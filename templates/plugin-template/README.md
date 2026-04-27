@@ -47,7 +47,7 @@ Once created, keep the app name in `.env.app`:
 VITE_APP_NAME=my-plugin
 ```
 
-The template generates this file from the Vertesia app id. It is safe to commit because `VITE_*` values are public build-time UI configuration. Vercel reads it during `vite build --mode app`; use `.env.app.local` for uncommitted local overrides.
+The template generates this file from the project name, which must match the `name` field in the Vertesia app manifest. It is safe to commit because `VITE_*` values are public build-time UI configuration. Vercel reads it during `vite build --mode app`; use `.env.app.local` for uncommitted local overrides.
 
 ## Quick Start
 
