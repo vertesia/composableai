@@ -1,4 +1,4 @@
-import { AccessControlEntry, ACECreatePayload, AcesQueryOptions, Permission, ProjectRoles } from "@vertesia/common";
+import { AccessControlEntry, ACECreatePayload, ACEUpdatePayload, AcesQueryOptions, Permission, ProjectRoles } from "@vertesia/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import { GroupsApi } from "./GroupsApi.js";
 
@@ -51,6 +51,14 @@ export class AcesApi extends ApiTopic {
     }
 
     /**
+     * List all ACEs scoped to the current project.
+     * Returns both regular project ACEs and dynamic (content_set/principal_set) ACEs.
+     */
+    listProjectAces(): Promise<AccessControlEntry[]> {
+        return this.get('/project');
+    }
+
+    /**
      * Get an ACE by its Id
      * @param id
      * @returns InteractionResult
@@ -61,6 +69,10 @@ export class AcesApi extends ApiTopic {
 
     create(payload: ACECreatePayload): Promise<AccessControlEntry> {
         return this.post('/', { payload })
+    }
+
+    update(id: string, payload: ACEUpdatePayload): Promise<AccessControlEntry> {
+        return this.put('/' + id, { payload })
     }
 
     delete(id: string): Promise<{ id: string }> {

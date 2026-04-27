@@ -11,6 +11,8 @@ export interface UserGroup {
     updated_at: Date;
     created_by?: string;
     updated_by?: string;
+    /** Custom properties for dynamic permission matching */
+    properties?: Record<string, any>;
 }
 
 export interface PopulatesUserGroup extends UserGroup {
@@ -21,8 +23,9 @@ export interface UserGroupRef {
     id: string;
     name: string;
     tags?: string[];
+    properties?: Record<string, any>;
 }
 
-export const UserGroupRefPopulate = 'id name tags description';
+export const UserGroupRefPopulate = 'id name tags description properties';
 
 export const MEMBERS_GROUP_NAME = 'members';
