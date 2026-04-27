@@ -39,6 +39,8 @@ export type AgentRunArchiveState = 'none' | 'pending' | 'archiving' | 'complete'
  */
 export type AgentRunType = 'api' | 'schedule';
 
+export type AgentRunKind = 'agent' | 'process' ;
+
 /**
  * Internal discriminator key for documents stored in the agent_runs collection.
  */
@@ -177,6 +179,9 @@ export interface AgentRunBase<TData = Record<string, any>, TProperties = Record<
      * @deprecated Use source_type for creation source and run_type for runtime mode.
      */
     type?: AgentRunType;
+
+    /** Whether this is an interactive agent run or a process run */
+    run_kind?: AgentRunKind;
 }
 
 /**
