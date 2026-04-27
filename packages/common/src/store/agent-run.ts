@@ -40,6 +40,8 @@ export type AgentRunArchiveState = 'none' | 'pending' | 'archiving' | 'complete'
  */
 export type AgentRunType = 'api' | 'schedule';
 
+export type AgentRunKind = 'agent' | 'process' ;
+
 /**
  * Shared fields between CreateAgentRunPayload and AgentRun.
  *
@@ -88,6 +90,9 @@ export interface AgentRunBase<TData = Record<string, any>, TProperties = Record<
 
     /** How the run was created */
     type?: AgentRunType;
+
+    /** Whether this is an interactive agent run or a process run */
+    run_kind?: AgentRunKind;
 }
 
 /**
@@ -376,6 +381,9 @@ export interface ListAgentRunsQuery {
     /** Filter by run type */
     type?: AgentRunType;
 
+    /** Filter by run kind ('agent' or 'process') */
+    run_kind?: AgentRunKind;
+
     /** Field to sort by */
     sort?: 'started_at' | 'updated_at';
 
@@ -490,6 +498,9 @@ export interface AgentRunSearchHit {
 
     /** How the run was created */
     type?: AgentRunType;
+
+    /** Whether this is an interactive agent run or a process run */
+    run_kind?: AgentRunKind;
 
     /** Created timestamp */
     created_at: string;

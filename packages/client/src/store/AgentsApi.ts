@@ -96,6 +96,7 @@ export class AgentsApi extends ApiTopic {
         if (query?.until) params.until = query.until.toISOString();
         if (query?.schedule_id) params.schedule_id = query.schedule_id;
         if (query?.type) params.type = query.type;
+        if (query?.run_kind) params.run_kind = query.run_kind;
         if (query?.limit) params.limit = String(query.limit);
         if (query?.offset) params.offset = String(query.offset);
         if (query?.cursor) params.cursor = query.cursor;
