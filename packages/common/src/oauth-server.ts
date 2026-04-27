@@ -135,7 +135,7 @@ export interface OAuthAuthorizationServerMetadata {
 
 export interface OAuthClientMetadataDocument {
     client_id: string;
-    client_name?: string;
+    client_name: string;
     redirect_uris: string[];
     grant_types?: OAuthGrantType[];
     response_types?: OAuthResponseType[];
@@ -143,6 +143,15 @@ export interface OAuthClientMetadataDocument {
     scope?: string;
     client_uri?: string;
     logo_uri?: string;
+    tos_uri?: string;
+    policy_uri?: string;
+}
+
+export interface OAuthClientDisplayMetadata {
+    client_uri?: string;
+    logo_uri?: string;
+    tos_uri?: string;
+    policy_uri?: string;
 }
 
 export interface OAuthAuthorizeQuery {
@@ -163,6 +172,7 @@ export interface OAuthAuthorizationRequest {
     request_id: string;
     client_id: string;
     client_name: string;
+    client_metadata?: OAuthClientDisplayMetadata;
     client_registration_mode?: OAuthClientRegistrationMode;
     redirect_uri: string;
     redirect_origin: string;
