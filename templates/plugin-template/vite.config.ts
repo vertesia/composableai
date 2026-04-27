@@ -93,7 +93,7 @@ function defineAppConfig(): UserConfig {
     const useHttps = !process.env.VERCEL;
 
     return {
-        base: '/', // Absolute paths — required for SPA routing under /app/*
+        base: '/app/', // App assets are served from dist/app/ on Vercel.
         plugins: [
             tailwindcss(),
             react(),
