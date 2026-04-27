@@ -101,17 +101,20 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
                 <Input placeholder={t('store.filterByName')} value={searchTerm} onChange={setSearchTerm} />
                 <SelectBox className="w-60" isClearable options={Object.values(ChunkableOptions)} value={chunkable} onChange={onChunkableChange} placeholder={t('store.isChunkable')} />
             </div>
-            <div className="flex-1 overflow-y-auto">
-                {
-                    (!isLoading && objects?.length === 0) ? (
-                        <EmptyCollection title={t('store.noType')} buttonLabel={t('store.createType')} onClick={onOpenCreateModal}>
-                            {t('store.getStartedTypes')}
-                        </EmptyCollection >
-                    ) : (
-                        <ContentObjectTypesTable objects={objects} isLoading={isLoading} />
-                    )
-                }
-                <CreateOrUpdateTypeModal okLabel="Create" title={t('store.createType')} isOpen={showCreateModal} onClose={onCloseCreateModal} />
+            <div className="flex flex-col w-full flex-1 min-h-0 border rounded-md my-2">
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                    {
+                        (!isLoading && objects?.length === 0) ? (
+                            <EmptyCollection title={t('store.noType')} buttonLabel={t('store.createType')} onClick={onOpenCreateModal}>
+                                {t('store.getStartedTypes')}
+                            </EmptyCollection >
+                        ) : (
+                            <ContentObjectTypesTable objects={objects} isLoading={isLoading} />
+                        )
+                    }
+                    <div ref={loadMoreRef} className="h-4 w-full" />
+                    <CreateOrUpdateTypeModal okLabel="Create" title={t('store.createType')} isOpen={showCreateModal} onClose={onCloseCreateModal} />
+                </div>
             </div>
         </div>
     )
