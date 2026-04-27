@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/packages",
-  "version": "1.1.0-dev.20260327.125707Z",
+  "version": "1.1.0-dev.20260427.060440Z",
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
@@ -54,7 +54,7 @@
       "qs@>=6.0.0 <6.14.0": "^6.14.1",
       "lodash-es@<4.18.1": "^4.18.1",
       "lodash@<4.18.1": "^4.18.1",
-      "fast-xml-parser@<5.3.8": "^5.5.7",
+      "fast-xml-parser@<5.7.2": "^5.7.2",
       "@eslint/config-array": "^0.23.3",
       "minimatch@>=3.0.0 <4.0.0": "legacy-v3",
       "minimatch@>=5.0.0 <6.0.0": "legacy-v5",

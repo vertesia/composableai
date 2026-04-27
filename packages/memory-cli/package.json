@@ -1,7 +1,7 @@
 {
   "name": "@vertesia/memory-cli",
   "description": "Vertesia memory builder CLI",
-  "version": "1.1.0-dev.20260327.125707Z",
+  "version": "1.1.0-dev.20260427.060440Z",
   "type": "module",
   "bin": {
     "memo": "./bin/memo.js"
