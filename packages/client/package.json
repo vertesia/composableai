@@ -17,15 +17,15 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@rollup/plugin-commonjs": "^28.0.3",
-    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-commonjs": "^28.0.9",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^12.1.2",
+    "@rollup/plugin-typescript": "^12.3.0",
     "@types/node": "^25.6.0",
     "eslint": "^10.0.2",
-    "rollup": "^4.59.0",
+    "rollup": "^4.60.2",
     "ts-dual-module": "^0.6.3",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.58.1",
     "vitest": "^4.0.16"
   },
@@ -33,7 +33,7 @@
     "@llumiverse/common": "workspace:*",
     "@vertesia/api-fetch-client": "workspace:*",
     "@vertesia/common": "workspace:*",
-    "eventsource": "^3.0.6"
+    "eventsource": "^3.0.7"
   },
   "ts_dual_module": {
     "outDir": "lib"

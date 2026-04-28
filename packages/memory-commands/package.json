@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@vertesia/memory": "workspace:*",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.3"
   },
   "ts_dual_module": {
     "outDir": "lib"

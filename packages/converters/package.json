@@ -22,11 +22,11 @@
     "devDependencies": {
         "@types/tmp": "^0.2.6",
         "ts-dual-module": "^0.6.3",
-        "typescript": "^6.0.2",
+        "typescript": "^6.0.3",
         "vitest": "^4.0.16"
     },
     "dependencies": {
-        "sharp": "^0.33.5",
+        "sharp": "^0.34.5",
         "tmp": "^0.2.5"
     },
     "repository": {
