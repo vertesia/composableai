@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { AwsConfiguration, CompositeAppConfig, CompositeAppConfigPayload, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, InCodeTypeDefinition, MagicPdfConfiguration, Project, ProjectConfiguration, ProjectIntegrationListEntry, ProjectRef, ProjectToolInfo, RenderingTemplateDefinition, RenderingTemplateDefinitionRef, SupportedIntegrations } from "@vertesia/common";
+import { AwsConfiguration, CompositeAppConfig, CompositeAppConfigPayload, ExaConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, InCodeTypeDefinition, LinkupConfiguration, MagicPdfConfiguration, Project, ProjectConfiguration, ProjectIntegrationListEntry, ProjectRef, ProjectToolInfo, RenderingTemplateDefinition, RenderingTemplateDefinitionRef, ResendConfiguration, SerperConfiguration, SupportedIntegrations } from "@vertesia/common";
 
 export default class ProjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -97,7 +97,7 @@ class IntegrationsConfigurationApi extends ApiTopic {
         return this.get(`/${projectId}/integrations`).then(res => res.integrations);
     }
 
-    retrieve(projectId: string, integrationId: SupportedIntegrations): Promise<GladiaConfiguration | GithubConfiguration | AwsConfiguration | MagicPdfConfiguration | undefined> {
+    retrieve(projectId: string, integrationId: SupportedIntegrations): Promise<GladiaConfiguration | GithubConfiguration | AwsConfiguration | MagicPdfConfiguration | SerperConfiguration | ExaConfiguration | LinkupConfiguration | ResendConfiguration | undefined> {
         return this.get(`/${projectId}/integrations/${integrationId}`).catch(err => {
             if (err.status === 404) {
                 return undefined;
