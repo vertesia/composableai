@@ -20,13 +20,13 @@
     "require": "./lib/cjs/index.js"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^28.0.3",
-    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-commonjs": "^28.0.9",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^12.1.2",
-    "rollup": "^4.59.0",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "rollup": "^4.60.2",
     "ts-dual-module": "^0.6.3",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "vitest": "^4.0.16"
   },
   "ts_dual_module": {
