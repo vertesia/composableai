@@ -140,14 +140,6 @@ export function isServiceAccountRequest(req: IssueTokenRequest): req is ServiceA
     return req.type === 'service_account';
 }
 
-/**
- * Resolve the agent token's assertion type, applying the default when omitted.
- * Lives in common so both the STS server and clients agree on the default.
- */
-export function getAgentAssertionType(req: AgentTokenRequest): AgentAssertionType {
-    return req.assertion_type ?? 'user_access_token';
-}
-
 // Response types
 export interface TokenResponse {
     token: string;
