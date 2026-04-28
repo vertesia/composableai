@@ -5,7 +5,8 @@ export interface IntegrationConfigurationBase {
 }
 
 export interface GladiaConfiguration extends IntegrationConfigurationBase {
-    api_key: string;
+    api_key?: string;
+    has_api_key?: boolean;
     url?: string;
 }
 
@@ -25,27 +26,32 @@ export interface MagicPdfConfiguration extends IntegrationConfigurationBase {
 }
 
 export interface SerperConfiguration extends IntegrationConfigurationBase {
-    api_key: string;
+    api_key?: string;
+    has_api_key?: boolean;
     url?: string;
 }
 
 export interface ExaConfiguration extends IntegrationConfigurationBase {
-    api_key: string;
+    api_key?: string;
+    has_api_key?: boolean;
 }
 
 export interface LinkupConfiguration extends IntegrationConfigurationBase {
-    api_key: string;
+    api_key?: string;
+    has_api_key?: boolean;
 }
 
 export interface ResendConfiguration extends IntegrationConfigurationBase {
     /** Resend API key for sending emails */
-    api_key: string;
+    api_key?: string;
+    has_api_key?: boolean;
     /** Domain for email (both sending and receiving). Must be verified in Resend. */
     email_domain: string;
     /** Default display name for outgoing emails (e.g., "Vertesia - Project Name") */
     default_from_name?: string;
     /** Webhook secret for validating inbound email webhooks (required for receiving emails) */
-    webhook_secret: string;
+    webhook_secret?: string;
+    has_webhook_secret?: boolean;
     /** Domains allowed to send emails TO start agents (for inbound validation) */
     allowed_sender_domains?: string[];
     /** Require sender to have project access to start agents via email (default: true) */
