@@ -7,6 +7,7 @@ export interface IntegrationConfigurationBase {
 export interface GladiaConfiguration extends IntegrationConfigurationBase {
     api_key?: string;
     has_api_key?: boolean;
+    api_key_hint?: string;
     url?: string;
 }
 
@@ -28,23 +29,27 @@ export interface MagicPdfConfiguration extends IntegrationConfigurationBase {
 export interface SerperConfiguration extends IntegrationConfigurationBase {
     api_key?: string;
     has_api_key?: boolean;
+    api_key_hint?: string;
     url?: string;
 }
 
 export interface ExaConfiguration extends IntegrationConfigurationBase {
     api_key?: string;
     has_api_key?: boolean;
+    api_key_hint?: string;
 }
 
 export interface LinkupConfiguration extends IntegrationConfigurationBase {
     api_key?: string;
     has_api_key?: boolean;
+    api_key_hint?: string;
 }
 
 export interface ResendConfiguration extends IntegrationConfigurationBase {
     /** Resend API key for sending emails */
     api_key?: string;
     has_api_key?: boolean;
+    api_key_hint?: string;
     /** Domain for email (both sending and receiving). Must be verified in Resend. */
     email_domain: string;
     /** Default display name for outgoing emails (e.g., "Vertesia - Project Name") */
@@ -52,6 +57,7 @@ export interface ResendConfiguration extends IntegrationConfigurationBase {
     /** Webhook secret for validating inbound email webhooks (required for receiving emails) */
     webhook_secret?: string;
     has_webhook_secret?: boolean;
+    webhook_secret_hint?: string;
     /** Domains allowed to send emails TO start agents (for inbound validation) */
     allowed_sender_domains?: string[];
     /** Require sender to have project access to start agents via email (default: true) */
@@ -70,6 +76,7 @@ export interface AskUserWebhookConfiguration extends IntegrationConfigurationBas
     /** Secret for signing webhook payloads (HMAC-SHA256) */
     webhook_secret?: string;
     has_webhook_secret?: boolean;
+    webhook_secret_hint?: string;
     /** Which events to send: ['requested', 'resolved'] or subset (default: both) */
     events?: ('requested' | 'resolved')[];
     /** Custom headers to include in webhook requests */
