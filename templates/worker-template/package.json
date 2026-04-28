@@ -47,7 +47,7 @@
     "rimraf": "^6.0.1",
     "@temporalio/proto": "^1.13.0",
     "@temporalio/testing": "^1.13.0",
-    "typescript": "^5.9.2",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.16",
     "vitest-fetch-mock": "^0.4.5"

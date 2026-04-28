@@ -48,11 +48,11 @@
     "@eslint/js": "^10.0.1",
     "@koa-stack/router": "^0.24.0",
     "@koa-stack/server": "^0.24.0",
-    "@types/koa": "^2.15.0",
+    "@types/koa": "^3.0.2",
     "@types/mocha": "^10.0.10",
     "eslint": "^10.0.2",
     "koa": "^2.16.4",
-    "mocha": "^10.2.0",
+    "mocha": "^11.7.5",
     "ts-dual-module": "^0.6.3",
     "ts-node": "^10.9.2",
     "tsx": "^4.8.1",
@@ -61,6 +61,6 @@
     "vitest": "^4.0.16"
   },
   "dependencies": {
-    "eventsource-parser": "^1.1.1"
+    "eventsource-parser": "^3.0.8"
   }
 }
