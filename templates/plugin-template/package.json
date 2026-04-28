@@ -44,10 +44,10 @@
   "devDependencies": {
     "@eslint/js": "^9.0.0",
     "@hono/vite-dev-server": "^0.25.1",
-    "@rollup/plugin-commonjs": "^28.0.8",
+    "@rollup/plugin-commonjs": "^29.0.2",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
-    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-terser": "^1.0.0",
     "@rollup/plugin-typescript": "^12.1.2",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/vite": "^4.1.18",
@@ -74,7 +74,7 @@
     "vite-plugin-serve-static": "^1.2.0"
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.5",
+    "@hono/node-server": "^2.0.0",
     "@llumiverse/common": "workspace:*",
     "@vertesia/client": "workspace:*",
     "@vertesia/common": "workspace:*",

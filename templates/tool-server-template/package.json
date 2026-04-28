@@ -28,10 +28,10 @@
   "author": "Vertesia",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^28.0.8",
+    "@rollup/plugin-commonjs": "^29.0.2",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
-    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-terser": "^1.0.0",
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.3",
@@ -43,7 +43,7 @@
     "typescript": "^6.0.2"
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.5",
+    "@hono/node-server": "^2.0.0",
     "@llumiverse/common": "workspace:*",
     "@vertesia/client": "workspace:*",
     "@vertesia/common": "workspace:*",

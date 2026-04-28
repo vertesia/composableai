@@ -18,7 +18,7 @@
   },
   "license": "Apache-2.0",
   "devDependencies": {
-    "@smithy/types": "^3.7.2",
+    "@smithy/types": "^4.14.1",
     "@temporalio/proto": "^1.11.5",
     "@temporalio/testing": "^1.11.5",
     "@temporalio/worker": "^1.11.5",
@@ -45,7 +45,7 @@
     "mime": "^4.0.0",
     "ms": "3.0.0-canary.1",
     "node-web-stream-adapters": "^0.2.1",
-    "p-limit": "^6.2.0",
+    "p-limit": "^7.3.0",
     "papaparse": "^5.5.3",
     "seedrandom": "^3.0.5",
     "sharp": "^0.33.4",
