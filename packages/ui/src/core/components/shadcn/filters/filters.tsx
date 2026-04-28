@@ -97,6 +97,7 @@ function generateComboboxOptions(
                     }}
                     options={filterGroup?.options || []}
                     labelRenderer={filterGroup?.labelRenderer}
+                    multiple={filter.multiple ?? filterGroup?.multiple}
                 />
             );
         }
