@@ -22,11 +22,11 @@
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^25.6.0",
-    "eslint": "^10.0.2",
+    "eslint": "^10.2.1",
     "rollup": "^4.59.0",
     "ts-dual-module": "^0.6.3",
     "typescript": "^6.0.2",
-    "typescript-eslint": "^8.58.1",
+    "typescript-eslint": "^8.59.1",
     "vitest": "^4.0.16"
   },
   "dependencies": {
