@@ -385,19 +385,15 @@ function throwIfAborted(signal?: AbortSignal): void {
 async function delay(milliseconds: number, signal?: AbortSignal): Promise<void> {
     throwIfAborted(signal);
     await new Promise<void>((resolve, reject) => {
-        let timeout: ReturnType<typeof setTimeout>;
-        const onAbort = () => {
+        const timeout = setTimeout(() => {
+            signal?.removeEventListener('abort', onAbort);
+            resolve();
+        }, milliseconds);
+        function onAbort() {
             clearTimeout(timeout);
             signal?.removeEventListener('abort', onAbort);
             reject(new Error('Authentication aborted.'));
-        };
-        const cleanup = () => {
-            signal?.removeEventListener('abort', onAbort);
-        };
-        timeout = setTimeout(() => {
-            cleanup();
-            resolve();
-        }, milliseconds);
+        }
         signal?.addEventListener('abort', onAbort, { once: true });
     });
 }
