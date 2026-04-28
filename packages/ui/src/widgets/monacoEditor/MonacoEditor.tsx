@@ -41,6 +41,7 @@ interface MonacoEditorProps {
     className?: string;
     editorRef?: RefObject<IEditorApi | undefined>;
     language?: string;
+    path?: string;
     onChange?: (update: ViewUpdate) => void;
     debounceTimeout?: number;
     theme?: string;
@@ -57,6 +58,7 @@ export function MonacoEditor({
     className,
     editorRef,
     language = 'javascript',
+    path,
     debounceTimeout = 0,
     options = {},
     beforeMount,
@@ -129,7 +131,7 @@ export function MonacoEditor({
         setEditorValue(actualValue);
 
         if (debouncedOnChange) {
-            const update = {
+            const update: ViewUpdate = {
                 docChanged: true,
                 state: {
                     doc: {
@@ -137,8 +139,7 @@ export function MonacoEditor({
                         length: actualValue.length
                     }
                 }
-            } as unknown as ViewUpdate;
-            // Using type assertion through unknown to avoid complex type mocking
+            };
 
             debouncedOnChange(update);
         }
@@ -237,6 +238,7 @@ export function MonacoEditor({
                 height="100%"
                 theme={resolvedTheme === 'dark' ? 'vs-dark' : 'light'}
                 language={language}
+                path={path}
                 value={editorValue}
                 onChange={handleEditorChange}
                 onMount={handleEditorDidMount}

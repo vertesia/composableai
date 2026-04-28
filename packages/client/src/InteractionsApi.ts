@@ -46,6 +46,7 @@ export default class InteractionsApi extends ApiTopic {
             }
         });
     }
+
     /**
      * Find interactions given a mongo match query.
      * You can also specify if prompts schemas are included in the result

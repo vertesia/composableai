@@ -138,7 +138,7 @@ export interface OnboardingProgress {
     interactions: boolean,
     prompts: boolean,
     environments: boolean,
-    default_environment_defined: boolean
+    default_environment_defined: boolean,
 }
 
 

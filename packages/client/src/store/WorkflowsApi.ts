@@ -39,6 +39,7 @@ import {
 } from "@vertesia/common";
 import { VertesiaClient } from "../client.js";
 import { EventSourceProvider } from "../execute.js";
+import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from "./stream-termination.js";
 
 export class WorkflowsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -257,14 +258,7 @@ export class WorkflowsApi extends ApiTopic {
                                 onMessage(agentMessage, exit);
                             }
 
-                            // Get workstream ID (defaults to 'main' if not set)
-                            const workstreamId = compactMessage.w || 'main';
-
-                            const streamIsOver = compactMessage.t === AgentMessageType.TERMINATED ||
-                                (compactMessage.t === AgentMessageType.COMPLETE && workstreamId === 'main');
-
-                            // Only close the stream when the main workstream completes or terminates
-                            if (streamIsOver) {
+                            if (shouldCloseCompactRunStream(compactMessage, runId)) {
                                 console.log("Closing stream due to COMPLETE message from main workstream");
                                 if (!isClosed) {
                                     isClosed = true;
@@ -272,7 +266,7 @@ export class WorkflowsApi extends ApiTopic {
                                     resolve(null);
                                 }
                             } else if (compactMessage.t === AgentMessageType.COMPLETE) {
-                                console.log(`Received COMPLETE message from non-main workstream: ${workstreamId}, keeping stream open`);
+                                console.log(`Received COMPLETE message that does not close the root stream for run ${runId}`);
                             }
                         } catch (err) {
                             console.error("Failed to parse SSE message:", err, ev.data);
@@ -328,10 +322,7 @@ export class WorkflowsApi extends ApiTopic {
                         if (onMessage) {
                             onMessage(msg, exit);
                         }
-                        const workstreamId = msg.workstream_id || 'main';
-                        const streamIsOver = msg.type === AgentMessageType.TERMINATED ||
-                            (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
-                        if (streamIsOver) {
+                        if (shouldCloseAgentRunStream(msg, runId)) {
                             resolve(null);
                             return;
                         }

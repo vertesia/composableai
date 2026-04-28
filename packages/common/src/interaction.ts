@@ -1211,6 +1211,15 @@ export interface ResolvedInteractionExecutionInfo {
     tags: string[];
 
     /**
+     * Agent runner configuration (tool_names opt-ins, is_agent, is_tool, etc.).
+     * Included on resolve so non-UI callers (worker activities) can pick up the
+     * interaction's defaults without a second retrieve round-trip — and so
+     * in-code interactions (sys:, app:) which have no Mongo document work the
+     * same as stored ones.
+     */
+    agent_runner_options?: AgentRunnerOptions;
+
+    /**
      * The resolved runtime configuration
      */
     resolved: ResolvedRuntimeConfig;
@@ -1261,10 +1270,8 @@ export interface SystemSkillCatalogEntry {
     title: string;
     /** Description of what the skill unlocks */
     description: string;
-    /** Tools that become available when this skill is called */
+    /** Tool names this skill enables (unlocks) when called */
     tools: string[];
-    /** Related tools that complement this skill */
-    related_tools: string[];
 }
 
 /**

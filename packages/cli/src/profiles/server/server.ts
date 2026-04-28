@@ -2,13 +2,6 @@ import { Server, createServer, ServerResponse, IncomingMessage } from 'http';
 
 export async function startServer(cb: (req: IncomingMessage, res: ServerResponse) => void): Promise<Server> {
     const server = createServer(cb);
-    const onSigint = () => {
-        server.close();
-    }
-    server.on('close', () => {
-        process.off('SIGINT', onSigint);
-    });
-    process.on('SIGINT', onSigint);
 
     // start the server on a random unused port
     return new Promise((resolve, reject) => {

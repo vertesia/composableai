@@ -25,7 +25,7 @@ import { ... } from "@vertesia/workflow/activities";
 import { ... } from "@vertesia/workflow/dsl-activities";
 
 // Workflow definitions for Temporal
-import { dslWorkflow, iterativeGenerationWorkflow } from "@vertesia/workflow/workflows";
+import { dslWorkflow } from "@vertesia/workflow/workflows";
 
 // Pre-bundled workflows for Temporal workers
 import { ... } from "@vertesia/workflow/workflows-bundle";
@@ -57,7 +57,6 @@ The package includes activities for document processing:
 Pre-built workflows for common patterns:
 
 - **dslWorkflow** - Execute DSL-defined workflow pipelines
-- **iterativeGenerationWorkflow** - Iterative content generation with refinement
 - **recalculateEmbeddingsWorkflow** - Bulk embedding recalculation
 
 ## License

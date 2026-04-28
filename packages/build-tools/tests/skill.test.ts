@@ -43,18 +43,18 @@ Content here`;
     });
   });
 
-  it('should include related_tools from frontmatter', async () => {
+  it('should include tools from frontmatter', async () => {
     const content = `---
 name: test
 title: Test
 description: Test description
-related_tools: [tool1, tool2]
+tools: [tool1, tool2]
 ---
 Content`;
 
     const result = await skillTransformer.transform(content, 'test.md');
-    expect(result.data).toHaveProperty('related_tools');
-    expect((result.data as any).related_tools).toEqual(['tool1', 'tool2']);
+    expect(result.data).toHaveProperty('tools');
+    expect((result.data as any).tools).toEqual(['tool1', 'tool2']);
   });
 
   it('should validate against schema successfully', () => {

@@ -1,5 +1,15 @@
 import { Command } from "commander";
-import { createObject, deleteObject, downloadObjectContent, getObject, listObjects, updateObject } from "./commands.js";
+import {
+    createObject,
+    deleteObject,
+    downloadObjectContent,
+    getObject,
+    getObjectText,
+    listObjects,
+    queryObjects,
+    searchObjects,
+    updateObject,
+} from "./commands.js";
 
 export function registerObjectsCommand(program: Command) {
 
@@ -30,6 +40,12 @@ export function registerObjectsCommand(program: Command) {
         .action(async (objectId: string, options: Record<string, any>) => {
             await getObject(program, objectId, options);
         });
+    store.command('text <objectId>')
+        .description("Get the extracted text for an existing object")
+        .option('--json', 'Print raw JSON instead of plain text')
+        .action(async (objectId: string, options: Record<string, any>) => {
+            await getObjectText(program, objectId, options);
+        });
     store.command('download <objectId>')
         .description("Download an object's content to a file")
         .option('-o, --output [path]', 'Output file path (defaults to object name)')
@@ -40,7 +56,25 @@ export function registerObjectsCommand(program: Command) {
         .description("List the objects inside a folder. If no folder is specified all the objects are listed.")
         .option('-l,--limit [limit]', 'Limit the number of objects returned. The default limit is 100. Useful for pagination.')
         .option('-s,--skip [skip]', 'Skip the number of objects to skip. Default is 0. Useful for pagination.')
+        .option('--json', 'Print raw JSON')
         .action(async (folderPath: string | undefined, options: Record<string, any>) => {
             await listObjects(program, folderPath, options);
+        });
+    store.command('search <query>')
+        .description("Full-text search across stored content objects")
+        .option('-l,--limit [limit]', 'Limit the number of results returned. Default is 20.')
+        .option('--type [type]', 'Filter by object type id or code')
+        .option('--path [path]', 'Filter by object location/path')
+        .option('--select [fields]', 'Selection string for returned fields')
+        .option('--json', 'Print raw JSON')
+        .action(async (query: string, options: Record<string, any>) => {
+            await searchObjects(program, query, options);
+        });
+    store.command('query')
+        .description("Query indexed documents using raw Elasticsearch DSL")
+        .option('--dsl [json]', 'Raw Elasticsearch DSL as a JSON string')
+        .option('--json', 'Print raw JSON')
+        .action(async (options: Record<string, any>) => {
+            await queryObjects(program, options);
         });
 }

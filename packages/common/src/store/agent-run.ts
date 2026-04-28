@@ -17,6 +17,7 @@ import { UserChannel } from "../email.js";
 import { AgentEvent } from "../workflow-analytics.js";
 import { UserInputSignal } from "./signals.js";
 import { ContentObjectTypeRef } from "./store.js";
+import { ProcessDefinitionBody, ProcessState } from "./process.js";
 import { AgentMessage, CompactMessage, ConversationActivityState, ConversationFileRef, WorkflowRunEvent } from "./workflow.js";
 
 /**
@@ -39,6 +40,91 @@ export type AgentRunArchiveState = 'none' | 'pending' | 'archiving' | 'complete'
  * How the agent run was created.
  */
 export type AgentRunType = 'api' | 'schedule';
+
+/**
+ * Internal discriminator key for documents stored in the agent_runs collection.
+ */
+export type RunKind = 'agent' | 'process';
+
+/**
+ * Public-facing runtime mode.
+ */
+export type RunType = 'autonomous' | 'supervised' | 'programmatic';
+export type ProcessRunType = 'supervised' | 'programmatic';
+
+/**
+ * Shared fields for all records stored in the agent_runs collection.
+ */
+export interface RunBase {
+    /** The stable identifier used by all client code */
+    id: string;
+
+    /** Internal discriminator key */
+    run_kind: RunKind;
+
+    /** Public-facing runtime mode */
+    run_type: RunType;
+
+    /** Account ID */
+    account: string;
+
+    /** Project ID */
+    project: string;
+
+    /** Temporal workflow ID (stable across continueAsNew) */
+    workflow_id?: string;
+
+    /** First Temporal workflow run ID (used for Redis channel and artifact resolution) */
+    first_workflow_run_id?: string;
+
+    /** Artifact storage path for this run */
+    artifacts_path?: string;
+
+    /** Current status of the run */
+    status: AgentRunStatus;
+
+    /** Whether the run is currently working or idle */
+    activity_state?: ConversationActivityState;
+
+    /** Conversation/process visibility */
+    visibility?: ConversationVisibility;
+
+    /** User or service that initiated the run */
+    started_by: string;
+
+    /** When the run started */
+    started_at: Date;
+
+    /** When the run completed (or failed/cancelled) */
+    completed_at?: Date;
+
+    /** Short human-readable title */
+    title?: string;
+
+    /** User-defined or system tags for categorization */
+    tags?: string[];
+
+    /** Categories for organizing runs */
+    categories?: string[];
+
+    /** How the run was started */
+    source?: RunSource;
+
+    /** Replacement for legacy AgentRun.type */
+    source_type?: AgentRunType;
+
+    /** Schedule ID — set when this run was triggered by a Temporal schedule */
+    schedule_id?: string;
+
+    /** Archive lifecycle state */
+    archive_state?: AgentRunArchiveState;
+
+    /** Timestamp when the document was created */
+    created_at: Date;
+
+    /** Timestamp when the document was last updated */
+    updated_at: Date;
+}
 
 /**
  * Shared fields between CreateAgentRunPayload and AgentRun.
@@ -87,6 +173,11 @@ export interface AgentRunBase<TData = Record<string, any>, TProperties = Record<
     schedule_id?: string;
 
     /** How the run was created */
+    source_type?: AgentRunType;
+
+    /**
+     * @deprecated Use source_type for creation source and run_type for runtime mode.
+     */
     type?: AgentRunType;
 }
 
@@ -99,15 +190,9 @@ export interface AgentRunBase<TData = Record<string, any>, TProperties = Record<
  * @typeParam TData - The interaction's expected input data type.
  * @typeParam TProperties - The content type's property schema.
  */
-export interface AgentRun<TData = Record<string, any>, TProperties = Record<string, any>> extends AgentRunBase<TData, TProperties> {
-    /** The stable identifier used by all client code */
-    id: string;
-
-    /** Account ID */
-    account: string;
-
-    /** Project ID */
-    project: string;
+export interface AgentRun<TData = Record<string, any>, TProperties = Record<string, any>> extends RunBase, AgentRunBase<TData, TProperties> {
+    run_kind: 'agent';
+    run_type: 'autonomous';
 
     // --- Temporal workflow references ---
 
@@ -168,15 +253,36 @@ export interface AgentRun<TData = Record<string, any>, TProperties = Record<stri
 
     /** Source agent run ID when this run was forked (enables message history chaining) */
     forked_from?: string;
-
-    // --- Timestamps ---
-
-    /** Timestamp when the document was created */
-    created_at: Date;
-
-    /** Timestamp when the document was last updated */
-    updated_at: Date;
 }
+
+export interface ProcessRunConfig {
+    model?: string;
+    /**
+     * Free-form message from the user when starting a run. Passed to the
+     * orchestrator LLM in supervised mode; stored on the run regardless
+     * so programmatic runs retain the intent that triggered them.
+     */
+    user_message?: string;
+}
+
+export interface ProcessRun extends RunBase {
+    run_kind: 'process';
+    run_type: ProcessRunType;
+    process_id?: string;
+    process_definition_snapshot: ProcessDefinitionBody;
+    process_version?: number;
+    process_state: ProcessState;
+    config?: ProcessRunConfig;
+}
+
+export type AnyAgentRun = AgentRun | ProcessRun;
+export type AutonomousRunResponse<TData = Record<string, any>, TProperties = Record<string, any>> = AgentRun<TData, TProperties>;
+export type SupervisedRunResponse = ProcessRun & { run_type: 'supervised' };
+export type ProgrammaticRunResponse = ProcessRun & { run_type: 'programmatic' };
+export type AgentRunResponse<TData = Record<string, any>, TProperties = Record<string, any>> =
+    | AutonomousRunResponse<TData, TProperties>
+    | SupervisedRunResponse
+    | ProgrammaticRunResponse;
 
 /**
  * Payload to create and start a new agent run.
@@ -207,20 +313,64 @@ export interface CreateAgentRunPayload<TData = Record<string, any>, TProperties 
     started_by?: string;
 }
 
-/**
- * Payload to record an AgentRun for an already-running workflow.
- *
- * Used by server-side callers that have already started a Temporal workflow
- * and need to create the stable AgentRun MongoDB document against it.
- *
- * @typeParam TData - The interaction's expected input data type.
- */
-export interface RecordAgentRunPayload<TData = CreateAgentRunPayload["data"]> extends Pick<AgentRunBase<TData>, "interaction" | "data" | "schedule_id" | "visibility" | "type"> {
-    /** Temporal workflow ID (stable across continueAsNew) */
-    workflow_id: string;
+export interface ProcessRunInputPayload<TData = Record<string, any>, TSource = RunSource> {
+    process_id?: string;
+    process_definition?: ProcessDefinitionBody;
+    data?: TData;
+    config?: ProcessRunConfig;
+    visibility?: ConversationVisibility;
+    tags?: string[];
+    categories?: string[];
+    source?: TSource;
+    started_by?: string;
+}
 
-    /** First Temporal workflow run ID (stable stream/artifact identity) */
+export interface CreateProcessRunPayload<TData = Record<string, any>, TSource = RunSource> extends ProcessRunInputPayload<TData, TSource> {
+    run_type: ProcessRunType;
+}
+
+export interface RecordRunWorkflowPayload {
+    /** Temporal workflow id. */
+    workflow_id: string;
+    /** First Temporal run id for this workflow. Required when the workflow has already started. */
+    first_workflow_run_id?: string;
+}
+
+/**
+ * @internal Used by workflow activities that need to create a stable run
+ * document for a workflow they already own.
+ */
+export interface RecordAgentRunPayload<TData = Record<string, any>> extends RecordRunWorkflowPayload {
+    run_kind?: 'agent';
+    interaction: string;
     first_workflow_run_id: string;
+    schedule_id?: string;
+    visibility?: ConversationVisibility;
+    data?: TData;
+    type?: AgentRunType;
+}
+
+/**
+ * @internal Used by process workflows to reserve a child ProcessRun before
+ * starting its Temporal child workflow.
+ */
+export interface RecordProcessRunPayload<TData = Record<string, any>, TSource = RunSource>
+    extends ProcessRunInputPayload<TData, TSource>, RecordRunWorkflowPayload {
+    run_kind: 'process';
+    run_type?: ProcessRunType;
+}
+
+export type RecordRunPayload<TData = Record<string, any>, TSource = RunSource> =
+    | RecordAgentRunPayload<TData>
+    | RecordProcessRunPayload<TData, TSource>;
+
+/**
+ * @internal Attaches the first Temporal run id after a pre-created run record
+ * has successfully started its workflow.
+ */
+export interface BindRunWorkflowPayload extends Required<RecordRunWorkflowPayload> {
+    status?: AgentRunStatus;
+    activity_state?: ConversationActivityState;
 }
 
 /**
@@ -247,6 +397,8 @@ export interface UpdateAgentRunStatusPayload {
     archived_at?: string;
     archive_version?: number;
     last_archive_error?: string;
+    sequence?: number;
+    process_state?: ProcessState;
 }
 
 /**
@@ -376,6 +528,12 @@ export interface ListAgentRunsQuery {
     /** Filter by run type */
     type?: AgentRunType;
 
+    /** Filter by public runtime mode */
+    run_type?: RunType | RunType[];
+
+    /** Filter by internal run discriminator */
+    run_kind?: RunKind;
+
     /** Field to sort by */
     sort?: 'started_at' | 'updated_at';
 
@@ -384,7 +542,7 @@ export interface ListAgentRunsQuery {
 }
 
 export interface ListAgentRunsResponse {
-    items: AgentRun[];
+    items: AgentRunResponse[];
     total_count: number;
     next_cursor: string | null;
 }
@@ -414,6 +572,9 @@ export interface SearchAgentRunsQuery {
     /** Filter by content type name */
     content_type_name?: string;
 
+    /** Filter by public runtime mode */
+    run_type?: RunType | RunType[];
+
     /** Only return runs started after this date */
     since?: Date;
 
@@ -438,7 +599,13 @@ export interface AgentRunSearchHit {
     score: number;
 
     /** Interaction ID */
-    interaction: string;
+    interaction?: string;
+
+    /** Public-facing runtime mode */
+    run_type?: RunType;
+
+    /** Internal run discriminator */
+    run_kind?: RunKind;
 
     /** Human-readable interaction name */
     interaction_name?: string;
@@ -489,6 +656,11 @@ export interface AgentRunSearchHit {
     schedule_id?: string;
 
     /** How the run was created */
+    source_type?: AgentRunType;
+
+    /**
+     * @deprecated Use source_type for creation source and run_type for runtime mode.
+     */
     type?: AgentRunType;
 
     /** Created timestamp */
@@ -519,10 +691,16 @@ export interface AgentRunInternals {
     first_workflow_run_id?: string;
     artifacts_path?: string;
     status: AgentRunStatus;
-    interaction: string;
+    run_kind?: RunKind;
+    run_type?: RunType;
+    interaction?: string;
     interaction_name?: string;
     config?: InteractionExecutionConfiguration;
-    interactive: boolean;
+    interactive?: boolean;
+    process_id?: string;
+    process_definition_snapshot?: ProcessDefinitionBody;
+    process_version?: number;
+    process_state?: ProcessState;
     started_at: Date;
     completed_at?: Date;
     started_by: string;

@@ -5,7 +5,7 @@ import { ExecutablePromptSegmentDef, PromptSegmentDefType } from "../prompt.js";
 
 /**
  * Sanitize a tool definition to only include fields expected by LLM APIs.
- * Removes extra fields like 'category', 'default', 'related_tools' that are
+ * Removes extra fields like 'category', 'default', 'tools' that are
  * used internally but should not be sent to the LLM.
  */
 export function sanitizeToolDefinition(tool: ToolDefinition): ToolDefinition {
