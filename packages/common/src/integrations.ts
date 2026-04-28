@@ -69,6 +69,7 @@ export interface AskUserWebhookConfiguration extends IntegrationConfigurationBas
     webhook_url: string;
     /** Secret for signing webhook payloads (HMAC-SHA256) */
     webhook_secret?: string;
+    has_webhook_secret?: boolean;
     /** Which events to send: ['requested', 'resolved'] or subset (default: both) */
     events?: ('requested' | 'resolved')[];
     /** Custom headers to include in webhook requests */
