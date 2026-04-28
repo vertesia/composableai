@@ -6,6 +6,7 @@
   "files": [
     "lib",
     "src",
+    "openapi-code-samples.json",
     "tsconfig.dist.json"
   ],
   "license": "Apache-2.0",

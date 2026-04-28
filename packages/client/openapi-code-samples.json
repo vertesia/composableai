@@ -1,0 +1,100 @@
+{
+  "GetRun": [
+    {
+      "lang": "TypeScript",
+      "label": "Vertesia SDK",
+      "source": "import { VertesiaClient } from '@vertesia/client';\n\nconst client = new VertesiaClient({\n    site: 'api.vertesia.io',\n    apikey: '<YOUR_API_KEY>',\n});\n\nconst run = await client.runs.retrieve('<RUN_ID>');\nconsole.log(run);"
+    }
+  ],
+  "UpdateRun": [
+    {
+      "lang": "TypeScript",
+      "label": "Vertesia SDK",
+      "source": "import { VertesiaClient } from '@vertesia/client';\n\nconst client = new VertesiaClient({\n    site: 'api.vertesia.io',\n    apikey: '<YOUR_API_KEY>',\n});\n\nconst run = await client.runs.put('/<RUN_ID>', {\n    payload: {\n        tags: ['reviewed'],\n    },\n});\nconsole.log(run);"
+    }
+  ],
+  "DeleteRun": [
+    {
+      "lang": "TypeScript",
+      "label": "Vertesia SDK",
+      "source": "import { VertesiaClient } from '@vertesia/client';\n\nconst client = new VertesiaClient({\n    site: 'api.vertesia.io',\n    apikey: '<YOUR_API_KEY>',\n});\n\nconst deleted = await client.runs.del('/<RUN_ID>');\nconsole.log(deleted);"
+    }
+  ],
+  "StreamRun": [
+    {
+      "lang": "TypeScript",
+      "label": "Vertesia SDK",
+      "source": "import { VertesiaClient } from '@vertesia/client';\n\nconst client = new VertesiaClient({\n    site: 'api.vertesia.io',\n    apikey: '<YOUR_API_KEY>',\n});\n\nconst events = await client.runs.get('/<RUN_ID>/stream', {\n    query: {\n        access_token: '<YOUR_JWT_TOKEN>',\n    },\n    reader: 'sse',\n});\n\nconsole.log(events);"
+    }
+  ],
+  "ReplayRun": [
+    {
+      "lang": "TypeScript",
+      "label": "Vertesia SDK",
+      "source": "import { VertesiaClient } from '@vertesia/client';\n\nconst client = new VertesiaClient({\n    site: 'api.vertesia.io',\n    apikey: '<YOUR_API_KEY>',\n});\n\nconst run = await client.runs.post('/<RUN_ID>/replay');\nconsole.log(run);"
+    }
+  ],
+  "ReplayRunStream": [
+    {
+      "lang": "TypeScript",
+      "label": "Vertesia SDK",
+      "source": "import { VertesiaClient } from '@vertesia/client';\n\nconst client = new VertesiaClient({\n    site: 'api.vertesia.io',\n    apikey: '<YOUR_API_KEY>',\n});\n\nconst run = await client.runs.post('/<RUN_ID>/replay-stream');\nconsole.log(run);"
+    }
+  ],
+  "CreateRun": [
+    {
+      "lang": "TypeScript",
+      "label": "Vertesia SDK",
+      "source": "import { VertesiaClient } from '@vertesia/client';\n\nconst client = new VertesiaClient({\n    site: 'api.vertesia.io',\n    apikey: '<YOUR_API_KEY>',\n});\n\nconst run = await client.runs.create({\n    interaction: '<INTERACTION_ID>',\n    data: {\n        question: 'Summarize this document',\n    },\n    config: {\n        environment: '<ENVIRONMENT_ID>',\n        model: '<MODEL_ID>',\n    },\n});\n\nconsole.log(run);"
+    }
+  ],
+  "ListRuns": [
+    {
+      "lang": "TypeScript",
+      "label": "Vertesia SDK",
+      "source": "import { VertesiaClient } from '@vertesia/client';\n\nconst client = new VertesiaClient({\n    site: 'api.vertesia.io',\n    apikey: '<YOUR_API_KEY>',\n});\n\nconst runs = await client.runs.list({\n    limit: 10,\n    offset: 0,\n    filters: {\n        status: 'completed',\n        interaction: '<INTERACTION_ID>',\n    },\n});\n\nconsole.log(runs);"
+    }
+  ],
+  "ComputeRunFacets": [
+    {
+      "lang": "TypeScript",
+      "label": "Vertesia SDK",
+      "source": "import { VertesiaClient } from '@vertesia/client';\n\nconst client = new VertesiaClient({\n    site: 'api.vertesia.io',\n    apikey: '<YOUR_API_KEY>',\n});\n\nconst facets = await client.runs.computeFacets({\n    facets: [\n        { name: 'environments', field: 'environment' },\n        { name: 'interactions', field: 'interaction' },\n        { name: 'status', field: 'status' },\n    ],\n    query: {\n        status: 'completed',\n    },\n});\n\nconsole.log(facets);"
+    }
+  ],
+  "SearchRuns": [
+    {
+      "lang": "TypeScript",
+      "label": "Vertesia SDK",
+      "source": "import { VertesiaClient } from '@vertesia/client';\n\nconst client = new VertesiaClient({\n    site: 'api.vertesia.io',\n    apikey: '<YOUR_API_KEY>',\n});\n\nconst runs = await client.runs.search({\n    limit: 10,\n    offset: 0,\n    query: {\n        status: 'completed',\n        interaction: '<INTERACTION_ID>',\n        start: '2026-04-01T00:00:00.000Z',\n        end: '2026-04-30T23:59:59.999Z',\n    },\n});\n\nconsole.log(runs);"
+    }
+  ],
+  "FindRuns": [
+    {
+      "lang": "TypeScript",
+      "label": "Vertesia SDK",
+      "source": "import { VertesiaClient } from '@vertesia/client';\n\nconst client = new VertesiaClient({\n    site: 'api.vertesia.io',\n    apikey: '<YOUR_API_KEY>',\n});\n\nconst runs = await client.runs.find({\n    query: {\n        interaction: '<INTERACTION_ID>',\n        status: 'completed',\n    },\n    limit: 10,\n    select: 'id status created_at',\n});\n\nconsole.log(runs);"
+    }
+  ],
+  "SendRunToolResults": [
+    {
+      "lang": "TypeScript",
+      "label": "Vertesia SDK",
+      "source": "import { VertesiaClient } from '@vertesia/client';\n\nconst client = new VertesiaClient({\n    site: 'api.vertesia.io',\n    apikey: '<YOUR_API_KEY>',\n});\n\nconst response = await client.runs.sendToolResults({\n    run: {\n        id: '<RUN_ID>',\n        account: '<ACCOUNT_ID>',\n        project: '<PROJECT_ID>',\n    },\n    environment: '<ENVIRONMENT_ID>',\n    options: {},\n    conversation: {},\n    tools: [],\n    results: [{\n        tool_use_id: '<TOOL_USE_ID>',\n        content: 'Tool result text',\n        is_error: false,\n    }],\n});\n\nconsole.log(response);"
+    }
+  ],
+  "SendRunUserMessage": [
+    {
+      "lang": "TypeScript",
+      "label": "Vertesia SDK",
+      "source": "import { VertesiaClient } from '@vertesia/client';\n\nconst client = new VertesiaClient({\n    site: 'api.vertesia.io',\n    apikey: '<YOUR_API_KEY>',\n});\n\nconst response = await client.runs.sendUserMessage({\n    run: {\n        id: '<RUN_ID>',\n        account: '<ACCOUNT_ID>',\n        project: '<PROJECT_ID>',\n    },\n    environment: '<ENVIRONMENT_ID>',\n    options: {},\n    conversation: {},\n    tools: [],\n    message: 'Continue with a shorter answer.',\n});\n\nconsole.log(response);"
+    }
+  ],
+  "CloneRun": [
+    {
+      "lang": "TypeScript",
+      "label": "Vertesia SDK",
+      "source": "import { VertesiaClient } from '@vertesia/client';\n\nconst client = new VertesiaClient({\n    site: 'api.vertesia.io',\n    apikey: '<YOUR_API_KEY>',\n});\n\nconst run = await client.runs.clone({\n    source_run_id: '<SOURCE_RUN_ID>',\n    workflow: {\n        run_id: '<TEMPORAL_RUN_ID>',\n        workflow_id: '<TEMPORAL_WORKFLOW_ID>',\n    },\n});\n\nconsole.log(run);"
+    }
+  ]
+}
