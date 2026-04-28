@@ -4,8 +4,7 @@
   "description": "The Vertesia command-line interface (CLI) provides a set of commands to manage and interact with the Vertesia Platform.",
   "type": "module",
   "bin": {
-    "vertesia": "./bin/app.js",
-    "docker-credential-vertesia": "./bin/docker-credential-vertesia.js"
+    "vertesia": "./bin/app.js"
   },
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",

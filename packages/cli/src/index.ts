@@ -12,7 +12,6 @@ import { AVAILABLE_REGIONS, DEFAULT_REGION, getConfigFile } from './profiles/ind
 import { listProjects, useProject } from './projects/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
-import { registerWorkerCommand } from './worker/index.js';
 import { registerWorkflowsCommand } from './workflows/index.js';
 //warnIfNotLatest();
 
@@ -119,7 +118,6 @@ program.command("runs [interactionId]")
         runHistory(program, interactionId, options);
     });
 
-registerWorkerCommand(program);
 registerAppsCommand(program);
 registerAgentsCommand(program);
 registerArtifactsCommand(program);
