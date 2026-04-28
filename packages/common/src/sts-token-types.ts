@@ -4,20 +4,6 @@
  */
 
 export type TokenType = 'apikey' | 'user' | 'project' | 'environment' | 'agent' | 'service_account';
-
-/**
- * Trust path used by the STS to authorize an agent-token issuance.
- *
- * - `user_access_token`: issuance is authorized by a live user (or
- *   user-equivalent) access token passed in `on_behalf_of`. This is the
- *   pre-existing path and remains the default when `assertion_type` is omitted.
- * - `workload_id_token`: issuance is authorized by the caller's workload
- *   identity (e.g. a GCP service account on GKE). The STS re-verifies all
- *   business claims (`account_id`, `project_id`, `user_id`) against MongoDB.
- *   This path is intended for trusted workloads (e.g. zeno-worker) that need
- *   to refresh an agent token without holding a live user token.
- */
-// export type AgentAssertionType = 'user_access_token' | 'workload_id_token';
 export type SigningAlgorithm = 'ES256' | 'RS256';
 
 interface BaseTokenRequest {
@@ -60,14 +46,16 @@ export interface EnvironmentTokenRequest extends BaseTokenRequest {
     account_id: string; // Will fetch name and verify project belongs to it
 }
 
-// Agent token for service accounts acting as agents.
-//
-// Two trust paths are supported:
-//
-// - `user_access_token`: caller must supply `on_behalf_of`, a live signed Vertesia token. STS
-//   verifies the user context from that token.
-// - `workload_id_token`: caller must supply `on_behalf_of_user`, the user ID the agent acts on. It
-//   implies that a full verification will be performed based on the workload identity.
+/**
+ * Agent token for service accounts acting as agents.
+ *
+ * Two trust paths are supported:
+ *
+ * - `user_access_token`: caller must supply `on_behalf_of`, a live signed Vertesia token. STS
+ *   verifies the user context from that token.
+ * - `workload_id_token`: caller must supply `on_behalf_of_user`, the user ID the agent acts on. It
+ *   implies that a full verification will be performed based on the workload identity.
+ */
 export interface AgentTokenRequest extends BaseTokenRequest {
     type: 'agent';
     account_id: string;
