@@ -13,12 +13,14 @@ export const SelectionCombobox = ({
     setFilterValues,
     options,
     labelRenderer,
+    multiple = true,
 }: {
     filterType: string;
     filterValues: FilterOption[];
     setFilterValues: (filterValues: FilterOption[]) => void;
     options: FilterGroupOption[];
     labelRenderer?: (value: string) => React.ReactNode | Promise<React.ReactNode>;
+    multiple?: boolean;
 }) => {
     const [open, setOpen] = useState(false);
     const [commandInput, setCommandInput] = useState("");
@@ -88,7 +90,9 @@ export const SelectionCombobox = ({
                                                 setOpen(false);
                                             }}
                                         >
-                                            <input type="checkbox" checked={true} onChange={() => {}} />
+                                            {multiple && (
+                                                <input type="checkbox" checked={true} onChange={() => {}} />
+                                            )}
                                             <DynamicLabel
                                                 value={value.value || ''}
                                                 labelRenderer={labelRenderer}
@@ -112,20 +116,23 @@ export const SelectionCombobox = ({
                                                     key={filter.value}
                                                     value={String(filter.label || filter.value)}
                                                     onSelect={() => {
-                                                        setFilterValues([...filterValues, {
+                                                        const next = {
                                                             value: filter.value,
                                                             label: filter.label
-                                                        }]);
+                                                        };
+                                                        setFilterValues(multiple ? [...filterValues, next] : [next]);
                                                         setTimeout(() => {
                                                             setCommandInput("");
                                                         }, 200);
                                                         setOpen(false);
                                                     }}
                                                 >
-                                                    <Checkbox
-                                                        checked={false}
-                                                        className="opacity-0 group-data-[selected=true]:opacity-100"
-                                                    />
+                                                    {multiple && (
+                                                        <Checkbox
+                                                            checked={false}
+                                                            className="opacity-0 group-data-[selected=true]:opacity-100"
+                                                        />
+                                                    )}
                                                     <span className="text-muted">
                                                         <DynamicLabel
                                                             value={filter.value || ''}
