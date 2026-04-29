@@ -1,5 +1,13 @@
 import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
-import { CostAnalyticsQuery, CostAnalyticsResponse, CostRunPriceQuery, CostRunPriceResponse, ModelPriceComparisonResponse } from '@vertesia/common';
+import {
+    CostAnalyticsQuery,
+    CostAnalyticsResponse,
+    CostExportQuery,
+    CostModelPricesQuery,
+    CostRunPriceQuery,
+    CostRunPriceResponse,
+    ModelPriceComparisonResponse,
+} from '@vertesia/common';
 
 export class CostApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -31,9 +39,14 @@ export class CostApi extends ApiTopic {
      * Get current list prices and effective prices for the selected period.
      */
     getModelPrices(
-        query: Pick<CostAnalyticsQuery, 'from' | 'to'> = {}
+        query: CostModelPricesQuery = {}
     ): Promise<ModelPriceComparisonResponse> {
-        return this.get('/model-prices', { query });
+        return this.get('/model-prices', {
+            query: {
+                from: query.from,
+                to: query.to,
+            },
+        });
     }
 
     /**
@@ -57,10 +70,13 @@ export class CostApi extends ApiTopic {
     /**
      * Get the CSV export URL for raw inference audit events.
      */
-    getExportUrl(params?: { from?: string | number; to?: string | number }): string {
+    getExportUrl(params?: CostExportQuery): string {
         const searchParams = new URLSearchParams();
         if (params?.from) searchParams.set('from', typeof params.from === 'number' ? new Date(params.from).toISOString() : params.from);
         if (params?.to) searchParams.set('to', typeof params.to === 'number' ? new Date(params.to).toISOString() : params.to);
+        if (params?.scope) searchParams.set('scope', params.scope);
+        if (params?.project_id) searchParams.set('project_id', params.project_id);
+        if (params?.workflow_id) searchParams.set('workflow_id', params.workflow_id);
         const qs = searchParams.toString();
         return `${this.baseUrl}/export${qs ? `?${qs}` : ''}`;
     }

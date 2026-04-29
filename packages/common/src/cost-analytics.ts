@@ -55,6 +55,26 @@ export interface CostAnalyticsQuery {
     no_cache?: boolean;
 }
 
+export interface CostModelPricesQuery {
+    /** Start time (ISO string or epoch ms) */
+    from?: string | number;
+    /** End time (ISO string or epoch ms) */
+    to?: string | number;
+}
+
+export interface CostExportQuery {
+    /** Start time (ISO string or epoch ms) */
+    from?: string | number;
+    /** End time (ISO string or epoch ms) */
+    to?: string | number;
+    /** Scope: 'project' (default, current project) or 'org' (all projects in account) */
+    scope?: 'project' | 'org';
+    /** Filter by project ID (optional, for org scope) */
+    project_id?: string;
+    /** Filter by workflow / agent run ID */
+    workflow_id?: string;
+}
+
 // ============================================================================
 // Response
 // ============================================================================
