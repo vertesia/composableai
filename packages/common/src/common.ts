@@ -19,6 +19,20 @@ export interface DeleteByIdResult {
     id: string;
 }
 
+export interface DeleteCountResult {
+    id: string;
+    count: number;
+}
+
+export interface SuccessResponse {
+    success: true;
+}
+
+export interface DeleteOperationResult {
+    acknowledged: boolean;
+    deletedCount: number;
+}
+
 export interface CountResult {
     count: number;
 }
@@ -66,3 +80,9 @@ export interface BulkObjectCreateResult extends BulkOperationResult {
     /** Objects that failed to create */
     failed: { external_id?: string; index: number; error: string }[];
 }
+
+export type BulkOperationResponse =
+    | BulkOperationResult
+    | BulkObjectCreateResult
+    | BulkObjectUpdateResult
+    | BulkObjectDeleteResult;

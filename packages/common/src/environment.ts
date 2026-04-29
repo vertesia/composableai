@@ -1,4 +1,8 @@
-import type { AIModel, ProviderParams, TextFallbackOptions } from "@llumiverse/common";
+import type {
+    AIModel,
+    ProviderParams,
+    TextFallbackOptions
+} from "@llumiverse/common";
 import { ProviderList, Providers } from "@llumiverse/common";
 
 // Virtual providers from studio
@@ -53,6 +57,10 @@ export const SupportedProvidersList: Record<SupportedProviders, SupportedProvide
 
 export interface VirtualEnvEntry {
     model: string;
+}
+
+export interface ListEnvironmentsQuery {
+    all?: boolean;
 }
 
 /**
@@ -123,6 +131,10 @@ export const ExecutionEnvironmentRefPopulate = "id name provider enabled_models 
 
 export interface ExecutionEnvironmentCreatePayload extends Omit<ExecutionEnvironment, 'id' | 'account' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'project' | 'apikey_hint'> { }
 export interface ExecutionEnvironmentUpdatePayload extends Partial<Omit<ExecutionEnvironment, 'id' | 'account' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'apikey_hint'>> { }
+export interface ExecutionEnvironmentConfigUpdatePayload {
+    enabled_models?: AIModel[];
+    config?: MediatorEnvConfig | LoadBalancingEnvConfig;
+}
 
 export interface MigrateInteractionsPayload {
     /**

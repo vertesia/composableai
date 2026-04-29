@@ -395,6 +395,14 @@ export interface CreateTablesPayload {
     message: string;
 }
 
+export interface QueryValidationPayload {
+    queries: Array<{ name: string; sql: string }>;
+}
+
+export interface BatchQueryPayload {
+    queries: Array<{ name: string; sql: string; limit?: number }>;
+}
+
 /**
  * Schema change operation types.
  */
@@ -516,6 +524,72 @@ export interface QueryResult {
     execution_time_ms: number;
     /** Error message if query failed (used in batch queries) */
     error?: string;
+}
+
+export interface BatchQueryResultItem extends QueryResult {
+    name: string;
+}
+
+export interface BatchQueryResult {
+    results: BatchQueryResultItem[];
+}
+
+export interface QueryValidationError {
+    query: string;
+    error: string;
+}
+
+export interface QueryValidationResult {
+    valid: boolean;
+    errors: QueryValidationError[];
+}
+
+export interface DataStoreDownloadInfo {
+    url: string;
+    gcs_generation: number;
+    schema_version: string;
+    store_id: string;
+    store_name: string;
+    tables: string[];
+    expires_in: number;
+}
+
+export interface DataStoreArchiveResult {
+    id: string;
+    status: DataStoreStatus;
+}
+
+export type DataStoreSchemaResponse = DataSchema | DataSchemaForAI;
+
+export interface DataStoreTableDetail extends DataTable {
+    sample_data?: Record<string, unknown>[];
+}
+
+export interface DataStoreTableDropResult {
+    dropped: string;
+}
+
+export interface DashboardArchiveResult {
+    id: string;
+    status: DashboardStatus;
+}
+
+export interface DashboardBulkArchiveResult {
+    archived: number;
+    failed: number;
+}
+
+export interface DashboardBulkDeleteResult {
+    deleted: number;
+    failed: number;
+}
+
+export interface DashboardVersioningStatusResponse {
+    versioning_enabled: boolean;
+}
+
+export interface DashboardVersioningPayload {
+    enabled: boolean;
 }
 
 // ============================================================================

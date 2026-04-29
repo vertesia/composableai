@@ -125,6 +125,26 @@ export interface CatalogInteractionRef {
     description?: string;
 }
 
+export interface CatalogTagQuery {
+    tag?: string;
+}
+
+export interface StoredCatalogInteractionsQuery extends CatalogTagQuery {
+    status?: string;
+    published?: boolean;
+}
+
+export interface ExecuteInteractionByEndpointQuery {
+    tag?: string;
+}
+
+export interface ResolveInteractionQuery {
+    environment?: string;
+    model?: string;
+    hasImage?: boolean;
+    hasVideo?: boolean;
+}
+
 export interface InCodePrompt {
     role: PromptRole,
     content: string,
@@ -807,6 +827,12 @@ export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadB
 
 export type AsyncExecutionPayload = AsyncConversationExecutionPayload | AsyncInteractionExecutionPayload;
 
+export interface AsyncExecutionResult {
+    runId: string;
+    workflowId: string;
+    agentRunId?: string;
+}
+
 /**
  * Telemetry context for streaming mode.
  * Contains info not available in current_state needed to send LlmCallEvent.
@@ -1073,6 +1099,13 @@ export interface InteractionExecutionResult<P = any> extends ExecutionRun<P> {
     options?: StatelessExecutionOptions;
 }
 
+export interface LegacyInteractionExecutionResult<P = any>
+    extends Omit<InteractionExecutionResult<P>, 'result' | 'account' | 'project'> {
+    account: string | AccountRef;
+    project: string | ProjectRef;
+    result?: JSONObject | string | null;
+}
+
 export interface ExecutionRunRef extends Omit<ExecutionRun, "result" | "parameters" | "interaction"> {
     interaction?: InteractionRef;
     interaction_code?: string;
@@ -1118,6 +1151,10 @@ export interface GenerateTestDataPayload {
     config: InteractionExecutionConfiguration;
 }
 
+export interface GeneratedTestDataRecord {
+    [key: string]: unknown;
+}
+
 export interface ImprovePromptPayloadConfig {
     config: InteractionExecutionConfiguration;
 }
@@ -1127,6 +1164,33 @@ export interface ImprovePromptPayload extends ImprovePromptPayloadConfig {
     context?: string,
     prompt: { name: string, content: string }[]; // prompt array
     result_schema?: JSONSchema, // optional interactionr result schema
+}
+
+export interface GeneratedInteractionPromptTemplate {
+    role: 'safety' | 'system' | 'user';
+    name: string;
+    content: string;
+    content_type: 'jst';
+    inputSchema: JSONSchema;
+}
+
+export interface GeneratedInteractionPromptSegment {
+    type: 'template';
+    template: GeneratedInteractionPromptTemplate;
+}
+
+export interface GeneratedInteractionDefinition {
+    name: string;
+    description: string;
+    temperature: number;
+    prompts: GeneratedInteractionPromptSegment[];
+    max_tokens?: number;
+    result_schema: JSONSchema;
+    tags: Array<'generated' | 'agent'>;
+}
+
+export interface PromptImprovementResponse {
+    result: CompletionResult[];
 }
 
 export interface RateLimitRequestPayload {

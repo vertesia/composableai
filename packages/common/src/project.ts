@@ -57,6 +57,14 @@ export interface ProjectRef {
     restricted?: boolean;
 }
 
+export interface ProjectTagQuery {
+    tag?: string;
+}
+
+export interface ListProjectsQuery {
+    account?: string;
+}
+
 export enum ResourceVisibility {
     public = "public",
     account = "account",
@@ -259,6 +267,10 @@ export interface ProjectCreatePayload {
 
 export interface ProjectUpdatePayload extends Partial<Project> { }
 
+export interface ProjectPluginsUpdatePayload {
+    plugins: string[];
+}
+
 
 export const ProjectRefPopulate = "id name account";
 
@@ -344,6 +356,14 @@ export interface IndexingStatusResponse {
         /** Configured parallel batch count */
         parallel_batch_count?: number;
     };
+}
+
+export interface StartProjectReindexPayload {
+    shard_size?: number;
+    parallel_shard_count?: number;
+    concurrency?: number;
+    bulk_size_bytes?: number;
+    bulk_concurrency?: number;
 }
 
 // ============================================================================
@@ -686,4 +706,8 @@ export interface DriftAnalysisStatusResponse extends WorkflowRunStatus {
 export interface ProjectIntegrationListEntry {
     id: SupportedIntegrations;
     enabled: boolean;
+}
+
+export interface ProjectIntegrationListResponse {
+    integrations: ProjectIntegrationListEntry[];
 }

@@ -1,4 +1,4 @@
-import { ApiKey, ApiKeyWithValue, CreateOrUpdateApiKeyPayload, CreatePublicKeyPayload } from "@vertesia/common";
+import { ApiKey, ApiKeyReadResponse, ApiKeyWithValue, AuthTokenResponse, CreateOrUpdateApiKeyPayload, CreatePublicKeyPayload, DeleteOperationResult } from "@vertesia/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 export class ApiKeysApi extends ApiTopic {
@@ -41,12 +41,20 @@ export class ApiKeysApi extends ApiTopic {
      * ALL REQUESTS ARE LOGGED IN SECURITY AUDIT LOG
      * @returns ApiKeyWithValue
      * */
-    retrieve(id: string, withValue: boolean = false): Promise<ApiKey | ApiKeyWithValue> {
+    retrieve(id: string, withValue: boolean = false): Promise<ApiKeyReadResponse> {
         if (withValue) {
             return this.get(`/${id}`, { query: { withValue: true } });
         } else {
             return this.get(`/${id}`);
         }
+    }
+
+    delete(id: string): Promise<DeleteOperationResult> {
+        return this.del(`/${id}`);
+    }
+
+    getToken(id: string): Promise<AuthTokenResponse> {
+        return this.get(`/${id}/token`);
     }
 
     /**

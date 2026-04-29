@@ -384,7 +384,7 @@ export interface ListAgentRunsQuery {
 }
 
 export interface ListAgentRunsResponse {
-    items: AgentRun[];
+    items: AgentRun<Record<string, unknown>, Record<string, unknown>>[];
     total_count: number;
     next_cursor: string | null;
 }

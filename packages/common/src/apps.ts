@@ -59,6 +59,16 @@ export interface AppUIConfig {
     available_in?: AppAvailableIn[];
 }
 
+export interface AppInstallationProjectsQuery {
+    name?: string;
+    id?: string;
+}
+
+export interface AppInstallationsQuery {
+    kind?: AppInstallationKind;
+    available_in?: AppAvailableIn;
+}
+
 /**
  * Authentication type for tool collections
  */

@@ -94,3 +94,14 @@ export enum SupportedIntegrations {
     resend = "resend",
     ask_user_webhook = "ask_user_webhook",
 }
+
+export type ProjectIntegrationConfig =
+    | GladiaConfiguration
+    | GithubConfiguration
+    | AwsConfiguration
+    | MagicPdfConfiguration
+    | SerperConfiguration
+    | ExaConfiguration
+    | LinkupConfiguration
+    | ResendConfiguration
+    | AskUserWebhookConfiguration;

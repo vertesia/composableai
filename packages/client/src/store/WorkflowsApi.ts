@@ -19,6 +19,7 @@ import {
     toAgentMessage,
     PromptSizeAnalyticsResponse,
     RunsByAgentAnalyticsResponse,
+    SignalAgentResponse,
     TimeToFirstResponseAnalyticsResponse,
     TokenUsageAnalyticsResponse,
     ToolAnalyticsResponse,
@@ -31,11 +32,16 @@ import {
     WorkflowAnalyticsSummaryQuery,
     WorkflowAnalyticsSummaryResponse,
     WorkflowAnalyticsTimeSeriesQuery,
+    WorkflowActionResponse,
     WorkflowDefinitionRef,
+    WorkflowExecutionStartResult,
+    WorkflowQueryResult,
     WorkflowRule,
     WorkflowRuleItem,
+    WorkflowRunUpdatesResponse,
     WorkflowRunWithDetails,
     WorkflowToolParametersQuery,
+    WorkflowUpdatePublishResponse,
 } from "@vertesia/common";
 import { VertesiaClient } from "../client.js";
 import { EventSourceProvider } from "../execute.js";
@@ -64,7 +70,7 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs`, { payload: payload });
     }
 
-    sendSignal(workflowId: string, runId: string, signal: string, payload?: any): Promise<{ message: string }> {
+    sendSignal(workflowId: string, runId: string, signal: string, payload?: any): Promise<SignalAgentResponse> {
         return this.post(`/runs/${workflowId}/${runId}/signal/${signal}`, { payload });
     }
 
@@ -95,12 +101,12 @@ export class WorkflowsApi extends ApiTopic {
         return this.get(`/runs/${workflowId}/${runId}/interaction`);
     }
 
-    terminate(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {
+    terminate(workflowId: string, runId: string, reason?: string): Promise<WorkflowActionResponse> {
         const payload: WorkflowActionPayload = { reason };
         return this.post(`/runs/${workflowId}/${runId}/actions/terminate`, { payload });
     }
 
-    cancel(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {
+    cancel(workflowId: string, runId: string, reason?: string): Promise<WorkflowActionResponse> {
         const payload: WorkflowActionPayload = { reason };
         return this.post(`/runs/${workflowId}/${runId}/actions/cancel`, { payload });
     }
@@ -113,18 +119,18 @@ export class WorkflowsApi extends ApiTopic {
      * @param queryName The name of the query to execute (e.g., "BatchAgentProgress")
      * @returns The query result
      */
-    query<T = unknown>(workflowId: string, runId: string, queryName: string): Promise<T> {
+    query(workflowId: string, runId: string, queryName: string): Promise<WorkflowQueryResult> {
         return this.get(`/runs/${workflowId}/${runId}/query/${queryName}`);
     }
 
     execute(
         name: string,
         payload: ExecuteWorkflowPayload = {},
-    ): Promise<({ run_id: string; workflow_id: string } | undefined)[]> {
+    ): Promise<(WorkflowExecutionStartResult | undefined)[]> {
         return this.post(`/execute/${name}`, { payload });
     }
 
-    postMessage(runId: string, msg: AgentMessage): Promise<void> {
+    postMessage(runId: string, msg: AgentMessage): Promise<WorkflowUpdatePublishResponse> {
         if (!runId) {
             throw new Error("runId is required");
         }
@@ -138,7 +144,7 @@ export class WorkflowsApi extends ApiTopic {
      */
     async retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
         const query = { since };
-        const response = await this.get(`/runs/${workflowId}/${runId}/updates`, { query }) as { messages: CompactMessage[] };
+        const response = await this.get(`/runs/${workflowId}/${runId}/updates`, { query }) as WorkflowRunUpdatesResponse;
         // Convert compact messages to AgentMessage for backward compatibility
         return response.messages.map((m: CompactMessage) => toAgentMessage(m, runId));
     }

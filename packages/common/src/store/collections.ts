@@ -85,3 +85,33 @@ export interface CollectionSearchPayload {
     type?: string;
     types?: string[];
 }
+
+export interface CollectionMembersUpdateResult {
+    id: string;
+}
+
+export interface CollectionSecuritySettingsResponse {
+    id: string;
+    security: Record<string, string[]>;
+}
+
+export interface CollectionPropagationResponse {
+    id: string;
+    message: string;
+    security?: Record<string, string[]>;
+    shared_properties?: string[];
+}
+
+export interface CollectionChildrenUpdateResult {
+    count: number;
+}
+
+export interface CollectionMembersUpdatePayload {
+    action: "add" | "delete";
+    members: string[];
+}
+
+export interface CollectionChildrenUpdatePayload {
+    action: "add" | "delete";
+    children: string[];
+}
