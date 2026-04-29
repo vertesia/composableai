@@ -161,6 +161,11 @@ export class DocumentSearch implements SearchInterface {
 
             return true;
         }).catch((err) => {
+            // index_not_found_exception means the data store has no index yet — treat as empty
+            if (err?.status === 404) {
+                this.result.value = { isLoading: false, objects: [], hasMore: false };
+                return false;
+            }
             this.result.value = {
                 error: err,
                 isLoading: false,

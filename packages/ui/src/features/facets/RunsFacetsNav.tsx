@@ -19,6 +19,8 @@ interface RunsFacetsNavProps {
         created_by?: any[];
     };
     search: SearchInterface;
+    actions?: React.ReactNode[];
+    selectionCount?: number;
 }
 
 // Hook to create filter groups for runs
@@ -181,7 +183,7 @@ export function useRunsFilterHandler(search: SearchInterface) {
 }
 
 // Legacy component for backward compatibility
-export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
+export function RunsFacetsNav({ facets, search, actions, selectionCount }: RunsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
     const filterGroups = useRunsFilterGroups(facets);
     const handleFilterLogic = useRunsFilterHandler(search);
@@ -202,15 +204,36 @@ export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
             filters={filters}
             setFilters={handleFilterChange}
         >
-            <div className='flex justify-between mb-1 sticky top-2 py-2 z-10 bg-background'>
-                <div className='flex gap-2 items-center'>
+            <div className='gap-2 items-center w-full'>
+                <div className='flex justify-between mb-1'>
                     <FilterBtn />
-                    <FilterBar />
-                    <FilterClear />
+                    <div className='flex justify-end'>
+                        {!selectionCount && (
+                            <div className="flex items-center justify-between px-2 py-1">
+                                <div className="text-sm text-muted">
+                                    {search.initialized ? `${search.totalCount} calls` : 'Loading calls...'}
+                                </div>
+                            </div>
+                        )}
+                        {actions && actions.length > 0 ? (
+                            <div className='flex items-center gap-2 mb-1 mr-2'>
+                                {actions.map((action, index) => (
+                                    <div key={index}>{action}</div>
+                                ))}
+                            </div>
+                        ) : null}
+                        <Button onClick={handleRefetch} variant='outline' title="Refresh">
+                            <RefreshCw className="size-5" />
+                        </Button>
+                    </div>
                 </div>
-                <Button onClick={handleRefetch} variant='outline' title="Refresh">
-                    <RefreshCw className="size-5" />
-                </Button>
+                {filters.length > 0 && (
+                    <div className='flex items-center gap-2 mb-1'>
+                        <FilterBar />
+                        <FilterClear />
+                    </div>
+                )}
+
             </div>
         </FilterProvider>
     );
