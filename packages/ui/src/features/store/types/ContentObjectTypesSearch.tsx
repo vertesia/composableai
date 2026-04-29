@@ -96,7 +96,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
     };
 
     return (
-        <div className="flex flex-col gap-4 flex-1 min-h-0">
+        <div className="flex flex-col flex-1 min-h-0">
             <div className="flex flex-shrink-0 gap-4">
                 <Input placeholder={t('store.filterByName')} value={searchTerm} onChange={setSearchTerm} />
                 <SelectBox className="w-60" isClearable options={Object.values(ChunkableOptions)} value={chunkable} onChange={onChunkableChange} placeholder={t('store.isChunkable')} />
@@ -109,10 +109,12 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
                                 {t('store.getStartedTypes')}
                             </EmptyCollection >
                         ) : (
-                            <ContentObjectTypesTable objects={objects} isLoading={isLoading} />
+                            <>
+                                <ContentObjectTypesTable objects={objects} isLoading={isLoading} />
+                                <div ref={loadMoreRef} className="h-4 w-full" />
+                            </>
                         )
                     }
-                    <div ref={loadMoreRef} className="h-4 w-full" />
                     <CreateOrUpdateTypeModal okLabel="Create" title={t('store.createType')} isOpen={showCreateModal} onClose={onCloseCreateModal} />
                 </div>
             </div>
