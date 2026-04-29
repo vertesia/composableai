@@ -643,6 +643,15 @@ export interface AppInstallationWithManifest extends Omit<AppInstallation, 'mani
     oauth_collection_ids?: string[];
 }
 
+export interface AppInstallationListEntry extends Omit<AppInstallation, 'manifest'> {
+    manifest: AppManifest | null;
+    oauth_collection_ids?: string[];
+}
+
+export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest'> {
+    manifest: null;
+}
+
 export interface AppInstallationPayload {
     app_id: string;
     settings?: Record<string, any>;
@@ -658,6 +667,10 @@ export interface AppInstallationPayload {
      * Separate from oauth_params to avoid key collisions between provider keys and collection ids.
      */
     oauth_provider_params?: Record<string, { client_id?: string; client_secret?: string; scopes?: string[] }>;
+}
+
+export interface UpdateAppInstallationToolAllowlistPayload {
+    tool_allowlist: string[] | null;
 }
 
 export type AppInstallationKind = 'ui' | 'tools' | 'all';

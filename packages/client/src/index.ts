@@ -1,4 +1,4 @@
-export type { OrphanedAppInstallation } from "./AppsApi.js";
+export type { OrphanedAppInstallation } from "@vertesia/common";
 export * from './client.js';
 export type { GroupsQueryOptions } from './GroupsApi.js';
 export * from './InteractionBase.js';

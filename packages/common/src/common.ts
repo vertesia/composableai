@@ -19,6 +19,10 @@ export interface DeleteByIdResult {
     id: string;
 }
 
+export interface CountResult {
+    count: number;
+}
+
 export interface BulkOperationPayload {
     /**
      * The operation name
