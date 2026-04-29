@@ -15,6 +15,10 @@ export interface GenericCommandResponse {
     details?: any;
 }
 
+export interface DeleteByIdResult {
+    id: string;
+}
+
 export interface BulkOperationPayload {
     /**
      * The operation name
