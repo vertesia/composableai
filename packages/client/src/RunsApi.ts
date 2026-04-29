@@ -30,7 +30,7 @@ export interface ComputeRunFacetsResponse {
     models?: { _id: string; count: number }[];
     tags?: { _id: string; count: number }[];
     status?: { _id: string; count: number }[];
-    total?: { count: number }[];
+    total?: number;
 }
 
 export class RunsApi extends ApiTopic {

@@ -73,6 +73,21 @@ FullHeightLayout.HR = function HDivider({ }: HDividerProps) {
     );
 }
 
+FullHeightLayout.Flex = function Flex({ className, children }: BodyProps) {
+    return (
+        <div
+            className={clsx(
+                "grow flex flex-col",
+                "overflow-hidden min-h-0",
+                "p-2",
+                className
+            )}
+        >
+            {children}
+        </div>
+    );
+}
+
 FullHeightLayout.Tab = function Tab({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex flex-col h-full">

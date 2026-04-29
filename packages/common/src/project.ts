@@ -411,6 +411,12 @@ export interface CreateReindexTargetResult {
     index_name: string;
     alias_name: string;
     version: number;
+    dimensions?: {
+        text?: number;
+        image?: number;
+        properties?: number;
+    };
+    language?: string;
 }
 
 /**
@@ -475,6 +481,11 @@ export interface IndexShardParams {
     target_index: string;
     shard_min: string;
     shard_max?: string;
+    embedding_dimensions?: {
+        text?: number;
+        image?: number;
+        properties?: number;
+    };
     dry_run?: boolean;
     concurrency?: number;
     batch_size?: number;
