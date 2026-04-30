@@ -158,13 +158,21 @@ export class WorkflowsApi extends ApiTopic {
      * This approach provides better performance for conversations with large historical messages
      * since HTTP responses are compressed while SSE streams cannot be compressed.
      */
-    async streamMessages(workflowId: string, runId: string, onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void, since?: number): Promise<unknown> {
+    async streamMessages(
+        workflowId: string,
+        runId: string,
+        onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+        since?: number,
+        signal?: AbortSignal,
+    ): Promise<unknown> {
         return new Promise<unknown>((resolve, reject) => {
             let reconnectAttempts = 0;
             let lastMessageTimestamp = since || 0;
             let isClosed = false;
             let currentSse: EventSource | null = null;
             let interval: ReturnType<typeof setInterval> | null = null;
+            let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+            let abortHandler: (() => void) | null = null;
 
             const maxReconnectAttempts = 10;
             const baseDelay = 1000; // 1 second base delay
@@ -178,6 +186,10 @@ export class WorkflowsApi extends ApiTopic {
             };
 
             const cleanup = () => {
+                if (reconnectTimer) {
+                    clearTimeout(reconnectTimer);
+                    reconnectTimer = null;
+                }
                 if (interval) {
                     clearInterval(interval);
                     interval = null;
@@ -185,6 +197,10 @@ export class WorkflowsApi extends ApiTopic {
                 if (currentSse) {
                     currentSse.close();
                     currentSse = null;
+                }
+                if (signal && abortHandler) {
+                    signal.removeEventListener('abort', abortHandler);
+                    abortHandler = null;
                 }
             };
 
@@ -195,6 +211,15 @@ export class WorkflowsApi extends ApiTopic {
                     resolve(payload);
                 }
             };
+
+            if (signal) {
+                if (signal.aborted) {
+                    exit(null);
+                    return;
+                }
+                abortHandler = () => exit(null);
+                signal.addEventListener('abort', abortHandler, { once: true });
+            }
 
             // 2. Connect to SSE for real-time updates only (skipHistory=true)
             const setupStream = async (isReconnect: boolean = false) => {
@@ -214,7 +239,10 @@ export class WorkflowsApi extends ApiTopic {
                     streamUrl.searchParams.set("skipHistory", "true");
 
                     const bearerToken = client._auth ? await client._auth() : undefined;
+                    if (isClosed) return;
                     if (!bearerToken) {
+                        isClosed = true;
+                        cleanup();
                         reject(new Error("No auth token available"));
                         return;
                     }
@@ -297,7 +325,8 @@ export class WorkflowsApi extends ApiTopic {
                             console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
 
                             reconnectAttempts++;
-                            setTimeout(() => {
+                            reconnectTimer = setTimeout(() => {
+                                reconnectTimer = null;
                                 if (!isClosed) {
                                     setupStream(true);
                                 }
@@ -313,7 +342,8 @@ export class WorkflowsApi extends ApiTopic {
                     if (reconnectAttempts < maxReconnectAttempts) {
                         const delay = calculateBackoffDelay(reconnectAttempts);
                         reconnectAttempts++;
-                        setTimeout(() => {
+                        reconnectTimer = setTimeout(() => {
+                            reconnectTimer = null;
                             if (!isClosed) {
                                 setupStream(true);
                             }
@@ -338,7 +368,7 @@ export class WorkflowsApi extends ApiTopic {
                         const streamIsOver = msg.type === AgentMessageType.TERMINATED ||
                             (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
                         if (streamIsOver) {
-                            resolve(null);
+                            exit(null);
                             return;
                         }
                     }
