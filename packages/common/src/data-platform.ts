@@ -299,6 +299,15 @@ export interface DataStoreVersion {
     snapshot_name?: string;
 }
 
+export interface ListDataStoreVersionsQuery {
+    limit?: number;
+    snapshots_only?: boolean;
+}
+
+export interface GetDataStoreTableQuery {
+    sample?: boolean;
+}
+
 // ============================================================================
 // Import Types
 // ============================================================================

@@ -138,6 +138,10 @@ export interface ExecuteInteractionByEndpointQuery {
     tag?: string;
 }
 
+export interface ExecuteInteractionByEndpointHeaders {
+    'x-interaction-tag'?: string;
+}
+
 export interface ResolveInteractionQuery {
     environment?: string;
     model?: string;

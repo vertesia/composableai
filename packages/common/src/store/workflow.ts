@@ -603,6 +603,19 @@ export interface WorkflowRunUpdatesResponse {
     messages: CompactMessage[];
 }
 
+export interface WorkflowRunDetailsQuery {
+    include_history?: boolean;
+    history_format?: 'events' | 'tasks' | 'agent';
+}
+
+export interface WorkflowRunUpdatesQuery {
+    since?: number;
+}
+
+export interface WorkflowRunStreamQuery extends WorkflowRunUpdatesQuery {
+    skipHistory?: boolean;
+}
+
 export interface WorkflowUpdatePublishResponse {
     success: true;
 }

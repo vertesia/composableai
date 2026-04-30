@@ -115,3 +115,10 @@ export interface CollectionChildrenUpdatePayload {
     action: "add" | "delete";
     children: string[];
 }
+
+export interface CollectionMembersQuery {
+    status?: string;
+    type?: string;
+    limit?: number;
+    offset?: number;
+}

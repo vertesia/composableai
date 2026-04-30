@@ -36,6 +36,13 @@ export interface UpdateContentObjectHeaders {
     'x-suppress-workflows'?: boolean;
 }
 
+export interface GetObjectRenditionQuery {
+    block_on_generation?: boolean;
+    generate_if_missing?: boolean;
+    max_hw?: number;
+    sign_url?: boolean;
+}
+
 /**
  * Headers for Data Store API calls.
  * Used for Cloud Run session affinity to route requests to the same instance.
@@ -750,6 +757,35 @@ export interface FileBucketResponse {
 
 export interface FileListResponse {
     files: string[];
+}
+
+export interface FileMetadataQuery {
+    file: string;
+}
+
+export interface FileListQuery {
+    prefix: string;
+}
+
+export interface FileDeleteQuery {
+    prefix?: boolean;
+}
+
+export interface ContentObjectTypeCatalogQuery {
+    tag?: string;
+    layout?: boolean;
+    schema?: boolean;
+    limit?: number;
+    offset?: number;
+}
+
+export interface ContentObjectTypeListQuery {
+    name?: string;
+    chunkable?: boolean;
+    layout?: boolean;
+    schema?: boolean;
+    limit?: number;
+    offset?: number;
 }
 
 export interface CopyFilePayload {

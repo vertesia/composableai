@@ -152,6 +152,11 @@ export interface RenderMarkdownStatusResponse extends WorkflowRunStatus {
     error?: string;
 }
 
+export interface RenderMarkdownStatusQuery {
+    workflow_id: string;
+    workflow_run_id: string;
+}
+
 /**
  * Client-side polling options for markdown rendering.
  */
