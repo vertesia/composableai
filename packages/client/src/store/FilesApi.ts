@@ -2,6 +2,11 @@ import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
     BulkUploadUrlsPayload,
     BulkUploadUrlsResponse,
+    DeleteFileResult,
+    FileBucketResponse,
+    FileListResponse,
+    FileMetadataResponse,
+    FileMetadataUpdateResult,
     GetFileUrlPayload,
     GetFileUrlResponse,
     GetUploadUrlPayload,
@@ -31,9 +36,8 @@ export class FilesApi extends ApiTopic {
         super(parent, "/api/v1/files");
     }
 
-    async deleteFile(path: string, prefix?: boolean): Promise<void | number> {
-        const res = await this.delete(`/${path}`, { query: { prefix } });
-        return res.count;
+    async deleteFile(path: string, prefix?: boolean): Promise<DeleteFileResult> {
+        return this.delete(`/${path}`, { query: { prefix } });
     }
 
     /**
@@ -43,14 +47,7 @@ export class FilesApi extends ApiTopic {
      * @param uri
      * @returns
      */
-    getMetadata(uri: string): Promise<{
-        name: string;
-        size: number;
-        contentType: string;
-        contentDisposition?: string;
-        etag?: string;
-        customMetadata?: Record<string, string>;
-    }> {
+    getMetadata(uri: string): Promise<FileMetadataResponse> {
         return this.get("/metadata", {
             query: {
                 file: uri,
@@ -64,7 +61,7 @@ export class FilesApi extends ApiTopic {
      * @param metadata - Custom metadata key-value pairs
      * @returns Success status
      */
-    setFileMetadata(file: string, metadata: Record<string, string>): Promise<{ success: boolean; file: string }> {
+    setFileMetadata(file: string, metadata: Record<string, string>): Promise<FileMetadataUpdateResult> {
         const payload: SetFileMetadataPayload = { file, metadata };
         return this.put("/metadata", { payload });
     }
@@ -74,8 +71,12 @@ export class FilesApi extends ApiTopic {
      * The bucket URI is returned.
      * @returns
      */
-    getOrCreateBucket(): Promise<{ bucket: string }> {
+    getOrCreateBucket(): Promise<FileBucketResponse> {
         return this.post("/bucket");
+    }
+
+    list(prefix: string): Promise<FileListResponse> {
+        return this.get('/list', { query: { prefix } });
     }
 
     getUploadUrl(payload: GetUploadUrlPayload): Promise<GetFileUrlResponse> {

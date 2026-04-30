@@ -272,6 +272,34 @@ export interface AgentRunUpdatesResponse {
     messages: CompactMessage[];
 }
 
+export interface AgentRunUpdatesQuery {
+    since?: number;
+}
+
+export interface StreamAgentRunQuery extends AgentRunUpdatesQuery {
+    skipHistory?: boolean;
+}
+
+export interface AgentRunDetailsQuery {
+    include_history?: boolean;
+}
+
+export type AgentArtifactVisibility = 'user' | 'internal' | 'all';
+
+export interface AgentRunArtifactsQuery {
+    visibility?: AgentArtifactVisibility;
+}
+
+export interface AgentRunArtifactUploadHeaders {
+    'content-type'?: string;
+}
+
+export interface AgentRunArtifactQuery {
+    url?: boolean;
+    disposition?: 'inline' | 'attachment';
+    filename?: string;
+}
+
 /**
  * Payload for posting an update into an agent's workflow stream.
  */
@@ -384,7 +412,7 @@ export interface ListAgentRunsQuery {
 }
 
 export interface ListAgentRunsResponse {
-    items: AgentRun[];
+    items: AgentRun<Record<string, unknown>, Record<string, unknown>>[];
     total_count: number;
     next_cursor: string | null;
 }

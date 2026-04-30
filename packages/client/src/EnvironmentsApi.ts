@@ -1,5 +1,5 @@
-import type { AIModel, EmbeddingsOptions, EmbeddingsResult, ModelSearchPayload } from "@llumiverse/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import type { AIModel, EmbeddingsOptions, EmbeddingsResult, ModelSearchPayload } from "@llumiverse/common";
 import {
     ExecutionEnvironment,
     ExecutionEnvironmentCreatePayload,

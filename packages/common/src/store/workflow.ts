@@ -1,4 +1,5 @@
 import { ConversationVisibility, InteractionRef, UserChannel } from "../interaction.js";
+import { JSONValue } from "../json.js";
 import { JSONSchema } from "../json-schema.js";
 import type { WorkflowInput } from "./dsl-workflow.js";
 
@@ -587,11 +588,43 @@ export interface ListWorkflowRunsResponse {
     has_more?: boolean;
 }
 
+export interface WorkflowExecutionStartResult {
+    run_id: string;
+    workflow_id: string;
+}
+
 export interface ListWorkflowInteractionsResponse {
     workflow_id: string,
     run_id: string,
     interaction: WorkflowInteractionVars
 }
+
+export interface WorkflowRunUpdatesResponse {
+    messages: CompactMessage[];
+}
+
+export interface WorkflowRunDetailsQuery {
+    include_history?: boolean;
+    history_format?: 'events' | 'tasks' | 'agent';
+}
+
+export interface WorkflowRunUpdatesQuery {
+    since?: number;
+}
+
+export interface WorkflowRunStreamQuery extends WorkflowRunUpdatesQuery {
+    skipHistory?: boolean;
+}
+
+export interface WorkflowUpdatePublishResponse {
+    success: true;
+}
+
+export interface WorkflowActionResponse {
+    message: string;
+}
+
+export type WorkflowQueryResult = JSONValue;
 
 export interface WorkflowInteractionVars {
     type: string,

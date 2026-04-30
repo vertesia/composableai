@@ -3,10 +3,14 @@ import {
     CreateDashboardPayload,
     CreateDashboardSnapshotPayload,
     Dashboard,
+    DashboardArchiveResult,
+    DashboardBulkArchiveResult,
+    DashboardBulkDeleteResult,
     DashboardItem,
     DashboardStatus,
     DashboardVersion,
     DashboardVersionItem,
+    DashboardVersioningStatusResponse,
     DataStoreApiHeaders,
     PromoteDashboardVersionPayload,
     UpdateDashboardPayload,
@@ -112,7 +116,7 @@ export class DashboardApi extends ApiTopic {
      * @param id - Dashboard ID
      * @returns Object with the archived dashboard ID
      */
-    delete(id: string): Promise<{ id: string; status: DashboardStatus }> {
+    delete(id: string): Promise<DashboardArchiveResult> {
         return this.del(`/${id}`, { headers: this.storeHeaders() });
     }
 
@@ -122,7 +126,7 @@ export class DashboardApi extends ApiTopic {
      * @param ids - Array of dashboard IDs
      * @returns Object with counts of archived and failed dashboards
      */
-    bulkArchive(ids: string[]): Promise<{ archived: number; failed: number }> {
+    bulkArchive(ids: string[]): Promise<DashboardBulkArchiveResult> {
         return this.post('/bulk/archive', { payload: { ids }, headers: this.storeHeaders() });
     }
 
@@ -132,7 +136,7 @@ export class DashboardApi extends ApiTopic {
      * @param ids - Array of dashboard IDs
      * @returns Object with counts of deleted and failed dashboards
      */
-    bulkDelete(ids: string[]): Promise<{ deleted: number; failed: number }> {
+    bulkDelete(ids: string[]): Promise<DashboardBulkDeleteResult> {
         return this.post('/bulk/delete', { payload: { ids }, headers: this.storeHeaders() });
     }
 
@@ -210,7 +214,7 @@ export class DashboardApi extends ApiTopic {
     setVersioningEnabled(
         dashboardId: string,
         enabled: boolean
-    ): Promise<{ versioning_enabled: boolean }> {
+    ): Promise<DashboardVersioningStatusResponse> {
         return this.put(`/${dashboardId}/versioning`, { payload: { enabled }, headers: this.storeHeaders() });
     }
 }
