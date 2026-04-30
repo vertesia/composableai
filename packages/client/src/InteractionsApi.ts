@@ -69,7 +69,7 @@ export default class InteractionsApi extends ApiTopic {
     /**
      * Get the list of all interactions facets
      * @param payload query payload to filter facet search
-     * @returns ComputeInteractionFacetsResponse[]
+     * @returns ComputedFacetResponse
      **/
     computeFacets(query: ComputeInteractionFacetPayload): Promise<ComputedFacetResponse> {
         return this.post("/facets", {

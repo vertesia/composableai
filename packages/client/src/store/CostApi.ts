@@ -41,12 +41,7 @@ export class CostApi extends ApiTopic {
     getModelPrices(
         query: CostModelPricesQuery = {}
     ): Promise<ModelPriceComparisonResponse> {
-        return this.get('/model-prices', {
-            query: {
-                from: query.from,
-                to: query.to,
-            },
-        });
+        return this.get('/model-prices', { query: { ...query } });
     }
 
     /**
