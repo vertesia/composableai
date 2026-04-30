@@ -3,9 +3,7 @@ import { useState } from 'react';
 import { SearchInterface } from './utils/SearchInterface';
 
 interface InteractionsFacetsNavProps {
-    facets: {
-        tags?: any[];
-    };
+    facets: Record<string, unknown>;
     search: SearchInterface;
     env?: string | null;
 }
