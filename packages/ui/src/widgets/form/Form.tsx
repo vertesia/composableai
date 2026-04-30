@@ -7,6 +7,7 @@ import { ComponentType, ReactNode, SyntheticEvent, useState } from "react";
 import { FormContext, FormContextProvider, InputComponentProps, useForm } from "./FormContext.js";
 import { ManagedListProperty, ManagedObject, ManagedObjectBase, ManagedProperty, Node } from "./ManagedObject.js";
 import { Input } from "./inputs.js";
+import { EnumInput, EnumArrayInput } from "./EnumInput.js";
 
 interface FormProps {
     object: ManagedObject;
@@ -82,8 +83,15 @@ export function ScalarField({ object, editor, inline = false }: ScalarFieldProps
         editor = object.schema.editor;
     }
     const { components, disabled } = useForm();
-    const Component = (editor && components[editor]) || Input;
     const inputType = object.getInputType();
+
+    let Component;
+    if (inputType === 'enum') {
+        Component = object.schema.isMulti ? EnumArrayInput : EnumInput;
+    } else {
+        Component = (editor && components[editor]) || Input;
+    }
+
     if (inputType === 'checkbox') {
         inline = true;
     }
