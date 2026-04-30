@@ -1,3 +1,4 @@
+import type { ModelOptions } from "@llumiverse/common";
 import { ConversationVisibility, InteractionRef, UserChannel } from "../interaction.js";
 import { JSONSchema } from "../json-schema.js";
 import type { WorkflowInput } from "./dsl-workflow.js";
@@ -608,7 +609,8 @@ export interface WorkflowInteractionVars {
     tool_names: string[],
     config: {
         environment: string,
-        model: string
+        model: string,
+        model_options?: ModelOptions
     },
     interactionParamsSchema?: JSONSchema,
     collection_id?: string;
