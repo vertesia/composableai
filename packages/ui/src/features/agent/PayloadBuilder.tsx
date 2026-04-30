@@ -6,6 +6,7 @@ import Ajv, { ValidateFunction } from "ajv";
 import React, { createContext, useContext, useState, useSyncExternalStore } from "react";
 
 export type WorkflowMode = 'start' | 'schedule';
+type ModelOptions = NonNullable<WorkflowInteractionVars["config"]["model_options"]>;
 
 export interface ScheduledWorkflowConfig {
     name: string;
@@ -47,6 +48,7 @@ export class PayloadBuilder {
     _interaction: InCodeInteraction | undefined;
     _environment: ExecutionEnvironmentRef | undefined;
     _model: string = '';
+    _model_options: ModelOptions | undefined;
     _tool_names: string[] = [];
     _data: JSONObject | undefined;
     _mode: WorkflowMode = 'start';
@@ -79,6 +81,7 @@ export class PayloadBuilder {
         builder._data = this._data;
         builder._environment = this._environment;
         builder._model = this._model;
+        builder._model_options = this._model_options ? { ...this._model_options } as ModelOptions : undefined;
         builder._tool_names = [...this._tool_names];
         builder._interactive = this._interactive;
         builder._debug_mode = this._debug_mode;
@@ -251,6 +254,7 @@ export class PayloadBuilder {
         this._non_blocking_subagents = context.non_blocking_subagents ?? true;
         this._checkpoint_tokens = context.checkpoint_tokens;
         this._user_channels = context.user_channels;
+        this._model_options = context.config?.model_options as ModelOptions | undefined;
         this.collection = context.collection_id ?? undefined;
 
         // we need to trigger the setter to deal with default models
@@ -273,6 +277,7 @@ export class PayloadBuilder {
             // Reset the validator when schema changes
             this._inputValidator = undefined;
             if (interaction && !this._preserveRunValues) {
+                this._model_options = interaction.model_options as ModelOptions | undefined;
                 if (interaction.runtime?.environment) {
                     const envId = interaction.runtime.environment;
                     this.vertesia.environments.retrieve(envId).then((environment) => this.environment = environment);
@@ -313,6 +318,15 @@ export class PayloadBuilder {
         }
     }
 
+    get model_options() {
+        return this._model_options;
+    }
+
+    set model_options(modelOptions: ModelOptions | undefined) {
+        this._model_options = modelOptions;
+        this.onStateChanged();
+    }
+
     get tool_names() {
         return this._tool_names;
     }
@@ -350,6 +364,7 @@ export class PayloadBuilder {
     setInteraction(interaction: InCodeInteraction | undefined) { this.interaction = interaction; }
     setEnvironment(environment: ExecutionEnvironmentRef | undefined) { this.environment = environment; }
     setModel(model: string | undefined) { this.model = model; }
+    setModelOptions(modelOptions: ModelOptions | undefined) { this.model_options = modelOptions; }
     setToolNames(tools: string[]) { this.tool_names = tools; }
     setCollection(collection: string | undefined) { this.collection = collection; }
     setInteractive(interactive: boolean) { this.interactive = interactive; }
@@ -427,6 +442,7 @@ export class PayloadBuilder {
         this._collection = undefined;
         this._preserveRunValues = false;
         this._model = '';
+        this._model_options = undefined;
         this._environment = undefined;
         this._tool_names = [];
         this._interaction = undefined;
