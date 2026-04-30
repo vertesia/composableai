@@ -117,7 +117,7 @@ export class WorkflowsApi extends ApiTopic {
      * @param workflowId The workflow ID
      * @param runId The run ID
      * @param queryName The name of the query to execute (e.g., "BatchAgentProgress")
-     * @returns The query result
+     * @returns The workflow query result as a JSON value.
      */
     query(workflowId: string, runId: string, queryName: string): Promise<WorkflowQueryResult> {
         return this.get(`/runs/${workflowId}/${runId}/query/${queryName}`);

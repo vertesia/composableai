@@ -79,7 +79,8 @@ export class DocumentSearch implements SearchInterface {
     }
 
     getFacetBuckets(name: string): FacetBucket[] {
-        return (this.facets.value as any)[name]?.buckets || [];
+        const value = this.facets.value[name];
+        return Array.isArray(value) ? value : [];
     }
 
     resetFacets() {
