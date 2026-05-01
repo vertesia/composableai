@@ -48,7 +48,6 @@ export interface ComputedFacetBucket {
     count: number;
 }
 
-export interface ComputedFacetResponse {
-    [key: string]: ComputedFacetBucket[] | number | undefined;
+export type ComputedFacetResponse = Record<string, ComputedFacetBucket[] | number> & {
     total?: number;
-}
+};
