@@ -2,8 +2,22 @@ import { VertesiaClient } from '@vertesia/client';
 import colors from 'ansi-colors';
 import enquirer from "enquirer";
 import jwt from 'jsonwebtoken';
-import { AVAILABLE_REGIONS, DEFAULT_REGION, Region, config, getConfigUrl, getServerUrls, shouldRefreshProfileToken } from "./index.js";
-import { deleteAuthBundle, getAccessTokenExpiry, readAuthBundle, writeAuthBundle } from "./keyring.js";
+import {
+    AVAILABLE_REGIONS,
+    DEFAULT_REGION,
+    Region,
+    config,
+    getConfigUrl,
+    getServerUrls,
+    shouldRefreshProfileToken,
+} from "./index.js";
+import {
+    deleteAuthBundle,
+    getAccessTokenExpiry,
+    isKeyringAvailable,
+    readAuthBundle,
+    writeAuthBundle,
+} from "./keyring.js";
 import { ensureProfileAccessToken, refreshCurrentProfileAuthentication, refreshProfileAuthentication } from './auth.js';
 import { ConfigResult } from './server/index.js';
 const { prompt } = enquirer;
@@ -18,6 +32,52 @@ interface CliPromptQuestion {
     initial?: string | number | boolean;
     format?: (value: string) => string;
     validate?: (value: string) => boolean | string;
+}
+
+interface AuthDetailsOptions {
+    json?: boolean;
+}
+
+interface TokenDetails {
+    present: boolean;
+    type?: 'jwt' | 'opaque';
+    expires_at?: string;
+    expired?: boolean;
+    issuer?: string;
+    subject?: string;
+    audience?: string;
+    account?: string;
+    project?: string;
+}
+
+interface AuthDetailsPayload {
+    selected_profile?: string;
+    profile?: {
+        name: string;
+        account: string;
+        project: string;
+        config_url: string;
+        studio_server_url: string;
+        zeno_server_url: string;
+        region?: Region;
+    };
+    keyring_available: boolean;
+    active_credential_source: string;
+    environment: {
+        credential?: string;
+        studio_server_url?: string;
+        zeno_server_url?: string;
+        token_server_url?: string;
+        project?: string;
+    };
+    stored_credentials?: {
+        access_token: TokenDetails;
+        refresh_token: TokenDetails;
+        id_token: TokenDetails;
+        oauth_client_id?: string;
+        oauth_resource?: string;
+    };
+    active_token: TokenDetails;
 }
 
 
@@ -66,6 +126,56 @@ export function showProfile(name?: string) {
             console.error(`Profile ${name} not found`);
         }
     }
+}
+
+export function showAuthDetails(options: AuthDetailsOptions = {}) {
+    const envAuth = readEnvCredential();
+    const profile = config.current;
+    const bundle = profile ? readAuthBundle(profile.name) : undefined;
+    const profileAccessToken = bundle?.accessToken || profile?.apikey;
+    const activeToken = envAuth?.token || profileAccessToken;
+    const activeCredentialSource = envAuth
+        ? `environment:${envAuth.name}`
+        : profileAccessToken
+            ? `profile:${profile?.name}`
+            : 'none';
+
+    const payload: AuthDetailsPayload = {
+        selected_profile: profile?.name,
+        profile: profile && {
+            name: profile.name,
+            account: profile.account,
+            project: profile.project,
+            config_url: profile.config_url,
+            studio_server_url: profile.studio_server_url,
+            zeno_server_url: profile.zeno_server_url,
+            region: profile.region,
+        },
+        keyring_available: isKeyringAvailable(),
+        active_credential_source: activeCredentialSource,
+        environment: {
+            credential: envAuth?.name,
+            studio_server_url: process.env.VERTESIA_SERVER_URL || process.env.COMPOSABLE_PROMPTS_SERVER_URL,
+            zeno_server_url: process.env.VERTESIA_STORE_URL || process.env.ZENO_SERVER_URL,
+            token_server_url: process.env.VERTESIA_TOKEN_SERVER_URL,
+            project: process.env.VERTESIA_PROJECT_ID || process.env.COMPOSABLE_PROMPTS_PROJECT_ID,
+        },
+        stored_credentials: profile ? {
+            access_token: readTokenDetails(profileAccessToken, bundle?.accessTokenExpiresAt),
+            refresh_token: readTokenDetails(bundle?.refreshToken, bundle?.refreshTokenExpiresAt),
+            id_token: readTokenDetails(bundle?.idToken),
+            oauth_client_id: bundle?.oauthClientId,
+            oauth_resource: bundle?.oauthResource,
+        } : undefined,
+        active_token: readTokenDetails(activeToken, envAuth ? undefined : bundle?.accessTokenExpiresAt),
+    };
+
+    if (options.json) {
+        console.log(JSON.stringify(payload, undefined, 4));
+        return;
+    }
+
+    printAuthDetails(payload);
 }
 
 export async function showActiveAuthToken() {
@@ -381,6 +491,82 @@ function readTokenRefs(token: string): CredentialRefs {
     };
 }
 
+function readEnvCredential(): { name: string; token: string } | undefined {
+    if (process.env.VERTESIA_TOKEN) {
+        return {
+            name: 'VERTESIA_TOKEN',
+            token: process.env.VERTESIA_TOKEN,
+        };
+    }
+    if (process.env.VERTESIA_APIKEY) {
+        return {
+            name: 'VERTESIA_APIKEY',
+            token: process.env.VERTESIA_APIKEY,
+        };
+    }
+    if (process.env.COMPOSABLE_PROMPTS_APIKEY) {
+        return {
+            name: 'COMPOSABLE_PROMPTS_APIKEY',
+            token: process.env.COMPOSABLE_PROMPTS_APIKEY,
+        };
+    }
+    return undefined;
+}
+
+function readTokenDetails(token: string | undefined, expiresAt?: number): TokenDetails {
+    if (!token) {
+        return { present: false };
+    }
+
+    const decoded = jwt.decode(token, { json: true });
+    if (!decoded || typeof decoded !== 'object') {
+        return readOpaqueTokenDetails(expiresAt);
+    }
+
+    const tokenExpiresAt = expiresAt ?? readNumericDate(decoded, 'exp');
+    return {
+        present: true,
+        type: 'jwt',
+        expires_at: formatTimestamp(tokenExpiresAt),
+        expired: tokenExpiresAt === undefined ? undefined : tokenExpiresAt <= Date.now(),
+        issuer: readStringField(decoded, 'iss'),
+        subject: readStringField(decoded, 'sub'),
+        audience: readAudience(decoded),
+        account: readRefId(decoded, 'account') || readStringField(decoded, 'account_id'),
+        project: readRefId(decoded, 'project') || readStringField(decoded, 'project_id'),
+    };
+}
+
+function readOpaqueTokenDetails(expiresAt?: number): TokenDetails {
+    return {
+        present: true,
+        type: 'opaque',
+        expires_at: formatTimestamp(expiresAt),
+        expired: expiresAt === undefined ? undefined : expiresAt <= Date.now(),
+    };
+}
+
+function readNumericDate(value: object, key: string): number | undefined {
+    const field = Reflect.get(value, key);
+    return typeof field === 'number' ? field * 1000 : undefined;
+}
+
+function readAudience(value: object): string | undefined {
+    const field = Reflect.get(value, 'aud');
+    if (typeof field === 'string') {
+        return field;
+    }
+    if (Array.isArray(field)) {
+        const first = field.find((candidate) => typeof candidate === 'string');
+        return typeof first === 'string' ? first : undefined;
+    }
+    return undefined;
+}
+
+function formatTimestamp(value: number | undefined): string | undefined {
+    return value === undefined ? undefined : new Date(value).toISOString();
+}
+
 function readRefId(value: object, key: string): string | undefined {
     const field = Reflect.get(value, key);
     if (typeof field === 'string') {
@@ -400,6 +586,63 @@ function readStringField(value: object, key: string): string | undefined {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function printAuthDetails(payload: AuthDetailsPayload) {
+    console.log('Authentication details');
+    console.log();
+    printSection('Profile', [
+        ['Selected', payload.selected_profile],
+        ['Account', payload.profile?.account],
+        ['Project', payload.profile?.project],
+        ['Config URL', payload.profile?.config_url],
+        ['Studio server', payload.profile?.studio_server_url],
+        ['Zeno server', payload.profile?.zeno_server_url],
+        ['Region', payload.profile?.region],
+    ]);
+    printSection('Environment overrides', [
+        ['Credential', payload.environment.credential],
+        ['Studio server', payload.environment.studio_server_url],
+        ['Zeno server', payload.environment.zeno_server_url],
+        ['Token server', payload.environment.token_server_url],
+        ['Project', payload.environment.project],
+    ]);
+    printSection('Stored credentials', [
+        ['Keyring', payload.keyring_available ? 'available' : 'unavailable'],
+        ['Access token', formatTokenSummary(payload.stored_credentials?.access_token)],
+        ['Refresh token', formatTokenSummary(payload.stored_credentials?.refresh_token)],
+        ['ID token', formatTokenSummary(payload.stored_credentials?.id_token)],
+        ['OAuth client', payload.stored_credentials?.oauth_client_id],
+        ['OAuth resource', payload.stored_credentials?.oauth_resource],
+    ]);
+    printSection('Active credential', [
+        ['Source', payload.active_credential_source],
+        ['Token', formatTokenSummary(payload.active_token)],
+        ['Issuer', payload.active_token.issuer],
+        ['Subject', payload.active_token.subject],
+        ['Audience', payload.active_token.audience],
+        ['Account', payload.active_token.account],
+        ['Project', payload.active_token.project],
+    ]);
+}
+
+function printSection(title: string, rows: Array<[string, string | undefined]>) {
+    console.log(colors.bold(title));
+    for (const [label, value] of rows) {
+        console.log(`  ${label}: ${value || '-'}`);
+    }
+    console.log();
+}
+
+function formatTokenSummary(details: TokenDetails | undefined): string {
+    if (!details?.present) {
+        return 'not stored';
+    }
+    const parts = [details.type || 'token'];
+    if (details.expires_at) {
+        parts.push(`${details.expired ? 'expired' : 'expires'} ${details.expires_at}`);
+    }
+    return parts.join(', ');
 }
 
 export async function tryRefreshToken() {

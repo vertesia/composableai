@@ -7,7 +7,22 @@ import { listEnvironments } from './envs/index.js';
 import { listInteractions } from './interactions/index.js';
 import { registerObjectsCommand } from './objects/index.js';
 import { getVersion, upgrade } from './package.js';
-import { createProfile, deleteProfile, listProfiles, loginProfile, logoutProfile, showActiveAuthToken, showActiveIdToken, showProfile, tryRefreshToken, updateCurrentProfile, updateProfile, useProfile, type CreateProfileOptions } from './profiles/commands.js';
+import {
+    createProfile,
+    deleteProfile,
+    listProfiles,
+    loginProfile,
+    logoutProfile,
+    showActiveAuthToken,
+    showActiveIdToken,
+    showAuthDetails,
+    showProfile,
+    tryRefreshToken,
+    updateCurrentProfile,
+    updateProfile,
+    useProfile,
+    type CreateProfileOptions,
+} from './profiles/commands.js';
 import { AVAILABLE_REGIONS, DEFAULT_REGION, getConfigFile } from './profiles/index.js';
 import { listProjects, useProject } from './projects/index.js';
 import runInteraction from './run/index.js';
@@ -61,6 +76,12 @@ authRoot.command("token")
 authRoot.command("id-token")
     .description("Show the ID token stored for the current selected profile.")
     .action(() => showActiveIdToken())
+
+authRoot.command("details")
+    .alias("info")
+    .description("Show non-secret authentication details for the active credential.")
+    .option("--json", "Print authentication details as JSON.")
+    .action((options: { json?: boolean }) => showAuthDetails(options))
 
 authRoot.command("refresh")
     .description("Refresh the auth token used by the current profile. An alias to 'vertesia profiles refresh'.")

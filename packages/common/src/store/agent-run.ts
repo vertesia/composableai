@@ -315,6 +315,8 @@ export interface CreateAgentRunPayload<TData = Record<string, any>, TProperties 
 
 export interface ProcessRunInputPayload<TData = Record<string, any>, TSource = RunSource> {
     process_id?: string;
+    /** Optional published process version to pin. Defaults to the latest/head revision. */
+    process_version?: number;
     process_definition?: ProcessDefinitionBody;
     data?: TData;
     config?: ProcessRunConfig;

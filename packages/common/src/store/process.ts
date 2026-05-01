@@ -164,6 +164,33 @@ export interface ProcessDefinitionBody {
     metadata?: ProcessDefinitionMetadata;
 }
 
+export interface InCodeProcessDefinition {
+    /**
+     * Process identifier exposed by an app package. App-local ids are normalized
+     * by Studio to `app:<app-name>:<id>` when returned to callers.
+     */
+    id: string;
+    /** Human-readable or app-local process name. */
+    name: string;
+    title?: string;
+    description?: string;
+    tags?: string[];
+    definition: ProcessDefinitionBody;
+}
+
+export interface ProcessDefinitionRevisionInfo {
+    /** Direct parent revision id. Omitted for the first revision in a bucket. */
+    parent?: string;
+    /** Root revision id shared by all revisions of the same process definition. */
+    root: string;
+    /** True when this is the latest revision returned by default list/resolve calls. */
+    head: boolean;
+    /** Optional human-readable label for the revision. */
+    label?: string;
+    /** Optional publish note captured when a draft is promoted. */
+    comment?: string;
+}
+
 export interface ProcessDefinition {
     id: string;
     account: string;
@@ -172,6 +199,7 @@ export interface ProcessDefinition {
     description?: string;
     status: ProcessDefinitionStatus;
     version: number;
+    revision?: ProcessDefinitionRevisionInfo;
     tags?: string[];
     definition: ProcessDefinitionBody;
     created_at: Date;
@@ -224,7 +252,14 @@ export interface ProcessState {
 export interface CreateProcessDefinitionPayload {
     name: string;
     description?: string;
+    /**
+     * @deprecated Process definitions are created as drafts. Use the publish endpoint
+     * to create immutable published versions.
+     */
     status?: ProcessDefinitionStatus;
+    /**
+     * @deprecated Version is server-owned. Use the publish endpoint to create the next version.
+     */
     version?: number;
     tags?: string[];
     definition: ProcessDefinitionBody;
@@ -233,8 +268,32 @@ export interface CreateProcessDefinitionPayload {
 export interface UpdateProcessDefinitionPayload {
     name?: string;
     description?: string;
+    /**
+     * @deprecated Status is server-owned. Use publish/archive endpoints instead of updating it directly.
+     */
     status?: ProcessDefinitionStatus;
+    /**
+     * @deprecated Version is server-owned. Use the publish endpoint to create the next version.
+     */
     version?: number;
     tags?: string[];
     definition?: ProcessDefinitionBody;
+}
+
+export interface PublishProcessDefinitionPayload {
+    /** Required explicit confirmation from the caller. */
+    confirmed: boolean;
+    /** Optional tags to merge into the published revision. */
+    tags?: string[];
+    /** Optional human-readable revision label. */
+    label?: string;
+    /** Optional publish note. */
+    comment?: string;
+}
+
+export interface RevertProcessDefinitionPayload {
+    /** Required explicit confirmation from the caller. */
+    confirmed: boolean;
+    /** Optional note explaining why this version is being restored as the draft. */
+    comment?: string;
 }

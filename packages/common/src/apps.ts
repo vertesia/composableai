@@ -1,6 +1,6 @@
 import { JSONSchema, ToolDefinition } from "@llumiverse/common";
 import { CatalogInteractionRef } from "./interaction.js";
-import { DSLActivityOptions, InCodeTypeDefinition } from "./store/index.js";
+import { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from "./store/index.js";
 
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ["default", "footer", "settings"] as const;
@@ -381,7 +381,7 @@ export interface RemoteActivityDefinition {
     options?: DSLActivityOptions;
 }
 
-export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'templates';
+export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 export interface AppManifestData {
     /**
@@ -467,7 +467,8 @@ export interface AppManifestData {
      * - ui
      * - tools
      * - interactions
-     * - types
+ * - types
+ * - processes
      * - settings
      * - all (the default if no scope is provided)
      *  You can also use comma-separated values to combine scopes (e.g. "ui,tools").
@@ -595,7 +596,7 @@ export function resolveManifestUrls(
     }
 }
 
-export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'templates' | 'settings' | 'widgets' | 'activities' | 'all';
+export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates' | 'settings' | 'widgets' | 'activities' | 'all';
 export interface AppPackage {
     /**
      * The UI configuration of the app
@@ -624,6 +625,11 @@ export interface AppPackage {
      * A list of types.
      */
     types?: InCodeTypeDefinition[];
+
+    /**
+     * A list of process definitions exposed by the app.
+     */
+    processes?: InCodeProcessDefinition[];
 
     /**
      * Templates provided by the app.
