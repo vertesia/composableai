@@ -60,6 +60,7 @@
       "activities": "./activities/index.js",
       "dsl-activities": "./activities/index-dsl.js",
       "workflows": "./workflows",
+      "bulk-import": "./bulk-import",
       "workflows-bundle": "./workflows-bundle.js",
       "vars": "./vars"
     }
@@ -89,6 +90,11 @@
       "types": "./lib/types/workflows.d.ts",
       "import": "./lib/esm/workflows.js",
       "require": "./lib/cjs/workflows.js"
+    },
+    "./bulk-import": {
+      "types": "./lib/types/bulk-import.d.ts",
+      "import": "./lib/esm/bulk-import.js",
+      "require": "./lib/cjs/bulk-import.js"
     },
     "./dsl": {
       "types": "./lib/types/dsl.d.ts",
@@ -130,6 +136,9 @@
       ],
       "workflows": [
         "./lib/types/workflows.d.ts"
+      ],
+      "bulk-import": [
+        "./lib/types/bulk-import.d.ts"
       ],
       "dsl": [
         "./lib/types/dsl.d.ts"
