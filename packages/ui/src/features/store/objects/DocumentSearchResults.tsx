@@ -119,6 +119,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const [filters, setFilters] = useState<BaseFilter[]>([]);
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
 
     // Trigger initial search when component mounts
     useEffect(() => {
@@ -248,7 +249,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     }
 
     return (
-        <div className="flex flex-col gap-y-2">
+        <div className="flex flex-col gap-y-2 flex-1 min-h-0 ">
             <OverviewDrawer object={selectedObject} onClose={() => setSelectedObject(null)} />
             {
                 error && <ErrorBox title={t('store.error')}>{error.message}</ErrorBox>
@@ -265,26 +266,30 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 handleRefetch={handleRefetch}
                 setIsGridView={setIsGridView}
             />
-            <DocumentTable
-                objects={objects}
-                isLoading={!objects.length && isLoading}
-                layout={actualLayout}
-                onRowClick={onRowClick}
-                previewObject={previewObject}
-                selectedObject={selectedObject}
-                onUpload={onUpload}
-                isGridView={isGridView}
-                collectionId={searchContext.collectionId} // Pass the collection ID from context
-            />
-            {hasMore ? (
-                <div ref={loadMoreRef} className="w-full flex justify-center" >
-                    <Spinner size='xl' />
+            <div className="flex flex-col w-full flex-1 min-h-0 border rounded-md mb-2">
+                <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
+                    <DocumentTable
+                        objects={objects}
+                        isLoading={!objects.length && isLoading}
+                        layout={actualLayout}
+                        onRowClick={onRowClick}
+                        previewObject={previewObject}
+                        selectedObject={selectedObject}
+                        onUpload={onUpload}
+                        isGridView={isGridView}
+                        collectionId={searchContext.collectionId}
+                    />
+                    {hasMore ? (
+                        <div ref={loadMoreRef} className="w-full flex justify-center" >
+                            <Spinner size='xl' />
+                        </div>
+                    ) : (
+                        <div className="text-muted text-center text-sm py-1">
+                            {`All ${objects.length} objects loaded.`}
+                        </div>
+                    )}
                 </div>
-            ) : (
-                <div className="text-muted text-center text-sm py-1">
-                    {`All ${objects.length} objects loaded.`}
-                </div>
-            )}
+            </div>
         </div>
     );
 }

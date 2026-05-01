@@ -44,7 +44,7 @@ function DocumentPanelComponent({
                 client.store.objects.getObjectText(docId),
                 client.store.objects.retrieve(docId),
             ]);
-            setContent(textResult.text);
+            setContent(textResult.text ?? null);
             const name = obj.name;
             setDocName(name);
             if (name) onUpdateDocumentTitle?.(docId, name);

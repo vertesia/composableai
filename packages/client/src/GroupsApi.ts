@@ -1,4 +1,4 @@
-import { UserGroup, UserRef } from "@vertesia/common";
+import { CreateUserGroupPayload, DeleteByIdResult, UpdateUserGroupPayload, UserGroup, UserRef } from "@vertesia/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 export interface GroupsQueryOptions {
@@ -29,7 +29,7 @@ export class GroupsApi extends ApiTopic {
      * @param payload The group data to create
      * @returns The created UserGroup object
      */
-    create(payload: Partial<UserGroup>): Promise<UserGroup> {
+    create(payload: CreateUserGroupPayload): Promise<UserGroup> {
         return this.post('/', { payload });
     }
 
@@ -48,7 +48,7 @@ export class GroupsApi extends ApiTopic {
      * @param payload The group data to update
      * @returns The updated UserGroup object
      */
-    update(groupId: string, payload: Partial<UserGroup>): Promise<UserGroup> {
+    update(groupId: string, payload: UpdateUserGroupPayload): Promise<UserGroup> {
         return this.put('/' + groupId, { payload });
     }
 
@@ -57,7 +57,7 @@ export class GroupsApi extends ApiTopic {
      * @param groupId The ID of the group to delete
      * @returns Object with the deleted group ID
      */
-    delete(groupId: string): Promise<{ id: string }> {
+    delete(groupId: string): Promise<DeleteByIdResult> {
         return this.del('/' + groupId);
     }
 

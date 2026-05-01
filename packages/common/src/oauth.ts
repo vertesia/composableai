@@ -80,6 +80,10 @@ export interface OAuthProvider extends OAuthProviderData {
     id: string;
 }
 
+export interface RevokeOAuthGrantQuery {
+    include_consent?: boolean;
+}
+
 /**
  * Payload for creating an OAuth Provider.
  * The client_secret is accepted as plaintext on create and stored encrypted.
@@ -128,4 +132,13 @@ export interface OAuthProviderAuthorizeResponse {
     authorization_url?: string;
     state?: string;
     connected?: boolean;
+}
+
+export interface OAuthProviderAccessTokenResponse {
+    access_token: string;
+}
+
+export interface OAuthProviderExchangePayload {
+    code: string;
+    state: string;
 }
