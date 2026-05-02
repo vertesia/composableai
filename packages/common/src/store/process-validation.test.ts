@@ -195,6 +195,43 @@ describe("process definition validation", () => {
         );
     });
 
+    it("rejects set_context nodes that omit the updates envelope", () => {
+        const definition = validDefinition();
+        definition.nodes.review = {
+            type: "tool",
+            tool: "set_context",
+            input: {
+                approved: true,
+            },
+            writes: ["approved"],
+            transitions: [{ to: "approved" }],
+        };
+
+        const result = getProcessDefinitionValidationResult(definition);
+
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('tool node "review" set_context input has unsupported property "approved"');
+        expect(result.errors).toContain('tool node "review" set_context input.updates must be an object');
+    });
+
+    it("accepts set_context nodes with the updates envelope", () => {
+        const definition = validDefinition();
+        definition.nodes.review = {
+            type: "tool",
+            tool: "set_context",
+            input: {
+                updates: {
+                    approved: true,
+                },
+                reason: "mark approved in validation test",
+            },
+            writes: ["approved"],
+            transitions: [{ to: "approved" }],
+        };
+
+        expect(() => validateProcessDefinitionBody(definition)).not.toThrow();
+    });
+
     it("rejects invalid foreach fanout controls", () => {
         const definition = validDefinition();
         definition.initial = "fanout";

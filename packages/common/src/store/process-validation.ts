@@ -78,6 +78,9 @@ function validateNodeDefinition(
             errors.push(`human_task node "${nodeId}" task fields must be an array`);
         }
     }
+    if (node.type === "tool") {
+        validateBuiltinToolNodeInput(nodeId, node, errors);
+    }
     if (node.type === "process") {
         if (!node.process && !node.process_definition) {
             errors.push(`process node "${nodeId}" is missing process or process_definition`);
@@ -173,6 +176,40 @@ function validateNodeDefinition(
         if (branch.when) {
             validateGuardRule(`node "${nodeId}" branch to "${branch.to}" guard`, branch.when, errors);
         }
+    }
+}
+
+function validateBuiltinToolNodeInput(nodeId: string, node: NodeDefinition, errors: string[]) {
+    if (!node.tool) {
+        errors.push(`tool node "${nodeId}" is missing tool`);
+        return;
+    }
+
+    if (node.tool === "set_context") {
+        validateSetContextNodeInput(nodeId, node.input, errors);
+    }
+}
+
+function validateSetContextNodeInput(nodeId: string, input: unknown, errors: string[]) {
+    if (!isRecord(input)) {
+        errors.push(`tool node "${nodeId}" set_context input must be an object`);
+        return;
+    }
+
+    for (const key of Object.keys(input)) {
+        if (key !== "updates" && key !== "reason" && key !== "event_id") {
+            errors.push(`tool node "${nodeId}" set_context input has unsupported property "${key}"`);
+        }
+    }
+
+    if (!isRecord(input.updates)) {
+        errors.push(`tool node "${nodeId}" set_context input.updates must be an object`);
+    }
+    if (input.reason !== undefined && typeof input.reason !== "string") {
+        errors.push(`tool node "${nodeId}" set_context input.reason must be a string`);
+    }
+    if (input.event_id !== undefined && typeof input.event_id !== "string") {
+        errors.push(`tool node "${nodeId}" set_context input.event_id must be a string`);
     }
 }
 
