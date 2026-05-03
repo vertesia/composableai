@@ -57,6 +57,28 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
             },
         });
 
+        if (Env.isLocalDev && Env.devAuthToken) {
+            session.setSession = setSession;
+            getComposableToken(selectedAccount, selectedProject, Env.devAuthToken)
+                .then((res) => {
+                    session.login(res.rawToken).then(() => setSession(session.clone()));
+                })
+                .catch((err) => {
+                    console.error("Failed to initialize dev auth token", err);
+                    Env.logger.error("Failed to initialize dev auth token", {
+                        vertesia: {
+                            account_id: selectedAccount,
+                            project_id: selectedProject,
+                            error: err,
+                        },
+                    });
+                    session.isLoading = false;
+                    session.authError = err instanceof Error ? err : new Error(String(err));
+                    setSession(session.clone());
+                });
+            return;
+        }
+
         if (token && state) {
             session.setSession = setSession;
             const validationError = verifyState(state);

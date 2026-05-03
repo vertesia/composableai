@@ -26,6 +26,13 @@ export interface EnvProps {
     region?: string,
     datadogRum?: boolean,
     datadogLogs?: boolean,
+    /**
+     * Development-only Vertesia auth token.
+     *
+     * This is intended for sandbox/dev previews where the host process already
+     * has a short-lived Vertesia token. Production apps must not set this.
+     */
+    devAuthToken?: string,
     logger?: {
         info: (msg: string, ...args: any) => void,
         warn: (msg: string, ...args: any) => void,
@@ -115,6 +122,10 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
 
     get datadogLogs() {
         return this._props?.datadogLogs ?? false;
+    }
+
+    get devAuthToken() {
+        return this._props?.devAuthToken;
     }
 
     get logger() {

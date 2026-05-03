@@ -253,17 +253,22 @@ export async function getComposableToken(accountId?: string, projectId?: string,
 
     const selectedAccount = accountId ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined
     const selectedProject = projectId ?? localStorage.getItem(LastSelectedProjectId_KEY + '-' + selectedAccount) ?? undefined
+    const devAuthToken = Env.isLocalDev ? Env.devAuthToken : undefined;
 
     //token is still valid for more than 5 minutes
     if (!forceRefresh && AUTH_TOKEN_RAW && AUTH_TOKEN && AUTH_TOKEN.exp > (Date.now() / 1000 + 300)) {
         return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
+    if (devAuthToken) {
+        AUTH_TOKEN_RAW = devAuthToken;
+    }
+
     //token is close to expire, refresh it
-    if (!useInternalAuth && getFirebaseAuth().currentUser) {
+    if (!devAuthToken && !useInternalAuth && getFirebaseAuth().currentUser) {
         //we have a firebase user, get the token from there
         AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
-    } else if (initToken || AUTH_TOKEN_RAW) {
+    } else if (!devAuthToken && (initToken || AUTH_TOKEN_RAW)) {
         // we have a token already and no firebase user, refresh it
         AUTH_TOKEN_RAW = await fetchComposableToken(() => Promise.resolve(initToken ?? AUTH_TOKEN_RAW), selectedAccount, selectedProject);
     }

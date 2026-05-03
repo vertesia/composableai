@@ -89,8 +89,9 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
  * @returns
  */
 function defineAppConfig({ command }: ConfigEnv): UserConfig {
-    // Vercel dev proxies to the framework dev server over HTTP — HTTPS would break that.
-    const useHttps = !process.env.VERCEL;
+    // DEV_MODE is used by appgen/sandbox previews. Vercel also proxies to the
+    // framework dev server over HTTP, so both modes disable HTTPS.
+    const useHttps = process.env.DEV_MODE !== '1' && process.env.VERCEL !== '1';
     const base = command === 'build' ? '/app/' : '/';
 
     return {
@@ -98,7 +99,7 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
         plugins: [
             tailwindcss(),
             react(),
-            // HTTPS is required for Firebase auth but must be disabled under vercel dev
+            // HTTPS is required for Firebase auth but must be disabled under appgen/Vercel dev
             ...(useHttps ? [basicSsl()] : []),
             // serve lib/plugin.js content in dev mode
             serveStatic([

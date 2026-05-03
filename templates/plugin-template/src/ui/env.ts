@@ -10,6 +10,7 @@ Env.init({
     isLocalDev: true,
     isDocker: true,
     type: "development",
+    devAuthToken: import.meta.env.DEV ? import.meta.env.VITE_VERTESIA_AUTH_TOKEN : undefined,
     endpoints: {
         studio: "https://api.us1.vertesia.io",
         zeno: "https://api.us1.vertesia.io",
