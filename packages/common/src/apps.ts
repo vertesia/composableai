@@ -545,8 +545,16 @@ export function substituteEndpoints(url: string, endpoints?: Endpoints): string 
     return url.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key: string) => {
         const value = (endpoints as Record<string, string | undefined>)[key];
         if (typeof value !== 'string' || !value) return match;
-        return value.replace(/\/+$/, '');
+        return trimTrailingSlashes(value);
     });
+}
+
+function trimTrailingSlashes(value: string): string {
+    let end = value.length;
+    while (end > 0 && value[end - 1] === '/') {
+        end--;
+    }
+    return end === value.length ? value : value.slice(0, end);
 }
 
 /**
