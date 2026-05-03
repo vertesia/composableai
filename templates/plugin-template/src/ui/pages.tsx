@@ -7,6 +7,7 @@ import { useUserSession } from "@vertesia/ui/session";
 import { useUITranslation } from "@vertesia/ui/i18n";
 import type { CreateAgentRunPayload } from "@vertesia/common";
 import { ASSISTANT_INTERACTION } from "./constants";
+import { PageShell } from "./PageShell";
 
 export function HomePage() {
     const { user } = useUserSession();
@@ -14,16 +15,18 @@ export function HomePage() {
     const navigate = useNavigate();
 
     return (
-        <div className="p-6 space-y-4">
-            <h1 className="text-2xl font-semibold">{t('nav.welcome', { name: user?.name || user?.email })}</h1>
-            <p className="text-muted">
-                {t('nav.templateDescription')}
-            </p>
-            <Button variant="outline" onClick={() => navigate('/chat')}>
-                <Bot className="size-4 mr-2" />
-                {t('nav.tryAgentChat')}
-            </Button>
-        </div>
+        <PageShell
+            title={t("nav.welcome", { name: user?.name || user?.email })}
+            description={t("nav.templateDescription")}
+            action={(
+                <Button variant="outline" onClick={() => navigate("/chat")}>
+                    <Bot className="size-4 mr-2" />
+                    {t("nav.tryAgentChat")}
+                </Button>
+            )}
+        >
+            <div />
+        </PageShell>
     );
 }
 
@@ -38,7 +41,7 @@ export function ChatPage() {
         const payload: CreateAgentRunPayload = {
             interaction: ASSISTANT_INTERACTION,
             interactive: true,
-            data: { user_prompt: initialMessage || '' },
+            data: { user_prompt: initialMessage || "" },
         };
         const result = await store.agents.start(payload);
         if (result) {
@@ -48,14 +51,14 @@ export function ChatPage() {
         return undefined;
     }, [store, navigate]);
 
-    const handleReset = useCallback(() => navigate('/chat'), [navigate]);
+    const handleReset = useCallback(() => navigate("/chat"), [navigate]);
 
     return (
         <div className="flex flex-col h-full">
             <ModernAgentConversation
                 agentRunId={agentRunId}
                 startWorkflow={startWorkflow}
-                title={t('nav.pluginAssistant')}
+                title={t("nav.pluginAssistant")}
                 resetWorkflow={handleReset}
                 hideObjectLinking
                 interactive

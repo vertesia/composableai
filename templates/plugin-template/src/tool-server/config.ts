@@ -1,5 +1,6 @@
 import { ToolServerConfig } from "@vertesia/tools-sdk";
 import { activities } from "./activities/index.js";
+import { dashboards } from "./dashboards/index.js";
 import { interactions } from "./interactions/index.js";
 import { mcpProviders } from "./mcp/index.js";
 import { skills } from "./skills/index.js";
@@ -21,6 +22,7 @@ export const ServerConfig = {
     skills,
     templates,
     mcpProviders,
+    dashboards,
     uiConfig: {
         isolation: "shadow",
         src: "/lib/plugin.js",

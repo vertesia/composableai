@@ -1,4 +1,13 @@
-import { AppPackage, AppPackageScope, AppWidgetInfo, CatalogInteractionRef, InCodeProcessDefinition, InCodeTypeDefinition, RemoteActivityDefinition } from "@vertesia/common";
+import type {
+    AppDashboardDefinition,
+    AppPackage,
+    AppPackageScope,
+    AppWidgetInfo,
+    CatalogInteractionRef,
+    InCodeProcessDefinition,
+    InCodeTypeDefinition,
+    RemoteActivityDefinition,
+} from "@vertesia/common";
 import { Context, Hono } from "hono";
 import { ToolUseContext } from "../types.js";
 import { ToolServerConfig } from "./types.js";
@@ -7,7 +16,9 @@ function getRequestPayload<T>(c: Context): Promise<T | undefined> {
     return c.req.method === "POST" ? c.req.json<T>() : Promise.resolve(undefined);
 }
 
-const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config: ToolServerConfig, c: Context) => Promise<void>> = {
+type AppPackageBuilder = (pkg: AppPackage, config: ToolServerConfig, c: Context) => Promise<void>;
+
+const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
     async tools(pkg: AppPackage, config: ToolServerConfig, c: Context) {
         const { tools: toolCollections = [], skills: skillCollections = [] } = config;
 
@@ -79,6 +90,19 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
             }))
         );
     },
+    async dashboards(pkg: AppPackage, config: ToolServerConfig) {
+        const seen = new Set<string>();
+        const dashboards: AppDashboardDefinition[] = [];
+        for (const dashboard of config.dashboards || []) {
+            if (seen.has(dashboard.id)) {
+                console.warn(`[app-package] Duplicate dashboard id "${dashboard.id}", skipping`);
+                continue;
+            }
+            seen.add(dashboard.id);
+            dashboards.push(dashboard);
+        }
+        pkg.dashboards = dashboards;
+    },
     async widgets(pkg: AppPackage, config: ToolServerConfig) {
         const { skills: skillCollections = [] } = config;
         const widgets: Record<string, AppWidgetInfo> = {};
@@ -134,6 +158,7 @@ async function handlePackageRequest(c: Context, config: ToolServerConfig) {
         await builders.types(pkg, config, c);
         await builders.processes(pkg, config, c);
         await builders.templates(pkg, config, c);
+        await builders.dashboards(pkg, config, c);
         await builders.widgets(pkg, config, c);
         await builders.ui(pkg, config, c);
         await builders.settings(pkg, config, c);
@@ -153,6 +178,9 @@ async function handlePackageRequest(c: Context, config: ToolServerConfig) {
         }
         if (scopes.has('templates')) {
             await builders.templates(pkg, config, c);
+        }
+        if (scopes.has('dashboards')) {
+            await builders.dashboards(pkg, config, c);
         }
         if (scopes.has('widgets')) {
             await builders.widgets(pkg, config, c);
