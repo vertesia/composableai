@@ -6,7 +6,7 @@ import { RenderingTemplateCollection } from "../RenderingTemplateCollection.js";
 import { ToolCollection } from "../ToolCollection.js";
 import { ToolExecutionPayload } from "../types.js";
 import { JSONSchema } from "@llumiverse/common";
-import { AppUIConfig, ProjectConfiguration } from "@vertesia/common";
+import { AppUIConfig, InCodeProcessDefinition, ProjectConfiguration } from "@vertesia/common";
 import { ContentTypesCollection } from "../ContentTypesCollection.js";
 
 /**
@@ -63,6 +63,10 @@ export interface ToolServerConfig {
      */
     types?: ContentTypesCollection[];
     /**
+     * Process definitions to expose as app-contributed processes.
+     */
+    processes?: InCodeProcessDefinition[];
+    /**
      * Skill collections to expose
      */
     skills?: SkillCollection[];
@@ -102,4 +106,3 @@ export interface ToolServerConfig {
      */
     toolFilter?: (projectConfig: ProjectConfiguration) => boolean;
 }
-

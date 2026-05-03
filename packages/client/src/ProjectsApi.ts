@@ -1,5 +1,30 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { AwsConfiguration, CompositeAppConfig, CompositeAppConfigPayload, CountResult, DeleteByIdResult, ExaConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, InCodeTypeDefinition, LinkupConfiguration, MagicPdfConfiguration, Project, ProjectConfiguration, ProjectIntegrationListEntry, ProjectIntegrationListResponse, ProjectRef, ProjectToolInfo, RenderingTemplateDefinition, RenderingTemplateDefinitionRef, ResendConfiguration, SerperConfiguration, SupportedIntegrations } from "@vertesia/common";
+import {
+    AwsConfiguration,
+    CompositeAppConfig,
+    CompositeAppConfigPayload,
+    CountResult,
+    DeleteByIdResult,
+    ExaConfiguration,
+    GithubConfiguration,
+    GladiaConfiguration,
+    ICreateProjectPayload,
+    InCodeProcessDefinition,
+    InCodeTypeDefinition,
+    LinkupConfiguration,
+    MagicPdfConfiguration,
+    Project,
+    ProjectConfiguration,
+    ProjectIntegrationListEntry,
+    ProjectIntegrationListResponse,
+    ProjectRef,
+    ProjectToolInfo,
+    RenderingTemplateDefinition,
+    RenderingTemplateDefinitionRef,
+    ResendConfiguration,
+    SerperConfiguration,
+    SupportedIntegrations,
+} from "@vertesia/common";
 
 export default class ProjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -67,6 +92,16 @@ export default class ProjectsApi extends ApiTopic {
 
     getAppContentType(projectId: string, typeId: string): Promise<InCodeTypeDefinition> {
         return this.get(`/${projectId}/app-types/${typeId}`);
+    }
+
+    listAppProcesses(projectId: string, tag?: string): Promise<InCodeProcessDefinition[]> {
+        return this.get(`/${projectId}/app-processes`, {
+            query: { tag }
+        });
+    }
+
+    getAppProcess(projectId: string, processId: string): Promise<InCodeProcessDefinition> {
+        return this.get(`/${projectId}/app-processes/${processId}`);
     }
 
     listAppRenderingTemplates(projectId: string, tag?: string): Promise<RenderingTemplateDefinitionRef[]> {

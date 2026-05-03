@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { ListPendingAsksResponse, PendingAskData, UserChannel } from "@vertesia/common";
+import type { ListPendingAsksResponse, PendingAskData, TaskField, UserChannel } from "@vertesia/common";
 
 /**
  * Request to register a pending ask.
@@ -17,6 +17,8 @@ export interface RegisterPendingAskRequest {
     timeoutHours?: number;
     /** User communication channels */
     userChannels: UserChannel[];
+    /** Durable task fields shown in task inbox */
+    taskFields?: TaskField[];
 }
 
 /**
