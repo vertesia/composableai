@@ -12,7 +12,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "dev": "vite dev --mode app",
-    "prebuild": "pnpm run lint && tsc --build --noEmit",
+    "prebuild": "pnpm run lint && node scripts/typecheck.mjs",
     "build": "pnpm run build:server && pnpm run build:ui",
     "build:server": "rollup -c",
     "build:ui": "pnpm run build:ui:app && pnpm run build:ui:lib",
