@@ -4,6 +4,7 @@ import {
     MAX_PROCESS_GUARD_DEPTH,
     MAX_PROCESS_GUARD_NODES,
     getProcessDefinitionValidationResult,
+    getProcessInteractionValidationSelectors,
     validateProcessDefinitionBody,
 } from "./process-validation.js";
 
@@ -232,6 +233,105 @@ describe("process definition validation", () => {
         expect(() => validateProcessDefinitionBody(definition)).not.toThrow();
     });
 
+    it("rejects set_context nodes that write undeclared or internal fields", () => {
+        const definition = validDefinition();
+        definition.nodes.review = {
+            type: "tool",
+            tool: "set_context",
+            input: {
+                updates: {
+                    approved: true,
+                    _current_node: "approved",
+                },
+            },
+            writes: ["decision"],
+            transitions: [{ to: "approved" }],
+        };
+
+        const result = getProcessDefinitionValidationResult(definition);
+
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('tool node "review" set_context updates "approved" but writes does not allow it');
+        expect(result.errors).toContain('tool node "review" set_context cannot write reserved context field "_current_node"');
+    });
+
+    it("rejects unknown tools when a runtime tool catalog is provided", () => {
+        const definition = validDefinition();
+        definition.nodes.review = {
+            type: "tool",
+            tool: "missing_tool",
+            input: {},
+            transitions: [{ to: "approved" }],
+        };
+
+        const result = getProcessDefinitionValidationResult(definition, { knownTools: ["set_context"] });
+
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('tool node "review" references unknown tool "missing_tool"');
+    });
+
+    it("rejects unknown interactions when a runtime interaction catalog is provided", () => {
+        const definition = validDefinition();
+        definition.nodes.review = {
+            type: "interaction",
+            interaction: "sys:MissingInteraction",
+            writes: ["approved"],
+            transitions: [{ to: "approved" }],
+        };
+
+        const result = getProcessDefinitionValidationResult(definition, { knownInteractions: ["sys:GeneralAgent"] });
+
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('interaction node "review" references unknown interaction "sys:MissingInteraction"');
+    });
+
+    it("rejects non-object result_schema on agent and interaction nodes", () => {
+        const definition = validDefinition();
+        definition.nodes.review = {
+            type: "agent",
+            interaction: "sys:GeneralAgent",
+            writes: ["approved"],
+            transitions: [{ to: "approved" }],
+        };
+        Object.assign(definition.nodes.review, { result_schema: "not a schema" });
+
+        const result = getProcessDefinitionValidationResult(definition);
+
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('agent node "review" result_schema must be a JSON Schema object');
+    });
+
+    it("builds interaction selectors used by process validation", () => {
+        const selectors = getProcessInteractionValidationSelectors([
+            { type: "sys", id: "sys:GeneralAgent", name: "GeneralAgent", title: "General agent", tags: [] },
+            { type: "stored", id: "65f000000000000000000001", name: "contract-risk", version: 3, title: "Contract risk", tags: [] },
+            { type: "app", id: "claims/score", name: "score_claim", title: "Score claim", tags: [] },
+        ]);
+
+        expect(selectors).toContain("sys:GeneralAgent");
+        expect(selectors).toContain("GeneralAgent");
+        expect(selectors).toContain("contract-risk@draft");
+        expect(selectors).toContain("65f000000000000000000001@3");
+        expect(selectors).toContain("app:claims/score");
+    });
+
+    it("rejects string branch conditions so broken definitions do not save", () => {
+        const definition = validDefinition();
+        const branchWithStringCondition = {
+            to: "approved",
+            condition: "context.approved == true",
+        };
+        definition.nodes.review.type = "condition";
+        definition.nodes.review.task = undefined;
+        definition.nodes.review.transitions = undefined;
+        definition.nodes.review.branches = [branchWithStringCondition];
+
+        const result = getProcessDefinitionValidationResult(definition);
+
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('node "review" branch at index 0 uses string condition; use JSON Logic in "when" instead');
+    });
+
     it("rejects invalid foreach fanout controls", () => {
         const definition = validDefinition();
         definition.initial = "fanout";
@@ -250,7 +350,7 @@ describe("process definition validation", () => {
                 max_concurrency: 0,
                 collect: {
                     into: "",
-                    include: ["bogus" as "status"],
+                    include: ["status"],
                 },
                 node: {
                     type: "process",
@@ -262,6 +362,7 @@ describe("process definition validation", () => {
                 type: "final",
             },
         };
+        Object.assign(definition.nodes.fanout.collect ?? {}, { include: ["bogus"] });
 
         const result = getProcessDefinitionValidationResult(definition);
 

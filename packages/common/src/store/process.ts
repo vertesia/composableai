@@ -110,6 +110,12 @@ export interface NodeDefinition {
     process_version?: number;
     run_type?: ProcessNodeRunType;
     returns?: ProcessNodeReturnsDefinition;
+    /**
+     * Optional JSON Schema for structured output produced by interaction and
+     * agent nodes. When omitted, the process engine derives a schema from
+     * `writes` and the process context schema.
+     */
+    result_schema?: JSONSchema;
     prompt?: string;
     input?: Record<string, any>;
     config?: Record<string, any>;

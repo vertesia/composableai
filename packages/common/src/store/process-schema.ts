@@ -123,6 +123,10 @@ export const ProcessDefinitionBodyJsonSchema = {
                 returns: {
                     $ref: "#/$defs/processNodeReturnsDefinition",
                 },
+                result_schema: {
+                    $ref: "#/$defs/jsonSchemaDefinition",
+                    description: "Optional JSON Schema for structured output from interaction and agent nodes.",
+                },
                 prompt: {
                     type: "string",
                     nullable: true,
@@ -462,6 +466,13 @@ export const ProcessDefinitionBodyJsonSchema = {
         jsonLogicRule: {
             type: "object",
             description: "JSON Logic expression.",
+            required: [],
+            additionalProperties: true,
+        },
+        jsonSchemaDefinition: {
+            type: "object",
+            nullable: true,
+            description: "JSON Schema object.",
             required: [],
             additionalProperties: true,
         },

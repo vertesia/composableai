@@ -5,25 +5,58 @@ import {
     type NodeDefinition,
     type ProcessDefinitionBody,
 } from "./process.js";
+import type { CatalogInteractionRef } from "../interaction.js";
 
 export interface ProcessDefinitionValidationResult {
     valid: boolean;
     errors: string[];
 }
 
+export interface ProcessDefinitionValidationOptions {
+    knownTools?: Iterable<string>;
+    knownInteractions?: Iterable<string>;
+}
+
+export function getProcessInteractionValidationSelectors(interactions: Iterable<CatalogInteractionRef>): string[] {
+    const selectors = new Set<string>();
+    for (const interaction of interactions) {
+        selectors.add(interaction.id);
+        selectors.add(interaction.name);
+        if (interaction.type === "sys") {
+            selectors.add(`sys:${interaction.name}`);
+        }
+        if (interaction.type === "app" && !interaction.id.startsWith("app:")) {
+            selectors.add(`app:${interaction.id}`);
+        }
+        if (interaction.type === "stored" || interaction.type === "draft") {
+            selectors.add(`${interaction.name}@draft`);
+            selectors.add(`${interaction.id}@draft`);
+            if (typeof interaction.version === "number") {
+                selectors.add(`${interaction.name}@${interaction.version}`);
+                selectors.add(`${interaction.id}@${interaction.version}`);
+            }
+        }
+    }
+    return [...selectors];
+}
+
 export const MAX_PROCESS_DEFINITION_BYTES = 1024 * 1024;
 export const MAX_PROCESS_GUARD_DEPTH = 64;
 export const MAX_PROCESS_GUARD_NODES = 4096;
 
-export function validateProcessDefinitionBody(definition: ProcessDefinitionBody): void {
-    const result = getProcessDefinitionValidationResult(definition);
+export function validateProcessDefinitionBody(definition: ProcessDefinitionBody, options: ProcessDefinitionValidationOptions = {}): void {
+    const result = getProcessDefinitionValidationResult(definition, options);
     if (!result.valid) {
         throw new Error(result.errors.join("; "));
     }
 }
 
-export function getProcessDefinitionValidationResult(definition: ProcessDefinitionBody): ProcessDefinitionValidationResult {
+export function getProcessDefinitionValidationResult(
+    definition: ProcessDefinitionBody,
+    options: ProcessDefinitionValidationOptions = {},
+): ProcessDefinitionValidationResult {
     const errors: string[] = [];
+    const context = createValidationContext(options);
     const size = new TextEncoder().encode(JSON.stringify(definition)).length;
     if (size > MAX_PROCESS_DEFINITION_BYTES) {
         errors.push(`process definition exceeds ${MAX_PROCESS_DEFINITION_BYTES} bytes`);
@@ -51,7 +84,7 @@ export function getProcessDefinitionValidationResult(definition: ProcessDefiniti
     }
 
     for (const [nodeId, node] of Object.entries(definition.nodes ?? {})) {
-        validateNodeDefinition(definition, nodeId, node, errors);
+        validateNodeDefinition(definition, nodeId, node, errors, context);
     }
 
     return {
@@ -65,6 +98,7 @@ function validateNodeDefinition(
     nodeId: string,
     node: NodeDefinition,
     errors: string[],
+    context: ProcessDefinitionValidationContext,
 ) {
     if (!isProcessNodeType(node.type)) {
         errors.push(`node "${nodeId}" has invalid type "${String(node.type)}"`);
@@ -79,7 +113,15 @@ function validateNodeDefinition(
         }
     }
     if (node.type === "tool") {
-        validateBuiltinToolNodeInput(nodeId, node, errors);
+        validateToolNodeDefinition(nodeId, node, errors, context);
+    }
+    if ((node.type === "interaction" || node.type === "agent") && node.interaction && context.knownInteractions) {
+        if (!isKnownSelector(node.interaction, context.knownInteractions)) {
+            errors.push(`${node.type} node "${nodeId}" references unknown interaction "${node.interaction}"`);
+        }
+    }
+    if ((node.type === "interaction" || node.type === "agent") && node.result_schema !== undefined && !isRecord(node.result_schema)) {
+        errors.push(`${node.type} node "${nodeId}" result_schema must be a JSON Schema object`);
     }
     if (node.type === "process") {
         if (!node.process && !node.process_definition) {
@@ -95,7 +137,7 @@ function validateNodeDefinition(
             errors.push(`process node "${nodeId}" returns.context must be an array of strings`);
         }
         if (node.process_definition) {
-            const childResult = getProcessDefinitionValidationResult(node.process_definition);
+            const childResult = getProcessDefinitionValidationResult(node.process_definition, context.options);
             for (const error of childResult.errors) {
                 errors.push(`process node "${nodeId}" process_definition: ${error}`);
             }
@@ -121,7 +163,7 @@ function validateNodeDefinition(
                 childPath: `${nodeId}.node`,
                 childLabel: `foreach node "${nodeId}" child node`,
                 child: node.node,
-            }, errors);
+            }, errors, context);
         }
     }
     if (node.type === "branch") {
@@ -151,7 +193,7 @@ function validateNodeDefinition(
                 childPath: `${nodeId}.branches.${index}.node`,
                 childLabel: `branch node "${nodeId}" branch "${branch.id || index}" child node`,
                 child: branch.node,
-            }, errors);
+            }, errors, context);
         }
     }
     if (node.failure_policy && !isParallelFailurePolicy(node.failure_policy)) {
@@ -164,33 +206,66 @@ function validateNodeDefinition(
         if (transition.trigger && !isTransitionTrigger(transition.trigger)) {
             errors.push(`node "${nodeId}" has invalid transition trigger "${transition.trigger}"`);
         }
-        if (transition.guard) {
+        if (typeof transition.guard === "string") {
+            errors.push(`node "${nodeId}" transition to "${transition.to}" guard must be a JSON Logic object`);
+        } else if (transition.guard) {
             validateGuardRule(`node "${nodeId}" transition to "${transition.to}" guard`, transition.guard, errors);
         }
     }
 
-    for (const branch of getConditionBranches(node)) {
+    for (const [index, branch] of getConditionBranches(node).entries()) {
+        if (hasStringConditionProperty(branch, "condition")) {
+            errors.push(`node "${nodeId}" branch at index ${index} uses string condition; use JSON Logic in "when" instead`);
+        }
+        if (hasStringConditionProperty(branch, "guard")) {
+            errors.push(`node "${nodeId}" branch at index ${index} uses string guard; use JSON Logic in "when" instead`);
+        }
         if (!definition.nodes[branch.to]) {
             errors.push(`node "${nodeId}" has branch to "${branch.to}" which does not exist`);
         }
-        if (branch.when) {
+        if (typeof branch.when === "string") {
+            errors.push(`node "${nodeId}" branch to "${branch.to}" when must be a JSON Logic object`);
+        } else if (branch.when) {
             validateGuardRule(`node "${nodeId}" branch to "${branch.to}" guard`, branch.when, errors);
         }
     }
 }
 
-function validateBuiltinToolNodeInput(nodeId: string, node: NodeDefinition, errors: string[]) {
+interface ProcessDefinitionValidationContext {
+    options: ProcessDefinitionValidationOptions;
+    knownTools?: ReadonlySet<string>;
+    knownInteractions?: ReadonlySet<string>;
+}
+
+function createValidationContext(options: ProcessDefinitionValidationOptions): ProcessDefinitionValidationContext {
+    return {
+        options,
+        knownTools: options.knownTools ? new Set(options.knownTools) : undefined,
+        knownInteractions: options.knownInteractions ? new Set(options.knownInteractions) : undefined,
+    };
+}
+
+function validateToolNodeDefinition(
+    nodeId: string,
+    node: NodeDefinition,
+    errors: string[],
+    context: ProcessDefinitionValidationContext,
+) {
     if (!node.tool) {
         errors.push(`tool node "${nodeId}" is missing tool`);
         return;
     }
+    if (context.knownTools && !context.knownTools.has(node.tool)) {
+        errors.push(`tool node "${nodeId}" references unknown tool "${node.tool}"`);
+    }
 
     if (node.tool === "set_context") {
-        validateSetContextNodeInput(nodeId, node.input, errors);
+        validateSetContextNode(nodeId, node, errors);
     }
 }
 
-function validateSetContextNodeInput(nodeId: string, input: unknown, errors: string[]) {
+function validateSetContextNode(nodeId: string, node: NodeDefinition, errors: string[]) {
+    const input = node.input;
     if (!isRecord(input)) {
         errors.push(`tool node "${nodeId}" set_context input must be an object`);
         return;
@@ -204,6 +279,7 @@ function validateSetContextNodeInput(nodeId: string, input: unknown, errors: str
 
     if (!isRecord(input.updates)) {
         errors.push(`tool node "${nodeId}" set_context input.updates must be an object`);
+        return;
     }
     if (input.reason !== undefined && typeof input.reason !== "string") {
         errors.push(`tool node "${nodeId}" set_context input.reason must be a string`);
@@ -211,6 +287,49 @@ function validateSetContextNodeInput(nodeId: string, input: unknown, errors: str
     if (input.event_id !== undefined && typeof input.event_id !== "string") {
         errors.push(`tool node "${nodeId}" set_context input.event_id must be a string`);
     }
+    validateSetContextWrites(nodeId, node, input.updates, errors);
+}
+
+function validateSetContextWrites(
+    nodeId: string,
+    node: NodeDefinition,
+    updates: Record<string, unknown>,
+    errors: string[],
+) {
+    const updateKeys = Object.keys(updates);
+    if (updateKeys.length === 0) {
+        return;
+    }
+    if (!Array.isArray(node.writes) || node.writes.length === 0) {
+        errors.push(`tool node "${nodeId}" set_context updates require declared writes`);
+        return;
+    }
+    for (const key of updateKeys) {
+        if (key.startsWith("_")) {
+            errors.push(`tool node "${nodeId}" set_context cannot write reserved context field "${key}"`);
+        }
+        if (!isWriteAllowed(key, node.writes)) {
+            errors.push(`tool node "${nodeId}" set_context updates "${key}" but writes does not allow it`);
+        }
+    }
+}
+
+function isWriteAllowed(key: string, writes: string[]): boolean {
+    return writes.some(write => key === write || key.startsWith(`${write}.`));
+}
+
+function isKnownSelector(selector: string, knownSelectors: ReadonlySet<string>): boolean {
+    if (knownSelectors.has(selector)) {
+        return true;
+    }
+    if (!selector.includes("@")) {
+        return false;
+    }
+    return knownSelectors.has(selector.slice(0, selector.lastIndexOf("@")));
+}
+
+function hasStringConditionProperty(value: unknown, key: string): boolean {
+    return isRecord(value) && typeof value[key] === "string";
 }
 
 function isProcessNodeType(value: string): boolean {
@@ -253,6 +372,7 @@ function validateFanoutChildNodeDefinition(
         child: NodeDefinition;
     },
     errors: string[],
+    context: ProcessDefinitionValidationContext,
 ) {
     const { ownerLabel, childPath, childLabel, child } = input;
     if (!isFanoutChildNodeType(child.type)) {
@@ -276,6 +396,7 @@ function validateFanoutChildNodeDefinition(
             branches: undefined,
         },
         errors,
+        context,
     );
 }
 
@@ -379,12 +500,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function getConditionBranches(node: NodeDefinition): BranchDefinition[] {
     return node.type === "condition" && Array.isArray(node.branches)
-        ? node.branches as BranchDefinition[]
+        ? node.branches.filter(isConditionBranchDefinition)
         : [];
 }
 
 function getBranchNodeBranches(node: NodeDefinition): BranchNodeBranchDefinition[] {
     return node.type === "branch" && Array.isArray(node.branches)
-        ? node.branches as BranchNodeBranchDefinition[]
+        ? node.branches.filter(isBranchNodeBranchDefinition)
         : [];
+}
+
+function isConditionBranchDefinition(branch: BranchDefinition | BranchNodeBranchDefinition): branch is BranchDefinition {
+    return "to" in branch;
+}
+
+function isBranchNodeBranchDefinition(branch: BranchDefinition | BranchNodeBranchDefinition): branch is BranchNodeBranchDefinition {
+    return "node" in branch;
 }
