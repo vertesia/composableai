@@ -114,6 +114,9 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
         build: {
             outDir: 'dist/app', // App build goes to dist/app/
         },
+        optimizeDeps: process.env.DEV_MODE === '1'
+            ? { noDiscovery: true, include: [] }
+            : undefined,
         // for authentication with Firebase
         server: {
             proxy: {
