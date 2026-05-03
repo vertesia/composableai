@@ -33,34 +33,6 @@
       ]
     },
     {
-      "type": "select",
-      "name": "THEME_TOKENS",
-      "message": "Theme palette",
-      "initial": 0,
-      "choices": [
-        {
-          "title": "Slate-blue (light default, dark mode supported)",
-          "description": "Calm professional palette. Good neutral starting point.",
-          "value": ":root {\n    --primary: oklch(58% 0.180 265);\n    --primary-background: oklch(97% 0.020 265);\n    --secondary: oklch(40% 0.060 280);\n    --secondary-background: oklch(96% 0.010 280);\n    --ring: oklch(58% 0.180 265 / 0.45);\n}\n\n.dark {\n    --primary: oklch(72% 0.170 265);\n    --primary-background: oklch(22% 0.040 265);\n    --secondary: oklch(78% 0.040 280);\n    --secondary-background: oklch(20% 0.020 280);\n    --ring: oklch(72% 0.170 265 / 0.55);\n}"
-        },
-        {
-          "title": "Indigo + violet (richer brand feel)",
-          "description": "Saturated primary for marketing-friendly plugins.",
-          "value": ":root {\n    --primary: oklch(56% 0.190 290);\n    --primary-background: oklch(97% 0.020 290);\n    --secondary: oklch(45% 0.110 320);\n    --secondary-background: oklch(96% 0.020 320);\n    --ring: oklch(56% 0.190 290 / 0.45);\n}\n\n.dark {\n    --primary: oklch(74% 0.170 290);\n    --primary-background: oklch(23% 0.040 290);\n    --secondary: oklch(78% 0.110 320);\n    --secondary-background: oklch(22% 0.030 320);\n    --ring: oklch(74% 0.170 290 / 0.55);\n}"
-        },
-        {
-          "title": "Cyan accent — futuristic dark default",
-          "description": "Neon cyan primary tuned for a dark-first plugin. Pair with class=\"dark\" on <html>.",
-          "value": ":root {\n    --primary: oklch(70% 0.180 200);\n    --primary-background: oklch(96% 0.020 200);\n    --secondary: oklch(45% 0.060 240);\n    --secondary-background: oklch(96% 0.010 240);\n    --ring: oklch(70% 0.180 200 / 0.45);\n}\n\n.dark {\n    --primary: oklch(80% 0.180 200);\n    --primary-background: oklch(22% 0.040 230);\n    --secondary: oklch(80% 0.060 240);\n    --secondary-background: oklch(20% 0.020 240);\n    --ring: oklch(80% 0.180 200 / 0.65);\n}"
-        },
-        {
-          "title": "Lime accent — friendly light default",
-          "description": "Energetic green primary for tools-feeling plugins.",
-          "value": ":root {\n    --primary: oklch(62% 0.180 145);\n    --primary-background: oklch(97% 0.030 145);\n    --secondary: oklch(45% 0.060 220);\n    --secondary-background: oklch(96% 0.010 220);\n    --ring: oklch(62% 0.180 145 / 0.45);\n}\n\n.dark {\n    --primary: oklch(78% 0.190 145);\n    --primary-background: oklch(22% 0.040 145);\n    --secondary: oklch(80% 0.060 220);\n    --secondary-background: oklch(22% 0.020 220);\n    --ring: oklch(78% 0.190 145 / 0.55);\n}"
-        }
-      ]
-    },
-    {
       "type": "text",
       "name": "ASSISTANT_INTERACTION",
       "message": "Assistant interaction id (the agent the persistent assistant will run)",
@@ -87,7 +59,6 @@
     "src/tool-server/config.ts",
     "src/ui/constants.ts",
     "src/ui/env.ts",
-    "src/ui/index.css",
     "src/ui/plugin.tsx",
     ".env.app.template"
   ],

@@ -9,11 +9,27 @@
 @source "../../node_modules/@vertesia/tools-admin-ui/src";
 
 /*
- * Theme Customization — generated from the `THEME_TOKENS` prompt during scaffolding.
+ * Theme Customization
  *
- * Adjust to match your brand. Values use oklch(lightness chroma hue).
- * See https://oklch.com for a color picker. To switch the app to dark by
- * default, also add class="dark" on <html> in index.html.
+ * Slate-blue default palette — calm, neutral, light + dark.
+ * Edit the oklch values below to brand your plugin (https://oklch.com).
+ * For a dark-first plugin, also set class="dark" on <html> in index.html.
+ *
+ * Looking for ready-made palettes? See "Theme presets" in the template README.
  */
 
-{{THEME_TOKENS}}
+:root {
+    --primary: oklch(58% 0.180 265);
+    --primary-background: oklch(97% 0.020 265);
+    --secondary: oklch(40% 0.060 280);
+    --secondary-background: oklch(96% 0.010 280);
+    --ring: oklch(58% 0.180 265 / 0.45);
+}
+
+.dark {
+    --primary: oklch(72% 0.170 265);
+    --primary-background: oklch(22% 0.040 265);
+    --secondary: oklch(78% 0.040 280);
+    --secondary-background: oklch(20% 0.020 280);
+    --ring: oklch(72% 0.170 265 / 0.55);
+}
