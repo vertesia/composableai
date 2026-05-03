@@ -68,6 +68,7 @@ pnpm start                 # Preview production build (build:server + vite previ
 - **Input onChange API**: `@vertesia/ui` Input passes value directly (`onChange={setValue}`), not a React event — Textarea uses standard events
 - **listConversations limitations**: Does not return the `input` field — only `topic` is available for labeling conversations; fall back to date/time
 - **getRunDetails** for full data: Use `client.store.workflows.getRunDetails(runId, workflowId)` when you need `input` or history
+- **No widgets, TS18003**: `tsconfig.widgets.json` includes `src/tool-server/skills/**/*.tsx`. If you delete every example skill that ships a widget, `tsc --build` fails because the project has no inputs. Either keep at least one `.tsx` widget (recommended), or remove the `tsconfig.widgets.json` entry from `tsconfig.json`'s `references` array. Add it back when you ship your first widget. Note the trade-off: dropping the reference means ESLint's project service won't typecheck future widget files.
 
 ## Skills
 
