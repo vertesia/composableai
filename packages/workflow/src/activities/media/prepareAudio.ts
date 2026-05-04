@@ -221,11 +221,12 @@ export async function prepareAudio(
         throw new DocumentNotFoundError(`Document ${objectId} has no source`, [objectId]);
     }
 
-    if (!inputObject.content.type || !inputObject.content.type.startsWith('audio/')) {
+    if (!inputObject.content.type ||
+        (!inputObject.content.type.startsWith('audio/') && !inputObject.content.type.startsWith('video/'))) {
         log.error(`Document ${objectId} is not an audio file: ${inputObject.content.type}`);
         throw new InvalidContentTypeError(
             objectId,
-            'audio/*',
+            'audio/* or video/*',
             inputObject.content.type || 'unknown',
         );
     }

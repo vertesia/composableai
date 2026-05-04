@@ -237,73 +237,71 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
 
     return (
         <>
-            <div className="flex justify-between items-center px-2">
-                <div className="flex items-center gap-1 bg-muted mb-2 p-1 rounded">
-                    <Button
-                        variant={`${viewCode ? "ghost" : "primary"}`}
-                        size="sm"
-                        alt={t('store.previewProperties')}
-                        onClick={() => setViewCode(!viewCode)}
-                    >
-                        Properties
-                    </Button>
-                    <Button
-                        variant={`${viewCode ? "primary" : "ghost"}`}
-                        size="sm"
-                        alt={t('store.viewInJsonFormat')}
-                        onClick={() => setViewCode(!viewCode)}
-                    >
-                        JSON
-                    </Button>
-                </div>
-                <div className="flex items-center gap-2">
-                    {object.properties && (
+            <div className="flex flex-col h-full">
+                <div className="flex justify-between items-center px-2">
+                    <div className="flex items-center gap-1 bg-muted mb-2 p-1 rounded">
+                        <Button
+                            variant={`${viewCode ? "ghost" : "primary"}`}
+                            size="sm"
+                            alt={t('store.previewProperties')}
+                            onClick={() => setViewCode(!viewCode)}
+                        >
+                            Properties
+                        </Button>
+                        <Button
+                            variant={`${viewCode ? "primary" : "ghost"}`}
+                            size="sm"
+                            alt={t('store.viewInJsonFormat')}
+                            onClick={() => setViewCode(!viewCode)}
+                        >
+                            JSON
+                        </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {object.properties && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                title="Copy properties"
+                                onClick={() =>
+                                    handleCopyContent(
+                                        JSON.stringify(
+                                            object.properties,
+                                            null,
+                                            2,
+                                        ),
+                                        "properties",
+                                    )
+                                }
+                            >
+                                <Copy className="size-4" />
+                            </Button>
+                        )}
                         <Button
                             variant="ghost"
                             size="sm"
-                            title="Copy properties"
-                            onClick={() =>
-                                handleCopyContent(
-                                    JSON.stringify(
-                                        object.properties,
-                                        null,
-                                        2,
-                                    ),
-                                    "properties",
-                                )
-                            }
+                            onClick={handleOpenPropertiesModal}
+                            title="Edit properties"
+                            className="flex items-center gap-2"
                         >
-                            <Copy className="size-4" />
+                            <SquarePen className="size-4" />
                         </Button>
-                    )}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleOpenPropertiesModal}
-                        title="Edit properties"
-                        className="flex items-center gap-2"
-                    >
-                        <SquarePen className="size-4" />
-                    </Button>
+                    </div>
                 </div>
-            </div>
 
-            {
-                object.properties ? (
-                    <div className={`h-full px-2`}>
+                {object.properties ? (
+                    <div className="flex-1 min-h-0 px-2">
                         <JSONDisplay
                             value={object.properties}
                             viewCode={viewCode}
-
                         />
                     </div>
                 ) : (
-                    <div className={`h-full px-2`}>
+                    <div className="flex-1 min-h-0 px-2">
                         <div>{t('store.noPropertiesDefined')}</div>
                     </div>
-                )
-            }
-            {/* Properties Editor Modal */}
+                )}
+            </div>
             <PropertiesEditorModal
                 isOpen={isPropertiesModalOpen}
                 onClose={handleClosePropertiesModal}
@@ -337,6 +335,13 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     };
 
     const [currentPanel, setCurrentPanel] = useState<PanelView>(getInitialView());
+    const [hasVisitedPdfPanel, setHasVisitedPdfPanel] = useState(currentPanel === PanelView.Pdf);
+
+    useEffect(() => {
+        if (currentPanel === PanelView.Pdf) {
+            setHasVisitedPdfPanel(true);
+        }
+    }, [currentPanel]);
 
     // Text editing state
     const [isEditing, setIsEditing] = useState(false);
@@ -358,8 +363,10 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         loadText: reloadText,
     } = useObjectText(object.id, object.text, loadText);
 
-    // Poll for PDF/document processing status when object is created or processing
-    const shouldPollProgress = (isPdf || isPreviewableAsPdfDoc) && isCreatedOrProcessing;
+    // Only poll while the active panel can actually surface processing progress.
+    const shouldPollProgress = (isPdf || isPreviewableAsPdfDoc)
+        && isCreatedOrProcessing
+        && (currentPanel === PanelView.Text || currentPanel === PanelView.Pdf);
     const {
         progress: pdfProgress,
         status: pdfStatus,
@@ -375,15 +382,19 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         triggerConversion: triggerOfficePdfConversion,
     } = useOfficePdfConversion(object.id, isPreviewableAsPdfDoc);
 
-    // Reload object when PDF processing completes
+    // Load text once processing completes without triggering a full object refetch
+    // (which would flash the page-level loading spinner).
     useEffect(() => {
         if (processingComplete && pdfStatus === WorkflowExecutionStatus.COMPLETED) {
-            refetch?.();
+            reloadText();
         }
-    }, [processingComplete, pdfStatus, refetch]);
+    }, [processingComplete, pdfStatus, reloadText]);
 
     // Show processing panel when workflow is running (for both PDFs and Office documents)
     const showProcessingPanel = (isPdf || isPreviewableAsPdfDoc) && isCreatedOrProcessing && !processingComplete && pdfStatus === WorkflowExecutionStatus.RUNNING;
+    const showPdfPreviewPanel = currentPanel === PanelView.Pdf && !showProcessingPanel;
+    const showPdfProcessingPanel = showProcessingPanel && (currentPanel === PanelView.Text || currentPanel === PanelView.Pdf);
+    const keepPdfPreviewMounted = hasVisitedPdfPanel && !showProcessingPanel;
 
     const textContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -489,27 +500,33 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     />
                 )}
             </div>
-            <div className={getPanelVisibility(currentPanel === PanelView.Image)}>
-                <ImagePanel object={object} />
-            </div>
-            <div className={getPanelVisibility(currentPanel === PanelView.Video)}>
-                <VideoPanel object={object} />
-            </div>
-            <div className={getPanelVisibility(currentPanel === PanelView.Audio)}>
-                <AudioPanel object={object} />
-            </div>
-            {hasTranscript && (
-                <div className={getPanelVisibility(currentPanel === PanelView.Transcript)}>
+            {currentPanel === PanelView.Image && (
+                <div className={getPanelVisibility(true)}>
+                    <ImagePanel object={object} />
+                </div>
+            )}
+            {currentPanel === PanelView.Video && (
+                <div className={getPanelVisibility(true)}>
+                    <VideoPanel object={object} />
+                </div>
+            )}
+            {currentPanel === PanelView.Audio && (
+                <div className={getPanelVisibility(true)}>
+                    <AudioPanel object={object} />
+                </div>
+            )}
+            {hasTranscript && currentPanel === PanelView.Transcript && (
+                <div className={getPanelVisibility(true)}>
                     <TranscriptPanel object={object} handleCopyContent={handleCopyContent} />
                 </div>
             )}
-            {isPdf && (
-                <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
+            {isPdf && keepPdfPreviewMounted && (
+                <div className={getPanelVisibility(showPdfPreviewPanel)}>
                     <PdfPreviewPanel object={object} />
                 </div>
             )}
-            {isPreviewableAsPdfDoc && (
-                <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
+            {isPreviewableAsPdfDoc && keepPdfPreviewMounted && (
+                <div className={getPanelVisibility(showPdfPreviewPanel)}>
                     <OfficePdfPreviewPanel
                         pdfRendition={pdfRendition}
                         officePdfUrl={officePdfUrl}
@@ -519,24 +536,28 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     />
                 </div>
             )}
-            {showProcessingPanel && (
-                <div className={getPanelVisibility(currentPanel === PanelView.Text)}>
+            {showPdfProcessingPanel && (
+                <div className={getPanelVisibility(true)}>
                     <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
                 </div>
             )}
-            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText)}>
-                <div className="flex justify-center items-center flex-1">
-                    <Spinner size="lg" />
+            {currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText && (
+                <div className={getPanelVisibility(true)}>
+                    <div className="flex justify-center items-center flex-1">
+                        <Spinner size="lg" />
+                    </div>
                 </div>
-            </div>
-            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText)}>
-                <TextPanel
-                    object={object}
-                    text={displayText}
-                    isTextCropped={isTextCropped}
-                    textContainerRef={textContainerRef}
-                />
-            </div>
+            )}
+            {currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText && (
+                <div className={getPanelVisibility(true)}>
+                    <TextPanel
+                        object={object}
+                        text={displayText}
+                        isTextCropped={isTextCropped}
+                        textContainerRef={textContainerRef}
+                    />
+                </div>
+            )}
             {isEditing && currentPanel === PanelView.Text && fullText != null && (
                 <TextEditorPanel
                     object={object}

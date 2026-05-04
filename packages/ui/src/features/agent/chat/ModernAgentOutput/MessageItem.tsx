@@ -534,11 +534,8 @@ function MessageItemComponent({
                                 options={uxConfig.options}
                                 variant={uxConfig.variant}
                                 multiSelect={uxConfig.multiSelect}
-                                allowFreeResponse={uxConfig.allowFreeResponse}
-                                placeholder={uxConfig.placeholder}
                                 onSelect={(optionId) => onSendMessage?.(optionId)}
                                 onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(", "))}
-                                onSubmit={(text) => onSendMessage?.(text)}
                                 hideBorder
                             />
                         );

@@ -5,6 +5,8 @@ import { cn } from "../libs/utils"
 
 import { CheckIcon, ChevronRightIcon } from "lucide-react"
 
+const HoverMenuContext = React.createContext(false);
+
 function DropdownMenu({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
@@ -269,8 +271,35 @@ interface DropdownProps {
   trigger: React.ReactNode;
   children: React.ReactNode | React.ReactNode[];
   align?: 'left' | 'center' | 'right';
+  hover?: boolean;
 }
-export function Dropdown({ trigger, children, align = 'right' }: DropdownProps) {
+export function Dropdown({ trigger, children, align = 'right', hover }: DropdownProps) {
+  const [open, setOpen] = React.useState(false);
+  const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  if (hover) {
+    const onEnter = () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+      setOpen(true);
+    };
+    const onLeave = () => {
+      closeTimer.current = setTimeout(() => setOpen(false), 80);
+    };
+    const alignClass = align === 'right' ? 'right-0' : align === 'center' ? 'left-1/2 -translate-x-1/2' : 'left-0';
+    return (
+      <div className="relative inline-flex" onMouseEnter={onEnter} onMouseLeave={onLeave}>
+        {trigger}
+        {open && (
+          <div className={cn('absolute top-full pt-1 z-50', alignClass)}>
+            <div className="min-w-32 rounded-lg p-1 shadow-md ring-1 ring-foreground/10 bg-popover text-popover-foreground">
+              <HoverMenuContext.Provider value={true}>{children}</HoverMenuContext.Provider>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -307,13 +336,25 @@ interface MenuItemProps {
   variant?: "default" | "destructive";
   className?: string;
 }
-export function MenuItem({ children, href, onClick, closeOnClick = true, isDisabled = false, variant = "default", className }: MenuItemProps) {
+export function MenuItem({ children, href, onClick, isDisabled = false, variant = "default", className }: MenuItemProps) {
+  const isHoverMenu = React.useContext(HoverMenuContext);
+  const baseClass = cn(
+    "w-full gap-2 rounded-md px-1.5 py-1 text-sm text-nowrap [&_svg:not([class*='size-'])]:size-4 flex cursor-default items-center select-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
+    variant === 'destructive' ? 'text-destructive' : '',
+    isDisabled ? 'pointer-events-none opacity-50' : 'hover:bg-muted focus:bg-muted',
+    className
+  );
+  if (isHoverMenu) {
+    const handleClick = (e: React.MouseEvent) => { e.stopPropagation(); onClick?.(e); };
+    return href
+      ? <a href={href} className={baseClass}>{children}</a>
+      : <button className={baseClass} disabled={isDisabled} onClick={handleClick}>{children}</button>;
+  }
   return (
     <DropdownMenuItem
       className={cn("data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-nowrap", className)}
       disabled={isDisabled}
       variant={variant}
-      onSelect={(e) => { if (!closeOnClick) e.preventDefault(); }}
       onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
       asChild={!!href}
     >

@@ -1,9 +1,20 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import type { AppInstallation, AppInstallationKind, AppInstallationPayload, AppInstallationWithManifest, AppManifest, AppManifestData, AppToolCollection, ProjectRef, RequireAtLeastOne, ValidateUrlRequest, ValidateUrlResponse } from "@vertesia/common";
-
-export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest'> {
-    manifest: null,
-}
+import type {
+    AppInstallation,
+    AppInstallationKind,
+    AppInstallationListEntry,
+    AppInstallationPayload,
+    AppInstallationWithManifest,
+    AppManifest,
+    AppManifestData,
+    AppToolCollection,
+    CountResult,
+    ProjectRef,
+    RequireAtLeastOne,
+    UpdateAppInstallationToolAllowlistPayload,
+    ValidateUrlRequest,
+    ValidateUrlResponse,
+} from "@vertesia/common";
 
 export default class AppsApi extends ApiTopic {
 
@@ -40,11 +51,18 @@ export default class AppsApi extends ApiTopic {
      * Install the app with the given id in the current project.
      * @param appId - the id of the app to install
      */
-    install(appId: string, settings?: Record<string, any>): Promise<AppInstallation> {
+    install(
+        appId: string,
+        settings?: Record<string, unknown>,
+        oauthParams?: Record<string, { client_id?: string; client_secret?: string; scopes?: string[] }>,
+        oauthProviderParams?: Record<string, { client_id?: string; client_secret?: string; scopes?: string[] }>,
+    ): Promise<AppInstallation> {
         return this.post(`/install`, {
             payload: {
                 app_id: appId,
-                settings
+                settings,
+                oauth_params: oauthParams,
+                oauth_provider_params: oauthProviderParams,
             } satisfies AppInstallationPayload
         });
     }
@@ -54,7 +72,7 @@ export default class AppsApi extends ApiTopic {
      * @param installationId - the id of the app installation
      * @returns
      */
-    uninstall(installationId: string) {
+    uninstall(installationId: string): Promise<CountResult> {
         return this.del(`/install/${installationId}`);
     }
 
@@ -111,7 +129,7 @@ export default class AppsApi extends ApiTopic {
      * For a user level list of available installations (with user permission check) use getInstalledApps
      * @returns 
      */
-    getAllAppInstallations(): Promise<(AppInstallationWithManifest | OrphanedAppInstallation)[]> {
+    getAllAppInstallations(): Promise<AppInstallationListEntry[]> {
         return this.get('/installations/all');
     }
 
@@ -136,7 +154,9 @@ export default class AppsApi extends ApiTopic {
      * Pass null to remove all restrictions (all tools permitted).
      */
     updateToolAllowlist(installId: string, tool_allowlist: string[] | null): Promise<AppInstallationWithManifest> {
-        return this.put(`/installations/${installId}/tool-allowlist`, { payload: { tool_allowlist } });
+        return this.put(`/installations/${installId}/tool-allowlist`, {
+            payload: { tool_allowlist } satisfies UpdateAppInstallationToolAllowlistPayload,
+        });
     }
 
     /**

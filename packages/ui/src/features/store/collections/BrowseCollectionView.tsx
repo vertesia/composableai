@@ -1,10 +1,10 @@
-import { Collection, getContentTypeRefId } from "@vertesia/common";
+import { Collection, getContentTypeRefId, ColumnLayout } from "@vertesia/common";
 import { useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { TypeRegistry } from "../types/TypeRegistry.js";
 import { useTypeRegistry } from "../types/TypeRegistryProvider.js";
 import { DocumentSearchResults, DocumentSearchResultsWithDropZone } from "../objects/DocumentSearchResults";
-import { ColumnLayout } from "@vertesia/common";
+
 
 const collectionDefaultLayout: ColumnLayout[] = [
     { name: "ID", field: "id", type: "objectId?slice=-7" },

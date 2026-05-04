@@ -4,6 +4,8 @@ import { BaseObject } from "./common.js";
 import { WorkflowExecutionPayload } from "./index.js";
 import { ParentClosePolicyType } from "./temporalio.js";
 
+export type DurationValue = StringValue | number;
+
 /**
  * Discriminator for workflow input type - either object IDs or GCS file URIs
  */
@@ -42,9 +44,9 @@ export interface DSLWorkflowExecutionPayload extends WorkflowExecutionPayload {
  * @see ActivityOptions in @temporalio/common
  */
 export interface DSLActivityOptions {
-    startToCloseTimeout?: StringValue | number;
-    scheduleToStartTimeout?: StringValue | number;
-    scheduleToCloseTimeout?: StringValue | number;
+    startToCloseTimeout?: DurationValue;
+    scheduleToStartTimeout?: DurationValue;
+    scheduleToCloseTimeout?: DurationValue;
     retry?: DSLRetryPolicy;
 }
 
@@ -55,11 +57,14 @@ export interface DSLActivityOptions {
  */
 export interface DSLRetryPolicy {
     backoffCoefficient?: number;
-    initialInterval?: StringValue | number;
+    initialInterval?: DurationValue;
     maximumAttempts?: number;
-    maximumInterval?: StringValue | number;
+    maximumInterval?: DurationValue;
     nonRetryableErrorTypes?: string[];
 }
+
+export type WorkflowSearchAttributeValue = string[] | number[] | boolean[] | Date[];
+export type WorkflowSearchAttributes = Record<string, WorkflowSearchAttributeValue>;
 
 /**
  * The payload for a DSL activity execution.
@@ -225,11 +230,11 @@ export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
     options?: {
         memo?: Record<string, any>;
         retry?: DSLRetryPolicy;
-        searchAttributes?: Record<string, string[] | number[] | boolean[] | Date[]>;
+        searchAttributes?: WorkflowSearchAttributes;
         taskQueue?: string;
-        workflowExecutionTimeout?: StringValue | number;
-        workflowRunTimeout?: StringValue | number;
-        workflowTaskTimeout?: StringValue | number;
+        workflowExecutionTimeout?: DurationValue;
+        workflowRunTimeout?: DurationValue;
+        workflowTaskTimeout?: DurationValue;
         workflowId?: string;
         cronSchedule?: string;
         parentClosePolicy?: ParentClosePolicyType;

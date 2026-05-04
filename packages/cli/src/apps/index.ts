@@ -31,6 +31,7 @@ const exampleManifest: AppManifestData = {
         {
             url: "https://example.com/mcp-server",
             type: "mcp",
+            id: "example_mcp_server",
             name: "example-mcp-server",
             description: "Example MCP server for testing",
             namespace: "example",

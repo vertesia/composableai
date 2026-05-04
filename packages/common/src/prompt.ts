@@ -100,3 +100,18 @@ export interface PromptTemplateUpdatePayload
     extends Partial<
         Omit<PromptTemplate, "id" | "created_at" | "updated_at" | "created_by" | "updated_by" | "project">
     > { }
+
+export interface PromptTemplateInteractionVersion {
+    version: number;
+}
+
+export interface PromptTemplateInteractionUsage {
+    id: string;
+    name: string;
+    versions: PromptTemplateInteractionVersion[];
+}
+
+export interface PromptTemplateInteractionsResponse {
+    prompt: string;
+    interactions: PromptTemplateInteractionUsage[];
+}

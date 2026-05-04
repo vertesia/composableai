@@ -100,8 +100,8 @@ interface ModernAgentConversationProps {
     resetWorkflow?: () => void;
     /** Called after a restart succeeds — receives the new AgentRun for navigation */
     onRestart?: (newRun: AgentRun) => void;
-    /** Called after a fork succeeds — receives the new AgentRun for navigation */
-    onFork?: (newRun: AgentRun) => void;
+    /** Called after a clone succeeds — receives the new AgentRun for navigation */
+    onClone?: (newRun: AgentRun) => void;
     /** Called to show run details/internals modal */
     onShowDetails?: () => void;
 
@@ -169,6 +169,8 @@ interface ModernAgentConversationProps {
     showArtifacts?: boolean;
     /** Hide the document preview panel that auto-opens on create_document */
     hideDocumentPanel?: boolean;
+    /** Message types to exclude from the conversation view */
+    hiddenMessageTypes?: AgentMessageType[];
 
     // Callback to get attached documents when sending messages
     // Returns array of { id, name } to include in message metadata and display
@@ -673,7 +675,7 @@ function ModernAgentConversationInner({
     placeholder,
     resetWorkflow,
     onRestart,
-    onFork,
+    onClone,
     onShowDetails,
     // File upload props (onFilesSelected handled internally by handleFileUpload)
     uploadedFiles,
@@ -695,6 +697,7 @@ function ModernAgentConversationInner({
     hideFileUpload,
     showArtifacts = false,
     hideDocumentPanel: _hideDocumentPanel,
+    hiddenMessageTypes,
     // Attachment callback
     getAttachedDocs,
     onAttachmentsSent,
@@ -1418,7 +1421,7 @@ const handleCloseRightPanel = useCallback(() => {
                         onDownload={downloadConversation}
                         resetWorkflow={resetWorkflow}
                         onRestart={onRestart}
-                        onFork={onFork}
+                        onClone={onClone}
                         onShowDetails={onShowDetails}
                         onExportPdf={exportConversationPdf}
                         isReceivingChunks={debugChunkFlash}
@@ -1470,6 +1473,7 @@ const handleCloseRightPanel = useCallback(() => {
                     StoreLinkComponent={effectiveStoreLinkComponent}
                     CollectionLinkComponent={CollectionLinkComponent}
                     prependFriendlyMessage={prependFriendlyMessage}
+                    hiddenMessageTypes={hiddenMessageTypes}
                 />
             )}
 

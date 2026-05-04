@@ -7,19 +7,20 @@ import { Info } from 'lucide-react';
 interface FormItemProps {
     label: any;
     children: ReactNode;
+    childrenId?: string;
     className?: string;
     description?: ReactNode;
     required?: boolean;
-    direction?: "row" | "column";
+    direction?: "row" | "column" | "row-reverse";
     disabled?: boolean;
     /** When true, the label row stretches to full width. Useful when placing actions (e.g. buttons) inside the label. */
     fullWidthLabel?: boolean;
 }
-export function FormItem({ description, required, label, className, direction = "column", children, disabled = false, fullWidthLabel = false }: FormItemProps) {
+export function FormItem({ description, required, label, className, direction = "column", children, disabled = false, fullWidthLabel = false, childrenId }: FormItemProps) {
     return (
-        <div className={clsx("flex w-full space-y-1", className, direction === "row" ? "flex-row justify-between items-center gap-2" : "flex-col")}>
-            <div className={clsx('flex items-center gap-1', fullWidthLabel && 'w-full')}>
-                <label className={`text-sm font-medium mb-1 ${disabled ? "text-muted" : ""} ${fullWidthLabel && "flex-1"}`}>
+        <div className={clsx("flex w-full space-y-1", className, direction === "row" ? "flex-row justify-between items-center gap-2" : direction === "row-reverse" ? "flex-row-reverse justify-between items-center gap-2" : "flex-col")}>
+            <div className={clsx('flex items-center gap-1 mb-0', fullWidthLabel && 'w-full')}>
+                <label htmlFor={childrenId} className={`text-sm font-medium mb-1 ${disabled ? "text-muted" : ""} ${fullWidthLabel && "flex-1"}`}>
                     {label}{required ? <span className='text-destructive -mt-4 ml-1'>*</span> : ""}
                 </label>
                 {

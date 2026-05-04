@@ -53,10 +53,10 @@
     "src/tool-server/config.ts",
     "src/ui/env.ts",
     "src/ui/plugin.tsx",
-    ".env.local.template"
+    ".env.app.template"
   ],
   "renameFiles": {
-    ".env.local.template": ".env.local"
+    ".env.app.template": ".env.app"
   },
   "removeAfterInstall": [
     "template.config.json"

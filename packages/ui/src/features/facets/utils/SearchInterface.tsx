@@ -8,5 +8,7 @@ export interface SearchInterface {
     search(applyDefaults?: boolean): Promise<boolean | undefined>;
     setDefaultKeys(keys: defaultKeys[]): void;
     readonly isRunning: boolean;
+    readonly initialized?: boolean;
+    readonly totalCount?: number;
     query: Record<string, any>;
 }

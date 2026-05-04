@@ -1,6 +1,7 @@
 import { PortalContainerProvider } from "@vertesia/ui/core";
 import "./i18n"; // register plugin-specific translations
 import { App } from "./app";
+import { PluginLayout } from "./PluginLayout";
 
 /**
  * Export the plugin component.
@@ -9,7 +10,15 @@ export default function TEMPLATE__PluginComponentName({ slot }: { slot: string }
     // Render the plugin component based on the slot.
     // Slot "page" is used in the App Portal
     // Slot "content" is used in the Composite App
-    if (slot === "page" || slot === "content") {
+    if (slot === "page") {
+        return (
+            <PortalContainerProvider>
+                <PluginLayout>
+                    <App />
+                </PluginLayout>
+            </PortalContainerProvider>
+        );
+    } else if (slot === "content") {
         return (
             <PortalContainerProvider>
                 <App />

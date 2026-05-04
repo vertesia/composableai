@@ -1,4 +1,4 @@
-import { UpdateUserPayload, User } from '@vertesia/common';
+import { DeleteByIdResult, UpdateUserPayload, User } from '@vertesia/common';
 import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
 
 
@@ -16,7 +16,7 @@ export default class UsersApi extends ApiTopic {
         return this.put('/' + userId, { payload });
     }
 
-    delete(userId: string): Promise<{ id: string }> {
+    delete(userId: string): Promise<DeleteByIdResult> {
         return this.del('/' + userId);
     }
 }

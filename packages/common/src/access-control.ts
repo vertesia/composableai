@@ -88,6 +88,10 @@ export interface ACECreatePayload extends
 export interface ACEUpdatePayload extends Partial<ACECreatePayload> {
 }
 
+export interface RoleDefinition {
+    name: ProjectRoles;
+    permissions: Permission[];
+}
 
 export interface AcesQueryOptions {
 

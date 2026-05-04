@@ -48,7 +48,7 @@ pnpm start                 # Preview production build (build:server + vite previ
 - Component API reference: `composableai/packages/ui/llms.txt` (also shipped with npm package)
 - Use `@vertesia/ui/core` for components, `@vertesia/ui/router` for navigation, `@vertesia/ui/session` for auth
 - Standalone dev requires HTTPS (Firebase auth): https://localhost:5173
-- Set `VITE_APP_NAME` in `.env.local` for dev mode
+- Set `VITE_APP_NAME` in `.env.app`; use `.env.app.local` for local overrides
 
 ## Development Practices
 

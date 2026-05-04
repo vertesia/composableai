@@ -68,7 +68,7 @@ export function PluginSidebar() {
             limit: 20,
             sort: 'started_at',
             order: 'desc',
-        }).then(runs => setConversations(runs.map(r => ({
+        }).then(response => setConversations(response.items.map(r => ({
             run_id: r.id,
             workflow_id: r.workflow_id,
             started_at: r.started_at ? new Date(r.started_at).toISOString() : null,

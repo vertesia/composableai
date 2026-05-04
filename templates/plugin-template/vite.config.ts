@@ -41,13 +41,13 @@ const CONFIG__inlineCss = false;
  * Vite configuration to build the plugin as a library or as a standalone application or to run the application in dev mode.
  * Use `vite build --mode lib` to build a library (plugin)
  * Use `vite build` or `vite build --mode app`to build a standalone application
- * Use `vite dev` to run the application in dev mode.
+ * Use `vite dev --mode app` to run the application in dev mode.
  */
 export default defineConfig((env) => {
     if (env.mode === 'lib') {
         return defineLibConfig(env);
     } else {
-        return defineAppConfig();
+        return defineAppConfig(env);
     }
 })
 
@@ -88,12 +88,13 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
  * or to build a standalone application.
  * @returns
  */
-function defineAppConfig(): UserConfig {
+function defineAppConfig({ command }: ConfigEnv): UserConfig {
     // Vercel dev proxies to the framework dev server over HTTP — HTTPS would break that.
     const useHttps = !process.env.VERCEL;
+    const base = command === 'build' ? '/app/' : '/';
 
     return {
-        base: '/', // Absolute paths — required for SPA routing under /app/*
+        base, // Dev serves the admin UI at /; Vercel serves built app assets from /app/.
         plugins: [
             tailwindcss(),
             react(),

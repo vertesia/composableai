@@ -3,6 +3,7 @@ export * from "./utils/SearchInterface";
 export { StringFacet } from "./utils/StringFacet";
 export { StringListFacet } from "./utils/StringListFacet";
 export { TypeFacet } from "./utils/TypeFacet";
+export { VInteractionFacet } from "./utils/VInteractionFacet";
 export { VStringFacet } from "./utils/VStringFacet";
 export { VTypeFacet } from "./utils/VTypeFacet";
 export { VUserFacet } from "./utils/VUserFacet";

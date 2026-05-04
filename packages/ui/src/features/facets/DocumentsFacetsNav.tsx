@@ -1,19 +1,18 @@
 import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup, useIsInModal } from '@vertesia/ui/core';
 import { useState } from 'react';
+import { ComputedFacetResponse } from '@vertesia/common';
 import { useTypeRegistry } from '../store/types/TypeRegistryProvider.js';
 import { VStringFacet } from './utils/VStringFacet';
 import { VTypeFacet } from './utils/VTypeFacet';
 import { SearchInterface } from './utils/SearchInterface';
 
 interface DocumentsFacetsNavProps {
-    facets: {
-        type?: any[];
-        status?: any[];
-        role?: any[];
-        location?: any[];
-        tags?: string[];
-    };
+    facets: ComputedFacetResponse;
     search: SearchInterface;
+}
+
+function getBuckets(value: ComputedFacetResponse[string]) {
+    return Array.isArray(value) ? value : [];
 }
 
 // Hook to create filter groups for documents
@@ -37,7 +36,7 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
 
     if (facets.type) {
         const typeFilterGroup = VTypeFacet({
-            buckets: facets.type || [],
+            buckets: getBuckets(facets.type),
             typeRegistry: typeRegistry,
             type: 'select',
             multiple: true
@@ -48,7 +47,7 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
     if (facets.status) {
         const statusFilterGroup = VStringFacet({
             search: null as any, // This will be provided by the search context
-            buckets: facets.status || [],
+            buckets: getBuckets(facets.status),
             name: 'status',
             placeholder: 'Status',
             type: 'select',
@@ -62,9 +61,9 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
             name: 'tags',
             placeholder: 'Tags',
             type: 'stringList',
-            options: facets.tags.map((tag: string) => ({
-                label: tag,
-                value: tag
+            options: getBuckets(facets.tags).map((tag) => ({
+                label: tag._id,
+                value: tag._id
             }))
         });
     }

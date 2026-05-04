@@ -78,6 +78,15 @@ export interface ConversationState {
     /** Names of currently active tools (base + unlocked). Tool definitions loaded from tool_reference. */
     active_tool_names?: string[];
 
+    /** Active tools that should not be evicted by bounded active-tool pruning. */
+    pinned_tool_names?: string[];
+
+    /**
+     * Activation and usage metadata for tools seen during the conversation.
+     * Used to keep the active tool set bounded without losing recovery context.
+     */
+    tool_activation_metadata?: Record<string, ToolActivationMetadata>;
+
     /** Skills that have been used in this conversation (for auto-syncing scripts and package installation) */
     used_skills?: UsedSkill[];
 
@@ -191,4 +200,17 @@ export interface UsedSkill {
     packages?: string[];
     /** System-level packages to install via sudo apt-get (e.g., ["poppler-utils"]) */
     system_packages?: string[];
+}
+
+export interface ToolActivationMetadata {
+    /** Turn when the tool became active in this conversation. */
+    activated_at_iteration: number;
+    /** Most recent turn where the tool was actually executed. */
+    last_used_iteration?: number;
+    /** Number of successful executions in this conversation. */
+    use_count: number;
+    /** Activation source, e.g. "base", "discover_tools", "skill:presentation_authoring". */
+    source: string;
+    /** Whether this tool is pinned and should be preserved during eviction. */
+    pinned?: boolean;
 }
