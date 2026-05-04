@@ -1,4 +1,4 @@
-import { AccessControlEntry, ACECreatePayload, ACEUpdatePayload, AcesQueryOptions, Permission, ProjectRoles } from "@vertesia/common";
+import { AccessControlEntry, ACECreatePayload, ACEUpdatePayload, AcesQueryOptions, DeleteByIdResult, RoleDefinition } from "@vertesia/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import { GroupsApi } from "./GroupsApi.js";
 
@@ -27,7 +27,7 @@ export class RolesApi extends ApiTopic {
         super(parent, "/roles")
     }
 
-    list(): Promise<{ name: ProjectRoles, permissions: Permission[] }[]> {
+    list(): Promise<RoleDefinition[]> {
         return this.get('/');
     }
 
@@ -75,7 +75,7 @@ export class AcesApi extends ApiTopic {
         return this.put('/' + id, { payload })
     }
 
-    delete(id: string): Promise<{ id: string }> {
+    delete(id: string): Promise<DeleteByIdResult> {
         return this.del('/' + id)
     }
 

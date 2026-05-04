@@ -32,6 +32,14 @@ export async function saveGladiaTranscription(payload: DSLActivityExecutionPaylo
             error: "Gladia integration not enabled",
         };
     }
+    if (!gladiaConfig.api_key) {
+        return {
+            hasText: false,
+            objectId: inputType === 'objectIds' ? context.objectId : undefined,
+            status: TextExtractionStatus.error,
+            error: "Gladia API key not configured",
+        };
+    }
 
     const gladiaClient = new FetchClient(gladiaConfig.url ?? GLADIA_URL);
     gladiaClient.withHeaders({ "x-gladia-key": gladiaConfig.api_key });

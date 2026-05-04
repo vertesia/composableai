@@ -1,6 +1,17 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { Collection, ComplexCollectionSearchQuery, ComplexSearchPayload, ComputeCollectionFacetPayload, ComputeObjectFacetPayload, ContentObjectItem, ContentObjectStatus, CreateCollectionPayload, DynamicCollection } from "@vertesia/common";
-import { ComputeFacetsResponse, SearchResponse } from "./ObjectsApi.js";
+import {
+    Collection,
+    ComplexCollectionSearchQuery,
+    ComplexSearchPayload,
+    ComputeCollectionFacetPayload,
+    ComputeObjectFacetPayload,
+    ComputedFacetResponse,
+    ContentObjectItem,
+    ContentObjectStatus,
+    CreateCollectionPayload,
+    DynamicCollection,
+    ObjectSearchResponse
+} from "@vertesia/common";
 
 
 export class CollectionsApi extends ApiTopic {
@@ -23,7 +34,7 @@ export class CollectionsApi extends ApiTopic {
      * @param query: ComputeCollectionFacetPayload
      * @returns ComputeFacetsResponse list of facets
     **/
-    computeListFacets(query: ComputeCollectionFacetPayload): Promise<ComputeFacetsResponse> {
+    computeListFacets(query: ComputeCollectionFacetPayload): Promise<ComputedFacetResponse> {
         return this.post("/facets", {
             payload: query
         });
@@ -72,13 +83,13 @@ export class CollectionsApi extends ApiTopic {
         });
     }
 
-    computeFacets(collectionId: string, query: ComputeObjectFacetPayload): Promise<ComputeFacetsResponse> {
+    computeFacets(collectionId: string, query: ComputeObjectFacetPayload): Promise<ComputedFacetResponse> {
         return this.post(`/${collectionId}/facets`, {
             payload: query
         });
     }
 
-    searchMembers(collectionId: string, payload: ComplexSearchPayload): Promise<SearchResponse> {
+    searchMembers(collectionId: string, payload: ComplexSearchPayload): Promise<ObjectSearchResponse> {
         return this.post(`/${collectionId}/search`, { payload });
     }
 

@@ -4,6 +4,7 @@ import {
     BulkObjectDeleteResult,
     BulkObjectUpdateResult,
     canGenerateRendition,
+    Collection,
     ComplexSearchPayload,
     ComputeObjectFacetPayload,
     ContentObject,
@@ -11,8 +12,12 @@ import {
     ContentObjectItem,
     ContentObjectProcessingPriority,
     ContentSource,
+    ContentObjectTextResponse,
     CreateContentObjectPayload,
+    DeleteContentObjectResult,
     Embedding,
+    ObjectSearchResponse,
+    ComputedFacetResponse,
     ExportPropertiesPayload,
     ExportPropertiesResponse,
     FindPayload,
@@ -25,6 +30,7 @@ import {
     ListWorkflowRunsResponse,
     ObjectSearchPayload,
     ObjectSearchQuery,
+    SetObjectEmbeddingsResponse,
     SupportedEmbeddingTypes,
 } from "@vertesia/common";
 
@@ -35,24 +41,6 @@ export { getSupportedRenditionFormats, supportsVisualRendition } from "@vertesia
 import { StreamSource } from "../StreamSource.js";
 import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
 import { ZenoClient } from "./client.js";
-
-export interface ComputeFacetsResponse {
-    type?: { _id: string; count: number }[];
-    location?: { _id: string; count: number }[];
-    status?: { _id: string; count: number }[];
-    [key: string]:
-        | { _id: string; count: number }[]
-        | number
-        | undefined;
-    total?: number;
-}
-
-export interface SearchResponse {
-    results: ContentObjectItem[];
-    facets: ComputeFacetsResponse;
-    /** Raw ES aggregation results. Only present when aggs were requested and ES backend was used. */
-    aggregations?: Record<string, unknown>;
-}
 
 export class ObjectsApi extends ApiTopic {
     declare client: ZenoClient;
@@ -112,7 +100,7 @@ export class ObjectsApi extends ApiTopic {
 
     computeFacets(
         query: ComputeObjectFacetPayload,
-    ): Promise<ComputeFacetsResponse> {
+    ): Promise<ComputedFacetResponse> {
         return this.post("/facets", {
             payload: query,
         });
@@ -137,7 +125,7 @@ export class ObjectsApi extends ApiTopic {
     }
 
     /** Search object — different from find because allow full text search */
-    search(payload: ComplexSearchPayload): Promise<SearchResponse> {
+    search(payload: ComplexSearchPayload): Promise<ObjectSearchResponse> {
         return this.post("/search", {
             payload,
         });
@@ -151,7 +139,7 @@ export class ObjectsApi extends ApiTopic {
         });
     }
 
-    getObjectText(id: string): Promise<{ text: string }> {
+    getObjectText(id: string): Promise<ContentObjectTextResponse> {
         return this.get(`/${id}/text`);
     }
 
@@ -367,13 +355,13 @@ export class ObjectsApi extends ApiTopic {
      * @param id The ID of the object
      * @returns Array of collections containing this object (both static and dynamic)
      */
-    getCollections(id: string): Promise<any[]> {
+    getCollections(id: string): Promise<Collection[]> {
         return this.get(`/${id}/collections`);
     }
 
-    delete(id: string): Promise<{ id: string }>;
+    delete(id: string): Promise<DeleteContentObjectResult>;
     delete(ids: string[]): Promise<BulkObjectDeleteResult>;
-    delete(idOrIds: string | string[]): Promise<{ id: string } | BulkObjectDeleteResult> {
+    delete(idOrIds: string | string[]): Promise<DeleteContentObjectResult | BulkObjectDeleteResult> {
         if (Array.isArray(idOrIds)) {
             return this.client.runOperation({
                 name: 'delete',
@@ -469,7 +457,7 @@ export class ObjectsApi extends ApiTopic {
         id: string,
         type: SupportedEmbeddingTypes,
         payload: Embedding,
-    ): Promise<Record<SupportedEmbeddingTypes, Embedding>> {
+    ): Promise<SetObjectEmbeddingsResponse> {
         return this.put(`/${id}/embeddings/${type}`, {
             payload,
         });

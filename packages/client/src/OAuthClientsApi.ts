@@ -3,6 +3,7 @@ import type {
     CreateOAuthClientPayload,
     OAuthClient,
     OAuthClientCreateResponse,
+    SuccessResponse,
     UpdateOAuthClientPayload,
 } from '@vertesia/common';
 
@@ -27,7 +28,7 @@ export default class OAuthClientsApi extends ApiTopic {
         return this.put(`/${clientId}`, { payload });
     }
 
-    remove(clientId: string): Promise<{ success: true }> {
+    remove(clientId: string): Promise<SuccessResponse> {
         return this.del(`/${clientId}`);
     }
 }

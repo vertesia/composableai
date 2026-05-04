@@ -16,6 +16,7 @@ import {
     EnsureIndexResult,
     AnalyzeDriftBatchResult,
     DriftAnalysisStatusResponse,
+    StartProjectReindexPayload,
     ComputeShardsRequest,
     ComputeShardsResult,
     IndexShardParams,
@@ -57,13 +58,7 @@ export class IndexingApi extends ApiTopic {
      *
      * @param options Optional workflow tuning parameters
      */
-    async reindex(options?: {
-        shard_size?: number;
-        parallel_shard_count?: number;
-        concurrency?: number;
-        bulk_size_bytes?: number;
-        bulk_concurrency?: number;
-    }): Promise<GenericCommandResponse> {
+    async reindex(options?: StartProjectReindexPayload): Promise<GenericCommandResponse> {
         return this.post("/reindex", { payload: options });
     }
 

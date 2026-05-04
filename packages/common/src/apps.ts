@@ -1,4 +1,4 @@
-import { JSONSchema, ToolDefinition } from "@llumiverse/common";
+import { JSONObject, JSONSchema, ToolDefinition } from "@llumiverse/common";
 import { CatalogInteractionRef } from "./interaction.js";
 import { DSLActivityOptions, InCodeTypeDefinition } from "./store/index.js";
 
@@ -57,6 +57,16 @@ export interface AppUIConfig {
      * Defaults to ['app_portal', 'composite_app'] for new apps.
      */
     available_in?: AppAvailableIn[];
+}
+
+export interface AppInstallationProjectsQuery {
+    name?: string;
+    id?: string;
+}
+
+export interface AppInstallationsQuery {
+    kind?: AppInstallationKind;
+    available_in?: AppAvailableIn;
 }
 
 /**
@@ -643,6 +653,24 @@ export interface AppInstallationWithManifest extends Omit<AppInstallation, 'mani
     oauth_collection_ids?: string[];
 }
 
+export interface AppInstallationListEntry extends Omit<AppInstallation, 'manifest'> {
+    manifest: AppManifest | null;
+    oauth_collection_ids?: string[];
+}
+
+export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest'> {
+    manifest: null;
+}
+
+export interface OAuthClientCredentials {
+    client_id?: string;
+    client_secret?: string;
+    scopes?: string[];
+}
+
+export type AppOAuthCollectionParams = Record<string, OAuthClientCredentials>;
+export type AppOAuthProviderParams = Record<string, OAuthClientCredentials>;
+
 export interface AppInstallationPayload {
     app_id: string;
     settings?: Record<string, any>;
@@ -651,13 +679,17 @@ export interface AppInstallationPayload {
      * Legacy callers may still use collection.name for older manifests.
      * Collected from the user at install time for collections with oauth_config.required_at_install.
      */
-    oauth_params?: Record<string, { client_id?: string; client_secret?: string; scopes?: string[] }>;
+    oauth_params?: AppOAuthCollectionParams;
     /**
      * OAuth credentials for named providers, keyed by the provider key from oauth_providers.
      * Collected from the user at install time for providers with required_at_install.
      * Separate from oauth_params to avoid key collisions between provider keys and collection ids.
      */
-    oauth_provider_params?: Record<string, { client_id?: string; client_secret?: string; scopes?: string[] }>;
+    oauth_provider_params?: AppOAuthProviderParams;
+}
+
+export interface UpdateAppInstallationToolAllowlistPayload {
+    tool_allowlist: string[] | null;
 }
 
 export type AppInstallationKind = 'ui' | 'tools' | 'all';
@@ -766,7 +798,7 @@ export interface OAuthMetadataResponse {
     collection_id: string;
     collection_name: string;
     mcp_server_url: string;
-    metadata: any;
+    metadata: JSONObject;
 }
 
 // ============================================================================

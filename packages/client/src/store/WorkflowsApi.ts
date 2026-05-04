@@ -19,6 +19,7 @@ import {
     toAgentMessage,
     PromptSizeAnalyticsResponse,
     RunsByAgentAnalyticsResponse,
+    SignalAgentResponse,
     TimeToFirstResponseAnalyticsResponse,
     TokenUsageAnalyticsResponse,
     ToolAnalyticsResponse,
@@ -31,11 +32,16 @@ import {
     WorkflowAnalyticsSummaryQuery,
     WorkflowAnalyticsSummaryResponse,
     WorkflowAnalyticsTimeSeriesQuery,
+    WorkflowActionResponse,
     WorkflowDefinitionRef,
+    WorkflowExecutionStartResult,
+    WorkflowQueryResult,
     WorkflowRule,
     WorkflowRuleItem,
+    WorkflowRunUpdatesResponse,
     WorkflowRunWithDetails,
     WorkflowToolParametersQuery,
+    WorkflowUpdatePublishResponse,
 } from "@vertesia/common";
 import { VertesiaClient } from "../client.js";
 import { EventSourceProvider } from "../execute.js";
@@ -64,7 +70,7 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs`, { payload: payload });
     }
 
-    sendSignal(workflowId: string, runId: string, signal: string, payload?: any): Promise<{ message: string }> {
+    sendSignal(workflowId: string, runId: string, signal: string, payload?: any): Promise<SignalAgentResponse> {
         return this.post(`/runs/${workflowId}/${runId}/signal/${signal}`, { payload });
     }
 
@@ -95,12 +101,12 @@ export class WorkflowsApi extends ApiTopic {
         return this.get(`/runs/${workflowId}/${runId}/interaction`);
     }
 
-    terminate(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {
+    terminate(workflowId: string, runId: string, reason?: string): Promise<WorkflowActionResponse> {
         const payload: WorkflowActionPayload = { reason };
         return this.post(`/runs/${workflowId}/${runId}/actions/terminate`, { payload });
     }
 
-    cancel(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {
+    cancel(workflowId: string, runId: string, reason?: string): Promise<WorkflowActionResponse> {
         const payload: WorkflowActionPayload = { reason };
         return this.post(`/runs/${workflowId}/${runId}/actions/cancel`, { payload });
     }
@@ -111,20 +117,20 @@ export class WorkflowsApi extends ApiTopic {
      * @param workflowId The workflow ID
      * @param runId The run ID
      * @param queryName The name of the query to execute (e.g., "BatchAgentProgress")
-     * @returns The query result
+     * @returns The workflow query result as a JSON value.
      */
-    query<T = unknown>(workflowId: string, runId: string, queryName: string): Promise<T> {
+    query(workflowId: string, runId: string, queryName: string): Promise<WorkflowQueryResult> {
         return this.get(`/runs/${workflowId}/${runId}/query/${queryName}`);
     }
 
     execute(
         name: string,
         payload: ExecuteWorkflowPayload = {},
-    ): Promise<({ run_id: string; workflow_id: string } | undefined)[]> {
+    ): Promise<(WorkflowExecutionStartResult | undefined)[]> {
         return this.post(`/execute/${name}`, { payload });
     }
 
-    postMessage(runId: string, msg: AgentMessage): Promise<void> {
+    postMessage(runId: string, msg: AgentMessage): Promise<WorkflowUpdatePublishResponse> {
         if (!runId) {
             throw new Error("runId is required");
         }
@@ -138,7 +144,7 @@ export class WorkflowsApi extends ApiTopic {
      */
     async retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
         const query = { since };
-        const response = await this.get(`/runs/${workflowId}/${runId}/updates`, { query }) as { messages: CompactMessage[] };
+        const response = await this.get(`/runs/${workflowId}/${runId}/updates`, { query }) as WorkflowRunUpdatesResponse;
         // Convert compact messages to AgentMessage for backward compatibility
         return response.messages.map((m: CompactMessage) => toAgentMessage(m, runId));
     }
@@ -152,13 +158,21 @@ export class WorkflowsApi extends ApiTopic {
      * This approach provides better performance for conversations with large historical messages
      * since HTTP responses are compressed while SSE streams cannot be compressed.
      */
-    async streamMessages(workflowId: string, runId: string, onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void, since?: number): Promise<unknown> {
+    async streamMessages(
+        workflowId: string,
+        runId: string,
+        onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+        since?: number,
+        signal?: AbortSignal,
+    ): Promise<unknown> {
         return new Promise<unknown>((resolve, reject) => {
             let reconnectAttempts = 0;
             let lastMessageTimestamp = since || 0;
             let isClosed = false;
             let currentSse: EventSource | null = null;
             let interval: ReturnType<typeof setInterval> | null = null;
+            let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+            let abortHandler: (() => void) | null = null;
 
             const maxReconnectAttempts = 10;
             const baseDelay = 1000; // 1 second base delay
@@ -172,6 +186,10 @@ export class WorkflowsApi extends ApiTopic {
             };
 
             const cleanup = () => {
+                if (reconnectTimer) {
+                    clearTimeout(reconnectTimer);
+                    reconnectTimer = null;
+                }
                 if (interval) {
                     clearInterval(interval);
                     interval = null;
@@ -179,6 +197,10 @@ export class WorkflowsApi extends ApiTopic {
                 if (currentSse) {
                     currentSse.close();
                     currentSse = null;
+                }
+                if (signal && abortHandler) {
+                    signal.removeEventListener('abort', abortHandler);
+                    abortHandler = null;
                 }
             };
 
@@ -189,6 +211,15 @@ export class WorkflowsApi extends ApiTopic {
                     resolve(payload);
                 }
             };
+
+            if (signal) {
+                if (signal.aborted) {
+                    exit(null);
+                    return;
+                }
+                abortHandler = () => exit(null);
+                signal.addEventListener('abort', abortHandler, { once: true });
+            }
 
             // 2. Connect to SSE for real-time updates only (skipHistory=true)
             const setupStream = async (isReconnect: boolean = false) => {
@@ -208,7 +239,10 @@ export class WorkflowsApi extends ApiTopic {
                     streamUrl.searchParams.set("skipHistory", "true");
 
                     const bearerToken = client._auth ? await client._auth() : undefined;
+                    if (isClosed) return;
                     if (!bearerToken) {
+                        isClosed = true;
+                        cleanup();
                         reject(new Error("No auth token available"));
                         return;
                     }
@@ -291,7 +325,8 @@ export class WorkflowsApi extends ApiTopic {
                             console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
 
                             reconnectAttempts++;
-                            setTimeout(() => {
+                            reconnectTimer = setTimeout(() => {
+                                reconnectTimer = null;
                                 if (!isClosed) {
                                     setupStream(true);
                                 }
@@ -307,7 +342,8 @@ export class WorkflowsApi extends ApiTopic {
                     if (reconnectAttempts < maxReconnectAttempts) {
                         const delay = calculateBackoffDelay(reconnectAttempts);
                         reconnectAttempts++;
-                        setTimeout(() => {
+                        reconnectTimer = setTimeout(() => {
+                            reconnectTimer = null;
                             if (!isClosed) {
                                 setupStream(true);
                             }
@@ -332,7 +368,7 @@ export class WorkflowsApi extends ApiTopic {
                         const streamIsOver = msg.type === AgentMessageType.TERMINATED ||
                             (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
                         if (streamIsOver) {
-                            resolve(null);
+                            exit(null);
                             return;
                         }
                     }

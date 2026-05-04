@@ -23,6 +23,18 @@ export interface PopulatesUserGroup extends UserGroup {
     members: UserRef[];
 }
 
+export interface CreateUserGroupPayload {
+    name: string;
+    description?: string;
+    tags?: string[];
+}
+
+export interface UpdateUserGroupPayload {
+    name: string;
+    description?: string;
+    tags?: string[];
+}
+
 export interface UserGroupRef {
     id: string;
     name: string;

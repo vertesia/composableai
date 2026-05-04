@@ -1,11 +1,10 @@
 import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
+import type { ComputedFacetResponse } from '@vertesia/common';
 import { useState } from 'react';
 import { SearchInterface } from './utils/SearchInterface';
 
 interface InteractionsFacetsNavProps {
-    facets: {
-        tags?: any[];
-    };
+    facets: ComputedFacetResponse;
     search: SearchInterface;
     env?: string | null;
 }

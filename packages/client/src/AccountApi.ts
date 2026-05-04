@@ -1,5 +1,20 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { Account, InviteUserRequestPayload, InviteUserResponsePayload, OnboardingProgress, ProjectRef, StripeBillingStatusResponse, TransientToken, UpdateAccountPayload, User, UserInviteTokenData } from "@vertesia/common";
+import {
+    Account,
+    AccountProjectsResponse,
+    GoogleProjectTokenResponse,
+    InviteAcceptanceResponse,
+    InviteDeclineResponse,
+    InviteUserRequestPayload,
+    InviteUserResponsePayload,
+    OnboardingProgress,
+    ProjectRef,
+    StripeBillingStatusResponse,
+    TransientToken,
+    UpdateAccountPayload,
+    User,
+    UserInviteTokenData,
+} from "@vertesia/common";
 
 export default class AccountApi extends ApiTopic {
 
@@ -27,7 +42,7 @@ export default class AccountApi extends ApiTopic {
      * Get all projects for account
     */
     projects(): Promise<ProjectRef[]> {
-        return this.get('/projects').then(res => res.data);
+        return this.get('/projects').then((res: AccountProjectsResponse) => res.data);
     }
 
     members(): Promise<User[]> {
@@ -59,17 +74,17 @@ export default class AccountApi extends ApiTopic {
 
     /**
      * Accept Invite for account
-     * @returns UserInviteTokenData
+     * @returns InviteAcceptanceResponse
      * */
-    acceptInvite(id: string): Promise<UserInviteTokenData> {
+    acceptInvite(id: string): Promise<InviteAcceptanceResponse> {
         return this.put(`/invites/${id}`);
     }
 
     /**
      * Delete Invite for account
-     * @returns UserInviteTokenData
+     * @returns InviteDeclineResponse
      * */
-    rejectInvite(id: string): Promise<UserInviteTokenData> {
+    rejectInvite(id: string): Promise<InviteDeclineResponse> {
         return this.delete(`/invites/${id}`);
     }
 
@@ -85,7 +100,7 @@ export default class AccountApi extends ApiTopic {
      * This token can be used to access exposed google cloud services
      * @returns
      */
-    getGoogleToken(): Promise<{ principal: string, token: string }> {
+    getGoogleToken(): Promise<GoogleProjectTokenResponse> {
         return this.get('/google-token');
     }
 
