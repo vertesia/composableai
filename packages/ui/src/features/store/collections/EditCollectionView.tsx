@@ -1,5 +1,5 @@
-import { Collection, CreateCollectionPayload, getContentTypeRefId, JSONSchemaObject } from "@vertesia/common";
-import { Button, ErrorBox, FormItem, Input, Panel, Styles, Textarea, useFetch, useToast, useTheme } from "@vertesia/ui/core";
+import { Collection, CreateCollectionPayload, getContentTypeRefId, JSONSchemaObject, SecurityLevelLabels } from "@vertesia/common";
+import { Badge, Button, ErrorBox, FormItem, Input, Panel, SelectBox, Styles, Textarea, useFetch, useToast, useTheme } from "@vertesia/ui/core";
 import { SharedPropsEditor, SyncMemberHeadsToggle, UserInfo } from "@vertesia/ui/features";
 import { useUserSession } from "@vertesia/ui/session";
 import { MonacoEditor, EditorApi, GeneratedForm, ManagedObject, Node } from "@vertesia/ui/widgets";
@@ -16,6 +16,8 @@ interface UpdateData {
     tags: string[];
     type: string;
     allowed_types: string[];
+    sensitivity?: number;
+    compartments: string[];
 }
 
 interface EditCollectionViewProps {
@@ -38,7 +40,10 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
         tags: collection.tags || [],
         type: collection.type ? getContentTypeRefId(collection.type) : "",
         allowed_types: collection.allowed_types || [],
+        sensitivity: collection.sensitivity,
+        compartments: collection.compartments || [],
     });
+    const [compartmentInput, setCompartmentInput] = useState('');
 
     const tableLayoutValue = useMemo(() => {
         return stringifyTableLayout(collection.table_layout);
@@ -65,6 +70,8 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             tags: metadata.tags,
             type: metadata.type,
             allowed_types: metadata.allowed_types,
+            sensitivity: metadata.sensitivity,
+            compartments: metadata.compartments,
         };
         let error: string | undefined;
         if (!payload.name) {
@@ -220,6 +227,50 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                         }}
                         isClearable
                     />
+                </FormItem>
+                <FormItem label="Sensitivity" description="BLP sensitivity level — propagated to member documents (max across collections)">
+                    <SelectBox
+                        options={SecurityLevelLabels.map((label, index) => ({ label: `${index} — ${label}`, value: index }))}
+                        value={metadata.sensitivity !== undefined ? { label: `${metadata.sensitivity} — ${SecurityLevelLabels[metadata.sensitivity] ?? 'Unknown'}`, value: metadata.sensitivity } : undefined}
+                        onChange={(opt: { label: string; value: number }) => setField('sensitivity', opt.value)}
+                        optionLabel={(opt: { label: string }) => opt.label}
+                        by="value"
+                        placeholder="Not set"
+                    />
+                </FormItem>
+                <FormItem label="Compartments" description="Security compartments — propagated to member documents (union across collections)">
+                    <div className="flex gap-2">
+                        <Input
+                            value={compartmentInput}
+                            onChange={setCompartmentInput}
+                            placeholder="Add a compartment"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const val = compartmentInput.trim();
+                                    if (val && !metadata.compartments.includes(val)) {
+                                        setField('compartments', [...metadata.compartments, val]);
+                                        setCompartmentInput('');
+                                    }
+                                }
+                            }}
+                        />
+                        <Button type="button" variant="outline" onClick={() => {
+                            const val = compartmentInput.trim();
+                            if (val && !metadata.compartments.includes(val)) {
+                                setField('compartments', [...metadata.compartments, val]);
+                                setCompartmentInput('');
+                            }
+                        }}>Add</Button>
+                    </div>
+                    <div className="flex gap-1 flex-wrap mt-2">
+                        {metadata.compartments.map((c) => (
+                            <Badge key={c} variant="secondary" className="cursor-pointer"
+                                onClick={() => setField('compartments', metadata.compartments.filter(x => x !== c))}>
+                                {c} ×
+                            </Badge>
+                        ))}
+                    </div>
                 </FormItem>
             </Panel>
 

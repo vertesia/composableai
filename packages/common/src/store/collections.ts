@@ -20,6 +20,10 @@ export interface CreateCollectionPayload {
     allowed_types?: string[];
     updated_by?: string,
     shared_properties?: string[];
+    /** BLP sensitivity level for member documents */
+    sensitivity?: number;
+    /** Compartments for member documents */
+    compartments?: string[];
 }
 
 export interface CollectionItem extends BaseObject {
