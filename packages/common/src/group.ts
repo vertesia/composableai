@@ -33,6 +33,9 @@ export interface UpdateUserGroupPayload {
     name: string;
     description?: string;
     tags?: string[];
+    properties?: Record<string, any>;
+    clearance?: number;
+    compartments?: string[];
 }
 
 export interface UserGroupRef {
