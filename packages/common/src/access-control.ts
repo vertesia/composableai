@@ -132,6 +132,37 @@ export interface RoleDefinition {
     permissions: Permission[];
 }
 
+// ============================================================================
+// BLP Security Levels
+// ============================================================================
+
+/**
+ * Default sensitivity/clearance levels for the Bell-LaPadula security model.
+ * The numeric value is the index in the array (0 = lowest, 4 = highest).
+ * Projects can override these labels via project settings.
+ */
+export enum SecurityLevel {
+    public = 0,
+    internal = 1,
+    confidential = 2,
+    restricted = 3,
+    secret = 4,
+}
+
+/** Human-readable labels for each security level, indexed by numeric value. */
+export const SecurityLevelLabels: readonly string[] = [
+    'Public',
+    'Internal',
+    'Confidential',
+    'Restricted',
+    'Secret',
+];
+
+/** Get the label for a security level value. Returns "Unknown" for out-of-range values. */
+export function getSecurityLevelLabel(level: number): string {
+    return SecurityLevelLabels[level] ?? 'Unknown';
+}
+
 export interface AcesQueryOptions {
 
     level?: 'resource' | 'project' | 'projects' | 'account'

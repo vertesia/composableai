@@ -21,6 +21,10 @@ export interface User {
     updated_by?: string;
     /** Custom properties for dynamic permission matching */
     properties?: Record<string, any>;
+    /** BLP clearance level — determines max document sensitivity the user can access */
+    clearance?: number;
+    /** Compartments the user belongs to — restricts access to documents in matching compartments */
+    compartments?: string[];
 }
 
 

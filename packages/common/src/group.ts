@@ -13,6 +13,10 @@ export interface UserGroup {
     updated_by?: string;
     /** Custom properties for dynamic permission matching */
     properties?: Record<string, any>;
+    /** BLP clearance level — merged with user clearance using max() */
+    clearance?: number;
+    /** Compartments — merged with user compartments using array union */
+    compartments?: string[];
 }
 
 export interface PopulatesUserGroup extends UserGroup {
@@ -36,8 +40,10 @@ export interface UserGroupRef {
     name: string;
     tags?: string[];
     properties?: Record<string, any>;
+    clearance?: number;
+    compartments?: string[];
 }
 
-export const UserGroupRefPopulate = 'id name tags description properties';
+export const UserGroupRefPopulate = 'id name tags description properties clearance compartments';
 
 export const MEMBERS_GROUP_NAME = 'members';
