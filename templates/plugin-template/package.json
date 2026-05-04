@@ -83,6 +83,8 @@
     "@vertesia/ui": "workspace:*",
     "dotenv": "^17.2.3",
     "hono": "^4.10.3",
-    "lucide-react": "^0.562.0"
+    "html-parse-stringify": "^3.0.1",
+    "lucide-react": "^0.562.0",
+    "use-sync-external-store": "^1.6.0"
   }
 }

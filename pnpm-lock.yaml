@@ -1044,9 +1044,15 @@ importers:
       hono:
         specifier: ^4.12.14
         version: 4.12.14
+      html-parse-stringify:
+        specifier: ^3.0.1
+        version: 3.0.1
       lucide-react:
         specifier: ^0.562.0
         version: 0.562.0(react@19.2.3)
+      use-sync-external-store:
+        specifier: ^1.6.0
+        version: 1.6.0(react@19.2.3)
     devDependencies:
       '@eslint/js':
         specifier: ^9.0.0

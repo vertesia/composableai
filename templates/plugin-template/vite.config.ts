@@ -93,6 +93,9 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
     // framework dev server over HTTP, so both modes disable HTTPS.
     const useHttps = process.env.DEV_MODE !== '1' && process.env.VERCEL !== '1';
     const base = command === 'build' ? '/app/' : '/';
+    const devApiTarget = process.env.VERTESIA_STUDIO_PROXY_TARGET
+        ?? process.env.VITE_VERTESIA_STUDIO_PROXY_TARGET
+        ?? 'https://api.dev1.vertesia.io';
 
     return {
         base, // Dev serves the admin UI at /; Vercel serves built app assets from /app/.
@@ -115,11 +118,17 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
             outDir: 'dist/app', // App build goes to dist/app/
         },
         optimizeDeps: process.env.DEV_MODE === '1'
-            ? { noDiscovery: true, include: [] }
+            ? { include: ['html-parse-stringify', 'use-sync-external-store/shim'] }
             : undefined,
         // for authentication with Firebase
         server: {
             proxy: {
+                '/vertesia-api': {
+                    target: devApiTarget,
+                    changeOrigin: true,
+                    secure: true,
+                    rewrite: (path) => path.replace(/^\/vertesia-api/, ''),
+                },
                 '/__/auth': {
                     target: 'https://dengenlabs.firebaseapp.com',
                     changeOrigin: true,
