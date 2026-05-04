@@ -47,14 +47,13 @@ export interface EnvironmentTokenRequest extends BaseTokenRequest {
 }
 
 /**
- * Agent token for service accounts acting as agents.
+ * Agent token for a service account to act as agent on behalf of a user.
  *
  * Two trust paths are supported:
  *
- * - `user_access_token`: caller must supply `on_behalf_of`, a live signed Vertesia token. STS
- *   verifies the user context from that token.
- * - `workload_id_token`: caller must supply `on_behalf_of_user`, the user ID the agent acts on. It
- *   implies that a full verification will be performed based on the workload identity.
+ * - `user_access_token`: a live signed Vertesia token. STS verifies the user context from that token.
+ * - `workload_id_token`: a workload acts on behalf of a user. It implies that a full verification
+ *   will be performed based on the workload identity.
  */
 export interface AgentTokenRequest extends BaseTokenRequest {
     type: 'agent';
@@ -63,19 +62,17 @@ export interface AgentTokenRequest extends BaseTokenRequest {
     name?: string;
 
     /**
-     * A signed Vertesia token used to verify the user context.
+     * User information.
      *
-     * @optional Either this field or `on_behalf_of_user` must be provided.
-     */
-    on_behalf_of?: string;
-
-    /**
-     * The user ID the agent is acting on behalf of. It implies a full verification.
+     * The value of this field can be either:
+     *   - a signed Vertesia token used to verify the user context
+     *   - a user ID prefixed with `user:` to indicate the user on behalf of whom the agent is
+     *     acting.
      *
-     * @optional Either this field or `on_behalf_of` must be provided.
-     * @example 68100a7c9f3c2b7d11a1b2c3
+     * @example {JsonWebToken}
+     * @example user:68100a7c9f3c2b7d11a1b2c3
      */
-    on_behalf_of_user?: string;
+    on_behalf_of: string;
 }
 
 // Service account token
