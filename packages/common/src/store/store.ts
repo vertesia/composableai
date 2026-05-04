@@ -12,6 +12,37 @@ export enum ContentObjectApiHeaders {
     SUPPRESS_WORKFLOWS = 'x-suppress-workflows',
 }
 
+export interface CreateContentObjectQuery {
+    collection_id?: string;
+    processing_priority?: ContentObjectProcessingPriority;
+}
+
+export interface CreateContentObjectHeaders {
+    'x-collection-id'?: string;
+    'x-processing-priority'?: ContentObjectProcessingPriority;
+}
+
+export interface UpdateContentObjectQuery {
+    create_revision?: boolean;
+    revision_label?: string;
+    processing_priority?: ContentObjectProcessingPriority;
+}
+
+export interface UpdateContentObjectHeaders {
+    'if-match'?: string;
+    'x-create-revision'?: boolean;
+    'x-revision-label'?: string;
+    'x-processing-priority'?: ContentObjectProcessingPriority;
+    'x-suppress-workflows'?: boolean;
+}
+
+export interface GetObjectRenditionQuery {
+    block_on_generation?: boolean;
+    generate_if_missing?: boolean;
+    max_hw?: number;
+    sign_url?: boolean;
+}
+
 /**
  * Headers for Data Store API calls.
  * Used for Cloud Run session affinity to route requests to the same instance.
@@ -52,6 +83,64 @@ export interface InheritedPropertyMetadata {
 export interface ContentObjectUserPermissions {
     can_write: boolean;
     can_delete: boolean;
+}
+
+export interface ContentObjectTextResponse {
+    text?: string;
+}
+
+export interface DeleteContentObjectResult {
+    id: string;
+    count: number;
+}
+
+export interface SetObjectEmbeddingsResponse {
+    type?: Embedding;
+}
+
+export interface ContentObjectApiTypeRef {
+    id?: string;
+    code?: string;
+    name: string;
+}
+
+export interface ContentObjectApiRevision {
+    parent?: string;
+    root: string;
+    head: boolean;
+    label?: string;
+}
+
+export interface ContentObjectItemApiResponse extends BaseObject {
+    parent: string;
+    location: string;
+    status: ContentObjectStatus;
+    type?: ContentObjectApiTypeRef;
+    content: ContentSource;
+    external_id?: string;
+    properties: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+    tokens?: {
+        count: number;
+        encoding: string;
+        etag: string;
+    };
+    revision: ContentObjectApiRevision;
+    is_deleted?: boolean;
+    is_locked?: boolean;
+    score?: number;
+    user_permissions?: ContentObjectUserPermissions;
+}
+
+export interface ContentObjectApiResponse extends ContentObjectItemApiResponse {
+    text?: string;
+    text_etag?: string;
+    embeddings?: Record<string, Embedding>;
+    parts?: string[];
+    parts_etag?: string;
+    transcript?: Record<string, unknown>;
+    security?: Record<string, string[]>;
+    inherited_properties?: InheritedPropertyMetadata[];
 }
 
 export interface ContentObject<T = any> extends ContentObjectItem<T> {
@@ -493,6 +582,12 @@ export interface GetRenditionResponse {
     workflow_run_id?: string;
 }
 
+export interface ObjectSearchResponse {
+    results: ContentObjectItem<Record<string, unknown>>[];
+    facets: import('../facets.js').ComputedFacetResponse;
+    aggregations?: Record<string, unknown>;
+}
+
 // ============================================================================
 // Rendition Format Compatibility Utilities
 // ============================================================================
@@ -627,11 +722,25 @@ export interface GetFileUrlResponse {
     path: string;
 }
 
+export interface FileMetadataResponse {
+    name: string;
+    size: number;
+    contentType: string;
+    contentDisposition?: string;
+    etag?: string;
+    customMetadata?: Record<string, string>;
+}
+
 export interface SetFileMetadataPayload {
     /** The file path (relative to bucket) or full URI */
     file: string;
     /** Custom metadata key-value pairs to set on the file */
     metadata: Record<string, string>;
+}
+
+export interface FileMetadataUpdateResult {
+    success: boolean;
+    file: string;
 }
 
 export interface BulkUploadUrlsPayload {
@@ -640,6 +749,61 @@ export interface BulkUploadUrlsPayload {
 
 export interface BulkUploadUrlsResponse {
     files: GetFileUrlResponse[];
+}
+
+export interface FileBucketResponse {
+    bucket: string;
+}
+
+export interface FileListResponse {
+    files: string[];
+}
+
+export interface FileMetadataQuery {
+    file: string;
+}
+
+export interface FileListQuery {
+    prefix: string;
+}
+
+export interface FileDeleteQuery {
+    prefix?: boolean;
+}
+
+export interface ContentObjectTypeCatalogQuery {
+    tag?: string;
+    layout?: boolean;
+    schema?: boolean;
+    limit?: number;
+    offset?: number;
+}
+
+export interface ContentObjectTypeListQuery {
+    name?: string;
+    chunkable?: boolean;
+    layout?: boolean;
+    schema?: boolean;
+    limit?: number;
+    offset?: number;
+}
+
+export interface CopyFilePayload {
+    source: string;
+    dest: string;
+}
+
+export interface CopyFileResponse {
+    success: boolean;
+    source: string;
+    dest: string;
+}
+
+export interface DeleteFileResult {
+    success: boolean;
+    count: number;
+    message?: string;
+    file?: string;
 }
 
 export enum ContentObjectProcessingPriority {

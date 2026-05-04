@@ -47,6 +47,7 @@ export class PayloadBuilder {
     _interaction: InCodeInteraction | undefined;
     _environment: ExecutionEnvironmentRef | undefined;
     _model: string = '';
+    _model_options: InCodeInteraction["model_options"] | undefined;
     _tool_names: string[] = [];
     _data: JSONObject | undefined;
     _mode: WorkflowMode = 'start';
@@ -79,6 +80,7 @@ export class PayloadBuilder {
         builder._data = this._data;
         builder._environment = this._environment;
         builder._model = this._model;
+        builder._model_options = this._model_options;
         builder._tool_names = [...this._tool_names];
         builder._interactive = this._interactive;
         builder._debug_mode = this._debug_mode;
@@ -252,6 +254,7 @@ export class PayloadBuilder {
         this._checkpoint_tokens = context.checkpoint_tokens;
         this._user_channels = context.user_channels;
         this.collection = context.collection_id ?? undefined;
+        this._model_options = context.config?.model_options as InCodeInteraction["model_options"] | undefined;
 
         // we need to trigger the setter to deal with default models
         this.environment = env;
@@ -313,6 +316,17 @@ export class PayloadBuilder {
         }
     }
 
+    get model_options(): InCodeInteraction["model_options"] | undefined {
+        return this._model_options;
+    }
+
+    set model_options(modelOptions: InCodeInteraction["model_options"] | undefined) {
+        if (JSON.stringify(modelOptions) !== JSON.stringify(this._model_options)) {
+            this._model_options = modelOptions;
+            this.onStateChanged();
+        }
+    }
+
     get tool_names() {
         return this._tool_names;
     }
@@ -350,6 +364,7 @@ export class PayloadBuilder {
     setInteraction(interaction: InCodeInteraction | undefined) { this.interaction = interaction; }
     setEnvironment(environment: ExecutionEnvironmentRef | undefined) { this.environment = environment; }
     setModel(model: string | undefined) { this.model = model; }
+    setModelOptions(modelOptions: InCodeInteraction["model_options"] | undefined) { this.model_options = modelOptions; }
     setToolNames(tools: string[]) { this.tool_names = tools; }
     setCollection(collection: string | undefined) { this.collection = collection; }
     setInteractive(interactive: boolean) { this.interactive = interactive; }
@@ -427,6 +442,7 @@ export class PayloadBuilder {
         this._collection = undefined;
         this._preserveRunValues = false;
         this._model = '';
+        this._model_options = undefined;
         this._environment = undefined;
         this._tool_names = [];
         this._interaction = undefined;

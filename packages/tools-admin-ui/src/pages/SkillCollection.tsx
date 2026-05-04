@@ -9,7 +9,7 @@ import { TYPE_VARIANTS } from '../components/typeVariants.js';
 interface SkillToolDef {
     name: string;
     description?: string;
-    related_tools?: string[];
+    tools?: string[];
 }
 
 interface SkillCollectionResponse {
@@ -92,9 +92,9 @@ export function SkillCollection() {
                                     </span>
                                     <div className="font-semibold text-card-foreground">{displayName}</div>
                                     <div className="mt-1 text-sm text-muted-foreground">{skill.description || 'No description'}</div>
-                                    {skill.related_tools && skill.related_tools.length > 0 && (
+                                    {skill.tools && skill.tools.length > 0 && (
                                         <div className="mt-2 flex flex-wrap gap-1">
-                                            {skill.related_tools.map(t => <Badge key={t}>{t}</Badge>)}
+                                            {skill.tools.map(t => <Badge key={t}>{t}</Badge>)}
                                         </div>
                                     )}
                                 </CardContent>

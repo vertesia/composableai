@@ -57,6 +57,14 @@ export interface ProjectRef {
     restricted?: boolean;
 }
 
+export interface ProjectTagQuery {
+    tag?: string;
+}
+
+export interface ListProjectsQuery {
+    account?: string;
+}
+
 export enum ResourceVisibility {
     public = "public",
     account = "account",
@@ -259,6 +267,10 @@ export interface ProjectCreatePayload {
 
 export interface ProjectUpdatePayload extends Partial<Project> { }
 
+export interface ProjectPluginsUpdatePayload {
+    plugins: string[];
+}
+
 
 export const ProjectRefPopulate = "id name account";
 
@@ -346,6 +358,14 @@ export interface IndexingStatusResponse {
     };
 }
 
+export interface StartProjectReindexPayload {
+    shard_size?: number;
+    parallel_shard_count?: number;
+    concurrency?: number;
+    bulk_size_bytes?: number;
+    bulk_concurrency?: number;
+}
+
 // ============================================================================
 // Internal indexing types (used by Temporal workflows)
 // ============================================================================
@@ -391,6 +411,12 @@ export interface CreateReindexTargetResult {
     index_name: string;
     alias_name: string;
     version: number;
+    dimensions?: {
+        text?: number;
+        image?: number;
+        properties?: number;
+    };
+    language?: string;
 }
 
 /**
@@ -455,6 +481,11 @@ export interface IndexShardParams {
     target_index: string;
     shard_min: string;
     shard_max?: string;
+    embedding_dimensions?: {
+        text?: number;
+        image?: number;
+        properties?: number;
+    };
     dry_run?: boolean;
     concurrency?: number;
     batch_size?: number;
@@ -686,4 +717,8 @@ export interface DriftAnalysisStatusResponse extends WorkflowRunStatus {
 export interface ProjectIntegrationListEntry {
     id: SupportedIntegrations;
     enabled: boolean;
+}
+
+export interface ProjectIntegrationListResponse {
+    integrations: ProjectIntegrationListEntry[];
 }

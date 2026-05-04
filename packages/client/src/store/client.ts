@@ -1,5 +1,5 @@
 import { AbstractFetchClient, RequestError } from "@vertesia/api-fetch-client";
-import { BulkOperationPayload, BulkOperationResult } from "@vertesia/common";
+import { BulkOperationPayload, BulkOperationResponse } from "@vertesia/common";
 import { AgentsApi } from "./AgentsApi.js";
 import { CollectionsApi } from "./CollectionsApi.js";
 import { CostApi } from "./CostApi.js";
@@ -13,9 +13,11 @@ import { FilesApi } from "./FilesApi.js";
 import { HiveMemoryApi } from "./HiveMemoryApi.js";
 import { ObjectsApi } from "./ObjectsApi.js";
 import { PendingAsksApi } from "./PendingAsksApi.js";
+import { ProcessApi } from "./ProcessApi.js";
 import { QueryApi } from "./QueryApi.js";
 import { RenderingApi } from "./RenderingApi.js";
 import { SchedulesApi } from "./SchedulesApi.js";
+import { TaskApi } from "./TaskApi.js";
 import { ToolsApi } from "./ToolsApi.js";
 import { TypesApi } from "./TypesApi.js";
 import { VERSION, VERSION_HEADER } from "./version.js";
@@ -72,7 +74,7 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
         );
     }
 
-    runOperation(payload: BulkOperationPayload): Promise<BulkOperationResult> {
+    runOperation(payload: BulkOperationPayload): Promise<BulkOperationResponse> {
         return this.post("/api/v1/operations", {
             payload
         });
@@ -91,6 +93,8 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     types = new TypesApi(this);
     workflows = new WorkflowsApi(this);
     schedules = new SchedulesApi(this);
+    processes = new ProcessApi(this);
+    tasks = new TaskApi(this);
     files = new FilesApi(this);
     commands = new CommandsApi(this);
     workers = new WorkersApi(this);

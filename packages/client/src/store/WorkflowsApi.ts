@@ -19,6 +19,7 @@ import {
     toAgentMessage,
     PromptSizeAnalyticsResponse,
     RunsByAgentAnalyticsResponse,
+    SignalAgentResponse,
     TimeToFirstResponseAnalyticsResponse,
     TokenUsageAnalyticsResponse,
     ToolAnalyticsResponse,
@@ -31,14 +32,20 @@ import {
     WorkflowAnalyticsSummaryQuery,
     WorkflowAnalyticsSummaryResponse,
     WorkflowAnalyticsTimeSeriesQuery,
+    WorkflowActionResponse,
     WorkflowDefinitionRef,
+    WorkflowExecutionStartResult,
+    WorkflowQueryResult,
     WorkflowRule,
     WorkflowRuleItem,
+    WorkflowRunUpdatesResponse,
     WorkflowRunWithDetails,
     WorkflowToolParametersQuery,
+    WorkflowUpdatePublishResponse,
 } from "@vertesia/common";
 import { VertesiaClient } from "../client.js";
 import { EventSourceProvider } from "../execute.js";
+import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from "./stream-termination.js";
 
 export class WorkflowsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -64,7 +71,7 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs`, { payload: payload });
     }
 
-    sendSignal(workflowId: string, runId: string, signal: string, payload?: any): Promise<{ message: string }> {
+    sendSignal(workflowId: string, runId: string, signal: string, payload?: any): Promise<SignalAgentResponse> {
         return this.post(`/runs/${workflowId}/${runId}/signal/${signal}`, { payload });
     }
 
@@ -95,12 +102,12 @@ export class WorkflowsApi extends ApiTopic {
         return this.get(`/runs/${workflowId}/${runId}/interaction`);
     }
 
-    terminate(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {
+    terminate(workflowId: string, runId: string, reason?: string): Promise<WorkflowActionResponse> {
         const payload: WorkflowActionPayload = { reason };
         return this.post(`/runs/${workflowId}/${runId}/actions/terminate`, { payload });
     }
 
-    cancel(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {
+    cancel(workflowId: string, runId: string, reason?: string): Promise<WorkflowActionResponse> {
         const payload: WorkflowActionPayload = { reason };
         return this.post(`/runs/${workflowId}/${runId}/actions/cancel`, { payload });
     }
@@ -111,20 +118,20 @@ export class WorkflowsApi extends ApiTopic {
      * @param workflowId The workflow ID
      * @param runId The run ID
      * @param queryName The name of the query to execute (e.g., "BatchAgentProgress")
-     * @returns The query result
+     * @returns The workflow query result as a JSON value.
      */
-    query<T = unknown>(workflowId: string, runId: string, queryName: string): Promise<T> {
+    query(workflowId: string, runId: string, queryName: string): Promise<WorkflowQueryResult> {
         return this.get(`/runs/${workflowId}/${runId}/query/${queryName}`);
     }
 
     execute(
         name: string,
         payload: ExecuteWorkflowPayload = {},
-    ): Promise<({ run_id: string; workflow_id: string } | undefined)[]> {
+    ): Promise<(WorkflowExecutionStartResult | undefined)[]> {
         return this.post(`/execute/${name}`, { payload });
     }
 
-    postMessage(runId: string, msg: AgentMessage): Promise<void> {
+    postMessage(runId: string, msg: AgentMessage): Promise<WorkflowUpdatePublishResponse> {
         if (!runId) {
             throw new Error("runId is required");
         }
@@ -138,7 +145,7 @@ export class WorkflowsApi extends ApiTopic {
      */
     async retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
         const query = { since };
-        const response = await this.get(`/runs/${workflowId}/${runId}/updates`, { query }) as { messages: CompactMessage[] };
+        const response = await this.get(`/runs/${workflowId}/${runId}/updates`, { query }) as WorkflowRunUpdatesResponse;
         // Convert compact messages to AgentMessage for backward compatibility
         return response.messages.map((m: CompactMessage) => toAgentMessage(m, runId));
     }
@@ -257,14 +264,7 @@ export class WorkflowsApi extends ApiTopic {
                                 onMessage(agentMessage, exit);
                             }
 
-                            // Get workstream ID (defaults to 'main' if not set)
-                            const workstreamId = compactMessage.w || 'main';
-
-                            const streamIsOver = compactMessage.t === AgentMessageType.TERMINATED ||
-                                (compactMessage.t === AgentMessageType.COMPLETE && workstreamId === 'main');
-
-                            // Only close the stream when the main workstream completes or terminates
-                            if (streamIsOver) {
+                            if (shouldCloseCompactRunStream(compactMessage, runId)) {
                                 console.log("Closing stream due to COMPLETE message from main workstream");
                                 if (!isClosed) {
                                     isClosed = true;
@@ -272,7 +272,7 @@ export class WorkflowsApi extends ApiTopic {
                                     resolve(null);
                                 }
                             } else if (compactMessage.t === AgentMessageType.COMPLETE) {
-                                console.log(`Received COMPLETE message from non-main workstream: ${workstreamId}, keeping stream open`);
+                                console.log(`Received COMPLETE message that does not close the root stream for run ${runId}`);
                             }
                         } catch (err) {
                             console.error("Failed to parse SSE message:", err, ev.data);
@@ -328,10 +328,7 @@ export class WorkflowsApi extends ApiTopic {
                         if (onMessage) {
                             onMessage(msg, exit);
                         }
-                        const workstreamId = msg.workstream_id || 'main';
-                        const streamIsOver = msg.type === AgentMessageType.TERMINATED ||
-                            (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
-                        if (streamIsOver) {
+                        if (shouldCloseAgentRunStream(msg, runId)) {
                             resolve(null);
                             return;
                         }

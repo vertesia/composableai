@@ -4,13 +4,15 @@ import {
     AgentEvent,
     AgentArtifactUrlResponse,
     AgentMessage,
-    AgentMessageType,
     AgentRun,
     AgentRunDetailsStreamEvent,
     AgentRunInternals,
+    AgentRunResponse,
     AgentRunUpdatesResponse,
+    BindRunWorkflowPayload,
     CompactMessage,
     CreateAgentRunPayload,
+    CreateProcessRunPayload,
     ErrorAnalyticsResponse,
     FirstResponseBehaviorAnalyticsResponse,
     LatencyAnalyticsResponse,
@@ -21,7 +23,11 @@ import {
     PromptSizeAnalyticsResponse,
     PostAgentRunUpdatePayload,
     PostAgentRunUpdateResponse,
+    ProcessRun,
+    ProcessState,
     RecordAgentRunPayload,
+    RecordProcessRunPayload,
+    RecordRunPayload,
     RunsByAgentAnalyticsResponse,
     SearchAgentRunsQuery,
     SearchAgentRunsResponse,
@@ -46,6 +52,7 @@ import {
 } from '@vertesia/common';
 import { VertesiaClient } from '../client.js';
 import { EventSourceProvider } from '../execute.js';
+import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
 
 export class AgentsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -62,16 +69,30 @@ export class AgentsApi extends ApiTopic {
      */
     start<TData = Record<string, unknown>>(
         payload: CreateAgentRunPayload<TData>,
-    ): Promise<AgentRun<TData>> {
+    ): Promise<AgentRun<TData>>;
+    start<TData = Record<string, any>>(
+        payload: CreateProcessRunPayload<TData>,
+    ): Promise<ProcessRun>;
+    start<TData = Record<string, any>>(
+        payload: CreateAgentRunPayload<TData> | CreateProcessRunPayload<TData>,
+    ): Promise<AgentRun<TData> | ProcessRun> {
         return this.post('/', { payload });
     }
 
     /**
-     * Record an AgentRun for an already-running workflow (e.g. schedule-triggered).
-     * Only creates the MongoDB document — the workflow passes its own Temporal IDs.
+     * Record a run for an already-running workflow. This only creates the
+     * MongoDB document; the caller owns the Temporal workflow ids.
+     *
+     * @internal
      */
-    createRecord(payload: RecordAgentRunPayload): Promise<AgentRun> {
+    recordRun<TData = Record<string, any>>(payload: RecordAgentRunPayload<TData>): Promise<AgentRun<TData>>;
+    recordRun<TData = Record<string, any>>(payload: RecordProcessRunPayload<TData>): Promise<ProcessRun>;
+    recordRun<TData = Record<string, any>>(payload: RecordRunPayload<TData>): Promise<AgentRun<TData> | ProcessRun> {
         return this.post('/record', { payload });
+    }
+
+    createRecord(payload: RecordAgentRunPayload): Promise<AgentRun> {
+        return this.recordRun(payload);
     }
 
     /**
@@ -82,9 +103,33 @@ export class AgentsApi extends ApiTopic {
     }
 
     /**
+     * Get any agent run by id, preserving the agent/process discriminator.
+     */
+    retrieveRun<TData = Record<string, unknown>, TProperties = Record<string, unknown>>(
+        id: string,
+    ): Promise<AgentRunResponse<TData, TProperties>> {
+        return this.get(`/${id}`);
+    }
+
+    retrieveProcess(id: string): Promise<ProcessRun> {
+        return this.get(`/${id}`);
+    }
+
+    /**
      * List agent runs with optional filters.
      */
     list(query?: ListAgentRunsQuery): Promise<ListAgentRunsResponse> {
+        return this.get('/', { query: this.buildListQueryParams(query) });
+    }
+
+    async listProcessRuns(query?: Omit<ListAgentRunsQuery, 'run_kind'>): Promise<ProcessRun[]> {
+        const response: ListAgentRunsResponse = await this.get('/', {
+            query: this.buildListQueryParams({ ...query, run_kind: 'process' }),
+        });
+        return response.items.filter(isProcessRunResponse);
+    }
+
+    private buildListQueryParams(query?: ListAgentRunsQuery): Record<string, string> {
         const params: Record<string, string> = {};
         if (query?.id) params.id = query.id;
         if (query?.status) {
@@ -96,12 +141,14 @@ export class AgentsApi extends ApiTopic {
         if (query?.until) params.until = query.until.toISOString();
         if (query?.schedule_id) params.schedule_id = query.schedule_id;
         if (query?.type) params.type = query.type;
+        if (query?.run_type) params.run_type = Array.isArray(query.run_type) ? query.run_type.join(',') : query.run_type;
+        if (query?.run_kind) params.run_kind = query.run_kind;
         if (query?.limit) params.limit = String(query.limit);
         if (query?.offset) params.offset = String(query.offset);
         if (query?.cursor) params.cursor = query.cursor;
         if (query?.sort) params.sort = query.sort;
         if (query?.order) params.order = query.order;
-        return this.get('/', { query: params });
+        return params;
     }
 
     /**
@@ -150,6 +197,31 @@ export class AgentsApi extends ApiTopic {
         return this.post(`/${id}/fork`, {});
     }
 
+    getContext(id: string): Promise<{ run_id: string; current_node: string; context: Record<string, any> }> {
+        return this.get(`/${id}/context`);
+    }
+
+    getHistory(id: string): Promise<{
+        run_id: string;
+        current_node: string;
+        node_history: ProcessState['node_history'];
+        node_history_ref?: ProcessState['node_history_ref'];
+    }> {
+        return this.get(`/${id}/history`);
+    }
+
+    advance(id: string, payload?: { target?: string; reason?: string }): Promise<{ message: string }> {
+        return this.post(`/${id}/advance`, { payload: payload ?? {} });
+    }
+
+    retryNode(id: string, payload?: { node?: string; reason?: string }): Promise<{ message: string }> {
+        return this.post(`/${id}/retry-node`, { payload: payload ?? {} });
+    }
+
+    answerTask(id: string, taskId: string, result: Record<string, any>): Promise<{ message: string }> {
+        return this.post(`/${id}/answer-task`, { payload: { task_id: taskId, result } });
+    }
+
     /**
      * Update agent run status/metadata.
      * Called by workflow activities to sync lifecycle state.
@@ -157,8 +229,17 @@ export class AgentsApi extends ApiTopic {
     updateStatus(
         id: string,
         update: UpdateAgentRunStatusPayload,
-    ): Promise<AgentRun> {
+    ): Promise<AgentRun | ProcessRun> {
         return this.post(`/${id}/status`, { payload: update });
+    }
+
+    /**
+     * Attach Temporal workflow run ids to a pre-created run record.
+     *
+     * @internal
+     */
+    bindWorkflowRun(id: string, payload: BindRunWorkflowPayload): Promise<AgentRun | ProcessRun> {
+        return this.post(`/${id}/workflow`, { payload });
     }
 
     // ========================================================================
@@ -281,11 +362,7 @@ export class AgentsApi extends ApiTopic {
                     if (onMessage) onMessage(msg, exit);
                     if (isClosed) break;
 
-                    const workstreamId = msg.workstream_id || 'main';
-                    const streamIsOver =
-                        msg.type === AgentMessageType.TERMINATED ||
-                        (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
-                    if (streamIsOver) {
+                    if (shouldCloseAgentRunStream(msg, id)) {
                         exit(null);
                         return promise;
                     }
@@ -356,11 +433,7 @@ export class AgentsApi extends ApiTopic {
                             onMessage(agentMessage, exit);
                         }
 
-                        const workstreamId = compactMessage.w || 'main';
-                        const streamIsOver =
-                            compactMessage.t === AgentMessageType.TERMINATED ||
-                            (compactMessage.t === AgentMessageType.COMPLETE && workstreamId === 'main');
-                        if (streamIsOver) {
+                        if (shouldCloseCompactRunStream(compactMessage, id)) {
                             exit(null);
                         }
                     } catch (err) {
@@ -513,7 +586,7 @@ export class AgentsApi extends ApiTopic {
     }
 
     /**
-     * List child workflows (sub-agents) for an agent run.
+     * List child workflows for an agent or process run.
      */
     listChildren(id: string): Promise<ListWorkflowRunsResponse> {
         return this.get(`/${id}/children`);
@@ -521,7 +594,7 @@ export class AgentsApi extends ApiTopic {
 
     /**
      * Get details for a specific child workflow.
-     * Serves from GCS archive when available, falls back to Temporal.
+     * Serves from the child run record when available, falls back to archive or Temporal.
      */
     getChildDetails(
         id: string,
@@ -781,4 +854,8 @@ export class AgentsApi extends ApiTopic {
         return this.post('/analytics/first-response-behavior', { payload: query });
     }
 
+}
+
+function isProcessRunResponse(run: AgentRunResponse): run is ProcessRun {
+    return run.run_kind === 'process';
 }

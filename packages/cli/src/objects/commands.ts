@@ -1,6 +1,13 @@
-import { VertesiaClient } from "@vertesia/client";
+import { QueryResult, VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
-import { ContentObject, ContentObjectTypeItem, CreateContentObjectPayload } from "@vertesia/common";
+import {
+    ComplexSearchPayload,
+    ContentObject,
+    ContentObjectItem,
+    ContentObjectTypeItem,
+    CreateContentObjectPayload,
+    ObjectSearchPayload,
+} from "@vertesia/common";
 import { Command } from "commander";
 import enquirer from "enquirer";
 import { Stats, createReadStream, createWriteStream, type Dirent } from "node:fs";
@@ -16,6 +23,26 @@ const { prompt } = enquirer;
 const AUTOMATIC_TYPE_SELECTION = "auto";
 const AUTOMATIC_TYPE_SELECTION_DESC = "Auto (Vertesia will analyze the file and select the most appropriate type)";
 const TYPE_SELECTION_ERROR = "TypeSelectionError";
+
+interface JsonOutputOptions {
+    json?: boolean;
+}
+
+interface ListObjectsOptions extends JsonOutputOptions {
+    limit?: string;
+    skip?: string;
+}
+
+interface SearchObjectsOptions extends JsonOutputOptions {
+    limit?: string;
+    type?: string;
+    path?: string;
+    select?: string;
+}
+
+interface QueryObjectsOptions extends JsonOutputOptions {
+    dsl?: string;
+}
 
 function splitInChunksWithSize<T>(arr: Array<T>, size: number): T[][] {
     if (size < 1) {
@@ -242,10 +269,64 @@ export async function getObject(program: Command, objectId: string, _options: Re
     console.log(object);
 }
 
-export async function listObjects(program: Command, _folderPath: string | undefined, _options: Record<string, any>) {
+export async function getObjectText(program: Command, objectId: string, options: JsonOutputOptions) {
     const client = await getClient(program);
-    const objects = await client.objects.list();
-    console.log(objects.map(o => `${o.id}\t ${o.name}`).join('\n'));
+    const text = await client.objects.getObjectText(objectId);
+    if (options.json) {
+        printJson(text);
+        return;
+    }
+    console.log(text.text);
+}
+
+export async function listObjects(program: Command, folderPath: string | undefined, options: ListObjectsOptions) {
+    const client = await getClient(program);
+    const payload: ObjectSearchPayload = {
+        limit: readOptionalIntegerOption(options.limit),
+        offset: readOptionalIntegerOption(options.skip),
+    };
+    if (folderPath) {
+        payload.query = { location: folderPath };
+    }
+    const objects = await client.objects.list(payload);
+    if (options.json) {
+        printJson(objects);
+        return;
+    }
+    printObjectItems(objects);
+}
+
+export async function searchObjects(program: Command, query: string, options: SearchObjectsOptions) {
+    const client = await getClient(program);
+    const payload: ComplexSearchPayload = {
+        limit: readOptionalIntegerOption(options.limit) ?? 20,
+        select: options.select,
+        query: {
+            full_text: query,
+            ...(options.type ? { type: options.type } : {}),
+            ...(options.path ? { location: options.path } : {}),
+        },
+    };
+    const results = await client.objects.search(payload);
+    if (options.json) {
+        printJson(results);
+        return;
+    }
+    printObjectItems(results.results);
+    if (results.facets.total !== undefined) {
+        console.error(`Found ${results.facets.total} results`);
+    }
+}
+
+export async function queryObjects(program: Command, options: QueryObjectsOptions) {
+    const payload = readQueryPayload(options);
+    const client = await getClient(program);
+    const result = await client.store.query.execute(payload);
+    if (options.json) {
+        printJson(result);
+        return;
+    }
+    printQueryResult(result);
 }
 
 export async function listTypes(program: Command) {
@@ -292,4 +373,119 @@ export async function downloadObjectContent(program: Command, objectId: string, 
     await pipeline(nodeStream, writeStream);
 
     console.log(`Downloaded to: ${outputPath}`);
+}
+
+function readOptionalIntegerOption(value: string | undefined): number | undefined {
+    if (value === undefined || value === "") {
+        return undefined;
+    }
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+        console.error(`Invalid numeric option: ${value}`);
+        process.exit(2);
+    }
+    return parsed;
+}
+
+function readQueryPayload(options: QueryObjectsOptions): { dsl: Record<string, unknown> } {
+    if (!options.dsl) {
+        console.error("Specify --dsl with a JSON object.");
+        process.exit(2);
+    }
+    try {
+        const dsl = JSON.parse(options.dsl ?? "");
+        if (!isRecord(dsl)) {
+            console.error("Invalid JSON for --dsl: expected a JSON object.");
+            process.exit(2);
+        }
+        return { dsl };
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`Invalid JSON for --dsl: ${message}`);
+        process.exit(2);
+    }
+}
+
+function printJson(value: unknown) {
+    console.log(JSON.stringify(value, null, 2));
+}
+
+function printObjectItems(objects: ContentObjectItem[]) {
+    if (objects.length === 0) {
+        console.log("No objects found");
+        return;
+    }
+    console.log(
+        objects
+            .map((object) => {
+                const typeName = readObjectTypeName(object);
+                const location = object.location ?? "";
+                const status = object.status ?? "";
+                return [object.id, object.name, typeName, status, location].join("\t");
+            })
+            .join("\n"),
+    );
+}
+
+function readObjectTypeName(object: ContentObjectItem): string {
+    if (!object.type) {
+        return "";
+    }
+    if (typeof object.type === "string") {
+        return object.type;
+    }
+    return object.type.name || object.type.id || object.type.code || "";
+}
+
+function printQueryResult(result: QueryResult) {
+    if (result.type === "dsl") {
+        if (!result.hits || result.hits.length === 0) {
+            console.log("No hits");
+            return;
+        }
+        console.log(
+            result.hits
+                .map((hit) => JSON.stringify({
+                    id: hit.id,
+                    score: hit.score,
+                    source: hit.source,
+                }))
+                .join("\n"),
+        );
+        return;
+    }
+
+    const columns = result.columns?.map((column) => column.name) ?? [];
+    const rows = result.rows ?? [];
+    if (columns.length > 0) {
+        console.log(columns.join("\t"));
+    }
+    if (rows.length === 0) {
+        if (columns.length === 0) {
+            console.log("No rows");
+        }
+        return;
+    }
+    console.log(
+        rows
+            .map((row) => row.map((value) => formatQueryValue(value)).join("\t"))
+            .join("\n"),
+    );
+}
+
+function formatQueryValue(value: unknown): string {
+    if (value === null || value === undefined) {
+        return "";
+    }
+    if (typeof value === "string") {
+        return value;
+    }
+    if (typeof value === "number" || typeof value === "boolean") {
+        return String(value);
+    }
+    return JSON.stringify(value);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
 }

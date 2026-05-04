@@ -28,6 +28,10 @@ export interface ApiKeyWithValue extends Omit<ApiKey, "maskedValue"> {
     value: string;
 }
 
+export interface ApiKeyReadResponse extends ApiKey {
+    value?: string;
+}
+
 export interface CreatePublicKeyPayload {
     name?: string;
     projectId?: string;
@@ -36,6 +40,14 @@ export interface CreatePublicKeyPayload {
 
 export interface AuthTokenResponse {
     token: string;
+}
+
+export interface ApiKeyListQuery {
+    level?: 'account' | 'project';
+}
+
+export interface ApiKeyReadQuery {
+    withValue?: boolean;
 }
 
 export interface AuthTokenPayload {
@@ -110,6 +122,7 @@ export interface AuthTokenPayload {
 
 export enum PrincipalType {
     User = "user",
+    OAuthAccess = "oauth_access",
     Group = "group",
     ApiKey = "apikey",
     ServiceAccount = "service_account",

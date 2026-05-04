@@ -1,8 +1,8 @@
 import { createContext, useContext } from 'react';
 
 import { SharedState, useWatchSharedState } from '@vertesia/ui/core';
-import { ComputeFacetsResponse, ZenoClient } from '@vertesia/client';
-import { ComplexSearchPayload, ComplexSearchQuery, ComputeObjectFacetPayload, ContentObjectItem, FacetBucket, FacetSpec, ObjectSearchQuery } from '@vertesia/common';
+import { ZenoClient } from '@vertesia/client';
+import { ComplexSearchPayload, ComplexSearchQuery, ComputeObjectFacetPayload, ComputedFacetResponse, ContentObjectItem, FacetBucket, FacetSpec, ObjectSearchQuery } from '@vertesia/common';
 import { SearchInterface } from '@vertesia/ui/features'
 
 interface DocumentSearchResult {
@@ -16,7 +16,7 @@ interface DocumentSearchResult {
 export class DocumentSearch implements SearchInterface {
 
     collectionId?: string;
-    facets = new SharedState<ComputeFacetsResponse>({});
+    facets = new SharedState<ComputedFacetResponse>({});
     result = new SharedState<DocumentSearchResult>({ objects: [], isLoading: false });
 
     facetSpecs: FacetSpec[] = [];
@@ -79,7 +79,8 @@ export class DocumentSearch implements SearchInterface {
     }
 
     getFacetBuckets(name: string): FacetBucket[] {
-        return (this.facets.value as any)[name]?.buckets || [];
+        const value = this.facets.value[name];
+        return Array.isArray(value) ? value : [];
     }
 
     resetFacets() {
@@ -161,6 +162,11 @@ export class DocumentSearch implements SearchInterface {
 
             return true;
         }).catch((err) => {
+            // index_not_found_exception means the data store has no index yet — treat as empty
+            if (err?.status === 404) {
+                this.result.value = { isLoading: false, objects: [], hasMore: false };
+                return false;
+            }
             this.result.value = {
                 error: err,
                 isLoading: false,

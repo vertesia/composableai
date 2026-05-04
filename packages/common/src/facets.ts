@@ -42,3 +42,13 @@ export interface FacetNameBucket {
 export interface FacetResult {
     buckets: FacetBucket[]
 }
+
+export interface ComputedFacetBucket {
+    _id: string;
+    count: number;
+}
+
+export interface ComputedFacetResponse {
+    [key: string]: ComputedFacetBucket[] | number | undefined;
+    total?: number;
+}

@@ -1,5 +1,5 @@
 import { ApiKey } from "./apikey.js";
-import { ProjectRoles } from "./project.js";
+import { ProjectRef, ProjectRoles } from "./project.js";
 
 export interface UserWithAccounts extends User {
     accounts: AccountRef[];
@@ -116,6 +116,23 @@ export interface InviteUserResponsePayload {
     action: 'invited' | 'added';
 }
 
+export interface InviteAcceptanceResponse {
+    status: 'added';
+}
+
+export interface InviteDeclineResponse {
+    status: 'deleted';
+}
+
+export interface AccountProjectsResponse {
+    data: ProjectRef[];
+}
+
+export interface GoogleProjectTokenResponse {
+    principal: string;
+    token: string;
+}
+
 
 
 type UserOrApiKey<T extends User | ApiKey> = T extends User ? User : ApiKey;
@@ -138,7 +155,7 @@ export interface OnboardingProgress {
     interactions: boolean,
     prompts: boolean,
     environments: boolean,
-    default_environment_defined: boolean
+    default_environment_defined: boolean,
 }
 
 

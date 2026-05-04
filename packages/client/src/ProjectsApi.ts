@@ -1,5 +1,30 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { AwsConfiguration, CompositeAppConfig, CompositeAppConfigPayload, ExaConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, InCodeTypeDefinition, LinkupConfiguration, MagicPdfConfiguration, Project, ProjectConfiguration, ProjectIntegrationListEntry, ProjectRef, ProjectToolInfo, RenderingTemplateDefinition, RenderingTemplateDefinitionRef, ResendConfiguration, SerperConfiguration, SupportedIntegrations } from "@vertesia/common";
+import {
+    AwsConfiguration,
+    CompositeAppConfig,
+    CompositeAppConfigPayload,
+    CountResult,
+    DeleteByIdResult,
+    ExaConfiguration,
+    GithubConfiguration,
+    GladiaConfiguration,
+    ICreateProjectPayload,
+    InCodeProcessDefinition,
+    InCodeTypeDefinition,
+    LinkupConfiguration,
+    MagicPdfConfiguration,
+    Project,
+    ProjectConfiguration,
+    ProjectIntegrationListEntry,
+    ProjectIntegrationListResponse,
+    ProjectRef,
+    ProjectToolInfo,
+    RenderingTemplateDefinition,
+    RenderingTemplateDefinitionRef,
+    ResendConfiguration,
+    SerperConfiguration,
+    SupportedIntegrations,
+} from "@vertesia/common";
 
 export default class ProjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -24,6 +49,10 @@ export default class ProjectsApi extends ApiTopic {
         return this.put(`/${projectId}`, {
             payload
         });
+    }
+
+    delete(projectId: string): Promise<DeleteByIdResult> {
+        return this.del(`/${projectId}`);
     }
 
     updateConfiguration(projectId: string, payload: Partial<ProjectConfiguration>): Promise<ProjectConfiguration> {
@@ -65,6 +94,16 @@ export default class ProjectsApi extends ApiTopic {
         return this.get(`/${projectId}/app-types/${typeId}`);
     }
 
+    listAppProcesses(projectId: string, tag?: string): Promise<InCodeProcessDefinition[]> {
+        return this.get(`/${projectId}/app-processes`, {
+            query: { tag }
+        });
+    }
+
+    getAppProcess(projectId: string, processId: string): Promise<InCodeProcessDefinition> {
+        return this.get(`/${projectId}/app-processes/${processId}`);
+    }
+
     listAppRenderingTemplates(projectId: string, tag?: string): Promise<RenderingTemplateDefinitionRef[]> {
         return this.get(`/${projectId}/app-templates`, {
             query: { tag }
@@ -94,7 +133,7 @@ class IntegrationsConfigurationApi extends ApiTopic {
     }
 
     list(projectId: string): Promise<ProjectIntegrationListEntry[]> {
-        return this.get(`/${projectId}/integrations`).then(res => res.integrations);
+        return this.get(`/${projectId}/integrations`).then((res: ProjectIntegrationListResponse) => res.integrations);
     }
 
     retrieve(projectId: string, integrationId: SupportedIntegrations): Promise<GladiaConfiguration | GithubConfiguration | AwsConfiguration | MagicPdfConfiguration | SerperConfiguration | ExaConfiguration | LinkupConfiguration | ResendConfiguration | undefined> {
@@ -110,6 +149,14 @@ class IntegrationsConfigurationApi extends ApiTopic {
         return this.put(`/${projectId}/integrations/${integrationId}`, {
             payload
         });
+    }
+
+    updatePlugins(projectId: string, plugins: string[]): Promise<CountResult> {
+        return this.post(`/${projectId}/plugins`, { payload: { plugins } });
+    }
+
+    listPlugins(projectId: string): Promise<string[]> {
+        return this.get(`/${projectId}/plugins`);
     }
 
 }

@@ -1,6 +1,5 @@
-import { AsyncExecutionPayload, ExecutionRunStatus, InteractionExecutionPayload, InteractionExecutionResult, NamedInteractionExecutionPayload, RateLimitRequestPayload, RateLimitRequestResponse } from '@vertesia/common';
+import { AsyncExecutionPayload, AsyncExecutionResult, ExecutionRunStatus, InteractionExecutionPayload, InteractionExecutionResult, NamedInteractionExecutionPayload, RateLimitRequestPayload, RateLimitRequestResponse } from '@vertesia/common';
 import { VertesiaClient } from './client.js';
-import type { AsyncExecutionResult } from './InteractionsApi.js';
 
 export async function EventSourceProvider(): Promise<typeof EventSource> {
     if (typeof globalThis.EventSource === 'function') {

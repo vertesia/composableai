@@ -1,21 +1,27 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
     AlterTablePayload,
+    BatchQueryResult,
     CreateDataStorePayload,
     CreateSnapshotPayload,
     CreateTablesPayload,
     DataSchema,
     DataSchemaForAI,
+    DataStoreArchiveResult,
     DataStore,
     DataStoreApiHeaders,
+    DataStoreDownloadInfo,
     DataStoreItem,
     DataStoreVersion,
     DataTable,
+    DataStoreTableDetail,
+    DataStoreTableDropResult,
     DataTableSummary,
     ImportDataPayload,
     ImportJob,
     QueryPayload,
     QueryResult,
+    QueryValidationResult,
     UpdateSchemaPayload,
 } from "@vertesia/common";
 import { DashboardApi } from "./DashboardApi.js";
@@ -89,7 +95,7 @@ export class DataApi extends ApiTopic {
      * @param id - Data store ID
      * @returns Object with the archived store ID
      */
-    delete(id: string): Promise<{ id: string }> {
+    delete(id: string): Promise<DataStoreArchiveResult> {
         return this.del(`/${id}`, { headers: this.storeHeaders(id) });
     }
 
@@ -204,7 +210,7 @@ export class DataApi extends ApiTopic {
      * @param sample - If true, includes sample rows
      * @returns The table with metadata and optional sample data
      */
-    getTable(id: string, tableName: string, sample?: boolean): Promise<DataTable & { sampleRows?: Record<string, unknown>[] }> {
+    getTable(id: string, tableName: string, sample?: boolean): Promise<DataStoreTableDetail> {
         const query = sample ? '?sample=true' : '';
         return this.get(`/${id}/tables/${tableName}${query}`, { headers: this.storeHeaders(id) });
     }
@@ -227,7 +233,7 @@ export class DataApi extends ApiTopic {
      * @param id - Data store ID
      * @param tableName - Table name
      */
-    dropTable(id: string, tableName: string): Promise<void> {
+    dropTable(id: string, tableName: string): Promise<DataStoreTableDropResult> {
         return this.del(`/${id}/tables/${tableName}`, { headers: this.storeHeaders(id) });
     }
 
@@ -383,6 +389,10 @@ export class DataApi extends ApiTopic {
         return this.post(`/${id}/query`, { payload, headers: this.storeHeaders(id) });
     }
 
+    queryBatch(id: string, queries: QueryPayload[]): Promise<BatchQueryResult> {
+        return this.post(`/${id}/query/batch`, { payload: { queries }, headers: this.storeHeaders(id) });
+    }
+
     /**
      * Validate SQL queries without executing them.
      *
@@ -478,39 +488,4 @@ export class DataApi extends ApiTopic {
     dashboards(storeId: string): DashboardApi {
         return new DashboardApi(this.client, storeId);
     }
-}
-
-/**
- * Response from the download endpoint.
- */
-export interface DataStoreDownloadInfo {
-    /** Signed download URL (expires in 15 min) */
-    url: string;
-    /** GCS generation number for cache validation */
-    gcs_generation: number;
-    /** Schema version */
-    schema_version: string;
-    /** Store ID */
-    store_id: string;
-    /** Store name */
-    store_name: string;
-    /** List of table names */
-    tables: string[];
-    /** URL expiry time in seconds */
-    expires_in: number;
-}
-
-/**
- * Result from SQL query validation.
- */
-export interface QueryValidationResult {
-    /** Whether all queries are valid */
-    valid: boolean;
-    /** Validation errors (if any) */
-    errors: Array<{
-        /** Query name that failed validation */
-        query: string;
-        /** Error message describing the issue */
-        error: string;
-    }>;
 }
