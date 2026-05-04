@@ -58,6 +58,10 @@ export interface Collection extends CollectionItem {
     properties: Record<string, any>;
     query?: Record<string, any>;
     security?: Record<string, string[]>; // ACL for collection access
+    /** BLP sensitivity level — propagated to member documents (max across collections) */
+    sensitivity?: number;
+    /** Compartments — propagated to member documents (union across collections) */
+    compartments?: string[];
     /**
      * List of property names from the collection's properties that should be shared with (injected into) member objects.
      * These properties will be propagated to all members of this collection and merged as arrays.

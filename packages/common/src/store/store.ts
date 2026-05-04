@@ -62,6 +62,12 @@ export interface ContentObject<T = any> extends ContentObjectItem<T> {
     parts_etag?: string; // the etag of the text used for the parts list
     transcript?: Transcript;
     security?: Record<string, string[]>; // Security field for granular permissions
+    /** BLP sensitivity level — documents with higher sensitivity require higher user clearance */
+    sensitivity?: number;
+    /** Sensitivity set directly on the document (not inherited from collections) */
+    own_sensitivity?: number;
+    /** Compartments — restricts access to users with matching compartments */
+    compartments?: string[];
 
     /**
      * Inherited properties metadata - tracks which properties were inherited from parent collections.
