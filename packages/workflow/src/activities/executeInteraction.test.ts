@@ -38,7 +38,7 @@ const createPayload = (): DSLActivityExecutionPayload<ExecuteInteractionParams> 
     activity: { name: 'executeInteraction', params: {} },
 });
 
-async function mockInteractionError(error: Error & { statusCode?: number }): Promise<void> {
+async function mockInteractionError(error: Error & { statusCode?: number; status?: number; code?: number }): Promise<void> {
     const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
     const mockClient = {
         interactions: {
@@ -54,11 +54,22 @@ async function mockInteractionError(error: Error & { statusCode?: number }): Pro
 }
 
 describe('executeInteraction retryability', () => {
-    it('leaves 412 failures retryable', async () => {
+    it('leaves 412 rendition-in-progress failures retryable', async () => {
         await mockInteractionError(Object.assign(new Error('rendition in progress'), { statusCode: 412 }));
 
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             message: 'Interaction Execution failed testInteraction: rendition in progress',
+        });
+    });
+
+    it.each([
+        ['status', { status: 412 }],
+        ['code', { code: 412 }],
+    ])('leaves 412 failures retryable when reported as %s', async (_field, statusProps) => {
+        await mockInteractionError(Object.assign(new Error('precondition failed'), statusProps));
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            message: 'Interaction Execution failed testInteraction: precondition failed',
         });
     });
 
