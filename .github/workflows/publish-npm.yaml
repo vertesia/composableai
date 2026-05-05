@@ -27,8 +27,8 @@ on:
         default: true
 
 permissions:
-  id-token: write  # Required for OIDC between GitHub and NPM
-  contents: write  # Required to push version changes for preview
+  id-token: write # Required for OIDC between GitHub and NPM
+  contents: write # Required to push version changes for preview
 
 jobs:
   publish:
@@ -45,7 +45,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
           cache: "pnpm"
 
       # Ensure npm 11.5.1 or later is installed
@@ -66,10 +66,12 @@ jobs:
       # Template integration tests using local verdaccio registry (dry-run only)
       - name: Template integration test - Plugin
         if: inputs.dry_run == true
-        run: ./.github/bin/test-template-integration.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Plugin"
+        run: ./.github/bin/test-template-integration.sh --release-type "${{
+          inputs.release_type }}" --template "Vertesia Plugin"
       - name: Template integration test - Tool Server (deprecated)
         if: inputs.dry_run == true
-        run: ./.github/bin/test-template-integration.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Tool Server (deprecated)"
+        run: ./.github/bin/test-template-integration.sh --release-type "${{
+          inputs.release_type }}" --template "Vertesia Tool Server (deprecated)"
 
   # ============================================================
   # Integration test after real publish (non-dry-run only)
@@ -89,6 +91,10 @@ jobs:
           node-version: 24
 
       - name: Smoke test - Plugin
-        run: ./.github/bin/test-template-smoke.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Plugin" --wait
+        run: ./.github/bin/test-template-smoke.sh --release-type "${{
+          inputs.release_type }}" --template "Vertesia Plugin" --branch "${{
+          github.ref_name }}" --wait
       - name: Smoke test - Tool Server (deprecated)
-        run: ./.github/bin/test-template-smoke.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Tool Server (deprecated)" --wait
+        run: ./.github/bin/test-template-smoke.sh --release-type "${{
+          inputs.release_type }}" --template "Vertesia Tool Server (deprecated)"
+          --branch "${{ github.ref_name }}" --wait

@@ -132,6 +132,12 @@ export interface TokenResponse {
     expires_in?: number;
 }
 
+export interface IssueTokenResponse {
+    token: string;
+    token_type: 'Bearer';
+    expires_in?: number;
+}
+
 export interface ValidateTokenResponse {
     valid: boolean;
     payload?: any;
