@@ -36,6 +36,8 @@ export interface UpdateUserPayload {
     phone?: string;
     last_selected_account?: string;
     properties?: Record<string, any>;
+    clearance?: number;
+    compartments?: string[];
 }
 
 
