@@ -1,9 +1,18 @@
-import { ComputePromptFacetPayload, PromptSearchPayload, PromptSearchQuery, PromptTemplate, PromptTemplateForkPayload, PromptTemplateCreatePayload, PromptTemplateRef, PromptTemplateUpdatePayload } from "@vertesia/common";
+import { ComputePromptFacetPayload, PromptSearchPayload, PromptSearchQuery, PromptTemplate, PromptTemplateForkPayload, PromptTemplateCreatePayload, PromptTemplateRef, PromptTemplateUpdatePayload, TemplateType } from "@vertesia/common";
+import { PromptRole } from "@llumiverse/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 export interface ComputePromptFacetsResponse {
     role?: { _id: string, count: number }[];
     total?: { count: number }[];
+}
+
+export interface PromptRenderResponse {
+    id: string;
+    name: string;
+    role: PromptRole;
+    content_type: TemplateType;
+    rendered: string;
 }
 
 export default class PromptsApi extends ApiTopic {
@@ -97,18 +106,16 @@ export default class PromptsApi extends ApiTopic {
         });
     }
 
-    //TODO - Does this exist?
     /**
-     * Render a prompt template
+     * Render a prompt template with the given variables.
      * @param id of the prompt template to render
-     * @param payload that will be passed to the prompt template to generate the prompts
-     * @returns PromptTemplate
+     * @param payload variables to apply to the template
+     * @returns { id, name, role, content_type, rendered }
      * @throws ApiError
      * @throws 404 if not found
-     * @throws 400 if payload is invalid
-     * @throws 500 if render fails
-     **/
-    render(id: string, payload: object): Promise<PromptTemplate> {
+     * @throws 403 if the prompt is not in the current project
+     */
+    render(id: string, payload: object): Promise<PromptRenderResponse> {
         return this.post(`/${id}/render`, {
             payload
         });

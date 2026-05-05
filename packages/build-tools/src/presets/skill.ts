@@ -77,7 +77,6 @@ const SkillFrontmatterSchema = z.object({
     // Nested structure fields
     context_triggers: SkillContextTriggersFrontmatterSchema.optional(),
     execution: SkillExecutionFrontmatterSchema.optional(),
-    related_tools: z.array(z.string()).optional(),
     input_schema: z.object({
         type: z.literal('object'),
         properties: z.record(z.any()).optional(),
@@ -111,7 +110,7 @@ export const SkillDefinitionSchema = z.object({
     }).optional(),
     context_triggers: SkillContextTriggersSchema,
     execution: SkillExecutionSchema,
-    related_tools: z.array(z.string()).optional(),
+    tools: z.array(z.string()).optional(),
     scripts: z.array(z.string()).optional(),
     widgets: z.array(z.string()).optional()
 }).passthrough();
@@ -151,7 +150,7 @@ export type SkillDefinition = z.infer<typeof SkillDefinitionSchema>;
  *    execution:
  *      language: python
  *      packages: [...]
- *    related_tools: [...]
+ *    tools: [...]
  *
  * @param frontmatter - Parsed frontmatter object
  * @param instructions - Markdown content (body of the file)
@@ -211,12 +210,9 @@ function buildSkillDefinition(
         }
     }
 
-    // Related tools - support both direct field and from tools field
-    if (frontmatter.related_tools) {
-        skill.related_tools = frontmatter.related_tools;
-    } else if (frontmatter.tools && !hasNestedTriggers) {
-        // If tools is not part of context_triggers, use it as related_tools
-        skill.related_tools = frontmatter.tools;
+    // Tools unlocked by this skill (from frontmatter `tools:` key)
+    if (frontmatter.tools) {
+        skill.tools = frontmatter.tools;
     }
 
     // Input schema from frontmatter
