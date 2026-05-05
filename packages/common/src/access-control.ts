@@ -87,7 +87,10 @@ export enum AccessControlPrincipalType {
  * { region: { $in: ["us-east", "eu-west"] } }               // set membership (literal)
  * { security_level: { $lte: "$principal.access_level" } }   // cross-reference (resolved at token time)
  */
-export type PropertyConditions = Record<string, string | number | boolean | Record<string, any>>;
+/** A single condition value: literal, or operator object (e.g. { $lte: 3 }) */
+export type PropertyConditionValue = string | number | boolean | Record<string, any>;
+
+export type PropertyConditions = Record<string, PropertyConditionValue>;
 
 /**
  * Conditions attached to an ACE for dynamic matching.
