@@ -249,6 +249,20 @@ export async function fetchComposableTokenFromFirebaseToken(accountId?: string, 
     return fetchComposableToken(getFirebaseAuthToken, accountId, projectId, ttl);
 }
 
+/**
+ * Mint a scoped Vertesia token from an existing Vertesia JWT. STS accepts STS-issued
+ * tokens on /token/issue, so this works for sessions established via Central Auth where
+ * the browser has no Firebase user.
+ */
+export async function fetchComposableTokenFromVertesiaToken(vertesiaToken: string, accountId?: string, projectId?: string, ttl?: number) {
+    return fetchComposableToken(() => Promise.resolve(vertesiaToken), accountId, projectId, ttl);
+}
+
+/** Returns the cached Vertesia raw JWT, if any. Does not refresh. */
+export function getCurrentVertesiaToken(): string | undefined {
+    return AUTH_TOKEN_RAW;
+}
+
 export async function getComposableToken(accountId?: string, projectId?: string, initToken?: string, forceRefresh = false, useInternalAuth = false): Promise<ComposableTokenResponse> {
 
     const selectedAccount = accountId ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined
