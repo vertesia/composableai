@@ -187,9 +187,17 @@ export async function startConfigSession(
                     console.error("Invalid token");
                     process.exit(1);
                 }
+            } else {
+                // Empty answer — enquirer 2.x resolves with `result: ''` on Ctrl-C
+                // rather than rejecting. Without this branch the HTTP server stays
+                // open and the process hangs.
+                cleanup();
+                console.log("\nAuthentication cancelled.");
+                process.exit(130);
             }
         } catch (err: unknown) {
             // This could be thrown if the prompt is interrupted
+            cleanup();
             if (signal?.aborted) {
                 return;
             }
