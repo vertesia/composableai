@@ -2,7 +2,7 @@ import { AccountRef, ProjectRef } from '@vertesia/common'
 import { Button, Center, ErrorBox, Input, SelectBox, Spinner, useFetch, useToast } from '@vertesia/ui/core'
 import { Env } from "@vertesia/ui/env"
 import { useLocation } from "@vertesia/ui/router"
-import { fetchComposableTokenFromFirebaseToken, useUserSession } from '@vertesia/ui/session'
+import { fetchComposableTokenFromFirebaseToken, fetchComposableTokenFromVertesiaToken, getCurrentVertesiaToken, useUserSession } from '@vertesia/ui/session'
 import { useState } from 'react'
 import { useUITranslation } from '../../i18n/index.js'
 
@@ -117,7 +117,10 @@ export function TerminalLogin() {
         // expire in 1 day
         let payload: LoginResult | undefined
         try {
-            const token = await fetchComposableTokenFromFirebaseToken(data.account, data.project, 24 * 3600)
+            const vertesiaToken = getCurrentVertesiaToken()
+            const token = vertesiaToken
+                ? await fetchComposableTokenFromVertesiaToken(vertesiaToken, data.account, data.project, 24 * 3600)
+                : await fetchComposableTokenFromFirebaseToken(data.account, data.project, 24 * 3600)
             if (token) {
                 payload = {
                     ...data,
