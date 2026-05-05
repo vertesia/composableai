@@ -6,6 +6,7 @@ import Ajv, { ValidateFunction } from "ajv";
 import React, { createContext, useContext, useState, useSyncExternalStore } from "react";
 
 export type WorkflowMode = 'start' | 'schedule';
+type ModelOptions = NonNullable<WorkflowInteractionVars["config"]["model_options"]>;
 
 export interface ScheduledWorkflowConfig {
     name: string;
@@ -80,7 +81,7 @@ export class PayloadBuilder {
         builder._data = this._data;
         builder._environment = this._environment;
         builder._model = this._model;
-        builder._model_options = this._model_options;
+        builder._model_options = this._model_options ? { ...this._model_options } as ModelOptions : undefined;
         builder._tool_names = [...this._tool_names];
         builder._interactive = this._interactive;
         builder._debug_mode = this._debug_mode;
@@ -253,6 +254,7 @@ export class PayloadBuilder {
         this._non_blocking_subagents = context.non_blocking_subagents ?? true;
         this._checkpoint_tokens = context.checkpoint_tokens;
         this._user_channels = context.user_channels;
+        this._model_options = context.config?.model_options as ModelOptions | undefined;
         this.collection = context.collection_id ?? undefined;
         this._model_options = context.config?.model_options as InCodeInteraction["model_options"] | undefined;
 
@@ -276,6 +278,7 @@ export class PayloadBuilder {
             // Reset the validator when schema changes
             this._inputValidator = undefined;
             if (interaction && !this._preserveRunValues) {
+                this._model_options = interaction.model_options as ModelOptions | undefined;
                 if (interaction.runtime?.environment) {
                     const envId = interaction.runtime.environment;
                     this.vertesia.environments.retrieve(envId).then((environment) => this.environment = environment);

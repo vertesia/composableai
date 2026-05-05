@@ -1,3 +1,4 @@
+import type { JSONObject } from "../json.js";
 import { WorkflowExecutionPayload, WorkflowRunStatus } from "./workflow.js";
 
 export interface PdfToRichtextOptions {
@@ -64,7 +65,7 @@ export interface DocTableCsv extends DocTable {
 export interface DocTableJson extends DocTable {
     format: "application/json";
     title?: string;
-    data: Object[];
+    data: JSONObject[];
 }
 
 /**
