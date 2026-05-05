@@ -450,7 +450,7 @@ vertesia apps update <appId> --manifest '{
 The template includes `src/tool-server/server-node.ts` as a standalone HTTP server entry.
 
 ```dockerfile
-FROM node:18-alpine
+FROM node:24-alpine
 WORKDIR /app
 COPY package*.json ./
 RUN npm install --production
