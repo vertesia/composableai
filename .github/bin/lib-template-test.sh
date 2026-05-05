@@ -31,7 +31,8 @@ validate_release_type() {
 derive_tag_and_branch() {
   if [ "$RELEASE_TYPE" = "snapshot" ]; then
     NPM_TAG="dev"
-    TEMPLATE_REF="main"
+    # Use caller-supplied TEMPLATE_BRANCH so packages and template come from the same branch.
+    TEMPLATE_REF="${TEMPLATE_BRANCH:-main}"
   else
     NPM_TAG="latest"
     TEMPLATE_REF=""

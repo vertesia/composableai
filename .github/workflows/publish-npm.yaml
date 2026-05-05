@@ -89,6 +89,6 @@ jobs:
           node-version: 24
 
       - name: Smoke test - Plugin
-        run: ./.github/bin/test-template-smoke.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Plugin" --wait
+        run: ./.github/bin/test-template-smoke.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Plugin" --branch "${{ github.ref_name }}" --wait
       - name: Smoke test - Tool Server (deprecated)
-        run: ./.github/bin/test-template-smoke.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Tool Server (deprecated)" --wait
+        run: ./.github/bin/test-template-smoke.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Tool Server (deprecated)" --branch "${{ github.ref_name }}" --wait
