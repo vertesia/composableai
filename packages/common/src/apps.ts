@@ -510,11 +510,19 @@ export interface AppManifestData {
 }
 
 /**
+ * Reserved deployment environment names that may never be used as endpoint
+ * override keys. Reserving them prevents a manifest from hijacking auto-resolution
+ * on a shared production studio-server (whose `Env.environment` is one of these).
+ */
+const RESERVED_ENDPOINT_OVERRIDE_ENVS = new Set(['production', 'preview', 'staging']);
+
+/**
  * Returns true if the given environment name is allowed as an endpoint override key.
- * Only "desktop-" or "dev-" prefixed names are valid.
+ * Any non-empty name is accepted except the reserved shared-deployment names.
  */
 export function isValidEndpointOverrideEnv(envName: string): boolean {
-    return envName.startsWith('desktop-') || envName.startsWith('dev-');
+    if (!envName) return false;
+    return !RESERVED_ENDPOINT_OVERRIDE_ENVS.has(envName.toLowerCase());
 }
 
 /**
@@ -558,22 +566,34 @@ function trimTrailingSlashes(value: string): string {
 }
 
 /**
- * Resolves the effective endpoint for an app given an optional environment name
- * and deployment-time URL variables.
+ * Resolves the effective endpoint for an app.
  *
  * Order of resolution:
- * 1. If `envName` matches a dev-only endpoint override key, use that URL
- * 2. Otherwise use the main `endpoint`
- * 3. Apply `{{var}}` substitution using `vars`
+ * 1. If `requestedOverride` matches an `endpoint_overrides` key, use that URL
+ *    (caller must verify the user is allowed to use the override).
+ * 2. Else if `envName` matches an `endpoint_overrides` key, use that URL
+ *    (auto-resolution from the studio-server's deployment env).
+ * 3. Otherwise use the main `endpoint`.
+ * 4. Apply `{{var}}` substitution using `vars`.
  */
 export function resolveAppEndpoint(
     manifest: Pick<AppManifestData, 'endpoint' | 'endpoint_overrides'>,
     envName?: string,
-    vars?: Endpoints
+    vars?: Endpoints,
+    requestedOverride?: string
 ): string | undefined {
-    const raw = envName && manifest.endpoint_overrides?.[envName] && isValidEndpointOverrideEnv(envName)
-        ? manifest.endpoint_overrides[envName]
-        : manifest.endpoint;
+    let raw: string | undefined;
+    if (requestedOverride
+        && manifest.endpoint_overrides?.[requestedOverride]
+        && isValidEndpointOverrideEnv(requestedOverride)) {
+        raw = manifest.endpoint_overrides[requestedOverride];
+    } else if (envName
+        && manifest.endpoint_overrides?.[envName]
+        && isValidEndpointOverrideEnv(envName)) {
+        raw = manifest.endpoint_overrides[envName];
+    } else {
+        raw = manifest.endpoint;
+    }
     return raw ? substituteEndpoints(raw, vars) : raw;
 }
 
@@ -589,12 +609,13 @@ export function resolveAppEndpoint(
 export function resolveManifestUrls(
     manifest: Partial<AppManifestData> | null | undefined,
     envName?: string,
-    vars?: Endpoints
+    vars?: Endpoints,
+    requestedOverride?: string
 ): void {
     if (!manifest) return;
 
     if (manifest.endpoint) {
-        const resolved = resolveAppEndpoint(manifest, envName, vars);
+        const resolved = resolveAppEndpoint(manifest, envName, vars, requestedOverride);
         if (resolved && resolved !== manifest.endpoint) {
             manifest.endpoint = resolved;
         }
