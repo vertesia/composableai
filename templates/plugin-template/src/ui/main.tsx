@@ -43,8 +43,11 @@ const routes: Route[] = [
     { path: "tenants/:tenantId/live/:agentRunId/app/*", Component: () => <AppRoute enforceInstallation={!devAuthToken} /> },
     { path: "live/:agentRunId/app/*", Component: () => <AppRoute enforceInstallation={!devAuthToken} /> },
     { path: "tenants/:tenantId/apps/:appId/versions/:versionId/app/*", Component: () => <AppRoute enforceInstallation={!devAuthToken} /> },
+    // Tool-server admin (tools / skills / interactions / types / templates / dashboards) at /tools/*.
+    { path: "tools/*", Component: () => <AdminApp baseUrl={apiBaseUrl} /> },
+    // Plugin UI is the default — `/`, `/app/*`, and any other path.
     { path: "app/*", Component: () => <AppRoute enforceInstallation={!devAuthToken} /> },
-    { path: "*", Component: () => <AdminApp baseUrl={apiBaseUrl} /> },
+    { path: "*", Component: () => <AppRoute enforceInstallation={!devAuthToken} /> },
 ]
 
 function DevShell({ children, token }: { children: ReactNode; token: string }) {
