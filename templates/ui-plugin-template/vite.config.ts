@@ -46,7 +46,7 @@ export default defineConfig((env) => {
     if (env.mode === 'lib') {
         return defineLibConfig(env);
     } else {
-        return defineAppConfig();
+        return defineAppConfig(env);
     }
 })
 
@@ -87,14 +87,22 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
  * or to build a standalone application.
  * @returns
  */
-function defineAppConfig(): UserConfig {
+function defineAppConfig({ command }: ConfigEnv): UserConfig {
+    // DEV_MODE is used by appgen/sandbox previews. Vercel also proxies to the
+    // framework dev server over HTTP, so both modes disable HTTPS.
+    const useHttps = process.env.DEV_MODE !== '1' && process.env.VERCEL !== '1';
+    const base = command === 'build' ? '/app/' : '/';
+    const devApiTarget = process.env.VERTESIA_STUDIO_PROXY_TARGET
+        ?? process.env.VITE_VERTESIA_STUDIO_PROXY_TARGET
+        ?? 'https://api.dev1.vertesia.io';
 
     return {
+        base,
         plugins: [
             tailwindcss(),
             react(),
-            // we need to use https for the firebase authentication to work
-            basicSsl(),
+            // HTTPS is required for Firebase auth but must be disabled under appgen/Vercel dev.
+            ...(useHttps ? [basicSsl()] : []),
             // serve lib/plugin.js content in dev mode
             serveStatic([
                 {
@@ -103,9 +111,19 @@ function defineAppConfig(): UserConfig {
                 },
             ]),
         ],
+        optimizeDeps: process.env.DEV_MODE === '1'
+            ? { include: ['html-parse-stringify', 'use-sync-external-store/shim'] }
+            : undefined,
         // for authentication with Firebase
         server: {
+            hmr: process.env.APPGEN_DISABLE_HMR === '1' ? false : undefined,
             proxy: {
+                '/vertesia-api': {
+                    target: devApiTarget,
+                    changeOrigin: true,
+                    secure: true,
+                    rewrite: (path) => path.replace(/^\/vertesia-api/, ''),
+                },
                 '/__/auth': {
                     target: 'https://dengenlabs.firebaseapp.com',
                     changeOrigin: true,

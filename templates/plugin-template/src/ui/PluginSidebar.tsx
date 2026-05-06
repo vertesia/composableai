@@ -135,7 +135,12 @@ export function PluginSidebar({ showConversations = true }: PluginSidebarProps) 
             limit: 20,
             sort: "started_at",
             order: "desc",
-        }).then(response => setConversations(response.items.map(run => toWorkflowRun(run as AgentRunListItem))));
+        })
+            .then(response => {
+                const items = Array.isArray(response.items) ? response.items : [];
+                setConversations(items.map(run => toWorkflowRun(run as AgentRunListItem)));
+            })
+            .catch(() => setConversations([]));
     }, [client, showConversations]);
 
     const groupedConversations = useMemo(() => groupByDate(conversations, t), [conversations, t]);

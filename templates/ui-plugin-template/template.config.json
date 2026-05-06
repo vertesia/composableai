@@ -47,12 +47,8 @@
     "vite.config.ts",
     "index.html",
     "src/env.ts",
-    "src/plugin.tsx",
-    ".env.local.template"
+    "src/plugin.tsx"
   ],
-  "renameFiles": {
-    ".env.local.template": ".env.local"
-  },
   "removeAfterInstall": [
     "template.config.json"
   ]

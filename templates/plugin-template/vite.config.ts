@@ -122,6 +122,7 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
             : undefined,
         // for authentication with Firebase
         server: {
+            hmr: process.env.APPGEN_DISABLE_HMR === '1' ? false : undefined,
             proxy: {
                 '/vertesia-api': {
                     target: devApiTarget,

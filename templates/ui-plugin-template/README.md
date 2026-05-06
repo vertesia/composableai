@@ -34,7 +34,7 @@ src/
 pnpm install
 ```
 
-Next, set the app Id in the `VITE_APP_NAME` variable in the `.env.local` file.
+For local appgen previews and publishing, the app name is injected by the app workspace tooling. For manual local development outside appgen, set `VITE_APP_NAME` in your shell environment before running Vite.
 
 ### Development
 

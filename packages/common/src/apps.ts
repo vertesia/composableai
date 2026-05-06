@@ -394,6 +394,99 @@ export interface RemoteActivityDefinition {
 
 export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates' | 'dashboards';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
+
+export type AppVersionKind = 'preview' | 'published';
+export type AppVersionState = 'ready' | 'failed' | 'expired';
+export type AppVersionTarget = 'static' | 'service';
+
+export interface AppVersionStorage {
+    tenant_id?: string;
+    app_prefix?: string;
+    source_archive?: string;
+    build_prefix?: string;
+    manifest_path?: string;
+    service_archive?: string;
+    live_metadata_path?: string;
+}
+
+export interface AppVersionUrls {
+    live_url?: string;
+    app_url?: string;
+    plugin_url?: string;
+    package_url?: string;
+    internal_preview_url?: string;
+}
+
+export interface AppVersionRecord {
+    id: string;
+    account: string;
+    project: string;
+    app?: string;
+    app_id: string;
+    app_name: string;
+    version_id: string;
+    kind: AppVersionKind;
+    state: AppVersionState;
+    active?: boolean;
+    target?: AppVersionTarget;
+    agent_run_id?: string;
+    sandbox_id?: string;
+    title?: string;
+    description?: string;
+    storage?: AppVersionStorage;
+    urls?: AppVersionUrls;
+    manifest?: Record<string, unknown>;
+    files?: string[];
+    file_count?: number;
+    source_file_count?: number;
+    screenshot_artifact?: string;
+    checks?: string[];
+    created_by?: string;
+    created_at: string;
+    updated_at: string;
+    published_at?: string;
+    checked_at?: string;
+    expires_at?: string;
+}
+
+export interface UpsertAppVersionRequest {
+    app?: string;
+    app_id: string;
+    app_name?: string;
+    version_id: string;
+    kind: AppVersionKind;
+    state?: AppVersionState;
+    active?: boolean;
+    target?: AppVersionTarget;
+    agent_run_id?: string;
+    sandbox_id?: string;
+    title?: string;
+    description?: string;
+    storage?: AppVersionStorage;
+    urls?: AppVersionUrls;
+    manifest?: Record<string, unknown>;
+    files?: string[];
+    file_count?: number;
+    source_file_count?: number;
+    screenshot_artifact?: string;
+    checks?: string[];
+    published_at?: string;
+    checked_at?: string;
+    expires_at?: string;
+}
+
+export interface AppVersionListQuery {
+    app_id?: string;
+    kind?: AppVersionKind;
+    include_expired?: boolean;
+    limit?: number;
+}
+
+export interface ActivateAppVersionResponse {
+    version: AppVersionRecord;
+    app?: AppManifest;
+}
+
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.

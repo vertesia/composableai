@@ -10,6 +10,7 @@ import './index.css'
 // initialize dev environment
 import { AdminApp } from '@vertesia/tools-admin-ui'
 import { RouterProvider, type Route } from '@vertesia/ui/router'
+import { resolveAppApiBaseUrl } from './api-base'
 import { App } from './app'
 import { setUsePluginAssets } from './assets'
 import { DevSessionProvider } from './DevSessionProvider'
@@ -22,22 +23,7 @@ setUsePluginAssets(false);
 
 const appName = import.meta.env.VITE_APP_NAME;
 const devAuthToken = import.meta.env.DEV ? import.meta.env.VITE_VERTESIA_AUTH_TOKEN : undefined;
-
-function resolveApiBaseUrl() {
-    const configured = import.meta.env.VITE_APP_API_BASE_URL ?? import.meta.env.VITE_APP_API_BASE;
-    if (configured) return configured.replace(/\/+$/, '');
-
-    const parts = window.location.pathname.split('/').filter(Boolean);
-    if (parts[0] === 'live' && parts[1]) {
-        return `/live/${parts[1]}/api`;
-    }
-    if (parts[0] === 'tenants' && parts[2] === 'apps' && parts[4] === 'versions' && parts[5]) {
-        return `/${parts.slice(0, 6).join('/')}/api`;
-    }
-    return '/api';
-}
-
-const apiBaseUrl = resolveApiBaseUrl();
+const apiBaseUrl = resolveAppApiBaseUrl();
 
 function AppRoute({ enforceInstallation }: { enforceInstallation: boolean }) {
     const content = (
@@ -54,8 +40,11 @@ function AppRoute({ enforceInstallation }: { enforceInstallation: boolean }) {
 }
 
 const routes: Route[] = [
-    { path: "*", Component: () => <AdminApp baseUrl={apiBaseUrl} /> },
+    { path: "tenants/:tenantId/live/:agentRunId/app/*", Component: () => <AppRoute enforceInstallation={!devAuthToken} /> },
+    { path: "live/:agentRunId/app/*", Component: () => <AppRoute enforceInstallation={!devAuthToken} /> },
+    { path: "tenants/:tenantId/apps/:appId/versions/:versionId/app/*", Component: () => <AppRoute enforceInstallation={!devAuthToken} /> },
     { path: "app/*", Component: () => <AppRoute enforceInstallation={!devAuthToken} /> },
+    { path: "*", Component: () => <AdminApp baseUrl={apiBaseUrl} /> },
 ]
 
 function DevShell({ children, token }: { children: ReactNode; token: string }) {
