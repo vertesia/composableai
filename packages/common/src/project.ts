@@ -321,40 +321,32 @@ export interface IndexingStatusResponse {
     reindex_in_progress: boolean;
     /** Reindex progress (if reindex is in progress) */
     reindex_progress?: {
-        /** Total documents to reindex */
-        total: number;
-        /** Documents processed so far */
-        processed: number;
-        /** Successfully indexed documents */
-        successful: number;
-        /** Failed documents */
-        failed: number;
-        /** Current status (e.g., "indexing", "complete") */
+        /** Total shards to process */
+        total_shards: number;
+        /** Shards completed so far */
+        completed_shards: number;
+        /** Shards that failed */
+        failed_shards: number;
+        /** Current status (e.g., "computing_shards", "indexing", "completed") */
         status: string;
-        /** Current batch number */
-        current_batch: number;
-        /** Total number of batches */
-        total_batches: number;
-        /** Percentage complete (0-100) */
-        percent_complete: number;
-        /** Batches processed per second */
-        batches_per_second: number;
+        /** Documents scanned from source */
+        scanned: number;
+        /** Documents written to target index */
+        written: number;
+        /** Documents that failed to index */
+        errors: number;
         /** Documents processed per second */
         docs_per_second: number;
         /** Elapsed time in seconds */
         elapsed_seconds: number;
         /** Estimated seconds remaining (null if unknown) */
         estimated_seconds_remaining: number | null;
-        /** Total bytes sent to ES */
-        total_bytes?: number;
-        /** Total ES bulk flushes */
-        bulk_flushes?: number;
-        /** Average bytes per ES bulk flush */
-        avg_flush_bytes?: number;
-        /** Configured batch size */
-        batch_size?: number;
-        /** Configured parallel batch count */
-        parallel_batch_count?: number;
+        /** Percentage complete (0-100) */
+        percent_complete: number;
+        /** Source alias */
+        alias: string;
+        /** Target index name */
+        target_index: string;
     };
 }
 
