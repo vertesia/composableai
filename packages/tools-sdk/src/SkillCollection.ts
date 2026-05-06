@@ -86,7 +86,7 @@ export class SkillCollection implements ICollection<SkillDefinition> {
      * Get skills exposed as tool definitions.
      * This allows skills to appear alongside regular tools.
      * When called, they return rendered instructions.
-     * Includes related_tools for dynamic tool discovery.
+     * Includes tools for dynamic tool discovery.
      */
     getToolDefinitions(filterContext?: ToolUseContext): AgentToolDefinition[] {
         const defaultSchema: ToolDefinition['input_schema'] = {
@@ -109,8 +109,8 @@ export class SkillCollection implements ICollection<SkillDefinition> {
         return skills.map(skill => {
             // Build description with related tools info if available
             let description = `[Skill] ${skill.description}. Returns contextual instructions for this task.`;
-            if (skill.related_tools && skill.related_tools.length > 0) {
-                description += ` Unlocks tools: ${skill.related_tools.join(', ')}.`;
+            if (skill.tools && skill.tools.length > 0) {
+                description += ` Unlocks tools: ${skill.tools.join(', ')}.`;
             }
 
             return {
@@ -118,7 +118,7 @@ export class SkillCollection implements ICollection<SkillDefinition> {
                 name: `learn_${skill.name}`,
                 description,
                 input_schema: skill.input_schema || defaultSchema,
-                related_tools: skill.related_tools,
+                tools: skill.tools,
                 category: this.name,
             };
         });
@@ -357,7 +357,7 @@ export function parseSkillFile(
 
     // Related tools from frontmatter
     if (frontmatter.tools) {
-        skill.related_tools = frontmatter.tools;
+        skill.tools = frontmatter.tools;
     }
 
     return skill;

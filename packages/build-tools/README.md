@@ -76,7 +76,7 @@ description: A helpful skill
 content_type: md
 context_triggers:
   keywords: [skill, helper]
-related_tools: [tool1, tool2]
+tools: [tool1, tool2]
 ---
 
 # My Skill
@@ -95,7 +95,7 @@ This is the skill content in markdown.
   context_triggers: {
     keywords: ['skill', 'helper']
   },
-  related_tools: ['tool1', 'tool2'],
+  tools: ['tool1', 'tool2'],
   scripts: ['helper.js', 'script.py'],  // If .js/.py files exist in skill dir
   widgets: ['chart', 'user-select']     // If .tsx files exist in skill dir
 }
@@ -133,7 +133,7 @@ This is the skill content in markdown.
     system_packages?: string[];    // System-level packages
     template?: string;             // Code template
   };
-  related_tools?: string[];        // Optional: Related tool names
+  tools?: string[];        // Optional: Related tool names
   scripts?: string[];              // Optional: Script files in skill dir
   widgets?: string[];              // Optional: Widget names in skill dir
   isEnabled?: (context: any) => Promise<boolean>;  // Optional: Runtime filter function
