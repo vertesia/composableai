@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/build-tools",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Build tools for Vertesia projects - Rollup and Vite plugins for transforming imports, bundling skills, and compiling widgets",
   "type": "module",
   "main": "./lib/esm/index.js",
@@ -32,7 +32,7 @@
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.1.2",
-    "@types/node": "^25.6.0",
+    "@types/node": "^24.1.0",
     "rollup": "^4.59.0",
     "ts-dual-module": "^0.6.3",
     "typescript": "^6.0.2",

@@ -5,7 +5,7 @@ import { SidebarSection, useSidebarToggle } from "@vertesia/ui/layout";
 import { useLocation, useRouterBasePath } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { MessageSquare } from "lucide-react";
-import type { WorkflowRun } from "@vertesia/common";
+import type { AgentRunResponse, WorkflowRun } from "@vertesia/common";
 import { AppSidebarItem } from "./AppSidebarItem";
 import { ASSISTANT_INTERACTION } from "./constants";
 import { routes } from "./routes";
@@ -34,24 +34,9 @@ function groupNavRoutes(items: PluginRoute[]): Array<{ title?: string; items: Pl
     return order.map(key => ({ title: key || undefined, items: groups.get(key)! }));
 }
 
-interface AgentRunListItem {
-    id: string;
-    run_kind?: string;
-    workflow_id?: string;
-    status: WorkflowRun["status"];
-    started_at?: Date | string | null;
-    completed_at?: Date | string | null;
-    topic?: string;
-    title?: string;
-    data?: Record<string, unknown>;
-    interaction_name?: string;
-    visibility?: WorkflowRun["visibility"];
-    activity_state?: WorkflowRun["activity_state"];
-    interactive?: boolean;
-}
-
-function toWorkflowRun(run: AgentRunListItem): WorkflowRun {
+function toWorkflowRun(run: AgentRunResponse): WorkflowRun {
     const isAgentRun = run.run_kind === "agent";
+
     return {
         run_id: run.id,
         workflow_id: run.workflow_id,
@@ -138,7 +123,7 @@ export function PluginSidebar({ showConversations = true }: PluginSidebarProps) 
         })
             .then(response => {
                 const items = Array.isArray(response.items) ? response.items : [];
-                setConversations(items.map(run => toWorkflowRun(run as AgentRunListItem)));
+                setConversations(items.map(toWorkflowRun));
             })
             .catch(() => setConversations([]));
     }, [client, showConversations]);

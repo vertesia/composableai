@@ -286,6 +286,9 @@ export class IndexingApi extends ApiTopic {
      */
     private get zenoBulkBaseUrl(): string {
         const storeBaseUrl = this.client.baseUrl;
+        if (storeBaseUrl.includes('localhost:') || storeBaseUrl.includes('127.0.0.1:')) {
+            return 'https://zeno-bulk-dev-main.api.dev1.vertesia.io';
+        }
         if (storeBaseUrl.includes('zeno-server')) {
             return storeBaseUrl.replace(/zeno-server/, 'zeno-bulk');
         }

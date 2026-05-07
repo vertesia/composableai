@@ -293,6 +293,8 @@ export interface OAuthIdTokenPayload {
     account: AuthTokenPayload['account'];
     accounts: AuthTokenPayload['accounts'];
     project?: ProjectRef;
+    /** User groups */
+    groups?: AuthTokenPayload['groups'];
     iss: string;
     aud: string;
     exp: number;

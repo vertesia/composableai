@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState, type RefObject } from "react";
 
 import { AUDIO_RENDITION_NAME, AudioMetadata, ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, MarkdownRenditionFormat, PDF_RENDITION_NAME, Permission, POSTER_RENDITION_NAME, VideoMetadata, WorkflowExecutionStatus } from "@vertesia/common";
-import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
+import { Button, Dropdown, MenuItem, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
@@ -541,14 +541,14 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
                 </div>
             )}
-            {currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText && (
+            {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && isLoadingText && (
                 <div className={getPanelVisibility(true)}>
                     <div className="flex justify-center items-center flex-1">
                         <Spinner size="lg" />
                     </div>
                 </div>
             )}
-            {currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText && (
+            {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && !isLoadingText && (
                 <div className={getPanelVisibility(true)}>
                     <TextPanel
                         object={object}
@@ -668,43 +668,38 @@ function TextActions({
                                     <SquarePen className="size-4" />
                                 </SecureButton>
                             )}
-                            <Button variant="ghost" size="sm" title="Download text" onClick={handleDownloadText}>
-                                <Download className="size-4" />
-                            </Button>
                         </>
                     )}
-                    {isMarkdown && text && (
-                        <>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleExportDocx}
-                                disabled={isDownloading}
-                                className="flex items-center gap-2"
-                            >
-                                {isDownloading ? (
-                                    <Spinner size="sm" />
-                                ) : (
-                                    <Download className="size-4" />
-                                )}
-                                DOCX
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleExportPdf}
-                                disabled={isDownloading}
-                                className="flex items-center gap-2"
-                            >
-                                {isDownloading ? (
-                                    <Spinner size="sm" />
-                                ) : (
-                                    <Download className="size-4" />
-                                )}
-                                PDF
-                            </Button>
-                        </>
-                    )}
+                    <Dropdown trigger={
+                        <Button variant="ghost" size="sm" disabled={!text} className="flex items-center gap-2" alt="download">
+                            <Download className="size-4" />
+                        </Button>}>
+                        {fullText && (
+                            <MenuItem onClick={handleDownloadText} isDisabled={isDownloading}>
+                                <div className="flex items-center gap-2">
+                                    {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
+                                    Download Text
+                                </div>
+                            </MenuItem>
+                        )}
+                        {isMarkdown && text && (
+                            <>
+                                <MenuItem onClick={handleExportDocx} isDisabled={isDownloading}>
+                                    <div className="flex items-center gap-2">
+                                        {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
+                                        Export as DOCX
+                                    </div>
+                                </MenuItem>
+                                <MenuItem onClick={handleExportPdf} isDisabled={isDownloading}>
+                                    <div className="flex items-center gap-2">
+                                        {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
+                                        Export as PDF
+                                    </div>
+                                </MenuItem>
+                            </>
+                        )}
+                    </Dropdown>
+
                 </div>
             </div>
         </>

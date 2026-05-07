@@ -72,6 +72,7 @@ type ListTasksOptions = {
     assignee?: unknown;
     sourceType?: unknown;
     limit?: unknown;
+    wait?: unknown;
     json?: boolean;
     output?: unknown;
 };
@@ -144,6 +145,7 @@ export function registerAgentsCommand(program: Command) {
         .option("--assignee <principal>", "Filter by assignee principal ref")
         .option("--source-type <type>", "Filter by source type: agent or process")
         .option("-l, --limit <limit>", "Maximum tasks to return", "50")
+        .option("--wait <seconds>", "Wait up to this many seconds for at least one matching task")
         .option("--json", "Print raw JSON")
         .option("-o, --output <file>", "Write JSON output to a file")
         .action(async (runId: string | undefined, options: ListTasksOptions) => {
@@ -361,13 +363,14 @@ async function listAgentTasks(
     options: ListTasksOptions,
 ) {
     const client = await getClient(program);
-    const tasks = await client.tasks.list({
+    const query = {
         run_id: readOptionalString(options.runId) ?? runId,
         status: readOptionalTaskStatus(options.status),
         assignee: readOptionalString(options.assignee),
         source_type: readOptionalTaskSourceType(options.sourceType),
         limit: readOptionalInteger(options.limit) ?? 50,
-    });
+    };
+    const tasks = await waitForTaskList(client, query, readOptionalSeconds(options.wait) ?? 0);
 
     const outputFile = readOptionalString(options.output);
     if (options.json || outputFile) {
@@ -381,6 +384,26 @@ async function listAgentTasks(
     }
 
     printTasks(tasks);
+}
+
+async function waitForTaskList(
+    client: Awaited<ReturnType<typeof getClient>>,
+    query: {
+        run_id?: string;
+        status?: Task["status"];
+        assignee?: string;
+        source_type?: Task["source"]["type"];
+        limit: number;
+    },
+    waitSeconds: number,
+): Promise<Task[]> {
+    const deadline = Date.now() + (waitSeconds * 1000);
+    let tasks = await client.tasks.list(query);
+    while (tasks.length === 0 && Date.now() < deadline) {
+        await delay(500);
+        tasks = await client.tasks.list(query);
+    }
+    return tasks;
 }
 
 async function inspectAgentRun(program: Command, runId: string, options: InspectOptions) {
@@ -582,6 +605,18 @@ function readOptionalInteger(value: unknown): number | undefined {
     }
     const parsed = Number.parseInt(raw, 10);
     return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function readOptionalSeconds(value: unknown): number | undefined {
+    const raw = readOptionalString(value);
+    if (!raw) {
+        return undefined;
+    }
+    const parsed = Number.parseFloat(raw);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+        throw new Error("wait must be a non-negative number of seconds");
+    }
+    return parsed;
 }
 
 function readVisibility(value: unknown): "project" | "private" | undefined {
