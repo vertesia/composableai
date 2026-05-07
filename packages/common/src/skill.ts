@@ -62,7 +62,7 @@ export interface InjectedSkill {
     /**
      * Tools related to this skill
      */
-    related_tools?: string[];
+    tools?: string[];
 
     /**
      * UI module for rendering results
