@@ -40,6 +40,8 @@ export function TextEditorPanel({ object, text, onClose, onSaved }: TextEditorPa
     const [showConfirmation, setShowConfirmation] = useState(false);
 
     const language = getMonacoLanguage(object.content?.type);
+    console.log('Determined language for Monaco Editor:', language);
+    console.log('TextEditorPanel rendered with object:', object, text);
 
     const handleEditorChange = useCallback(() => {
         if (!isDirty) setIsDirty(true);
@@ -112,7 +114,7 @@ export function TextEditorPanel({ object, text, onClose, onSaved }: TextEditorPa
                 <Button variant="ghost" size="sm" onClick={onClose} disabled={isSaving}>
                     {t('store.cancelEdit')}
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleSave} disabled={!isDirty} isLoading={isSaving}>
+                <Button variant="secondary" size="sm" onClick={handleSave} disabled={!isDirty} isLoading={isSaving}>
                     {t('store.saveText')}
                 </Button>
             </div>
