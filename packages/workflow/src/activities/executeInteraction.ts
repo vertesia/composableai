@@ -203,7 +203,8 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         if (error.statusCode === 429 && params.exit_on_resource_exhaustion) {
             throw new ResourceExhaustedError(error.statusCode, "Resource exhausted - rate limit exceeded");
         } else if (is4xxNonRetryable(error.status) || is4xxNonRetryable(error.statusCode) || is4xxNonRetryable(error.code) || error.retryable === false) {
-            // 4xx HTTP errors (except 429 rate-limit) are permanent client errors (e.g. model not found, invalid request).
+            // 4xx HTTP errors (except retryable statuses) are permanent client errors
+            // (e.g. model not found, invalid request).
             // Errors explicitly marked as non-retryable (e.g. LlumiverseError) also fall here.
             // They will not be resolved by retrying.
             throw ApplicationFailure.create({
@@ -341,9 +342,10 @@ export async function executeInteractionFromActivity(
 
 /**
  * Returns true for 4xx status codes that indicate permanent client errors.
- * 429 (Too Many Requests) is excluded because it is retryable.
+ * 412 (Precondition Failed) and 429 (Too Many Requests) are excluded because
+ * they are retryable.
  */
 function is4xxNonRetryable(code: number | undefined): boolean {
     if (code === undefined || typeof code !== 'number') return false;
-    return code >= 400 && code < 500 && code !== 429;
+    return code >= 400 && code < 500 && code !== 412 && code !== 429;
 }

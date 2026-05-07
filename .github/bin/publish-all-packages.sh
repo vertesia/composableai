@@ -12,6 +12,20 @@ set -e
 # Functions
 # =============================================================================
 
+workspace_package_dirs() {
+  local repo_root
+  repo_root="$(git rev-parse --show-toplevel)"
+
+  # Use pnpm workspace filtering so pnpm-workspace.yaml exclusions are authoritative.
+  pnpm -r --filter "./packages/**" exec pwd | while IFS= read -r pkg_dir; do
+    case "$pkg_dir" in
+      "${repo_root}"/packages/*)
+        [ -f "${pkg_dir}/package.json" ] && printf '%s\n' "$pkg_dir"
+        ;;
+    esac
+  done
+}
+
 update_package_versions() {
   echo "=== Updating composableai package versions ==="
 
@@ -61,31 +75,43 @@ update_package_versions() {
 publish_packages() {
   echo "=== Publishing composableai packages ==="
 
-  for pkg_dir in packages/*; do
-    if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
-      pkg_name=$(basename "$pkg_dir")
-      cd "$pkg_dir"
+  while IFS= read -r pkg_dir; do
+    pkg_name=$(basename "$pkg_dir")
+    cd "$pkg_dir"
 
-      pkg_version=$(pnpm pkg get version | tr -d '"')
+    pkg_version=$(pnpm pkg get version | tr -d '"')
 
-      # Fail if npm_tag is not set (safety check to prevent publishing without explicit tag)
-      if [ -z "$npm_tag" ]; then
-        echo "Error: npm_tag is not set. This indicates an invalid ref/version-type combination."
-        exit 1
-      fi
-
-      echo "Publishing @vertesia/${pkg_name}@${pkg_version} with tag ${npm_tag}"
-
-      # Publish
-      if [ -n "$DRY_RUN_FLAG" ]; then
-        pnpm publish --access public --tag "${npm_tag}" --no-git-checks ${DRY_RUN_FLAG}
-      else
-        pnpm publish --access public --tag "${npm_tag}" --no-git-checks
-      fi
-
-      cd ../..
+    # Fail if npm_tag is not set (safety check to prevent publishing without explicit tag)
+    if [ -z "$npm_tag" ]; then
+      echo "Error: npm_tag is not set. This indicates an invalid ref/version-type combination."
+      exit 1
     fi
-  done
+
+    echo "Publishing @vertesia/${pkg_name}@${pkg_version} with tag ${npm_tag}"
+
+    # Publish
+    if [ -n "$DRY_RUN_FLAG" ]; then
+      pnpm publish --access public --tag "${npm_tag}" --no-git-checks ${DRY_RUN_FLAG}
+    else
+      pnpm publish --access public --tag "${npm_tag}" --no-git-checks
+    fi
+
+    cd "$(git rev-parse --show-toplevel)"
+  done < <(workspace_package_dirs)
+}
+
+write_package_summary_rows() {
+  local version="$1"
+
+  while IFS= read -r pkg_dir; do
+    pkg_name=$(basename "$pkg_dir")
+    if [ "$DRY_RUN" = "true" ]; then
+      echo "| \`@vertesia/${pkg_name}\` | ${version} |" >> "$GITHUB_STEP_SUMMARY"
+    else
+      pkg_url="https://www.npmjs.com/package/@vertesia/${pkg_name}?activeTab=versions"
+      echo "| \`@vertesia/${pkg_name}\` | [${version}](${pkg_url}) |" >> "$GITHUB_STEP_SUMMARY"
+    fi
+  done < <(workspace_package_dirs)
 }
 
 update_template_versions() {
@@ -201,17 +227,7 @@ ${title}
 | ------- | ------- |
 EOF
 
-  for pkg_dir in packages/*; do
-    if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
-      pkg_name=$(basename "$pkg_dir")
-      if [ "$DRY_RUN" = "true" ]; then
-        echo "| \`@vertesia/${pkg_name}\` | ${version} |" >> "$GITHUB_STEP_SUMMARY"
-      else
-        pkg_url="https://www.npmjs.com/package/@vertesia/${pkg_name}?activeTab=versions"
-        echo "| \`@vertesia/${pkg_name}\` | [${version}](${pkg_url}) |" >> "$GITHUB_STEP_SUMMARY"
-      fi
-    fi
-  done
+  write_package_summary_rows "$version"
 
   # Add metadata
   cat >> "$GITHUB_STEP_SUMMARY" << EOF

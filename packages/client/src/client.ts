@@ -199,7 +199,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.sessionTags = opts.sessionTags;
         this.oauthClients = new OAuthClientsApi(this);
         this.oauthGrants = new OAuthGrantsApi(this);
-        this.oauthServer = new OAuthServerApi(this);
+        this.oauthServer = new OAuthServerApi(this, this.tokenServerUrl);
         this.oauthProviders = new OAuthProvidersApi(this);
         this.remoteMcpConnections = new RemoteMcpConnectionsApi(this);
     }
@@ -290,6 +290,14 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
 
     get files() {
         return this.store.files;
+    }
+
+    get processes() {
+        return this.store.processes;
+    }
+
+    get tasks() {
+        return this.store.tasks;
     }
 
     /**

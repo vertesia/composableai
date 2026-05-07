@@ -61,6 +61,7 @@ wait_for_npm() {
 
 RELEASE_TYPE=""
 TEMPLATE_NAME="Vertesia Plugin"
+TEMPLATE_BRANCH=""
 WAIT_FOR_NPM=false
 
 while [[ $# -gt 0 ]]; do
@@ -73,13 +74,17 @@ while [[ $# -gt 0 ]]; do
       TEMPLATE_NAME="$2"
       shift 2
       ;;
+    --branch)
+      TEMPLATE_BRANCH="$2"
+      shift 2
+      ;;
     --wait)
       WAIT_FOR_NPM=true
       shift
       ;;
     *)
       echo "Error: Unknown argument '$1'"
-      echo "Usage: $0 --release-type <snapshot|release> [--template <name>] [--wait]"
+      echo "Usage: $0 --release-type <snapshot|release> [--template <name>] [--branch <ref>] [--wait]"
       exit 1
       ;;
   esac

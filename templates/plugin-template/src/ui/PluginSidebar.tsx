@@ -5,9 +5,27 @@ import { SidebarSection, useSidebarToggle } from '@vertesia/ui/layout';
 import { useLocation, useRouterBasePath } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { HomeIcon, MessageSquare, PlusCircle } from 'lucide-react';
-import type { WorkflowRun } from '@vertesia/common';
+import type { AgentRunResponse, WorkflowRun } from '@vertesia/common';
 import { AppSidebarItem } from './AppSidebarItem';
 import { ASSISTANT_INTERACTION } from './constants';
+
+function toWorkflowRun(run: AgentRunResponse): WorkflowRun {
+    const isAgentRun = run.run_kind === 'agent';
+
+    return {
+        run_id: run.id,
+        workflow_id: run.workflow_id,
+        status: run.status,
+        started_at: run.started_at ? new Date(run.started_at).toISOString() : null,
+        closed_at: run.completed_at ? new Date(run.completed_at).toISOString() : null,
+        topic: isAgentRun ? run.topic : run.title,
+        input: isAgentRun && run.data ? { data: run.data } : undefined,
+        interaction_name: isAgentRun ? run.interaction_name : undefined,
+        visibility: run.visibility,
+        activity_state: run.activity_state,
+        interactive: isAgentRun ? run.interactive : undefined,
+    };
+}
 
 function getConversationLabel(conv: WorkflowRun, t: (key: string) => string): string {
     if (conv.topic) return conv.topic;
@@ -68,13 +86,7 @@ export function PluginSidebar() {
             limit: 20,
             sort: 'started_at',
             order: 'desc',
-        }).then(response => setConversations(response.items.map(r => ({
-            run_id: r.id,
-            workflow_id: r.workflow_id,
-            started_at: r.started_at ? new Date(r.started_at).toISOString() : null,
-            topic: r.topic,
-            input: r.data ? { data: r.data } : undefined,
-        } as WorkflowRun))));
+        }).then(response => setConversations(response.items.map(toWorkflowRun)));
     }, [client]);
 
     const grouped = useMemo(() => groupByDate(conversations, t), [conversations, t]);
