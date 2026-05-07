@@ -17,7 +17,8 @@ console.log(`Starting Tool Server on port ${port}...`);
 console.log(`API endpoint: http://localhost:${port}/api`);
 console.log(`Web UI: http://localhost:${port}/`);
 
-server.get('*', serveStatic({ root: './dist' }));
+// Hono's handler type carries a route symbol, so duplicate workspace type instances can be incompatible.
+server.all('*', serveStatic({ root: './dist' }) as never);
 
 serve({
     fetch: server.fetch,

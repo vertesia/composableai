@@ -73,7 +73,7 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
     }
 
     get runId() {
-        const runId = activityInfo().workflowExecution.runId;
+        const runId = activityInfo().workflowExecution?.runId;
         if (!runId) {
             log.error("No runId found in activityInfo");
             throw new WorkflowParamNotFoundError(
@@ -88,7 +88,7 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
     }
 
     get workflowId() {
-        const workflowId = activityInfo().workflowExecution.workflowId;
+        const workflowId = activityInfo().workflowExecution?.workflowId;
         if (!workflowId) {
             log.error("No workflowId found in activityInfo");
             throw new WorkflowParamNotFoundError(

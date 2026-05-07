@@ -25,7 +25,7 @@ export async function checkRateLimit(payload: DSLActivityExecutionPayload<RateLi
     const info = activityInfo();
     const requestPayload: RateLimitRequestPayload = {
       interaction: params.interactionIdOrEndpoint,
-      workflow_run_id: info.workflowExecution.runId,
+      workflow_run_id: info.workflowExecution!.runId,
       environment_id: environmentId,
       model_id: modelId,
     };

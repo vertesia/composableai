@@ -20,6 +20,7 @@
     /* Bundler mode */
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "ignoreDeprecations": "6.0",
     //"allowImportingTsExtensions": true,
     //"verbatimModuleSyntax": true,
     //"noEmit": false,
