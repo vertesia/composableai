@@ -3,6 +3,7 @@ import { registerAppsCommand } from './apps/index.js';
 import { registerAgentsCommand } from './agents/index.js';
 import { registerArtifactsCommand } from './artifacts/index.js';
 import { registerDataCommand } from './data/index.js';
+import { registerIamCommand } from './iam/index.js';
 import { listEnvironments } from './envs/index.js';
 import { listInteractions } from './interactions/index.js';
 import { registerObjectsCommand } from './objects/index.js';
@@ -143,6 +144,7 @@ registerAppsCommand(program);
 registerAgentsCommand(program);
 registerArtifactsCommand(program);
 registerDataCommand(program);
+registerIamCommand(program);
 
 const profilesRoot = program.command("profiles")
     .description("Manage configuration profiles")
