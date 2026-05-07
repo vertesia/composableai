@@ -92,10 +92,6 @@ export interface AuthTokenPayload {
     /** groups */
     groups?: UserGroupRef[]; //group ids
 
-    /** Merged user + group properties for dynamic permission matching.
-     *  User properties take precedence over group properties. */
-    properties?: Record<string, any>;
-
     /** Content security conditions keyed by permission (read/write/delete).
      *  Presence triggers restrict mode: project:* is dropped from security filters. */
     content_security?: ContentSecurity;
