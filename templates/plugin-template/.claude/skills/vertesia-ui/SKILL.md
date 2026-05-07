@@ -9,6 +9,36 @@ React UI built with React 19, Tailwind CSS 4, and `@vertesia/ui` components.
 
 For the full component API reference, see also `composableai/packages/ui/llms.txt` (shipped with the npm package).
 
+For a reusable list/detail table example with backend search, sort, facets, inline filters, and back-navigation preservation, see `references/generic-table-pattern.md`.
+
+## Required First Step: Component Inventory
+
+Before writing or refactoring UI code, explicitly check whether `@vertesia/ui` already provides the surface you need.
+
+At minimum, search for an existing component in these buckets:
+
+- `@vertesia/ui/core`
+- `@vertesia/ui/layout`
+- `@vertesia/ui/features`
+
+If a suitable component exists, use it. Do not reimplement it with raw HTML just because the local version is faster to type.
+
+This is especially strict for:
+
+- tables
+- page headers
+- filters
+- modals
+- tabs
+- badges
+- buttons
+- selects
+- text inputs
+- side panels
+- empty/loading/error states
+
+If you still introduce a custom wrapper, state which existing `@vertesia/ui` component you checked and why it was insufficient.
+
 ## Import Paths
 
 ```tsx
@@ -98,6 +128,8 @@ import { Table, TBody, THead, Th, Tr, Td } from '@vertesia/ui/core';
 ```
 
 `TBody` renders loading skeletons when `isLoading=true`. **Only use `isLoading` for initial empty-state load**, not for "load more" — show a separate `<Spinner />` below the table for appending.
+
+Use this instead of custom `<table>` wrappers unless there is a documented gap.
 
 ### Infinite Scroll (Lazy Loading)
 
@@ -213,6 +245,60 @@ const path = useLocation().pathname;   // Current path
 <NavLink href="/items">Go to Items</NavLink>
 ```
 
+### List / Detail Preservation
+
+If a list page links to a detail page and users are expected to go back, do not keep the list state inside the list page component.
+
+Preserve these concerns above the route boundary when they matter:
+
+- active filters
+- search query
+- sort
+- pagination or loaded results
+- row selection
+- scroll position
+
+Use a provider above `NestedRouterProvider` or above the list/detail route split. Do not use a module-level singleton.
+
+If `FilterProvider` is involved, remember that it restores filters from the URL on mount. If your list state also survives route changes, normalize or dedupe filter writes at the provider boundary so the same filter does not get appended repeatedly on back-navigation.
+
+For scroll restoration:
+
+- persist the list scroll position in provider state and `window.history.state.data`
+- restore it in `useLayoutEffect`
+- wait until the list has rendered before restoring, typically with `requestAnimationFrame`
+
+Do not treat list/detail navigation as a cosmetic issue. If filters and scroll reset on back, the UX is wrong.
+
+### Search vs Find For Table Surfaces
+
+For table/list surfaces that need any combination of:
+
+- full-text search
+- backend sort
+- backend facets
+
+use one backend `search` path consistently.
+
+Do not mix `find` for the default state with `search` for filtered states if the page exposes sort and facet-driven filtering. That creates different backend behavior depending on UI state and weakens the table contract.
+
+Use `find` only for simple exact-match fetches that do not require backend sort, full-text behavior, or facets.
+
+## Completion Check
+
+Before calling a UI task complete, run a short conformance pass:
+
+1. any raw `<table>` where `Table` / `THead` / `TBody` should be used?
+2. any native `<select>` where `SelectBox` should be used?
+3. any local page-header wrapper where `GenericPageNavHeader` would fit?
+4. any inline styles that should move to CSS or semantic utility classes?
+5. any custom wrapper that duplicates existing `@vertesia/ui` behavior without a documented gap?
+6. any list/detail flow where filters, sort, or scroll reset on back-navigation because the state lives below the route boundary?
+7. any `FilterProvider` usage that can double-restore URL filters into already-persisted React state?
+8. any hover-reveal Tailwind classes built from template strings instead of literal class names?
+
+If the answer is yes to any of the above, the UI pass is not done yet.
+
 ## Layout
 
 ### Sidebar
@@ -250,6 +336,8 @@ const { isOpen, toggleMobile } = useSidebarToggle();
   actions={<Button>Create New</Button>}
 />
 ```
+
+Prefer `GenericPageNavHeader` over a local page-header abstraction when it fits the page.
 
 ## Data Fetching
 
@@ -325,6 +413,29 @@ Override CSS custom properties in `index.css` after the shared import:
 ```
 
 Available tokens: `--primary`, `--success`, `--attention`, `--destructive`, `--done`, `--info`, `--muted` (each with `-background` variant), `--background`, `--foreground`, `--card-*`, `--sidebar-*`, `--border`, `--input`, `--ring`.
+
+### Tailwind Variant Safety
+
+Do not build Tailwind variant classes dynamically in template strings when you need them emitted into CSS.
+
+Bad:
+
+```tsx
+className={`opacity-0 group-hover/${groupName}:opacity-100`}
+```
+
+That class is usually invisible to Tailwind’s static analysis and will not be generated.
+
+Use literal class names or a static map instead:
+
+```tsx
+const hoverClass = {
+  contract: "group-hover/contract:opacity-100",
+  owner: "group-hover/owner:opacity-100",
+}[groupName];
+```
+
+This matters especially for hover-reveal filter buttons and row actions.
 
 ## Plugin Entry Points
 

@@ -103,6 +103,43 @@ pnpm build && pnpm start   # Runs on port 3000 (or PORT env var)
 
 The Node server (`server-node.ts`) serves static files from `dist/` via `@hono/node-server/serve-static`.
 
+### Tunnel-Based Dev Testing
+
+When testing a local plugin against a cloud Vertesia project:
+
+1. start the local HTTPS dev server
+2. expose it publicly with a tunnel, for example:
+
+```bash
+npx cloudflared tunnel --url https://localhost:5174 --no-tls-verify
+```
+
+3. update the installed app manifest so `endpoint` points to:
+
+```text
+https://<public-tunnel-host>/api/package
+```
+
+4. verify:
+
+- the app manifest now shows the tunnel endpoint
+- `GET <public-tunnel-host>/api/package?scope=types,interactions,activities` returns the expected app package
+
+If the project cannot resolve app-defined resources, treat tunnel reachability and manifest endpoint correctness as first-line checks.
+
+### Auth Expiry Discipline
+
+When the CLI or project auth expires during tunnel-based testing:
+
+1. refresh auth first
+2. verify whether the current local dev server is still alive on its existing port
+3. verify whether the current tunnel host is still reachable
+4. verify whether the installed app manifest still points to that live tunnel
+5. only create a new tunnel if the current one is actually dead
+6. if a new tunnel is created, update the installed app manifest immediately
+
+Avoid creating a fresh `pnpm dev` process and a fresh quick tunnel by reflex. That leaves multiple ports and stale manifest endpoints in play, which commonly shows up as `Failed to fetch type` or `interaction not found` even though the local app code is fine.
+
 ### Organization Access Restriction
 
 Set `VERTESIA_ALLOWED_ORGS` to restrict to specific orgs:

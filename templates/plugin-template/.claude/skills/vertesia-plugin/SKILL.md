@@ -121,6 +121,8 @@ Each resource follows the same pattern: create files → export from collection 
 
 For UI component APIs, routing, layout, styling, and agent conversation patterns, use the **vertesia-ui** skill.
 
+When the task includes UI work, do not stop at "it renders". The UI pass should start with a `@vertesia/ui` component inventory and end with a conformance check for duplicated primitives such as raw tables, native selects, local page headers, and inline styles.
+
 Key entry points:
 - `src/ui/plugin.tsx` — Library entry for Vertesia host (exports default component receiving `{ slot }`)
 - `src/ui/main.tsx` — Standalone dev entry (VertesiaShell + AdminApp at `/`, plugin at `/app/`)
@@ -132,6 +134,29 @@ Key entry points:
 Tool endpoints receive JWT tokens via `Authorization: Bearer {token}`. The SDK validates automatically. Access the client via `const client = await context.getClient()` in tool `run()`. For full client API reference, use the **vertesia-api** skill.
 
 For organization access restriction and deployment details, see REFERENCE.md.
+
+## Local Runtime Exposure
+
+For project-connected testing, the local plugin server is not enough by itself. The installed Vertesia app manifest must point to a reachable package endpoint.
+
+Use this sequence:
+
+1. run the local HTTPS dev server
+2. expose it with a tunnel such as Cloudflare Tunnel
+3. update the installed app manifest `endpoint` to `<public-url>/api/package`
+4. verify the app package from the public URL before debugging project-side failures
+
+If the project does not see updated types, interactions, or activities, check the manifest endpoint before changing app code.
+
+When auth expires during this flow:
+
+1. refresh auth first
+2. verify the currently running dev server port still works
+3. verify the current public tunnel still resolves
+4. verify the installed app manifest still points to that live tunnel
+5. only then decide whether a new server or tunnel is needed
+
+Do not keep spawning new local ports and quick tunnels after an auth failure. The project can easily end up pointing at a dead tunnel even while the local app appears healthy.
 
 ## Key Dependencies
 
