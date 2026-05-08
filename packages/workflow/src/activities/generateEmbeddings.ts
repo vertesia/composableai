@@ -1,18 +1,18 @@
-import { EmbeddingsResult } from "@llumiverse/common";
 import { log } from "@temporalio/activity";
-import { VertesiaClient, ZenoClientNotFoundError } from "@vertesia/client";
+import { type VertesiaClient, ZenoClientNotFoundError } from "@vertesia/client";
 import {
-    ContentObject,
-    DSLActivityExecutionPayload,
-    DSLActivitySpec,
+    type ContentObject,
+    type DSLActivityExecutionPayload,
+    type DSLActivitySpec,
+    type EmbeddingsApiResult,
     ImageRenditionFormat,
-    ProjectConfigurationEmbeddings,
+    type ProjectConfigurationEmbeddings,
     SupportedEmbeddingTypes,
 } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../errors.js";
 import { fetchBlobAsBase64, md5 } from "../utils/blobs.js";
-import { DocPart } from "../utils/chunks.js";
+import type { DocPart } from "../utils/chunks.js";
 import { countTokens } from "../utils/tokens.js";
 
 export interface GenerateEmbeddingsParams {
@@ -247,7 +247,8 @@ async function generateTextEmbeddings(
             environment,
             client,
         );
-        if (!res || !res.values) {
+        const values = res?.results?.[0]?.outputs?.[0]?.values;
+        if (!values) {
             return {
                 id: document.id,
                 status: "failed",
@@ -256,10 +257,10 @@ async function generateTextEmbeddings(
         }
 
         log.debug(`${type} embeddings generated for document ${document.id}`, {
-            len: res.values.length,
+            len: values.length,
         });
         await client.objects.setEmbedding(document.id, type, {
-            values: res.values,
+            values,
             model: res.model,
             etag: textEtag,
         });
@@ -268,7 +269,7 @@ async function generateTextEmbeddings(
             id: document.id,
             type,
             status: "completed",
-            len: res.values.length,
+            len: values.length,
         };
     }
 }
@@ -340,7 +341,10 @@ async function generateImageEmbeddings({
 
     const res = await client.environments
         .embeddings(environment, {
-            image,
+            inputs: [{
+                type: "image",
+                source: { base64: image, mime_type: "image/jpeg" },
+            }],
             model,
         })
         .then((res) => res)
@@ -349,7 +353,8 @@ async function generateImageEmbeddings({
             throw e;
         });
 
-    if (!res || !res.values) {
+    const values = res?.results?.[0]?.outputs?.[0]?.values;
+    if (!values) {
         return {
             id: document.id,
             status: "failed",
@@ -361,7 +366,7 @@ async function generateImageEmbeddings({
         document.id,
         SupportedEmbeddingTypes.image,
         {
-            values: res.values,
+            values,
             model: res.model,
             etag: contentEtag,
         },
@@ -371,7 +376,7 @@ async function generateImageEmbeddings({
         id: document.id,
         type,
         status: "completed",
-        len: res.values.length,
+        len: values.length,
     };
 }
 
@@ -380,14 +385,14 @@ async function generateEmbeddingsFromStudio(
     env: string,
     client: VertesiaClient,
     model?: string,
-): Promise<EmbeddingsResult> {
+): Promise<EmbeddingsApiResult> {
     log.debug(
         `Generating embeddings for text of ${text.length} chars with environment ${env}`,
     );
 
     return client.environments
         .embeddings(env, {
-            text,
+            inputs: [{ type: "text", text }],
             model,
         })
         .then((res) => res)
