@@ -56,8 +56,36 @@ pnpm start                 # Preview production build (build:server + vite previ
 | `src/tool-server/settings.ts` | Plugin settings JSON Schema                          |
 | `src/ui/plugin.tsx`           | Library entry for the Vertesia host app              |
 | `src/ui/main.tsx`             | Standalone dev entry (VertesiaShell + AdminApp)      |
-| `src/ui/routes.tsx`           | Route definitions (NestedRouterProvider)             |
+| `src/ui/app/App.tsx`          | App root (NestedRouterProvider)                      |
+| `src/ui/app/routes.tsx`       | Route definitions                                    |
 | `src/ui/index.css`            | Tailwind CSS 4 entry with shared styles import       |
+
+## UI Directory Structure
+
+User application code lives under `src/ui/app/`. Place new files according to the layout below — `app/README.md` has the full convention and the "add a feature" recipe.
+
+```text
+src/ui/
+├── main.tsx, plugin.tsx, env.ts, index.css   ← bootstrap / wiring (don't add app code here)
+├── i18n/
+└── app/                                       ← user application code
+    ├── App.tsx, routes.tsx, constants.ts
+    ├── components/    ← cross-feature shared components (generic primitives)
+    ├── hooks/         ← cross-feature shared hooks
+    ├── layouts/       ← plugin chrome (PluginLayout, PluginSidebar, …)
+    ├── pages/         ← thin route-level wrappers (one file per route)
+    └── features/<name>/
+        ├── components/, hooks/, types.ts, utils.ts
+        ├── <Feature>View.tsx
+        └── index.ts   ← public barrel
+```
+
+Rules of thumb:
+
+- A new route → thin component in `app/pages/` that imports its feature.
+- Self-contained business logic → `app/features/<name>/` with its own components/hooks/types.
+- A primitive used by ≥2 features (e.g. a sortable header) → promote to `app/components/`.
+- A hook used by ≥2 features → promote to `app/hooks/`.
 
 ## Plugin-Specific Conventions
 

@@ -25,6 +25,7 @@
   "objects.filterByValue": "Filter by {{value}}",
   "objects.filterStatus": "Status",
   "objects.filterType": "Type",
+  "objects.refresh": "Refresh",
   "objects.searchError": "Failed to search content objects.",
   "objects.searchPlaceholder": "Search content objects...",
   "objects.status.archived": "Archived",

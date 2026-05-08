@@ -7,7 +7,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { Database, HomeIcon, MessageSquare, PlusCircle } from 'lucide-react';
 import type { AgentRunResponse, WorkflowRun } from '@vertesia/common';
 import { AppSidebarItem } from './AppSidebarItem';
-import { ASSISTANT_INTERACTION } from './constants';
+import { ASSISTANT_INTERACTION } from '../constants';
 
 function toWorkflowRun(run: AgentRunResponse): WorkflowRun {
     const isAgentRun = run.run_kind === 'agent';
