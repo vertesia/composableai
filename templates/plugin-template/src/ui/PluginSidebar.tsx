@@ -4,7 +4,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { SidebarSection, useSidebarToggle } from '@vertesia/ui/layout';
 import { useLocation, useRouterBasePath } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import { HomeIcon, MessageSquare, PlusCircle } from 'lucide-react';
+import { Database, HomeIcon, MessageSquare, PlusCircle } from 'lucide-react';
 import type { AgentRunResponse, WorkflowRun } from '@vertesia/common';
 import { AppSidebarItem } from './AppSidebarItem';
 import { ASSISTANT_INTERACTION } from './constants';
@@ -103,6 +103,14 @@ export function PluginSidebar() {
                             to="/"
                         >
                             {t('nav.home')}
+                        </AppSidebarItem>
+                        <AppSidebarItem
+                            id="menu-objects"
+                            current={path === `${basePath}/objects`}
+                            icon={Database}
+                            to="/objects"
+                        >
+                            {t('nav.objects')}
                         </AppSidebarItem>
                         <AppSidebarItem
                             id="menu-chat"
