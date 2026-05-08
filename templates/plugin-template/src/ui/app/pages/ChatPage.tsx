@@ -1,6 +1,6 @@
 import { useCallback } from "react";
-import { ModernAgentConversation } from "@vertesia/ui/features";
-import { useNavigate, useParams } from "@vertesia/ui/router";
+import { GenericPageNavHeader, ModernAgentConversation } from "@vertesia/ui/features";
+import { NavLink, useNavigate, useParams } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { useUITranslation } from "@vertesia/ui/i18n";
 import type { CreateAgentRunPayload } from "@vertesia/common";
@@ -31,6 +31,19 @@ export function ChatPage() {
 
     return (
         <div className="flex flex-col h-full">
+            {agentRunId && (
+                <GenericPageNavHeader
+                    useDynamicBreadcrumbs={false}
+                    breadcrumbs={[
+                        <NavLink key="root" href="/conversations">
+                            {t('nav.conversations')}
+                        </NavLink>,
+                        <span key="current">
+                            <span>{t('nav.conversation')}</span>
+                        </span>,
+                    ]}
+                />
+            )}
             <ModernAgentConversation
                 agentRunId={agentRunId}
                 startWorkflow={startWorkflow}

@@ -1,6 +1,7 @@
 import { ChatPage } from "./pages/ChatPage";
 import { ContentObjectDetailPage } from "./pages/ContentObjectDetailPage";
 import { ContentObjectsPage } from "./pages/ContentObjectsPage";
+import { ConversationsPage } from "./pages/ConversationsPage";
 import { HomePage } from "./pages/HomePage";
 
 export const routes = [
@@ -15,6 +16,10 @@ export const routes = [
     {
         path: '/objects/:id',
         Component: () => <ContentObjectDetailPage />,
+    },
+    {
+        path: '/conversations',
+        Component: () => <ConversationsPage />,
     },
     {
         path: '/chat',

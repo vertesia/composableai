@@ -8,6 +8,7 @@ interface SortableHeadProps<TField extends string> {
     activeField: TField;
     direction: SortDir;
     onSort: (field: TField) => void;
+    className?: string;
 }
 
 export function SortableHead<TField extends string>({
@@ -16,6 +17,7 @@ export function SortableHead<TField extends string>({
     activeField,
     direction,
     onSort,
+    className,
 }: SortableHeadProps<TField>) {
     const isActive = activeField === field;
     const Icon = isActive ? (direction === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
@@ -25,7 +27,7 @@ export function SortableHead<TField extends string>({
             aria-sort={
                 isActive ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'
             }
-            className="text-left cursor-pointer select-none"
+            className={`text-left cursor-pointer select-none${className ? ` ${className}` : ''}`}
             onClick={() => onSort(field)}
         >
             <div className="flex items-center gap-1">
