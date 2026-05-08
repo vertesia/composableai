@@ -1,4 +1,5 @@
 import { ChatPage } from "./pages/ChatPage";
+import { ContentObjectDetailPage } from "./pages/ContentObjectDetailPage";
 import { ContentObjectsPage } from "./pages/ContentObjectsPage";
 import { HomePage } from "./pages/HomePage";
 
@@ -10,6 +11,10 @@ export const routes = [
     {
         path: '/objects',
         Component: () => <ContentObjectsPage />,
+    },
+    {
+        path: '/objects/:id',
+        Component: () => <ContentObjectDetailPage />,
     },
     {
         path: '/chat',

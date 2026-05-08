@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { Badge } from '@vertesia/ui/core';
 import type { ContentObjectItem } from '@vertesia/common';
 import { InlineFilterButton } from '../../../components/InlineFilterButton';
@@ -8,16 +9,23 @@ interface ContentObjectRowProps {
     item: ContentObjectItem;
     t: (key: string, opts?: Record<string, unknown>) => string;
     onAddFilter: (name: FilterableField, value: string, label: string) => void;
+    onOpen: (id: string) => void;
 }
 
-export function ContentObjectRow({ item, t, onAddFilter }: ContentObjectRowProps) {
-    const updated = item.updated_at ? new Date(item.updated_at).toLocaleString() : '—';
+function ContentObjectRowImpl({ item, t, onAddFilter, onOpen }: ContentObjectRowProps) {
+    const updated = useMemo(
+        () => (item.updated_at ? new Date(item.updated_at).toLocaleString() : '—'),
+        [item.updated_at],
+    );
     const typeName = item.type?.name;
     const typeId = item.type && 'id' in item.type ? item.type.id : undefined;
     const statusLabel = item.status ? t(`objects.status.${item.status}`) : '—';
 
     return (
-        <tr>
+        <tr
+            className="cursor-pointer hover:bg-muted/50"
+            onClick={() => onOpen(item.id)}
+        >
             <td>
                 <div className="flex flex-col">
                     <span className="font-medium">{item.name || item.id}</span>
@@ -56,3 +64,5 @@ export function ContentObjectRow({ item, t, onAddFilter }: ContentObjectRowProps
         </tr>
     );
 }
+
+export const ContentObjectRow = memo(ContentObjectRowImpl);

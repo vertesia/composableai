@@ -21,6 +21,8 @@
   "objects.col.status": "Status",
   "objects.col.type": "Type",
   "objects.col.updated": "Updated",
+  "objects.detail.loadError": "Failed to load this content object.",
+  "objects.detail.notFound": "Content object not found.",
   "objects.empty": "No content objects found.",
   "objects.filterByValue": "Filter by {{value}}",
   "objects.filterStatus": "Status",

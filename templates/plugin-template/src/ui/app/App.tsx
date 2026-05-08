@@ -1,8 +1,11 @@
 import { NestedRouterProvider } from "@vertesia/ui/router";
+import { ContentObjectsListStateProvider } from "./features/content-objects";
 import { routes } from "./routes";
 
 export function App() {
     return (
-        <NestedRouterProvider routes={routes} />
+        <ContentObjectsListStateProvider>
+            <NestedRouterProvider routes={routes} />
+        </ContentObjectsListStateProvider>
     )
 }

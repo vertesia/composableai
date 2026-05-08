@@ -327,17 +327,44 @@ const { isOpen, toggleMobile } = useSidebarToggle();
 
 ```tsx
 <GenericPageNavHeader
-  title="Page Title"
-  description="Optional description"
+  useDynamicBreadcrumbs={false}
   breadcrumbs={[
     <NavLink href="/" key="home">Home</NavLink>,
-    <span key="current">Current Page</span>,
+    <span key="current"><span>Current Page</span></span>,
   ]}
   actions={<Button>Create New</Button>}
 />
 ```
 
 Prefer `GenericPageNavHeader` over a local page-header abstraction when it fits the page.
+
+#### Breadcrumb rules
+
+These bite repeatedly — apply them on every page that uses `GenericPageNavHeader`.
+
+1. **Always pass `useDynamicBreadcrumbs={false}`.** The default (`true`) reads `window.history.state?.historyChain` and falls back to URL path inference. Both produce surprises: stale entries from a previous detail visit (e.g. "App > App") leak onto a top-level list, and URL inference capitalizes raw segments (e.g. "Objects" instead of your i18n label "Content Objects"). Explicit beats inferred.
+
+2. **Don't combine `title=` with breadcrumbs for list/detail flows.** `title=` renders a big bold heading *under* the breadcrumb row, which on a detail page reads as a stacked title — not a breadcrumb. The real breadcrumb pattern is to put **all** segments in `breadcrumbs={[...]}` (parent → current) and omit `title=` entirely. composable-ui's `ContentObjectView` follows this.
+
+3. **Wrap string labels in a nested element to avoid 20-char truncation.** `Breadcrumbs.renderBreadcrumbItem` slices any *string* label to 17 chars + `…`. Filenames and document titles hit this constantly. Pass a `ReactNode` instead and add CSS truncation:
+
+   ```tsx
+   <span key="current" title={fullName}>
+     <span className="inline-block align-middle max-w-[60ch] truncate">
+       {fullName}
+     </span>
+   </span>
+   ```
+
+   The outer `span`'s `children` is now a node, not a string, so the JS truncation path is skipped. The inner `span` truncates only when actually too wide for the layout. The `title=` gives a hover tooltip with the full name.
+
+4. **`NavLink` works as a clickable breadcrumb item.** `GenericPageNavHeader` extracts `href` from the element and wires its own `onClick` to `navigate(href)`. No need to add `onClick` yourself.
+
+5. **No back button.** The breadcrumb itself is the way back. Don't add a separate `<Button><ArrowLeft />Back</Button>` — it duplicates the breadcrumb's affordance and clutters the header.
+
+#### Description prop
+
+The `description` prop renders an `Info` tooltip icon in the breadcrumb row. When there are **no** breadcrumbs the icon orphans above the title — looks broken. Either omit `description=`, or always pair it with at least one breadcrumb.
 
 ## Data Fetching
 

@@ -21,6 +21,8 @@
   "objects.col.status": "Statut",
   "objects.col.type": "Type",
   "objects.col.updated": "Mis à jour",
+  "objects.detail.loadError": "Échec du chargement de cet objet de contenu.",
+  "objects.detail.notFound": "Objet de contenu introuvable.",
   "objects.empty": "Aucun objet de contenu trouvé.",
   "objects.filterByValue": "Filtrer par {{value}}",
   "objects.filterStatus": "Statut",
