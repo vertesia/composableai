@@ -5,6 +5,7 @@ import { registerArtifactsCommand } from './artifacts/index.js';
 import runExport from './codegen/index.js';
 import { registerDataCommand } from './data/index.js';
 import { genTestData } from './datagen/index.js';
+import { registerIamCommand } from './iam/index.js';
 import { listEnvironments } from './envs/index.js';
 import { listInteractions } from './interactions/index.js';
 import { getPublishMemoryAction } from './memory/index.js';
@@ -132,6 +133,7 @@ registerWorkerCommand(program);
 registerAppsCommand(program);
 registerArtifactsCommand(program);
 registerDataCommand(program);
+registerIamCommand(program);
 
 const profilesRoot = program.command("profiles")
     .description("Manage configuration profiles")

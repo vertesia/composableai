@@ -58,15 +58,51 @@ export enum AccessControlResourceType {
     account = "account",
     interaction = "interaction",
     app = "application",
+    /** Dynamic resource matching by content properties at query time. */
+    content_set = "content_set",
 }
 
 export enum AccessControlPrincipalType {
     user = "user",
     group = "group",
     apikey = "apikey",
+    /** Dynamic principal matching by user/group properties at token time. */
+    principal_set = "principal_set",
 }
 
 
+
+/**
+ * MongoDB query syntax subset for matching properties.
+ * Keys are property names, values are either direct match values or operator objects.
+ * Supported operators: `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$exists`.
+ *
+ * In `resource_props`, values can reference principal properties using the `$principal.` prefix.
+ * These are resolved at token time by substituting the user's merged property value.
+ * If the referenced property is missing, a type-appropriate default is used (0, "", false).
+ *
+ * @example
+ * { department: "engineering" }                              // exact match (literal)
+ * { level: { $gte: 5 } }                                    // comparison (literal)
+ * { region: { $in: ["us-east", "eu-west"] } }               // set membership (literal)
+ * { security_level: { $lte: "$principal.access_level" } }   // cross-reference (resolved at token time)
+ */
+/** A single condition value: literal, or operator object (e.g. { $lte: 3 }) */
+export type PropertyConditionValue = string | number | boolean | Record<string, any>;
+
+export type PropertyConditions = Record<string, PropertyConditionValue>;
+
+/**
+ * Conditions attached to an ACE for dynamic matching.
+ * - `principal_props`: matched against user/group properties at token time (PrincipalSet).
+ * - `resource_props`: matched against content properties at query time (ContentSet).
+ */
+export interface AceConditions {
+    /** Property conditions matched against user/group properties at token time (PrincipalSet). */
+    principal_props?: PropertyConditions;
+    /** Property conditions matched against content properties at query time (ContentSet). */
+    resource_props?: PropertyConditions;
+}
 
 export interface AccessControlEntry {
     role: ProjectRoles;
@@ -74,6 +110,12 @@ export interface AccessControlEntry {
     resource: string; //objectId
     principal_type: AccessControlPrincipalType;
     principal: string; //objectId
+    /** Account scope — required for principal_set/content_set ACEs. */
+    account?: string;
+    /** Project scope — narrows a principal_set/content_set ACE to a single project. */
+    project?: string;
+    /** Dynamic matching conditions for principal_set/content_set ACEs. */
+    conditions?: AceConditions;
     tags?: string[];
     expires_at?: string;
     created_at?: string;
@@ -91,6 +133,37 @@ export interface ACEUpdatePayload extends Partial<ACECreatePayload> {
 export interface RoleDefinition {
     name: ProjectRoles;
     permissions: Permission[];
+}
+
+// ============================================================================
+// BLP Security Levels
+// ============================================================================
+
+/**
+ * Default sensitivity/clearance levels for the Bell-LaPadula security model.
+ * The numeric value is the index in the array (0 = lowest, 4 = highest).
+ * Projects can override these labels via project settings.
+ */
+export enum SecurityLevel {
+    public = 0,
+    internal = 1,
+    confidential = 2,
+    restricted = 3,
+    secret = 4,
+}
+
+/** Human-readable labels for each security level, indexed by numeric value. */
+export const SecurityLevelLabels: readonly string[] = [
+    'Public',
+    'Internal',
+    'Confidential',
+    'Restricted',
+    'Secret',
+];
+
+/** Get the label for a security level value. Returns "Unknown" for out-of-range values. */
+export function getSecurityLevelLabel(level: number): string {
+    return SecurityLevelLabels[level] ?? 'Unknown';
 }
 
 export interface AcesQueryOptions {

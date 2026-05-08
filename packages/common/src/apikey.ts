@@ -1,6 +1,18 @@
+import { PropertyConditions } from "./access-control.js";
 import { UserGroupRef } from "./group.js";
 import { ProjectRef, ProjectRoles } from "./project.js";
 import { AccountRef } from "./user.js";
+
+/**
+ * Content security conditions in the JWT, keyed by permission type.
+ * Each key maps to an array of condition sets — at query time, any matching set grants access ($or).
+ * Presence of this object in the JWT switches content access from allow-all to restrict mode.
+ */
+export interface ContentSecurity {
+    read?: PropertyConditions[];
+    write?: PropertyConditions[];
+    delete?: PropertyConditions[];
+}
 
 export enum ApiKeyTypes {
     secret = "sk",
@@ -79,6 +91,10 @@ export interface AuthTokenPayload {
 
     /** groups */
     groups?: UserGroupRef[]; //group ids
+
+    /** Content security conditions keyed by permission (read/write/delete).
+     *  Presence triggers restrict mode: project:* is dropped from security filters. */
+    content_security?: ContentSecurity;
 
     /**
      * API endpoints information to be used with this token.
