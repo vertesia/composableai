@@ -8,7 +8,7 @@ Additional details for the plugin architecture. Referenced from SKILL.md.
 - [CSS Customization](#css-customization)
 - [Deployment](#deployment)
 
-For resource creation code examples (tools, skills, interactions, types, templates), use the **write-tool-server-resource** skill.
+For resource creation code examples (tools, skills, interactions, types, templates), use the **vertesia-tool-server-resource** skill.
 
 ---
 

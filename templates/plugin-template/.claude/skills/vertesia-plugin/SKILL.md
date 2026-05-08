@@ -1,6 +1,6 @@
 ---
 name: vertesia-plugin
-description: Reference for plugin architecture, dual build system, import hooks, and deployment. Use when understanding plugin structure or build configuration. For creating resources use write-tool-server-resource; for UI use vertesia-ui; for client API use vertesia-api.
+description: Reference for plugin architecture, dual build system, import hooks, and deployment. Use when understanding plugin structure or build configuration. For creating resources use vertesia-tool-server-resource; for UI use vertesia-ui; for client API use vertesia-api.
 ---
 
 # Vertesia Plugin Development
@@ -113,7 +113,7 @@ These Rollup import transformations only work in `src/tool-server/` code:
 
 ## Creating Resources
 
-To create tools, skills, interactions, content types, or templates, use the **write-tool-server-resource** skill. It provides step-by-step scaffolding with full code examples.
+To create tools, skills, interactions, content types, or templates, use the **vertesia-tool-server-resource** skill. It provides step-by-step scaffolding with full code examples.
 
 Each resource follows the same pattern: create files → export from collection → register in `config.ts`.
 

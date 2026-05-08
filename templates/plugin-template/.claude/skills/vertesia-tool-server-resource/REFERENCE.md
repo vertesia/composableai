@@ -1,41 +1,24 @@
----
-name: write-tool-server-resource
-description: Creates tools, skills, interactions, content types, and rendering templates for the Vertesia plugin tool server. Handles file scaffolding, collection registration, and config.ts wiring. Use when adding new tool server resources to this plugin.
----
+# Write Tool Server Resource — Code Reference
 
-# Write Tool Server Resource
+Full code examples for each resource type. SKILL.md has the workflow and decision-points; this file has the templates you copy from.
 
-Step-by-step guide for creating tool server resources. Each resource follows the same workflow:
-1. Create files in the appropriate `src/tool-server/<type>/<collection>/` directory
-2. Export from the collection's `index.ts`
-3. Register the collection in `config.ts` (if new collection)
+## Table of Contents
 
-**Important conventions:**
-- All imports use `.js` extensions: `import { x } from "./foo.js"`
-- Use `satisfies` for type validation
-- Icons are SVG strings exported as default from `.ts` files
-- Import hooks (`?skill`, `?skills`, `?prompt`, `?template`, `?templates`) only work in Rollup-compiled code
-- Snake_case for resource names (`my_tool`), PascalCase for TypeScript exports (`MyTool`)
-
-For full code examples, see the `examples/` directories under each resource type.
+- [Tool](#tool)
+- [Skill](#skill)
+- [Interaction (template-based)](#interaction-template-based)
+- [Interaction (code-based)](#interaction-code-based)
+- [Content Type](#content-type)
+- [Rendering Template](#rendering-template)
+- [Collection registration & icons](#collection-registration--icons)
 
 ---
 
-## Creating a Tool
+## Tool
 
-### File structure
-
-```
-src/tool-server/tools/<collection>/<tool-name>/
-  schema.ts     # TypeScript interface + JSONSchema
-  index.ts      # Tool definition (satisfies Tool<ParamsT>)
-  <impl>.ts     # Implementation logic
-```
-
-### Step 1: Define the schema
+### `schema.ts`
 
 ```typescript
-// schema.ts
 import { JSONSchema } from "@llumiverse/common";
 
 export interface MyToolParams {
@@ -53,10 +36,9 @@ export const Schema = {
 } satisfies JSONSchema;
 ```
 
-### Step 2: Implement the logic
+### `<impl>.ts`
 
 ```typescript
-// my-impl.ts
 import { ToolExecutionContext, ToolExecutionPayload } from "@vertesia/tools-sdk";
 import { ToolResultContent } from "@vertesia/common";
 import { type MyToolParams } from "./schema.js";
@@ -80,10 +62,9 @@ export async function myToolRun(
 }
 ```
 
-### Step 3: Define the tool
+### `index.ts` (tool definition)
 
 ```typescript
-// index.ts
 import { Tool } from "@vertesia/tools-sdk";
 import { myToolRun } from "./my-impl.js";
 import { MyToolParams, Schema } from "./schema.js";
@@ -96,10 +77,9 @@ export const MyTool = {
 } satisfies Tool<MyToolParams>;
 ```
 
-### Step 4: Add to collection
+### Collection (`tools/<collection>/index.ts`)
 
 ```typescript
-// src/tool-server/tools/<collection>/index.ts
 import { ToolCollection } from "@vertesia/tools-sdk";
 import { MyTool } from "./my-tool/index.js";
 import icon from "./icon.svg.js";
@@ -113,25 +93,11 @@ export const MyTools = new ToolCollection({
 });
 ```
 
-### Step 5: Register in config.ts
-
-Add the collection to the `tools` array in `src/tool-server/tools/index.ts`, which is imported by `config.ts`.
-
 ---
 
-## Creating a Skill
+## Skill
 
-### File structure
-
-```
-src/tool-server/skills/<collection>/<skill-name>/
-  SKILL.md        # Skill definition (YAML frontmatter + instructions)
-  properties.ts   # Optional: runtime properties (isEnabled)
-  *.tsx            # Optional: widgets (compiled to dist/widgets/)
-  *.py, *.js       # Optional: scripts (copied to dist/scripts/)
-```
-
-### Step 1: Write SKILL.md
+### `SKILL.md`
 
 ```markdown
 ---
@@ -152,18 +118,18 @@ Describe the behavior, output format, and constraints.
 ```
 
 **Frontmatter fields:**
-- `name` (required): Snake_case identifier
-- `description` (required): What the skill does
-- `title`: Display name
-- `keywords`: Trigger auto-activation when matched
-- `tools`: Related tools to unlock when skill is active
-- `language`/`packages`: For code execution skills
+
+- `name` (required): snake_case identifier
+- `description` (required): what the skill does
+- `title`: display name
+- `keywords`: trigger auto-activation when matched
+- `tools`: related tools to unlock when skill is active
+- `language` / `packages`: for code-execution skills
 - `widgets`: UI widgets to render
 
-### Step 2 (optional): Add runtime properties
+### Optional `properties.ts`
 
 ```typescript
-// properties.ts
 import { SkillDefinition, ToolUseContext } from "@vertesia/tools-sdk";
 
 export default {
@@ -174,10 +140,10 @@ export default {
 } satisfies Partial<SkillDefinition>;
 ```
 
-### Step 3: Collection uses auto-discovery
+### Collection auto-discovery
 
 ```typescript
-// src/tool-server/skills/<collection>/index.ts
+// skills/<collection>/index.ts
 import { SkillCollection } from "@vertesia/tools-sdk";
 import skills from "./all?skills";
 
@@ -189,27 +155,12 @@ export const MySkills = new SkillCollection({
 });
 ```
 
-Skills are auto-discovered — no need to manually import each one.
-
 ---
 
-## Creating an Interaction
+## Interaction (template-based)
 
-Two approaches: **template-based** (prompt in `.hbs` file) or **code-based** (prompts inline).
+### `prompt.hbs`
 
-### File structure (template-based)
-
-```
-src/tool-server/interactions/<collection>/<interaction-name>/
-  index.ts          # InteractionSpec
-  prompt.hbs        # Handlebars prompt template with YAML frontmatter
-  prompt_schema.ts  # JSONSchema for template variables
-  result_schema.ts  # JSONSchema for structured output
-```
-
-### Template-based interaction
-
-**Prompt template:**
 ```handlebars
 {{!-- prompt.hbs --}}
 ---
@@ -221,9 +172,9 @@ Analyze the following content: {{input}}
 Please provide a {{format}} summary.
 ```
 
-**Prompt schema:**
+### `prompt_schema.ts`
+
 ```typescript
-// prompt_schema.ts
 import { JSONSchema } from "@llumiverse/common";
 
 export default {
@@ -236,9 +187,9 @@ export default {
 } satisfies JSONSchema;
 ```
 
-**Result schema:**
+### `result_schema.ts`
+
 ```typescript
-// result_schema.ts
 import { JSONSchema } from "@llumiverse/common";
 
 export default {
@@ -251,9 +202,9 @@ export default {
 } satisfies JSONSchema;
 ```
 
-**Interaction spec:**
+### `index.ts` (interaction spec)
+
 ```typescript
-// index.ts
 import { InteractionSpec } from "@vertesia/common";
 import PROMPT from "./prompt.hbs?prompt";
 import result_schema from "./result_schema.js";
@@ -268,10 +219,13 @@ export default {
 } satisfies InteractionSpec;
 ```
 
-### Code-based interaction (for agents/conversations)
+---
+
+## Interaction (code-based)
+
+For agents and conversational interactions (no `.hbs` file):
 
 ```typescript
-// index.ts
 import { PromptRole } from "@llumiverse/common";
 import type { InteractionSpec } from "@vertesia/common";
 import { TemplateType } from "@vertesia/common";
@@ -299,10 +253,9 @@ export default {
 } satisfies InteractionSpec;
 ```
 
-### Add to collection
+### Collection (`interactions/<collection>/index.ts`)
 
 ```typescript
-// src/tool-server/interactions/<collection>/index.ts
 import { InteractionCollection } from "@vertesia/tools-sdk";
 import analyzeContent from "./analyze_content/index.js";
 import icon from "./icon.svg.js";
@@ -318,21 +271,11 @@ export const MyInteractions = new InteractionCollection({
 
 ---
 
-## Creating a Content Type
+## Content Type
 
-### File structure
-
-```
-src/tool-server/types/<collection>/
-  index.ts          # ContentTypesCollection
-  icon.svg.ts       # Collection icon
-  <type-name>.ts    # InCodeTypeSpec (one file per type)
-```
-
-### Type definition
+### `<type-name>.ts`
 
 ```typescript
-// my-type.ts
 import { InCodeTypeSpec } from "@vertesia/common";
 
 export const MyType = {
@@ -359,10 +302,9 @@ export const MyType = {
 } satisfies InCodeTypeSpec;
 ```
 
-### Collection
+### Collection (`types/<collection>/index.ts`)
 
 ```typescript
-// src/tool-server/types/<collection>/index.ts
 import { ContentTypesCollection } from "@vertesia/tools-sdk";
 import { MyType } from "./my-type.js";
 import icon from "./icon.svg.js";
@@ -378,17 +320,9 @@ export const MyTypes = new ContentTypesCollection({
 
 ---
 
-## Creating a Rendering Template
+## Rendering Template
 
-### File structure
-
-```
-src/tool-server/templates/<collection>/<template-name>/
-  TEMPLATE.md       # Template definition (YAML frontmatter + instructions)
-  *.svg, *.latex     # Asset files (auto-discovered, copied to dist/templates/)
-```
-
-### TEMPLATE.md
+### `TEMPLATE.md`
 
 ```markdown
 ---
@@ -404,23 +338,24 @@ Instructions for the document generation system.
 
 ## Available Variables
 
-- `{{title}}` - Report title
-- `{{author}}` - Author name
-- `{{date}}` - Report date
+- `{{title}}` — Report title
+- `{{author}}` — Author name
+- `{{date}}` — Report date
 ```
 
 **Frontmatter fields:**
-- `description` (required): What this template generates
+
+- `description` (required): what this template generates
 - `type` (required): `'document'` or `'presentation'`
-- `title`: Display name
-- `tags`: Categorization tags
+- `title`: display name
+- `tags`: categorization tags
 
 Asset files (SVG, LaTeX, PNG) in the same directory are auto-discovered and copied to `dist/templates/`.
 
-### Collection uses auto-discovery
+### Collection auto-discovery
 
 ```typescript
-// src/tool-server/templates/<collection>/index.ts
+// templates/<collection>/index.ts
 import { RenderingTemplateCollection } from "@vertesia/tools-sdk";
 import templates from './all?templates';
 
@@ -434,13 +369,9 @@ export const MyTemplates = new RenderingTemplateCollection({
 
 ---
 
-## Collection Registration
+## Collection registration & icons
 
-All collections must be wired into the server through `config.ts`.
-
-### Adding to an existing collection type
-
-Add your collection to the array in `src/tool-server/<type>/index.ts`:
+### Adding a collection to its type's index
 
 ```typescript
 // src/tool-server/tools/index.ts
@@ -450,26 +381,14 @@ import { MyTools } from "./my-collection/index.js";
 export const tools = [ExampleTools, MyTools];
 ```
 
-### Creating a new collection type (first of its kind)
+`config.ts` already imports from these per-type index files, so no further wiring is needed once the new collection is in the array.
 
-If `src/tool-server/<type>/index.ts` doesn't have your collection yet, add it there. The `config.ts` already imports from these index files.
-
-### Icon file
+### `icon.svg.ts`
 
 Each collection needs an SVG icon as a default string export:
 
 ```typescript
-// icon.svg.ts
 export default `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <circle cx="12" cy="12" r="10"/>
 </svg>`;
 ```
-
-## Verification
-
-After creating a resource:
-
-1. Build: `pnpm build:server`
-2. Start: `pnpm start`
-3. Check the admin UI at `http://localhost:3000/` — your resource should appear
-4. Check the API endpoint: `curl http://localhost:3000/api/tools` (or `/api/skills`, `/api/interactions`, `/api/types`, `/api/templates`)

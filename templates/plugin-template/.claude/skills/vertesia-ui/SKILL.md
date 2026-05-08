@@ -1,6 +1,6 @@
 ---
 name: vertesia-ui
-description: Reference for building UIs with @vertesia/ui. Covers component API (Input, Button, Card, Modal, Tabs, Table), table views with infinite scroll and filters, layout (Sidebar, FullHeightLayout), routing (NestedRouterProvider, useParams, useNavigate), agent conversation (ModernAgentConversation), and styling. Use when creating or modifying React UI pages or components.
+description: Reference for building UIs with @vertesia/ui. Covers component API (Input, Button, VModal, VTabs, Table), list/detail tables with infinite scroll, sortable headers, FilterProvider with URL persistence and inline row filters, layout (Sidebar, FullHeightLayout, GenericPageNavHeader), routing (NestedRouterProvider, useParams, useNavigate), agent conversation (ModernAgentConversation), styling, and security. Use when creating or modifying React UI pages or components.
 ---
 
 # Vertesia UI Development
@@ -449,100 +449,18 @@ Wraps app in `VertesiaShell` + `RouterProvider`. Mounts `AdminApp` at `/`, plugi
 
 ## Security
 
-### XSS Prevention
+Apply these rules to any page or component that takes user input or hits the API. Full patterns + code in `references/security.md`.
 
-React escapes JSX content automatically, but be careful with:
-
-```tsx
-// NEVER use dangerouslySetInnerHTML with unsanitized input
-<div dangerouslySetInnerHTML={{ __html: userInput }} />  // ❌
-
-// If you must render HTML, sanitize first
-import DOMPurify from 'dompurify';
-<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(userInput) }} />  // ✅
-```
-
-### URL Validation
-
-Validate user-provided URLs before rendering as links:
-
-```tsx
-function isValidUrl(url: string): boolean {
-    try {
-        const parsed = new URL(url);
-        return ['http:', 'https:'].includes(parsed.protocol);
-    } catch { return false; }
-}
-
-// Only render validated URLs
-{isValidUrl(userUrl) && <a href={userUrl}>Link</a>}
-```
-
-### Error Handling
-
-Never expose internal details in user-facing errors:
-
-```tsx
-try {
-    await client.objects.retrieve(objectId);
-} catch (error) {
-    console.error('Object retrieval failed:', error);  // Log full details
-    toast({ title: 'Error', description: 'Unable to load data. Please try again.', variant: 'destructive' });  // Generic message
-}
-```
-
-### Secrets
-
-- Never hardcode API keys or tokens — use environment variables
-- Prefix client-side env vars with `VITE_` (they are embedded in the bundle)
-- Keep sensitive keys server-side only (tool server code, not UI)
-- Never commit `.env` files — use `.env.example` for documentation
-
-### Form Security
-
-- Validate inputs before submitting (use Zod or similar for schema validation)
-- Validate file uploads: check type, size, and extension before uploading
-
-```tsx
-const MAX_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
-
-if (file.size > MAX_SIZE) throw new Error('File too large');
-if (!ALLOWED_TYPES.includes(file.type)) throw new Error('Invalid file type');
-```
-
-### Client-Side Throttling
-
-Disable buttons after the first click and re-enable in a `finally` block. This prevents duplicate submissions and gives users clear feedback:
-
-```tsx
-const [isSubmitting, setIsSubmitting] = useState(false);
-
-async function handleSubmit() {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    try {
-        await client.someApi.doAction(payload);
-        toast({ title: 'Success', description: 'Item saved' });
-    } catch (error) {
-        console.error('Action failed:', error);
-        toast({ title: 'Error', description: 'Unable to save. Please try again.', variant: 'destructive' });
-    } finally {
-        setIsSubmitting(false);
-    }
-}
-
-<Button onClick={handleSubmit} disabled={isSubmitting}>
-    {isSubmitting ? 'Saving...' : 'Save'}
-</Button>
-```
-
-Apply this pattern to **every** button that triggers an async action — form submissions, delete confirmations, API calls, etc.
+- Never pass unsanitized HTML to `dangerouslySetInnerHTML`.
+- Validate user-provided URLs before rendering as links.
+- Catch API errors, log details to console, surface a generic message via `useToast` — never leak internal error text.
+- Client-side env vars must use the `VITE_` prefix (they are embedded in the bundle); keep secrets server-side.
+- Throttle async button actions with an `isSubmitting` flag cleared in `finally`.
 
 ## Development Practices
 
 - Extract components from map callbacks when the body has logic or is more than 2-3 lines
 - Use `<Separator />` from `@vertesia/ui/core` for dividers instead of `border-t/b`
 - Debounce expensive search operations
-- Always use the client-side throttling pattern (see Security section) for async button actions
+- Always throttle async button actions with `isSubmitting` (see `references/security.md`)
 - Show generic user-facing error messages; log details to console
