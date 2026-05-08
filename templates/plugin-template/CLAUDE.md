@@ -2,6 +2,31 @@
 
 Dual-architecture plugin: **Hono tool server** (backend) + **React UI plugin** (frontend), built and deployed as a single unit.
 
+## Skill Auto-Invocation
+
+IMPORTANT: You MUST invoke the relevant skill using the Skill tool BEFORE starting implementation for the task types below. Skills contain detailed, up-to-date patterns beyond what this file covers.
+
+| When the task involves...                                                       | INVOKE this skill first         |
+| ------------------------------------------------------------------------------- | ------------------------------- |
+| Reviewing requirement docs, discovery notes, or feature/demo asks               | `vertesia-gap-assessment`       |
+| Understanding plugin architecture, dual build system, or `config.ts`            | `vertesia-plugin`               |
+| Adding tools, skills, interactions, content types, or rendering templates       | `vertesia-tool-server-resource` |
+| Building or modifying React UI pages or components                              | `vertesia-ui`                   |
+| Calling the Vertesia client API (objects, workflows, interactions, files)       | `vertesia-api`                  |
+| Writing or debugging DSL workflows that call remote activities                  | `vertesia-dsl-workflow`         |
+| Seeding the store with realistic demo objects                                   | `vertesia-demo-content`         |
+
+### Typical "build a feature" loop
+
+1. If the requirement is fuzzy or comes from a discovery doc → `vertesia-gap-assessment` first.
+2. Need plugin context (build, layout, deployment) → `vertesia-plugin`.
+3. Pick the implementation skill:
+   - Backend resources (tools/skills/interactions/types/templates) → `vertesia-tool-server-resource`
+   - UI page or component → `vertesia-ui`
+   - Multi-step orchestration → `vertesia-dsl-workflow`
+4. Add `vertesia-api` whenever the implementation reads or writes the platform.
+5. Add `vertesia-demo-content` if you need real seed objects to exercise the feature end-to-end.
+
 ## Build & Dev Commands
 
 ```bash
@@ -16,65 +41,67 @@ pnpm start                 # Preview production build (build:server + vite previ
 
 ## Dual Build System
 
-| Component | Bundler | Entry | tsconfig | Output |
-|-----------|---------|-------|----------|--------|
-| Tool Server | Rollup | `src/tool-server/server.ts` | `tsconfig.tool-server.json` | `lib/*.js` |
-| UI Plugin | Vite | `src/ui/plugin.tsx` | `tsconfig.ui.json` | `dist/lib/plugin.js` |
-| UI App | Vite | `src/ui/main.tsx` | `tsconfig.ui.json` | `dist/ui/` |
-| Widgets | Rollup | `skills/**/*.tsx` | `tsconfig.widgets.json` | `dist/widgets/` |
-
-## Code Style
-
-- ESM with `.js` import extensions in tool-server code: `import { x } from "./foo.js"`
-- Type-safe definitions: `{} satisfies Tool<T>`, `{} satisfies InCodeTypeSpec`, `{} satisfies InteractionSpec`
-- All tool/skill/interaction/type/template collections must be registered in `src/tool-server/config.ts`
-- Import hooks (`?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates`) only work in Rollup-compiled tool-server code, not in UI code
-- Icons are SVG strings exported as default from `.ts` files
+| Component   | Bundler | Entry                       | tsconfig                    | Output                |
+|-------------|---------|-----------------------------|-----------------------------|-----------------------|
+| Tool Server | Rollup  | `src/tool-server/server.ts` | `tsconfig.tool-server.json` | `lib/*.js`            |
+| UI Plugin   | Vite    | `src/ui/plugin.tsx`         | `tsconfig.ui.json`          | `dist/lib/plugin.js`  |
+| UI App      | Vite    | `src/ui/main.tsx`           | `tsconfig.ui.json`          | `dist/ui/`            |
+| Widgets     | Rollup  | `skills/**/*.tsx`           | `tsconfig.widgets.json`     | `dist/widgets/`       |
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `src/tool-server/config.ts` | Registers all collections — add new resources here |
-| `src/tool-server/settings.ts` | Plugin settings JSON Schema |
-| `src/ui/plugin.tsx` | Library entry for Vertesia host app |
-| `src/ui/main.tsx` | Standalone dev entry (VertesiaShell). Routes: `/` and `/app/*` → plugin UI; `/tools/*` → AdminApp (tools / skills / interactions / types / templates / dashboards) |
-| `src/ui/routes.tsx` | Route definitions (NestedRouterProvider) |
-| `src/ui/index.css` | Tailwind CSS 4 entry with shared styles import |
+| File                          | Purpose                                              |
+|-------------------------------|------------------------------------------------------|
+| `src/tool-server/config.ts`   | Registers all collections — add new resources here   |
+| `src/tool-server/settings.ts` | Plugin settings JSON Schema                          |
+| `src/ui/plugin.tsx`           | Library entry for the Vertesia host app              |
+| `src/ui/main.tsx`             | Standalone dev entry (VertesiaShell + AdminApp)      |
+| `src/ui/app/App.tsx`          | App root (NestedRouterProvider)                      |
+| `src/ui/app/routes.tsx`       | Route definitions                                    |
+| `src/ui/index.css`            | Tailwind CSS 4 entry with shared styles import       |
 
-## UI Development
+## UI Directory Structure
 
-- React 19, Tailwind CSS 4, `@vertesia/ui` component library
-- Component API reference: `composableai/packages/ui/llms.txt` (also shipped with npm package)
-- Use `@vertesia/ui/core` for components, `@vertesia/ui/router` for navigation, `@vertesia/ui/session` for auth
-- Standalone dev requires HTTPS (Firebase auth): https://localhost:5173
+User application code lives under `src/ui/app/`. Place new files according to the layout below — `app/README.md` has the full convention and the "add a feature" recipe.
+
+```text
+src/ui/
+├── main.tsx, plugin.tsx, env.ts, index.css   ← bootstrap / wiring (don't add app code here)
+├── i18n/
+└── app/                                       ← user application code
+    ├── App.tsx, routes.tsx, constants.ts
+    ├── components/    ← cross-feature shared components (generic primitives)
+    ├── hooks/         ← cross-feature shared hooks
+    ├── layouts/       ← plugin chrome (PluginLayout, PluginSidebar, …)
+    ├── pages/         ← thin route-level wrappers (one file per route)
+    └── features/<name>/
+        ├── components/, hooks/, types.ts, utils.ts
+        ├── <Feature>View.tsx
+        └── index.ts   ← public barrel
+```
+
+Rules of thumb:
+
+- A new route → thin component in `app/pages/` that imports its feature.
+- Self-contained business logic → `app/features/<name>/` with its own components/hooks/types.
+- A primitive used by ≥2 features (e.g. a sortable header) → promote to `app/components/`.
+- A hook used by ≥2 features → promote to `app/hooks/`.
+
+## Plugin-Specific Conventions
+
+- ESM with `.js` import extensions in tool-server code: `import { x } from "./foo.js"`
+- Type-safe definitions: `{} satisfies Tool<T>`, `{} satisfies InCodeTypeSpec`, `{} satisfies InteractionSpec`
+- All collections must be registered in `src/tool-server/config.ts` (or its per-type index files)
+- Standalone dev requires HTTPS (Firebase auth): <https://localhost:5173>
 - Set `VITE_APP_NAME` in `.env.app`; use `.env.app.local` for local overrides
+- Icons are SVG strings exported as default from `.ts` files
 
-## Development Practices
+## Cross-Cutting Pitfalls
 
-- Extract components from map callbacks when the body has logic or is more than 2-3 lines
-- Use `flex flex-col gap-{n}` for vertical spacing (not `space-y-*`)
-- Debounce expensive search/filter operations
-- Guard form submissions with `isSubmitting` state to prevent double-clicks
-- Show generic user-facing error messages; log details to console
-- Never hardcode secrets or API keys — use environment variables (`VITE_*` prefix for client-side)
-- Validate user inputs before passing to API calls
-- Never use `dangerouslySetInnerHTML` without sanitization
+Fast-path reminders — these bite often enough to flag here even though the relevant skill covers them:
 
-## Common Pitfalls
+- **Import hooks are Rollup-only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` fail silently or error in Vite UI code. They work only in tool-server code.
+- **Must register in `config.ts`**: a collection that isn't wired into `config.ts` (or its per-type index) won't be served.
+- **`Input.onChange` takes the value directly** (`onChange={setValue}`), not a React event — `Textarea` uses standard events.
 
-- **Import hooks are Rollup-only**: `?skill`, `?prompt`, `?raw` imports fail silently or error in Vite UI code
-- **Must register in config.ts**: Creating a collection without adding it to `config.ts` means it won't be served
-- **Input onChange API**: `@vertesia/ui` Input passes value directly (`onChange={setValue}`), not a React event — Textarea uses standard events
-- **listConversations limitations**: Does not return the `input` field — only `topic` is available for labeling conversations; fall back to date/time
-- **getRunDetails** for full data: Use `client.store.workflows.getRunDetails(runId, workflowId)` when you need `input` or history
-- **No widgets is fine**: `prebuild` runs `node scripts/typecheck.mjs`, which auto-detects whether `src/tool-server/skills/**/*.tsx` exists and only includes `tsconfig.widgets.json` when it does. Delete every example skill safely; add a widget later and the script picks it up automatically. No need to edit `tsconfig.json`.
-
-## Skills
-
-| Skill | Use when |
-|-------|----------|
-| `write-tool-server-resource` | Adding new tools, skills, interactions, content types, or templates to the tool server |
-| `vertesia-plugin` | Understanding plugin architecture, build system, or configuration |
-| `vertesia-api` | Working with the Vertesia client API (objects, workflows, interactions, auth) |
-| `vertesia-ui` | Building UI pages and components (routing, layout, styling, agent conversation) |
+For full UI patterns (tables, filters, sort, security) see `vertesia-ui`; for tool-server scaffolding conventions see `vertesia-tool-server-resource`.
