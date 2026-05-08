@@ -73,9 +73,13 @@ import { VertesiaShell, StandaloneApp } from '@vertesia/ui/shell';
 <Button onClick={handleClick}>Click Me</Button>
 <Button variant="outline" size="sm">Secondary</Button>
 <Button variant="destructive">Delete</Button>
-// Variants: default, destructive, outline, secondary, ghost, link
-// Sizes: default, sm, lg, icon
+// Variants: primary (default), destructive, outline, secondary, ghost, link, unstyled
+// Sizes: xs, sm, md (default), lg, xl, icon
 ```
+
+**Tooltip + accessible name are built in:** pass `alt="..."` (or `title="..."`) and `Button` auto-wraps with `VTooltip`. Don't wrap a `Button` in manual `VTooltip` (nested-button DOM) or add a separate `aria-label`. Manual `VTooltip` is only for non-Button triggers (span, icon, Badge) or non-default placement/size.
+
+Use `isDisabled={...}` (documented prop). `size="icon"` is `rounded-full` — for a *square* icon button use `size="sm"`/`"xs"`. Example: `<Button variant="ghost" size="sm" alt="Refresh" onClick={refetch}><RefreshCw /></Button>`.
 
 ### VModal
 

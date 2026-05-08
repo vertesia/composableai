@@ -32,7 +32,13 @@ import type { ContentObjectTypeItem } from '@vertesia/common';
 import { SortableHead } from '../../components/SortableHead';
 import { ContentObjectRow } from './components/ContentObjectRow';
 import { useContentObjectsListState } from './ContentObjectsListStateContext';
-import { STATUS_VALUES, type FilterableField, type SortField } from './types';
+import {
+    STATUS_VALUES,
+    type ContentObjectRowModel,
+    type FilterableField,
+    type SortField,
+} from './types';
+import { statusVariant } from './utils';
 
 const SCROLL_HISTORY_KEY = 'contentObjectsScrollTop';
 
@@ -283,21 +289,48 @@ export function ContentObjectsView() {
         [types, t],
     );
 
+    const rowModels = useMemo<ContentObjectRowModel[]>(
+        () =>
+            deferredItems.map((item) => {
+                const title = item.name || item.id;
+                const typeName = item.type?.name ?? '—';
+                const typeId = item.type && 'id' in item.type ? item.type.id : undefined;
+                const statusLabel = item.status ? t(`objects.status.${item.status}`) : '—';
+
+                return {
+                    id: item.id,
+                    title,
+                    description: item.description,
+                    typeId,
+                    typeName,
+                    typeFilterTooltip:
+                        typeId ? t('objects.filterByValue', { value: typeName }) : undefined,
+                    statusValue: item.status,
+                    statusLabel,
+                    statusFilterTooltip: item.status
+                        ? t('objects.filterByValue', { value: statusLabel })
+                        : undefined,
+                    statusVariant: statusVariant(item.status),
+                    updatedLabel: item.updated_at ? new Date(item.updated_at).toLocaleString() : '—',
+                };
+            }),
+        [deferredItems, t],
+    );
+
     const tableRows = useMemo(
         () =>
-            deferredItems.map((item) => (
+            rowModels.map((row) => (
                 <ContentObjectRow
-                    key={item.id}
-                    item={item}
-                    t={t}
+                    key={row.id}
+                    row={row}
                     onAddFilter={addFilterValue}
                     onOpen={handleRowOpen}
                 />
             )),
-        [deferredItems, t, addFilterValue, handleRowOpen],
+        [rowModels, addFilterValue, handleRowOpen],
     );
 
-    const showEmpty = !isLoading && deferredItems.length === 0;
+    const showEmpty = !isLoading && rowModels.length === 0;
 
     return (
         <div className="flex flex-col h-full">

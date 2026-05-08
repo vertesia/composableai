@@ -25,3 +25,17 @@ export type BadgeVariant =
     | 'success'
     | 'info'
     | 'done';
+
+export interface ContentObjectRowModel {
+    id: string;
+    title: string;
+    description?: string;
+    typeId?: string;
+    typeName: string;
+    typeFilterTooltip?: string;
+    statusValue?: ContentObjectStatus;
+    statusLabel: string;
+    statusFilterTooltip?: string;
+    statusVariant: BadgeVariant;
+    updatedLabel: string;
+}
