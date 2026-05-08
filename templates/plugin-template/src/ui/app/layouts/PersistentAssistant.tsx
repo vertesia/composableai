@@ -6,7 +6,7 @@ import { useUITranslation } from "@vertesia/ui/i18n";
 import { useLocation } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import type { CreateAgentRunPayload } from "@vertesia/common";
-import { ASSISTANT_INTERACTION } from "./constants";
+import { ASSISTANT_INTERACTION } from "../constants";
 import { OPEN_ASSISTANT_EVENT } from "./assistantEvents";
 import type { OpenAssistantDetail } from "./assistantEvents";
 

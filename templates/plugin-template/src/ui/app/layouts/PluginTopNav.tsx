@@ -37,7 +37,9 @@ export function PluginTopNav({
     return (
         <div className="bg-sidebar text-sidebar-foreground border-sidebar-border h-14 flex items-center justify-between gap-3 border-b px-3">
             <div className="flex items-center gap-2 min-w-0">
-                <HamburgerButton />
+                <div className="size-9 shrink-0">
+                    <HamburgerButton />
+                </div>
                 <span className="text-sm font-semibold truncate">{Env.name}</span>
             </div>
             <div className="flex-1 flex items-center justify-center max-w-xl">
