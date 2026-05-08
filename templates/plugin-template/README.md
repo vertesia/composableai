@@ -52,8 +52,8 @@ The template generates this file from the project name, which must match the `na
 ## Quick Start
 
 ```bash
-pnpm install
-pnpm dev          # Vite dev server with API middleware
+{{PM}} install
+{{PM_RUN}} dev          # Vite dev server with API middleware
 ```
 
 Open <https://localhost:5173> -- the UI loads with HMR, and the tool server API is available at `/api` on the same port.
@@ -62,14 +62,14 @@ Open <https://localhost:5173> -- the UI loads with HMR, and the tool server API 
 
 | Script              | Runs                           | Description                                                 |
 | ------------------- | ------------------------------ | ----------------------------------------------------------- |
-| `pnpm dev`          | `vite dev --mode app`          | Dev server (HTTPS) with UI HMR + tool server API middleware |
-| `pnpm build`        | `build:server && build:ui`     | Full production build (lint runs as prebuild)               |
-| `pnpm build:server` | `rollup -c`                    | Compile tool server to `lib/`                               |
-| `pnpm build:ui`     | `build:ui:app && build:ui:lib` | Build both UI targets                                       |
-| `pnpm build:ui:app` | `vite build --mode app`        | Standalone app to `dist/app/`                               |
-| `pnpm build:ui:lib` | `vite build --mode lib`        | Plugin library to `dist/lib/plugin.js`                      |
-| `pnpm start`        | `build:server && vite preview` | Preview production build locally                            |
-| `pnpm start:vercel` | `vercel dev`                   | Test Vercel deployment locally                              |
+| `{{PM_RUN}} dev`          | `vite dev --mode app`          | Dev server (HTTPS) with UI HMR + tool server API middleware |
+| `{{PM_RUN}} build`        | `rollup -c && vite build (app + lib)` | Full production build (lint runs as prebuild)        |
+| `{{PM_RUN}} build:server` | `rollup -c`                    | Compile tool server to `lib/`                               |
+| `{{PM_RUN}} build:ui`     | `vite build (app + lib)`       | Build both UI targets                                       |
+| `{{PM_RUN}} build:ui:app` | `vite build --mode app`        | Standalone app to `dist/app/`                               |
+| `{{PM_RUN}} build:ui:lib` | `vite build --mode lib`        | Plugin library to `dist/lib/plugin.js`                      |
+| `{{PM_RUN}} start`        | `rollup -c && vite preview`    | Preview production build locally                            |
+| `{{PM_RUN}} start:vercel` | `vercel dev`                   | Test Vercel deployment locally                              |
 
 ## Project Structure
 
@@ -105,11 +105,11 @@ plugin-template/
 
 ## Architecture
 
-### Dev Mode (`pnpm dev`)
+### Dev Mode (`{{PM_RUN}} dev`)
 
 A single Vite dev server runs at `https://localhost:5173`. The `vite-api-server.ts` plugin mounts the Hono tool server as Connect middleware, so the API is served at `/api` on the same port. Tool server source is loaded via Vite's `ssrLoadModule` with hot reload. Import hooks (`?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates`) are handled by `vertesiaImportPlugin`. HTTPS is required for Firebase authentication.
 
-### Preview Mode (`pnpm start`)
+### Preview Mode (`{{PM_RUN}} start`)
 
 Builds the tool server first, then runs `vite preview` which loads the compiled server from `lib/` as middleware alongside the built UI. Useful for validating production output locally.
 
@@ -486,7 +486,7 @@ To test your local tool server with Vertesia agents (e.g. debug tool execution, 
 
 ```bash
 # 1. Start the dev server
-pnpm dev
+{{PM_RUN}} dev
 
 # 2. In a separate terminal, create a tunnel
 npx cloudflared tunnel --url https://localhost:5173 --no-tls-verify
@@ -513,9 +513,9 @@ This lets you set breakpoints, add logging, and iterate on tools/skills while ru
 
 **Import hooks are Rollup-only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` only work in tool server code (compiled by Rollup). They are not available in UI code (compiled by Vite).
 
-**HTTPS required for dev**: `pnpm dev` uses HTTPS via `@vitejs/plugin-basic-ssl`. Use `-k` flag with curl to skip certificate verification.
+**HTTPS required for dev**: `{{PM_RUN}} dev` uses HTTPS via `@vitejs/plugin-basic-ssl`. Use `-k` flag with curl to skip certificate verification.
 
-**TypeScript verification**: Run `pnpm exec tsc --noEmit` to check for compilation errors without building.
+**TypeScript verification**: Run `npx tsc --noEmit` to check for compilation errors without building.
 
 ## License
 
