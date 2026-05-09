@@ -90,6 +90,9 @@ export enum AccessControlPrincipalType {
  * { region: { $in: ["us-east", "eu-west"] } }               // set membership (literal)
  * { security_level: { $lte: "$principal.access_level" } }   // cross-reference (resolved at token time)
  */
+/** Principal property reference resolved at token generation time. */
+export type PrincipalPropertyReference = `$principal.${string}`;
+
 /** MongoDB-style operator object for matching property values. */
 export interface PropertyConditionOperator {
     $eq?: unknown;
@@ -98,9 +101,9 @@ export interface PropertyConditionOperator {
     $gte?: unknown;
     $lt?: unknown;
     $lte?: unknown;
-    $in?: unknown[];
-    $nin?: unknown[];
-    $exists?: boolean;
+    $in?: unknown[] | PrincipalPropertyReference;
+    $nin?: unknown[] | PrincipalPropertyReference;
+    $exists?: boolean | PrincipalPropertyReference;
     $empty?: boolean;
     $like?: string;
 }
