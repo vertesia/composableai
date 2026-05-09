@@ -84,6 +84,9 @@ export interface ServiceAccountTokenRequest extends BaseTokenRequest {
     name?: string;
 }
 
+/**
+ * @discriminator type
+ */
 export type IssueTokenRequest =
     | ApiKeyTokenRequest
     | UserTokenRequest

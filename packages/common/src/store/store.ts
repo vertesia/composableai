@@ -424,12 +424,23 @@ export function getContentTypeRefId(type: ContentObjectTypeRef) {
     return (type as StoredTypeRef).id || (type as InCodeTypeRef).code;
 }
 
+export function withContentObjectTypeRefDiscriminator(type: ContentObjectTypeRef): ContentObjectTypeRef {
+    if ((type as StoredTypeRef).id) {
+        return { ...type, ref_type: 'stored' } as StoredTypeRef;
+    }
+    return { ...type, ref_type: 'incode' } as InCodeTypeRef;
+}
+
 /**
  * Reference to a content object type. Either `id` (stored type) or `code` (in-code type) must be set.
+ */
+/**
+ * @discriminator ref_type
  */
 export type ContentObjectTypeRef = StoredTypeRef | InCodeTypeRef;
 
 interface StoredTypeRef {
+    ref_type: 'stored';
     /**
      * MongoDB ObjectId string for stored types
      */
@@ -439,6 +450,7 @@ interface StoredTypeRef {
 }
 
 interface InCodeTypeRef {
+    ref_type: 'incode';
     id?: never;
     /**
      * Namespaced identifier for in-code types (e.g. "sys:Invoice", "app:myapp:Contract")

@@ -444,6 +444,9 @@ export interface TimerTask extends TaskBase {
 }
 
 // Union type for all processed tasks
+/**
+ * @discriminator type
+ */
 export type WorkflowTask =
     | ActivityTask
     | ChildWorkflowTask
@@ -451,6 +454,9 @@ export type WorkflowTask =
     | TimerTask;
 
 // History format discriminated union
+/**
+ * @discriminator type
+ */
 export type WorkflowHistory =
     | { type: 'events'; events: WorkflowRunEvent[] }
     | { type: 'tasks'; tasks: WorkflowTask[] }

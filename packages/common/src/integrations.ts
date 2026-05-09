@@ -1,10 +1,11 @@
 
 
-export interface IntegrationConfigurationBase {
+export interface IntegrationConfigurationBase<TIntegration extends SupportedIntegrations = SupportedIntegrations> {
+    integration: TIntegration;
     enabled: boolean;
 }
 
-export interface GladiaConfiguration extends IntegrationConfigurationBase {
+export interface GladiaConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.gladia> {
     api_key?: string;
     has_api_key?: boolean;
     api_key_hint?: string;
@@ -12,40 +13,40 @@ export interface GladiaConfiguration extends IntegrationConfigurationBase {
 }
 
 
-export interface GithubConfiguration extends IntegrationConfigurationBase {
+export interface GithubConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.github> {
     allowed_repositories: string[];
 }
 
-export interface AwsConfiguration extends IntegrationConfigurationBase {
+export interface AwsConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.aws> {
     s3_role_arn: string;
 }
 
-export interface MagicPdfConfiguration extends IntegrationConfigurationBase {
+export interface MagicPdfConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.magic_pdf> {
     // No additional configuration
     default_features?: string[];
     default_zones?: string[];
 }
 
-export interface SerperConfiguration extends IntegrationConfigurationBase {
+export interface SerperConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.serper> {
     api_key?: string;
     has_api_key?: boolean;
     api_key_hint?: string;
     url?: string;
 }
 
-export interface ExaConfiguration extends IntegrationConfigurationBase {
+export interface ExaConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.exa> {
     api_key?: string;
     has_api_key?: boolean;
     api_key_hint?: string;
 }
 
-export interface LinkupConfiguration extends IntegrationConfigurationBase {
+export interface LinkupConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.linkup> {
     api_key?: string;
     has_api_key?: boolean;
     api_key_hint?: string;
 }
 
-export interface ResendConfiguration extends IntegrationConfigurationBase {
+export interface ResendConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.resend> {
     /** Resend API key for sending emails */
     api_key?: string;
     has_api_key?: boolean;
@@ -70,7 +71,7 @@ export interface ResendConfiguration extends IntegrationConfigurationBase {
  * Configuration for ask_user webhook notifications.
  * Sends webhooks when agents call ask_user and when users respond.
  */
-export interface AskUserWebhookConfiguration extends IntegrationConfigurationBase {
+export interface AskUserWebhookConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.ask_user_webhook> {
     /** Webhook URL to receive ask_user events */
     webhook_url: string;
     /** Secret for signing webhook payloads (HMAC-SHA256) */
@@ -95,6 +96,9 @@ export enum SupportedIntegrations {
     ask_user_webhook = "ask_user_webhook",
 }
 
+/**
+ * @discriminator integration
+ */
 export type ProjectIntegrationConfig =
     | GladiaConfiguration
     | GithubConfiguration
@@ -105,3 +109,13 @@ export type ProjectIntegrationConfig =
     | LinkupConfiguration
     | ResendConfiguration
     | AskUserWebhookConfiguration;
+
+export function withProjectIntegrationDiscriminator(
+    integration: SupportedIntegrations,
+    config: Record<string, unknown>,
+): ProjectIntegrationConfig {
+    return {
+        ...config,
+        integration,
+    } as ProjectIntegrationConfig;
+}

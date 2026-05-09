@@ -829,6 +829,9 @@ export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadB
     include_previous_error?: boolean;
 }
 
+/**
+ * @discriminator type
+ */
 export type AsyncExecutionPayload = AsyncConversationExecutionPayload | AsyncInteractionExecutionPayload;
 
 export interface AsyncExecutionResult {

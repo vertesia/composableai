@@ -279,6 +279,9 @@ export type AnyAgentRun = AgentRun | ProcessRun;
 export type AutonomousRunResponse<TData = Record<string, any>, TProperties = Record<string, any>> = AgentRun<TData, TProperties>;
 export type SupervisedRunResponse = ProcessRun & { run_type: 'supervised' };
 export type ProgrammaticRunResponse = ProcessRun & { run_type: 'programmatic' };
+/**
+ * @discriminator run_type
+ */
 export type AgentRunResponse<TData = Record<string, any>, TProperties = Record<string, any>> =
     | AutonomousRunResponse<TData, TProperties>
     | SupervisedRunResponse
