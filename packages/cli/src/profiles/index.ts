@@ -5,11 +5,27 @@ import { join } from "path";
 import { readJsonFile, writeJsonFile } from "../utils/stdio.js";
 import { ConfigPayload, ConfigResult, startConfigSession } from "./server/index.js";
 import type { OnResultCallback } from "./commands.js";
-import { canUseOAuthProfile, OAuthUnavailableError, startOAuthSession } from "./oauth.js";
-import { deleteAuthBundle, getAccessTokenExpiry, hasStoredAccessToken, isKeyringAvailable, readAuthBundle, readProfileAccessToken, writeAuthBundle } from "./keyring.js";
+import {
+    canUseOAuthProfile,
+    OAuthUnavailableError,
+    startOAuthSession,
+    type OAuthDiagnosticsOptions,
+    type OAuthProfile,
+} from "./oauth.js";
+import {
+    deleteAuthBundle,
+    getAccessTokenExpiry,
+    hasStoredAccessTokenSync,
+    isSyncKeyringAvailable,
+    readAuthBundle,
+    readAuthBundleSync,
+    writeAuthBundleSync,
+    tryWriteAuthBundle,
+    type StoredAuthBundle,
+} from "./keyring.js";
 
 export function getConfigFile(path?: string) {
-    const dir = join(os.homedir(), '.vertesia');
+    const dir = process.env.VERTESIA_CONFIG_DIR || join(os.homedir(), '.vertesia');
     if (!path || path === '/') {
         return dir;
     } else {
@@ -119,10 +135,13 @@ interface ProfilesData {
     profiles: Profile[];
 }
 
-export function shouldRefreshProfileToken(profile: Profile, thresholdInSeconds = 1) {
-    const token = readProfileAccessToken(profile);
+export function shouldRefreshProfileToken(
+    profile: Profile,
+    bundle: StoredAuthBundle | undefined,
+    thresholdInSeconds = 1,
+) {
+    const token = bundle?.accessToken || profile.apikey;
     if (token) {
-        const bundle = readAuthBundle(profile.name);
         const expiresAt = bundle?.accessTokenExpiresAt
             ?? getAccessTokenExpiry(token);
         if (expiresAt) {
@@ -153,14 +172,13 @@ export class ConfigureProfile {
             return;
         }
         const oldName = this.data.name!;
-        const previousBundle = oldName ? readAuthBundle(oldName) : undefined;
+        const previousBundle = oldName ? await readAuthBundle(oldName) : undefined;
         this.data.name = result.profile;
         this.data.account = result.account;
         this.data.project = result.project;
         this.data.studio_server_url = result.studio_server_url;
         this.data.zeno_server_url = result.zeno_server_url;
-        delete this.data.apikey;
-        writeAuthBundle(result.profile, {
+        const writeResult = await tryWriteAuthBundle(result.profile, {
             accessToken: result.token,
             accessTokenExpiresAt: readResultAccessTokenExpiry(result),
             idToken: result.id_token || previousBundle?.idToken,
@@ -169,8 +187,14 @@ export class ConfigureProfile {
             oauthClientId: result.oauth_client_id || previousBundle?.oauthClientId,
             oauthResource: result.oauth_resource || previousBundle?.oauthResource,
         });
+        if (writeResult.stored) {
+            delete this.data.apikey;
+        } else {
+            this.data.apikey = result.token;
+            warnCredentialStoreFallback(writeResult.error);
+        }
         if (oldName && oldName !== result.profile) {
-            deleteAuthBundle(oldName);
+            await deleteAuthBundle(oldName);
         }
         this.config.remove(oldName);
         this.config.add(this.data as Profile);
@@ -212,11 +236,21 @@ export class ConfigureProfile {
         );
     }
 
-    async start(onResult?: OnResultCallback, signal?: AbortSignal) {
+    async start(
+        onResult?: OnResultCallback,
+        signal?: AbortSignal,
+        options: OAuthDiagnosticsOptions = {},
+    ) {
         this.onResultCallback = onResult;
         if (canUseOAuthProfile(this.data)) {
             try {
-                const result = await startOAuthSession(this.data as Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> & Partial<Pick<Profile, 'account' | 'config_url' | 'project'>>, signal);
+                const result = await startOAuthSession(
+                    this.data as OAuthProfile,
+                    {
+                        ...options,
+                        signal,
+                    },
+                );
                 await this.applyConfigResult(result, { logCompletion: true });
                 return;
             } catch (error: unknown) {
@@ -339,7 +373,7 @@ export class Config {
         writeJsonFile(file, {
             default: this.current?.name,
             profiles: this.profiles.map(profile => {
-                if (profile.apikey && !hasStoredAccessToken(profile.name)) {
+                if (profile.apikey && !hasStoredAccessTokenSync(profile.name)) {
                     return profile;
                 }
                 const { apikey, ...safeProfile } = profile;
@@ -365,19 +399,23 @@ export class Config {
             const data = readJsonFile(getConfigFile('profiles.json')) as ProfilesData;
             this.profiles = data.profiles;
             let needsSave = false;
-            if (isKeyringAvailable()) {
+            if (isSyncKeyringAvailable()) {
                 for (const profile of this.profiles) {
                     if (!profile.apikey) {
                         continue;
                     }
-                    const existingBundle = readAuthBundle(profile.name);
+                    const existingBundle = readAuthBundleSync(profile.name);
                     if (!existingBundle?.accessToken) {
-                        writeAuthBundle(profile.name, {
-                            accessToken: profile.apikey,
-                            accessTokenExpiresAt: readInlineTokenExpiry(profile.apikey),
-                            refreshToken: existingBundle?.refreshToken,
-                            refreshTokenExpiresAt: existingBundle?.refreshTokenExpiresAt,
-                        });
+                        try {
+                            writeAuthBundleSync(profile.name, {
+                                accessToken: profile.apikey,
+                                accessTokenExpiresAt: readInlineTokenExpiry(profile.apikey),
+                                refreshToken: existingBundle?.refreshToken,
+                                refreshTokenExpiresAt: existingBundle?.refreshTokenExpiresAt,
+                            });
+                        } catch {
+                            continue;
+                        }
                     }
                     delete profile.apikey;
                     needsSave = true;
@@ -444,6 +482,20 @@ function readResultAccessTokenExpiry(result: ConfigResult): number | undefined {
         return Date.now() + result.expires_in * 1000;
     }
     return readInlineTokenExpiry(result.token);
+}
+
+let credentialStoreFallbackWarningPrinted = false;
+
+export function warnCredentialStoreFallback(error: unknown): void {
+    if (credentialStoreFallbackWarningPrinted) {
+        return;
+    }
+    credentialStoreFallbackWarningPrinted = true;
+    console.warn('Unable to write to the OS credential store. Falling back to profiles.json for this access token.');
+    console.warn('For headless or CI usage, prefer VERTESIA_APIKEY. Use VERTESIA_TOKEN only for short-lived injected sessions.');
+    if (error) {
+        console.warn(`Credential store error: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }
 
 function readKnownServerUrls(target: ConfigUrlRef, region: Region = DEFAULT_REGION): Partial<Pick<Profile, 'studio_server_url' | 'zeno_server_url'>> {

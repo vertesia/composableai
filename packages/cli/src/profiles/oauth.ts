@@ -9,17 +9,25 @@ const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server
 const OAUTH_CLIENT_METADATA_PATH = '/.well-known/oauth-client/vertesia-cli';
 const DEFAULT_OAUTH_SCOPE = 'openid profile';
 
-type OAuthProfile = Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> & Partial<Pick<Profile, 'account' | 'config_url' | 'project'>>;
+export type OAuthProfile =
+    Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'>
+    & Partial<Pick<Profile, 'account' | 'config_url' | 'project'>>;
 
 interface TokenRefs {
     account?: string;
     project?: string;
     audience?: string;
+    issuer?: string;
 }
 
 interface OAuthDiscovery {
     metadata: OAuthAuthorizationServerMetadata;
     serverUrl: string;
+}
+
+export interface OAuthDiagnosticsOptions {
+    debug?: boolean;
+    logDetails?: boolean;
 }
 
 export class OAuthUnavailableError extends Error {
@@ -54,13 +62,23 @@ export function getOAuthResource(metadata: Pick<OAuthAuthorizationServerMetadata
     return new URL(metadata.issuer).toString();
 }
 
-export async function startOAuthSession(profile: OAuthProfile, signal?: AbortSignal): Promise<ConfigResult> {
+export async function startOAuthSession(
+    profile: OAuthProfile,
+    options: OAuthDiagnosticsOptions & { signal?: AbortSignal } = {},
+): Promise<ConfigResult> {
     assertOAuthProfile(profile);
 
-    const { metadata, serverUrl } = await discoverAuthorizationServer(profile);
+    const diagnostics = getOAuthDiagnostics(options);
+    const { metadata, serverUrl } = await discoverAuthorizationServer(profile, diagnostics);
     const clientId = getOAuthClientId(serverUrl);
     const resource = getOAuthResource(metadata);
     const scope = DEFAULT_OAUTH_SCOPE;
+    logOAuthEndpoints('OAuth device flow', serverUrl, metadata, {
+        clientId,
+        resource,
+        debug: diagnostics.debug,
+        logDetails: true,
+    });
     const deviceAuthorization = await createDeviceAuthorization(metadata, {
         clientId,
         resource,
@@ -68,6 +86,7 @@ export async function startOAuthSession(profile: OAuthProfile, signal?: AbortSig
         projectId: profile.project,
     });
     const verificationUrl = buildDeviceVerificationUrl(profile, deviceAuthorization);
+    logDeviceVerificationUrls(deviceAuthorization, verificationUrl, diagnostics);
 
     console.log('Opening browser to', verificationUrl);
     console.log('The session code is', deviceAuthorization.user_code);
@@ -76,7 +95,8 @@ export async function startOAuthSession(profile: OAuthProfile, signal?: AbortSig
         console.error('Unable to open browser:', error instanceof Error ? error.message : String(error));
     });
 
-    const response = await pollDeviceToken(metadata, clientId, deviceAuthorization, signal);
+    const response = await pollDeviceToken(metadata, clientId, deviceAuthorization, options.signal);
+    logIssuedToken('OAuth token created', metadata, response, diagnostics);
     return buildConfigResult(profile, response, clientId, resource);
 }
 
@@ -86,18 +106,28 @@ export async function refreshOAuthSession(
     bundle?: StoredAuthBundle,
     options: {
         projectId?: string;
-    } = {},
+    } & OAuthDiagnosticsOptions = {},
 ): Promise<ConfigResult> {
     assertOAuthProfile(profile);
 
-    const { metadata, serverUrl } = await discoverAuthorizationServer(profile);
+    const diagnostics = getOAuthDiagnostics(options);
+    const { metadata, serverUrl } = await discoverAuthorizationServer(profile, diagnostics);
     const clientId = getOAuthClientId(serverUrl);
     const resource = bundle?.oauthResource || readTokenRefs(bundle?.accessToken).audience || getOAuthResource(metadata);
+    logOAuthEndpoints('OAuth refresh flow', serverUrl, metadata, {
+        clientId,
+        resource,
+        debug: diagnostics.debug,
+        logDetails: diagnostics.logDetails,
+    });
     const response = await exchangeRefreshToken(metadata, clientId, refreshToken, resource, options.projectId);
+    logIssuedToken('OAuth token refreshed', metadata, response, diagnostics);
     return buildConfigResult(profile, response, clientId, resource);
 }
 
-function assertOAuthProfile(profile: OAuthProfile): asserts profile is OAuthProfile & Required<Pick<OAuthProfile, 'name' | 'studio_server_url' | 'zeno_server_url'>> {
+function assertOAuthProfile(
+    profile: OAuthProfile,
+): asserts profile is OAuthProfile & Required<Pick<OAuthProfile, 'name' | 'studio_server_url' | 'zeno_server_url'>> {
     if (!profile.name) {
         throw new Error('Profile name is required for OAuth authentication.');
     }
@@ -113,12 +143,22 @@ function withTrailingSlash(url: string): string {
     return url.endsWith('/') ? url : `${url}/`;
 }
 
-async function discoverAuthorizationServer(profile: Pick<Profile, 'studio_server_url'> & Partial<Pick<Profile, 'config_url'>>): Promise<OAuthDiscovery> {
+async function discoverAuthorizationServer(
+    profile: Pick<Profile, 'studio_server_url'> & Partial<Pick<Profile, 'config_url'>>,
+    diagnostics: Required<OAuthDiagnosticsOptions>,
+): Promise<OAuthDiscovery> {
     const candidates = getOAuthServerUrlCandidates(profile);
     let unavailableError: OAuthUnavailableError | undefined;
+    if (diagnostics.debug) {
+        console.log('OAuth discovery candidates:');
+        for (const candidate of candidates) {
+            console.log(`  - ${candidate}`);
+        }
+    }
     for (const candidate of candidates) {
         try {
             const metadata = await fetchAuthorizationServerMetadata(candidate);
+            logOAuthDebug(diagnostics, `OAuth discovery selected ${candidate}`);
             return {
                 metadata: applyProfileAuthorizationEndpoint(metadata, profile),
                 serverUrl: candidate,
@@ -126,6 +166,7 @@ async function discoverAuthorizationServer(profile: Pick<Profile, 'studio_server
         } catch (error) {
             if (error instanceof OAuthUnavailableError) {
                 unavailableError = error;
+                logOAuthDebug(diagnostics, `OAuth discovery skipped ${candidate}: ${error.message}`);
                 continue;
             }
             throw error;
@@ -146,6 +187,23 @@ function applyProfileAuthorizationEndpoint(
         ...metadata,
         authorization_endpoint: new URL('/oauth/authorize', configUrl.origin).toString(),
     };
+}
+
+function buildDeviceVerificationUrl(
+    profile: Partial<Pick<Profile, 'config_url'>>,
+    device: OAuthDeviceAuthorizationResponse,
+): string {
+    if (!profile.config_url) {
+        return device.verification_uri_complete;
+    }
+    try {
+        const configUrl = new URL(profile.config_url);
+        const verificationUrl = new URL('/oauth/device', configUrl.origin);
+        verificationUrl.searchParams.set('user_code', device.user_code);
+        return verificationUrl.toString();
+    } catch {
+        return device.verification_uri_complete;
+    }
 }
 
 function getOAuthServerUrlCandidates(profile: Pick<Profile, 'studio_server_url'>): string[] {
@@ -171,6 +229,81 @@ function getOAuthServerUrlCandidates(profile: Pick<Profile, 'studio_server_url'>
 
     candidates.push('https://sts.dev1.vertesia.io');
     return Array.from(new Set(candidates.map((candidate) => candidate.replace(/\/+$/, ''))));
+}
+
+function getOAuthDiagnostics(options: OAuthDiagnosticsOptions): Required<OAuthDiagnosticsOptions> {
+    const debug = options.debug === true || isTruthyEnv(process.env.VERTESIA_CLI_DEBUG);
+    return {
+        debug,
+        logDetails: options.logDetails === true || debug,
+    };
+}
+
+function isTruthyEnv(value: string | undefined): boolean {
+    return value === '1' || value === 'true' || value === 'yes';
+}
+
+function logDeviceVerificationUrls(
+    device: OAuthDeviceAuthorizationResponse,
+    selectedVerificationUrl: string,
+    diagnostics: Required<OAuthDiagnosticsOptions>,
+): void {
+    if (!diagnostics.debug) {
+        return;
+    }
+    console.log('OAuth verification URLs');
+    console.log('  STS verification URL:', device.verification_uri_complete);
+    console.log('  Browser verification URL:', selectedVerificationUrl);
+}
+
+function logOAuthEndpoints(
+    title: string,
+    serverUrl: string,
+    metadata: OAuthAuthorizationServerMetadata,
+    options: OAuthDiagnosticsOptions & {
+        clientId: string;
+        resource: string;
+    },
+): void {
+    if (!options.logDetails && !options.debug) {
+        return;
+    }
+    console.log(title);
+    console.log('  OAuth server:', serverUrl);
+    console.log('  Issuer:', metadata.issuer);
+    console.log('  Device endpoint:', metadata.device_authorization_endpoint || '-');
+    console.log('  Token endpoint:', metadata.token_endpoint);
+    if (options.debug) {
+        console.log('  Authorization endpoint:', metadata.authorization_endpoint);
+        console.log('  Client ID:', options.clientId);
+        console.log('  Resource:', options.resource);
+    }
+}
+
+function logIssuedToken(
+    title: string,
+    metadata: OAuthAuthorizationServerMetadata,
+    response: OAuthTokenResponse,
+    diagnostics: Required<OAuthDiagnosticsOptions>,
+): void {
+    if (!diagnostics.logDetails && !diagnostics.debug) {
+        return;
+    }
+    const refs = readTokenRefs(response.access_token);
+    console.log(title);
+    console.log('  Token endpoint:', metadata.token_endpoint);
+    console.log('  Token issuer:', refs.issuer || metadata.issuer);
+    if (diagnostics.debug) {
+        console.log('  Token audience:', refs.audience || '-');
+        console.log('  Account ID:', refs.account || '-');
+        console.log('  Project ID:', refs.project || '-');
+    }
+}
+
+function logOAuthDebug(diagnostics: Required<OAuthDiagnosticsOptions>, message: string): void {
+    if (diagnostics.debug) {
+        console.log('[oauth debug]', message);
+    }
 }
 
 async function fetchAuthorizationServerMetadata(oauthServerUrl: string): Promise<OAuthAuthorizationServerMetadata> {
@@ -244,17 +377,6 @@ async function createDeviceAuthorization(
         throw new Error('OAuth device authorization endpoint returned an invalid response.');
     }
     return payload as OAuthDeviceAuthorizationResponse;
-}
-
-function buildDeviceVerificationUrl(profile: OAuthProfile, device: OAuthDeviceAuthorizationResponse): string {
-    if (!profile.config_url) {
-        return device.verification_uri_complete;
-    }
-
-    const configUrl = new URL(profile.config_url);
-    const verificationUrl = new URL('/oauth/device', configUrl.origin);
-    verificationUrl.searchParams.set('user_code', device.user_code);
-    return verificationUrl.toString();
 }
 
 async function pollDeviceToken(
@@ -443,6 +565,7 @@ function readTokenRefs(token: string | undefined): TokenRefs {
         account: readRefId(decoded, 'account') || readStringField(decoded, 'account_id'),
         project: readRefId(decoded, 'project') || readStringField(decoded, 'project_id'),
         audience,
+        issuer: readStringField(decoded, 'iss'),
     };
 }
 

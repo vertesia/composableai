@@ -65,7 +65,7 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
         env.apikey = await ensureProfileAccessToken(profile);
         if (!env.apikey && !profile.apikey) {
             if (!isKeyringAvailable()) {
-                throw new Error('No keyring-backed auth token is available for the selected profile on this system. Use VERTESIA_APIKEY or VERTESIA_TOKEN instead.');
+                throw new Error('No keyring-backed auth token is available for the selected profile on this system. Use VERTESIA_APIKEY for headless authentication.');
             }
             throw new Error('No auth token is stored for the selected profile. Run `vertesia auth refresh` to authenticate again.');
         }

@@ -28,6 +28,7 @@
   "scripts": {
     "lint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
     "build": "tsc --build",
+    "build:native": "node ./scripts/build-native.mjs",
     "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build"
   },
   "dependencies": {
@@ -58,7 +59,8 @@
     "typescript": "^6.0.2"
   },
   "optionalDependencies": {
-    "@napi-rs/keyring": "^1.2.0"
+    "@napi-rs/keyring": "^1.2.0",
+    "@vertesia/cli-darwin-arm64": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

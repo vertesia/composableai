@@ -1,0 +1,36 @@
+{
+  "name": "@vertesia/cli-darwin-arm64",
+  "version": "1.2.0",
+  "description": "Native macOS arm64 binary for the Vertesia CLI.",
+  "type": "module",
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "bin": {
+    "vertesia-cli-darwin-arm64": "./bin/vertesia"
+  },
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "node ../cli/scripts/build-native.mjs",
+    "prepack": "VERTESIA_CLI_REQUIRE_NATIVE_BINARY=1 node ../cli/scripts/build-native.mjs"
+  },
+  "devDependencies": {
+    "@llumiverse/common": "workspace:*",
+    "@vertesia/api-fetch-client": "workspace:*",
+    "@vertesia/client": "workspace:*",
+    "@vertesia/common": "workspace:*",
+    "@vertesia/workflow": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vertesia/composableai.git",
+    "directory": "packages/cli-darwin-arm64"
+  }
+}

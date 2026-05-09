@@ -8,15 +8,91 @@ const { prompt } = enquirer;
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)));
 
-let _package: any;
-function getPackage() {
+interface PackageMetadata {
+    name: string;
+    version: string;
+}
+
+interface RuntimeMetadata {
+    name: 'bun' | 'node';
+    version?: string;
+    platform: NodeJS.Platform;
+    arch: string;
+}
+
+interface BunRuntime {
+    version?: string;
+}
+
+const fallbackPackage: PackageMetadata = {
+    name: process.env.VERTESIA_CLI_BUILD_NAME || '@vertesia/cli',
+    version: process.env.VERTESIA_CLI_BUILD_VERSION || '0.0.0',
+};
+
+let _package: PackageMetadata | undefined;
+function getPackage(): PackageMetadata {
     if (_package === undefined) {
-        _package = JSON.parse(readFileSync(`${packageDir}/package.json`, 'utf8'));
+        _package = readPackageFile() ?? fallbackPackage;
     }
     return _package;
 }
-function getVersion() {
+
+function readPackageFile(): PackageMetadata | undefined {
+    try {
+        const parsed: unknown = JSON.parse(readFileSync(`${packageDir}/package.json`, 'utf8'));
+        if (!isPackageMetadata(parsed)) {
+            throw new Error('Invalid package metadata.');
+        }
+        return parsed;
+    } catch (error: unknown) {
+        if (isFileNotFoundError(error)) {
+            return undefined;
+        }
+        throw error;
+    }
+}
+
+function isPackageMetadata(value: unknown): value is PackageMetadata {
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
+    const name = Reflect.get(value, 'name');
+    const version = Reflect.get(value, 'version');
+    return typeof name === 'string' && typeof version === 'string';
+}
+
+function isFileNotFoundError(error: unknown): boolean {
+    return error instanceof Error
+        && 'code' in error
+        && Reflect.get(error, 'code') === 'ENOENT';
+}
+
+function getVersion(): string {
     return getPackage().version;
+}
+
+function getRuntimeMetadata(): RuntimeMetadata {
+    const bun = Reflect.get(globalThis, 'Bun') as BunRuntime | undefined;
+    if (bun) {
+        return {
+            name: 'bun',
+            version: bun.version,
+            platform: process.platform,
+            arch: process.arch,
+        };
+    }
+    return {
+        name: 'node',
+        version: process.versions.node,
+        platform: process.platform,
+        arch: process.arch,
+    };
+}
+
+function getVersionLabel(): string {
+    const runtime = getRuntimeMetadata();
+    const runtimeVersion = runtime.version ? ` ${runtime.version}` : '';
+    return `${getVersion()} (${runtime.name}${runtimeVersion}, ${runtime.platform}-${runtime.arch})`;
 }
 
 async function getLatestVersion() {
@@ -65,4 +141,4 @@ async function warnIfNotLatest() {
     }
 }
 
-export { getLatestVersion, getPackage, getVersion, packageDir, warnIfNotLatest };
+export { getLatestVersion, getPackage, getRuntimeMetadata, getVersion, getVersionLabel, packageDir, warnIfNotLatest };
