@@ -8,6 +8,7 @@ import type {
     AppManifest,
     AppManifestData,
     AppPackage,
+    AppPackageScope,
     AppToolCollection,
     AppVersionListQuery,
     AppVersionRecord,
@@ -69,6 +70,17 @@ export default class AppsApi extends ApiTopic {
      */
     listAppInstallationTools(appInstallId: string): Promise<AppToolCollection[]> {
         return this.get(`/installations/${appInstallId}/tools`)
+    }
+
+    /**
+     * Get package capabilities exposed by an app installation.
+     */
+    getAppInstallationPackage(appInstallId: string, scope: AppPackageScope | AppPackageScope[] = 'all'): Promise<AppPackage> {
+        return this.get(`/installations/${appInstallId}/package`, {
+            query: {
+                scope: Array.isArray(scope) ? scope.join(',') : scope,
+            },
+        });
     }
 
     /**

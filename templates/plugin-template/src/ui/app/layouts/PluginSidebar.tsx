@@ -5,13 +5,29 @@ import { SidebarSection, useSidebarToggle } from '@vertesia/ui/layout';
 import { useLocation, useRouterBasePath } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { Database, HomeIcon, MessageSquare, MessagesSquare, PlusCircle } from 'lucide-react';
-import type { AgentRunResponse, WorkflowRun } from '@vertesia/common';
+import type { WorkflowRun } from '@vertesia/common';
 import { AppSidebarItem } from './AppSidebarItem';
 import { ASSISTANT_INTERACTION } from '../constants';
 
 const SIDEBAR_RECENT_LIMIT = 3;
 
-function toWorkflowRun(run: AgentRunResponse): WorkflowRun {
+type RecentAgentRun = {
+    id: string;
+    run_kind?: string;
+    workflow_id?: string;
+    status?: WorkflowRun['status'];
+    started_at?: string | number | Date | null;
+    completed_at?: string | number | Date | null;
+    topic?: string;
+    title?: string;
+    data?: Record<string, unknown>;
+    interaction_name?: string;
+    visibility?: WorkflowRun['visibility'];
+    activity_state?: WorkflowRun['activity_state'];
+    interactive?: boolean;
+};
+
+function toWorkflowRun(run: RecentAgentRun): WorkflowRun {
     const isAgentRun = run.run_kind === 'agent';
 
     return {
