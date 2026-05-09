@@ -610,8 +610,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       hono:
-        specifier: ^4.12.14
-        version: 4.12.14
+        specifier: ^4.12.18
+        version: 4.12.18
       jose:
         specifier: ^6.0.11
         version: 6.1.3
@@ -1019,7 +1019,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.19.10
-        version: 1.19.13(hono@4.12.14)
+        version: 1.19.13(hono@4.12.18)
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
@@ -1043,7 +1043,7 @@ importers:
         version: 17.3.1
       hono:
         specifier: ^4.12.14
-        version: 4.12.14
+        version: 4.12.18
       lucide-react:
         specifier: ^0.562.0
         version: 0.562.0(react@19.2.3)
@@ -1053,7 +1053,7 @@ importers:
         version: 9.39.4
       '@hono/vite-dev-server':
         specifier: ^0.25.1
-        version: 0.25.1(hono@4.12.14)
+        version: 0.25.1(hono@4.12.18)
       '@rollup/plugin-commonjs':
         specifier: ^28.0.8
         version: 28.0.9(rollup@4.60.1)
@@ -1143,7 +1143,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.19.10
-        version: 1.19.13(hono@4.12.14)
+        version: 1.19.13(hono@4.12.18)
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
@@ -1161,7 +1161,7 @@ importers:
         version: 17.3.1
       hono:
         specifier: ^4.12.14
-        version: 4.12.14
+        version: 4.12.18
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -4551,6 +4551,9 @@ packages:
   bail@2.0.2:
     resolution: {integrity: sha512-0xO6mYd7JB2YesxDKplafRpsiOzPt9V02ddPCLbY1xYGPOX24NTyN50qnUxgCPcSoYMhKpAuBTjQoRZCAkUDRw==}
 
+  balanced-match@1.0.2:
+    resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
+
   balanced-match@4.0.4:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
     engines: {node: 18 || 20 || >=22}
@@ -4569,6 +4572,12 @@ packages:
   boxen@8.0.1:
     resolution: {integrity: sha512-F3PH5k5juxom4xktynS7MoFY+NUWH5LC4CnH11YB8NPew+HLpmBLCybSAEyb2F+4pRXhuhWqFesoQd6DAyc2hw==}
     engines: {node: '>=18'}
+
+  brace-expansion@1.1.14:
+    resolution: {integrity: sha512-MWPGfDxnyzKU7rNOW9SP/c50vi3xrmrua/+6hfPbCS2ABNWfx24vPidzvC7krjU/RTo235sV776ymlsMtGKj8g==}
+
+  brace-expansion@2.1.0:
+    resolution: {integrity: sha512-TN1kCZAgdgweJhWWpgKYrQaMNHcDULHkWwQIspdtjV4Y5aurRdZpjAqn6yX3FPqTA9ngHCc4hJxMAMgGfve85w==}
 
   brace-expansion@5.0.5:
     resolution: {integrity: sha512-VZznLgtwhn+Mact9tfiwx64fA9erHH/MCXEUfB/0bX/6Fz6ny5EGTXYltMocqg4xFAQZtnO3DHWWXi8RiuN7cQ==}
@@ -4771,6 +4780,9 @@ packages:
 
   commondir@1.0.1:
     resolution: {integrity: sha512-W9pAhw0ja1Edb5GVdIF1mjZw/ASI0AlShXM83UUGe2DVr5TdAPEA1OA8m/g8zWp9x6On7gqufY+FatDbC3MDQg==}
+
+  concat-map@0.0.1:
+    resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
   concurrently@9.2.1:
     resolution: {integrity: sha512-fsfrO0MxV64Znoy8/l1vVIjjHa29SZyyqPgQBwhiDcaW8wJc2W3XWVOGx4M3oJBnv/zdUZIIp1gDeS98GzP8Ng==}
@@ -5733,8 +5745,8 @@ packages:
   hermes-parser@0.25.1:
     resolution: {integrity: sha512-6pEjquH3rqaI6cYAXYPcz9MS4rY6R4ngRgrgfDshRptUZIc3lw0MCIJIGDj9++mfySOuPTHB4nrSW99BCvOPIA==}
 
-  hono@4.12.14:
-    resolution: {integrity: sha512-am5zfg3yu6sqn5yjKBNqhnTX7Cv+m00ox+7jbaKkrLMRJ4rAdldd1xPd/JzbBWspqaQv6RSTrgFN95EsfhC+7w==}
+  hono@4.12.18:
+    resolution: {integrity: sha512-RWzP96k/yv0PQfyXnWjs6zot20TqfpfsNXhOnev8d1InAxubW93L11/oNUc3tQqn2G0bSdAOBpX+2uDFHV7kdQ==}
     engines: {node: '>=16.9.0'}
 
   html-parse-stringify@3.0.1:
@@ -9455,14 +9467,14 @@ snapshots:
       protobufjs: 7.5.5
       yargs: 17.7.2
 
-  '@hono/node-server@1.19.13(hono@4.12.14)':
+  '@hono/node-server@1.19.13(hono@4.12.18)':
     dependencies:
-      hono: 4.12.14
+      hono: 4.12.18
 
-  '@hono/vite-dev-server@0.25.1(hono@4.12.14)':
+  '@hono/vite-dev-server@0.25.1(hono@4.12.18)':
     dependencies:
-      '@hono/node-server': 1.19.13(hono@4.12.14)
-      hono: 4.12.14
+      '@hono/node-server': 1.19.13(hono@4.12.18)
+      hono: 4.12.18
       minimatch: 9.0.9
 
   '@humanfs/core@0.19.1': {}
@@ -12030,6 +12042,8 @@ snapshots:
 
   bail@2.0.2: {}
 
+  balanced-match@1.0.2: {}
+
   balanced-match@4.0.4: {}
 
   baseline-browser-mapping@2.9.19: {}
@@ -12048,6 +12062,15 @@ snapshots:
       type-fest: 4.41.0
       widest-line: 5.0.0
       wrap-ansi: 9.0.2
+
+  brace-expansion@1.1.14:
+    dependencies:
+      balanced-match: 1.0.2
+      concat-map: 0.0.1
+
+  brace-expansion@2.1.0:
+    dependencies:
+      balanced-match: 1.0.2
 
   brace-expansion@5.0.5:
     dependencies:
@@ -12245,6 +12268,8 @@ snapshots:
   commander@8.3.0: {}
 
   commondir@1.0.1: {}
+
+  concat-map@0.0.1: {}
 
   concurrently@9.2.1:
     dependencies:
@@ -13509,7 +13534,7 @@ snapshots:
     dependencies:
       hermes-estree: 0.25.1
 
-  hono@4.12.14: {}
+  hono@4.12.18: {}
 
   html-parse-stringify@3.0.1:
     dependencies:
@@ -14610,15 +14635,15 @@ snapshots:
 
   minimatch@3.1.5:
     dependencies:
-      brace-expansion: 5.0.5
+      brace-expansion: 1.1.14
 
   minimatch@5.1.9:
     dependencies:
-      brace-expansion: 5.0.5
+      brace-expansion: 2.1.0
 
   minimatch@9.0.9:
     dependencies:
-      brace-expansion: 5.0.5
+      brace-expansion: 2.1.0
 
   minimist@1.2.8: {}
 
