@@ -1,28 +1,22 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
 import {
-    AwsConfiguration,
     CompositeAppConfig,
     CompositeAppConfigPayload,
     CountResult,
     DeleteByIdResult,
-    ExaConfiguration,
-    GithubConfiguration,
-    GladiaConfiguration,
     ICreateProjectPayload,
     InCodeProcessDefinition,
     InCodeTypeDefinition,
-    LinkupConfiguration,
-    MagicPdfConfiguration,
     Project,
     ProjectConfiguration,
+    ProjectIntegrationConfigRequest,
+    ProjectIntegrationConfigResponse,
     ProjectIntegrationListEntry,
     ProjectIntegrationListResponse,
     ProjectRef,
     ProjectToolInfo,
     RenderingTemplateDefinition,
     RenderingTemplateDefinitionRef,
-    ResendConfiguration,
-    SerperConfiguration,
     SupportedIntegrations,
 } from "@vertesia/common";
 
@@ -136,7 +130,7 @@ class IntegrationsConfigurationApi extends ApiTopic {
         return this.get(`/${projectId}/integrations`).then((res: ProjectIntegrationListResponse) => res.integrations);
     }
 
-    retrieve(projectId: string, integrationId: SupportedIntegrations): Promise<GladiaConfiguration | GithubConfiguration | AwsConfiguration | MagicPdfConfiguration | SerperConfiguration | ExaConfiguration | LinkupConfiguration | ResendConfiguration | undefined> {
+    retrieve(projectId: string, integrationId: SupportedIntegrations): Promise<ProjectIntegrationConfigResponse | undefined> {
         return this.get(`/${projectId}/integrations/${integrationId}`).catch(err => {
             if (err.status === 404) {
                 return undefined;
@@ -145,7 +139,7 @@ class IntegrationsConfigurationApi extends ApiTopic {
         });
     }
 
-    update(projectId: string, integrationId: string, payload: any): Promise<GladiaConfiguration | GithubConfiguration> {
+    update(projectId: string, integrationId: string, payload: ProjectIntegrationConfigRequest): Promise<ProjectIntegrationConfigResponse> {
         return this.put(`/${projectId}/integrations/${integrationId}`, {
             payload
         });

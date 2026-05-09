@@ -226,7 +226,9 @@ export interface VertesiaSDKToolCollectionObject extends BaseToolCollectionObjec
 export type ToolCollectionObject = MCPToolCollectionObject | VertesiaSDKToolCollectionObject;
 
 /**
- * Public tool collection configuration.
+ * Backward-compatible TypeScript alias. Public API payloads should reference
+ * ToolCollectionObject directly so generated clients do not create a wrapper
+ * model around the discriminated union.
  */
 export type ToolCollection = ToolCollectionObject;
 
@@ -414,7 +416,7 @@ export interface AppManifestData {
      * A list of tool collections endpoints to be used by this app.
      * Prefer using endpoint over tool_collections.
      */
-    tool_collections?: ToolCollection[]
+    tool_collections?: ToolCollectionObject[]
 
     /**
      * Named OAuth providers shared across multiple MCP tool collections.
