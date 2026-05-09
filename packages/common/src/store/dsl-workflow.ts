@@ -306,7 +306,7 @@ export interface DSLWorkflowSpecWithActivities extends DSLWorkflowSpecBase {
  */
 export type DSLWorkflowSpec = DSLWorkflowSpecWithSteps | DSLWorkflowSpecWithActivities;
 
-export function withDSLWorkflowSpecDiscriminator(spec: DSLWorkflowSpec): DSLWorkflowSpec {
+export function withDSLWorkflowSpecDiscriminator(spec: DSLWorkflowSpecBase): DSLWorkflowSpec {
     if ('steps' in spec && spec.steps) {
         return { ...spec, spec_format: 'steps' } as DSLWorkflowSpecWithSteps;
     }
