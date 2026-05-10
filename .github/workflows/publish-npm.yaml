@@ -31,9 +31,75 @@ permissions:
   contents: write # Required to push version changes for preview
 
 jobs:
+  build-cli-darwin-arm64:
+    name: Build CLI darwin-arm64 binary
+    runs-on: macos-14
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: "pnpm"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: pnpm install
+
+      - name: Configure Apple codesigning certificate
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.APPLE_CODESIGN_KEYCHAIN_PASSWORD }}
+        run: |
+          if [ -z "$CERTIFICATE_BASE64" ]; then
+            echo "No Apple Developer ID certificate configured; using ad-hoc codesigning."
+            exit 0
+          fi
+
+          CERTIFICATE_PATH="$RUNNER_TEMP/apple-codesign.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/apple-codesign.keychain-db"
+          if [ -z "$KEYCHAIN_PASSWORD" ]; then
+            KEYCHAIN_PASSWORD="$(uuidgen)"
+          fi
+
+          echo "$CERTIFICATE_BASE64" | base64 --decode > "$CERTIFICATE_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed 's/"//g')
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+      - name: Build signed CLI binary
+        env:
+          VERTESIA_CLI_CODESIGN_IDENTITY: ${{ secrets.APPLE_CODESIGN_IDENTITY }}
+        run: |
+          if [ -z "$VERTESIA_CLI_CODESIGN_IDENTITY" ]; then
+            export VERTESIA_CLI_CODESIGN_IDENTITY="-"
+          fi
+          pnpm --filter @llumiverse/common build
+          pnpm --filter @vertesia/common --filter @vertesia/api-fetch-client --filter @vertesia/client --filter @vertesia/workflow build
+          pnpm --filter @vertesia/cli build
+          pnpm --filter @vertesia/cli-darwin-arm64 build
+          codesign --verify --strict --verbose=2 packages/cli-darwin-arm64/bin/vertesia
+
+      - name: Upload CLI binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: vertesia-cli-darwin-arm64
+          path: packages/cli-darwin-arm64/bin/vertesia
+          if-no-files-found: error
+
   publish:
     name: Publish all packages
     runs-on: ubuntu-latest
+    needs: build-cli-darwin-arm64
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -55,7 +121,18 @@ jobs:
 
       - run: pnpm install
 
+      - name: Download CLI darwin-arm64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: vertesia-cli-darwin-arm64
+          path: packages/cli-darwin-arm64/bin
+
+      - name: Prepare CLI binary artifact
+        run: chmod +x packages/cli-darwin-arm64/bin/vertesia
+
       - name: Publish all packages
+        env:
+          VERTESIA_CLI_REQUIRE_NATIVE_BINARY: "1"
         run: |
           ./.github/bin/publish-all-packages.sh \
               --ref "${{ github.ref_name }}" \

@@ -1,13 +1,14 @@
 import type { Profile } from './index.js';
 import { config, shouldRefreshProfileToken } from './index.js';
 import type { OnResultCallback } from './commands.js';
-import { canUseOAuthProfile, refreshOAuthSession } from './oauth.js';
-import { readAuthBundle, readProfileAccessToken } from './keyring.js';
+import { canUseOAuthProfile, refreshOAuthSession, type OAuthDiagnosticsOptions } from './oauth.js';
+import { readAuthBundle } from './keyring.js';
 import type { ConfigResult } from './server/index.js';
 
 export async function ensureProfileAccessToken(profile: Profile, onResult?: OnResultCallback): Promise<string | undefined> {
-    const token = readProfileAccessToken(profile);
-    if (token && !shouldRefreshProfileToken(profile, 30)) {
+    const bundle = await readAuthBundle(profile.name);
+    const token = bundle?.accessToken || profile.apikey;
+    if (token && !shouldRefreshProfileToken(profile, bundle, 30)) {
         return token;
     }
 
@@ -20,9 +21,9 @@ export async function refreshProfileAccessToken(
     onResult?: OnResultCallback,
     options: {
         projectId?: string;
-    } = {},
+    } & OAuthDiagnosticsOptions = {},
 ): Promise<ConfigResult | undefined> {
-    const bundle = readAuthBundle(profile.name);
+    const bundle = await readAuthBundle(profile.name);
     if (!bundle?.refreshToken || !canUseOAuthProfile(profile)) {
         return undefined;
     }
@@ -40,7 +41,7 @@ export async function refreshProfileAuthentication(
     signal?: AbortSignal,
     options: {
         projectId?: string;
-    } = {},
+    } & OAuthDiagnosticsOptions = {},
 ): Promise<ConfigResult | undefined> {
     const profile = config.getProfile(profileName);
     if (!profile) {
@@ -65,7 +66,7 @@ export async function refreshProfileAuthentication(
     }
 
     const updater = config.updateProfile(profileName);
-    await updater.start(onResult, signal);
+    await updater.start(onResult, signal, options);
     return undefined;
 }
 
@@ -74,7 +75,7 @@ export async function refreshCurrentProfileAuthentication(
     signal?: AbortSignal,
     options: {
         projectId?: string;
-    } = {},
+    } & OAuthDiagnosticsOptions = {},
 ): Promise<ConfigResult | undefined> {
     if (!config.current) {
         console.log("No profile is selected. Run `vertesia profiles use <name>` to select a profile");

@@ -10,13 +10,15 @@ import {
     getConfigUrl,
     getServerUrls,
     shouldRefreshProfileToken,
+    warnCredentialStoreFallback,
+    type Profile,
 } from "./index.js";
 import {
     deleteAuthBundle,
     getAccessTokenExpiry,
     isKeyringAvailable,
     readAuthBundle,
-    writeAuthBundle,
+    tryWriteAuthBundle,
 } from "./keyring.js";
 import { ensureProfileAccessToken, refreshCurrentProfileAuthentication, refreshProfileAuthentication } from './auth.js';
 import { ConfigResult } from './server/index.js';
@@ -47,7 +49,9 @@ interface TokenDetails {
     subject?: string;
     audience?: string;
     account?: string;
+    account_name?: string;
     project?: string;
+    project_name?: string;
 }
 
 interface AuthDetailsPayload {
@@ -55,7 +59,9 @@ interface AuthDetailsPayload {
     profile?: {
         name: string;
         account: string;
+        account_name?: string;
         project: string;
+        project_name?: string;
         config_url: string;
         studio_server_url: string;
         zeno_server_url: string;
@@ -128,12 +134,14 @@ export function showProfile(name?: string) {
     }
 }
 
-export function showAuthDetails(options: AuthDetailsOptions = {}) {
+export async function showAuthDetails(options: AuthDetailsOptions = {}) {
     const envAuth = readEnvCredential();
     const profile = config.current;
-    const bundle = profile ? readAuthBundle(profile.name) : undefined;
+    const bundle = profile ? await readAuthBundle(profile.name) : undefined;
     const profileAccessToken = bundle?.accessToken || profile?.apikey;
     const activeToken = envAuth?.token || profileAccessToken;
+    const profileAccessTokenDetails = readTokenDetails(profileAccessToken, bundle?.accessTokenExpiresAt);
+    const activeTokenDetails = readTokenDetails(activeToken, envAuth ? undefined : bundle?.accessTokenExpiresAt);
     const activeCredentialSource = envAuth
         ? `environment:${envAuth.name}`
         : profileAccessToken
@@ -145,7 +153,9 @@ export function showAuthDetails(options: AuthDetailsOptions = {}) {
         profile: profile && {
             name: profile.name,
             account: profile.account,
+            account_name: profileAccessTokenDetails.account_name,
             project: profile.project,
+            project_name: profileAccessTokenDetails.project_name,
             config_url: profile.config_url,
             studio_server_url: profile.studio_server_url,
             zeno_server_url: profile.zeno_server_url,
@@ -161,13 +171,13 @@ export function showAuthDetails(options: AuthDetailsOptions = {}) {
             project: process.env.VERTESIA_PROJECT_ID || process.env.COMPOSABLE_PROMPTS_PROJECT_ID,
         },
         stored_credentials: profile ? {
-            access_token: readTokenDetails(profileAccessToken, bundle?.accessTokenExpiresAt),
+            access_token: profileAccessTokenDetails,
             refresh_token: readTokenDetails(bundle?.refreshToken, bundle?.refreshTokenExpiresAt),
             id_token: readTokenDetails(bundle?.idToken),
             oauth_client_id: bundle?.oauthClientId,
             oauth_resource: bundle?.oauthResource,
         } : undefined,
-        active_token: readTokenDetails(activeToken, envAuth ? undefined : bundle?.accessTokenExpiresAt),
+        active_token: activeTokenDetails,
     };
 
     if (options.json) {
@@ -218,7 +228,7 @@ export async function showActiveIdToken() {
         return;
     }
 
-    const bundle = readAuthBundle(config.current.name);
+    const bundle = await readAuthBundle(config.current.name);
     if (!bundle?.idToken) {
         console.log('No ID token is stored for the current profile. Run `vertesia auth refresh` to authenticate again.');
         return;
@@ -227,12 +237,12 @@ export async function showActiveIdToken() {
 }
 
 
-export function deleteProfile(name: string) {
-    deleteAuthBundle(name);
+export async function deleteProfile(name: string) {
+    await deleteAuthBundle(name);
     config.remove(name).save();
 }
 
-export function logoutProfile(name?: string) {
+export async function logoutProfile(name?: string) {
     const profileName = name || config.current?.name;
     if (!profileName) {
         console.log("No profile is selected. Run `vertesia profiles use <name>` to select a profile");
@@ -247,7 +257,7 @@ export function logoutProfile(name?: string) {
         delete profile.apikey;
         config.save();
     }
-    deleteAuthBundle(profileName);
+    await deleteAuthBundle(profileName);
     console.log(`Logged out of profile ${profileName}.`);
 }
 
@@ -257,6 +267,7 @@ export interface CreateProfileOptions {
     apikey?: string,
     project?: string;
     account?: string;
+    debug?: boolean;
     onResult?: OnResultCallback
 }
 export async function createProfile(name?: string, options: CreateProfileOptions = {}) {
@@ -359,21 +370,29 @@ export async function createProfile(name?: string, options: CreateProfileOptions
             console.error("Unable to resolve project and account from the supplied credential. Check the target endpoint or provide --project and --account.");
             process.exit(1);
         }
-        writeAuthBundle(name, {
+        const writeResult = await tryWriteAuthBundle(name, {
             accessToken: options.apikey,
             accessTokenExpiresAt: getAccessTokenExpiry(options.apikey),
         });
-        config.add({
+        const profile: Profile = {
             account,
             project,
             name,
             config_url: getConfigUrl(target!, region),
             region,
             ...serverUrls,
-        });
+        };
+        if (!writeResult.stored) {
+            profile.apikey = options.apikey;
+            warnCredentialStoreFallback(writeResult.error);
+        }
+        config.add(profile);
         config.use(name!).save();
     } else {
-        await config.createProfile(name!, target!, region).start(options.onResult);
+        await config.createProfile(name!, target!, region).start(options.onResult, undefined, {
+            debug: options.debug,
+            logDetails: true,
+        });
     }
 
     return name!;
@@ -386,6 +405,8 @@ export async function loginProfile(name?: string, options: CreateProfileOptions 
     if (profile) {
         await refreshProfileAuthentication(profile.name, options.onResult, undefined, {
             projectId: options.project,
+            debug: options.debug,
+            logDetails: true,
         });
         return profile.name;
     }
@@ -407,6 +428,7 @@ export async function updateProfile(name?: string, onResult?: OnResultCallback, 
 
 export interface RefreshProfileOptions {
     project?: string;
+    debug?: boolean;
 }
 
 export async function refreshProfile(
@@ -420,6 +442,8 @@ export async function refreshProfile(
     }
     return refreshProfileAuthentication(name, onResult, signal, {
         projectId: options.project,
+        debug: options.debug,
+        logDetails: true,
     });
 }
 
@@ -430,6 +454,8 @@ export function updateCurrentProfile(
 ): Promise<void> {
     return refreshCurrentProfileAuthentication(onResult, signal, {
         projectId: options.project,
+        debug: options.debug,
+        logDetails: true,
     }).then(() => undefined);
 }
 
@@ -533,7 +559,9 @@ function readTokenDetails(token: string | undefined, expiresAt?: number): TokenD
         subject: readStringField(decoded, 'sub'),
         audience: readAudience(decoded),
         account: readRefId(decoded, 'account') || readStringField(decoded, 'account_id'),
+        account_name: readRefName(decoded, 'account') || readStringField(decoded, 'account_name'),
         project: readRefId(decoded, 'project') || readStringField(decoded, 'project_id'),
+        project_name: readRefName(decoded, 'project') || readStringField(decoded, 'project_name'),
     };
 }
 
@@ -579,6 +607,15 @@ function readRefId(value: object, key: string): string | undefined {
     return typeof id === 'string' ? id : undefined;
 }
 
+function readRefName(value: object, key: string): string | undefined {
+    const field = Reflect.get(value, key);
+    if (!isRecord(field)) {
+        return undefined;
+    }
+    const name = Reflect.get(field, 'name');
+    return typeof name === 'string' ? name : undefined;
+}
+
 function readStringField(value: object, key: string): string | undefined {
     const field = Reflect.get(value, key);
     return typeof field === 'string' ? field : undefined;
@@ -593,8 +630,10 @@ function printAuthDetails(payload: AuthDetailsPayload) {
     console.log();
     printSection('Profile', [
         ['Selected', payload.selected_profile],
-        ['Account', payload.profile?.account],
-        ['Project', payload.profile?.project],
+        ['Account ID', payload.profile?.account],
+        ['Account name', payload.profile?.account_name],
+        ['Project ID', payload.profile?.project],
+        ['Project name', payload.profile?.project_name],
         ['Config URL', payload.profile?.config_url],
         ['Studio server', payload.profile?.studio_server_url],
         ['Zeno server', payload.profile?.zeno_server_url],
@@ -621,8 +660,10 @@ function printAuthDetails(payload: AuthDetailsPayload) {
         ['Issuer', payload.active_token.issuer],
         ['Subject', payload.active_token.subject],
         ['Audience', payload.active_token.audience],
-        ['Account', payload.active_token.account],
-        ['Project', payload.active_token.project],
+        ['Account ID', payload.active_token.account],
+        ['Account name', payload.active_token.account_name],
+        ['Project ID', payload.active_token.project],
+        ['Project name', payload.active_token.project_name],
     ]);
 }
 
@@ -650,7 +691,8 @@ export async function tryRefreshToken() {
         console.log("No profile is selected. Run `vertesia profiles use <name>` to select a profile");
         process.exit(1);
     }
-    if (shouldRefreshProfileToken(config.current)) {
+    const bundle = await readAuthBundle(config.current.name);
+    if (shouldRefreshProfileToken(config.current, bundle)) {
         console.log();
         console.log(colors.bold("Operation Failed:"), colors.red("Authentication token expired!"));
         console.log();
@@ -675,7 +717,9 @@ async function _doRefreshToken(profileName: string, onResult?: OnResultCallback)
             initial: true,
         });
         if (r.refresh) {
-            await refreshProfileAuthentication(profileName, onResult, abortController.signal);
+            await refreshProfileAuthentication(profileName, onResult, abortController.signal, {
+                logDetails: true,
+            });
         }
     } finally {
         process.off('SIGINT', handleSignal);

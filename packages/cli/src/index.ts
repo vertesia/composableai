@@ -7,7 +7,7 @@ import { registerIamCommand } from './iam/index.js';
 import { listEnvironments } from './envs/index.js';
 import { listInteractions } from './interactions/index.js';
 import { registerObjectsCommand } from './objects/index.js';
-import { getVersion, upgrade } from './package.js';
+import { getVersionLabel, upgrade } from './package.js';
 import {
     createProfile,
     deleteProfile,
@@ -33,7 +33,7 @@ import { registerWorkflowsCommand } from './workflows/index.js';
 
 const program = new Command();
 
-program.version(getVersion());
+program.version(getVersionLabel());
 
 program.command("upgrade")
     .description("Upgrade to the latest version of the CLI")
@@ -62,6 +62,7 @@ authRoot.command("login [profile]")
     .option("-r, --region <region>", `Deployment region for a new profile: ${AVAILABLE_REGIONS.join(', ')}. Defaults to ${DEFAULT_REGION}. Only applies to preview and prod targets.`)
     .option("-p, --project <project>", "Authenticate for the given project ID")
     .option("-a, --account <account>", "The account ID to use when creating a profile")
+    .option("--debug", "Print OAuth discovery and token endpoint diagnostics")
     .action(async (profile: string | undefined, options: CreateProfileOptions) => {
         await loginProfile(profile, options);
     })
@@ -87,7 +88,8 @@ authRoot.command("details")
 authRoot.command("refresh")
     .description("Refresh the auth token used by the current profile. An alias to 'vertesia profiles refresh'.")
     .option("-p, --project <project>", "Refresh the current profile token for the given project ID")
-    .action((options: { project?: string }) => updateCurrentProfile(undefined, undefined, options))
+    .option("--debug", "Print OAuth discovery and token endpoint diagnostics")
+    .action((options: { project?: string; debug?: boolean }) => updateCurrentProfile(undefined, undefined, options))
 
 program.command("envs [envId]")
     .description("List the environments you have access to")
@@ -174,6 +176,7 @@ profilesRoot.command('add [name]')
     .option("-k, --apikey <key>", "The API key or auth token to use for the profile")
     .option("-p, --project <project>", "The project ID to use for the profile")
     .option("-a, --account <account>", "The account ID to use for the profile")
+    .option("--debug", "Print OAuth discovery and token endpoint diagnostics")
     .description("Create a new configuration profile")
     .action(async (name: string | undefined, options: CreateProfileOptions) => {
         await createProfile(name, options);
@@ -187,13 +190,14 @@ profilesRoot.command('edit [name]')
 profilesRoot.command('refresh')
     .description("Refresh token for the current configuration profile")
     .option("-p, --project <project>", "Refresh the current profile token for the given project ID")
-    .action((options: { project?: string }) => {
+    .option("--debug", "Print OAuth discovery and token endpoint diagnostics")
+    .action((options: { project?: string; debug?: boolean }) => {
         updateCurrentProfile(undefined, undefined, options);
     });
 profilesRoot.command('delete <name>')
     .description("delete an existing configuration profile")
-    .action((name) => {
-        deleteProfile(name);
+    .action(async (name) => {
+        await deleteProfile(name);
     });
 profilesRoot.command('file')
     .description("print the configuration file path")

@@ -280,6 +280,27 @@ importers:
       '@napi-rs/keyring':
         specifier: ^1.2.0
         version: 1.2.0
+      '@vertesia/cli-darwin-arm64':
+        specifier: workspace:*
+        version: link:../cli-darwin-arm64
+
+  packages/cli-darwin-arm64:
+    devDependencies:
+      '@llumiverse/common':
+        specifier: workspace:*
+        version: link:../../llumiverse/common
+      '@vertesia/api-fetch-client':
+        specifier: workspace:*
+        version: link:../api-fetch-client
+      '@vertesia/client':
+        specifier: workspace:*
+        version: link:../client
+      '@vertesia/common':
+        specifier: workspace:*
+        version: link:../common
+      '@vertesia/workflow':
+        specifier: workspace:*
+        version: link:../workflow
 
   packages/client:
     dependencies:
