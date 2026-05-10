@@ -18,6 +18,7 @@ import {
     ExecutablePromptSegmentDef,
     PopulatedPromptSegmentDef,
     PromptSegmentDef,
+    PromptSegmentRef,
     PromptTemplateRef,
     PromptTemplateRefWithSchema,
     TemplateType,
@@ -359,7 +360,7 @@ export interface InteractionRef {
     version: number;
     tags: string[];
     agent_runner_options?: AgentRunnerOptions;
-    prompts?: PromptSegmentDef<PromptTemplateRef>[];
+    prompts?: PromptSegmentRef<PromptTemplateRef>[];
     updated_at: Date;
 }
 export const InteractionRefPopulate =
@@ -370,7 +371,7 @@ export const InteractionRefWithSchemaPopulate =
 
 export interface InteractionRefWithSchema extends Omit<InteractionRef, "prompts"> {
     result_schema?: JSONSchema;
-    prompts?: PromptSegmentDef<PromptTemplateRefWithSchema>[];
+    prompts?: PromptSegmentRef<PromptTemplateRefWithSchema>[];
 }
 
 export interface InteractionsExportPayload {

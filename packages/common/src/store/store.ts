@@ -1,3 +1,4 @@
+import { ComputedFacetResponse } from "../facets.js";
 import { SearchPayload } from "../payload.js";
 import { SupportedEmbeddingTypes } from "../project.js";
 import { ComplexSearchQuery } from "../query.js";
@@ -98,11 +99,7 @@ export interface SetObjectEmbeddingsResponse {
     type?: Embedding;
 }
 
-export interface ContentObjectApiTypeRef {
-    id?: string;
-    code?: string;
-    name: string;
-}
+export type ContentObjectApiTypeRef = ContentObjectTypeRef;
 
 export interface ContentObjectApiRevision {
     parent?: string;
@@ -112,7 +109,7 @@ export interface ContentObjectApiRevision {
 }
 
 export interface ContentObjectItemApiResponse extends BaseObject {
-    parent: string;
+    parent?: string;
     location: string;
     status: ContentObjectStatus;
     type?: ContentObjectApiTypeRef;
@@ -216,7 +213,7 @@ export interface ContentMetadata {
     size?: number; // in bytes
     languages?: string[];
     location?: Location;
-    generation_runs: GenerationRunMetadata[];
+    generation_runs?: GenerationRunMetadata[];
     etag?: string;
     renditions?: Rendition[];
 }
@@ -258,8 +255,8 @@ export interface DocumentMetadata extends ContentMetadata {
         features_requested?: string[];
         zones_requested?: string[];
         table_count?: number;
-        image_count: number;
-        zone_count: number;
+        image_count?: number;
+        zone_count?: number;
         needs_ocr_count?: number;
     };
     sections?: TextSection[]; // List of sections with descriptions and line indexes
@@ -329,7 +326,7 @@ export interface RevisionInfo {
  * The content object item is a simplified version of the ContentObject that is returned by the store API when listing objects.
  */
 export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
-    parent: string; // the id of the direct parent object. The root object doesn't have the parent field set.
+    parent?: string; // the id of the direct parent object. The root object doesn't have the parent field set.
 
     /** An optional path based location for the object */
     location: string; // the path of the parent object
@@ -600,7 +597,7 @@ export interface GetRenditionResponse {
 
 export interface ObjectSearchResponse {
     results: ContentObjectItem<Record<string, unknown>>[];
-    facets: import('../facets.js').ComputedFacetResponse;
+    facets: ComputedFacetResponse;
     aggregations?: Record<string, unknown>;
 }
 

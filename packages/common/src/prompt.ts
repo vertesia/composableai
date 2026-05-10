@@ -22,10 +22,18 @@ export enum PromptSegmentDefType {
 export interface PromptSegmentDef<
     T = string | PromptTemplate | PromptTemplateRef,
 > {
+    id?: string;
     type: PromptSegmentDefType;
     template?: T; // the template id in case of a prompt template
     configuration?: any; // the configuration if any in case of builtin prompts
 }
+
+export interface PromptSegmentRef<
+    T = string | PromptTemplate | PromptTemplateRef,
+> extends PromptSegmentDef<T> {
+    id: string;
+}
+
 export interface PopulatedPromptSegmentDef
     extends Omit<PromptSegmentDef, "template"> {
     template?: PromptTemplate;
