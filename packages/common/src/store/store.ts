@@ -113,7 +113,7 @@ export interface ContentObjectItemApiResponse extends BaseObject {
     location: string;
     status: ContentObjectStatus;
     type?: ContentObjectApiTypeRef;
-    content: ContentSource;
+    content?: ContentSource;
     external_id?: string;
     properties: Record<string, unknown>;
     metadata?: Record<string, unknown>;
@@ -349,7 +349,7 @@ export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
     /**
      * Content source information, typically a link to an object store
      */
-    content: ContentSource;
+    content?: ContentSource;
 
     /**
      * External identifier for integration with other systems

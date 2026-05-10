@@ -795,13 +795,13 @@ function ImagePanel({ object }: { object: ContentObject }) {
                         setImageUrl(rendition.renditions[0]);
                     } else if (isOriginalWebSupported) {
                         // Fall back to original file only if web-supported
-                        const downloadUrl = await client.files.getDownloadUrl(object.content.source!);
+                        const downloadUrl = await client.files.getDownloadUrl(content.source!);
                         setImageUrl(downloadUrl.url);
                     }
                 } catch (error) {
                     // Fall back to original file only if web-supported
                     if (isOriginalWebSupported) {
-                        const downloadUrl = await client.files.getDownloadUrl(object.content.source!);
+                        const downloadUrl = await client.files.getDownloadUrl(content.source!);
                         setImageUrl(downloadUrl.url);
                     }
                 }
