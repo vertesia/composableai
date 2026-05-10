@@ -627,6 +627,16 @@ export interface SearchAgentRunsQuery {
 
     /** Offset for pagination */
     offset?: number;
+
+    /**
+     * Multi-field sort. Each item has the form `field` or `field:order`, where
+     *   field is one of: `started_at`, `updated_at`
+     *   order is one of: `asc`, `desc` (default: `desc`)
+     * The first item is the primary sort; subsequent items are tie-breakers.
+     * Example: `['updated_at:desc', 'started_at:asc']`.
+     * Defaults to `['started_at:desc']` when omitted.
+     */
+    sort?: string[];
 }
 
 /**
