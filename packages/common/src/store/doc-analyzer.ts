@@ -86,7 +86,7 @@ export interface DocAnalyzeRunStatusResponse extends WorkflowRunStatus {
 
 export interface DocAnalyzerResultResponse {
     document?: string;
-    tables?: DocTableCsv[] | DocTableJson[];
+    tables?: DocTableResponse[];
     images?: DocImage[];
     annotated?: string | null;
 }

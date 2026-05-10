@@ -503,6 +503,12 @@ export interface ContentObjectTypeItem extends BaseObject {
     strict_mode?: boolean;
 }
 export type InCodeTypeDefinition = Pick<ContentObjectTypeItem, 'id' | 'name' | 'description' | 'tags' | 'object_schema' | 'table_layout' | 'is_chunkable' | 'strict_mode'>;
+export interface ContentObjectTypeCatalogEntry extends InCodeTypeDefinition {
+    updated_by?: string;
+    created_by?: string;
+    created_at?: string;
+    updated_at?: string;
+}
 /**
  * The itnerface to be used whend efining types in a plugin app.
  */
