@@ -5,14 +5,14 @@
 
 ## Reference URLs
 
-- Visual style guide: https://docs-ui-style-shadcn.vertesia.dev
-- Markdown component guide: https://docs-ui-style-shadcn.vertesia.dev/components.md
-- LLM reference: https://docs-ui-style-shadcn.vertesia.dev/llms.txt
+- Visual style guide: https://design.vertesiahq.com
+- Markdown component guide: https://design.vertesiahq.com/components.md
+- LLM reference: https://design.vertesiahq.com/llms.txt
 
 # @vertesia/ui Component Reference
 
 > Markdown rendition of the Vertesia UI style guide for LLMs and text-first clients.
-> Visual style guide: https://docs-ui-style-shadcn.vertesia.dev
+> Visual style guide: https://design.vertesiahq.com
 
 Use this file when generating React UI for Vertesia apps or plugins. Prefer `@vertesia/ui`
 components over local duplicates, and use semantic color classes instead of hardcoded colors.
@@ -31,65 +31,65 @@ import { useUserSession } from '@vertesia/ui/session';
 
 ## Classes
 
-- [Semantic](https://docs-ui-style-shadcn.vertesia.dev/semantic)
-- [Background](https://docs-ui-style-shadcn.vertesia.dev/classes/background)
-- [Text](https://docs-ui-style-shadcn.vertesia.dev/classes/text)
-- [Border & Ring](https://docs-ui-style-shadcn.vertesia.dev/classes/border)
-- [Icons](https://docs-ui-style-shadcn.vertesia.dev/classes/icons)
+- [Semantic](https://design.vertesiahq.com/semantic)
+- [Background](https://design.vertesiahq.com/classes/background)
+- [Text](https://design.vertesiahq.com/classes/text)
+- [Border & Ring](https://design.vertesiahq.com/classes/border)
+- [Icons](https://design.vertesiahq.com/classes/icons)
 
 ## Components
 
-- [Heading](https://docs-ui-style-shadcn.vertesia.dev/components/heading)
-- [Buttons](https://docs-ui-style-shadcn.vertesia.dev/components/buttons)
-- [Badges](https://docs-ui-style-shadcn.vertesia.dev/components/badges)
-- [Dot Badges](https://docs-ui-style-shadcn.vertesia.dev/components/dotBadges)
-- [Message Box](https://docs-ui-style-shadcn.vertesia.dev/components/messageBox)
-- [Modal](https://docs-ui-style-shadcn.vertesia.dev/components/modal)
-- [Confirm Modal](https://docs-ui-style-shadcn.vertesia.dev/components/confirmModal)
-- [Delete Modal](https://docs-ui-style-shadcn.vertesia.dev/components/deleteModal)
-- [Filter](https://docs-ui-style-shadcn.vertesia.dev/components/filter)
-- [Tabs](https://docs-ui-style-shadcn.vertesia.dev/components/tabs)
-- [Tooltips](https://docs-ui-style-shadcn.vertesia.dev/components/tooltips)
-- [Switch](https://docs-ui-style-shadcn.vertesia.dev/components/switch)
-- [Side Panel](https://docs-ui-style-shadcn.vertesia.dev/components/sidePanel)
-- [SelectBox](https://docs-ui-style-shadcn.vertesia.dev/components/selectBox)
-- [Overlay](https://docs-ui-style-shadcn.vertesia.dev/components/overlay)
-- [Breadcrumbs](https://docs-ui-style-shadcn.vertesia.dev/components/breadcrumb)
-- [Monaco](https://docs-ui-style-shadcn.vertesia.dev/components/monaco)
-- [Card](https://docs-ui-style-shadcn.vertesia.dev/components/card)
-- [Checkbox](https://docs-ui-style-shadcn.vertesia.dev/components/checkbox)
-- [Collapsible](https://docs-ui-style-shadcn.vertesia.dev/components/collapsible)
-- [Command](https://docs-ui-style-shadcn.vertesia.dev/components/command)
-- [Dropdown](https://docs-ui-style-shadcn.vertesia.dev/components/dropdown)
-- [Label](https://docs-ui-style-shadcn.vertesia.dev/components/label)
-- [Panel](https://docs-ui-style-shadcn.vertesia.dev/components/panel)
-- [Popover](https://docs-ui-style-shadcn.vertesia.dev/components/popover)
-- [Radio Group](https://docs-ui-style-shadcn.vertesia.dev/components/radioGroup)
-- [Resizeable](https://docs-ui-style-shadcn.vertesia.dev/components/resizeable)
-- [Separator](https://docs-ui-style-shadcn.vertesia.dev/components/separator)
-- [Text](https://docs-ui-style-shadcn.vertesia.dev/components/text)
-- [Theme](https://docs-ui-style-shadcn.vertesia.dev/components/theme)
+- [Heading](https://design.vertesiahq.com/components/heading)
+- [Buttons](https://design.vertesiahq.com/components/buttons)
+- [Badges](https://design.vertesiahq.com/components/badges)
+- [Dot Badges](https://design.vertesiahq.com/components/dotBadges)
+- [Message Box](https://design.vertesiahq.com/components/messageBox)
+- [Modal](https://design.vertesiahq.com/components/modal)
+- [Confirm Modal](https://design.vertesiahq.com/components/confirmModal)
+- [Delete Modal](https://design.vertesiahq.com/components/deleteModal)
+- [Filter](https://design.vertesiahq.com/components/filter)
+- [Tabs](https://design.vertesiahq.com/components/tabs)
+- [Tooltips](https://design.vertesiahq.com/components/tooltips)
+- [Switch](https://design.vertesiahq.com/components/switch)
+- [Side Panel](https://design.vertesiahq.com/components/sidePanel)
+- [SelectBox](https://design.vertesiahq.com/components/selectBox)
+- [Overlay](https://design.vertesiahq.com/components/overlay)
+- [Breadcrumbs](https://design.vertesiahq.com/components/breadcrumb)
+- [Monaco](https://design.vertesiahq.com/components/monaco)
+- [Card](https://design.vertesiahq.com/components/card)
+- [Checkbox](https://design.vertesiahq.com/components/checkbox)
+- [Collapsible](https://design.vertesiahq.com/components/collapsible)
+- [Command](https://design.vertesiahq.com/components/command)
+- [Dropdown](https://design.vertesiahq.com/components/dropdown)
+- [Label](https://design.vertesiahq.com/components/label)
+- [Panel](https://design.vertesiahq.com/components/panel)
+- [Popover](https://design.vertesiahq.com/components/popover)
+- [Radio Group](https://design.vertesiahq.com/components/radioGroup)
+- [Resizeable](https://design.vertesiahq.com/components/resizeable)
+- [Separator](https://design.vertesiahq.com/components/separator)
+- [Text](https://design.vertesiahq.com/components/text)
+- [Theme](https://design.vertesiahq.com/components/theme)
 
 ## Layout & Structure
 
-- [Avatar](https://docs-ui-style-shadcn.vertesia.dev/components/avatar)
-- [Center](https://docs-ui-style-shadcn.vertesia.dev/components/center)
-- [Divider](https://docs-ui-style-shadcn.vertesia.dev/components/divider)
-- [Link](https://docs-ui-style-shadcn.vertesia.dev/components/link)
-- [Portal](https://docs-ui-style-shadcn.vertesia.dev/components/portal)
-- [Spinner](https://docs-ui-style-shadcn.vertesia.dev/components/spinner)
+- [Avatar](https://design.vertesiahq.com/components/avatar)
+- [Center](https://design.vertesiahq.com/components/center)
+- [Divider](https://design.vertesiahq.com/components/divider)
+- [Link](https://design.vertesiahq.com/components/link)
+- [Portal](https://design.vertesiahq.com/components/portal)
+- [Spinner](https://design.vertesiahq.com/components/spinner)
 
 ## Forms
 
-- [FormItem](https://docs-ui-style-shadcn.vertesia.dev/components/formItem)
-- [Inputs](https://docs-ui-style-shadcn.vertesia.dev/components/inputs)
-- [Textarea](https://docs-ui-style-shadcn.vertesia.dev/components/textarea)
-- [ComboBox](https://docs-ui-style-shadcn.vertesia.dev/components/comboBox)
-- [InputList](https://docs-ui-style-shadcn.vertesia.dev/components/inputList)
-- [MenuList](https://docs-ui-style-shadcn.vertesia.dev/components/menuList)
-- [NumberInput](https://docs-ui-style-shadcn.vertesia.dev/components/numberInput)
-- [SelectList](https://docs-ui-style-shadcn.vertesia.dev/components/selectList)
-- [TagsInput](https://docs-ui-style-shadcn.vertesia.dev/components/tagsInput)
+- [FormItem](https://design.vertesiahq.com/components/formItem)
+- [Inputs](https://design.vertesiahq.com/components/inputs)
+- [Textarea](https://design.vertesiahq.com/components/textarea)
+- [ComboBox](https://design.vertesiahq.com/components/comboBox)
+- [InputList](https://design.vertesiahq.com/components/inputList)
+- [MenuList](https://design.vertesiahq.com/components/menuList)
+- [NumberInput](https://design.vertesiahq.com/components/numberInput)
+- [SelectList](https://design.vertesiahq.com/components/selectList)
+- [TagsInput](https://design.vertesiahq.com/components/tagsInput)
 
 # Component Guidance
 
@@ -97,7 +97,7 @@ import { useUserSession } from '@vertesia/ui/session';
 
 Primary action primitive with Vertesia variants, loading state, disabled state, and tooltip support.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/buttons
+- Route: https://design.vertesiahq.com/components/buttons
 - Import path: `@vertesia/ui/core`
 - Exports: `Button`, `CopyButton`, `buttonVariants`
 
@@ -147,7 +147,7 @@ import { Button } from '@vertesia/ui/core';
 
 Single-line text input with a simplified value-based `onChange` callback.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/inputs
+- Route: https://design.vertesiahq.com/components/inputs
 - Import path: `@vertesia/ui/core`
 - Exports: `Input`
 
@@ -184,7 +184,7 @@ const [name, setName] = useState('');
 
 Multi-line text control using standard React textarea event handling.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/textarea
+- Route: https://design.vertesiahq.com/components/textarea
 - Import path: `@vertesia/ui/core`
 - Exports: `Textarea`
 
@@ -215,7 +215,7 @@ Multi-line text control using standard React textarea event handling.
 
 Field wrapper for labels, required indicators, and help tooltips.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/formItem
+- Route: https://design.vertesiahq.com/components/formItem
 - Import path: `@vertesia/ui/core`
 - Exports: `FormItem`
 
@@ -248,7 +248,7 @@ Field wrapper for labels, required indicators, and help tooltips.
 
 Accessible overlay dialog for focused tasks and forms.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/modal
+- Route: https://design.vertesiahq.com/components/modal
 - Import path: `@vertesia/ui/core`
 - Exports: `Modal`, `ModalTitle`, `ModalBody`, `ModalFooter`
 
@@ -293,7 +293,7 @@ Accessible overlay dialog for focused tasks and forms.
 
 Confirmation dialog for actions that need explicit user consent.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/confirmModal
+- Route: https://design.vertesiahq.com/components/confirmModal
 - Import path: `@vertesia/ui/core`
 - Exports: `ConfirmModal`
 
@@ -316,7 +316,7 @@ Confirmation dialog for actions that need explicit user consent.
 
 Delete-specific confirmation wrapper with async delete handling and toast feedback.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/deleteModal
+- Route: https://design.vertesiahq.com/components/deleteModal
 - Import path: `@vertesia/ui/core`
 - Exports: `DeleteModal`
 
@@ -342,7 +342,7 @@ Delete-specific confirmation wrapper with async delete handling and toast feedba
 
 Dropdown select for string or object options, with optional search, clear, and multi-select modes.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/selectBox
+- Route: https://design.vertesiahq.com/components/selectBox
 - Import path: `@vertesia/ui/core`
 - Exports: `SelectBox`
 
@@ -383,7 +383,7 @@ Dropdown select for string or object options, with optional search, clear, and m
 
 Tab container driven by an array of tab objects and companion bar/panel components.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/tabs
+- Route: https://design.vertesiahq.com/components/tabs
 - Import path: `@vertesia/ui/core`
 - Exports: `Tabs`, `TabsBar`, `TabsPanel`, `VTabs`, `VTabsBar`, `VTabsPanel`
 
@@ -408,7 +408,7 @@ Tab container driven by an array of tab objects and companion bar/panel componen
 
 Compact status and category labels.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/badges
+- Route: https://design.vertesiahq.com/components/badges
 - Import path: `@vertesia/ui/core`
 - Exports: `Badge`, `DotBadge`
 
@@ -425,7 +425,7 @@ Compact status and category labels.
 
 Semantic feedback box for success, attention, destructive, done, info, and muted messages.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/messageBox
+- Route: https://design.vertesiahq.com/components/messageBox
 - Import path: `@vertesia/ui/core`
 - Exports: `MessageBox`
 
@@ -437,7 +437,7 @@ Semantic feedback box for success, attention, destructive, done, info, and muted
 
 Choice controls for boolean values and mutually exclusive option sets.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/checkbox
+- Route: https://design.vertesiahq.com/components/checkbox
 - Import path: `@vertesia/ui/core`
 - Exports: `Checkbox`, `Switch`, `RadioGroup`, `RadioGroupItem`, `RadioGroupOption`
 
@@ -451,7 +451,7 @@ Choice controls for boolean values and mutually exclusive option sets.
 
 Overlay primitives for action menus, floating content, command palettes, and contextual help.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/dropdown
+- Route: https://design.vertesiahq.com/components/dropdown
 - Import path: `@vertesia/ui/core`
 - Exports: `Dropdown`, `MenuGroup`, `MenuItem`, `Popover`, `Command`, `VTooltip`, `Tooltip`
 
@@ -466,7 +466,7 @@ Overlay primitives for action menus, floating content, command palettes, and con
 
 Content containers for repeated items and framed tool surfaces.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/card
+- Route: https://design.vertesiahq.com/components/card
 - Import path: `@vertesia/ui/core`
 - Exports: `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`, `Panel`
 
@@ -479,7 +479,7 @@ Content containers for repeated items and framed tool surfaces.
 
 Small primitives for display, separation, links, loading states, portals, and overlays.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/components/center
+- Route: https://design.vertesiahq.com/components/center
 - Import path: `@vertesia/ui/core`
 - Exports: `Avatar`, `SvgAvatar`, `Center`, `Divider`, `Link`, `Portal`, `Spinner`, `Separator`, `Overlay`
 
@@ -493,7 +493,7 @@ Small primitives for display, separation, links, loading states, portals, and ov
 
 Semantic Tailwind classes and approved lucide-react icon guidance for Vertesia apps.
 
-- Route: https://docs-ui-style-shadcn.vertesia.dev/semantic
+- Route: https://design.vertesiahq.com/semantic
 - Import path: `@vertesia/ui/core`
 - Exports: `ModeToggle`
 
