@@ -263,6 +263,17 @@ export interface ProcessRunConfig {
      * so programmatic runs retain the intent that triggered them.
      */
     user_message?: string;
+    /**
+     * Optional monitor workflow used when a process is launched as a
+     * conversation workstream. The process workflow sends checkpoint status
+     * signals to this monitor so long-running human-task processes do not need
+     * tight polling.
+     */
+    process_workstream_monitor?: {
+        monitor_workflow_id: string;
+        launch_id?: string;
+        workstream_id?: string;
+    };
 }
 
 export interface ProcessRun extends RunBase {
