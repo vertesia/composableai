@@ -52,7 +52,9 @@ export interface PromptTemplateRef {
     role: PromptRole;
     version: number;
     status: PromptStatus;
-    content_type: TemplateType;
+    content_type?: TemplateType;
+    created_at: Date;
+    updated_at: Date;
 }
 
 export interface PromptTemplateRefWithSchema extends PromptTemplateRef {

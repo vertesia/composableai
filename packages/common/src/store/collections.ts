@@ -59,7 +59,7 @@ export interface CollectionItem extends BaseObject {
 }
 
 export interface Collection extends CollectionItem {
-    properties: Record<string, any>;
+    properties?: Record<string, any>;
     query?: Record<string, any>;
     security?: Record<string, string[]>; // ACL for collection access
     /** BLP sensitivity level — propagated to member documents (max across collections) */

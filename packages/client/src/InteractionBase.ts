@@ -1,4 +1,4 @@
-import { ExecutionRun, InteractionUpdatePayload, InteractionExecutionPayload } from "@vertesia/common";
+import { InteractionExecutionResult, InteractionUpdatePayload, InteractionExecutionPayload } from "@vertesia/common";
 import { VertesiaClient, VertesiaClientProps } from "./client.js";
 import { executeInteraction } from "./execute.js";
 
@@ -35,10 +35,10 @@ export class InteractionBase<P = any> {
      * @param id of the interaction to execute
      * @param payload InteractionExecutionPayload
      * @param onChunk callback to be called when the next chunk of the response is available
-     * @returns the resolved execution run as Promise<ExecutionRun>
+     * @returns the resolved interaction execution result
      */
     async execute(payload: InteractionExecutionPayload = {},
-        onChunk?: (chunk: string) => void): Promise<ExecutionRun<P>> {
+        onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P>> {
         return executeInteraction<P>(this.client, this.id, payload, onChunk);
     }
 }

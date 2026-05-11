@@ -133,7 +133,7 @@ export interface RunBase {
  * @typeParam TProperties - The content type's property schema.
  */
 export interface AgentRunBase<TData = Record<string, any>, TProperties = Record<string, any>> {
-    /** Interaction ID or code (e.g. "sys:generic_question") */
+    /** Interaction ID or code (e.g. "sys:generic_question"). */
     interaction: string;
 
     /** Input parameters, typed per interaction */
@@ -293,7 +293,8 @@ export type AgentRunResponse<TData = Record<string, any>, TProperties = Record<s
  * @typeParam TData - The interaction's expected input data type.
  * @typeParam TProperties - The content type's property schema.
  */
-export interface CreateAgentRunPayload<TData = Record<string, any>, TProperties = Record<string, any>> extends AgentRunBase<TData, TProperties> {
+export interface CreateAgentRunPayload<TData = Record<string, any>, TProperties = Record<string, any>>
+    extends AgentRunBase<TData, TProperties> {
     /** Search scope for RAG queries */
     search_scope?: AgentSearchScope;
 

@@ -36,7 +36,7 @@ export interface ApiKey {
 
 export interface CreateOrUpdateApiKeyPayload extends Partial<ApiKey> {}
 
-export interface ApiKeyWithValue extends Omit<ApiKey, "maskedValue"> {
+export interface ApiKeyWithValue extends ApiKey {
     value: string;
 }
 

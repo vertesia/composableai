@@ -26,7 +26,7 @@ export async function executeInteraction<P = any>(client: VertesiaClient,
     const stream = !!onChunk;
     const response = await client.runs.create({
         ...payload, interaction: interactionId, stream
-    });
+    }) as unknown as InteractionExecutionResult<P>;
     if (stream) {
         if (response.status === ExecutionRunStatus.failed) {
             return response;

@@ -1021,11 +1021,11 @@ export interface BaseExecutionRun<P = any> {
     /** Environment reference - populated with full object in API responses */
     environment: ExecutionEnvironmentRef;
     modelId?: string; //Can be undefined for virtual environments. In most cases should be defined.
-    result_schema: JSONSchema;
+    result_schema?: JSONSchema;
     ttl: number;
     status: ExecutionRunStatus;
     finish_reason?: string;
-    prompt: any;
+    prompt?: any;
     token_use?: ExecutionTokenUsage;
     chunks?: number;
     execution_time?: number; // ms
@@ -1101,7 +1101,10 @@ export interface PromptModalities {
     hasImage: boolean;
 }
 
-export interface InteractionExecutionResult<P = any> extends ExecutionRun<P> {
+export interface InteractionExecutionResult<P = any> extends Omit<ExecutionRun<P>, "account" | "project" | "interaction"> {
+    account: string;
+    project: string;
+    interaction?: string;
     tool_use?: ToolUse[];
     conversation?: unknown;
     options?: StatelessExecutionOptions;
@@ -1140,6 +1143,7 @@ export const ConfigModesOptions: Record<ConfigModes, ConfigModesDescription> = {
 };
 
 export interface InteractionExecutionConfiguration {
+    id?: string;
     environment?: string;
     model?: string;
     do_validate?: boolean;
