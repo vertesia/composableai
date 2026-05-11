@@ -49,6 +49,7 @@ export interface ExecutablePromptSegmentDef
 export interface PromptTemplateRef {
     id: string;
     name: string;
+    description?: string;
     role: PromptRole;
     version: number;
     status: PromptStatus;

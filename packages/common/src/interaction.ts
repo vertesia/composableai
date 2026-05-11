@@ -28,6 +28,7 @@ import { ConversationState } from "./store/conversation-state.js";
 import { AccountRef } from "./user.js";
 import { LlmCallType } from "./workflow-analytics.js";
 import type { MCPToolAnnotations } from "./apps.js";
+import { PrincipalType } from "./apikey.js";
 
 export interface InteractionExecutionError {
     code: string;
@@ -988,7 +989,7 @@ export enum RunSourceTypes {
 export interface RunSource {
     type: RunSourceTypes;
     label: string;
-    principal_type: "user" | "apikey";
+    principal_type: `${PrincipalType}`;
     principal_id: string;
     client_ip: string;
 }
