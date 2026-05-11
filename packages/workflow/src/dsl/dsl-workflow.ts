@@ -136,7 +136,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
         file: files[0],
     });
 
-    log.info("Executing workflow", { payload });
+    log.debug("Executing workflow", { payload });
 
     // Resolve remote activities from installed apps only if the workflow uses prefixed activity names
     let remoteActivities: RemoteActivityMap = {};
@@ -147,7 +147,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
             );
             remoteActivities = await defaultProxy.resolveRemoteActivities(resolvePayload) as RemoteActivityMap;
             if (Object.keys(remoteActivities).length > 0) {
-                log.info("Resolved remote activities", {
+                log.debug("Resolved remote activities", {
                     count: Object.keys(remoteActivities).length,
                     names: Object.keys(remoteActivities),
                 });
@@ -238,7 +238,7 @@ async function handleError(originalError: any, basePayload: BaseActivityPayload,
 
 async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean, proxy?: ActivityInterfaceFor<UntypedActivities>, basePayload?: BaseActivityPayload) {
     if (step.condition && !vars.match(step.condition)) {
-        log.info("Child workflow skipped: condition not satisfied", { workflow: step.name, condition: step.condition });
+        log.debug("Child workflow skipped: condition not satisfied", { workflow: step.name, condition: step.condition });
         return;
     }
     if (step.name.startsWith('dsl:') && !step.spec && proxy && basePayload) {
@@ -285,7 +285,7 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
 
 async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean, proxy?: ActivityInterfaceFor<UntypedActivities>, basePayload?: BaseActivityPayload) {
     if (step.condition && !vars.match(step.condition)) {
-        log.info("Child workflow skipped: condition not satisfied", { workflow: step.name, condition: step.condition });
+        log.debug("Child workflow skipped: condition not satisfied", { workflow: step.name, condition: step.condition });
         return;
     }
     if (step.name.startsWith('dsl:') && !step.spec && proxy && basePayload) {
@@ -389,7 +389,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         log.debug(`Workflow vars before executing activity ${activity.name}`, { vars: vars.resolve() });
     }
     if (activity.condition && !vars.match(activity.condition)) {
-        log.info("Activity skipped: condition not satisfied", activity.condition);
+        log.debug("Activity skipped: condition not satisfied", activity.condition);
         return;
     }
 
@@ -426,7 +426,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
             );
         }
         const remote = remoteActivities[activity.name];
-        log.info("Executing remote activity", {
+        log.debug("Executing remote activity", {
             activityName: activity.name,
             remoteName: remote.activity_name,
             app: remote.app_name,
@@ -482,7 +482,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
     const fn = proxy[activity.name];
     if (activity.parallel) {
         //TODO execute in parallel
-        log.info("Parallel execution not yet implemented");
+        log.debug("Parallel execution not yet implemented");
     } else {
         log.debug("Executing activity: " + activity.name, { importParams });
         const result = await fn(executionPayload);
