@@ -1,9 +1,8 @@
-import { ExecutionRun } from "@vertesia/common";
 import { Command } from "commander";
 import { getClient } from "../client.js";
 import { Spinner } from "../utils/console.js";
 import { readFile, readStdin, writeFile } from "../utils/stdio.js";
-import { ExecutionQueue, ExecutionRequest } from "./executor.js";
+import { CliExecutionResult, ExecutionQueue, ExecutionRequest } from "./executor.js";
 
 
 export default async function runInteraction(program: Command, interactionSpec: string, options: Record<string, any>) {
@@ -104,7 +103,7 @@ export default async function runInteraction(program: Command, interactionSpec: 
             return;
         }
 
-        const result: ExecutionRun[] = await queue.run((completed) => {
+        const result: CliExecutionResult[] = await queue.run((completed) => {
             // Skip updating if aborted
             if (signal.aborted) return;
             
@@ -166,7 +165,7 @@ async function getInputData(options: Record<string, any>) {
     }
 }
 
-function writeResult(runs: ExecutionRun[], hasMultiOutputs: boolean, options: Record<string, any>) {
+function writeResult(runs: CliExecutionResult[], hasMultiOutputs: boolean, options: Record<string, any>) {
     const out = formatResult(runs, hasMultiOutputs, options);
     if (typeof options.output === 'string') {
         writeFile(options.output, out);
@@ -175,7 +174,7 @@ function writeResult(runs: ExecutionRun[], hasMultiOutputs: boolean, options: Re
     }
 }
 
-function formatResult(runs: ExecutionRun[], hasMultiOutputs: boolean, options: Record<string, any>) {
+function formatResult(runs: CliExecutionResult[], hasMultiOutputs: boolean, options: Record<string, any>) {
     const outputData = options.dataOnly ? runs.map(run => run.result) : runs;
     let out: string;
     if (!hasMultiOutputs) {
