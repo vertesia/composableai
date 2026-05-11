@@ -127,8 +127,6 @@ export interface ExecutionEnvironmentRef {
     updated_at: string;
 }
 
-export const ExecutionEnvironmentRefPopulate = "id name provider enabled_models default_model endpoint_url allowed_projects account created_at updated_at";
-
 export interface ExecutionEnvironmentCreatePayload extends Omit<ExecutionEnvironment, 'id' | 'account' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'project' | 'apikey_hint'> { }
 export interface ExecutionEnvironmentUpdatePayload extends Partial<Omit<ExecutionEnvironment, 'id' | 'account' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'apikey_hint'>> { }
 export interface ExecutionEnvironmentConfigUpdatePayload {

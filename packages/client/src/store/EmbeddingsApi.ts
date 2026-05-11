@@ -2,7 +2,7 @@ import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
     EmbeddingsStatusResponse,
     GenericCommandResponse,
-    ProjectConfigurationEmbeddings,
+    ProjectConfigurationEmbeddingEnablePayload,
     SupportedEmbeddingTypes,
 } from "@vertesia/common";
 
@@ -19,7 +19,10 @@ export class EmbeddingsApi extends ApiTopic {
         return this.get(type + "/status");
     }
 
-    async activate(type: SupportedEmbeddingTypes, config: Partial<ProjectConfigurationEmbeddings>): Promise<GenericCommandResponse> {
+    async activate(
+        type: SupportedEmbeddingTypes,
+        config: ProjectConfigurationEmbeddingEnablePayload
+    ): Promise<GenericCommandResponse> {
 
         if (!config.environment) {
             throw new Error("Invalid configuration: select environment");

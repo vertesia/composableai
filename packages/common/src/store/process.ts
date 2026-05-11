@@ -221,7 +221,7 @@ export interface NodeHistoryEntry {
     entered_at: Date | string;
     exited_at?: Date | string;
     status: 'running' | 'completed' | 'skipped' | 'failed' | 'cancelled';
-    context_diff: Record<string, any>;
+    context_diff?: Record<string, any>;
     data_ref?: string;
     sequence?: number;
     child_run_id?: string;

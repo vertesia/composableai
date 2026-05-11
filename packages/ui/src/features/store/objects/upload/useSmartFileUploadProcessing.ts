@@ -137,7 +137,7 @@ export function useSmartFileUploadProcessing() {
                     "content.etag": { $in: hashes },
                 };
 
-                let res: ContentObjectItem[];
+                let res: Array<Pick<ContentObjectItem, "id" | "content">>;
 
                 if (limitToCollectionId) {
                     const payload: ComplexSearchPayload = {
