@@ -21,8 +21,8 @@
   ],
   "scripts": {
     "build": "pnpm lint && pnpm exec rimraf ./lib && tsc -b && pnpm exec rollup -c",
-    "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
+    "lint": "biome lint src",
+    "lint:fix": "biome lint --write src",
     "test": "vitest run"
   },
   "dependencies": {
@@ -31,21 +31,15 @@
     "react": "^19.2.3"
   },
   "devDependencies": {
-    "@eslint/compat": "^2.0.2",
-    "@eslint/js": "^10.0.1",
     "@rollup/plugin-commonjs": "^28.0.3",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-replace": "^6.0.2",
     "@rollup/plugin-terser": "^0.4.4",
     "@types/node": "^24.1.0",
     "@types/react": "^19.2.3",
-    "eslint": "^10.0.2",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
     "rimraf": "^6.1.2",
     "rollup": "^4.59.0",
     "typescript": "^6.0.2",
-    "typescript-eslint": "^8.58.1",
     "vitest": "^4.0.16"
   },
   "exports": {

@@ -21,8 +21,8 @@
   ],
   "scripts": {
     "build": "pnpm exec rimraf ./lib && tsc -b && pnpm exec rollup -c",
-    "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix"
+    "lint": "biome lint src",
+    "lint:fix": "biome lint --write src"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.7.1",
@@ -97,8 +97,6 @@
     "vega-lite": "^6.4.1"
   },
   "devDependencies": {
-    "@eslint/compat": "^2.0.2",
-    "@eslint/js": "^10.0.1",
     "@rollup/plugin-commonjs": "^28.0.3",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.1",
@@ -109,16 +107,11 @@
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19.2.3",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^10.0.2",
     "eslint-import-resolver-typescript": "^4.4.4",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
     "i18next-cli": "^1.51.5",
     "rimraf": "^6.1.2",
     "rollup": "^4.59.0",
     "typescript": "^6.0.2",
-    "typescript-eslint": "^8.58.1",
     "vitest": "^4.0.16"
   },
   "exports": {

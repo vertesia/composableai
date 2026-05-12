@@ -7,8 +7,8 @@
   "types": "lib/main.d.ts",
   "scripts": {
     "clean": "rimraf ./lib tsconfig.tsbuildinfo",
-    "lint": "pnpm exec eslint 'src/**/*' --fix",
-    "format": "pnpm exec prettier --write \"**/*.{ts,js,json,md}\"",
+    "lint": "biome lint src",
+    "format": "biome format --write src",
     "prebuild": "pnpm run lint",
     "build": "pnpm run clean && tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
     "typecheck:test": "tsc --project tsconfig.test.json",
@@ -37,18 +37,11 @@
     "@vertesia/workflow": "workspace:*"
   },
   "devDependencies": {
-    "@eslint/compat": "^2.0.2",
-    "@eslint/js": "^10.0.1",
-    "eslint": "^10.0.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
     "@types/node": "^24.1.0",
-    "prettier": "3.5.3",
     "rimraf": "^6.0.1",
     "@temporalio/proto": "^1.13.0",
     "@temporalio/testing": "^1.13.0",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.16",
     "vitest-fetch-mock": "^0.4.5"
   },

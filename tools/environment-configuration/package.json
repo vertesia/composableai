@@ -7,25 +7,18 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "lint": "npx eslint",
-    "format": "npx prettier --write \"**/*.{ts,js,json,md}\"",
+    "lint": "biome lint src",
+    "format": "biome format --write src",
     "build": "tsc --build",
     "clean": "tsc --build --clean",
     "aws": "npx bun ./src/index.ts aws",
     "gcp": "npx bun ./src/index.ts gcp"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@eslint/markdown": "^7.5.1",
     "@tsconfig/node-lts": "^22.0.1",
     "@types/bun": "latest",
-    "eslint": "^10.0.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
     "globals": "^17.3.0",
-    "prettier": "3.5.3",
-    "typescript": "^6.0.2",
-    "typescript-eslint": "^8.56.1"
+    "typescript": "^6.0.2"
   },
   "dependencies": {
     "@aws-sdk/client-iam": "^3.948.0",

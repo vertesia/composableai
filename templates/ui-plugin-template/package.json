@@ -13,7 +13,7 @@
     "build:app": "vite build --mode app",
     "build:lib": "vite build --mode lib",
     "build": "vite build --mode app && vite build --mode lib",
-    "lint": "eslint .",
+    "lint": "biome lint src",
     "preview": "vite preview"
   },
   "peerDependencies": {
@@ -21,7 +21,6 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/vite": "^4.1.18",
     "@types/node": "^24.1.0",
@@ -30,15 +29,11 @@
     "@vertesia/plugin-builder": "workspace:*",
     "@vitejs/plugin-basic-ssl": "^2.1.0",
     "@vitejs/plugin-react": "^5.1.2",
-    "eslint": "^10.0.2",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.3.0",
     "react": "^19.1.2",
     "react-dom": "^19.1.2",
     "tailwindcss": "^4.1.18",
     "typescript": "^6.0.2",
-    "typescript-eslint": "^8.58.1",
     "vite": "^7.3.0",
     "vite-plugin-serve-static": "^1.2.0"
   },

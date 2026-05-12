@@ -26,7 +26,7 @@
     "cli"
   ],
   "scripts": {
-    "lint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+    "lint": "biome lint src",
     "build": "tsc --build",
     "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build"
   },
@@ -61,10 +61,7 @@
     "@napi-rs/keyring": "^1.2.0"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/jsonwebtoken": "^9.0.10",
-    "eslint": "^10.0.2",
-    "typescript-eslint": "^8.58.1"
+    "@types/jsonwebtoken": "^9.0.10"
   },
   "repository": {
     "type": "git",
