@@ -17,9 +17,9 @@ const envConfig: Parameters<typeof Env.init>[0] & { devAuthToken?: string } = {
     type: "development",
     devAuthToken: isDev ? import.meta.env.VITE_VERTESIA_AUTH_TOKEN : undefined,
     endpoints: {
-        studio: import.meta.env.VITE_STUDIO_URL ?? CONFIG__STUDIO_URL,
-        zeno: import.meta.env.VITE_ZENO_URL ?? CONFIG__ZENO_URL,
-        sts: import.meta.env.VITE_STS_URL ?? CONFIG__STS_URL,
+        studio: import.meta.env.VITE_VERTESIA_STUDIO_URL ?? CONFIG__STUDIO_URL,
+        zeno: import.meta.env.VITE_VERTESIA_ZENO_URL ?? CONFIG__ZENO_URL,
+        sts: import.meta.env.VITE_VERTESIA_STS_URL ?? CONFIG__STS_URL,
     }
 };
 

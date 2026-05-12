@@ -395,18 +395,27 @@ export interface RemoteActivityDefinition {
 export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates' | 'dashboards';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 
-export type AppVersionKind = 'preview' | 'published';
+export type AppVersionKind = 'design' | 'preview' | 'published';
 export type AppVersionState = 'ready' | 'failed' | 'expired';
 export type AppVersionTarget = 'static' | 'service';
 
 export interface AppVersionStorage {
     tenant_id?: string;
     app_prefix?: string;
+    artifacts_prefix?: string;
     source_archive?: string;
+    source_git?: AppVersionGitSource;
     build_prefix?: string;
     manifest_path?: string;
     service_archive?: string;
     live_metadata_path?: string;
+}
+
+export interface AppVersionGitSource {
+    url?: string;
+    remote?: string;
+    ref?: string;
+    commit?: string;
 }
 
 export interface AppVersionUrls {
@@ -636,6 +645,8 @@ export interface Endpoints {
     token?: string;
     /** The browser-facing Studio UI (composable-ui) base URL */
     ui?: string;
+    /** The Smart HTTP app source git server base URL */
+    git?: string;
 }
 
 /**

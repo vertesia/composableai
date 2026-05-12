@@ -15,6 +15,7 @@ export interface EnvProps {
         zeno: string,
         studio: string,
         sts: string, // Security Token Service endpoint
+        git?: string, // Smart HTTP app source git endpoint
     },
     firebase?: {
         apiKey: string,

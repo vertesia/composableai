@@ -102,7 +102,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     static async fromAuthToken(
         token: string,
         payload?: AuthTokenPayload,
-        endpoints?: { studio: string; store: string; token?: string }
+        endpoints?: { studio: string; store: string; token?: string; git?: string }
     ) {
         if (!payload) {
             payload = decodeJWT(token);
@@ -454,6 +454,7 @@ function getEndpointsFromDomain(domain: string) {
             studio: `http://localhost:8091`,
             store: `http://localhost:8092`,
             token: getRuntimeStsUrl() ?? "https://sts.dev1.vertesia.io",
+            git: "https://git.dev1.vertesia.io",
         };
     } else {
         const url = `https://${domain}`;
@@ -463,6 +464,7 @@ function getEndpointsFromDomain(domain: string) {
             studio: url,
             store: url,
             token: url.replace("api", "sts"),
+            git: url.replace("api", "git"),
         };
     }
 }

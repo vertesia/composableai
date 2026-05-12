@@ -30,3 +30,16 @@ app/
 5. Wire the route in `app/routes.tsx`.
 
 For UI patterns and component conventions, see the `vertesia-ui` skill.
+
+## Visual defaults
+
+Build app screens as compact Vertesia Studio product surfaces. The default is a
+light operational UI with restrained brand accents.
+
+- Use `@vertesia/ui` components and semantic tokens before hardcoded colors.
+- Prefer dense tables, queues, filters, split panes, detail pages, and process
+  timelines over hero sections or oversized dashboard cards.
+- Keep page titles around `text-xl`/`text-2xl`; use smaller headings inside
+  panels.
+- Do not force black/near-black backgrounds, neon palettes, or dark-first panels
+  unless explicitly requested.

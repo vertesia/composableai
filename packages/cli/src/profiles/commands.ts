@@ -281,8 +281,8 @@ export async function createProfile(name?: string, options: CreateProfileOptions
         });
     }
     if (!options.target) {
-        // only show dev environments in dev mode
-        const choices = config.isDevMode ? ['local', 'dev-main', 'dev-preview', 'preview', 'prod', 'custom'] : ['preview', 'prod'];
+        // Branch/dev deployments are custom URLs so profile config is explicit.
+        const choices = config.isDevMode ? ['local', 'preview', 'prod', 'custom'] : ['preview', 'prod', 'custom'];
         questions.push({
             type: 'select',
             name: 'target',

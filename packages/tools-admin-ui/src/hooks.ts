@@ -7,12 +7,22 @@ import { useFetch } from '@vertesia/ui/core';
 import type { ResourceData, ServerInfo } from './types.js';
 import { buildResourceData } from './types.js';
 
+type ResourceDataArgs = Parameters<typeof buildResourceData>;
+
+async function fetchJson<T>(url: string): Promise<T> {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Request failed: ${response.status} ${response.statusText}`);
+    }
+    return response.json() as Promise<T>;
+}
+
 /**
  * Fetches the tool server info (message, version, endpoints).
  */
 export function useServerInfo(baseUrl: string) {
     return useFetch<ServerInfo>(() =>
-        fetch(baseUrl).then(r => r.json()),
+        fetchJson<ServerInfo>(baseUrl),
         [baseUrl]
     );
 }
@@ -23,14 +33,14 @@ export function useServerInfo(baseUrl: string) {
  */
 export function useResourceData(baseUrl: string, mcpEndpoints?: string[]) {
     return useFetch<ResourceData>(() => {
-        const fetchJson = (path: string) => fetch(`${baseUrl}/${path}`).then(r => r.json());
+        const fetchResource = <T>(path: string) => fetchJson<T>(`${baseUrl}/${path}`);
         return Promise.all([
-            fetchJson('interactions'),
-            fetchJson('tools'),
-            fetchJson('skills'),
-            fetchJson('activities'),
-            fetchJson('types'),
-            fetchJson('templates'),
+            fetchResource<ResourceDataArgs[0]>('interactions'),
+            fetchResource<ResourceDataArgs[1]>('tools'),
+            fetchResource<ResourceDataArgs[2]>('skills'),
+            fetchResource<ResourceDataArgs[3]>('activities'),
+            fetchResource<ResourceDataArgs[4]>('types'),
+            fetchResource<ResourceDataArgs[5]>('templates'),
         ]).then(([interactions, tools, skills, activities, types, templates]) =>
             buildResourceData(interactions, tools, skills, activities, types, templates, mcpEndpoints)
         );
