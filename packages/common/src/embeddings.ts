@@ -36,7 +36,6 @@ export interface EmbeddingsApiTextInput {
     text: string;
     task_type?: EmbeddingTaskType;
     title?: string;
-    truncate?: "NONE" | "START" | "END";
 }
 
 export interface EmbeddingsApiImageInput {
@@ -67,8 +66,6 @@ export interface EmbeddingsApiRequest {
     model?: string;
     task_type?: EmbeddingTaskType;
     dimensions?: number;
-    output_dtype?: "float" | "binary" | "int8";
-    truncate?: "NONE" | "START" | "END";
 }
 
 /**
