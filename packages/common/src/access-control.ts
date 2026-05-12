@@ -63,6 +63,12 @@ export enum AccessControlResourceType {
     app = "application",
     /** Dynamic resource matching by content properties at query time. */
     content_set = "content_set",
+    /**
+     * Pattern-based denial of platform contributions (UI plugins, tools, skills).
+     * Only valid with role = 'none'. Patterns live in `conditions.resource_props.patterns`
+     * as `<kind>:<glob>` strings (e.g. "ui:studio", "tool:create_ace*").
+     */
+    contribution_set = "contribution_set",
 }
 
 export enum AccessControlPrincipalType {

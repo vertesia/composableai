@@ -14,6 +14,24 @@ export interface ContentSecurity {
     delete?: PropertyConditions[];
 }
 
+/**
+ * Pattern-based access denials carried in the JWT.
+ *
+ * Each top-level key is a contribution `kind` (`ui`, `tool`, ...). The value is an
+ * array of glob patterns (with `*` wildcard) hiding contributions of that kind from
+ * the principal. Enforcers (UI shell, agent tool/skill discovery) match against the
+ * slice for their kind.
+ *
+ * Future kinds may be added as new optional keys without breaking existing consumers
+ * — unknown keys are ignored by their enforcer.
+ */
+export interface Denials {
+    /** Patterns hiding UI plugins / routes. Enforced by the UI shell. */
+    ui?: string[];
+    /** Patterns hiding agent tools and skill loaders (`learn_*`). Enforced during tool discovery. */
+    tool?: string[];
+}
+
 export enum ApiKeyTypes {
     secret = "sk",
 }
@@ -95,6 +113,10 @@ export interface AuthTokenPayload {
     /** Content security conditions keyed by permission (read/write/delete).
      *  Presence triggers restrict mode: project:* is dropped from security filters. */
     content_security?: ContentSecurity;
+
+    /** Pattern-based denials of platform contributions, grouped by kind.
+     *  Enforcers (UI shell, agent tool discovery) filter their visible items against this. */
+    denials?: Denials;
 
     /**
      * API endpoints information to be used with this token.
