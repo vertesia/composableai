@@ -15,14 +15,6 @@ interface GitCredentialInput {
     path?: string;
 }
 
-const KNOWN_GIT_BASE_URLS = [
-    'https://git.vertesia.io',
-    'https://git.us1.vertesia.io',
-    'https://git.eu1.vertesia.io',
-    'https://git.jp1.vertesia.io',
-    'https://git.dev1.vertesia.io',
-];
-
 export async function configureGitAuth(options: GitAuthOptions = {}) {
     const profile = getRequestedProfile(options.profile);
     const gitBaseUrl = normalizeGitBaseUrl(options.url || gitServerUrlForProfile(profile));
@@ -155,13 +147,26 @@ function gitConfig(...args: string[]) {
 }
 
 function removeKnownVertesiaAliases() {
-    for (const gitBaseUrl of KNOWN_GIT_BASE_URLS) {
+    let raw: string;
+    try {
+        raw = execFileSync('git', ['config', '--global', '--get-regexp', '^url\\..*\\.insteadOf$'], {
+            stdio: ['ignore', 'pipe', 'ignore'],
+            encoding: 'utf8',
+        });
+    } catch {
+        // No matching keys, or no global config — nothing to clean up.
+        return;
+    }
+    for (const line of raw.split('\n')) {
+        const space = line.indexOf(' ');
+        if (space < 0) continue;
+        const key = line.slice(0, space);
+        const value = line.slice(space + 1);
+        if (value !== 'vertesia:') continue;
         try {
-            execFileSync('git', ['config', '--global', '--unset-all', `url.${gitBaseUrl}/.insteadOf`, 'vertesia:'], {
-                stdio: 'ignore',
-            });
+            execFileSync('git', ['config', '--global', '--unset-all', key, '^vertesia:$'], { stdio: 'ignore' });
         } catch {
-            // The alias may not exist yet.
+            // Best-effort; ignore if the key disappears between read and unset.
         }
     }
 }
