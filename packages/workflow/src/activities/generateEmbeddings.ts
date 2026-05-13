@@ -339,6 +339,8 @@ async function generateImageEmbeddings({
     const rendition = renditions[0];
     const image = await fetchBlobAsBase64(client, rendition);
 
+    // TODO(task_type): Document embedding task — image inputs do not carry task_type, but this is a document-indexing call.
+    // Revisit if task_type support is added to ImageEmbeddingInput in a later PR.
     const res = await client.environments
         .embeddings(environment, {
             inputs: [{
@@ -390,6 +392,7 @@ async function generateEmbeddingsFromStudio(
         `Generating embeddings for text of ${text.length} chars with environment ${env}`,
     );
 
+    // TODO(task_type): Document embedding task — add task_type: "document" once task_type support is validated end-to-end.
     return client.environments
         .embeddings(env, {
             inputs: [{ type: "text", text }],
