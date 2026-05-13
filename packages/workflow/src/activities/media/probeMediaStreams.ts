@@ -15,7 +15,6 @@ export interface ProbeMediaStreamsResult {
     hasAudio: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface ProbeMediaStreamsParams {}
 
 export interface ProbeMediaStreams extends DSLActivitySpec<ProbeMediaStreamsParams> {

@@ -14,10 +14,11 @@
     "aws": "npx bun ./src/index.ts aws",
     "gcp": "npx bun ./src/index.ts gcp"
   },
-  "devDependencies": {
-    "@tsconfig/node-lts": "^22.0.1",
-    "@types/bun": "latest",
-    "globals": "^17.3.0",
+    "devDependencies": {
+        "@biomejs/biome": "^2.4.4",
+        "@tsconfig/node-lts": "^22.0.1",
+        "@types/bun": "latest",
+        "globals": "^17.3.0",
     "typescript": "^6.0.2"
   },
   "dependencies": {
