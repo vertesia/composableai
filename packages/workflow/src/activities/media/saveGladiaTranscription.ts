@@ -1,6 +1,6 @@
 import { log } from "@temporalio/activity";
 import { FetchClient } from "@vertesia/api-fetch-client";
-import { AudioMetadata, DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations, TranscriptSegment, VideoMetadata } from "@vertesia/common";
+import { AudioMetadata, DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfigurationWithSecrets, SupportedIntegrations, TranscriptSegment, VideoMetadata } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { TextExtractionResult, TextExtractionStatus } from "../../result-types.js";
 
@@ -23,7 +23,7 @@ export async function saveGladiaTranscription(payload: DSLActivityExecutionPaylo
     const context = await setupActivity<SaveGladiaTranscriptionParams>(payload);
     const { params, client, inputType } = context;
 
-    const gladiaConfig = await client.projects.integrations.retrieve(payload.project_id, SupportedIntegrations.gladia) as GladiaConfiguration | undefined;
+    const gladiaConfig = await client.projects.integrations.retrieve(payload.project_id, SupportedIntegrations.gladia) as GladiaConfigurationWithSecrets | undefined;
     if (!gladiaConfig || !gladiaConfig.enabled) {
         return {
             hasText: false,

@@ -7,6 +7,7 @@ import type {
     AppInstallationWithManifest,
     AppManifest,
     AppManifestData,
+    AppPackage,
     AppToolCollection,
     CountResult,
     ProjectRef,
@@ -15,6 +16,10 @@ import type {
     ValidateUrlRequest,
     ValidateUrlResponse,
 } from "@vertesia/common";
+
+export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest'> {
+    manifest: null,
+}
 
 export default class AppsApi extends ApiTopic {
 
@@ -32,11 +37,20 @@ export default class AppsApi extends ApiTopic {
 
     /**
      * Get the list if tools provided by the given app.
-     * @param appId 
-     * @returns 
+     * @param appId
+     * @returns
      */
     listAppInstallationTools(appInstallId: string): Promise<AppToolCollection[]> {
         return this.get(`/installations/${appInstallId}/tools`)
+    }
+
+    /**
+     * Fetch the always-on system tools package served by studio-server.
+     * Tools and skills (`learn_*`) are returned on separate fields so UIs can
+     * render them distinctly. URLs are already resolved per deployment.
+     */
+    getSystemToolsPackage(scope: string = 'tools'): Promise<AppPackage> {
+        return this.get('/studio-tools/package', { query: { scope } });
     }
 
     /**

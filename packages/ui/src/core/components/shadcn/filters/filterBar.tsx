@@ -357,7 +357,7 @@ const FilterClear = ({ className }: { className?: string }) => {
   return (
     <Button
       variant="outline"
-      size="xs"
+      size="md"
       className={cn("transition group", className)}
       onClick={() => setFilters([])}
     >

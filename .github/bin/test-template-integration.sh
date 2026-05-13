@@ -129,19 +129,31 @@ publish_to_verdaccio() {
   npm set "//${VERDACCIO_URL#http://}/:_authToken" "test-token"
 
   local count=0
-  for pkg_dir in packages/*; do
-    if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
-      pkg_name=$(basename "$pkg_dir")
-      cd "$pkg_dir"
-      pkg_version=$(pnpm pkg get version | tr -d '"')
-      echo "  Publishing @vertesia/${pkg_name}@${pkg_version}..."
-      pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" > /dev/null 2>&1
-      count=$((count + 1))
-      cd ../..
-    fi
-  done
+  while IFS= read -r pkg_dir; do
+    pkg_name=$(basename "$pkg_dir")
+    cd "$pkg_dir"
+    pkg_version=$(pnpm pkg get version | tr -d '"')
+    echo "  Publishing @vertesia/${pkg_name}@${pkg_version}..."
+    pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" > /dev/null 2>&1
+    count=$((count + 1))
+    cd "${SCRIPT_DIR}/../.."
+  done < <(workspace_package_dirs)
 
   echo "Published ${count} packages to verdaccio"
+}
+
+workspace_package_dirs() {
+  local repo_root
+  repo_root="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+  # Use pnpm workspace filtering so pnpm-workspace.yaml exclusions are authoritative.
+  pnpm -r --filter "./packages/**" exec pwd | while IFS= read -r pkg_dir; do
+    case "$pkg_dir" in
+      "${repo_root}"/packages/*)
+        [ -f "${pkg_dir}/package.json" ] && printf '%s\n' "$pkg_dir"
+        ;;
+    esac
+  done
 }
 
 # =============================================================================

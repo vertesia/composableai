@@ -91,3 +91,15 @@ export function applyTransform(value: string, transform: string): string {
 export function concatValues(values: string[], separator: string = ''): string {
   return values.join(separator);
 }
+
+/**
+ * Look up a value in a map (used for the "map" transform)
+ * @throws Error if the key is not present in the map
+ */
+export function applyMapTransform(value: string, map: Record<string, string>): string {
+  if (!(value in map)) {
+    const keys = Object.keys(map).join(', ');
+    throw new Error(`Value "${value}" has no entry in map (expected one of: ${keys})`);
+  }
+  return map[value];
+}

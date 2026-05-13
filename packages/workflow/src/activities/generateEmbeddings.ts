@@ -6,7 +6,7 @@ import {
     type DSLActivitySpec,
     type EmbeddingsApiResult,
     ImageRenditionFormat,
-    type ProjectConfigurationEmbeddings,
+    type ProjectConfigurationEmbedding,
     SupportedEmbeddingTypes,
 } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
@@ -160,7 +160,7 @@ interface ExecuteGenerateEmbeddingsParams {
     document: ContentObject;
     client: VertesiaClient;
     type: SupportedEmbeddingTypes;
-    config: ProjectConfigurationEmbeddings;
+    config: ProjectConfigurationEmbedding;
     property?: string;
     force?: boolean;
 }
@@ -196,6 +196,11 @@ async function generateTextEmbeddings(
     }
 
     const { environment } = config;
+    if (!environment) {
+        throw new Error(
+            "No environment found in project configuration. Set environment in project configuration to generate embeddings.",
+        );
+    }
 
     // Compute text etag for comparison
     const textEtag = document.text_etag ?? (document.text ? md5(document.text) : undefined);
@@ -312,6 +317,11 @@ async function generateImageEmbeddings({
     }
 
     const { environment, model } = config;
+    if (!environment) {
+        throw new Error(
+            "No environment found in project configuration. Set environment in project configuration to generate embeddings.",
+        );
+    }
 
     const resRnd = await client.store.objects.getRendition(document.id, {
         format: ImageRenditionFormat.jpeg,

@@ -99,6 +99,10 @@ export function DocumentPreviewPanel({
   };
 
   const loadImageUrl = async (obj: ContentObject) => {
+    if (!obj.content?.source) {
+      return;
+    }
+
     try {
       // Try to get a rendition first
       const rendition = await client.objects.getRendition(obj.id, {
@@ -113,7 +117,7 @@ export function DocumentPreviewPanel({
 
       // Get download URL
       const downloadUrlResult = await client.files.getDownloadUrl(
-        obj.content.source!,
+        obj.content.source,
       );
       setImageUrl(downloadUrlResult.url);
     } catch (error) {

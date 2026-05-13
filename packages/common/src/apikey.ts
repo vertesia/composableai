@@ -36,7 +36,7 @@ export interface ApiKey {
 
 export interface CreateOrUpdateApiKeyPayload extends Partial<ApiKey> {}
 
-export interface ApiKeyWithValue extends Omit<ApiKey, "maskedValue"> {
+export interface ApiKeyWithValue extends ApiKey {
     value: string;
 }
 
@@ -138,6 +138,7 @@ export interface AuthTokenPayload {
 
 export enum PrincipalType {
     User = "user",
+    OAuthAccess = "oauth_access",
     Group = "group",
     ApiKey = "apikey",
     ServiceAccount = "service_account",

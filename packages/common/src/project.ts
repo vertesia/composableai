@@ -164,7 +164,7 @@ export interface ProjectModelDefaults {
 
 export interface ProjectConfiguration {
 
-    human_context: string;
+    human_context?: string;
 
     defaults?: ProjectModelDefaults;
 
@@ -173,9 +173,9 @@ export interface ProjectConfiguration {
     sync_content_properties?: boolean;
 
     embeddings: {
-        text?: ProjectConfigurationEmbeddings;
-        image?: ProjectConfigurationEmbeddings;
-        properties?: ProjectConfigurationEmbeddings
+        text?: ProjectConfigurationEmbedding;
+        image?: ProjectConfigurationEmbedding;
+        properties?: ProjectConfigurationEmbedding
     }
 
     datacenter?: string;
@@ -237,13 +237,22 @@ export const SearchTypes = {
     ...FullTextType
 } as const;
 
-export interface ProjectConfigurationEmbeddings {
-    environment: string;
+export interface ProjectConfigurationEmbedding {
+    environment?: string;
     enabled: boolean;
-    dimensions: number;
+    dimensions?: number;
     max_tokens?: number;
     model?: string;
 }
+
+export interface ProjectConfigurationEmbeddingEnablePayload {
+    environment: string;
+    max_tokens?: number;
+    model?: string;
+}
+
+/** @deprecated Use ProjectConfigurationEmbedding for a single embedding configuration. */
+export type ProjectConfigurationEmbeddings = ProjectConfigurationEmbedding;
 
 export interface Project {
     id: string;
@@ -252,7 +261,7 @@ export interface Project {
     description?: string;
     account: string;
     configuration: ProjectConfiguration;
-    integrations: Map<string, any>;
+    integrations?: Map<string, any>;
     plugins: string[];
     created_by: string,
     updated_by: string,

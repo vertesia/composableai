@@ -1,4 +1,4 @@
-import { AppPackage, AppPackageScope, AppWidgetInfo, CatalogInteractionRef, InCodeTypeDefinition, RemoteActivityDefinition } from "@vertesia/common";
+import { AppPackage, AppPackageScope, AppWidgetInfo, CatalogInteractionRef, InCodeProcessDefinition, InCodeTypeDefinition, RemoteActivityDefinition } from "@vertesia/common";
 import { Context, Hono } from "hono";
 import { ToolUseContext } from "../types.js";
 import { ToolServerConfig } from "./types.js";
@@ -63,6 +63,13 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
         }
         pkg.types = allTypes;
     },
+    async processes(pkg: AppPackage, config: ToolServerConfig) {
+        const allProcesses: InCodeProcessDefinition[] = [];
+        for (const process of config.processes || []) {
+            allProcesses.push(process);
+        }
+        pkg.processes = allProcesses;
+    },
     async templates(pkg: AppPackage, config: ToolServerConfig) {
         const basePath = `${config.prefix || '/api'}/templates`;
         pkg.templates = (config.templates || []).flatMap(coll =>
@@ -125,6 +132,7 @@ async function handlePackageRequest(c: Context, config: ToolServerConfig) {
         await builders.tools(pkg, config, c);
         await builders.interactions(pkg, config, c);
         await builders.types(pkg, config, c);
+        await builders.processes(pkg, config, c);
         await builders.templates(pkg, config, c);
         await builders.widgets(pkg, config, c);
         await builders.ui(pkg, config, c);
@@ -139,6 +147,9 @@ async function handlePackageRequest(c: Context, config: ToolServerConfig) {
         }
         if (scopes.has('types')) {
             await builders.types(pkg, config, c);
+        }
+        if (scopes.has('processes')) {
+            await builders.processes(pkg, config, c);
         }
         if (scopes.has('templates')) {
             await builders.templates(pkg, config, c);
