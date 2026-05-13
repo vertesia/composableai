@@ -22,3 +22,5 @@ minimumReleaseAgeExclude:
   - dompurify@3.4.0
   # Renovate security update: fast-xml-parser@5.7.2
   - fast-xml-parser@5.7.2
+  # Renovate security update: protobufjs@<7.5.5@7.5.8
+  - protobufjs@<7.5.5@7.5.8
