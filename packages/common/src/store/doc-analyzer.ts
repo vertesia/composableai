@@ -68,6 +68,8 @@ export interface DocTableJson extends DocTable {
     data: JSONObject[];
 }
 
+export type DocTableResponse = DocTableCsv | DocTableJson;
+
 /**
  * Output format for document processing workflows
  */
@@ -84,7 +86,7 @@ export interface DocAnalyzeRunStatusResponse extends WorkflowRunStatus {
 
 export interface DocAnalyzerResultResponse {
     document?: string;
-    tables?: DocTableCsv[] | DocTableJson[];
+    tables?: DocTableResponse[];
     images?: DocImage[];
     annotated?: string | null;
 }
@@ -171,4 +173,10 @@ export interface GetAdaptedTablesRequestQuery {
 export interface AdaptedTable {
     comment?: string;
     data: Record<string, any>[];
+}
+
+export type AdaptedTableResponse = Record<string, AdaptedTable>;
+
+export interface AnnotatedPdfResponse {
+    url: string | null;
 }

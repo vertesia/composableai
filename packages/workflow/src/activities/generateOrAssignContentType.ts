@@ -160,7 +160,7 @@ export async function generateOrAssignContentType(
 
   const jsonResult = res.result.object();
 
-  log.info("Selected Content Type Result: " + JSON.stringify(jsonResult));
+  log.debug("Selected Content Type Result: " + JSON.stringify(jsonResult));
 
 
   //if type is not identified or not present in the database, generate a new type

@@ -752,7 +752,6 @@ const TextPanel = memo(({
     );
 });
 
-
 function TranscriptPanel({ object, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
     const { t } = useUITranslation();
     const transcript = object.transcript;

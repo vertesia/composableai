@@ -3,6 +3,7 @@ import { NodeStreamSource } from "@vertesia/client/node";
 import {
     ComplexSearchPayload,
     ContentObject,
+    ContentObjectItemApiResponse,
     ContentObjectItem,
     ContentObjectTypeItem,
     CreateContentObjectPayload,
@@ -410,7 +411,7 @@ function printJson(value: unknown) {
     console.log(JSON.stringify(value, null, 2));
 }
 
-function printObjectItems(objects: ContentObjectItem[]) {
+function printObjectItems(objects: Array<ContentObjectItem | ContentObjectItemApiResponse>) {
     if (objects.length === 0) {
         console.log("No objects found");
         return;
@@ -427,7 +428,7 @@ function printObjectItems(objects: ContentObjectItem[]) {
     );
 }
 
-function readObjectTypeName(object: ContentObjectItem): string {
+function readObjectTypeName(object: ContentObjectItem | ContentObjectItemApiResponse): string {
     if (!object.type) {
         return "";
     }

@@ -94,5 +94,5 @@ export interface ExportPropertiesPayload {
 export interface ExportPropertiesResponse {
     type: string;
     name: string;
-    data: Blob;
+    data: string;
 }
