@@ -89,11 +89,14 @@ export interface DerivedVariable {
   /** Source variable name(s) to derive from. Can be a single string or array of strings for concat transform */
   from: string | string[];
 
-  /** Transformation to apply: "pascalCase", "camelCase", "kebabCase", "snakeCase", "titleCase", "upperCase", "lowerCase", "concat" */
+  /** Transformation to apply: "pascalCase", "camelCase", "kebabCase", "snakeCase", "titleCase", "upperCase", "lowerCase", "concat", "map" */
   transform: string;
 
   /** Separator for concat transform (default: "") */
   separator?: string;
+
+  /** Lookup table for the "map" transform: { sourceValue: derivedValue } */
+  map?: Record<string, string>;
 }
 
 /**
