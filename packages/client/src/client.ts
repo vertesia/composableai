@@ -373,7 +373,11 @@ function isApiKey(apiKey: string) {
     return apiKey.startsWith("pk-") || apiKey.startsWith("sk-");
 }
 
-function isTokenExpired(token: string | null) {
+/**
+ * Returns true when the token should be refreshed: either missing, or within
+ * EXPIRATION_THRESHOLD of its `exp` claim, or already expired. Exported for tests.
+ */
+export function isTokenExpired(token: string | null) {
     if (!token) {
         return true;
     }
@@ -381,7 +385,7 @@ function isTokenExpired(token: string | null) {
     const decoded = decodeJWT(token);
     const exp = decoded.exp;
     const currentTime = Date.now();
-    return currentTime <= exp * 1000 - EXPIRATION_THRESHOLD;
+    return currentTime >= exp * 1000 - EXPIRATION_THRESHOLD;
 }
 
 export function decodeJWT(jwt: string): AuthTokenPayload {

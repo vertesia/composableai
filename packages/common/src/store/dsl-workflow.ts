@@ -23,6 +23,9 @@ export interface WorkflowInputFile {
  * Discriminated union for workflow inputs.
  * Workflows can accept either a list of object IDs (existing behavior) OR a list of file references (new).
  */
+/**
+ * @discriminator inputType
+ */
 export type WorkflowInput =
     | { inputType: 'objectIds', objectIds: string[] }
     | { inputType: 'files', files: WorkflowInputFile[] };
@@ -245,6 +248,9 @@ export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
     }
 }
 
+/**
+ * @discriminator type
+ */
 export type DSLWorkflowStep = DSLActivityStep | DSLChildWorkflowStep;
 
 export interface DSLWorkflowSpecBase {
@@ -270,6 +276,7 @@ export interface DSLWorkflowSpecBase {
 }
 
 export interface DSLWorkflowSpecWithSteps extends DSLWorkflowSpecBase {
+    spec_format: 'steps';
     steps: DSLWorkflowStep[];
     /**
      * @deprecated use steps instead
@@ -281,6 +288,7 @@ export interface DSLWorkflowSpecWithSteps extends DSLWorkflowSpecBase {
  * @deprecated use steps instead
  */
 export interface DSLWorkflowSpecWithActivities extends DSLWorkflowSpecBase {
+    spec_format: 'activities';
     steps?: never;
     /**
      * @deprecated use steps instead
@@ -293,7 +301,17 @@ export interface DSLWorkflowSpecWithActivities extends DSLWorkflowSpecBase {
  * steps was added after activities and may contain a mix of activities and other tasks like exec child workflows.
  * For backward compatibility we keep the activities field as a fallback but one should use one or the other not both.
  */
+/**
+ * @discriminator spec_format
+ */
 export type DSLWorkflowSpec = DSLWorkflowSpecWithSteps | DSLWorkflowSpecWithActivities;
+
+export function withDSLWorkflowSpecDiscriminator(spec: DSLWorkflowSpecBase): DSLWorkflowSpec {
+    if ('steps' in spec && spec.steps) {
+        return { ...spec, spec_format: 'steps' } as DSLWorkflowSpecWithSteps;
+    }
+    return { ...spec, spec_format: 'activities' } as DSLWorkflowSpecWithActivities;
+}
 
 export interface DSLWorkflowDefinition extends BaseObject, DSLWorkflowSpecBase {
     // an optional JSON schema to describe the input vars of the workflow.
