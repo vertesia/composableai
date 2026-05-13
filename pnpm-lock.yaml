@@ -610,8 +610,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       hono:
-        specifier: ^4.12.14
-        version: 4.12.14
+        specifier: ^4.12.18
+        version: 4.12.18
       jose:
         specifier: ^6.0.11
         version: 6.1.3
@@ -1019,7 +1019,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.19.10
-        version: 1.19.13(hono@4.12.14)
+        version: 1.19.13(hono@4.12.18)
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
@@ -1043,7 +1043,7 @@ importers:
         version: 17.3.1
       hono:
         specifier: ^4.12.14
-        version: 4.12.14
+        version: 4.12.18
       html-parse-stringify:
         specifier: ^3.0.1
         version: 3.0.1
@@ -1059,7 +1059,7 @@ importers:
         version: 9.39.4
       '@hono/vite-dev-server':
         specifier: ^0.25.1
-        version: 0.25.1(hono@4.12.14)
+        version: 0.25.1(hono@4.12.18)
       '@rollup/plugin-commonjs':
         specifier: ^28.0.8
         version: 28.0.9(rollup@4.60.1)
@@ -1149,7 +1149,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.19.10
-        version: 1.19.13(hono@4.12.14)
+        version: 1.19.13(hono@4.12.18)
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
@@ -1167,7 +1167,7 @@ importers:
         version: 17.3.1
       hono:
         specifier: ^4.12.14
-        version: 4.12.14
+        version: 4.12.18
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -5739,8 +5739,8 @@ packages:
   hermes-parser@0.25.1:
     resolution: {integrity: sha512-6pEjquH3rqaI6cYAXYPcz9MS4rY6R4ngRgrgfDshRptUZIc3lw0MCIJIGDj9++mfySOuPTHB4nrSW99BCvOPIA==}
 
-  hono@4.12.14:
-    resolution: {integrity: sha512-am5zfg3yu6sqn5yjKBNqhnTX7Cv+m00ox+7jbaKkrLMRJ4rAdldd1xPd/JzbBWspqaQv6RSTrgFN95EsfhC+7w==}
+  hono@4.12.18:
+    resolution: {integrity: sha512-RWzP96k/yv0PQfyXnWjs6zot20TqfpfsNXhOnev8d1InAxubW93L11/oNUc3tQqn2G0bSdAOBpX+2uDFHV7kdQ==}
     engines: {node: '>=16.9.0'}
 
   html-parse-stringify@3.0.1:
@@ -9461,14 +9461,14 @@ snapshots:
       protobufjs: 7.5.5
       yargs: 17.7.2
 
-  '@hono/node-server@1.19.13(hono@4.12.14)':
+  '@hono/node-server@1.19.13(hono@4.12.18)':
     dependencies:
-      hono: 4.12.14
+      hono: 4.12.18
 
-  '@hono/vite-dev-server@0.25.1(hono@4.12.14)':
+  '@hono/vite-dev-server@0.25.1(hono@4.12.18)':
     dependencies:
-      '@hono/node-server': 1.19.13(hono@4.12.14)
-      hono: 4.12.14
+      '@hono/node-server': 1.19.13(hono@4.12.18)
+      hono: 4.12.18
       minimatch: 9.0.9
 
   '@humanfs/core@0.19.1': {}
@@ -13515,7 +13515,7 @@ snapshots:
     dependencies:
       hermes-estree: 0.25.1
 
-  hono@4.12.14: {}
+  hono@4.12.18: {}
 
   html-parse-stringify@3.0.1:
     dependencies:
