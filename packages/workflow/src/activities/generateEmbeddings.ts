@@ -213,7 +213,7 @@ async function generateTextEmbeddings(
     }
 
     // Count tokens if needed, do not rely on existing token count
-    let tokenCount : number | undefined = undefined;
+    let tokenCount: number | undefined = undefined;
     if (type === SupportedEmbeddingTypes.text && document.text) {
         tokenCount = countTokens(document.text).count;
     }
