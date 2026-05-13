@@ -1,15 +1,15 @@
-import { memo, useEffect, useRef, useState, type RefObject } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, MarkdownRenditionFormat, PDF_RENDITION_NAME, Permission, WorkflowExecutionStatus } from "@vertesia/common";
 import { Button, Dropdown, MenuItem, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
-import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
+import { JSONDisplay, Progress } from "@vertesia/ui/widgets";
 import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from "lucide-react";
 import { useUITranslation } from '../../../../i18n/index.js';
+import { UniversalDocumentViewer, type UniversalDocumentConverter, type UniversalDocumentSource } from "../../../document-viewer/UniversalDocumentViewer.js";
 import { MagicPdfView } from "../../../magic-pdf";
 import { AudioPanel, ImagePanel, VideoPanel } from "../../../media-viewer";
-import { SimplePdfViewer } from "../../../pdf-viewer";
 import { SecureButton } from "../../../permissions/SecureButton.js";
 import { getWorkflowStatusColor, getWorkflowStatusName, isPreviewableAsPdf } from "../../../utils/index.js";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
@@ -38,11 +38,12 @@ interface TextPanelProps {
 }
 
 interface OfficePdfPreviewPanelProps {
+    object: ContentObject;
     pdfRendition?: { content?: { source?: string } };
     officePdfUrl?: string;
+    converters: UniversalDocumentConverter[];
     officePdfConverting: boolean;
     officePdfError?: string;
-    onConvert: () => void;
 }
 
 interface OfficePdfActionsProps {
@@ -117,23 +118,6 @@ function isCreatedOrProcessingStatus(status?: ContentObjectStatus): boolean {
  */
 function getContentProcessorType(object: ContentObject): string | undefined {
     return (object.metadata as DocumentMetadata)?.content_processor?.type;
-}
-
-/**
- * Check if text content appears to be markdown based on common patterns.
- */
-function looksLikeMarkdown(text: string | undefined): boolean {
-    if (!text) return false;
-    return (
-        text.includes("\n# ") ||
-        text.includes("\n## ") ||
-        text.includes("\n### ") ||
-        text.includes("\n* ") ||
-        text.includes("\n- ") ||
-        text.includes("\n+ ") ||
-        text.includes("![") ||
-        text.includes("](")
-    );
 }
 
 /**
@@ -297,6 +281,7 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
 }
 
 function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: ContentObject, loadText: boolean, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, refetch?: () => Promise<unknown> }) {
+    const { client } = useUserSession();
     const { t } = useUITranslation();
     const isImage = object?.metadata?.type === ContentNature.Image;
     const isVideo = object?.metadata?.type === ContentNature.Video;
@@ -363,8 +348,33 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         pdfUrl: officePdfUrl,
         isConverting: officePdfConverting,
         error: officePdfError,
-        triggerConversion: triggerOfficePdfConversion,
     } = useOfficePdfConversion(object.id, isPreviewableAsPdfDoc);
+
+    const officePdfConverters = useMemo<UniversalDocumentConverter[]>(() => [{
+        id: 'office-pdf-rendition',
+        target: 'pdf',
+        canConvert: ({ contentType, extension }) => isPreviewableAsPdfDoc
+            || isPreviewableAsPdf(contentType)
+            || ['doc', 'docx', 'ppt', 'pptx'].includes(extension),
+        convert: async () => {
+            const response = await client.objects.getRendition(object.id, {
+                format: MarkdownRenditionFormat.pdf,
+                generate_if_missing: true,
+                sign_url: true,
+                block_on_generation: true,
+            });
+
+            if (response.status === "found" && response.renditions?.length) {
+                return {
+                    url: response.renditions[0],
+                    contentType: 'application/pdf',
+                    fileName: `${object.name || 'document'}.pdf`,
+                };
+            }
+
+            return null;
+        },
+    }], [client, isPreviewableAsPdfDoc, object.id, object.name]);
 
     // Load text once processing completes without triggering a full object refetch
     // (which would flash the page-level loading spinner).
@@ -452,9 +462,6 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                                 alt={t('store.viewAsPdf')}
                                 onClick={() => {
                                     setCurrentPanel(PanelView.Pdf);
-                                    if (!pdfRendition && !officePdfUrl && !officePdfConverting) {
-                                        triggerOfficePdfConversion();
-                                    }
                                 }}
                                 disabled={officePdfConverting}
                             >
@@ -512,11 +519,12 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
             {isPreviewableAsPdfDoc && keepPdfPreviewMounted && (
                 <div className={getPanelVisibility(showPdfPreviewPanel)}>
                     <OfficePdfPreviewPanel
+                        object={object}
                         pdfRendition={pdfRendition}
                         officePdfUrl={officePdfUrl}
+                        converters={officePdfConverters}
                         officePdfConverting={officePdfConverting}
                         officePdfError={officePdfError}
-                        onConvert={triggerOfficePdfConversion}
                     />
                 </div>
             )}
@@ -697,21 +705,16 @@ const TextPanel = memo(({
     textContainerRef,
 }: TextPanelProps) => {
     const { t } = useUITranslation();
-    const content = object.content;
     const isCreatedOrProcessing = isCreatedOrProcessingStatus(object?.status);
-
-    // Check content processor type for XML
     const contentProcessorType = getContentProcessorType(object);
-    const isXml = contentProcessorType === "xml";
-
-    // Check if content type is markdown or plain text
-    const isMarkdownOrText =
-        content &&
-        content.type &&
-        (content.type === "text/markdown" || content.type === "text/plain");
-
-    // Render as markdown if it's markdown/text type OR if text looks like markdown (but not if XML)
-    const shouldRenderAsMarkdown = !isXml && (isMarkdownOrText || looksLikeMarkdown(text));
+    const source: UniversalDocumentSource = {
+        id: object.id,
+        title: object.name,
+        fileName: object.content?.name || object.name,
+        contentType: contentProcessorType === "xml" ? "text/xml" : object.content?.type,
+        content: text,
+        sourcePath: object.content?.source,
+    };
 
     return (
         text ? (
@@ -728,21 +731,12 @@ const TextPanel = memo(({
                     className={`max-w-7xl px-2 h-full overflow-auto`}
                     ref={textContainerRef}
                 >
-                    {isXml ? (
-                        <div className="px-4 py-2">
-                            <XMLViewer xml={text} collapsible />
-                        </div>
-                    ) : shouldRenderAsMarkdown ? (
-                        <div className="vprose prose-sm p-1">
-                            <MarkdownRenderer components={createMarkdownComponents()}>
-                                {text}
-                            </MarkdownRenderer>
-                        </div>
-                    ) : (
-                        <pre className="text-wrap bg-muted text-muted p-2">
-                            {text}
-                        </pre>
-                    )}
+                    <UniversalDocumentViewer
+                        source={source}
+                        className="h-full"
+                        bodyClassName="overflow-auto"
+                        markdownComponents={createMarkdownComponents()}
+                    />
                 </div>
             </>
         ) :
@@ -898,10 +892,18 @@ function OfficePdfActions({
 }
 
 function PdfPreviewPanel({ object }: { object: ContentObject }) {
+    const source: UniversalDocumentSource = {
+        id: object.id,
+        title: object.name,
+        fileName: object.content?.name || object.name,
+        contentType: object.content?.type,
+        sourcePath: object.content?.source,
+    };
+
     return (
         <div className='h-full'>
-            <SimplePdfViewer
-                object={object}
+            <UniversalDocumentViewer
+                source={source}
                 className="h-full"
             />
         </div>
@@ -913,11 +915,12 @@ function PdfPreviewPanel({ object }: { object: ContentObject }) {
  * Handles the various states: converting, error, showing PDF.
  */
 function OfficePdfPreviewPanel({
+    object,
     pdfRendition,
     officePdfUrl,
+    converters,
     officePdfConverting,
     officePdfError,
-    onConvert,
 }: OfficePdfPreviewPanelProps) {
     const { t } = useUITranslation();
     if (officePdfConverting) {
@@ -939,26 +942,48 @@ function OfficePdfPreviewPanel({
     }
 
     if (pdfRendition?.content?.source) {
+        const source: UniversalDocumentSource = {
+            id: object.id,
+            title: object.name,
+            fileName: `${object.name || 'document'}.pdf`,
+            contentType: 'application/pdf',
+            sourcePath: pdfRendition.content.source,
+        };
+
         return (
             <div className='h-full'>
-                <SimplePdfViewer source={pdfRendition.content.source} className="h-full" />
+                <UniversalDocumentViewer source={source} className="h-full" />
             </div>
         );
     }
 
     if (officePdfUrl) {
+        const source: UniversalDocumentSource = {
+            id: object.id,
+            title: object.name,
+            fileName: `${object.name || 'document'}.pdf`,
+            contentType: 'application/pdf',
+            url: officePdfUrl,
+        };
+
         return (
             <div className='h-full'>
-                <SimplePdfViewer url={officePdfUrl} className="h-full" />
+                <UniversalDocumentViewer source={source} className="h-full" />
             </div>
         );
     }
 
+    const source: UniversalDocumentSource = {
+        id: object.id,
+        title: object.name,
+        fileName: object.content?.name || object.name,
+        contentType: object.content?.type,
+        sourcePath: object.content?.source,
+    };
+
     return (
-        <div className="flex flex-col justify-center items-center flex-1 gap-2">
-            <Button onClick={onConvert}>
-                Convert to PDF
-            </Button>
+        <div className="h-full">
+            <UniversalDocumentViewer source={source} converters={converters} className="h-full" />
         </div>
     );
 }

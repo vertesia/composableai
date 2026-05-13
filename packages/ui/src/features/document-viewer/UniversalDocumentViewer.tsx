@@ -1,8 +1,8 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { type ComponentType, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertCircleIcon, FileIcon, Loader2Icon } from 'lucide-react';
 import { Button, cn } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
-import { MarkdownRenderer } from '@vertesia/ui/widgets';
+import { MarkdownRenderer, XMLViewer } from '@vertesia/ui/widgets';
 import { SimplePdfViewer } from '../pdf-viewer/SimplePdfViewer.js';
 
 export type UniversalDocumentRenditionTarget = 'pdf' | 'markdown' | 'text' | 'image';
@@ -44,7 +44,23 @@ export interface UniversalDocumentViewerContext {
 export interface UniversalDocumentRenderer {
     id: string;
     canRender: (context: UniversalDocumentViewerContext) => boolean;
-    render: (context: UniversalDocumentViewerContext) => ReactNode;
+    render?: (context: UniversalDocumentViewerContext) => ReactNode;
+    Component?: ComponentType<{ context: UniversalDocumentViewerContext }>;
+}
+
+export interface UniversalDocumentConverterContext {
+    source: UniversalDocumentSource;
+    fileName: string;
+    extension: string;
+    contentType?: string;
+    target: UniversalDocumentRenditionTarget;
+}
+
+export interface UniversalDocumentConverter {
+    id: string;
+    target: UniversalDocumentRenditionTarget;
+    canConvert: (context: UniversalDocumentConverterContext) => boolean;
+    convert: (context: UniversalDocumentConverterContext) => Promise<UniversalDocumentRendition | null>;
 }
 
 export interface UniversalDocumentViewerProps {
@@ -52,12 +68,18 @@ export interface UniversalDocumentViewerProps {
     className?: string;
     bodyClassName?: string;
     renderers?: UniversalDocumentRenderer[];
+    converters?: UniversalDocumentConverter[];
     resolveUrl?: (source: UniversalDocumentSource, disposition: 'inline' | 'attachment') => Promise<string>;
     loadText?: (source: UniversalDocumentSource) => Promise<string>;
+    /**
+     * @deprecated Use converters instead.
+     */
     createRendition?: (
         source: UniversalDocumentSource,
         target: UniversalDocumentRenditionTarget,
     ) => Promise<UniversalDocumentRendition | null>;
+    markdownComponents?: any;
+    showHeader?: boolean;
     onDownload?: (source: UniversalDocumentSource) => void;
 }
 
@@ -85,6 +107,10 @@ function isImage(context: UniversalDocumentViewerContext): boolean {
 
 function isHtml(context: UniversalDocumentViewerContext): boolean {
     return context.contentType === 'text/html' || ['html', 'htm'].includes(context.extension);
+}
+
+function isXml(context: UniversalDocumentViewerContext): boolean {
+    return ['application/xml', 'text/xml'].includes(context.contentType || '') || context.extension === 'xml';
 }
 
 function isCodeOrText(context: UniversalDocumentViewerContext): boolean {
@@ -119,14 +145,25 @@ function EmptyState({ message }: { message: string }) {
     );
 }
 
+function renderWithCustomRenderer(renderer: UniversalDocumentRenderer, context: UniversalDocumentViewerContext): ReactNode {
+    if (renderer.Component) {
+        const RendererComponent = renderer.Component;
+        return <RendererComponent context={context} />;
+    }
+    return renderer.render?.(context) ?? null;
+}
+
 export function UniversalDocumentViewer({
     source,
     className,
     bodyClassName,
     renderers = [],
+    converters = [],
     resolveUrl,
     loadText,
     createRendition,
+    markdownComponents,
+    showHeader = true,
     onDownload,
 }: UniversalDocumentViewerProps) {
     const { client } = useUserSession();
@@ -138,6 +175,17 @@ export function UniversalDocumentViewer({
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
+    const sourceKey = [
+        source.id,
+        source.title,
+        source.fileName,
+        source.contentType,
+        source.url,
+        source.sourcePath,
+        source.content,
+        source.artifact?.runId,
+        source.artifact?.path,
+    ].join('\0');
 
     const defaultResolveUrl = useCallback(async (currentSource: UniversalDocumentSource, disposition: 'inline' | 'attachment') => {
         if (currentSource.url) return currentSource.url;
@@ -184,35 +232,57 @@ export function UniversalDocumentViewer({
     };
 
     const selectedCustomRenderer = renderers.find((renderer) => renderer.canRender(baseContext));
-    const needsText = !selectedCustomRenderer && (isMarkdown(baseContext) || isHtml(baseContext) || isCodeOrText(baseContext));
+    const needsText = !selectedCustomRenderer && (isMarkdown(baseContext) || isHtml(baseContext) || isXml(baseContext) || isCodeOrText(baseContext));
     const needsUrl = !selectedCustomRenderer && (isPdf(baseContext) || isImage(baseContext));
-    const needsPdfRendition = !selectedCustomRenderer && canUsePdfRendition(baseContext) && !baseContext.url;
+    const converterContext: UniversalDocumentConverterContext = {
+        source,
+        fileName,
+        extension,
+        contentType: source.contentType,
+        target: 'pdf',
+    };
+    const selectedConverter = !selectedCustomRenderer && !baseContext.url
+        ? converters.find((converter) => converter.target === 'pdf' && converter.canConvert(converterContext))
+        : undefined;
+    const needsPdfRendition = !selectedCustomRenderer
+        && !baseContext.url
+        && (canUsePdfRendition(baseContext) || !!selectedConverter)
+        && (!!selectedConverter || !!createRendition);
 
     useEffect(() => {
         let cancelled = false;
+        const currentSource = source;
         setError(null);
-        setUrl(source.url);
-        setContent(source.content);
+        setUrl(currentSource.url);
+        setContent(currentSource.content);
         setRendition(null);
 
         async function load() {
             if (!needsText && !needsUrl && !needsPdfRendition) return;
             setIsLoading(true);
             try {
-                if (needsPdfRendition && createRendition) {
-                    const result = await createRendition(source, 'pdf');
+                if (needsPdfRendition) {
+                    const result = selectedConverter
+                        ? await selectedConverter.convert({
+                            source: currentSource,
+                            fileName,
+                            extension,
+                            contentType: currentSource.contentType,
+                            target: 'pdf',
+                        })
+                        : await createRendition?.(currentSource, 'pdf');
                     if (!cancelled) setRendition(result);
                     return;
                 }
 
                 if (needsText) {
-                    const result = await loadDocumentText(source);
+                    const result = await loadDocumentText(currentSource);
                     if (!cancelled) setContent(result);
                     return;
                 }
 
                 if (needsUrl) {
-                    const result = await resolveDocumentUrl(source, 'inline');
+                    const result = await resolveDocumentUrl(currentSource, 'inline');
                     if (!cancelled) setUrl(result);
                 }
             } catch (err: unknown) {
@@ -228,13 +298,16 @@ export function UniversalDocumentViewer({
         };
     }, [
         createRendition,
+        extension,
+        fileName,
         loadDocumentText,
         needsPdfRendition,
         needsText,
         needsUrl,
         refreshKey,
         resolveDocumentUrl,
-        source,
+        selectedConverter,
+        sourceKey,
     ]);
 
     const context: UniversalDocumentViewerContext = {
@@ -263,7 +336,7 @@ export function UniversalDocumentViewer({
             </div>
         );
     } else if (selectedCustomRenderer) {
-        body = selectedCustomRenderer.render(context);
+        body = renderWithCustomRenderer(selectedCustomRenderer, context);
     } else if ((isPdf(context) || rendition?.contentType === 'application/pdf') && context.url) {
         body = <SimplePdfViewer url={context.url} className="h-full" />;
     } else if (isImage(context) && context.url) {
@@ -275,7 +348,7 @@ export function UniversalDocumentViewer({
     } else if (isMarkdown(context)) {
         body = (
             <div className="prose prose-sm dark:prose-invert max-w-none px-5 py-4">
-                <MarkdownRenderer artifactRunId={source.artifact?.runId}>
+                <MarkdownRenderer artifactRunId={source.artifact?.runId} components={markdownComponents}>
                     {context.content || ''}
                 </MarkdownRenderer>
             </div>
@@ -289,9 +362,15 @@ export function UniversalDocumentViewer({
                 srcDoc={context.content || ''}
             />
         );
+    } else if (isXml(context)) {
+        body = (
+            <div className="px-4 py-2">
+                <XMLViewer xml={context.content || ''} collapsible />
+            </div>
+        );
     } else if (isCodeOrText(context)) {
         body = <CodeViewer content={context.content} extension={extension} />;
-    } else if (needsPdfRendition && !createRendition) {
+    } else if (canUsePdfRendition(context) && !selectedConverter && !createRendition) {
         body = <EmptyState message="This file needs a PDF rendition before it can be previewed." />;
     } else {
         body = <EmptyState message="Preview is not available for this file type." />;
@@ -299,19 +378,21 @@ export function UniversalDocumentViewer({
 
     return (
         <div className={cn('flex h-full min-h-0 flex-col overflow-hidden', className)}>
-            <div className="flex min-h-10 items-center justify-between gap-3 border-b py-2 pl-3 pr-16">
-                <div className="min-w-0">
-                    <div className="truncate text-sm font-medium" title={fileName}>{fileName}</div>
-                    {context.contentType && (
-                        <div className="truncate text-xs text-muted">{context.contentType}</div>
+            {showHeader && (
+                <div className="flex min-h-10 items-center justify-between gap-3 border-b py-2 pl-3 pr-16">
+                    <div className="min-w-0">
+                        <div className="truncate text-sm font-medium" title={fileName}>{fileName}</div>
+                        {context.contentType && (
+                            <div className="truncate text-xs text-muted">{context.contentType}</div>
+                        )}
+                    </div>
+                    {onDownload && (
+                        <Button variant="outline" size="sm" onClick={() => onDownload(source)}>
+                            Download
+                        </Button>
                     )}
                 </div>
-                {onDownload && (
-                    <Button variant="outline" size="sm" onClick={() => onDownload(source)}>
-                        Download
-                    </Button>
-                )}
-            </div>
+            )}
             <div className={cn('min-h-0 flex-1 overflow-auto', bodyClassName)}>
                 {body}
             </div>
