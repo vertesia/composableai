@@ -354,7 +354,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         id: 'office-pdf-rendition',
         target: 'pdf',
         canConvert: ({ contentType, extension }) => isPreviewableAsPdfDoc
-            || isPreviewableAsPdf(contentType)
+            || (contentType ? isPreviewableAsPdf(contentType) : false)
             || ['doc', 'docx', 'ppt', 'pptx'].includes(extension),
         convert: async () => {
             const response = await client.objects.getRendition(object.id, {

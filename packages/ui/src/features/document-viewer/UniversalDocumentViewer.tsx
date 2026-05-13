@@ -271,7 +271,7 @@ export function UniversalDocumentViewer({
                             target: 'pdf',
                         })
                         : await createRendition?.(currentSource, 'pdf');
-                    if (!cancelled) setRendition(result);
+                    if (!cancelled) setRendition(result ?? null);
                     return;
                 }
 
