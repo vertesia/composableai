@@ -960,6 +960,9 @@ importers:
         specifier: ^0.562.0
         version: 0.562.0(react@19.2.3)
     devDependencies:
+      '@biomejs/biome':
+        specifier: ^2.4.4
+        version: 2.4.15
       '@hono/vite-dev-server':
         specifier: ^0.25.1
         version: 0.25.1(hono@4.12.18)
@@ -1066,6 +1069,9 @@ importers:
         specifier: 19.2.3
         version: 19.2.3(react@19.2.3)
     devDependencies:
+      '@biomejs/biome':
+        specifier: ^2.4.4
+        version: 2.4.15
       '@rollup/plugin-commonjs':
         specifier: ^28.0.8
         version: 28.0.9(rollup@4.60.1)
@@ -1115,6 +1121,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/ui
     devDependencies:
+      '@biomejs/biome':
+        specifier: ^2.4.4
+        version: 2.4.15
       '@tailwindcss/forms':
         specifier: ^0.5.10
         version: 0.5.11(tailwindcss@4.2.0)

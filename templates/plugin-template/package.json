@@ -42,6 +42,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.4",
     "@hono/vite-dev-server": "^0.25.1",
     "@rollup/plugin-commonjs": "^28.0.8",
     "@rollup/plugin-json": "^6.1.0",
