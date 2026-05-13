@@ -99,8 +99,11 @@ const authGit = authRoot.command("git")
 
 authGit.command("credential [action]")
     .description("Git credential helper entrypoint. Called by git; users should run `vertesia auth git` instead.")
-    .option("-p, --profile <profile>", "Profile to use for credentials.")
-    .action((action: string | undefined, options: { profile?: string }) => serveGitCredential(action, options));
+    .action(function (this: import("commander").Command, action: string | undefined) {
+        // --profile is declared on the parent `auth git`, so read via globals.
+        const profile = this.optsWithGlobals().profile as string | undefined;
+        return serveGitCredential(action, { profile });
+    });
 
 program.command("envs [envId]")
     .description("List the environments you have access to")

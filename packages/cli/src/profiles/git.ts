@@ -46,6 +46,11 @@ export async function serveGitCredential(action: string | undefined, options: Pi
         const input = await readCredentialInput();
         const profile = pickProfileForCredential(input, options.profile);
         if (!profile) {
+            if (options.profile) {
+                throw new Error(
+                    `Vertesia profile '${options.profile}' was not found. Run \`vertesia auth git\` from an active profile.`,
+                );
+            }
             throw new Error(
                 `No Vertesia profile matches git host ${input.host || '<unknown>'}. Run \`vertesia auth git\`.`,
             );
