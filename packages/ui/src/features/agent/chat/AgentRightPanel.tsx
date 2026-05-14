@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Badge, Button, useToast, Tabs, TabsBar, TabsPanel, type Tab as TabDefinition } from '@vertesia/ui/core';
+import { Badge, Button, cn, useToast, Tabs, TabsBar, TabsPanel, type Tab as TabDefinition } from '@vertesia/ui/core';
 import { useUITranslation } from '../../../i18n/index.js';
 import {
     CheckCircleIcon,
@@ -18,6 +18,7 @@ import InlineSlidingPlanPanel from './ModernAgentOutput/InlineSlidingPlanPanel';
 import { getConversationUrl } from './ModernAgentOutput/utils.js';
 import { DocumentPanel } from './DocumentPanel.js';
 import { ArtifactsTab } from './ArtifactsTab.js';
+import { BrowserUseWidget, getLatestBrowserUseByWorkstream } from './BrowserUseWidget.js';
 import type { OpenDocument } from './types/document.js';
 
 // ---------------------------------------------------------------------------
@@ -115,6 +116,61 @@ function UploadedDocumentsTab({ files }: UploadedDocumentsProps) {
 }
 
 // ---------------------------------------------------------------------------
+// Local error boundaries
+// ---------------------------------------------------------------------------
+
+interface RightPanelErrorBoundaryProps {
+    children: React.ReactNode;
+    title: string;
+    description: string;
+    compact?: boolean;
+}
+
+interface RightPanelErrorBoundaryState {
+    hasError: boolean;
+    message?: string;
+}
+
+class RightPanelErrorBoundary extends React.Component<RightPanelErrorBoundaryProps, RightPanelErrorBoundaryState> {
+    state: RightPanelErrorBoundaryState = { hasError: false };
+
+    static getDerivedStateFromError(error: unknown): RightPanelErrorBoundaryState {
+        return {
+            hasError: true,
+            message: error instanceof Error ? error.message : String(error),
+        };
+    }
+
+    componentDidCatch(error: unknown, errorInfo: React.ErrorInfo) {
+        console.error('Agent right panel section failed to render', {
+            error,
+            componentStack: errorInfo.componentStack,
+        });
+    }
+
+    render() {
+        if (!this.state.hasError) return this.props.children;
+
+        return (
+            <div
+                className={cn(
+                    'rounded-md border border-destructive bg-mixer-destructive/10 text-destructive',
+                    this.props.compact ? 'p-2 text-xs' : 'm-3 p-3 text-sm'
+                )}
+            >
+                <div className="font-medium">{this.props.title}</div>
+                <div className="mt-1 text-xs text-muted">{this.props.description}</div>
+                {this.state.message && (
+                    <div className="mt-1 break-all text-[11px] text-muted">
+                        {this.state.message}
+                    </div>
+                )}
+            </div>
+        );
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Workstreams tab
 // ---------------------------------------------------------------------------
 
@@ -124,10 +180,12 @@ interface WorkstreamsTabProps {
     runId?: string;
 }
 
-function WorkstreamsTab({ workstreams, messages: _messages }: WorkstreamsTabProps) {
+function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const toast = useToast();
+    const browserUseByWorkstream = useMemo(() => getLatestBrowserUseByWorkstream(messages), [messages]);
+    const renderErrorDescription = t('agent.panelRenderErrorDescription');
 
     const copyRunId = useCallback((runId: string) => {
         navigator.clipboard.writeText(runId);
@@ -161,6 +219,7 @@ function WorkstreamsTab({ workstreams, messages: _messages }: WorkstreamsTabProp
                 const progress = ws.deadline_ms > 0
                     ? Math.min(100, Math.round((ws.elapsed_ms / ws.deadline_ms) * 100))
                     : 0;
+                const browserUse = browserUseByWorkstream.get(ws.workstream_id);
 
                 const statusBadge = ws.status === 'running'
                     ? <Badge variant="info">{ws.phase || 'running'}</Badge>
@@ -171,55 +230,71 @@ function WorkstreamsTab({ workstreams, messages: _messages }: WorkstreamsTabProp
                             : <Badge variant="destructive">{t('agent.canceled')}</Badge>;
 
                 return (
-                    <div
+                    <RightPanelErrorBoundary
                         key={ws.launch_id}
-                        className="p-3 border rounded-md space-y-2"
+                        title={t('agent.workstreamRenderError')}
+                        description={renderErrorDescription}
+                        compact
                     >
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium truncate">
-                                {ws.workstream_id}
-                            </span>
-                            {statusBadge}
-                        </div>
-                        {/* Progress bar — only for active workstreams */}
-                        {isActive && (
-                            <>
-                                <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-info rounded-full transition-all duration-500"
-                                        style={{ width: `${progress}%` }}
-                                    />
-                                </div>
-                                <div className="flex justify-between text-xs text-muted">
-                                    <span>{t('agent.elapsed', { seconds: elapsed })}</span>
-                                    <span>{t('agent.remaining', { seconds: remaining })}</span>
-                                </div>
-                            </>
-                        )}
-                        {/* Actions */}
-                        {ws.child_workflow_run_id && (
-                            <div className="flex gap-1 pt-1 border-t border-muted">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-xs h-7 px-2 text-muted hover:text-foreground"
-                                    onClick={() => copyRunId(ws.child_workflow_run_id!)}
-                                >
-                                    <ClipboardCopyIcon className="size-3 mr-1" />
-                                    {t('agent.copyRunId')}
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-xs h-7 px-2 text-muted hover:text-foreground"
-                                    onClick={() => downloadConversation(ws.child_workflow_run_id!)}
-                                >
-                                    <DownloadCloudIcon className="size-3 mr-1" />
-                                    {t('agent.download')}
-                                </Button>
+                        <div className="p-3 border rounded-md space-y-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium truncate">
+                                    {ws.workstream_id}
+                                </span>
+                                {statusBadge}
                             </div>
-                        )}
-                    </div>
+                            {/* Progress bar — only for active workstreams */}
+                            {isActive && (
+                                <>
+                                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-info rounded-full transition-all duration-500"
+                                            style={{ width: `${progress}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between text-xs text-muted">
+                                        <span>{t('agent.elapsed', { seconds: elapsed })}</span>
+                                        <span>{t('agent.remaining', { seconds: remaining })}</span>
+                                    </div>
+                                </>
+                            )}
+                            {browserUse && (
+                                <RightPanelErrorBoundary
+                                    title={t('agent.browserWidgetRenderError')}
+                                    description={renderErrorDescription}
+                                    compact
+                                >
+                                    <BrowserUseWidget
+                                        state={browserUse}
+                                        runId={runId}
+                                    />
+                                </RightPanelErrorBoundary>
+                            )}
+                            {/* Actions */}
+                            {ws.child_workflow_run_id && (
+                                <div className="flex gap-1 pt-1 border-t border-muted">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-xs h-7 px-2 text-muted hover:text-foreground"
+                                        onClick={() => copyRunId(ws.child_workflow_run_id!)}
+                                    >
+                                        <ClipboardCopyIcon className="size-3 mr-1" />
+                                        {t('agent.copyRunId')}
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-xs h-7 px-2 text-muted hover:text-foreground"
+                                        onClick={() => downloadConversation(ws.child_workflow_run_id!)}
+                                    >
+                                        <DownloadCloudIcon className="size-3 mr-1" />
+                                        {t('agent.download')}
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    </RightPanelErrorBoundary>
                 );
             })}
         </div>
@@ -332,11 +407,21 @@ function AgentRightPanelComponent({
     const hasDocuments = openDocuments.length > 0;
     const hasUploads = processingFiles ? processingFiles.size > 0 : false;
     const hasPlan = showPlan && plan;
+    const withTabBoundary = useCallback((name: string, content: React.ReactNode) => (
+        <RightPanelErrorBoundary
+            title={t('agent.panelRenderError', { name })}
+            description={t('agent.panelRenderErrorDescription')}
+        >
+            {content}
+        </RightPanelErrorBoundary>
+    ), [t]);
 
     const conversationTab: TabDefinition = {
         name: 'conversation',
         label: 'Conversation',
-        content: conversationContent ? <div className="flex flex-col h-full min-h-0">{conversationContent}</div> : null,
+        content: conversationContent
+            ? withTabBoundary('Conversation', <div className="flex flex-col h-full min-h-0">{conversationContent}</div>)
+            : null,
         is_allowed: !!conversationContent,
     };
 
@@ -347,7 +432,7 @@ function AgentRightPanelComponent({
             label: hasPlan
                 ? <span className="flex items-center gap-1">{t('agent.plan')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" /></span>
                 : t('agent.plan'),
-            content: plan ? (
+            content: withTabBoundary(t('agent.plan'), plan ? (
                 <InlineSlidingPlanPanel
                     plan={plan}
                     workstreamStatus={workstreamStatus || new Map()}
@@ -361,7 +446,7 @@ function AgentRightPanelComponent({
                 <div className="flex flex-col items-center justify-center py-8 text-muted">
                     <span className="text-sm">{t('agent.noPlanAvailable')}</span>
                 </div>
-            ),
+            )),
             is_allowed: true,
         },
         {
@@ -369,7 +454,10 @@ function AgentRightPanelComponent({
             label: hasWorkstreams
                 ? <span className="flex items-center gap-1">{t('agent.workstreams')} <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">{activeWorkstreams.length}</span></span>
                 : t('agent.workstreams'),
-            content: <WorkstreamsTab workstreams={activeWorkstreams} messages={messages} runId={runId} />,
+            content: withTabBoundary(
+                t('agent.workstreams'),
+                <WorkstreamsTab workstreams={activeWorkstreams} messages={messages} runId={runId} />
+            ),
             is_allowed: !hideWorkstreams,
         },
         {
@@ -377,7 +465,7 @@ function AgentRightPanelComponent({
             label: hasDocuments
                 ? <span className="flex items-center gap-1">{t('agent.documents')} <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">{openDocuments.length}</span></span>
                 : t('agent.documents'),
-            content: openDocuments.length > 0 && onSelectDocument && onCloseDocument ? (
+            content: withTabBoundary(t('agent.documents'), openDocuments.length > 0 && onSelectDocument && onCloseDocument ? (
                 <DocumentPanel
                     isOpen={true}
                     documents={openDocuments}
@@ -393,7 +481,7 @@ function AgentRightPanelComponent({
                     <FileTextIcon className="size-8 mb-2" />
                     <span className="text-sm">{t('agent.noDocumentsOpen')}</span>
                 </div>
-            ),
+            )),
             is_allowed: true,
         },
         {
@@ -401,19 +489,21 @@ function AgentRightPanelComponent({
             label: hasUploads
                 ? <span className="flex items-center gap-1">{t('agent.uploads')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" /></span>
                 : t('agent.uploads'),
-            content: <UploadedDocumentsTab files={processingFiles} />,
+            content: withTabBoundary(t('agent.uploads'), <UploadedDocumentsTab files={processingFiles} />),
             is_allowed: true,
         },
         {
             name: 'artifacts',
             label: t('agent.artifacts'),
-            content: <ArtifactsTab runId={runId} refreshKey={artifactRefreshKey} />,
+            content: withTabBoundary(t('agent.artifacts'), <ArtifactsTab runId={runId} refreshKey={artifactRefreshKey} />),
             is_allowed: showArtifacts,
         },
         {
             name: 'payload',
             label: t('agent.payload'),
-            content: payloadContent ? <div className="overflow-y-auto">{payloadContent}</div> : null,
+            content: payloadContent
+                ? withTabBoundary(t('agent.payload'), <div className="overflow-y-auto">{payloadContent}</div>)
+                : null,
             is_allowed: !!payloadContent,
         },
     ];

@@ -16,6 +16,7 @@ const META_KEYS = new Set([
     'tool', 'tool_run_id', 'activity_group_id', 'event_class',
     'tool_iteration', 'tool_status', 'tools', 'streamed',
     'files', 'outputFiles', 'display_role', 'observation',
+    'browseruse', 'browser_use',
 ]);
 
 /** Filter out internal metadata keys, return user-facing detail entries */
