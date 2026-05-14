@@ -1,6 +1,6 @@
 import { JSONObject, JSONSchema, ToolDefinition } from "@llumiverse/common";
 import { CatalogInteractionRef } from "./interaction.js";
-import { DSLActivityOptions, InCodeTypeDefinition } from "./store/index.js";
+import { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from "./store/index.js";
 
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ["default", "footer", "settings"] as const;
@@ -220,14 +220,17 @@ export interface VertesiaSDKToolCollectionObject extends BaseToolCollectionObjec
 /**
  * Tool collection configuration (object format)
  */
+/**
+ * @discriminator type
+ */
 export type ToolCollectionObject = MCPToolCollectionObject | VertesiaSDKToolCollectionObject;
 
 /**
- * Tool collection can be either:
- * - A string URL (legacy format, with "mcp:" prefix for MCP servers)
- * - An object with url, type, and optional auth (new format)
+ * Backward-compatible TypeScript alias. Public API payloads should reference
+ * ToolCollectionObject directly so generated clients do not create a wrapper
+ * model around the discriminated union.
  */
-export type ToolCollection = string | ToolCollectionObject;
+export type ToolCollection = ToolCollectionObject;
 
 export const MCP_COLLECTION_ID_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
 export const MCP_COLLECTION_NAMESPACE_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
@@ -255,41 +258,30 @@ export function getDefaultOAuthAppNameForCollectionId(collectionId: string): str
 
 /**
  * Normalizes a tool collection to the object format.
- * Handles backward compatibility with string URLs.
+ * Applies optional `{{var}}` substitution to the URL so manifests can reference
+ * deployment-time variables like `{{studio_ui}}`.
  *
- * @param collection - String URL or ToolCollectionObject
+ * @param collection - ToolCollectionObject
+ * @param vars - Optional endpoint variables to substitute in URLs
  * @returns Normalized ToolCollectionObject
  */
-export function normalizeToolCollection(collection: ToolCollection): ToolCollectionObject {
-    if (typeof collection === 'string') {
-        // Legacy string format
-        if (collection.startsWith('mcp:')) {
-            const url = collection.substring('mcp:'.length);
-            // For legacy MCP strings, derive name and prefix from URL
-            const urlObj = new URL(url);
-            const name = urlObj.hostname.replace(/\./g, '-');
-            const id = deriveMCPCollectionId(urlObj.hostname);
-            return {
-                url,
-                type: 'mcp',
-                id,
-                name,
-                description: `MCP server at ${url}`,
-                namespace: name
-            };
-        }
-        return {
-            url: collection,
-            type: 'vertesia_sdk'
-        };
+export function normalizeToolCollection(collection: ToolCollectionObject, vars?: Endpoints): ToolCollectionObject {
+    if (!collection || typeof collection !== 'object') {
+        throw new TypeError('Tool collection must be an object');
     }
-    // Already in object format
+    const substitutedUrl = vars && collection.url ? substituteEndpoints(collection.url, vars) : collection.url;
+    const urlChanged = substitutedUrl !== collection.url;
     if (collection.type === 'mcp') {
         const fallbackId = deriveMCPCollectionId(collection.id || collection.name || collection.url);
-        return {
-            ...collection,
-            id: collection.id || fallbackId,
-        };
+        if (urlChanged || !collection.id) {
+            return {
+                ...collection,
+                url: substitutedUrl,
+                id: collection.id || fallbackId,
+            };
+        }
+    } else if (urlChanged) {
+        return { ...collection, url: substitutedUrl };
     }
     return collection;
 }
@@ -328,18 +320,29 @@ export interface AgentToolDefinition extends ToolDefinition {
     /**
      * Whether this tool is available by default.
      * - true/undefined: Tool is always available to agents
-     * - false: Tool is only available when activated by a skill's related_tools
+     * - false: Tool is only available when enabled by a skill via `tools`
      */
     default?: boolean;
     /**
-     * For skill tools (learn_*): list of related tool names that become available
-     * when this skill is called. Used for dynamic tool discovery.
+     * For skill tools (`learn_*`): the tool names this skill enables when called.
+     * Matches the `tools:` key used in SKILL.md frontmatter and built-in skill
+     * definitions — one name across the whole stack.
      */
-    related_tools?: string[];
+    tools?: string[];
     /**
      * MCP tool annotations providing hints about tool behavior and safety.
      */
     annotations?: MCPToolAnnotations;
+    /**
+     * When true, agents must obtain explicit user confirmation via `ask_user`
+     * (Yes/No) before invoking this tool. If the user answers No, the tool
+     * must not run and should return an error indicating the user declined.
+     *
+     * Stronger than `annotations.destructiveHint` (which is only a hint) —
+     * this is a hard contract the agent is expected to honor. Set on tools
+     * that perform irreversible or destructive actions (e.g. delete_*).
+     */
+    requires_user_confirmation?: boolean;
 }
 
 /**
@@ -369,7 +372,7 @@ export interface RemoteActivityDefinition {
     options?: DSLActivityOptions;
 }
 
-export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'templates';
+export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 export interface AppManifestData {
     /**
@@ -413,7 +416,7 @@ export interface AppManifestData {
      * A list of tool collections endpoints to be used by this app.
      * Prefer using endpoint over tool_collections.
      */
-    tool_collections?: ToolCollection[]
+    tool_collections?: ToolCollectionObject[]
 
     /**
      * Named OAuth providers shared across multiple MCP tool collections.
@@ -455,7 +458,8 @@ export interface AppManifestData {
      * - ui
      * - tools
      * - interactions
-     * - types
+ * - types
+ * - processes
      * - settings
      * - all (the default if no scope is provided)
      *  You can also use comma-separated values to combine scopes (e.g. "ui,tools").
@@ -472,31 +476,145 @@ export interface AppManifestData {
      * Only dev environment names are allowed as keys (starting with "desktop-" or "dev-").
      */
     endpoint_overrides?: Record<string, string>;
+
+    /**
+     * Optional app version string (e.g. "1.0.0") — informational.
+     */
+    version?: string;
+
+    /**
+     * Free-form tags used for classification and filtering. Platform apps
+     * carry `"system"` so UIs can skip install/uninstall/manage-permission
+     * controls that don't apply to synthetic installations.
+     */
+    tags?: string[];
 }
+
+/**
+ * Reserved deployment environment names that may never be used as endpoint
+ * override keys. Reserving them prevents a manifest from hijacking auto-resolution
+ * on a shared production studio-server (whose `Env.environment` is one of these).
+ */
+const RESERVED_ENDPOINT_OVERRIDE_ENVS = new Set(['production', 'preview', 'staging']);
 
 /**
  * Returns true if the given environment name is allowed as an endpoint override key.
- * Only "desktop-" or "dev-" prefixed names are valid.
+ * Any non-empty name is accepted except the reserved shared-deployment names.
  */
 export function isValidEndpointOverrideEnv(envName: string): boolean {
-    return envName.startsWith('desktop-') || envName.startsWith('dev-');
+    if (!envName) return false;
+    return !RESERVED_ENDPOINT_OVERRIDE_ENVS.has(envName.toLowerCase());
 }
 
 /**
- * Resolves the effective endpoint for an app given an optional environment name.
- * Returns the override endpoint if the env name matches a valid dev environment, otherwise the default endpoint.
+ * Deployment-time URL endpoints that can be referenced in app manifest URLs
+ * via `{{key}}` placeholders. The caller (typically studio-server) supplies
+ * these from environment config so that system apps can ship a single manifest
+ * with endpoints like `{{studio}}/api/package` that resolve per deployment.
+ */
+export interface Endpoints {
+    /** The Studio API (studio-server) base URL */
+    studio?: string;
+    /** The Store API (zeno-server) base URL */
+    store?: string;
+    /** The token server base URL */
+    token?: string;
+    /** The browser-facing Studio UI (composable-ui) base URL */
+    ui?: string;
+}
+
+/**
+ * Substitutes `{{key}}` placeholders in a URL with the matching endpoint.
+ * Unknown placeholders are left untouched (so failures surface as fetch errors
+ * with the unresolved placeholder visible, rather than silently pointing nowhere).
+ * Trailing slashes on replacement values are stripped to avoid `//api/...` joins.
+ */
+export function substituteEndpoints(url: string, endpoints?: Endpoints): string {
+    if (!url || !endpoints) return url;
+    return url.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key: string) => {
+        const value = (endpoints as Record<string, string | undefined>)[key];
+        if (typeof value !== 'string' || !value) return match;
+        return trimTrailingSlashes(value);
+    });
+}
+
+function trimTrailingSlashes(value: string): string {
+    let end = value.length;
+    while (end > 0 && value[end - 1] === '/') {
+        end--;
+    }
+    return end === value.length ? value : value.slice(0, end);
+}
+
+/**
+ * Resolves the effective endpoint for an app.
+ *
+ * Order of resolution:
+ * 1. If `requestedOverride` matches an `endpoint_overrides` key, use that URL
+ *    (caller must verify the user is allowed to use the override).
+ * 2. Else if `envName` matches an `endpoint_overrides` key, use that URL
+ *    (auto-resolution from the studio-server's deployment env).
+ * 3. Otherwise use the main `endpoint`.
+ * 4. Apply `{{var}}` substitution using `vars`.
  */
 export function resolveAppEndpoint(
     manifest: Pick<AppManifestData, 'endpoint' | 'endpoint_overrides'>,
-    envName?: string
+    envName?: string,
+    vars?: Endpoints,
+    requestedOverride?: string
 ): string | undefined {
-    if (envName && manifest.endpoint_overrides?.[envName] && isValidEndpointOverrideEnv(envName)) {
-        return manifest.endpoint_overrides[envName];
+    let raw: string | undefined;
+    if (requestedOverride
+        && manifest.endpoint_overrides?.[requestedOverride]
+        && isValidEndpointOverrideEnv(requestedOverride)) {
+        raw = manifest.endpoint_overrides[requestedOverride];
+    } else if (envName
+        && manifest.endpoint_overrides?.[envName]
+        && isValidEndpointOverrideEnv(envName)) {
+        raw = manifest.endpoint_overrides[envName];
+    } else {
+        raw = manifest.endpoint;
     }
-    return manifest.endpoint;
+    return raw ? substituteEndpoints(raw, vars) : raw;
 }
 
-export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'templates' | 'settings' | 'widgets' | 'activities' | 'all';
+/**
+ * Resolves all URL placeholders in a manifest in place (both `endpoint` and
+ * `tool_collections[].url`). Intended for server-side serialization — clients and
+ * downstream workers receive already-substituted URLs so they don't need to know
+ * about deployment-time vars.
+ *
+ * Mutates the manifest rather than returning a copy so it works cleanly with
+ * Mongoose populated subdocs.
+ */
+export function resolveManifestUrls(
+    manifest: Partial<AppManifestData> | null | undefined,
+    envName?: string,
+    vars?: Endpoints,
+    requestedOverride?: string
+): void {
+    if (!manifest) return;
+
+    if (manifest.endpoint) {
+        const resolved = resolveAppEndpoint(manifest, envName, vars, requestedOverride);
+        if (resolved && resolved !== manifest.endpoint) {
+            manifest.endpoint = resolved;
+        }
+    }
+
+    const toolCollections = manifest.tool_collections as ToolCollectionObject[] | undefined;
+    if (toolCollections && Array.isArray(toolCollections)) {
+        for (let i = 0; i < toolCollections.length; i++) {
+            const item = toolCollections[i];
+            if (item && typeof item === 'object' && item.url) {
+                const sub = substituteEndpoints(item.url, vars);
+                if (sub !== item.url) item.url = sub;
+            }
+        }
+    }
+}
+
+export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates' | 'settings' | 'widgets' | 'activities' | 'all';
 export interface AppPackage {
     /**
      * The UI configuration of the app
@@ -509,6 +627,14 @@ export interface AppPackage {
     tools?: AgentToolDefinition[]
 
     /**
+     * A list of skills (`learn_*` tools) exposed by the app. Kept separate from
+     * `tools` so clients can render them distinctly — consumers that don't care
+     * (e.g. the worker building a combined tool registry) should concatenate
+     * the two lists.
+     */
+    skills?: AgentToolDefinition[]
+
+    /**
      * A list of interactions exposed by the app
      */
     interactions?: CatalogInteractionRef[];
@@ -517,6 +643,11 @@ export interface AppPackage {
      * A list of types.
      */
     types?: InCodeTypeDefinition[];
+
+    /**
+     * A list of process definitions exposed by the app.
+     */
+    processes?: InCodeProcessDefinition[];
 
     /**
      * Templates provided by the app.

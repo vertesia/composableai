@@ -27,18 +27,6 @@ export const config = {
     {
       name: 'Vertesia Plugin',
       repository: 'vertesia/composableai/templates/plugin-template'
-    },
-    {
-      name: 'Vertesia Tool Server (deprecated)',
-      repository: 'vertesia/composableai/templates/tool-server-template'
-    },
-    {
-      name: 'Vertesia UI Plugin (deprecated)',
-      repository: 'vertesia/composableai/templates/ui-plugin-template'
-    },
-    {
-      name: 'Vertesia Workflow Worker',
-      repository: 'vertesia/composableai/templates/worker-template'
     }
   ] as TemplateDefinition[],
 

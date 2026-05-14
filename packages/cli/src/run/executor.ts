@@ -1,6 +1,10 @@
 import { VertesiaClient } from "@vertesia/client";
-import { ConfigModes, ExecutionRun, RunDataStorageLevel } from "@vertesia/common";
+import { ConfigModes, InteractionExecutionResult, RunDataStorageLevel } from "@vertesia/common";
 import { TextFallbackOptions } from "@llumiverse/common";
+
+export type CliExecutionResult = InteractionExecutionResult & {
+    runNumber?: number;
+};
 
 export class ExecutionQueue {
     requests: ExecutionRequest[] = [];
@@ -18,7 +22,7 @@ export class ExecutionQueue {
         this.abortController.abort();
     }
 
-    async run(onBatch: (completed: ExecutionRun[]) => void, onChunk?: ((chunk: any) => void), signal?: AbortSignal) {
+    async run(onBatch: (completed: CliExecutionResult[]) => void, onChunk?: ((chunk: any) => void), signal?: AbortSignal) {
         // If an external signal is provided, link it to our local abort controller
         if (signal) {
             if (signal.aborted) {
@@ -37,7 +41,7 @@ export class ExecutionQueue {
         }
 
         const chunkSize = this.size;
-        const out: ExecutionRun[] = [];
+        const out: CliExecutionResult[] = [];
         const requests = this.requests;
 
         try {
@@ -94,7 +98,7 @@ export class ExecutionRequest {
         public options: Record<string, any>) {
     }
 
-    async run(onChunk?: ((chunk: any) => void), signal?: AbortSignal): Promise<ExecutionRun> {
+    async run(onChunk?: ((chunk: any) => void), signal?: AbortSignal): Promise<CliExecutionResult> {
         // Check if already aborted
         if (signal?.aborted) {
             throw new Error("Operation aborted");
@@ -129,7 +133,7 @@ export class ExecutionRequest {
             onChunk(chunk);
         } : undefined;
 
-        let run;
+        let run: CliExecutionResult;
         try {
             if (this.options.byId) {
                 run = await this.client.interactions.execute(this.interactionSpec, {
@@ -152,14 +156,13 @@ export class ExecutionRequest {
 
             // add count number in the run
             if (this.runNumber != null) {
-                (run as any).runNumber = this.runNumber;
+                run.runNumber = this.runNumber;
             }
             return run;
         } catch (error) {
             // Check if aborted
             if (signal?.aborted) {
                 //TODO: Maybe use error cause?
-                //eslint-disable-next-line preserve-caught-error
                 throw new Error("Operation aborted");
             }
             throw error;

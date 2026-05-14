@@ -10,16 +10,13 @@
   ],
   "license": "Apache-2.0",
   "scripts": {
-    "lint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+    "lint": "biome lint src",
     "build": "pnpm exec tsmod build",
     "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@types/node": "^24.1.0",
-    "eslint": "^10.0.2",
     "ts-dual-module": "^0.6.3",
-    "typescript-eslint": "^8.58.1",
     "vitest": "^4.0.16"
   },
   "dependencies": {

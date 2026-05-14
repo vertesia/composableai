@@ -46,13 +46,33 @@ export interface EnvironmentTokenRequest extends BaseTokenRequest {
     account_id: string; // Will fetch name and verify project belongs to it
 }
 
-// Agent token for service accounts acting as agents
+/**
+ * Agent token for a service account to act as agent on behalf of a user.
+ *
+ * Two trust paths are supported:
+ *
+ * - `user_access_token`: a live signed Vertesia token. STS verifies the user context from that token.
+ * - `workload_id_token`: a workload acts on behalf of a user. It implies that a full verification
+ *   will be performed based on the workload identity.
+ */
 export interface AgentTokenRequest extends BaseTokenRequest {
     type: 'agent';
     account_id: string;
     project_id: string; // Will verify it belongs to account
     name?: string;
-    on_behalf_of: string; // Required: signed Vertesia token to verify user context
+
+    /**
+     * User information.
+     *
+     * The value of this field can be either:
+     *   - a signed Vertesia token used to verify the user context
+     *   - a user ID prefixed with `user:` to indicate the user on behalf of whom the agent is
+     *     acting.
+     *
+     * @example {JsonWebToken}
+     * @example user:68100a7c9f3c2b7d11a1b2c3
+     */
+    on_behalf_of: string;
 }
 
 // Service account token
@@ -64,6 +84,9 @@ export interface ServiceAccountTokenRequest extends BaseTokenRequest {
     name?: string;
 }
 
+/**
+ * @discriminator type
+ */
 export type IssueTokenRequest =
     | ApiKeyTokenRequest
     | UserTokenRequest
@@ -108,6 +131,8 @@ export function isServiceAccountRequest(req: IssueTokenRequest): req is ServiceA
 // Response types
 export interface TokenResponse {
     token: string;
+    token_type?: string;
+    expires_in?: number;
 }
 
 export interface IssueTokenResponse {

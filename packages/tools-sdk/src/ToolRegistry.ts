@@ -29,6 +29,8 @@ export class ToolRegistry {
             input_schema: tool.input_schema,
             category: this.category,
             default: tool.default,
+            ...(tool.annotations ? { annotations: tool.annotations } : {}),
+            ...(tool.requires_user_confirmation ? { requires_user_confirmation: true } : {}),
         });
         let tools = Object.values(this.registry);
         if (context) {
@@ -57,13 +59,6 @@ export class ToolRegistry {
 
     runTool<ParamsT extends Record<string, any>>(payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext): Promise<ToolExecutionResult> {
         const toolName = payload.tool_use.tool_name;
-        const toolUseId = payload.tool_use.id;
-        const runId = payload.metadata?.run_id;
-        console.log(`[ToolRegistry] Executing tool: ${toolName}`, {
-            toolUseId,
-            runId,
-            input: sanitizeInput(payload.tool_use.tool_input),
-        });
         return this.getTool(toolName).run(payload, context);
     }
 
@@ -75,28 +70,4 @@ export class ToolNotFoundError extends HTTPException {
         super(404, { message: "Tool function not found: " + name });
         this.name = "ToolNotFoundError";
     }
-}
-
-const SENSITIVE_KEYS = new Set([
-    'apikey', 'api_key', 'token', 'secret', 'password', 'credential', 'credentials',
-    'authorization', 'auth', 'key', 'private_key', 'access_token', 'refresh_token'
-]);
-
-function sanitizeInput(input: Record<string, any> | null | undefined): Record<string, any> | null {
-    if (!input) return null;
-
-    const sanitized: Record<string, any> = {};
-    for (const [key, value] of Object.entries(input)) {
-        const lowerKey = key.toLowerCase();
-        if (SENSITIVE_KEYS.has(lowerKey) || lowerKey.includes('key') || lowerKey.includes('token') || lowerKey.includes('secret')) {
-            sanitized[key] = '[REDACTED]';
-        } else if (typeof value === 'string' && value.length > 50) {
-            sanitized[key] = value.slice(0, 50) + '...';
-        } else if (typeof value === 'object' && value !== null) {
-            sanitized[key] = Array.isArray(value) ? `[Array(${value.length})]` : '[Object]';
-        } else {
-            sanitized[key] = value;
-        }
-    }
-    return sanitized;
 }
