@@ -1,6 +1,6 @@
 import { activityInfo, CompleteAsyncError, log } from "@temporalio/activity";
 import { FetchClient, RequestError } from "@vertesia/api-fetch-client";
-import { AUDIO_RENDITION_NAME, ContentNature, DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations, VideoMetadata } from "@vertesia/common";
+import { AUDIO_RENDITION_NAME, ContentNature, DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfigurationWithSecrets, SupportedIntegrations, VideoMetadata } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../../errors.js";
 import { TextExtractionResult, TextExtractionStatus } from "../../index.js";
@@ -32,7 +32,7 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
     const context = await setupActivity<TranscriptMediaParams>(payload);
     const { params, client, inputType } = context;
 
-    const gladiaConfig = await client.projects.integrations.retrieve(payload.project_id, SupportedIntegrations.gladia) as GladiaConfiguration | undefined;
+    const gladiaConfig = await client.projects.integrations.retrieve(payload.project_id, SupportedIntegrations.gladia) as GladiaConfigurationWithSecrets | undefined;
     if (!gladiaConfig || !gladiaConfig.enabled) {
         return {
             hasText: false,

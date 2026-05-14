@@ -14,6 +14,9 @@ export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
 
 const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
 
+export interface UserSessionLoginOptions {
+    loadOnboardingStatus?: boolean;
+}
 
 class UserSession {
 
@@ -88,7 +91,7 @@ class UserSession {
         return this.authToken?.account;
     }
 
-    async login(token: string) {
+    async login(token: string, options: UserSessionLoginOptions = {}) {
         this.authError = undefined;
         this.isLoading = false;
         this.client.withAuthCallback(() => this.authCallback)
@@ -101,7 +104,9 @@ class UserSession {
         // notify the host app of the login
         Env.onLogin?.(this.authToken);
 
-        await this.fetchOnboardingStatus();
+        if (options.loadOnboardingStatus ?? true) {
+            await this.fetchOnboardingStatus();
+        }
 
         return Promise.resolve();
 

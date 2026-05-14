@@ -205,6 +205,10 @@ export interface DataSchema {
     updated_by?: string;
 }
 
+export interface DataStoreFullSchemaResponse extends DataSchema {
+    schema_format: 'full';
+}
+
 // ============================================================================
 // Data Store Types
 // ============================================================================
@@ -415,6 +419,9 @@ export interface BatchQueryPayload {
 /**
  * Schema change operation types.
  */
+/**
+ * @discriminator op
+ */
 export type AlterTableOperation =
     | { op: 'add_column'; column: DataColumn }
     | { op: 'drop_column'; column: string }
@@ -568,7 +575,10 @@ export interface DataStoreArchiveResult {
     status: DataStoreStatus;
 }
 
-export type DataStoreSchemaResponse = DataSchema | DataSchemaForAI;
+/**
+ * @discriminator schema_format
+ */
+export type DataStoreSchemaResponse = DataStoreFullSchemaResponse | DataSchemaForAI;
 
 export interface DataStoreTableDetail extends DataTable {
     sample_data?: Record<string, unknown>[];
@@ -668,6 +678,7 @@ export interface DataRelationshipForAI {
  * Provides semantic context for understanding the data model.
  */
 export interface DataSchemaForAI {
+    schema_format: 'ai';
     /** Store name */
     name: string;
     /** Schema version */

@@ -221,14 +221,17 @@ export interface VertesiaSDKToolCollectionObject extends BaseToolCollectionObjec
 /**
  * Tool collection configuration (object format)
  */
+/**
+ * @discriminator type
+ */
 export type ToolCollectionObject = MCPToolCollectionObject | VertesiaSDKToolCollectionObject;
 
 /**
- * Tool collection can be either:
- * - A string URL (legacy format, with "mcp:" prefix for MCP servers)
- * - An object with url, type, and optional auth (new format)
+ * Backward-compatible TypeScript alias. Public API payloads should reference
+ * ToolCollectionObject directly so generated clients do not create a wrapper
+ * model around the discriminated union.
  */
-export type ToolCollection = string | ToolCollectionObject;
+export type ToolCollection = ToolCollectionObject;
 
 export const MCP_COLLECTION_ID_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
 export const MCP_COLLECTION_NAMESPACE_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
@@ -256,39 +259,17 @@ export function getDefaultOAuthAppNameForCollectionId(collectionId: string): str
 
 /**
  * Normalizes a tool collection to the object format.
- * Handles backward compatibility with string URLs and applies optional
- * `{{var}}` substitution to the URL so legacy manifests can reference
+ * Applies optional `{{var}}` substitution to the URL so manifests can reference
  * deployment-time variables like `{{studio_ui}}`.
  *
- * @param collection - String URL or ToolCollectionObject
+ * @param collection - ToolCollectionObject
  * @param vars - Optional endpoint variables to substitute in URLs
  * @returns Normalized ToolCollectionObject
  */
-export function normalizeToolCollection(collection: ToolCollection, vars?: Endpoints): ToolCollectionObject {
-    if (typeof collection === 'string') {
-        const substituted = substituteEndpoints(collection, vars);
-        // Legacy string format
-        if (substituted.startsWith('mcp:')) {
-            const url = substituted.substring('mcp:'.length);
-            // For legacy MCP strings, derive name and prefix from URL
-            const urlObj = new URL(url);
-            const name = urlObj.hostname.replace(/\./g, '-');
-            const id = deriveMCPCollectionId(urlObj.hostname);
-            return {
-                url,
-                type: 'mcp',
-                id,
-                name,
-                description: `MCP server at ${url}`,
-                namespace: name
-            };
-        }
-        return {
-            url: substituted,
-            type: 'vertesia_sdk'
-        };
+export function normalizeToolCollection(collection: ToolCollectionObject, vars?: Endpoints): ToolCollectionObject {
+    if (!collection || typeof collection !== 'object') {
+        throw new TypeError('Tool collection must be an object');
     }
-    // Already in object format — substitute URL if needed and ensure MCP id
     const substitutedUrl = vars && collection.url ? substituteEndpoints(collection.url, vars) : collection.url;
     const urlChanged = substitutedUrl !== collection.url;
     if (collection.type === 'mcp') {
@@ -538,7 +519,7 @@ export interface AppManifestData {
      * A list of tool collections endpoints to be used by this app.
      * Prefer using endpoint over tool_collections.
      */
-    tool_collections?: ToolCollection[]
+    tool_collections?: ToolCollectionObject[]
 
     /**
      * Named OAuth providers shared across multiple MCP tool collections.
@@ -705,7 +686,7 @@ export function resolveAppEndpoint(
 }
 
 /**
- * Resolves all URL placeholders in a manifest in place (both `endpoint` and legacy
+ * Resolves all URL placeholders in a manifest in place (both `endpoint` and
  * `tool_collections[].url`). Intended for server-side serialization — clients and
  * downstream workers receive already-substituted URLs so they don't need to know
  * about deployment-time vars.
@@ -728,13 +709,11 @@ export function resolveManifestUrls(
         }
     }
 
-    if (manifest.tool_collections && Array.isArray(manifest.tool_collections)) {
-        for (let i = 0; i < manifest.tool_collections.length; i++) {
-            const item = manifest.tool_collections[i];
-            if (typeof item === 'string') {
-                const sub = substituteEndpoints(item, vars);
-                if (sub !== item) manifest.tool_collections[i] = sub;
-            } else if (item && typeof item === 'object' && item.url) {
+    const toolCollections = manifest.tool_collections as ToolCollectionObject[] | undefined;
+    if (toolCollections && Array.isArray(toolCollections)) {
+        for (let i = 0; i < toolCollections.length; i++) {
+            const item = toolCollections[i];
+            if (item && typeof item === 'object' && item.url) {
                 const sub = substituteEndpoints(item.url, vars);
                 if (sub !== item.url) item.url = sub;
             }

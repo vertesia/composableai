@@ -19,7 +19,6 @@ export * from './json.js';
 export * from './meters.js';
 export * from './oauth-server.js';
 export * from './model_utility.js';
-export * from './openapi.js';
 export * from './oauth.js';
 export * from './payload.js';
 export * from "./Progress.js";

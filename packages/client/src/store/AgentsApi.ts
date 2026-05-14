@@ -169,6 +169,7 @@ export class AgentsApi extends ApiTopic {
         if (query?.until) params.until = query.until.toISOString();
         if (query?.limit) params.limit = String(query.limit);
         if (query?.offset) params.offset = String(query.offset);
+        if (query?.sort?.length) params.sort = query.sort.join(',');
         return this.get('/search', { query: params });
     }
 

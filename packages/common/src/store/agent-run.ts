@@ -133,7 +133,7 @@ export interface RunBase {
  * @typeParam TProperties - The content type's property schema.
  */
 export interface AgentRunBase<TData = Record<string, any>, TProperties = Record<string, any>> {
-    /** Interaction ID or code (e.g. "sys:generic_question") */
+    /** Interaction ID or code (e.g. "sys:generic_question"). */
     interaction: string;
 
     /** Input parameters, typed per interaction */
@@ -263,6 +263,17 @@ export interface ProcessRunConfig {
      * so programmatic runs retain the intent that triggered them.
      */
     user_message?: string;
+    /**
+     * Optional monitor workflow used when a process is launched as a
+     * conversation workstream. The process workflow sends checkpoint status
+     * signals to this monitor so long-running human-task processes do not need
+     * tight polling.
+     */
+    process_workstream_monitor?: {
+        monitor_workflow_id: string;
+        launch_id?: string;
+        workstream_id?: string;
+    };
 }
 
 export interface ProcessRun extends RunBase {
@@ -279,6 +290,9 @@ export type AnyAgentRun = AgentRun | ProcessRun;
 export type AutonomousRunResponse<TData = Record<string, any>, TProperties = Record<string, any>> = AgentRun<TData, TProperties>;
 export type SupervisedRunResponse = ProcessRun & { run_type: 'supervised' };
 export type ProgrammaticRunResponse = ProcessRun & { run_type: 'programmatic' };
+/**
+ * @discriminator run_type
+ */
 export type AgentRunResponse<TData = Record<string, any>, TProperties = Record<string, any>> =
     | AutonomousRunResponse<TData, TProperties>
     | SupervisedRunResponse
@@ -290,7 +304,8 @@ export type AgentRunResponse<TData = Record<string, any>, TProperties = Record<s
  * @typeParam TData - The interaction's expected input data type.
  * @typeParam TProperties - The content type's property schema.
  */
-export interface CreateAgentRunPayload<TData = Record<string, any>, TProperties = Record<string, any>> extends AgentRunBase<TData, TProperties> {
+export interface CreateAgentRunPayload<TData = Record<string, any>, TProperties = Record<string, any>>
+    extends AgentRunBase<TData, TProperties> {
     /** Search scope for RAG queries */
     search_scope?: AgentSearchScope;
 
@@ -616,6 +631,16 @@ export interface SearchAgentRunsQuery {
 
     /** Offset for pagination */
     offset?: number;
+
+    /**
+     * Multi-field sort. Each item has the form `field` or `field:order`, where
+     *   field is one of: `started_at`, `updated_at`
+     *   order is one of: `asc`, `desc` (default: `desc`)
+     * The first item is the primary sort; subsequent items are tie-breakers.
+     * Example: `['updated_at:desc', 'started_at:asc']`.
+     * Defaults to `['started_at:desc']` when omitted.
+     */
+    sort?: string[];
 }
 
 /**
