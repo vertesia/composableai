@@ -20,7 +20,7 @@
     "react"
   ],
   "scripts": {
-    "build": "pnpm lint && pnpm exec rimraf ./lib && tsc -b && pnpm exec rollup -c",
+    "build": "pnpm exec rimraf ./lib && tsc -b && pnpm exec rollup -c",
     "lint": "biome lint src",
     "lint:fix": "biome lint --write src",
     "test": "vitest run"
