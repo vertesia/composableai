@@ -99,6 +99,7 @@
     "README.md"
   ],
   "renameFiles": {
+    "biome.json.template": "biome.json",
     ".env.app.template": ".env.app"
   },
   "removeAfterInstall": [
