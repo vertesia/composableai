@@ -1,6 +1,8 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import type { AIModel, EmbeddingsOptions, EmbeddingsResult, ModelSearchPayload } from "@llumiverse/common";
+import type { AIModel, ModelSearchPayload } from "@llumiverse/common";
 import {
+    EmbeddingsApiRequest,
+    EmbeddingsApiResult,
     ExecutionEnvironment,
     ExecutionEnvironmentCreatePayload,
     ExecutionEnvironmentRef,
@@ -70,7 +72,7 @@ export default class EnvironmentsApi extends ApiTopic {
         return this.get(`/${id}/trainable-models`);
     }
 
-    embeddings(id: string, payload?: EmbeddingsOptions): Promise<EmbeddingsResult> {
+    embeddings(id: string, payload: EmbeddingsApiRequest): Promise<EmbeddingsApiResult> {
         return this.post('/' + id + '/embeddings', {
             payload
         });
