@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "vite dev --mode app",
     "lint": "biome lint src",
-    "prebuild": "pnpm run lint && tsc --build --noEmit",
+    "prebuild": "biome lint src && tsc --build --noEmit",
     "build:server": "rollup -c",
     "build:ui:app": "vite build --mode app",
     "build:ui:lib": "vite build --mode lib",
