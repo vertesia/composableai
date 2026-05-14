@@ -38,6 +38,7 @@
     "README.md"
   ],
   "renameFiles": {
+    "biome.json.template": "biome.json",
     ".env.template": ".env"
   },
   "preInstall": {

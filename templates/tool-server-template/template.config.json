@@ -24,6 +24,9 @@
   "files": [
     "src/config.ts"
   ],
+  "renameFiles": {
+    "biome.json.template": "biome.json"
+  },
   "removeAfterInstall": [
     "template.config.json"
   ]

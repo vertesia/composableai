@@ -51,6 +51,7 @@
     ".env.local.template"
   ],
   "renameFiles": {
+    "biome.json.template": "biome.json",
     ".env.local.template": ".env.local"
   },
   "removeAfterInstall": [
