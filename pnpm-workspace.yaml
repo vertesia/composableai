@@ -1,5 +1,4 @@
 packages:
-  - llumiverse
   - llumiverse/common
   - packages/*
   - "!packages/memory"
