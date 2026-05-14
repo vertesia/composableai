@@ -12,16 +12,16 @@
   "license": "Apache-2.0",
   "scripts": {
     "dev": "vite dev --mode app",
+    "lint": "biome lint src",
     "prebuild": "pnpm run lint && tsc --build --noEmit",
-    "build": "pnpm run build:server && pnpm run build:ui",
     "build:server": "rollup -c",
-    "build:ui": "pnpm run build:ui:app && pnpm run build:ui:lib",
     "build:ui:app": "vite build --mode app",
     "build:ui:lib": "vite build --mode lib",
-    "start": "pnpm run preview",
+    "build:ui": "vite build --mode app && vite build --mode lib",
+    "build": "rollup -c && vite build --mode app && vite build --mode lib",
+    "preview": "rollup -c && vite preview",
+    "start": "rollup -c && vite preview",
     "start:vercel": "vercel dev",
-    "lint": "biome lint src",
-    "preview": "pnpm run build:server && vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

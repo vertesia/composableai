@@ -172,7 +172,12 @@ export function replaceVariables(
  * 1. Sets the package name to PROJECT_NAME
  * 2. Resolves workspace:* dependencies to actual latest versions
  */
-export function adjustPackageJson(projectName: string, answers: Record<string, any>, isDev: boolean): void {
+export function adjustPackageJson(
+  projectName: string,
+  answers: Record<string, any>,
+  isDev: boolean,
+  packageManager: string
+): void {
   console.log(chalk.blue('📝 Adjusting package.json...\n'));
 
   const packageJsonPath = path.join(projectName, 'package.json');
@@ -191,6 +196,12 @@ export function adjustPackageJson(projectName: string, answers: Record<string, a
     if (packageJson.name !== newName) {
       packageJson.name = newName;
       console.log(chalk.gray(`   ✓ Set package name to "${newName}"`));
+    }
+
+    // Pin the chosen package manager via Corepack
+    if (answers.PM_VERSION) {
+      packageJson.packageManager = `${packageManager}@${answers.PM_VERSION}`;
+      console.log(chalk.gray(`   ✓ Set packageManager to "${packageJson.packageManager}"`));
     }
 
     // 2. Replace workspace:* with pinned versions
