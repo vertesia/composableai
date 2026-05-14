@@ -20,16 +20,13 @@
     "react"
   ],
   "scripts": {
-    "lint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+    "lint": "biome lint src",
     "build": "tsc --build",
     "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.3",
-    "eslint": "^10.0.2",
-    "typescript": "^6.0.2",
-    "typescript-eslint": "^8.58.1"
+    "typescript": "^6.0.2"
   },
   "peerDependencies": {
     "react": ">=16.8.0"
