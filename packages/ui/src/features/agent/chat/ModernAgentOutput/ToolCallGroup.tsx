@@ -217,6 +217,7 @@ const getFilesFromDetails = (details: { files?: string[]; outputFiles?: string[]
 };
 
 const TOOL_BADGE_CLASS = "text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium";
+const TOOL_ERROR_BADGE_CLASS = "text-[10px] px-1.5 py-0.5 rounded-md bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 font-medium";
 const ASSISTANT_BADGE_CLASS = "text-[10px] px-1.5 py-0.5 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 font-medium";
 
 const isToolPreambleMessage = (message: AgentMessage): boolean => {
@@ -244,7 +245,10 @@ const getMessageActivityLabel = (message: AgentMessage): string => {
 };
 
 const getMessageBadgeClass = (message: AgentMessage): string => {
-    return isToolPreambleMessage(message) ? ASSISTANT_BADGE_CLASS : TOOL_BADGE_CLASS;
+    if (isToolPreambleMessage(message)) return ASSISTANT_BADGE_CLASS;
+    const toolStatus = message.details?.tool_status;
+    if (toolStatus === 'error') return TOOL_ERROR_BADGE_CLASS;
+    return TOOL_BADGE_CLASS;
 };
 
 function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames = {} }: ToolCallItemProps) {
