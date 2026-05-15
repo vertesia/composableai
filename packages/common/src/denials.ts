@@ -34,10 +34,15 @@
 /**
  * Pattern-based access denials carried in the JWT.
  *
- * Each top-level key is a contribution `kind` (`ui`, `tool`, …). The value is an
- * array of glob patterns hiding contributions of that kind from the principal.
- * Enforcers (UI shell, agent tool/skill discovery) match against the slice for
- * their kind.
+ * Each top-level key is a contribution `kind` (`ui`, `tool`, `app`, …). The value
+ * is an array of glob patterns hiding contributions of that kind from the
+ * principal. Enforcers (UI shell, agent tool/skill discovery, server-side
+ * installation listing) match against the slice for their kind.
+ *
+ * The `app` kind is a shortcut: it implicitly denies every kind for the matched
+ * app. Each enforcer that checks `ui:` / `tool:` also checks `app:` — denying
+ * `app:slack` is equivalent to denying its UI plugin, all its tools, and (when
+ * server-side enforcement is applied) the entire installation listing entry.
  *
  * Future kinds may be added as new optional keys without breaking existing
  * consumers — unknown keys are ignored by their enforcer.
@@ -47,6 +52,12 @@ export interface Denials {
     ui?: string[];
     /** Patterns hiding agent tools and skill loaders (`learn_*`). Enforced during tool discovery. */
     tool?: string[];
+    /**
+     * Patterns hiding entire apps. Implicitly denies every contribution kind for
+     * the matched app. Matched against the app name as a single segment.
+     * Enforced server-side (installation listings) and client-side (UI / tools).
+     */
+    app?: string[];
 }
 
 // ============================================================================
@@ -191,6 +202,7 @@ export class DenialsMatcher {
     private readonly denials: Denials | undefined;
     private uiCompiled?: SegmentMatcher[];
     private toolCompiled?: CompiledToolPattern[];
+    private appCompiled?: SegmentMatcher[];
 
     constructor(denials: Denials | undefined) {
         this.denials = denials;
@@ -206,14 +218,32 @@ export class DenialsMatcher {
         return !!this.denials?.ui?.length;
     }
 
+    /** True if there are any whole-app denials configured. */
+    get hasAppDenials(): boolean {
+        return !!this.denials?.app?.length;
+    }
+
     /**
-     * Check whether a tool is denied. Same semantics as {@link isToolDenied}
-     * but with cached pattern compilation.
+     * Check whether the entire app is denied (matches an `app:` pattern). Use
+     * this when filtering installation listings server-side — `ui:` denials
+     * should not hide an installation, only its UI plugin entry.
+     */
+    isAppDenied(appName: string): boolean {
+        if (!this.hasAppDenials) return false;
+        this.appCompiled ??= this.denials!.app!.map(compileSegment);
+        return this.appCompiled.some(m => m(appName));
+    }
+
+    /**
+     * Check whether a tool is denied. Checks `tool:` patterns and also `app:`
+     * patterns — denying the whole app implicitly denies all its tools.
      *
      * Prefer this overload — passing the parts avoids string-building +
      * splitting for every call.
      */
     isToolDenied(appName: string, category: string | undefined, toolName: string): boolean {
+        if (!this.hasToolDenials && !this.hasAppDenials) return false;
+        if (this.isAppDenied(appName)) return true;
         if (!this.hasToolDenials) return false;
         const compiled = this.compileToolPatterns();
         const cat = category ?? '';
@@ -225,14 +255,20 @@ export class DenialsMatcher {
      * than the parts overload because it has to split the URI.
      */
     isToolUriDenied(toolId: string): boolean {
-        if (!this.hasToolDenials) return false;
+        if (!this.hasToolDenials && !this.hasAppDenials) return false;
         const segs = toolId.split(':');
         if (segs.length !== 3) return false;
         return this.isToolDenied(segs[0], segs[1], segs[2]);
     }
 
-    /** Check whether a UI plugin (identified by app name) is denied. */
+    /**
+     * Check whether a UI plugin (identified by app name) is denied. Checks
+     * `ui:` patterns and also `app:` patterns — denying the whole app
+     * implicitly denies its UI plugin.
+     */
     isUiDenied(appName: string): boolean {
+        if (!this.hasUiDenials && !this.hasAppDenials) return false;
+        if (this.isAppDenied(appName)) return true;
         if (!this.hasUiDenials) return false;
         this.uiCompiled ??= this.denials!.ui!.map(compileSegment);
         return this.uiCompiled.some(m => m(appName));
@@ -240,7 +276,7 @@ export class DenialsMatcher {
 
     /** Filter an array of tool-like objects, removing denied ones. */
     filterTools<T extends { app_name: string; category?: string; name: string }>(tools: T[]): T[] {
-        if (!this.hasToolDenials) return tools;
+        if (!this.hasToolDenials && !this.hasAppDenials) return tools;
         return tools.filter(t => !this.isToolDenied(t.app_name, t.category, t.name));
     }
 

@@ -293,3 +293,75 @@ describe('DenialsMatcher', () => {
         }
     });
 });
+
+describe('DenialsMatcher — app: kind', () => {
+    it('hasAppDenials reflects presence of patterns', () => {
+        expect(new DenialsMatcher(undefined).hasAppDenials).toBe(false);
+        expect(new DenialsMatcher({}).hasAppDenials).toBe(false);
+        expect(new DenialsMatcher({ app: [] }).hasAppDenials).toBe(false);
+        expect(new DenialsMatcher({ app: ['slack'] }).hasAppDenials).toBe(true);
+    });
+
+    it('isAppDenied matches only app: patterns, not ui or tool', () => {
+        const m = new DenialsMatcher({ app: ['slack'], ui: ['teams'], tool: ['github:*'] });
+        expect(m.isAppDenied('slack')).toBe(true);
+        expect(m.isAppDenied('teams')).toBe(false);     // ui: doesn't make isAppDenied true
+        expect(m.isAppDenied('github')).toBe(false);    // tool: doesn't make isAppDenied true
+        expect(m.isAppDenied('other')).toBe(false);
+    });
+
+    it('isAppDenied supports wildcards', () => {
+        const m = new DenialsMatcher({ app: ['admin-*'] });
+        expect(m.isAppDenied('admin-tools')).toBe(true);
+        expect(m.isAppDenied('admin-users')).toBe(true);
+        expect(m.isAppDenied('public-app')).toBe(false);
+    });
+
+    it('isUiDenied checks app: as well as ui:', () => {
+        const m = new DenialsMatcher({ app: ['slack'] });
+        expect(m.isUiDenied('slack')).toBe(true);     // covered by app:
+        expect(m.isUiDenied('teams')).toBe(false);
+    });
+
+    it('isToolDenied checks app: as well as tool:', () => {
+        const m = new DenialsMatcher({ app: ['slack'] });
+        expect(m.isToolDenied('slack', 'messaging', 'send')).toBe(true);
+        expect(m.isToolDenied('slack', 'any', 'any')).toBe(true);
+        expect(m.isToolDenied('teams', 'messaging', 'send')).toBe(false);
+    });
+
+    it('combines ui:, tool:, and app: with OR semantics', () => {
+        const m = new DenialsMatcher({
+            ui: ['admin-portal'],
+            tool: ['github:files:upload'],
+            app: ['slack'],
+        });
+        // app entirely denied
+        expect(m.isUiDenied('slack')).toBe(true);
+        expect(m.isToolDenied('slack', 'msg', 'x')).toBe(true);
+        // ui-only deny
+        expect(m.isUiDenied('admin-portal')).toBe(true);
+        expect(m.isAppDenied('admin-portal')).toBe(false);
+        // tool-only deny
+        expect(m.isToolDenied('github', 'files', 'upload')).toBe(true);
+        expect(m.isUiDenied('github')).toBe(false);     // github's UI still visible
+        expect(m.isAppDenied('github')).toBe(false);
+    });
+
+    it('filterTools honors app: denials', () => {
+        const m = new DenialsMatcher({ app: ['slack'] });
+        const tools = [
+            { app_name: 'slack', category: 'msg', name: 'send' },
+            { app_name: 'slack', category: 'files', name: 'upload' },
+            { app_name: 'teams', category: 'msg', name: 'send' },
+        ];
+        expect(m.filterTools(tools).map(t => t.app_name)).toEqual(['teams']);
+    });
+
+    it('isUiDenied with both ui: and app: triggers if either matches', () => {
+        const m = new DenialsMatcher({ ui: ['ui-only'], app: ['app-wide'] });
+        expect(m.isUiDenied('ui-only')).toBe(true);
+        expect(m.isUiDenied('app-wide')).toBe(true);
+        expect(m.isUiDenied('other')).toBe(false);
+    });
+});
