@@ -22,7 +22,7 @@ export function registerIamCommand(program: Command) {
         .requiredOption('--role <role>', "Role: owner, admin, developer, reader, member, 'none' for denials, etc.")
         .option('--principal-props <json>', 'Principal conditions JSON (for principal_set)')
         .option('--resource-props <json>', 'Resource conditions JSON (for content_set)')
-        .option('--patterns <list>', 'Comma-separated contribution patterns (for contribution_set). E.g. "ui:studio,tool:create_*"')
+        .option('--patterns <list>', 'Comma-separated contribution patterns (for contribution_set). E.g. "ui:studio,tool:create_*,app:slack" (app: hides everything from an app)')
         .action(async (options: Record<string, any>) => {
             await createAce(program, options);
         });
@@ -31,7 +31,7 @@ export function registerIamCommand(program: Command) {
         .description('Create a contribution_set denial rule (shortcut: role=none, resource_type=contribution_set)')
         .requiredOption('--principal <value>', 'Principal ID or display name (for principal_set)')
         .requiredOption('--principal-type <type>', 'Principal type: user, group, apikey, principal_set')
-        .requiredOption('--patterns <list>', 'Comma-separated contribution patterns (e.g. "ui:studio,tool:create_*")')
+        .requiredOption('--patterns <list>', 'Comma-separated contribution patterns. Kinds: ui:<app>, tool:<app>:<collection>:<tool>, app:<app> (hides everything). E.g. "ui:studio,tool:create_*,app:slack"')
         .option('--resource-name <name>', 'Display name for this denial rule', 'Denial Rule')
         .option('--principal-props <json>', 'Principal conditions JSON (for principal_set)')
         .action(async (options: Record<string, any>) => {
