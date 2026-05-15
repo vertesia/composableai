@@ -1,4 +1,4 @@
-import { AppInstallationWithManifest, ProjectRef } from "@vertesia/common";
+import { AppInstallationWithManifest, isUiDenied, ProjectRef } from "@vertesia/common";
 import { Center, useFetch, SelectBox } from "@vertesia/ui/core";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from "@vertesia/ui/session";
 import { LockIcon } from "lucide-react";
@@ -40,7 +40,8 @@ export function StandaloneAppImpl({ name, AccessDenied = AccessDeniedMessage, ch
         if (!authToken) {
             setState("loading");
         } else {
-            const isAppVisible = authToken.apps.includes(name);
+            // Apps are visible by default; specific apps can be hidden per-user via the JWT's `denials.ui` patterns.
+            const isAppVisible = !isUiDenied(name, authToken.denials);
             if (isAppVisible) {
                 client.apps.getAppInstallationByName(name).then(inst => {
                     if (!inst) {
