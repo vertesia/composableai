@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Cpu, FileTextIcon, SendIcon, UploadIcon, XIcon } from "lucide-react";
+import { ArrowUpIcon, Bot, CheckCircle, Cpu, FileTextIcon, UploadIcon, XIcon } from "lucide-react";
 import { useUserSession } from "@vertesia/ui/session";
 import {
     ActiveWorkstreamEntry,
@@ -12,10 +12,14 @@ import {
     UserInputSignal,
 } from "@vertesia/common";
 import { FusionFragmentProvider } from "@vertesia/fusion-ux";
-import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
+import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle, Textarea } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
-import { type AgentConversationViewMode } from "./ModernAgentOutput/AllMessagesMixed";
+import {
+    type AgentConversationViewMode,
+    type AgentInitialRequestTemplate,
+    type AgentInitialRequestTemplateContext,
+} from "./ModernAgentOutput/AllMessagesMixed";
 import { type BatchProgressPanelClassNames } from "./ModernAgentOutput/BatchProgressPanel";
 import { type MessageItemClassNames } from "./ModernAgentOutput/MessageItem";
 import { type StreamingMessageClassNames } from "./ModernAgentOutput/StreamingMessage";
@@ -84,7 +88,7 @@ function printElementToPdf(sourceElement: HTMLElement, title: string): boolean {
     return true;
 }
 
-interface ModernAgentConversationProps {
+export interface ModernAgentConversationProps {
     /** Stable AgentRun ID — the primary identifier for all runtime operations. */
     agentRunId?: string;
     title?: string;
@@ -213,6 +217,14 @@ interface ModernAgentConversationProps {
     /** Optional message to display as the first user message in the conversation.
      *  Purely visual/UI — not sent to temporal. Renders as a QUESTION MessageItem before real messages. */
     prependFriendlyMessage?: string;
+    /** Optional structured request data to render as the first user entry in the conversation. */
+    initialRequestData?: unknown;
+    /** Optional schema used by the default request renderer. */
+    initialRequestSchema?: AgentInitialRequestTemplateContext['schema'];
+    /** Optional label/title for the default structured request renderer. */
+    initialRequestTitle?: string;
+    /** Optional agent-specific request renderer for arbitrary input schemas. */
+    initialRequestTemplate?: AgentInitialRequestTemplate;
 
     // Fusion fragment props
     /**
@@ -286,6 +298,12 @@ function StartWorkflowView({
     // File upload props
     acceptedFileTypes,
     maxFiles = 5,
+    hideHeader = false,
+    hideFileUpload = false,
+    hideObjectLinking,
+    inputContainerClassName,
+    inputClassName,
+    className,
 }: ModernAgentConversationProps) {
     const { t } = useUITranslation();
     const resolvedPlaceholder = placeholder ?? t('agent.typeYourMessage');
@@ -469,7 +487,7 @@ function StartWorkflowView({
                     duration: 3000,
                 });
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast({
                 title: t('agent.errorStarting'),
                 status: "error",
@@ -506,7 +524,19 @@ function StartWorkflowView({
     if (startedAgentRunId) {
         return (
             <ModernAgentConversationInner
-                {...{ onClose, isModal, initialMessage, placeholder }}
+                {...{
+                    onClose,
+                    isModal,
+                    initialMessage,
+                    placeholder,
+                    fullWidth,
+                    hideHeader,
+                    hideFileUpload,
+                    hideObjectLinking,
+                    inputContainerClassName,
+                    inputClassName,
+                    className,
+                }}
                 agentRunId={startedAgentRunId}
                 title={title}
             />
@@ -514,10 +544,10 @@ function StartWorkflowView({
     }
 
     return (
-        <div className="flex flex-col h-full bg-background items-center">
+        <div className={cn("flex h-full flex-col items-center bg-background", className)}>
             <div
                 className={cn(
-                    "flex flex-col h-full w-full overflow-hidden border-0 relative",
+                    "relative flex h-full w-full flex-col overflow-hidden border-0",
                     fullWidth ? "" : "max-w-4xl"
                 )}
                 onDragEnter={handleDragEnter}
@@ -546,120 +576,131 @@ function StartWorkflowView({
                 />
 
                 {/* Header */}
-                <div className="flex items-center justify-between py-2 px-3 border-b border-border bg-background">
-                    <div className="flex items-center space-x-2">
-                        <div className="p-1">
-                            <Cpu className="size-3.5 text-muted" />
+                {!hideHeader && (
+                    <div className="flex items-center justify-between border-b border-border/60 bg-background px-3 py-2">
+                        <div className="flex items-center space-x-2">
+                            <div className="p-1">
+                                <Cpu className="size-3.5 text-muted" />
+                            </div>
+                            <span className="text-sm font-medium text-foreground">
+                                {resolvedTitle}
+                            </span>
                         </div>
-                        <span className="font-medium text-sm text-foreground">
-                            {resolvedTitle}
-                        </span>
-                    </div>
 
-                    {/* Close button if needed */}
-                    {onClose && !isModal && (
-                        <Button
-                            size="xs"
-                            variant="ghost"
-                            onClick={onClose}
-                            title={t('agent.close')}
-                            className="text-muted hover:text-foreground"
-                        >
-                            <XIcon className="size-4" />
-                        </Button>
-                    )}
-                </div>
+                        {/* Close button if needed */}
+                        {onClose && !isModal && (
+                            <Button
+                                size="xs"
+                                variant="ghost"
+                                onClick={onClose}
+                                title={t('agent.close')}
+                                className="text-muted hover:text-foreground"
+                            >
+                                <XIcon className="size-4" />
+                            </Button>
+                        )}
+                    </div>
+                )}
 
                 {/* Empty conversation area with instructions */}
-                <div className="flex-1 overflow-y-auto bg-background flex flex-col items-center justify-end">
-                    <div className="w-full px-4 py-6">
+                <div className="flex flex-1 flex-col items-center justify-end overflow-y-auto bg-background px-4">
+                    <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-end py-8">
                         {initialMessage && (
-                            <div className="px-4 py-3 mb-4 bg-info-background border-l-2 border-info text-info">
+                            <div className="text-[15px] leading-relaxed text-foreground/80">
                                 {initialMessage}
                             </div>
                         )}
-
-                        <div className="bg-card p-4 border-l-2 border-info">
-                            <div className="text-base text-foreground font-medium">
-                                {t('agent.enterMessage')}
-                            </div>
-                            <div className="mt-3 text-sm text-muted">
-                                {t('agent.typeQuestionBelow', { buttonText: resolvedStartButtonText })}
-                            </div>
-                        </div>
                     </div>
                 </div>
 
                 {/* Input Area */}
-                <div className="py-3 px-3 border-t border-border bg-background">
-                {/* Staged files display */}
-                {stagedFiles.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-3">
-                        {stagedFiles.map((file, index) => (
-                            <div
-                                key={`${file.name}-${index}`}
-                                className="flex items-center gap-1.5 px-2 py-1 bg-attention/10 text-attention rounded-md text-sm"
-                            >
-                                <FileTextIcon className="size-3.5" />
-                                <span className="max-w-[120px] truncate">{file.name}</span>
-                                <span className="text-xs opacity-70">{t('agent.staged')}</span>
-                                <button
-                                    onClick={() => removeStagedFile(index)}
-                                    className="ml-1 p-0.5 hover:bg-attention/20 rounded"
-                                >
-                                    <XIcon className="size-3" />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Upload button row */}
-                <div className="flex gap-2 mb-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isSending || stagedFiles.length >= maxFiles}
-                        className="text-xs"
-                    >
-                        <UploadIcon className="size-3.5 mr-1.5" />
-                        {t('agent.upload')}
-                    </Button>
-                </div>
-
-                <div className="flex items-end gap-2">
-                    <textarea
-                        ref={inputRef}
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder={resolvedPlaceholder}
-                        disabled={isSending}
-                        rows={2}
-                        className="flex-1 py-2.5 px-3 text-sm border border-border bg-background text-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring rounded-md resize-none overflow-hidden"
-                        style={{ minHeight: '60px', maxHeight: '200px' }}
-                    />
-                    <Button
-                        onClick={startWorkflowWithMessage}
-                        disabled={!inputValue.trim() || isSending}
-                        className="px-3 py-2.5 text-xs rounded-md transition-colors"
-                    >
-                        {isSending ? (
-                            <Spinner size="sm" className="mr-1.5" />
-                        ) : (
-                            <SendIcon className="size-3.5 mr-1.5" />
+                <div className="shrink-0 bg-background px-4 pb-4 pt-2" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}>
+                    <div
+                        className={cn(
+                            "mx-auto flex max-w-3xl flex-col gap-3 rounded-2xl border border-border/70 bg-mixer-muted/15 p-3 shadow-lg shadow-black/5",
+                            inputContainerClassName
                         )}
-                        {resolvedStartButtonText}
-                    </Button>
-                </div>
-                <div className="text-xs text-muted mt-2 text-center">
-                    {stagedFiles.length > 0
-                        ? t('agent.filesStagedCount', { count: stagedFiles.length })
-                        : t('agent.enterToSend')}
+                    >
+                        {/* Staged files display */}
+                        {stagedFiles.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {stagedFiles.map((file, index) => (
+                                    <div
+                                        key={`${file.name}-${index}`}
+                                        className="flex items-center gap-1.5 rounded-md bg-attention/10 px-2 py-1 text-sm text-attention"
+                                    >
+                                        <FileTextIcon className="size-3.5" />
+                                        <span className="max-w-[120px] truncate">{file.name}</span>
+                                        <span className="text-xs opacity-70">{t('agent.staged')}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeStagedFile(index)}
+                                            className="ml-1 rounded p-0.5 hover:bg-attention/20"
+                                        >
+                                            <XIcon className="size-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <Textarea
+                            ref={inputRef}
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder={resolvedPlaceholder}
+                            disabled={isSending}
+                            rows={2}
+                            className={cn(
+                                "min-h-[72px] resize-none overflow-hidden border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0",
+                                inputClassName
+                            )}
+                            style={{ minHeight: '72px', maxHeight: '200px' }}
+                        />
+
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-2">
+                                {!hideFileUpload && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={isSending || stagedFiles.length >= maxFiles}
+                                        className="rounded-full text-muted"
+                                        title={t('agent.upload')}
+                                    >
+                                        <UploadIcon className="size-4" />
+                                    </Button>
+                                )}
+                            </div>
+                            <Button
+                                onClick={startWorkflowWithMessage}
+                                disabled={!inputValue.trim() || isSending}
+                                variant="ghost"
+                                size="icon"
+                                className={cn(
+                                    "size-9 rounded-full border border-border/60 bg-foreground text-background shadow-sm",
+                                    "hover:bg-foreground/90 hover:text-background",
+                                    "disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100"
+                                )}
+                                title={resolvedStartButtonText}
+                            >
+                                {isSending ? (
+                                    <Spinner size="sm" />
+                                ) : (
+                                    <ArrowUpIcon className="size-4" />
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                    <div className="mx-auto mt-2 max-w-3xl text-center text-xs text-muted">
+                        {stagedFiles.length > 0
+                            ? t('agent.filesStagedCount', { count: stagedFiles.length })
+                            : t('agent.enterToSend')}
+                    </div>
                 </div>
             </div>
-        </div>
         </div>
     );
 }
@@ -741,6 +782,10 @@ function ModernAgentConversationInner({
     StoreLinkComponent,
     CollectionLinkComponent,
     prependFriendlyMessage,
+    initialRequestData,
+    initialRequestSchema,
+    initialRequestTitle,
+    initialRequestTemplate,
     payloadContent,
     conversationContent,
     conversationTab = false,
@@ -1473,6 +1518,10 @@ const handleCloseRightPanel = useCallback(() => {
                     StoreLinkComponent={effectiveStoreLinkComponent}
                     CollectionLinkComponent={CollectionLinkComponent}
                     prependFriendlyMessage={prependFriendlyMessage}
+                    initialRequestData={initialRequestData}
+                    initialRequestSchema={initialRequestSchema}
+                    initialRequestTitle={initialRequestTitle}
+                    initialRequestTemplate={initialRequestTemplate}
                     hiddenMessageTypes={hiddenMessageTypes}
                 />
             )}
@@ -1480,13 +1529,22 @@ const handleCloseRightPanel = useCallback(() => {
             {!hideMessageInput && (
                 <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
                     {effectiveWorkflowStatus && effectiveWorkflowStatus !== "RUNNING" ? (
-                        <MessageBox
-                            status={effectiveWorkflowStatus === "COMPLETED" ? 'success' : 'done'}
-                            icon={null}
-                            className="m-2"
-                        >
-                            This Workflow is {effectiveWorkflowStatus}
-                        </MessageBox>
+                        viewMode === "sliding" && effectiveWorkflowStatus === "COMPLETED" ? (
+                            <div className="mx-auto w-full max-w-3xl px-4 py-3 text-sm text-muted">
+                                <div className="flex items-center gap-2 border-t border-success/25 pt-3 text-success">
+                                    <CheckCircle className="size-4" />
+                                    <span className="font-medium">Workflow completed</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <MessageBox
+                                status={effectiveWorkflowStatus === "COMPLETED" ? 'success' : 'done'}
+                                icon={null}
+                                className="m-2"
+                            >
+                                This Workflow is {effectiveWorkflowStatus}
+                            </MessageBox>
+                        )
                     ) : showInput && (
                         <MessageInput
                             onSend={handleSendMessage}

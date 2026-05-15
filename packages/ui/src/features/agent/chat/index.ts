@@ -5,7 +5,7 @@ export {
 } from "./AgentChart";
 export * from "./AnimatedThinkingDots";
 export * from "./JumpingDots";
-export { ModernAgentConversation } from "./ModernAgentConversation";
+export { ModernAgentConversation, type ModernAgentConversationProps } from "./ModernAgentConversation";
 export { VegaLiteChart } from "./VegaLiteChart";
 export * from "./WaitingMessages";
 // MessageInput types for external use
@@ -33,4 +33,8 @@ export type { ToolCallGroupClassNames } from "./ModernAgentOutput/ToolCallGroup"
 export type { BatchProgressPanelClassNames } from "./ModernAgentOutput/BatchProgressPanel";
 export * from "./SkillWidgetProvider";
 // AgentConversationViewMode type for external use
-export type { AgentConversationViewMode } from "./ModernAgentOutput/AllMessagesMixed";
+export type {
+    AgentConversationViewMode,
+    AgentInitialRequestTemplate,
+    AgentInitialRequestTemplateContext,
+} from "./ModernAgentOutput/AllMessagesMixed";

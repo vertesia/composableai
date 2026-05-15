@@ -132,7 +132,6 @@ export function extractWorkstreams(
     ) {
       // Use the workstream_id as both the ID and the display name
       workstreams.set(message.workstream_id, message.workstream_id);
-      console.log(`Found workstream: ${message.workstream_id}`);
     }
   });
 
@@ -141,8 +140,6 @@ export function extractWorkstreams(
   if (workstreams.size <= 2 && !workstreams.has("main")) {
     workstreams.set("main", t('agent.main'));
   }
-
-  console.log("Final workstreams map:", workstreams);
 
   return workstreams;
 }

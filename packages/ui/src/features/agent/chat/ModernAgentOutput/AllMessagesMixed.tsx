@@ -1,17 +1,27 @@
-import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@vertesia/common";
+import { AgentMessage, AgentMessageType, AskUserMessageDetails, BatchProgressDetails, JSONSchema, Plan } from "@vertesia/common";
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { cn } from "@vertesia/ui/core";
+import { MarkdownRenderer } from "@vertesia/ui/widgets";
+import { AlertTriangle, Brain, ChevronDown, ChevronRight, FileText, Pencil, Search, Terminal, Wrench } from "lucide-react";
 import { useUITranslation } from '../../../../i18n/index.js';
 import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 export type AgentConversationViewMode = "stacked" | "sliding";
+import { AskUserWidget } from "../AskUserWidget";
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from "./BatchProgressPanel";
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from "./MessageItem";
 import StreamingMessage, { type StreamingMessageClassNames } from "./StreamingMessage";
 import ToolCallGroup, { type ToolCallGroupClassNames } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { DONE_STATES, getSlidingViewMessageBuckets, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, RenderableGroup, shouldCollapseAdjacentRenderedMessage, StreamingData } from "./utils";
-import { ThinkingMessages } from "../WaitingMessages";
+import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, isToolActivityMessage, mergeConsecutiveToolGroups, RenderableGroup, shouldCollapseAdjacentRenderedMessage, StreamingData, ToolExecutionStatus } from "./utils";
+
+export interface AgentInitialRequestTemplateContext {
+    data: unknown;
+    schema?: JSONSchema | null;
+    title?: string;
+}
+
+export type AgentInitialRequestTemplate = (context: AgentInitialRequestTemplateContext) => React.ReactNode;
 
 /** Extended group that may carry preamble info (text from a preceding single/streaming message) */
 type RenderableGroupWithPreamble = RenderableGroup & {
@@ -71,18 +81,939 @@ function attachPreambles(groups: RenderableGroup[]): RenderableGroupWithPreamble
     return result.filter(g => !g._consumed);
 }
 
-// Replace %thinking_message% placeholder with actual thinking message
-const processThinkingPlaceholder = (text: string, thinkingMessageIndex: number): string => {
-    if (text.includes('%thinking_message%')) {
-        return text.replace(/%thinking_message%/g, ThinkingMessages[thinkingMessageIndex]);
-    }
-    return text;
-};
-
 // Check if message is a batch progress message
 const isBatchProgressMessage = (message: AgentMessage): message is AgentMessage & { details: BatchProgressDetails } => {
     return message.type === AgentMessageType.BATCH_PROGRESS && !!message.details?.batch_id;
 };
+
+function getTimestampMs(timestamp: number | string | undefined): number {
+    if (!timestamp) return Date.now();
+    return typeof timestamp === "number" ? timestamp : new Date(timestamp).getTime();
+}
+
+function getElapsedSeconds(timestamp: number | string | undefined): number {
+    const elapsed = Date.now() - getTimestampMs(timestamp);
+    return Math.max(0, Math.round(elapsed / 1000));
+}
+
+function getDurationSeconds(start: number | string | undefined, end: number | string | undefined): number {
+    const elapsed = getTimestampMs(end) - getTimestampMs(start);
+    return Math.max(0, Math.round(elapsed / 1000));
+}
+
+function formatDuration(seconds: number): string {
+    if (seconds < 60) return `${seconds}s`;
+
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+}
+
+function getReadableToolLabel(message: AgentMessage): string {
+    const details = message.details as {
+        display_role?: string;
+        tool?: string;
+        tools?: Array<string | { name?: string; tool?: string }>;
+    } | undefined;
+    const rawTool = details?.tool || "";
+    const relatedTools = Array.isArray(details?.tools)
+        ? details.tools
+            .map((tool) => typeof tool === "string" ? tool : tool.name || tool.tool || "")
+            .filter(Boolean)
+        : [];
+    const toolNames = [rawTool, ...relatedTools].join(" ").toLowerCase();
+    const tool = rawTool.toLowerCase();
+    const text = typeof message.message === "string" ? message.message.trim() : "";
+
+    if (details?.display_role === "tool_preamble") {
+        if (toolNames.includes("search") || toolNames.includes("web") || toolNames.includes("fetch")) {
+            return "Preparing search";
+        }
+        return relatedTools.length > 0 ? "Preparing tools" : "Thinking";
+    }
+
+    if (tool.includes("search")) return "Searching";
+    if (tool.includes("fetch") || tool.includes("web")) return "Searching the web";
+    if (tool.includes("read") || tool.includes("document")) return "Reading";
+    if (tool.includes("edit") || tool.includes("write") || tool.includes("create")) return "Editing";
+    if (tool.includes("bash") || tool.includes("shell") || tool.includes("command")) return "Running command";
+    if (text) return text;
+    return "Using tool";
+}
+
+function getSummaryWorkStatus(messages: AgentMessage[], isActive: boolean): ToolExecutionStatus {
+    if (messages.some((message) => message.type === AgentMessageType.ERROR || message.details?.tool_status === "error")) {
+        return "error";
+    }
+    if (messages.some((message) => message.type === AgentMessageType.WARNING || message.details?.tool_status === "warning")) {
+        return "warning";
+    }
+    return isActive ? "running" : "completed";
+}
+
+function getSummaryWorkLabel(status: ToolExecutionStatus, isActive: boolean): string {
+    if (status === "error") return "Work needs attention";
+    if (status === "warning") return "Work had warnings";
+    return isActive ? "Working" : "Worked";
+}
+
+function isSummaryPrimaryMessage(message: AgentMessage): boolean {
+    return message.type === AgentMessageType.QUESTION ||
+        message.type === AgentMessageType.ANSWER ||
+        message.type === AgentMessageType.REQUEST_INPUT ||
+        message.type === AgentMessageType.TERMINATED ||
+        message.type === AgentMessageType.ERROR ||
+        message.type === AgentMessageType.WARNING;
+}
+
+function isSummaryWorkMessage(message: AgentMessage): boolean {
+    if (isToolActivityMessage(message)) return true;
+    if (message.type === AgentMessageType.UPDATE || message.type === AgentMessageType.PLAN) return true;
+
+    return message.type === AgentMessageType.THOUGHT && !message.details?.streamed;
+}
+
+function getMessageText(message: AgentMessage): string {
+    if (!message.message) return "";
+    if (typeof message.message === "object") return JSON.stringify(message.message, null, 2);
+    return String(message.message).trim();
+}
+
+type SummaryConversationItem =
+    | { type: "message"; message: AgentMessage }
+    | {
+        type: "work";
+        id: string;
+        messages: AgentMessage[];
+        isActive: boolean;
+        status: ToolExecutionStatus;
+        startTimestamp: number | string;
+        endTimestamp?: number | string;
+    };
+
+function buildSummaryConversationItems(messages: AgentMessage[], isCompleted: boolean): SummaryConversationItem[] {
+    const items: SummaryConversationItem[] = [];
+    let pendingWork: AgentMessage[] = [];
+
+    const flushWork = (isActive: boolean, endMessage?: AgentMessage) => {
+        if (pendingWork.length === 0) return;
+
+        const firstMessage = pendingWork[0];
+        const lastMessage = pendingWork[pendingWork.length - 1];
+        const status = getSummaryWorkStatus(pendingWork, isActive);
+        items.push({
+            type: "work",
+            id: `${firstMessage.timestamp}-${lastMessage.timestamp}-${pendingWork.length}`,
+            messages: pendingWork,
+            isActive,
+            status,
+            startTimestamp: firstMessage.timestamp,
+            endTimestamp: endMessage?.timestamp ?? lastMessage.timestamp,
+        });
+        pendingWork = [];
+    };
+
+    for (const message of messages) {
+        if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
+            continue;
+        }
+
+        if (isSummaryWorkMessage(message)) {
+            pendingWork.push(message);
+            continue;
+        }
+
+        if (isSummaryPrimaryMessage(message)) {
+            flushWork(false, message);
+            items.push({ type: "message", message });
+        }
+    }
+
+    flushWork(!isCompleted);
+    return items;
+}
+
+interface SummaryMessageProps {
+    message: AgentMessage;
+    onSendMessage?: (message: string) => void;
+    StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
+    CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
+}
+
+const SUMMARY_PROSE_CLASS = [
+    "vprose prose max-w-none break-words text-[15px] text-foreground/80",
+    "prose-p:my-3 prose-p:leading-relaxed prose-li:my-1 prose-pre:my-4 prose-headings:tracking-normal",
+    "prose-headings:text-foreground prose-strong:text-foreground prose-code:text-foreground",
+    "prose-a:text-foreground prose-a:underline prose-a:decoration-muted prose-a:underline-offset-4",
+    "[&_p]:text-foreground/80 [&_li]:text-foreground/80 [&_li::marker]:text-muted",
+].join(" ");
+
+function SummaryUserBubble({
+    children,
+    workstreamId,
+    className,
+}: {
+    children: React.ReactNode;
+    workstreamId?: string;
+    className?: string;
+}) {
+    return (
+        <div className="mx-auto flex w-full max-w-3xl justify-end px-1">
+            <div
+                className={cn(
+                    "max-w-[min(44rem,82%)] rounded-[1.35rem] border border-border/50 bg-muted/70 px-4 py-2.5",
+                    "text-[15px] leading-relaxed text-foreground shadow-sm shadow-black/5 dark:bg-muted/80 dark:shadow-black/20",
+                    "break-words [overflow-wrap:anywhere]",
+                    className
+                )}
+                data-workstream-id={workstreamId}
+            >
+                {children}
+            </div>
+        </div>
+    );
+}
+
+function SummaryMessage({
+    message,
+    onSendMessage,
+    StoreLinkComponent,
+    CollectionLinkComponent,
+}: SummaryMessageProps) {
+    const content = getMessageText(message);
+    const workstreamId = getWorkstreamId(message);
+    const runId = (message as { workflow_run_id?: string }).workflow_run_id;
+
+    const markdownComponents = useMemo(() => ({
+        a: ({ node: _node, ref: _ref, ...props }: { node?: unknown; ref?: unknown; href?: string; children?: React.ReactNode }) => {
+            const href = props.href || "";
+            if (href.includes("/store/objects") && StoreLinkComponent) {
+                const documentId = href.split("/store/objects/")[1] || "";
+                return <StoreLinkComponent href={href} documentId={documentId}>{props.children}</StoreLinkComponent>;
+            }
+            if (href.includes("/store/collections") && CollectionLinkComponent) {
+                const collectionId = href.split("/store/collections/")[1] || "";
+                return <CollectionLinkComponent href={href} collectionId={collectionId}>{props.children}</CollectionLinkComponent>;
+            }
+            return <a {...props} target="_blank" rel="noopener noreferrer" />;
+        },
+    }), [StoreLinkComponent, CollectionLinkComponent]);
+
+    if (message.type === AgentMessageType.QUESTION) {
+        return <SummaryUserBubble workstreamId={workstreamId}>{content}</SummaryUserBubble>;
+    }
+
+    if (message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux) {
+        const uxConfig = (message.details as AskUserMessageDetails).ux!;
+        return (
+            <div className="mx-auto w-full max-w-3xl px-1">
+                <AskUserWidget
+                    question={content}
+                    options={uxConfig.options}
+                    variant={uxConfig.variant}
+                    multiSelect={uxConfig.multiSelect}
+                    onSelect={(optionId) => onSendMessage?.(optionId)}
+                    onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(", "))}
+                    hideBorder
+                />
+            </div>
+        );
+    }
+
+    const isError = message.type === AgentMessageType.ERROR || message.type === AgentMessageType.WARNING;
+
+    return (
+        <div className="mx-auto w-full max-w-3xl px-1" data-workstream-id={workstreamId}>
+            {isError && (
+                <div className="mb-2 text-xs font-medium text-destructive">
+                    {message.type === AgentMessageType.WARNING ? "Warning" : "Error"}
+                </div>
+            )}
+            {content && (
+                <div
+                    className={cn(
+                        SUMMARY_PROSE_CLASS,
+                        isError && "rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2"
+                    )}
+                    style={{ overflowWrap: 'anywhere' }}
+                >
+                    <MarkdownRenderer
+                        artifactRunId={runId}
+                        onProposalSelect={(optionId) => onSendMessage?.(optionId)}
+                        onProposalSubmit={(text) => onSendMessage?.(text)}
+                        components={markdownComponents}
+                    >
+                        {content}
+                    </MarkdownRenderer>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function isRecordValue(value: unknown): value is Record<string, unknown> {
+    return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function hasInitialRequestValue(value: unknown): boolean {
+    if (value === null || value === undefined) return false;
+    if (typeof value === "string") return value.trim().length > 0;
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === "object") return Object.keys(value as Record<string, unknown>).length > 0;
+    return true;
+}
+
+function isRenderableNode(node: React.ReactNode): boolean {
+    if (node === null || node === undefined || node === false) return false;
+    if (typeof node === "string") return node.trim().length > 0;
+    return true;
+}
+
+function getSchemaProperties(schema: JSONSchema | null | undefined): Record<string, JSONSchema> {
+    if (!schema || !isRecordValue(schema)) return {};
+    const properties = (schema as Record<string, unknown>).properties;
+    if (!isRecordValue(properties)) return {};
+    return properties as Record<string, JSONSchema>;
+}
+
+function getSchemaLabel(schema: JSONSchema | undefined, fallback: string): string {
+    const title = schema && isRecordValue(schema) ? schema.title : undefined;
+    if (typeof title === "string" && title.trim()) return title;
+
+    return fallback
+        .replace(/[_-]+/g, " ")
+        .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function stringifyRequestValue(value: unknown): string {
+    if (typeof value === "string") return value;
+    if (typeof value === "number" || typeof value === "boolean") return String(value);
+    try {
+        return JSON.stringify(value, null, 2);
+    } catch {
+        return String(value);
+    }
+}
+
+function renderRequestValue(value: unknown): React.ReactNode {
+    if (value === null || value === undefined || value === "") {
+        return <span className="text-muted">Not provided</span>;
+    }
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+    if (typeof value === "number") return String(value);
+    if (typeof value === "string") return <span className="whitespace-pre-wrap">{value}</span>;
+    if (Array.isArray(value) && value.every((item) => typeof item !== "object" || item === null)) {
+        return value.map((item) => stringifyRequestValue(item)).join(", ");
+    }
+
+    return (
+        <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-md bg-background/55 px-2 py-1.5 font-mono text-[12px] leading-relaxed text-foreground/80">
+            {stringifyRequestValue(value)}
+        </pre>
+    );
+}
+
+function renderDefaultInitialRequest(
+    data: unknown,
+    schema: JSONSchema | null | undefined,
+    title: string | undefined,
+): React.ReactNode {
+    if (!hasInitialRequestValue(data)) return null;
+    if (!isRecordValue(data)) return renderRequestValue(data);
+
+    const properties = getSchemaProperties(schema);
+    const fieldKeys = [
+        ...Object.keys(properties),
+        ...Object.keys(data).filter((key) => !(key in properties)),
+    ];
+    const fields = fieldKeys
+        .map((key) => ({
+            key,
+            label: getSchemaLabel(properties[key], key),
+            value: data[key],
+        }))
+        .filter((field) => hasInitialRequestValue(field.value));
+
+    if (fields.length === 0) return null;
+
+    return (
+        <div className="space-y-2 text-left">
+            {title ? (
+                <div className="text-xs font-medium uppercase tracking-normal text-muted">{title}</div>
+            ) : null}
+            <dl className="space-y-2">
+                {fields.map((field) => (
+                    <div
+                        key={field.key}
+                        className="grid gap-1 sm:grid-cols-[minmax(7rem,32%)_1fr] sm:gap-3"
+                    >
+                        <dt className="text-xs font-medium text-muted">{field.label}</dt>
+                        <dd className="min-w-0 break-words text-sm text-foreground">
+                            {renderRequestValue(field.value)}
+                        </dd>
+                    </div>
+                ))}
+            </dl>
+        </div>
+    );
+}
+
+interface InitialRequestMessageProps {
+    data?: unknown;
+    schema?: JSONSchema | null;
+    title?: string;
+    template?: AgentInitialRequestTemplate;
+    prependFriendlyMessage?: string;
+    timestamp?: number | string;
+    isSummaryView: boolean;
+    messageItemClassNames?: MessageItemClassNames;
+    messageStyleOverrides?: MessageItemProps['messageStyleOverrides'];
+    StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
+    CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
+}
+
+function InitialRequestMessage({
+    data,
+    schema,
+    title,
+    template,
+    prependFriendlyMessage,
+    timestamp,
+    isSummaryView,
+    messageItemClassNames,
+    messageStyleOverrides,
+    StoreLinkComponent,
+    CollectionLinkComponent,
+}: InitialRequestMessageProps) {
+    const plainText = prependFriendlyMessage?.trim() || (typeof data === "string" ? data.trim() : "");
+    const templateContent = template?.({
+        data: data ?? prependFriendlyMessage,
+        schema,
+        title,
+    });
+
+    if (!isRenderableNode(templateContent) && plainText) {
+        const message = {
+            type: AgentMessageType.QUESTION,
+            message: plainText,
+            timestamp: getTimestampMs(timestamp),
+            workflow_run_id: "",
+            workstream_id: "main",
+        };
+
+        return isSummaryView ? (
+            <SummaryMessage
+                message={message}
+                StoreLinkComponent={StoreLinkComponent}
+                CollectionLinkComponent={CollectionLinkComponent}
+            />
+        ) : (
+            <MessageItem
+                {...messageItemClassNames}
+                messageStyleOverrides={messageStyleOverrides}
+                message={message}
+            />
+        );
+    }
+
+    const content = isRenderableNode(templateContent)
+        ? templateContent
+        : renderDefaultInitialRequest(data, schema, title);
+    if (!isRenderableNode(content)) return null;
+
+    return (
+        <SummaryUserBubble className="py-3">
+            {content}
+        </SummaryUserBubble>
+    );
+}
+
+type SummaryToolDetailKind = "search" | "read" | "edit" | "command" | "think" | "tool";
+
+interface SummaryToolDetailSection {
+    label: string;
+    value: unknown;
+    tone?: "default" | "error";
+}
+
+interface SummaryToolDetailItem {
+    key: string;
+    kind: SummaryToolDetailKind;
+    label: string;
+    title: string;
+    text?: string;
+    status?: ToolExecutionStatus;
+    sections: SummaryToolDetailSection[];
+}
+
+const TOOL_DETAIL_SYSTEM_KEYS = new Set([
+    "account_id",
+    "activity_group_id",
+    "activity_id",
+    "channel_id",
+    "collection_id",
+    "document_id",
+    "display_role",
+    "event_class",
+    "id",
+    "object_id",
+    "project_id",
+    "run_id",
+    "streamed",
+    "tenant_id",
+    "thread_id",
+    "tool",
+    "tool_iteration",
+    "tool_run_id",
+    "tool_status",
+    "tools",
+    "workflow_run_id",
+]);
+
+function getDetailsRecord(message: AgentMessage): Record<string, unknown> {
+    return isRecordValue(message.details) ? message.details : {};
+}
+
+function humanizeIdentifier(value: string): string {
+    return value
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function getFirstStringValue(details: Record<string, unknown>, keys: string[]): string | undefined {
+    for (const key of keys) {
+        const value = details[key];
+        if (typeof value === "string" && value.trim()) return value.trim();
+        if (typeof value === "number" || typeof value === "boolean") return String(value);
+    }
+    return undefined;
+}
+
+function getToolNames(details: Record<string, unknown>): string[] {
+    const names: string[] = [];
+    if (typeof details.tool === "string" && details.tool.trim()) names.push(details.tool.trim());
+    if (Array.isArray(details.tools)) {
+        for (const tool of details.tools) {
+            if (typeof tool === "string" && tool.trim()) {
+                names.push(tool.trim());
+            } else if (isRecordValue(tool)) {
+                const name = typeof tool.name === "string" ? tool.name : tool.tool;
+                if (typeof name === "string" && name.trim()) names.push(name.trim());
+            }
+        }
+    }
+    return names;
+}
+
+function getToolDetailKind(message: AgentMessage): SummaryToolDetailKind {
+    const details = getDetailsRecord(message);
+    const toolNames = getToolNames(details).join(" ").toLowerCase();
+    const text = getMessageText(message).toLowerCase();
+    const haystack = `${toolNames} ${text}`;
+
+    if (details.display_role === "tool_preamble") return "think";
+    if (haystack.includes("search") || haystack.includes("web") || haystack.includes("fetch")) return "search";
+    if (haystack.includes("read") || haystack.includes("document") || haystack.includes("file")) return "read";
+    if (haystack.includes("edit") || haystack.includes("write") || haystack.includes("patch") || haystack.includes("create")) return "edit";
+    if (haystack.includes("bash") || haystack.includes("shell") || haystack.includes("command") || haystack.includes("terminal")) return "command";
+    if (message.type === AgentMessageType.THOUGHT && toolNames.length === 0) return "think";
+    return "tool";
+}
+
+function getToolDetailLabel(kind: SummaryToolDetailKind): string {
+    switch (kind) {
+        case "search":
+            return "Search";
+        case "read":
+            return "Read";
+        case "edit":
+            return "Edit";
+        case "command":
+            return "Bash";
+        case "think":
+            return "Thought";
+        default:
+            return "Tool";
+    }
+}
+
+function getToolTarget(details: Record<string, unknown>): string | undefined {
+    const directTarget = getFirstStringValue(details, [
+        "query",
+        "path",
+        "file",
+        "file_name",
+        "fileName",
+        "filename",
+        "name",
+        "title",
+        "artifact",
+        "artifact_path",
+        "url",
+        "command",
+    ]);
+    if (directTarget) return directTarget;
+
+    const files = details.files ?? details.outputFiles;
+    if (Array.isArray(files) && files.length > 0) {
+        return files.map((file) => stringifyRequestValue(file)).join(", ");
+    }
+
+    return undefined;
+}
+
+function compactInlineText(value: string, maxLength = 160): string {
+    const normalized = value.replace(/\s+/g, " ").trim();
+    return normalized.length > maxLength ? `${normalized.slice(0, maxLength - 1)}...` : normalized;
+}
+
+function formatToolSectionValue(value: unknown): string {
+    const text = stringifyRequestValue(value).trim();
+    return text.length > 2400 ? `${text.slice(0, 2400)}\n...` : text;
+}
+
+function createToolSection(label: string, value: unknown, tone?: SummaryToolDetailSection["tone"]): SummaryToolDetailSection | undefined {
+    if (value === null || value === undefined || value === "") return undefined;
+    if (Array.isArray(value) && value.length === 0) return undefined;
+    if (isRecordValue(value) && Object.keys(value).length === 0) return undefined;
+    return { label, value, tone };
+}
+
+function getRemainingDetailFields(
+    details: Record<string, unknown>,
+    consumedKeys: Set<string>,
+): Record<string, unknown> | undefined {
+    const remaining = Object.entries(details).reduce<Record<string, unknown>>((acc, [key, value]) => {
+        if (TOOL_DETAIL_SYSTEM_KEYS.has(key) || consumedKeys.has(key)) return acc;
+        if (value === null || value === undefined || value === "") return acc;
+        acc[key] = value;
+        return acc;
+    }, {});
+
+    return Object.keys(remaining).length > 0 ? remaining : undefined;
+}
+
+function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[] {
+    const details = getDetailsRecord(message);
+    const consumedKeys = new Set<string>();
+    const sections: SummaryToolDetailSection[] = [];
+
+    const addSection = (label: string, keys: string[], tone?: SummaryToolDetailSection["tone"]) => {
+        for (const key of keys) {
+            const section = createToolSection(label, details[key], tone);
+            if (section) {
+                consumedKeys.add(key);
+                sections.push(section);
+                return;
+            }
+        }
+    };
+
+    addSection("Query", ["query"]);
+    addSection("Input", ["input", "params", "arguments", "args"]);
+    addSection("Output", ["output", "stdout", "result", "results", "content", "result_summary", "observation", "display_message"]);
+    addSection("Files", ["files", "outputFiles"]);
+    addSection("Error", ["error", "stderr"], "error");
+
+    const remainingDetails = getRemainingDetailFields(details, consumedKeys);
+    if (sections.length === 0 && remainingDetails) {
+        sections.push({ label: "Details", value: remainingDetails });
+    }
+
+    return sections;
+}
+
+function buildSummaryToolDetailItem(message: AgentMessage, index: number): SummaryToolDetailItem | undefined {
+    const text = getMessageText(message);
+    const details = getDetailsRecord(message);
+    const kind = getToolDetailKind(message);
+    const toolNames = getToolNames(details);
+    const target = getToolTarget(details);
+    const fallbackTitle = toolNames[0] ? humanizeIdentifier(toolNames[0]) : getReadableToolLabel(message);
+    const title = compactInlineText(target || text || fallbackTitle);
+    const normalizedText = text ? compactInlineText(text, 420) : undefined;
+    const shouldShowText = normalizedText && normalizedText !== title;
+
+    if (!title && !shouldShowText) return undefined;
+
+    return {
+        key: `${message.timestamp}-${details.activity_id || details.tool_run_id || index}`,
+        kind,
+        label: getToolDetailLabel(kind),
+        title,
+        text: shouldShowText ? normalizedText : undefined,
+        status: details.tool_status as ToolExecutionStatus | undefined,
+        sections: getToolDetailSections(message),
+    };
+}
+
+function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
+    const byRunId = new Map<string, { index: number; messages: AgentMessage[] }>();
+    const ungrouped: Array<{ index: number; message: AgentMessage }> = [];
+
+    messages.forEach((message, index) => {
+        const details = getDetailsRecord(message);
+        const runId = typeof details.tool_run_id === "string" ? details.tool_run_id : undefined;
+        if (!runId) {
+            ungrouped.push({ index, message });
+            return;
+        }
+
+        const group = byRunId.get(runId);
+        if (group) {
+            group.messages.push(message);
+        } else {
+            byRunId.set(runId, { index, messages: [message] });
+        }
+    });
+
+    const grouped = Array.from(byRunId.values()).map(({ index, messages: runMessages }) => {
+        const sortedMessages = [...runMessages].sort((a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp));
+        const baseMessage = sortedMessages[sortedMessages.length - 1];
+        const firstTextMessage = sortedMessages.find((message) => getMessageText(message));
+        const mergedDetails = sortedMessages.reduce<Record<string, unknown>>((acc, message) => ({
+            ...acc,
+            ...getDetailsRecord(message),
+        }), {});
+
+        return {
+            index,
+            message: {
+                ...baseMessage,
+                message: firstTextMessage ? firstTextMessage.message : baseMessage.message,
+                details: mergedDetails,
+            },
+        };
+    });
+
+    return [...ungrouped, ...grouped]
+        .sort((a, b) => a.index - b.index)
+        .map(({ message }) => message);
+}
+
+function buildSummaryToolDetailItems(messages: AgentMessage[]): SummaryToolDetailItem[] {
+    const seen = new Set<string>();
+    const items: SummaryToolDetailItem[] = [];
+
+    mergeSummaryToolMessages(messages).forEach((message, index) => {
+        const item = buildSummaryToolDetailItem(message, index);
+        if (!item) return;
+        const signature = `${item.kind}:${item.label}:${item.title}:${item.text ?? ""}`;
+        if (seen.has(signature)) return;
+        seen.add(signature);
+        items.push(item);
+    });
+
+    return items;
+}
+
+function ToolDetailIcon({ kind, status }: { kind: SummaryToolDetailKind; status?: ToolExecutionStatus }) {
+    if (status === "error" || status === "warning") {
+        return <AlertTriangle className="size-3.5" />;
+    }
+
+    switch (kind) {
+        case "search":
+            return <Search className="size-3.5" />;
+        case "read":
+            return <FileText className="size-3.5" />;
+        case "edit":
+            return <Pencil className="size-3.5" />;
+        case "command":
+            return <Terminal className="size-3.5" />;
+        case "think":
+            return <Brain className="size-3.5" />;
+        default:
+            return <Wrench className="size-3.5" />;
+    }
+}
+
+function ToolDetailSection({ section }: { section: SummaryToolDetailSection }) {
+    const value = section.value;
+    const isPrimitive = typeof value === "string" || typeof value === "number" || typeof value === "boolean";
+    const isFileList = section.label === "Files" && Array.isArray(value);
+
+    if (isFileList) {
+        return (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {value.map((file, index) => (
+                    <span
+                        key={`${stringifyRequestValue(file)}-${index}`}
+                        className="rounded-md bg-mixer-muted/15 px-1.5 py-0.5 font-mono text-[11px] text-muted"
+                    >
+                        {compactInlineText(stringifyRequestValue(file), 64)}
+                    </span>
+                ))}
+            </div>
+        );
+    }
+
+    return (
+        <div className="mt-2">
+            <div className={cn("mb-1 text-[11px] font-medium uppercase tracking-normal", section.tone === "error" ? "text-destructive" : "text-muted")}>
+                {section.label}
+            </div>
+            {isPrimitive && !String(value).includes("\n") && String(value).length < 180 ? (
+                <div className={cn("break-words text-xs", section.tone === "error" ? "text-destructive" : "text-foreground/75")}>
+                    {String(value)}
+                </div>
+            ) : (
+                <pre className={cn(
+                    "max-h-52 overflow-auto whitespace-pre-wrap rounded-lg border px-3 py-2 font-mono text-[11px] leading-relaxed",
+                    section.tone === "error"
+                        ? "border-destructive/20 bg-destructive/5 text-destructive"
+                        : "border-border/60 bg-background/55 text-foreground/75"
+                )}>
+                    {formatToolSectionValue(value)}
+                </pre>
+            )}
+        </div>
+    );
+}
+
+function SummaryToolTimeline({ items }: { items: SummaryToolDetailItem[] }) {
+    return (
+        <div className="mt-4 max-h-[30rem] overflow-y-auto rounded-xl border border-border/60 bg-background/45 px-3 py-3">
+            <div className="space-y-1">
+                {items.map((item, index) => {
+                    const isLast = index === items.length - 1;
+                    const isAttention = item.status === "error" || item.status === "warning";
+                    return (
+                        <div key={item.key} className="grid grid-cols-[1.5rem_1fr] gap-3">
+                            <div className="relative flex justify-center">
+                                {!isLast && <div className="absolute top-7 bottom-0 w-px bg-border/70" />}
+                                <div className={cn(
+                                    "relative z-10 flex size-6 items-center justify-center rounded-md border bg-background",
+                                    isAttention ? "border-attention/40 text-attention" : "border-border text-muted"
+                                )}>
+                                    <ToolDetailIcon kind={item.kind} status={item.status} />
+                                </div>
+                            </div>
+                            <div className={cn("min-w-0 pb-4", isLast && "pb-0")}>
+                                <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                                    <span className="text-sm font-semibold text-foreground">{item.label}</span>
+                                    <span className="min-w-0 break-words text-sm text-muted">{item.title}</span>
+                                </div>
+                                {item.text ? (
+                                    <div className="mt-1 break-words text-sm leading-relaxed text-foreground/80">
+                                        {item.text}
+                                    </div>
+                                ) : null}
+                                {item.sections.map((section, sectionIndex) => (
+                                    <ToolDetailSection key={`${section.label}-${sectionIndex}`} section={section} />
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+function SummaryStreamingMessage({
+    text,
+    artifactRunId,
+    workstreamId,
+}: {
+    text: string;
+    artifactRunId?: string;
+    workstreamId?: string;
+}) {
+    return (
+        <div className="mx-auto w-full max-w-3xl px-1" data-workstream-id={workstreamId}>
+            <div
+                className={SUMMARY_PROSE_CLASS}
+                style={{ overflowWrap: 'anywhere' }}
+            >
+                <MarkdownRenderer artifactRunId={artifactRunId}>{text}</MarkdownRenderer>
+            </div>
+        </div>
+    );
+}
+
+function SummaryActivityRow({
+    label,
+    status,
+    timestamp,
+    durationSeconds,
+    showElapsed,
+    details,
+    className,
+}: {
+    label: string;
+    status?: ToolExecutionStatus;
+    timestamp?: number | string;
+    durationSeconds?: number;
+    showElapsed?: boolean;
+    details?: AgentMessage[];
+    className?: string;
+}) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const elapsed = durationSeconds ?? getElapsedSeconds(timestamp);
+    const shouldShowElapsed = showElapsed && timestamp !== undefined;
+    const isAttention = status === "error" || status === "warning";
+    const detailItems = useMemo(() => buildSummaryToolDetailItems(details ?? []), [details]);
+    const canExpand = detailItems.length > 0;
+
+    return (
+        <div className={cn("mx-auto w-full max-w-3xl px-1", className)}>
+            <div className={cn("border-b border-border/70 pb-3 text-sm", isAttention ? "text-attention" : "text-muted")}>
+                <button
+                    type="button"
+                    className={cn(
+                        "inline-flex max-w-full items-center gap-2 text-left outline-none",
+                        "focus-visible:text-foreground focus-visible:underline focus-visible:underline-offset-4",
+                        canExpand ? "cursor-pointer hover:text-foreground" : "cursor-default"
+                    )}
+                    onClick={() => canExpand && setIsExpanded((current) => !current)}
+                    aria-expanded={canExpand ? isExpanded : undefined}
+                    disabled={!canExpand}
+                >
+                    <span className="min-w-0 truncate font-medium">{label}</span>
+                    {shouldShowElapsed ? (
+                        <span className="shrink-0 text-muted/75">for {formatDuration(elapsed)}</span>
+                    ) : null}
+                    {canExpand ? (
+                        isExpanded ? (
+                            <ChevronDown className="size-4 shrink-0 opacity-50" />
+                        ) : (
+                            <ChevronRight className="size-4 shrink-0 opacity-50" />
+                        )
+                    ) : null}
+                </button>
+                {canExpand && isExpanded ? <SummaryToolTimeline items={detailItems} /> : null}
+            </div>
+        </div>
+    );
+}
+
+function TimelineEntry({
+    children,
+    status,
+}: {
+    children: React.ReactNode;
+    status?: ToolExecutionStatus | "message";
+}) {
+    const dotClass = status === "error"
+        ? "bg-destructive"
+        : status === "warning"
+            ? "bg-attention"
+            : status === "completed"
+                ? "bg-success"
+                : "bg-muted";
+
+    return (
+        <div className="relative pl-7">
+            <div className="absolute left-2 top-0 bottom-0 w-px bg-border" />
+            <div className={cn("absolute left-[5px] top-4 size-2.5 rounded-full ring-4 ring-background", dotClass)} />
+            {children}
+        </div>
+    );
+}
 
 // Error boundary to catch and isolate errors in individual message components
 // Note: Markdown parsing errors are handled internally by MarkdownRenderer,
@@ -166,6 +1097,14 @@ interface AllMessagesMixedProps {
     /** Optional message to display as the first user message in the conversation.
      *  Purely visual/UI — not sent to temporal. Renders as a QUESTION MessageItem before real messages. */
     prependFriendlyMessage?: string;
+    /** Optional structured request data to render as the first user entry in Summary/Details. */
+    initialRequestData?: unknown;
+    /** Optional schema used to turn structured request data into a readable first entry. */
+    initialRequestSchema?: JSONSchema | null;
+    /** Optional title for the structured request renderer. */
+    initialRequestTitle?: string;
+    /** Optional caller-provided renderer for agent-specific request shapes. */
+    initialRequestTemplate?: AgentInitialRequestTemplate;
     /** Message types to exclude from the conversation view */
     hiddenMessageTypes?: AgentMessageType[];
 }
@@ -180,7 +1119,6 @@ function AllMessagesMixedComponent({
     isCompleted = false,
     streamingMessages = new Map(),
     onSendMessage,
-    thinkingMessageIndex = 0,
     messageItemClassNames,
     messageStyleOverrides,
     toolCallGroupClassNames,
@@ -194,6 +1132,10 @@ function AllMessagesMixedComponent({
     StoreLinkComponent,
     CollectionLinkComponent,
     prependFriendlyMessage,
+    initialRequestData,
+    initialRequestSchema,
+    initialRequestTitle,
+    initialRequestTemplate,
     hiddenMessageTypes,
 }: AllMessagesMixedProps) {
     if (!artifactRunId) {
@@ -215,6 +1157,7 @@ function AllMessagesMixedComponent({
     const programmaticScrollRef = useRef<boolean>(false);
 
     const isStreaming = streamingMessages.size > 0;
+    const isSummaryView = viewMode === 'sliding';
 
     // Detect user scroll: if they scroll away from the bottom, stop auto-scrolling.
     // Re-enable auto-scroll when they scroll back near the bottom.
@@ -359,11 +1302,13 @@ function AllMessagesMixedComponent({
         return filterMessagesByWorkstream(sortedMessages, activeWorkstream);
     }, [sortedMessages, activeWorkstream]);
 
-    // Pre-compute important messages and recent thinking for sliding view (avoid IIFE in render)
-    const { importantMessages, recentThinking } = React.useMemo(
-        () => getSlidingViewMessageBuckets(displayMessages, isCompleted, streamingMessages.size > 0),
-        [displayMessages, isCompleted, streamingMessages.size],
+    const summaryConversationItems = React.useMemo(
+        () => buildSummaryConversationItems(displayMessages, isCompleted),
+        [displayMessages, isCompleted],
     );
+    const hasInitialRequest = Boolean(prependFriendlyMessage?.trim()) ||
+        hasInitialRequestValue(initialRequestData) ||
+        initialRequestTemplate !== undefined;
 
     // Split streaming messages:
     // - complete (or stale incomplete) ones are interleaved chronologically
@@ -411,22 +1356,26 @@ function AllMessagesMixedComponent({
         [displayMessages, completeStreaming, activeWorkstream]
     );
 
-    // Group important messages with ONLY complete streaming interleaved for sliding view
-    const groupedImportantMessages = React.useMemo(
-        () => attachPreambles(mergeConsecutiveToolGroups(groupMessagesWithStreaming(importantMessages, completeStreaming, activeWorkstream))),
-        [importantMessages, completeStreaming, activeWorkstream]
+    const hasActiveSummaryWork = useMemo(
+        () => summaryConversationItems.some((item) => item.type === "work" && item.isActive),
+        [summaryConversationItems]
     );
 
     // Show working indicator when agent is actively processing
     const isAgentWorking = useMemo(() => {
         if (isCompleted) return false;
-        // Agent is working if there are streaming messages, recent thinking, or no final answer yet
-        return streamingMessages.size > 0 || recentThinking.length > 0 || !displayMessages.some(msg =>
+        // Agent is working if there are streaming messages or no terminal message yet.
+        return streamingMessages.size > 0 || !displayMessages.some(msg =>
             msg.type === AgentMessageType.COMPLETE ||
             msg.type === AgentMessageType.IDLE ||
             msg.type === AgentMessageType.TERMINATED
         );
-    }, [isCompleted, streamingMessages.size, recentThinking.length, displayMessages]);
+    }, [isCompleted, streamingMessages.size, displayMessages]);
+
+    const latestVisibleTimestamp = useMemo(() => {
+        const latestMessage = displayMessages[displayMessages.length - 1];
+        return latestMessage?.timestamp ?? Date.now();
+    }, [displayMessages]);
 
     // Determine completion status for each workstream
     const workstreamCompletionStatus = useMemo(() => {
@@ -551,18 +1500,20 @@ function AllMessagesMixedComponent({
                 }
             `}</style>
 
-            {/* Workstream tabs with completion indicators */}
-            <div className={cn("sticky top-0 z-10", hideWorkstreamTabs && "hidden")}>
-                <WorkstreamTabs
-                    workstreams={workstreams}
-                    activeWorkstream={activeWorkstream}
-                    onSelectWorkstream={setActiveWorkstream}
-                    count={workstreamCounts}
-                    completionStatus={workstreamCompletionStatus}
-                />
-            </div>
+            {/* Workstream tabs are a debug affordance; Summary keeps the conversation surface quiet. */}
+            {viewMode === 'stacked' && (
+                <div className={cn("sticky top-0 z-10", hideWorkstreamTabs && "hidden")}>
+                    <WorkstreamTabs
+                        workstreams={workstreams}
+                        activeWorkstream={activeWorkstream}
+                        onSelectWorkstream={setActiveWorkstream}
+                        count={workstreamCounts}
+                        completionStatus={workstreamCompletionStatus}
+                    />
+                </div>
+            )}
 
-            {displayMessages.length === 0 ? (
+            {displayMessages.length === 0 && !hasInitialRequest ? (
                 <div className="flex items-center justify-center h-full text-center py-8">
                     <div className="flex items-center px-3 py-2 text-sm text-muted">
                         {activeWorkstream === "all"
@@ -571,20 +1522,30 @@ function AllMessagesMixedComponent({
                     </div>
                 </div>
             ) : (
-                <div className={cn("flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full", messageListClassName)}>
+                <div
+                    className={cn(
+                        "flex-1 flex flex-col justify-start w-full max-w-full",
+                        isSummaryView
+                            ? "gap-6 px-2 py-6 sm:px-4"
+                            : "gap-3 pb-4",
+                        messageListClassName
+                    )}
+                >
                     {/* Friendly message — rendered outside the messages array to avoid memo issues/triggering autoscroll */}
-                    {prependFriendlyMessage && (
-                        <MessageItem
-                            key={prependFriendlyMessage}
-                            {...messageItemClassNames}
+                    {hasInitialRequest && (
+                        <InitialRequestMessage
+                            key="initial-request"
+                            data={initialRequestData}
+                            schema={initialRequestSchema}
+                            title={initialRequestTitle}
+                            template={initialRequestTemplate}
+                            prependFriendlyMessage={prependFriendlyMessage}
+                            timestamp={displayMessages[0]?.timestamp ?? Date.now()}
+                            isSummaryView={isSummaryView}
+                            messageItemClassNames={messageItemClassNames}
                             messageStyleOverrides={messageStyleOverrides}
-                            message={{
-                                type: AgentMessageType.QUESTION,
-                                message: prependFriendlyMessage,
-                                timestamp: displayMessages[0]?.timestamp ?? Date.now(),
-                                workflow_run_id: "",
-                                workstream_id: "main",
-                            }}
+                            StoreLinkComponent={StoreLinkComponent}
+                            CollectionLinkComponent={CollectionLinkComponent}
                         />
                     )}
                     {/* Show either all messages or just sliding view depending on viewMode */}
@@ -608,30 +1569,52 @@ function AllMessagesMixedComponent({
 
                                     if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     return (
-                                        <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}>
-                                            <ToolCallGroup
-                                                messages={group.messages}
-                                                showPulsatingCircle={isLatest}
-                                                toolRunId={group.toolRunId}
-                                                toolStatus={group.toolStatus}
-                                                preambleText={group.preambleText}
-                                                preambleMessage={group.preambleMessage}
-                                                {...toolCallGroupClassNames}
-                                            />
-                                        </MessageErrorBoundary>
+                                        <TimelineEntry
+                                            key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}
+                                            status={group.toolStatus}
+                                        >
+                                            <MessageErrorBoundary>
+                                                <ToolCallGroup
+                                                    {...toolCallGroupClassNames}
+                                                    messages={group.messages}
+                                                    showPulsatingCircle={isLatest}
+                                                    toolRunId={group.toolRunId}
+                                                    toolStatus={group.toolStatus}
+                                                    preambleText={group.preambleText}
+                                                    preambleMessage={group.preambleMessage}
+                                                    rootClassName={cn(
+                                                        "rounded-lg border border-border bg-background/60 shadow-none",
+                                                        toolCallGroupClassNames?.rootClassName
+                                                    )}
+                                                    headerClassName={cn(
+                                                        "px-3 py-2",
+                                                        toolCallGroupClassNames?.headerClassName
+                                                    )}
+                                                    itemHeaderClassName={cn(
+                                                        "hover:bg-mixer-muted/20",
+                                                        toolCallGroupClassNames?.itemHeaderClassName
+                                                    )}
+                                                />
+                                            </MessageErrorBoundary>
+                                        </TimelineEntry>
                                     );
                                 } else if (group.type === 'streaming') {
                                     // Render streaming message - no error boundary to avoid interrupting streaming
                                     return (
-                                        <StreamingMessage
-                                            key={`streaming-${group.streamingId}-${groupIndex}`}
-                                            text={group.text}
-                                            workstreamId={group.workstreamId}
-                                            isComplete={group.isComplete}
-                                            timestamp={group.startTimestamp}
-                                            artifactRunId={artifactRunId}
-                                            {...streamingMessageClassNames}
-                                        />
+                                        <TimelineEntry key={`streaming-${group.streamingId}-${groupIndex}`}>
+                                            <StreamingMessage
+                                                {...streamingMessageClassNames}
+                                                text={group.text}
+                                                workstreamId={group.workstreamId}
+                                                isComplete={group.isComplete}
+                                                timestamp={group.startTimestamp}
+                                                artifactRunId={artifactRunId}
+                                                cardClassName={cn(
+                                                    "rounded-lg border border-border bg-background/60 shadow-none",
+                                                    streamingMessageClassNames?.cardClassName
+                                                )}
+                                            />
+                                        </TimelineEntry>
                                     );
                                 } else {
                                     // Render single message
@@ -655,153 +1638,123 @@ function AllMessagesMixedComponent({
                                     }
 
                                     return (
-                                        <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
-                                            <MessageItem
-                                                message={message}
-                                                showPulsatingCircle={isLatestMessage}
-                                                onSendMessage={onSendMessage}
-                                                {...messageItemClassNames}
-                                                messageStyleOverrides={messageStyleOverrides}
-                                                StoreLinkComponent={StoreLinkComponent}
-                                                CollectionLinkComponent={CollectionLinkComponent}
-                                            />
-                                        </MessageErrorBoundary>
+                                        <TimelineEntry key={`${message.timestamp}-${groupIndex}`} status="message">
+                                            <MessageErrorBoundary>
+                                                <MessageItem
+                                                    {...messageItemClassNames}
+                                                    message={message}
+                                                    showPulsatingCircle={isLatestMessage}
+                                                    onSendMessage={onSendMessage}
+                                                    cardClassName={cn(
+                                                        "rounded-lg border border-border bg-background/60 shadow-none",
+                                                        messageItemClassNames?.cardClassName
+                                                    )}
+                                                    headerClassName={cn("px-3 py-2", messageItemClassNames?.headerClassName)}
+                                                    contentClassName={cn("bg-transparent", messageItemClassNames?.contentClassName)}
+                                                    messageStyleOverrides={messageStyleOverrides}
+                                                    StoreLinkComponent={StoreLinkComponent}
+                                                    CollectionLinkComponent={CollectionLinkComponent}
+                                                />
+                                            </MessageErrorBoundary>
+                                        </TimelineEntry>
                                     );
                                 }
                             })}
                             {/* Incomplete streaming - no error boundary to avoid interrupting streaming */}
                             {incompleteStreaming.map(({ id, data }) => (
-                                <StreamingMessage
-                                    key={`streaming-incomplete-${id}`}
-                                    text={data.text}
-                                    workstreamId={data.workstreamId}
-                                    isComplete={data.isComplete}
-                                    timestamp={data.startTimestamp}
-                                    artifactRunId={artifactRunId}
-                                    {...streamingMessageClassNames}
-                                />
+                                <TimelineEntry key={`streaming-incomplete-${id}`}>
+                                    <StreamingMessage
+                                        {...streamingMessageClassNames}
+                                        text={data.text}
+                                        workstreamId={data.workstreamId}
+                                        isComplete={data.isComplete}
+                                        timestamp={data.startTimestamp}
+                                        artifactRunId={artifactRunId}
+                                        cardClassName={cn(
+                                            "rounded-lg border border-border bg-background/60 shadow-none",
+                                            streamingMessageClassNames?.cardClassName
+                                        )}
+                                    />
+                                </TimelineEntry>
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && incompleteStreaming.length === 0 && (
-                                <div className={cn("flex items-center gap-2 pl-3 py-1.5 border-l-2 border-l-purple-500", workingIndicatorClassName)}>
-                                    <PulsatingCircle size="sm" color="blue" />
-                                    <span className="text-xs text-muted">{t('agent.working')}</span>
-                                </div>
+                                <TimelineEntry>
+                                    <div className={cn("flex items-center gap-2 py-2 text-sm text-muted", workingIndicatorClassName)}>
+                                        <PulsatingCircle size="sm" color="blue" />
+                                        <span>{t('agent.working')}</span>
+                                    </div>
+                                </TimelineEntry>
                             )}
                         </>
                     ) : (
-                        // Most Important view - main messages + streaming interleaved
+                        // Summary view - conversation turns with per-turn work disclosure
                         <>
-                            {groupedImportantMessages.map((group, groupIndex) => {
-                                const isLastGroup = groupIndex === groupedImportantMessages.length - 1;
-
-                                if (group.type === 'tool_group') {
-                                    // Render grouped tool calls
-                                    const lastMessage = group.messages[group.messages.length - 1];
-                                    const isTerminalToolStatus =
-                                        group.toolStatus === "completed" ||
-                                        group.toolStatus === "error" ||
-                                        group.toolStatus === "warning";
-                                    const isLatest = !isCompleted &&
-                                        recentThinking.length === 0 &&
-                                        isLastGroup &&
-                                        !DONE_STATES.includes(lastMessage.type) &&
-                                        !isTerminalToolStatus;
-
+                            {summaryConversationItems.map((item, itemIndex) => {
+                                if (item.type === "work") {
                                     if (hideToolCallsInViewMode?.includes(viewMode)) return null;
+
                                     return (
-                                        <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}>
-                                            <ToolCallGroup
-                                                messages={group.messages}
-                                                showPulsatingCircle={isLatest}
-                                                toolRunId={group.toolRunId}
-                                                toolStatus={group.toolStatus}
-                                                preambleText={group.preambleText}
-                                                preambleMessage={group.preambleMessage}
-                                                {...toolCallGroupClassNames}
-                                            />
-                                        </MessageErrorBoundary>
-                                    );
-                                } else if (group.type === 'streaming') {
-                                    // Render streaming message - no error boundary to avoid interrupting streaming
-                                    return (
-                                        <StreamingMessage
-                                            key={`streaming-${group.streamingId}-${groupIndex}`}
-                                            text={group.text}
-                                            workstreamId={group.workstreamId}
-                                            isComplete={group.isComplete}
-                                            timestamp={group.startTimestamp}
-                                            artifactRunId={artifactRunId}
-                                            {...streamingMessageClassNames}
+                                        <SummaryActivityRow
+                                            key={`work-${item.id}-${itemIndex}`}
+                                            label={getSummaryWorkLabel(item.status, item.isActive)}
+                                            status={item.status}
+                                            timestamp={item.startTimestamp}
+                                            durationSeconds={item.isActive
+                                                ? undefined
+                                                : getDurationSeconds(item.startTimestamp, item.endTimestamp)}
+                                            showElapsed
+                                            details={item.messages}
+                                            className={workingIndicatorClassName}
                                         />
                                     );
-                                } else {
-                                    // Render single message
-                                    const message = group.message;
-                                    const isLatestMessage = !isCompleted &&
-                                        recentThinking.length === 0 &&
-                                        isLastGroup &&
-                                        !DONE_STATES.includes(message.type);
+                                }
 
-                                    // Special handling for batch progress messages
-                                    if (isBatchProgressMessage(message)) {
-                                        return (
-                                            <MessageErrorBoundary key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}>
-                                                <BatchProgressPanel
-                                                    message={message}
-                                                    batchData={message.details}
-                                                    isRunning={!message.details.completed_at}
-                                                    {...batchProgressPanelClassNames}
-                                                />
-                                            </MessageErrorBoundary>
-                                        );
-                                    }
-
+                                const message = item.message;
+                                if (isBatchProgressMessage(message)) {
                                     return (
-                                        <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
-                                            <MessageItem
+                                        <MessageErrorBoundary key={`batch-${message.details.batch_id}-${message.timestamp}-${itemIndex}`}>
+                                            <BatchProgressPanel
                                                 message={message}
-                                                showPulsatingCircle={isLatestMessage}
-                                                onSendMessage={onSendMessage}
-                                                {...messageItemClassNames}
-                                                messageStyleOverrides={messageStyleOverrides}
-                                                StoreLinkComponent={StoreLinkComponent}
-                                                CollectionLinkComponent={CollectionLinkComponent}
+                                                batchData={message.details}
+                                                isRunning={!message.details.completed_at}
+                                                {...batchProgressPanelClassNames}
                                             />
                                         </MessageErrorBoundary>
                                     );
                                 }
+
+                                return (
+                                    <MessageErrorBoundary key={`${message.timestamp}-${itemIndex}`}>
+                                        <SummaryMessage
+                                            message={message}
+                                            onSendMessage={onSendMessage}
+                                            StoreLinkComponent={StoreLinkComponent}
+                                            CollectionLinkComponent={CollectionLinkComponent}
+                                        />
+                                    </MessageErrorBoundary>
+                                );
                             })}
-                            {/* Recent thinking messages - displayed with streaming reveal */}
-                            {recentThinking.map((thinking, idx) => (
-                                <StreamingMessage
-                                    key={`thinking-${thinking.timestamp}-${idx}`}
-                                    text={processThinkingPlaceholder(thinking.message || '', thinkingMessageIndex)}
-                                    workstreamId={getWorkstreamId(thinking)}
-                                    isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"
-                                    timestamp={thinking.timestamp}
-                                    artifactRunId={artifactRunId}
-                                    {...streamingMessageClassNames}
-                                />
-                            ))}
                             {/* Incomplete streaming - no error boundary to avoid interrupting streaming */}
                             {incompleteStreaming.map(({ id, data }) => (
-                                <StreamingMessage
+                                <SummaryStreamingMessage
                                     key={`streaming-incomplete-${id}`}
                                     text={data.text}
                                     workstreamId={data.workstreamId}
-                                    isComplete={data.isComplete}
-                                    timestamp={data.startTimestamp}
                                     artifactRunId={artifactRunId}
-                                    {...streamingMessageClassNames}
                                 />
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
-                            {isAgentWorking && recentThinking.length === 0 && incompleteStreaming.length === 0 && (
-                                <div className={cn("flex items-center gap-2 pl-3 py-1.5 border-l-2 border-l-purple-500", workingIndicatorClassName)}>
-                                    <PulsatingCircle size="sm" color="blue" />
-                                    <span className="text-xs text-muted">{t('agent.working')}</span>
-                                </div>
+                            {isAgentWorking &&
+                                !hasActiveSummaryWork &&
+                                incompleteStreaming.length === 0 && (
+                                <SummaryActivityRow
+                                    label="Working"
+                                    status="running"
+                                    timestamp={latestVisibleTimestamp}
+                                    showElapsed
+                                    className={workingIndicatorClassName}
+                                />
                             )}
                         </>
                     )}

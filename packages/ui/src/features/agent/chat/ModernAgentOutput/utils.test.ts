@@ -97,7 +97,7 @@ describe("ModernAgentOutput utils - sliding view thinking", () => {
         expect(result.recentThinking).toEqual([]);
     });
 
-    it("keeps the newest thinking when nothing more important has happened yet", () => {
+    it("keeps recent thinking when nothing more important has happened yet", () => {
         const question = makeMessage({
             timestamp: 1000,
             message: "Start the benchmark.",
@@ -113,6 +113,147 @@ describe("ModernAgentOutput utils - sliding view thinking", () => {
 
         expect(result.importantMessages).toEqual([question]);
         expect(result.recentThinking).toEqual([thinking]);
+    });
+
+    it("keeps the current thinking trace instead of only the latest item", () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            message: "Start the benchmark.",
+            type: AgentMessageType.QUESTION,
+        });
+        const firstThinking = makeMessage({
+            timestamp: 2000,
+            message: "Planning the work.",
+            type: AgentMessageType.THOUGHT,
+        });
+        const secondThinking = makeMessage({
+            timestamp: 3000,
+            message: "Launching the workstreams now.",
+            type: AgentMessageType.UPDATE,
+        });
+
+        const result = getSlidingViewMessageBuckets([question, firstThinking, secondThinking], false, false);
+
+        expect(result.importantMessages).toEqual([question]);
+        expect(result.recentThinking).toEqual([firstThinking, secondThinking]);
+    });
+
+    it("hides completed tool activity from the summary bucket", () => {
+        const user = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: "Find headlines",
+        });
+        const completedTool = makeMessage({
+            timestamp: 1500,
+            type: AgentMessageType.THOUGHT,
+            message: "Searched the web",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "completed",
+            },
+        });
+        const answer = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.ANSWER,
+            message: "Here are the headlines.",
+        });
+
+        const result = getSlidingViewMessageBuckets([user, completedTool, answer], true, false);
+
+        expect(result.importantMessages).toEqual([user, answer]);
+    });
+
+    it("keeps running, warning, and error tool activity visible in summary", () => {
+        const runningTool = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching the web",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "running",
+            },
+        });
+        const warningTool = makeMessage({
+            timestamp: 1100,
+            type: AgentMessageType.THOUGHT,
+            message: "Search returned partial results",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "warning",
+            },
+        });
+        const errorTool = makeMessage({
+            timestamp: 1200,
+            type: AgentMessageType.THOUGHT,
+            message: "Search failed",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "error",
+            },
+        });
+
+        const result = getSlidingViewMessageBuckets([runningTool, warningTool, errorTool], false, false);
+
+        expect(result.importantMessages).toEqual([runningTool, warningTool, errorTool]);
+    });
+
+    it("hides stale running tool activity once a newer assistant answer exists", () => {
+        const user = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: "Find Japan news headlines",
+        });
+        const runningTool = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching the web",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "running",
+            },
+        });
+        const answer = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.ANSWER,
+            message: "Here are the headlines.",
+        });
+
+        const result = getSlidingViewMessageBuckets([user, runningTool, answer], false, false);
+
+        expect(result.importantMessages).toEqual([user, answer]);
+    });
+
+    it("keeps user, assistant, warnings, errors, and input requests in summary", () => {
+        const user = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: "Start",
+        });
+        const answer = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.ANSWER,
+            message: "Done",
+        });
+        const warning = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.WARNING,
+            message: "Partial result",
+        });
+        const error = makeMessage({
+            timestamp: 4000,
+            type: AgentMessageType.ERROR,
+            message: "Failed",
+        });
+        const requestInput = makeMessage({
+            timestamp: 5000,
+            type: AgentMessageType.REQUEST_INPUT,
+            message: "Choose one",
+        });
+
+        const result = getSlidingViewMessageBuckets([user, answer, warning, error, requestInput], false, false);
+
+        expect(result.importantMessages).toEqual([user, answer, warning, error, requestInput]);
     });
 });
 

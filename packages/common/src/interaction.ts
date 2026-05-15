@@ -682,6 +682,13 @@ export interface AgentRunnerOptions {
      * within this collection'.
      */
     collection_id?: string;
+
+    /**
+     * Optional user-facing template for rendering run input as the first conversation entry.
+     * Supports {{field_name}}, {{nested.field}}, {{items.0.name}}, and {{json}} placeholders
+     * resolved from the run data.
+     */
+    request_template?: string;
 }
 
 // ================= User Communication Channels ====================

@@ -58,20 +58,18 @@ function getTimestampMs(timestamp: number | string): number {
 export function getWorkstreamId(message: AgentMessage): string {
     // Only use the direct workstream_id property on the message
     if (message.workstream_id) {
-        // For debugging COMPLETE messages
-        if (message.type === AgentMessageType.COMPLETE) {
-            console.log("[getWorkstreamId] COMPLETE message with workstream_id:", message.workstream_id);
-        }
         return message.workstream_id;
-    }
-
-    // For debugging COMPLETE messages without workstream_id
-    if (message.type === AgentMessageType.COMPLETE) {
-        console.log("[getWorkstreamId] COMPLETE message without workstream_id, defaulting to 'main'");
     }
 
     // Default to 'main' workstream
     return "main";
+}
+
+export function isSummaryVisibleToolActivity(message: AgentMessage): boolean {
+    if (!isToolActivityMessage(message)) return false;
+
+    const status = getToolStatus(message);
+    return status === "running" || status === "error" || status === "warning";
 }
 
 /**
@@ -83,22 +81,43 @@ export function getSlidingViewMessageBuckets(
     isCompleted: boolean,
     hasStreaming: boolean,
 ): { importantMessages: AgentMessage[]; recentThinking: AgentMessage[] } {
+    const isPrimarySummaryMessage = (msg: AgentMessage): boolean =>
+        msg.type === AgentMessageType.ANSWER ||
+        msg.type === AgentMessageType.QUESTION ||
+        msg.type === AgentMessageType.REQUEST_INPUT ||
+        msg.type === AgentMessageType.TERMINATED ||
+        msg.type === AgentMessageType.ERROR ||
+        msg.type === AgentMessageType.WARNING ||
+        (msg.type === AgentMessageType.THOUGHT && msg.details?.streamed);
+
     const latestUserQuestionTimestamp = messages.reduce((max, msg) => {
         if (msg.type !== AgentMessageType.QUESTION) return max;
         return Math.max(max, getTimestampMs(msg.timestamp));
     }, -Infinity);
 
-    const importantMessages = messages.filter((msg) =>
-        msg.type === AgentMessageType.ANSWER ||
-        msg.type === AgentMessageType.QUESTION ||
-        msg.type === AgentMessageType.COMPLETE ||
-        msg.type === AgentMessageType.IDLE ||
-        msg.type === AgentMessageType.REQUEST_INPUT ||
-        msg.type === AgentMessageType.TERMINATED ||
-        msg.type === AgentMessageType.ERROR ||
-        (msg.type === AgentMessageType.THOUGHT &&
-            (msg.details?.tool || msg.details?.tools || msg.details?.streamed || msg.details?.display_role === "tool_preamble"))
-    );
+    const latestPrimarySummaryTimestamp = messages.reduce((max, msg) => {
+        if (!isPrimarySummaryMessage(msg)) return max;
+        return Math.max(max, getTimestampMs(msg.timestamp));
+    }, -Infinity);
+
+    const latestPrimarySummaryIndex = messages.reduce((latestIndex, msg, index) => {
+        if (!isPrimarySummaryMessage(msg)) return latestIndex;
+        return index;
+    }, -1);
+
+    const importantMessages = messages.filter((msg, index) => {
+        if (isPrimarySummaryMessage(msg)) return true;
+        if (!isSummaryVisibleToolActivity(msg)) return false;
+
+        const status = getToolStatus(msg);
+        if (status === "error" || status === "warning") return true;
+
+        const timestamp = getTimestampMs(msg.timestamp);
+        return (
+            (latestPrimarySummaryIndex < 0 || index > latestPrimarySummaryIndex) &&
+            (!Number.isFinite(latestPrimarySummaryTimestamp) || timestamp >= latestPrimarySummaryTimestamp)
+        );
+    });
 
     const latestImportantTimestamp = importantMessages.reduce((max, msg) => {
         return Math.max(max, getTimestampMs(msg.timestamp));
@@ -127,7 +146,6 @@ export function getSlidingViewMessageBuckets(
 
                 return true;
             })
-            .slice(-1)
         : [];
 
     return { importantMessages, recentThinking };
@@ -154,9 +172,6 @@ export function getWorkstreamStatusMap(messages: AgentMessage[]): Map<string, "p
         wsMessages?.push(message);
     });
 
-    // Log all workstreams found
-    console.log("[getWorkstreamStatusMap] Found workstreams:", Array.from(workstreamMessages.keys()));
-
     // Determine status based on last message type
     for (const [workstreamId, msgs] of workstreamMessages.entries()) {
         if (msgs.length > 0) {
@@ -174,17 +189,12 @@ export function getWorkstreamStatusMap(messages: AgentMessage[]): Map<string, "p
 
             if (hasCompleteMessage ||
                 DONE_STATES.includes(lastMessage.type)) {
-                console.log(`[getWorkstreamStatusMap] Marking workstream ${workstreamId} as completed`);
                 statusMap.set(workstreamId, "completed");
             } else {
-                console.log(`[getWorkstreamStatusMap] Workstream ${workstreamId} is in_progress`);
+                statusMap.set(workstreamId, "in_progress");
             }
         }
     }
-
-    // Log final status map for debugging
-    console.log("[getWorkstreamStatusMap] Final status map:",
-        Array.from(statusMap.entries()).map(([id, status]) => `${id}: ${status}`).join(', '));
 
     return statusMap;
 }

@@ -1,5 +1,5 @@
 import { Button, Spinner, Modal, ModalBody, ModalTitle, VTooltip, cn, Textarea } from "@vertesia/ui/core";
-import { Activity, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
+import { Activity, ArrowUpIcon, FileTextIcon, HelpCircleIcon, PaperclipIcon, SquareIcon, UploadIcon, XIcon } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ConversationFile, FileProcessingStatus } from "@vertesia/common";
 import { SelectDocument } from "../../../store";
@@ -102,6 +102,7 @@ export default function MessageInput({
     hideFileUpload = false,
     // Styling props
     className,
+    inputClassName,
 }: MessageInputProps) {
     const { t } = useUITranslation();
     const resolvedPlaceholder = placeholder ?? t('agent.typeYourMessage');
@@ -300,8 +301,11 @@ export default function MessageInput({
 
     return (
         <div
-            className={cn("p-3 border-t border-muted flex-shrink-0 transition-all fixed lg:sticky bottom-0 left-0 right-0 lg:left-auto lg:right-auto w-full bg-background z-10", isDragOver && "bg-blue-50 dark:bg-blue-900/20 border-blue-400", className)}
-            style={{ minHeight: "120px" }}
+            className={cn(
+                "px-3 py-4 border-t border-border/60 flex-shrink-0 transition-all fixed lg:sticky bottom-0 left-0 right-0 lg:left-auto lg:right-auto w-full bg-background/95 backdrop-blur z-10",
+                isDragOver && "bg-info/10 border-info",
+                className
+            )}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -433,14 +437,14 @@ export default function MessageInput({
 
             {/* Action buttons row */}
             {(onFilesSelected || renderDocumentSearch) && (
-                <div className="flex gap-2 mb-2">
+                <div className="mx-auto flex max-w-3xl gap-2 mb-2">
                     {onFilesSelected && (
                         <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={openFileDialog}
                             disabled={disabled || uploadedFiles.length >= maxFiles}
-                            className="text-xs"
+                            className="text-xs text-muted"
                         >
                             <UploadIcon className="size-3.5 mr-1.5" />
                             {t('agent.upload')}
@@ -448,11 +452,11 @@ export default function MessageInput({
                     )}
                     {renderDocumentSearch && (
                         <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => setIsDocSearchOpen(true)}
                             disabled={disabled}
-                            className="text-xs"
+                            className="text-xs text-muted"
                         >
                             <FileTextIcon className="size-3.5 mr-1.5" />
                             {t('agent.searchDocuments')}
@@ -467,8 +471,8 @@ export default function MessageInput({
             )}
 
             {/* Input row */}
-            <div className="flex items-end space-x-2">
-                <div className="flex flex-1 items-end space-x-1">
+            <div className="mx-auto flex max-w-3xl flex-col gap-3 rounded-2xl border border-border/70 bg-mixer-muted/15 p-3 shadow-lg shadow-black/5">
+                <div className="flex min-w-0 flex-1">
                     <Textarea
                         ref={ref}
                         value={value}
@@ -479,44 +483,65 @@ export default function MessageInput({
                         placeholder={isStreaming ? t('agent.agentWorking') : (onFilesSelected ? t('agent.askAnything') : resolvedPlaceholder)}
                         rows={2}
                         style={{ minHeight: '60px', maxHeight: '200px' }}
+                        className={cn(
+                            "min-h-[72px] resize-none border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0",
+                            inputClassName
+                        )}
                     />
-                    {!hideObjectLinking && (
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                        {!hideObjectLinking && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="rounded-full text-muted"
+                                disabled={!isCompleted}
+                                onClick={() => setIsObjectModalOpen(true)}
+                                alt={t('agent.linkObject')}
+                            >
+                                <PaperclipIcon className="size-4" />
+                            </Button>
+                        )}
+                    </div>
+                    {/* Show Stop button only when streaming AND no text entered */}
+                    {/* When user types something, show Send button to allow sending a message */}
+                    {isStreaming && onStop && !value.trim() ? (
                         <Button
+                            onClick={handleStop}
+                            disabled={isStopping}
                             variant="ghost"
-                            className="rounded-full"
-                            disabled={!isCompleted}
-                            onClick={() => setIsObjectModalOpen(true)}
-                            alt={t('agent.linkObject')}
+                            size="icon"
+                            className={cn(
+                                "size-9 rounded-full border border-border/60 bg-foreground text-background shadow-sm",
+                                "hover:bg-foreground/90 hover:text-background",
+                                "disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100",
+                                "[&_svg]:text-destructive disabled:[&_svg]:text-muted"
+                            )}
+                            title={t('agent.stopAgent')}
                         >
-                            <PaperclipIcon className="size-4" />
+                            {isStopping ? <Spinner size="sm" /> : <SquareIcon className="size-3 fill-current stroke-current" />}
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={handleSend}
+                            disabled={disabled || isSending || !value.trim() || hasProcessingFiles}
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                                "size-9 rounded-full border border-border/60 bg-foreground text-background shadow-sm",
+                                "hover:bg-foreground/90 hover:text-background",
+                                "disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100"
+                            )}
+                            title={hasProcessingFiles ? t('agent.waitForFiles') : undefined}
+                        >
+                            {isSending ? <Spinner size="sm" /> : <ArrowUpIcon className="size-4" />}
                         </Button>
                     )}
                 </div>
-                {/* Show Stop button only when streaming AND no text entered */}
-                {/* When user types something, show Send button to allow sending a message */}
-                {isStreaming && onStop && !value.trim() ? (
-                    <Button
-                        onClick={handleStop}
-                        disabled={isStopping}
-                        className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white"
-                        title={t('agent.stopAgent')}
-                    >
-                        {isStopping ? <Spinner size="sm" className="mr-2" /> : <StopCircleIcon className="size-4 mr-2" />} <span>{t('agent.stop')}</span>
-                    </Button>
-                ) : (
-                    <Button
-                        onClick={handleSend}
-                        disabled={disabled || isSending || !value.trim() || hasProcessingFiles}
-                        className="px-4 py-2.5"
-                        title={hasProcessingFiles ? t('agent.waitForFiles') : undefined}
-                    >
-                        {isSending ? <Spinner size="sm" className="mr-2" /> : <SendIcon className="size-4 mr-2" />}
-                        <span>{hasProcessingFiles ? t('agent.processing') : t('agent.send')}</span>
-                    </Button>
-                )}
             </div>
 
-            <div className="text-xs text-muted mt-2 text-center">
+            <div className="mx-auto max-w-3xl text-xs text-muted mt-2 text-center">
                 {activeTaskCount > 0 ? (
                     <div className="flex items-center justify-center">
                         <Activity className="h-3 w-3 mr-1 text-attention" />
