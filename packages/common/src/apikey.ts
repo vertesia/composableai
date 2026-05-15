@@ -1,4 +1,5 @@
 import { PropertyConditions } from "./access-control.js";
+import type { Denials } from "./denials.js";
 import { UserGroupRef } from "./group.js";
 import { ProjectRef, ProjectRoles } from "./project.js";
 import { AccountRef } from "./user.js";
@@ -12,24 +13,6 @@ export interface ContentSecurity {
     read?: PropertyConditions[];
     write?: PropertyConditions[];
     delete?: PropertyConditions[];
-}
-
-/**
- * Pattern-based access denials carried in the JWT.
- *
- * Each top-level key is a contribution `kind` (`ui`, `tool`, ...). The value is an
- * array of glob patterns (with `*` wildcard) hiding contributions of that kind from
- * the principal. Enforcers (UI shell, agent tool/skill discovery) match against the
- * slice for their kind.
- *
- * Future kinds may be added as new optional keys without breaking existing consumers
- * — unknown keys are ignored by their enforcer.
- */
-export interface Denials {
-    /** Patterns hiding UI plugins / routes. Enforced by the UI shell. */
-    ui?: string[];
-    /** Patterns hiding agent tools and skill loaders (`learn_*`). Enforced during tool discovery. */
-    tool?: string[];
 }
 
 export enum ApiKeyTypes {
