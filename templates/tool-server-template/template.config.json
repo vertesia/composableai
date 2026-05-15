@@ -24,6 +24,9 @@
   "files": [
     "src/config.ts"
   ],
+  "renameFiles": {
+    "pnpm-workspace.yaml.template": "pnpm-workspace.yaml"
+  },
   "removeAfterInstall": [
     "template.config.json"
   ]

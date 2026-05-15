@@ -51,6 +51,7 @@
     ".env.local.template"
   ],
   "renameFiles": {
+    "pnpm-workspace.yaml.template": "pnpm-workspace.yaml",
     ".env.local.template": ".env.local"
   },
   "removeAfterInstall": [
