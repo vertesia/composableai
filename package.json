@@ -12,7 +12,7 @@
     "test": "pnpm -r test",
     "clean": "rimraf ./node_modules && pnpm -r clean",
     "prepublishOnly": "pnpm build",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r --filter='!@llumiverse/*' lint"
   },
   "devDependencies": {
     "eslint": "^10.0.2",
