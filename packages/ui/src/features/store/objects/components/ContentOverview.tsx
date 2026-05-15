@@ -596,7 +596,7 @@ function TextActions({
     // Get content processor type for file extension detection
     const contentProcessorType = getContentProcessorType(object);
 
-    const handleExportDocument = async (format: MarkdownRenditionFormat) => {
+    const handleExportDocument = async (format: MarkdownRenditionFormat, useDefaultTemplate?: boolean) => {
         // Prevent multiple concurrent exports
         if (isDownloading) return;
 
@@ -611,11 +611,13 @@ function TextActions({
         await renderDocument(object.id, {
             format,
             title: object.name || "document",
+            useDefaultTemplate,
         });
     };
 
     const handleExportDocx = () => handleExportDocument(MarkdownRenditionFormat.docx);
-    const handleExportPdf = () => handleExportDocument(MarkdownRenditionFormat.pdf);
+    const handleExportPdf = () => handleExportDocument(MarkdownRenditionFormat.pdf, false);
+    const handleExportBrandedPdf = () => handleExportDocument(MarkdownRenditionFormat.pdf);
 
     const handleDownloadText = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -694,6 +696,12 @@ function TextActions({
                                     <div className="flex items-center gap-2">
                                         {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
                                         Export as PDF
+                                    </div>
+                                </MenuItem>
+                                <MenuItem onClick={handleExportBrandedPdf} isDisabled={isDownloading}>
+                                    <div className="flex items-center gap-2">
+                                        {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
+                                        Export as Branded PDF
                                     </div>
                                 </MenuItem>
                             </>
