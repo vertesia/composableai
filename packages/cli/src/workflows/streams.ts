@@ -21,7 +21,6 @@ const typeIcons: Partial<Record<AgentMessageType, string>> = {
 };
 
 // Enhanced color palette with gradients (using integer enum keys)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const typeColors: Partial<Record<AgentMessageType, any>> = {
     [AgentMessageType.SYSTEM]: gradient.atlas,
     [AgentMessageType.THOUGHT]: gradient.mind,

@@ -9,6 +9,7 @@ export * from './channels.js';
 export * from './common.js';
 export * from './data-platform.js';
 export * from './denials.js';
+export * from './embeddings.js';
 export * from './environment.js';
 export * from "./facets.js";
 export * from './group.js';

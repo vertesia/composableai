@@ -22,6 +22,7 @@ export interface OAuthClientData {
     response_types: OAuthResponseType[];
     token_endpoint_auth_method: OAuthTokenEndpointAuthMethod;
     allowed_scopes: string[];
+    default_scopes?: string[];
     registration_source: OAuthRegistrationSource;
     status: OAuthClientStatus;
     project_binding_mode: OAuthProjectBindingMode;
@@ -98,6 +99,7 @@ export interface CreateOAuthClientPayload {
     response_types?: OAuthResponseType[];
     token_endpoint_auth_method?: OAuthTokenEndpointAuthMethod;
     allowed_scopes?: string[];
+    default_scopes?: string[];
     project_binding_mode?: OAuthProjectBindingMode;
     fixed_project_id?: string;
     client_secret?: string;
@@ -111,6 +113,7 @@ export interface UpdateOAuthClientPayload {
     response_types?: OAuthResponseType[];
     token_endpoint_auth_method?: OAuthTokenEndpointAuthMethod;
     allowed_scopes?: string[];
+    default_scopes?: string[];
     status?: OAuthClientStatus;
     project_binding_mode?: OAuthProjectBindingMode;
     fixed_project_id?: string;

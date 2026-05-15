@@ -36,7 +36,6 @@ export interface RemoteActivityInfo {
  */
 export type RemoteActivityMap = Record<string, RemoteActivityInfo>;
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface ResolveRemoteActivitiesParams {}
 
 /**

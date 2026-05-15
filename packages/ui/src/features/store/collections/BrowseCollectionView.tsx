@@ -36,10 +36,14 @@ export function BrowseCollectionView({ collection }: BrowseCollectionViewProps) 
         }
     }
     const tableLayout = getTableLayout(collection, typeRegistry);
-    return collection.dynamic ? (
-        <DocumentSearchResults layout={tableLayout} />
-    ) : (
-        <DocumentSearchResultsWithDropZone onUploadDone={onUploadDone} layout={tableLayout} />
+    return (
+        <div className="flex flex-col h-full">
+            {collection.dynamic ? (
+                <DocumentSearchResults layout={tableLayout} />
+            ) : (
+                <DocumentSearchResultsWithDropZone onUploadDone={onUploadDone} layout={tableLayout} />
+            )}
+        </div>
     )
 }
 

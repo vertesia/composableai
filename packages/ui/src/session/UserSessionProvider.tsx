@@ -11,8 +11,9 @@ const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
 
 interface UserSessionProviderProps {
     children: ReactNode | ReactNode[];
+    loadOnboardingStatus?: boolean;
 }
-export function UserSessionProvider({ children }: UserSessionProviderProps) {
+export function UserSessionProvider({ children, loadOnboardingStatus = true }: UserSessionProviderProps) {
     const hashParams = new URLSearchParams(location.hash.substring(1));
     const token = hashParams.get("token");
     const state = hashParams.get("state");
@@ -73,7 +74,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
             }
             getComposableToken(selectedAccount, selectedProject, token, false, shouldRedirectToCentralAuth())
                 .then((res) => {
-                    session.login(res.rawToken).then(() => {
+                    session.login(res.rawToken, { loadOnboardingStatus }).then(() => {
                         setSession(session.clone());
                         //cleanup the hash
                         window.location.hash = "";
@@ -163,7 +164,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
                 session.setSession = setSession;
                 await getComposableToken(selectedAccount, selectedProject, undefined, false, shouldRedirectToCentralAuth())
                     .then((res) => {
-                        session.login(res.rawToken).then(() => setSession(session.clone()));
+                        session.login(res.rawToken, { loadOnboardingStatus }).then(() => setSession(session.clone()));
                     })
                     .catch((err) => {
                         console.error("Failed to fetch user token from studio", err);

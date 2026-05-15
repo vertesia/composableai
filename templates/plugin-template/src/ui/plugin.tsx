@@ -1,7 +1,7 @@
 import { PortalContainerProvider } from "@vertesia/ui/core";
 import "./i18n"; // register plugin-specific translations
-import { App } from "./app";
-import { PluginLayout } from "./PluginLayout";
+import { App } from "./app/App";
+import { PluginLayout } from "./app/layouts/PluginLayout";
 
 /**
  * Export the plugin component.

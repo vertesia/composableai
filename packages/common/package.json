@@ -10,6 +10,7 @@
     "tsconfig.dist.json"
   ],
   "scripts": {
+    "lint": "biome lint src",
     "test": "vitest run",
     "build": "pnpm exec tsmod build && pnpm exec rollup -c",
     "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"

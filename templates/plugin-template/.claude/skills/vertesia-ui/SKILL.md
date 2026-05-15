@@ -1,6 +1,6 @@
 ---
 name: vertesia-ui
-description: Reference for building UIs with @vertesia/ui. Covers component API (Input, Button, Card, Modal, Tabs, Table), table views with infinite scroll and filters, layout (Sidebar, FullHeightLayout), routing (NestedRouterProvider, useParams, useNavigate), agent conversation (ModernAgentConversation), and styling. Use when creating or modifying React UI pages or components.
+description: Reference for building UIs with @vertesia/ui. Covers component API (Input, Button, VModal, VTabs, Table), list/detail tables with infinite scroll, sortable headers, FilterProvider with URL persistence and inline row filters, layout (Sidebar, FullHeightLayout, GenericPageNavHeader), routing (NestedRouterProvider, useParams, useNavigate), agent conversation (ModernAgentConversation), styling, and security. Use when creating or modifying React UI pages or components.
 ---
 
 # Vertesia UI Development
@@ -8,6 +8,36 @@ description: Reference for building UIs with @vertesia/ui. Covers component API 
 React UI built with React 19, Tailwind CSS 4, and `@vertesia/ui` components.
 
 For the full component API reference, see also `composableai/packages/ui/llms.txt` (shipped with the npm package).
+
+For a reusable list/detail table example with backend search, sort, facets, inline filters, and back-navigation preservation, see `references/generic-table-pattern.md`.
+
+## Required First Step: Component Inventory
+
+Before writing or refactoring UI code, explicitly check whether `@vertesia/ui` already provides the surface you need.
+
+At minimum, search for an existing component in these buckets:
+
+- `@vertesia/ui/core`
+- `@vertesia/ui/layout`
+- `@vertesia/ui/features`
+
+If a suitable component exists, use it. Do not reimplement it with raw HTML just because the local version is faster to type.
+
+This is especially strict for:
+
+- tables
+- page headers
+- filters
+- modals
+- tabs
+- badges
+- buttons
+- selects
+- text inputs
+- side panels
+- empty/loading/error states
+
+If you still introduce a custom wrapper, state which existing `@vertesia/ui` component you checked and why it was insufficient.
 
 ## Import Paths
 
@@ -43,9 +73,13 @@ import { VertesiaShell, StandaloneApp } from '@vertesia/ui/shell';
 <Button onClick={handleClick}>Click Me</Button>
 <Button variant="outline" size="sm">Secondary</Button>
 <Button variant="destructive">Delete</Button>
-// Variants: default, destructive, outline, secondary, ghost, link
-// Sizes: default, sm, lg, icon
+// Variants: primary (default), destructive, outline, secondary, ghost, link, unstyled
+// Sizes: xs, sm, md (default), lg, xl, icon
 ```
+
+**Tooltip + accessible name are built in:** pass `alt="..."` (or `title="..."`) and `Button` auto-wraps with `VTooltip`. Don't wrap a `Button` in manual `VTooltip` (nested-button DOM) or add a separate `aria-label`. Manual `VTooltip` is only for non-Button triggers (span, icon, Badge) or non-default placement/size.
+
+Use `isDisabled={...}` (documented prop). `size="icon"` is `rounded-full` — for a *square* icon button use `size="sm"`/`"xs"`. Example: `<Button variant="ghost" size="sm" alt="Refresh" onClick={refetch}><RefreshCw /></Button>`.
 
 ### VModal
 
@@ -98,6 +132,8 @@ import { Table, TBody, THead, Th, Tr, Td } from '@vertesia/ui/core';
 ```
 
 `TBody` renders loading skeletons when `isLoading=true`. **Only use `isLoading` for initial empty-state load**, not for "load more" — show a separate `<Spinner />` below the table for appending.
+
+Use this instead of custom `<table>` wrappers unless there is a documented gap.
 
 ### Infinite Scroll (Lazy Loading)
 
@@ -213,6 +249,60 @@ const path = useLocation().pathname;   // Current path
 <NavLink href="/items">Go to Items</NavLink>
 ```
 
+### List / Detail Preservation
+
+If a list page links to a detail page and users are expected to go back, do not keep the list state inside the list page component.
+
+Preserve these concerns above the route boundary when they matter:
+
+- active filters
+- search query
+- sort
+- pagination or loaded results
+- row selection
+- scroll position
+
+Use a provider above `NestedRouterProvider` or above the list/detail route split. Do not use a module-level singleton.
+
+If `FilterProvider` is involved, remember that it restores filters from the URL on mount. If your list state also survives route changes, normalize or dedupe filter writes at the provider boundary so the same filter does not get appended repeatedly on back-navigation.
+
+For scroll restoration:
+
+- persist the list scroll position in provider state and `window.history.state.data`
+- restore it in `useLayoutEffect`
+- wait until the list has rendered before restoring, typically with `requestAnimationFrame`
+
+Do not treat list/detail navigation as a cosmetic issue. If filters and scroll reset on back, the UX is wrong.
+
+### Search vs Find For Table Surfaces
+
+For table/list surfaces that need any combination of:
+
+- full-text search
+- backend sort
+- backend facets
+
+use one backend `search` path consistently.
+
+Do not mix `find` for the default state with `search` for filtered states if the page exposes sort and facet-driven filtering. That creates different backend behavior depending on UI state and weakens the table contract.
+
+Use `find` only for simple exact-match fetches that do not require backend sort, full-text behavior, or facets.
+
+## Completion Check
+
+Before calling a UI task complete, run a short conformance pass:
+
+1. any raw `<table>` where `Table` / `THead` / `TBody` should be used?
+2. any native `<select>` where `SelectBox` should be used?
+3. any local page-header wrapper where `GenericPageNavHeader` would fit?
+4. any inline styles that should move to CSS or semantic utility classes?
+5. any custom wrapper that duplicates existing `@vertesia/ui` behavior without a documented gap?
+6. any list/detail flow where filters, sort, or scroll reset on back-navigation because the state lives below the route boundary?
+7. any `FilterProvider` usage that can double-restore URL filters into already-persisted React state?
+8. any hover-reveal Tailwind classes built from template strings instead of literal class names?
+
+If the answer is yes to any of the above, the UI pass is not done yet.
+
 ## Layout
 
 ### Sidebar
@@ -241,15 +331,44 @@ const { isOpen, toggleMobile } = useSidebarToggle();
 
 ```tsx
 <GenericPageNavHeader
-  title="Page Title"
-  description="Optional description"
+  useDynamicBreadcrumbs={false}
   breadcrumbs={[
     <NavLink href="/" key="home">Home</NavLink>,
-    <span key="current">Current Page</span>,
+    <span key="current"><span>Current Page</span></span>,
   ]}
   actions={<Button>Create New</Button>}
 />
 ```
+
+Prefer `GenericPageNavHeader` over a local page-header abstraction when it fits the page.
+
+#### Breadcrumb rules
+
+These bite repeatedly — apply them on every page that uses `GenericPageNavHeader`.
+
+1. **Always pass `useDynamicBreadcrumbs={false}`.** The default (`true`) reads `window.history.state?.historyChain` and falls back to URL path inference. Both produce surprises: stale entries from a previous detail visit (e.g. "App > App") leak onto a top-level list, and URL inference capitalizes raw segments (e.g. "Objects" instead of your i18n label "Content Objects"). Explicit beats inferred.
+
+2. **Don't combine `title=` with breadcrumbs for list/detail flows.** `title=` renders a big bold heading *under* the breadcrumb row, which on a detail page reads as a stacked title — not a breadcrumb. The real breadcrumb pattern is to put **all** segments in `breadcrumbs={[...]}` (parent → current) and omit `title=` entirely. composable-ui's `ContentObjectView` follows this.
+
+3. **Wrap string labels in a nested element to avoid 20-char truncation.** `Breadcrumbs.renderBreadcrumbItem` slices any *string* label to 17 chars + `…`. Filenames and document titles hit this constantly. Pass a `ReactNode` instead and add CSS truncation:
+
+   ```tsx
+   <span key="current" title={fullName}>
+     <span className="inline-block align-middle max-w-[60ch] truncate">
+       {fullName}
+     </span>
+   </span>
+   ```
+
+   The outer `span`'s `children` is now a node, not a string, so the JS truncation path is skipped. The inner `span` truncates only when actually too wide for the layout. The `title=` gives a hover tooltip with the full name.
+
+4. **`NavLink` works as a clickable breadcrumb item.** `GenericPageNavHeader` extracts `href` from the element and wires its own `onClick` to `navigate(href)`. No need to add `onClick` yourself.
+
+5. **No back button.** The breadcrumb itself is the way back. Don't add a separate `<Button><ArrowLeft />Back</Button>` — it duplicates the breadcrumb's affordance and clutters the header.
+
+#### Description prop
+
+The `description` prop renders an `Info` tooltip icon in the breadcrumb row. When there are **no** breadcrumbs the icon orphans above the title — looks broken. Either omit `description=`, or always pair it with at least one breadcrumb.
 
 ## Data Fetching
 
@@ -326,6 +445,29 @@ Override CSS custom properties in `index.css` after the shared import:
 
 Available tokens: `--primary`, `--success`, `--attention`, `--destructive`, `--done`, `--info`, `--muted` (each with `-background` variant), `--background`, `--foreground`, `--card-*`, `--sidebar-*`, `--border`, `--input`, `--ring`.
 
+### Tailwind Variant Safety
+
+Do not build Tailwind variant classes dynamically in template strings when you need them emitted into CSS.
+
+Bad:
+
+```tsx
+className={`opacity-0 group-hover/${groupName}:opacity-100`}
+```
+
+That class is usually invisible to Tailwind’s static analysis and will not be generated.
+
+Use literal class names or a static map instead:
+
+```tsx
+const hoverClass = {
+  contract: "group-hover/contract:opacity-100",
+  owner: "group-hover/owner:opacity-100",
+}[groupName];
+```
+
+This matters especially for hover-reveal filter buttons and row actions.
+
 ## Plugin Entry Points
 
 ### plugin.tsx (library mode)
@@ -338,100 +480,18 @@ Wraps app in `VertesiaShell` + `RouterProvider`. Mounts `AdminApp` at `/`, plugi
 
 ## Security
 
-### XSS Prevention
+Apply these rules to any page or component that takes user input or hits the API. Full patterns + code in `references/security.md`.
 
-React escapes JSX content automatically, but be careful with:
-
-```tsx
-// NEVER use dangerouslySetInnerHTML with unsanitized input
-<div dangerouslySetInnerHTML={{ __html: userInput }} />  // ❌
-
-// If you must render HTML, sanitize first
-import DOMPurify from 'dompurify';
-<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(userInput) }} />  // ✅
-```
-
-### URL Validation
-
-Validate user-provided URLs before rendering as links:
-
-```tsx
-function isValidUrl(url: string): boolean {
-    try {
-        const parsed = new URL(url);
-        return ['http:', 'https:'].includes(parsed.protocol);
-    } catch { return false; }
-}
-
-// Only render validated URLs
-{isValidUrl(userUrl) && <a href={userUrl}>Link</a>}
-```
-
-### Error Handling
-
-Never expose internal details in user-facing errors:
-
-```tsx
-try {
-    await client.objects.retrieve(objectId);
-} catch (error) {
-    console.error('Object retrieval failed:', error);  // Log full details
-    toast({ title: 'Error', description: 'Unable to load data. Please try again.', variant: 'destructive' });  // Generic message
-}
-```
-
-### Secrets
-
-- Never hardcode API keys or tokens — use environment variables
-- Prefix client-side env vars with `VITE_` (they are embedded in the bundle)
-- Keep sensitive keys server-side only (tool server code, not UI)
-- Never commit `.env` files — use `.env.example` for documentation
-
-### Form Security
-
-- Validate inputs before submitting (use Zod or similar for schema validation)
-- Validate file uploads: check type, size, and extension before uploading
-
-```tsx
-const MAX_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
-
-if (file.size > MAX_SIZE) throw new Error('File too large');
-if (!ALLOWED_TYPES.includes(file.type)) throw new Error('Invalid file type');
-```
-
-### Client-Side Throttling
-
-Disable buttons after the first click and re-enable in a `finally` block. This prevents duplicate submissions and gives users clear feedback:
-
-```tsx
-const [isSubmitting, setIsSubmitting] = useState(false);
-
-async function handleSubmit() {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    try {
-        await client.someApi.doAction(payload);
-        toast({ title: 'Success', description: 'Item saved' });
-    } catch (error) {
-        console.error('Action failed:', error);
-        toast({ title: 'Error', description: 'Unable to save. Please try again.', variant: 'destructive' });
-    } finally {
-        setIsSubmitting(false);
-    }
-}
-
-<Button onClick={handleSubmit} disabled={isSubmitting}>
-    {isSubmitting ? 'Saving...' : 'Save'}
-</Button>
-```
-
-Apply this pattern to **every** button that triggers an async action — form submissions, delete confirmations, API calls, etc.
+- Never pass unsanitized HTML to `dangerouslySetInnerHTML`.
+- Validate user-provided URLs before rendering as links.
+- Catch API errors, log details to console, surface a generic message via `useToast` — never leak internal error text.
+- Client-side env vars must use the `VITE_` prefix (they are embedded in the bundle); keep secrets server-side.
+- Throttle async button actions with an `isSubmitting` flag cleared in `finally`.
 
 ## Development Practices
 
 - Extract components from map callbacks when the body has logic or is more than 2-3 lines
 - Use `<Separator />` from `@vertesia/ui/core` for dividers instead of `border-t/b`
 - Debounce expensive search operations
-- Always use the client-side throttling pattern (see Security section) for async button actions
+- Always throttle async button actions with `isSubmitting` (see `references/security.md`)
 - Show generic user-facing error messages; log details to console
