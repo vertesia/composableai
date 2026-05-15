@@ -30,6 +30,7 @@ export * from './query.js';
 export * from './rate-limiter.js';
 export * from './refs.js';
 export * from './runs.js';
+export * from './secrets.js';
 export * from './skill.js';
 export * from "./store/index.js";
 export * from './sts-token-types.js';

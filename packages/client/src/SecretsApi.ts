@@ -2,32 +2,25 @@ import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import type {
     BrowserCredentialFillRequest,
     BrowserCredentialFillResponse,
-    BrowserCredentialRecord,
-    CreateBrowserCredentialRequest,
-    UpdateBrowserCredentialRequest,
+    CreateSecretRequest,
+    ListSecretsQuery,
+    SecretKind,
+    SecretRecord,
+    UpdateSecretRequest,
 } from "@vertesia/common";
 
 export default class SecretsApi extends ApiTopic {
-    readonly browserCredentials: BrowserCredentialsApi;
-
     constructor(parent: ClientBase) {
         super(parent, "/api/v1/secrets");
-        this.browserCredentials = new BrowserCredentialsApi(this);
-    }
-}
-
-export class BrowserCredentialsApi extends ApiTopic {
-    constructor(parent: ClientBase) {
-        super(parent, "/browser-credentials");
     }
 
-    list(projectId: string, query?: { host?: string; enabled?: boolean }): Promise<BrowserCredentialRecord[]> {
+    list(projectId: string, query?: Omit<ListSecretsQuery, "project_id">): Promise<SecretRecord[]> {
         return this.get('/', { query: { ...query, project_id: projectId } })
-            .then((res: { credentials: BrowserCredentialRecord[] }) => res.credentials);
+            .then((res: { secrets: SecretRecord[] }) => res.secrets);
     }
 
-    retrieve(projectId: string, credentialId: string): Promise<BrowserCredentialRecord | undefined> {
-        return this.get(`/${credentialId}`, { query: { project_id: projectId } }).catch(err => {
+    retrieve(projectId: string, secretId: string, query?: { kind?: SecretKind }): Promise<SecretRecord | undefined> {
+        return this.get(`/${secretId}`, { query: { ...query, project_id: projectId } }).catch(err => {
             if (err.status === 404) {
                 return undefined;
             }
@@ -35,27 +28,28 @@ export class BrowserCredentialsApi extends ApiTopic {
         });
     }
 
-    create(projectId: string, payload: CreateBrowserCredentialRequest): Promise<BrowserCredentialRecord> {
+    create(projectId: string, payload: CreateSecretRequest): Promise<SecretRecord> {
         return this.post('/', { query: { project_id: projectId }, payload });
     }
 
     update(
         projectId: string,
-        credentialId: string,
-        payload: UpdateBrowserCredentialRequest,
-    ): Promise<BrowserCredentialRecord> {
-        return this.put(`/${credentialId}`, { query: { project_id: projectId }, payload });
+        secretId: string,
+        payload: UpdateSecretRequest,
+        query?: { kind?: SecretKind },
+    ): Promise<SecretRecord> {
+        return this.put(`/${secretId}`, { query: { ...query, project_id: projectId }, payload });
     }
 
-    remove(projectId: string, credentialId: string): Promise<void> {
-        return this.del(`/${credentialId}`, { query: { project_id: projectId } });
+    remove(projectId: string, secretId: string, query?: { kind?: SecretKind }): Promise<void> {
+        return this.del(`/${secretId}`, { query: { ...query, project_id: projectId } });
     }
 
-    fillBrowser(
+    fillBrowserCredential(
         projectId: string,
-        credentialId: string,
+        secretId: string,
         payload: BrowserCredentialFillRequest,
     ): Promise<BrowserCredentialFillResponse> {
-        return this.post(`/${credentialId}/fill-browser`, { query: { project_id: projectId }, payload });
+        return this.post(`/${secretId}/actions/fill-browser`, { query: { project_id: projectId }, payload });
     }
 }

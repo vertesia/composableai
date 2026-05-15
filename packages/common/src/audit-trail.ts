@@ -9,6 +9,7 @@ export type AuditAction =
     | 'bulk_delete'
     | 'attach'
     | 'detach'
+    | 'credentials_fill'
     | 'publish'
     | 'unpublish'
     // Billable operations

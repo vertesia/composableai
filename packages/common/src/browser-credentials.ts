@@ -37,6 +37,11 @@ export interface BrowserCredentialMetadata {
     capabilities?: BrowserCredentialCapability[];
     notes?: string;
     totp?: BrowserCredentialTotpMetadata;
+    /**
+     * Optional ISO timestamp after which the credential is no longer usable.
+     * Expired credentials are hidden from lookup and cannot be filled.
+     */
+    expires_at?: string;
 }
 
 export interface BrowserCredentialSecretInput {
@@ -83,22 +88,6 @@ export interface UpdateBrowserCredentialRequest extends Partial<BrowserCredentia
     clear_oauth?: boolean;
 }
 
-export interface BrowserCredentialProjectQuery {
-    /**
-     * Project scope for top-level secret APIs. Must match the authenticated project context.
-     */
-    project_id?: string;
-}
-
-export interface ListBrowserCredentialsQuery extends BrowserCredentialProjectQuery {
-    host?: string;
-    enabled?: boolean;
-}
-
-export interface ListBrowserCredentialsResponse {
-    credentials: BrowserCredentialRecord[];
-}
-
 export interface BrowserCredentialFillTarget {
     username_target_id?: string;
     password_target_id?: string;
@@ -106,15 +95,12 @@ export interface BrowserCredentialFillTarget {
     submit_target_id?: string;
 }
 
-export interface BrowserCredentialControlPlaneRef {
-    url: string;
-    token: string;
-    preview_token?: string;
-}
-
 export interface BrowserCredentialFillRequest extends BrowserCredentialFillTarget {
-    current_url: string;
-    control_plane: BrowserCredentialControlPlaneRef;
+    /**
+     * Browser-use parent workflow id. The API resolves the Daytona sandbox and
+     * observes the current page server-side before decrypting the credential.
+     */
+    browser_workflow_id: string;
 }
 
 export interface BrowserCredentialFillResponse {
