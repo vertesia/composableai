@@ -241,8 +241,8 @@ interface SummaryMessageProps {
 }
 
 const SUMMARY_PROSE_CLASS = [
-    "vprose prose max-w-none break-words text-[15px] text-foreground/80",
-    "prose-p:my-3 prose-p:leading-relaxed prose-li:my-1 prose-pre:my-4 prose-headings:tracking-normal",
+    "agent-markdown vprose prose max-w-none break-words text-sm leading-6 text-foreground/80",
+    "prose-p:my-2 prose-p:leading-6 prose-li:my-0.5 prose-pre:my-3 prose-headings:tracking-normal",
     "prose-headings:text-foreground prose-strong:text-foreground prose-code:text-foreground",
     "prose-a:text-foreground prose-a:underline prose-a:decoration-muted prose-a:underline-offset-4",
     "[&_p]:text-foreground/80 [&_li]:text-foreground/80 [&_li::marker]:text-muted",
@@ -1497,6 +1497,173 @@ function AllMessagesMixedComponent({
                 }
                 .dark .vprose pre {
                     color: var(--color-foreground, #f9fafb);
+                }
+
+                /* Summary chat markdown: keep structure, but match the app's quieter conversation surface. */
+                .agent-markdown {
+                    color: color-mix(in oklch, var(--foreground) 78%, transparent);
+                    font-size: 0.875rem;
+                    line-height: 1.625;
+                    overflow-x: auto;
+                }
+                .agent-markdown > * + * {
+                    margin-top: 0.65rem;
+                }
+                .agent-markdown p {
+                    margin-top: 0.5rem;
+                    margin-bottom: 0.5rem;
+                }
+                .agent-markdown h1,
+                .agent-markdown h2,
+                .agent-markdown h3,
+                .agent-markdown h4 {
+                    margin-top: 1.2rem;
+                    margin-bottom: 0.45rem;
+                    color: var(--foreground);
+                    font-weight: 650;
+                    letter-spacing: 0;
+                    line-height: 1.3;
+                }
+                .agent-markdown h1 {
+                    font-size: 1.2rem;
+                }
+                .agent-markdown h2 {
+                    font-size: 1.05rem;
+                }
+                .agent-markdown h3,
+                .agent-markdown h4 {
+                    font-size: 0.95rem;
+                }
+                .agent-markdown h1:first-child,
+                .agent-markdown h2:first-child,
+                .agent-markdown h3:first-child,
+                .agent-markdown h4:first-child {
+                    margin-top: 0;
+                }
+                .agent-markdown hr {
+                    margin: 1.15rem 0;
+                    border: 0;
+                    border-top: 1px solid var(--border);
+                    opacity: 0.65;
+                }
+                .agent-markdown ul,
+                .agent-markdown ol {
+                    margin-top: 0.55rem;
+                    margin-bottom: 0.55rem;
+                    padding-left: 1.25rem;
+                }
+                .agent-markdown li {
+                    margin-top: 0.2rem;
+                    margin-bottom: 0.2rem;
+                    padding-left: 0.1rem;
+                    color: inherit;
+                }
+                .agent-markdown li::marker {
+                    color: var(--muted);
+                }
+                .agent-markdown strong {
+                    color: var(--foreground);
+                    font-weight: 600;
+                }
+                .agent-markdown em {
+                    color: color-mix(in oklch, var(--foreground) 72%, transparent);
+                }
+                .agent-markdown a {
+                    color: var(--foreground);
+                    text-decoration-color: var(--muted);
+                    text-underline-offset: 3px;
+                }
+                .agent-markdown blockquote {
+                    margin-top: 0.85rem;
+                    margin-bottom: 0.85rem;
+                    padding-left: 0.875rem;
+                    border-left: 2px solid var(--border);
+                    color: var(--muted);
+                    font-style: normal;
+                }
+                .agent-markdown :not(pre) > code {
+                    border: 1px solid var(--border);
+                    border-radius: 0.375rem;
+                    background: var(--muted-background);
+                    color: var(--foreground);
+                    padding: 0.1rem 0.35rem;
+                    font-size: 0.8125em;
+                    font-weight: 500;
+                }
+                .agent-markdown pre {
+                    margin-top: 0.85rem;
+                    margin-bottom: 0.85rem;
+                    max-height: 32rem;
+                    overflow: auto;
+                    border: 1px solid var(--border);
+                    border-radius: 0.75rem;
+                    background: var(--muted-background);
+                    color: var(--foreground);
+                    padding: 0.875rem;
+                    font-size: 0.8125rem;
+                    line-height: 1.55;
+                }
+                .agent-markdown pre code {
+                    border: 0;
+                    background: transparent;
+                    color: inherit;
+                    padding: 0;
+                    font-size: inherit;
+                }
+                .agent-markdown table {
+                    display: table;
+                    width: 100%;
+                    max-width: 100%;
+                    margin: 0.9rem 0 1rem;
+                    border: 1px solid var(--border);
+                    border-radius: 0.75rem;
+                    border-collapse: separate;
+                    border-spacing: 0;
+                    font-size: 0.8125rem;
+                    table-layout: auto;
+                }
+                .agent-markdown thead {
+                    background: var(--muted-background);
+                }
+                .agent-markdown th,
+                .agent-markdown td {
+                    border: 0;
+                    border-bottom: 1px solid var(--border);
+                    padding: 0.55rem 0.7rem;
+                    text-align: left;
+                    vertical-align: top;
+                    overflow-wrap: break-word;
+                    word-break: normal;
+                }
+                .agent-markdown th {
+                    color: var(--muted);
+                    font-size: 0.6875rem;
+                    font-weight: 600;
+                    letter-spacing: 0;
+                    text-transform: none;
+                    white-space: nowrap;
+                }
+                .agent-markdown td {
+                    color: inherit;
+                }
+                .agent-markdown th:first-child,
+                .agent-markdown td:first-child {
+                    min-width: 8.5rem;
+                    width: 1%;
+                    white-space: nowrap;
+                }
+                .agent-markdown th + th,
+                .agent-markdown td + td {
+                    border-left: 1px solid var(--border);
+                }
+                .agent-markdown tr:last-child td {
+                    border-bottom: 0;
+                }
+                .agent-markdown tbody tr:nth-child(even) {
+                    background: color-mix(in oklch, var(--muted-background) 55%, transparent);
+                }
+                .agent-markdown tbody tr:hover {
+                    background: var(--muted-background);
                 }
             `}</style>
 
