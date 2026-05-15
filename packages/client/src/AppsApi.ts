@@ -10,12 +10,15 @@ import type {
     AppPackage,
     AppPackageScope,
     AppToolCollection,
+    AppBuildProgress,
     AppVersionListQuery,
     AppVersionRecord,
     ActivateAppVersionResponse,
     CountResult,
     ProjectRef,
     RequireAtLeastOne,
+    StartAppBuildRequest,
+    StartAppBuildResponse,
     UpdateAppInstallationToolAllowlistPayload,
     UpsertAppVersionRequest,
     ValidateUrlRequest,
@@ -61,6 +64,14 @@ export default class AppsApi extends ApiTopic {
 
     activateVersion(recordId: string): Promise<ActivateAppVersionResponse> {
         return this.post(`/versions/${recordId}/activate`);
+    }
+
+    startBuild(appIdOrRecordId: string, payload: StartAppBuildRequest): Promise<StartAppBuildResponse> {
+        return this.post(`/${encodeURIComponent(appIdOrRecordId)}/builds`, { payload });
+    }
+
+    getBuildProgress(appIdOrRecordId: string, workflowId: string, runId: string): Promise<AppBuildProgress> {
+        return this.get(`/${encodeURIComponent(appIdOrRecordId)}/builds/${encodeURIComponent(workflowId)}/${encodeURIComponent(runId)}/progress`);
     }
 
     /**

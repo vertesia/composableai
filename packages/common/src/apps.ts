@@ -379,6 +379,9 @@ export type AppAvailableIn = 'app_portal' | 'composite_app';
 export type AppVersionKind = 'design' | 'preview' | 'published';
 export type AppVersionState = 'ready' | 'failed' | 'expired';
 export type AppVersionTarget = 'static' | 'service';
+export type AppVersionGitRefType = 'branch' | 'tag' | 'commit' | 'detached';
+export type AppBuildIntent = 'preview' | 'publish';
+export type AppBuildTrigger = 'ui' | 'git_push' | 'agent' | 'api';
 
 export interface AppVersionStorage {
     tenant_id?: string;
@@ -395,8 +398,18 @@ export interface AppVersionStorage {
 export interface AppVersionGitSource {
     url?: string;
     remote?: string;
+    /**
+     * The source ref that should be used to reproduce this version. For immutable
+     * app versions this is normally the tag created during preview/publish.
+     */
     ref?: string;
+    ref_type?: AppVersionGitRefType;
+    branch?: string;
+    tag?: string;
     commit?: string;
+    dirty?: boolean;
+    pushed?: boolean;
+    push_warning?: string;
 }
 
 export interface AppVersionUrls {
@@ -475,6 +488,67 @@ export interface AppVersionListQuery {
 export interface ActivateAppVersionResponse {
     version: AppVersionRecord;
     app?: AppManifest;
+}
+
+export interface StartAppBuildRequest {
+    /**
+     * Source branch, tag, or commit to build. When omitted, the app source
+     * configuration chooses the dev branch for previews and production branch
+     * for publishes.
+     */
+    source_ref?: string;
+    source_ref_type?: Extract<AppVersionGitRefType, 'branch' | 'tag' | 'commit'>;
+    intent?: AppBuildIntent;
+    trigger?: AppBuildTrigger;
+    target?: AppVersionTarget;
+    activate?: boolean;
+    build_command?: string;
+    title?: string;
+    description?: string;
+}
+
+export interface StartAppBuildResponse {
+    workflow_id: string;
+    run_id: string;
+    app_id: string;
+    intent: AppBuildIntent;
+    source_ref?: string;
+    source_ref_type?: Extract<AppVersionGitRefType, 'branch' | 'tag' | 'commit'>;
+}
+
+export interface AppBuildWorkflowInput extends StartAppBuildRequest {
+    app_id: string;
+    app_record_id?: string;
+    app_title?: string;
+    app_description?: string;
+    source_git_url?: string;
+}
+
+export interface AppBuildWorkflowResult {
+    app_id: string;
+    version_id: string;
+    kind: Extract<AppVersionKind, 'preview' | 'published'>;
+    state: AppVersionState;
+    source_git?: AppVersionGitSource;
+    urls?: AppVersionUrls;
+    file_count?: number;
+}
+
+export type AppBuildProgressStatus = 'queued' | 'resolving' | 'building' | 'completed' | 'failed';
+
+export interface AppBuildProgress {
+    status: AppBuildProgressStatus;
+    step: string;
+    app_id?: string;
+    version_id?: string;
+    intent?: AppBuildIntent;
+    source_ref?: string;
+    source_ref_type?: Extract<AppVersionGitRefType, 'branch' | 'tag' | 'commit'>;
+    source_commit?: string;
+    file_count?: number;
+    app_url?: string;
+    error?: string;
+    updated_at: string;
 }
 
 export interface AppManifestData {
@@ -588,11 +662,30 @@ export interface AppManifestData {
     version?: string;
 
     /**
+     * Source repository configuration for apps generated and maintained through
+     * AppGen. Branches are mutable deployment lanes; immutable app versions
+     * record their exact source tag/commit in AppVersionRecord.storage.source_git.
+     */
+    source?: AppSourceConfig;
+
+    /**
      * Free-form tags used for classification and filtering. Platform apps
      * carry `"system"` so UIs can skip install/uninstall/manage-permission
      * controls that don't apply to synthetic installations.
      */
     tags?: string[];
+}
+
+export interface AppGitSourceConfig {
+    url?: string;
+    default_branch?: string;
+    production_branch?: string;
+    development_branch?: string;
+}
+
+export interface AppSourceConfig {
+    kind: 'git';
+    git?: AppGitSourceConfig;
 }
 
 /**
