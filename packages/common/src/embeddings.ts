@@ -1,6 +1,4 @@
-import type { EmbeddingsResult } from "@llumiverse/common";
-
-export type EmbeddingTaskType = "query" | "document";
+import type { EmbeddingsResult, EmbeddingTaskType } from "@llumiverse/common";
 
 /**
  * Wire-format inputs accepted by the studio-server embeddings endpoint.
