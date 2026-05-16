@@ -588,7 +588,7 @@ function TextActions({
     const content = object.content;
     const { renderDocument, isDownloading } = useDownloadFile({ client, toast });
     const { data: fullProject } = useFetch(
-        () => project ? client.projects.retrieve(project.id, 'id,configuration') : Promise.resolve(undefined),
+        () => project ? client.projects.retrieve(project.id) : Promise.resolve(undefined),
         [project?.id]
     );
     const pdfTemplateObjectId = fullProject?.configuration?.pdf_template_object_id;
