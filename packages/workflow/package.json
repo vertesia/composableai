@@ -12,6 +12,7 @@
     "bundle-workflows": "./bin/bundle-workflows.mjs"
   },
   "scripts": {
+    "lint": "biome lint src",
     "test": "vitest run",
     "build": "pnpm exec tsmod build && node ./bin/bundle-workflows.mjs lib/esm/workflows.js lib/workflows-bundle.js",
     "clean": "rm -rf ./lib tsconfig.tsbuildinfo"
