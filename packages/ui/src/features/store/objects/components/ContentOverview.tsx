@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState, type RefObject } from "react";
 
 import { AUDIO_RENDITION_NAME, AudioMetadata, ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, MarkdownRenditionFormat, PDF_RENDITION_NAME, Permission, POSTER_RENDITION_NAME, VideoMetadata, WorkflowExecutionStatus } from "@vertesia/common";
-import { Button, Dropdown, MenuItem, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
+import { Button, Dropdown, MenuItem, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useFetch, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
@@ -587,7 +587,11 @@ function TextActions({
     const { t } = useUITranslation();
     const content = object.content;
     const { renderDocument, isDownloading } = useDownloadFile({ client, toast });
-    const pdfTemplateObjectId = project?.configuration?.pdf_template_object_id;
+    const { data: fullProject } = useFetch(
+        () => project ? client.projects.retrieve(project.id, 'id,configuration') : Promise.resolve(undefined),
+        [project?.id]
+    );
+    const pdfTemplateObjectId = fullProject?.configuration?.pdf_template_object_id;
 
     const isMarkdown =
         content &&
