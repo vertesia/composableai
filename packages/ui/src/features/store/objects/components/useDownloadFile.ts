@@ -18,6 +18,10 @@ export interface RenderAndDownloadOptions {
     artifactRunId?: string;
     /** Additional Pandoc options */
     pandocOptions?: string[];
+    /** Use Vertesia default branded template (default: true for PDF) */
+    useDefaultTemplate?: boolean;
+    /** Object ID of a content object containing a custom LaTeX template to use instead of the default */
+    templateObjectId?: string;
 }
 
 export interface UseDownloadFileResult {
@@ -118,6 +122,8 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
                 format: options.format,
                 title: options.title,
                 pandoc_options: options.pandocOptions,
+                use_default_template: options.useDefaultTemplate,
+                template_path: options.templateObjectId ? `store:${options.templateObjectId}` : undefined,
             }, filename);
 
             toast({
