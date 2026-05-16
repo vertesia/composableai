@@ -582,11 +582,12 @@ function TextActions({
     onToggleEdit,
     canEdit,
 }: TextActionsProps) {
-    const { client } = useUserSession();
+    const { client, project } = useUserSession();
     const toast = useToast();
     const { t } = useUITranslation();
     const content = object.content;
     const { renderDocument, isDownloading } = useDownloadFile({ client, toast });
+    const pdfTemplateObjectId = project?.configuration?.pdf_template_object_id;
 
     const isMarkdown =
         content &&
@@ -608,10 +609,14 @@ function TextActions({
             duration: 2000,
         });
 
+        // For branded exports, use the project-configured template if available
+        const templateObjectId = useDefaultTemplate !== false ? pdfTemplateObjectId : undefined;
+
         await renderDocument(object.id, {
             format,
             title: object.name || "document",
             useDefaultTemplate,
+            templateObjectId,
         });
     };
 
