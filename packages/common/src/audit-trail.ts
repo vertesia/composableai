@@ -10,6 +10,7 @@ export type AuditAction =
     | 'attach'
     | 'detach'
     | 'credentials_fill'
+    | 'credentials_totp_generation'
     | 'publish'
     | 'unpublish'
     // Billable operations

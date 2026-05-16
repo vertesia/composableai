@@ -1,9 +1,11 @@
 import type {
-    BrowserCredentialMetadata,
-    BrowserCredentialRecord,
-    BrowserCredentialSecretInput,
+    WebsiteCredentialMetadata,
+    WebsiteCredentialRecord,
+    WebsiteCredentialSecretInput,
 } from './browser-credentials.js';
 
+// First supported top-level secret kind. OAuth connector grants continue to use
+// the OAuth/MCP token flows and can be materialized later by tools that need them.
 export type SecretKind = 'website_credential';
 
 export interface SecretProjectQuery {
@@ -34,7 +36,7 @@ export interface SecretRecord {
     properties?: Record<string, unknown>;
     created_at?: string;
     updated_at?: string;
-    details?: BrowserCredentialRecord;
+    details?: WebsiteCredentialRecord;
 }
 
 export interface ListSecretsResponse {
@@ -43,14 +45,14 @@ export interface ListSecretsResponse {
 
 export interface CreateSecretRequest {
     kind: SecretKind;
-    metadata: BrowserCredentialMetadata;
-    secret?: BrowserCredentialSecretInput;
+    metadata: WebsiteCredentialMetadata;
+    secret?: WebsiteCredentialSecretInput;
 }
 
 export interface UpdateSecretRequest {
     kind?: SecretKind;
-    metadata?: Partial<BrowserCredentialMetadata>;
-    secret?: BrowserCredentialSecretInput;
+    metadata?: Partial<WebsiteCredentialMetadata>;
+    secret?: WebsiteCredentialSecretInput;
     clear_username_secret?: boolean;
     clear_password?: boolean;
     clear_totp?: boolean;

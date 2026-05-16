@@ -1,7 +1,7 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import type {
-    BrowserCredentialFillRequest,
-    BrowserCredentialFillResponse,
+    WebsiteCredentialFillRequest,
+    WebsiteCredentialFillResponse,
     CreateSecretRequest,
     ListSecretsQuery,
     SecretKind,
@@ -45,11 +45,11 @@ export default class SecretsApi extends ApiTopic {
         return this.del(`/${secretId}`, { query: { ...query, project_id: projectId } });
     }
 
-    fillBrowserCredential(
+    fillWebsiteCredential(
         projectId: string,
         secretId: string,
-        payload: BrowserCredentialFillRequest,
-    ): Promise<BrowserCredentialFillResponse> {
+        payload: WebsiteCredentialFillRequest,
+    ): Promise<WebsiteCredentialFillResponse> {
         return this.post(`/${secretId}/actions/fill-browser`, { query: { project_id: projectId }, payload });
     }
 }

@@ -1,8 +1,8 @@
-export type BrowserCredentialCapability = 'password' | 'totp' | 'oauth';
+export type WebsiteCredentialCapability = 'password' | 'totp' | 'oauth';
 
-export type BrowserCredentialTotpAlgorithm = 'SHA1' | 'SHA256' | 'SHA512';
+export type WebsiteCredentialTotpAlgorithm = 'SHA1' | 'SHA256' | 'SHA512';
 
-export interface BrowserCredentialWebsite {
+export interface WebsiteCredentialWebsite {
     /**
      * Hostname this credential is allowed on. Subdomains match.
      */
@@ -17,26 +17,26 @@ export interface BrowserCredentialWebsite {
     allowed_origins?: string[];
 }
 
-export interface BrowserCredentialTotpMetadata {
-    algorithm?: BrowserCredentialTotpAlgorithm;
+export interface WebsiteCredentialTotpMetadata {
+    algorithm?: WebsiteCredentialTotpAlgorithm;
     digits?: 6 | 8;
     period?: number;
     issuer?: string;
     account?: string;
 }
 
-export interface BrowserCredentialMetadata {
+export interface WebsiteCredentialMetadata {
     name: string;
-    websites: BrowserCredentialWebsite[];
+    websites: WebsiteCredentialWebsite[];
     username?: string;
     username_hint?: string;
     username_secret?: boolean;
     properties?: Record<string, unknown>;
     tags?: string[];
     enabled?: boolean;
-    capabilities?: BrowserCredentialCapability[];
+    capabilities?: WebsiteCredentialCapability[];
     notes?: string;
-    totp?: BrowserCredentialTotpMetadata;
+    totp?: WebsiteCredentialTotpMetadata;
     /**
      * Optional ISO timestamp after which the credential is no longer usable.
      * Expired credentials are hidden from lookup and cannot be filled.
@@ -44,13 +44,13 @@ export interface BrowserCredentialMetadata {
     expires_at?: string;
 }
 
-export interface BrowserCredentialSecretInput {
+export interface WebsiteCredentialSecretInput {
     /**
      * Optional encrypted username. Prefer metadata.username unless the username itself is sensitive.
      */
     username?: string;
     password?: string;
-    totp?: BrowserCredentialTotpMetadata & {
+    totp?: WebsiteCredentialTotpMetadata & {
         seed: string;
     };
     /**
@@ -63,7 +63,7 @@ export interface BrowserCredentialSecretInput {
     };
 }
 
-export interface BrowserCredentialRecord extends BrowserCredentialMetadata {
+export interface WebsiteCredentialRecord extends WebsiteCredentialMetadata {
     id: string;
     credential_ref: string;
     project: string;
@@ -76,26 +76,26 @@ export interface BrowserCredentialRecord extends BrowserCredentialMetadata {
     password_hint?: string;
 }
 
-export interface CreateBrowserCredentialRequest extends BrowserCredentialMetadata {
-    secret?: BrowserCredentialSecretInput;
+export interface CreateWebsiteCredentialRequest extends WebsiteCredentialMetadata {
+    secret?: WebsiteCredentialSecretInput;
 }
 
-export interface UpdateBrowserCredentialRequest extends Partial<BrowserCredentialMetadata> {
-    secret?: BrowserCredentialSecretInput;
+export interface UpdateWebsiteCredentialRequest extends Partial<WebsiteCredentialMetadata> {
+    secret?: WebsiteCredentialSecretInput;
     clear_username_secret?: boolean;
     clear_password?: boolean;
     clear_totp?: boolean;
     clear_oauth?: boolean;
 }
 
-export interface BrowserCredentialFillTarget {
+export interface WebsiteCredentialFillTarget {
     username_target_id?: string;
     password_target_id?: string;
     totp_target_id?: string;
     submit_target_id?: string;
 }
 
-export interface BrowserCredentialFillRequest extends BrowserCredentialFillTarget {
+export interface WebsiteCredentialFillRequest extends WebsiteCredentialFillTarget {
     /**
      * Browser-use parent workflow id. The API resolves the Daytona sandbox and
      * observes the current page server-side before decrypting the credential.
@@ -103,7 +103,7 @@ export interface BrowserCredentialFillRequest extends BrowserCredentialFillTarge
     browser_workflow_id: string;
 }
 
-export interface BrowserCredentialFillResponse {
+export interface WebsiteCredentialFillResponse {
     ok: boolean;
     credential_ref: string;
     url: string;
