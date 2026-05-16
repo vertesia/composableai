@@ -25,7 +25,7 @@ import {
     type CreateProfileOptions,
 } from './profiles/commands.js';
 import { configureGitAuth, serveGitCredential } from './profiles/git.js';
-import { AVAILABLE_REGIONS, DEFAULT_REGION, getConfigFile } from './profiles/index.js';
+import { AVAILABLE_REGIONS, DEFAULT_REGION, config, getConfigFile } from './profiles/index.js';
 import { listProjects, useProject } from './projects/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
@@ -34,7 +34,16 @@ import { registerWorkflowsCommand } from './workflows/index.js';
 
 const program = new Command();
 
-program.version(getVersion());
+program
+    .version(getVersion())
+    .option("-p, --profile <profile>", "Use the named profile for this command without changing the default profile");
+
+program.hook('preAction', command => {
+    const profile = command.optsWithGlobals().profile as string | undefined;
+    if (profile) {
+        config.use(profile);
+    }
+});
 
 program.command("upgrade")
     .description("Upgrade to the latest version of the CLI")
