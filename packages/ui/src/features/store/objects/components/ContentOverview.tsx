@@ -672,41 +672,47 @@ function TextActions({
                             )}
                         </>
                     )}
-                    <Dropdown trigger={
-                        <Button variant="ghost" size="sm" disabled={!text} className="flex items-center gap-2" alt="download">
-                            <Download className="size-4" />
-                        </Button>}>
-                        {fullText && (
-                            <MenuItem onClick={handleDownloadText} isDisabled={isDownloading}>
-                                <div className="flex items-center gap-2">
-                                    {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
-                                    Download Text
-                                </div>
-                            </MenuItem>
-                        )}
-                        {isMarkdown && text && (
-                            <>
-                                <MenuItem onClick={handleExportDocx} isDisabled={isDownloading}>
+                    {isDownloading ? (
+                        <Button variant="ghost" size="sm" disabled className="flex items-center gap-2" alt="download">
+                            <Spinner size="sm" />
+                        </Button>
+                    ) : (
+                        <Dropdown trigger={
+                            <Button variant="ghost" size="sm" disabled={!text} className="flex items-center gap-2" alt="download">
+                                <Download className="size-4" />
+                            </Button>}>
+                            {fullText && (
+                                <MenuItem onClick={handleDownloadText}>
                                     <div className="flex items-center gap-2">
-                                        {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
-                                        Export as DOCX
+                                        <Download className="size-4" />
+                                        Download Text
                                     </div>
                                 </MenuItem>
-                                <MenuItem onClick={handleExportPdf} isDisabled={isDownloading}>
-                                    <div className="flex items-center gap-2">
-                                        {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
-                                        Export as PDF
-                                    </div>
-                                </MenuItem>
-                                <MenuItem onClick={handleExportBrandedPdf} isDisabled={isDownloading}>
-                                    <div className="flex items-center gap-2">
-                                        {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
-                                        Export as Branded PDF
-                                    </div>
-                                </MenuItem>
-                            </>
-                        )}
-                    </Dropdown>
+                            )}
+                            {isMarkdown && text && (
+                                <>
+                                    <MenuItem onClick={handleExportDocx}>
+                                        <div className="flex items-center gap-2">
+                                            <Download className="size-4" />
+                                            Export as DOCX
+                                        </div>
+                                    </MenuItem>
+                                    <MenuItem onClick={handleExportPdf}>
+                                        <div className="flex items-center gap-2">
+                                            <Download className="size-4" />
+                                            Export as PDF
+                                        </div>
+                                    </MenuItem>
+                                    <MenuItem onClick={handleExportBrandedPdf}>
+                                        <div className="flex items-center gap-2">
+                                            <Download className="size-4" />
+                                            Export as Branded PDF
+                                        </div>
+                                    </MenuItem>
+                                </>
+                            )}
+                        </Dropdown>
+                    )}
 
                 </div>
             </div>
