@@ -1,22 +1,39 @@
+function stripLeadingWildcard(host: string): string {
+    return host.startsWith('*.') ? host.slice(2) : host;
+}
+
+function stripIPv6Brackets(host: string): string {
+    return host.startsWith('[') && host.endsWith(']') ? host.slice(1, -1) : host;
+}
+
+function looksLikeBareIpv6(host: string): boolean {
+    const firstColon = host.indexOf(':');
+    return firstColon >= 0 && host.indexOf(':', firstColon + 1) >= 0 && !host.startsWith('[');
+}
+
+function hasWhitespace(host: string): boolean {
+    return host.includes(' ') || host.includes('\t') || host.includes('\n') || host.includes('\r') || host.includes('\f') || host.includes('\v');
+}
+
 export function normalizeHost(value: unknown): string | undefined {
     if (typeof value !== 'string') return undefined;
-    const trimmed = value.trim().toLowerCase();
-    if (!trimmed) return undefined;
+    let input = value.trim().toLowerCase();
+    if (!input) return undefined;
+    input = stripLeadingWildcard(input);
+    input = input.endsWith('.') ? input.slice(0, -1) : input;
 
-    let host: string;
+    if (!input.includes('://')) {
+        input = looksLikeBareIpv6(input) ? `https://[${input}]` : `https://${input}`;
+    }
+
     try {
-        host = new URL(trimmed.includes('://') ? trimmed : `https://${trimmed}`).hostname.toLowerCase();
+        const url = new URL(input);
+        let host = stripIPv6Brackets(url.hostname.toLowerCase());
+        host = host.endsWith('.') ? host.slice(0, -1) : host;
+        return host && !hasWhitespace(host) ? host : undefined;
     } catch {
-        host = trimmed.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+        return undefined;
     }
-
-    host = host.replace(/^\*\./, '').replace(/^\[/, '').replace(/\]$/, '').replace(/\.$/, '');
-    if (host.includes(':') && !host.includes('::')) {
-        host = host.replace(/:\d+$/, '');
-        if (host.includes(':')) return undefined;
-    }
-    if (!host || /\s/.test(host)) return undefined;
-    return host;
 }
 
 export function hostFromUrl(value: string, baseUrl?: string): string | undefined {

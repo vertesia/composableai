@@ -14,6 +14,7 @@ describe('host-utils', () => {
         expect(normalizeHost(' HTTPS://App.Example.COM:443/login ')).toBe('app.example.com');
         expect(normalizeHost('*.example.com')).toBe('example.com');
         expect(normalizeHost('localhost:3000')).toBe('localhost');
+        expect(normalizeHost('::1')).toBe('::1');
         expect(normalizeHost('[::1]:3000')).toBe('::1');
     });
 
