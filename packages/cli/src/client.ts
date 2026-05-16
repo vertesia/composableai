@@ -24,16 +24,21 @@ export async function getClient(_program?: Command): Promise<VertesiaClient> {
 
 async function createClient(profile: Profile | undefined): Promise<VertesiaClient> {
     const token = process.env.VERTESIA_TOKEN;
+    const preferProfileEndpoints = Boolean(profile && config.explicitProfile);
 
-    // Explicit environment overrides should win over profile settings so the same
-    // credential can be reused against a local deployment without changing profiles.
+    // Endpoint env vars are useful for localhost development, but an explicit
+    // --profile must not be silently redirected by inherited local env vars.
     const env = {
         apikey: process.env.VERTESIA_APIKEY
             || process.env.COMPOSABLE_PROMPTS_APIKEY,
-        serverUrl: process.env.VERTESIA_SERVER_URL
-            || process.env.COMPOSABLE_PROMPTS_SERVER_URL!,
-        storeUrl: process.env.VERTESIA_STORE_URL
-            || process.env.ZENO_SERVER_URL!,
+        serverUrl: preferProfileEndpoints
+            ? profile?.studio_server_url
+            : process.env.VERTESIA_SERVER_URL
+                || process.env.COMPOSABLE_PROMPTS_SERVER_URL!,
+        storeUrl: preferProfileEndpoints
+            ? profile?.zeno_server_url
+            : process.env.VERTESIA_STORE_URL
+                || process.env.ZENO_SERVER_URL!,
         projectId: process.env.VERTESIA_PROJECT_ID
             || process.env.COMPOSABLE_PROMPTS_PROJECT_ID
             || profile?.project

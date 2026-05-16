@@ -41,7 +41,7 @@ program
 program.hook('preAction', command => {
     const profile = command.optsWithGlobals().profile as string | undefined;
     if (profile) {
-        config.use(profile);
+        config.use(profile, { explicit: true });
     }
 });
 
