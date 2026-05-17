@@ -28,7 +28,7 @@ export function normalizeHost(value: unknown): string | undefined {
 
     try {
         const url = new URL(input);
-        let host = stripIPv6Brackets(url.hostname.toLowerCase());
+        let host = stripLeadingWildcard(stripIPv6Brackets(url.hostname.toLowerCase()));
         host = host.endsWith('.') ? host.slice(0, -1) : host;
         return host && !hasWhitespace(host) ? host : undefined;
     } catch {
