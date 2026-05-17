@@ -1,5 +1,6 @@
 import { AgentMessage, AgentMessageType } from "@vertesia/common";
 import { describe, expect, it } from "vitest";
+import { buildSummaryConversationItems } from "./SummaryConversation";
 import { getSlidingViewMessageBuckets, groupMessagesWithStreaming, isToolActivityMessage, mergeConsecutiveToolGroups, shouldCollapseAdjacentRenderedMessage } from "./utils";
 
 function makeMessage(overrides: Partial<AgentMessage>): AgentMessage {
@@ -254,6 +255,251 @@ describe("ModernAgentOutput utils - sliding view thinking", () => {
         const result = getSlidingViewMessageBuckets([user, answer, warning, error, requestInput], false, false);
 
         expect(result.importantMessages).toEqual([user, answer, warning, error, requestInput]);
+    });
+});
+
+describe("ModernAgentOutput summary conversation items", () => {
+    it("keeps streamed assistant prose between tool groups visible", () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: "Find Japan news.",
+        });
+        const firstTool = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching for Japan news",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "completed",
+                tool_run_id: "tool-1",
+            },
+        });
+        const assistantProse = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.THOUGHT,
+            message: "I found one angle; I will check foreign media coverage too.",
+            details: {
+                display_role: "tool_preamble",
+                tools: ["web_search_serper"],
+                streamed: true,
+            },
+        });
+        const secondTool = makeMessage({
+            timestamp: 4000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching foreign media coverage",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "completed",
+                tool_run_id: "tool-2",
+            },
+        });
+        const answer = makeMessage({
+            timestamp: 5000,
+            type: AgentMessageType.ANSWER,
+            message: "Here is what I found.",
+        });
+
+        const items = buildSummaryConversationItems([question, firstTool, assistantProse, secondTool, answer], true);
+
+        expect(items.map((item) => item.type)).toEqual(["message", "work", "message", "work", "message"]);
+        expect(items[2]).toMatchObject({ type: "message", message: assistantProse });
+    });
+
+    it("keeps non-streamed tool preambles inside work details", () => {
+        const preamble = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: "I will call a search tool.",
+            details: {
+                display_role: "tool_preamble",
+                tools: ["web_search_serper"],
+            },
+        });
+        const tool = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "completed",
+                tool_run_id: "tool-1",
+            },
+        });
+
+        const items = buildSummaryConversationItems([preamble, tool], true);
+
+        expect(items).toHaveLength(1);
+        expect(items[0]).toMatchObject({
+            type: "work",
+            messages: [preamble, tool],
+        });
+    });
+
+    it("hides transient thinking once the work segment completes", () => {
+        const tool = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "completed",
+                tool_run_id: "tool-1",
+            },
+        });
+        const thinking = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: "Thinking...",
+            details: {
+                display_role: "thinking",
+                activity_group_id: "activity-1",
+            },
+        });
+        const answer = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.ANSWER,
+            message: "Here is the answer.",
+        });
+
+        const items = buildSummaryConversationItems([tool, thinking, answer], true);
+
+        expect(items[0]).toMatchObject({
+            type: "work",
+            messages: [tool],
+        });
+    });
+
+    it("keeps only the current trailing thinking marker while active", () => {
+        const tool = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "completed",
+                tool_run_id: "tool-1",
+            },
+        });
+        const thinking = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: "Thinking...",
+            details: {
+                display_role: "thinking",
+                activity_group_id: "activity-1",
+            },
+        });
+
+        const items = buildSummaryConversationItems([tool, thinking], false);
+
+        expect(items[0]).toMatchObject({
+            type: "work",
+            messages: [tool, thinking],
+        });
+    });
+
+    it("hides stale thinking when another tool event follows it", () => {
+        const firstTool = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "completed",
+                tool_run_id: "tool-1",
+            },
+        });
+        const thinking = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: "Thinking...",
+            details: {
+                display_role: "thinking",
+                activity_group_id: "activity-1",
+            },
+        });
+        const secondTool = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching again",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "running",
+                tool_run_id: "tool-2",
+            },
+        });
+
+        const items = buildSummaryConversationItems([firstTool, thinking, secondTool], false);
+
+        expect(items[0]).toMatchObject({
+            type: "work",
+            messages: [firstTool, secondTool],
+        });
+    });
+
+    it("hides transient thinking when a later streaming message is observed", () => {
+        const tool = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "completed",
+                tool_run_id: "tool-1",
+            },
+        });
+        const thinking = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: "Thinking...",
+            details: {
+                display_role: "thinking",
+                activity_group_id: "activity-1",
+            },
+        });
+
+        const items = buildSummaryConversationItems([tool, thinking], false, 3000);
+
+        expect(items[0]).toMatchObject({
+            type: "work",
+            messages: [tool],
+        });
+    });
+
+    it("hides transient thinking when a later ignored message is persisted", () => {
+        const tool = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "completed",
+                tool_run_id: "tool-1",
+            },
+        });
+        const thinking = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: "Thinking...",
+            details: {
+                display_role: "thinking",
+                activity_group_id: "activity-1",
+            },
+        });
+        const chunk = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.STREAMING_CHUNK,
+            message: "partial answer",
+        });
+
+        const items = buildSummaryConversationItems([tool, thinking, chunk], false);
+
+        expect(items[0]).toMatchObject({
+            type: "work",
+            messages: [tool],
+        });
     });
 });
 

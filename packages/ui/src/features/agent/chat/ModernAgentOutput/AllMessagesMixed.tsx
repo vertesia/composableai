@@ -11,9 +11,10 @@ import { AskUserWidget } from "../AskUserWidget";
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from "./BatchProgressPanel";
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from "./MessageItem";
 import StreamingMessage, { type StreamingMessageClassNames } from "./StreamingMessage";
+import { buildSummaryConversationItems } from "./SummaryConversation";
 import ToolCallGroup, { type ToolCallGroupClassNames } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, isToolActivityMessage, mergeConsecutiveToolGroups, RenderableGroup, shouldCollapseAdjacentRenderedMessage, StreamingData, ToolExecutionStatus } from "./utils";
+import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, RenderableGroup, shouldCollapseAdjacentRenderedMessage, StreamingData, ToolExecutionStatus } from "./utils";
 
 export interface AgentInitialRequestTemplateContext {
     data: unknown;
@@ -141,96 +142,16 @@ function getReadableToolLabel(message: AgentMessage): string {
     return "Using tool";
 }
 
-function getSummaryWorkStatus(messages: AgentMessage[], isActive: boolean): ToolExecutionStatus {
-    if (messages.some((message) => message.type === AgentMessageType.ERROR || message.details?.tool_status === "error")) {
-        return "error";
-    }
-    if (messages.some((message) => message.type === AgentMessageType.WARNING || message.details?.tool_status === "warning")) {
-        return "warning";
-    }
-    return isActive ? "running" : "completed";
-}
-
 function getSummaryWorkLabel(status: ToolExecutionStatus, isActive: boolean): string {
     if (status === "error") return "Work needs attention";
     if (status === "warning") return "Work had warnings";
     return isActive ? "Working" : "Worked";
 }
 
-function isSummaryPrimaryMessage(message: AgentMessage): boolean {
-    return message.type === AgentMessageType.QUESTION ||
-        message.type === AgentMessageType.ANSWER ||
-        message.type === AgentMessageType.REQUEST_INPUT ||
-        message.type === AgentMessageType.TERMINATED ||
-        message.type === AgentMessageType.ERROR ||
-        message.type === AgentMessageType.WARNING;
-}
-
-function isSummaryWorkMessage(message: AgentMessage): boolean {
-    if (isToolActivityMessage(message)) return true;
-    if (message.type === AgentMessageType.UPDATE || message.type === AgentMessageType.PLAN) return true;
-
-    return message.type === AgentMessageType.THOUGHT && !message.details?.streamed;
-}
-
 function getMessageText(message: AgentMessage): string {
     if (!message.message) return "";
     if (typeof message.message === "object") return JSON.stringify(message.message, null, 2);
     return String(message.message).trim();
-}
-
-type SummaryConversationItem =
-    | { type: "message"; message: AgentMessage }
-    | {
-        type: "work";
-        id: string;
-        messages: AgentMessage[];
-        isActive: boolean;
-        status: ToolExecutionStatus;
-        startTimestamp: number | string;
-        endTimestamp?: number | string;
-    };
-
-function buildSummaryConversationItems(messages: AgentMessage[], isCompleted: boolean): SummaryConversationItem[] {
-    const items: SummaryConversationItem[] = [];
-    let pendingWork: AgentMessage[] = [];
-
-    const flushWork = (isActive: boolean, endMessage?: AgentMessage) => {
-        if (pendingWork.length === 0) return;
-
-        const firstMessage = pendingWork[0];
-        const lastMessage = pendingWork[pendingWork.length - 1];
-        const status = getSummaryWorkStatus(pendingWork, isActive);
-        items.push({
-            type: "work",
-            id: `${firstMessage.timestamp}-${lastMessage.timestamp}-${pendingWork.length}`,
-            messages: pendingWork,
-            isActive,
-            status,
-            startTimestamp: firstMessage.timestamp,
-            endTimestamp: endMessage?.timestamp ?? lastMessage.timestamp,
-        });
-        pendingWork = [];
-    };
-
-    for (const message of messages) {
-        if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
-            continue;
-        }
-
-        if (isSummaryWorkMessage(message)) {
-            pendingWork.push(message);
-            continue;
-        }
-
-        if (isSummaryPrimaryMessage(message)) {
-            flushWork(false, message);
-            items.push({ type: "message", message });
-        }
-    }
-
-    flushWork(!isCompleted);
-    return items;
 }
 
 interface SummaryMessageProps {
@@ -248,6 +169,39 @@ const SUMMARY_PROSE_CLASS = [
     "[&_p]:text-foreground/80 [&_li]:text-foreground/80 [&_li::marker]:text-muted",
 ].join(" ");
 
+const USER_BUBBLE_COLLAPSE_THRESHOLD = 520;
+
+function getReactNodeTextLength(node: React.ReactNode): number {
+    if (node === null || node === undefined || typeof node === "boolean") return 0;
+    if (typeof node === "string" || typeof node === "number") return String(node).length;
+    if (Array.isArray(node)) {
+        return node.reduce((total, child) => total + getReactNodeTextLength(child), 0);
+    }
+    if (React.isValidElement(node)) {
+        const props = node.props as { children?: React.ReactNode };
+        return getReactNodeTextLength(props.children);
+    }
+    return 0;
+}
+
+function useLiveElapsedSeconds(timestamp?: number | string, enabled?: boolean): number {
+    const [elapsed, setElapsed] = useState(() => getElapsedSeconds(timestamp));
+
+    useEffect(() => {
+        if (!enabled) {
+            setElapsed(getElapsedSeconds(timestamp));
+            return;
+        }
+
+        const updateElapsed = () => setElapsed(getElapsedSeconds(timestamp));
+        updateElapsed();
+        const intervalId = window.setInterval(updateElapsed, 1000);
+        return () => window.clearInterval(intervalId);
+    }, [enabled, timestamp]);
+
+    return elapsed;
+}
+
 function SummaryUserBubble({
     children,
     workstreamId,
@@ -257,18 +211,52 @@ function SummaryUserBubble({
     workstreamId?: string;
     className?: string;
 }) {
+    const { t } = useUITranslation();
+    const [isExpanded, setIsExpanded] = useState(false);
+    const contentLength = useMemo(() => getReactNodeTextLength(children), [children]);
+    const shouldCollapse = contentLength > USER_BUBBLE_COLLAPSE_THRESHOLD;
+    const isPlainText = typeof children === "string" || typeof children === "number";
+
+    useEffect(() => {
+        if (!shouldCollapse && isExpanded) {
+            setIsExpanded(false);
+        }
+    }, [isExpanded, shouldCollapse]);
+
     return (
         <div className="mx-auto flex w-full max-w-3xl justify-end px-1">
             <div
                 className={cn(
-                    "max-w-[min(44rem,82%)] rounded-[1.35rem] border border-border/50 bg-muted/70 px-4 py-2.5",
-                    "text-[15px] leading-relaxed text-foreground shadow-sm shadow-black/5 dark:bg-muted/80 dark:shadow-black/20",
+                    "max-w-[min(44rem,82%)] rounded-[1.35rem] bg-mixer-muted/35 px-4 py-2.5",
+                    "text-sm font-normal leading-6 text-foreground/90 shadow-sm shadow-black/5 dark:bg-mixer-muted/15 dark:text-foreground/88 dark:shadow-none",
                     "break-words [overflow-wrap:anywhere]",
                     className
                 )}
                 data-workstream-id={workstreamId}
             >
-                {children}
+                <div
+                    className={cn(
+                        isPlainText && "whitespace-pre-wrap",
+                        shouldCollapse && !isExpanded &&
+                            "max-h-72 overflow-hidden [mask-image:linear-gradient(to_bottom,black_76%,transparent_100%)]"
+                    )}
+                >
+                    {children}
+                </div>
+                {shouldCollapse && (
+                    <button
+                        type="button"
+                        aria-expanded={isExpanded}
+                        className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => setIsExpanded((current) => !current)}
+                    >
+                        {isExpanded ? t("agent.showLess") : t("agent.showMore")}
+                        <ChevronDown
+                            className={cn("size-4 transition-transform", isExpanded && "rotate-180")}
+                            aria-hidden="true"
+                        />
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -835,6 +823,7 @@ function ToolDetailSection({ section }: { section: SummaryToolDetailSection }) {
     const value = section.value;
     const isPrimitive = typeof value === "string" || typeof value === "number" || typeof value === "boolean";
     const isFileList = section.label === "Files" && Array.isArray(value);
+    const hideLabel = section.label === "Output";
 
     if (isFileList) {
         return (
@@ -851,64 +840,92 @@ function ToolDetailSection({ section }: { section: SummaryToolDetailSection }) {
         );
     }
 
+    const labelClassName = cn("text-xs font-medium", section.tone === "error" ? "text-destructive" : "text-muted");
+    const content = isPrimitive && !String(value).includes("\n") && String(value).length < 180 ? (
+        <div className={cn("break-words text-xs", section.tone === "error" ? "text-destructive" : "text-foreground/75")}>
+            {String(value)}
+        </div>
+    ) : (
+        <pre className={cn(
+            "max-h-52 overflow-auto whitespace-pre-wrap rounded-lg px-3 py-2 font-mono text-[11px] leading-relaxed",
+            section.tone === "error"
+                ? "bg-destructive/5 text-destructive"
+                : "bg-mixer-muted/10 text-foreground/75"
+        )}>
+            {formatToolSectionValue(value)}
+        </pre>
+    );
+
     return (
         <div className="mt-2">
-            <div className={cn("mb-1 text-[11px] font-medium uppercase tracking-normal", section.tone === "error" ? "text-destructive" : "text-muted")}>
-                {section.label}
-            </div>
-            {isPrimitive && !String(value).includes("\n") && String(value).length < 180 ? (
-                <div className={cn("break-words text-xs", section.tone === "error" ? "text-destructive" : "text-foreground/75")}>
-                    {String(value)}
+            {!hideLabel ? (
+                <div className={cn("mb-1", labelClassName)}>
+                    {section.label}
                 </div>
-            ) : (
-                <pre className={cn(
-                    "max-h-52 overflow-auto whitespace-pre-wrap rounded-lg border px-3 py-2 font-mono text-[11px] leading-relaxed",
-                    section.tone === "error"
-                        ? "border-destructive/20 bg-destructive/5 text-destructive"
-                        : "border-border/60 bg-background/55 text-foreground/75"
+            ) : null}
+            {content}
+        </div>
+    );
+}
+
+function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
+    const isAttention = item.status === "error" || item.status === "warning";
+    const hasDetails = Boolean(item.text || item.sections.length);
+    const [isExpanded, setIsExpanded] = useState(isAttention);
+
+    return (
+        <div className="min-w-0">
+            <button
+                type="button"
+                className={cn(
+                    "grid w-full grid-cols-[1.5rem_1fr_auto] gap-2 text-left outline-none transition-colors",
+                    "focus-visible:text-foreground focus-visible:underline focus-visible:underline-offset-4",
+                    hasDetails ? "cursor-pointer hover:text-foreground" : "cursor-default"
+                )}
+                onClick={() => hasDetails && setIsExpanded((current) => !current)}
+                aria-expanded={hasDetails ? isExpanded : undefined}
+                disabled={!hasDetails}
+            >
+                <span className={cn(
+                    "flex size-5 items-center justify-center pt-0.5",
+                    isAttention ? "text-attention" : "text-muted"
                 )}>
-                    {formatToolSectionValue(value)}
-                </pre>
-            )}
+                    <ToolDetailIcon kind={item.kind} status={item.status} />
+                </span>
+                <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                    <span className="text-sm font-medium text-muted">{item.label}</span>
+                    <span className="min-w-0 break-words text-sm text-muted">{item.title}</span>
+                </span>
+                {hasDetails ? (
+                    <ChevronDown
+                        className={cn("mt-0.5 size-4 shrink-0 text-muted opacity-50 transition-transform", !isExpanded && "-rotate-90")}
+                        aria-hidden="true"
+                    />
+                ) : null}
+            </button>
+            {hasDetails && isExpanded ? (
+                <div className="ml-7 mt-1">
+                    {item.text ? (
+                        <div className="break-words text-sm leading-relaxed text-muted">
+                            {item.text}
+                        </div>
+                    ) : null}
+                    {item.sections.map((section, sectionIndex) => (
+                        <ToolDetailSection key={`${section.label}-${sectionIndex}`} section={section} />
+                    ))}
+                </div>
+            ) : null}
         </div>
     );
 }
 
 function SummaryToolTimeline({ items }: { items: SummaryToolDetailItem[] }) {
     return (
-        <div className="mt-4 max-h-[30rem] overflow-y-auto rounded-xl border border-border/60 bg-background/45 px-3 py-3">
-            <div className="space-y-1">
-                {items.map((item, index) => {
-                    const isLast = index === items.length - 1;
-                    const isAttention = item.status === "error" || item.status === "warning";
-                    return (
-                        <div key={item.key} className="grid grid-cols-[1.5rem_1fr] gap-3">
-                            <div className="relative flex justify-center">
-                                {!isLast && <div className="absolute top-7 bottom-0 w-px bg-border/70" />}
-                                <div className={cn(
-                                    "relative z-10 flex size-6 items-center justify-center rounded-md border bg-background",
-                                    isAttention ? "border-attention/40 text-attention" : "border-border text-muted"
-                                )}>
-                                    <ToolDetailIcon kind={item.kind} status={item.status} />
-                                </div>
-                            </div>
-                            <div className={cn("min-w-0 pb-4", isLast && "pb-0")}>
-                                <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                                    <span className="text-sm font-semibold text-foreground">{item.label}</span>
-                                    <span className="min-w-0 break-words text-sm text-muted">{item.title}</span>
-                                </div>
-                                {item.text ? (
-                                    <div className="mt-1 break-words text-sm leading-relaxed text-foreground/80">
-                                        {item.text}
-                                    </div>
-                                ) : null}
-                                {item.sections.map((section, sectionIndex) => (
-                                    <ToolDetailSection key={`${section.label}-${sectionIndex}`} section={section} />
-                                ))}
-                            </div>
-                        </div>
-                    );
-                })}
+        <div className="mt-3 max-h-[30rem] overflow-y-auto">
+            <div className="space-y-2">
+                {items.map((item) => (
+                    <SummaryToolTimelineItem key={item.key} item={item} />
+                ))}
             </div>
         </div>
     );
@@ -942,6 +959,8 @@ function SummaryActivityRow({
     durationSeconds,
     showElapsed,
     details,
+    emptyDetailsLabel,
+    defaultExpanded = false,
     className,
 }: {
     label: string;
@@ -950,14 +969,18 @@ function SummaryActivityRow({
     durationSeconds?: number;
     showElapsed?: boolean;
     details?: AgentMessage[];
+    emptyDetailsLabel?: string;
+    defaultExpanded?: boolean;
     className?: string;
 }) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const elapsed = durationSeconds ?? getElapsedSeconds(timestamp);
+    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+    const isLiveElapsed = showElapsed && durationSeconds === undefined;
+    const liveElapsed = useLiveElapsedSeconds(timestamp, isLiveElapsed);
+    const elapsed = durationSeconds ?? liveElapsed;
     const shouldShowElapsed = showElapsed && timestamp !== undefined;
     const isAttention = status === "error" || status === "warning";
     const detailItems = useMemo(() => buildSummaryToolDetailItems(details ?? []), [details]);
-    const canExpand = detailItems.length > 0;
+    const canExpand = detailItems.length > 0 || Boolean(emptyDetailsLabel);
 
     return (
         <div className={cn("mx-auto w-full max-w-3xl px-1", className)}>
@@ -985,7 +1008,16 @@ function SummaryActivityRow({
                         )
                     ) : null}
                 </button>
-                {canExpand && isExpanded ? <SummaryToolTimeline items={detailItems} /> : null}
+                {canExpand && isExpanded ? (
+                    detailItems.length > 0 ? (
+                        <SummaryToolTimeline items={detailItems} />
+                    ) : (
+                        <div className="mt-3 flex items-center gap-2 text-sm text-muted">
+                            <Terminal className="size-4 opacity-70" aria-hidden="true" />
+                            <span>{emptyDetailsLabel}</span>
+                        </div>
+                    )
+                ) : null}
             </div>
         </div>
     );
@@ -1302,13 +1334,15 @@ function AllMessagesMixedComponent({
         return filterMessagesByWorkstream(sortedMessages, activeWorkstream);
     }, [sortedMessages, activeWorkstream]);
 
-    const summaryConversationItems = React.useMemo(
-        () => buildSummaryConversationItems(displayMessages, isCompleted),
-        [displayMessages, isCompleted],
-    );
+    const fallbackWorkingStartedAtRef = useRef(Date.now());
     const hasInitialRequest = Boolean(prependFriendlyMessage?.trim()) ||
         hasInitialRequestValue(initialRequestData) ||
         initialRequestTemplate !== undefined;
+
+    const latestDisplayMessageTimestamp = useMemo(() => {
+        if (displayMessages.length === 0) return -Infinity;
+        return Math.max(...displayMessages.map((msg) => getTimestampMs(msg.timestamp)));
+    }, [displayMessages]);
 
     // Split streaming messages:
     // - complete (or stale incomplete) ones are interleaved chronologically
@@ -1318,12 +1352,6 @@ function AllMessagesMixedComponent({
     const { completeStreaming, incompleteStreaming } = React.useMemo(() => {
         const complete = new Map<string, StreamingData>();
         const incomplete: Array<{ id: string; data: StreamingData }> = [];
-        const newestMessageTimestamp = displayMessages.length > 0
-            ? Math.max(...displayMessages.map(msg =>
-                typeof msg.timestamp === "number" ? msg.timestamp : new Date(msg.timestamp).getTime()
-            ))
-            : -Infinity;
-
         streamingMessages.forEach((data, id) => {
             // Filter by workstream if specified
             if (activeWorkstream && activeWorkstream !== "all") {
@@ -1333,7 +1361,7 @@ function AllMessagesMixedComponent({
 
             // If a newer persisted message exists, this stream is stale and should be
             // treated as complete for ordering purposes.
-            const isStale = data.startTimestamp <= newestMessageTimestamp;
+            const isStale = data.startTimestamp <= latestDisplayMessageTimestamp;
             if (isStale) {
                 // Only interleave chronologically when a newer persisted message
                 // already exists — the streaming message is truly historical.
@@ -1346,7 +1374,20 @@ function AllMessagesMixedComponent({
         });
 
         return { completeStreaming: complete, incompleteStreaming: incomplete };
-    }, [streamingMessages, activeWorkstream, displayMessages]);
+    }, [streamingMessages, activeWorkstream, latestDisplayMessageTimestamp]);
+
+    const latestSummaryObservedTimestamp = useMemo(() => {
+        const latestStreamingTimestamp = incompleteStreaming.reduce(
+            (latest, { data }) => Math.max(latest, data.startTimestamp),
+            -Infinity,
+        );
+        return Math.max(latestDisplayMessageTimestamp, latestStreamingTimestamp);
+    }, [incompleteStreaming, latestDisplayMessageTimestamp]);
+
+    const summaryConversationItems = React.useMemo(
+        () => buildSummaryConversationItems(displayMessages, isCompleted, latestSummaryObservedTimestamp),
+        [displayMessages, isCompleted, latestSummaryObservedTimestamp],
+    );
 
     // Group messages with ONLY complete streaming interleaved for stacked view
     // Incomplete streaming is rendered separately at the end (avoids re-grouping on every chunk)
@@ -1374,7 +1415,7 @@ function AllMessagesMixedComponent({
 
     const latestVisibleTimestamp = useMemo(() => {
         const latestMessage = displayMessages[displayMessages.length - 1];
-        return latestMessage?.timestamp ?? Date.now();
+        return latestMessage?.timestamp ?? fallbackWorkingStartedAtRef.current;
     }, [displayMessages]);
 
     // Determine completion status for each workstream
@@ -1863,7 +1904,7 @@ function AllMessagesMixedComponent({
 
                                     return (
                                         <SummaryActivityRow
-                                            key={`work-${item.id}-${itemIndex}`}
+                                            key={`work-${item.id}-${item.isActive ? "active" : "done"}-${itemIndex}`}
                                             label={getSummaryWorkLabel(item.status, item.isActive)}
                                             status={item.status}
                                             timestamp={item.startTimestamp}
@@ -1872,6 +1913,7 @@ function AllMessagesMixedComponent({
                                                 : getDurationSeconds(item.startTimestamp, item.endTimestamp)}
                                             showElapsed
                                             details={item.messages}
+                                            defaultExpanded={item.isActive}
                                             className={workingIndicatorClassName}
                                         />
                                     );
@@ -1911,7 +1953,7 @@ function AllMessagesMixedComponent({
                                     artifactRunId={artifactRunId}
                                 />
                             ))}
-                            {/* Working indicator - shows agent is actively processing */}
+                            {/* Working fallback - shown before any tool/thought message has arrived */}
                             {isAgentWorking &&
                                 !hasActiveSummaryWork &&
                                 incompleteStreaming.length === 0 && (
@@ -1920,6 +1962,8 @@ function AllMessagesMixedComponent({
                                     status="running"
                                     timestamp={latestVisibleTimestamp}
                                     showElapsed
+                                    emptyDetailsLabel={t("agent.waitingForAgentActivity")}
+                                    defaultExpanded
                                     className={workingIndicatorClassName}
                                 />
                             )}

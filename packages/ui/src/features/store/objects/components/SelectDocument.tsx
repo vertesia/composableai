@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { clsx } from "clsx";
 import { RefreshCw } from "lucide-react";
 
 import { DocumentsFacetsNav } from "../../../facets";
@@ -10,7 +9,7 @@ import { DocumentSearchProvider } from "../search/DocumentSearchProvider";
 import { ContentDispositionButton } from "./ContentDispositionButton";
 
 import { ColumnLayout, ContentObjectItem } from "@vertesia/common";
-import { Button, ErrorBox, Spinner, useIntersectionObserver } from "@vertesia/ui/core";
+import { Button, ErrorBox, useIntersectionObserver } from "@vertesia/ui/core";
 import { useUITranslation } from '../../../../i18n/index.js';
 
 const layout: ColumnLayout[] = [
@@ -98,20 +97,17 @@ function SelectDocumentImpl({ onRowClick, selectedIds }: Readonly<SelectDocument
             </div>
             <div className="@container flex-1 overflow-y-auto">
                 {/* Documents Display Grid or Table */}
-                <DocumentTable objects={objects || []} isLoading={false} layout={layout} onRowClick={onRowClick} highlightRow={selectedIds?.size ? highlightRow : undefined} isGridView={isGridView} />
+                <DocumentTable
+                    objects={objects || []}
+                    isLoading={isLoading && !objects.length}
+                    layout={layout}
+                    onRowClick={onRowClick}
+                    highlightRow={selectedIds?.size ? highlightRow : undefined}
+                    isGridView={isGridView}
+                />
 
                 {/* Intersection observer target */}
                 <div ref={loadMoreRef} className="h-4 w-full" />
-
-                {/* Loading spinner */}
-                <div
-                    className={clsx(
-                        "bg-white dark:bg-gray-800 opacity-80 absolute inset-0 z-50 flex justify-center items-center rounded",
-                        isLoading ? "block" : "hidden"
-                    )}
-                >
-                    <Spinner size="xl" />
-                </div>
             </div>
         </div>
     )
