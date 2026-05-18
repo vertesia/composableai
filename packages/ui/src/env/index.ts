@@ -34,6 +34,14 @@ export interface EnvProps {
      * has a short-lived Vertesia token. Production apps must not set this.
      */
     devAuthToken?: string,
+    /**
+     * Optional host-provided Vertesia auth token bootstrap.
+     *
+     * Published generated apps use this to ask their same-origin app gateway for
+     * the token backing the gateway session cookie, allowing UserSession to
+     * initialize without redirecting through Central Auth.
+     */
+    authTokenProvider?: () => Promise<string | undefined>,
     logger?: {
         info: (msg: string, ...args: any) => void,
         warn: (msg: string, ...args: any) => void,
@@ -127,6 +135,10 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
 
     get devAuthToken() {
         return this._props?.devAuthToken;
+    }
+
+    get authTokenProvider() {
+        return this._props?.authTokenProvider;
     }
 
     get logger() {
