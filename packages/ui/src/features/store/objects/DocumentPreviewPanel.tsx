@@ -194,7 +194,8 @@ export function DocumentPreviewPanel({
           {/* Tabs */}
           <div className="border-b">
             <div className="flex px-4">
-              <button
+              <Button
+                variant="unstyled"
                 className={`py-2 px-4 font-medium border-b-2 ${currentTab === "preview"
                   ? "border-indigo-600 text-indigo-700 dark:text-indigo-300"
                   : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -205,8 +206,9 @@ export function DocumentPreviewPanel({
                   <LayoutGrid className="h-4 w-4" />
                   <span>{t('store.preview')}</span>
                 </div>
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="unstyled"
                 className={`py-2 px-4 font-medium border-b-2 ${currentTab === "properties"
                   ? "border-indigo-600 text-indigo-700 dark:text-indigo-300"
                   : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -217,7 +219,7 @@ export function DocumentPreviewPanel({
                   <Info className="h-4 w-4" />
                   <span>{t('store.properties')}</span>
                 </div>
-              </button>
+              </Button>
             </div>
           </div>
 

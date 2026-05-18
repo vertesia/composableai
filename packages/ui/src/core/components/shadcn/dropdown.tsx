@@ -346,9 +346,10 @@ export function MenuItem({ children, href, onClick, isDisabled = false, variant 
   );
   if (isHoverMenu) {
     const handleClick = (e: React.MouseEvent) => { e.stopPropagation(); onClick?.(e); };
+    // Raw <button> — hover-menu fallback for a dropdown item; Button would apply wrong (button) focus/hover on top of menu-item semantics.
     return href
       ? <a href={href} className={baseClass}>{children}</a>
-      : <button className={baseClass} disabled={isDisabled} onClick={handleClick}>{children}</button>;
+      : <button type="button" className={baseClass} disabled={isDisabled} onClick={handleClick}>{children}</button>;
   }
   return (
     <DropdownMenuItem

@@ -5,6 +5,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VegaEmbed } from 'react-vega';
 import type { View } from 'vega';
 import type { TopLevelSpec as VisualizationSpec } from 'vega-lite';
+import { Button } from '@vertesia/ui/core';
 import { cn } from '../../../core/components/libs/utils';
 import { useUITranslation } from '../../../i18n/index.js';
 import { useUserSession } from '@vertesia/ui/session';
@@ -66,13 +67,14 @@ function FullscreenDialog({
                 >
                     {/* Close button - top right corner */}
                     <DialogPrimitive.Close asChild>
-                        <button
+                        <Button
+                            variant="unstyled"
                             onClick={onClose}
                             className="absolute top-3 right-3 z-10 p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 shadow-sm"
                             aria-label={t('agent.closeFullscreen')}
                         >
                             <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                        </button>
+                        </Button>
                     </DialogPrimitive.Close>
                     {/* Chart content first - takes most space */}
                     <div className="flex-1 overflow-auto p-4 sm:p-6 animate-in fade-in-0 duration-500 delay-150">
@@ -911,7 +913,8 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
     // Toolbar component (reused in both views)
     const Toolbar = ({ className }: { className?: string }) => (
         <div className={cn("flex items-center gap-2", className)}>
-            <button
+            <Button
+                variant="unstyled"
                 onClick={handleCopy}
                 disabled={isCopied}
                 className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 flex items-center gap-1"
@@ -919,8 +922,9 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
             >
                 {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 {isCopied ? t('agent.copied') : t('agent.copy')}
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="unstyled"
                 onClick={handleExport}
                 disabled={isExporting}
                 className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
@@ -928,16 +932,17 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
             >
                 <Download className="w-3 h-3" />
                 {isExporting ? t('agent.exporting') : t('agent.export')}
-            </button>
+            </Button>
             {showFullscreenButton && (
-                <button
+                <Button
+                    variant="unstyled"
                     onClick={toggleFullscreen}
                     className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors flex items-center gap-1"
                     title={isFullscreen ? t('agent.exitFullscreen') : t('agent.fullscreen')}
                 >
                     {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
                     {isFullscreen ? t('agent.exit') : t('agent.fullscreen')}
-                </button>
+                </Button>
             )}
         </div>
     );
