@@ -144,16 +144,6 @@ importers:
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
-      '@vertesia/common':
-        specifier: workspace:*
-        version: link:../common
-      gray-matter:
-        specifier: ^4.0.3
-        version: 4.0.3
-      zod:
-        specifier: ^3.24.1
-        version: 3.25.76
-    devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^28.0.3
         version: 28.0.9(rollup@4.60.1)
@@ -169,6 +159,16 @@ importers:
       '@rollup/plugin-typescript':
         specifier: ^12.1.2
         version: 12.3.0(rollup@4.60.1)(tslib@2.8.1)(typescript@6.0.3)
+      '@vertesia/common':
+        specifier: workspace:*
+        version: link:../common
+      gray-matter:
+        specifier: ^4.0.3
+        version: 4.0.3
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+    devDependencies:
       '@types/node':
         specifier: ^24.1.0
         version: 24.12.2

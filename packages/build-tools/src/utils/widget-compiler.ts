@@ -73,7 +73,7 @@ export async function compileWidgets(
 
         // Add minification if requested
         if (minify) {
-            const { terser } = await import('rollup-plugin-terser' as any);
+            const terser = (await import('@rollup/plugin-terser' as any)).default as any;
             plugins.push(
                 terser({
                     compress: {
