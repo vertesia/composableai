@@ -380,12 +380,14 @@ export default function MessageInput({
                                     <FileTextIcon className="size-3.5" />
                                     <span className="max-w-[120px] truncate">{file.name}</span>
                                     {onRemoveFile && (
-                                        <button
+                                        <Button
+                                            variant="unstyled"
+                                            aria-label={`Remove ${file.name}`}
                                             onClick={() => onRemoveFile(file.id)}
                                             className="ml-1 p-0.5 hover:bg-success/20 rounded"
                                         >
                                             <XIcon className="size-3" />
-                                        </button>
+                                        </Button>
                                     )}
                                 </div>
                             ))}
@@ -418,12 +420,14 @@ export default function MessageInput({
                                 <FileTextIcon className="size-3.5" />
                                 <span className="max-w-[120px] truncate">{doc.name}</span>
                                 {onRemoveDocument && (
-                                    <button
+                                    <Button
+                                        variant="unstyled"
+                                        aria-label={`Remove ${doc.name}`}
                                         onClick={() => onRemoveDocument(doc.id)}
                                         className="ml-1 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded"
                                     >
                                         <XIcon className="size-3" />
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
                         ))}

@@ -37,7 +37,8 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeP
     if (node.isDirectory) {
         return (
             <div>
-                <button
+                <Button
+                    variant="unstyled"
                     className="flex items-center gap-1.5 w-full text-left py-1 px-1 rounded hover:bg-muted/30 text-sm"
                     style={{ paddingLeft: `${depth * 16 + 4}px` }}
                     onClick={() => setExpanded((prev) => !prev)}
@@ -49,7 +50,7 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeP
                         ? <FolderOpenIcon className="size-4 shrink-0 text-info" />
                         : <FolderIcon className="size-4 shrink-0 text-info" />}
                     <span className="truncate font-medium">{formatDirectoryLabel(node.name)}</span>
-                </button>
+                </Button>
                 {expanded && node.children.map((child) => (
                     <TreeNode
                         key={child.path}
@@ -67,7 +68,8 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeP
     const isDownloading = downloadingPath === node.path;
 
     return (
-        <button
+        <Button
+            variant="unstyled"
             className="flex items-center gap-1.5 w-full text-left py-1 px-1 rounded hover:bg-muted/30 text-sm"
             style={{ paddingLeft: `${depth * 16 + 4}px` }}
             onClick={() => onDownload(node.path)}
@@ -78,7 +80,7 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeP
                 : <span className="size-3.5 shrink-0" />}
             <FileIcon className="size-4 shrink-0 text-muted" />
             <span className="truncate">{node.name}</span>
-        </button>
+        </Button>
     );
 }
 

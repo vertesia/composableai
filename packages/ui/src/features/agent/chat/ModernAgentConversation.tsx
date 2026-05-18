@@ -603,12 +603,14 @@ function StartWorkflowView({
                                 <FileTextIcon className="size-3.5" />
                                 <span className="max-w-[120px] truncate">{file.name}</span>
                                 <span className="text-xs opacity-70">{t('agent.staged')}</span>
-                                <button
+                                <Button
+                                    variant="unstyled"
+                                    aria-label={`Remove staged file ${file.name}`}
                                     onClick={() => removeStagedFile(index)}
                                     className="ml-1 p-0.5 hover:bg-attention/20 rounded"
                                 >
                                     <XIcon className="size-3" />
-                                </button>
+                                </Button>
                             </div>
                         ))}
                     </div>
@@ -1547,12 +1549,31 @@ const handleCloseRightPanel = useCallback(() => {
             {isRightPanelVisible && (
                 <>
                     {!conversationTab && (
+                        // biome-ignore lint/a11y/useSemanticElements: <hr> has no semantics for a draggable resize handle; ARIA separator is the spec-recommended pattern.
                         <div
-                            className="hidden lg:block lg:w-1 lg:shrink-0 cursor-col-resize bg-border/70 hover:bg-border transition-colors"
-                            onMouseDown={() => setIsRightPanelResizing(true)}
                             role="separator"
                             aria-orientation="vertical"
                             aria-label="Resize right panel"
+                            aria-valuenow={Math.round(rightPanelWidth)}
+                            aria-valuemin={300}
+                            aria-valuetext={`${Math.round(rightPanelWidth)} pixels`}
+                            tabIndex={0}
+                            className="hidden lg:block lg:w-1 lg:shrink-0 cursor-col-resize bg-border/70 hover:bg-border transition-colors"
+                            onMouseDown={() => setIsRightPanelResizing(true)}
+                            onKeyDown={(event) => {
+                                if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                                event.preventDefault();
+                                const step = event.shiftKey ? 32 : 16;
+                                // Right panel is anchored to the right edge — ArrowLeft grows it, ArrowRight shrinks.
+                                const delta = event.key === 'ArrowLeft' ? step : -step;
+                                const container = conversationLayoutRef.current;
+                                const minRightPanelWidth = 300;
+                                const minConversationWidth = 420;
+                                const maxRightPanelWidth = container
+                                    ? Math.max(minRightPanelWidth, container.getBoundingClientRect().width - minConversationWidth)
+                                    : minRightPanelWidth + 600;
+                                setRightPanelWidth(w => Math.min(Math.max(w + delta, minRightPanelWidth), maxRightPanelWidth));
+                            }}
                         />
                     )}
                     <div

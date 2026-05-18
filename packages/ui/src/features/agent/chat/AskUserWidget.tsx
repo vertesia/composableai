@@ -254,7 +254,8 @@ export function AskUserWidget({
                             /* Single-select mode - always use full-width card layout for clarity */
                             <div className="flex flex-col gap-2 w-full">
                                 {options.map((option) => (
-                                    <button
+                                    <Button
+                                        variant="unstyled"
                                         key={option.id}
                                         onClick={() => onSelect?.(option.id)}
                                         disabled={isLoading}
@@ -283,7 +284,7 @@ export function AskUserWidget({
                                                 )}
                                             </div>
                                         </div>
-                                    </button>
+                                    </Button>
                                 ))}
                             </div>
                         )}

@@ -40,10 +40,16 @@ export interface InputProps
   clearable?: boolean;
   value?: string;
   onChange?: (value: string) => void
+  /**
+   * Convenience for `aria-invalid`. When true, sets aria-invalid="true" and styles via
+   * the existing `aria-invalid:*` Tailwind utilities. Prefer this over passing aria-invalid
+   * directly so consumers and FormItem can drive validity through a single prop.
+   */
+  invalid?: boolean
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, size = "md", variant = "default", clearable = true, onChange, value, ...props }, ref) => {
+  ({ className, type, size = "md", variant = "default", clearable = true, onChange, value, invalid, ...props }, ref) => {
 
     const _onClear = () => {
       onChange && onChange('');
@@ -52,6 +58,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const _onChange = (ev: ChangeEvent<HTMLInputElement>) => {
       onChange && onChange(ev.target.value);
     };
+
+    // Map `invalid` to aria-invalid unless the consumer already set it explicitly.
+    const ariaInvalid = props['aria-invalid'] ?? (invalid ? true : undefined)
 
     return (
       <div className="w-full relative inline-block [&:hover_.clear-button]:opacity-100">
@@ -67,6 +76,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           value={value == null ? '' : value}
           onChange={_onChange}
           {...props}
+          aria-invalid={ariaInvalid}
         />
         {clearable && value && !props.readOnly && !props.disabled && (
           <Button variant={"link"} size={"icon"}
@@ -75,7 +85,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             className={`clear-button opacity-0 transition-opacity duration-200
               absolute top-1/2 -translate-y-1/2 text-muted !hover:text-destructive cursor-pointer
               flex items-center justify-center size-6 rounded right-2`}
-            alt="Clear input"
+            aria-label="Clear input"
           >
             <X size={16} />
           </Button>
