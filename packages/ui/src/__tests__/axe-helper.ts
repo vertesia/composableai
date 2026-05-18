@@ -1,3 +1,4 @@
+import type { AxeResults } from 'axe-core';
 import { axe as baseAxe } from 'vitest-axe';
 
 /**
@@ -13,7 +14,7 @@ import { axe as baseAxe } from 'vitest-axe';
  * Lives in a `.ts` file (not `.tsx`) to keep its module init free of React/JSX
  * resolution concerns.
  */
-export function axe(container: Element | string) {
+export function axe(container: Element | string): Promise<AxeResults> {
     return baseAxe(container, {
         rules: {
             'color-contrast': { enabled: false },
