@@ -87,6 +87,46 @@ describe('@vertesia/ui accessibility (axe)', () => {
         expect(await axe(container)).toHaveNoViolations();
     });
 
+    it('FormItem wires helpText to its child via aria-describedby', async () => {
+        const { container } = renderWithProviders(
+            <FormItem label="Email" helpText="We will never share your email.">
+                <Input value="" onChange={() => undefined} clearable={false} />
+            </FormItem>,
+        );
+        const input = container.querySelector('input');
+        const describedBy = input?.getAttribute('aria-describedby');
+        expect(describedBy).toBeTruthy();
+        const helpEl = describedBy ? document.getElementById(describedBy) : null;
+        expect(helpEl?.textContent).toBe('We will never share your email.');
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('FormItem wires error to its child via aria-describedby + aria-invalid', async () => {
+        const { container } = renderWithProviders(
+            <FormItem label="Email" error="Must be a valid email address.">
+                <Input value="not-an-email" onChange={() => undefined} clearable={false} />
+            </FormItem>,
+        );
+        const input = container.querySelector('input');
+        expect(input?.getAttribute('aria-invalid')).toBe('true');
+        const describedBy = input?.getAttribute('aria-describedby');
+        expect(describedBy).toBeTruthy();
+        const errEl = describedBy ? document.getElementById(describedBy) : null;
+        expect(errEl?.textContent).toBe('Must be a valid email address.');
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('FormItem concatenates helpText + error ids into aria-describedby', async () => {
+        const { container } = renderWithProviders(
+            <FormItem label="Password" helpText="At least 12 characters." error="Too short.">
+                <Input value="x" onChange={() => undefined} clearable={false} />
+            </FormItem>,
+        );
+        const input = container.querySelector('input');
+        const describedBy = input?.getAttribute('aria-describedby');
+        expect(describedBy?.split(' ').length).toBe(2);
+    });
+
     it('Label paired with Input (htmlFor) has no violations', async () => {
         const { container } = renderWithProviders(
             <div>
