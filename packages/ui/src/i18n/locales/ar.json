@@ -143,6 +143,7 @@
   "agent.submitSelectionCount_other": "إرسال الاختيار ({{count}})",
   "agent.summary": "ملخص",
   "agent.taskProgress": "تقدم المهام",
+  "agent.thinking": "جارٍ التفكير",
   "agent.toggleRightSidebar": "تبديل الشريط الجانبي الأيمن",
   "agent.typeNewInstructions": "اكتب رسالتك لإعطاء تعليمات جديدة",
   "agent.typeQuestionBelow": "اكتب سؤالك أدناه واضغط Enter أو انقر {{buttonText}} للبدء",

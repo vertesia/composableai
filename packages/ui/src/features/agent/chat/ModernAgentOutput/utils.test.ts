@@ -401,11 +401,13 @@ describe("ModernAgentOutput summary conversation items", () => {
 
         expect(items[0]).toMatchObject({
             type: "work",
+            isActive: false,
             messages: [tool],
+            endTimestamp: 1000,
         });
     });
 
-    it("keeps only the current trailing thinking marker while active", () => {
+    it("completes tool work before showing post-tool thinking as active", () => {
         const tool = makeMessage({
             timestamp: 1000,
             type: AgentMessageType.THOUGHT,
@@ -428,9 +430,17 @@ describe("ModernAgentOutput summary conversation items", () => {
 
         const items = buildSummaryConversationItems([tool, thinking], false);
 
+        expect(items).toHaveLength(2);
         expect(items[0]).toMatchObject({
             type: "work",
-            messages: [tool, thinking],
+            isActive: false,
+            messages: [tool],
+            endTimestamp: 1000,
+        });
+        expect(items[1]).toMatchObject({
+            type: "work",
+            isActive: true,
+            messages: [thinking],
         });
     });
 
@@ -638,6 +648,10 @@ describe("ModernAgentOutput summary conversation items", () => {
 
         const items = buildSummaryConversationItems([question, runningTool, completedTool], false);
 
+        expect(items[1]).toMatchObject({
+            type: "work",
+            isActive: false,
+        });
         expect(getSummaryConversationLatestTimestamp(items, 500)).toBe(2500);
     });
 
@@ -695,6 +709,10 @@ describe("ModernAgentOutput summary conversation items", () => {
         const items = buildSummaryConversationItems([question], false);
 
         expect(shouldShowSummaryActivityFallback(items, true, false)).toBe(true);
+    });
+
+    it("shows activity fallback before the first persisted start message arrives", () => {
+        expect(shouldShowSummaryActivityFallback([], true, false)).toBe(true);
     });
 
     it("does not flicker activity fallback after the assistant answer arrives before idle", () => {

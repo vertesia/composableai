@@ -131,6 +131,7 @@
   "agent.submitSelectionCount_other": "提交選擇({{count}})",
   "agent.summary": "摘要",
   "agent.taskProgress": "任務進度",
+  "agent.thinking": "思考中",
   "agent.toggleRightSidebar": "切換右側邊欄",
   "agent.typeNewInstructions": "輸入新的指示",
   "agent.typeQuestionBelow": "在下方輸入問題並按Enter或點擊{{buttonText}}開始",

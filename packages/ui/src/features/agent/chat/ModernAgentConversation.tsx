@@ -14,7 +14,6 @@ import {
 import { FusionFragmentProvider } from "@vertesia/fusion-ux";
 import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle, Textarea } from "@vertesia/ui/core";
 
-import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
 import {
     type AgentConversationViewMode,
     type AgentInitialRequestTemplate,
@@ -29,7 +28,6 @@ import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
 import MessageInput, { UploadedFile, SelectedDocument } from "./ModernAgentOutput/MessageInput";
 import { getConversationUrl, getWorkstreamId } from "./ModernAgentOutput/utils";
-import { ThinkingMessages } from "./WaitingMessages";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
 import { useUITranslation } from "../../../i18n/index.js";
@@ -43,6 +41,71 @@ import { useFileProcessing } from "./hooks/useFileProcessing.js";
 export type StartWorkflowFn = (
     initialMessage?: string,
 ) => Promise<{ agent_run_id: string } | undefined>;
+
+function getTimestampMs(timestamp: number | string | undefined): number {
+    if (typeof timestamp === "number") return timestamp;
+    if (!timestamp) return Date.now();
+    const parsed = new Date(timestamp).getTime();
+    return Number.isFinite(parsed) ? parsed : Date.now();
+}
+
+function formatCompactDuration(seconds: number): string {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+}
+
+function useElapsedSeconds(timestamp?: number | string, enabled = true): number {
+    const [elapsed, setElapsed] = useState(() =>
+        Math.max(0, Math.floor((Date.now() - getTimestampMs(timestamp)) / 1000))
+    );
+
+    useEffect(() => {
+        if (!enabled) return;
+
+        const updateElapsed = () => {
+            setElapsed(Math.max(0, Math.floor((Date.now() - getTimestampMs(timestamp)) / 1000)));
+        };
+
+        updateElapsed();
+        const intervalId = window.setInterval(updateElapsed, 1000);
+        return () => window.clearInterval(intervalId);
+    }, [enabled, timestamp]);
+
+    return elapsed;
+}
+
+function PendingStartConversation({
+    message,
+    startedAt,
+}: {
+    message: string;
+    startedAt: number;
+}) {
+    const { t } = useUITranslation();
+    const elapsed = useElapsedSeconds(startedAt);
+
+    return (
+        <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-end gap-6 px-1 py-8">
+            <div className="flex w-full justify-end">
+                <div
+                    className={cn(
+                        "max-w-[min(44rem,82%)] rounded-[1.35rem] bg-mixer-muted/35 px-4 py-2.5",
+                        "break-words text-sm font-normal leading-6 text-foreground/90 shadow-sm shadow-black/5",
+                        "dark:bg-mixer-muted/15 dark:text-foreground/88 dark:shadow-none [overflow-wrap:anywhere]"
+                    )}
+                >
+                    <div className="whitespace-pre-wrap">{message}</div>
+                </div>
+            </div>
+            <div className="border-b border-border/70 pb-3 text-sm text-muted">
+                <span className="font-medium">{t('agent.thinking')}</span>
+                <span className="ml-2 text-muted/75">for {formatCompactDuration(elapsed)}</span>
+            </div>
+        </div>
+    );
+}
 
 function printElementToPdf(sourceElement: HTMLElement, title: string): boolean {
     if (typeof window === "undefined" || typeof document === "undefined") {
@@ -313,6 +376,8 @@ function StartWorkflowView({
     const [inputValue, setInputValue] = useState<string>("");
     const [isSending, setIsSending] = useState(false);
     const [startedAgentRunId, setStartedAgentRunId] = useState<string | null>(null);
+    const [pendingStartMessage, setPendingStartMessage] = useState<string | null>(null);
+    const [pendingStartTimestamp, setPendingStartTimestamp] = useState<number | null>(null);
     const toast = useToast();
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -424,6 +489,9 @@ function StartWorkflowView({
                 ].join('\n');
             }
 
+            setPendingStartMessage(messageContent);
+            setPendingStartTimestamp(Date.now());
+
             const newRun = await startWorkflow(messageContent);
             if (newRun) {
                 const agentId = newRun.agent_run_id;
@@ -488,6 +556,8 @@ function StartWorkflowView({
                 });
             }
         } catch (err: unknown) {
+            setPendingStartMessage(null);
+            setPendingStartTimestamp(null);
             toast({
                 title: t('agent.errorStarting'),
                 status: "error",
@@ -604,13 +674,20 @@ function StartWorkflowView({
 
                 {/* Empty conversation area with instructions */}
                 <div className="flex flex-1 flex-col items-center justify-end overflow-y-auto bg-background px-4">
-                    <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-end py-8">
-                        {initialMessage && (
-                            <div className="text-[15px] leading-relaxed text-foreground/80">
-                                {initialMessage}
-                            </div>
-                        )}
-                    </div>
+                    {pendingStartMessage && pendingStartTimestamp ? (
+                        <PendingStartConversation
+                            message={pendingStartMessage}
+                            startedAt={pendingStartTimestamp}
+                        />
+                    ) : (
+                        <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-end py-8">
+                            {initialMessage && (
+                                <div className="text-[15px] leading-relaxed text-foreground/80">
+                                    {initialMessage}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Input Area */}
@@ -857,7 +934,6 @@ function ModernAgentConversationInner({
         }
     }, [onViewModeChangeProp]);
     const [isStopping, setIsStopping] = useState(false);
-    const [thinkingMessageIndex, setThinkingMessageIndex] = useState(0);
     const [isDragOver, setIsDragOver] = useState(false);
     const [activeWorkstreams, setActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
     const [completedWorkstreams, setCompletedWorkstreams] = useState<Array<{ launch_id: string; workstream_id: string; status: 'completed' | 'canceled' }>>([]);
@@ -1056,18 +1132,6 @@ const handleCloseRightPanel = useCallback(() => {
     // ────────────────────────────────────────────
     // Effects
     // ────────────────────────────────────────────
-
-    // Show rotating thinking messages
-    useEffect(() => {
-        if (!isCompleted) {
-            const interval = setInterval(() => {
-                setThinkingMessageIndex(() =>
-                    Math.floor(Math.random() * (ThinkingMessages.length - 1)),
-                );
-            }, 4000);
-            return () => clearInterval(interval);
-        }
-    }, [isCompleted]);
 
     // Expose handleFileUpload to external callers via ref
     useEffect(() => {
@@ -1474,57 +1538,40 @@ const handleCloseRightPanel = useCallback(() => {
                 </div>
             )}
 
-            {messages.length === 0 && !isCompleted ? (
-                <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-6">
-                    <div className="p-5 max-w-md border border-info rounded-lg shadow-sm">
-                        <div className="flex items-center space-x-3 mb-3">
-                            <PulsatingCircle size="sm" color="blue" />
-                            <div className="text-sm text-muted font-medium">
-                                {ThinkingMessages[thinkingMessageIndex]}
-                            </div>
-                        </div>
-                        <div className="mt-4 flex justify-center">
-                            <AnimatedThinkingDots color="blue" className="mt-1" />
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <AllMessagesMixed
-                    messages={messages}
-                    bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
-                    isCompleted={isCompleted}
-                    plan={getActivePlan.plan}
-                    workstreamStatus={getActivePlan.workstreamStatus}
-                    showPlanPanel={showRightPanelProp && showSlidingPanel}
-                    onTogglePlanPanel={handleTogglePlanPanel}
-                    plans={plans}
-                    activePlanIndex={activePlanIndex}
-                    onChangePlan={handleChangePlan}
-                    taskLabels={taskLabels}
-                    streamingMessages={streamingMessages}
-                    onSendMessage={handleSendMessage}
-                    thinkingMessageIndex={thinkingMessageIndex}
-                    messageItemClassNames={messageItemClassNames}
-                    messageStyleOverrides={messageStyleOverrides}
-                    toolCallGroupClassNames={toolCallGroupClassNames}
-                    hideToolCallsInViewMode={hideToolCallsInViewMode}
-                    streamingMessageClassNames={streamingMessageClassNames}
-                    batchProgressPanelClassNames={batchProgressPanelClassNames}
-                    artifactRunId={agentRunId}
-                    viewMode={viewMode}
-                    hideWorkstreamTabs={hideWorkstreamTabs}
-                    workingIndicatorClassName={workingIndicatorClassName}
-                    messageListClassName={messageListClassName}
-                    StoreLinkComponent={effectiveStoreLinkComponent}
-                    CollectionLinkComponent={CollectionLinkComponent}
-                    prependFriendlyMessage={prependFriendlyMessage}
-                    initialRequestData={initialRequestData}
-                    initialRequestSchema={initialRequestSchema}
-                    initialRequestTitle={initialRequestTitle}
-                    initialRequestTemplate={initialRequestTemplate}
-                    hiddenMessageTypes={hiddenMessageTypes}
-                />
-            )}
+            <AllMessagesMixed
+                messages={messages}
+                bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
+                isCompleted={isCompleted}
+                plan={getActivePlan.plan}
+                workstreamStatus={getActivePlan.workstreamStatus}
+                showPlanPanel={showRightPanelProp && showSlidingPanel}
+                onTogglePlanPanel={handleTogglePlanPanel}
+                plans={plans}
+                activePlanIndex={activePlanIndex}
+                onChangePlan={handleChangePlan}
+                taskLabels={taskLabels}
+                streamingMessages={streamingMessages}
+                onSendMessage={handleSendMessage}
+                messageItemClassNames={messageItemClassNames}
+                messageStyleOverrides={messageStyleOverrides}
+                toolCallGroupClassNames={toolCallGroupClassNames}
+                hideToolCallsInViewMode={hideToolCallsInViewMode}
+                streamingMessageClassNames={streamingMessageClassNames}
+                batchProgressPanelClassNames={batchProgressPanelClassNames}
+                artifactRunId={agentRunId}
+                viewMode={viewMode}
+                hideWorkstreamTabs={hideWorkstreamTabs}
+                workingIndicatorClassName={workingIndicatorClassName}
+                messageListClassName={messageListClassName}
+                StoreLinkComponent={effectiveStoreLinkComponent}
+                CollectionLinkComponent={CollectionLinkComponent}
+                prependFriendlyMessage={prependFriendlyMessage}
+                initialRequestData={initialRequestData}
+                initialRequestSchema={initialRequestSchema}
+                initialRequestTitle={initialRequestTitle}
+                initialRequestTemplate={initialRequestTemplate}
+                hiddenMessageTypes={hiddenMessageTypes}
+            />
 
             {!hideMessageInput && (
                 <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>

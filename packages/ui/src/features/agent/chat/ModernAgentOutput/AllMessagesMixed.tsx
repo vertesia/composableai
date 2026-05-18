@@ -155,6 +155,26 @@ function getSummaryWorkLabel(status: ToolExecutionStatus, isActive: boolean): st
     return isActive ? "Working" : "Worked";
 }
 
+function isTransientThinkingWork(messages: AgentMessage[]): boolean {
+    return messages.length > 0 && messages.every(isTransientThinkingMessage);
+}
+
+function getSummaryActivityLabel(
+    status: ToolExecutionStatus,
+    isActive: boolean,
+    messages: AgentMessage[],
+    thinkingLabel: string,
+): string {
+    if (isActive && isTransientThinkingWork(messages)) return thinkingLabel;
+    return getSummaryWorkLabel(status, isActive);
+}
+
+function hasOpenUserTurn(messages: AgentMessage[]): boolean {
+    const mainMessages = messages.filter((message) => getWorkstreamId(message) === "main");
+    const latestMessage = mainMessages[mainMessages.length - 1] ?? messages[messages.length - 1];
+    return latestMessage?.type === AgentMessageType.QUESTION;
+}
+
 function getMessageText(message: AgentMessage): string {
     if (!message.message) return "";
     if (typeof message.message === "object") return JSON.stringify(message.message, null, 2);
@@ -1357,10 +1377,10 @@ function AllMessagesMixedComponent({
         return Math.max(...persistentMessages.map((msg) => getTimestampMs(msg.timestamp)));
     }, [displayMessages]);
 
-    const isDisplayCompleted = useMemo(
-        () => isCompleted || !isInProgress(displayMessages),
-        [displayMessages, isCompleted],
-    );
+    const isDisplayCompleted = useMemo(() => {
+        if (hasOpenUserTurn(displayMessages)) return false;
+        return isCompleted || !isInProgress(displayMessages);
+    }, [displayMessages, isCompleted]);
 
     // Split streaming messages:
     // - complete (or stale incomplete) ones are interleaved chronologically
@@ -1760,7 +1780,7 @@ function AllMessagesMixedComponent({
                 </div>
             )}
 
-            {displayMessages.length === 0 && !hasInitialRequest ? (
+            {displayMessages.length === 0 && !hasInitialRequest && !(isSummaryView && showActivityFallback) ? (
                 <div className="flex items-center justify-center h-full text-center py-8">
                     <div className="flex items-center px-3 py-2 text-sm text-muted">
                         {activeWorkstream === "all"
@@ -1940,19 +1960,25 @@ function AllMessagesMixedComponent({
                             {summaryConversationItems.map((item, itemIndex) => {
                                 if (item.type === "work") {
                                     if (hideToolCallsInViewMode?.includes(viewMode)) return null;
+                                    const isThinkingOnlyWork = isTransientThinkingWork(item.messages);
 
                                     return (
                                         <SummaryActivityRow
                                             key={`work-${item.id}-${item.isActive ? "active" : "done"}-${itemIndex}`}
-                                            label={getSummaryWorkLabel(item.status, item.isActive)}
+                                            label={getSummaryActivityLabel(
+                                                item.status,
+                                                item.isActive,
+                                                item.messages,
+                                                t('agent.thinking'),
+                                            )}
                                             status={item.status}
                                             timestamp={item.startTimestamp}
                                             durationSeconds={item.isActive
                                                 ? undefined
                                                 : getDurationSeconds(item.startTimestamp, item.endTimestamp)}
                                             showElapsed
-                                            details={item.messages}
-                                            defaultExpanded={item.isActive}
+                                            details={isThinkingOnlyWork ? undefined : item.messages}
+                                            defaultExpanded={item.isActive && !isThinkingOnlyWork}
                                             className={workingIndicatorClassName}
                                         />
                                     );
@@ -1995,7 +2021,7 @@ function AllMessagesMixedComponent({
                             {/* Activity fallback - shown before any tool/thought message has arrived */}
                             {showActivityFallback && (
                                 <SummaryActivityRow
-                                    label={getSummaryWorkLabel("running", true)}
+                                    label={t('agent.thinking')}
                                     status="running"
                                     timestamp={activityStartedTimestampRef.current}
                                     showElapsed

@@ -131,6 +131,7 @@
   "agent.submitSelectionCount_other": "Submit Selection ({{count}})",
   "agent.summary": "Summary",
   "agent.taskProgress": "Task Progress",
+  "agent.thinking": "Thinking",
   "agent.toggleRightSidebar": "Toggle right sidebar",
   "agent.typeNewInstructions": "Type your message to give new instructions",
   "agent.typeQuestionBelow": "Type your question below and press Enter or click {{buttonText}} to begin",

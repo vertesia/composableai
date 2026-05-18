@@ -134,6 +134,7 @@
   "agent.submitSelectionCount_other": "Valider la sélection ({{count}})",
   "agent.summary": "Résumé",
   "agent.taskProgress": "Progression des tâches",
+  "agent.thinking": "Réflexion",
   "agent.toggleRightSidebar": "Basculer le panneau latéral",
   "agent.typeNewInstructions": "Saisissez votre message pour donner de nouvelles instructions",
   "agent.typeQuestionBelow": "Saisissez votre question ci-dessous et appuyez sur Entrée ou cliquez sur {{buttonText}} pour commencer",

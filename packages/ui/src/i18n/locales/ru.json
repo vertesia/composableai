@@ -137,6 +137,7 @@
   "agent.submitSelectionCount_other": "Отправить выбор ({{count}})",
   "agent.summary": "Сводка",
   "agent.taskProgress": "Прогресс задач",
+  "agent.thinking": "Думает",
   "agent.toggleRightSidebar": "Переключить правую панель",
   "agent.typeNewInstructions": "Введите сообщение, чтобы дать новые инструкции",
   "agent.typeQuestionBelow": "Введите ваш вопрос ниже и нажмите Enter или нажмите {{buttonText}}, чтобы начать",

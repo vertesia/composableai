@@ -131,6 +131,7 @@
   "agent.submitSelectionCount_other": "選択を送信({{count}})",
   "agent.summary": "概要",
   "agent.taskProgress": "タスクの進捗",
+  "agent.thinking": "思考中",
   "agent.toggleRightSidebar": "右サイドバーの切り替え",
   "agent.typeNewInstructions": "新しい指示を入力してください",
   "agent.typeQuestionBelow": "下に質問を入力してEnterを押すか{{buttonText}}をクリックして開始",

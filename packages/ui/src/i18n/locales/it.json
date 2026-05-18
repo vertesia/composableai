@@ -134,6 +134,7 @@
   "agent.submitSelectionCount_other": "Invia selezione ({{count}})",
   "agent.summary": "Riepilogo",
   "agent.taskProgress": "Progresso attività",
+  "agent.thinking": "Elaborazione",
   "agent.toggleRightSidebar": "Alterna pannello laterale",
   "agent.typeNewInstructions": "Scrivi il tuo messaggio per dare nuove istruzioni",
   "agent.typeQuestionBelow": "Scrivi la tua domanda qui sotto e premi Invio o clicca {{buttonText}} per iniziare",

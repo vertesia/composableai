@@ -131,6 +131,7 @@
   "agent.submitSelectionCount_other": "Seçimi gönder ({{count}})",
   "agent.summary": "Özet",
   "agent.taskProgress": "Görev ilerlemesi",
+  "agent.thinking": "Düşünüyor",
   "agent.toggleRightSidebar": "Sağ kenar çubuğunu aç/kapat",
   "agent.typeNewInstructions": "Yeni talimatlar vermek için mesajınızı yazın",
   "agent.typeQuestionBelow": "Sorunuzu aşağıya yazın ve başlamak için Enter'a basın veya {{buttonText}} tıklayın",

@@ -1,5 +1,5 @@
 import { AgentMessage, AgentMessageType } from "@vertesia/common";
-import { isStreamReplacedByMessage, isToolActivityMessage, StreamingData, ToolExecutionStatus } from "./utils";
+import { getToolStatus, isStreamReplacedByMessage, isToolActivityMessage, StreamingData, ToolExecutionStatus } from "./utils";
 
 export type SummaryConversationItem =
     | { type: "message"; message: AgentMessage }
@@ -109,6 +109,62 @@ function getSummaryWorkStatus(messages: AgentMessage[], isActive: boolean): Tool
     return isActive ? "running" : "completed";
 }
 
+function getConcreteToolKey(message: AgentMessage): string | undefined {
+    const details = message.details;
+    if (!details) return undefined;
+
+    if (typeof details.tool_run_id === "string" && details.tool_run_id.trim()) return `run:${details.tool_run_id}`;
+    if (typeof details.activity_id === "string" && details.activity_id.trim()) return `activity:${details.activity_id}`;
+    if (typeof details.activity_group_id === "string" && details.activity_group_id.trim()) {
+        return `group:${details.activity_group_id}`;
+    }
+    if (typeof details.tool === "string" && details.tool.trim()) return `tool:${details.tool}`;
+    return undefined;
+}
+
+function isConcreteToolExecutionMessage(message: AgentMessage): boolean {
+    return isToolActivityMessage(message) && getToolStatus(message) !== undefined;
+}
+
+function hasConcreteToolExecution(messages: AgentMessage[]): boolean {
+    return messages.some(isConcreteToolExecutionMessage);
+}
+
+function hasActiveConcreteToolExecution(messages: AgentMessage[]): boolean {
+    const latestStatusByKey = new Map<string, ToolExecutionStatus>();
+    let unkeyedRunningCount = 0;
+
+    messages.forEach((message) => {
+        if (!isConcreteToolExecutionMessage(message)) return;
+
+        const status = getToolStatus(message);
+        if (!status) return;
+
+        const key = getConcreteToolKey(message);
+        if (!key) {
+            if (status === "running") unkeyedRunningCount += 1;
+            return;
+        }
+        latestStatusByKey.set(key, status);
+    });
+
+    return unkeyedRunningCount > 0 ||
+        Array.from(latestStatusByKey.values()).some((status) => status === "running");
+}
+
+function shouldSplitPostToolThinking(message: AgentMessage, pendingWork: AgentMessage[]): boolean {
+    return isTransientThinkingMessage(message) &&
+        hasConcreteToolExecution(pendingWork) &&
+        !hasActiveConcreteToolExecution(pendingWork);
+}
+
+function shouldResumeCompletedWorkForTool(message: AgentMessage, pendingWork: AgentMessage[]): boolean {
+    return isToolActivityMessage(message) &&
+        !isTransientThinkingMessage(message) &&
+        pendingWork.length > 0 &&
+        pendingWork.every(isTransientThinkingMessage);
+}
+
 function isSummaryWorkMessage(message: AgentMessage): boolean {
     if (isSummaryAssistantProseMessage(message)) return false;
     if (isToolActivityMessage(message)) return true;
@@ -157,6 +213,19 @@ export function buildSummaryConversationItems(
         }
 
         if (isSummaryWorkMessage(message)) {
+            if (shouldResumeCompletedWorkForTool(message, pendingWork)) {
+                const previousItem = items[items.length - 1];
+                if (previousItem?.type === "work" && !previousItem.isActive) {
+                    items.pop();
+                    pendingWork = [...previousItem.messages, message];
+                    continue;
+                }
+            }
+
+            if (shouldSplitPostToolThinking(message, pendingWork)) {
+                flushWork(false);
+            }
+
             pendingWork.push(message);
             continue;
         }
@@ -167,7 +236,11 @@ export function buildSummaryConversationItems(
         }
     }
 
-    flushWork(!isCompleted);
+    const shouldCompletePendingWork = hasConcreteToolExecution(pendingWork) &&
+        !hasActiveConcreteToolExecution(pendingWork) &&
+        !pendingWork.some(isTransientThinkingMessage);
+
+    flushWork(!isCompleted && !shouldCompletePendingWork);
     return items;
 }
 

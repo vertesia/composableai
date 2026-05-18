@@ -131,6 +131,7 @@
   "agent.submitSelectionCount_other": "Auswahl senden ({{count}})",
   "agent.summary": "Zusammenfassung",
   "agent.taskProgress": "Aufgabenfortschritt",
+  "agent.thinking": "Denkt",
   "agent.toggleRightSidebar": "Rechte Seitenleiste umschalten",
   "agent.typeNewInstructions": "Geben Sie Ihre Nachricht ein, um neue Anweisungen zu geben",
   "agent.typeQuestionBelow": "Geben Sie Ihre Frage unten ein und drücken Sie Enter oder klicken Sie auf {{buttonText}}, um zu beginnen",
