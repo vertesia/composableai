@@ -316,6 +316,13 @@ export interface ProjectConfiguration {
      */
     browser_use?: BrowserUseProjectConfiguration;
 
+    /**
+     * Object ID of a content object containing a custom LaTeX template (.latex file)
+     * to use as the branded PDF template. When set, "Export as Branded PDF" uses this
+     * template instead of the built-in Vertesia default template.
+     */
+    pdf_template_object_id?: string;
+
 }
 
 // export interface ProjectConfigurationEmbeddings {

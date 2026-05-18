@@ -4,6 +4,7 @@
 import chalk from 'chalk';
 import { spawn, spawnSync } from 'child_process';
 import prompts from 'prompts';
+import { buildPackageManagerEnv } from './package-manager.js';
 import { PostInstallConfig, PreInstallConfig } from './template-config.js';
 
 /**
@@ -29,7 +30,8 @@ async function installGlobalPackage(packageName: string, packageManager: string)
 
     const child = spawn(packageManager, args, {
       stdio: 'inherit',
-      shell: true
+      shell: true,
+      env: buildPackageManagerEnv(packageManager)
     });
 
     child.on('close', (code) => {

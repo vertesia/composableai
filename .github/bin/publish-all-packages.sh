@@ -37,7 +37,7 @@ update_package_versions() {
   fi
 
   # Get current version and strip any existing -dev* suffix to get base version
-  current_version=$(pnpm pkg get version | tr -d '"')
+  current_version=$(npm pkg get version | tr -d '"')
   base_version=$(echo "$current_version" | sed 's/-dev.*//')
 
   # Apply bump if needed (for both snapshot and release)
@@ -79,7 +79,7 @@ publish_packages() {
     pkg_name=$(basename "$pkg_dir")
     cd "$pkg_dir"
 
-    pkg_version=$(pnpm pkg get version | tr -d '"')
+      pkg_version=$(npm pkg get version | tr -d '"')
 
     # Fail if npm_tag is not set (safety check to prevent publishing without explicit tag)
     if [ -z "$npm_tag" ]; then
@@ -175,7 +175,7 @@ commit_and_push() {
   echo "=== Committing version changes ==="
 
   # Get the version from root package.json
-  version=$(pnpm pkg get version | tr -d '"')
+  version=$(npm pkg get version | tr -d '"')
 
   git config user.email "github-actions[bot]@users.noreply.github.com"
   git config user.name "github-actions[bot]"
@@ -210,7 +210,7 @@ write_github_summary() {
   echo "=== Writing GitHub Summary ==="
 
   # Get the version from root package.json
-  version=$(pnpm pkg get version | tr -d '"')
+  version=$(npm pkg get version | tr -d '"')
 
   # Determine title based on dry run mode
   if [ "$DRY_RUN" = "true" ]; then
