@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { axe } from 'vitest-axe';
 import { useState } from 'react';
-import { Button } from '../core/components/shadcn/button.js';
+import { Button, CopyButton } from '../core/components/shadcn/button.js';
 import { Input } from '../core/components/shadcn/input.js';
 import { Label } from '../core/components/shadcn/label.js';
 import { Checkbox } from '../core/components/shadcn/checkbox.js';
@@ -24,12 +24,66 @@ describe('@vertesia/ui accessibility (axe)', () => {
         expect(await axe(container)).toHaveNoViolations();
     });
 
+    it('Button defaults to type="button" but does not inject type when asChild', async () => {
+        const { container } = renderWithProviders(
+            <div>
+                <Button onClick={() => undefined}>Default</Button>
+                <Button asChild>
+                    <a href="#somewhere">Slotted link</a>
+                </Button>
+            </div>,
+        );
+        const buttons = container.querySelectorAll('button');
+        expect(buttons.length).toBe(1);
+        expect(buttons[0].getAttribute('type')).toBe('button');
+        const anchor = container.querySelector('a');
+        expect(anchor?.hasAttribute('type')).toBe(false);
+    });
+
+    it('Button.alt is forwarded to aria-label during deprecation window', async () => {
+        const { container } = renderWithProviders(
+            <Button onClick={() => undefined} alt="Save changes">
+                <span aria-hidden="true">✓</span>
+            </Button>,
+        );
+        const button = container.querySelector('button');
+        expect(button?.getAttribute('aria-label')).toBe('Save changes');
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('CopyButton has an accessible name via internal aria-label', async () => {
+        const { container } = renderWithProviders(
+            <CopyButton content="example value" />,
+        );
+        const button = container.querySelector('button');
+        expect(button?.getAttribute('aria-label')).toBeTruthy();
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
     it('Input wrapped in FormItem has a labelled control', async () => {
         const { container } = renderWithProviders(
             <FormItem label="Email" childrenId="a11y-test-email">
                 <Input id="a11y-test-email" value="" onChange={() => undefined} clearable={false} />
             </FormItem>,
         );
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('Input with invalid prop sets aria-invalid', async () => {
+        const { container } = renderWithProviders(
+            <div>
+                <Label htmlFor="a11y-test-invalid-input">Username</Label>
+                <Input
+                    id="a11y-test-invalid-input"
+                    value="x"
+                    onChange={() => undefined}
+                    clearable={false}
+                    invalid
+                />
+            </div>,
+        );
+        const input = container.querySelector('input');
+        expect(input?.getAttribute('aria-invalid')).toBe('true');
         expect(await axe(container)).toHaveNoViolations();
     });
 
@@ -53,13 +107,22 @@ describe('@vertesia/ui accessibility (axe)', () => {
         expect(await axe(container)).toHaveNoViolations();
     });
 
-    // Switch currently does not forward aria-label / aria-labelledby to its underlying
-    // Radix button. The `children` prop renders a sibling <span>, not an actual label.
-    // Un-skip once Section 3 fixes Switch to accept and forward aria-* props.
-    it.skip('Switch with inline children label has no violations', async () => {
+    it('Switch with aria-labelledby pointing to a Label has no violations', async () => {
         function Harness() {
             const [value, setValue] = useState(false);
-            return <Switch value={value} onChange={setValue}>Enable notifications</Switch>;
+            return (
+                <div className="flex items-center gap-2">
+                    <Switch
+                        id="a11y-test-notifications"
+                        aria-labelledby="a11y-test-notifications-label"
+                        value={value}
+                        onChange={setValue}
+                    />
+                    <Label htmlFor="a11y-test-notifications" id="a11y-test-notifications-label">
+                        Enable notifications
+                    </Label>
+                </div>
+            );
         }
         const { container } = renderWithProviders(<Harness />);
         expect(await axe(container)).toHaveNoViolations();
