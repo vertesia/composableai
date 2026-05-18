@@ -17,6 +17,24 @@ interface ComposableTokenResponse {
     message?: string;
 }
 
+function normalizeIssuer(value: string | undefined): string | undefined {
+    return value?.replace(/\/+$/, '');
+}
+
+function decodeToken(token: string): AuthTokenPayload {
+    return jwtDecode(token) as AuthTokenPayload;
+}
+
+function isVertesiaIssuedToken(token: string | undefined): token is string {
+    if (!token) return false;
+    try {
+        const decoded = decodeToken(token) as AuthTokenPayload & { iss?: string };
+        return normalizeIssuer(decoded.iss) === normalizeIssuer(Env.endpoints.sts);
+    } catch {
+        return false;
+    }
+}
+
 export async function fetchComposableToken(getIdToken: () => Promise<string | null | undefined>, accountId?: string, projectId?: string, ttl?: number, retryCount = 0): Promise<string> {
     console.log(`Getting/refreshing composable token for account ${accountId} and project ${projectId} `);
     Env.logger.info('Getting/refreshing composable token', {
@@ -268,14 +286,20 @@ export async function getComposableToken(accountId?: string, projectId?: string,
     const selectedAccount = accountId ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined
     const selectedProject = projectId ?? localStorage.getItem(LastSelectedProjectId_KEY + '-' + selectedAccount) ?? undefined
     const devAuthToken = Env.isLocalDev ? Env.devAuthToken : undefined;
+    const suppliedToken = devAuthToken ?? initToken ?? AUTH_TOKEN_RAW;
 
     //token is still valid for more than 5 minutes
     if (!forceRefresh && AUTH_TOKEN_RAW && AUTH_TOKEN && AUTH_TOKEN.exp > (Date.now() / 1000 + 300)) {
         return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
-    if (devAuthToken) {
-        AUTH_TOKEN_RAW = devAuthToken;
+    if (!forceRefresh && isVertesiaIssuedToken(suppliedToken)) {
+        AUTH_TOKEN_RAW = suppliedToken;
+        AUTH_TOKEN = decodeToken(AUTH_TOKEN_RAW);
+        if (!AUTH_TOKEN.exp) {
+            throw new Error('Invalid composable token');
+        }
+        return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
     //token is close to expire, refresh it
@@ -285,6 +309,8 @@ export async function getComposableToken(accountId?: string, projectId?: string,
     } else if (!devAuthToken && (initToken || AUTH_TOKEN_RAW)) {
         // we have a token already and no firebase user, refresh it
         AUTH_TOKEN_RAW = await fetchComposableToken(() => Promise.resolve(initToken ?? AUTH_TOKEN_RAW), selectedAccount, selectedProject);
+    } else if (devAuthToken) {
+        AUTH_TOKEN_RAW = devAuthToken;
     }
 
     if (!AUTH_TOKEN_RAW) {
@@ -297,7 +323,7 @@ export async function getComposableToken(accountId?: string, projectId?: string,
         throw new Error('Cannot acquire a composable token');
     }
 
-    AUTH_TOKEN = jwtDecode(AUTH_TOKEN_RAW) as AuthTokenPayload;
+    AUTH_TOKEN = decodeToken(AUTH_TOKEN_RAW);
 
     if (!AUTH_TOKEN || !AUTH_TOKEN.exp || !AUTH_TOKEN_RAW) {
         console.error('Invalid composable token', AUTH_TOKEN);
