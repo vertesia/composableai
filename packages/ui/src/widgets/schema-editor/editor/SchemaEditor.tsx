@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { Button, useToast } from '@vertesia/ui/core';
 
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { ManagedSchema, SchemaNode } from '../ManagedSchema.js';
 import { TypeNames } from '../type-signature.js';
 import { Editable } from './Editable.js';

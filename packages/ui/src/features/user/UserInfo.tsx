@@ -3,7 +3,7 @@ import { Avatar, Popover, PopoverContent, PopoverTrigger, Table, useFetch } from
 import { useUserSession } from "@vertesia/ui/session";
 import { Users, Users2 } from "lucide-react";
 import { ReactNode } from "react";
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 const USER_CACHE: Record<string, Promise<User>> = {};
 const GROUP_CACHE: Record<string, Promise<UserGroup>> = {};

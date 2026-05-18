@@ -51,7 +51,9 @@ const SCAN_TARGETS = [
 
 const SOURCE_EXT = /\.(tsx?|css)$/;
 const SKIP_DIRS = new Set(['node_modules', 'lib', 'dist', '.turbo']);
-const RTL_OK = /\/\/\s*rtl-ok:/;
+// Match `rtl-ok:` in any comment style so the codemod skips the same lines
+// the inventory does (`// rtl-ok:`, `{/* rtl-ok: */}`, `/* rtl-ok: */`, etc).
+const RTL_OK = /rtl-ok:/;
 
 // The variant prefix matcher we need to preserve in front of the base utility:
 //   hover:, md:, dark:, peer-focus:, data-[state=open]:, [&_th]:, etc.

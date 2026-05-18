@@ -1,7 +1,7 @@
 import { Button, DialogDescription, Heading, Modal, ModalBody, ModalFooter, ModalTitle, Portal, Tabs, TabsBar, TabsPanel, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
-import { useUITranslation } from '../../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { i18nInstance, NAMESPACE } from '../../../../../i18n/instance.js';
 import { CreateCollectionForm, SelectCollection } from "../../../collections";
 import { useObjectsActionCallback } from "../ObjectsActionHooks";

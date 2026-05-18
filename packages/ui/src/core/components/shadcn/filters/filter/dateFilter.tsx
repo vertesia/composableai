@@ -4,7 +4,7 @@ import Calendar from "react-calendar";
 import { Button } from "../../button";
 import { Filter, FilterGroup } from "../types";
 import { calendarStyles } from "../filter-styles";
-import { useUITranslation } from '../../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];

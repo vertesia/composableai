@@ -1,6 +1,6 @@
 import { Plan } from "@vertesia/common";
 import { AlertCircle, CheckCircle, Circle, Clock } from "lucide-react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import SlideInPanel from "./SlideInPanel";
 
 interface PlanPanelProps {

@@ -8,7 +8,7 @@ import {
     Command, CommandEmpty, CommandGroup, CommandItem, CommandInput
 } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 /**
  * A component to select a collection from a list of collections.

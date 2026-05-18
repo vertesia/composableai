@@ -3,7 +3,7 @@ import { Menu, Search } from 'lucide-react'
 import { Button, HeroIcon } from '@vertesia/ui/core'
 import { useSidebarToggle } from './SidebarContext.js'
 import { TitleBar } from './TitleBar.js'
-import { useUITranslation } from '../i18n/index.js'
+import { useUITranslation } from '@vertesia/ui/i18n'
 
 interface NavbarProps {
     title?: string

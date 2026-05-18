@@ -5,7 +5,7 @@ import { Button, Checkbox, Input, Modal, ModalBody, ModalFooter, ModalTitle, Num
 import { useUserSession } from '@vertesia/ui/session';
 import { Settings } from 'lucide-react';
 
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface VectorSearchWidgetProps {
     onChange: (query?: ComplexSearchQuery) => void;

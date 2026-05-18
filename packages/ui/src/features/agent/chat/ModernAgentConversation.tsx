@@ -28,7 +28,7 @@ import { getConversationUrl, getWorkstreamId } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
-import { useUITranslation } from "../../../i18n/index.js";
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { VegaLiteChart } from "./VegaLiteChart";
 import { AgentRightPanel, type WorkstreamInfo } from "./AgentRightPanel.js";
 import { useAgentStream } from "./hooks/useAgentStream.js";

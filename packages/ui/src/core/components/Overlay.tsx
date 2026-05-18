@@ -112,18 +112,28 @@ function getAnimationProps(position: string) {
 function getPositionClasses(position: string, width?: string, height?: string) {
     const baseClasses = "fixed bg-white shadow-lg p-4 relative"
 
+    // `position` is a PHYSICAL prop ('left' | 'right' | 'top' | 'bottom' |
+    // 'center'), and the framer-motion animation x/y values above use physical
+    // axes, so the matching CSS positioning is intentionally physical too.
+    // Callers that want logical (start/end) behavior should choose 'left' or
+    // 'right' based on the active direction (see AppLayout.tsx for the
+    // pattern).
     switch (position) {
         case 'left':
-            return `${baseClasses} start-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
+            // rtl-ok: physical position prop -> physical CSS
+            return `${baseClasses} left-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
         case 'right':
-            return `${baseClasses} end-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
+            // rtl-ok: physical position prop -> physical CSS
+            return `${baseClasses} right-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
         case 'top':
             return `${baseClasses} top-[var(--header-height)] start-0 end-0 ${height || 'h-80'}`
         case 'bottom':
             return `${baseClasses} bottom-0 start-0 end-0 ${height || 'h-80'}`
         case 'center':
-            return `${baseClasses} top-1/2 start-1/2 transform -translate-x-1/2 -translate-y-1/2 ${width || 'w-96'} ${height || 'max-h-96'}`
+            // rtl-ok: symmetric centering — paired with -translate-x-1/2 which works the same way in both directions
+            return `${baseClasses} top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${width || 'w-96'} ${height || 'max-h-96'}`
         default:
-            return `${baseClasses} end-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
+            // rtl-ok: physical default
+            return `${baseClasses} right-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
     }
 }

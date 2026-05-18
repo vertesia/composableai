@@ -1,6 +1,6 @@
 import { useUserSession } from '@vertesia/ui/session';
 import { Button, Spinner } from '../../core/index.js';
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { CheckCircle2, ExternalLink, ShieldAlertIcon } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useOAuthPopup } from './useOAuthPopup.js';

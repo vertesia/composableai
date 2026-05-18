@@ -3,7 +3,7 @@ import { Activity, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCi
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ConversationFile, FileProcessingStatus } from "@vertesia/common";
 import { SelectDocument } from "../../../store";
-import { useUITranslation } from "../../../../i18n/index.js";
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 /** Represents an uploaded file attachment */
 export interface UploadedFile {

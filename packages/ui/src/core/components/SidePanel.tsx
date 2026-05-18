@@ -43,11 +43,20 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
         document.addEventListener('mouseup', handleMouseUp);
     };
 
+    // The `side` prop is PHYSICAL ('left' | 'right') — the panel anchors to
+    // that physical edge regardless of dir. Callers that want a logical
+    // start-anchored panel in RTL should pass `side='right'` explicitly (see
+    // AppLayout.tsx). Using physical classes here keeps the contract honest;
+    // the codemod (and inventory in strict mode) is exempted via rtl-ok.
     const isLeft = side === 'left';
-    const positionClass = isLeft ? 'start-0' : 'end-0';
-    const paddingClass = isLeft ? 'pe-10 sm:pe-16' : 'ps-10 sm:ps-16';
-    const borderClass = isLeft ? 'border-e' : 'border-s';
-    const dragHandleClass = isLeft ? '-end-1' : '-start-1';
+    // rtl-ok: physical-side prop maps 1:1 to physical CSS
+    const positionClass = isLeft ? 'left-0' : 'right-0';
+    // rtl-ok: padding/border/drag-handle mirror the physical side of the panel
+    const paddingClass = isLeft ? 'pr-10 sm:pr-16' : 'pl-10 sm:pl-16';
+    // rtl-ok: see above
+    const borderClass = isLeft ? 'border-r' : 'border-l';
+    // rtl-ok: see above
+    const dragHandleClass = isLeft ? '-right-1' : '-left-1';
     const initialX = isLeft ? "-100%" : "100%";
 
     return (

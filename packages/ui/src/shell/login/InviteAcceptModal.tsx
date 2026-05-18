@@ -2,7 +2,7 @@ import { TransientToken, UserInviteTokenData } from "@vertesia/common"
 import { Button, Modal, ModalBody, ModalTitle } from "@vertesia/ui/core"
 import { useEffect, useState } from "react"
 import { useUserSession } from "@vertesia/ui/session"
-import { useUITranslation } from '../../i18n/index.js'
+import { useUITranslation } from '@vertesia/ui/i18n'
 
 
 export function InviteAcceptModal() {

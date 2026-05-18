@@ -5,7 +5,7 @@ import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { Bot, ChevronDown, ChevronRight, CopyIcon, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
 import { useState, memo, useEffect, useRef } from "react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { useImageLightbox } from "../ImageLightbox";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";

@@ -285,7 +285,8 @@ export function Dropdown({ trigger, children, align = 'right', hover }: Dropdown
     const onLeave = () => {
       closeTimer.current = setTimeout(() => setOpen(false), 80);
     };
-    const alignClass = align === 'right' ? 'end-0' : align === 'center' ? 'start-1/2 -translate-x-1/2' : 'start-0';
+    // rtl-ok: 'center' uses symmetric left-1/2 + -translate-x-1/2 (same in LTR/RTL)
+    const alignClass = align === 'right' ? 'end-0' : align === 'center' ? 'left-1/2 -translate-x-1/2' : 'start-0';
     return (
       <div className="relative inline-flex" onMouseEnter={onEnter} onMouseLeave={onLeave}>
         {trigger}

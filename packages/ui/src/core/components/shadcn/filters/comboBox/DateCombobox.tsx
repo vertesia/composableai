@@ -4,7 +4,7 @@ import ReactCalendar from "react-calendar";
 import { Button } from "../../button";
 import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
 import { calendarStyles } from "../filter-styles";
-import { useUITranslation } from '../../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export const DateCombobox = ({
     filterValues,

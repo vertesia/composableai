@@ -3,7 +3,7 @@ import { Badge, cn } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { ExternalLinkIcon, ImageIcon, MonitorIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useUITranslation } from "../../../i18n/index.js";
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useImageLightbox } from "./ImageLightbox.js";
 import { getArtifactCacheKey, useArtifactUrlCache } from "./useArtifactUrlCache.js";
 

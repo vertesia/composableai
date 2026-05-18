@@ -1,7 +1,7 @@
 import { useState, createContext, useContext, useCallback, ReactNode } from "react";
 import { Button } from "@vertesia/ui/core";
 import { X, ExternalLink } from "lucide-react";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface ImageLightboxContextValue {
     openImage: (src: string, alt?: string) => void;

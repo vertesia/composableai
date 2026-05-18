@@ -4,7 +4,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { Button, VTooltip } from '@vertesia/ui/core';
 import { NavLink } from '@vertesia/ui/router';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { DocumentTabBar } from './DocumentTabBar.js';
 import type { OpenDocument } from './types/document.js';
 

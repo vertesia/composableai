@@ -1,7 +1,7 @@
 import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@vertesia/common";
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { cn } from "@vertesia/ui/core";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 export type AgentConversationViewMode = "stacked" | "sliding";

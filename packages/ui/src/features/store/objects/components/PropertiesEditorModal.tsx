@@ -1,6 +1,6 @@
 import { useUserSession } from '@vertesia/ui/session';
 import { useState, useRef, useEffect } from 'react';
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import {
     Button,
     Modal,

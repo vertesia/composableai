@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useState, memo } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
-import { useUITranslation } from "../../../../i18n/index.js";
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export interface BatchProgressPanelProps {
     message: AgentMessage;

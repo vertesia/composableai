@@ -1,7 +1,7 @@
 import { AgentMessage } from "@vertesia/common";
 import { Button, cn } from "@vertesia/ui/core";
 import { CheckCircle, Clock } from "lucide-react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
 import { getWorkstreamId } from "./utils";
 

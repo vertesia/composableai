@@ -1,5 +1,5 @@
 
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface NotFoundViewProps {
 }

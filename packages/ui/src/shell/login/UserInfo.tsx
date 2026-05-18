@@ -5,7 +5,7 @@ import { useUserSession } from "@vertesia/ui/session";
 // Package version is now passed as prop from the consuming application
 import { Check, CopyIcon } from "lucide-react";
 import { useState } from "react";
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export function InfoItems({ title, value }: { title: string, value: string }) {
     function copyToClipboard(value: string) {

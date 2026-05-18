@@ -1,4 +1,10 @@
-import { SUPPORTED_LANGUAGES, useLanguage, useUITranslation, type SupportedLanguage } from '../../../i18n/index.js';
+// IMPORTANT: this MUST import via the @vertesia/ui/i18n subpath, not a
+// relative path. The Rollup config externalizes @vertesia/ui/* subpaths via
+// regex; a relative `../../../i18n/index.js` would bundle the entire i18n
+// module (including LanguageProviderContext) into vertesia-ui-core.js,
+// creating a private context separate from the one the shell mounts.
+// setLanguage would then no-op.
+import { SUPPORTED_LANGUAGES, useLanguage, useUITranslation, type SupportedLanguage } from '@vertesia/ui/i18n';
 import { SelectBox } from './selectBox';
 
 /**

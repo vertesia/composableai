@@ -7,7 +7,7 @@ import type { View } from 'vega';
 import type { TopLevelSpec as VisualizationSpec } from 'vega-lite';
 import { Button } from '@vertesia/ui/core';
 import { cn } from '../../../core/components/libs/utils';
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import type { VegaLiteChartSpec } from './AgentChart';
 import { getArtifactCacheKey, getFileCacheKey, useArtifactUrlCache } from './useArtifactUrlCache';

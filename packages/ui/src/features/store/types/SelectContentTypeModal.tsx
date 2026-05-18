@@ -10,7 +10,7 @@ import {
 } from "@vertesia/ui/core";
 import { ContentObjectTypeItem } from "@vertesia/common";
 import { useTypeRegistry } from "./TypeRegistryProvider.js";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { CheckCircleIcon, Info } from "lucide-react";
 
 /**

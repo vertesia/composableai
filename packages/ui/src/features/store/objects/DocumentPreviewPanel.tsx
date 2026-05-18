@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface DocumentPreviewPanelProps {
   objectId: string | null;

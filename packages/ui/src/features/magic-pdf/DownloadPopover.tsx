@@ -2,7 +2,7 @@ import { ContentObject, DocumentMetadata } from "@vertesia/common";
 import { Button, Popover, PopoverContent, PopoverTrigger } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Download } from "lucide-react";
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { getResourceUrl } from "./MagicPdfProvider";
 
 interface DownloadPopoverProps {

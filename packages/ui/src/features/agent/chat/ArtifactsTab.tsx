@@ -11,7 +11,7 @@ import {
     RefreshCwIcon,
 } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useArtifacts, type ArtifactTreeNode } from './hooks/useArtifacts.js';
 
 // ---------------------------------------------------------------------------

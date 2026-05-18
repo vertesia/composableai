@@ -6,7 +6,7 @@ import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
 import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from "lucide-react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { MagicPdfView } from "../../../magic-pdf";
 import { AudioPanel, ImagePanel, VideoPanel } from "../../../media-viewer";
 import { SimplePdfViewer } from "../../../pdf-viewer";

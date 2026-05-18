@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Badge, Button, cn, useToast, Tabs, TabsBar, TabsPanel, type Tab as TabDefinition } from '@vertesia/ui/core';
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import {
     CheckCircleIcon,
     ClipboardCopyIcon,

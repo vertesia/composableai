@@ -2,7 +2,7 @@ import { AgentRun } from "@vertesia/common";
 import { Button, Dropdown, MenuGroup, MenuItem, cn, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, GitFork, InfoIcon, MoreVertical, RefreshCcw, XIcon } from "lucide-react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
 import { type AgentConversationViewMode } from "./AllMessagesMixed";
 import { getConversationUrl } from "./utils";

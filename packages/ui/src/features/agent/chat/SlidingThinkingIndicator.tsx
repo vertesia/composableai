@@ -2,7 +2,7 @@ import { AgentMessage, AgentMessageType } from "@vertesia/common";
 import { Button, cn } from "@vertesia/ui/core";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { AnimatedThinkingDots, PulsatingCircle, PulsingMessageLoader } from "./AnimatedThinkingDots";
 import MessageItem from "./ModernAgentOutput/MessageItem";
 import { ThinkingMessages } from "./WaitingMessages";
