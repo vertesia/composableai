@@ -6,6 +6,7 @@ export * from './apikey.js';
 export * from './apps.js';
 export * from './ask-user.js';
 export * from './channels.js';
+export * from './cmis-external.js';
 export * from './common.js';
 export * from './data-platform.js';
 export * from './embeddings.js';
