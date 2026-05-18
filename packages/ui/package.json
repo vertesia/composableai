@@ -112,13 +112,15 @@
         "@types/react": "^19.2.3",
         "@types/react-dom": "^19.2.3",
         "axe-core": "^4.10.2",
+        "culori": "^4.0.1",
         "i18next-cli": "^1.51.5",
         "jsdom": "^25.0.1",
         "rimraf": "^6.1.2",
         "rollup": "^4.59.0",
         "typescript": "^6.0.2",
         "vitest": "^4.0.16",
-        "vitest-axe": "^0.1.0"
+        "vitest-axe": "^0.1.0",
+        "wcag-contrast": "^3.0.0"
     },
     "exports": {
         "./styles.css": "./src/css/index.css",
