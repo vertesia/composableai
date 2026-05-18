@@ -136,7 +136,7 @@ export default function SelectFilter({
                     fallbackLabel={option.label}
                   />
                   {selectedGroup?.multiple && isSelected && (
-                    <span className="ml-auto text-xs text-success">✓</span>
+                    <span className="ms-auto text-xs text-success">✓</span>
                   )}
                 </CommandItem>
               );

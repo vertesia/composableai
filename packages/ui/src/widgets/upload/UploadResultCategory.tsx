@@ -45,13 +45,13 @@ export function UploadResultCategory({
                 type="button"
                 aria-expanded={isExpanded}
                 aria-controls={panelId}
-                className="w-full flex items-center justify-between p-3 bg-color-muted/10 cursor-pointer text-left bg-transparent border-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="w-full flex items-center justify-between p-3 bg-color-muted/10 cursor-pointer text-start bg-transparent border-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <span className="flex items-center">
-                    <span className="mr-2">{icon}</span>
+                    <span className="me-2">{icon}</span>
                     <span className="font-medium">{title}</span>
-                    <span className="ml-2 px-2 py-0.5 bg-color-muted/20 rounded-full text-xs">
+                    <span className="ms-2 px-2 py-0.5 bg-color-muted/20 rounded-full text-xs">
                         {count}
                     </span>
                 </span>

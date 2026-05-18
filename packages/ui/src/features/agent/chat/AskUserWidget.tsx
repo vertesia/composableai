@@ -70,22 +70,22 @@ export interface AskUserWidgetProps {
 
 const VARIANT_STYLES = {
     default: {
-        border: "border-l-attention",
+        border: "border-s-attention",
         bg: "bg-amber-50 dark:bg-amber-900/20",
         icon: "text-attention",
     },
     warning: {
-        border: "border-l-destructive",
+        border: "border-s-destructive",
         bg: "bg-red-50 dark:bg-red-900/20",
         icon: "text-destructive",
     },
     info: {
-        border: "border-l-info",
+        border: "border-s-info",
         bg: "bg-blue-50 dark:bg-blue-900/20",
         icon: "text-info",
     },
     success: {
-        border: "border-l-success",
+        border: "border-s-success",
         bg: "bg-green-50 dark:bg-green-900/20",
         icon: "text-success",
     },
@@ -174,12 +174,12 @@ export function AskUserWidget({
         }
     };
 
-    const borderClass = hideBorder ? "" : `border-l-4 ${styles.border}`;
+    const borderClass = hideBorder ? "" : `border-s-4 ${styles.border}`;
 
     return (
         <div className={`my-4 font-sans ${className || ""}`}>
             <div
-                className={`${borderClass} ${styles.bg} rounded-r-lg shadow-sm ${cardClassName || ""}`}
+                className={`${borderClass} ${styles.bg} rounded-e-lg shadow-sm ${cardClassName || ""}`}
             >
                 {/* Header with icon and question */}
                 <div className={`px-4 py-3 ${headerClassName || ""}`}>
@@ -259,7 +259,7 @@ export function AskUserWidget({
                                         key={option.id}
                                         onClick={() => onSelect?.(option.id)}
                                         disabled={isLoading}
-                                        className={`w-full text-left px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700
+                                        className={`w-full text-start px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700
                                             bg-white dark:bg-gray-800
                                             hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600
                                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1

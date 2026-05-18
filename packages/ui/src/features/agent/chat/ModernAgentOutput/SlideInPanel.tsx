@@ -47,8 +47,8 @@ export default function SlideInPanel({
             
             {/* Slide-in panel */}
             <div 
-                className={`fixed top-0 right-0 bottom-0 z-50 bg-white dark:bg-gray-900 shadow-lg border-l border-gray-200 dark:border-gray-800 transition-transform duration-300 ease-in-out ${
-                    isOpen ? 'translate-x-0' : 'translate-x-full'
+                className={`fixed top-0 end-0 bottom-0 z-50 bg-white dark:bg-gray-900 shadow-lg border-s border-gray-200 dark:border-gray-800 transition-transform duration-300 ease-in-out ${
+                    isOpen ? 'translate-x-0' : 'translate-x-full rtl:-translate-x-full'
                 }`}
                 style={{ width }}
             >

@@ -1,7 +1,7 @@
 import { MessageBox } from '@vertesia/ui/core';
 import { VertesiaErrorBoundary } from './VertesiaErrorBoundary';
 import { ReactNode } from 'react';
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export function PanelErrorBoundary({ children }: { children: ReactNode }) {
     return (

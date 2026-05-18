@@ -6,7 +6,7 @@ import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
 import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from "lucide-react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { MagicPdfView } from "../../../magic-pdf";
 import { AudioPanel, ImagePanel, VideoPanel } from "../../../media-viewer";
 import { SimplePdfViewer } from "../../../pdf-viewer";
@@ -740,7 +740,7 @@ const TextPanel = memo(({
         text ? (
             <>
                 {isTextCropped && (
-                    <div className="px-2 py-2 bg-attention/10 border-l-4 border-attention mx-2 mb-2 rounded">
+                    <div className="px-2 py-2 bg-attention/10 border-s-4 border-attention mx-2 mb-2 rounded">
                         <div className="flex items-center gap-2 text-attention">
                             <AlertTriangle className="size-4" />
                             <span className="text-sm font-semibold">{t('store.showingFirst128K')}</span>

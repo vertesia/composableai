@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { MonacoEditor, EditorApi, SchemaEditor, useSchema } from '@vertesia/ui/widgets';
 import { Button, useToast, useTheme, Panel } from '@vertesia/ui/core';

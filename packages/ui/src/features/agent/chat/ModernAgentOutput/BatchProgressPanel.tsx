@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useState, memo } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
-import { useUITranslation } from "../../../../i18n/index.js";
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export interface BatchProgressPanelProps {
     message: AgentMessage;
@@ -87,10 +87,10 @@ function BatchProgressPanelComponent({
 
     // Border color based on status
     const getBorderColor = () => {
-        if (overallStatus === "completed") return "border-l-success";
-        if (overallStatus === "error") return "border-l-destructive";
-        if (overallStatus === "warning") return "border-l-attention";
-        return "border-l-blue-500";
+        if (overallStatus === "completed") return "border-s-success";
+        if (overallStatus === "error") return "border-s-destructive";
+        if (overallStatus === "warning") return "border-s-attention";
+        return "border-s-blue-500";
     };
 
     // Progress bar color
@@ -117,7 +117,7 @@ function BatchProgressPanelComponent({
     const durationSec = (duration / 1000).toFixed(1);
 
     return (
-        <div className={cn("border-l-4 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5", getBorderColor(), className)}>
+        <div className={cn("border-s-4 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5", getBorderColor(), className)}>
             {/* Header */}
             <div
                 className={cn("flex items-center justify-between px-4 py-2 border-b border-gray-100/80 dark:border-gray-800/80 bg-blue-50/50 dark:bg-blue-900/10 cursor-pointer", headerClassName)}
@@ -135,7 +135,7 @@ function BatchProgressPanelComponent({
                     {isExpanded ? (
                         <ChevronDown className="size-3 text-muted" />
                     ) : (
-                        <ChevronRight className="size-3 text-muted" />
+                        <ChevronRight className="size-3 text-muted cn-rtl-flip" />
                     )}
                 </div>
 

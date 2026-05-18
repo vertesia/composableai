@@ -28,7 +28,7 @@ import { getConversationUrl, getWorkstreamId } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
-import { useUITranslation } from "../../../i18n/index.js";
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { VegaLiteChart } from "./VegaLiteChart";
 import { AgentRightPanel, type WorkstreamInfo } from "./AgentRightPanel.js";
 import { useAgentStream } from "./hooks/useAgentStream.js";
@@ -574,12 +574,12 @@ function StartWorkflowView({
                 <div className="flex-1 overflow-y-auto bg-background flex flex-col items-center justify-end">
                     <div className="w-full px-4 py-6">
                         {initialMessage && (
-                            <div className="px-4 py-3 mb-4 bg-info-background border-l-2 border-info text-info">
+                            <div className="px-4 py-3 mb-4 bg-info-background border-s-2 border-info text-info">
                                 {initialMessage}
                             </div>
                         )}
 
-                        <div className="bg-card p-4 border-l-2 border-info">
+                        <div className="bg-card p-4 border-s-2 border-info">
                             <div className="text-base text-foreground font-medium">
                                 {t('agent.enterMessage')}
                             </div>
@@ -607,7 +607,7 @@ function StartWorkflowView({
                                     variant="unstyled"
                                     aria-label={`Remove staged file ${file.name}`}
                                     onClick={() => removeStagedFile(index)}
-                                    className="ml-1 p-0.5 hover:bg-attention/20 rounded"
+                                    className="ms-1 p-0.5 hover:bg-attention/20 rounded"
                                 >
                                     <XIcon className="size-3" />
                                 </Button>
@@ -625,7 +625,7 @@ function StartWorkflowView({
                         disabled={isSending || stagedFiles.length >= maxFiles}
                         className="text-xs"
                     >
-                        <UploadIcon className="size-3.5 mr-1.5" />
+                        <UploadIcon className="size-3.5 me-1.5" />
                         {t('agent.upload')}
                     </Button>
                 </div>
@@ -648,9 +648,9 @@ function StartWorkflowView({
                         className="px-3 py-2.5 text-xs rounded-md transition-colors"
                     >
                         {isSending ? (
-                            <Spinner size="sm" className="mr-1.5" />
+                            <Spinner size="sm" className="me-1.5" />
                         ) : (
-                            <SendIcon className="size-3.5 mr-1.5" />
+                            <SendIcon className="size-3.5 me-1.5" />
                         )}
                         {resolvedStartButtonText}
                     </Button>
@@ -1579,7 +1579,7 @@ const handleCloseRightPanel = useCallback(() => {
                     <div
                         className={conversationTab
                             ? "w-full h-full overflow-auto"
-                            : "w-full lg:w-[var(--agent-right-panel-width)] lg:shrink-0 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l"}
+                            : "w-full lg:w-[var(--agent-right-panel-width)] lg:shrink-0 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-s"}
                         style={!conversationTab ? ({ ['--agent-right-panel-width' as string]: `${rightPanelWidth}px` } as React.CSSProperties) : undefined}
                     >
                     <AgentRightPanel

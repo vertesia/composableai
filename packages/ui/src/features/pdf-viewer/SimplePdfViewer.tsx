@@ -3,7 +3,7 @@ import { Button, Spinner, VTooltip } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Maximize2, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { PdfPageSlider } from "./PdfPageSlider";
 
 interface SimplePdfViewerProps {

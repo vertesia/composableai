@@ -4,7 +4,7 @@ import { Button, useToast, useTheme } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { useNavigate } from '@vertesia/ui/router';
 import { MonacoEditor, IEditorApi } from '@vertesia/ui/widgets';
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { SaveVersionConfirmModal } from './SaveVersionConfirmModal.js';
 
 interface TextEditorPanelProps {

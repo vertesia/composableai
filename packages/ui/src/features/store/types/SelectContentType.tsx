@@ -2,7 +2,7 @@ import { ContentObjectTypeItem } from "@vertesia/common";
 import { SelectBox } from "@vertesia/ui/core";
 import { useEffect, useState } from "react";
 import { useTypeRegistry } from "./TypeRegistryProvider.js";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface SelectContentTypeProps {
     defaultValue?: string | string[] | null; // the typeId

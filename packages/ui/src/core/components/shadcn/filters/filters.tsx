@@ -115,7 +115,7 @@ export default function Filters({
                 .filter((filter) => filter.value?.length > 0)
                 .map((filter) => (
                     <div className="flex gap-[1px] items-center text-sm" key={filter.name + '-' + (filter.type == 'date' ? 'date' : filter.type === 'stringList' && typeof filter.value[0] === 'string' ? (filter.value as string[]).join(',') : Array.isArray(filter.value) ? filter.value.map((v: any) => v.value).join(',') : '')}>
-                        <div className="flex gap-1.5 shrink-0 rounded-l bg-muted p-1.5 h-8 items-center">
+                        <div className="flex gap-1.5 shrink-0 rounded-s bg-muted p-1.5 h-8 items-center">
                             {filter.placeholder || filter.name}
                         </div>
                         {generateComboboxOptions(
@@ -131,7 +131,7 @@ export default function Filters({
                                     prev.filter((f) => f !== filter),
                                 );
                             }}
-                            className="bg-muted rounded-l-none rounded-r-sm size-8 hover:text-primary hover:bg-muted/50 transition shrink-0"
+                            className="bg-muted rounded-s-none rounded-e-sm size-8 hover:text-primary hover:bg-muted/50 transition shrink-0"
                         >
                             <X className="size-6" />
                         </Button>

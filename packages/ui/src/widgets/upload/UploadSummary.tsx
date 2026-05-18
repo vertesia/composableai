@@ -58,7 +58,7 @@ export function UploadSummary({ files, className = "", location, collection }: U
     return (
         <div className={`flex flex-col py-2 ${className}`}>
             <div className="flex items-center mb-4">
-                <div className="size-8 mr-4 rounded-full bg-success/10 flex items-center justify-center">
+                <div className="size-8 me-4 rounded-full bg-success/10 flex items-center justify-center">
                     <CheckCircleIcon className="size-4 text-success" />
                 </div>
                 <div>

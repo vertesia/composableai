@@ -104,7 +104,7 @@ export function SaveVersionConfirmModal({ isOpen, onClose, onConfirm, isLoading,
                         <FormItem
                             label={t('modal.saveVersion.versionLabel')}
                             description={t('modal.saveVersion.versionLabelDescription')}
-                            className="mt-3 pl-8"
+                            className="mt-3 ps-8"
                         >
                             <Input
                                 value={versionLabel}

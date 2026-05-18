@@ -3,10 +3,12 @@ import * as React from "react"
 
 import { cn } from "../libs/utils"
 
+// Thumb slide distance — physical translate-x in LTR, mirrored in RTL so the
+// thumb slides toward the start of the track in both directions.
 const sizes = {
-  'sm': ['h-5 w-8', 'size-3', 'translate-x-4'],
-  'md': ['h-6 w-11', 'size-4', 'translate-x-6'],
-  'lg': ['h-8 w-16', 'size-6', 'translate-x-9'],
+  'sm': ['h-5 w-8', 'size-3', 'translate-x-4 rtl:-translate-x-4'],
+  'md': ['h-6 w-11', 'size-4', 'translate-x-6 rtl:-translate-x-6'],
+  'lg': ['h-8 w-16', 'size-6', 'translate-x-9 rtl:-translate-x-9'],
 }
 
 interface SwitchProps extends Pick<
@@ -41,7 +43,7 @@ function Switch({ className, size = 'md', value, onChange, children, disabled, .
         className={cn(
           "bg-white rounded-full pointer-events-none block ring-0 transition-transform",
           thumbSize,
-          value ? thumbTranslate : 'translate-x-1',
+          value ? thumbTranslate : 'translate-x-1 rtl:-translate-x-1',
         )}
       />
     </SwitchPrimitive.Root>
