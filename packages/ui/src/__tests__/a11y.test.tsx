@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { axe } from 'vitest-axe';
 import { useState } from 'react';
 import { Button, CopyButton } from '../core/components/shadcn/button.js';
 import { Input } from '../core/components/shadcn/input.js';
@@ -12,6 +11,7 @@ import { Modal, ModalTitle, ModalBody } from '../core/components/shadcn/modal/di
 import { Table, THead, TBody, TableHeaderCell, SortableTableHeaderCell } from '../core/components/table/index.js';
 import { SelectBox } from '../core/components/shadcn/selectBox.js';
 import { renderWithProviders } from './test-utils.js';
+import { axe } from './axe-helper.js';
 
 describe('@vertesia/ui accessibility (axe)', () => {
     it('Button (text + icon-only with aria-label) has no violations', async () => {
@@ -127,6 +127,65 @@ describe('@vertesia/ui accessibility (axe)', () => {
         const input = container.querySelector('input');
         const describedBy = input?.getAttribute('aria-describedby');
         expect(describedBy?.split(' ').length).toBe(2);
+    });
+
+    it('FormItem composes with SelectBox (auto-wires id + aria-describedby + aria-invalid on the trigger)', async () => {
+        function Harness() {
+            const [val, setVal] = useState<string | undefined>(undefined);
+            return (
+                <FormItem label="Country" helpText="Pick where you live." error="Required.">
+                    <SelectBox
+                        options={['France', 'Germany', 'Spain']}
+                        value={val}
+                        onChange={setVal}
+                    />
+                </FormItem>
+            );
+        }
+        const { container } = renderWithProviders(<Harness />);
+        const trigger = container.querySelector('button[aria-haspopup="dialog"]');
+        expect(trigger).toBeTruthy();
+        // FormItem clones SelectBox and passes id; SelectBox forwards it to the trigger.
+        expect(trigger?.getAttribute('id')).toBeTruthy();
+        // The visible <label htmlFor=…> in FormItem points at the trigger's id.
+        const labelHtmlFor = container.querySelector('label')?.getAttribute('for');
+        expect(labelHtmlFor).toBe(trigger?.getAttribute('id'));
+        // aria-describedby on the trigger contains the helpText + error ids.
+        const describedBy = trigger?.getAttribute('aria-describedby');
+        expect(describedBy).toBeTruthy();
+        expect(describedBy?.split(' ').length).toBe(2);
+        // Error sets aria-invalid="true" on the trigger.
+        expect(trigger?.getAttribute('aria-invalid')).toBe('true');
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('FormItem does NOT set htmlFor when the child cannot be wired and no childrenId is given', async () => {
+        // Two children: auto-wiring is skipped (warned in dev). The label must not
+        // claim to control anything — htmlFor would point at an id no element owns.
+        const { container } = renderWithProviders(
+            <FormItem label="Custom">
+                <Input value="" onChange={() => undefined} clearable={false} />
+                <span>extra</span>
+            </FormItem>,
+        );
+        const label = container.querySelector('label');
+        expect(label?.hasAttribute('for')).toBe(false);
+    });
+
+    it('FormItem does NOT auto-wire a Fragment child (Fragment ignores cloned props)', async () => {
+        const { container } = renderWithProviders(
+            <FormItem label="Fragment example">
+                <>
+                    <Input value="" onChange={() => undefined} clearable={false} />
+                </>
+            </FormItem>,
+        );
+        const label = container.querySelector('label');
+        // The fragment short-circuits wiring; htmlFor must not be set.
+        expect(label?.hasAttribute('for')).toBe(false);
+        // The input inside the fragment must not have received an injected id.
+        const input = container.querySelector('input');
+        expect(input?.id ?? '').toBe('');
     });
 
     it('Label paired with Input (htmlFor) has no violations', async () => {

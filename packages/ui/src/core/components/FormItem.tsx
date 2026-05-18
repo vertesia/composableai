@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Children, cloneElement, isValidElement, ReactNode, useId, useRef } from 'react';
+import { Children, cloneElement, Fragment, isValidElement, ReactNode, useId, useRef } from 'react';
 
 import { VTooltip } from './shadcn/tooltip';
 import { Info } from 'lucide-react';
@@ -55,12 +55,19 @@ export function FormItem({
     const inputId = childrenId ?? generatedId;
     const hasWarnedRef = useRef(false);
 
+    // A single valid element child is the auto-wire target. Children.toArray flattens
+    // nested arrays and fragments-of-elements, but a *single* element whose `type` is
+    // Fragment is still counted as one element by React — cloning it would add props
+    // to the Fragment (which ignores them), not to the input inside. Exclude that case.
     const validChildren = Children.toArray(children).filter(isValidElement);
-    const canWireChild = validChildren.length === 1;
+    const singleChild = validChildren.length === 1 ? validChildren[0] : undefined;
+    const isSingleFragment = singleChild?.type === Fragment;
+    const canWireChild = !!singleChild && !isSingleFragment;
+    let wired = false;
 
     let renderedChildren: ReactNode = children;
-    if (canWireChild) {
-        const child = validChildren[0] as React.ReactElement<Record<string, unknown>>;
+    if (canWireChild && singleChild) {
+        const child = singleChild as React.ReactElement<Record<string, unknown>>;
         const childProps = child.props ?? {};
         const mergedDescribedBy = joinIds(
             childProps['aria-describedby'] as string | undefined,
@@ -73,20 +80,26 @@ export function FormItem({
             'aria-describedby': mergedDescribedBy,
             'aria-invalid': ariaInvalid,
         });
+        wired = true;
     } else if (process.env.NODE_ENV !== 'production' && !hasWarnedRef.current && (helpText || error || childrenId === undefined)) {
         hasWarnedRef.current = true;
         // eslint-disable-next-line no-console
         console.warn(
-            '[@vertesia/ui] FormItem received zero or multiple element children. ARIA wiring skipped. ' +
-            'Pass `childrenId` and set `aria-describedby` / `aria-invalid` on your input manually, ' +
-            'or wrap the inputs in a single fragment-free element.',
+            '[@vertesia/ui] FormItem received zero, multiple, or a fragment as element children. ARIA wiring skipped. ' +
+            'Pass `childrenId` and set `id` / `aria-describedby` / `aria-invalid` on your input manually, ' +
+            'or wrap the input in a single non-fragment element.',
         );
     }
+
+    // Only set htmlFor when the label actually points at a real control:
+    // either we wired the child (so it received `inputId`) or the consumer
+    // provided `childrenId` and wired their input themselves.
+    const labelHtmlFor = wired || childrenId ? inputId : undefined;
 
     return (
         <div className={clsx("flex w-full space-y-1", className, direction === "row" ? "flex-row justify-between items-center gap-2" : direction === "row-reverse" ? "flex-row-reverse justify-between items-center gap-2" : "flex-col")}>
             <div className={clsx('flex items-center gap-1 mb-0', fullWidthLabel && 'w-full')}>
-                <label htmlFor={inputId} className={`text-sm font-medium mb-1 ${disabled ? "text-muted" : ""} ${fullWidthLabel && "flex-1"}`}>
+                <label htmlFor={labelHtmlFor} className={`text-sm font-medium mb-1 ${disabled ? "text-muted" : ""} ${fullWidthLabel && "flex-1"}`}>
                     {label}{required ? <span className='text-destructive -mt-4 ml-1'>*</span> : ""}
                 </label>
                 {

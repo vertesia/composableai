@@ -37,6 +37,13 @@ export interface SelectBoxBaseProps<T> {
     'aria-label'?: string;
     /** Id of an element that labels the trigger. Use when there is a visible external label. */
     'aria-labelledby'?: string;
+    /** Id forwarded to the trigger button. Required for FormItem's auto-wiring to work. */
+    id?: string;
+    /** Ids of elements describing the control (e.g. FormItem helpText/error). Forwarded to the trigger. */
+    'aria-describedby'?: string;
+    /** Marks the control invalid. Forwarded to the trigger and combined with the internal
+     *  missing-value detection (either being truthy yields aria-invalid="true"). */
+    'aria-invalid'?: boolean | 'true' | 'false';
 }
 
 interface SelectBoxSingleProps<T> extends SelectBoxBaseProps<T> {
@@ -78,6 +85,9 @@ export function SelectBox<T = any>({
     clearTitle,
     'aria-label': ariaLabelProp,
     'aria-labelledby': ariaLabelledByProp,
+    id: idProp,
+    'aria-describedby': ariaDescribedByProp,
+    'aria-invalid': ariaInvalidProp,
 }: Readonly<SelectBoxProps<T>>) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
@@ -310,28 +320,39 @@ export function SelectBox<T = any>({
 
     const showClear = !!isClearable && !!value && (Array.isArray(value) ? value.length > 0 : true);
 
+    // aria-invalid resolves to true if either the consumer set it or the
+    // internal missing-value check fires. Either truthy yields "true".
+    const ariaInvalid = ariaInvalidProp === true || ariaInvalidProp === 'true' || isMissingValue
+        ? true
+        : (ariaInvalidProp === false || ariaInvalidProp === 'false' ? false : undefined);
+
     return (
         // The Vertesia Popover wrapper is uncontrolled; onOpenChange mirrors Radix's
         // own open/close into our local `open` so we can drive aria-expanded correctly.
         <Popover onOpenChange={setOpen}>
-            <div ref={wrapperRef} className="relative">
+            {/* Consumer `className` is applied to the wrapper (the visible bounding box)
+                so width/spacing overrides size the popover correctly. The trigger button
+                is always w-full of the wrapper; the absolutely-positioned clear button
+                is positioned relative to the wrapper. */}
+            <div ref={wrapperRef} className={clsx("relative", className)}>
                 <PopoverTrigger asChild>
                     <button
                         type="button"
+                        id={idProp}
                         disabled={disabled || isLoading}
                         aria-haspopup="dialog"
                         aria-expanded={open}
                         aria-controls={popupId}
                         aria-label={ariaLabel}
                         aria-labelledby={ariaLabelledBy}
-                        aria-invalid={isMissingValue || undefined}
+                        aria-describedby={ariaDescribedByProp}
+                        aria-invalid={ariaInvalid}
                         className={clsx(
-                            className,
                             isLoading
                                 ? 'flex w-full justify-center items-center gap-2 border border-border rounded-md p-2 text-muted text-sm bg-transparent'
                                 : clsx(
-                                    border && (isMissingValue ? 'border border-destructive' : 'border border-border'),
-                                    'flex w-full flex-row gap-2 items-center justify-between p-2 rounded-md group relative bg-transparent text-inherit text-left',
+                                    border && (isMissingValue || ariaInvalid ? 'border border-destructive' : 'border border-border'),
+                                    'flex w-full flex-row gap-2 items-center justify-between p-2 rounded-md group bg-transparent text-inherit text-left',
                                     'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                                     !disabled ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed text-muted",
                                     // Leave room for the absolutely-positioned clear button on the right.
