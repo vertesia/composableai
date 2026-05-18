@@ -59,7 +59,10 @@ beforeAll(() => {
 });
 
 function parseBlock(css: string, selector: string): Record<string, string> {
-    const escaped = selector.replace(/[.]/g, '\\.');
+    // Escape ALL regex metacharacters, not just `.`. Today the only callers pass
+    // `:root` and `.dark`, but a future selector like `[data-theme="dark"]` would
+    // otherwise be interpreted as regex syntax.
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const blockRe = new RegExp(`${escaped}\\s*\\{([\\s\\S]*?)\\n\\}`, 'm');
     const m = blockRe.exec(css);
     if (!m) throw new Error(`Could not find selector ${selector} in color.css`);
