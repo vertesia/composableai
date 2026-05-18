@@ -4,7 +4,7 @@ import { useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { i18nInstance, NAMESPACE } from '../../../../../i18n/instance.js';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useDocumentSearch } from '../../search';
 import { useObjectsActionContext } from '../ObjectsActionHooks';
 import { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';

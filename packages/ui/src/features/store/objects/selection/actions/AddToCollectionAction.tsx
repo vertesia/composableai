@@ -2,7 +2,7 @@ import { Button, DialogDescription, Heading, Modal, ModalBody, ModalFooter, Moda
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { i18nInstance, NAMESPACE } from '../../../../../i18n/instance.js';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { CreateCollectionForm, SelectCollection } from "../../../collections";
 import { useObjectsActionCallback } from "../ObjectsActionHooks";
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";

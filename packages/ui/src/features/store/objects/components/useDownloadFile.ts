@@ -2,7 +2,7 @@ import { VertesiaClient, ZenoClient } from "@vertesia/client";
 import { MarkdownRenditionFormat, RenderMarkdownPayload } from "@vertesia/common";
 import { useCallback, useState } from "react";
 import { ToastFn } from "@vertesia/ui/core";
-import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 
 export interface UseDownloadFileOptions {
     client: VertesiaClient | ZenoClient;

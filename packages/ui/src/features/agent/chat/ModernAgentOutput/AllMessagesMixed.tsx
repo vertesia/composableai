@@ -2,7 +2,7 @@ import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@ver
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { cn } from "@vertesia/ui/core";
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 export type AgentConversationViewMode = "stacked" | "sliding";
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from "./BatchProgressPanel";
