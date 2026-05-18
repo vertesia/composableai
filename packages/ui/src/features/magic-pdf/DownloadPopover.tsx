@@ -55,15 +55,15 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
             </PopoverTrigger>
             <PopoverContent align="start" className="p-0 w-auto">
                 <div className="min-w-[200px] flex flex-col divide-y divide-border">
-                    <button className={buttonClass} onClick={() => onDownload("annotated.pdf")}>
+                    <Button variant="unstyled" className={buttonClass} onClick={() => onDownload("annotated.pdf")}>
                         annotated.pdf
-                    </button>
-                    <button className={buttonClass} onClick={() => onDownload("document.xml")}>
+                    </Button>
+                    <Button variant="unstyled" className={buttonClass} onClick={() => onDownload("document.xml")}>
                         document.xml
-                    </button>
-                    <button className={buttonClass} onClick={() => onDownload("analyzed-pages.json")}>
+                    </Button>
+                    <Button variant="unstyled" className={buttonClass} onClick={() => onDownload("analyzed-pages.json")}>
                         analyzed-pages.json
-                    </button>
+                    </Button>
                 </div>
             </PopoverContent>
         </Popover>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { XIcon } from 'lucide-react';
+import { Button } from '@vertesia/ui/core';
 
 interface SlideInPanelProps {
     isOpen: boolean;
@@ -54,12 +55,14 @@ export default function SlideInPanel({
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
                     <h3 className="font-medium text-gray-800 dark:text-gray-200">{title}</h3>
-                    <button 
+                    <Button
+                        variant="unstyled"
                         className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-full"
                         onClick={onClose}
+                        aria-label="Close"
                     >
                         <XIcon className="h-5 w-5" />
-                    </button>
+                    </Button>
                 </div>
                 
                 {/* Content */}

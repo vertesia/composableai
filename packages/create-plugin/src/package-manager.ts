@@ -1,9 +1,19 @@
 /**
  * Package manager detection and selection
  */
+import chalk from 'chalk';
 import { execSync } from 'child_process';
 import prompts from 'prompts';
-import chalk from 'chalk';
+
+export function buildPackageManagerEnv(packageManager: string): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+
+  if (packageManager === 'pnpm' && !env.pnpm_config_registry && env.npm_config_registry) {
+    env.pnpm_config_registry = env.npm_config_registry;
+  }
+
+  return env;
+}
 
 /**
  * Check if a command exists on the system (cross-platform)
@@ -89,6 +99,7 @@ export async function installDependencies(projectName: string, packageManager: s
     execSync(`${packageManager} install`, {
       cwd: projectName,
       stdio: 'inherit',
+      env: buildPackageManagerEnv(packageManager),
     });
     console.log();
   } catch (error) {
