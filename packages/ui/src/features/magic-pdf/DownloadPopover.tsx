@@ -25,7 +25,7 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
 
     const processorType = getProcessorType();
 
-    const buttonClass = "p-2 cursor-pointer hover:bg-muted text-left text-sm";
+    const buttonClass = "p-2 cursor-pointer hover:bg-muted text-start text-sm";
 
     // For markdown processor, only one download option - render simple button
     if (processorType === "markdown") {

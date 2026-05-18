@@ -111,7 +111,7 @@ function DocumentPanelComponent({
                 {isLoading ? (
                     <div className="flex items-center justify-center py-12">
                         <Loader2Icon className="size-5 animate-spin text-muted" />
-                        <span className="ml-2 text-sm text-muted">{t('agent.loadingDocument')}</span>
+                        <span className="ms-2 text-sm text-muted">{t('agent.loadingDocument')}</span>
                     </div>
                 ) : error ? (
                     <div className="p-4 rounded-md bg-destructive/10 text-destructive text-sm">

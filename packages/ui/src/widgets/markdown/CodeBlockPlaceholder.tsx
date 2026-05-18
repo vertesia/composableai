@@ -58,7 +58,7 @@ export function CodeBlockPlaceholder({
                     <Button
                         variant="unstyled"
                         onClick={onRetry}
-                        className="ml-2 rounded bg-destructive/10 px-2 py-1 text-xs hover:bg-destructive/20 transition-colors text-destructive"
+                        className="ms-2 rounded bg-destructive/10 px-2 py-1 text-xs hover:bg-destructive/20 transition-colors text-destructive"
                     >
                         Retry
                     </Button>

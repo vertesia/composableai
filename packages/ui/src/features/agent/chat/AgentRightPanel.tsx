@@ -279,7 +279,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                                         className="text-xs h-7 px-2 text-muted hover:text-foreground"
                                         onClick={() => copyRunId(ws.child_workflow_run_id!)}
                                     >
-                                        <ClipboardCopyIcon className="size-3 mr-1" />
+                                        <ClipboardCopyIcon className="size-3 me-1" />
                                         {t('agent.copyRunId')}
                                     </Button>
                                     <Button
@@ -288,7 +288,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                                         className="text-xs h-7 px-2 text-muted hover:text-foreground"
                                         onClick={() => downloadConversation(ws.child_workflow_run_id!)}
                                     >
-                                        <DownloadCloudIcon className="size-3 mr-1" />
+                                        <DownloadCloudIcon className="size-3 me-1" />
                                         {t('agent.download')}
                                     </Button>
                                 </div>
@@ -521,7 +521,7 @@ function AgentRightPanelComponent({
                     <TabsBar className="border-b-0 mb-0 min-w-max" />
                 </div>
                 {!conversationContent && (
-                    <Button variant="ghost" size="sm" className="shrink-0 ml-1" onClick={onClose}>
+                    <Button variant="ghost" size="sm" className="shrink-0 ms-1" onClick={onClose}>
                         <XIcon className="size-4" />
                     </Button>
                 )}

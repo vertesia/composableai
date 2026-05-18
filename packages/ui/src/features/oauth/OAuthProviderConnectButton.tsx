@@ -116,7 +116,7 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
                 </>
             ) : (
                 <>
-                    <ExternalLink className="size-4 mr-1" />
+                    <ExternalLink className="size-4 me-1" />
                     <span>{t('oauthProvider.authenticate')}</span>
                 </>
             )}

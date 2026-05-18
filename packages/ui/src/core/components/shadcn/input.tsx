@@ -70,7 +70,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             cn(
               variants({ size, variant }),
               className,
-              clearable && value ? "pr-8" : "",
+              clearable && value ? "pe-8" : "",
             )}
           ref={ref}
           value={value == null ? '' : value}
@@ -84,7 +84,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             onClick={_onClear}
             className={`clear-button opacity-0 transition-opacity duration-200
               absolute top-1/2 -translate-y-1/2 text-muted !hover:text-destructive cursor-pointer
-              flex items-center justify-center size-6 rounded right-2`}
+              flex items-center justify-center size-6 rounded end-2`}
             aria-label="Clear input"
           >
             <X size={16} />

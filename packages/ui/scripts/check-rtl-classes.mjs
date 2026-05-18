@@ -57,36 +57,43 @@ const BASELINE_PATH = resolve(PKG_ROOT, '.rtl-baseline.json');
 const VARIANT = String.raw`(?:(?:[a-z][a-z0-9-]*|\[[^\]]+\]|peer-[a-z-]+|group-[a-z-]+|data-\[[^\]]+\]|aria-\[[^\]]+\]|has-\[[^\]]+\]|not-[a-z-]+):)*`;
 const NEG = String.raw`-?`;
 
-// Codemod-safe categories.
+// Class boundary — a directional utility must START at one of these to count
+// as its own class. Without this, `left-2` inside `slide-in-from-left-2`
+// would get counted as a `left` violation.
+const BOUNDARY_BEFORE = String.raw`(?<=^|[\s"'\`{(\[,>])`;
+
+// Codemod-safe categories. Every pattern is anchored to a class boundary so
+// directional fragments inside larger class names (e.g. `slide-in-from-left-2`)
+// don't double-count.
 const AUTO_PATTERNS = [
-    ['ml',         `${VARIANT}${NEG}ml-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
-    ['mr',         `${VARIANT}${NEG}mr-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
-    ['pl',         `${VARIANT}pl-(?:\\d+|\\[.+?\\]|px|\\d+\\.\\d+|[\\d./]+)`],
-    ['pr',         `${VARIANT}pr-(?:\\d+|\\[.+?\\]|px|\\d+\\.\\d+|[\\d./]+)`],
-    ['left',       `${VARIANT}${NEG}left-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
-    ['right',      `${VARIANT}${NEG}right-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
-    ['text-left',  `${VARIANT}text-left\\b`],
-    ['text-right', `${VARIANT}text-right\\b`],
-    ['border-l',   `${VARIANT}border-l(?:-(?:\\d+|\\[.+?\\]|none|px))?\\b`],
-    ['border-r',   `${VARIANT}border-r(?:-(?:\\d+|\\[.+?\\]|none|px))?\\b`],
-    ['rounded-l',  `${VARIANT}rounded-l(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
-    ['rounded-r',  `${VARIANT}rounded-r(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
-    ['rounded-tl', `${VARIANT}rounded-tl(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
-    ['rounded-tr', `${VARIANT}rounded-tr(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
-    ['rounded-bl', `${VARIANT}rounded-bl(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
-    ['rounded-br', `${VARIANT}rounded-br(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
-    ['float',      `${VARIANT}float-(?:left|right)\\b`],
-    ['clear',      `${VARIANT}clear-(?:left|right)\\b`],
+    ['ml',         `${BOUNDARY_BEFORE}${VARIANT}${NEG}ml-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
+    ['mr',         `${BOUNDARY_BEFORE}${VARIANT}${NEG}mr-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
+    ['pl',         `${BOUNDARY_BEFORE}${VARIANT}pl-(?:\\d+|\\[.+?\\]|px|\\d+\\.\\d+|[\\d./]+)`],
+    ['pr',         `${BOUNDARY_BEFORE}${VARIANT}pr-(?:\\d+|\\[.+?\\]|px|\\d+\\.\\d+|[\\d./]+)`],
+    ['left',       `${BOUNDARY_BEFORE}${VARIANT}${NEG}left-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
+    ['right',      `${BOUNDARY_BEFORE}${VARIANT}${NEG}right-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
+    ['text-left',  `${BOUNDARY_BEFORE}${VARIANT}text-left\\b`],
+    ['text-right', `${BOUNDARY_BEFORE}${VARIANT}text-right\\b`],
+    ['border-l',   `${BOUNDARY_BEFORE}${VARIANT}border-l(?:-(?:\\d+|\\[.+?\\]|none|px))?\\b`],
+    ['border-r',   `${BOUNDARY_BEFORE}${VARIANT}border-r(?:-(?:\\d+|\\[.+?\\]|none|px))?\\b`],
+    ['rounded-l',  `${BOUNDARY_BEFORE}${VARIANT}rounded-l(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
+    ['rounded-r',  `${BOUNDARY_BEFORE}${VARIANT}rounded-r(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
+    ['rounded-tl', `${BOUNDARY_BEFORE}${VARIANT}rounded-tl(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
+    ['rounded-tr', `${BOUNDARY_BEFORE}${VARIANT}rounded-tr(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
+    ['rounded-bl', `${BOUNDARY_BEFORE}${VARIANT}rounded-bl(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
+    ['rounded-br', `${BOUNDARY_BEFORE}${VARIANT}rounded-br(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
+    ['float',      `${BOUNDARY_BEFORE}${VARIANT}float-(?:left|right)\\b`],
+    ['clear',      `${BOUNDARY_BEFORE}${VARIANT}clear-(?:left|right)\\b`],
 ];
 
 // Audit categories — context-dependent; codemod must NOT rewrite blindly.
 const AUDIT_PATTERNS = [
-    ['space-x',     `${VARIANT}space-x-(?:\\d+|\\[.+?\\]|px|reverse|\\d+\\.\\d+|[\\d./]+)`],
-    ['divide-x',    `${VARIANT}divide-x(?:-(?:\\d+|\\[.+?\\]|reverse))?\\b`],
-    ['translate-x', `${VARIANT}${NEG}translate-x-(?:\\d+|\\[.+?\\]|px|full|\\d+\\.\\d+|[\\d./]+)`],
-    ['slide-in',    `${VARIANT}slide-in-from-(?:left|right)(?:-\\d+|\\[.+?\\])?\\b`],
-    ['slide-out',   `${VARIANT}slide-out-to-(?:left|right)(?:-\\d+|\\[.+?\\])?\\b`],
-    ['fixed-edge',  `${VARIANT}(?:left|right)-0\\b`],
+    ['space-x',     `${BOUNDARY_BEFORE}${VARIANT}space-x-(?:\\d+|\\[.+?\\]|px|reverse|\\d+\\.\\d+|[\\d./]+)`],
+    ['divide-x',    `${BOUNDARY_BEFORE}${VARIANT}divide-x(?:-(?:\\d+|\\[.+?\\]|reverse))?\\b`],
+    ['translate-x', `${BOUNDARY_BEFORE}${VARIANT}${NEG}translate-x-(?:\\d+|\\[.+?\\]|px|full|\\d+\\.\\d+|[\\d./]+)`],
+    ['slide-in',    `${BOUNDARY_BEFORE}${VARIANT}slide-in-from-(?:left|right)(?:-\\d+|\\[.+?\\])?\\b`],
+    ['slide-out',   `${BOUNDARY_BEFORE}${VARIANT}slide-out-to-(?:left|right)(?:-\\d+|\\[.+?\\])?\\b`],
+    ['fixed-edge',  `${BOUNDARY_BEFORE}${VARIANT}(?:left|right)-0\\b`],
 ];
 
 const ALL_PATTERNS = [
@@ -105,7 +112,9 @@ function walk(dir, out = []) {
     return out;
 }
 
-const RTL_OK = /\/\/\s*rtl-ok:/;
+// Accept rtl-ok in any comment style: `// rtl-ok: …`, `{/* rtl-ok: … */}`,
+// or trailing block comments. We just look for the marker on the line.
+const RTL_OK = /rtl-ok:/;
 
 function scanFile(file) {
     const src = readFileSync(file, 'utf-8');
@@ -120,6 +129,9 @@ function scanFile(file) {
             re.lastIndex = 0;
             let m;
             while ((m = re.exec(line)) !== null) {
+                // The match itself may start with an `rtl:` variant — that's
+                // deliberate RTL-aware code, not a violation. Skip it.
+                if (m[0].includes('rtl:')) continue;
                 hits.push({ category, klass, match: m[0], line: i + 1 });
             }
         }

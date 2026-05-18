@@ -204,7 +204,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                             <span>{t('store.editingGenericDocument')}</span>
                         )}
                         {jsonSchema && (
-                            <span className="ml-2 text-green-600">(JSON schema validation enabled)</span>
+                            <span className="ms-2 text-green-600">(JSON schema validation enabled)</span>
                         )}
                     </div>
                     <div className="h-[75vh] border rounded-md overflow-hidden">

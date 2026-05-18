@@ -24,7 +24,7 @@ export function ConversationRow({ hit, t, onAddFilter, onOpen }: ConversationRow
             onClick={() => onOpen(hit.id)}
         >
             <td className="max-w-0">
-                <div className="font-medium line-clamp-2 pr-4" title={topic}>
+                <div className="font-medium line-clamp-2 pe-4" title={topic}>
                     {topic}
                 </div>
             </td>

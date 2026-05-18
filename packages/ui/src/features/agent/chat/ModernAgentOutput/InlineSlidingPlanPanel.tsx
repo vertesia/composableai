@@ -152,7 +152,7 @@ function InlineSlidingPlanPanelComponent({
 
                 return (
                   <div key={index} className="flex p-3 my-1">
-                    <div className={`mr-2 mt-0.5 flex-shrink-0 text-muted`}>
+                    <div className={`me-2 mt-0.5 flex-shrink-0 text-muted`}>
                       {taskId}
                     </div>
                     <div className="w-full">
@@ -160,7 +160,7 @@ function InlineSlidingPlanPanelComponent({
                         {taskGoal}
                       </div>
                       <div className="mt-1 flex justify-end items-center">
-                        <div className={`mr-2 mt-0.5 flex-shrink-0 ${statusColor}`}>
+                        <div className={`me-2 mt-0.5 flex-shrink-0 ${statusColor}`}>
                           <StatusIcon className="size-3.5" />
                         </div>
                         <Badge variant={status === "completed" ? "success" : status === "in_progress" ? "info" : "default"}>
@@ -232,7 +232,7 @@ function InlineSlidingPlanPanelComponent({
                         key={id}
                         className={cn("flex items-center p-1.5 rounded", statusBg)}
                       >
-                        <div className={`mr-1.5 ${statusColor}`}>
+                        <div className={`me-1.5 ${statusColor}`}>
                           <StatusIcon className="h-3.5 w-3.5" />
                         </div>
                         <div className="flex-1">

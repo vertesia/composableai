@@ -149,7 +149,7 @@ export function BrowserUseWidget({ state, runId, className }: BrowserUseWidgetPr
             {imageUrl ? (
                 <button
                     type="button"
-                    className="block w-full bg-mixer-muted/20 text-left"
+                    className="block w-full bg-mixer-muted/20 text-start"
                     onClick={() => openImage(imageUrl, imageName)}
                     title={t("agent.clickToEnlarge")}
                 >

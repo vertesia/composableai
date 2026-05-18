@@ -70,7 +70,7 @@ function FullscreenDialog({
                         <Button
                             variant="unstyled"
                             onClick={onClose}
-                            className="absolute top-3 right-3 z-10 p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 shadow-sm"
+                            className="absolute top-3 end-3 z-10 p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 shadow-sm"
                             aria-label={t('agent.closeFullscreen')}
                         >
                             <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
@@ -1085,7 +1085,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
                     )}
                 </div>
                 {/* Floating toolbar in fullscreen */}
-                <div className="absolute bottom-6 right-6">
+                <div className="absolute bottom-6 end-6">
                     <Toolbar className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 border border-gray-200 dark:border-gray-700" />
                 </div>
             </FullscreenDialog>

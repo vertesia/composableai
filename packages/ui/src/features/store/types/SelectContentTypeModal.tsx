@@ -108,13 +108,13 @@ export function SelectContentTypeModal({
 
                 {!selectedType && (
                     <div className="flex items-center text-attention">
-                        <CheckCircleIcon className="size-4 mr-1" />
+                        <CheckCircleIcon className="size-4 me-1" />
                         {t('store.automaticTypeDetection')}
                         <VTooltip
                             description={t('store.automaticTypeDetectionDescription')}
                             placement="top" size="xs"
                         >
-                            <Info className="size-3 ml-2" />
+                            <Info className="size-3 ms-2" />
                         </VTooltip>
                     </div>
                 )}

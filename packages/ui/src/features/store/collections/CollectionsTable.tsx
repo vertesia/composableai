@@ -83,7 +83,7 @@ export function CollectionsTable({ }: CollectionsTableProps) {
                                         </td>
                                         <td>{c.type?.name || "-"}</td>
                                         <td>{dayjs(c.created_at).fromNow()}</td>
-                                        <td className="text-right">
+                                        <td className="text-end">
                                             <Button
                                                 variant="destructive"
                                                 size="sm"
@@ -121,7 +121,7 @@ export function CollectionIcon({ isDynamic }: { isDynamic: boolean }) {
     const icon = isDynamic ? <Search className="size-5" /> : <FolderClosed className="size-5" />;
 
     return (
-        <VTooltip description={tooltipText} className="mr-2">
+        <VTooltip description={tooltipText} className="me-2">
             {icon}
         </VTooltip>
     );

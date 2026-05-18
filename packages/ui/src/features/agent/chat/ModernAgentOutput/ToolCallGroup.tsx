@@ -511,7 +511,7 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
     if (resolvedFiles.length === 0) return null;
 
     return (
-        <div className="pl-4 pr-2 pb-1.5">
+        <div className="ps-4 pe-2 pb-1.5">
             <FileDisplay files={resolvedFiles} />
         </div>
     );
@@ -652,10 +652,10 @@ function ToolCallGroupComponent({
 
     // Get border color based on status
     const getBorderColor = () => {
-        if (toolStatus === "completed") return "border-l-success";
-        if (toolStatus === "error") return "border-l-destructive";
-        if (toolStatus === "warning") return "border-l-attention";
-        return "border-l-purple-500";
+        if (toolStatus === "completed") return "border-s-success";
+        if (toolStatus === "error") return "border-s-destructive";
+        if (toolStatus === "warning") return "border-s-attention";
+        return "border-s-purple-500";
     };
 
     // Animate new messages when they're added
@@ -725,7 +725,7 @@ function ToolCallGroupComponent({
 
     return (
         <div
-            className={cn("border-l-4 overflow-hidden bg-white dark:bg-gray-900 mb-4", getBorderColor(), rootClassName)}
+            className={cn("border-s-4 overflow-hidden bg-white dark:bg-gray-900 mb-4", getBorderColor(), rootClassName)}
         >
             {/* Compact header */}
             <div
@@ -843,7 +843,7 @@ function ToolCallGroupComponent({
                                     const toolStatusValue = (details as Record<string, unknown> | undefined)?.tool_status as ToolExecutionStatus | undefined;
                                     const interestingDetails = extractInterestingDetails(details as Record<string, unknown> | undefined);
                                     return (
-                                        <div className={cn("pl-5 pr-3 pb-2 text-sm", itemContentClassName)}>
+                                        <div className={cn("ps-5 pe-3 pb-2 text-sm", itemContentClassName)}>
                                             {/* Badges row: tool name + status + timestamp */}
                                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                                                 <span className={cn(badgeClass, toolBadgeClassName)}>

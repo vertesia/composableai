@@ -39,7 +39,7 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeP
             <div>
                 <Button
                     variant="unstyled"
-                    className="flex items-center gap-1.5 w-full text-left py-1 px-1 rounded hover:bg-muted/30 text-sm"
+                    className="flex items-center gap-1.5 w-full text-start py-1 px-1 rounded hover:bg-muted/30 text-sm"
                     style={{ paddingLeft: `${depth * 16 + 4}px` }}
                     onClick={() => setExpanded((prev) => !prev)}
                 >
@@ -70,7 +70,7 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeP
     return (
         <Button
             variant="unstyled"
-            className="flex items-center gap-1.5 w-full text-left py-1 px-1 rounded hover:bg-muted/30 text-sm"
+            className="flex items-center gap-1.5 w-full text-start py-1 px-1 rounded hover:bg-muted/30 text-sm"
             style={{ paddingLeft: `${depth * 16 + 4}px` }}
             onClick={() => onDownload(node.path)}
             disabled={isDownloading}
@@ -141,7 +141,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
             <div className="flex flex-col items-center justify-center py-8 text-muted">
                 <span className="text-sm text-destructive mb-2">{error}</span>
                 <Button variant="ghost" size="sm" onClick={refresh}>
-                    <RefreshCwIcon className="size-3.5 mr-1.5" />
+                    <RefreshCwIcon className="size-3.5 me-1.5" />
                     {t('agent.retry')}
                 </Button>
             </div>
@@ -154,7 +154,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
                 <PackageIcon className="size-8 mb-2" />
                 <span className="text-sm">{t('agent.noArtifactsYet')}</span>
                 <Button variant="ghost" size="sm" className="mt-2" onClick={refresh}>
-                    <RefreshCwIcon className="size-3.5 mr-1.5" />
+                    <RefreshCwIcon className="size-3.5 me-1.5" />
                     {t('agent.refresh')}
                 </Button>
             </div>

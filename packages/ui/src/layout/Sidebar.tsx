@@ -132,7 +132,7 @@ export function SidebarItem({ external, className, tools, children, icon: Icon, 
                             />
                         }
                         {children}
-                        {tools && <div className='flex items-center ml-auto'>{tools}</div>}
+                        {tools && <div className='flex items-center ms-auto'>{tools}</div>}
                     </a>
                 </SidebarTooltip>
             </Nav>

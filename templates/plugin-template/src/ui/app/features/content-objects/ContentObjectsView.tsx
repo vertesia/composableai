@@ -357,7 +357,7 @@ export function ContentObjectsView() {
                             onClick={() => refetch()}
                             isDisabled={isLoading}
                             alt={t('objects.refresh')}
-                            className="ml-auto"
+                            className="ms-auto"
                         >
                             <RefreshCw />
                         </Button>

@@ -128,13 +128,13 @@ export function DocumentUploadModal({
                 <div className="text-sm mt-1">
                     {collectionData && (
                         <div className="flex items-center">
-                            <span className="mr-1">{t('upload.collectionLabel')}</span>
+                            <span className="me-1">{t('upload.collectionLabel')}</span>
                             <span className="font-medium">{collectionData.name}</span>
                         </div>
                     )}
                     {selectedFolder && (
                         <div className="flex items-center mt-1">
-                            <span className="mr-1">{t('upload.folderLabel')}</span>
+                            <span className="me-1">{t('upload.folderLabel')}</span>
                             <span className="font-medium">{selectedFolder}</span>
                         </div>
                     )}
@@ -569,7 +569,7 @@ export function DocumentUploadModal({
                         description={t('upload.contentTypeTooltip')}
                         placement="top" size="xs"
                     >
-                        <Info className="size-3 ml-2" />
+                        <Info className="size-3 ms-2" />
                     </VTooltip>
                 </label>
                 <SelectBox
@@ -586,13 +586,13 @@ export function DocumentUploadModal({
                 ) : (
                     <div className="p-2 rounded-md">
                         <div className="flex items-center text-attention">
-                            <CheckCircleIcon className="size-4 mr-1" />
+                            <CheckCircleIcon className="size-4 me-1" />
                             {t('store.automaticTypeDetection')}
                             <VTooltip
                                 description={t('store.automaticTypeDetectionDescription')}
                                 placement="top" size="xs"
                             >
-                                <Info className="size-3 ml-2" />
+                                <Info className="size-3 ms-2" />
                             </VTooltip>
                         </div>
                     </div>
@@ -738,7 +738,7 @@ export function DocumentUploadModal({
                                 key={`${fileStatus.file.name}-${index}`}
                                 className="flex items-center py-2 border-b border-border last:border-b-0"
                             >
-                                <div className="mr-3">
+                                <div className="me-3">
                                     {fileStatus.status === "pending" && (
                                         <FileIcon className="size-5 text-muted" />
                                     )}

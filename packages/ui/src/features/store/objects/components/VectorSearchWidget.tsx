@@ -108,7 +108,7 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
     return (
         <div className="flex gap-1 items-center">
             <Input placeholder={t('store.searchPlaceholder')} value={searchText} onChange={setSearchText} onKeyDown={handleKeyPress} className='min-w-[200px]' />
-            <Button variant="ghost" onClick={() => setShowSettings(true)} alt={t('store.semanticSearchSettings')} className="ml-1"><Settings size={18} /></Button>
+            <Button variant="ghost" onClick={() => setShowSettings(true)} alt={t('store.semanticSearchSettings')} className="ms-1"><Settings size={18} /></Button>
             <Modal isOpen={showSettings} onClose={() => setShowSettings(false)}>
                 <ModalTitle>{t('store.searchTypes')}</ModalTitle>
                 <ModalBody>
@@ -131,7 +131,7 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
                             </label>
                         ))}
                         <div className="mt-3">
-                            <span className="mr-2">{t('store.limit')}</span>
+                            <span className="me-2">{t('store.limit')}</span>
                             <NumberInput type="number" min={1} value={limit} onChange={v => setLimit(Number(v ?? 100))} style={{ width: 80 }} />
                         </div>
                     </div>

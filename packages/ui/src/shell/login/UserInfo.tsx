@@ -19,7 +19,7 @@ export function InfoItems({ title, value }: { title: string, value: string }) {
             <div className="flex flex-col w-[calc(100%-3rem)]">
                 <div className='text-sm px-2 dark:text-slate-200'>{title}</div>
                 <VTooltip description={value} size="xs" placement="left">
-                    <div className='text-xs truncate text-muted w-full text-left px-2'>{value} </div>
+                    <div className='text-xs truncate text-muted w-full text-start px-2'>{value} </div>
                 </VTooltip>
             </div>
             {isCopied ?

@@ -81,7 +81,7 @@ function ParentItem({ property, readonly }: ParentItemProps) {
             </div>
             {
                 isOpen &&
-                <ul className="ml-4 border-l border-gray-400 border-dashed">
+                <ul className="ms-4 border-s border-gray-400 border-dashed">
                     {
                         (property.children || []).map(prop => renderProperty(prop, readonly))
                     }

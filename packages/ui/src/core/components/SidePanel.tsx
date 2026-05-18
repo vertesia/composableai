@@ -44,10 +44,10 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
     };
 
     const isLeft = side === 'left';
-    const positionClass = isLeft ? 'left-0' : 'right-0';
-    const paddingClass = isLeft ? 'pr-10 sm:pr-16' : 'pl-10 sm:pl-16';
-    const borderClass = isLeft ? 'border-r' : 'border-l';
-    const dragHandleClass = isLeft ? '-right-1' : '-left-1';
+    const positionClass = isLeft ? 'start-0' : 'end-0';
+    const paddingClass = isLeft ? 'pe-10 sm:pe-16' : 'ps-10 sm:ps-16';
+    const borderClass = isLeft ? 'border-e' : 'border-s';
+    const dragHandleClass = isLeft ? '-end-1' : '-start-1';
     const initialX = isLeft ? "-100%" : "100%";
 
     return (
@@ -94,7 +94,7 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
                                                         <h2 className="w-full text-base font-semibold leading-6">
                                                             <div className="text-2xl">{title ?? ""}</div>
                                                         </h2>
-                                                        <div className="ml-3 flex h-7 items-center">
+                                                        <div className="ms-3 flex h-7 items-center">
                                                             <CloseButton onClose={onClose} />
                                                         </div>
                                                     </div>

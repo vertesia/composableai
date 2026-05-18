@@ -70,7 +70,7 @@ export function Overlay({
                         >
                             {
                                 showCloseButton && (
-                                    <div className="absolute top-2 right-2 z-10">
+                                    <div className="absolute top-2 end-2 z-10">
                                         <Button onClick={handleClose} variant="primary">
                                             <X />
                                         </Button>
@@ -114,16 +114,16 @@ function getPositionClasses(position: string, width?: string, height?: string) {
 
     switch (position) {
         case 'left':
-            return `${baseClasses} left-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
+            return `${baseClasses} start-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
         case 'right':
-            return `${baseClasses} right-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
+            return `${baseClasses} end-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
         case 'top':
-            return `${baseClasses} top-[var(--header-height)] left-0 right-0 ${height || 'h-80'}`
+            return `${baseClasses} top-[var(--header-height)] start-0 end-0 ${height || 'h-80'}`
         case 'bottom':
-            return `${baseClasses} bottom-0 left-0 right-0 ${height || 'h-80'}`
+            return `${baseClasses} bottom-0 start-0 end-0 ${height || 'h-80'}`
         case 'center':
-            return `${baseClasses} top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${width || 'w-96'} ${height || 'max-h-96'}`
+            return `${baseClasses} top-1/2 start-1/2 transform -translate-x-1/2 -translate-y-1/2 ${width || 'w-96'} ${height || 'max-h-96'}`
         default:
-            return `${baseClasses} right-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
+            return `${baseClasses} end-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
     }
 }

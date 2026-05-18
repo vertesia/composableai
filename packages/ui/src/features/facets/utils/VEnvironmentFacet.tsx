@@ -28,7 +28,7 @@ export function VEnvironmentFacet({ buckets, name }: EnvironmentFacetProps): Fil
             return (
                 <div className="w-full flex items-center">
                     <span className="text-sm truncate">{displayName}</span>
-                    <span className="ml-2 text-xs">({bucket?.count || 0})</span>
+                    <span className="ms-2 text-xs">({bucket?.count || 0})</span>
                 </div>
             );
         },

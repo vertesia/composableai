@@ -72,7 +72,7 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
                                     <div className="shrink-0">
                                         <Icon className={`size-6 ${color}`} aria-hidden="true" />
                                     </div>
-                                    <div className="ml-3 flex-1 pt-0.5 min-w-0">
+                                    <div className="ms-3 flex-1 pt-0.5 min-w-0">
                                         <p className="text-sm font-semibold text-foreground break-words">{data.title}</p>
                                         {data.description && (
                                             <p className="mt-2 text-sm text-muted break-words whitespace-pre-wrap leading-relaxed">
@@ -80,7 +80,7 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
                                             </p>
                                         )}
                                     </div>
-                                    <div className="ml-4 flex shrink-0">
+                                    <div className="ms-4 flex shrink-0">
                                         <button
                                             type="button"
                                             className="inline-flex rounded-md bg-muted text-muted hover:text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"

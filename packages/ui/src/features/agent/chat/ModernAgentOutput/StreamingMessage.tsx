@@ -269,7 +269,7 @@ function StreamingMessageComponent({
         <div className={cn("w-full max-w-full", className)}>
             {/* Card wrapper matching MessageItem structure */}
             <div
-                className={cn("border-l-4 bg-white dark:bg-gray-900 mb-4 border-l-purple-500 w-full max-w-full overflow-hidden", cardClassName)}
+                className={cn("border-s-4 bg-white dark:bg-gray-900 mb-4 border-s-purple-500 w-full max-w-full overflow-hidden", cardClassName)}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}

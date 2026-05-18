@@ -136,10 +136,10 @@ export const DateCombobox = ({
                                                     const endDate = dateRange[1].getTime();
 
                                                     if (currentDate === startDate) {
-                                                        return 'bg-primary text-primary-foreground rounded-l-md font-semibold';
+                                                        return 'bg-primary text-primary-foreground rounded-s-md font-semibold';
                                                     }
                                                     if (currentDate === endDate) {
-                                                        return 'bg-primary text-primary-foreground rounded-r-md font-semibold';
+                                                        return 'bg-primary text-primary-foreground rounded-e-md font-semibold';
                                                     }
                                                     if (currentDate > startDate && currentDate < endDate) {
                                                         return 'bg-primary/20 text-primary font-medium';

@@ -297,7 +297,7 @@ export function SlidingThinkingIndicator({
                 (showDetails || thinkingMessages.length > 0) &&
                 (showDetails ? (
                     // Show details view - always show all thinking messages regardless of completion state
-                    <div className="space-y-1 space-y-reverse max-h-[300px] overflow-y-auto pr-1 flex flex-col-reverse">
+                    <div className="space-y-1 space-y-reverse max-h-[300px] overflow-y-auto pe-1 flex flex-col-reverse">
                         {sortedThinkingMessages.map((message, index) => (
                             <div
                                 key={`${message.timestamp}-${index}`}
@@ -348,8 +348,8 @@ export function SlidingThinkingIndicator({
                                     ) : (
                                         <div
                                             className={cn(
-                                                "py-2 px-3 border-l-2 bg-white dark:bg-slate-800 flex items-center w-full",
-                                                "transition-all duration-200 ease-in-out rounded-r-md",
+                                                "py-2 px-3 border-s-2 bg-white dark:bg-slate-800 flex items-center w-full",
+                                                "transition-all duration-200 ease-in-out rounded-e-md",
                                                 // Set border color based on message type
                                                 {
                                                     "border-blue-400 dark:border-blue-500":
@@ -362,7 +362,7 @@ export function SlidingThinkingIndicator({
                                             )}
                                         >
                                             {/* Add an indicator based on message type */}
-                                            <div className="mr-2">
+                                            <div className="me-2">
                                                 {getThinkingColor(message) === "blue" && (
                                                     <div className="w-4">
                                                         <PulsingMessageLoader
@@ -389,7 +389,7 @@ export function SlidingThinkingIndicator({
 
                                             <div
                                                 className={cn(
-                                                    "text-sm font-medium flex-1 overflow-hidden text-ellipsis mr-3",
+                                                    "text-sm font-medium flex-1 overflow-hidden text-ellipsis me-3",
                                                     {
                                                         "text-blue-700 dark:text-blue-300":
                                                             getThinkingColor(message) === "blue",
@@ -409,7 +409,7 @@ export function SlidingThinkingIndicator({
                         </div>
                     ) : (
                         // Stacked View - Show all thinking messages
-                        <div className="space-y-1 space-y-reverse max-h-[300px] overflow-y-auto pr-1 flex flex-col-reverse">
+                        <div className="space-y-1 space-y-reverse max-h-[300px] overflow-y-auto pe-1 flex flex-col-reverse">
                             {sortedThinkingMessages.map((message, index) => (
                                 <div
                                     key={`${message.timestamp}-${index}`}

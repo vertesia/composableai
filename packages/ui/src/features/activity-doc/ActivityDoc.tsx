@@ -143,7 +143,7 @@ function ObjectMembersPanel({ members }: { members: ActivityPropertyDefinition[]
 
 function NestedPropertiesDetails({ properties }: { properties: ActivityPropertyDefinition[] }) {
     return (
-        <div className='border-l-2 border-l-blue-200 flex flex-col divide-y divide-gray-100 border-t border-t-gray-200'>
+        <div className='border-s-2 border-s-blue-200 flex flex-col divide-y divide-gray-100 border-t border-t-gray-200'>
             {properties.map(prop => <PropertyDetails key={prop.name} property={prop} className="px-4 py-2" />)}
         </div>
     )

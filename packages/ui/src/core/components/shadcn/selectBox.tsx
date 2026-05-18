@@ -259,14 +259,14 @@ export function SelectBox<T = any>({
                                 >
                                     {multiple || inline ? (
                                         <div className='w-full flex justify-between items-center cursor-pointer'>
-                                            <div className='w-full truncate text-left'>
+                                            <div className='w-full truncate text-start'>
                                                 {optionLabel ? optionLabel(opt) : opt as String}
                                             </div>
                                             {isSelected && <Check className="size-4" />}
                                         </div>
                                     ) : (
                                         <PopoverClose className='w-full flex justify-between items-center'>
-                                            <div className='w-full truncate text-left'>
+                                            <div className='w-full truncate text-start'>
                                                 {optionLabel ? optionLabel(opt) : opt as String}
                                             </div>
                                             {isSelected && <Check className="size-4" />}
@@ -284,7 +284,7 @@ export function SelectBox<T = any>({
                         type="button"
                         onClick={addNew}
                         className={clsx(
-                            'w-full text-left gap-x-2 px-2 py-1.5 truncate group flex rounded-md items-center text-sm cursor-pointer hover:bg-accent bg-transparent border-0',
+                            'w-full text-start gap-x-2 px-2 py-1.5 truncate group flex rounded-md items-center text-sm cursor-pointer hover:bg-accent bg-transparent border-0',
                         )}
                     >
                         <SquarePlus size={16} strokeWidth={1.25} absoluteStrokeWidth />
@@ -352,11 +352,11 @@ export function SelectBox<T = any>({
                                 ? 'flex w-full justify-center items-center gap-2 border border-border rounded-md p-2 text-muted text-sm bg-transparent'
                                 : clsx(
                                     border && (isMissingValue || ariaInvalid ? 'border border-destructive' : 'border border-border'),
-                                    'flex w-full flex-row gap-2 items-center justify-between p-2 rounded-md group bg-transparent text-inherit text-left',
+                                    'flex w-full flex-row gap-2 items-center justify-between p-2 rounded-md group bg-transparent text-inherit text-start',
                                     'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                                     !disabled ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed text-muted",
                                     // Leave room for the absolutely-positioned clear button on the right.
-                                    showClear && 'pr-10',
+                                    showClear && 'pe-10',
                                 ),
                         )}
                     >
@@ -370,12 +370,12 @@ export function SelectBox<T = any>({
                                     )}
                                 >
                                     {label && (
-                                        <div id={labelId} className='w-full text-left text-xs font-semibold'>{label}</div>
+                                        <div id={labelId} className='w-full text-start text-xs font-semibold'>{label}</div>
                                     )}
-                                    <div className={clsx('w-full text-left ', isMissingValue && 'text-destructive')}>
+                                    <div className={clsx('w-full text-start ', isMissingValue && 'text-destructive')}>
                                         {isMissingValue && (
                                             <VTooltip description={missingValueWarning} placement="top" asChild>
-                                                <AlertTriangle className="inline-block size-4 mr-1 -mt-0.5 cursor-help" />
+                                                <AlertTriangle className="inline-block size-4 me-1 -mt-0.5 cursor-help" />
                                             </VTooltip>
                                         )}
                                         {multiple ? renderMultipleValue() : renderSingleValue()}
@@ -410,7 +410,7 @@ export function SelectBox<T = any>({
                                 e.stopPropagation();
                             }
                         }}
-                        className="absolute right-8 top-1/2 -translate-y-1/2 hover:bg-muted/20 rounded p-1"
+                        className="absolute end-8 top-1/2 -translate-y-1/2 hover:bg-muted/20 rounded p-1"
                     >
                         {clearIcon ? clearIcon : <X className="size-4" />}
                     </Button>

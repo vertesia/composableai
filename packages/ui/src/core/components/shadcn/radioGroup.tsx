@@ -20,7 +20,7 @@ function RadioGroupItem({
         data-slot="radio-group-indicator"
         className="flex size-4 items-center justify-center"
       >
-        <span className="bg-primary-foreground absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full" />
+        <span className="bg-primary-foreground absolute top-1/2 start-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full" />
       </RadioGroupPrimitive.Indicator>
     </RadioGroupPrimitive.Item>
   )
@@ -69,7 +69,7 @@ function RadioGroup<T = RadioGroupOption>({ onSelect, selected, options, adapter
             key={getId(option)}
             value={getId(option)}
             className={cn(
-              'relative block w-full cursor-pointer rounded-lg border border-border bg-accent px-6 py-4 shadow-2xs text-left',
+              'relative block w-full cursor-pointer rounded-lg border border-border bg-accent px-6 py-4 shadow-2xs text-start',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               'sm:flex sm:justify-between',
               isSelected && getSelectedClass(option),

@@ -140,22 +140,22 @@ export interface MessageItemProps extends MessageItemClassNames {
 
 // Consolidated Studio/default message styling - single source of truth
 export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleConfig> = {
-    [AgentMessageType.ANSWER]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.COMPLETE]: { borderColor: 'border-l-success', iconColor: 'text-success', sender: 'Completed', Icon: CheckCircle },
-    [AgentMessageType.IDLE]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
-    [AgentMessageType.REQUEST_INPUT]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Input', Icon: User },
-    [AgentMessageType.QUESTION]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
-    [AgentMessageType.THOUGHT]: { borderColor: 'border-l-purple-500', iconColor: 'text-purple-600 dark:text-purple-400', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.ERROR]: { borderColor: 'border-l-destructive', iconColor: 'text-destructive', sender: 'Error', Icon: AlertCircle },
-    [AgentMessageType.UPDATE]: { borderColor: 'border-l-success', iconColor: 'text-success', sender: 'Update', Icon: Info },
-    [AgentMessageType.PLAN]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Plan', Icon: MessageSquare },
-    [AgentMessageType.TERMINATED]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'Terminated', Icon: CheckCircle },
-    [AgentMessageType.WARNING]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Warning', Icon: AlertCircle },
-    [AgentMessageType.SYSTEM]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
-    [AgentMessageType.STREAMING_CHUNK]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.BATCH_PROGRESS]: { borderColor: 'border-l-blue-500', iconColor: 'text-blue-600 dark:text-blue-400', sender: 'Batch', Icon: Layers },
-    [AgentMessageType.RESTARTING]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Restarting', Icon: RefreshCcw },
-    default: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.ANSWER]: { borderColor: 'border-s-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.COMPLETE]: { borderColor: 'border-s-success', iconColor: 'text-success', sender: 'Completed', Icon: CheckCircle },
+    [AgentMessageType.IDLE]: { borderColor: 'border-s-info', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
+    [AgentMessageType.REQUEST_INPUT]: { borderColor: 'border-s-attention', iconColor: 'text-attention', sender: 'Input', Icon: User },
+    [AgentMessageType.QUESTION]: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
+    [AgentMessageType.THOUGHT]: { borderColor: 'border-s-purple-500', iconColor: 'text-purple-600 dark:text-purple-400', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.ERROR]: { borderColor: 'border-s-destructive', iconColor: 'text-destructive', sender: 'Error', Icon: AlertCircle },
+    [AgentMessageType.UPDATE]: { borderColor: 'border-s-success', iconColor: 'text-success', sender: 'Update', Icon: Info },
+    [AgentMessageType.PLAN]: { borderColor: 'border-s-attention', iconColor: 'text-attention', sender: 'Plan', Icon: MessageSquare },
+    [AgentMessageType.TERMINATED]: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'Terminated', Icon: CheckCircle },
+    [AgentMessageType.WARNING]: { borderColor: 'border-s-attention', iconColor: 'text-attention', sender: 'Warning', Icon: AlertCircle },
+    [AgentMessageType.SYSTEM]: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
+    [AgentMessageType.STREAMING_CHUNK]: { borderColor: 'border-s-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.BATCH_PROGRESS]: { borderColor: 'border-s-blue-500', iconColor: 'text-blue-600 dark:text-blue-400', sender: 'Batch', Icon: Layers },
+    [AgentMessageType.RESTARTING]: { borderColor: 'border-s-attention', iconColor: 'text-attention', sender: 'Restarting', Icon: RefreshCcw },
+    default: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
 };
 
 function MessageItemComponent({
@@ -471,7 +471,7 @@ function MessageItemComponent({
     return (
         <div className={cn("w-full max-w-full", resolvedStyle.className)}>
             <div
-                className={cn("border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden", resolvedStyle.borderColor, resolvedStyle.cardClassName)}
+                className={cn("border-s-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden", resolvedStyle.borderColor, resolvedStyle.cardClassName)}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
@@ -482,7 +482,7 @@ function MessageItemComponent({
                         </div>
                         <span className={cn("text-xs font-medium text-muted", resolvedStyle.senderClassName)}>{SENDER_I18N_KEYS[resolvedStyle.sender] ? t(SENDER_I18N_KEYS[resolvedStyle.sender]) : resolvedStyle.sender}</span>
                         {workstreamId !== "main" && workstreamId !== "all" && (
-                            <Badge variant="default" className="text-xs text-muted ml-1">
+                            <Badge variant="default" className="text-xs text-muted ms-1">
                                 {workstreamId}
                             </Badge>
                         )}
@@ -605,7 +605,7 @@ function MessageItemComponent({
                             {showDetails ? t('agent.hideDetails') : t('agent.showDetails')}
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                className={`h-3 w-3 ml-1 transition-transform ${showDetails ? "rotate-180" : ""}`}
+                                className={`h-3 w-3 ms-1 transition-transform ${showDetails ? "rotate-180" : ""}`}
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
