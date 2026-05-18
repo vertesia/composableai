@@ -144,9 +144,7 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
                             key={option.value}
                             onClick={() => handleOptionClick(option.value)}
                             disabled={submitted}
-                            aria-pressed={isMultiple ? isSelected : undefined}
-                            role={isMultiple ? undefined : 'radio'}
-                            aria-checked={isMultiple ? undefined : isSelected}
+                            aria-pressed={isSelected}
                             className={`
                                 relative border rounded-lg p-3 transition-all w-full text-left bg-transparent
                                 ${submitted
