@@ -132,6 +132,7 @@
   "agent.summary": "Zusammenfassung",
   "agent.taskProgress": "Aufgabenfortschritt",
   "agent.thinking": "Denkt",
+  "agent.preparing": "Vorbereitung",
   "agent.toggleRightSidebar": "Rechte Seitenleiste umschalten",
   "agent.typeNewInstructions": "Geben Sie Ihre Nachricht ein, um neue Anweisungen zu geben",
   "agent.typeQuestionBelow": "Geben Sie Ihre Frage unten ein und drücken Sie Enter oder klicken Sie auf {{buttonText}}, um zu beginnen",

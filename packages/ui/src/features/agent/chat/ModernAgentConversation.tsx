@@ -14,6 +14,7 @@ import {
 import { FusionFragmentProvider } from "@vertesia/fusion-ux";
 import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle, Textarea } from "@vertesia/ui/core";
 
+import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
 import {
     type AgentConversationViewMode,
     type AgentInitialRequestTemplate,
@@ -28,6 +29,7 @@ import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
 import MessageInput, { UploadedFile, SelectedDocument } from "./ModernAgentOutput/MessageInput";
 import { getConversationUrl, getWorkstreamId } from "./ModernAgentOutput/utils";
+import { ThinkingMessages } from "./WaitingMessages";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
 import { useUITranslation } from "../../../i18n/index.js";
@@ -76,6 +78,21 @@ function useElapsedSeconds(timestamp?: number | string, enabled = true): number 
     return elapsed;
 }
 
+function useThinkingMessageIndex(enabled = true): number {
+    const [thinkingMessageIndex, setThinkingMessageIndex] = useState(0);
+
+    useEffect(() => {
+        if (!enabled) return;
+
+        const intervalId = window.setInterval(() => {
+            setThinkingMessageIndex(() => Math.floor(Math.random() * ThinkingMessages.length));
+        }, 4000);
+        return () => window.clearInterval(intervalId);
+    }, [enabled]);
+
+    return thinkingMessageIndex;
+}
+
 function PendingStartConversation({
     message,
     startedAt,
@@ -85,6 +102,7 @@ function PendingStartConversation({
 }) {
     const { t } = useUITranslation();
     const elapsed = useElapsedSeconds(startedAt);
+    const thinkingMessageIndex = useThinkingMessageIndex();
 
     return (
         <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-end gap-6 px-1 py-8">
@@ -99,9 +117,22 @@ function PendingStartConversation({
                     <div className="whitespace-pre-wrap">{message}</div>
                 </div>
             </div>
-            <div className="border-b border-border/70 pb-3 text-sm text-muted">
-                <span className="font-medium">{t('agent.thinking')}</span>
-                <span className="ml-2 text-muted/75">for {formatCompactDuration(elapsed)}</span>
+            <div className="border-b border-border/70 pb-4 text-sm text-muted">
+                <div className="flex items-center gap-3">
+                    <PulsatingCircle size="sm" color="blue" />
+                    <div className="min-w-0">
+                        <div>
+                            <span className="font-medium">{t('agent.preparing')}</span>
+                            <span className="ml-2 text-muted/75">for {formatCompactDuration(elapsed)}</span>
+                        </div>
+                        <div className="mt-1 truncate text-muted/80">
+                            {ThinkingMessages[thinkingMessageIndex]}
+                        </div>
+                    </div>
+                </div>
+                <div className="mt-3 pl-6">
+                    <AnimatedThinkingDots color="blue" />
+                </div>
             </div>
         </div>
     );
@@ -304,6 +335,10 @@ export interface ModernAgentConversationProps {
     conversationContent?: React.ReactNode;
     /** When true, renders the conversation inside the right panel as a "Conversation" tab */
     conversationTab?: boolean;
+    /** Internal optimistic first message shown while a newly-started run is waiting for persisted messages. */
+    pendingStartMessage?: string;
+    /** Timestamp for the internal optimistic first-message waiting state. */
+    pendingStartTimestamp?: number;
 }
 
 export function ModernAgentConversation(
@@ -609,6 +644,8 @@ function StartWorkflowView({
                 }}
                 agentRunId={startedAgentRunId}
                 title={title}
+                pendingStartMessage={pendingStartMessage ?? undefined}
+                pendingStartTimestamp={pendingStartTimestamp ?? undefined}
             />
         );
     }
@@ -866,6 +903,8 @@ function ModernAgentConversationInner({
     payloadContent,
     conversationContent,
     conversationTab = false,
+    pendingStartMessage,
+    pendingStartTimestamp,
 }: ModernAgentConversationProps & { agentRunId: string }) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
@@ -1538,40 +1577,47 @@ const handleCloseRightPanel = useCallback(() => {
                 </div>
             )}
 
-            <AllMessagesMixed
-                messages={messages}
-                bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
-                isCompleted={isCompleted}
-                plan={getActivePlan.plan}
-                workstreamStatus={getActivePlan.workstreamStatus}
-                showPlanPanel={showRightPanelProp && showSlidingPanel}
-                onTogglePlanPanel={handleTogglePlanPanel}
-                plans={plans}
-                activePlanIndex={activePlanIndex}
-                onChangePlan={handleChangePlan}
-                taskLabels={taskLabels}
-                streamingMessages={streamingMessages}
-                onSendMessage={handleSendMessage}
-                messageItemClassNames={messageItemClassNames}
-                messageStyleOverrides={messageStyleOverrides}
-                toolCallGroupClassNames={toolCallGroupClassNames}
-                hideToolCallsInViewMode={hideToolCallsInViewMode}
-                streamingMessageClassNames={streamingMessageClassNames}
-                batchProgressPanelClassNames={batchProgressPanelClassNames}
-                artifactRunId={agentRunId}
-                viewMode={viewMode}
-                hideWorkstreamTabs={hideWorkstreamTabs}
-                workingIndicatorClassName={workingIndicatorClassName}
-                messageListClassName={messageListClassName}
-                StoreLinkComponent={effectiveStoreLinkComponent}
-                CollectionLinkComponent={CollectionLinkComponent}
-                prependFriendlyMessage={prependFriendlyMessage}
-                initialRequestData={initialRequestData}
-                initialRequestSchema={initialRequestSchema}
-                initialRequestTitle={initialRequestTitle}
-                initialRequestTemplate={initialRequestTemplate}
-                hiddenMessageTypes={hiddenMessageTypes}
-            />
+            {messages.length === 0 && !isCompleted && pendingStartMessage && pendingStartTimestamp ? (
+                <PendingStartConversation
+                    message={pendingStartMessage}
+                    startedAt={pendingStartTimestamp}
+                />
+            ) : (
+                <AllMessagesMixed
+                    messages={messages}
+                    bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
+                    isCompleted={isCompleted}
+                    plan={getActivePlan.plan}
+                    workstreamStatus={getActivePlan.workstreamStatus}
+                    showPlanPanel={showRightPanelProp && showSlidingPanel}
+                    onTogglePlanPanel={handleTogglePlanPanel}
+                    plans={plans}
+                    activePlanIndex={activePlanIndex}
+                    onChangePlan={handleChangePlan}
+                    taskLabels={taskLabels}
+                    streamingMessages={streamingMessages}
+                    onSendMessage={handleSendMessage}
+                    messageItemClassNames={messageItemClassNames}
+                    messageStyleOverrides={messageStyleOverrides}
+                    toolCallGroupClassNames={toolCallGroupClassNames}
+                    hideToolCallsInViewMode={hideToolCallsInViewMode}
+                    streamingMessageClassNames={streamingMessageClassNames}
+                    batchProgressPanelClassNames={batchProgressPanelClassNames}
+                    artifactRunId={agentRunId}
+                    viewMode={viewMode}
+                    hideWorkstreamTabs={hideWorkstreamTabs}
+                    workingIndicatorClassName={workingIndicatorClassName}
+                    messageListClassName={messageListClassName}
+                    StoreLinkComponent={effectiveStoreLinkComponent}
+                    CollectionLinkComponent={CollectionLinkComponent}
+                    prependFriendlyMessage={prependFriendlyMessage}
+                    initialRequestData={initialRequestData}
+                    initialRequestSchema={initialRequestSchema}
+                    initialRequestTitle={initialRequestTitle}
+                    initialRequestTemplate={initialRequestTemplate}
+                    hiddenMessageTypes={hiddenMessageTypes}
+                />
+            )}
 
             {!hideMessageInput && (
                 <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>

@@ -135,6 +135,7 @@
   "agent.summary": "Resumo",
   "agent.taskProgress": "Progresso das tarefas",
   "agent.thinking": "Pensando",
+  "agent.preparing": "Preparando",
   "agent.toggleRightSidebar": "Alternar painel lateral",
   "agent.typeNewInstructions": "Digite sua mensagem para dar novas instruções",
   "agent.typeQuestionBelow": "Digite sua pergunta abaixo e pressione Enter ou clique em {{buttonText}} para começar",

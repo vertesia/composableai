@@ -132,6 +132,7 @@
   "agent.summary": "요약",
   "agent.taskProgress": "작업 진행률",
   "agent.thinking": "생각 중",
+  "agent.preparing": "준비 중",
   "agent.toggleRightSidebar": "오른쪽 사이드바 전환",
   "agent.typeNewInstructions": "새로운 지시사항을 입력하세요",
   "agent.typeQuestionBelow": "아래에 질문을 입력하고 Enter를 누르거나 {{buttonText}}를 클릭하여 시작하세요",

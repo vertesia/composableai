@@ -132,6 +132,7 @@
   "agent.summary": "Summary",
   "agent.taskProgress": "Task Progress",
   "agent.thinking": "Thinking",
+  "agent.preparing": "Preparing",
   "agent.toggleRightSidebar": "Toggle right sidebar",
   "agent.typeNewInstructions": "Type your message to give new instructions",
   "agent.typeQuestionBelow": "Type your question below and press Enter or click {{buttonText}} to begin",

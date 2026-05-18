@@ -132,6 +132,7 @@
   "agent.summary": "摘要",
   "agent.taskProgress": "任务进度",
   "agent.thinking": "思考中",
+  "agent.preparing": "准备中",
   "agent.toggleRightSidebar": "切换右侧边栏",
   "agent.typeNewInstructions": "输入新的指示",
   "agent.typeQuestionBelow": "在下方输入问题并按Enter或点击{{buttonText}}开始",

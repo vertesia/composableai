@@ -1,5 +1,5 @@
 import { AgentMessage, AgentMessageType } from "@vertesia/common";
-import { getToolStatus, isStreamReplacedByMessage, isToolActivityMessage, StreamingData, ToolExecutionStatus } from "./utils";
+import { isStreamReplacedByMessage, isToolActivityMessage, StreamingData, ToolExecutionStatus } from "./utils";
 
 export type SummaryConversationItem =
     | { type: "message"; message: AgentMessage }
@@ -109,55 +109,6 @@ function getSummaryWorkStatus(messages: AgentMessage[], isActive: boolean): Tool
     return isActive ? "running" : "completed";
 }
 
-function getConcreteToolKey(message: AgentMessage): string | undefined {
-    const details = message.details;
-    if (!details) return undefined;
-
-    if (typeof details.tool_run_id === "string" && details.tool_run_id.trim()) return `run:${details.tool_run_id}`;
-    if (typeof details.activity_id === "string" && details.activity_id.trim()) return `activity:${details.activity_id}`;
-    if (typeof details.activity_group_id === "string" && details.activity_group_id.trim()) {
-        return `group:${details.activity_group_id}`;
-    }
-    if (typeof details.tool === "string" && details.tool.trim()) return `tool:${details.tool}`;
-    return undefined;
-}
-
-function isConcreteToolExecutionMessage(message: AgentMessage): boolean {
-    return isToolActivityMessage(message) && getToolStatus(message) !== undefined;
-}
-
-function hasConcreteToolExecution(messages: AgentMessage[]): boolean {
-    return messages.some(isConcreteToolExecutionMessage);
-}
-
-function hasActiveConcreteToolExecution(messages: AgentMessage[]): boolean {
-    const latestStatusByKey = new Map<string, ToolExecutionStatus>();
-    let unkeyedRunningCount = 0;
-
-    messages.forEach((message) => {
-        if (!isConcreteToolExecutionMessage(message)) return;
-
-        const status = getToolStatus(message);
-        if (!status) return;
-
-        const key = getConcreteToolKey(message);
-        if (!key) {
-            if (status === "running") unkeyedRunningCount += 1;
-            return;
-        }
-        latestStatusByKey.set(key, status);
-    });
-
-    return unkeyedRunningCount > 0 ||
-        Array.from(latestStatusByKey.values()).some((status) => status === "running");
-}
-
-function shouldSplitPostToolThinking(message: AgentMessage, pendingWork: AgentMessage[]): boolean {
-    return isTransientThinkingMessage(message) &&
-        hasConcreteToolExecution(pendingWork) &&
-        !hasActiveConcreteToolExecution(pendingWork);
-}
-
 function shouldResumeCompletedWorkForTool(message: AgentMessage, pendingWork: AgentMessage[]): boolean {
     return isToolActivityMessage(message) &&
         !isTransientThinkingMessage(message) &&
@@ -222,10 +173,6 @@ export function buildSummaryConversationItems(
                 }
             }
 
-            if (shouldSplitPostToolThinking(message, pendingWork)) {
-                flushWork(false);
-            }
-
             pendingWork.push(message);
             continue;
         }
@@ -236,11 +183,7 @@ export function buildSummaryConversationItems(
         }
     }
 
-    const shouldCompletePendingWork = hasConcreteToolExecution(pendingWork) &&
-        !hasActiveConcreteToolExecution(pendingWork) &&
-        !pendingWork.some(isTransientThinkingMessage);
-
-    flushWork(!isCompleted && !shouldCompletePendingWork);
+    flushWork(!isCompleted);
     return items;
 }
 
@@ -350,11 +293,19 @@ export function shouldShowSummaryActivityFallback(
     if (items.some((item) => item.type === "work" && item.isActive)) return false;
 
     const latestItem = items[items.length - 1];
-    if (!latestItem) return true;
+    if (!latestItem) return false;
     if (latestItem.type === "work") return true;
 
     // A user/request message means the client is waiting for the first
     // persisted activity. Assistant or terminal messages mean the user-visible
     // result already arrived; a delayed idle marker should not flash activity.
     return latestItem.message.type === AgentMessageType.QUESTION;
+}
+
+export function isInitialSummaryActivityFallback(items: SummaryConversationItem[]): boolean {
+    const latestItem = items[items.length - 1];
+    if (!latestItem) return false;
+    return latestItem.type === "message" &&
+        latestItem.message.type === AgentMessageType.QUESTION &&
+        items.length === 1;
 }

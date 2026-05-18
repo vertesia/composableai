@@ -5,7 +5,8 @@ import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import { AlertTriangle, Brain, ChevronDown, ChevronRight, FileText, Pencil, Search, Terminal, Wrench } from "lucide-react";
 import { useUITranslation } from '../../../../i18n/index.js';
 import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
-import { PulsatingCircle } from "../AnimatedThinkingDots";
+import { AnimatedThinkingDots, PulsatingCircle } from "../AnimatedThinkingDots";
+import { ThinkingMessages } from "../WaitingMessages";
 export type AgentConversationViewMode = "stacked" | "sliding";
 import { AskUserWidget } from "../AskUserWidget";
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from "./BatchProgressPanel";
@@ -15,6 +16,7 @@ import {
     buildSummaryConversationItems,
     buildSummaryDisplayMessages,
     getSummaryActivityAnchorTimestamp,
+    isInitialSummaryActivityFallback,
     isTransientThinkingMessage,
     shouldShowSummaryActivityFallback,
 } from "./SummaryConversation";
@@ -162,10 +164,7 @@ function isTransientThinkingWork(messages: AgentMessage[]): boolean {
 function getSummaryActivityLabel(
     status: ToolExecutionStatus,
     isActive: boolean,
-    messages: AgentMessage[],
-    thinkingLabel: string,
 ): string {
-    if (isActive && isTransientThinkingWork(messages)) return thinkingLabel;
     return getSummaryWorkLabel(status, isActive);
 }
 
@@ -227,6 +226,21 @@ function useLiveElapsedSeconds(timestamp?: number | string, enabled?: boolean): 
     }, [enabled, timestamp]);
 
     return elapsed;
+}
+
+function useRotatingThinkingMessageIndex(enabled = true): number {
+    const [thinkingMessageIndex, setThinkingMessageIndex] = useState(0);
+
+    useEffect(() => {
+        if (!enabled) return;
+
+        const intervalId = window.setInterval(() => {
+            setThinkingMessageIndex(() => Math.floor(Math.random() * ThinkingMessages.length));
+        }, 4000);
+        return () => window.clearInterval(intervalId);
+    }, [enabled]);
+
+    return thinkingMessageIndex;
 }
 
 function SummaryUserBubble({
@@ -544,7 +558,42 @@ function InitialRequestMessage({
     );
 }
 
-type SummaryToolDetailKind = "search" | "read" | "edit" | "command" | "think" | "tool";
+function InitialRequestWaitingCard({
+    label,
+    timestamp,
+    className,
+}: {
+    label: string;
+    timestamp?: number | string;
+    className?: string;
+}) {
+    const thinkingMessageIndex = useRotatingThinkingMessageIndex();
+    const elapsed = useLiveElapsedSeconds(timestamp, true);
+
+    return (
+        <div className={cn("mx-auto w-full max-w-3xl px-1", className)}>
+            <div className="border-b border-border/70 pb-4 text-sm text-muted">
+                <div className="flex items-center gap-3">
+                    <PulsatingCircle size="sm" color="blue" />
+                    <div className="min-w-0">
+                        <div>
+                            <span className="font-medium">{label}</span>
+                            <span className="ml-2 text-muted/75">for {formatDuration(elapsed)}</span>
+                        </div>
+                        <div className="mt-1 truncate text-muted/80">
+                            {ThinkingMessages[thinkingMessageIndex]}
+                        </div>
+                    </div>
+                </div>
+                <div className="mt-3 pl-6">
+                    <AnimatedThinkingDots color="blue" />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+type SummaryToolDetailKind = "search" | "read" | "edit" | "command" | "skill" | "discover" | "think" | "tool";
 
 interface SummaryToolDetailSection {
     label: string;
@@ -626,14 +675,20 @@ function getToolNames(details: Record<string, unknown>): string[] {
 function getToolDetailKind(message: AgentMessage): SummaryToolDetailKind {
     const details = getDetailsRecord(message);
     const toolNames = getToolNames(details).join(" ").toLowerCase();
+    const concreteTool = typeof details.tool === "string" ? details.tool.toLowerCase() : "";
     const text = getMessageText(message).toLowerCase();
     const haystack = `${toolNames} ${text}`;
 
     if (details.display_role === "tool_preamble") return "think";
-    if (haystack.includes("search") || haystack.includes("web") || haystack.includes("fetch")) return "search";
-    if (haystack.includes("read") || haystack.includes("document") || haystack.includes("file")) return "read";
-    if (haystack.includes("edit") || haystack.includes("write") || haystack.includes("patch") || haystack.includes("create")) return "edit";
-    if (haystack.includes("bash") || haystack.includes("shell") || haystack.includes("command") || haystack.includes("terminal")) return "command";
+    if (concreteTool.startsWith("learn_") || haystack.includes("learn_") || /\bskill\b/.test(text)) return "skill";
+    if (concreteTool === "discover_tools") return "discover";
+    if (message.type === AgentMessageType.THOUGHT && !concreteTool) return "think";
+
+    const classifierText = concreteTool || haystack;
+    if (classifierText.includes("search") || classifierText.includes("web") || classifierText.includes("fetch")) return "search";
+    if (classifierText.includes("read") || classifierText.includes("document") || classifierText.includes("file")) return "read";
+    if (classifierText.includes("edit") || classifierText.includes("write") || classifierText.includes("patch") || classifierText.includes("create")) return "edit";
+    if (classifierText.includes("bash") || classifierText.includes("shell") || classifierText.includes("command") || classifierText.includes("terminal")) return "command";
     if (message.type === AgentMessageType.THOUGHT && toolNames.length === 0) return "think";
     return "tool";
 }
@@ -648,6 +703,10 @@ function getToolDetailLabel(kind: SummaryToolDetailKind): string {
             return "Edit";
         case "command":
             return "Bash";
+        case "skill":
+            return "Skill";
+        case "discover":
+            return "Tool";
         case "think":
             return "Thought";
         default:
@@ -839,6 +898,10 @@ function ToolDetailIcon({ kind, status }: { kind: SummaryToolDetailKind; status?
             return <Pencil className="size-3.5" />;
         case "command":
             return <Terminal className="size-3.5" />;
+        case "skill":
+            return <Brain className="size-3.5" />;
+        case "discover":
+            return <Wrench className="size-3.5" />;
         case "think":
             return <Brain className="size-3.5" />;
         default:
@@ -1454,6 +1517,13 @@ function AllMessagesMixedComponent({
         isAgentWorking,
         incompleteStreaming.length > 0,
     );
+    const summaryActivityFallbackLabel = isInitialSummaryActivityFallback(summaryConversationItems)
+        ? t('agent.preparing')
+        : t('agent.working');
+    const showInitialRequestWaitingCard = displayMessages.length === 0 &&
+        hasInitialRequest &&
+        isAgentWorking &&
+        incompleteStreaming.length === 0;
     const activityAnchorCandidate = useMemo(
         () => getSummaryActivityAnchorTimestamp(
             summaryConversationItems,
@@ -1781,13 +1851,23 @@ function AllMessagesMixedComponent({
             )}
 
             {displayMessages.length === 0 && !hasInitialRequest && !(isSummaryView && showActivityFallback) ? (
-                <div className="flex items-center justify-center h-full text-center py-8">
-                    <div className="flex items-center px-3 py-2 text-sm text-muted">
-                        {activeWorkstream === "all"
-                            ? t('agent.waitingForAgentResponse')
-                            : t('agent.noMessagesInWorkstream')}
+                activeWorkstream === "all" && isAgentWorking && incompleteStreaming.length === 0 ? (
+                    <div className="flex-1 px-2 py-6 sm:px-4">
+                        <InitialRequestWaitingCard
+                            label={t('agent.preparing')}
+                            timestamp={fallbackWorkingStartedAtRef.current}
+                            className={workingIndicatorClassName}
+                        />
                     </div>
-                </div>
+                ) : (
+                    <div className="flex items-center justify-center h-full text-center py-8">
+                        <div className="flex items-center px-3 py-2 text-sm text-muted">
+                            {activeWorkstream === "all"
+                                ? t('agent.waitingForAgentResponse')
+                                : t('agent.noMessagesInWorkstream')}
+                        </div>
+                    </div>
+                )
             ) : (
                 <div
                     className={cn(
@@ -1813,6 +1893,13 @@ function AllMessagesMixedComponent({
                             messageStyleOverrides={messageStyleOverrides}
                             StoreLinkComponent={StoreLinkComponent}
                             CollectionLinkComponent={CollectionLinkComponent}
+                        />
+                    )}
+                    {showInitialRequestWaitingCard && (
+                        <InitialRequestWaitingCard
+                            label={summaryActivityFallbackLabel}
+                            timestamp={activityStartedTimestampRef.current}
+                            className={workingIndicatorClassName}
                         />
                     )}
                     {/* Show either all messages or just sliding view depending on viewMode */}
@@ -1945,7 +2032,7 @@ function AllMessagesMixedComponent({
                                 </TimelineEntry>
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
-                            {isAgentWorking && incompleteStreaming.length === 0 && (
+                            {isAgentWorking && incompleteStreaming.length === 0 && !showInitialRequestWaitingCard && (
                                 <TimelineEntry>
                                     <div className={cn("flex items-center gap-2 py-2 text-sm text-muted", workingIndicatorClassName)}>
                                         <PulsatingCircle size="sm" color="blue" />
@@ -1968,8 +2055,6 @@ function AllMessagesMixedComponent({
                                             label={getSummaryActivityLabel(
                                                 item.status,
                                                 item.isActive,
-                                                item.messages,
-                                                t('agent.thinking'),
                                             )}
                                             status={item.status}
                                             timestamp={item.startTimestamp}
@@ -2019,9 +2104,9 @@ function AllMessagesMixedComponent({
                                 />
                             ))}
                             {/* Activity fallback - shown before any tool/thought message has arrived */}
-                            {showActivityFallback && (
+                            {showActivityFallback && !showInitialRequestWaitingCard && (
                                 <SummaryActivityRow
-                                    label={t('agent.thinking')}
+                                    label={summaryActivityFallbackLabel}
                                     status="running"
                                     timestamp={activityStartedTimestampRef.current}
                                     showElapsed

@@ -5,6 +5,7 @@ import {
     buildSummaryDisplayMessages,
     getSummaryConversationLatestTimestamp,
     getSummaryActivityAnchorTimestamp,
+    isInitialSummaryActivityFallback,
     shouldShowSummaryActivityFallback,
 } from "./SummaryConversation";
 import {
@@ -403,11 +404,11 @@ describe("ModernAgentOutput summary conversation items", () => {
             type: "work",
             isActive: false,
             messages: [tool],
-            endTimestamp: 1000,
+            endTimestamp: 3000,
         });
     });
 
-    it("completes tool work before showing post-tool thinking as active", () => {
+    it("keeps completed tool work active while post-tool thinking is current", () => {
         const tool = makeMessage({
             timestamp: 1000,
             type: AgentMessageType.THOUGHT,
@@ -430,17 +431,11 @@ describe("ModernAgentOutput summary conversation items", () => {
 
         const items = buildSummaryConversationItems([tool, thinking], false);
 
-        expect(items).toHaveLength(2);
+        expect(items).toHaveLength(1);
         expect(items[0]).toMatchObject({
             type: "work",
-            isActive: false,
-            messages: [tool],
-            endTimestamp: 1000,
-        });
-        expect(items[1]).toMatchObject({
-            type: "work",
             isActive: true,
-            messages: [thinking],
+            messages: [tool, thinking],
         });
     });
 
@@ -619,7 +614,7 @@ describe("ModernAgentOutput summary conversation items", () => {
         expect(getSummaryConversationLatestTimestamp(items, 500)).toBe(1000);
     });
 
-    it("anchors activity fallback after the latest visible work row when tool work just completed", () => {
+    it("keeps the latest visible work row active when tool work just completed", () => {
         const question = makeMessage({
             timestamp: 1000,
             type: AgentMessageType.QUESTION,
@@ -650,7 +645,7 @@ describe("ModernAgentOutput summary conversation items", () => {
 
         expect(items[1]).toMatchObject({
             type: "work",
-            isActive: false,
+            isActive: true,
         });
         expect(getSummaryConversationLatestTimestamp(items, 500)).toBe(2500);
     });
@@ -709,10 +704,35 @@ describe("ModernAgentOutput summary conversation items", () => {
         const items = buildSummaryConversationItems([question], false);
 
         expect(shouldShowSummaryActivityFallback(items, true, false)).toBe(true);
+        expect(isInitialSummaryActivityFallback(items)).toBe(true);
     });
 
-    it("shows activity fallback before the first persisted start message arrives", () => {
-        expect(shouldShowSummaryActivityFallback([], true, false)).toBe(true);
+    it("does not show a standalone activity fallback before a visible prompt exists", () => {
+        expect(shouldShowSummaryActivityFallback([], true, false)).toBe(false);
+        expect(isInitialSummaryActivityFallback([])).toBe(false);
+    });
+
+    it("uses working fallback after a follow-up question in an existing conversation", () => {
+        const firstQuestion = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: "Find local news.",
+        });
+        const answer = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.ANSWER,
+            message: "Here are the headlines.",
+        });
+        const followUpQuestion = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.QUESTION,
+            message: "Tell me more.",
+        });
+
+        const items = buildSummaryConversationItems([firstQuestion, answer, followUpQuestion], false);
+
+        expect(shouldShowSummaryActivityFallback(items, true, false)).toBe(true);
+        expect(isInitialSummaryActivityFallback(items)).toBe(false);
     });
 
     it("does not flicker activity fallback after the assistant answer arrives before idle", () => {
