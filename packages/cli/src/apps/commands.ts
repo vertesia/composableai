@@ -1,4 +1,4 @@
-import { AccessControlPrincipalType, AccessControlResourceType, AppInstallationKind, AppManifestData, ProjectRoles } from "@vertesia/common";
+import { AppInstallationKind, AppManifestData } from "@vertesia/common";
 import colors from "ansi-colors";
 import { Command } from "commander";
 import { readFile } from "fs/promises";
@@ -70,30 +70,12 @@ export async function createApp(program: Command, options: Record<string, any>) 
     console.log(`  ID: ${result.id}`);
     console.log(`  Name: ${result.name}`);
 
-    // If --install flag is set, install the app and grant permissions
+    // If --install flag is set, install the app
     if (options.install) {
         console.log();
-
-        // Install the app
         const installation = await client.apps.install(result.id);
         console.log(`${colors.green('✓')} App installed successfully`);
         console.log(`  Installation ID: ${installation.id}`);
-
-        // Get current user ID from JWT
-        const jwt = await client.getDecodedJWT();
-        
-        if (jwt && jwt.sub) {
-            // Grant app_member role to the current user
-            await client.iam.aces.create({
-                principal: jwt.sub,
-                principal_type: AccessControlPrincipalType.user,
-                resource: installation.id,
-                resource_type: AccessControlResourceType.app,
-                role: ProjectRoles.app_member,
-            });
-
-            console.log(`${colors.green('✓')} Permissions granted to ${jwt.email || jwt.sub}`);
-        }
     }
 }
 

@@ -79,11 +79,6 @@ export interface AuthTokenPayload {
     project_roles?: ProjectRoles[];
 
     /**
-     * The app names enabled for this token. Defaults to an empty array if no apps are enabled.
-     */
-    apps: string[];
-
-    /**
      * The user ID (if any) attached to the token.
      * This is set when the token is a user token or an agent token running as a user.
      * Not set for impersonating tokens like project tokens.
