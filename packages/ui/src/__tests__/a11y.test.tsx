@@ -10,6 +10,7 @@ import { RadioGroup } from '../core/components/shadcn/radioGroup.js';
 import { FormItem } from '../core/components/FormItem.js';
 import { Modal, ModalTitle, ModalBody } from '../core/components/shadcn/modal/dialog.js';
 import { Table, THead, TBody, TableHeaderCell, SortableTableHeaderCell } from '../core/components/table/index.js';
+import { SelectBox } from '../core/components/shadcn/selectBox.js';
 import { renderWithProviders } from './test-utils.js';
 
 describe('@vertesia/ui accessibility (axe)', () => {
@@ -242,6 +243,73 @@ describe('@vertesia/ui accessibility (axe)', () => {
         expect(headers.length).toBe(2);
         expect(headers[0].getAttribute('scope')).toBe('col');
         expect(headers[1].getAttribute('scope')).toBe('col');
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('SelectBox trigger is a button with aria-haspopup="dialog" and aria-expanded', async () => {
+        function Harness() {
+            const [val, setVal] = useState<string | undefined>(undefined);
+            return (
+                <SelectBox
+                    label="Country"
+                    options={['France', 'Germany', 'Spain']}
+                    value={val}
+                    onChange={setVal}
+                    placeholder="Select a country"
+                />
+            );
+        }
+        const { container } = renderWithProviders(<Harness />);
+        const trigger = container.querySelector('button');
+        expect(trigger?.getAttribute('type')).toBe('button');
+        expect(trigger?.getAttribute('aria-haspopup')).toBe('dialog');
+        expect(trigger?.getAttribute('aria-expanded')).toBe('false');
+        expect(trigger?.getAttribute('aria-controls')).toBeTruthy();
+        // When `label` is set, the trigger gets aria-labelledby pointing at the visual label.
+        expect(trigger?.getAttribute('aria-labelledby')).toBeTruthy();
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('SelectBox with explicit aria-label (no visual label) has no violations', async () => {
+        function Harness() {
+            const [val, setVal] = useState<string | undefined>(undefined);
+            return (
+                <SelectBox
+                    aria-label="Country picker"
+                    options={['France', 'Germany']}
+                    value={val}
+                    onChange={setVal}
+                    placeholder="Pick one"
+                />
+            );
+        }
+        const { container } = renderWithProviders(<Harness />);
+        const trigger = container.querySelector('button');
+        expect(trigger?.getAttribute('aria-label')).toBe('Country picker');
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('SelectBox clear button is a sibling of the trigger (no nested buttons)', async () => {
+        function Harness() {
+            const [val, setVal] = useState<string | undefined>('France');
+            return (
+                <SelectBox
+                    aria-label="Country"
+                    options={['France', 'Germany']}
+                    value={val}
+                    onChange={setVal}
+                    isClearable
+                />
+            );
+        }
+        const { container } = renderWithProviders(<Harness />);
+        // Two buttons in the trigger area: the trigger itself and the clear control.
+        const buttons = container.querySelectorAll('button');
+        expect(buttons.length).toBe(2);
+        // Crucially, neither button is nested inside the other.
+        for (const b of buttons) {
+            expect(b.querySelector('button')).toBeNull();
+        }
         expect(await axe(container)).toHaveNoViolations();
     });
 
