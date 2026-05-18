@@ -935,7 +935,7 @@ importers:
   templates/plugin-template:
     dependencies:
       '@hono/node-server':
-        specifier: ^1.19.10
+        specifier: ^1.19.13
         version: 1.19.13(hono@4.12.18)
       '@llumiverse/common':
         specifier: workspace:*
@@ -959,7 +959,7 @@ importers:
         specifier: ^17.2.3
         version: 17.3.1
       hono:
-        specifier: ^4.12.14
+        specifier: ^4.12.18
         version: 4.12.18
       lucide-react:
         specifier: ^0.562.0
