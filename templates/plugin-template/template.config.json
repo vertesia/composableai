@@ -100,6 +100,7 @@
   ],
   "renameFiles": {
     "biome.json.template": "biome.json",
+    "pnpm-workspace.yaml.template": "pnpm-workspace.yaml",
     ".env.app.template": ".env.app"
   },
   "removeAfterInstall": [
