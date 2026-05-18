@@ -1,4 +1,5 @@
 import { useState, createContext, useContext, useCallback, ReactNode } from "react";
+import { Button } from "@vertesia/ui/core";
 import { X, ExternalLink } from "lucide-react";
 import { useUITranslation } from '../../../i18n/index.js';
 
@@ -53,13 +54,15 @@ export function ImageLightboxProvider({ children }: ImageLightboxProviderProps) 
                             className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
                         />
                         {/* Close button */}
-                        <button
+                        <Button
+                            variant="unstyled"
                             className="absolute top-2 right-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
                             onClick={closeImage}
                             title={t('agent.close')}
+                            aria-label={t('agent.close')}
                         >
                             <X className="size-6" />
-                        </button>
+                        </Button>
                         {/* Open in new tab button */}
                         <a
                             href={image.src}

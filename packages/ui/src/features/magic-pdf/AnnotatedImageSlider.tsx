@@ -317,7 +317,10 @@ function ImageTypeButton({ type, currentType, onClick, icon, tooltip }: ImageTyp
     const isSelected = type === currentType;
     return (
         <VTooltip description={tooltip} placement="bottom" size="xs">
-            <button
+            <Button
+                variant="unstyled"
+                aria-label={tooltip}
+                aria-pressed={isSelected}
                 className={clsx(
                     "p-1 rounded cursor-pointer transition-colors",
                     isSelected
@@ -327,7 +330,7 @@ function ImageTypeButton({ type, currentType, onClick, icon, tooltip }: ImageTyp
                 onClick={onClick}
             >
                 {icon}
-            </button>
+            </Button>
         </VTooltip>
     );
 }
@@ -345,7 +348,9 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
     return (
         <div className="flex items-center gap-x-0.5">
             <VTooltip description={t('pdf.zoomOut')} placement="bottom" size="xs">
-                <button
+                <Button
+                    variant="unstyled"
+                    aria-label={t('pdf.zoomOut')}
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
                         canZoomOut
@@ -356,13 +361,15 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
                     disabled={!canZoomOut}
                 >
                     <Minus className="size-4" />
-                </button>
+                </Button>
             </VTooltip>
             <span className="text-xs text-muted-foreground min-w-[32px] text-center">
                 {zoom}%
             </span>
             <VTooltip description={t('pdf.zoomIn')} placement="bottom" size="xs">
-                <button
+                <Button
+                    variant="unstyled"
+                    aria-label={t('pdf.zoomIn')}
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
                         canZoomIn
@@ -373,10 +380,12 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
                     disabled={!canZoomIn}
                 >
                     <Plus className="size-4" />
-                </button>
+                </Button>
             </VTooltip>
             <VTooltip description={t('pdf.fitToWidth')} placement="bottom" size="xs">
-                <button
+                <Button
+                    variant="unstyled"
+                    aria-label={t('pdf.fitToWidth')}
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
                         zoom !== DEFAULT_ZOOM
@@ -386,7 +395,7 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
                     onClick={onFitToView}
                 >
                     <Maximize className="size-4" />
-                </button>
+                </Button>
             </VTooltip>
         </div>
     );

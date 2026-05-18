@@ -48,6 +48,10 @@ export async function compileWidgets(
         const typescript = (await import('@rollup/plugin-typescript' as any)).default as any;
         const nodeResolve = (await import('@rollup/plugin-node-resolve' as any)).default as any;
         const commonjs = (await import('@rollup/plugin-commonjs' as any)).default as any;
+        // @rollup/plugin-json — required when widgets transitively import JSON files,
+        // e.g. @vertesia/ui pulls in i18n locale JSON via lib/esm/i18n/locales/*.json.
+        // Without this, Rollup tries to parse JSON as JS and bails.
+        const json = (await import('@rollup/plugin-json' as any)).default as any;
 
         const plugins: Plugin[] = [
             typescript({
@@ -56,6 +60,9 @@ export async function compileWidgets(
                 sourceMap: true,
                 ...typescriptOptions
             }),
+            // Order matters: json must come before node-resolve so .json imports
+            // are handled by it rather than fed to the default loader.
+            json(),
             nodeResolve({
                 browser: true,
                 preferBuiltins: false,
@@ -85,7 +92,20 @@ export async function compileWidgets(
                 inlineDynamicImports: true
             },
             external,
-            plugins
+            plugins,
+            // Suppress noisy but benign upstream-library warnings:
+            // - MODULE_LEVEL_DIRECTIVE: "use client" directives shipped by
+            //   framer-motion, Radix UI, cmdk, etc. for Next.js RSC support.
+            //   Rollup can't process them and safely ignores them.
+            // - THIS_IS_UNDEFINED: top-level `this` rewrites in some CJS-style
+            //   modules (react-calendar). Rollup rewrites to `undefined` per
+            //   the ES module spec; behavior is unchanged.
+            // Real warnings (unresolved deps, circular imports, etc.) still surface.
+            onwarn(warning, defaultHandler) {
+                if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+                if (warning.code === 'THIS_IS_UNDEFINED') return;
+                defaultHandler(warning);
+            }
         };
 
         const bundle = await rollup(rollupConfig);

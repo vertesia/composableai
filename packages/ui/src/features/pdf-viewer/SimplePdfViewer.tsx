@@ -130,12 +130,14 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
                 compact
                 headerExtra={
                     <VTooltip description={t('pdf.fullscreen')} placement="bottom" size="xs">
-                        <button
+                        <Button
+                            variant="unstyled"
                             className="p-1 rounded cursor-pointer transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
                             onClick={() => setIsFullscreen(true)}
+                            aria-label={t('pdf.fullscreen')}
                         >
                             <Maximize2 className="size-4" />
-                        </button>
+                        </Button>
                     </VTooltip>
                 }
             />

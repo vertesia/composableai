@@ -335,6 +335,7 @@ function MessageItemComponent({
             return (
                 <img
                     {...props}
+                    alt={props.alt ?? ""}
                     className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
                     loading="lazy"
                     onClick={() => props.src && openImage(props.src, props.alt)}
@@ -596,7 +597,8 @@ function MessageItemComponent({
                 {/* Optional details section */}
                 {message.details && (
                     <div className={cn("mt-2 print:hidden", resolvedStyle.detailsClassName)}>
-                        <button
+                        <Button
+                            variant="unstyled"
                             onClick={() => setShowDetails(!showDetails)}
                             className="text-[11px] text-muted flex items-center"
                         >
@@ -610,7 +612,7 @@ function MessageItemComponent({
                             >
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
-                        </button>
+                        </Button>
 
                         {showDetails && (
                             <div className="mt-1 p-1.5 bg-muted border border-mixer-muted/40 rounded text-sm">

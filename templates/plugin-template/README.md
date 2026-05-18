@@ -390,6 +390,18 @@ Key files:
 
 The Vertesia Composite App can show sub-items for your plugin in its sidebar. Configure these in `src/tool-server/ui-nav-items.ts` — it maps existing UI routes (from `routes.tsx`) as navigation entries. This file lives in `tool-server/` because the platform discovers UI navigation through the tool server's config endpoint, not from the UI bundle itself.
 
+## Accessibility
+
+The scaffolded plugin targets a **WCAG 2.1 AA baseline** out of the box. The `biome.json.template` inherits the `a11y` rule group (`useButtonType`, `useAltText`, `useSemanticElements`, `useHtmlLang`, etc.) at `error` so violations break `{{PM_RUN}} build` before they ship. A few conventions to keep:
+
+- **Prefer `<Button>` over raw `<button>`.** `Button` from `@vertesia/ui/core` provides consistent focus rings, deprecation-safe ARIA forwarding, and disabled state. Use raw `<button type="button">` only inside primitives that spread hook props onto the DOM (e.g. a downshift-style toggle); add a one-line comment explaining why.
+- **Icon-only buttons require an accessible name.** Pass `aria-label`. Example: `<Button aria-label="Refresh" onClick={…}><RefreshIcon /></Button>`. The included `InlineFilterButton` follows this pattern. Avoid the deprecated `alt` prop — it is forwarded to `aria-label` for one release with a console warning.
+- **Sortable table headers use `<SortableTableHeaderCell>`** from `@vertesia/ui/core`. It renders a real `<button>` inside the `<th>`, sets `aria-sort`, and is keyboard-operable automatically. The bundled `SortableHead` example wraps this primitive.
+- **Form controls go through `<FormItem>`.** Use the `helpText` prop for persistent helper text and the `error` prop for validation messages — both auto-wire `aria-describedby` and `aria-invalid` on a single element child. The `description` prop is hover-only (renders as a tooltip on an Info icon) and is *not* an accessible substitute for `helpText`.
+- **Headers and labels matter for screen readers.** Set the page title in `index.html`, keep `lang="en"` (or your locale) on `<html>`, and make sure every input has a `<label htmlFor>` (or use `FormItem`).
+
+If you need to introduce a pattern the rules flag (a `role="separator"` resize handle, a `<div role="button">` wrapper around a render-prop child, etc.), use a `// biome-ignore lint/a11y/<rule>: <reason>` comment on the line immediately before the JSX element, with a real justification — not a blanket suppression.
+
 ## API Reference
 
 ### `GET /api`
