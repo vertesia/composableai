@@ -402,7 +402,7 @@ export function DocumentPreviewPanel({
           className="bg-indigo-600 hover:bg-indigo-700 text-white"
         >
           {t('store.openFullDocument')}
-          <ChevronRight className="h-4 w-4 ml-2" />
+          <ChevronRight className="h-4 w-4 ml-2 cn-rtl-flip" />
         </Button>
       </div>
     </div>

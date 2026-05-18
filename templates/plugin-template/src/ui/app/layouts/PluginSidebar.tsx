@@ -4,7 +4,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { SidebarSection, useSidebarToggle } from '@vertesia/ui/layout';
 import { useLocation, useRouterBasePath } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import { Database, HomeIcon, MessageSquare, MessagesSquare, PlusCircle } from 'lucide-react';
+import { Database, HomeIcon, MessageSquare, MessagesSquare, PlusCircle, Settings } from 'lucide-react';
 import type { AgentRunResponse, WorkflowRun } from '@vertesia/common';
 import { AppSidebarItem } from './AppSidebarItem';
 import { ASSISTANT_INTERACTION } from '../constants';
@@ -92,6 +92,14 @@ export function PluginSidebar() {
                             to="/chat"
                         >
                             {t('nav.newChat')}
+                        </AppSidebarItem>
+                        <AppSidebarItem
+                            id="menu-settings"
+                            current={path === `${basePath}/settings`}
+                            icon={Settings}
+                            to="/settings"
+                        >
+                            {t('nav.settings')}
                         </AppSidebarItem>
                     </SidebarSection>
                     {conversations.length > 0 && (

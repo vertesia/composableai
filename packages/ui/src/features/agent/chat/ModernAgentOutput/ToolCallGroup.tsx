@@ -347,7 +347,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                         {isExpanded ? (
                             <ChevronDown className="size-3 text-muted" />
                         ) : (
-                            <ChevronRight className="size-3 text-muted" />
+                            <ChevronRight className="size-3 text-muted cn-rtl-flip" />
                         )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -747,7 +747,7 @@ function ToolCallGroupComponent({
                         </>
                     )}
                     {isCollapsed ? (
-                        <ChevronRight className="size-3 text-muted flex-shrink-0" />
+                        <ChevronRight className="size-3 text-muted flex-shrink-0 cn-rtl-flip" />
                     ) : (
                         <ChevronDown className="size-3 text-muted flex-shrink-0" />
                     )}
@@ -816,7 +816,7 @@ function ToolCallGroupComponent({
                                         {isItemExpanded ? (
                                             <ChevronDown className="size-3 text-muted" />
                                         ) : (
-                                            <ChevronRight className="size-3 text-muted" />
+                                            <ChevronRight className="size-3 text-muted cn-rtl-flip" />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">

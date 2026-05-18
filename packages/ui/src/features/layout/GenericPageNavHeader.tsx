@@ -115,7 +115,7 @@ export function GenericPageNavHeader({ className, children, title, description, 
                         {breadcrumbItems.length > 0 && (
                             <Breadcrumbs
                                 path={breadcrumbItems}
-                                separator={<ChevronRight className="size-3.5" />}
+                                separator={<ChevronRight className="size-3.5 cn-rtl-flip" />}
                                 maxItems={4}
                             />
                         )}

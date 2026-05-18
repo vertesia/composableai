@@ -1,5 +1,6 @@
 export * from './theme/ThemeSwitcher';
 export * from './theme/ThemeProvider';
+export * from './LanguageSwitcher';
 
 export * from "./badge"
 export * from './button';

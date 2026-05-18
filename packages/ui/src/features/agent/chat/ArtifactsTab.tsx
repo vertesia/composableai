@@ -44,7 +44,7 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeP
                 >
                     {expanded
                         ? <ChevronDownIcon className="size-3.5 shrink-0 text-muted" />
-                        : <ChevronRightIcon className="size-3.5 shrink-0 text-muted" />}
+                        : <ChevronRightIcon className="size-3.5 shrink-0 text-muted cn-rtl-flip" />}
                     {expanded
                         ? <FolderOpenIcon className="size-4 shrink-0 text-info" />
                         : <FolderIcon className="size-4 shrink-0 text-info" />}

@@ -135,7 +135,7 @@ function BatchProgressPanelComponent({
                     {isExpanded ? (
                         <ChevronDown className="size-3 text-muted" />
                     ) : (
-                        <ChevronRight className="size-3 text-muted" />
+                        <ChevronRight className="size-3 text-muted cn-rtl-flip" />
                     )}
                 </div>
 

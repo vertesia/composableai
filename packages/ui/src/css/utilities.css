@@ -70,3 +70,13 @@
   @utility stroke-mixer-* {
     stroke: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 1%));
   }
+
+  /*
+   * Mirrors an element on the x-axis only when the document is in RTL mode.
+   * Apply to navigational icons (chevrons, arrows) whose direction is
+   * locale-relative, e.g. submenu indicators or "next" arrows. Leave alone
+   * when the icon's direction is semantic (e.g. external-link arrow).
+   */
+  @utility cn-rtl-flip {
+    @apply rtl:-scale-x-100;
+  }

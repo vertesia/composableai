@@ -26,6 +26,7 @@
   "nav.objects": "Content Objects",
   "nav.recent": "Recent",
   "nav.pluginAssistant": "Plugin Assistant",
+  "nav.settings": "Settings",
   "nav.signOut": "Sign out",
   "nav.templateDescription": "This is the plugin template. Use it as a starting point to build your own plugin UI.",
   "nav.today": "Today",
