@@ -9,7 +9,7 @@ import {
     WEB_SUPPORTED_IMAGE_FORMATS,
     WEB_SUPPORTED_VIDEO_FORMATS,
 } from '@vertesia/ui/features';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink, useParams } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import type { ContentObject } from '@vertesia/common';
@@ -31,12 +31,6 @@ function MetadataRow({ label, children }: MetadataRowProps) {
             <span className="text-sm wrap-break-word">{children}</span>
         </div>
     );
-}
-
-function formatDate(value?: string | Date): string {
-    if (!value) return '—';
-    const d = value instanceof Date ? value : new Date(value);
-    return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString();
 }
 
 interface PreviewProps {
@@ -67,6 +61,7 @@ function Preview({ object, t }: PreviewProps) {
 
 export function ContentObjectDetailView() {
     const { t } = useUITranslation();
+    const { formatDateTime } = useLocaleFormat();
     const { client } = useUserSession();
     const { id } = useParams() as { id?: string };
 
@@ -135,10 +130,10 @@ export function ContentObjectDetailView() {
                         <code className="text-xs">{object.content?.type ?? '—'}</code>
                     </MetadataRow>
                     <MetadataRow label={t('objects.col.updated')}>
-                        {formatDate(object.updated_at)}
+                        {formatDateTime(object.updated_at)}
                     </MetadataRow>
                     <MetadataRow label={t('objects.detail.created')}>
-                        {formatDate(object.created_at)}
+                        {formatDateTime(object.created_at)}
                     </MetadataRow>
                     {properties && Object.keys(properties).length > 0 && (
                         <MetadataRow label={t('objects.detail.properties')}>

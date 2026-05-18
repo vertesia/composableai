@@ -23,7 +23,7 @@
         "build": "pnpm exec rimraf ./lib && tsc -b && pnpm exec rollup -c",
         "lint": "biome lint src && pnpm run check:rtl-classes",
         "lint:fix": "biome lint --write src",
-        "check:rtl-classes": "node scripts/check-rtl-classes.mjs",
+        "check:rtl-classes": "node scripts/check-rtl-classes.mjs --mode=strict",
         "test": "vitest run",
         "test:watch": "vitest",
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit"

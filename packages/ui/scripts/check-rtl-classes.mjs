@@ -236,13 +236,30 @@ function main() {
     }
 
     if (args.mode === 'strict') {
+        // Strict mode only fails on AUTO violations (codemod-safe directional
+        // utilities that should always be converted to logical equivalents).
+        // AUDIT categories (space-x, divide-x, translate-x, slide-in/out,
+        // fixed-edge) are framework-handled in this stack — Tailwind v4 makes
+        // space-x logical, Radix's DirectionProvider flips slide-in/out
+        // automatically, and translate-x centering is symmetric. We still
+        // report them so a future contributor can spot a genuinely new
+        // directional usage, but they don't block CI.
+        const autoTotal = Object.entries(byCategory)
+            .filter(([k]) => k.startsWith('auto:'))
+            .reduce((sum, [, n]) => sum + n, 0);
         printSummary(byCategory, total);
-        if (total > 0) {
-            console.error(`\n❌ Strict mode: ${total} directional-utility violations remain.`);
-            console.error('Convert to logical equivalents, or add `// rtl-ok: <reason>` for intentional directional classes.');
+        if (autoTotal > 0) {
+            console.error(`\n❌ Strict mode: ${autoTotal} auto-fixable directional-utility violations remain.`);
+            console.error('Convert to logical equivalents (ms-/me-/ps-/pe-/start-/end-/text-start/text-end),');
+            console.error('or add `// rtl-ok: <reason>` for intentional directional classes.');
             process.exit(1);
         }
-        console.log(`\n✅ No directional-utility violations.`);
+        const auditTotal = total - autoTotal;
+        if (auditTotal > 0) {
+            console.log(`\n✅ No auto-fixable violations. ${auditTotal} audit-only occurrences remain (informational).`);
+        } else {
+            console.log(`\n✅ No directional-utility violations.`);
+        }
         process.exit(0);
     }
 

@@ -69,3 +69,4 @@ export {
     resolveLanguage,
     type SupportedLanguage,
 } from './rtl.js';
+export { useLocaleFormat, type LocaleFormat } from './useLocaleFormat.js';

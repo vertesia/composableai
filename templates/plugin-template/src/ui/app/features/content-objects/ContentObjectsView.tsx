@@ -25,7 +25,7 @@ import {
     useIntersectionObserver,
 } from '@vertesia/ui/core';
 import { GenericPageNavHeader } from '@vertesia/ui/features';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import type { ContentObjectTypeItem } from '@vertesia/common';
@@ -82,6 +82,7 @@ function findScrollableElement(start: HTMLElement | null): HTMLElement | null {
 
 export function ContentObjectsView() {
     const { t } = useUITranslation();
+    const { formatDateTime } = useLocaleFormat();
     const { client } = useUserSession();
     const navigate = useNavigate();
 
@@ -311,10 +312,10 @@ export function ContentObjectsView() {
                         ? t('objects.filterByValue', { value: statusLabel })
                         : undefined,
                     statusVariant: statusVariant(item.status),
-                    updatedLabel: item.updated_at ? new Date(item.updated_at).toLocaleString() : '—',
+                    updatedLabel: formatDateTime(item.updated_at),
                 };
             }),
-        [deferredItems, t],
+        [deferredItems, t, formatDateTime],
     );
 
     const tableRows = useMemo(
