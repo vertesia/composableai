@@ -49,7 +49,7 @@ export function UploadResultCategory({
                         {count}
                     </span>
                 </div>
-                <button className="text-muted">
+                <span className="text-muted" aria-hidden="true">
                     <svg
                         className={`h-5 w-5 transition-transform ${isExpanded ? 'transform rotate-180' : ''}`}
                         fill="none"
@@ -58,7 +58,7 @@ export function UploadResultCategory({
                     >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
-                </button>
+                </span>
             </div>
 
             {isExpanded && (

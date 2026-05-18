@@ -137,8 +137,8 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
     const renderTrailingIcon = () => {
         if (showClearOption) {
             return (
-                <span
-                    role="button"
+                <Button
+                    variant="unstyled"
                     aria-label="Clear selection"
                     className="ml-2 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive cursor-pointer"
                     onClick={(e) => {
@@ -147,7 +147,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                     }}
                 >
                     <X className="h-4 w-4" />
-                </span>
+                </Button>
             );
         }
         return <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />;

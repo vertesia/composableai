@@ -198,6 +198,7 @@ function ComboInput<T>({ inputRef, placeholder, boxRef, ctrl, layout, clearable,
             <div style={{ position: 'absolute', right: `${layout.buttonRight}px`, top: 0, bottom: 0, display: 'flex', alignItems: 'center', gap: '2px' }}>
                 {showClear && (
                     <button
+                        type="button"
                         style={{ border: 'none', padding: 0, margin: 0, backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', width: `${layout.buttonWidth}px` }}
                         onClick={() => { ctrl.selectedItem = null; }}
                     >
@@ -205,7 +206,9 @@ function ComboInput<T>({ inputRef, placeholder, boxRef, ctrl, layout, clearable,
                     </button>
                 )}
                 {Toggle && (
+                    // Raw <button> — spreads ctrl.getToggleButtonProps() from downshift; props must attach to the DOM element directly.
                     <button
+                        type="button"
                         style={{ width: `${layout.buttonWidth}px`, border: 'none', padding: 0, margin: 0, backgroundColor: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         {...ctrl.getToggleButtonProps()}
                     >

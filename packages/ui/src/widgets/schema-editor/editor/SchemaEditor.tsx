@@ -68,7 +68,7 @@ function ParentItem({ property, readonly }: ParentItemProps) {
     return (
         <li>
             <div className='flex items-center w-full'>
-                <button onClick={() => setOpen(!isOpen)}><Icon className="size-4" /></button>
+                <Button variant="ghost" size="icon" onClick={() => setOpen(!isOpen)}><Icon className="size-4" /></Button>
                 <div className='flex-1'><PropertyTitleBar property={property} readonly={readonly} /></div>
             </div>
             {

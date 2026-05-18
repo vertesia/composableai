@@ -603,12 +603,13 @@ function StartWorkflowView({
                                 <FileTextIcon className="size-3.5" />
                                 <span className="max-w-[120px] truncate">{file.name}</span>
                                 <span className="text-xs opacity-70">{t('agent.staged')}</span>
-                                <button
+                                <Button
+                                    variant="unstyled"
                                     onClick={() => removeStagedFile(index)}
                                     className="ml-1 p-0.5 hover:bg-attention/20 rounded"
                                 >
                                     <XIcon className="size-3" />
-                                </button>
+                                </Button>
                             </div>
                         ))}
                     </div>
@@ -1547,12 +1548,11 @@ const handleCloseRightPanel = useCallback(() => {
             {isRightPanelVisible && (
                 <>
                     {!conversationTab && (
-                        <div
+                        // biome-ignore lint/a11y/useSemanticElements: <hr> has no semantics for a draggable resize handle; ARIA separator is the spec-recommended pattern.
+                        // biome-ignore lint/a11y/useAriaPropsForRole: aria-orientation is a permitted prop on role=separator per WAI-ARIA.
+                        <div role="separator" aria-orientation="vertical" aria-label="Resize right panel" tabIndex={0}
                             className="hidden lg:block lg:w-1 lg:shrink-0 cursor-col-resize bg-border/70 hover:bg-border transition-colors"
                             onMouseDown={() => setIsRightPanelResizing(true)}
-                            role="separator"
-                            aria-orientation="vertical"
-                            aria-label="Resize right panel"
                         />
                     )}
                     <div
