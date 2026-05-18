@@ -109,6 +109,7 @@ export function PluginSidebar() {
                         <SidebarSection title={t('nav.recent')}>
                             {conversations.map(conv => {
                                 const convPath = `${basePath}/chat/${conv.run_id}`;
+                                const label = getConversationLabel(conv, t, formatTime);
                                 return (
                                     <AppSidebarItem
                                         key={conv.run_id}
@@ -117,7 +118,13 @@ export function PluginSidebar() {
                                         icon={MessageSquare}
                                         className="overflow-hidden"
                                     >
-                                        <span className="truncate">{getConversationLabel(conv, t, formatTime)}</span>
+                                        <span
+                                            className="min-w-0 flex-1 truncate text-start"
+                                            dir="auto"
+                                            title={label}
+                                        >
+                                            {label}
+                                        </span>
                                     </AppSidebarItem>
                                 );
                             })}
