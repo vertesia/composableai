@@ -24,7 +24,8 @@
         "lint": "biome lint src",
         "lint:fix": "biome lint --write src",
         "test": "vitest run",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
     },
     "dependencies": {
         "@floating-ui/dom": "^1.7.1",

@@ -48,6 +48,7 @@
     "node_modules",
     "**/*.test.ts",
     "**/*.test.tsx",
+    "src/__tests__/**",
     "lib",
     "test"
   ],
