@@ -21,7 +21,7 @@
     ],
     "scripts": {
         "build": "pnpm exec rimraf ./lib && tsc -b && pnpm exec rollup -c",
-        "lint": "biome lint src",
+        "lint": "biome lint src && pnpm run check:rtl-classes",
         "lint:fix": "biome lint --write src",
         "check:rtl-classes": "node scripts/check-rtl-classes.mjs",
         "test": "vitest run",

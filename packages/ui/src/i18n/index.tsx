@@ -1,7 +1,9 @@
 import { useEffect, type ReactNode } from 'react';
-import { I18nextProvider, useTranslation } from 'react-i18next';
+import { I18nextProvider, Trans, useTranslation } from 'react-i18next';
 import { i18nInstance, NAMESPACE } from './instance.js';
 import { useLanguage } from './LanguageProvider.js';
+
+export { Trans };
 
 export interface I18nProviderProps {
     /** Force a specific language. If omitted, uses browser language detection with 'en' fallback. */
