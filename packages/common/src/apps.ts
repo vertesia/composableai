@@ -62,6 +62,13 @@ export interface AppUIConfig {
 export interface AppInstallationProjectsQuery {
     name?: string;
     id?: string;
+    /**
+     * When true (default), a project is hidden if either the app's UI plugin is
+     * denied (`ui:` pattern) or the whole app is denied (`app:` pattern). Set to
+     * false to only filter by whole-app denials — used when the caller doesn't
+     * care about the app's UI surface (e.g., tool-only access from agents).
+     */
+    include_ui_denial?: boolean;
 }
 
 export interface AppInstallationsQuery {
