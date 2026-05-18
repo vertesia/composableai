@@ -9,6 +9,7 @@ import { Switch } from '../core/components/shadcn/switch.js';
 import { RadioGroup } from '../core/components/shadcn/radioGroup.js';
 import { FormItem } from '../core/components/FormItem.js';
 import { Modal, ModalTitle, ModalBody } from '../core/components/shadcn/modal/dialog.js';
+import { Table, THead, TBody, TableHeaderCell, SortableTableHeaderCell } from '../core/components/table/index.js';
 import { renderWithProviders } from './test-utils.js';
 
 describe('@vertesia/ui accessibility (axe)', () => {
@@ -217,6 +218,61 @@ describe('@vertesia/ui accessibility (axe)', () => {
                 </tbody>
             </table>,
         );
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('TableHeaderCell defaults to scope="col"', async () => {
+        const { container } = renderWithProviders(
+            <Table>
+                <THead>
+                    <tr>
+                        <TableHeaderCell>Name</TableHeaderCell>
+                        <TableHeaderCell scope="col">Email</TableHeaderCell>
+                    </tr>
+                </THead>
+                <TBody columns={2}>
+                    <tr>
+                        <td>Ada</td>
+                        <td>ada@example.com</td>
+                    </tr>
+                </TBody>
+            </Table>,
+        );
+        const headers = container.querySelectorAll('th');
+        expect(headers.length).toBe(2);
+        expect(headers[0].getAttribute('scope')).toBe('col');
+        expect(headers[1].getAttribute('scope')).toBe('col');
+        expect(await axe(container)).toHaveNoViolations();
+    });
+
+    it('SortableTableHeaderCell renders a button and sets aria-sort on the <th>', async () => {
+        function Harness() {
+            const [dir, setDir] = useState<'ascending' | 'descending'>('ascending');
+            return (
+                <Table>
+                    <THead>
+                        <tr>
+                            <SortableTableHeaderCell
+                                sortDirection={dir}
+                                onSort={() => setDir(d => (d === 'ascending' ? 'descending' : 'ascending'))}
+                            >
+                                Name
+                            </SortableTableHeaderCell>
+                        </tr>
+                    </THead>
+                    <TBody columns={1}>
+                        <tr><td>Ada</td></tr>
+                    </TBody>
+                </Table>
+            );
+        }
+        const { container } = renderWithProviders(<Harness />);
+        const th = container.querySelector('th');
+        expect(th?.getAttribute('aria-sort')).toBe('ascending');
+        expect(th?.getAttribute('scope')).toBe('col');
+        const btn = th?.querySelector('button');
+        expect(btn?.getAttribute('type')).toBe('button');
+        expect(btn?.textContent).toContain('Name');
         expect(await axe(container)).toHaveNoViolations();
     });
 });
