@@ -148,7 +148,6 @@
   "agent.waitForFilesProcessing": "Please wait for all files to finish processing before sending",
   "agent.waiting": "Waiting...",
   "agent.waitingForAgentResponse": "Waiting for agent response...",
-  "agent.waitingForAgentActivity": "Waiting for agent activity...",
   "agent.workflowCancelled": "Workflow cancelled",
   "agent.workflowRunIdCopied": "Workflow Run ID copied",
   "agent.working": "Working...",

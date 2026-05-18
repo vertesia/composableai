@@ -238,7 +238,7 @@ function getMessageComparableText(message: AgentMessage): string | undefined {
     return normalizeComparableText(message.message);
 }
 
-function isStreamReplacedByMessage(
+export function isStreamReplacedByMessage(
     streaming: StreamingData,
     messages: AgentMessage[],
 ): boolean {
@@ -256,6 +256,9 @@ function isStreamReplacedByMessage(
             streaming.activityId &&
             message.details?.activity_id === streaming.activityId
         ) {
+            if (isToolCallMessage(message) || message.details?.tool_status) {
+                return false;
+            }
             return true;
         }
 

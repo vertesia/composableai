@@ -11,10 +11,16 @@ import { AskUserWidget } from "../AskUserWidget";
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from "./BatchProgressPanel";
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from "./MessageItem";
 import StreamingMessage, { type StreamingMessageClassNames } from "./StreamingMessage";
-import { buildSummaryConversationItems } from "./SummaryConversation";
+import {
+    buildSummaryConversationItems,
+    buildSummaryDisplayMessages,
+    getSummaryActivityAnchorTimestamp,
+    isTransientThinkingMessage,
+    shouldShowSummaryActivityFallback,
+} from "./SummaryConversation";
 import ToolCallGroup, { type ToolCallGroupClassNames } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, RenderableGroup, shouldCollapseAdjacentRenderedMessage, StreamingData, ToolExecutionStatus } from "./utils";
+import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, isInProgress, mergeConsecutiveToolGroups, RenderableGroup, shouldCollapseAdjacentRenderedMessage, StreamingData, ToolExecutionStatus } from "./utils";
 
 export interface AgentInitialRequestTemplateContext {
     data: unknown;
@@ -88,8 +94,9 @@ const isBatchProgressMessage = (message: AgentMessage): message is AgentMessage 
 };
 
 function getTimestampMs(timestamp: number | string | undefined): number {
-    if (!timestamp) return Date.now();
-    return typeof timestamp === "number" ? timestamp : new Date(timestamp).getTime();
+    if (timestamp === undefined || timestamp === null || timestamp === "") return Date.now();
+    const value = typeof timestamp === "number" ? timestamp : new Date(timestamp).getTime();
+    return Number.isFinite(value) ? value : Date.now();
 }
 
 function getElapsedSeconds(timestamp: number | string | undefined): number {
@@ -1344,6 +1351,17 @@ function AllMessagesMixedComponent({
         return Math.max(...displayMessages.map((msg) => getTimestampMs(msg.timestamp)));
     }, [displayMessages]);
 
+    const latestNonTransientDisplayMessageTimestamp = useMemo(() => {
+        const persistentMessages = displayMessages.filter((msg) => !isTransientThinkingMessage(msg));
+        if (persistentMessages.length === 0) return -Infinity;
+        return Math.max(...persistentMessages.map((msg) => getTimestampMs(msg.timestamp)));
+    }, [displayMessages]);
+
+    const isDisplayCompleted = useMemo(
+        () => isCompleted || !isInProgress(displayMessages),
+        [displayMessages, isCompleted],
+    );
+
     // Split streaming messages:
     // - complete (or stale incomplete) ones are interleaved chronologically
     // - actively incomplete ones render at the end
@@ -1361,7 +1379,7 @@ function AllMessagesMixedComponent({
 
             // If a newer persisted message exists, this stream is stale and should be
             // treated as complete for ordering purposes.
-            const isStale = data.startTimestamp <= latestDisplayMessageTimestamp;
+            const isStale = data.startTimestamp <= latestNonTransientDisplayMessageTimestamp;
             if (isStale) {
                 // Only interleave chronologically when a newer persisted message
                 // already exists — the streaming message is truly historical.
@@ -1374,9 +1392,17 @@ function AllMessagesMixedComponent({
         });
 
         return { completeStreaming: complete, incompleteStreaming: incomplete };
-    }, [streamingMessages, activeWorkstream, latestDisplayMessageTimestamp]);
+    }, [streamingMessages, activeWorkstream, latestNonTransientDisplayMessageTimestamp]);
+
+    const summaryDisplayMessages = React.useMemo(
+        () => buildSummaryDisplayMessages(displayMessages, completeStreaming),
+        [displayMessages, completeStreaming],
+    );
 
     const latestSummaryObservedTimestamp = useMemo(() => {
+        const hasVisibleLiveStream = incompleteStreaming.some(({ data }) => data.text.trim().length > 0);
+        if (hasVisibleLiveStream) return Number.POSITIVE_INFINITY;
+
         const latestStreamingTimestamp = incompleteStreaming.reduce(
             (latest, { data }) => Math.max(latest, data.startTimestamp),
             -Infinity,
@@ -1385,8 +1411,8 @@ function AllMessagesMixedComponent({
     }, [incompleteStreaming, latestDisplayMessageTimestamp]);
 
     const summaryConversationItems = React.useMemo(
-        () => buildSummaryConversationItems(displayMessages, isCompleted, latestSummaryObservedTimestamp),
-        [displayMessages, isCompleted, latestSummaryObservedTimestamp],
+        () => buildSummaryConversationItems(summaryDisplayMessages, isDisplayCompleted, latestSummaryObservedTimestamp),
+        [summaryDisplayMessages, isDisplayCompleted, latestSummaryObservedTimestamp],
     );
 
     // Group messages with ONLY complete streaming interleaved for stacked view
@@ -1397,26 +1423,39 @@ function AllMessagesMixedComponent({
         [displayMessages, completeStreaming, activeWorkstream]
     );
 
-    const hasActiveSummaryWork = useMemo(
-        () => summaryConversationItems.some((item) => item.type === "work" && item.isActive),
-        [summaryConversationItems]
-    );
-
-    // Show working indicator when agent is actively processing
+    // Show an activity indicator when the latest visible conversation state is not terminal.
+    // Older idle/complete messages from previous turns must not suppress the new turn.
     const isAgentWorking = useMemo(() => {
-        if (isCompleted) return false;
-        // Agent is working if there are streaming messages or no terminal message yet.
-        return streamingMessages.size > 0 || !displayMessages.some(msg =>
-            msg.type === AgentMessageType.COMPLETE ||
-            msg.type === AgentMessageType.IDLE ||
-            msg.type === AgentMessageType.TERMINATED
-        );
-    }, [isCompleted, streamingMessages.size, displayMessages]);
+        return !isDisplayCompleted;
+    }, [isDisplayCompleted]);
 
-    const latestVisibleTimestamp = useMemo(() => {
-        const latestMessage = displayMessages[displayMessages.length - 1];
-        return latestMessage?.timestamp ?? fallbackWorkingStartedAtRef.current;
-    }, [displayMessages]);
+    const showActivityFallback = shouldShowSummaryActivityFallback(
+        summaryConversationItems,
+        isAgentWorking,
+        incompleteStreaming.length > 0,
+    );
+    const activityAnchorCandidate = useMemo(
+        () => getSummaryActivityAnchorTimestamp(
+            summaryConversationItems,
+            summaryDisplayMessages,
+            fallbackWorkingStartedAtRef.current,
+        ),
+        [summaryConversationItems, summaryDisplayMessages],
+    );
+    const activityStartedTimestampRef = useRef<number | string>(activityAnchorCandidate);
+    const wasActivityFallbackVisibleRef = useRef(false);
+
+    if (showActivityFallback) {
+        const candidateMs = getTimestampMs(activityAnchorCandidate);
+        const currentMs = getTimestampMs(activityStartedTimestampRef.current);
+        if (!wasActivityFallbackVisibleRef.current || candidateMs < currentMs) {
+            activityStartedTimestampRef.current = activityAnchorCandidate;
+        }
+        wasActivityFallbackVisibleRef.current = true;
+    } else {
+        activityStartedTimestampRef.current = activityAnchorCandidate;
+        wasActivityFallbackVisibleRef.current = false;
+    }
 
     // Determine completion status for each workstream
     const workstreamCompletionStatus = useMemo(() => {
@@ -1953,17 +1992,13 @@ function AllMessagesMixedComponent({
                                     artifactRunId={artifactRunId}
                                 />
                             ))}
-                            {/* Working fallback - shown before any tool/thought message has arrived */}
-                            {isAgentWorking &&
-                                !hasActiveSummaryWork &&
-                                incompleteStreaming.length === 0 && (
+                            {/* Activity fallback - shown before any tool/thought message has arrived */}
+                            {showActivityFallback && (
                                 <SummaryActivityRow
-                                    label="Working"
+                                    label={getSummaryWorkLabel("running", true)}
                                     status="running"
-                                    timestamp={latestVisibleTimestamp}
+                                    timestamp={activityStartedTimestampRef.current}
                                     showElapsed
-                                    emptyDetailsLabel={t("agent.waitingForAgentActivity")}
-                                    defaultExpanded
                                     className={workingIndicatorClassName}
                                 />
                             )}

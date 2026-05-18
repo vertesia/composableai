@@ -1,7 +1,21 @@
 import { AgentMessage, AgentMessageType } from "@vertesia/common";
 import { describe, expect, it } from "vitest";
-import { buildSummaryConversationItems } from "./SummaryConversation";
-import { getSlidingViewMessageBuckets, groupMessagesWithStreaming, isToolActivityMessage, mergeConsecutiveToolGroups, shouldCollapseAdjacentRenderedMessage } from "./utils";
+import {
+    buildSummaryConversationItems,
+    buildSummaryDisplayMessages,
+    getSummaryConversationLatestTimestamp,
+    getSummaryActivityAnchorTimestamp,
+    shouldShowSummaryActivityFallback,
+} from "./SummaryConversation";
+import {
+    getSlidingViewMessageBuckets,
+    groupMessagesWithStreaming,
+    isInProgress,
+    isStreamReplacedByMessage,
+    isToolActivityMessage,
+    mergeConsecutiveToolGroups,
+    shouldCollapseAdjacentRenderedMessage,
+} from "./utils";
 
 function makeMessage(overrides: Partial<AgentMessage>): AgentMessage {
     return {
@@ -76,6 +90,23 @@ describe("ModernAgentOutput utils - tool preamble behavior", () => {
             expect(grouped[0].messages[0].details?.display_role).toBe("tool_preamble");
             expect(grouped[0].messages[1].details?.tool).toBe("list-assistant-knowledge");
         }
+    });
+});
+
+describe("ModernAgentOutput utils - progress state", () => {
+    it("treats a new user turn after an older idle message as in progress", () => {
+        const idle = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.IDLE,
+            message: "Waiting for your command...",
+        });
+        const question = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.QUESTION,
+            message: "Look that up too.",
+        });
+
+        expect(isInProgress([idle, question])).toBe(true);
     });
 });
 
@@ -259,7 +290,7 @@ describe("ModernAgentOutput utils - sliding view thinking", () => {
 });
 
 describe("ModernAgentOutput summary conversation items", () => {
-    it("keeps streamed assistant prose between tool groups visible", () => {
+    it("keeps streamed tool preambles between tool groups inside work details", () => {
         const question = makeMessage({
             timestamp: 1000,
             type: AgentMessageType.QUESTION,
@@ -303,8 +334,11 @@ describe("ModernAgentOutput summary conversation items", () => {
 
         const items = buildSummaryConversationItems([question, firstTool, assistantProse, secondTool, answer], true);
 
-        expect(items.map((item) => item.type)).toEqual(["message", "work", "message", "work", "message"]);
-        expect(items[2]).toMatchObject({ type: "message", message: assistantProse });
+        expect(items.map((item) => item.type)).toEqual(["message", "work", "message"]);
+        if (items[1].type !== "work") {
+            throw new Error("Expected tool preamble to stay inside the work row");
+        }
+        expect(items[1].messages).toEqual([firstTool, assistantProse, secondTool]);
     });
 
     it("keeps non-streamed tool preambles inside work details", () => {
@@ -468,6 +502,59 @@ describe("ModernAgentOutput summary conversation items", () => {
         });
     });
 
+    it("hides transient thinking while live assistant text is streaming", () => {
+        const tool = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "completed",
+                tool_run_id: "tool-1",
+            },
+        });
+        const thinking = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: "Thinking...",
+            details: {
+                display_role: "thinking",
+                activity_group_id: "activity-1",
+            },
+        });
+
+        const items = buildSummaryConversationItems([tool, thinking], false, Number.POSITIVE_INFINITY);
+
+        expect(items[0]).toMatchObject({
+            type: "work",
+            messages: [tool],
+        });
+    });
+
+    it("does not turn an idle message into a completed transient thinking row", () => {
+        const thinking = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: "Thinking...",
+            details: {
+                display_role: "thinking",
+                activity_group_id: "activity-1",
+            },
+        });
+        const idle = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.IDLE,
+            message: "Waiting for your command...",
+            details: {
+                event_class: "activity",
+            },
+        });
+
+        const items = buildSummaryConversationItems([thinking, idle], true);
+
+        expect(items).toEqual([]);
+    });
+
     it("hides transient thinking when a later ignored message is persisted", () => {
         const tool = makeMessage({
             timestamp: 1000,
@@ -500,6 +587,231 @@ describe("ModernAgentOutput summary conversation items", () => {
             type: "work",
             messages: [tool],
         });
+    });
+
+    it("keeps activity fallback anchored to the latest visible summary item", () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: "Find local news.",
+        });
+        const hiddenSystemMessage = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.SYSTEM,
+            message: "Ops ready",
+            details: {
+                system_type: "toolkit_ready",
+            },
+        });
+
+        const items = buildSummaryConversationItems([question, hiddenSystemMessage], false);
+
+        expect(getSummaryConversationLatestTimestamp(items, 500)).toBe(1000);
+    });
+
+    it("anchors activity fallback after the latest visible work row when tool work just completed", () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: "Find local news.",
+        });
+        const runningTool = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "running",
+                tool_run_id: "tool-1",
+            },
+        });
+        const completedTool = makeMessage({
+            timestamp: 2500,
+            type: AgentMessageType.THOUGHT,
+            message: "Found results",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "completed",
+                tool_run_id: "tool-1",
+            },
+        });
+
+        const items = buildSummaryConversationItems([question, runningTool, completedTool], false);
+
+        expect(getSummaryConversationLatestTimestamp(items, 500)).toBe(2500);
+    });
+
+    it("anchors activity fallback to the earliest persisted message when summary has no visible items", () => {
+        const toolkitReady = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.SYSTEM,
+            message: "Ops ready",
+            details: {
+                system_type: "toolkit_ready",
+            },
+        });
+        const hiddenThinking = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.THOUGHT,
+            message: "Thinking...",
+            details: {
+                display_role: "thinking",
+            },
+        });
+
+        const items = buildSummaryConversationItems([toolkitReady, hiddenThinking], false, 4000);
+
+        expect(items).toEqual([]);
+        expect(getSummaryActivityAnchorTimestamp(items, [toolkitReady, hiddenThinking], 500)).toBe(1000);
+    });
+
+    it("uses the latest visible summary item before falling back to hidden messages", () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: "Find local news.",
+        });
+        const hiddenSystemMessage = makeMessage({
+            timestamp: 5000,
+            type: AgentMessageType.SYSTEM,
+            message: "Ops ready",
+            details: {
+                system_type: "toolkit_ready",
+            },
+        });
+
+        const items = buildSummaryConversationItems([question, hiddenSystemMessage], false);
+
+        expect(getSummaryActivityAnchorTimestamp(items, [question, hiddenSystemMessage], 500)).toBe(1000);
+    });
+
+    it("shows activity fallback while a user turn is waiting for first activity", () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: "Find local news.",
+        });
+
+        const items = buildSummaryConversationItems([question], false);
+
+        expect(shouldShowSummaryActivityFallback(items, true, false)).toBe(true);
+    });
+
+    it("does not flicker activity fallback after the assistant answer arrives before idle", () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: "Find local news.",
+        });
+        const tool = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching",
+            details: {
+                tool: "web_search_serper",
+                tool_status: "completed",
+                tool_run_id: "tool-1",
+            },
+        });
+        const answer = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.ANSWER,
+            message: "Here are the headlines.",
+            details: {
+                streamed: true,
+            },
+        });
+
+        const items = buildSummaryConversationItems([question, tool, answer], false);
+
+        expect(items.map((item) => item.type)).toEqual(["message", "work", "message"]);
+        expect(shouldShowSummaryActivityFallback(items, true, false)).toBe(false);
+    });
+
+    it("does not show activity fallback while assistant text is streaming", () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: "Find local news.",
+        });
+
+        const items = buildSummaryConversationItems([question], false);
+
+        expect(shouldShowSummaryActivityFallback(items, true, true)).toBe(false);
+    });
+
+    it("keeps unreplaced completed pre-tool streaming prose inside the following work row", () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: "What does Les Echos say?",
+        });
+        const tool = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching for Les Echos via Serper...",
+            details: {
+                activity_group_id: "activity-1",
+                tool: "web_search_serper",
+                tool_status: "running",
+                tool_run_id: "tool-1",
+            },
+        });
+
+        const summaryMessages = buildSummaryDisplayMessages(
+            [question, tool],
+            new Map([
+                ["activity-1", {
+                    text: 'I will now search for "Les Echos" to see what they are reporting.',
+                    startTimestamp: 2000,
+                    activityId: "activity-1",
+                    isComplete: true,
+                }],
+            ]),
+        );
+        const items = buildSummaryConversationItems(summaryMessages, false);
+
+        expect(items.map((item) => item.type)).toEqual(["message", "work"]);
+        if (items[1].type !== "work") {
+            throw new Error("Expected streaming preamble to be grouped into the work row");
+        }
+        expect(items[1].messages).toMatchObject([
+            {
+                type: AgentMessageType.THOUGHT,
+                message: 'I will now search for "Les Echos" to see what they are reporting.',
+                details: {
+                    display_role: "tool_preamble",
+                    tools: ["web_search_serper"],
+                },
+            },
+            tool,
+        ]);
+    });
+
+    it("does not duplicate completed streaming prose once persisted prose replaces it", () => {
+        const answer = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.ANSWER,
+            message: "Here are the headlines.",
+            details: {
+                activity_id: "activity-1",
+                streamed: true,
+            },
+        });
+
+        const summaryMessages = buildSummaryDisplayMessages(
+            [answer],
+            new Map([
+                ["activity-1", {
+                    text: "Here are the headlines.",
+                    startTimestamp: 2000,
+                    activityId: "activity-1",
+                    isComplete: true,
+                }],
+            ]),
+        );
+
+        expect(summaryMessages).toEqual([answer]);
     });
 });
 
@@ -553,6 +865,26 @@ describe("ModernAgentOutput utils - streamed deduplication", () => {
 
         expect(grouped).toHaveLength(1);
         expect(grouped[0].type).toBe("single");
+    });
+
+    it("does not treat a tool event with the same activity id as a replacement for streamed prose", () => {
+        const tool = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: "Searching",
+            details: {
+                activity_id: "activity-1",
+                tool: "web_search_serper",
+                tool_status: "running",
+                tool_run_id: "tool-1",
+            },
+        });
+
+        expect(isStreamReplacedByMessage({
+            text: "I will search first.",
+            startTimestamp: 1000,
+            activityId: "activity-1",
+        }, [tool])).toBe(false);
     });
 });
 

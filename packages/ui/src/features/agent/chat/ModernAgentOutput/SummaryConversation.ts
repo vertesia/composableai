@@ -1,5 +1,5 @@
 import { AgentMessage, AgentMessageType } from "@vertesia/common";
-import { isToolActivityMessage, ToolExecutionStatus } from "./utils";
+import { isStreamReplacedByMessage, isToolActivityMessage, StreamingData, ToolExecutionStatus } from "./utils";
 
 export type SummaryConversationItem =
     | { type: "message"; message: AgentMessage }
@@ -29,7 +29,7 @@ function isLowSignalSummaryText(text: string): boolean {
         normalized === "waiting...";
 }
 
-function isTransientThinkingMessage(message: AgentMessage): boolean {
+export function isTransientThinkingMessage(message: AgentMessage): boolean {
     return message.type === AgentMessageType.THOUGHT && message.details?.display_role === "thinking";
 }
 
@@ -43,6 +43,8 @@ function getTimestampMs(timestamp: number | string | undefined): number {
 function getLatestMessageTimestamp(messages: AgentMessage[]): number {
     return messages.reduce((latest, message) => Math.max(latest, getTimestampMs(message.timestamp)), -Infinity);
 }
+
+const TOOL_PREAMBLE_MATCH_WINDOW_MS = 60_000;
 
 function filterTransientThinkingMessages(
     messages: AgentMessage[],
@@ -80,9 +82,11 @@ export function isSummaryAssistantProseMessage(message: AgentMessage): boolean {
 
     if (message.type === AgentMessageType.ANSWER) return true;
 
-    // Tool preambles marked as streamed are model-visible prose that users already
-    // saw while the agent was working. Keep them in Summary instead of swallowing
-    // them into the work disclosure.
+    if (message.details?.display_role === "tool_preamble") return false;
+
+    // Streamed thoughts without tool metadata are model-visible prose. They remain
+    // in the conversation unless buildSummaryDisplayMessages classifies them as
+    // tool preambles by matching nearby tool activity.
     return message.type === AgentMessageType.THOUGHT && Boolean(message.details?.streamed);
 }
 
@@ -165,4 +169,119 @@ export function buildSummaryConversationItems(
 
     flushWork(!isCompleted);
     return items;
+}
+
+function findMatchingToolActivity(data: StreamingData, messages: AgentMessage[]): AgentMessage | undefined {
+    const exactMatch = data.activityId
+        ? messages.find((message) =>
+            isToolActivityMessage(message) &&
+            (message.details?.activity_id === data.activityId || message.details?.activity_group_id === data.activityId))
+        : undefined;
+    if (exactMatch) return exactMatch;
+
+    const streamStartMs = getTimestampMs(data.startTimestamp);
+    if (!Number.isFinite(streamStartMs)) return undefined;
+
+    const followingMessages = [...messages]
+        .filter((message) => getTimestampMs(message.timestamp) >= streamStartMs)
+        .sort((a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp));
+
+    for (const message of followingMessages) {
+        const messageMs = getTimestampMs(message.timestamp);
+        if (messageMs - streamStartMs > TOOL_PREAMBLE_MATCH_WINDOW_MS) return undefined;
+        if (isToolActivityMessage(message)) return message;
+        if (isSummaryPrimaryMessage(message)) return undefined;
+    }
+
+    return undefined;
+}
+
+export function buildSummaryDisplayMessages(
+    messages: AgentMessage[],
+    completeStreaming: Map<string, StreamingData>,
+): AgentMessage[] {
+    if (completeStreaming.size === 0) return messages;
+
+    const workflowRunId = messages.find((message) => message.workflow_run_id)?.workflow_run_id ?? "";
+    const streamingMessages: AgentMessage[] = [];
+
+    completeStreaming.forEach((data, streamingId) => {
+        const text = data.text.trim();
+        if (!text || isStreamReplacedByMessage(data, messages)) return;
+        const matchingToolMessage = findMatchingToolActivity(data, messages);
+
+        streamingMessages.push({
+            timestamp: data.startTimestamp,
+            workflow_run_id: workflowRunId,
+            type: matchingToolMessage ? AgentMessageType.THOUGHT : AgentMessageType.ANSWER,
+            message: text,
+            workstream_id: data.workstreamId,
+            details: {
+                activity_id: data.activityId,
+                display_role: matchingToolMessage ? "tool_preamble" : undefined,
+                source: "streaming_summary",
+                streamed: true,
+                streaming_id: streamingId,
+                tools: matchingToolMessage?.details?.tool ? [matchingToolMessage.details.tool] : undefined,
+            },
+        });
+    });
+
+    if (streamingMessages.length === 0) return messages;
+
+    return [...messages, ...streamingMessages].sort(
+        (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp),
+    );
+}
+
+export function getSummaryConversationLatestTimestamp(
+    items: SummaryConversationItem[],
+    fallbackTimestamp: number | string,
+): number | string {
+    const latestItem = items[items.length - 1];
+    if (!latestItem) return fallbackTimestamp;
+    if (latestItem.type === "work") return latestItem.endTimestamp ?? latestItem.startTimestamp;
+    return latestItem.message.timestamp ?? fallbackTimestamp;
+}
+
+export function getSummaryActivityAnchorTimestamp(
+    items: SummaryConversationItem[],
+    messages: AgentMessage[],
+    fallbackTimestamp: number | string,
+): number | string {
+    const latestItem = items[items.length - 1];
+    if (latestItem) {
+        return latestItem.type === "work"
+            ? latestItem.endTimestamp ?? latestItem.startTimestamp
+            : latestItem.message.timestamp ?? fallbackTimestamp;
+    }
+
+    const earliestMessage = messages.reduce<{ timestamp?: number | string; ms: number }>(
+        (earliest, message) => {
+            const ms = getTimestampMs(message.timestamp);
+            if (!Number.isFinite(ms) || ms >= earliest.ms) return earliest;
+            return { timestamp: message.timestamp, ms };
+        },
+        { ms: Number.POSITIVE_INFINITY },
+    );
+
+    return earliestMessage.timestamp ?? fallbackTimestamp;
+}
+
+export function shouldShowSummaryActivityFallback(
+    items: SummaryConversationItem[],
+    isAgentWorking: boolean,
+    hasIncompleteStreaming: boolean,
+): boolean {
+    if (!isAgentWorking || hasIncompleteStreaming) return false;
+    if (items.some((item) => item.type === "work" && item.isActive)) return false;
+
+    const latestItem = items[items.length - 1];
+    if (!latestItem) return true;
+    if (latestItem.type === "work") return true;
+
+    // A user/request message means the client is waiting for the first
+    // persisted activity. Assistant or terminal messages mean the user-visible
+    // result already arrived; a delayed idle marker should not flash activity.
+    return latestItem.message.type === AgentMessageType.QUESTION;
 }
