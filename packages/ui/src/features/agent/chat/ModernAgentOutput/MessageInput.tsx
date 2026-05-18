@@ -382,6 +382,7 @@ export default function MessageInput({
                                     {onRemoveFile && (
                                         <Button
                                             variant="unstyled"
+                                            aria-label={`Remove ${file.name}`}
                                             onClick={() => onRemoveFile(file.id)}
                                             className="ml-1 p-0.5 hover:bg-success/20 rounded"
                                         >
@@ -421,6 +422,7 @@ export default function MessageInput({
                                 {onRemoveDocument && (
                                     <Button
                                         variant="unstyled"
+                                        aria-label={`Remove ${doc.name}`}
                                         onClick={() => onRemoveDocument(doc.id)}
                                         className="ml-1 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded"
                                     >

@@ -68,7 +68,15 @@ function ParentItem({ property, readonly }: ParentItemProps) {
     return (
         <li>
             <div className='flex items-center w-full'>
-                <Button variant="ghost" size="icon" onClick={() => setOpen(!isOpen)}><Icon className="size-4" /></Button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setOpen(!isOpen)}
+                    aria-label={isOpen ? `Collapse ${property.name}` : `Expand ${property.name}`}
+                    aria-expanded={isOpen}
+                >
+                    <Icon className="size-4" />
+                </Button>
                 <div className='flex-1'><PropertyTitleBar property={property} readonly={readonly} /></div>
             </div>
             {

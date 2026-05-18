@@ -319,6 +319,8 @@ function ImageTypeButton({ type, currentType, onClick, icon, tooltip }: ImageTyp
         <VTooltip description={tooltip} placement="bottom" size="xs">
             <Button
                 variant="unstyled"
+                aria-label={tooltip}
+                aria-pressed={isSelected}
                 className={clsx(
                     "p-1 rounded cursor-pointer transition-colors",
                     isSelected
@@ -348,6 +350,7 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
             <VTooltip description={t('pdf.zoomOut')} placement="bottom" size="xs">
                 <Button
                     variant="unstyled"
+                    aria-label={t('pdf.zoomOut')}
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
                         canZoomOut
@@ -366,6 +369,7 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
             <VTooltip description={t('pdf.zoomIn')} placement="bottom" size="xs">
                 <Button
                     variant="unstyled"
+                    aria-label={t('pdf.zoomIn')}
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
                         canZoomIn
@@ -381,6 +385,7 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
             <VTooltip description={t('pdf.fitToWidth')} placement="bottom" size="xs">
                 <Button
                     variant="unstyled"
+                    aria-label={t('pdf.fitToWidth')}
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
                         zoom !== DEFAULT_ZOOM
