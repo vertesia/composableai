@@ -132,7 +132,7 @@ publish_to_verdaccio() {
   while IFS= read -r pkg_dir; do
     pkg_name=$(basename "$pkg_dir")
     cd "$pkg_dir"
-    pkg_version=$(pnpm pkg get version | tr -d '"')
+    pkg_version=$(npm pkg get version | tr -d '"')
     echo "  Publishing @vertesia/${pkg_name}@${pkg_version}..."
     pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" > /dev/null 2>&1
     count=$((count + 1))
