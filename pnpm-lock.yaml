@@ -32,6 +32,7 @@ overrides:
   lodash-es@<4.18.1: ^4.18.1
   lodash@<4.18.1: ^4.18.1
   fast-xml-parser@<5.7.2: ^5.7.2
+  '@eslint/config-array': ^0.23.3
   minimatch@>=3.0.0 <4.0.0: legacy-v3
   minimatch@>=5.0.0 <6.0.0: legacy-v5
   minimatch@>=9.0.0 <10.0.0: legacy-v9
@@ -10312,7 +10313,7 @@ snapshots:
   '@turbo/windows-64@2.9.14':
     optional: true
 
-  '@turbo/windows-arm64@2.9.6':
+  '@turbo/windows-arm64@2.9.14':
     optional: true
 
   '@types/accepts@1.3.7':
@@ -13747,7 +13748,7 @@ snapshots:
     dependencies:
       '@swc/core': 1.15.21
       '@swc/counter': 0.1.3
-      webpack: 5.105.2(@swc/core@1.15.21(@swc/helpers@0.5.18))
+      webpack: 5.105.2(@swc/core@1.15.21)
 
   symbol-tree@3.2.4: {}
 
@@ -13871,7 +13872,7 @@ snapshots:
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
     optionalDependencies:
-      '@swc/core': 1.15.21(@swc/helpers@0.5.18)
+      '@swc/core': 1.15.21
 
   tslib@2.8.1: {}
 
@@ -13886,12 +13887,12 @@ snapshots:
 
   turbo@2.9.14:
     optionalDependencies:
-      '@turbo/darwin-64': 2.9.6
-      '@turbo/darwin-arm64': 2.9.6
-      '@turbo/linux-64': 2.9.6
-      '@turbo/linux-arm64': 2.9.6
-      '@turbo/windows-64': 2.9.6
-      '@turbo/windows-arm64': 2.9.6
+      '@turbo/darwin-64': 2.9.14
+      '@turbo/darwin-arm64': 2.9.14
+      '@turbo/linux-64': 2.9.14
+      '@turbo/linux-arm64': 2.9.14
+      '@turbo/windows-64': 2.9.14
+      '@turbo/windows-arm64': 2.9.14
 
   type-fest@4.41.0: {}
 
