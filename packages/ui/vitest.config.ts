@@ -1,13 +1,10 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
 
-// Map @vertesia/ui/* to source so tests don't go through the built lib (which
-// resolves React via the consumer's node_modules and triggers "Invalid hook
-// call" because the test process already has its own React copy). Mirrors
-// the `paths` field in tsconfig.json. Explicit file extensions so the alias
-// resolves to the same canonical URL as a sibling relative import would —
-// otherwise Vite caches them as two separate modules with separate React
-// contexts.
+// Map @vertesia/ui/* subpaths to source so tests stay in the same React
+// module graph as the components they exercise (going through the built
+// lib/ would import React from a different node_modules and trigger
+// "Invalid hook call" detection).
 const SUBPATH_INDEX_FILES: Record<string, string> = {
     core: 'src/core/index.ts',
     shell: 'src/shell/index.tsx',
