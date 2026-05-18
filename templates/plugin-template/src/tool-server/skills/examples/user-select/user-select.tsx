@@ -139,11 +139,16 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
                     const isSelected = selected.has(option.value);
 
                     return (
-                        <div
+                        <button
+                            type="button"
                             key={option.value}
                             onClick={() => handleOptionClick(option.value)}
+                            disabled={submitted}
+                            aria-pressed={isMultiple ? isSelected : undefined}
+                            role={isMultiple ? undefined : 'radio'}
+                            aria-checked={isMultiple ? undefined : isSelected}
                             className={`
-                                relative border rounded-lg p-3 transition-all
+                                relative border rounded-lg p-3 transition-all w-full text-left bg-transparent
                                 ${submitted
                                     ? 'cursor-default'
                                     : 'cursor-pointer hover:border-mixer-10 hover:bg-mixer-2'
@@ -183,7 +188,7 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
                                     {option.text}
                                 </span>
                             </div>
-                        </div>
+                        </button>
                     );
                 })}
             </div>

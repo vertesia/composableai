@@ -92,7 +92,20 @@ export async function compileWidgets(
                 inlineDynamicImports: true
             },
             external,
-            plugins
+            plugins,
+            // Suppress noisy but benign upstream-library warnings:
+            // - MODULE_LEVEL_DIRECTIVE: "use client" directives shipped by
+            //   framer-motion, Radix UI, cmdk, etc. for Next.js RSC support.
+            //   Rollup can't process them and safely ignores them.
+            // - THIS_IS_UNDEFINED: top-level `this` rewrites in some CJS-style
+            //   modules (react-calendar). Rollup rewrites to `undefined` per
+            //   the ES module spec; behavior is unchanged.
+            // Real warnings (unresolved deps, circular imports, etc.) still surface.
+            onwarn(warning, defaultHandler) {
+                if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+                if (warning.code === 'THIS_IS_UNDEFINED') return;
+                defaultHandler(warning);
+            }
         };
 
         const bundle = await rollup(rollupConfig);
