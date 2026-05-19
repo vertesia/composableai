@@ -76,9 +76,12 @@ export default class SecretsApi extends ApiTopic {
      * Purpose-keyed metadata read. Returns whether a credential is set
      * for the given purpose, never the plaintext. UI status checks use
      * this to render "configured / not configured" badges.
+     *
+     * Route is `/by-purpose/:purpose` (not `/:purpose`) — top-level
+     * `/:secretId` is reserved for `SecretRecord` ObjectId lookups.
      */
     metadata(purpose: string): Promise<SecretMetadataResponse> {
-        return this.get(`/${encodeURIComponent(purpose)}`);
+        return this.get(`/by-purpose/${encodeURIComponent(purpose)}`);
     }
 
     /**
@@ -88,7 +91,7 @@ export default class SecretsApi extends ApiTopic {
      * activity's process memory.
      */
     access(purpose: string): Promise<SecretAccessResponse> {
-        return this.post(`/${encodeURIComponent(purpose)}/access`, { payload: {} });
+        return this.post(`/by-purpose/${encodeURIComponent(purpose)}/access`, { payload: {} });
     }
 }
 
