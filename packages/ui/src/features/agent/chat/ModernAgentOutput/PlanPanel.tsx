@@ -1,6 +1,6 @@
 import { Plan } from "@vertesia/common";
 import { AlertCircle, CheckCircle, Circle, Clock } from "lucide-react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface PlanPanelProps {
     plan: Plan;
@@ -45,12 +45,12 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
 
                         return (
                             <div key={index} className="flex items-start">
-                                <div className={`mr-1.5 mt-0.5 ${statusColor}`}>
+                                <div className={`me-1.5 mt-0.5 ${statusColor}`}>
                                     <StatusIcon className="h-3.5 w-3.5" />
                                 </div>
                                 <div className="text-xs">
                                     <span className="text-gray-700 dark:text-gray-300">{taskGoal}</span>
-                                    <span className="ml-1 bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-[10px] font-mono">
+                                    <span className="ms-1 bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-[10px] font-mono">
                                         {taskId}
                                     </span>
                                 </div>
@@ -60,7 +60,7 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
                 </div>
             ) : (
                 <div className="text-xs text-gray-500 dark:text-gray-400 italic flex items-center">
-                    <AlertCircle className="h-3.5 w-3.5 mr-1.5 text-amber-500" />
+                    <AlertCircle className="h-3.5 w-3.5 me-1.5 text-amber-500" />
                     {t('agent.noPlanDetected')}
                 </div>
             )}
@@ -106,13 +106,13 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
 
                                 return (
                                     <div key={id} className="flex items-center">
-                                        <div className={`mr-1.5 ${statusColor}`}>
+                                        <div className={`me-1.5 ${statusColor}`}>
                                             <StatusIcon className="h-3 w-3" />
                                         </div>
                                         <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">
                                             {displayId}
                                         </span>
-                                        <span className="text-[10px] text-gray-500 dark:text-gray-500 ml-1">
+                                        <span className="text-[10px] text-gray-500 dark:text-gray-500 ms-1">
                                             {statusText}
                                         </span>
                                     </div>

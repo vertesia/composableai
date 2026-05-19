@@ -283,7 +283,7 @@ export function ConversationsView() {
                             onClick={() => refetch()}
                             isDisabled={isLoading}
                             alt={t('conversations.refresh')}
-                            className="ml-auto"
+                            className="ms-auto"
                         >
                             <RefreshCw />
                         </Button>

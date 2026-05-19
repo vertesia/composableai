@@ -64,15 +64,15 @@ export function DocumentInput({ object }: DocumentInputProps) {
     return (
         <div>
             <div className="relative">
-                <input value={actualValue} onChange={_onChange} className={clsx(Styles.INPUT, "pr-10 w-full")} />
+                <input value={actualValue} onChange={_onChange} className={clsx(Styles.INPUT, "pe-10 w-full")} />
                 {doc &&
-                    <div className="absolute inset-y-0 right-10 flex items-center justify-center ">
+                    <div className="absolute inset-y-0 end-10 flex items-center justify-center ">
                         <Button onClick={clearValue} variant='unstyled' className='hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-600'>
                             <X className="size-5" />
                         </Button>
                     </div>
                 }
-                <div className="absolute inset-y-0 right-0 flex items-center justify-center">
+                <div className="absolute inset-y-0 end-0 flex items-center justify-center">
                     <Button onClick={on} variant='unstyled' className='hover:bg-gray-100 dark:hover:bg-gray-600'>
                         <ChevronsUpDown className="size-5" />
                     </Button>

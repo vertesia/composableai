@@ -12,7 +12,7 @@ import TextFilter from "./filter/TextFilter";
 import DateFilter from "./filter/dateFilter";
 import SelectFilter from "./filter/SelectFilter";
 import StringListFilter from "./filter/StringListFilter";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 const FilterContext = React.createContext<{
   filters: Filter[];

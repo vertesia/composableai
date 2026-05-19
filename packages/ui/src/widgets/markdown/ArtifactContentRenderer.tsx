@@ -154,7 +154,7 @@ function TableRenderer({ content }: { content: unknown }): ReactElement {
                 <thead>
                     <tr className="border-b">
                         {headers.map((h, i) => (
-                            <th key={i} className="px-3 py-2 text-left font-medium text-muted">
+                            <th key={i} className="px-3 py-2 text-start font-medium text-muted">
                                 {h}
                             </th>
                         ))}

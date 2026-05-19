@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
 import { AnimateChangeInHeight } from "../animateChangeInHeight";
 import { FilterGroupOption, FilterOption } from "../types";
 import { DynamicLabel } from "../DynamicLabel";
-import { useUITranslation } from '../../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export const SelectionCombobox = ({
     filterType,

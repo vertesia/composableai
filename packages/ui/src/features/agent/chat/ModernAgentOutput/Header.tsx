@@ -2,7 +2,7 @@ import { AgentRun } from "@vertesia/common";
 import { Button, Dropdown, MenuGroup, MenuItem, cn, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, GitFork, InfoIcon, MoreVertical, RefreshCcw, XIcon } from "lucide-react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
 import { type AgentConversationViewMode } from "./AllMessagesMixed";
 import { getConversationUrl } from "./utils";
@@ -71,7 +71,7 @@ export default function Header({
                         <Bot className="size-5 text-muted" />
                         <span className="font-medium">{title}</span>
                     </div>
-                    <span className="text-xs text-muted ml-1 flex items-center gap-1.5">
+                    <span className="text-xs text-muted ms-1 flex items-center gap-1.5">
                         (Agent Run ID: {agentRunId})
                         {/* Streaming chunk indicator - gray when idle, purple when receiving */}
                         <span className={cn(
@@ -82,7 +82,7 @@ export default function Header({
                         )} />
                     </span>
                 </div>
-                <div className="flex justify-end items-center space-x-2 ml-auto">
+                <div className="flex justify-end items-center space-x-2 ms-auto">
                     {/* View Mode Toggle */}
                     <div className="flex items-center space-x-1 bg-muted rounded p-0.5 mt-2 lg:mt-0">
                         <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" onClick={() => onViewModeChange("stacked")}>
@@ -97,7 +97,7 @@ export default function Header({
                         <div className="relative">
                             {/* Notification badge when plan is available but hidden */}
                             {hasPlan && !showPlanPanel && (
-                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border border-border z-10"></span>
+                                <span className="absolute -top-1 -end-1 w-2.5 h-2.5 bg-primary rounded-full border border-border z-10"></span>
                             )}
                             <Button
                                 size="sm"
@@ -106,7 +106,7 @@ export default function Header({
                                 className="transition-all duration-200 rounded-md"
                                 title={t('agent.toggleRightSidebar')}
                             >
-                                <ClipboardList className="size-4 mr-1.5" />
+                                <ClipboardList className="size-4 me-1.5" />
                                 <span className="font-medium text-xs">{showPlanPanel ? t('agent.hideSidebar') : t('agent.showSidebar')}</span>
                             </Button>
                         </div>
@@ -120,7 +120,7 @@ export default function Header({
                             className="transition-all duration-200 rounded-md"
                             title={t('agent.continueConversation')}
                         >
-                            <RefreshCcw className="size-4 mr-1.5" />
+                            <RefreshCcw className="size-4 me-1.5" />
                             <span className="font-medium text-xs">{t('agent.continueConversation')}</span>
                         </Button>
                     )}

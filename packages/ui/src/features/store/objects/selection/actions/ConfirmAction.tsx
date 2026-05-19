@@ -1,6 +1,6 @@
 import { ConfirmModal } from "@vertesia/ui/core";
 import { useCallback, useState } from "react";
-import { useUITranslation } from '../../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { ObjectsActionCallback, useObjectsActionCallback } from '../ObjectsActionHooks';
 import { ObjectsActionParams, ObjectsActionSpec } from "../ObjectsActionSpec";
 

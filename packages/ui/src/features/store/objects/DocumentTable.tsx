@@ -1,6 +1,6 @@
 import { ContentObjectItem } from "@vertesia/common";
 import { Spinner, useToast } from "@vertesia/ui/core";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { DropZone } from '@vertesia/ui/widgets';
 import clsx from "clsx";
 import { ChangeEvent, useMemo, useState } from "react";

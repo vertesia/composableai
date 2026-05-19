@@ -100,7 +100,7 @@ export function FormItem({
         <div className={clsx("flex w-full space-y-1", className, direction === "row" ? "flex-row justify-between items-center gap-2" : direction === "row-reverse" ? "flex-row-reverse justify-between items-center gap-2" : "flex-col")}>
             <div className={clsx('flex items-center gap-1 mb-0', fullWidthLabel && 'w-full')}>
                 <label htmlFor={labelHtmlFor} className={`text-sm font-medium mb-1 ${disabled ? "text-muted" : ""} ${fullWidthLabel && "flex-1"}`}>
-                    {label}{required ? <span className='text-destructive -mt-4 ml-1'>*</span> : ""}
+                    {label}{required ? <span className='text-destructive -mt-4 ms-1'>*</span> : ""}
                 </label>
                 {
                     description &&

@@ -4,7 +4,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { ContentObjectTypeItem } from "@vertesia/common";
 import { Table, TBody, THead } from "@vertesia/ui/core";
 import { useNavigate } from "@vertesia/ui/router";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 dayjs.extend(relativeTime);
 

@@ -6,7 +6,7 @@ import { useWatchSearchResult } from "./search/ObjectTypeSearchContext";
 import { EmptyCollection, ErrorBox, Input, SelectBox, useDebounce, useIntersectionObserver, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useTypeRegistry } from "./TypeRegistryProvider.js";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 import { CreateOrUpdateTypeModal, CreateOrUpdateTypePayload } from "./CreateOrUpdateTypeModal";
 

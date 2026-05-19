@@ -5,7 +5,7 @@ import { useUserSession } from "@vertesia/ui/session";
 import { MonacoEditor, EditorApi, GeneratedForm, ManagedObject, Node } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { useContext, useMemo, useRef, useState } from "react";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { SearchContext } from "../objects/search/DocumentSearchContext";
 import { SelectContentType, stringifyTableLayout } from "../types";
 

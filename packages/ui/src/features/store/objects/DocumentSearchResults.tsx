@@ -1,5 +1,5 @@
 import { ColumnLayout, ComplexSearchQuery, ContentObject, ContentObjectItem } from '@vertesia/common';
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import {
     Filter as BaseFilter,
     Button, Divider, ErrorBox,
