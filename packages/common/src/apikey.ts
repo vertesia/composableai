@@ -79,6 +79,17 @@ export interface AuthTokenPayload {
     project_roles?: ProjectRoles[];
 
     /**
+     * @deprecated Legacy field. The runtime no longer reads it — visibility is governed by
+     * {@link Denials}. Kept (and emitted) temporarily so older studio-server / zeno-server /
+     * zeno-worker builds that still iterate `principal.apps` continue working during the
+     * preview-sync window. Removed once preview is aligned with main. See
+     * `apps/token-server/src/tokens/legacy-apps-backcompat.ts`.
+     *
+     * LEGACY-APPS-BACKCOMPAT — remove once preview has the denials-aware code.
+     */
+    apps?: string[];
+
+    /**
      * The user ID (if any) attached to the token.
      * This is set when the token is a user token or an agent token running as a user.
      * Not set for impersonating tokens like project tokens.
