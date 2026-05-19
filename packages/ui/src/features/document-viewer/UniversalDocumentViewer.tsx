@@ -379,7 +379,7 @@ export function UniversalDocumentViewer({
     return (
         <div className={cn('flex h-full min-h-0 flex-col overflow-hidden', className)}>
             {showHeader && (
-                <div className="flex min-h-10 items-center justify-between gap-3 border-b py-2 pl-3 pr-16">
+                <div className="flex min-h-10 items-center justify-between gap-3 border-b py-2 ps-3 pe-16">
                     <div className="min-w-0">
                         <div className="truncate text-sm font-medium" title={fileName}>{fileName}</div>
                         {context.contentType && (

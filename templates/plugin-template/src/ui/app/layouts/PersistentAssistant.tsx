@@ -102,7 +102,7 @@ export function PersistentAssistant({
                     variant="outline"
                     size="sm"
                     onClick={() => setIsOpen(true)}
-                    className="fixed right-4 bottom-5 z-40 gap-2 shadow-md"
+                    className="fixed end-4 bottom-5 z-40 gap-2 shadow-md"
                     alt={t("nav.openAssistant")}
                 >
                     <Bot className="size-4" />

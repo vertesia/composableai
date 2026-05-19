@@ -79,14 +79,14 @@ function TreeNode({ node, depth, runId, onPreview, onDownload, downloadingPath }
         >
             <button
                 type="button"
-                className="flex min-w-0 flex-1 items-center gap-1.5 py-1 text-left"
+                className="flex min-w-0 flex-1 items-center gap-1.5 py-1 text-start"
                 onClick={() => onPreview(node.path)}
             >
                 <span className="size-3.5 shrink-0" />
                 <FileIcon className="size-4 shrink-0 text-muted" />
                 <span className="truncate">{node.name}</span>
             </button>
-            <div className="flex shrink-0 items-center pr-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+            <div className="flex shrink-0 items-center pe-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                 <Button
                     variant="ghost"
                     size="xs"

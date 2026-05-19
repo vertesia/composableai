@@ -37,7 +37,7 @@ export function CommandPaletteTrigger({ onOpen }: { onOpen: () => void }) {
             className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-xs text-muted hover:bg-muted transition-colors min-w-[220px]"
         >
             <Search className="size-3.5" />
-            <span className="flex-1 text-left">{t("nav.commandPalettePlaceholder")}</span>
+            <span className="flex-1 text-start">{t("nav.commandPalettePlaceholder")}</span>
             <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono">
                 {shortcut}
             </kbd>
@@ -145,13 +145,13 @@ export function CommandPalette() {
                                         type="button"
                                         onMouseEnter={() => setActiveIndex(index)}
                                         onClick={() => choose(item)}
-                                        className={`w-full flex items-center gap-3 px-4 py-2 text-left text-sm transition-colors ${
+                                        className={`w-full flex items-center gap-3 px-4 py-2 text-start text-sm transition-colors ${
                                             isActive ? "bg-muted" : "hover:bg-muted/60"
                                         }`}
                                     >
                                         {Icon && <Icon className="size-4 text-muted" />}
                                         <span>{item.label}</span>
-                                        <span className="ml-auto text-xs text-muted font-mono">{item.path}</span>
+                                        <span className="ms-auto text-xs text-muted font-mono">{item.path}</span>
                                     </button>
                                 </li>
                             );
