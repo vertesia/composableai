@@ -973,9 +973,6 @@ importers:
       '@vertesia/common':
         specifier: workspace:*
         version: link:../../packages/common
-      '@vertesia/tools-admin-ui':
-        specifier: workspace:*
-        version: link:../../packages/tools-admin-ui
       '@vertesia/tools-sdk':
         specifier: workspace:*
         version: link:../../packages/tools-sdk
