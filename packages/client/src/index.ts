@@ -10,6 +10,8 @@ export { default as OAuthGrantsApi } from './OAuthGrantsApi.js';
 export { default as OAuthProvidersApi } from './OAuthProvidersApi.js';
 export { default as OAuthServerApi } from './OAuthServerApi.js';
 export { default as RemoteMcpConnectionsApi } from './RemoteMcpConnectionsApi.js';
+export { default as SecretsApi } from './SecretsApi.js';
+export type { SecretAccessResponse, SecretMetadataResponse } from './SecretsApi.js';
 export type { AsyncExecutionResult };
 /** @deprecated Use `ComputedFacetResponse` from `@vertesia/common`. */
 export type ComputeInteractionFacetsResponse = ComputedFacetResponse;

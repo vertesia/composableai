@@ -19,6 +19,7 @@ import PromptsApi from "./PromptsApi.js";
 import { RefsApi } from "./RefsApi.js";
 import RemoteMcpConnectionsApi from "./RemoteMcpConnectionsApi.js";
 import { RunsApi } from "./RunsApi.js";
+import SecretsApi from "./SecretsApi.js";
 import SkillsApi from "./SkillsApi.js";
 import { ZenoClient } from "./store/client.js";
 import { VERSION, VERSION_HEADER } from "./store/version.js";
@@ -367,6 +368,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     refs = new RefsApi(this);
     commands = new CommandsApi(this);
     apps = new AppsApi(this);
+    secrets = new SecretsApi(this);
 }
 
 function isApiKey(apiKey: string) {

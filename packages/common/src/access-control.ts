@@ -53,6 +53,22 @@ export enum Permission {
 
     /** whether the user has access to Sutdio App. */
     studio_access = "studio:access",
+
+    /**
+     * Grants access to `POST /api/v1/secrets/:purpose/access` — the
+     * only path that returns DECRYPTED project secret material
+     * (integration passwords, API keys, …) to a caller. Required by
+     * workflow activities that need live credentials for an external
+     * system (e.g. the migration worker pulling CMIS creds from the
+     * EncryptedSecret store).
+     *
+     * Phase 1: granted to the Developer role by inheritance (Developer
+     * starts from Object.values(Permission) and deletes a few specific
+     * permissions, of which this is NOT one). Future hardening should
+     * narrow to a dedicated agent-only role or run-scoped tokens
+     * minted by STS with this permission attached per workflow run.
+     */
+    secret_accessor = "secret:access",
 }
 
 export enum AccessControlResourceType {
