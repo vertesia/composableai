@@ -21,8 +21,20 @@ export enum ProjectRoles {
     reader = "reader", // can only read (browse)
     billing = "billing", // can only manage billings
     member = "member", // can only access, but no specific permissions
-    app_member = "app_member", // used to mark an user have access to an application. does not provide any permission on its own
+    /**
+     * @deprecated Companion to {@link AccessControlResourceType.app}. Was used on
+     * `resource_type: 'application'` ACEs to mark "user X has access to app Y".
+     * The JWT no longer carries an `apps[]` field and visibility is governed by
+     * `app:` denial patterns instead. Kept only so existing legacy ACEs can be
+     * read/deleted from the IAM UI. Do NOT assign this role to new ACEs.
+     */
+    app_member = "app_member",
     content_superadmin = "content_superadmin", // can see all content objects and collections
+    /**
+     * Deny marker — not a real role. Used only with resource_type = 'contribution_set'
+     * to express pattern-based denial of platform contributions.
+     */
+    none = "none",
 }
 
 export function isRoleIncludedIn(role: string, includingRole: string) {

@@ -110,17 +110,26 @@ export default class AppsApi extends ApiTopic {
      * @param param0 
      * @returns 
      */
-    getAppInstallationProjects(app: RequireAtLeastOne<{ id?: string, name?: string }, 'id' | 'name'>): Promise<ProjectRef[]> {
+    getAppInstallationProjects(
+        app: RequireAtLeastOne<{ id?: string, name?: string }, 'id' | 'name'>,
+        options?: {
+            /**
+             * When true (default), the UI denial check is applied — projects where
+             * the app's UI plugin is denied are excluded. Set to false to only
+             * filter by whole-app (`app:`) denials.
+             */
+            includeUiDenial?: boolean;
+        },
+    ): Promise<ProjectRef[]> {
         if (!app.id && !app.name) {
             throw new Error("Invalid arguments: appId or appName must be specified");
         }
-        const query = app.id ? {
-            id: app.id
-        } : {
-            name: app.name
+        const query: Record<string, string> = app.id ? { id: app.id } : { name: app.name! };
+        if (options?.includeUiDenial === false) {
+            query.include_ui_denial = 'false';
         }
         return this.get("/installations/projects", {
-            query
+            query,
         });
     }
 

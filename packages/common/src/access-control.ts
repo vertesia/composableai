@@ -60,9 +60,22 @@ export enum AccessControlResourceType {
     environment = "environment",
     account = "account",
     interaction = "interaction",
+    /**
+     * @deprecated Legacy positive-grant for "user X has access to app Y". The JWT
+     * no longer carries an `apps[]` field; visibility is governed by `app:`
+     * denial patterns in {@link Denials}. Do NOT create new ACEs of this type —
+     * use a denial rule (`resource_type: 'contribution_set'` with role `none`)
+     * instead. Kept so existing rows can be listed and deleted from the IAM UI.
+     */
     app = "application",
     /** Dynamic resource matching by content properties at query time. */
     content_set = "content_set",
+    /**
+     * Pattern-based denial of platform contributions (UI plugins, tools, skills).
+     * Only valid with role = 'none'. Patterns live in `conditions.resource_props.patterns`
+     * as `<kind>:<glob>` strings (e.g. "ui:studio", "tool:create_ace*").
+     */
+    contribution_set = "contribution_set",
 }
 
 export enum AccessControlPrincipalType {

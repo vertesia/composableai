@@ -1,4 +1,5 @@
 import { PropertyConditions } from "./access-control.js";
+import type { Denials } from "./denials.js";
 import { UserGroupRef } from "./group.js";
 import { ProjectRef, ProjectRoles } from "./project.js";
 import { AccountRef } from "./user.js";
@@ -78,9 +79,15 @@ export interface AuthTokenPayload {
     project_roles?: ProjectRoles[];
 
     /**
-     * The app names enabled for this token. Defaults to an empty array if no apps are enabled.
+     * @deprecated Legacy field. The runtime no longer reads it — visibility is governed by
+     * {@link Denials}. Kept (and emitted) temporarily so older studio-server / zeno-server /
+     * zeno-worker builds that still iterate `principal.apps` continue working during the
+     * preview-sync window. Removed once preview is aligned with main. See
+     * `apps/token-server/src/tokens/legacy-apps-backcompat.ts`.
+     *
+     * LEGACY-APPS-BACKCOMPAT — remove once preview has the denials-aware code.
      */
-    apps: string[];
+    apps?: string[];
 
     /**
      * The user ID (if any) attached to the token.
@@ -95,6 +102,10 @@ export interface AuthTokenPayload {
     /** Content security conditions keyed by permission (read/write/delete).
      *  Presence triggers restrict mode: project:* is dropped from security filters. */
     content_security?: ContentSecurity;
+
+    /** Pattern-based denials of platform contributions, grouped by kind.
+     *  Enforcers (UI shell, agent tool discovery) filter their visible items against this. */
+    denials?: Denials;
 
     /**
      * API endpoints information to be used with this token.

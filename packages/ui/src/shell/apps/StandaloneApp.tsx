@@ -1,5 +1,6 @@
 import { AppInstallationWithManifest, ProjectRef } from "@vertesia/common";
 import { Center, useFetch, SelectBox } from "@vertesia/ui/core";
+import { useDenialsMatcher } from "../../features/permissions/index.js";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from "@vertesia/ui/session";
 import { LockIcon } from "lucide-react";
 import { ComponentType, ReactNode, useEffect, useMemo, useState } from "react";
@@ -33,6 +34,7 @@ export function StandaloneApp({ name, AccessDenied = AccessDeniedMessage, childr
 }
 export function StandaloneAppImpl({ name, AccessDenied = AccessDeniedMessage, children }: StandaloneAppProps) {
     const { authToken, client } = useUserSession();
+    const denialsMatcher = useDenialsMatcher();
     const [installation, setInstallation] = useState<AppInstallationWithManifest | null>(null)
     const [state, setState] = useState<"loading" | "error" | "loaded">("loading");
 
@@ -40,7 +42,8 @@ export function StandaloneAppImpl({ name, AccessDenied = AccessDeniedMessage, ch
         if (!authToken) {
             setState("loading");
         } else {
-            const isAppVisible = authToken.apps.includes(name);
+            // Apps are visible by default; specific apps can be hidden per-user via the JWT's `denials.ui` patterns.
+            const isAppVisible = !denialsMatcher.isUiDenied(name);
             if (isAppVisible) {
                 client.apps.getAppInstallationByName(name).then(inst => {
                     if (!inst) {
@@ -55,7 +58,7 @@ export function StandaloneAppImpl({ name, AccessDenied = AccessDeniedMessage, ch
                 setState("error");
             }
         }
-    }, [name, authToken]);
+    }, [name, authToken, denialsMatcher]);
 
     if (state === "loading") {
         return null;
