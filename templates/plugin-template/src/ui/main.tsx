@@ -4,7 +4,6 @@ import { createRoot } from 'react-dom/client'
 import './i18n'; // register plugin-specific translations
 import './index.css'
 // initialize dev environment
-import { AdminApp } from '@vertesia/tools-admin-ui'
 import { RouterProvider, type Route } from '@vertesia/ui/router'
 import { App } from './app/App'
 import { setUsePluginAssets } from './assets'
@@ -17,17 +16,19 @@ setUsePluginAssets(false);
 
 const appName = import.meta.env.VITE_APP_NAME;
 
+function renderPluginApp() {
+    return (
+        <StandaloneApp name={appName} AccessDenied={PluginAccessDenied}>
+            <PluginLayout>
+                <App />
+            </PluginLayout>
+        </StandaloneApp>
+    );
+}
+
 const routes: Route[] = [
-    { path: "*", Component: () => <AdminApp /> },
-    {
-        path: "app/*", Component: () => (
-            <StandaloneApp name={appName} AccessDenied={PluginAccessDenied}>
-                <PluginLayout>
-                    <App />
-                </PluginLayout>
-            </StandaloneApp>
-        )
-    },
+    { path: "app/*", Component: renderPluginApp },
+    { path: "*", Component: renderPluginApp },
 ]
 
 createRoot(document.getElementById('root')!).render(

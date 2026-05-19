@@ -95,7 +95,7 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
     const base = command === 'build' ? '/app/' : '/';
 
     return {
-        base, // Dev serves the admin UI at /; Vercel serves built app assets from /app/.
+        base, // Dev serves the standalone app at /; Vercel serves built app assets from /app/.
         plugins: [
             tailwindcss(),
             react(),

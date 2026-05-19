@@ -55,7 +55,7 @@ pnpm start                 # Preview production build (build:server + vite previ
 | `src/tool-server/config.ts`   | Registers all collections — add new resources here   |
 | `src/tool-server/settings.ts` | Plugin settings JSON Schema                          |
 | `src/ui/plugin.tsx`           | Library entry for the Vertesia host app              |
-| `src/ui/main.tsx`             | Standalone dev entry (VertesiaShell + AdminApp)      |
+| `src/ui/main.tsx`             | Standalone dev entry (VertesiaShell + plugin app)    |
 | `src/ui/app/App.tsx`          | App root (NestedRouterProvider)                      |
 | `src/ui/app/routes.tsx`       | Route definitions                                    |
 | `src/ui/index.css`            | Tailwind CSS 4 entry with shared styles import       |

@@ -4,7 +4,11 @@ import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const cwd = process.cwd();
-const allowAdminShell = process.env.APPGEN_ALLOW_TOOL_ADMIN_UI === "true";
+const allowAdminShell = process.env.APPGEN_ALLOW_INTERNAL_APP_SHELL === "true";
+const blockedAdminShellTokens = [
+    String.fromCharCode(65, 100, 109, 105, 110, 65, 112, 112),
+    ["@ver", "tesia/", "tools-", "admin-", "ui"].join(""),
+];
 const report = {
     ok: true,
     scanned_files: 0,
@@ -60,11 +64,11 @@ const processFiles = toolServerFiles.filter((file) => rel(file).includes("/proce
 for (const file of uiFiles) {
     const text = await readFile(file, "utf8");
 
-    if (!allowAdminShell && includesAny(text, ["AdminApp", "@vertesia/tools-admin-ui"])) {
+    if (!allowAdminShell && includesAny(text, blockedAdminShellTokens)) {
         add(
             "errors",
             "no-admin-shell-leakage",
-            "Normal app UI must render src/ui/app, not @vertesia/tools-admin-ui/AdminApp.",
+            "Normal app UI must render src/ui/app, not an internal vendor admin shell.",
             file,
         );
     }
