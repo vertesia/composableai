@@ -16,13 +16,19 @@ function getRequestPayload<T>(c: Context): Promise<T | undefined> {
     return c.req.method === "POST" ? c.req.json<T>() : Promise.resolve(undefined);
 }
 
-type AppPackageBuilder = (pkg: AppPackage, config: ToolServerConfig, c: Context) => Promise<void>;
+export interface BuildAppPackageOptions {
+    scope?: AppPackageScope | AppPackageScope[] | string;
+    origin?: string;
+    toolUseContext?: ToolUseContext;
+}
+
+type AppPackageBuilder = (pkg: AppPackage, config: ToolServerConfig, options: BuildAppPackageOptions) => Promise<void>;
 
 const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
-    async tools(pkg: AppPackage, config: ToolServerConfig, c: Context) {
+    async tools(pkg: AppPackage, config: ToolServerConfig, options: BuildAppPackageOptions) {
         const { tools: toolCollections = [], skills: skillCollections = [] } = config;
 
-        const filterContext = await getRequestPayload<ToolUseContext>(c);
+        const filterContext = options.toolUseContext;
 
         // Aggregate all tools from all collections
         const allTools = toolCollections.flatMap(collection =>
@@ -119,10 +125,10 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
         }
         pkg.widgets = widgets;
     },
-    async ui(pkg: AppPackage, config: ToolServerConfig, c: Context) {
+    async ui(pkg: AppPackage, config: ToolServerConfig, options: BuildAppPackageOptions) {
         if (config.uiConfig) {
             pkg.ui = { ...config.uiConfig };
-            const origin = new URL(c.req.url).origin;
+            const origin = options.origin || "http://localhost";
             pkg.ui.src = new URL(pkg.ui.src, origin).toString();
             if (!pkg.ui.isolation) {
                 pkg.ui.isolation = "shadow";
@@ -146,56 +152,72 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
 }
 
 
-async function handlePackageRequest(c: Context, config: ToolServerConfig) {
-    const scope = c.req.query('scope') || 'all';
+function normalizeScopes(scope: BuildAppPackageOptions['scope']): Set<AppPackageScope> {
+    const values = Array.isArray(scope)
+        ? scope
+        : typeof scope === 'string'
+            ? scope.split(',')
+            : [scope || 'all'];
+    return new Set(values.filter(Boolean) as AppPackageScope[]);
+}
+
+export async function buildAppPackage(config: ToolServerConfig, options: BuildAppPackageOptions = {}): Promise<AppPackage> {
     const pkg: AppPackage = {};
 
-    const scopes = new Set<AppPackageScope>(scope.split(',') as AppPackageScope[]);
-    // TODO build pkg based on the query param scope
+    const scopes = normalizeScopes(options.scope);
     if (scopes.has('all')) {
-        await builders.tools(pkg, config, c);
-        await builders.interactions(pkg, config, c);
-        await builders.types(pkg, config, c);
-        await builders.processes(pkg, config, c);
-        await builders.templates(pkg, config, c);
-        await builders.dashboards(pkg, config, c);
-        await builders.widgets(pkg, config, c);
-        await builders.ui(pkg, config, c);
-        await builders.settings(pkg, config, c);
-        await builders.activities(pkg, config, c);
+        await builders.tools(pkg, config, options);
+        await builders.interactions(pkg, config, options);
+        await builders.types(pkg, config, options);
+        await builders.processes(pkg, config, options);
+        await builders.templates(pkg, config, options);
+        await builders.dashboards(pkg, config, options);
+        await builders.widgets(pkg, config, options);
+        await builders.ui(pkg, config, options);
+        await builders.settings(pkg, config, options);
+        await builders.activities(pkg, config, options);
     } else {
         if (scopes.has('tools')) {
-            await builders.tools(pkg, config, c);
+            await builders.tools(pkg, config, options);
         }
         if (scopes.has('interactions')) {
-            await builders.interactions(pkg, config, c);
+            await builders.interactions(pkg, config, options);
         }
         if (scopes.has('types')) {
-            await builders.types(pkg, config, c);
+            await builders.types(pkg, config, options);
         }
         if (scopes.has('processes')) {
-            await builders.processes(pkg, config, c);
+            await builders.processes(pkg, config, options);
         }
         if (scopes.has('templates')) {
-            await builders.templates(pkg, config, c);
+            await builders.templates(pkg, config, options);
         }
         if (scopes.has('dashboards')) {
-            await builders.dashboards(pkg, config, c);
+            await builders.dashboards(pkg, config, options);
         }
         if (scopes.has('widgets')) {
-            await builders.widgets(pkg, config, c);
+            await builders.widgets(pkg, config, options);
         }
         if (scopes.has('ui')) {
-            await builders.ui(pkg, config, c);
+            await builders.ui(pkg, config, options);
         }
         if (scopes.has('settings')) {
-            await builders.settings(pkg, config, c);
+            await builders.settings(pkg, config, options);
         }
         if (scopes.has('activities')) {
-            await builders.activities(pkg, config, c);
+            await builders.activities(pkg, config, options);
         }
     }
 
+    return pkg;
+}
+
+async function handlePackageRequest(c: Context, config: ToolServerConfig) {
+    const pkg = await buildAppPackage(config, {
+        scope: c.req.query('scope') || 'all',
+        origin: new URL(c.req.url).origin,
+        toolUseContext: await getRequestPayload<ToolUseContext>(c),
+    });
     return c.json(pkg);
 }
 
