@@ -1,8 +1,8 @@
 import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@vertesia/common";
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { cn } from "@vertesia/ui/core";
-import { useUITranslation } from '../../../../i18n/index.js';
-import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 export type AgentConversationViewMode = "stacked" | "sliding";
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from "./BatchProgressPanel";
@@ -112,7 +112,7 @@ class MessageErrorBoundary extends Component<
     render() {
         if (this.state.hasError) {
             return (
-                <div className="border-l-4 border-l-destructive bg-destructive/10 px-4 py-2 my-2 rounded-r">
+                <div className="border-s-4 border-s-destructive bg-destructive/10 px-4 py-2 my-2 rounded-e">
                     <p className="text-sm text-destructive font-medium">{i18nInstance.getFixedT(null, NAMESPACE)('agent.failedToRenderMessage')}</p>
                     <p className="text-xs text-muted mt-1 truncate">
                         {this.state.error?.message || 'Unknown error'}
@@ -683,7 +683,7 @@ function AllMessagesMixedComponent({
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && incompleteStreaming.length === 0 && (
-                                <div className={cn("flex items-center gap-2 pl-3 py-1.5 border-l-2 border-l-purple-500", workingIndicatorClassName)}>
+                                <div className={cn("flex items-center gap-2 ps-3 py-1.5 border-s-2 border-s-purple-500", workingIndicatorClassName)}>
                                     <PulsatingCircle size="sm" color="blue" />
                                     <span className="text-xs text-muted">{t('agent.working')}</span>
                                 </div>
@@ -798,7 +798,7 @@ function AllMessagesMixedComponent({
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && recentThinking.length === 0 && incompleteStreaming.length === 0 && (
-                                <div className={cn("flex items-center gap-2 pl-3 py-1.5 border-l-2 border-l-purple-500", workingIndicatorClassName)}>
+                                <div className={cn("flex items-center gap-2 ps-3 py-1.5 border-s-2 border-s-purple-500", workingIndicatorClassName)}>
                                     <PulsatingCircle size="sm" color="blue" />
                                     <span className="text-xs text-muted">{t('agent.working')}</span>
                                 </div>

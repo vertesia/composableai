@@ -129,7 +129,7 @@ function DataView<T>({ viewer: Viewer, value, onEdit, editOnClick, outlineOnHove
     return (
         <div tabIndex={0} onKeyUp={onKeyUp} onClick={onClick} className={clsx("flex justify-start items-center group", outlineOnHover ? VIEW_BOX_HOVER : VIEW_BOX, { 'cursor-pointer': editOnClick })}>
             <Viewer value={value} placeholder={placeholder} />
-            <div className='ml-auto flex space-x-2'>
+            <div className='ms-auto flex space-x-2'>
                 {
                     !readonly && onDelete &&
                     <Button variant="ghost" size="sm" className={btnStyle} onClick={onDelete}>

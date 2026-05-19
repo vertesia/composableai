@@ -16,7 +16,7 @@ export function HomePage() {
                 {t('nav.templateDescription')}
             </p>
             <Button variant="outline" onClick={() => navigate('/chat')}>
-                <Bot className="size-4 mr-2" />
+                <Bot className="size-4 me-2" />
                 {t('nav.tryAgentChat')}
             </Button>
         </div>

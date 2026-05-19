@@ -2,7 +2,7 @@ import { Permission, ProjectRoles } from "@vertesia/common"
 import { ErrorBox, useFetch } from "@vertesia/ui/core"
 import { UserSession, useUserSession } from "@vertesia/ui/session"
 import { createContext, useContext, useMemo } from "react"
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { isAnyOf } from "./helpers"
 
 type ListRolesResponse = {

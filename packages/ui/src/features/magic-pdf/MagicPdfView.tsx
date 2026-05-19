@@ -3,7 +3,7 @@ import { Button, ErrorBox, ResizableHandle, ResizablePanel, ResizablePanelGroup,
 import { useUserSession } from "@vertesia/ui/session";
 import { X } from "lucide-react";
 import { Component, ErrorInfo, ReactNode, useState } from "react";
-import { useUITranslation, i18nInstance, NAMESPACE } from '../../i18n/index.js';
+import { useUITranslation, i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { PdfPageSlider } from "../pdf-viewer/PdfPageSlider";
 import { AnnotatedImageSlider } from "./AnnotatedImageSlider";
 import { DownloadPopover } from "./DownloadPopover";

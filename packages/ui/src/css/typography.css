@@ -32,19 +32,19 @@
 }
 
 .vprose ul {
-    @apply my-3 pl-6 list-disc space-y-1;
+    @apply my-3 ps-6 list-disc space-y-1;
 }
 
 .vprose ol {
-    @apply my-3 pl-6 list-decimal space-y-1;
+    @apply my-3 ps-6 list-decimal space-y-1;
 }
 
 .vprose li {
-    @apply text-mixer-foreground/50 my-2 pl-1;
+    @apply text-mixer-foreground/50 my-2 ps-1;
 }
 
 .vprose blockquote {
-    @apply border-l-4 border-muted/30 dark:border-muted pl-4 italic text-muted my-3;
+    @apply border-s-4 border-muted/30 dark:border-muted ps-4 italic text-muted my-3;
 }
 
 .vprose hr {
@@ -68,7 +68,7 @@
 }
 
 .vprose th {
-    @apply border border-muted/30 bg-mixer-muted/50 px-4 py-2 text-left text-muted font-bold;
+    @apply border border-muted/30 bg-mixer-muted/50 px-4 py-2 text-start text-muted font-bold;
 }
 
 .vprose td {
@@ -84,5 +84,5 @@
 }
 
 .vprose .code-language-indicator {
-    @apply text-xs px-3 py-1 rounded-t-md font-mono border-t border-l border-r -mb-2;
+    @apply text-xs px-3 py-1 rounded-t-md font-mono border-t border-s border-e -mb-2;
 }

@@ -4,7 +4,7 @@ import { Env } from "@vertesia/ui/env"
 import { useLocation } from "@vertesia/ui/router"
 import { fetchComposableTokenFromFirebaseToken, fetchComposableTokenFromVertesiaToken, getCurrentVertesiaToken, useUserSession } from '@vertesia/ui/session'
 import { useState } from 'react'
-import { useUITranslation } from '../../i18n/index.js'
+import { useUITranslation } from '@vertesia/ui/i18n'
 
 interface ProfileData {
     profile?: string

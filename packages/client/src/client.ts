@@ -91,6 +91,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     oauthServer: OAuthServerApi;
     oauthProviders: OAuthProvidersApi;
     remoteMcpConnections: RemoteMcpConnectionsApi;
+    secrets: SecretsApi;
 
     /**
      * Create a client from the given token.
@@ -203,6 +204,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.oauthServer = new OAuthServerApi(this, this.tokenServerUrl);
         this.oauthProviders = new OAuthProvidersApi(this);
         this.remoteMcpConnections = new RemoteMcpConnectionsApi(this);
+        this.secrets = new SecretsApi(this);
     }
 
     withApiVersion(version: string | number | null) {
@@ -368,7 +370,6 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     refs = new RefsApi(this);
     commands = new CommandsApi(this);
     apps = new AppsApi(this);
-    secrets = new SecretsApi(this);
 }
 
 function isApiKey(apiKey: string) {

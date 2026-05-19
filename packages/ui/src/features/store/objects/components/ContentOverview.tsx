@@ -1,12 +1,12 @@
 import { memo, useEffect, useRef, useState, type RefObject } from "react";
 
 import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, MarkdownRenditionFormat, PDF_RENDITION_NAME, Permission, WorkflowExecutionStatus } from "@vertesia/common";
-import { Button, Dropdown, MenuItem, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
+import { Button, Dropdown, MenuItem, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useFetch, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
 import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from "lucide-react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { MagicPdfView } from "../../../magic-pdf";
 import { AudioPanel, ImagePanel, VideoPanel } from "../../../media-viewer";
 import { SimplePdfViewer } from "../../../pdf-viewer";
@@ -566,11 +566,16 @@ function TextActions({
     onToggleEdit,
     canEdit,
 }: TextActionsProps) {
-    const { client } = useUserSession();
+    const { client, project } = useUserSession();
     const toast = useToast();
     const { t } = useUITranslation();
     const content = object.content;
     const { renderDocument, isDownloading } = useDownloadFile({ client, toast });
+    const { data: fullProject } = useFetch(
+        () => project ? client.projects.retrieve(project.id) : Promise.resolve(undefined),
+        [project?.id]
+    );
+    const pdfTemplateObjectId = fullProject?.configuration?.pdf_template_object_id;
 
     const isMarkdown =
         content &&
@@ -580,7 +585,7 @@ function TextActions({
     // Get content processor type for file extension detection
     const contentProcessorType = getContentProcessorType(object);
 
-    const handleExportDocument = async (format: MarkdownRenditionFormat) => {
+    const handleExportDocument = async (format: MarkdownRenditionFormat, useDefaultTemplate?: boolean) => {
         // Prevent multiple concurrent exports
         if (isDownloading) return;
 
@@ -592,14 +597,20 @@ function TextActions({
             duration: 2000,
         });
 
+        // For branded exports, use the project-configured template if available
+        const templateObjectId = useDefaultTemplate !== false ? pdfTemplateObjectId : undefined;
+
         await renderDocument(object.id, {
             format,
             title: object.name || "document",
+            useDefaultTemplate,
+            templateObjectId,
         });
     };
 
     const handleExportDocx = () => handleExportDocument(MarkdownRenditionFormat.docx);
-    const handleExportPdf = () => handleExportDocument(MarkdownRenditionFormat.pdf);
+    const handleExportPdf = () => handleExportDocument(MarkdownRenditionFormat.pdf, false);
+    const handleExportBrandedPdf = () => handleExportDocument(MarkdownRenditionFormat.pdf);
 
     const handleDownloadText = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -654,35 +665,47 @@ function TextActions({
                             )}
                         </>
                     )}
-                    <Dropdown trigger={
-                        <Button variant="ghost" size="sm" disabled={!text} className="flex items-center gap-2" alt="download">
-                            <Download className="size-4" />
-                        </Button>}>
-                        {fullText && (
-                            <MenuItem onClick={handleDownloadText} isDisabled={isDownloading}>
-                                <div className="flex items-center gap-2">
-                                    {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
-                                    Download Text
-                                </div>
-                            </MenuItem>
-                        )}
-                        {isMarkdown && text && (
-                            <>
-                                <MenuItem onClick={handleExportDocx} isDisabled={isDownloading}>
+                    {isDownloading ? (
+                        <Button variant="ghost" size="sm" disabled className="flex items-center gap-2" alt="download">
+                            <Spinner size="sm" />
+                        </Button>
+                    ) : (
+                        <Dropdown trigger={
+                            <Button variant="ghost" size="sm" disabled={!text} className="flex items-center gap-2" alt="download">
+                                <Download className="size-4" />
+                            </Button>}>
+                            {fullText && (
+                                <MenuItem onClick={handleDownloadText}>
                                     <div className="flex items-center gap-2">
-                                        {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
-                                        Export as DOCX
+                                        <Download className="size-4" />
+                                        Download Text
                                     </div>
                                 </MenuItem>
-                                <MenuItem onClick={handleExportPdf} isDisabled={isDownloading}>
-                                    <div className="flex items-center gap-2">
-                                        {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
-                                        Export as PDF
-                                    </div>
-                                </MenuItem>
-                            </>
-                        )}
-                    </Dropdown>
+                            )}
+                            {isMarkdown && text && (
+                                <>
+                                    <MenuItem onClick={handleExportDocx}>
+                                        <div className="flex items-center gap-2">
+                                            <Download className="size-4" />
+                                            Export as DOCX
+                                        </div>
+                                    </MenuItem>
+                                    <MenuItem onClick={handleExportPdf}>
+                                        <div className="flex items-center gap-2">
+                                            <Download className="size-4" />
+                                            Export as PDF
+                                        </div>
+                                    </MenuItem>
+                                    <MenuItem onClick={handleExportBrandedPdf}>
+                                        <div className="flex items-center gap-2">
+                                            <Download className="size-4" />
+                                            Export as Branded PDF
+                                        </div>
+                                    </MenuItem>
+                                </>
+                            )}
+                        </Dropdown>
+                    )}
 
                 </div>
             </div>
@@ -717,7 +740,7 @@ const TextPanel = memo(({
         text ? (
             <>
                 {isTextCropped && (
-                    <div className="px-2 py-2 bg-attention/10 border-l-4 border-attention mx-2 mb-2 rounded">
+                    <div className="px-2 py-2 bg-attention/10 border-s-4 border-attention mx-2 mb-2 rounded">
                         <div className="flex items-center gap-2 text-attention">
                             <AlertTriangle className="size-4" />
                             <span className="text-sm font-semibold">{t('store.showingFirst128K')}</span>

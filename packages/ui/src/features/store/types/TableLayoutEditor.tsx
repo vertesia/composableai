@@ -3,7 +3,7 @@ import { ColumnLayout, ContentObjectType } from '@vertesia/common';
 import { Button, useToast, useTheme, Panel } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { MonacoEditor, EditorApi } from '@vertesia/ui/widgets';
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface TableLayoutEditorProps {
     objectType: ContentObjectType;

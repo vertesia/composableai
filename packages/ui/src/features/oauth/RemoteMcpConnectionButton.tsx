@@ -1,6 +1,6 @@
 import { useUserSession } from '@vertesia/ui/session';
 import { Button, Spinner } from '../../core/index.js';
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { CheckCircle2, ExternalLink, ShieldAlertIcon } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useOAuthPopup } from './useOAuthPopup.js';
@@ -242,7 +242,7 @@ export function RemoteMcpConnectionButton({
                         </>
                     ) : (
                         <>
-                            <ExternalLink className="size-3 mr-1" />
+                            <ExternalLink className="size-3 me-1" />
                             <span>{t('mcpOAuth.connect')}</span>
                         </>
                     )}
@@ -265,7 +265,7 @@ export function RemoteMcpConnectionButton({
                 </>
             ) : (
                 <>
-                    <ExternalLink className="size-4 mr-1" />
+                    <ExternalLink className="size-4 me-1" />
                     <span>{t('mcpOAuth.connect')}</span>
                 </>
             )}

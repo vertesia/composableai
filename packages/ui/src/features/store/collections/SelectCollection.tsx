@@ -8,7 +8,7 @@ import {
     Command, CommandEmpty, CommandGroup, CommandItem, CommandInput
 } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 /**
  * A component to select a collection from a list of collections.
@@ -137,20 +137,20 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
     const renderTrailingIcon = () => {
         if (showClearOption) {
             return (
-                <span
-                    role="button"
+                <Button
+                    variant="unstyled"
                     aria-label="Clear selection"
-                    className="ml-2 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive cursor-pointer"
+                    className="ms-2 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive cursor-pointer"
                     onClick={(e) => {
                         e.stopPropagation();
                         handleClear();
                     }}
                 >
                     <X className="h-4 w-4" />
-                </span>
+                </Button>
             );
         }
-        return <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />;
+        return <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />;
     };
 
     // Show error state
@@ -185,7 +185,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                     className={cn("w-full justify-between min-w-0")}
                     disabled={disabled}
                 >
-                    <span className="truncate flex-1 text-left min-w-0">
+                    <span className="truncate flex-1 text-start min-w-0">
                         {getDisplayText()}
                     </span>
                     {renderTrailingIcon()}
@@ -202,7 +202,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                         />
                         {
                             isSearching && (
-                                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                <div className="me-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                             )
                         }
                     </div>
@@ -253,7 +253,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                                     >
                                         <span className="truncate">{collection.name}</span>
                                         {isSelected && (
-                                            <Check className="ml-2 h-4 w-4 shrink-0" />
+                                            <Check className="ms-2 h-4 w-4 shrink-0" />
                                         )}
                                     </CommandItem>
                                 );

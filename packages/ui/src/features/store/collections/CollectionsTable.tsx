@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useState, useEffect } from "react";
 import { CreateCollectionModal } from "./CreateCollection";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 dayjs.extend(relativeTime);
 
@@ -83,7 +83,7 @@ export function CollectionsTable({ }: CollectionsTableProps) {
                                         </td>
                                         <td>{c.type?.name || "-"}</td>
                                         <td>{dayjs(c.created_at).fromNow()}</td>
-                                        <td className="text-right">
+                                        <td className="text-end">
                                             <Button
                                                 variant="destructive"
                                                 size="sm"
@@ -121,7 +121,7 @@ export function CollectionIcon({ isDynamic }: { isDynamic: boolean }) {
     const icon = isDynamic ? <Search className="size-5" /> : <FolderClosed className="size-5" />;
 
     return (
-        <VTooltip description={tooltipText} className="mr-2">
+        <VTooltip description={tooltipText} className="me-2">
             {icon}
         </VTooltip>
     );

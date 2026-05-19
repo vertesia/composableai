@@ -43,6 +43,25 @@
             "allowConstantExport": true
           }
         }
+      },
+      "a11y": {
+        "useAltText": "error",
+        "useAriaPropsForRole": "error",
+        "useValidAriaProps": "error",
+        "useValidAriaValues": "error",
+        "useHeadingContent": "error",
+        "useHtmlLang": "error",
+        "useIframeTitle": "error",
+        "noPositiveTabindex": "error",
+        "useAnchorContent": "error",
+        "useButtonType": "error",
+        "useFocusableInteractive": "error",
+        "useSemanticElements": "error",
+        "useKeyWithClickEvents": "warn",
+        "useKeyWithMouseEvents": "warn",
+        "noStaticElementInteractions": "warn",
+        "useAriaActivedescendantWithTabindex": "warn",
+        "noLabelWithoutControl": "warn"
       }
     }
   },
