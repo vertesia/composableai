@@ -3,6 +3,7 @@ import type {
     AppInstallation,
     AppInstallationKind,
     AppInstallationListEntry,
+    AppInstallationOAuthTokenRequest,
     AppInstallationPayload,
     AppInstallationWithManifest,
     AppManifest,
@@ -10,6 +11,7 @@ import type {
     AppPackage,
     AppToolCollection,
     CountResult,
+    McpOAuthTokenResponse,
     ProjectRef,
     RequireAtLeastOne,
     UpdateAppInstallationToolAllowlistPayload,
@@ -42,6 +44,19 @@ export default class AppsApi extends ApiTopic {
      */
     listAppInstallationTools(appInstallId: string): Promise<AppToolCollection[]> {
         return this.get(`/installations/${appInstallId}/tools`)
+    }
+
+    /**
+     * Resolve an OAuth access token from an installation's shared
+     * provider binding (declared via `manifest.oauth_providers[<key>]`).
+     * Used by Vertesia-hosted tool servers that call external APIs on
+     * behalf of an installation — e.g. the migration app's SharePoint
+     * discovery against Microsoft Graph.
+     */
+    getInstallationOAuthToken(appInstallId: string, providerKey: string): Promise<McpOAuthTokenResponse> {
+        return this.post(`/installations/${appInstallId}/oauth-token`, {
+            payload: { provider_key: providerKey } satisfies AppInstallationOAuthTokenRequest,
+        });
     }
 
     /**

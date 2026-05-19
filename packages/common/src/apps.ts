@@ -913,6 +913,21 @@ export interface McpOAuthTokenResponse {
     access_token: string;
 }
 
+/**
+ * Request payload for the per-installation OAuth token endpoint. Used
+ * by apps whose backend tools need an access token from a shared
+ * provider binding (declared via `manifest.oauth_providers[<key>]`)
+ * rather than from a per-MCP-collection binding.
+ *
+ * Used by Vertesia-hosted tool servers that call external APIs on
+ * behalf of an installation — e.g. the migration app's SharePoint /
+ * OneDrive discovery hits Microsoft Graph using a token resolved here.
+ */
+export interface AppInstallationOAuthTokenRequest {
+    /** The `oauth_providers` key declared in the app manifest. */
+    provider_key: string;
+}
+
 export interface McpOAuthConnectResponse {
     success: boolean;
 }
