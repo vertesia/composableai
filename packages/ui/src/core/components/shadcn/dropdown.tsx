@@ -74,7 +74,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "hover:bg-muted focus:bg-muted data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:text-destructive gap-2 rounded-md px-1.5 py-1 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 group/dropdown-menu-item relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "hover:bg-muted focus:bg-muted data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:text-destructive gap-2 rounded-md px-1.5 py-1 text-sm data-inset:ps-7 [&_svg:not([class*='size-'])]:size-4 group/dropdown-menu-item relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       {...props}
@@ -96,14 +96,14 @@ function DropdownMenuCheckboxItem({
       data-slot="dropdown-menu-checkbox-item"
       data-inset={inset}
       className={cn(
-        "focus:bg-muted focus:text-muted focus:**:text-muted gap-2 rounded-md py-1 pr-8 pl-1.5 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "focus:bg-muted focus:text-muted focus:**:text-muted gap-2 rounded-md py-1 pe-8 ps-1.5 text-sm data-inset:ps-7 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       checked={checked}
       {...props}
     >
       <span
-        className="absolute right-2 flex items-center justify-center pointer-events-none"
+        className="absolute end-2 flex items-center justify-center pointer-events-none"
         data-slot="dropdown-menu-checkbox-item-indicator"
       >
         <DropdownMenuPrimitive.ItemIndicator>
@@ -140,13 +140,13 @@ function DropdownMenuRadioItem({
       data-slot="dropdown-menu-radio-item"
       data-inset={inset}
       className={cn(
-        "focus:bg-muted focus:text-muted focus:**:text-muted gap-2 rounded-md py-1 pr-8 pl-1.5 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "focus:bg-muted focus:text-muted focus:**:text-muted gap-2 rounded-md py-1 pe-8 ps-1.5 text-sm data-inset:ps-7 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       {...props}
     >
       <span
-        className="absolute right-2 flex items-center justify-center pointer-events-none"
+        className="absolute end-2 flex items-center justify-center pointer-events-none"
         data-slot="dropdown-menu-radio-item-indicator"
       >
         <DropdownMenuPrimitive.ItemIndicator>
@@ -170,7 +170,7 @@ function DropdownMenuLabel({
     <DropdownMenuPrimitive.Label
       data-slot="dropdown-menu-label"
       data-inset={inset}
-      className={cn("text-muted px-1.5 py-1 text-xs font-medium data-inset:pl-7", className)}
+      className={cn("text-muted px-1.5 py-1 text-xs font-medium data-inset:ps-7", className)}
       {...props}
     />
   )
@@ -196,7 +196,7 @@ function DropdownMenuShortcut({
   return (
     <span
       data-slot="dropdown-menu-shortcut"
-      className={cn("text-muted group-focus/dropdown-menu-item:text-muted ml-auto text-xs tracking-widest", className)}
+      className={cn("text-muted group-focus/dropdown-menu-item:text-muted ms-auto text-xs tracking-widest", className)}
       {...props}
     />
   )
@@ -221,13 +221,13 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "focus:bg-muted focus:text-muted data-open:bg-muted data-open:text-muted not-data-[variant=destructive]:focus:**:text-muted gap-2 rounded-md px-1.5 py-1 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 flex cursor-default items-center outline-hidden select-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "focus:bg-muted focus:text-muted data-open:bg-muted data-open:text-muted not-data-[variant=destructive]:focus:**:text-muted gap-2 rounded-md px-1.5 py-1 text-sm data-inset:ps-7 [&_svg:not([class*='size-'])]:size-4 flex cursor-default items-center outline-hidden select-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       {...props}
     >
       {children}
-      <ChevronRightIcon className="cn-rtl-flip ml-auto" />
+      <ChevronRightIcon className="cn-rtl-flip ms-auto" />
     </DropdownMenuPrimitive.SubTrigger>
   )
 }
@@ -285,7 +285,8 @@ export function Dropdown({ trigger, children, align = 'right', hover }: Dropdown
     const onLeave = () => {
       closeTimer.current = setTimeout(() => setOpen(false), 80);
     };
-    const alignClass = align === 'right' ? 'right-0' : align === 'center' ? 'left-1/2 -translate-x-1/2' : 'left-0';
+    // rtl-ok: 'center' uses symmetric left-1/2 + -translate-x-1/2 (same in LTR/RTL)
+    const alignClass = align === 'right' ? 'end-0' : align === 'center' ? 'left-1/2 -translate-x-1/2' : 'start-0';
     return (
       <div className="relative inline-flex" onMouseEnter={onEnter} onMouseLeave={onLeave}>
         {trigger}
@@ -346,9 +347,10 @@ export function MenuItem({ children, href, onClick, isDisabled = false, variant 
   );
   if (isHoverMenu) {
     const handleClick = (e: React.MouseEvent) => { e.stopPropagation(); onClick?.(e); };
+    // Raw <button> — hover-menu fallback for a dropdown item; Button would apply wrong (button) focus/hover on top of menu-item semantics.
     return href
       ? <a href={href} className={baseClass}>{children}</a>
-      : <button className={baseClass} disabled={isDisabled} onClick={handleClick}>{children}</button>;
+      : <button type="button" className={baseClass} disabled={isDisabled} onClick={handleClick}>{children}</button>;
   }
   return (
     <DropdownMenuItem

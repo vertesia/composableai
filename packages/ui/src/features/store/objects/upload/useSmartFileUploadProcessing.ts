@@ -2,7 +2,7 @@ import { ComplexSearchPayload, ContentObjectItem, FindPayload } from "@vertesia/
 import { useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Md5 } from "ts-md5";
-import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 
 /**
  * Types of actions that can be taken with a file
@@ -137,7 +137,7 @@ export function useSmartFileUploadProcessing() {
                     "content.etag": { $in: hashes },
                 };
 
-                let res: ContentObjectItem[];
+                let res: Array<Pick<ContentObjectItem, "id" | "content">>;
 
                 if (limitToCollectionId) {
                     const payload: ComplexSearchPayload = {

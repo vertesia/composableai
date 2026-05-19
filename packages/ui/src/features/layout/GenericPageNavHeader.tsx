@@ -108,14 +108,14 @@ export function GenericPageNavHeader({ className, children, title, description, 
     const breadcrumbItems = buildBreadcrumbItems();
 
     return (
-        <div className={clsx('pb-0 pl-4 pr-2 py-2 flex flex-col', className)}>
+        <div className={clsx('pb-0 ps-4 pe-2 py-2 flex flex-col', className)}>
             <div className='flex items-start gap-4'>
                 <div className="w-full flex place-content-between h-auto min-h-8 flex-col items-start justify-center">
                     <nav className="flex-1 flex justify-start text-sm">
                         {breadcrumbItems.length > 0 && (
                             <Breadcrumbs
                                 path={breadcrumbItems}
-                                separator={<ChevronRight className="size-3.5" />}
+                                separator={<ChevronRight className="size-3.5 cn-rtl-flip" />}
                                 maxItems={4}
                             />
                         )}
@@ -123,7 +123,7 @@ export function GenericPageNavHeader({ className, children, title, description, 
                             description &&
                             <VTooltip
                                 description={description}>
-                                <Info className="size-4 text-muted ml-4" />
+                                <Info className="size-4 text-muted ms-4" />
                             </VTooltip>
                         }
                     </nav>

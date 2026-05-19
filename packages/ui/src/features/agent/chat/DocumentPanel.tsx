@@ -4,7 +4,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { Button, VTooltip } from '@vertesia/ui/core';
 import { NavLink } from '@vertesia/ui/router';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { DocumentTabBar } from './DocumentTabBar.js';
 import type { OpenDocument } from './types/document.js';
 
@@ -111,7 +111,7 @@ function DocumentPanelComponent({
                 {isLoading ? (
                     <div className="flex items-center justify-center py-12">
                         <Loader2Icon className="size-5 animate-spin text-muted" />
-                        <span className="ml-2 text-sm text-muted">{t('agent.loadingDocument')}</span>
+                        <span className="ms-2 text-sm text-muted">{t('agent.loadingDocument')}</span>
                     </div>
                 ) : error ? (
                     <div className="p-4 rounded-md bg-destructive/10 text-destructive text-sm">

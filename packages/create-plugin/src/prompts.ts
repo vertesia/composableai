@@ -4,7 +4,7 @@
 import prompts from 'prompts';
 import chalk from 'chalk';
 import { TemplateConfig } from './template-config.js';
-import { applyTransform, concatValues } from './transforms.js';
+import { applyMapTransform, applyTransform, concatValues } from './transforms.js';
 
 /**
  * Prompt user for configuration values
@@ -101,6 +101,17 @@ export async function promptUser(projectName: string, templateConfig: TemplateCo
             return String(value);
           });
           answers[targetName] = concatValues(values, derivedConfig.separator || '');
+        } else if (derivedConfig.transform === 'map') {
+          // Look up the source value in a fixed map
+          if (!derivedConfig.map) {
+            throw new Error(`"map" transform requires a "map" field`);
+          }
+          const sourceField = Array.isArray(derivedConfig.from) ? derivedConfig.from[0] : derivedConfig.from;
+          const sourceValue = answers[sourceField];
+          if (sourceValue === undefined) {
+            throw new Error(`Source field "${sourceField}" not found in answers`);
+          }
+          answers[targetName] = applyMapTransform(String(sourceValue), derivedConfig.map);
         } else {
           // Handle single-source transforms
           const sourceField = Array.isArray(derivedConfig.from) ? derivedConfig.from[0] : derivedConfig.from;

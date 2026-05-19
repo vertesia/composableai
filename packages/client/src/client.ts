@@ -19,6 +19,7 @@ import PromptsApi from "./PromptsApi.js";
 import { RefsApi } from "./RefsApi.js";
 import RemoteMcpConnectionsApi from "./RemoteMcpConnectionsApi.js";
 import { RunsApi } from "./RunsApi.js";
+import SecretsApi from "./SecretsApi.js";
 import SkillsApi from "./SkillsApi.js";
 import { ZenoClient } from "./store/client.js";
 import { VERSION, VERSION_HEADER } from "./store/version.js";
@@ -90,6 +91,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     oauthServer: OAuthServerApi;
     oauthProviders: OAuthProvidersApi;
     remoteMcpConnections: RemoteMcpConnectionsApi;
+    secrets: SecretsApi;
 
     /**
      * Create a client from the given token.
@@ -199,9 +201,10 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.sessionTags = opts.sessionTags;
         this.oauthClients = new OAuthClientsApi(this);
         this.oauthGrants = new OAuthGrantsApi(this);
-        this.oauthServer = new OAuthServerApi(this);
+        this.oauthServer = new OAuthServerApi(this, this.tokenServerUrl);
         this.oauthProviders = new OAuthProvidersApi(this);
         this.remoteMcpConnections = new RemoteMcpConnectionsApi(this);
+        this.secrets = new SecretsApi(this);
     }
 
     withApiVersion(version: string | number | null) {
@@ -292,6 +295,14 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.files;
     }
 
+    get processes() {
+        return this.store.processes;
+    }
+
+    get tasks() {
+        return this.store.tasks;
+    }
+
     /**
      * Alias for store.types
      */
@@ -365,7 +376,11 @@ function isApiKey(apiKey: string) {
     return apiKey.startsWith("pk-") || apiKey.startsWith("sk-");
 }
 
-function isTokenExpired(token: string | null) {
+/**
+ * Returns true when the token should be refreshed: either missing, or within
+ * EXPIRATION_THRESHOLD of its `exp` claim, or already expired. Exported for tests.
+ */
+export function isTokenExpired(token: string | null) {
     if (!token) {
         return true;
     }
@@ -373,7 +388,7 @@ function isTokenExpired(token: string | null) {
     const decoded = decodeJWT(token);
     const exp = decoded.exp;
     const currentTime = Date.now();
-    return currentTime <= exp * 1000 - EXPIRATION_THRESHOLD;
+    return currentTime >= exp * 1000 - EXPIRATION_THRESHOLD;
 }
 
 export function decodeJWT(jwt: string): AuthTokenPayload {

@@ -1,8 +1,8 @@
-import { Button, Center, VTooltip } from "@vertesia/ui/core";
+import { Button, Center } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp, Maximize, Minus, Plus } from "lucide-react";
 import { ReactNode, useRef, useEffect, useState, useCallback, KeyboardEvent } from "react";
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { PdfThumbnailList } from "./PdfPageRenderer";
 
 // A4 portrait aspect ratio - used as fallback
@@ -305,7 +305,7 @@ export function PdfPageSlider({
                 <Button variant="ghost" size="xs" onClick={goPrev} alt={t('pdf.previousPage')}>
                     <ChevronsUp className='size-4' />
                 </Button>
-                <div className="absolute left-2 flex items-center gap-x-1">
+                <div className="absolute start-2 flex items-center gap-x-1">
                     <ZoomControls
                         zoom={zoom}
                         onZoomIn={zoomIn}
@@ -321,7 +321,7 @@ export function PdfPageSlider({
                         </>
                     )}
                 </div>
-                <div className="absolute right-2">
+                <div className="absolute end-2">
                     <PageNavigator currentPage={currentPage} totalPages={pageCount} onChange={onChange} />
                 </div>
             </div>
@@ -428,50 +428,36 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
     const { t } = useUITranslation();
     return (
         <div className="flex items-center gap-x-0.5">
-            <VTooltip description={t('pdf.zoomOut')} placement="bottom" size="xs">
-                <button
-                    className={clsx(
-                        "p-1 rounded cursor-pointer transition-colors",
-                        canZoomOut
-                            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
-                            : "text-muted-foreground/40 cursor-not-allowed"
-                    )}
-                    onClick={onZoomOut}
-                    disabled={!canZoomOut}
-                >
-                    <Minus className="size-4" />
-                </button>
-            </VTooltip>
+            <Button
+                variant="ghost"
+                size="xs"
+                onClick={onZoomOut}
+                isDisabled={!canZoomOut}
+                alt={t('pdf.zoomOut')}
+            >
+                <Minus />
+            </Button>
             <span className="text-xs text-muted-foreground min-w-[32px] text-center">
                 {zoom}%
             </span>
-            <VTooltip description={t('pdf.zoomIn')} placement="bottom" size="xs">
-                <button
-                    className={clsx(
-                        "p-1 rounded cursor-pointer transition-colors",
-                        canZoomIn
-                            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
-                            : "text-muted-foreground/40 cursor-not-allowed"
-                    )}
-                    onClick={onZoomIn}
-                    disabled={!canZoomIn}
-                >
-                    <Plus className="size-4" />
-                </button>
-            </VTooltip>
-            <VTooltip description={t('pdf.fitToWidth')} placement="bottom" size="xs">
-                <button
-                    className={clsx(
-                        "p-1 rounded cursor-pointer transition-colors",
-                        zoom !== DEFAULT_ZOOM
-                            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
-                            : "text-muted-foreground/40"
-                    )}
-                    onClick={onFitToView}
-                >
-                    <Maximize className="size-4" />
-                </button>
-            </VTooltip>
+            <Button
+                variant="ghost"
+                size="xs"
+                onClick={onZoomIn}
+                isDisabled={!canZoomIn}
+                alt={t('pdf.zoomIn')}
+            >
+                <Plus />
+            </Button>
+            <Button
+                variant="ghost"
+                size="xs"
+                onClick={onFitToView}
+                alt={t('pdf.fitToWidth')}
+                className={zoom === DEFAULT_ZOOM ? 'text-muted-foreground/40' : undefined}
+            >
+                <Maximize />
+            </Button>
         </div>
     );
 }

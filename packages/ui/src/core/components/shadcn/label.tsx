@@ -23,7 +23,7 @@ const Label: React.ForwardRefExoticComponent<LabelProps & React.RefAttributes<Re
     {...props}
   >
     {props.children}
-    {required && <span className="text-destructive-foreground ml-1">*</span>}
+    {required && <span className="text-destructive-foreground ms-1">*</span>}
   </LabelPrimitive.Root>
 ))
 Label.displayName = LabelPrimitive.Root.displayName

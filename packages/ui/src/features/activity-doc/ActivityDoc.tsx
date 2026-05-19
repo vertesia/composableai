@@ -1,4 +1,5 @@
 import { ActivityDefinition, ActivityPropertyDefinition, ActivityTypeDefinition } from "@vertesia/common";
+import { Button } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "motion/react";
 import React, { useMemo, useState } from "react";
@@ -142,7 +143,7 @@ function ObjectMembersPanel({ members }: { members: ActivityPropertyDefinition[]
 
 function NestedPropertiesDetails({ properties }: { properties: ActivityPropertyDefinition[] }) {
     return (
-        <div className='border-l-2 border-l-blue-200 flex flex-col divide-y divide-gray-100 border-t border-t-gray-200'>
+        <div className='border-s-2 border-s-blue-200 flex flex-col divide-y divide-gray-100 border-t border-t-gray-200'>
             {properties.map(prop => <PropertyDetails key={prop.name} property={prop} className="px-4 py-2" />)}
         </div>
     )
@@ -158,11 +159,11 @@ function ExpandablePanel({ button, body, className, isInitiallyOpen }: Expandabl
     const [isExpanded, setExpanded] = useState(isInitiallyOpen || false);
     return (
         <div className={clsx(isExpanded ? "block" : "inline-block", className)}>
-            <button className='p-0 m-0 bg-transparent' onClick={() => setExpanded(!isExpanded)}>
+            <Button variant="unstyled" className='p-0 m-0 bg-transparent' onClick={() => setExpanded(!isExpanded)}>
                 <AnimatePresence>
                     {button(isExpanded)}
                 </AnimatePresence>
-            </button>
+            </Button>
             <AnimatePresence>
                 {
                     isExpanded && <motion.div className='overflow-hidden'

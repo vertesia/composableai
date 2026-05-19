@@ -1,5 +1,24 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { AwsConfiguration, CompositeAppConfig, CompositeAppConfigPayload, CountResult, DeleteByIdResult, ExaConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, InCodeTypeDefinition, LinkupConfiguration, MagicPdfConfiguration, Project, ProjectConfiguration, ProjectIntegrationListEntry, ProjectIntegrationListResponse, ProjectRef, ProjectToolInfo, RenderingTemplateDefinition, RenderingTemplateDefinitionRef, ResendConfiguration, SerperConfiguration, SupportedIntegrations } from "@vertesia/common";
+import {
+    CompositeAppConfig,
+    CompositeAppConfigPayload,
+    CountResult,
+    DeleteByIdResult,
+    ICreateProjectPayload,
+    InCodeProcessDefinition,
+    InCodeTypeDefinition,
+    Project,
+    ProjectConfiguration,
+    ProjectIntegrationConfigRequest,
+    ProjectIntegrationConfigResponse,
+    ProjectIntegrationListEntry,
+    ProjectIntegrationListResponse,
+    ProjectRef,
+    ProjectToolInfo,
+    RenderingTemplateDefinition,
+    RenderingTemplateDefinitionRef,
+    SupportedIntegrations,
+} from "@vertesia/common";
 
 export default class ProjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -69,6 +88,16 @@ export default class ProjectsApi extends ApiTopic {
         return this.get(`/${projectId}/app-types/${typeId}`);
     }
 
+    listAppProcesses(projectId: string, tag?: string): Promise<InCodeProcessDefinition[]> {
+        return this.get(`/${projectId}/app-processes`, {
+            query: { tag }
+        });
+    }
+
+    getAppProcess(projectId: string, processId: string): Promise<InCodeProcessDefinition> {
+        return this.get(`/${projectId}/app-processes/${processId}`);
+    }
+
     listAppRenderingTemplates(projectId: string, tag?: string): Promise<RenderingTemplateDefinitionRef[]> {
         return this.get(`/${projectId}/app-templates`, {
             query: { tag }
@@ -101,7 +130,7 @@ class IntegrationsConfigurationApi extends ApiTopic {
         return this.get(`/${projectId}/integrations`).then((res: ProjectIntegrationListResponse) => res.integrations);
     }
 
-    retrieve(projectId: string, integrationId: SupportedIntegrations): Promise<GladiaConfiguration | GithubConfiguration | AwsConfiguration | MagicPdfConfiguration | SerperConfiguration | ExaConfiguration | LinkupConfiguration | ResendConfiguration | undefined> {
+    retrieve(projectId: string, integrationId: SupportedIntegrations): Promise<ProjectIntegrationConfigResponse | undefined> {
         return this.get(`/${projectId}/integrations/${integrationId}`).catch(err => {
             if (err.status === 404) {
                 return undefined;
@@ -110,7 +139,7 @@ class IntegrationsConfigurationApi extends ApiTopic {
         });
     }
 
-    update(projectId: string, integrationId: string, payload: any): Promise<GladiaConfiguration | GithubConfiguration> {
+    update(projectId: string, integrationId: string, payload: ProjectIntegrationConfigRequest): Promise<ProjectIntegrationConfigResponse> {
         return this.put(`/${projectId}/integrations/${integrationId}`, {
             payload
         });

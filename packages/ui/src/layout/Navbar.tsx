@@ -3,7 +3,7 @@ import { Menu, Search } from 'lucide-react'
 import { Button, HeroIcon } from '@vertesia/ui/core'
 import { useSidebarToggle } from './SidebarContext.js'
 import { TitleBar } from './TitleBar.js'
-import { useUITranslation } from '../i18n/index.js'
+import { useUITranslation } from '@vertesia/ui/i18n'
 
 interface NavbarProps {
     title?: string
@@ -25,7 +25,7 @@ export function Navbar({ children, logo, onSearch, title }: NavbarProps) {
                 <TitleBar title={title} />
                 {onSearch && <SearchBox onSearch={onSearch} />}
 
-                <div className="flex items-center gap-x-4 lg:gap-x-6 ml-auto">
+                <div className="flex items-center gap-x-4 lg:gap-x-6 ms-auto">
                     {children}
                 </div>
             </div>
@@ -46,12 +46,12 @@ function SearchBox({ }: SearchBoxProps) {
                 {t('layout.search')}
             </label>
             <Search
-                className="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400"
+                className="pointer-events-none absolute inset-y-0 start-0 h-full w-5 text-gray-400"
                 aria-hidden="true"
             />
             <input
                 id="search-field"
-                className="block h-full w-full border-0 py-0 pl-8 pr-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm"
+                className="block h-full w-full border-0 py-0 ps-8 pe-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm"
                 placeholder={t('layout.searchPlaceholder')}
                 type="search"
                 name="search"

@@ -2,7 +2,7 @@ import { Button, Center, VTooltip } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp, Image, Loader2, Maximize, Minus, Plus, ScanSearch } from "lucide-react";
 import { useRef, KeyboardEvent, useState, useEffect, useCallback } from "react";
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { ImageType, useMagicPdfContext } from "./MagicPdfProvider";
 
 // Zoom levels as percentages (100 = fit to width)
@@ -255,7 +255,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                 <Button variant="ghost" size="xs" onClick={goPrev} alt={t('pdf.previousPage')}>
                     <ChevronsUp className='size-4' />
                 </Button>
-                <div className="absolute left-2 flex items-center gap-x-1">
+                <div className="absolute start-2 flex items-center gap-x-1">
                     <ImageTypeButton
                         type={ImageType.original}
                         currentType={imageType}
@@ -280,7 +280,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                         canZoomOut={zoom > ZOOM_LEVELS[0]}
                     />
                 </div>
-                <div className="absolute right-2">
+                <div className="absolute end-2">
                     <PageNavigator currentPage={currentPage} totalPages={count} onChange={onChange} />
                 </div>
             </div>
@@ -317,7 +317,10 @@ function ImageTypeButton({ type, currentType, onClick, icon, tooltip }: ImageTyp
     const isSelected = type === currentType;
     return (
         <VTooltip description={tooltip} placement="bottom" size="xs">
-            <button
+            <Button
+                variant="unstyled"
+                aria-label={tooltip}
+                aria-pressed={isSelected}
                 className={clsx(
                     "p-1 rounded cursor-pointer transition-colors",
                     isSelected
@@ -327,7 +330,7 @@ function ImageTypeButton({ type, currentType, onClick, icon, tooltip }: ImageTyp
                 onClick={onClick}
             >
                 {icon}
-            </button>
+            </Button>
         </VTooltip>
     );
 }
@@ -345,7 +348,9 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
     return (
         <div className="flex items-center gap-x-0.5">
             <VTooltip description={t('pdf.zoomOut')} placement="bottom" size="xs">
-                <button
+                <Button
+                    variant="unstyled"
+                    aria-label={t('pdf.zoomOut')}
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
                         canZoomOut
@@ -356,13 +361,15 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
                     disabled={!canZoomOut}
                 >
                     <Minus className="size-4" />
-                </button>
+                </Button>
             </VTooltip>
             <span className="text-xs text-muted-foreground min-w-[32px] text-center">
                 {zoom}%
             </span>
             <VTooltip description={t('pdf.zoomIn')} placement="bottom" size="xs">
-                <button
+                <Button
+                    variant="unstyled"
+                    aria-label={t('pdf.zoomIn')}
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
                         canZoomIn
@@ -373,10 +380,12 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
                     disabled={!canZoomIn}
                 >
                     <Plus className="size-4" />
-                </button>
+                </Button>
             </VTooltip>
             <VTooltip description={t('pdf.fitToWidth')} placement="bottom" size="xs">
-                <button
+                <Button
+                    variant="unstyled"
+                    aria-label={t('pdf.fitToWidth')}
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
                         zoom !== DEFAULT_ZOOM
@@ -386,7 +395,7 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
                     onClick={onFitToView}
                 >
                     <Maximize className="size-4" />
-                </button>
+                </Button>
             </VTooltip>
         </div>
     );

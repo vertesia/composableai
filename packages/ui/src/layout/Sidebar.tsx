@@ -23,7 +23,7 @@ export function Sidebar({ children, logo, className }: SidebarProps) {
             }
             <div className="flex-1 min-h-0 overflow-hidden px-0 lg:px-2">
                 <nav className="h-full flex flex-col">
-                    <ul role="list" className="flex flex-col gap-y-2 overflow-y-auto h-full">
+                    <ul className="flex flex-col gap-y-2 overflow-y-auto h-full">
                         {children}
                     </ul>
                 </nav>
@@ -132,7 +132,7 @@ export function SidebarItem({ external, className, tools, children, icon: Icon, 
                             />
                         }
                         {children}
-                        {tools && <div className='flex items-center ml-auto'>{tools}</div>}
+                        {tools && <div className='flex items-center ms-auto'>{tools}</div>}
                     </a>
                 </SidebarTooltip>
             </Nav>

@@ -1,4 +1,4 @@
-import { useIntersectionObserver } from "@vertesia/ui/core";
+import { useIntersectionObserver } from "./useIntersectionObserver";
 import { useEffect, useRef, useState } from "react";
 
 interface SearchResponse<ResultT, PageT> {

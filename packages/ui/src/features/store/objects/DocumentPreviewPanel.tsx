@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface DocumentPreviewPanelProps {
   objectId: string | null;
@@ -99,6 +99,10 @@ export function DocumentPreviewPanel({
   };
 
   const loadImageUrl = async (obj: ContentObject) => {
+    if (!obj.content?.source) {
+      return;
+    }
+
     try {
       // Try to get a rendition first
       const rendition = await client.objects.getRendition(obj.id, {
@@ -113,7 +117,7 @@ export function DocumentPreviewPanel({
 
       // Get download URL
       const downloadUrlResult = await client.files.getDownloadUrl(
-        obj.content.source!,
+        obj.content.source,
       );
       setImageUrl(downloadUrlResult.url);
     } catch (error) {
@@ -139,12 +143,12 @@ export function DocumentPreviewPanel({
 
   return (
     <div
-      className={`fixed inset-y-0 right-0 w-2/5 dark:bg-slate-900 shadow-xl z-50 flex flex-col transition-transform duration-300 transform ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+      className={`fixed inset-y-0 end-0 w-2/5 dark:bg-slate-900 shadow-xl z-50 flex flex-col transition-transform duration-300 transform ${isOpen ? "translate-x-0" : "translate-x-full rtl:-translate-x-full"}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-gray-50 dark:from-gray-800 dark:to-gray-900">
         <div className="flex items-center">
-          <FileText className="h-5 w-5 text-indigo-600 mr-2" />
+          <FileText className="h-5 w-5 text-indigo-600 me-2" />
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 truncate">
             {isLoading
               ? t('store.loadingDocument')
@@ -190,7 +194,8 @@ export function DocumentPreviewPanel({
           {/* Tabs */}
           <div className="border-b">
             <div className="flex px-4">
-              <button
+              <Button
+                variant="unstyled"
                 className={`py-2 px-4 font-medium border-b-2 ${currentTab === "preview"
                   ? "border-indigo-600 text-indigo-700 dark:text-indigo-300"
                   : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -201,8 +206,9 @@ export function DocumentPreviewPanel({
                   <LayoutGrid className="h-4 w-4" />
                   <span>{t('store.preview')}</span>
                 </div>
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="unstyled"
                 className={`py-2 px-4 font-medium border-b-2 ${currentTab === "properties"
                   ? "border-indigo-600 text-indigo-700 dark:text-indigo-300"
                   : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -213,7 +219,7 @@ export function DocumentPreviewPanel({
                   <Info className="h-4 w-4" />
                   <span>{t('store.properties')}</span>
                 </div>
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -388,7 +394,7 @@ export function DocumentPreviewPanel({
               variant="outline"
               className="text-indigo-600 border-indigo-300 hover:bg-indigo-50"
             >
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="h-4 w-4 me-2" />
               {t('pdf.download')}
             </Button>
           )}
@@ -398,7 +404,7 @@ export function DocumentPreviewPanel({
           className="bg-indigo-600 hover:bg-indigo-700 text-white"
         >
           {t('store.openFullDocument')}
-          <ChevronRight className="h-4 w-4 ml-2" />
+          <ChevronRight className="h-4 w-4 ms-2 cn-rtl-flip" />
         </Button>
       </div>
     </div>
