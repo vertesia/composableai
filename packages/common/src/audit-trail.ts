@@ -11,6 +11,12 @@ export type AuditAction =
     | 'detach'
     | 'publish'
     | 'unpublish'
+    // Security-sensitive access (non-billable). Use this — NOT
+    // `inference` — when emitting events whose only purpose is to
+    // record that a principal read confidential material. Examples:
+    // EncryptedSecret decrypted plaintext, OAuth token bundles
+    // resolved for downstream API calls.
+    | 'secret_access'
     // Billable operations
     | 'inference'
     | 'embedding'
