@@ -142,7 +142,7 @@ export function AgentRunnerFacetsNav({ facets, search, selectionCount, actions }
                             </div>
                         )}
                         {actions && actions.length > 0 ? (
-                            <div className='flex items-center gap-2 mb-1 mr-2'>
+                            <div className='flex items-center gap-2 mb-1 me-2'>
                                 {actions.map((action, index) => (
                                     <div key={index}>{action}</div>
                                 ))}

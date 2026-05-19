@@ -1,4 +1,3 @@
-import { I18nProvider } from '@vertesia/ui/i18n'
 import { StandaloneApp, VertesiaShell } from '@vertesia/ui/shell'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -33,12 +32,10 @@ const routes: Route[] = [
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        <I18nProvider>
-            <VertesiaShell>
-                <OrgGate>
-                    <RouterProvider routes={routes} />
-                </OrgGate>
-            </VertesiaShell>
-        </I18nProvider>
+        <VertesiaShell>
+            <OrgGate>
+                <RouterProvider routes={routes} />
+            </OrgGate>
+        </VertesiaShell>
     </StrictMode>,
 )

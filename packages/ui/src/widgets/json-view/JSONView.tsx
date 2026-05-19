@@ -32,7 +32,7 @@ interface BlockElementProps {
     className?: string;
 }
 function BlockElement({ children, className }: BlockElementProps) {
-    return (<div className={clsx('flex flex-col gap-4 py-2 pl-4 border-l-4 border-l-solid border-l-slate-100 dark:border-l-slate-600', className)}>
+    return (<div className={clsx('flex flex-col gap-4 py-2 ps-4 border-s-4 border-s-solid border-s-slate-100 dark:border-s-slate-600', className)}>
         {children}
     </div>)
 }
@@ -129,7 +129,7 @@ function ItemProperty({ index, value, useBullet }: ItemPropertyProps) {
             break;
     }
     return (
-        <div className='flex gap-4 hover:bg-slate-50 dark:hover:bg-slate-800 py-2 pr-2 pl-4'>
+        <div className='flex gap-4 hover:bg-slate-50 dark:hover:bg-slate-800 py-2 pe-2 ps-4'>
             <div className='font-semibold text-gray-600 dark:text-gray-400'>{bullet}</div>
             <div>{content}</div>
         </div>

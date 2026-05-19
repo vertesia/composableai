@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { ModeToggle } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
 import { SidebarSection, useSidebarToggle } from '@vertesia/ui/layout';
 import { useLocation, useRouterBasePath } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import { Database, HomeIcon, MessageSquare, MessagesSquare, PlusCircle } from 'lucide-react';
+import { Database, HomeIcon, MessageSquare, MessagesSquare, PlusCircle, Settings } from 'lucide-react';
 import type { WorkflowRun } from '@vertesia/common';
 import { AppSidebarItem } from './AppSidebarItem';
 import { ASSISTANT_INTERACTION } from '../constants';
@@ -45,18 +45,21 @@ function toWorkflowRun(run: RecentAgentRun): WorkflowRun {
     };
 }
 
-function getConversationLabel(conv: WorkflowRun, t: (key: string) => string): string {
+function getConversationLabel(
+    conv: WorkflowRun,
+    t: (key: string) => string,
+    formatTime: (date: Date | string | number | null | undefined) => string,
+): string {
     if (conv.topic) return conv.topic;
     const prompt = conv.input?.data?.user_prompt;
     if (typeof prompt === 'string' && prompt.trim()) return prompt.trim();
-    if (conv.started_at) {
-        return new Date(conv.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
+    if (conv.started_at) return formatTime(conv.started_at);
     return t('nav.conversation');
 }
 
 export function PluginSidebar() {
     const { t } = useUITranslation();
+    const { formatTime } = useLocaleFormat();
     const path = useLocation().pathname;
     const basePath = useRouterBasePath();
     const { isOpen } = useSidebarToggle();
@@ -109,11 +112,20 @@ export function PluginSidebar() {
                         >
                             {t('nav.newChat')}
                         </AppSidebarItem>
+                        <AppSidebarItem
+                            id="menu-settings"
+                            current={path === `${basePath}/settings`}
+                            icon={Settings}
+                            to="/settings"
+                        >
+                            {t('nav.settings')}
+                        </AppSidebarItem>
                     </SidebarSection>
                     {conversations.length > 0 && (
                         <SidebarSection title={t('nav.recent')}>
                             {conversations.map(conv => {
                                 const convPath = `${basePath}/chat/${conv.run_id}`;
+                                const label = getConversationLabel(conv, t, formatTime);
                                 return (
                                     <AppSidebarItem
                                         key={conv.run_id}
@@ -122,7 +134,13 @@ export function PluginSidebar() {
                                         icon={MessageSquare}
                                         className="overflow-hidden"
                                     >
-                                        <span className="truncate">{getConversationLabel(conv, t)}</span>
+                                        <span
+                                            className="min-w-0 flex-1 truncate text-start"
+                                            dir="auto"
+                                            title={label}
+                                        >
+                                            {label}
+                                        </span>
                                     </AppSidebarItem>
                                 );
                             })}

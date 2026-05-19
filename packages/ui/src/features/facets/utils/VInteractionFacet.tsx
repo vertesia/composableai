@@ -58,7 +58,7 @@ export function VInteractionFacet({ buckets, name, placeholder }: InteractionFac
                             </Badge>
                         )}
                     </div>
-                    {(bucket?.count ?? 0) > 0 && <span className="ml-2 text-xs shrink-0">({bucket!.count})</span>}
+                    {(bucket?.count ?? 0) > 0 && <span className="ms-2 text-xs shrink-0">({bucket!.count})</span>}
                 </div>
             );
         },

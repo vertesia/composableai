@@ -5,7 +5,7 @@ import {
     ConversationFileRef,
     FileProcessingStatus,
 } from '@vertesia/common';
-import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 
 export interface UseFileProcessingResult {
     processingFiles: Map<string, ConversationFile>;

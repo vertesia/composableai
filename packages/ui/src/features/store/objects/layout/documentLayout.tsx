@@ -1,6 +1,6 @@
 import { ColumnLayout, ContentObjectItem } from "@vertesia/common";
 import { Table, TBody, THead } from "@vertesia/ui/core";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { CheckIcon } from "lucide-react";
 import { ChangeEvent } from "react";
 import { DocumentIcon, DocumentIconSkeleton } from "../components/DocumentIcon";

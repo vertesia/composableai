@@ -3,7 +3,7 @@ import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { AlignLeft } from 'lucide-react';
 import { Button, Modal, ModalBody, ModalFooter, ModalTitle, Styles, SelectBox } from '@vertesia/ui/core';
 
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { TypeNames } from '../type-signature.js';
 import { DataEditorProps } from './Editable.js';
 import { EditableSchemaProperty } from './EditableSchemaProperty.js';

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
 import { UniversalDocumentViewer, type UniversalDocumentSource } from '../../document-viewer/UniversalDocumentViewer.js';
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useArtifacts, type ArtifactTreeNode } from './hooks/useArtifacts.js';
 
 // ---------------------------------------------------------------------------
@@ -43,13 +43,13 @@ function TreeNode({ node, depth, runId, onPreview, onDownload, downloadingPath }
             <div>
                 <Button
                     variant="unstyled"
-                    className="flex items-center gap-1.5 w-full text-left py-1 px-1 rounded hover:bg-muted/30 text-sm"
+                    className="flex items-center gap-1.5 w-full text-start py-1 px-1 rounded hover:bg-muted/30 text-sm"
                     style={{ paddingLeft: `${depth * 16 + 4}px` }}
                     onClick={() => setExpanded((prev) => !prev)}
                 >
                     {expanded
                         ? <ChevronDownIcon className="size-3.5 shrink-0 text-muted" />
-                        : <ChevronRightIcon className="size-3.5 shrink-0 text-muted" />}
+                        : <ChevronRightIcon className="size-3.5 shrink-0 text-muted cn-rtl-flip" />}
                     {expanded
                         ? <FolderOpenIcon className="size-4 shrink-0 text-info" />
                         : <FolderIcon className="size-4 shrink-0 text-info" />}
@@ -221,7 +221,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
             <div className="flex flex-col items-center justify-center py-8 text-muted">
                 <span className="text-sm text-destructive mb-2">{error}</span>
                 <Button variant="ghost" size="sm" onClick={refresh}>
-                    <RefreshCwIcon className="size-3.5 mr-1.5" />
+                    <RefreshCwIcon className="size-3.5 me-1.5" />
                     {t('agent.retry')}
                 </Button>
             </div>
@@ -234,7 +234,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
                 <PackageIcon className="size-8 mb-2" />
                 <span className="text-sm">{t('agent.noArtifactsYet')}</span>
                 <Button variant="ghost" size="sm" className="mt-2" onClick={refresh}>
-                    <RefreshCwIcon className="size-3.5 mr-1.5" />
+                    <RefreshCwIcon className="size-3.5 me-1.5" />
                     {t('agent.refresh')}
                 </Button>
             </div>

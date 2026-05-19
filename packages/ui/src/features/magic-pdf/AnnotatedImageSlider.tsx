@@ -2,7 +2,7 @@ import { Button, Center, VTooltip } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp, Image, Loader2, Maximize, Minus, Plus, ScanSearch } from "lucide-react";
 import { useRef, KeyboardEvent, useState, useEffect, useCallback } from "react";
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { ImageType, useMagicPdfContext } from "./MagicPdfProvider";
 
 // Zoom levels as percentages (100 = fit to width)
@@ -255,7 +255,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                 <Button variant="ghost" size="xs" onClick={goPrev} alt={t('pdf.previousPage')}>
                     <ChevronsUp className='size-4' />
                 </Button>
-                <div className="absolute left-2 flex items-center gap-x-1">
+                <div className="absolute start-2 flex items-center gap-x-1">
                     <ImageTypeButton
                         type={ImageType.original}
                         currentType={imageType}
@@ -280,7 +280,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                         canZoomOut={zoom > ZOOM_LEVELS[0]}
                     />
                 </div>
-                <div className="absolute right-2">
+                <div className="absolute end-2">
                     <PageNavigator currentPage={currentPage} totalPages={count} onChange={onChange} />
                 </div>
             </div>

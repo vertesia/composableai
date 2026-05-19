@@ -3,7 +3,7 @@ import { Badge, cn } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { ExternalLinkIcon, ImageIcon, MonitorIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useUITranslation } from "../../../i18n/index.js";
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useImageLightbox } from "./ImageLightbox.js";
 import { getArtifactCacheKey, useArtifactUrlCache } from "./useArtifactUrlCache.js";
 
@@ -149,7 +149,7 @@ export function BrowserUseWidget({ state, runId, className }: BrowserUseWidgetPr
             {imageUrl ? (
                 <button
                     type="button"
-                    className="block w-full bg-mixer-muted/20 text-left"
+                    className="block w-full bg-mixer-muted/20 text-start"
                     onClick={() => openImage(imageUrl, imageName)}
                     title={t("agent.clickToEnlarge")}
                 >

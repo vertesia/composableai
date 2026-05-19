@@ -6,6 +6,7 @@ import { ContentObjectDetailPage } from "./pages/ContentObjectDetailPage";
 import { ContentObjectsPage } from "./pages/ContentObjectsPage";
 import { ConversationsPage } from "./pages/ConversationsPage";
 import { HomePage } from "./pages/HomePage";
+import { SettingsPage } from "./pages/SettingsPage";
 
 export type PluginRoute = Route & {
     label?: string;
@@ -47,6 +48,10 @@ export const routes: PluginRoute[] = [
         path: '/chat/:agentRunId',
         hideFromNav: true,
         Component: () => <ChatPage />,
+    },
+    {
+        path: '/settings',
+        Component: () => <SettingsPage />,
     },
     {
         path: '*',

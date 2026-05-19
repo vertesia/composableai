@@ -10,7 +10,7 @@ import {
 } from "@vertesia/ui/core";
 import { ContentObjectTypeItem } from "@vertesia/common";
 import { useTypeRegistry } from "./TypeRegistryProvider.js";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { CheckCircleIcon, Info } from "lucide-react";
 
 /**
@@ -108,13 +108,13 @@ export function SelectContentTypeModal({
 
                 {!selectedType && (
                     <div className="flex items-center text-attention">
-                        <CheckCircleIcon className="size-4 mr-1" />
+                        <CheckCircleIcon className="size-4 me-1" />
                         {t('store.automaticTypeDetection')}
                         <VTooltip
                             description={t('store.automaticTypeDetectionDescription')}
                             placement="top" size="xs"
                         >
-                            <Info className="size-3 ml-2" />
+                            <Info className="size-3 ms-2" />
                         </VTooltip>
                     </div>
                 )}

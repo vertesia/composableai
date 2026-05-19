@@ -2,7 +2,7 @@ import { AUDIO_RENDITION_NAME, AudioMetadata, ContentNature, ContentObject } fro
 import { Spinner } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { formatDuration, WEB_SUPPORTED_AUDIO_FORMATS } from "./formats.js";
 
 interface AudioPanelProps {

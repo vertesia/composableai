@@ -3,7 +3,7 @@ import { Center, useFetch, SelectBox } from "@vertesia/ui/core";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from "@vertesia/ui/session";
 import { LockIcon } from "lucide-react";
 import { ComponentType, ReactNode, useEffect, useMemo, useState } from "react";
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { AppInstallationProvider } from "./AppInstallationProvider";
 
 

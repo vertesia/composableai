@@ -3,7 +3,7 @@ import { Avatar, Popover, PopoverContent, PopoverTrigger, Table, useFetch } from
 import { useUserSession } from "@vertesia/ui/session";
 import { Users, Users2 } from "lucide-react";
 import { ReactNode } from "react";
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 const USER_CACHE: Record<string, Promise<User>> = {};
 const GROUP_CACHE: Record<string, Promise<UserGroup>> = {};
@@ -67,7 +67,7 @@ function SystemAvatar({ showTitle = false, size = "md" }: InfoProps) {
         <UserPopoverPanel title={t('user.systemUser')} description={t('user.systemUserDescription')}>
             <div className="flex gap-2 items-center">
                 <Avatar src="/icon.svg" size={size} />
-                {showTitle && <div className="text-sm font-semibold pl-2">{t('user.systemUser')}</div>}
+                {showTitle && <div className="text-sm font-semibold ps-2">{t('user.systemUser')}</div>}
             </div>
         </UserPopoverPanel>
     )
@@ -79,7 +79,7 @@ function ProjectMembersAvatar({ showTitle = false, size = "md" }: InfoProps) {
         <UserPopoverPanel title={t('user.allProjectMembers')} description={t('user.allProjectMembersDescription')}>
             <div className="flex gap-2 items-center">
                 <Users2 className="size-4" size={size} />
-                {showTitle && <div className="text-sm font-semibold pl-2">{t('user.allProjectMembers')}</div>}
+                {showTitle && <div className="text-sm font-semibold ps-2">{t('user.allProjectMembers')}</div>}
             </div>
         </UserPopoverPanel>
     )
@@ -103,7 +103,7 @@ function ServiceAccountAvatar({ accountId, showTitle = false, size = "md" }: Ser
         <UserPopoverPanel title={t('user.serviceAccount')} description={description}>
             <div className="flex flex-row items-center gap-2">
                 <Avatar src="/cloud.svg" name="SA" color="bg-amber-500" className="px-[5px] text-white" size={size} />
-                {showTitle && <div className="text-sm font-semibold pl-2 truncate">{t('user.serviceAccount')} : ~{_accountId.slice(-6)}</div>}
+                {showTitle && <div className="text-sm font-semibold ps-2 truncate">{t('user.serviceAccount')} : ~{_accountId.slice(-6)}</div>}
             </div>
         </UserPopoverPanel>
     );
@@ -371,7 +371,7 @@ function UnknownAvatar({ title, message, color, size = "md", showTitle = false }
         <UserPopoverPanel title={title} description={message}>
             <div className="flex flex-row items-center gap-2">
                 <Avatar color={color} size={size} />
-                {showTitle && <div className="text-sm font-semibold pl-1">{title}</div>}
+                {showTitle && <div className="text-sm font-semibold ps-1">{title}</div>}
             </div>
         </UserPopoverPanel>
     )
@@ -410,7 +410,7 @@ function GroupAvatar({ userId, showTitle = false, size = "md" }: GroupAvatarProp
         <UserPopoverPanel title={group.name || t('user.unnamedGroup')} description={description}>
             <div className="flex flex-row items-center gap-2">
                 <Users className="size-6 text-indigo-500" size={size} />
-                {showTitle && <div className="text-sm font-semibold pl-2">{group.name || t('user.unnamedGroup')}</div>}
+                {showTitle && <div className="text-sm font-semibold ps-2">{group.name || t('user.unnamedGroup')}</div>}
             </div>
         </UserPopoverPanel>
     )
@@ -439,7 +439,7 @@ function UserAvatar({ userId, showTitle = false, size = "md" }: UserAvatarProps)
         <UserPopoverPanel title={user.name || user.email || user.username || t('user.unknown')} description={description}>
             <div className="flex flex-row items-center gap-2">
                 <Avatar src={user.picture} name={user.name} color="bg-indigo-500" size={size} />
-                {showTitle && <div className="text-sm font-semibold pl-2">{user.name || user.email || user.username || t('user.unknown')}</div>}
+                {showTitle && <div className="text-sm font-semibold ps-2">{user.name || user.email || user.username || t('user.unknown')}</div>}
             </div>
         </UserPopoverPanel>
     )
