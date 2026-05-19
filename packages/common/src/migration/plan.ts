@@ -165,4 +165,9 @@ export interface MigrationExecution {
     sample_size?: number;
     /** Run source + transform but skip the sink. Pairs with sample_size. */
     dry_run?: boolean;
+    /** Initial sleep between ingester passes, in milliseconds. The
+     *  workflow auto-tunes from here: shrinks when batches are flowing
+     *  fast, grows when the bucket is empty. 0/undefined = default
+     *  (10s). Clamped at runtime to [1s, 60s]. */
+    ingest_interval_ms?: number;
 }
