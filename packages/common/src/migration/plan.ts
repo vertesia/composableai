@@ -134,8 +134,74 @@ export interface ACLMapping {
      *  "flatten_to_project" = drop per-doc ACLs, rely on project access.
      *  "drop" = no ACL applied. */
     strategy: 'copy' | 'flatten_to_project' | 'drop';
-    /** Source-role → Vertesia-role mapping. */
+    /** DEPRECATED — use principal_map. Kept for back-compat with early
+     *  Phase 1 plans. */
     roles?: Record<string, string>;
+    /**
+     * Maps a source principal name (Nuxeo `ace.user`, FileNet
+     * `Grantee_Name`, …) to a structured Vertesia principal reference.
+     * Required for strategy="copy" — source systems typically store
+     * principals as bare strings without distinguishing user vs group,
+     * so the planner must classify them explicitly. The discovery tool
+     * surfaces every distinct principal seen in ACEs; the agent fills
+     * this map by cross-referencing the customer's Vertesia user /
+     * group catalogue.
+     *
+     * Unmapped principals: the migration runner emits an ACE with
+     * `type: "unknown"` and logs a per-record warning. The operator
+     * inspects `_failed/` (when strategy="copy" and `error_on_unmapped`
+     * is true) or the in-Mongo migration_shard_progress counter.
+     */
+    principal_map?: Record<string, PrincipalRef>;
+    /**
+     * Override the built-in source-permission → Vertesia-permission
+     * rollup table. Each source key maps to a Vertesia permission
+     * string ("content:read" / "content:write" / "content:admin" / "content:delete"
+     * or a custom permission name). Entries missing from the map fall
+     * back to the adapter's default rollup (documented per source in
+     * docs/<source>-migration-mapping.md).
+     */
+    permission_map?: Record<string, string>;
+    /**
+     * Drop ACEs whose source ACL was inherited from a parent (Nuxeo
+     * `name: "inherited"`, FileNet `Permission_Source: 2`, …). Vertesia
+     * recomputes inherited permissions from the parent chain, so
+     * re-emitting them duplicates ACE evaluation. Default: true.
+     */
+    drop_inherited?: boolean;
+    /**
+     * Drop deny ACEs (Nuxeo `grant: false`, FileNet AccessMask with
+     * DENY bit). Most platforms preserve denies because they're
+     * security-critical; set true only when the target type can't
+     * model them. Default: false.
+     */
+    drop_deny?: boolean;
+    /**
+     * Drop ACEs with begin/end time bounds. Vertesia ACE doesn't model
+     * TTL on grants — a time-bounded ACE migrated naively becomes
+     * permanent. Default: true (drop with a warning per record).
+     */
+    drop_time_bounded?: boolean;
+    /**
+     * When strategy="copy" and a source principal isn't in
+     * principal_map, fail the record instead of emitting an unmapped
+     * ACE. Useful for compliance migrations where partial ACL fidelity
+     * is unacceptable. Default: false.
+     */
+    error_on_unmapped?: boolean;
+}
+
+/**
+ * Structured principal reference. Maps a source-system string id to a
+ * Vertesia principal — disambiguates user/group/everyone since most
+ * source systems store these as bare strings.
+ */
+export interface PrincipalRef {
+    type: 'user' | 'group' | 'everyone' | 'anonymous' | 'unknown';
+    /** Vertesia-side identifier. Omitted for `everyone` / `anonymous`. */
+    id?: string;
+    /** Optional display name for audit logs / UI surfacing. */
+    display_name?: string;
 }
 
 export interface ContentMapping {
