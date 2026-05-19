@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "../libs/utils"
 import { X } from "lucide-react";
 import { ChangeEvent } from "react";
-import { Button } from "@vertesia/ui/core";
+import { Button } from "./button";
 
 const variants = cva(
   "",
