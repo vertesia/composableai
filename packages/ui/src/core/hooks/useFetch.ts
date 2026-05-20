@@ -23,18 +23,18 @@ export function useFetch<T = unknown>(fetcher: () => Promise<T>, opts?: FetchOpt
     const [isLoading, setIsLoading] = useState(false);
     const [data, setData] = useState<T | undefined>(options.defaultValue);
     const fetch = () => {
-        options.start && options.start();
+        options.start?.();
         setIsLoading(true);
         return fetcher().then((result: T) => {
             setData(result);
-            options.onSuccess && options.onSuccess(result);
+            options.onSuccess?.(result);
         }).catch(error => {
             const err = toError(error);
             setError(err);
-            options.onError && options.onError(err);
+            options.onError?.(err);
         }).finally(() => {
             setIsLoading(false);
-            options.end && options.end();
+            options.end?.();
         });
     }
     useEffect(() => {

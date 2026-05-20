@@ -159,7 +159,7 @@ class WildcardSegmentNode<T = unknown> implements SegmentNode<T> {
         if (!params._) {
             params._ = segment ? [segment] : [];
         } else {
-            segment && params._.push(segment);
+            if (segment) params._.push(segment);
         }
         return this;
     }

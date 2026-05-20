@@ -30,7 +30,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
     useIntersectionObserver(loadMoreRef, () => {
-        isReady && search.loadMore();
+        if (isReady) search.loadMore();
     }, { deps: [isReady] });
 
     useEffect(() => {

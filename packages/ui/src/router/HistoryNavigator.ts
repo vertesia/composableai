@@ -240,7 +240,7 @@ export class HistoryNavigator {
     }
 
     stop() {
-        this._popStateListener && window.removeEventListener('popstate', this._popStateListener);
-        this._linkNavListener && document.body.removeEventListener('click', this._linkNavListener);
+        if (this._popStateListener) window.removeEventListener('popstate', this._popStateListener);
+        if (this._linkNavListener) document.body.removeEventListener('click', this._linkNavListener);
     }
 }

@@ -30,10 +30,10 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(({ valu
         const value = ev.target.value;
         setTextValue(value)
         if (value === '') {
-            onChange && onChange(undefined, value)
+            onChange?.(undefined, value)
         } else {
             const num = parseFloat(value);
-            onChange && onChange(num, value)
+            onChange?.(num, value)
         }
     }
 

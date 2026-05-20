@@ -40,7 +40,7 @@ export class ObjectWalker {
     _walk(key: ObjectKey, obj: unknown, visitor: ObjectVisitor) {
         const type = typeof obj;
         if (!obj || type !== 'object' || obj instanceof Date) {
-            visitor.onValue && visitor.onValue(key, obj);
+            visitor.onValue?.(key, obj);
         } else if (Array.isArray(obj)) {
             this._walkIterable(key, obj, visitor);
         } else if (this.supportIterators && isIterable(obj)) {
@@ -48,25 +48,25 @@ export class ObjectWalker {
         } else if (isPlainRecord(obj)) { // a plain object
             this._walkObject(key, obj, visitor);
         } else { // a random object - we treat it as a value
-            visitor.onValue && visitor.onValue(key, obj);
+            visitor.onValue?.(key, obj);
         }
     }
 
     _walkIterable(key: ObjectKey, obj: Iterable<unknown>, visitor: ObjectVisitor) {
-        visitor.onStartIteration && visitor.onStartIteration(key, obj);
+        visitor.onStartIteration?.(key, obj);
         let i = 0;
         for (const value of obj) {
             this._walk(i++, value, visitor);
         }
-        visitor.onEndIteration && visitor.onEndIteration(key, obj);
+        visitor.onEndIteration?.(key, obj);
     }
 
     _walkObject(key: ObjectKey, obj: Record<string, unknown>, visitor: ObjectVisitor) {
-        visitor.onStartObject && visitor.onStartObject(key, obj);
+        visitor.onStartObject?.(key, obj);
         for (const k of Object.keys(obj)) {
             this._walk(k, obj[k], visitor);
         }
-        visitor.onEndObject && visitor.onEndObject(key, obj);
+        visitor.onEndObject?.(key, obj);
     }
 
     map<T = unknown>(obj: unknown, mapFn: (key: ObjectKey, value: unknown) => unknown): T {

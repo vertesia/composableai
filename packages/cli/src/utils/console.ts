@@ -215,7 +215,11 @@ const streamsToRestore: WriteStream[] = [];
 let restoreCursorIsRegistered = false;
 
 export function toggleCursor(show: boolean, stream: WriteStream = process.stdout) {
-    show ? showCursor(stream) : hideCursor(stream);
+    if (show) {
+        showCursor(stream);
+    } else {
+        hideCursor(stream);
+    }
 }
 
 export function showCursor(stream: WriteStream = process.stdout) {

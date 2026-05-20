@@ -115,7 +115,7 @@ interface DataViewProps<T> {
 }
 function DataView<T>({ viewer: Viewer, value, onEdit, editOnClick, outlineOnHover, placeholder, onDelete, readonly }: DataViewProps<T>) {
     const onClick = () => {
-        editOnClick && onEdit();
+        if (editOnClick) onEdit();
     };
 
     const onKeyUp = (e: KeyboardEvent<HTMLDivElement>) => {

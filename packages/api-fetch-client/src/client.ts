@@ -97,13 +97,13 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
         }
         this.response = undefined;
         const request = await super.createRequest(url, init);
-        this.onRequest && this.onRequest(request);
+        this.onRequest?.(request);
         return request;
     }
 
     async handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): Promise<T> {
         this.response = res; // store last response
-        this.onResponse && this.onResponse(res, req);
+        this.onResponse?.(res, req);
         return super.handleResponse<T>(req, res, params);
     }
 

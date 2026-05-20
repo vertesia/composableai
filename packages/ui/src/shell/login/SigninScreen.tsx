@@ -22,7 +22,7 @@ interface SigninScreenProps {
 export function SigninScreen({ allowedPrefix, isNested = false, lightLogo, darkLogo, preservePath }: SigninScreenProps) {
     const [allow, setAllow] = useState(false);
     useSafeLayoutEffect(() => {
-        allowedPrefix && setAllow(window.location.pathname.startsWith(allowedPrefix));
+        if (allowedPrefix) setAllow(window.location.pathname.startsWith(allowedPrefix));
     }, [allowedPrefix]);
     return allow ? null : <SigninScreenImpl isNested={isNested} lightLogo={lightLogo} darkLogo={darkLogo} preservePath={preservePath} />;
 }

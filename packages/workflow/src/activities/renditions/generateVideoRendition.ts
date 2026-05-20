@@ -91,7 +91,7 @@ async function generateThumbnail(
         "2", // High quality
         `"${outputFile}"`,
     ].join(" ");
-    log.info(`Generating thumbnail at ${timestamp}s`), { command };
+    log.info(`Generating thumbnail at ${timestamp}s`, { command });
     try {
         const { stderr } = await execAsync(command);
 

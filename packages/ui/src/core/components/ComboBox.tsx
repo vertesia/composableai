@@ -124,7 +124,7 @@ export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelec
     });
     useEffect(() => {
         if (inputRef.current) {
-            focusOnMount && inputRef.current.focus();
+            if (focusOnMount) inputRef.current.focus();
         }
     }, [inputRef.current]);
     // the onSelect callback may change so we need to refresh it.

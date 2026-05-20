@@ -93,7 +93,7 @@ function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk:
                     try {
                         const data = JSON.parse(ev.data);
                         if (data) {
-                            onChunk && onChunk(data);
+                            onChunk?.(data);
                         }
                     } catch (err) {
                         reject(err);

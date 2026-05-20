@@ -174,7 +174,7 @@ export class Builder implements Commands {
                     rmSync(fileName);
                 }
             }
-            this.options.quiet || console.log(`Memory saved to ${target}`);
+            if (!this.options.quiet) console.log(`Memory saved to ${target}`);
             return target;
         } finally {
             if (this._tmpdir) {

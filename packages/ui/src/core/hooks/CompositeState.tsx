@@ -76,7 +76,7 @@ export class Slot {
 
     withConsumer(consume: ((content: ReactNode) => void) | undefined) {
         this.consume = consume;
-        consume && consume(this.current);
+        consume?.(this.current);
         return this;
     }
 }

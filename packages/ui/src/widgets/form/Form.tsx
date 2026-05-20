@@ -20,7 +20,7 @@ export function Form({ object, components, onSubmit, children, onChange, disable
     const _onSubmit = (evt: SyntheticEvent) => {
         evt.stopPropagation();
         evt.preventDefault();
-        onSubmit && onSubmit(object.value);
+        onSubmit?.(object.value);
     }
     object.observer = onChange;
     return (

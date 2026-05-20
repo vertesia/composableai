@@ -359,7 +359,7 @@ function DocumentTableImpl({
                     }
                 }
             }
-            onSelectionChange && onSelectionChange(selection);
+            onSelectionChange?.(selection);
         }
     };
 
