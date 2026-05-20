@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { Button } from "@vertesia/ui/core";
+import { Button } from "./shadcn/button";
 
 
 interface EmptyInteractionsProps {
