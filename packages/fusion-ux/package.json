@@ -28,7 +28,7 @@
   "dependencies": {
     "@vertesia/common": "workspace:*",
     "ajv": "^8.17.1",
-    "react": "^19.2.3"
+    "react": "^19.2.6"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.3",
@@ -36,11 +36,11 @@
     "@rollup/plugin-replace": "^6.0.2",
     "@rollup/plugin-terser": "^0.4.4",
     "@types/node": "^24.1.0",
-    "@types/react": "^19.2.3",
+    "@types/react": "^19.2.15",
     "rimraf": "^6.1.2",
     "rollup": "^4.59.0",
     "typescript": "^6.0.2",
-    "vitest": "^4.0.16"
+    "vitest": "^4.1.6"
   },
   "exports": {
     ".": {

@@ -34,7 +34,7 @@
     "@types/node": "^24.1.0"
   },
   "peerDependencies": {
-    "vite": "^7.3.2"
+    "vite": "^7.3.3"
   },
   "repository": {
     "type": "git",
