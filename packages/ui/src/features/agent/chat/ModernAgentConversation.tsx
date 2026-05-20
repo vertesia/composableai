@@ -515,6 +515,7 @@ function StartWorkflowView({
 
     return (
         <div className="flex flex-col h-full bg-background items-center">
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target only; file selection is also exposed via the upload button. */}
             <div
                 className={cn(
                     "flex flex-col h-full w-full overflow-hidden border-0 relative",
@@ -1525,6 +1526,7 @@ const handleCloseRightPanel = useCallback(() => {
     const mainContent = (
         <ArtifactUrlCacheProvider>
         <ImageLightboxProvider>
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target only; file selection is also exposed via the upload button. */}
         <div
             ref={conversationLayoutRef}
             className={cn("flex flex-col lg:flex-row gap-2 w-full h-full relative overflow-hidden", isDragOver && "ring-2 ring-blue-400 ring-inset", className)}

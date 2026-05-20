@@ -563,7 +563,7 @@ export function DocumentUploadModal({
     const typeSelection = () => {
         return (
             <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">
+                <div className="block text-sm font-medium mb-2">
                     {t('store.contentType')} <span className="text-muted font-normal">{t('store.optional')}</span>
                     <VTooltip
                         description={t('upload.contentTypeTooltip')}
@@ -571,7 +571,7 @@ export function DocumentUploadModal({
                     >
                         <Info className="size-3 ms-2" />
                     </VTooltip>
-                </label>
+                </div>
                 <SelectBox
                     options={types}
                     value={selectedType}

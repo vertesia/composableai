@@ -1,5 +1,5 @@
 import { AgentMessage, AgentMessageType } from "@vertesia/common";
-import { Button, cn, useToast } from "@vertesia/ui/core";
+import { Button, cn, onActivateKey, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
@@ -180,18 +180,20 @@ function FileDisplay({ files, className: fileClassName }: { files: string[]; cla
                 const fileName = file.split('/').pop()?.split('?')[0] || 'file';
                 if (isImageUrl(file)) {
                     return (
-                        <div
+                        <Button
+                            variant="unstyled"
                             key={idx}
-                            className="cursor-pointer"
+                            className="cursor-pointer p-0"
                             onClick={() => openImage(file, fileName)}
                             title={t('agent.clickToEnlarge')}
+                            aria-label={fileName}
                         >
                             <img
                                 src={file}
                                 alt={fileName}
                                 className="max-w-[300px] max-h-[200px] rounded border hover:opacity-80 transition-opacity hover:shadow-lg"
                             />
-                        </div>
+                        </Button>
                     );
                 }
                 return (
@@ -338,9 +340,13 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
     return (
         <div className={cn("border-b border-gray-100 dark:border-gray-800 last:border-b-0", classNames.itemClassName)}>
             {/* Collapsed header - always visible */}
+            {/* biome-ignore lint/a11y/useSemanticElements: header contains nested Buttons (copy); button-in-button is invalid HTML so role="button" on a div is the pragmatic choice. */}
             <div
+                role="button"
+                tabIndex={0}
                 className={cn("flex items-start justify-between px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", classNames.itemHeaderClassName)}
                 onClick={onToggle}
+                onKeyDown={onActivateKey(onToggle)}
             >
                 <div className="flex items-start gap-2 flex-1 min-w-0">
                     <div className="flex-shrink-0 pt-0.5">
@@ -728,9 +734,14 @@ function ToolCallGroupComponent({
             className={cn("border-s-4 overflow-hidden bg-white dark:bg-gray-900 mb-4", getBorderColor(), rootClassName)}
         >
             {/* Compact header */}
+            {/* biome-ignore lint/a11y/useSemanticElements: header contains nested Buttons; button-in-button is invalid HTML so role="button" on a div is the pragmatic choice. */}
             <div
+                role="button"
+                tabIndex={0}
+                aria-expanded={!isCollapsed}
                 className={cn("flex items-center justify-between px-4 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", headerClassName)}
                 onClick={() => setIsCollapsed(!isCollapsed)}
+                onKeyDown={onActivateKey(() => setIsCollapsed(!isCollapsed))}
             >
                 <div className="flex items-center gap-1 flex-1 min-w-0">
                     {renderStatusIndicator()}
@@ -807,9 +818,14 @@ function ToolCallGroupComponent({
                                 }}
                             >
                                 {/* Row header - clickable to expand */}
+                                {/* biome-ignore lint/a11y/useSemanticElements: header contains nested Buttons; button-in-button is invalid HTML so role="button" on a div is the pragmatic choice. */}
                                 <div
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-expanded={isItemExpanded}
                                     className={cn("flex items-start gap-2 py-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50", itemHeaderClassName)}
                                     onClick={() => toggleItem(idx)}
+                                    onKeyDown={onActivateKey(() => toggleItem(idx))}
                                     title={fullMessage}
                                 >
                                     <div className="flex-shrink-0 pt-0.5">

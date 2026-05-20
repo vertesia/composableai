@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { ComplexSearchQuery, ProjectConfiguration, SearchTypes, SupportedEmbeddingTypes } from '@vertesia/common';
-import { Button, Checkbox, Input, Modal, ModalBody, ModalFooter, ModalTitle, NumberInput, useToast } from '@vertesia/ui/core';
+import { Button, Checkbox, Input, Label, Modal, ModalBody, ModalFooter, ModalTitle, NumberInput, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { Settings } from 'lucide-react';
 
@@ -113,22 +113,24 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
                 <ModalTitle>{t('store.searchTypes')}</ModalTitle>
                 <ModalBody>
                     <div className="flex flex-col gap-2">
-                        <label className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <Checkbox
+                                id="search-type-full_text"
                                 checked={selectedTypes.includes(SearchTypes.full_text)}
                                 onCheckedChange={handleCheckboxChange(SearchTypes.full_text)}
                             />
-                            <span>{t('store.fullText')}</span>
-                        </label>
+                            <Label htmlFor="search-type-full_text">{t('store.fullText')}</Label>
+                        </div>
                         <div className="font-semibold mt-2 mb-1">{t('store.embeddings')}</div>
                         {embeddingTypes.map(type => (
-                            <label key={type} className="flex items-center gap-2">
+                            <div key={type} className="flex items-center gap-2">
                                 <Checkbox
+                                    id={`search-type-${type}`}
                                     checked={selectedTypes.includes(type)}
                                     onCheckedChange={handleCheckboxChange(type)}
                                 />
-                                <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
-                            </label>
+                                <Label htmlFor={`search-type-${type}`}>{type.charAt(0).toUpperCase() + type.slice(1)}</Label>
+                            </div>
                         ))}
                         <div className="mt-3">
                             <span className="me-2">{t('store.limit')}</span>

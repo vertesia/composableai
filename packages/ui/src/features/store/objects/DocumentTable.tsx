@@ -178,6 +178,7 @@ function ObjectTableWithDropZone({
     };
 
     return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target for file upload; selection is exposed via the upload UI.
         <div
             className="min-h-[400px] relative"
             onDragOver={handleDragOver}

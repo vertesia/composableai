@@ -299,6 +299,7 @@ export default function MessageInput({
 
 
     return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target only; file selection is also exposed via the upload button.
         <div
             className={cn("p-3 border-t border-muted flex-shrink-0 transition-all fixed lg:sticky bottom-0 start-0 end-0 lg:start-auto lg:end-auto w-full bg-background z-10", isDragOver && "bg-blue-50 dark:bg-blue-900/20 border-blue-400", className)}
             style={{ minHeight: "120px" }}

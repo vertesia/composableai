@@ -333,13 +333,19 @@ function MessageItemComponent({
         },
         img: ({ node, ref, ...props }: { node?: unknown; ref?: unknown; src?: string; alt?: string }) => {
             return (
-                <img
-                    {...props}
-                    alt={props.alt ?? ""}
-                    className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
-                    loading="lazy"
+                <Button
+                    variant="unstyled"
+                    className="block p-0"
                     onClick={() => props.src && openImage(props.src, props.alt)}
-                />
+                    aria-label={props.alt || props.src || 'image'}
+                >
+                    <img
+                        {...props}
+                        alt={props.alt ?? ""}
+                        className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
+                        loading="lazy"
+                    />
+                </Button>
             );
         },
     }), [openImage, StoreLinkComponent, CollectionLinkComponent]);
@@ -558,10 +564,12 @@ function MessageItemComponent({
                                 {artifactLinks
                                     .filter(a => a.isImage)
                                     .map(({ displayName, artifactPath, url }) => (
-                                        <div
+                                        <Button
+                                            variant="unstyled"
                                             key={`${artifactPath}-preview`}
-                                            className="max-w-xs cursor-pointer"
+                                            className="max-w-xs cursor-pointer text-start p-0"
                                             onClick={() => openImage(url, displayName)}
+                                            aria-label={displayName}
                                         >
                                             <img
                                                 src={url}
@@ -571,7 +579,7 @@ function MessageItemComponent({
                                             <div className="mt-1 text-[11px] text-muted truncate">
                                                 {displayName}
                                             </div>
-                                        </div>
+                                        </Button>
                                     ))}
                             </div>
                         )}

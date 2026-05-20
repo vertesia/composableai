@@ -127,7 +127,8 @@ function DataView<T>({ viewer: Viewer, value, onEdit, editOnClick, outlineOnHove
     const btnStyle = 'invisible group-hover:visible';
 
     return (
-        <div tabIndex={0} onKeyUp={onKeyUp} onClick={onClick} className={clsx("flex justify-start items-center group", outlineOnHover ? VIEW_BOX_HOVER : VIEW_BOX, { 'cursor-pointer': editOnClick })}>
+        // biome-ignore lint/a11y/noStaticElementInteractions: container is interactive only when editOnClick is true; role/keyboard provided conditionally and onClick is a no-op otherwise.
+        <div role={editOnClick ? "button" : undefined} tabIndex={0} onKeyUp={onKeyUp} onClick={onClick} className={clsx("flex justify-start items-center group", outlineOnHover ? VIEW_BOX_HOVER : VIEW_BOX, { 'cursor-pointer': editOnClick })}>
             <Viewer value={value} placeholder={placeholder} />
             <div className='ms-auto flex space-x-2'>
                 {
@@ -180,6 +181,8 @@ function DataEdit<T>({ editor: Editor, value, onSave, onCancel, skipClickOutside
     return (
         <div ref={ref}>
             <div className={EDIT_BOX}>
+                {/* biome-ignore lint/a11y/noStaticElementInteractions: stop-propagation wrapper to keep clicks inside the editor from triggering outer handlers; not a user-facing interaction. */}
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — wrapper exists only to stop event propagation, not as an interactive element. */}
                 <div className="w-full" onClick={(e) => e.stopPropagation()}>
                     <Editor
                         value={actualValue}
