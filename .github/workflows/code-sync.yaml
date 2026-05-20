@@ -48,7 +48,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           export SOURCE_COMPOSABLEAI_REF="${FROM_BRANCH}"
-          export SOURCE_COMPOSABLEAI_SHA="$(git rev-parse 'origin/${FROM_BRANCH}')"
+          export SOURCE_COMPOSABLEAI_SHA="$(git rev-parse "origin/${FROM_BRANCH}")"
           export SOURCE_COMPOSABLEAI_MSG="$(git log --format="%cd: %s by %an" --date=short -1 $SOURCE_COMPOSABLEAI_SHA)"
 
           export SOURCE_LLUMIVERSE_REF="main"
