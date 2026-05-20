@@ -1,8 +1,36 @@
 #!/usr/bin/env bash
 # Pre-commit hook:
-# - Runs the repository lint command
+# - Runs the repository lint command via the local pnpm workspace when
+#   composableai has its own node_modules (standalone clone, or after a local
+#   `pnpm install`).
+# - When composableai is checked out as a submodule of another repo and has no
+#   local node_modules, falls back to the parent workspace's biome binary at
+#   `../node_modules/.bin/biome` — so submodule contributors don't need to run
+#   a separate `pnpm install` inside composableai just to commit.
+# - Errors with actionable guidance if neither install is present.
 
 set -euo pipefail
 
 echo "Running lint..."
-pnpm run lint --diagnostic-level=error
+
+if [ -d node_modules ]; then
+    # Standalone clone or local `pnpm install` has been run — biome is reachable
+    # through pnpm exec in the normal way.
+    pnpm run lint --diagnostic-level=error
+    exit $?
+fi
+
+# Submodule mode: composableai/node_modules is absent because the parent
+# workspace's `pnpm install` doesn't install composableai's own root devDeps.
+# Fall back to the biome binary in the parent workspace's node_modules/.bin/.
+PARENT_BIOME="../node_modules/.bin/biome"
+if [ -x "$PARENT_BIOME" ]; then
+    echo "(using biome from parent workspace: $PARENT_BIOME)"
+    "$PARENT_BIOME" lint --diagnostic-level=error
+    exit $?
+fi
+
+echo "Error: biome not found in this workspace or its parent."
+echo "Run 'pnpm install' from inside composableai to install local biome,"
+echo "or commit with --no-verify to skip this check."
+exit 1
