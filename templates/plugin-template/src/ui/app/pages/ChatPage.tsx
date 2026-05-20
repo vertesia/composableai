@@ -1,9 +1,9 @@
-import { useCallback } from "react";
+import type { CreateAgentRunPayload } from "@vertesia/common";
 import { GenericPageNavHeader, ModernAgentConversation } from "@vertesia/ui/features";
+import { useUITranslation } from "@vertesia/ui/i18n";
 import { NavLink, useNavigate, useParams } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
-import { useUITranslation } from "@vertesia/ui/i18n";
-import type { CreateAgentRunPayload } from "@vertesia/common";
+import { useCallback } from "react";
 import { ASSISTANT_INTERACTION } from "../constants";
 
 export function ChatPage() {
@@ -17,7 +17,7 @@ export function ChatPage() {
         const payload: CreateAgentRunPayload = {
             interaction: ASSISTANT_INTERACTION,
             interactive: true,
-            data: { user_prompt: initialMessage || '' },
+            data: { user_prompt: initialMessage || "" },
         };
         const result = await store.agents.start(payload);
         if (result) {
@@ -27,7 +27,7 @@ export function ChatPage() {
         return undefined;
     }, [store, navigate]);
 
-    const handleReset = useCallback(() => navigate('/chat'), [navigate]);
+    const handleReset = useCallback(() => navigate("/chat"), [navigate]);
 
     return (
         <div className="flex flex-col h-full">
@@ -47,7 +47,7 @@ export function ChatPage() {
             <ModernAgentConversation
                 agentRunId={agentRunId}
                 startWorkflow={startWorkflow}
-                title={t('nav.pluginAssistant')}
+                title={t("nav.pluginAssistant")}
                 resetWorkflow={handleReset}
                 hideObjectLinking
                 interactive

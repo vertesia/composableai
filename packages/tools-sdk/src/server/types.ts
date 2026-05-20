@@ -6,7 +6,7 @@ import { RenderingTemplateCollection } from "../RenderingTemplateCollection.js";
 import { ToolCollection } from "../ToolCollection.js";
 import { ToolExecutionPayload } from "../types.js";
 import { JSONSchema } from "@llumiverse/common";
-import { AppUIConfig, InCodeProcessDefinition, ProjectConfiguration } from "@vertesia/common";
+import { AppDashboardDefinition, AppUIConfig, InCodeProcessDefinition, ProjectConfiguration } from "@vertesia/common";
 import { ContentTypesCollection } from "../ContentTypesCollection.js";
 
 /**
@@ -66,6 +66,10 @@ export interface ToolServerConfig {
      * Process definitions to expose as app-contributed processes.
      */
     processes?: InCodeProcessDefinition[];
+    /**
+     * Dashboard definitions to expose as app-contributed dashboards.
+     */
+    dashboards?: AppDashboardDefinition[];
     /**
      * Skill collections to expose
      */

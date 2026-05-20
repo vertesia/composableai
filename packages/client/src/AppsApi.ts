@@ -8,11 +8,19 @@ import type {
     AppManifest,
     AppManifestData,
     AppPackage,
+    AppPackageScope,
     AppToolCollection,
+    AppBuildProgress,
+    AppVersionListQuery,
+    AppVersionRecord,
+    ActivateAppVersionResponse,
     CountResult,
     ProjectRef,
     RequireAtLeastOne,
+    StartAppBuildRequest,
+    StartAppBuildResponse,
     UpdateAppInstallationToolAllowlistPayload,
+    UpsertAppVersionRequest,
     ValidateUrlRequest,
     ValidateUrlResponse,
 } from "@vertesia/common";
@@ -35,6 +43,37 @@ export default class AppsApi extends ApiTopic {
         return this.put(`/${id}`, { payload: manifest });
     }
 
+    listVersions(query?: AppVersionListQuery): Promise<AppVersionRecord[]> {
+        return this.get('/versions', {
+            query: {
+                ...(query?.app_id && { app_id: query.app_id }),
+                ...(query?.kind && { kind: query.kind }),
+                ...(query?.include_expired !== undefined && { include_expired: query.include_expired }),
+                ...(query?.limit !== undefined && { limit: query.limit }),
+            },
+        });
+    }
+
+    upsertVersion(payload: UpsertAppVersionRequest): Promise<AppVersionRecord> {
+        return this.post('/versions', { payload });
+    }
+
+    getVersion(recordId: string): Promise<AppVersionRecord> {
+        return this.get(`/versions/${recordId}`);
+    }
+
+    activateVersion(recordId: string): Promise<ActivateAppVersionResponse> {
+        return this.post(`/versions/${recordId}/activate`);
+    }
+
+    startBuild(appIdOrRecordId: string, payload: StartAppBuildRequest): Promise<StartAppBuildResponse> {
+        return this.post(`/${encodeURIComponent(appIdOrRecordId)}/builds`, { payload });
+    }
+
+    getBuildProgress(appIdOrRecordId: string, workflowId: string, runId: string): Promise<AppBuildProgress> {
+        return this.get(`/${encodeURIComponent(appIdOrRecordId)}/builds/${encodeURIComponent(workflowId)}/${encodeURIComponent(runId)}/progress`);
+    }
+
     /**
      * Get the list if tools provided by the given app.
      * @param appId
@@ -42,6 +81,17 @@ export default class AppsApi extends ApiTopic {
      */
     listAppInstallationTools(appInstallId: string): Promise<AppToolCollection[]> {
         return this.get(`/installations/${appInstallId}/tools`)
+    }
+
+    /**
+     * Get package capabilities exposed by an app installation.
+     */
+    getAppInstallationPackage(appInstallId: string, scope: AppPackageScope | AppPackageScope[] = 'all'): Promise<AppPackage> {
+        return this.get(`/installations/${appInstallId}/package`, {
+            query: {
+                scope: Array.isArray(scope) ? scope.join(',') : scope,
+            },
+        });
     }
 
     /**

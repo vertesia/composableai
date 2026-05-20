@@ -27,7 +27,7 @@ export async function saveAgentArtifact(
     mimeType: string = "application/json",
     storageId?: string,
 ) {
-    const id = storageId || activityInfo().workflowExecution.runId;
+    const id = storageId || activityInfo().workflowExecution!.runId;
     const ext = mime.getExtension(mimeType);
     if (!name) {
         throw ApplicationFailure.nonRetryable(`Name is required`);
@@ -55,7 +55,7 @@ export async function saveAgentArtifact(
 }
 
 export async function fetchAgentArtifact(client: VertesiaClient, name: string, storageId?: string) {
-    const id = storageId || activityInfo().workflowExecution.runId;
+    const id = storageId || activityInfo().workflowExecution!.runId;
     const filePath = agentStoragePath(id) + "/" + name;
     return fetchBlobAsBuffer(client, filePath);
 }

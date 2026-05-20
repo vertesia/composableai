@@ -89,16 +89,17 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
  * @returns
  */
 function defineAppConfig({ command }: ConfigEnv): UserConfig {
-    // Vercel dev proxies to the framework dev server over HTTP — HTTPS would break that.
-    const useHttps = !process.env.VERCEL;
+    // DEV_MODE is used by appgen/sandbox previews. Vercel also proxies to the
+    // framework dev server over HTTP, so both modes disable HTTPS.
+    const useHttps = process.env.DEV_MODE !== '1' && process.env.VERCEL !== '1';
     const base = command === 'build' ? '/app/' : '/';
 
     return {
-        base, // Dev serves the admin UI at /; Vercel serves built app assets from /app/.
+        base, // Dev serves the standalone app at /; Vercel serves built app assets from /app/.
         plugins: [
             tailwindcss(),
             react(),
-            // HTTPS is required for Firebase auth but must be disabled under vercel dev
+            // HTTPS is required for Firebase auth but must be disabled under appgen/Vercel dev
             ...(useHttps ? [basicSsl()] : []),
             // serve lib/plugin.js content in dev mode
             serveStatic([
@@ -113,8 +114,12 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
         build: {
             outDir: 'dist/app', // App build goes to dist/app/
         },
+        optimizeDeps: process.env.DEV_MODE === '1'
+            ? { include: ['html-parse-stringify', 'use-sync-external-store/shim'] }
+            : undefined,
         // for authentication with Firebase
         server: {
+            hmr: process.env.APPGEN_DISABLE_HMR === '1' ? false : undefined,
             proxy: {
                 '/__/auth': {
                     target: 'https://dengenlabs.firebaseapp.com',

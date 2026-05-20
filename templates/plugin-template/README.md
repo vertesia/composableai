@@ -384,7 +384,7 @@ In library mode, React and Vertesia dependencies are externalized (provided by t
 Key files:
 
 - `src/ui/plugin.tsx` -- library entry point (exports the plugin component)
-- `src/ui/main.tsx` -- standalone entry (wraps in `VertesiaShell` + `AdminApp`)
+- `src/ui/main.tsx` -- standalone entry (wraps the plugin app in `VertesiaShell`)
 - `src/ui/routes.tsx` -- route definitions using `NestedRouterProvider`
 - `src/ui/index.css` -- Tailwind CSS 4 with shared styles from `@vertesia/ui`
 

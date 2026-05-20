@@ -822,6 +822,99 @@ export interface DashboardQueryParameters {
 }
 
 /**
+ * Elasticsearch DSL supported by dashboard data sources.
+ * Queries execute through Vertesia Store, so project/security filtering remains server-side.
+ */
+export interface DashboardElasticsearchDsl {
+    query?: Record<string, unknown>;
+    aggs?: Record<string, unknown>;
+    size?: number;
+    from?: number;
+    sort?: Array<Record<string, unknown>>;
+}
+
+/**
+ * How an Elasticsearch DSL result should be converted into Vega rows.
+ */
+export type DashboardElasticsearchResultMapping =
+    | {
+        type: 'hits';
+    }
+    | {
+        type: 'aggregation_buckets';
+        /** Dot path under `aggregations` that contains a `buckets` array. */
+        path: string;
+        /** Output field name for bucket key. Defaults to `key`. */
+        keyField?: string;
+        /** Output field name for doc count. Defaults to `doc_count`. */
+        countField?: string;
+    };
+
+/**
+ * Dashboard data source backed by a Data Platform SQL query.
+ */
+export interface DashboardSqlDataSource {
+    kind: 'data_sql';
+    /** SQL query that returns all rows for the dashboard. */
+    query: string;
+    /** Maximum rows to return from the query. */
+    queryLimit?: number;
+    /** Default values for SQL {{param}} placeholders. */
+    queryParameters?: Record<string, string>;
+}
+
+/**
+ * Dashboard data source backed by Vertesia Store Elasticsearch DSL.
+ */
+export interface DashboardStoreElasticsearchDataSource {
+    kind: 'store_es_dsl';
+    /** Elasticsearch DSL query executed through the secured Store query API. */
+    dsl: DashboardElasticsearchDsl;
+    /** Result mapping. Defaults to `hits`. */
+    result?: DashboardElasticsearchResultMapping;
+}
+
+/**
+ * Data source for a Vega dashboard.
+ */
+export type DashboardDataSource = DashboardSqlDataSource | DashboardStoreElasticsearchDataSource;
+
+/**
+ * Dashboard definition contributed by an app package.
+ *
+ * App dashboard IDs are local to the app. The platform exposes them as
+ * `app:<app_name>:<id>` when listing or retrieving dashboards.
+ */
+export interface AppDashboardDefinition {
+    /** Local app dashboard ID. */
+    id: string;
+    /** Machine-friendly dashboard name. Defaults to `id`. */
+    name?: string;
+    /** Display title. Defaults to `name` or `id`. */
+    title?: string;
+    /** User-facing description. */
+    description?: string;
+    /** Tags for discovery and filtering. */
+    tags?: string[];
+    /** Data source used to populate Vega `data.values`. */
+    dataSource?: DashboardDataSource;
+    /** SQL query shortcut for app dashboards backed by data stores. */
+    query?: string;
+    /** Maximum SQL rows to return. */
+    queryLimit?: number;
+    /** Default values for SQL {{param}} placeholders. */
+    queryParameters?: Record<string, string>;
+    /** Complete Vega-Lite specification for the dashboard. */
+    spec?: Record<string, unknown>;
+    /** Legacy named SQL queries. */
+    queries?: DashboardQuery[];
+    /** Legacy panel definitions. */
+    panels?: DashboardPanel[];
+    /** Legacy dashboard layout. */
+    layout?: DashboardLayout;
+}
+
+/**
  * Summary view of a dashboard (for listings).
  */
 export interface DashboardItem extends BaseObject {
@@ -837,15 +930,22 @@ export interface DashboardItem extends BaseObject {
     last_rendered_at?: string;
     /** Tags for organization */
     tags: string[];
+    /** Source of the dashboard definition. Defaults to stored dashboards. */
+    source?: 'stored' | 'app';
+    /** App name when `source` is `app`. */
+    app_name?: string;
+    /** App dashboards are read-only until cloned into a stored dashboard. */
+    readonly?: boolean;
 }
 
 /**
  * Full dashboard with SQL query and Vega-Lite specification.
  *
  * **New architecture (v2):**
- * - Single `query` field with SQL (use JOINs/CTEs for complex data needs)
+ * - `dataSource` field with either SQL or Store Elasticsearch DSL
  * - Single `spec` field with complete Vega-Lite spec (vconcat/hconcat for multiple panels)
  * - Cross-panel interactivity via Vega selections
+ * - Legacy top-level `query` fields are treated as a SQL data source
  *
  * **Legacy architecture (v1, deprecated):**
  * - Multiple `queries` with named data sources
@@ -856,17 +956,25 @@ export interface DashboardItem extends BaseObject {
 export interface Dashboard extends DashboardItem {
     // ============= New architecture (v2) =============
     /**
+     * Data source used to populate Vega `data.values`.
+     * When omitted, top-level `query` is treated as a SQL data source for backwards compatibility.
+     */
+    dataSource?: DashboardDataSource;
+    /**
      * SQL query that returns all data for the dashboard.
      * Use JOINs, CTEs, or UNION ALL to combine data from multiple tables.
      * Can include {{param_name}} placeholders for dynamic values.
+     * @deprecated Use `dataSource: { kind: 'data_sql', query }` instead.
      */
     query?: string;
     /**
      * Maximum rows to return from the query (default: 10000).
+     * @deprecated Use `dataSource.queryLimit` instead.
      */
     queryLimit?: number;
     /**
      * Default values for SQL parameters.
+     * @deprecated Use `dataSource.queryParameters` instead.
      */
     queryParameters?: Record<string, string>;
     /**
@@ -900,15 +1008,17 @@ export interface Dashboard extends DashboardItem {
 
 /**
  * Payload for creating a new dashboard.
- * Requires query (SQL) and spec (Vega-Lite).
+ * Requires a data source and spec (Vega-Lite).
  */
 export interface CreateDashboardPayload {
     /** Dashboard name (unique within store) */
     name: string;
     /** Dashboard summary */
     summary?: string;
-    /** SQL query that returns all data for the dashboard */
-    query: string;
+    /** Data source used to populate Vega `data.values`. */
+    dataSource?: DashboardDataSource;
+    /** SQL query that returns all data for the dashboard. Deprecated shortcut for a SQL data source. */
+    query?: string;
     /** Maximum rows to return from the query (default: 10000) */
     queryLimit?: number;
     /** Default values for SQL {{param}} placeholders */
@@ -925,7 +1035,9 @@ export interface UpdateDashboardPayload {
     name?: string;
     /** Dashboard summary */
     summary?: string;
-    /** SQL query that returns all data for the dashboard */
+    /** Data source used to populate Vega `data.values`. */
+    dataSource?: DashboardDataSource;
+    /** SQL query that returns all data for the dashboard. Deprecated shortcut for a SQL data source. */
     query?: string;
     /** Maximum rows to return from the query (default: 10000) */
     queryLimit?: number;
@@ -942,6 +1054,8 @@ export interface UpdateDashboardPayload {
  */
 export interface PreviewDashboardPayload {
     // ============= New architecture (v2) =============
+    /** Data source used to populate Vega `data.values`. */
+    dataSource?: DashboardDataSource;
     /** SQL query that returns all data for the dashboard */
     query?: string;
     /** Maximum rows to return from the query (default: 10000) */
@@ -1005,6 +1119,16 @@ export interface DashboardVersion {
     version_number: number;
     /** Commit message describing the change */
     message: string;
+    /** Snapshot of v2 data source at this version */
+    dataSource?: DashboardDataSource;
+    /** Snapshot of v2 SQL query at this version */
+    query?: string;
+    /** Snapshot of v2 query limit at this version */
+    queryLimit?: number;
+    /** Snapshot of v2 query parameters at this version */
+    queryParameters?: Record<string, string>;
+    /** Snapshot of v2 Vega-Lite spec at this version */
+    spec?: Record<string, unknown>;
     /** Snapshot of queries at this version */
     queries: DashboardQuery[];
     /** Snapshot of panels at this version */

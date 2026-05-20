@@ -49,7 +49,7 @@ export function AdminApp({ baseUrl = '/api' }: AdminAppProps) {
     const { data: serverInfo, isLoading: loadingInfo, error: infoError } = useServerInfo(baseUrl);
     const { data: resourceData, isLoading: loadingData, error: dataError } = useResourceData(
         baseUrl,
-        serverInfo?.endpoints.mcp,
+        serverInfo?.endpoints?.mcp,
     );
 
     const isLoading = loadingInfo || loadingData;

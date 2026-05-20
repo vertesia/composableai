@@ -20,11 +20,20 @@
   "conversations.searchPlaceholder": "Rechercher des conversations...",
   "conversations.title": "Conversations",
   "conversations.untitled": "Conversation sans titre",
+  "nav.askAi": "Demander à l'IA",
+  "nav.assistantContext": "Contexte : {{scope}} • Route : {{route}}",
+  "nav.assistantInitialPrompt": "Comment puis-je vous aider aujourd'hui ?",
+  "nav.assistantPlaceholder": "Posez une question à l'assistant...",
+  "nav.commandPaletteNoResults": "Aucune commande correspondante.",
+  "nav.commandPalettePlaceholder": "Rechercher des commandes...",
   "nav.conversation": "Conversation",
   "nav.conversations": "Toutes les conversations",
   "nav.home": "Accueil",
+  "nav.newAssistantSession": "Démarrer une nouvelle session d'assistant",
   "nav.newChat": "Nouvelle conversation",
-  "nav.objects": "Objets de contenu",
+  "nav.newSession": "Nouvelle session",
+  "nav.objects": "Contenu",
+  "nav.openAssistant": "Ouvrir l'assistant",
   "nav.recent": "Récentes",
   "nav.pluginAssistant": "Assistant du plugin",
   "nav.settings": "Paramètres",
@@ -57,5 +66,5 @@
   "objects.status.failed": "Échec",
   "objects.status.processing": "En cours",
   "objects.status.ready": "Prêt",
-  "objects.title": "Objets de contenu"
+  "objects.title": "Contenu"
 }

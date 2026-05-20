@@ -20,11 +20,20 @@
   "conversations.searchPlaceholder": "Search conversations...",
   "conversations.title": "Conversations",
   "conversations.untitled": "Untitled conversation",
+  "nav.askAi": "Ask AI",
+  "nav.assistantContext": "Scope: {{scope}} • Route: {{route}}",
+  "nav.assistantInitialPrompt": "How can I help you today?",
+  "nav.assistantPlaceholder": "Ask the assistant...",
+  "nav.commandPaletteNoResults": "No matching commands.",
+  "nav.commandPalettePlaceholder": "Search commands...",
   "nav.conversation": "Conversation",
   "nav.conversations": "All Conversations",
   "nav.home": "Home",
+  "nav.newAssistantSession": "Start a new assistant session",
   "nav.newChat": "New Chat",
-  "nav.objects": "Content Objects",
+  "nav.newSession": "New session",
+  "nav.objects": "Content",
+  "nav.openAssistant": "Open assistant",
   "nav.recent": "Recent",
   "nav.pluginAssistant": "Plugin Assistant",
   "nav.settings": "Settings",
@@ -57,5 +66,5 @@
   "objects.status.failed": "Failed",
   "objects.status.processing": "Processing",
   "objects.status.ready": "Ready",
-  "objects.title": "Content Objects"
+  "objects.title": "Content"
 }

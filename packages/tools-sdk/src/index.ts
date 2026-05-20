@@ -2,6 +2,8 @@ export * from "./ActivityCollection.js";
 export { authorize, AuthSession } from "./auth.js";
 export * from "./ContentTypesCollection.js";
 export * from "./RenderingTemplateCollection.js";
+export { buildAppPackage } from "./server/app-package.js";
+export type { BuildAppPackageOptions } from "./server/app-package.js";
 export { copyRuntimeAssets } from "./copy-assets.js";
 export * from "./InteractionCollection.js";
 export * from "./server.js";
@@ -11,5 +13,4 @@ export * from "./SkillCollection.js";
 export * from "./ToolCollection.js";
 export * from "./ToolRegistry.js";
 export * from "./types.js";
-
 

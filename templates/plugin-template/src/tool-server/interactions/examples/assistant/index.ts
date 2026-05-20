@@ -1,6 +1,6 @@
-import { PromptRole } from "@llumiverse/common";
 import type { InteractionSpec } from "@vertesia/common";
-import { TemplateType } from "@vertesia/common";
+import SYSTEM_PROMPT from "./system.hbs?prompt";
+import USER_PROMPT from "./user.hbs?prompt";
 
 export default {
     name: "assistant",
@@ -10,16 +10,5 @@ export default {
     agent_runner_options: {
         is_agent: true,
     },
-    prompts: [
-        {
-            role: PromptRole.system,
-            content: "You are a helpful assistant for this plugin. Answer questions and help users with their tasks.",
-            content_type: TemplateType.text,
-        },
-        {
-            role: PromptRole.user,
-            content_type: TemplateType.handlebars,
-            content: "{{user_prompt}}",
-        },
-    ],
+    prompts: [SYSTEM_PROMPT, USER_PROMPT],
 } satisfies InteractionSpec;

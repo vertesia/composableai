@@ -55,7 +55,7 @@ pnpm start                 # Preview production build (build:server + vite previ
 | `src/tool-server/config.ts`   | Registers all collections — add new resources here   |
 | `src/tool-server/settings.ts` | Plugin settings JSON Schema                          |
 | `src/ui/plugin.tsx`           | Library entry for the Vertesia host app              |
-| `src/ui/main.tsx`             | Standalone dev entry (VertesiaShell + AdminApp)      |
+| `src/ui/main.tsx`             | Standalone dev entry (VertesiaShell + plugin app)    |
 | `src/ui/app/App.tsx`          | App root (NestedRouterProvider)                      |
 | `src/ui/app/routes.tsx`       | Route definitions                                    |
 | `src/ui/index.css`            | Tailwind CSS 4 entry with shared styles import       |
@@ -86,6 +86,26 @@ Rules of thumb:
 - Self-contained business logic → `app/features/<name>/` with its own components/hooks/types.
 - A primitive used by ≥2 features (e.g. a sortable header) → promote to `app/components/`.
 - A hook used by ≥2 features → promote to `app/hooks/`.
+
+## Visual Defaults
+
+Generated apps should look like compact Vertesia Studio product surfaces. Default
+to a light operational UI with restrained brand accents unless the user
+explicitly asks for a dark, immersive, or heavily branded treatment.
+
+- Use `@vertesia/ui` components and semantic tokens (`bg-background`,
+  `bg-card`, `border-border`, `text-muted`, `text-success`, `text-attention`,
+  `text-destructive`) before hardcoded colors.
+- Prefer tables, queues, filters, split panes, detail pages, and process
+  timelines over hero sections, oversized cards, or presentation-style
+  dashboards.
+- Keep typography dense and restrained. Use `text-xl`/`text-2xl` for page
+  titles and smaller headings inside panels.
+- Do not force black/near-black backgrounds, neon palettes, or dark-first
+  panels unless requested. If dark mode is useful, implement it with `.dark`
+  variants and semantic tokens.
+- Translate customer brand material into small accents, badges, labels, chart
+  colors, and optional theme variables rather than full-page theming.
 
 ## Plugin-Specific Conventions
 

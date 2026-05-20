@@ -1,8 +1,10 @@
-import { Button } from '@vertesia/ui/core';
+import { Button, Modal, ModalBody, ModalTitle } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     ChevronDownIcon,
     ChevronRightIcon,
+    DownloadIcon,
+    EyeIcon,
     FileIcon,
     FolderIcon,
     FolderOpenIcon,
@@ -11,6 +13,7 @@ import {
     RefreshCwIcon,
 } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
+import { UniversalDocumentViewer, type UniversalDocumentSource } from '../../document-viewer/UniversalDocumentViewer.js';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useArtifacts, type ArtifactTreeNode } from './hooks/useArtifacts.js';
 
@@ -22,6 +25,7 @@ interface TreeNodeProps {
     node: ArtifactTreeNode;
     depth: number;
     runId: string;
+    onPreview: (relativePath: string) => void;
     onDownload: (relativePath: string) => void;
     downloadingPath: string | null;
 }
@@ -31,7 +35,7 @@ function formatDirectoryLabel(name: string): string {
         .replace(/[_-]/g, ' ')
         .replace(/\b\w/g, (c) => c.toUpperCase());
 }
-function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeProps) {
+function TreeNode({ node, depth, runId, onPreview, onDownload, downloadingPath }: TreeNodeProps) {
     const [expanded, setExpanded] = useState(true);
 
     if (node.isDirectory) {
@@ -57,6 +61,7 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeP
                         node={child}
                         depth={depth + 1}
                         runId={runId}
+                        onPreview={onPreview}
                         onDownload={onDownload}
                         downloadingPath={downloadingPath}
                     />
@@ -68,20 +73,80 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeP
     const isDownloading = downloadingPath === node.path;
 
     return (
-        <Button
-            variant="unstyled"
-            className="flex items-center gap-1.5 w-full text-start py-1 px-1 rounded hover:bg-muted/30 text-sm"
+        <div
+            className="group flex items-center gap-1.5 w-full rounded hover:bg-muted/30 text-sm"
             style={{ paddingLeft: `${depth * 16 + 4}px` }}
-            onClick={() => onDownload(node.path)}
-            disabled={isDownloading}
         >
-            {isDownloading
-                ? <Loader2Icon className="size-3.5 shrink-0 animate-spin text-info" />
-                : <span className="size-3.5 shrink-0" />}
-            <FileIcon className="size-4 shrink-0 text-muted" />
-            <span className="truncate">{node.name}</span>
-        </Button>
+            <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-1.5 py-1 text-start"
+                onClick={() => onPreview(node.path)}
+            >
+                <span className="size-3.5 shrink-0" />
+                <FileIcon className="size-4 shrink-0 text-muted" />
+                <span className="truncate">{node.name}</span>
+            </button>
+            <div className="flex shrink-0 items-center pe-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                <Button
+                    variant="ghost"
+                    size="xs"
+                    className="h-6 w-6 p-0"
+                    onClick={() => onPreview(node.path)}
+                    alt="Preview artifact"
+                >
+                    <EyeIcon className="size-3.5" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="xs"
+                    className="h-6 w-6 p-0"
+                    onClick={() => onDownload(node.path)}
+                    disabled={isDownloading}
+                    alt="Download artifact"
+                >
+                    {isDownloading
+                        ? <Loader2Icon className="size-3.5 animate-spin text-info" />
+                        : <DownloadIcon className="size-3.5" />}
+                </Button>
+            </div>
+        </div>
     );
+}
+
+function getArtifactContentType(path: string): string | undefined {
+    const ext = path.split('.').pop()?.toLowerCase();
+    switch (ext) {
+        case 'css':
+            return 'text/css';
+        case 'gif':
+            return 'image/gif';
+        case 'htm':
+        case 'html':
+            return 'text/html';
+        case 'jpeg':
+        case 'jpg':
+            return 'image/jpeg';
+        case 'json':
+            return 'application/json';
+        case 'md':
+        case 'markdown':
+            return 'text/markdown';
+        case 'pdf':
+            return 'application/pdf';
+        case 'png':
+            return 'image/png';
+        case 'svg':
+            return 'image/svg+xml';
+        case 'ts':
+        case 'tsx':
+            return 'text/typescript';
+        case 'txt':
+            return 'text/plain';
+        case 'webp':
+            return 'image/webp';
+        default:
+            return undefined;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -98,6 +163,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
     const { client } = useUserSession();
     const { tree, flatFiles, isLoading, error, refresh } = useArtifacts(client, runId, refreshKey);
     const [downloadingPath, setDownloadingPath] = useState<string | null>(null);
+    const [previewPath, setPreviewPath] = useState<string | null>(null);
 
     const handleDownload = useCallback(async (relativePath: string) => {
         if (!runId) return;
@@ -117,6 +183,20 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
             setDownloadingPath(null);
         }
     }, [client, runId]);
+
+    const handlePreview = useCallback((relativePath: string) => {
+        setPreviewPath(relativePath);
+    }, []);
+
+    const previewSource: UniversalDocumentSource | null = runId && previewPath ? {
+        title: previewPath.split('/').pop() || previewPath,
+        fileName: previewPath.split('/').pop() || previewPath,
+        contentType: getArtifactContentType(previewPath),
+        artifact: {
+            runId,
+            path: previewPath,
+        },
+    } : null;
 
     if (!runId) {
         return (
@@ -187,11 +267,30 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
                         node={node}
                         depth={0}
                         runId={runId}
+                        onPreview={handlePreview}
                         onDownload={handleDownload}
                         downloadingPath={downloadingPath}
                     />
                 ))}
             </div>
+            {previewSource && (
+                <Modal
+                    isOpen={!!previewPath}
+                    onClose={() => setPreviewPath(null)}
+                    size="xl"
+                    className="h-[90vh] p-0"
+                    description="Artifact preview"
+                >
+                    <ModalTitle show={false}>{previewSource.fileName}</ModalTitle>
+                    <ModalBody className="h-full max-h-none p-0">
+                        <UniversalDocumentViewer
+                            source={previewSource}
+                            className="h-full"
+                            onDownload={() => previewPath && void handleDownload(previewPath)}
+                        />
+                    </ModalBody>
+                </Modal>
+            )}
         </div>
     );
 }

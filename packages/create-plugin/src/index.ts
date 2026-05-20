@@ -40,6 +40,7 @@ async function main() {
     .option('-y, --yes', 'Non-interactive mode: use defaults for all prompts', false)
     .option('--dev', 'Use workspace dependencies (development mode)', false)
     .option('--local-templates <path>', 'Use local template directory instead of fetching from GitHub')
+    .option('--skip-install', 'Skip dependency installation after copying and configuring the template', false)
     .option('--package-manager <manager>', 'Package manager to use: pnpm or npm (overrides template default and interactive selection)')
     .addHelpText('after', `
 Available Templates:
@@ -50,8 +51,8 @@ Documentation: ${config.docsUrl}
     .parse();
 
   let projectName = program.args[0];
-  const opts = program.opts<{ branch?: string; template?: string; yes: boolean; dev: boolean; localTemplates?: string; packageManager?: string }>();
-  const { branch, template, yes: nonInteractive, dev, localTemplates, packageManager: packageManagerOverride } = opts;
+  const opts = program.opts<{ branch?: string; template?: string; yes: boolean; dev: boolean; localTemplates?: string; skipInstall: boolean; packageManager?: string }>();
+  const { branch, template, yes: nonInteractive, dev, localTemplates, skipInstall, packageManager: packageManagerOverride } = opts;
 
   // Prompt for project name if not provided as CLI argument
   if (!projectName) {
@@ -143,6 +144,14 @@ Documentation: ${config.docsUrl}
     }
 
     // Step 10: Install dependencies
+    if (skipInstall) {
+      console.log(chalk.yellow('⚠️  Skipping dependency installation (--skip-install).\n'));
+      console.log(chalk.gray('You can install dependencies manually when needed:\n'));
+      console.log(chalk.gray(`  cd ${projectName}`));
+      console.log(chalk.gray(`  ${packageManager} install\n`));
+      skipDependencyInstall = true;
+    }
+
     if (!skipDependencyInstall) {
       await installDependencies(projectName, packageManager);
     }

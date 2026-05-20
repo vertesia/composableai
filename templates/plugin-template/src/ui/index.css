@@ -6,28 +6,29 @@
 @source "./";
 @source "../../index.html";
 @source "../../node_modules/@vertesia/ui/src";
-@source "../../node_modules/@vertesia/tools-admin-ui/src";
 
 /*
  * Theme Customization
  *
- * Override the default Vertesia theme colors below. Values use oklch(lightness chroma hue).
- * See https://oklch.com for a color picker.
- * These apply globally — plugin pages and the admin UI will both use the custom theme.
- * Uncomment and adjust to match your brand.
+ * Slate-blue default palette — calm, neutral, light + dark.
+ * Edit the oklch values below to brand your plugin (https://oklch.com).
+ * For a dark-first plugin, also set class="dark" on <html> in index.html.
+ *
+ * Looking for ready-made palettes? See "Theme presets" in the template README.
  */
 
-/* :root {
-  --primary: oklch(55% 0.200 145);
-  --primary-background: oklch(97% 0.020 145);
-  --secondary: oklch(35% 0.050 280);
-  --secondary-background: oklch(95% 0.010 280);
+:root {
+    --primary: oklch(58% 0.180 265);
+    --primary-background: oklch(97% 0.020 265);
+    --secondary: oklch(40% 0.060 280);
+    --secondary-background: oklch(96% 0.010 280);
+    --ring: oklch(58% 0.180 265 / 0.45);
 }
 
 .dark {
-  --primary: oklch(72% 0.190 145);
-  --primary-background: oklch(25% 0.030 145);
-  --secondary: oklch(80% 0.040 280);
-  --secondary-background: oklch(22% 0.015 280);
-} */
-
+    --primary: oklch(72% 0.170 265);
+    --primary-background: oklch(22% 0.040 265);
+    --secondary: oklch(78% 0.040 280);
+    --secondary-background: oklch(20% 0.020 280);
+    --ring: oklch(72% 0.170 265 / 0.55);
+}

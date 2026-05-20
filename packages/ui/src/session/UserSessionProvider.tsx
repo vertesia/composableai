@@ -58,6 +58,28 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
             },
         });
 
+        if (Env.isLocalDev && Env.devAuthToken) {
+            session.setSession = setSession;
+            getComposableToken(selectedAccount, selectedProject, Env.devAuthToken)
+                .then((res) => {
+                    session.login(res.rawToken).then(() => setSession(session.clone()));
+                })
+                .catch((err) => {
+                    console.error("Failed to initialize dev auth token", err);
+                    Env.logger.error("Failed to initialize dev auth token", {
+                        vertesia: {
+                            account_id: selectedAccount,
+                            project_id: selectedProject,
+                            error: err,
+                        },
+                    });
+                    session.isLoading = false;
+                    session.authError = err instanceof Error ? err : new Error(String(err));
+                    setSession(session.clone());
+                });
+            return;
+        }
+
         if (token && state) {
             session.setSession = setSession;
             const validationError = verifyState(state);
@@ -116,7 +138,14 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                     redirectToCentralAuth();
                 });
             return;
-        } else {
+        }
+
+        let cancelled = false;
+        let unsubscribe: (() => void) | undefined;
+
+        const startFirebaseOrCentralAuth = () => {
+            if (cancelled) return;
+
             // If the current host is not in the Firebase allowlist, central auth owns sign-in.
             if (!session.isLoggedIn()) {
                 console.log("Auth: not logged in & no token/state");
@@ -140,60 +169,101 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                     });
                     redirectToCentralAuth();
                     return; // Don't register onAuthStateChanged listener when redirecting
-                } else {
-                    console.log("Auth: host is in Firebase auth allowlist");
-                    Env.logger.info("Host is in Firebase auth allowlist", {
+                }
+
+                console.log("Auth: host is in Firebase auth allowlist");
+                Env.logger.info("Host is in Firebase auth allowlist", {
+                    vertesia: {
+                        account_id: selectedAccount,
+                        project_id: selectedProject,
+                    },
+                });
+            }
+
+            unsubscribe = onAuthStateChanged(getFirebaseAuth(), async (firebaseUser) => {
+                if (firebaseUser) {
+                    console.log("Auth: successful login with firebase");
+                    Env.logger.info("Successful login with firebase", {
                         vertesia: {
                             account_id: selectedAccount,
                             project_id: selectedProject,
                         },
                     });
+                    session.setSession = setSession;
+                    await getComposableToken(selectedAccount, selectedProject, undefined, false, shouldRedirectToCentralAuth())
+                        .then((res) => {
+                            session.login(res.rawToken, { loadOnboardingStatus }).then(() => setSession(session.clone()));
+                        })
+                        .catch((err) => {
+                            console.error("Failed to fetch user token from studio", err);
+                            Env.logger.error("Failed to fetch user token from studio", {
+                                vertesia: {
+                                    account_id: selectedAccount,
+                                    project_id: selectedProject,
+                                    error: err,
+                                },
+                            });
+                            if (!(err instanceof UserNotFoundError)) session.logout();
+                            session.isLoading = false;
+                            session.authError = err;
+                            setSession(session.clone());
+                        });
+                } else {
+                    // anonymous user
+                    console.log("Auth: using anonymous user");
+                    Env.logger.info("Using anonymous user", {
+                        vertesia: {
+                            account_id: selectedAccount,
+                            project_id: selectedProject,
+                        },
+                    });
+                    session.client.withAuthCallback(undefined);
+                    session.logout();
+                    setSession(session.clone());
                 }
-            }
+            });
+        };
+
+        if (Env.authTokenProvider) {
+            session.setSession = setSession;
+            void Env.authTokenProvider()
+                .then(async (injectedToken) => {
+                    if (!injectedToken) {
+                        startFirebaseOrCentralAuth();
+                        return;
+                    }
+                    const res = await getComposableToken(
+                        selectedAccount,
+                        selectedProject,
+                        injectedToken,
+                        false,
+                        shouldRedirectToCentralAuth(),
+                    );
+                    await session.login(res.rawToken, { loadOnboardingStatus });
+                    if (!cancelled) setSession(session.clone());
+                })
+                .catch((err: unknown) => {
+                    console.warn("Auth: failed to initialize injected auth token", err);
+                    Env.logger.warn("Failed to initialize injected auth token", {
+                        vertesia: {
+                            account_id: selectedAccount,
+                            project_id: selectedProject,
+                            error: err,
+                        },
+                    });
+                    startFirebaseOrCentralAuth();
+                });
+            return () => {
+                cancelled = true;
+                unsubscribe?.();
+            };
         }
 
-        return onAuthStateChanged(getFirebaseAuth(), async (firebaseUser) => {
-            if (firebaseUser) {
-                console.log("Auth: successful login with firebase");
-                Env.logger.info("Successful login with firebase", {
-                    vertesia: {
-                        account_id: selectedAccount,
-                        project_id: selectedProject,
-                    },
-                });
-                session.setSession = setSession;
-                await getComposableToken(selectedAccount, selectedProject, undefined, false, shouldRedirectToCentralAuth())
-                    .then((res) => {
-                        session.login(res.rawToken, { loadOnboardingStatus }).then(() => setSession(session.clone()));
-                    })
-                    .catch((err) => {
-                        console.error("Failed to fetch user token from studio", err);
-                        Env.logger.error("Failed to fetch user token from studio", {
-                            vertesia: {
-                                account_id: selectedAccount,
-                                project_id: selectedProject,
-                                error: err,
-                            },
-                        });
-                        if (!(err instanceof UserNotFoundError)) session.logout();
-                        session.isLoading = false;
-                        session.authError = err;
-                        setSession(session.clone());
-                    });
-            } else {
-                // anonymous user
-                console.log("Auth: using anonymous user");
-                Env.logger.info("Using anonymous user", {
-                    vertesia: {
-                        account_id: selectedAccount,
-                        project_id: selectedProject,
-                    },
-                });
-                session.client.withAuthCallback(undefined);
-                session.logout();
-                setSession(session.clone());
-            }
-        });
+        startFirebaseOrCentralAuth();
+        return () => {
+            cancelled = true;
+            unsubscribe?.();
+        };
     }, []);
 
     return <UserSessionContext.Provider value={session}>{children}</UserSessionContext.Provider>;

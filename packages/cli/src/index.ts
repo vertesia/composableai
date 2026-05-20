@@ -24,7 +24,8 @@ import {
     useProfile,
     type CreateProfileOptions,
 } from './profiles/commands.js';
-import { AVAILABLE_REGIONS, DEFAULT_REGION, getConfigFile } from './profiles/index.js';
+import { configureGitAuth, serveGitCredential } from './profiles/git.js';
+import { AVAILABLE_REGIONS, DEFAULT_REGION, config, getConfigFile } from './profiles/index.js';
 import { listProjects, useProject } from './projects/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
@@ -33,7 +34,16 @@ import { registerWorkflowsCommand } from './workflows/index.js';
 
 const program = new Command();
 
-program.version(getVersion());
+program
+    .version(getVersion())
+    .option("-p, --profile <profile>", "Use the named profile for this command without changing the default profile");
+
+program.hook('preAction', command => {
+    const profile = command.optsWithGlobals().profile as string | undefined;
+    if (profile) {
+        config.use(profile, { explicit: true });
+    }
+});
 
 program.command("upgrade")
     .description("Upgrade to the latest version of the CLI")
@@ -58,7 +68,7 @@ const authRoot = program.command("auth")
 
 authRoot.command("login [profile]")
     .description("Authenticate a profile, creating it when it does not exist")
-    .option("-t, --target <env>", "The target environment for a new profile. Possible values are: local, dev-main, dev-preview, preview, prod or a custom URL.")
+    .option("-t, --target <env>", "The target environment for a new profile. Possible values are: local, preview, prod, or a custom URL.")
     .option("-r, --region <region>", `Deployment region for a new profile: ${AVAILABLE_REGIONS.join(', ')}. Defaults to ${DEFAULT_REGION}. Only applies to preview and prod targets.`)
     .option("-p, --project <project>", "Authenticate for the given project ID")
     .option("-a, --account <account>", "The account ID to use when creating a profile")
@@ -88,6 +98,21 @@ authRoot.command("refresh")
     .description("Refresh the auth token used by the current profile. An alias to 'vertesia profiles refresh'.")
     .option("-p, --project <project>", "Refresh the current profile token for the given project ID")
     .action((options: { project?: string }) => updateCurrentProfile(undefined, undefined, options))
+
+const authGit = authRoot.command("git")
+    .description("Configure Git to authenticate to Vertesia app repositories with the active profile token.")
+    .option("-p, --profile <profile>", "Profile to use for Git credentials. Defaults to the active profile.")
+    .option("--url <url>", "Git server base URL, for example https://git.dev1.vertesia.io.")
+    .option("--no-alias", "Do not configure the vertesia:<app>.git short alias.")
+    .action((options: { profile?: string; url?: string; alias?: boolean }) => configureGitAuth(options));
+
+authGit.command("credential [action]")
+    .description("Git credential helper entrypoint. Called by git; users should run `vertesia auth git` instead.")
+    .action(function (this: import("commander").Command, action: string | undefined) {
+        // --profile is declared on the parent `auth git`, so read via globals.
+        const profile = this.optsWithGlobals().profile as string | undefined;
+        return serveGitCredential(action, { profile });
+    });
 
 program.command("envs [envId]")
     .description("List the environments you have access to")
@@ -169,7 +194,7 @@ profilesRoot.command('use [name]')
     });
 profilesRoot.command('add [name]')
     .alias('create')
-    .option("-t, --target <env>", "The target environment for the profile. Possible values are: local, dev-main, dev-preview, preview, prod or a custom URL.")
+    .option("-t, --target <env>", "The target environment for the profile. Possible values are: local, preview, prod, or a custom URL.")
     .option("-r, --region <region>", `Deployment region: ${AVAILABLE_REGIONS.join(', ')}. Defaults to ${DEFAULT_REGION}. Only applies to preview and prod targets.`)
     .option("-k, --apikey <key>", "The API key or auth token to use for the profile")
     .option("-p, --project <project>", "The project ID to use for the profile")

@@ -170,7 +170,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
                         const buffer = Buffer.from(base64Data, 'base64');
 
                         // Generate filename
-                        const { runId } = activityInfo().workflowExecution;
+                        const { runId } = activityInfo().workflowExecution!;
                         const { activityId } = activityInfo();
                         const filename = `generated-image-${runId}-${activityId}-${index}.png`;
 
@@ -255,14 +255,18 @@ export async function executeInteractionFromActivity(
 ) {
     const userTags = params.tags;
     const info = activityInfo();
-    const runId = info.workflowExecution.runId;
+    const workflowExecution = info.workflowExecution;
+    if (!workflowExecution) {
+        throw ApplicationFailure.nonRetryable("No workflow execution info found in activityInfo");
+    }
+    const runId = workflowExecution.runId;
     let tags = ["workflow"];
     if (userTags) {
         tags = tags.concat(userTags);
     }
     const workflow: ExecutionRunWorkflow = {
-        run_id: info.workflowExecution.runId,
-        workflow_id: info.workflowExecution.workflowId,
+        run_id: workflowExecution.runId,
+        workflow_id: workflowExecution.workflowId,
         activity_type: info.activityType,
     };
 
