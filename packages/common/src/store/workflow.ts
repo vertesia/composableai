@@ -613,6 +613,7 @@ export interface WorkflowRunUpdatesResponse {
 export interface WorkflowRunDetailsQuery {
     include_history?: boolean;
     history_format?: 'events' | 'tasks' | 'agent';
+    hydrate_payloads?: boolean;
 }
 
 export interface WorkflowRunUpdatesQuery {
