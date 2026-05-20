@@ -25,11 +25,11 @@
     "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build"
   },
   "devDependencies": {
-    "@types/react": "^19.2.3",
+    "@types/react": "^19.2.15",
     "typescript": "^6.0.2"
   },
   "peerDependencies": {
-    "react": ">=16.8.0"
+    "react": ">=16.14.0"
   },
   "dependencies": {
     "@vertesia/client": "workspace:*",
