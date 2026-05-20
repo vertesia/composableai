@@ -509,10 +509,12 @@ export class AgentsApi extends ApiTopic {
         id: string,
         options?: {
             includeHistory?: boolean;
+            hydratePayloads?: boolean;
         },
     ): Promise<WorkflowRunWithDetails> {
         const query: Record<string, string> = {};
         if (options?.includeHistory) query.include_history = 'true';
+        if (options?.hydratePayloads) query.hydrate_payloads = 'true';
         return this.get(`/${id}/details`, { query });
     }
 
@@ -600,10 +602,11 @@ export class AgentsApi extends ApiTopic {
     getChildDetails(
         id: string,
         childWorkflowId: string,
-        options?: { includeHistory?: boolean },
+        options?: { includeHistory?: boolean; hydratePayloads?: boolean },
     ): Promise<WorkflowRunWithDetails> {
         const query: Record<string, string> = {};
         if (options?.includeHistory) query.include_history = 'true';
+        if (options?.hydratePayloads) query.hydrate_payloads = 'true';
         return this.get(`/${id}/children/${childWorkflowId}/details`, { query });
     }
 
