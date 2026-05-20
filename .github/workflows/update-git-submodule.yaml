@@ -23,12 +23,14 @@ env:
   TARGET_COMPOSABLEAI_BRANCH: ${{ inputs.branch || github.event.client_payload.branch }}
 
 permissions:
-  contents: write # required for pushing changes to the repository, deleting old branches
-  pull-requests: write # required for creating new pull requests and closing old ones
+  contents: read
 
 jobs:
   update-submodule:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write       # required for pushing changes and deleting old branches
+      pull-requests: write  # required for creating new PRs and closing old ones
     steps:
       - name: Validate branch
         run: |
