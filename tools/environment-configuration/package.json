@@ -15,16 +15,16 @@
     "gcp": "npx bun ./src/index.ts gcp"
   },
     "devDependencies": {
-        "@biomejs/biome": "^2.4.4",
+        "@biomejs/biome": "^2.4.15",
         "@tsconfig/node-lts": "^22.0.1",
         "@types/bun": "latest",
-        "globals": "^17.3.0",
-    "typescript": "^6.0.2"
+        "globals": "^17.6.0",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "@aws-sdk/client-iam": "^3.948.0",
-    "@vertesia/client": "0.82.1",
-    "commander": "^14.0.2",
+    "@vertesia/client": "0.82.4",
+    "commander": "^14.0.3",
     "dotenv": "^16.6.1",
     "google-auth-library": "^10.6.2"
   }
