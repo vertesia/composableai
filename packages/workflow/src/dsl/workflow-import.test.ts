@@ -42,7 +42,7 @@ describe('DSL Workflow import vars', () => {
     });
 
 
-    it('import vars are part of activity params', async () => {
+    it('should include import vars in activity params', async () => {
 
 
         const { client, nativeConnection } = testEnv;

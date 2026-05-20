@@ -133,9 +133,9 @@ describe("SaveGladiaTranscription", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: SaveGladiaTranscriptionParams = {
+        const params = {
             gladiaTranscriptionId: "test-transcription-id",
-        };
+        } satisfies SaveGladiaTranscriptionParams;
 
         // Mock setupActivity
         vi.mocked(setupActivity).mockResolvedValue({
@@ -183,10 +183,10 @@ describe("SaveGladiaTranscription", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: SaveGladiaTranscriptionParams = {
+        const params = {
             gladiaTranscriptionId: "test-transcription-id",
             output_storage_path: "test-storage-path",
-        };
+        } satisfies SaveGladiaTranscriptionParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -223,9 +223,9 @@ describe("SaveGladiaTranscription", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: SaveGladiaTranscriptionParams = {
+        const params = {
             gladiaTranscriptionId: "test-transcription-id",
-        };
+        } satisfies SaveGladiaTranscriptionParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -272,9 +272,9 @@ describe("SaveGladiaTranscription", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: SaveGladiaTranscriptionParams = {
+        const params = {
             gladiaTranscriptionId: "test-transcription-id",
-        };
+        } satisfies SaveGladiaTranscriptionParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -321,9 +321,9 @@ describe("SaveGladiaTranscription", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: SaveGladiaTranscriptionParams = {
+        const params = {
             gladiaTranscriptionId: "test-transcription-id",
-        };
+        } satisfies SaveGladiaTranscriptionParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -383,9 +383,9 @@ describe("SaveGladiaTranscription", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: SaveGladiaTranscriptionParams = {
+        const params = {
             gladiaTranscriptionId: "test-transcription-id",
-        };
+        } satisfies SaveGladiaTranscriptionParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,

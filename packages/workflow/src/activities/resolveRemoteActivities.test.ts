@@ -31,7 +31,7 @@ const createPayload = (): DSLActivityExecutionPayload<ResolveRemoteActivitiesPar
     auth_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.sig",
     account_id: "acc-123",
     project_id: "proj-456",
-    params: {},
+    params: {} satisfies ResolveRemoteActivitiesParams,
     config: {
         studio_url: "http://mock-studio",
         store_url: "http://mock-store",
@@ -40,11 +40,11 @@ const createPayload = (): DSLActivityExecutionPayload<ResolveRemoteActivitiesPar
     event: ContentEventName.create,
     objectIds: [],
     vars: {},
-    activity: { name: "resolveRemoteActivities", params: {} },
+    activity: { name: "resolveRemoteActivities", params: {} satisfies ResolveRemoteActivitiesParams },
 });
 
 describe("resolveRemoteActivities", () => {
-    it("returns empty map when no apps installed", async () => {
+    it("should return empty map when no apps installed", async () => {
         mockGetInstalledApps.mockResolvedValueOnce([]);
 
         const result: RemoteActivityMap = await testEnv.run(resolveRemoteActivities, createPayload());
@@ -52,7 +52,7 @@ describe("resolveRemoteActivities", () => {
         expect(mockGetInstalledApps).toHaveBeenCalledWith("tools");
     });
 
-    it("returns qualified activity map from single app", async () => {
+    it("should return qualified activity map from single app", async () => {
         mockGetInstalledApps.mockResolvedValueOnce([{
             id: "install-1",
             manifest: {
@@ -89,7 +89,7 @@ describe("resolveRemoteActivities", () => {
         expect(entry.url).toBe("https://nlp-server.test/api/activities/nlp");
     });
 
-    it("merges activities from multiple apps", async () => {
+    it("should merge activities from multiple apps", async () => {
         mockGetInstalledApps.mockResolvedValueOnce([
             {
                 id: "install-1",
@@ -116,7 +116,7 @@ describe("resolveRemoteActivities", () => {
         expect(result["app:app-two:main:task_b"]).toBeDefined();
     });
 
-    it("skips app with no activities", async () => {
+    it("should skip app with no activities", async () => {
         mockGetInstalledApps.mockResolvedValueOnce([{
             id: "install-1",
             manifest: { name: "empty-app", endpoint: "https://empty.test/api/package" },
@@ -130,7 +130,7 @@ describe("resolveRemoteActivities", () => {
         expect(result).toEqual({});
     });
 
-    it("skips app with no endpoint", async () => {
+    it("should skip app with no endpoint", async () => {
         mockGetInstalledApps.mockResolvedValueOnce([{
             id: "install-1",
             manifest: { name: "no-endpoint" },
@@ -141,7 +141,7 @@ describe("resolveRemoteActivities", () => {
         expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it("handles duplicate qualified names across apps (first wins)", async () => {
+    it("should handle duplicate qualified names across apps (first wins)", async () => {
         mockGetInstalledApps.mockResolvedValueOnce([
             {
                 id: "install-1",
@@ -166,7 +166,7 @@ describe("resolveRemoteActivities", () => {
         expect(result["app:same-app:main:task"].app_install_id).toBe("install-1");
     });
 
-    it("continues with other apps when one fetch fails", async () => {
+    it("should continue with other apps when one fetch fails", async () => {
         mockGetInstalledApps.mockResolvedValueOnce([
             {
                 id: "install-1",
@@ -189,14 +189,14 @@ describe("resolveRemoteActivities", () => {
         expect(result["app:working-app:main:task"]).toBeDefined();
     });
 
-    it("returns empty map when getInstalledApps fails", async () => {
+    it("should return empty map when getInstalledApps fails", async () => {
         mockGetInstalledApps.mockRejectedValueOnce(new Error("API error"));
 
         const result: RemoteActivityMap = await testEnv.run(resolveRemoteActivities, createPayload());
         expect(result).toEqual({});
     });
 
-    it("skips activities without collection", async () => {
+    it("should skip activities without collection", async () => {
         mockGetInstalledApps.mockResolvedValueOnce([{
             id: "install-1",
             manifest: { name: "bad-app", endpoint: "https://bad.test/api/package" },

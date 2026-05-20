@@ -74,7 +74,7 @@ describe('DSL Workflow', () => {
         await testEnv?.teardown();
     });
 
-    it('successfully completes a mock workflow', async () => {
+    it('should successfully complete a mock workflow', async () => {
         const { client, nativeConnection } = testEnv;
         const taskQueue = 'test';
 

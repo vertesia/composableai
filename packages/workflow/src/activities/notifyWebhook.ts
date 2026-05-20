@@ -29,8 +29,13 @@ export interface NotifyWebhook extends DSLActivitySpec<NotifyWebhookParams> {
     name: 'notifyWebhook';
 }
 
+export interface NotifyWebhookResult {
+    status: number;
+    message: string;
+    url: string;
+}
 
-export async function notifyWebhook(payload: DSLActivityExecutionPayload<NotifyWebhookParams>) {
+export async function notifyWebhook(payload: DSLActivityExecutionPayload<NotifyWebhookParams>): Promise<NotifyWebhookResult> {
 
     const { params } = await setupActivity<NotifyWebhookParams>(payload);
     const { webhook, method, headers: defaultHeaders } = params

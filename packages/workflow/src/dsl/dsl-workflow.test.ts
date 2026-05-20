@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { computeActivityOptions } from "./dsl-workflow.js";
 
 describe('Workflow DSL', () => {
-    test('compute activity options without custom options', () => {
+    test('should compute activity options without custom options', () => {
         expect(computeActivityOptions({}, {
             startToCloseTimeout: 1000,
             scheduleToCloseTimeout: 2000,
@@ -28,7 +28,7 @@ describe('Workflow DSL', () => {
         })
     })
 
-    test('compute activity options with some custom options', () => {
+    test('should compute activity options with some custom options', () => {
         expect(computeActivityOptions({
             startToCloseTimeout: 100,
         }, {

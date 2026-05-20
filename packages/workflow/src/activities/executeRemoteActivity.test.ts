@@ -27,14 +27,14 @@ beforeEach(() => {
 const createPayload = (
     overrides: Partial<ExecuteRemoteActivityParams> = {},
 ): DSLActivityExecutionPayload<ExecuteRemoteActivityParams> => {
-    const params: ExecuteRemoteActivityParams = {
+    const params = {
         url: "https://tool-server.test/api/activities/nlp",
         activity_name: "analyze_sentiment",
         params: { text: "Hello world" },
         app_install_id: "install-123",
         app_name: "nlp-app",
         ...overrides,
-    };
+    } satisfies ExecuteRemoteActivityParams;
     return {
         auth_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.sig",
         account_id: "acc-123",
@@ -53,7 +53,7 @@ const createPayload = (
 };
 
 describe("executeRemoteActivity", () => {
-    it("posts correct payload and returns result on success", async () => {
+    it("should post correct payload and return result on success", async () => {
         mockFetch.mockResolvedValueOnce(
             new Response(
                 JSON.stringify({ result: { score: 0.95 }, is_error: false }),
@@ -61,7 +61,7 @@ describe("executeRemoteActivity", () => {
             ),
         );
 
-        const result = await testEnv.run(executeRemoteActivity, createPayload());
+        const result: unknown = await testEnv.run(executeRemoteActivity, createPayload());
         expect(result).toEqual({ score: 0.95 });
 
         expect(mockFetch).toHaveBeenCalledOnce();
@@ -85,7 +85,7 @@ describe("executeRemoteActivity", () => {
         expect(body.auth_token).toBeUndefined();
     });
 
-    it("throws on HTTP error (4xx/5xx)", async () => {
+    it("should throw on HTTP error (4xx/5xx)", async () => {
         mockFetch.mockResolvedValueOnce(
             new Response(
                 JSON.stringify({ error: "Activity not found", is_error: true }),
@@ -98,7 +98,7 @@ describe("executeRemoteActivity", () => {
         );
     });
 
-    it("throws on network error (for Temporal retry)", async () => {
+    it("should throw on network error (for Temporal retry)", async () => {
         mockFetch.mockRejectedValueOnce(new Error("Connection refused"));
 
         await expect(testEnv.run(executeRemoteActivity, createPayload())).rejects.toThrow(
@@ -106,7 +106,7 @@ describe("executeRemoteActivity", () => {
         );
     });
 
-    it("throws on invalid JSON response", async () => {
+    it("should throw on invalid JSON response", async () => {
         mockFetch.mockResolvedValueOnce(
             new Response("not json", { status: 200 }),
         );
@@ -116,7 +116,7 @@ describe("executeRemoteActivity", () => {
         );
     });
 
-    it("throws when response indicates is_error", async () => {
+    it("should throw when response indicates is_error", async () => {
         mockFetch.mockResolvedValueOnce(
             new Response(
                 JSON.stringify({ result: null, is_error: true, error: "Something went wrong" }),
@@ -129,7 +129,7 @@ describe("executeRemoteActivity", () => {
         );
     });
 
-    it("forwards app_settings in metadata", async () => {
+    it("should forward app_settings in metadata", async () => {
         mockFetch.mockResolvedValueOnce(
             new Response(
                 JSON.stringify({ result: "ok", is_error: false }),

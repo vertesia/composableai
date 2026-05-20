@@ -6,7 +6,7 @@ type Tree = { readonly [key: string]: Tree };
 
 describe('Workflow vars', () => {
 
-    test('access initial variables', () => {
+    test('should access initial variables', () => {
         const vars = new Vars({
             objectId: "123",
             timestamp: 123456,
@@ -16,7 +16,7 @@ describe('Workflow vars', () => {
         expect(vars.getValue("foo")).toBeUndefined();
     })
 
-    test('set and access variables', () => {
+    test('should set and access variables', () => {
         const vars = new Vars({
             objectId: "123",
             timestamp: 123456,
@@ -26,7 +26,7 @@ describe('Workflow vars', () => {
         expect(vars.getValue("objectId")).toBe("456");
     })
 
-    test('access and modify ref variables', () => {
+    test('should access and modify ref variables', () => {
         const vars = new Vars({
             objectId: "123",
             config: {
@@ -43,7 +43,7 @@ describe('Workflow vars', () => {
         expect(vars.getValue("configNameAlias")).toBe("bar");
     })
 
-    test('replace literal with ref', () => {
+    test('should replace literal with ref', () => {
         const vars = new Vars({
             objectId: "123",
             otherId: "1234",
@@ -56,14 +56,14 @@ describe('Workflow vars', () => {
         expect(vars.getValue("otherId")).toBe("456");
     });
 
-    test("undefined ref variable", () => {
+    test("should return undefined for undefined ref variable", () => {
         const vars = new Vars({
             otherId: "${objectId}",
         });
         expect(vars.getValue("otherId")).toBeUndefined();
     })
 
-    test("default values", () => {
+    test("should resolve default values", () => {
         const vars = new Vars({
             squote: "${objectId ?? '123'}",
             dquote: "${objectId ?? \"123\"}",
@@ -79,7 +79,7 @@ describe('Workflow vars', () => {
         expect(vars.getValue("array")).toEqual([1, 2]);
     })
 
-    test("array map", () => {
+    test("should map arrays through path expressions", () => {
         const vars = new Vars({
             docs: [{ text: "hello" }, { text: "world" }],
         });
@@ -87,7 +87,7 @@ describe('Workflow vars', () => {
         expect(vars.getValue("docs.text").join(' ')).toBe("hello world");
     })
 
-    test("resolveParams", () => {
+    test("should resolve params", () => {
         const vars = new Vars({
             objectIds: ["123", "456"],
             objectId: "123",
@@ -112,7 +112,7 @@ describe('Workflow vars', () => {
 
     });
 
-    test("resolve", () => {
+    test("should resolve variables", () => {
         const vars = new Vars({
             objectId: "123",
             message: "hello",
@@ -132,7 +132,7 @@ describe('Workflow vars', () => {
     });
 
 
-    test("createImportVars", () => {
+    test("should create import vars", () => {
         const vars = new Vars({
             person: { name: "John", age: 30 },
             objectId: "123",
@@ -147,7 +147,7 @@ describe('Workflow vars', () => {
         expect(params.data2).toStrictEqual({ message: "hello" });
     });
 
-    test("evaluate null and exists conditions", () => {
+    test("should evaluate null and exists conditions", () => {
         const vars = new Vars({
             objectId: "123",
             docType: {
@@ -170,7 +170,7 @@ describe('Workflow vars', () => {
         expect(vars.match({ "docType.idNull": { $null: true } })).toBe(true);
     });
 
-    test("evaluate $eq conditions", () => {
+    test("should evaluate $eq conditions", () => {
         const vars = new Vars({
             objectId: "123",
             otherId: "${objectId}",
@@ -192,14 +192,14 @@ describe('Workflow vars', () => {
         expect(vars.match({ "config": { $eq: { name: { foo: "bar" }, tags: ["a", "b", "c"] } } })).toBe(true);
     });
 
-    test("evaluate $regexp conditions", () => {
+    test("should evaluate $regexp conditions", () => {
         const vars = new Vars({
             expr: "a=2",
         });
         expect(vars.match({ expr: { $regexp: "^.*\\s*=\\s*.*$" } })).toBe(true);
     });
 
-    test("evaluate string compare conditions", () => {
+    test("should evaluate string compare conditions", () => {
         const vars = new Vars({
             expr: "<tag />",
         });
@@ -208,7 +208,7 @@ describe('Workflow vars', () => {
         expect(vars.match({ expr: { $endsWith: "/>" } })).toBe(true);
     });
 
-    test("evaluate $in conditions", () => {
+    test("should evaluate $in conditions", () => {
         const vars = new Vars({
             name: "foo",
         });
@@ -216,7 +216,7 @@ describe('Workflow vars', () => {
         expect(vars.match({ name: { $nin: ["hello", "world"] } })).toBe(true);
     });
 
-    test("evaluate $lt, $gt conditions", () => {
+    test("should evaluate $lt, $gt conditions", () => {
         const vars = new Vars({
             value: 5,
         });
@@ -226,7 +226,7 @@ describe('Workflow vars', () => {
         expect(vars.match({ value: { $gte: 5 } })).toBe(true);
     });
 
-    test("evaluate $or conditions", () => {
+    test("should evaluate $or conditions", () => {
         const vars = new Vars({
             value: 5,
             name: "foo"
@@ -236,7 +236,7 @@ describe('Workflow vars', () => {
         expect(vars.match({ name: { $or: [{ $eq: "bar" }, { $eq: "fooo" }] } })).toBe(false);
     });
 
-    test("evaluate nested conditions", () => {
+    test("should evaluate nested conditions", () => {
         const vars = new Vars({
             config: {
                 name: "foo",

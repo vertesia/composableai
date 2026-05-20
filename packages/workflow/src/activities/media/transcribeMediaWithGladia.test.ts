@@ -109,7 +109,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -191,7 +191,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -230,7 +230,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -293,9 +293,9 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {
+        const params = {
             force: true,
-        };
+        } satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -346,9 +346,9 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {
+        const params = {
             output_storage_path: "test-storage-path",
-        };
+        } satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -383,7 +383,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -416,7 +416,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -455,7 +455,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -518,7 +518,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -565,7 +565,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,

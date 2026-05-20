@@ -6,7 +6,7 @@ type Tree = { readonly [key: string]: Tree };
 
 describe('walk object', () => {
 
-    test('find string values', () => {
+    test('should find string values', () => {
         const obj = {
             name: "foo",
             age: 42,
@@ -36,7 +36,7 @@ describe('walk object', () => {
         expect(found.sort().join(',')).toBe(values);
     })
 
-    test('map numbers to string values', () => {
+    test('should map numbers to string values', () => {
         const obj = {
             name: "foo",
             age: 42,
@@ -66,7 +66,7 @@ describe('walk object', () => {
         expect(r.folder.subfolder.name).toBe("123");
     })
 
-    test('map numbers in an array to string values', () => {
+    test('should map numbers in an array to string values', () => {
         const obj = [123, { x: 1 }, { y: 2 }, { z: 3 }]
         const r = new ObjectWalker().map(obj, (_key, value) => {
             if (typeof value === "number") {

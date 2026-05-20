@@ -27,7 +27,7 @@ describe("setupActivity", () => {
     // verbatim when the activity is dispatched from TypeScript code (no activity.params,
     // no activity.fetch). Previously Vars.parse/resolve would treat any "${...}" as a
     // template ref and silently drop the key when it failed to resolve.
-    it("preserves user data containing literal ${} in code-dispatched activities", async () => {
+    it("should preserve user data containing literal ${} in code-dispatched activities", async () => {
         const data = {
             task: 'preserve "${}" literal',
             other: "also has ${undefined_ref}",
@@ -38,7 +38,7 @@ describe("setupActivity", () => {
         expect(ctx.params.data.other).toBe("also has ${undefined_ref}");
     });
 
-    it("returns empty params when code-dispatched activity has no params", async () => {
+    it("should return empty params when code-dispatched activity has no params", async () => {
         const payload = basePayload({ name: "testActivity" }, undefined as unknown as Record<string, unknown>);
         const ctx = await setupActivity(payload);
         expect(ctx.params).toEqual({});
@@ -46,7 +46,7 @@ describe("setupActivity", () => {
 
     // Counter-test: DSL-defined activities (those carrying activity.params) must
     // still have their ${refs} resolved against payload.params (imported vars).
-    it("still resolves ${refs} in activity.params for DSL-dispatched activities", async () => {
+    it("should still resolve ${refs} in activity.params for DSL-dispatched activities", async () => {
         const payload = basePayload(
             { name: "dslActivity", params: { message: "Hello ${name}" } },
             { name: "World" } as unknown as Record<string, unknown>,

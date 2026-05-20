@@ -145,7 +145,7 @@ describe('DSL Workflow with child workflows', () => {
         await testEnv?.teardown();
     });
 
-    test('execute child workflow', async () => {
+    test('should execute child workflow', async () => {
         const { client, nativeConnection } = testEnv;
         const taskQueue = 'test';
 
@@ -190,7 +190,7 @@ describe('DSL Workflow with child workflows', () => {
 
     });
 
-    test('execute DSL child workflow', async () => {
+    test('should execute DSL child workflow', async () => {
         const { client, nativeConnection } = testEnv;
         const taskQueue = 'test';
 
@@ -235,7 +235,7 @@ describe('DSL Workflow with child workflows', () => {
 
     });
 
-    test('execute DSL child workflow with variable resolution', async () => {
+    test('should execute DSL child workflow with variable resolution', async () => {
         const { client, nativeConnection } = testEnv;
         const taskQueue = 'test';
 

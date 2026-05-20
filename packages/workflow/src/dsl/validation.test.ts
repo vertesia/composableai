@@ -4,14 +4,14 @@ import { validateWorkflow } from "./validation.js";
 
 describe('workflow validation', () => {
 
-    test('empty object is not a valid workflow', () => {
+    test('should reject an empty object as a workflow', () => {
         const workflow = {
         }
         const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(2);
     })
 
-    test('activities is required', () => {
+    test('should require activities', () => {
         const workflow = {
             name: "test",
         }
@@ -19,7 +19,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(1);
     })
 
-    test('activities should be an array', () => {
+    test('should require activities to be an array', () => {
         const workflow = {
             name: "test",
             activities: {}
@@ -28,7 +28,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(1);
     })
 
-    test('activities array should have at least one item', () => {
+    test('should require activities array to have at least one item', () => {
         const workflow = {
             name: "test",
             activities: []
@@ -37,7 +37,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(1);
     })
 
-    test('activity should have a name', () => {
+    test('should require activity to have a name', () => {
         const workflow = {
             name: "test",
             activities: [{}]
@@ -46,7 +46,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(1);
     })
 
-    test('allow empty activity', () => {
+    test('should allow empty activity', () => {
         const workflow = {
             name: "test",
             activities: [{ name: "test" }]
@@ -55,7 +55,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(0);
     })
 
-    test('import undeclared var', () => {
+    test('should reject imported undeclared vars', () => {
         const workflow = {
             name: "test",
             vars: { "foo": true },
@@ -69,7 +69,7 @@ describe('workflow validation', () => {
     })
 
 
-    test('import declared vars', () => {
+    test('should allow importing declared vars', () => {
         const workflow = {
             name: "test",
             vars: { "foo": true, "bar": true },
@@ -82,7 +82,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(0);
     })
 
-    test('import unknown imported var through expressions', () => {
+    test('should reject unknown imported vars through expressions', () => {
         const workflow = {
             name: "test",
             vars: { "foo": true },
@@ -95,7 +95,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(1);
     })
 
-    test('import declared vars through expressions', () => {
+    test('should allow declared vars through expressions', () => {
         const workflow = {
             name: "test",
             vars: { "foo": true, "bar": "true" },
@@ -108,7 +108,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(0);
     })
 
-    test('detect self references', () => {
+    test('should detect self references', () => {
         const workflow = {
             name: "test",
             vars: { "object_type": "thetype" },
@@ -125,7 +125,7 @@ describe('workflow validation', () => {
         expect(errors[0].includes("Self referencing parameter")).toBe(true);
     })
 
-    test('reference known vars in fetch', () => {
+    test('should allow known vars in fetch', () => {
         const workflow = {
             name: "test",
             vars: { "foo": true, "bar": "true" },
@@ -148,7 +148,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(0);
     })
 
-    test('reference unknown vars in fetch', () => {
+    test('should reject unknown vars in fetch', () => {
         const workflow = {
             name: "test",
             vars: { "foo": true, "bar": "true" },
@@ -169,7 +169,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(2);
     })
 
-    test('reference one unknown and one known var in fetch', () => {
+    test('should reject one unknown var in fetch while allowing known vars', () => {
         const workflow = {
             name: "test",
             vars: { "foo": true, "bar": "true" },
@@ -190,7 +190,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(1);
     })
 
-    test('reference 2 unknown vars in params', () => {
+    test('should reject two unknown vars in params', () => {
         const workflow = {
             name: "test",
             vars: { "foo": true, "bar": "true" },
@@ -207,7 +207,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(2);
     })
 
-    test('reference 1 unknown vars in params', () => {
+    test('should reject one unknown var in params', () => {
         const workflow = {
             name: "test",
             vars: { "foo": true, "bar": "true" },
@@ -224,7 +224,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(1);
     })
 
-    test('reference known vars in params', () => {
+    test('should allow known vars in params', () => {
         const workflow = {
             name: "test",
             vars: { "foo": true, "bar": "true" },
