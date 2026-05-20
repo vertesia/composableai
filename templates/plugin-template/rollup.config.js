@@ -9,9 +9,23 @@
  *
  * Browser bundles are in rollup.config.browser.js
  */
+
+import { builtinModules } from 'node:module';
+import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
-import { vertesiaImportPlugin, skillTransformer, rawTransformer, skillCollectionTransformer, templateTransformer, templateCollectionTransformer, promptTransformer } from '@vertesia/build-tools';
+import {
+    promptTransformer,
+    rawTransformer,
+    skillCollectionTransformer,
+    skillTransformer,
+    templateCollectionTransformer,
+    templateTransformer,
+    vertesiaImportPlugin,
+} from '@vertesia/build-tools';
+
+const nodeBuiltins = new Set([...builtinModules, ...builtinModules.map((name) => `node:${name}`)]);
 
 // ============================================================================
 // Exit Plugin - Forces process exit after build completes
@@ -24,7 +38,7 @@ function exitPlugin() {
             console.log('Tool server build Done');
             // Force exit after bundle completes to prevent hanging
             setImmediate(() => process.exit(0));
-        }
+        },
     };
 }
 
@@ -42,7 +56,7 @@ const serverBuild = {
         sourcemap: true,
         preserveModules: true,
         preserveModulesRoot: 'src/tool-server',
-        entryFileNames: '[name].js'
+        entryFileNames: '[name].js',
     },
     external: (id) => {
         // Keep relative imports as part of the bundle
@@ -55,32 +69,72 @@ const serverBuild = {
     plugins: [
         vertesiaImportPlugin({
             transformers: [
-                skillTransformer,              // Handles .md?skill imports
-                skillCollectionTransformer,    // Handles ?skills imports
-                templateTransformer,           // Handles TEMPLATE.md imports
+                skillTransformer, // Handles .md?skill imports
+                skillCollectionTransformer, // Handles ?skills imports
+                templateTransformer, // Handles TEMPLATE.md imports
                 templateCollectionTransformer, // Handles ?templates imports
-                promptTransformer,             // Handles ?prompt imports
-                rawTransformer                 // Handles ?raw imports
+                promptTransformer, // Handles ?prompt imports
+                rawTransformer, // Handles ?raw imports
             ],
             assetsDir: './dist',
             widgetConfig: {
                 minify: false,
-                tsconfig: './tsconfig.widgets.json'
-            }
-
+                tsconfig: './tsconfig.widgets.json',
+            },
         }),
         typescript({
             tsconfig: './tsconfig.tool-server.json',
             declaration: true,
             declarationDir: 'lib',
-            sourceMap: true
+            sourceMap: true,
         }),
         json(),
-        exitPlugin()
-    ]
+    ],
+};
+
+const runtimeBundle = {
+    input: './src/tool-server/server.ts',
+    output: {
+        file: 'lib/server.js',
+        format: 'es',
+        sourcemap: true,
+        inlineDynamicImports: true,
+    },
+    external: (id) => nodeBuiltins.has(id),
+    plugins: [
+        vertesiaImportPlugin({
+            transformers: [
+                skillTransformer,
+                skillCollectionTransformer,
+                templateTransformer,
+                templateCollectionTransformer,
+                promptTransformer,
+                rawTransformer,
+            ],
+            assetsDir: './dist',
+            widgetConfig: {
+                minify: false,
+                tsconfig: './tsconfig.widgets.json',
+            },
+        }),
+        nodeResolve({
+            browser: false,
+            preferBuiltins: true,
+            exportConditions: ['node', 'import', 'default'],
+        }),
+        commonjs(),
+        json(),
+        typescript({
+            tsconfig: './tsconfig.tool-server.json',
+            declaration: false,
+            declarationMap: false,
+            sourceMap: true,
+        }),
+        exitPlugin(),
+    ],
 };
 
 // ============================================================================
-// Export server build configuration only
+// Export declaration/preserve-modules build plus bundled runtime entry
 // ============================================================================
-export default serverBuild;
+export default [serverBuild, runtimeBundle];
