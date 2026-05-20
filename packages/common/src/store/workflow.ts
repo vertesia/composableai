@@ -1,7 +1,7 @@
 import type { ModelOptions } from "@llumiverse/common";
 import { ConversationVisibility, InteractionRef, UserChannel } from "../interaction.js";
-import { JSONObject, JSONValue } from "../json.js";
 import { JSONSchema } from "../json-schema.js";
+import { JSONObject, JSONValue } from "../json.js";
 import type { WorkflowInput } from "./dsl-workflow.js";
 
 export enum ContentEventName {
@@ -163,7 +163,7 @@ export interface WorkflowExecutionPayload<T = Record<string, unknown>> extends W
     auth_token: string;
 }
 
-export function getDocumentIds(payload: WorkflowExecutionPayload): string[] {
+export function getDocumentIds(payload: WorkflowExecutionPayload<Record<string, unknown>>): string[] {
     // Check new input format first
     if (payload.input?.inputType === 'objectIds') {
         return payload.input.objectIds;

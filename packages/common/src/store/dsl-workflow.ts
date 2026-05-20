@@ -33,7 +33,7 @@ export type WorkflowInput =
 /**
  * The payload sent when starting a workflow from the temporal client to the workflow instance.
  */
-export interface DSLWorkflowExecutionPayload extends WorkflowExecutionPayload {
+export interface DSLWorkflowExecutionPayload extends WorkflowExecutionPayload<Record<string, unknown>> {
     /**
      * The workflow definition to be used by the DSL workflow.
      * If a dsl workflow is executed and no definition is provided the workflow will fail.

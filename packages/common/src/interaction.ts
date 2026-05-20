@@ -585,7 +585,7 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
 // ================= async execution payloads ====================
 export type ToolRef = string | { name: string; description: string };
 
-interface AsyncExecutionPayloadBase extends Omit<NamedInteractionExecutionPayload, "toolDefinitions" | "stream"> {
+interface AsyncExecutionPayloadBase extends Omit<NamedInteractionExecutionPayload, "toolDefinitions" | "stream">, Record<string, unknown> {
     type: "conversation" | "interaction";
 
     /**
