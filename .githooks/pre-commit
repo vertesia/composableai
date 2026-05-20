@@ -25,8 +25,7 @@ fi
 # Fall back to the biome binary in the parent workspace's node_modules/.bin/.
 PARENT_BIOME="../node_modules/.bin/biome"
 if [ -x "$PARENT_BIOME" ]; then
-    echo "[pre-commit] biome not installed locally in composableai."
-    echo "[pre-commit] Falling back to parent workspace's biome: $PARENT_BIOME"
+    echo "[pre-commit] biome not installed locally — falling back to parent workspace's biome: $PARENT_BIOME"
     "$PARENT_BIOME" lint --diagnostic-level=error
     exit $?
 fi
