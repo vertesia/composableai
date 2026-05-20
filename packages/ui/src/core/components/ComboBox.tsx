@@ -109,8 +109,9 @@ export interface ComboBoxProps<T> {
     noMatchMessage?: ReactNode;
     // open the menu when the input is focused
     openOnFocus?: boolean;
+    filterSelectedValue?: boolean;
 }
-export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelect, value, zIndex, unstyledInput, fullWidth, api, layout: layoutOpts, adapter, items, placeholder, clearable, noMatchMessage, openOnFocus }: ComboBoxProps<T>) {
+export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelect, value, filterSelectedValue, zIndex, unstyledInput, fullWidth, api, layout: layoutOpts, adapter, items, placeholder, clearable, noMatchMessage, openOnFocus }: ComboBoxProps<T>) {
     const [popupId] = useState(genComboboxPopupId());
     const popupCtrl = useRef<PopupController | undefined>(undefined);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -120,6 +121,7 @@ export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelec
         adapter,
         items,
         value,
+        filterSelectedValue,
         popupId
     });
     useEffect(() => {
@@ -269,6 +271,7 @@ export interface ComboboxControllerProps<ItemT> {
     adapter: OptionAdapter<ItemT>,
     items: ItemT[],
     value?: ItemT | string | null,
+    filterSelectedValue?: boolean,
     popupId: string;
 }
 export function useComboboxCtrl<ItemT>(props: ComboboxControllerProps<ItemT>): ComboboxController<ItemT> {
@@ -276,6 +279,9 @@ export function useComboboxCtrl<ItemT>(props: ComboboxControllerProps<ItemT>): C
     useEffect(() => {
         ctrl?.withState(setCtrl);
     }, []);
+    useEffect(() => {
+        ctrl?.syncProps(props);
+    }, [ctrl, props.adapter, props.items, props.popupId, props.value]);
     return ctrl;
 }
 
@@ -284,29 +290,36 @@ class ComboboxController<ItemT> {
     private popupId: string;
     public items: ItemT[];
     private adapter: OptionAdapter<ItemT>;
+    private _value: ItemT | string | null | undefined;
+    private filterSelectedValue: boolean;
     onSelect?: (item: ItemT | null) => void;
     private setState?: (ctrl: ComboboxController<ItemT>) => void;
     private _selectedItem: ItemT | null = null;
     private _filteredItems: ItemT[];
     private _inputText: string = "";
+    private _filterText: string = "";
     private _highlightedIndex: number | null = null;
     private _isMenuOpen: boolean = false;
     popupCtrl?: PopupController;
 
-    constructor({ adapter, items, value, popupId }: ComboboxControllerProps<ItemT>) {
+    constructor({ adapter, items, value, filterSelectedValue, popupId }: ComboboxControllerProps<ItemT>) {
         this.adapter = adapter;
         this.items = items;
         this.popupId = popupId;
+        this._value = value;
+        this.filterSelectedValue = filterSelectedValue ?? true;
         if (typeof value === "string") {
             this._inputText = value;
+            this._filterText = this.filterSelectedValue ? value : "";
         } else if (value) {
             this._selectedItem = adapter.findById(items, adapter.idOf(value)) || null;
             if (this._selectedItem) {
                 this._inputText = adapter.valueOf(value);
             }
+            this._filterText = this.filterSelectedValue ? this._inputText : "";
         }
-        if (this._inputText) {
-            this._filteredItems = this.adapter.filter(this.items, this._inputText);
+        if (this._filterText) {
+            this._filteredItems = this.adapter.filter(this.items, this._filterText);
         } else {
             this._filteredItems = this.items;
         }
@@ -317,11 +330,48 @@ class ComboboxController<ItemT> {
         return this;
     }
 
+    syncProps({ adapter, items, value, filterSelectedValue, popupId }: ComboboxControllerProps<ItemT>) {
+        const itemsChanged = this.items !== items;
+        this.adapter = adapter;
+        this.items = items;
+        this.popupId = popupId;
+        this.filterSelectedValue = filterSelectedValue ?? true;
+
+        let shouldUpdate = itemsChanged;
+
+        if (value !== this._value) {
+            this._value = value;
+            shouldUpdate = true;
+
+            if (typeof value === "string") {
+                this._inputText = value;
+                this._filterText = this.filterSelectedValue ? value : "";
+                this._selectedItem = this.adapter.findById(this.items, value) || null;
+            } else if (value) {
+                this._selectedItem = this.adapter.findById(this.items, this.adapter.idOf(value)) || null;
+                this._inputText = this._selectedItem ? this.adapter.valueOf(this._selectedItem) : this.adapter.valueOf(value);
+                this._filterText = this.filterSelectedValue ? this._inputText : "";
+            } else {
+                this._selectedItem = null;
+                this._inputText = "";
+                this._filterText = "";
+            }
+        }
+
+        if (shouldUpdate) {
+            this._filteredItems = this._filterText ? this.adapter.filter(this.items, this._filterText) : this.items;
+            this.updateState();
+        }
+    }
+
     private clone() {
         const clone = new ComboboxController({ adapter: this.adapter, items: this.items, popupId: this.popupId });
         clone.setState = this.setState;
         clone.onSelect = this.onSelect;
+        clone._value = this._value;
+        clone.filterSelectedValue = this.filterSelectedValue;
         clone._inputText = this._inputText;
+        clone._filterText = this._filterText;
         clone._highlightedIndex = this._highlightedIndex;
         clone._selectedItem = this._selectedItem;
         clone._isMenuOpen = this._isMenuOpen;
@@ -335,8 +385,8 @@ class ComboboxController<ItemT> {
     }
 
     get filteredItems() {
-        if (this._inputText) {
-            return this.adapter.filter(this.items, this._inputText);
+        if (this._filterText) {
+            return this.adapter.filter(this.items, this._filterText);
         } else {
             return this.items;
         }
@@ -348,8 +398,9 @@ class ComboboxController<ItemT> {
     set selectedItem(item: ItemT | null) {
         this._selectedItem = item;
         this._inputText = item ? this.adapter.valueOf(item) : "";
-        this._filteredItems = this._inputText ?
-            this.adapter.filter(this.items, this._inputText)
+        this._filterText = this.filterSelectedValue && this._inputText ? this._inputText : "";
+        this._filteredItems = this._filterText ?
+            this.adapter.filter(this.items, this._filterText)
             : this.items;
         this.updateState();
         this.onSelect?.(item);
@@ -361,6 +412,7 @@ class ComboboxController<ItemT> {
 
     set inputText(inputText: string) {
         this._inputText = inputText;
+        this._filterText = inputText;
         if (inputText) {
             this._filteredItems = this.adapter.filter(this.items, inputText);
         } else {
