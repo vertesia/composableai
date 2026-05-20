@@ -68,6 +68,10 @@ export default class EnvironmentsApi extends ApiTopic {
         });
     }
 
+    listEmbeddingModels(id: string): Promise<AIModel[]> {
+        return this.get(`/${id}/embedding-models`);
+    }
+
     listTrainableModels(id: string): Promise<AIModel[]> {
         return this.get(`/${id}/trainable-models`);
     }

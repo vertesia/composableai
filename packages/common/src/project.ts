@@ -361,6 +361,7 @@ export interface ProjectConfigurationEmbeddingEnablePayload {
     environment: string;
     max_tokens?: number;
     model?: string;
+    dimensions?: number;
 }
 
 /** @deprecated Use ProjectConfigurationEmbedding for a single embedding configuration. */
