@@ -1,4 +1,4 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, ClientBase, type IRequestParams } from "@vertesia/api-fetch-client";
 import {
     ActivityCatalog,
     AgentEvent,
@@ -20,6 +20,7 @@ import {
     PromptSizeAnalyticsResponse,
     RunsByAgentAnalyticsResponse,
     SignalAgentResponse,
+    SignalAgentPayload,
     TimeToFirstResponseAnalyticsResponse,
     TokenUsageAnalyticsResponse,
     ToolAnalyticsResponse,
@@ -42,6 +43,7 @@ import {
     WorkflowRunWithDetails,
     WorkflowToolParametersQuery,
     WorkflowUpdatePublishResponse,
+    UploadWorkflowRulePayload,
 } from "@vertesia/common";
 import { VertesiaClient } from "../client.js";
 import { EventSourceProvider } from "../execute.js";
@@ -71,7 +73,7 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs`, { payload: payload });
     }
 
-    sendSignal(workflowId: string, runId: string, signal: string, payload?: any): Promise<SignalAgentResponse> {
+    sendSignal(workflowId: string, runId: string, signal: string, payload?: SignalAgentPayload | null): Promise<SignalAgentResponse> {
         return this.post(`/runs/${workflowId}/${runId}/signal/${signal}`, { payload });
     }
 
@@ -83,7 +85,7 @@ export class WorkflowsApi extends ApiTopic {
             historyFormat?: 'events' | 'tasks' | 'agent';
         }
     ): Promise<WorkflowRunWithDetails> {
-        const query: Record<string, any> = {};
+        const query: NonNullable<IRequestParams["query"]> = {};
 
         // Support legacy includeHistory parameter
         if (options?.includeHistory !== undefined) {
@@ -307,7 +309,7 @@ export class WorkflowsApi extends ApiTopic {
                         }
                     };
 
-                    sse.onerror = (err: any) => {
+                    sse.onerror = (err: unknown) => {
                         if (isClosed) return;
 
                         console.warn(`SSE stream error for run ${runId}:`, err);
@@ -388,7 +390,7 @@ export class WorkflowsApi extends ApiTopic {
         runId: string,
         onMessage?: (message: CompactMessage) => void,
         since?: number
-    ): Promise<{ cleanup: () => void; sendSignal: (signalName: string, data: any) => void }> {
+    ): Promise<{ cleanup: () => void; sendSignal: (signalName: string, data: unknown) => void }> {
         return new Promise((resolve, reject) => {
             let reconnectAttempts = 0;
             const maxReconnectAttempts = 10;
@@ -450,7 +452,7 @@ export class WorkflowsApi extends ApiTopic {
                                         ws = null;
                                     }
                                 },
-                                sendSignal: (signalName: string, data: any) => {
+                                sendSignal: (signalName: string, data: unknown) => {
                                     if (ws?.readyState === WebSocket.OPEN) {
                                         const message: WebSocketClientMessage = {
                                             type: 'signal',
@@ -726,7 +728,7 @@ export class WorkflowsRulesApi extends ApiTopic {
         return this.get(`/${id}`);
     }
 
-    update(id: string, payload: any): Promise<WorkflowRule> {
+    update(id: string, payload: UploadWorkflowRulePayload): Promise<WorkflowRule> {
         return this.put(`/${id}`, {
             payload,
         });
@@ -745,7 +747,7 @@ export class WorkflowsRulesApi extends ApiTopic {
     execute(
         id: string,
         objectIds?: string[],
-        vars?: Record<string, any>,
+        vars?: Record<string, unknown>,
     ): Promise<({ run_id: string; workflow_id: string } | undefined)[]> {
         const payload: ExecuteWorkflowPayload = {
             objectIds,
@@ -770,7 +772,7 @@ export class WorkflowsDefinitionApi extends ApiTopic {
         return this.get(`/${id}`);
     }
 
-    update(id: string, payload: any): Promise<DSLWorkflowDefinition> {
+    update(id: string, payload: DSLWorkflowSpec): Promise<DSLWorkflowDefinition> {
         return this.put(`/${id}`, {
             payload,
         });

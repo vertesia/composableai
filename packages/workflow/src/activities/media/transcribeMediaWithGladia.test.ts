@@ -60,7 +60,7 @@ const createTestPayload = (
             ? { inputType: 'objectIds' as const, objectIds: [objectId] }
             : undefined,
         vars: {},
-        activity: { name: "TranscribeMedia", params }
+        activity: { name: "TranscribeMedia", params: params as unknown as Record<string, unknown> }
     };
 };
 
@@ -76,8 +76,8 @@ describe("TranscribeMedia", () => {
                 result_url: "https://api.gladia.io/v2/transcription/test-transcription-id",
             }),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -147,8 +147,8 @@ describe("TranscribeMedia", () => {
                 result_url: "https://api.gladia.io/v2/transcription/test-transcription-id",
             }),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -261,8 +261,8 @@ describe("TranscribeMedia", () => {
                 result_url: "https://api.gladia.io/v2/transcription/test-transcription-id",
             }),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -322,8 +322,8 @@ describe("TranscribeMedia", () => {
                 result_url: "https://api.gladia.io/v2/transcription/test-transcription-id",
             }),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -486,8 +486,8 @@ describe("TranscribeMedia", () => {
                 new RequestError("Invalid audio format", mockRequest, 422, { error: "Invalid audio format" })
             ),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {

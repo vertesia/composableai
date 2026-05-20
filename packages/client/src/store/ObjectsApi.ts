@@ -42,6 +42,10 @@ import { StreamSource } from "../StreamSource.js";
 import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
 import { ZenoClient } from "./client.js";
 
+type ContentObjectWritePayload = Omit<CreateContentObjectPayload, "content"> & {
+    content?: ContentSource | File | StreamSource;
+};
+
 export class ObjectsApi extends ApiTopic {
     declare client: ZenoClient;
 
@@ -79,7 +83,7 @@ export class ObjectsApi extends ApiTopic {
      * @param payload Search/filter parameters
      * @returns Matching content objects
      */
-    list<T = any>(
+    list<T = unknown>(
         payload: ObjectSearchPayload = {},
     ): Promise<ContentObjectItem<T>[]> {
         const limit = payload.limit || 100;
@@ -206,20 +210,23 @@ export class ObjectsApi extends ApiTopic {
     }
 
     async create(
-        payload: CreateContentObjectPayload,
+        payload: ContentObjectWritePayload,
         options?: {
             collection_id?: string;
             processing_priority?: ContentObjectProcessingPriority;
         },
     ): Promise<ContentObject> {
+        const { content, ...payloadWithoutContent } = payload;
         const createPayload: CreateContentObjectPayload = {
-            ...payload,
+            ...payloadWithoutContent,
         };
         if (
-            payload.content instanceof StreamSource ||
-            payload.content instanceof File
+            content instanceof StreamSource ||
+            content instanceof File
         ) {
-            createPayload.content = await this.upload(payload.content);
+            createPayload.content = await this.upload(content);
+        } else {
+            createPayload.content = content;
         }
 
         const headers: Record<string, string> = {};
@@ -294,7 +301,7 @@ export class ObjectsApi extends ApiTopic {
      */
     async update(
         id: string,
-        payload: Partial<CreateContentObjectPayload>,
+        payload: Partial<ContentObjectWritePayload>,
         options?: {
             createRevision?: boolean;
             revisionLabel?: string;
@@ -304,16 +311,19 @@ export class ObjectsApi extends ApiTopic {
             ifMatch?: string;
         },
     ): Promise<ContentObject> {
+        const { content, ...payloadWithoutContent } = payload;
         const updatePayload: Partial<CreateContentObjectPayload> = {
-            ...payload,
+            ...payloadWithoutContent,
         };
 
         // Handle file upload if content is provided as File or StreamSource
         if (
-            payload.content instanceof StreamSource ||
-            payload.content instanceof File
+            content instanceof StreamSource ||
+            content instanceof File
         ) {
-            updatePayload.content = await this.upload(payload.content);
+            updatePayload.content = await this.upload(content);
+        } else {
+            updatePayload.content = content;
         }
 
         const headers: Record<string, string> = {};
@@ -372,7 +382,7 @@ export class ObjectsApi extends ApiTopic {
         return this.del(`/${idOrIds}`);
     }
 
-    bulkUpdate(updates: Record<string, Record<string, any>>): Promise<BulkObjectUpdateResult> {
+    bulkUpdate(updates: Record<string, Record<string, unknown>>): Promise<BulkObjectUpdateResult> {
         const ids = Object.keys(updates);
         return this.client.runOperation({
             name: 'update',

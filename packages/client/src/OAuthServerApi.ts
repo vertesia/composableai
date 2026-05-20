@@ -24,8 +24,8 @@ export default class OAuthServerApi extends ClientBase {
         return this.parent.createRequest(url, init);
     }
 
-    handleResponse(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): Promise<any> {
-        return this.parent.handleResponse(req, res, params);
+    handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): T | Promise<T> {
+        return this.parent.handleResponse<T>(req, res, params);
     }
 
     createAuthorizationRequest(payload: CreateOAuthAuthorizationRequestPayload): Promise<OAuthAuthorizationRequest> {

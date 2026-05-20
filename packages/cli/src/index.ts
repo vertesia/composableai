@@ -29,6 +29,7 @@ import { listProjects, useProject } from './projects/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
 import { registerWorkflowsCommand } from './workflows/index.js';
+import { getBooleanOption, hasStatus } from './utils/options.js';
 //warnIfNotLatest();
 
 const program = new Command();
@@ -38,7 +39,7 @@ program.version(getVersion());
 program.command("upgrade")
     .description("Upgrade to the latest version of the CLI")
     .option("-y, --yes", "Skip the confirmation prompt")
-    .action((options: Record<string, any> = {}) => upgrade(options.yes))
+    .action((options: Record<string, unknown> = {}) => upgrade(getBooleanOption(options.yes)))
 
 const projectsRoot = program.command("projects")
     .description("List the projects you have access to")
@@ -91,12 +92,12 @@ authRoot.command("refresh")
 
 program.command("envs [envId]")
     .description("List the environments you have access to")
-    .action((envId: string | undefined, options: Record<string, any>) => {
+    .action((envId: string | undefined, options: Record<string, unknown>) => {
         listEnvironments(program, envId, options);
     })
 program.command("interactions [interaction]")
     .description("List the interactions available in the current project")
-    .action((interactionId: string | undefined, options: Record<string, any>) => {
+    .action((interactionId: string | undefined, options: Record<string, unknown>) => {
         listInteractions(program, interactionId, options);
     })
 program.command("run <interaction>")
@@ -122,7 +123,7 @@ program.command("run <interaction>")
     .option('--data-only', 'Write down only the data returned by the LLM and not the entire execution run. This mode is forced when streaming', false)
     .option('-r, --run-data [level]', 'Override the level of storage for the run data. Possible values are: "standard", "restricted", or "debug". Optional. If not specified, it uses the level defined in Studio.')
     .option('--by-id', 'When used, the interaction is selected by ID instead of by name')
-    .action((interaction: string, options: Record<string, any>) => runInteraction(program, interaction, options));
+    .action((interaction: string, options: Record<string, unknown>) => runInteraction(program, interaction, options));
 program.command("runs [interactionId]")
     .description('Search the run history for specific execution runs')
     .option('-t, --tags [tags]', 'A comma separated list of tags to filter the run history')
@@ -136,7 +137,7 @@ program.command("runs [interactionId]")
     .option("-o, --output [file]", "The output file if any. If not specified it will print to stdout")
     .option("--before [date]", "Filter runs before the given date. The date must be in ISO format")
     .option("--after [date]", "Filter runs after the given date. The date must be in ISO format")
-    .action((interactionId: string | undefined, options: Record<string, any>) => {
+    .action((interactionId: string | undefined, options: Record<string, unknown>) => {
         runHistory(program, interactionId, options);
     });
 
@@ -209,8 +210,8 @@ program.parseAsync(process.argv).catch(err => {
     process.exit(1);
 });
 
-process.on("unhandledRejection", (err: any) => {
-    if (err.status === 401) { // token expired?
+process.on("unhandledRejection", (err: unknown) => {
+    if (hasStatus(err, 401)) { // token expired?
         console.error("ERROR", err);
         tryRefreshToken();
     }

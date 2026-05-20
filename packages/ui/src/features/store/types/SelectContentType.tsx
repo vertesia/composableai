@@ -66,7 +66,7 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
                     optionLabel={optionLabel}
                     className={className || "text-sm bg-background"}
                     filterBy="name"
-                    isClearable={isClearable || false as any}
+                    isClearable={isClearable || false}
                     multiple
                 />
             </div>
@@ -83,7 +83,7 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
                 optionLabel={optionLabel}
                 className={className || "text-sm bg-background"}
                 filterBy="name"
-                isClearable={isClearable || false as any}
+                isClearable={isClearable || false}
             />
         </div>
     );

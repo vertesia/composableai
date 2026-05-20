@@ -1,4 +1,4 @@
-import { ComponentType, createContext, useContext } from "react";
+import { ChangeEvent, ComponentType, createContext, useContext } from "react";
 import { ManagedObject, ManagedObjectBase, Node } from "./ManagedObject.js";
 
 const FieldSetContext = createContext<ManagedObjectBase | undefined>(undefined);
@@ -12,10 +12,12 @@ export function useFieldSet() {
     return ctx;
 }
 
+export type InputChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
+
 export interface InputComponentProps {
     object: Node;
     type: string; // the editor/input type
-    onChange?: (event: any) => void;
+    onChange?: (event: InputChangeEvent) => void;
     disabled?: boolean;
 }
 export class FormContext {

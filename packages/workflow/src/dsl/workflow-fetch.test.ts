@@ -20,7 +20,7 @@ class DocumentTestProvider extends DataProvider {
         super(DocumentTestProvider.ID, true);
     }
 
-    doFetch(payload: FindPayload): Promise<Record<string, any>[]> {
+    doFetch(payload: FindPayload): Promise<Record<string, unknown>[]> {
         const query = payload.query;
         console.log('query', query);
         if (query.lang === 'en') {
@@ -116,6 +116,7 @@ describe('DSL Workflow', () => {
                 store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
+                spec_format: 'activities',
                 activities,
                 vars: {
                     lang,

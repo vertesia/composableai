@@ -143,7 +143,7 @@ interface CopyButtonProps {
   'aria-label'?: string
   size?: "xs" | "sm" | "md" | "lg" | "xl" | "icon"
   toast?: {
-    toast: any,
+    toast: (options: { status: "success" | "error"; title: string; duration: number }) => void,
     message: string
   }
   className?: string

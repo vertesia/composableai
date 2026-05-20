@@ -56,7 +56,7 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
                 if (!object) return;
                 if (object.metadata?.type !== ContentNature.Audio) return;
 
-                let downloadUrl;
+                let downloadUrl: Awaited<ReturnType<typeof client.files.getDownloadUrl>> | undefined;
                 if (audioRendition?.content?.source) {
                     downloadUrl = await client.files.getDownloadUrl(audioRendition.content.source);
                 } else if (isOriginalWebSupported && object.content?.source) {

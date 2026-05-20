@@ -15,7 +15,7 @@ export interface DataViewerProps<T> {
 
 export interface DataEditorProps<T> {
     value: T | undefined;
-    onChange: (value: any, autoSave?: boolean) => void
+    onChange: (value: T, autoSave?: boolean) => void
     onSave?: () => void
     onCancel?: () => void
 }
@@ -53,7 +53,7 @@ export function Editable<T>({ value, onChange, onDelete,
     const { on, off, isOn } = useFlag(isEditing);
     const [validationError, setValidationError] = useState<string | undefined>();
 
-    const _onChange = (value?: any) => {
+    const _onChange = (value: T) => {
         if (onValidate) {
             const err = onValidate(value);
             if (err) {
@@ -166,7 +166,7 @@ function DataEdit<T>({ editor: Editor, value, onSave, onCancel, skipClickOutside
 
     const ref = useClickOutside<HTMLDivElement>(handleSave, skipClickOutside);
 
-    const _onChange = (value: any, autoSave = false) => {
+    const _onChange = (value: T, autoSave = false) => {
         setActualValue(value);
         latestValue.current = value;
         if (autoSave) {

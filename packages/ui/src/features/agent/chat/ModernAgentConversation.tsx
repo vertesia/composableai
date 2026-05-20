@@ -469,7 +469,7 @@ function StartWorkflowView({
                     duration: 3000,
                 });
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast({
                 title: t('agent.errorStarting'),
                 status: "error",
@@ -1173,7 +1173,7 @@ const handleCloseRightPanel = useCallback(() => {
             })
             .catch((err) => {
                 removeOptimisticMessages((m) =>
-                    (m.details as any)?._messageId === messageId
+                    m.details?._messageId === messageId
                 );
                 toast({
                     status: "error",

@@ -15,7 +15,7 @@ vi.mock("@temporalio/activity", () => ({
 }));
 
 // Import after mocking
-import { imageResizer } from "../conversion/image";
+import { imageResizer } from "../conversion/image.js";
 
 const execAsync = promisify(exec);
 

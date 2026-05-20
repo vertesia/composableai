@@ -28,7 +28,7 @@ export function ContentObjectTypesTable({ objects, isLoading }: ContentObjectTyp
             </THead>
             <TBody isLoading={isLoading && (!objects || objects.length === 0)} columns={4}>
                 {
-                    objects?.map((obj: any) => (
+                    objects?.map((obj) => (
                         <tr key={obj.id} onClick={() => navigate(`/types/${obj.id}`)} className='cursor-pointer hover:bg-muted'>
                             <td>{obj.name}</td>
                             <td>{obj.strict_mode ? 'Yes' : 'No'}</td>

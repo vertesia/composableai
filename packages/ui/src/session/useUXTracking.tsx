@@ -19,7 +19,7 @@ export function useUXTracking() {
     }
 
     //send event to analytics and UX systems
-    const trackEvent = (eventName: string, eventProperties?: any) => {
+    const trackEvent = (eventName: string, eventProperties?: Record<string, unknown>) => {
 
         if (!Env.isProd) {
             console.debug('track event', eventName, eventProperties);

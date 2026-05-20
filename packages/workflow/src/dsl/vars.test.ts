@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { Vars } from "./vars.ts";
+import { Vars } from "./vars.js";
+
+/** Permissive recursive type for navigating untyped resolver results in test assertions. */
+type Tree = { readonly [key: string]: Tree };
 
 describe('Workflow vars', () => {
 
@@ -98,7 +101,7 @@ describe('Workflow vars', () => {
             secondDocId: "${objectIds.1}",
             secondDocIdByBracket: "${objectIds[1]}",
         }
-        const resolved = vars.resolveParams(params);
+        const resolved = vars.resolveParams(params) as unknown as Tree;
         expect(Object.keys(resolved).length).toBe(3);
         expect(resolved.query).toBeTypeOf("object");
         expect(resolved.query._id).toBe("123");
@@ -117,7 +120,7 @@ describe('Workflow vars', () => {
             data2: "${prompt_data}",
             unknown: "${notdefined}"
         });
-        const resolved = vars.resolve();
+        const resolved = vars.resolve() as unknown as Tree;
         console.log('@@@@@@@@@@@@@@@@@@@', resolved);
         expect(Object.keys(resolved).length).toBe(4); // since unknown will be undefined it will not be included
         expect(resolved.objectId).toBe("123");

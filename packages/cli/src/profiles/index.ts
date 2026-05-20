@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import os from "node:os";
 import { join } from "path";
 import { readJsonFile, writeJsonFile } from "../utils/stdio.js";
+import { hasErrorCode } from "../utils/options.js";
 import { ConfigPayload, ConfigResult, startConfigSession } from "./server/index.js";
 import type { OnResultCallback } from "./commands.js";
 import { canUseOAuthProfile, OAuthUnavailableError, startOAuthSession } from "./oauth.js";
@@ -356,8 +357,8 @@ export class Config {
             if (stats.isFile()) {
                 this.isDevMode = true;
             }
-        } catch (err: any) {
-            if (err.code !== 'ENOENT') {
+        } catch (err: unknown) {
+            if (!hasErrorCode(err, 'ENOENT')) {
                 throw err;
             }
         }
@@ -394,8 +395,8 @@ export class Config {
             if (needsSave) {
                 this.save();
             }
-        } catch (err: any) {
-            if (err.code !== 'ENOENT') {
+        } catch (err: unknown) {
+            if (!hasErrorCode(err, 'ENOENT')) {
                 throw err;
             }
         }

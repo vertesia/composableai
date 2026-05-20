@@ -2,6 +2,7 @@ import { ComputedFacetResponse } from "../facets.js";
 import { SearchPayload } from "../payload.js";
 import { SupportedEmbeddingTypes } from "../project.js";
 import { ComplexSearchQuery } from "../query.js";
+import { JSONObject } from "../json.js";
 import { BaseObject } from "./common.js";
 
 export enum ContentObjectApiHeaders {
@@ -140,7 +141,7 @@ export interface ContentObjectApiResponse extends ContentObjectItemApiResponse {
     inherited_properties?: InheritedPropertyMetadata[];
 }
 
-export interface ContentObject<T = any> extends ContentObjectItem<T> {
+export interface ContentObject<T = JSONObject> extends ContentObjectItem<T> {
     text?: string; // the text representation of the object
     text_etag?: string;
     embeddings: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
@@ -325,7 +326,7 @@ export interface RevisionInfo {
 /**
  * The content object item is a simplified version of the ContentObject that is returned by the store API when listing objects.
  */
-export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
+export interface ContentObjectItem<T = JSONObject> extends BaseObject {
     parent?: string; // the id of the direct parent object. The root object doesn't have the parent field set.
 
     /** An optional path based location for the object */
@@ -405,7 +406,7 @@ export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
 /**
  * When creating from an uploaded file the content should be an URL to the uploaded file
  */
-export interface CreateContentObjectPayload<T = any>
+export interface CreateContentObjectPayload<T = JSONObject>
     extends Partial<
         Omit<
             ContentObject<T>,
@@ -481,7 +482,7 @@ export interface ColumnLayout {
     /**
      * A default value to be used if the field is not present in the object
      */
-    default?: any;
+    default?: unknown;
 }
 export interface ContentObjectType extends ContentObjectTypeItem { }
 export interface ContentObjectTypeItem extends BaseObject {
@@ -495,7 +496,7 @@ export interface ContentObjectTypeItem extends BaseObject {
      * this is only included in ContentObjectTypeItem if explicitly requested
      * It is always included in ContentObjectType
      */
-    object_schema?: Record<string, any>; // an optional JSON schema for the object properties.
+    object_schema?: Record<string, unknown>; // an optional JSON schema for the object properties.
 
     /**
      * Determines if the content will be validated against the object schema a generation time and save/update time.
@@ -543,11 +544,11 @@ export interface WorkflowRule extends WorkflowRuleItem {
     /*
      * mongo matching rules for a content event
      */
-    match?: Record<string, any>;
+    match?: Record<string, unknown>;
     /**
      * Activities configuration if any.
      */
-    config?: Record<string, any>;
+    config?: Record<string, unknown>;
 
     /**
      * Debug mode for the rule
@@ -602,7 +603,7 @@ export interface GetRenditionResponse {
 }
 
 export interface ObjectSearchResponse {
-    results: ContentObjectItem<Record<string, unknown>>[];
+    results: ContentObjectItem[];
     facets: ComputedFacetResponse;
     aggregations?: Record<string, unknown>;
 }

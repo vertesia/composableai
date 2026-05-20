@@ -1,7 +1,7 @@
 import { Button, Spinner, Modal, ModalBody, ModalTitle, VTooltip, cn, Textarea } from "@vertesia/ui/core";
 import { Activity, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ConversationFile, FileProcessingStatus } from "@vertesia/common";
+import { ContentObjectItem, ConversationFile, FileProcessingStatus } from "@vertesia/common";
 import { SelectDocument } from "../../../store";
 import { useUITranslation } from '@vertesia/ui/i18n';
 
@@ -269,7 +269,7 @@ export default function MessageInput({
         adjustTextareaHeight();
     }, [value, adjustTextareaHeight]);
 
-    const handleObjectSelect = (object: any) => {
+    const handleObjectSelect = (object: ContentObjectItem) => {
         // Create a markdown link with the object title and ID
         const objectTitle = object.properties?.title || object.name || 'Object';
         const objectId = object.id;

@@ -125,7 +125,7 @@ function mergeByToolRunId(messages: AgentMessage[]): AgentMessage[] {
         // message text from the running message (message_to_human) if the
         // completed message has no text or empty text.
         const base = msgs[msgs.length - 1];
-        const runningMsg = msgs.find(m => (m.details as any)?.tool_status === 'running');
+        const runningMsg = msgs.find(m => m.details?.tool_status === 'running');
 
         if (runningMsg && (!base.message || base.message.trim() === '') && runningMsg.message) {
             // Merge: use running message text with completed message details
@@ -425,7 +425,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
 
                         {/* Show observation from details if available and different from header text */}
                         {(() => {
-                            const observation = (details as any)?.observation as string | undefined;
+                            const observation = typeof details?.observation === 'string' ? details.observation : undefined;
                             if (observation && observation !== messageContent) {
                                 return (
                                     <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
@@ -626,8 +626,8 @@ function ToolCallGroupComponent({
     const toast = useToast();
 
     // Extract workflow_run_id from messages (any message in the group should have it)
-    const artifactRunId = messages.find(m => (m as any).workflow_run_id)?.workflow_run_id as string | undefined
-        ?? (messages[0] as any)?.workflow_run_id;
+    const artifactRunId = messages.find(m => m.workflow_run_id)?.workflow_run_id
+        ?? messages[0]?.workflow_run_id;
 
     // Render status indicator based on tool execution status
     const renderStatusIndicator = () => {
@@ -785,7 +785,7 @@ function ToolCallGroupComponent({
             {isCollapsed && (
                 <div className="px-3 py-0.5 space-y-0">
                     {messages.map((m, idx) => {
-                        const details = m.details as { tool?: string; files?: string[]; outputFiles?: string[] } | undefined;
+                        const details = m.details as { tool?: string; files?: string[]; outputFiles?: string[]; observation?: string } | undefined;
                         const toolName = getMessageActivityLabel(m);
                         const badgeClass = getMessageBadgeClass(m);
                         const fullMessage = typeof m.message === "string" ? m.message : "";
@@ -873,7 +873,7 @@ function ToolCallGroupComponent({
 
                                             {/* Show observation from details if different from header text */}
                                             {(() => {
-                                                const observation = (details as any)?.observation as string | undefined;
+                                                const observation = typeof details?.observation === 'string' ? details.observation : undefined;
                                                 if (observation && observation !== fullMessage) {
                                                     return (
                                                         <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">

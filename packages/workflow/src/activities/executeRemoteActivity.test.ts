@@ -48,7 +48,7 @@ const createPayload = (
         event: ContentEventName.create,
         objectIds: [],
         vars: {},
-        activity: { name: "executeRemoteActivity", params },
+        activity: { name: "executeRemoteActivity", params: params as unknown as Record<string, unknown> },
     };
 };
 

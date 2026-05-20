@@ -123,7 +123,7 @@ export class Spinner {
             try {
                 const frames = this.data.frames;
                 this.log.print(this.prefix + frames[++i % frames.length] + this.suffix);
-            } catch (error) {
+            } catch {
                 // If we can't update, stop the spinner to prevent console issues
                 this.done(false);
             }
@@ -168,11 +168,11 @@ export class Spinner {
                 showCursor(this.log.stream);
                 this._restoreCursor = false;
             }
-        } catch (error) {
+        } catch {
             // If an error occurs during cleanup, make a best effort to restore the cursor
             try {
                 showCursor(this.log.stream);
-            } catch (_) {
+            } catch {
                 // Last resort - ignore errors in error handler
             }
         }

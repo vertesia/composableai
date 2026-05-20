@@ -47,7 +47,7 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(({ valu
 
     return (
         <input
-            onWheel={noScroll ? event => { (event.target as any).blur(); } : others.onWheel} /* avoid input change on wheel scroll */
+            onWheel={noScroll ? event => { event.currentTarget.blur(); } : others.onWheel} /* avoid input change on wheel scroll */
             type='number'
             value={textValue}
             onChange={_onChange}

@@ -171,7 +171,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                     {
                         name: "Search Score",
                         field: "score",
-                        render: (item) => (item as any).score?.toFixed(4) || "0.0000"
+                        render: (item) => typeof item.score === 'number' ? item.score.toFixed(4) : "0.0000"
                     } satisfies ExtendedColumnLayout,
                 ];
                 setActualLayout(layout);
@@ -374,8 +374,9 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
     const { downloadFromContentSource } = useDownloadFile({ client: store, toast });
 
     const contentSource = object?.content?.source;
+    const title = typeof object?.properties?.title === 'string' ? object.properties.title : object?.name;
     return object ? (
-        <SidePanel title={object.properties?.title || object.name} isOpen={true} onClose={onClose}>
+        <SidePanel title={title} isOpen={true} onClose={onClose}>
             <div className="flex items-center gap-x-2">
                 <Button variant="ghost" size="sm" title="Open Object" onClick={() => navigate(`/objects/${object.id}`)}>
                     <ExternalLink className="size-4" />

@@ -139,9 +139,9 @@ export interface ComplexSearchQuery extends ObjectSearchQuery {
      */
     score_aggregation?: scoreAggregationTypes;
 
-    match?: Record<string, any>;
+    match?: Record<string, unknown>;
 }
 
 export interface ComplexCollectionSearchQuery extends CollectionSearchPayload {
-    match?: Record<string, any>;
+    match?: Record<string, unknown>;
 }

@@ -58,7 +58,7 @@ const createTestPayload = (
             ? { inputType: 'objectIds' as const, objectIds: [objectId] }
             : undefined,
         vars: {},
-        activity: { name: "SaveGladiaTranscription", params }
+        activity: { name: "SaveGladiaTranscription", params: params as unknown as Record<string, unknown> }
     };
 };
 
@@ -110,8 +110,8 @@ describe("SaveGladiaTranscription", () => {
             withHeaders: vi.fn().mockReturnThis(),
             get: vi.fn().mockResolvedValue(mockGladiaTranscriptionResult),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         // Mock client
@@ -164,8 +164,8 @@ describe("SaveGladiaTranscription", () => {
             withHeaders: vi.fn().mockReturnThis(),
             get: vi.fn().mockResolvedValue(mockGladiaTranscriptionResult),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -256,8 +256,8 @@ describe("SaveGladiaTranscription", () => {
                 status: "error",
             }),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -305,8 +305,8 @@ describe("SaveGladiaTranscription", () => {
                 status: "processing",
             }),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -361,8 +361,8 @@ describe("SaveGladiaTranscription", () => {
                 },
             }),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {

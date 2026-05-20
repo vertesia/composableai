@@ -10,7 +10,7 @@ const mockGetInstalledApps = vi.fn();
 vi.mock("../utils/client.js", () => ({
     getVertesiaClient: vi.fn().mockReturnValue({
         apps: {
-            getInstalledApps: (...args: any[]) => mockGetInstalledApps(...args),
+            getInstalledApps: (...args: unknown[]) => mockGetInstalledApps(...args),
             validateUrl: vi.fn().mockResolvedValue({ valid: true }),
         },
     }),

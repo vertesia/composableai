@@ -101,7 +101,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                         project_id: projectId,
                     }
                 });
-                const idTokenDecoded = jwtDecode(idToken) as any;
+                const idTokenDecoded = jwtDecode<{ email?: string }>(idToken);
                 if (!idTokenDecoded?.email) {
                     Env.logger.error('No email found in id token');
                     throw new Error('No email found in id token');
@@ -141,7 +141,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                     status: stsRes?.status
                 },
             });
-            const idTokenDecoded = jwtDecode(idToken) as any;
+            const idTokenDecoded = jwtDecode<{ email?: string }>(idToken);
             if (!idTokenDecoded?.email) {
                 Env.logger.error('No email found in id token');
                 throw new Error('No email found in id token');

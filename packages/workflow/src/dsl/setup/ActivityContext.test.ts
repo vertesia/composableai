@@ -5,7 +5,7 @@ import { setupActivity } from "./ActivityContext.js";
 const MOCK_AUTH_TOKEN =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature";
 
-function basePayload<T extends Record<string, any>>(
+function basePayload<T extends object>(
     activity: DSLActivityExecutionPayload<T>["activity"],
     params: T,
 ): DSLActivityExecutionPayload<T> {
@@ -39,7 +39,7 @@ describe("setupActivity", () => {
     });
 
     it("returns empty params when code-dispatched activity has no params", async () => {
-        const payload = basePayload({ name: "testActivity" }, undefined as any);
+        const payload = basePayload({ name: "testActivity" }, undefined as unknown as Record<string, unknown>);
         const ctx = await setupActivity(payload);
         expect(ctx.params).toEqual({});
     });
@@ -49,9 +49,9 @@ describe("setupActivity", () => {
     it("still resolves ${refs} in activity.params for DSL-dispatched activities", async () => {
         const payload = basePayload(
             { name: "dslActivity", params: { message: "Hello ${name}" } },
-            { name: "World" } as any,
+            { name: "World" } as unknown as Record<string, unknown>,
         );
         const ctx = await setupActivity(payload);
-        expect((ctx.params as any).message).toBe("Hello World");
+        expect((ctx.params as { message: string }).message).toBe("Hello World");
     });
 });

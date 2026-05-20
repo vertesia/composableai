@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { ObjectWalker } from "./walk.ts";
+import { ObjectWalker } from "./walk.js";
+
+/** Permissive recursive type for navigating untyped walker results in test assertions. */
+type Tree = { readonly [key: string]: Tree };
 
 describe('walk object', () => {
 
@@ -24,7 +27,7 @@ describe('walk object', () => {
         const values = ["foo", "bar", "baz", "file"].sort().join(',');
         const found: string[] = [];
         new ObjectWalker().walk(obj, {
-            onValue(key, value) {
+            onValue(_key, value) {
                 if (typeof value === "string") {
                     found.push(value);
                 }
@@ -56,7 +59,7 @@ describe('walk object', () => {
                 return String(value)
             }
             return value;
-        });
+        }) as Tree;
         expect(r.age).toBe("42");
         expect(r.children[0].age).toBe("12");
         expect(r.children[1].age).toBe("15");
@@ -70,7 +73,7 @@ describe('walk object', () => {
                 return String(value)
             }
             return value;
-        });
+        }) as unknown as Tree;
         expect(r.length).toBe(4);
         expect(r[0]).toBe("123");
         expect(r[1].x).toBe("1");

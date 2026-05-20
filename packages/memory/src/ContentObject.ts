@@ -25,7 +25,7 @@ export class ContentObject implements ContentSource {
         const out = fs.createWriteStream(file);
         const stream = input.pipe(out);
         return new Promise((resolve, reject) => {
-            const handleError = (err: any) => {
+            const handleError = (err: unknown) => {
                 reject(err);
                 out.close();
             }
@@ -46,13 +46,13 @@ export class ContentObject implements ContentSource {
         return t;
     }
 
-    getJsonValue(): Promise<any> {
+    getJsonValue(): Promise<unknown> {
         return this.getText();
     }
 }
 
 export class JsonObject extends ContentObject {
-    async getJsonValue(): Promise<any> {
+    async getJsonValue(): Promise<unknown> {
         return JSON.parse(await this.getText());
     }
 }

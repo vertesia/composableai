@@ -70,10 +70,10 @@ export class AgentsApi extends ApiTopic {
     start<TData = Record<string, unknown>>(
         payload: CreateAgentRunPayload<TData>,
     ): Promise<AgentRun<TData>>;
-    start<TData = Record<string, any>>(
+    start<TData = Record<string, unknown>>(
         payload: CreateProcessRunPayload<TData>,
     ): Promise<ProcessRun>;
-    start<TData = Record<string, any>>(
+    start<TData = Record<string, unknown>>(
         payload: CreateAgentRunPayload<TData> | CreateProcessRunPayload<TData>,
     ): Promise<AgentRun<TData> | ProcessRun> {
         return this.post('/', { payload });
@@ -85,9 +85,9 @@ export class AgentsApi extends ApiTopic {
      *
      * @internal
      */
-    recordRun<TData = Record<string, any>>(payload: RecordAgentRunPayload<TData>): Promise<AgentRun<TData>>;
-    recordRun<TData = Record<string, any>>(payload: RecordProcessRunPayload<TData>): Promise<ProcessRun>;
-    recordRun<TData = Record<string, any>>(payload: RecordRunPayload<TData>): Promise<AgentRun<TData> | ProcessRun> {
+    recordRun<TData = Record<string, unknown>>(payload: RecordAgentRunPayload<TData>): Promise<AgentRun<TData>>;
+    recordRun<TData = Record<string, unknown>>(payload: RecordProcessRunPayload<TData>): Promise<ProcessRun>;
+    recordRun<TData = Record<string, unknown>>(payload: RecordRunPayload<TData>): Promise<AgentRun<TData> | ProcessRun> {
         return this.post('/record', { payload });
     }
 
@@ -198,7 +198,7 @@ export class AgentsApi extends ApiTopic {
         return this.post(`/${id}/fork`, {});
     }
 
-    getContext(id: string): Promise<{ run_id: string; current_node: string; context: Record<string, any> }> {
+    getContext(id: string): Promise<{ run_id: string; current_node: string; context: Record<string, unknown> }> {
         return this.get(`/${id}/context`);
     }
 
@@ -219,7 +219,7 @@ export class AgentsApi extends ApiTopic {
         return this.post(`/${id}/retry-node`, { payload: payload ?? {} });
     }
 
-    answerTask(id: string, taskId: string, result: Record<string, any>): Promise<{ message: string }> {
+    answerTask(id: string, taskId: string, result: Record<string, unknown>): Promise<{ message: string }> {
         return this.post(`/${id}/answer-task`, { payload: { task_id: taskId, result } });
     }
 

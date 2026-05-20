@@ -1,11 +1,10 @@
 import { describe, test, expect } from "vitest";
-import { Vars } from "./vars.ts";
-import { makeProjection } from "./projections.ts";
+import { makeProjection } from "./projections.js";
 
 describe('Result Projections', () => {
 
     test('simple projection', () => {
-        const params: Record<string, any> = {
+        const params: Record<string, unknown> = {
             docTypes: [{ id: 1, name: "type1" }, { id: 2, name: "type2" }],
             objectId: "123"
         }
@@ -31,7 +30,7 @@ describe('Result Projections', () => {
     })
 
     test('$element match', () => {
-        const params: Record<string, any> = {
+        const params: Record<string, unknown> = {
             docTypes: [{ id: 1, name: "type1" }, { id: 2, name: "type2" }],
             objectId: "123"
         }
@@ -64,7 +63,7 @@ describe('Result Projections', () => {
     })
 
     test('$element does not match', () => {
-        const params: Record<string, any> = {
+        const params: Record<string, unknown> = {
             docTypes: [{ id: 1, name: "type1" }, { id: 2, name: "type2" }],
             objectId: "123"
         }
@@ -97,7 +96,7 @@ describe('Result Projections', () => {
     })
 
     test('$element with field', () => {
-        const params: Record<string, any> = {
+        const params: Record<string, unknown> = {
             docTypes: [{ id: 1, name: "type1" }, { id: 2, name: "type2" }],
             objectId: "123"
         }
@@ -127,7 +126,7 @@ describe('Result Projections', () => {
     })
 
     test('$element with field - no match', () => {
-        const params: Record<string, any> = {
+        const params: Record<string, unknown> = {
             docTypes: [{ id: 1, name: "type1" }, { id: 2, name: "type2" }],
             objectId: "123"
         }

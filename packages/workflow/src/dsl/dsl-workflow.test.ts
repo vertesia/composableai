@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { computeActivityOptions } from "./dsl-workflow.ts";
+import { computeActivityOptions } from "./dsl-workflow.js";
 
 describe('Workflow DSL', () => {
     test('compute activity options without custom options', () => {

@@ -12,7 +12,7 @@ export default class Endpoints extends Resource {
         router.get("/no-content", this.getNoContent, this);
     }
 
-    async getRoot(ctx: Context) {
+    async getRoot(_ctx: Context) {
         return { message: "Hello World!" };
     }
 

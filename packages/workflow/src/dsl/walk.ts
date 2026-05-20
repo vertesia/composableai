@@ -1,11 +1,32 @@
 
 export type ObjectKey = string | number | undefined;
 export interface ObjectVisitor {
-    onStartObject?: (key: ObjectKey, value: any) => void;
-    onEndObject?: (key: ObjectKey, value: any) => void;
-    onStartIteration?: (key: ObjectKey, value: Iterable<any>) => void;
-    onEndIteration?: (key: ObjectKey, value: Iterable<any>) => void;
-    onValue?: (key: ObjectKey, value: any) => void;
+    onStartObject?: (key: ObjectKey, value: unknown) => void;
+    onEndObject?: (key: ObjectKey, value: unknown) => void;
+    onStartIteration?: (key: ObjectKey, value: Iterable<unknown>) => void;
+    onEndIteration?: (key: ObjectKey, value: Iterable<unknown>) => void;
+    onValue?: (key: ObjectKey, value: unknown) => void;
+}
+
+type MutableContainer = Record<string, unknown> | unknown[];
+
+function isIterable(value: unknown): value is Iterable<unknown> {
+    return !!value && typeof value === 'object' && Symbol.iterator in value && typeof value[Symbol.iterator] === 'function';
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+    return !!value && typeof value === 'object' && value.constructor === Object;
+}
+
+function setValue(target: MutableContainer | undefined, key: ObjectKey, value: unknown) {
+    if (!target || key === undefined) {
+        return;
+    }
+    if (Array.isArray(target) && typeof key === 'number') {
+        target[key] = value;
+    } else if (!Array.isArray(target) && typeof key === 'string') {
+        target[key] = value;
+    }
 }
 
 export class ObjectWalker {
@@ -13,25 +34,25 @@ export class ObjectWalker {
     constructor(supportIterators = false) {
         this.supportIterators = supportIterators;
     }
-    walk(obj: any, visitor: ObjectVisitor) {
+    walk(obj: unknown, visitor: ObjectVisitor) {
         this._walk(undefined, obj, visitor);
     }
-    _walk(key: ObjectKey, obj: any, visitor: ObjectVisitor) {
+    _walk(key: ObjectKey, obj: unknown, visitor: ObjectVisitor) {
         const type = typeof obj;
         if (!obj || type !== 'object' || obj instanceof Date) {
             visitor.onValue && visitor.onValue(key, obj);
         } else if (Array.isArray(obj)) {
             this._walkIterable(key, obj, visitor);
-        } else if (this.supportIterators && obj[Symbol.iterator] === 'function') {
+        } else if (this.supportIterators && isIterable(obj)) {
             this._walkIterable(key, obj, visitor);
-        } else if (obj.constructor === Object) { // a plain object
+        } else if (isPlainRecord(obj)) { // a plain object
             this._walkObject(key, obj, visitor);
         } else { // a random object - we treat it as a value
             visitor.onValue && visitor.onValue(key, obj);
         }
     }
 
-    _walkIterable(key: ObjectKey, obj: any, visitor: ObjectVisitor) {
+    _walkIterable(key: ObjectKey, obj: Iterable<unknown>, visitor: ObjectVisitor) {
         visitor.onStartIteration && visitor.onStartIteration(key, obj);
         let i = 0;
         for (const value of obj) {
@@ -40,7 +61,7 @@ export class ObjectWalker {
         visitor.onEndIteration && visitor.onEndIteration(key, obj);
     }
 
-    _walkObject(key: ObjectKey, obj: any, visitor: ObjectVisitor) {
+    _walkObject(key: ObjectKey, obj: Record<string, unknown>, visitor: ObjectVisitor) {
         visitor.onStartObject && visitor.onStartObject(key, obj);
         for (const k of Object.keys(obj)) {
             this._walk(k, obj[k], visitor);
@@ -48,27 +69,28 @@ export class ObjectWalker {
         visitor.onEndObject && visitor.onEndObject(key, obj);
     }
 
-    map(obj: any, mapFn: (key: ObjectKey, value: any) => any) {
+    map<T = unknown>(obj: unknown, mapFn: (key: ObjectKey, value: unknown) => unknown): T {
         const visitor = new MapVisitor(mapFn);
         this.walk(obj, visitor);
-        return visitor.result;
+        return visitor.result as T;
     }
 }
 
 class MapVisitor implements ObjectVisitor {
-    result: any;
-    current: any;
-    stack: any[] = [];
-    constructor(private mapFn: (key: ObjectKey, value: any) => any) { }
+    result: unknown;
+    current: MutableContainer | undefined;
+    stack: (MutableContainer | undefined)[] = [];
+    constructor(private mapFn: (key: ObjectKey, value: unknown) => unknown) { }
 
     onStartObject(key: ObjectKey) {
         if (key === undefined) {
-            this.result = {};
-            this.current = this.result;
+            const obj: Record<string, unknown> = {};
+            this.result = obj;
+            this.current = obj;
         } else {
             this.stack.push(this.current);
-            const obj = {};
-            this.current[key] = obj;
+            const obj: Record<string, unknown> = {};
+            setValue(this.current, key, obj);
             this.current = obj;
         }
     }
@@ -78,12 +100,13 @@ class MapVisitor implements ObjectVisitor {
 
     onStartIteration(key: ObjectKey) {
         if (key === undefined) {
-            this.result = [];
-            this.current = this.result;
+            const ar: unknown[] = [];
+            this.result = ar;
+            this.current = ar;
         } else {
             this.stack.push(this.current);
-            const ar: any[] = [];
-            this.current[key] = ar;
+            const ar: unknown[] = [];
+            setValue(this.current, key, ar);
             this.current = ar;
         }
     }
@@ -92,12 +115,12 @@ class MapVisitor implements ObjectVisitor {
         this.current = this.stack.pop();
     }
 
-    onValue(key: ObjectKey, value: any) {
+    onValue(key: ObjectKey, value: unknown) {
         const r = this.mapFn(key, value);
         if (key === undefined) {
             this.result = r;
         } else if (r !== undefined) {
-            this.current[key] = r;
+            setValue(this.current, key, r);
         }
     }
 }

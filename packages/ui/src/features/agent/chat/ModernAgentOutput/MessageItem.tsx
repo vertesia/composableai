@@ -293,7 +293,7 @@ function MessageItemComponent({
 
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
     const markdownComponents = useMemo(() => ({
-        a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
+        a: ({ node, ref, ...props }: { node?: unknown; ref?: unknown; href?: string; children?: React.ReactNode }) => {
             const href = props.href || "";
             if (href.includes("/store/objects")) {
                 if (StoreLinkComponent) {
@@ -331,7 +331,7 @@ function MessageItemComponent({
                 />
             );
         },
-        img: ({ node, ref, ...props }: { node?: any; ref?: any; src?: string; alt?: string }) => {
+        img: ({ node, ref, ...props }: { node?: unknown; ref?: unknown; src?: string; alt?: string }) => {
             return (
                 <img
                     {...props}
@@ -356,12 +356,12 @@ function MessageItemComponent({
         }
 
         // Handle string content with markdown - content is already processed
-        const runId = (message as any).workflow_run_id as string | undefined;
+        const runId = message.workflow_run_id;
 
         if (!runId && typeof content === 'string' && content.includes('artifact:')) {
             console.warn('[MessageItem] message contains artifact references but workflow_run_id is missing!', {
                 type: message.type,
-                workflow_run_id: (message as any).workflow_run_id,
+                workflow_run_id: message.workflow_run_id,
                 hasArtifact: content.includes('artifact:'),
             });
         }
@@ -386,10 +386,10 @@ function MessageItemComponent({
     >([]);
 
     // Create stable key from message for dependency tracking
-    const runId = (message as any).workflow_run_id as string | undefined;
-    const details = message.details as any;
+    const runId = message.workflow_run_id;
+    const details = message.details;
     // Check both outputFiles (from execute_shell) and files (from tool results like dashboard tools)
-    const outputFiles: unknown = details?.outputFiles ?? details?.files;
+    const outputFiles = details?.outputFiles ?? details?.files;
     const outputFilesKey = Array.isArray(outputFiles) ? outputFiles.join(",") : "";
 
     useEffect(() => {

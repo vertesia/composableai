@@ -11,7 +11,7 @@ export interface NotifyWebhookParams {
     workflow_type: string; //The type of workflow sending the notification (the wf function name)
     workflow_run_id: string; //The ID of the specific workflow run sending the notification
     event_name: string; //The event that triggered the notification (e.g. "completed", "failed", etc.)
-    detail?: Record<string, any>; // additional data about the event if any. It will be send to the webhook when using POST 
+    detail?: Record<string, unknown>; // additional data about the event if any. It will be send to the webhook when using POST 
     //target_url: string; //URL to send the notification to
     method: 'GET' | 'POST'; //HTTP method to use
     headers?: Record<string, string>; // additional headers to send
@@ -22,7 +22,7 @@ export interface WebhookNotificationPayload {
     workflow_name: string,
     workflow_run_id: string,
     event_name: string,
-    detail?: Record<string, any>,
+    detail?: unknown,
 }
 
 export interface NotifyWebhook extends DSLActivitySpec<NotifyWebhookParams> {
@@ -101,7 +101,7 @@ function getWorkflowName(workflowType: string): string {
     return workflowType.replace(/_?workflow$/i, '');
 }
 
-async function createRequestBody(payload: WorkflowExecutionBaseParams, params: NotifyWebhookParams, api_version: number | undefined): Promise<string> {
+async function createRequestBody(payload: WorkflowExecutionBaseParams<unknown>, params: NotifyWebhookParams, api_version: number | undefined): Promise<string> {
     if (api_version === undefined || Number(api_version) < ApiVersions.COMPLETION_RESULT_V1) {
         return createOldRequestBody(payload, params);
     } else {
@@ -109,7 +109,7 @@ async function createRequestBody(payload: WorkflowExecutionBaseParams, params: N
     }
 }
 
-async function createLatestRequestBody(payload: WorkflowExecutionBaseParams, params: NotifyWebhookParams, api_version: number | undefined): Promise<string> {
+async function createLatestRequestBody(payload: WorkflowExecutionBaseParams<unknown>, params: NotifyWebhookParams, api_version: number | undefined): Promise<string> {
     const data = await createEventData(payload, params, api_version);
     return JSON.stringify({
         workflow_id: params.workflow_id,
@@ -120,18 +120,19 @@ async function createLatestRequestBody(payload: WorkflowExecutionBaseParams, par
     } satisfies WebhookNotificationPayload);
 }
 
-async function createEventData(payload: WorkflowExecutionBaseParams, params: NotifyWebhookParams, api_version: number | undefined): Promise<any> {
+async function createEventData(payload: WorkflowExecutionBaseParams<unknown>, params: NotifyWebhookParams, api_version: number | undefined): Promise<unknown> {
     const data = params.detail;
-    if (data && data.run_id && params.event_name === "workflow_completed" && params.workflow_type === 'ExecuteInteractionWorkflow') {
+    const runId = typeof data?.run_id === "string" ? data.run_id : undefined;
+    if (runId && params.event_name === "workflow_completed" && params.workflow_type === 'ExecuteInteractionWorkflow') {
         const client = getVersionedVertesiaClient(payload, api_version); //ensure client is initialized
         // we replace the result property with the full execution run object
-        return await client.runs.retrieve(data.run_id);
+        return await client.runs.retrieve(runId);
     }
     return data;
 }
 
 
-function getVersionedVertesiaClient(payload: WorkflowExecutionBaseParams, version: string | number | undefined | null) {
+function getVersionedVertesiaClient(payload: WorkflowExecutionBaseParams<unknown>, version: string | number | undefined | null) {
     // set the api version header
     return new VertesiaClient(getVertesiaClientOptions(payload)).withApiVersion(version ? String(version) : null);
 }
@@ -176,12 +177,13 @@ where ExecutionRun contains a result property with the new completion result for
 */
 
 //@ts-ignore
-async function createOldRequestBody(payload: WorkflowExecutionBaseParams, params: NotifyWebhookParams): Promise<string> {
+async function createOldRequestBody(payload: WorkflowExecutionBaseParams<unknown>, params: NotifyWebhookParams): Promise<string> {
     let data = params.detail;
-    if (data && data.run_id && params.event_name === "workflow_completed" && params.workflow_type === 'ExecuteInteractionWorkflow') {
+    const runId = typeof data?.run_id === "string" ? data.run_id : undefined;
+    if (runId && params.event_name === "workflow_completed" && params.workflow_type === 'ExecuteInteractionWorkflow') {
         const client = getVersionedVertesiaClient(payload, null); //ensure client is using no specific version
         // Important Note: we cannot use client.runs.retrieve since it will transform the run result to the new format because of InteractionOutput
-        const run = await client.runs.get(data.run_id);
+        const run = await client.runs.get<{ id: string; status: string; result?: unknown }>(runId);
         // since we use an unversioned client the run will be in old format so we don't need to tranform the result
         const result = run.result;
         data = {

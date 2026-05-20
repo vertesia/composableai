@@ -42,8 +42,8 @@ export function NestedRouterProvider({ routes, index, children, fixLinks = false
 
 
     const wrapWithFixLinks = fixLinks ?
-        (elem: any) => <FixLinks basePath={ctx.matchedRoutePath}>{elem}</FixLinks>
-        : (elem: any) => elem;
+        (elem: React.ReactNode) => <FixLinks basePath={ctx.matchedRoutePath}>{elem}</FixLinks>
+        : (elem: React.ReactNode) => elem;
 
     return nestedRouteMatch && (
         <ReactRouterContext.Provider value={{

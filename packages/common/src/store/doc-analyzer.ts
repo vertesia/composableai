@@ -4,7 +4,7 @@ import { WorkflowExecutionPayload, WorkflowRunStatus } from "./workflow.js";
 export interface PdfToRichtextOptions {
     features?: string[];
     debug?: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export interface PdfToRichTextWorkflowPayload extends Omit<WorkflowExecutionPayload, "vars"> {
@@ -172,7 +172,7 @@ export interface GetAdaptedTablesRequestQuery {
  */
 export interface AdaptedTable {
     comment?: string;
-    data: Record<string, any>[];
+    data: Record<string, unknown>[];
 }
 
 export type AdaptedTableResponse = Record<string, AdaptedTable>;

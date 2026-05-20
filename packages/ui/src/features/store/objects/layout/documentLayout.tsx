@@ -16,7 +16,7 @@ interface ViewProps {
     previewObject?: (objectId: string) => void;
     selectedObject?: ContentObjectItem | null;
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
-    selection: DocumentSelection;
+    selection?: DocumentSelection;
     toggleAll?: (ev: ChangeEvent<HTMLInputElement>) => void;
     columns: DocumentTableColumn[];
 }

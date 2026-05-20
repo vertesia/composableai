@@ -101,10 +101,10 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
         return request;
     }
 
-    async handleResponse(req: Request, res: Response, params: IRequestParamsWithPayload | undefined) {
+    async handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): Promise<T> {
         this.response = res; // store last response
         this.onResponse && this.onResponse(res, req);
-        return super.handleResponse(req, res, params);
+        return super.handleResponse<T>(req, res, params);
     }
 
 }
@@ -132,8 +132,8 @@ export abstract class ApiTopic extends ClientBase {
         return this.client.createRequest(url, init);
     }
 
-    handleResponse(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): Promise<any> {
-        return this.client.handleResponse(req, res, params);
+    handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): T | Promise<T> {
+        return this.client.handleResponse<T>(req, res, params);
     }
 
     get headers() {

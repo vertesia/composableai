@@ -7,7 +7,7 @@ function textToPascalCase(text: string) {
     return text.trim().split(/\W/).map(w => w ? w[0].toUpperCase() + w.substring(1) : '').join('')
 }
 
-export async function listInteractions(program: Command, interactionId: string | undefined, options: Record<string, any>) {
+export async function listInteractions(program: Command, interactionId: string | undefined, options: Record<string, unknown>) {
     const client = await getClient(program);
     if (!interactionId) {
         const interactions = await client.interactions.list();
@@ -26,7 +26,7 @@ export async function listInteractions(program: Command, interactionId: string |
 }
 
 
-function printInteraction(interaction: Interaction, versions: InteractionRef[], _options: Record<string, any>) {
+function printInteraction(interaction: Interaction, versions: InteractionRef[], _options: Record<string, unknown>) {
     console.log(colors.bold(interaction.name) + " [" + interaction.id + "]");
     console.log(colors.bold("Description:"), interaction.description || 'n/a');
     console.log(colors.bold("Class name:"), textToPascalCase(interaction.name));

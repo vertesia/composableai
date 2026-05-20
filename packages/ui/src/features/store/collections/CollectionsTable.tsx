@@ -1,7 +1,7 @@
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { FolderClosed, Search, Trash2 } from "lucide-react";
-import { Button, ConfirmModal, ErrorBox, Table, TBody, TR, useToast, VTooltip, useFetch, EmptyCollection } from "@vertesia/ui/core";
+import { Button, ConfirmModal, ErrorBox, Table, TBody, TR, useToast, VTooltip, useFetch, EmptyCollection, errorMessage } from "@vertesia/ui/core";
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useState, useEffect } from "react";
@@ -30,7 +30,7 @@ export function CollectionsTable({ }: CollectionsTableProps) {
     }, [collections, error]);
 
     if (error) {
-        return <ErrorBox title={t('store.collectionFetchFailed')}>{error.message}</ErrorBox>
+        return <ErrorBox title={t('store.collectionFetchFailed')}>{errorMessage(error)}</ErrorBox>
     }
 
     const deleteCollection = async () => {
@@ -44,11 +44,11 @@ export function CollectionsTable({ }: CollectionsTableProps) {
                 duration: 3000
             });
             refetch();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Failed to delete collection:', err);
             toast({
                 title: t('store.failedToDeleteCollection'),
-                description: err.message || 'An error occurred',
+                description: errorMessage(err),
                 status: 'error',
                 duration: 5000
             });

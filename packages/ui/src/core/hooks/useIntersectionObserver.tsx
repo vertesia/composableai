@@ -7,7 +7,7 @@ import { RefObject, useEffect } from "react";
  * @param cb
  * @param opts
  */
-export function useIntersectionObserver(target: RefObject<HTMLElement | null | undefined>, cb: (entry: IntersectionObserverEntry) => void, opts: { leave?: boolean, threshold?: number, deps?: any[] } = {}) {
+export function useIntersectionObserver(target: RefObject<HTMLElement | null | undefined>, cb: (entry: IntersectionObserverEntry) => void, opts: { leave?: boolean, threshold?: number, deps?: unknown[] } = {}) {
 
     useEffect(() => {
         const observer = new IntersectionObserver(

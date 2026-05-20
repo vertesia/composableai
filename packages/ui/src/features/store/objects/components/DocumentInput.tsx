@@ -54,7 +54,7 @@ export function DocumentInput({ object }: DocumentInputProps) {
             return;
         }
 
-        client.objects.get(match[1]).then((doc) => {
+        client.objects.retrieve(match[1]).then((doc) => {
             setDoc(doc);
         }).catch(() => {
             clearValue();
@@ -81,7 +81,7 @@ export function DocumentInput({ object }: DocumentInputProps) {
             </div>
             {doc &&
                 <div className="p-1 semibold text-sm text-gray-600 dark:text-slate-300">
-                    {doc.properties?.title || doc.name}
+                    {typeof doc.properties?.title === 'string' ? doc.properties.title : doc.name}
                 </div>
             }
         </div>

@@ -4,7 +4,7 @@ import { Button, FormItem } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { Plus, Trash2 } from "lucide-react";
 import { ComponentType, ReactNode, SyntheticEvent, useState } from "react";
-import { FormContext, FormContextProvider, InputComponentProps, useForm } from "./FormContext.js";
+import { FormContext, FormContextProvider, InputChangeEvent, InputComponentProps, useForm } from "./FormContext.js";
 import { ManagedListProperty, ManagedObject, ManagedObjectBase, ManagedProperty, Node } from "./ManagedObject.js";
 import { Input } from "./inputs.js";
 
@@ -88,10 +88,10 @@ export function ScalarField({ object, editor, inline = false }: ScalarFieldProps
         inline = true;
     }
 
-    const handleOnChange = (event: any) => {
+    const handleOnChange = (event: InputChangeEvent) => {
         if (disabled) return;
         if (object.schema.isBoolean) {
-            object.value = event.target.checked;
+            object.value = event.target instanceof HTMLInputElement ? event.target.checked : false;
         } else if (object.schema.isNumber) {
             object.value = parseFloat(event.target.value);
         } else {
@@ -130,7 +130,7 @@ interface ListFieldProps {
     object: ManagedListProperty;
 }
 function ListField({ object }: ListFieldProps) {
-    const [value, setValue] = useState<any[]>(object.value || []);
+    const [value, setValue] = useState<unknown[]>(object.value || []);
     const { disabled } = useForm();
 
     const addItem = () => {
@@ -150,7 +150,7 @@ function ListField({ object }: ListFieldProps) {
             {!object.isListItem && <div className='text-gray-900 dark:text-gray-200 font-semibold'>{object.title}</div>}
             {
                 object.items.map((item, index) => {
-                    return <ListItem key={`${index}-${value[index] ?? ''}`} object={item} list={object} onDelete={() => deleteItem(index)} disabled={disabled} />;
+                    return <ListItem key={`${index}-${String(value[index] ?? '')}`} object={item} list={object} onDelete={() => deleteItem(index)} disabled={disabled} />;
                 })
             }
             <div>
@@ -167,11 +167,12 @@ interface ListItemProps {
     disabled?: boolean;
 }
 function ListItem({ list, object, onDelete, disabled }: ListItemProps) {
+    const editor = typeof list.schema.arraySchema.editor === 'string' ? list.schema.arraySchema.editor : undefined;
     return (
         <div className='flex gap-2 w-full'>
             <div className="flex-1">
                 {
-                    renderItemProperty(object, list.schema.arraySchema.editor)
+                    renderItemProperty(object, editor)
                 }
             </div>
             <Button variant='ghost' onClick={onDelete} disabled={disabled} alt="Delete"><Trash2 className='size-4 text-destructive' /></Button>

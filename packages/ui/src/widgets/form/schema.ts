@@ -44,7 +44,10 @@ export class Schema {
     }
 
     get title() {
-        return this.schema.title || this.schema.name;
+        const title = this.schema.title;
+        if (typeof title === 'string') return title;
+        const name = this.schema.name;
+        return typeof name === 'string' ? name : undefined;
     }
 
     get description() {
@@ -66,7 +69,7 @@ export class Schema {
         return this.schema.type as JSONSchemaTypeName;
     }
 
-    validate(value: any): ErrorObject<string, Record<string, any>, unknown>[] | null {
+    validate(value: unknown): ErrorObject<string, Record<string, unknown>, unknown>[] | null {
         if (!this.validator(value)) {
             return this.validator.errors || [];
         } else {
@@ -105,7 +108,7 @@ export class Schema {
     }
 
     get editor() {
-        return this.schema.editor;
+        return typeof this.schema.editor === 'string' ? this.schema.editor : undefined;
     }
 }
 
@@ -133,7 +136,7 @@ export class PropertySchema extends Schema {
     }
 
     get defaultValue() {
-        return this.schema.default;
+        return this.schema.default as JSONSchemaType | undefined;
     }
 
     set defaultValue(value: JSONSchemaType | undefined) {
@@ -141,7 +144,7 @@ export class PropertySchema extends Schema {
     }
 
     get enum() {
-        return this.schema.enum;
+        return this.schema.enum as JSONSchemaType[] | undefined;
     }
 
     set enum(values: JSONSchemaType[] | undefined) {

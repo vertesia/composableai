@@ -31,9 +31,10 @@ export async function getObjectFromStore(payload: DSLActivityExecutionPayload<Ge
         throw err;
     }
 
-    const projection = projectResult(payload, params, obj, obj);
+    const projection = projectResult(payload, params, obj, obj) as Partial<ContentObject>;
 
     return {
+        ...obj,
         ...projection,
         id: obj.id,
     }

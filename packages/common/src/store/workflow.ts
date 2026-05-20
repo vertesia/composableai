@@ -1,6 +1,6 @@
 import type { ModelOptions } from "@llumiverse/common";
 import { ConversationVisibility, InteractionRef, UserChannel } from "../interaction.js";
-import { JSONValue } from "../json.js";
+import { JSONObject, JSONValue } from "../json.js";
 import { JSONSchema } from "../json-schema.js";
 import type { WorkflowInput } from "./dsl-workflow.js";
 
@@ -31,7 +31,7 @@ export interface WorkflowAncestor {
     run_depth: number;
 }
 
-export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
+export interface WorkflowExecutionBaseParams<T = Record<string, unknown>> {
     /**
      * The ref of the user who initiated the workflow.
      */
@@ -113,7 +113,7 @@ export interface WebHookSpec {
      * When custom data is provided, the workflow result will always be nested
      * to prevent field collisions. Use result_path to control where it's nested.
      */
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
     /**
      * Path where the workflow result should be nested in the webhook body.
      * Defaults to "result" when custom data is provided.
@@ -133,7 +133,7 @@ export interface WebHookSpec {
     result_path?: string;
 }
 
-export interface WorkflowExecutionPayload<T = Record<string, any>> extends WorkflowExecutionBaseParams<T> {
+export interface WorkflowExecutionPayload<T = Record<string, unknown>> extends WorkflowExecutionBaseParams<T> {
     /**
      * The event which started the workflow who created the activity.
      */
@@ -197,7 +197,7 @@ export interface ExecuteWorkflowPayload {
     /**
      * Parameters to pass to the workflow
      */
-    vars?: Record<string, any>;
+    vars?: Record<string, unknown>;
 
     /**
      * Make the workflow ID unique by always adding a random token to the ID.
@@ -311,7 +311,7 @@ export interface ListWorkflowRunsPayload {
 export interface SignalEventProperties {
     direction: 'receiving' | 'sending';
     signalName?: string;
-    input?: any;
+    input?: unknown;
     sender?: {
         workflowId?: string;
         runId?: string;
@@ -343,7 +343,7 @@ export interface WorkflowRunEvent {
     activity?: {
         name?: string;
         id?: string;
-        input?: any;
+        input?: unknown;
         scheduledEventId?: string;
         startedEventId?: string;
     };
@@ -354,8 +354,8 @@ export interface WorkflowRunEvent {
         runId?: string,
         scheduledEventId?: string,
         startedEventId?: string,
-        input?: any,
-        result?: any,
+        input?: unknown,
+        result?: unknown,
     };
 
     signal?: SignalEventProperties;
@@ -368,7 +368,7 @@ export interface WorkflowRunEvent {
 
     error?: EventError;
 
-    result?: any;
+    result?: unknown;
 }
 
 // Task status enum for processed history
@@ -397,14 +397,14 @@ interface TaskBase {
     type: TaskType;
     activityId: string;
     activityName?: string;
-    input?: any;
+    input?: unknown;
     scheduled: string | null;
     status: TaskStatus;
     attempts: number;
     started: string | null;
     completed: string | null;
     error: string | null;
-    result: any;
+    result: unknown;
     /** Temporal run ID that produced this task (set when aggregating across continueAsNew runs). */
     runId?: string;
 }
@@ -535,11 +535,11 @@ export interface WorkflowRun {
     workflow_id?: string;
     initiated_by?: string;
     interaction_name?: string;
-    input?: any;
-    result?: any;
-    error?: any,
+    input?: unknown;
+    result?: unknown;
+    error?: unknown,
     has_reported_errors?: boolean;
-    raw?: any;
+    raw?: unknown;
     /**
      * The Vertesia Workflow Type of this Workflow Run.
      *  - For DSL workflows (`type:dslWorkflow`), the vertesia_type refers to the "Workflow Rule Name" specified in the
@@ -585,7 +585,7 @@ export interface PendingActivity {
 export interface WorkflowRunWithDetails extends WorkflowRun {
     history?: WorkflowHistory;
     memo?: {
-        [key: string]: any;
+        [key: string]: unknown;
     } | null;
     pendingActivities?: PendingActivity[];
 }
@@ -644,7 +644,7 @@ export interface WorkflowInteractionVars {
      * Multiple channels can be active simultaneously.
      */
     user_channels?: UserChannel[],
-    data?: Record<string, any>,
+    data?: JSONObject,
     tool_names: string[],
     config: {
         environment: string,
@@ -670,7 +670,7 @@ export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionP
     config: {
         interactionName: string;
         action: DocumentActionConfig;
-        data: Record<string, any>;
+        data: Record<string, unknown>;
     };
 }
 
@@ -712,7 +712,7 @@ export interface AgentMessage {
     workflow_run_id: string;
     type: AgentMessageType;
     message: string;
-    details?: any;
+    details?: AgentMessageDetails;
     workstream_id?: string;
 }
 
@@ -732,6 +732,30 @@ export enum AgentMessageType {
     STREAMING_CHUNK = 12,
     BATCH_PROGRESS = 13,
     RESTARTING = 14,
+}
+
+export interface AgentMessageDetails extends Record<string, unknown> {
+    event_class?: string;
+    tool?: string;
+    tools?: string[];
+    streamed?: boolean;
+    display_role?: string;
+    activity_id?: string;
+    activity_group_id?: string;
+    batch_id?: string;
+    tool_run_id?: string;
+    tool_status?: ToolCallDetails["tool_status"];
+    tool_iteration?: number;
+    observation?: unknown;
+    workflow_run_id?: string;
+    outputFiles?: string[];
+    files?: ConversationFile[] | string[];
+    plan?: PlanTask[];
+    streaming_id?: string;
+    chunk_index?: number;
+    is_final?: boolean;
+    _optimistic?: boolean;
+    _messageId?: string;
 }
 
 // ============================================
@@ -788,33 +812,37 @@ export interface PlanMessageDetails {
 // Type guards — check both message type and details shape for safety
 
 export function isToolCallMessage(msg: AgentMessage): msg is AgentMessage & { details: ToolCallDetails } {
+    const details = msg.details as Record<string, unknown> | undefined;
     return msg.type === AgentMessageType.THOUGHT &&
-        !!msg.details &&
-        typeof msg.details === 'object' &&
-        typeof msg.details.tool === 'string';
+        !!details &&
+        typeof details === 'object' &&
+        typeof details.tool === 'string';
 }
 
 export function isDocumentEventMessage(msg: AgentMessage): msg is AgentMessage & { details: DocumentEventDetails } {
+    const details = msg.details as Record<string, unknown> | undefined;
     return msg.type === AgentMessageType.UPDATE &&
-        !!msg.details &&
-        typeof msg.details === 'object' &&
-        (msg.details.event_class === 'document_created' || msg.details.event_class === 'document_updated') &&
-        typeof msg.details.document_id === 'string';
+        !!details &&
+        typeof details === 'object' &&
+        (details.event_class === 'document_created' || details.event_class === 'document_updated') &&
+        typeof details.document_id === 'string';
 }
 
 export function isFileProcessingMessage(msg: AgentMessage): msg is AgentMessage & { details: FileProcessingDetails } {
+    const details = msg.details as Record<string, unknown> | undefined;
     return msg.type === AgentMessageType.SYSTEM &&
-        !!msg.details &&
-        typeof msg.details === 'object' &&
-        msg.details.system_type === 'file_processing' &&
-        Array.isArray(msg.details.files);
+        !!details &&
+        typeof details === 'object' &&
+        details.system_type === 'file_processing' &&
+        Array.isArray(details.files);
 }
 
 export function isPlanMessage(msg: AgentMessage): msg is AgentMessage & { details: PlanMessageDetails } {
+    const details = msg.details as Record<string, unknown> | undefined;
     return msg.type === AgentMessageType.PLAN &&
-        !!msg.details &&
-        typeof msg.details === 'object' &&
-        Array.isArray(msg.details.plan);
+        !!details &&
+        typeof details === 'object' &&
+        Array.isArray(details.plan);
 }
 
 export function isRequestInputMessage(msg: AgentMessage): msg is AgentMessage & { details: RequestInputDetails } {
@@ -855,7 +883,7 @@ export interface CompactMessage {
     /** Workstream ID (only when not "main") */
     w?: string;
     /** Type-specific details */
-    d?: unknown;
+    d?: AgentMessageDetails | null;
     /** Is final chunk (only for STREAMING_CHUNK, 0 or 1) */
     f?: 0 | 1;
     /** Timestamp (only for stored/persisted messages) */
@@ -990,7 +1018,7 @@ export function createCompactMessage(
     options: {
         message?: string;
         workstreamId?: string;
-        details?: unknown;
+        details?: AgentMessageDetails;
         isFinal?: boolean;
         timestamp?: number;
     } = {}
@@ -1021,7 +1049,7 @@ export function toAgentMessage(compact: CompactMessage, workflowRunId: string = 
         workstream_id: compact.w || 'main',
     };
 
-    if (compact.d !== undefined) message.details = compact.d;
+    if (compact.d !== undefined && compact.d !== null) message.details = compact.d;
 
     // For streaming chunks, restore is_final and streaming_id in details
     // (streaming_id removed from wire format, use workstream_id as grouping key)
@@ -1175,7 +1203,7 @@ export function getWorkflowUpdatesKey(workflowRunId: string): string {
 export interface PlanTask {
     id: number;
     goal: string;
-    instructions: string[];
+    instructions?: string[];
     comment?: string;
     status?: "pending" | "in_progress" | "completed" | "skipped";
 }
@@ -1193,7 +1221,7 @@ export const LOW_PRIORITY_TASK_QUEUE = "low_priority";
 export interface WebSocketSignalMessage {
     type: 'signal';
     signalName: string;
-    data: any;
+    data: unknown;
     requestId?: string | number;
 }
 

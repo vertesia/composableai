@@ -6,7 +6,7 @@ import { dslWorkflow } from './dsl-workflow.js';
 import { setupActivity } from "./setup/ActivityContext.js";
 
 
-async function testImportedVars(payload: DSLActivityExecutionPayload<Record<string, any>>) {
+async function testImportedVars(payload: DSLActivityExecutionPayload<Record<string, unknown>>) {
     const { params } = await setupActivity(payload);
     if (!params.object_name) throw new Error('object_name is required');
     console.log('!!!!!!!!!!@@@@@@@@@@@@@@!!!!!!!!!!!!!!', params.object_name);
@@ -70,6 +70,7 @@ describe('DSL Workflow import vars', () => {
                 store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
+                spec_format: 'activities',
                 activities,
                 vars: {
                     object_name,

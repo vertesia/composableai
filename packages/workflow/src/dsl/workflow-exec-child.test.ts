@@ -70,6 +70,7 @@ const steps2: DSLWorkflowStep[] = [
         name: 'dslWorkflow',
         output: 'child',
         spec: {
+            spec_format: 'steps',
             name: 'testChildWorkflow',
             steps: childSteps,
             vars: {}
@@ -95,6 +96,7 @@ const steps3: DSLWorkflowStep[] = [
         name: 'dslWorkflow',
         output: 'child',
         spec: {
+            spec_format: 'steps',
             name: 'testChildWorkflow',
             steps: childSteps,
             vars: {}
@@ -169,6 +171,7 @@ describe('DSL Workflow with child workflows', () => {
                 store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
+                spec_format: 'steps',
                 steps: steps1,
                 vars: {
                     name,
@@ -213,6 +216,7 @@ describe('DSL Workflow with child workflows', () => {
                 store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
+                spec_format: 'steps',
                 steps: steps2,
                 vars: {
                     name,
@@ -257,6 +261,7 @@ describe('DSL Workflow with child workflows', () => {
                 store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
+                spec_format: 'steps',
                 steps: steps3,
                 vars: {
                     name,
