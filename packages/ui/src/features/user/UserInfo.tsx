@@ -269,6 +269,19 @@ function ErrorAvatar({ title = "Error", error, showTitle = false, size = "md" }:
     );
 }
 
+function MissingPrincipalAvatar({ showTitle = false, size = "md", color }: InfoProps & { color?: string }) {
+    const { t } = useUITranslation();
+    return (
+        <UnknownAvatar
+            title={t('user.unknownUser')}
+            message={t('user.unknownUserDescription')}
+            color={color}
+            showTitle={showTitle}
+            size={size}
+        />
+    );
+}
+
 interface UserInfoProps extends InfoProps {
     /**
      * The user reference is a string that contains the type and id of the user.
@@ -403,6 +416,9 @@ function GroupAvatar({ userId, showTitle = false, size = "md" }: GroupAvatarProp
     const { data: group, error } = useFetchGroupInfo(userId);
 
     if (error) {
+        if (isNotFoundError(error)) {
+            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-indigo-500" />
+        }
         return <ErrorAvatar title={t('user.failedToFetchGroup')} error={error} showTitle={showTitle} size={size} />
     }
 
@@ -442,6 +458,9 @@ function UserAvatar({ userId, showTitle = false, size = "md" }: UserAvatarProps)
     const { data: user, error } = useFetchUserInfo(userId);
 
     if (error) {
+        if (isNotFoundError(error)) {
+            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-indigo-500" />
+        }
         return <ErrorAvatar title={t('user.failedToFetchUser')} error={error} showTitle={showTitle} size={size} />
     }
 
@@ -472,15 +491,7 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = "md" }: ApiKeyAv
 
     if (error) {
         if (isNotFoundError(error)) {
-            return (
-                <UnknownAvatar
-                    title={t('user.unknownUser')}
-                    message={t('user.unknownUserDescription')}
-                    color="bg-pink-500"
-                    showTitle={showTitle}
-                    size={size}
-                />
-            );
+            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-pink-500" />
         }
         return <ErrorAvatar title={t('user.failedToFetchApiKey')} error={error} showTitle={showTitle} size={size} />
     }
