@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import { useToast } from '@vertesia/ui/core';
+import { errorMessage, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 
 import { useUITranslation } from '@vertesia/ui/i18n';
@@ -52,11 +52,11 @@ export function RemoveFromCollectionActionComponent({ action, objectIds, collect
                 ctx.params?.selection?.removeAll();
                 search.search();
             }
-        }).catch((err: any) => {
+        }).catch((err: unknown) => {
             toast({
                 status: 'error',
                 title: t('store.actions.errorRemovingObjects'),
-                description: err.message,
+                description: errorMessage(err),
                 duration: 5000
             });
         });

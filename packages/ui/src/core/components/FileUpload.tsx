@@ -1,5 +1,35 @@
 import { DragEventHandler, MutableRefObject, ReactNode, useRef } from "react";
 
+type DragCounterElement = HTMLElement & {
+    __dragOver_cnt__?: number;
+};
+
+interface FileSystemEntry {
+    name: string;
+    isFile: boolean;
+    isDirectory: boolean;
+}
+
+interface FileSystemFileEntry extends FileSystemEntry {
+    isFile: true;
+    file(callback: (file: File) => void): void;
+}
+
+interface FileSystemDirectoryEntry extends FileSystemEntry {
+    isDirectory: true;
+    createReader(): {
+        readEntries(callback: (entries: FileSystemEntry[]) => void): void;
+    };
+}
+
+function isFileEntry(entry: FileSystemEntry): entry is FileSystemFileEntry {
+    return entry.isFile;
+}
+
+function isDirectoryEntry(entry: FileSystemEntry): entry is FileSystemDirectoryEntry {
+    return entry.isDirectory;
+}
+
 /**
  * TODO: TS complains that:
  * Type 'FileList' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
@@ -78,20 +108,23 @@ export function DropZone({ onUpload }: DropZoneProps) {
     );
 }
 
-function _onDragEnter(el: any) {
+function _onDragEnter(el: DragCounterElement | null) {
+    if (!el) return false;
     let cnt = el.__dragOver_cnt__ || 0;
     el.__dragOver_cnt__ = cnt + 1;
     return !cnt; // true if first drag o ver false if dragover already recorded
 }
 
-function _onDragLeave(el: any) {
+function _onDragLeave(el: DragCounterElement | null) {
+    if (!el) return false;
     let cnt = el.__dragOver_cnt__;
     if (!cnt) return false;
     el.__dragOver_cnt__ = cnt - 1;
     return cnt === 1; // true if leave false if not
 }
 
-function _onDrop(el: any) {
+function _onDrop(el: DragCounterElement | null) {
+    if (!el) return;
     delete el.__dragOver_cnt__;
 }
 
@@ -124,19 +157,19 @@ export function useDropZone<T extends HTMLElement = HTMLDivElement>({
         if (items) {
             const promises: Promise<File[]>[] = [];
 
-            const traverseFileTree = (item: any, path: string = ""): Promise<File[]> => {
+            const traverseFileTree = (item: FileSystemEntry, path: string = ""): Promise<File[]> => {
                 return new Promise((resolve) => {
-                    if (item.isFile) {
+                    if (isFileEntry(item)) {
                         item.file((file: File) => {
                             Object.defineProperty(file, "webkitRelativePath", { value: path + file.name });
                             resolve([file]);
                         });
-                    } else if (item.isDirectory) {
+                    } else if (isDirectoryEntry(item)) {
                         const dirReader = item.createReader();
                         const entries: Promise<File[]>[] = [];
 
                         const readEntries = () => {
-                            dirReader.readEntries((results: any[]) => {
+                            dirReader.readEntries((results) => {
                                 if (!results.length) {
                                     Promise.all(entries).then((filesArrays) => resolve(filesArrays.flat()));
                                 } else {
@@ -154,7 +187,7 @@ export function useDropZone<T extends HTMLElement = HTMLDivElement>({
             };
 
             for (let i = 0; i < items.length; i++) {
-                const entry = items[i].webkitGetAsEntry();
+                const entry = items[i].webkitGetAsEntry() as FileSystemEntry | null;
                 if (entry) {
                     promises.push(traverseFileTree(entry));
                 }

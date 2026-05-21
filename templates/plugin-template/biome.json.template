@@ -25,20 +25,20 @@
     "rules": {
       "recommended": false,
       "correctness": {
-        "noUnusedFunctionParameters": "warn",
-        "noUnusedImports": "warn",
-        "noUnusedVariables": "warn",
+        "noUnusedFunctionParameters": "error",
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
         "useExhaustiveDependencies": "warn",
-        "useHookAtTopLevel": "warn"
+        "useHookAtTopLevel": "error"
       },
       "suspicious": {
-        "noExplicitAny": "warn",
-        "noImplicitAnyLet": "warn",
-        "noUnusedExpressions": "off"
+        "noExplicitAny": "error",
+        "noImplicitAnyLet": "error",
+        "noUnusedExpressions": "error"
       },
       "style": {
         "useComponentExportOnlyModules": {
-          "level": "warn",
+          "level": "error",
           "options": {
             "allowConstantExport": true
           }
@@ -57,11 +57,11 @@
         "useButtonType": "error",
         "useFocusableInteractive": "error",
         "useSemanticElements": "error",
-        "useKeyWithClickEvents": "warn",
-        "useKeyWithMouseEvents": "warn",
-        "noStaticElementInteractions": "warn",
-        "useAriaActivedescendantWithTabindex": "warn",
-        "noLabelWithoutControl": "warn"
+        "useKeyWithClickEvents": "error",
+        "useKeyWithMouseEvents": "error",
+        "noStaticElementInteractions": "error",
+        "useAriaActivedescendantWithTabindex": "error",
+        "noLabelWithoutControl": "error"
       }
     }
   },

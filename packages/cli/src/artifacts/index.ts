@@ -10,7 +10,7 @@ export function registerArtifactsCommand(program: Command) {
         .option("--run-id [runId]", "Artifact storage ID (defaults to VERTESIA_ARTIFACT_STORAGE_ID, then VERTESIA_AGENTRUN_ID)")
         .option("--name [name]", "Artifact name (required for stdin, defaults to filename otherwise)")
         .option("--mime [mimeType]", "MIME type of the file")
-        .action(async (file: string | undefined, options: Record<string, any>) => {
+        .action(async (file: string | undefined, options: Record<string, unknown>) => {
             await uploadArtifact(program, file, options);
         });
 
@@ -18,21 +18,21 @@ export function registerArtifactsCommand(program: Command) {
         .description("Download an artifact from an agent run")
         .option("--run-id [runId]", "Artifact storage ID (defaults to VERTESIA_ARTIFACT_STORAGE_ID, then VERTESIA_AGENTRUN_ID)")
         .option("-o, --output [path]", "Output file path (defaults to stdout)")
-        .action(async (name: string, options: Record<string, any>) => {
+        .action(async (name: string, options: Record<string, unknown>) => {
             await downloadArtifact(program, name, options);
         });
 
     artifacts.command("list")
         .description("List artifacts for an agent run")
         .option("--run-id [runId]", "Artifact storage ID (defaults to VERTESIA_ARTIFACT_STORAGE_ID, then VERTESIA_AGENTRUN_ID)")
-        .action(async (options: Record<string, any>) => {
+        .action(async (options: Record<string, unknown>) => {
             await listArtifacts(program, options);
         });
 
     artifacts.command("url <name>")
         .description("Get download URL for an artifact")
         .option("--run-id [runId]", "Artifact storage ID (defaults to VERTESIA_ARTIFACT_STORAGE_ID, then VERTESIA_AGENTRUN_ID)")
-        .action(async (name: string, options: Record<string, any>) => {
+        .action(async (name: string, options: Record<string, unknown>) => {
             await getArtifactUrl(program, name, options);
         });
 }

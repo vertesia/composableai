@@ -250,7 +250,7 @@ class UserSession {
     }
 }
 
-const UserSessionContext = createContext<UserSession>(undefined as any);
+const UserSessionContext = createContext<UserSession | undefined>(undefined);
 
 export function useUserSession() {
     const session = useContext(UserSessionContext);

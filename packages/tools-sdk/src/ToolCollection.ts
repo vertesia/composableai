@@ -14,13 +14,13 @@ export interface ToolCollectionProperties extends CollectionProperties {
     /**
      * The tools
      */
-    tools: Tool<any>[];
+    tools: Tool[];
 }
 
 /**
  * Implements a tools collection endpoint
  */
-export class ToolCollection implements ICollection<Tool<any>> {
+export class ToolCollection implements ICollection<Tool> {
 
     /**
      * A kebab case collection name. Must only contains alphanumeric and dash characters,
@@ -57,12 +57,12 @@ export class ToolCollection implements ICollection<Tool<any>> {
         this.tools = new ToolRegistry(name, tools);
     }
 
-    [Symbol.iterator](): Iterator<Tool<any>> {
+    [Symbol.iterator](): Iterator<Tool> {
         let index = 0;
         const tools = this.tools.getTools();
 
         return {
-            next(): IteratorResult<Tool<any>> {
+            next(): IteratorResult<Tool> {
                 if (index < tools.length) {
                     return { value: tools[index++], done: false };
                 } else {
@@ -72,12 +72,12 @@ export class ToolCollection implements ICollection<Tool<any>> {
         };
     }
 
-    map<U>(callback: (tool: Tool<any>, index: number) => U): U[] {
+    map<U>(callback: (tool: Tool, index: number) => U): U[] {
         return this.tools.getTools().map(callback);
     }
 
-    async execute(ctx: Context, preParsedPayload?: ToolExecutionPayload<any>): Promise<Response> {
-        let payload: ToolExecutionPayload<any> | undefined = preParsedPayload;
+    async execute(ctx: Context, preParsedPayload?: ToolExecutionPayload): Promise<Response> {
+        let payload: ToolExecutionPayload | undefined = preParsedPayload;
         try {
             if (!payload) {
                 payload = await readPayload(ctx);
@@ -101,8 +101,10 @@ export class ToolCollection implements ICollection<Tool<any>> {
                 ...r,
                 tool_use_id: payload.tool_use.id
             } satisfies ToolExecutionResponse);
-        } catch (err: any) { // HTTPException ?
-            const status = err.status || 500;
+        } catch (err: unknown) { // HTTPException ?
+            const status = err instanceof HTTPException ? err.status : 500;
+            const message = err instanceof Error ? err.message : "Error executing tool";
+            const stack = err instanceof Error ? err.stack : undefined;
             const toolName = payload?.tool_use?.tool_name;
             const toolUseId = payload?.tool_use?.id;
 
@@ -110,14 +112,14 @@ export class ToolCollection implements ICollection<Tool<any>> {
                 collection: this.name,
                 tool: toolName,
                 toolUseId,
-                error: err.message,
+                error: message,
                 status,
-                stack: err.stack,
+                stack,
             });
 
             return ctx.json({
                 tool_use_id: toolUseId || "undefined",
-                error: err.message || "Error executing tool",
+                error: message,
                 status
             } satisfies ToolExecutionResponseError, status)
         }
@@ -135,7 +137,7 @@ export class ToolCollection implements ICollection<Tool<any>> {
 }
 
 
-function readPayload(ctx: Context): ToolExecutionPayload<any> {
+function readPayload(ctx: Context): ToolExecutionPayload {
     const toolCtx = ctx as ToolContext;
 
     // Check if body was already parsed and validated by middleware
@@ -166,8 +168,8 @@ function readPayload(ctx: Context): ToolExecutionPayload<any> {
  * @param toolsDir - Path to the tools directory (e.g., /path/to/collection/tools)
  * @returns Promise resolving to array of Tool objects
  */
-export async function loadToolsFromDirectory(toolsDir: string): Promise<Tool<any>[]> {
-    const tools: Tool<any>[] = [];
+export async function loadToolsFromDirectory(toolsDir: string): Promise<Tool[]> {
+    const tools: Tool[] = [];
 
     if (!existsSync(toolsDir)) {
         console.warn(`Tools directory not found: ${toolsDir}`);
@@ -213,4 +215,3 @@ export async function loadToolsFromDirectory(toolsDir: string): Promise<Tool<any
 
     return tools;
 }
-

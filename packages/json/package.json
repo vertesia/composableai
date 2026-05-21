@@ -12,6 +12,7 @@
   "scripts": {
     "lint": "biome lint src",
     "test": "vitest run",
+    "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "build": "pnpm exec tsmod build && pnpm exec rollup -c",
     "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
   },

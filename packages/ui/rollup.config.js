@@ -18,7 +18,7 @@ const entries = fs.readdirSync(esmOutputDir).filter((name) => {
         if (fs.statSync(dir).isDirectory()) {
             return fs.existsSync(path.join(dir, 'index.js'));
         }
-    } catch (e) {
+    } catch {
         // ignore
     }
     return false;

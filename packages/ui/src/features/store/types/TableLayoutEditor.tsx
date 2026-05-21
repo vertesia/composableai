@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { ColumnLayout, ContentObjectType } from '@vertesia/common';
-import { Button, useToast, useTheme, Panel } from '@vertesia/ui/core';
+import { Button, errorMessage, useToast, useTheme, Panel } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { MonacoEditor, EditorApi } from '@vertesia/ui/widgets';
 import { useUITranslation } from '@vertesia/ui/i18n';
@@ -44,8 +44,8 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate, readonly = false
         } else {
             try {
                 table_layout = JSON.parse(value);
-            } catch (err: any) {
-                return validationError('Invalid JSON', err.message);
+            } catch (err: unknown) {
+                return validationError('Invalid JSON', errorMessage(err));
             }
         }
 
@@ -98,7 +98,7 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate, readonly = false
 }
 
 
-export function stringifyTableLayout(obj: any) {
+export function stringifyTableLayout(obj: unknown) {
     if (!obj) {
         return '[\n\n]';
     }

@@ -49,6 +49,7 @@ const buttonVariants = cva(
         lg: "h-10 rounded-md px-3",
         xl: 'rounded-md px-3.5 py-2.5 text-sm gap-x-2',
         icon: "p-0 m-0 rounded-full",
+        none: "",
       },
     },
     defaultVariants: {
@@ -143,7 +144,7 @@ interface CopyButtonProps {
   'aria-label'?: string
   size?: "xs" | "sm" | "md" | "lg" | "xl" | "icon"
   toast?: {
-    toast: any,
+    toast: (options: { status: "success" | "error"; title: string; duration: number }) => void,
     message: string
   }
   className?: string

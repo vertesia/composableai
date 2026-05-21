@@ -29,6 +29,8 @@ jobs:
       - run: pnpm install
       - name: Build workspace
         run: pnpm build
+      - name: Typecheck tests
+        run: pnpm typecheck:test
       - name: Run package tests
         run: pnpm ci:test
 

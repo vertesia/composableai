@@ -1,7 +1,9 @@
 import clsx from 'clsx';
 import { X } from 'lucide-react';
 import { useContext, useEffect, useRef, useState } from 'react';
+import { Button } from './shadcn/button';
 import { Popover, PopoverContent, PopoverContext, PopoverTrigger } from './shadcn/popover';
+import { onActivateKey } from '../utils/a11y.js';
 
 interface TagsInputProps {
     options: string[];
@@ -226,6 +228,8 @@ function TagsInputContent({
     return (
         <div className={clsx('relative', className)}>
             <PopoverTrigger asChild>
+                {/* biome-ignore lint/a11y/noStaticElementInteractions: PopoverTrigger asChild forwards button semantics + keyboard to this div; container click is a focus delegation pattern. */}
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — keyboard is handled by the input and PopoverTrigger. */}
                 <div
                     ref={triggerRef}
                     className={clsx(
@@ -333,7 +337,11 @@ function TagsInputContent({
                                                     highlightedItemRef.current = el;
                                                 }
                                             }}
+                                            role="option"
+                                            aria-selected={index === highlightedIndex}
+                                            tabIndex={0}
                                             onClick={() => handleSelect(option)}
+                                            onKeyDown={onActivateKey(() => handleSelect(option))}
                                             onMouseEnter={() => setHighlightedIndex(index)}
                                             className={clsx(
                                                 'px-3 py-2 text-sm cursor-pointer transition-colors',
@@ -352,23 +360,25 @@ function TagsInputContent({
                                     {filteredOptions.length > 0 && (
                                         <div className="border-t border-border" />
                                     )}
-                                    <div
+                                    <Button
                                         ref={(el) => {
                                             if (highlightedIndex === filteredOptions.length) {
                                                 highlightedItemRef.current = el;
                                             }
                                         }}
+                                        variant="unstyled"
+                                        size="none"
                                         onClick={() => handleCreate(searchTerm)}
                                         onMouseEnter={() => setHighlightedIndex(filteredOptions.length)}
                                         className={clsx(
-                                            'px-3 py-2 text-sm cursor-pointer transition-colors text-primary',
+                                            '!flex w-full justify-start px-3 py-2 text-sm cursor-pointer transition-colors text-primary',
                                             highlightedIndex === filteredOptions.length
                                                 ? 'bg-blue-500/20'
                                                 : 'hover:bg-accent/50'
                                         )}
                                     >
                                         {createText.replace('%value%', searchTerm)}
-                                    </div>
+                                    </Button>
                                 </>
                             )}
                         </>

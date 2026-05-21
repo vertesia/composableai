@@ -18,9 +18,21 @@ type SharpInputType = Buffer
     | Float64Array
     | string
     | NodeJS.ReadableStream
+
+type DestroyableReadableStream = NodeJS.ReadableStream & { destroy?: () => void };
+type DestroyableWritableStream = NodeJS.WritableStream & { destroy?: () => void };
+
+function isReadableStream(input: SharpInputType): input is DestroyableReadableStream {
+    return typeof (input as { pipe?: unknown }).pipe === 'function';
+}
+
 export function createImageTransformer(input: SharpInputType, opts: TransformOptions) {
-    const isInputStream = !!(input as NodeJS.ReadableStream).pipe;
-    let sh = isInputStream ? (input as NodeJS.ReadableStream).pipe(sharp()) : sharp(input as any);
+    let sh: sharp.Sharp;
+    if (isReadableStream(input)) {
+        sh = input.pipe(sharp());
+    } else {
+        sh = sharp(input as Exclude<SharpInputType, NodeJS.ReadableStream>);
+    }
     if (opts.max_hw) {
         sh = sh.resize({
             width: opts.max_hw,
@@ -45,14 +57,15 @@ export async function transformImage(input: SharpInputType, output: NodeJS.Writa
     sh.pipe(output);
 
     return new Promise((resolve, reject) => {
-        const handleError = (err: any) => {
+        const handleError = (err: unknown) => {
             console.error('Failed to transform', err);
             try {
-                if ((input as any).pipe && (input as any).destroy) {
-                    (input as any).destroy();
+                const outputStream = output as DestroyableWritableStream;
+                if (isReadableStream(input)) {
+                    input.destroy?.();
                 }
-                if ((output as any).destroy) {
-                    (output as any).destroy();
+                if (outputStream.destroy) {
+                    outputStream.destroy();
                 }
                 sh.destroy();
             } finally {
@@ -60,7 +73,9 @@ export async function transformImage(input: SharpInputType, output: NodeJS.Writa
             }
         }
         output.on('error', handleError);
-        (input as any).pipe && (input as any).on && (input as any).on('error', handleError);
+        if (isReadableStream(input)) {
+            input.on('error', handleError);
+        }
         output.on("finish", () => {
             resolve(sh);
         });

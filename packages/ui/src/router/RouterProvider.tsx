@@ -41,9 +41,9 @@ export function RouterProvider({ routes, index, onChange, children }: RouterProv
         return router;
     }, []);
     useSafeLayoutEffect(() => {
-        router && router.start();
+        router?.start();
         return () => {
-            router && router.stop();
+            router?.stop();
         }
     }, []);
 

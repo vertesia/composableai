@@ -30,7 +30,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
     useIntersectionObserver(loadMoreRef, () => {
-        isReady && search.loadMore();
+        if (isReady) search.loadMore();
     }, { deps: [isReady] });
 
     useEffect(() => {
@@ -44,8 +44,8 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
             .then(() => setIsReady(true));
     }, [debounceValue]);
 
-    const [chunkable, setChunkable] = useState(undefined);
-    const onChunkableChange = (data: any) => {
+    const [chunkable, setChunkable] = useState<string | undefined>(undefined);
+    const onChunkableChange = (data: string | undefined) => {
         setChunkable(data);
     };
 

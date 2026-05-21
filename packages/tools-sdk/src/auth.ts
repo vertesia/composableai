@@ -71,10 +71,11 @@ export async function authorize(ctx: Context, endpointOverrides?: EndpointOverri
         const session = new AuthSession(value, payload, endpointOverrides, toolContext);
         ctx.set("auth", session);
         return session;
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (err instanceof HTTPException) throw err;
+        const message = err instanceof Error ? err.message : String(err);
         throw new HTTPException(401, {
-            message: err.message,
+            message,
             cause: err
         });
     }

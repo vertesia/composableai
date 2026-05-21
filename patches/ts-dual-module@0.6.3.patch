@@ -1,4 +1,5 @@
 diff --git a/lib/build.js b/lib/build.js
+index 5a5de9fcf..1da1f1d04 100644
 --- a/lib/build.js
 +++ b/lib/build.js
 @@ -1,7 +1,9 @@
@@ -21,7 +22,7 @@ diff --git a/lib/build.js b/lib/build.js
      return params;
  }
  export async function build(pkg, args) {
-@@ -105,13 +108,13 @@ export async function build(pkg, args) {
+@@ -105,13 +107,13 @@ export async function build(pkg, args) {
      }
  }
  function _build(params) {

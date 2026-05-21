@@ -1,4 +1,5 @@
 import { log } from "@temporalio/activity";
+import { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
 import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { Readable } from "stream";
@@ -72,8 +73,9 @@ export async function mergeChildArtifacts(
             const namespacedPath = createNamespacedPath(relativePath, childRunId);
             await copyArtifact(client, childRunId, parentRunId, relativePath, namespacedPath);
             mergedFiles.push(namespacedPath);
-        } catch (err: any) {
-            log.warn(`Failed to merge ${relativePath}: ${err.message}`);
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            log.warn(`Failed to merge ${relativePath}: ${message}`);
         }
     }
 
@@ -132,7 +134,7 @@ function extractRelativePath(fullPath: string, runId: string): string | null {
  * Copy a single artifact from child to parent agent space with a new path
  */
 async function copyArtifact(
-    client: any,
+    client: VertesiaClient,
     childRunId: string,
     parentRunId: string,
     sourcePath: string,
@@ -142,7 +144,7 @@ async function copyArtifact(
     const stream = await client.files.downloadArtifact(childRunId, sourcePath);
 
     // Convert web stream to node stream for upload
-    const nodeStream = Readable.fromWeb(stream as any);
+    const nodeStream = Readable.fromWeb(stream as ReadableStream<Uint8Array>);
 
     // Determine mime type from extension
     const mimeType = getMimeType(sourcePath);

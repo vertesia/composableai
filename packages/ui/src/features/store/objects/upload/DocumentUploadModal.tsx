@@ -1,5 +1,5 @@
 import { Collection, ContentObjectTypeItem, DynamicCollection } from "@vertesia/common";
-import { Button, MessageBox, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, Spinner, useToast, VTooltip } from "@vertesia/ui/core";
+import { Button, MessageBox, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, Spinner, errorMessage, useToast, VTooltip } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useTypeRegistry } from "../../types/TypeRegistryProvider.js";
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
@@ -426,7 +426,7 @@ export function DocumentUploadModal({
                                     location: fileInfo.location,
                                 });
                             }
-                        } catch (error: any) {
+                        } catch (error: unknown) {
                             console.error(`Failed to process file ${fileInfo.name}:`, error);
 
                             // Update status to error
@@ -437,7 +437,7 @@ export function DocumentUploadModal({
                                             ...status,
                                             status: "error",
                                             progress: 100,
-                                            message: error.message || "Unknown error",
+                                            message: errorMessage(error, "Unknown error"),
                                         }
                                         : status,
                                 ),
@@ -446,7 +446,7 @@ export function DocumentUploadModal({
                             // Add to failed result
                             result.failedFiles.push({
                                 name: fileInfo.name,
-                                error: error.message || "Unknown error",
+                                error: errorMessage(error, "Unknown error"),
                                 status: "failed",
                                 location: fileInfo.location,
                                 type: typeId,
@@ -563,7 +563,7 @@ export function DocumentUploadModal({
     const typeSelection = () => {
         return (
             <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">
+                <div className="block text-sm font-medium mb-2">
                     {t('store.contentType')} <span className="text-muted font-normal">{t('store.optional')}</span>
                     <VTooltip
                         description={t('upload.contentTypeTooltip')}
@@ -571,7 +571,7 @@ export function DocumentUploadModal({
                     >
                         <Info className="size-3 ms-2" />
                     </VTooltip>
-                </label>
+                </div>
                 <SelectBox
                     options={types}
                     value={selectedType}

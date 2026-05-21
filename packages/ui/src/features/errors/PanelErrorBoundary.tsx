@@ -1,5 +1,5 @@
 import { MessageBox } from '@vertesia/ui/core';
-import { VertesiaErrorBoundary } from './VertesiaErrorBoundary';
+import { ErrorFallbackComponentProps, VertesiaErrorBoundary } from './VertesiaErrorBoundary';
 import { ReactNode } from 'react';
 import { useUITranslation } from '@vertesia/ui/i18n';
 
@@ -11,8 +11,9 @@ export function PanelErrorBoundary({ children }: { children: ReactNode }) {
     );
 }
 
-function PanelErrorFallback({ error }: { error?: Error }) {
+function PanelErrorFallback({ error }: ErrorFallbackComponentProps) {
     const { t } = useUITranslation();
+    const message = error instanceof Error ? error.message : undefined;
     return (
         <MessageBox status="error" title={t('errors.somethingWentWrong')}>
             <div className='mb-4'>
@@ -22,9 +23,9 @@ function PanelErrorFallback({ error }: { error?: Error }) {
                 <a className='text-info' href="mailto:support@vertesiahq.com">support@vertesiahq.com</a>.
             </div>
 
-            {error?.message &&
+            {message &&
                 <code className='w-full mt-4 text-sm text-muted break-words'>
-                    {error.message}
+                    {message}
                 </code>
             }
         </MessageBox>

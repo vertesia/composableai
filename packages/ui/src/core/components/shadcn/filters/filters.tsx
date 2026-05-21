@@ -21,7 +21,7 @@ function generateComboboxOptions(
         case "date":
             return (
                 <DateCombobox
-                    filterValues={Array.isArray(filter.value) && typeof filter.value[0] === 'object' ? filter.value.map((v: any) => v.value || '') : []}
+                    filterValues={Array.isArray(filter.value) && typeof filter.value[0] === 'object' ? (filter.value as FilterOption[]).map((v) => v.value || '') : []}
                     isRange={filter.multiple}
                     setFilterValues={(filterValues) => {
                         setFilters((prev) =>
@@ -114,7 +114,7 @@ export default function Filters({
             {filters
                 .filter((filter) => filter.value?.length > 0)
                 .map((filter) => (
-                    <div className="flex gap-[1px] items-center text-sm" key={filter.name + '-' + (filter.type == 'date' ? 'date' : filter.type === 'stringList' && typeof filter.value[0] === 'string' ? (filter.value as string[]).join(',') : Array.isArray(filter.value) ? filter.value.map((v: any) => v.value).join(',') : '')}>
+                    <div className="flex gap-[1px] items-center text-sm" key={filter.name + '-' + (filter.type == 'date' ? 'date' : filter.type === 'stringList' && typeof filter.value[0] === 'string' ? (filter.value as string[]).join(',') : Array.isArray(filter.value) ? (filter.value as FilterOption[]).map((v) => v.value).join(',') : '')}>
                         <div className="flex gap-1.5 shrink-0 rounded-s bg-muted p-1.5 h-8 items-center">
                             {filter.placeholder || filter.name}
                         </div>

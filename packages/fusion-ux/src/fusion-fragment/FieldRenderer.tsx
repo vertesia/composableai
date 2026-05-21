@@ -178,12 +178,19 @@ export function FieldRenderer({
   }, [isNull, field.highlight, isEditable, isHovered]);
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: hover handlers used for visual feedback only; interactive click+keyboard only added when isEditable is true.
     <div
       style={styles.container}
       title={field.tooltip}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleClick}
+      onKeyDown={isEditable ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleClick();
+        }
+      } : undefined}
       role={isEditable ? 'button' : undefined}
       tabIndex={isEditable ? 0 : undefined}
     >

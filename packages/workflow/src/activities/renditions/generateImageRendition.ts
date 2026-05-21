@@ -10,6 +10,11 @@ import {
 
 interface GenerateImageRenditionParams extends ImageRenditionParams { }
 
+interface LegacyImageRenditionParams {
+    maxHeightWidth?: number;
+    format_output?: ImageRenditionParams["format"];
+}
+
 export interface GenerateImageRendition
     extends DSLActivitySpec<GenerateImageRenditionParams> {
     name: "generateImageRendition";
@@ -25,10 +30,11 @@ export async function generateImageRendition(
     } = await setupActivity<GenerateImageRenditionParams>(payload);
 
     // Fix: Use maxHeightWidth if max_hw is not provided
+    const legacyParams = originParams as LegacyImageRenditionParams;
     const params = {
         ...originParams,
-        max_hw: originParams.max_hw || (originParams as any).maxHeightWidth || 1596, // Default to 1596 if both are missing
-        format: originParams.format || (originParams as any).format_output || "png", // Default to png if format is missing
+        max_hw: originParams.max_hw || legacyParams.maxHeightWidth || 1596, // Default to 1596 if both are missing
+        format: originParams.format || legacyParams.format_output || "png", // Default to png if format is missing
     };
 
     log.debug(`Generating image rendition for ${objectId}`, {
@@ -36,9 +42,10 @@ export async function generateImageRendition(
         params,
     });
 
-    const inputObject = await client.objects.retrieve(objectId).catch((err) => {
+    const inputObject = await client.objects.retrieve(objectId).catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
         log.error(`Failed to retrieve document ${objectId}`, { err });
-        if (err.message.includes("not found")) {
+        if (message.includes("not found")) {
             throw new DocumentNotFoundError(`Document ${objectId} not found`, [objectId]);
         }
         throw err;

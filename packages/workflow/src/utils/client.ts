@@ -10,12 +10,12 @@ import {
 import { WorkflowExecutionBaseParams } from "@vertesia/common";
 import { WorkflowParamNotFoundError } from "../errors.js";
 
-export function getVertesiaClient(payload: WorkflowExecutionBaseParams) {
+export function getVertesiaClient(payload: WorkflowExecutionBaseParams<unknown>) {
     return new VertesiaClient(getVertesiaClientOptions(payload));
 }
 
 export function getVertesiaClientOptions(
-    payload: WorkflowExecutionBaseParams,
+    payload: WorkflowExecutionBaseParams<unknown>,
 ): VertesiaClientProps {
     if (!payload.auth_token) {
         throw new WorkflowParamNotFoundError(

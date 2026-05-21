@@ -94,7 +94,7 @@ export async function generateEmbeddings(
         );
     }
 
-    let document;
+    let document: Awaited<ReturnType<typeof client.objects.retrieve>>;
     try {
         document = await client.objects.retrieve(
             objectId,
@@ -115,7 +115,10 @@ export async function generateEmbeddings(
         throw new DocumentNotFoundError("Document content not found", [objectId]);
     }
 
-    let res;
+    let res:
+        | Awaited<ReturnType<typeof generateTextEmbeddings>>
+        | Awaited<ReturnType<typeof generateImageEmbeddings>>
+        | { id: string; status: string; message: string };
 
     switch (type) {
         case SupportedEmbeddingTypes.text:

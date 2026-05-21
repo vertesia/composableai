@@ -21,7 +21,7 @@ describe('Skill Transformer with Assets', () => {
     expect(result.data).toHaveProperty('scripts');
     expect(result.data).toHaveProperty('widgets');
 
-    const data = result.data as any;
+    const data = result.data as { scripts?: string[]; widgets?: string[] };
     expect(data.scripts).toContain('helper.js');
     expect(data.scripts).toContain('script.py');
     expect(data.widgets).toContain('widget');
@@ -61,7 +61,7 @@ describe('Skill Transformer with Assets', () => {
 
     const result = await skillTransformer.transform(content, filePath);
 
-    const data = result.data as any;
+    const data = result.data as { scripts?: string[]; widgets?: string[] };
     expect(data.scripts).toBeUndefined();
     expect(data.widgets).toBeUndefined();
   });

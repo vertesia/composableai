@@ -70,7 +70,7 @@ export default class ProjectsApi extends ApiTopic {
      * Returns null if the tool is not found.
      */
     getToolByName(projectId: string, toolName: string): Promise<ProjectToolInfo | null> {
-        return this.get(`/${projectId}/tools/${toolName}`).catch((err: ServerError) => {
+        return this.get<ProjectToolInfo>(`/${projectId}/tools/${toolName}`).catch((err: ServerError) => {
             if (err.status === 404) {
                 return null;
             }
@@ -127,11 +127,11 @@ class IntegrationsConfigurationApi extends ApiTopic {
     }
 
     list(projectId: string): Promise<ProjectIntegrationListEntry[]> {
-        return this.get(`/${projectId}/integrations`).then((res: ProjectIntegrationListResponse) => res.integrations);
+        return this.get<ProjectIntegrationListResponse>(`/${projectId}/integrations`).then((res) => res.integrations);
     }
 
     retrieve(projectId: string, integrationId: SupportedIntegrations): Promise<ProjectIntegrationConfigResponse | undefined> {
-        return this.get(`/${projectId}/integrations/${integrationId}`).catch(err => {
+        return this.get<ProjectIntegrationConfigResponse>(`/${projectId}/integrations/${integrationId}`).catch(err => {
             if (err.status === 404) {
                 return undefined;
             }

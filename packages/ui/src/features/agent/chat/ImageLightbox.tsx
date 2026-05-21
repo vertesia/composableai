@@ -1,5 +1,5 @@
 import { useState, createContext, useContext, useCallback, ReactNode } from "react";
-import { Button } from "@vertesia/ui/core";
+import { Button, onActivateKey } from "@vertesia/ui/core";
 import { X, ExternalLink } from "lucide-react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 
@@ -43,9 +43,14 @@ export function ImageLightboxProvider({ children }: ImageLightboxProviderProps) 
         <ImageLightboxContext.Provider value={{ openImage, closeImage }}>
             {children}
             {image && (
+                // biome-ignore lint/a11y/useSemanticElements: backdrop contains nested Button + <a> tags; button-in-button is invalid HTML so role="button" on a div is the pragmatic choice.
                 <div
+                    role="button"
+                    tabIndex={-1}
+                    aria-label={t('agent.close')}
                     className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
                     onClick={closeImage}
+                    onKeyDown={onActivateKey(closeImage)}
                 >
                     <div className="relative max-w-[90vw] max-h-[90vh]">
                         <img
@@ -91,15 +96,23 @@ interface LightboxImageProps {
 export function LightboxImage({ src, alt, className }: LightboxImageProps) {
     const { openImage } = useImageLightbox();
 
+    const open = () => openImage(src, alt);
+
     return (
-        <img
-            src={src}
-            alt={alt}
-            className={`cursor-pointer hover:opacity-90 transition-opacity ${className || ""}`}
+        <Button
+            variant="unstyled"
+            className="block p-0"
             onClick={(e) => {
                 e.stopPropagation();
-                openImage(src, alt);
+                open();
             }}
-        />
+            aria-label={alt || src}
+        >
+            <img
+                src={src}
+                alt={alt}
+                className={`cursor-pointer hover:opacity-90 transition-opacity ${className || ""}`}
+            />
+        </Button>
     );
 }

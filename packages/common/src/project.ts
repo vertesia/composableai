@@ -373,7 +373,7 @@ export interface Project {
     description?: string;
     account: string;
     configuration: ProjectConfiguration;
-    integrations?: Map<string, any>;
+    integrations?: Map<string, unknown>;
     plugins: string[];
     created_by: string,
     updated_by: string,

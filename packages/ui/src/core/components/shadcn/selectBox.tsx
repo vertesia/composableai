@@ -60,7 +60,7 @@ interface SelectBoxMultipleProps<T> extends SelectBoxBaseProps<T> {
 
 type SelectBoxProps<T> = SelectBoxSingleProps<T> | SelectBoxMultipleProps<T>;
 
-export function SelectBox<T = any>({
+export function SelectBox<T = unknown>({
     options,
     optionLabel,
     value,
@@ -102,7 +102,7 @@ export function SelectBox<T = any>({
         // Use the isOptionsEqual helper which respects the 'by' comparator
         return !options.some(opt => {
             if (typeof by === 'string') {
-                return (opt as any)[by] === (value as any)[by];
+                return getProperty(opt, by) === getProperty(value, by);
             } else if (typeof by === 'function') {
                 return by(opt, value as T);
             } else {
@@ -134,7 +134,7 @@ export function SelectBox<T = any>({
         };
     }, []);
 
-    const _onClick = (opt: any) => {
+    const _onClick = (opt: T) => {
         if (multiple) {
             const currentValues = Array.isArray(value) ? value : [];
             const isSelected = isOptionSelected(opt, currentValues);
@@ -169,7 +169,7 @@ export function SelectBox<T = any>({
         }
 
         if (typeof by === 'string') {
-            return (a as any)[by] === (b as any)[by];
+                return getProperty(a, by) === getProperty(b, by);
         } else if (typeof by === 'function') {
             return by(a, b);
         } else {
@@ -183,7 +183,7 @@ export function SelectBox<T = any>({
         if (!filterBy) {
             return (o: T) => String(o).toLowerCase();
         } else if (typeof filterBy === 'string') {
-            return (o: any) => String(o[filterBy]).toLowerCase();
+            return (o: T) => String(getProperty(o, filterBy)).toLowerCase();
         } else {
             return filterBy;
         }
@@ -402,7 +402,7 @@ export function SelectBox<T = any>({
                             if (multiple) {
                                 (onChange as (options: T[]) => void)([] as T[]);
                             } else {
-                                (onChange as (option: T) => void)(undefined as any);
+                                (onChange as (option: T) => void)(undefined as T);
                             }
                         }}
                         onKeyDown={(e) => {
@@ -430,4 +430,8 @@ export function SelectBox<T = any>({
             </PopoverContent>
         </Popover>
     );
+}
+
+function getProperty(value: unknown, key: string): unknown {
+    return typeof value === 'object' && value !== null ? (value as Record<string, unknown>)[key] : undefined;
 }

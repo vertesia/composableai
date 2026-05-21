@@ -2,8 +2,8 @@ import { ReactNode, ComponentType } from "react"
 import { ErrorBoundary } from "react-error-boundary";
 
 export interface ErrorFallbackComponentProps {
-    error: any;
-    resetErrorBoundary: (...args: any[]) => void;
+    error: unknown;
+    resetErrorBoundary: (...args: unknown[]) => void;
 }
 export type ErrorBoundaryProps = {
     children: ReactNode;

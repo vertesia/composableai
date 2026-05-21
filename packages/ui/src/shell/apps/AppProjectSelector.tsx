@@ -1,5 +1,5 @@
 import { ProjectRef, RequireAtLeastOne } from "@vertesia/common";
-import { SelectBox, useFetch } from "@vertesia/ui/core";
+import { SelectBox, errorMessage, useFetch } from "@vertesia/ui/core";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from "@vertesia/ui/session";
 import { useState } from "react";
 
@@ -28,7 +28,7 @@ export function AppProjectSelector({ app, onChange, placeholder }: AppProjectSel
     }
 
     if (error) {
-        return <span className='text-red-600'>Error: failed to fetch projects: {error.message}</span>
+        return <span className='text-red-600'>Error: failed to fetch projects: {errorMessage(error)}</span>
     }
     return <SelectProject placeholder={placeholder} initialValue={project?.id} projects={projects || []} onChange={_onChange} />
 }
