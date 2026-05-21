@@ -63,6 +63,48 @@ const toolServerFiles = allFiles.filter((file) => rel(file).startsWith('src/tool
 const packageWriterFiles = scriptFiles.filter((file) => rel(file) === 'scripts/write-app-package.mjs');
 const interactionFiles = toolServerFiles.filter((file) => rel(file).includes('/interactions/'));
 const processFiles = toolServerFiles.filter((file) => rel(file).includes('/processes/'));
+const packageJsonPath = path.join(cwd, 'package.json');
+
+async function readPackageJson() {
+    try {
+        return JSON.parse(await readFile(packageJsonPath, 'utf8'));
+    } catch {
+        return undefined;
+    }
+}
+
+const packageJson = await readPackageJson();
+
+function hasDependency(name) {
+    if (!packageJson || typeof packageJson !== 'object') return false;
+    const sections = ['dependencies', 'devDependencies'];
+    return sections.some((section) => {
+        const deps = packageJson[section];
+        return deps && typeof deps === 'object' && typeof deps[name] === 'string';
+    });
+}
+
+function requireDependency(name, reason) {
+    if (hasDependency(name)) return;
+    add(
+        'errors',
+        'missing-template-dependency',
+        `${name} must stay in package.json. ${reason}`,
+        packageJsonPath,
+    );
+}
+
+if (uiFiles.length > 0) {
+    requireDependency('@vertesia/ui', 'Generated app UI uses Vertesia shell/session/components by default.');
+    requireDependency('@vertesia/client', 'Generated app UI should call Vertesia APIs through useUserSession().client.');
+    requireDependency('@vertesia/common', 'Generated app UI and client calls use shared Vertesia wire types.');
+}
+
+if (toolServerFiles.length > 0) {
+    requireDependency('@vertesia/tools-sdk', 'Service-target apps use it to create the package/tool server.');
+    requireDependency('@vertesia/common', 'Service-target apps use shared package, process, type, and interaction definitions.');
+    requireDependency('hono', 'Service-target apps expose a Hono runtime imported by app-runtime.');
+}
 
 for (const file of uiFiles) {
     const text = await readFile(file, 'utf8');
