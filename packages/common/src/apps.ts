@@ -193,7 +193,7 @@ export interface MCPToolCollectionObject extends BaseToolCollectionObject {
 }
 
 /**
- * Vertesia SDK tool collection configuration
+ * Vertesia client tool collection configuration
  */
 export interface VertesiaSDKToolCollectionObject extends BaseToolCollectionObject {
     type: "vertesia_sdk";
