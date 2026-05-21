@@ -31,7 +31,7 @@ export function SvgIcon({ content, ...props }: SvgIconProps) {
         // Clear and append the new SVG
         containerRef.current.innerHTML = '';
         containerRef.current.appendChild(svgEl);
-    }, [content, props]);
+    });
 
     return <span ref={containerRef} />;
 }

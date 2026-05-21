@@ -209,12 +209,13 @@ export function usePageTitle(title: string) {
 
 export function useNavigationPrompt(prompt: NavigationPrompt) {
     const { router } = useRouterContext();
+    const topRouter = router.getTopRouter();
     useEffect(() => {
-        router.getTopRouter().prompt = prompt;
+        topRouter.prompt = prompt;
         return () => {
-            router.getTopRouter().prompt = undefined;
+            topRouter.prompt = undefined;
         };
-    }, []);
+    }, [prompt, topRouter]);
 
     useEffect(() => {
         if (prompt.when) {

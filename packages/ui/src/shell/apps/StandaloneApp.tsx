@@ -55,7 +55,7 @@ export function StandaloneAppImpl({ name, AccessDenied = AccessDeniedMessage, ch
                 setState("error");
             }
         }
-    }, [name, authToken]);
+    }, [name, authToken, client.apps.getAppInstallationByName]);
 
     if (state === "loading") {
         return null;

@@ -5,7 +5,7 @@ import { useUITranslation } from "@vertesia/ui/i18n";
 import { UserNotFoundError, useUserSession, useUXTracking } from "@vertesia/ui/session";
 import { RegionTag } from "@vertesia/ui/layout";
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import EnterpriseSigninButton from "./EnterpriseSigninButton";
 import GitHubSignInButton from "./GitHubSignInButton";
 import GoogleSignInButton from "./GoogleSignInButton";
@@ -82,17 +82,17 @@ function StandardSigninPanel({ authError, darkLogo, lightLogo, preservePath }: {
         signOut();
     };
 
-    const goToSignup = () => {
+    const goToSignup = useCallback(() => {
         setSignupData(undefined);
         setCollectSignupData(true);
-    };
+    }, []);
 
     useEffect(() => {
         if (authError instanceof UserNotFoundError) {
             console.log("User not found, redirecting to signup");
             goToSignup();
         }
-    }, [authError]);
+    }, [authError, goToSignup]);
 
     const onSignup = (data: SignupData, fbToken: string) => {
         console.log("Got Signup data", data);

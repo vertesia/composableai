@@ -67,7 +67,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
         }
 
         retrieveRendition(client, document, setRenditionUrl, setRenditionAlt, setRenditionStatus)
-    }, [document])
+    }, [client, document])
 
     const isHighlighted = highlightRow?.(document);
 

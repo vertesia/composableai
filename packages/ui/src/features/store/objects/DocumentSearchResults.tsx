@@ -14,7 +14,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { TypeRegistry } from '../types/TypeRegistry.js';
 import { useTypeRegistry } from '../types/TypeRegistryProvider.js';
 import { Download, ExternalLink, RefreshCw } from 'lucide-react';
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
 import { ContentDispositionButton } from './components/ContentDispositionButton';
 import { ContentOverview } from './components/ContentOverview';
@@ -54,7 +54,7 @@ export function DocumentSearchResultsWithDropZone({ onUploadDone = async () => {
     const { t } = useUITranslation();
 
     // Create a wrapper around the onUploadDone callback that also refreshes the search
-    const handleUploadDone = async (objectIds: string[]) => {
+    const handleUploadDone = useCallback(async (objectIds: string[]) => {
         // First, call the original callback
         await onUploadDone(objectIds);
 
@@ -73,17 +73,17 @@ export function DocumentSearchResultsWithDropZone({ onUploadDone = async () => {
                 console.error('Failed to refresh search results:', err);
             });
         }, 1000); // 1-second delay for backend processing
-    };
+    }, [onUploadDone, search, t, toast]);
 
     // Use the enhanced standard upload handler with smart processing
     const uploadHandler = useDocumentUploadHandler(handleUploadDone);
 
     // Wrap the uploadHandler to ensure the collectionId is passed
-    const wrappedUploadHandler = (files: File[], type: string | null) => {
+    const wrappedUploadHandler = useCallback((files: File[], type: string | null) => {
         // Get the collection ID from the search context
         const collectionId = search.collectionId;
         return uploadHandler(files, type, collectionId);
-    };
+    }, [search, uploadHandler]);
 
     return <DocumentSearchResults layout={layout} onUpload={wrappedUploadHandler} />;
 }
@@ -134,7 +134,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 search._updateRunningState(false);
             });
         }
-    }, []);
+    }, [isReady, objects.length, search]);
 
     useEffect(() => {
         if (objects.length < loaded) {

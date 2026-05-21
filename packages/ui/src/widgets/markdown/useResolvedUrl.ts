@@ -128,8 +128,6 @@ export function useResolvedUrl({
         return { url: undefined, isLoading: true, error: undefined };
     });
 
-    const [retryCount, setRetryCount] = useState(0);
-
     const fetchUrl = useCallback(async () => {
         // Skip if already resolved or standard URL
         if (mappedRoute || scheme === 'standard') {
@@ -223,12 +221,12 @@ export function useResolvedUrl({
         return () => {
             cancelled = true;
         };
-    }, [fetchUrl, retryCount, state.url, state.error]);
+    }, [fetchUrl, state.url, state.error]);
 
     const retry = useCallback(() => {
         setState({ url: undefined, isLoading: true, error: undefined });
-        setRetryCount(c => c + 1);
-    }, []);
+        void fetchUrl();
+    }, [fetchUrl]);
 
     return {
         url: state.url,

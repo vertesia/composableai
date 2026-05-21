@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface FetchOpts<T> {
     start?: () => void,
@@ -22,27 +22,33 @@ export function useFetch<T = unknown>(fetcher: () => Promise<T>, opts?: FetchOpt
     const [error, setError] = useState<Error | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
     const [data, setData] = useState<T | undefined>(options.defaultValue);
-    const fetch = () => {
-        options.start?.();
+    const fetcherRef = useRef(fetcher);
+    fetcherRef.current = fetcher;
+    const optionsRef = useRef(options);
+    optionsRef.current = options;
+    const fetch = useCallback(() => {
+        const currentOptions = optionsRef.current;
+        currentOptions.start?.();
         setIsLoading(true);
-        return fetcher().then((result: T) => {
+        return fetcherRef.current().then((result: T) => {
             setData(result);
-            options.onSuccess?.(result);
+            currentOptions.onSuccess?.(result);
         }).catch(error => {
             const err = toError(error);
             setError(err);
-            options.onError?.(err);
+            currentOptions.onError?.(err);
         }).finally(() => {
             setIsLoading(false);
-            options.end?.();
+            currentOptions.end?.();
         });
-    }
+    }, [])
     useEffect(() => {
-        if (!options.condition || options.condition()) {
+        const currentOptions = optionsRef.current;
+        if (!currentOptions.condition || currentOptions.condition()) {
             fetch();
         }
 
-    }, options.deps);
+    }, [fetch, ...(options.deps ?? [])]);
     return { data, isLoading, error, setData, refetch: fetch };
 }
 

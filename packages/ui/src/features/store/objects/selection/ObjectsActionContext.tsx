@@ -60,7 +60,7 @@ export function ObjectsActionContextProvider({ children, type }: ObjectsActionCo
         context.allActions = DEFAULT_ACTIONS;
         context.wfRules = rules!;
         return context;
-    }, [selection, rules, type]);
+    }, [client, search, selection, rules, toast, type]);
 
     if (error) {
         return <ErrorBox title={t('store.failedToFetchWorkflows')}>{errorMessage(error)}</ErrorBox>

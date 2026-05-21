@@ -82,7 +82,7 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
         } else {
             setIsLoading(false);
         }
-    }, [url, source, object?.id, object?.content?.type, object?.content?.source, object?.metadata, webRendition, isOriginalWebSupported, client]);
+    }, [url, source, object, webRendition, isOriginalWebSupported, client]);
 
     useEffect(() => {
         if (!poster?.content?.source) return;

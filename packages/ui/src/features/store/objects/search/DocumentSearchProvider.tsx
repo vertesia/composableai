@@ -45,7 +45,7 @@ export function DocumentSearchProvider({ children, limit, parent, typeId, facets
             search.query.all_revisions = true;
         }
         return search;
-    }, [typeId, limit, collectionId]);
+    }, [collectionId, facets, limit, name, parent, store, typeId]);
 
     return (
         <SearchContext.Provider value={search}>{children}</SearchContext.Provider>

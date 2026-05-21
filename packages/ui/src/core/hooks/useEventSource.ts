@@ -26,10 +26,20 @@ export function useEventSource<T>(url: string | (() => Promise<string>),
     onMessage: (content: string) => void,
     onCompleted: (payload: T) => void) {
     useEffect(() => {
+        let stop: (() => void) | undefined;
+        let cancelled = false;
         if (typeof url === 'function') {
-            url().then(url => startSse(url, onMessage, onCompleted));
+            void url().then(url => {
+                if (!cancelled) {
+                    stop = startSse(url, onMessage, onCompleted);
+                }
+            });
         } else {
-            startSse(url, onMessage, onCompleted);
+            stop = startSse(url, onMessage, onCompleted);
         }
-    }, [url])
+        return () => {
+            cancelled = true;
+            stop?.();
+        }
+    }, [onCompleted, onMessage, url])
 }

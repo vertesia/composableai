@@ -15,7 +15,7 @@ export function StringListFacet({ search, name, placeholder, className }: String
 
     useEffect(() => {
         search.setFilterValue(name, tags);
-    }, [tags]);
+    }, [name, search, tags]);
 
     return (
         <InputList className={className} value={tags} onChange={setTags} placeholder={placeholder} />

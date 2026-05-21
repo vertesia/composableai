@@ -1,5 +1,5 @@
 import { useUserSession } from '@vertesia/ui/session';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import {
     Button,
@@ -42,6 +42,18 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
     //TODO  state not used
     const [_newVersionId, setNewVersionId] = useState<string | null>(null);
 
+    // Fetch JSON schema for the object type
+    const fetchJsonSchema = useCallback(async (typeId: string) => {
+        try {
+            const typeDetails = await store.types.retrieve(typeId);
+            if (typeDetails.object_schema) {
+                setJsonSchema(typeDetails.object_schema);
+            }
+        } catch (error) {
+            console.error('Failed to fetch JSON schema:', error);
+        }
+    }, [store.types]);
+
     // Initialize editor content when modal opens
     useEffect(() => {
         if (isOpen) {
@@ -52,19 +64,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                 fetchJsonSchema(object.type.id);
             }
         }
-    }, [isOpen, object]);
-
-    // Fetch JSON schema for the object type
-    async function fetchJsonSchema(typeId: string) {
-        try {
-            const typeDetails = await store.types.retrieve(typeId);
-            if (typeDetails.object_schema) {
-                setJsonSchema(typeDetails.object_schema);
-            }
-        } catch (error) {
-            console.error('Failed to fetch JSON schema:', error);
-        }
-    }
+    }, [isOpen, object, fetchJsonSchema]);
 
     // Configure Monaco editor with JSON schema validation
     const beforeMount = (monaco: typeof import('monaco-editor')) => {

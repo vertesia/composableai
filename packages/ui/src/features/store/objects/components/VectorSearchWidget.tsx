@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { ComplexSearchQuery, ProjectConfiguration, SearchTypes, SupportedEmbeddingTypes } from '@vertesia/common';
 import { Button, Checkbox, Input, Label, Modal, ModalBody, ModalFooter, ModalTitle, NumberInput, useToast } from '@vertesia/ui/core';
@@ -28,6 +28,7 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
     const [config, setConfig] = useState<ProjectConfiguration | undefined>(undefined);
     const isReady = !!project && (!!config?.embeddings.text || !!config?.embeddings.image);
     const [status, setStatus] = useState<string | undefined>(undefined);
+    const refreshRef = useRef(refresh);
 
     const [showSettings, setShowSettings] = useState(false);
     // Default to all types, or use prop if provided
@@ -53,28 +54,31 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
     });
 
     useEffect(() => {
-        setSearchText(undefined);
-        setStatus(undefined);
-    }, [refresh]);
+        if (refreshRef.current !== refresh) {
+            refreshRef.current = refresh;
+            setSearchText(undefined);
+            setStatus(undefined);
+        }
+    });
 
     useEffect(() => {
         if (!project) return;
         client.projects.retrieve(project.id).then((project) => {
             setConfig(project.configuration);
         })
-    }, [project]);
+    }, [client.projects.retrieve, project]);
 
     useEffect(() => {
         if (status) {
             toast({ title: status, status: 'success', duration: 2000 });
         }
-    }, [status]);
+    }, [status, toast]);
 
     useEffect(() => {
         if (!searchText || searchText.length === 0) {
             onChange(undefined);
         }
-    }, [searchText]);
+    }, [onChange, searchText]);
 
     const fireSearch = () => {
         if (!isReady || !searchText) return;

@@ -25,7 +25,7 @@ export function NestedRouterProvider({ routes, index, children, fixLinks = false
         const nestedRouter = new NestedRouter(ctx.router, basePath, routes);
         nestedRouter.index = index;
         return nestedRouter;
-    }, []);
+    }, [ctx.matchedRoutePath, ctx.router, index, routes]);
 
 
     useEffect(() => {
@@ -38,7 +38,7 @@ export function NestedRouterProvider({ routes, index, children, fixLinks = false
             const route = nestedRouter.match(ctx.remainingPath || '/') || createRoute404();
             setNestedRouteMatch(route);
         }
-    }, [nestedRouter, ctx.remainingPath]);
+    }, [ctx.matchedRoutePath, ctx.remainingPath, nestedRouter]);
 
 
     const wrapWithFixLinks = fixLinks ?
