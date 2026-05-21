@@ -26,6 +26,14 @@
  *       across all apps/collections. Example: `data_*` denies any tool whose
  *       name starts with `data_`.
  *
+ * Any segment may also be negated by prefixing it with `!` — the segment then
+ * matches anything its body would NOT have matched. Combined with the per-segment
+ * AND of tool patterns this expresses "deny all except" shapes, e.g.
+ * `tool:my-app:!safe:*` denies every tool in `my-app` whose category is not
+ * `safe`. Negation works for `ui:` and `app:` patterns too (e.g. `ui:!studio*`
+ * denies every UI plugin except those starting with `studio`). `!` is reserved
+ * as a leading character; valid app / category / tool names never start with it.
+ *
  * Workflow builtin tools (think, plan, query_documents, …) are NOT matched —
  * they do not have an app/category and are not addressable through this
  * mechanism by design.
@@ -83,8 +91,20 @@ type SegmentMatcher = (value: string) => boolean;
  *   - `*middle*`  → includes
  *
  * Anything else (e.g. `pre*mid*suf`, `mid*dle`) compiles to a RegExp.
+ *
+ * Negation: a leading `!` inverts the rest of the segment. Examples:
+ *   - `!safe`     → matches anything except the literal `safe`
+ *   - `!safe*`    → matches anything not starting with `safe`
+ *   - `!*`        → never matches
+ * Combined with the 3-segment tool grammar this gives useful "deny all except"
+ * shapes, e.g. `tool:my-app:!safe:*` denies every tool in `my-app` that is not
+ * in the `safe` category.
  */
 function compileSegment(pattern: string): SegmentMatcher {
+    if (pattern.startsWith('!')) {
+        const inner = compileSegment(pattern.slice(1));
+        return (v) => !inner(v);
+    }
     if (pattern === '*') return () => true;
     if (!pattern.includes('*')) return (v) => v === pattern;
 

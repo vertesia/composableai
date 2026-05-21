@@ -365,3 +365,43 @@ describe('DenialsMatcher — app: kind', () => {
         expect(m.isUiDenied('other')).toBe(false);
     });
 });
+
+describe('segment negation (leading "!")', () => {
+    it('!literal denies anything that is not the literal', () => {
+        const m = new DenialsMatcher({ ui: ['!studio'] });
+        expect(m.isUiDenied('apps')).toBe(true);
+        expect(m.isUiDenied('agents')).toBe(true);
+        expect(m.isUiDenied('studio')).toBe(false);
+    });
+
+    it('!prefix* denies anything not starting with the prefix', () => {
+        const m = new DenialsMatcher({ ui: ['!studio*'] });
+        expect(m.isUiDenied('studio')).toBe(false);
+        expect(m.isUiDenied('studio-tools')).toBe(false);
+        expect(m.isUiDenied('slack')).toBe(true);
+    });
+
+    it('!* never denies (matches nothing)', () => {
+        const m = new DenialsMatcher({ ui: ['!*'] });
+        expect(m.isUiDenied('anything')).toBe(false);
+        expect(m.isUiDenied('studio')).toBe(false);
+    });
+
+    it('negation inside a tool segment ANDs with the other segments', () => {
+        // Deny every tool in `my-app` whose category is NOT `safe`.
+        const m = new DenialsMatcher({ tool: ['my-app:!safe:*'] });
+        expect(m.isToolDenied('my-app', 'safe', 'x')).toBe(false);     // safe category preserved
+        expect(m.isToolDenied('my-app', 'admin', 'delete')).toBe(true); // any other category denied
+        expect(m.isToolDenied('other', 'admin', 'delete')).toBe(false); // different app untouched
+    });
+
+    it('negation works in app: kind too', () => {
+        const m = new DenialsMatcher({ app: ['!studio*'] });
+        expect(m.isAppDenied('studio')).toBe(false);
+        expect(m.isAppDenied('studio-tools')).toBe(false);
+        expect(m.isAppDenied('slack')).toBe(true);
+        // app: cascades into isUiDenied / isToolDenied
+        expect(m.isUiDenied('slack')).toBe(true);
+        expect(m.isUiDenied('studio')).toBe(false);
+    });
+});
