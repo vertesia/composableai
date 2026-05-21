@@ -419,9 +419,13 @@ function PageThumbnail({ pageNumber, currentPage, aspectRatio, zoom, url, onSele
             data-page={pageNumber}
             style={{ width: `${widthPercent}%` }}
         >
-            <div
+            <Button
+                variant="unstyled"
+                size="none"
+                aria-pressed={isSelected}
+                aria-label={`Page ${pageNumber}`}
                 className={clsx(
-                    'relative border-[2px] cursor-pointer overflow-hidden flex items-center justify-center bg-muted/50 w-full',
+                    'relative border-[2px] cursor-pointer overflow-hidden !flex items-center justify-center bg-muted/50 w-full',
                     isSelected ? "border-primary" : "border-border"
                 )}
                 style={{ aspectRatio: `1 / ${aspectRatio}` }}
@@ -432,7 +436,7 @@ function PageThumbnail({ pageNumber, currentPage, aspectRatio, zoom, url, onSele
                 ) : (
                     <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                 )}
-            </div>
+            </Button>
             <Center className="text-sm text-muted-foreground pt-1 font-semibold">{pageNumber}</Center>
         </div>
     );

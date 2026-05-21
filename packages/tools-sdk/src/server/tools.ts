@@ -39,7 +39,7 @@ export function createToolsRoute(app: Hono, basePath: string, config: ToolServer
                 title: t.title,
                 description: t.description,
             })),
-        } satisfies ToolCollectionDefinition & { collections: any[]; reserveToolCount?: number });
+        } satisfies ToolCollectionDefinition & { collections: unknown[]; reserveToolCount?: number });
     });
 
     // POST /api/tools - Route to the correct collection based on tool_name

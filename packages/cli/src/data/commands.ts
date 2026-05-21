@@ -7,11 +7,22 @@ import { basename, resolve } from "node:path";
 import { createReadStream } from "node:fs";
 import { getArtifactStorageId } from "../agent-context.js";
 import { getClient } from "../client.js";
+import { getStringOption, type CliOptions } from "../utils/options.js";
 
 const IMPORT_MODES = new Set(["append", "replace"]);
 const IMPORT_FORMATS = new Set<ImportDataFormat>(["csv", "json", "parquet"]);
 
-export async function listDataStores(program: Command, options: Record<string, any>) {
+type ImportDataOptions = CliOptions<{
+    json?: boolean;
+    mode?: string;
+    format?: string;
+    name?: string;
+    prefix?: string;
+    mime?: string;
+    message?: string;
+}>;
+
+export async function listDataStores(program: Command, options: CliOptions<{ json?: boolean }>) {
     const client = await getClient(program);
     const stores = await client.data.list();
 
@@ -35,7 +46,7 @@ export async function listDataStores(program: Command, options: Record<string, a
     });
 }
 
-export async function importData(program: Command, storeId: string, tableName: string, input: string | undefined, options: Record<string, any>) {
+export async function importData(program: Command, storeId: string, tableName: string, input: string | undefined, options: ImportDataOptions) {
     const client = await getClient(program);
     const mode = normalizeMode(options.mode);
     const source = await resolveImportSource(client, input, options);
@@ -108,7 +119,7 @@ function inferFormatFromName(name?: string): ImportDataFormat | undefined {
 async function resolveImportSource(
     client: Awaited<ReturnType<typeof getClient>>,
     input: string | undefined,
-    options: Record<string, any>,
+    options: ImportDataOptions,
 ): Promise<{ tableData: ImportTableData; original: string; uploadedUri?: string }> {
     const normalizedInput = typeof input === "string" && input.trim() !== "" ? input.trim() : "-";
 
@@ -137,7 +148,7 @@ async function resolveImportSource(
     const uploadName = resolveUploadName(normalizedInput, options.name);
     const format = normalizeFormat(options.format, uploadName);
     const uploadPath = buildImportUploadPath(uploadName, options);
-    const mimeType = options.mime || mime.getType(uploadName) || "application/octet-stream";
+    const mimeType = getStringOption(options.mime) || mime.getType(uploadName) || "application/octet-stream";
     const source = normalizedInput === "-"
         ? new NodeStreamSource(process.stdin, uploadName, mimeType, uploadPath)
         : new NodeStreamSource(createReadStream(resolve(normalizedInput)), uploadName, mimeType, uploadPath);
@@ -167,9 +178,10 @@ function resolveUploadName(input: string, explicitName: unknown): string {
     return basename(input);
 }
 
-function buildImportUploadPath(name: string, options: Record<string, any>): string {
-    const prefix = typeof options.prefix === "string" && options.prefix.trim() !== ""
-        ? options.prefix.trim().replace(/^\/+|\/+$/g, "")
+function buildImportUploadPath(name: string, options: ImportDataOptions): string {
+    const optionPrefix = getStringOption(options.prefix);
+    const prefix = optionPrefix
+        ? optionPrefix.replace(/^\/+|\/+$/g, "")
         : `imports/${getArtifactStorageId(options)}`;
     return `${prefix}/${Date.now()}-${randomUUID()}-${name}`;
 }

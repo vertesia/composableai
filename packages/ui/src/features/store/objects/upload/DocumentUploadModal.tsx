@@ -1,10 +1,10 @@
 import { Collection, ContentObjectTypeItem, DynamicCollection } from "@vertesia/common";
-import { Button, MessageBox, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, Spinner, useToast, VTooltip } from "@vertesia/ui/core";
+import { Button, MessageBox, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, Spinner, errorMessage, useToast, VTooltip } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useTypeRegistry } from "../../types/TypeRegistryProvider.js";
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from "lucide-react";
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { FileUploadAction, FileWithMetadata, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
 import { DocumentUploadResult } from "./useUploadHandler";
@@ -94,7 +94,7 @@ export function DocumentUploadModal({
     useEffect(() => {
         if (!collectionId) return;
         client.store.collections.retrieve(collectionId).then(setCollectionData);
-    }, [collectionId]);
+    }, [client.store.collections.retrieve, collectionId]);
 
     // Update title and description based on current state
     useEffect(() => {
@@ -158,66 +158,8 @@ export function DocumentUploadModal({
         return typeRegistry?.types || [];
     }, [typeRegistry?.types]);
 
-    // Reset state when modal opens/closes
-    useEffect(() => {
-        if (isOpen) {
-            // Always reset state first
-            setProcessedFiles([]);
-            setProcessingDone(false);
-            setSelectedType(null);
-            setFileStatuses([]);
-            setIsUploading(false);
-            setUploadComplete(false);
-            setOverallProgress(0);
-            setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
-            setResult(null);
-            setTitle(resolvedTitle);
-            setDescription("");
-
-            // Set initial files if provided
-            if (initialFiles && initialFiles.length > 0) {
-                setFiles(initialFiles);
-                processFiles(initialFiles);
-            } else {
-                setFiles([]);
-            }
-
-            // Create a new key to ensure the modal is fresh
-            setModalKey(Date.now());
-        }
-    }, [isOpen, initialFiles]);
-
-    // Complete cleanup when modal closes
-    const handleClose = () => {
-        // Reset all state to initial values to prevent memory leaks
-        setFiles([]);
-        setProcessedFiles([]);
-        setProcessingDone(false);
-        setSelectedType(null);
-        setFileStatuses([]);
-        setIsUploading(false);
-        setUploadComplete(false);
-        setOverallProgress(0);
-        setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
-        setResult(null);
-        setTitle(resolvedTitle);
-        setDescription("");
-        setModalKey(Date.now());
-
-        // Call the provided onClose function
-        onClose();
-    };
-
-    // Handle file drop/selection
-    const handleFileSelect = (newFiles: File[]) => {
-        if (newFiles && newFiles.length > 0) {
-            setFiles(newFiles);
-            processFiles(newFiles);
-        }
-    };
-
     // Process files to determine create/update/skip status
-    const processFiles = async (filesToProcess: File[]) => {
+    const processFiles = useCallback(async (filesToProcess: File[]) => {
         if (!filesToProcess.length) return;
 
         try {
@@ -257,6 +199,64 @@ export function DocumentUploadModal({
                 status: "error",
                 duration: 5000,
             });
+        }
+    }, [checkDocumentProcessing, collectionId, selectedFolder, t, toast]);
+
+    // Reset state when modal opens/closes
+    useEffect(() => {
+        if (isOpen) {
+            // Always reset state first
+            setProcessedFiles([]);
+            setProcessingDone(false);
+            setSelectedType(null);
+            setFileStatuses([]);
+            setIsUploading(false);
+            setUploadComplete(false);
+            setOverallProgress(0);
+            setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
+            setResult(null);
+            setTitle(resolvedTitle);
+            setDescription("");
+
+            // Set initial files if provided
+            if (initialFiles && initialFiles.length > 0) {
+                setFiles(initialFiles);
+                processFiles(initialFiles);
+            } else {
+                setFiles([]);
+            }
+
+            // Create a new key to ensure the modal is fresh
+            setModalKey(Date.now());
+        }
+    }, [isOpen, initialFiles, processFiles, resolvedTitle]);
+
+    // Complete cleanup when modal closes
+    const handleClose = () => {
+        // Reset all state to initial values to prevent memory leaks
+        setFiles([]);
+        setProcessedFiles([]);
+        setProcessingDone(false);
+        setSelectedType(null);
+        setFileStatuses([]);
+        setIsUploading(false);
+        setUploadComplete(false);
+        setOverallProgress(0);
+        setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
+        setResult(null);
+        setTitle(resolvedTitle);
+        setDescription("");
+        setModalKey(Date.now());
+
+        // Call the provided onClose function
+        onClose();
+    };
+
+    // Handle file drop/selection
+    const handleFileSelect = (newFiles: File[]) => {
+        if (newFiles && newFiles.length > 0) {
+            setFiles(newFiles);
+            processFiles(newFiles);
         }
     };
 
@@ -426,7 +426,7 @@ export function DocumentUploadModal({
                                     location: fileInfo.location,
                                 });
                             }
-                        } catch (error: any) {
+                        } catch (error: unknown) {
                             console.error(`Failed to process file ${fileInfo.name}:`, error);
 
                             // Update status to error
@@ -437,7 +437,7 @@ export function DocumentUploadModal({
                                             ...status,
                                             status: "error",
                                             progress: 100,
-                                            message: error.message || "Unknown error",
+                                            message: errorMessage(error, "Unknown error"),
                                         }
                                         : status,
                                 ),
@@ -446,7 +446,7 @@ export function DocumentUploadModal({
                             // Add to failed result
                             result.failedFiles.push({
                                 name: fileInfo.name,
-                                error: error.message || "Unknown error",
+                                error: errorMessage(error, "Unknown error"),
                                 status: "failed",
                                 location: fileInfo.location,
                                 type: typeId,
@@ -563,7 +563,7 @@ export function DocumentUploadModal({
     const typeSelection = () => {
         return (
             <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">
+                <div className="block text-sm font-medium mb-2">
                     {t('store.contentType')} <span className="text-muted font-normal">{t('store.optional')}</span>
                     <VTooltip
                         description={t('upload.contentTypeTooltip')}
@@ -571,7 +571,7 @@ export function DocumentUploadModal({
                     >
                         <Info className="size-3 ms-2" />
                     </VTooltip>
-                </label>
+                </div>
                 <SelectBox
                     options={types}
                     value={selectedType}

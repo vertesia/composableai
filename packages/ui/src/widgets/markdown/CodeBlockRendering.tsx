@@ -5,7 +5,7 @@ export interface CodeBlockRendererProps {
     language?: string;
 }
 export class CodeBlockRendererRegistry {
-    components: Record<string, React.FunctionComponent<any>> = {};
+    components: Record<string, React.FunctionComponent<CodeBlockRendererProps>> = {};
 
     registerComponent(language: string, component: React.FunctionComponent<CodeBlockRendererProps>) {
         this.components[language] = component;

@@ -4,7 +4,7 @@ import { ExecutionEnvironment } from "@vertesia/common";
 import colors from "ansi-colors";
 
 
-export async function listEnvironments(program: Command, envId: string | undefined, options: Record<string, any>) {
+export async function listEnvironments(program: Command, envId: string | undefined, options: Record<string, unknown>) {
     const client = await getClient(program);
     if (envId) {
         const env = await client.environments.retrieve(envId);
@@ -18,7 +18,7 @@ export async function listEnvironments(program: Command, envId: string | undefin
 }
 
 
-function printEnv(env: ExecutionEnvironment, _options: Record<string, any>) {
+function printEnv(env: ExecutionEnvironment, _options: Record<string, unknown>) {
     console.log(colors.bold(env.name) + " [" + env.id + "]")
     console.log(colors.bold("Provider:"), env.provider);
     console.log(colors.bold("Description:"), env.description || 'n/a');

@@ -29,7 +29,6 @@ export function createStringFilterGroup({ buckets, name, placeholder, type = 'se
 }
 
 export function VStringFacet({ buckets, name, placeholder, type, multiple }: {
-    search: any;
     buckets: FacetBucket[];
     name: string;
     placeholder?: string;

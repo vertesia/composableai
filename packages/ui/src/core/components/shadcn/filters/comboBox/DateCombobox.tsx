@@ -63,7 +63,7 @@ export const DateCombobox = ({
         }
     };
 
-    const handleDateChange = (date: any) => {
+    const handleDateChange = (date: unknown) => {
         if (isRange) {
             // Update local state immediately for visual feedback
             if (Array.isArray(date)) {

@@ -25,7 +25,7 @@ export interface RemoteActivityInfo {
     /** The app name */
     app_name: string;
     /** The app installation settings */
-    app_settings?: Record<string, any>;
+    app_settings?: Record<string, unknown>;
     /** The activity definition from the tool server */
     definition: RemoteActivityDefinition;
 }

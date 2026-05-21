@@ -23,7 +23,7 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
         description: "",
     });
 
-    function setPayloadProp(name: string, value: any) {
+    function setPayloadProp(name: string, value: unknown) {
         setPayload({
             ...payload,
             [name]: value,

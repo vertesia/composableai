@@ -5,3 +5,4 @@ export * from "./Sidebar.js";
 export * from "./SidebarContext.js";
 export * from "./TitleBar.js";
 export * from "./RegionTag.js";
+export * from "./ErrorPage.js";

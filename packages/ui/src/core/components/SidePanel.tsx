@@ -88,7 +88,9 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
                                     <div className="relative flex h-full">
                                         {/* Drag Handle */}
                                         {resizable && (
+                                            // biome-ignore lint/a11y/noStaticElementInteractions: drag handle is pointer-only (no keyboard equivalent for continuous resize); ARIA role omitted to avoid useAriaPropsForRole false positive.
                                             <div
+                                                aria-label="Resize panel"
                                                 className={`absolute ${dragHandleClass} top-0 bottom-0 w-3 cursor-ew-resize hover:bg-indigo-500 transition-colors flex items-center justify-center`}
                                                 onMouseDown={handleDragStart}
                                             >

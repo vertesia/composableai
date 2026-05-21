@@ -1,8 +1,11 @@
 import { ComplexSearchPayload, ContentObjectItem, FindPayload } from "@vertesia/common";
-import { useToast } from "@vertesia/ui/core";
+import { errorMessage, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
+import { useCallback } from "react";
 import { Md5 } from "ts-md5";
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
+
+const t = i18nInstance.getFixedT(null, NAMESPACE);
 
 /**
  * Types of actions that can be taken with a file
@@ -27,7 +30,7 @@ export interface FileWithMetadata {
     // Action to take with this file
     action?: FileUploadAction;
     // Any additional metadata needed
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 /**
@@ -69,9 +72,9 @@ async function prepareFilesWithMetadata(files: File[], selectedFolder?: string |
                 let location = selectedFolder || "/";
 
                 // If file has relative path, use it to determine location
-                const hasRelativePath = !!(file as any).webkitRelativePath;
+                const hasRelativePath = !!file.webkitRelativePath;
                 if (hasRelativePath) {
-                    const relativePath = (file as any).webkitRelativePath;
+                    const relativePath = file.webkitRelativePath;
                     const pathParts = relativePath.split("/");
 
                     if (pathParts.length > 1) {
@@ -110,7 +113,6 @@ async function prepareFilesWithMetadata(files: File[], selectedFolder?: string |
 export function useSmartFileUploadProcessing() {
     const { client } = useUserSession();
     const toast = useToast();
-    const t = i18nInstance.getFixedT(null, NAMESPACE);
 
     /**
      * Check files to determine if they need to be created, updated, or skipped
@@ -119,7 +121,7 @@ export function useSmartFileUploadProcessing() {
      * @param collectionId limit the check to a collection
      * @returns Promise with information about actions to take for each file
      */
-    const prepareFilesForUpload = async (
+    const prepareFilesForUpload = useCallback(async (
         files: File[],
         selectedFolder?: string | null,
         limitToCollectionId?: string,
@@ -175,7 +177,7 @@ export function useSmartFileUploadProcessing() {
                     const namesInLocation = unskippedFiles
                         .filter((file) => file.location === location)
                         .map((file) => file.name);
-                    const query: Record<string, any> = {
+                    const query: Record<string, unknown> = {
                         "content.name": { $in: namesInLocation },
                         location: location || "/"
                     };
@@ -236,16 +238,16 @@ export function useSmartFileUploadProcessing() {
             });
 
             return filesWithMetadata;
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 title: t('store.errorInUploadProcessingCheck'),
                 status: "error",
-                description: error.message,
+                description: errorMessage(error),
             });
             console.log("Error in file upload processing check", error);
-            throw new Error("Error in file upload processing check: " + error.message, { cause: error });
+            throw new Error("Error in file upload processing check: " + errorMessage(error), { cause: error });
         }
-    };
+    }, [client, toast]);
 
     return {
         checkDocumentProcessing: prepareFilesForUpload,

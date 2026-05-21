@@ -9,7 +9,7 @@ export interface FromOptions {
 }
 
 export class MemoryPackBuilder {
-    baseMetadata: Record<string, any> = {};
+    baseMetadata: Record<string, unknown> = {};
     entries: { [path: string]: ContentSource } = {};
 
     constructor(public builder: Builder) {

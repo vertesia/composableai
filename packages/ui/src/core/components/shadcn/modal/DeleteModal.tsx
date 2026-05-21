@@ -8,7 +8,7 @@ interface DeleteModalProps {
     title: string;
     content: string | ReactNode;
     setIdToDelete: (id: string | undefined) => void;
-    deleteApi: (id: string) => Promise<any>;
+    deleteApi: (id: string) => Promise<unknown>;
 }
 export function DeleteModal({ idToDelete, title, content, setIdToDelete, deleteApi }: DeleteModalProps) {
     const { t } = useUITranslation();
@@ -25,10 +25,10 @@ export function DeleteModal({ idToDelete, title, content, setIdToDelete, deleteA
                     title: t('modal.delete.succeeded'),
                     status: 'success'
                 });
-            }).catch((err: any) => {
+            }).catch((err: unknown) => {
                 toast({
                     title: t('modal.delete.failed'),
-                    description: err.message ?? t('modal.delete.error'),
+                    description: err instanceof Error ? err.message : t('modal.delete.error'),
                     status: 'error'
                 });
             }).finally(() => {

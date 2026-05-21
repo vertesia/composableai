@@ -1,10 +1,27 @@
 import { ApplicationFailure, log } from "@temporalio/activity";
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
+import { DSLActivityExecutionPayload, DSLActivitySpec, JSONObject } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
 
 const INT_EXTRACT_INFORMATION = "sys:ExtractInformation";
+
+interface RetryableError extends Error {
+    retryable?: boolean;
+}
+
+interface GeneratedPropertiesSummary {
+    title?: unknown;
+    description?: unknown;
+}
+
+function toRetryableError(error: unknown): RetryableError {
+    if (error instanceof Error) {
+        return error as RetryableError;
+    }
+    return new Error(String(error)) as RetryableError;
+}
+
 export interface GenerateDocumentPropertiesParams extends InteractionExecutionParams {
     typesHint?: string[];
     /**
@@ -72,7 +89,7 @@ export async function generateDocumentProperties(
         payload.debug_mode ? { params } : undefined,
     );
 
-    let infoRes;
+    let infoRes: Awaited<ReturnType<typeof executeInteractionFromActivity>>;
     try {
         infoRes = await executeInteractionFromActivity(
             client,
@@ -86,27 +103,28 @@ export async function generateDocumentProperties(
             promptData,
             payload.debug_mode ?? false,
         );
-    } catch (error: any) {
-        log.error(`Failed to extract document properties for ${objectId}`, { error, retryable: error.retryable });
-        
-        const isRetryable = error.retryable !== undefined 
-            ? error.retryable !== false
+    } catch (error: unknown) {
+        const extractionError = toRetryableError(error);
+        log.error(`Failed to extract document properties for ${objectId}`, { error: extractionError, retryable: extractionError.retryable });
+
+        const isRetryable = extractionError.retryable !== undefined
+            ? extractionError.retryable !== false
             : undefined;
-        
+
         if (isRetryable !== undefined) {
             if (isRetryable) {
                 throw ApplicationFailure.create({
-                    message: `Document property extraction failed for ${objectId}: ${error.message}`,
+                    message: `Document property extraction failed for ${objectId}: ${extractionError.message}`,
                     nonRetryable: false,
                 });
             } else {
                 throw ApplicationFailure.create({
-                    message: `Non-retryable document property extraction failed for ${objectId}: ${error.message}`,
+                    message: `Non-retryable document property extraction failed for ${objectId}: ${extractionError.message}`,
                     nonRetryable: true,
                 });
             }
         }
-        
+
         throw error;
     }
 
@@ -115,11 +133,11 @@ export async function generateDocumentProperties(
             return undefined;
         }
         let text = "";
-        const jsonResult = infoRes.result.object();
-        if (jsonResult.title) {
+        const jsonResult = infoRes.result.object<GeneratedPropertiesSummary>();
+        if (typeof jsonResult.title === "string") {
             text += jsonResult.title + "\n";
         }
-        if (jsonResult.description) {
+        if (typeof jsonResult.description === "string") {
             text += jsonResult.description;
         }
         if (text) {
@@ -131,9 +149,9 @@ export async function generateDocumentProperties(
 
     log.info(`Extracted information from object ${objectId} with type ${type.name}`, { runId: infoRes.id });
     await client.objects.update(doc.id, {
-        properties: {
-            ...infoRes.result.object(),
-            etag: doc.text_etag,
+            properties: {
+            ...infoRes.result.object<JSONObject>(),
+            ...(doc.text_etag !== undefined ? { etag: doc.text_etag } : {}),
         },
         text: getText(),
         generation_run_info: {

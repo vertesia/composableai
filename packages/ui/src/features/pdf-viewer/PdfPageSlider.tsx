@@ -94,10 +94,10 @@ export function PdfPageSlider({
     }, [compact]);
 
     // Legacy function for resize preservation - kept for backwards compatibility
-    const getItemHeight = (width: number | undefined, ratio: number) => {
+    const getItemHeight = useCallback((width: number | undefined, ratio: number) => {
         const placeholderHeight = width ? Math.round(width / ratio) : 200;
         return calculateItemHeight(placeholderHeight);
-    };
+    }, [calculateItemHeight]);
 
     // Single ResizeObserver at parent level to measure thumbnail width
     // Debounced to avoid excessive re-renders during resize
@@ -161,7 +161,7 @@ export function PdfPageSlider({
             if (debounceTimer) clearTimeout(debounceTimer);
             resizeObserver.disconnect();
         };
-    }, [aspectRatio]);
+    }, [aspectRatio, getItemHeight]);
 
     // Track whether we're programmatically scrolling to avoid feedback loops
     const isProgrammaticScrollRef = useRef(false);
@@ -340,12 +340,16 @@ export function PdfPageSlider({
                     calculateItemHeight={calculateItemHeight}
                     renderThumbnail={({ pageNumber, isSelected, pageElement, onSelect }) => (
                         <div key={pageNumber} className={clsx("hover:bg-muted rounded-md w-full", compact ? "p-1" : "p-2")}>
-                            <div
+                            <Button
+                                variant="unstyled"
+                                size="none"
+                                aria-pressed={isSelected}
+                                aria-label={`Page ${pageNumber}`}
                                 className={clsx('relative border-[2px] cursor-pointer overflow-hidden', isSelected ? "border-primary" : "border-border")}
                                 onClick={onSelect}
                             >
                                 {pageElement}
-                            </div>
+                            </Button>
                             <Center className={clsx("text-muted-foreground font-semibold", compact ? "text-xs pt-0.5" : "text-sm pt-1")}>{pageNumber}</Center>
                         </div>
                     )}

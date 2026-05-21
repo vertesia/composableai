@@ -132,7 +132,7 @@ export interface RunBase {
  * @typeParam TData - The interaction's expected input data type.
  * @typeParam TProperties - The content type's property schema.
  */
-export interface AgentRunBase<TData = Record<string, any>, TProperties = Record<string, any>> {
+export interface AgentRunBase<TData = Record<string, unknown>, TProperties = Record<string, unknown>> {
     /** Interaction ID or code (e.g. "sys:generic_question"). */
     interaction: string;
 
@@ -190,7 +190,7 @@ export interface AgentRunBase<TData = Record<string, any>, TProperties = Record<
  * @typeParam TData - The interaction's expected input data type.
  * @typeParam TProperties - The content type's property schema.
  */
-export interface AgentRun<TData = Record<string, any>, TProperties = Record<string, any>> extends RunBase, AgentRunBase<TData, TProperties> {
+export interface AgentRun<TData = Record<string, unknown>, TProperties = Record<string, unknown>> extends RunBase, AgentRunBase<TData, TProperties> {
     run_kind: 'agent';
     run_type: 'autonomous';
 
@@ -287,13 +287,13 @@ export interface ProcessRun extends RunBase {
 }
 
 export type AnyAgentRun = AgentRun | ProcessRun;
-export type AutonomousRunResponse<TData = Record<string, any>, TProperties = Record<string, any>> = AgentRun<TData, TProperties>;
+export type AutonomousRunResponse<TData = Record<string, unknown>, TProperties = Record<string, unknown>> = AgentRun<TData, TProperties>;
 export type SupervisedRunResponse = ProcessRun & { run_type: 'supervised' };
 export type ProgrammaticRunResponse = ProcessRun & { run_type: 'programmatic' };
 /**
  * @discriminator run_type
  */
-export type AgentRunResponse<TData = Record<string, any>, TProperties = Record<string, any>> =
+export type AgentRunResponse<TData = Record<string, unknown>, TProperties = Record<string, unknown>> =
     | AutonomousRunResponse<TData, TProperties>
     | SupervisedRunResponse
     | ProgrammaticRunResponse;
@@ -304,7 +304,7 @@ export type AgentRunResponse<TData = Record<string, any>, TProperties = Record<s
  * @typeParam TData - The interaction's expected input data type.
  * @typeParam TProperties - The content type's property schema.
  */
-export interface CreateAgentRunPayload<TData = Record<string, any>, TProperties = Record<string, any>>
+export interface CreateAgentRunPayload<TData = Record<string, unknown>, TProperties = Record<string, unknown>>
     extends AgentRunBase<TData, TProperties> {
     /** Search scope for RAG queries */
     search_scope?: AgentSearchScope;
@@ -328,7 +328,7 @@ export interface CreateAgentRunPayload<TData = Record<string, any>, TProperties 
     started_by?: string;
 }
 
-export interface ProcessRunInputPayload<TData = Record<string, any>, TSource = RunSource> {
+export interface ProcessRunInputPayload<TData = Record<string, unknown>, TSource = RunSource> {
     process_id?: string;
     /** Optional published process version to pin. Defaults to the latest/head revision. */
     process_version?: number;
@@ -342,7 +342,7 @@ export interface ProcessRunInputPayload<TData = Record<string, any>, TSource = R
     started_by?: string;
 }
 
-export interface CreateProcessRunPayload<TData = Record<string, any>, TSource = RunSource> extends ProcessRunInputPayload<TData, TSource> {
+export interface CreateProcessRunPayload<TData = Record<string, unknown>, TSource = RunSource> extends ProcessRunInputPayload<TData, TSource> {
     run_type: ProcessRunType;
 }
 
@@ -357,7 +357,7 @@ export interface RecordRunWorkflowPayload {
  * @internal Used by workflow activities that need to create a stable run
  * document for a workflow they already own.
  */
-export interface RecordAgentRunPayload<TData = Record<string, any>> extends RecordRunWorkflowPayload {
+export interface RecordAgentRunPayload<TData = Record<string, unknown>> extends RecordRunWorkflowPayload {
     run_kind?: 'agent';
     interaction: string;
     first_workflow_run_id: string;
@@ -371,13 +371,13 @@ export interface RecordAgentRunPayload<TData = Record<string, any>> extends Reco
  * @internal Used by process workflows to reserve a child ProcessRun before
  * starting its Temporal child workflow.
  */
-export interface RecordProcessRunPayload<TData = Record<string, any>, TSource = RunSource>
+export interface RecordProcessRunPayload<TData = Record<string, unknown>, TSource = RunSource>
     extends ProcessRunInputPayload<TData, TSource>, RecordRunWorkflowPayload {
     run_kind: 'process';
     run_type?: ProcessRunType;
 }
 
-export type RecordRunPayload<TData = Record<string, any>, TSource = RunSource> =
+export type RecordRunPayload<TData = Record<string, unknown>, TSource = RunSource> =
     | RecordAgentRunPayload<TData>
     | RecordProcessRunPayload<TData, TSource>;
 

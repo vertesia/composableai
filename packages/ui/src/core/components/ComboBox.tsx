@@ -124,14 +124,14 @@ export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelec
     });
     useEffect(() => {
         if (inputRef.current) {
-            focusOnMount && inputRef.current.focus();
+            if (focusOnMount) inputRef.current.focus();
         }
-    }, [inputRef.current]);
+    }, [focusOnMount]);
     // the onSelect callback may change so we need to refresh it.
     useEffect(() => {
         ctrl.onSelect = onSelect
         ctrl.popupCtrl = popupCtrl.current;
-    }, [onSelect, popupCtrl.current]);
+    }, [ctrl, onSelect]);
     useEffect(() => {
         if (api && ctrl && inputRef.current) {
             api.current = {
@@ -147,7 +147,7 @@ export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelec
                 api.current = null;
             }
         }
-    }, [api, ctrl, inputRef.current]);
+    }, [api, ctrl]);
 
     const showMenu = ctrl.isMenuOpen && (ctrl.filteredItems.length > 0 || !!noMatchMessage);
 
@@ -275,7 +275,7 @@ export function useComboboxCtrl<ItemT>(props: ComboboxControllerProps<ItemT>): C
     const [ctrl, setCtrl] = useState<ComboboxController<ItemT>>(new ComboboxController(props));
     useEffect(() => {
         ctrl?.withState(setCtrl);
-    }, []);
+    }, [ctrl]);
     return ctrl;
 }
 

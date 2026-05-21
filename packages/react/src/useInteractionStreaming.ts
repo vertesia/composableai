@@ -23,7 +23,7 @@ export function useInteractionStreaming<TProps>(interaction: InteractionBase<TPr
         }).finally(() => {
             chunks = []
         });
-    }, []);
+    }, [interaction.execute, isRunning]);
 
     return { text, isRunning, execute }
 }

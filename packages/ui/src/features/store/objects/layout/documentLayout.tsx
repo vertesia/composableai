@@ -16,7 +16,7 @@ interface ViewProps {
     previewObject?: (objectId: string) => void;
     selectedObject?: ContentObjectItem | null;
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
-    selection: DocumentSelection;
+    selection?: DocumentSelection;
     toggleAll?: (ev: ChangeEvent<HTMLInputElement>) => void;
     columns: DocumentTableColumn[];
 }
@@ -39,9 +39,10 @@ export function DocumentTableView({ objects, selection, isLoading, columns, onRo
                         const isHighlighted = highlightRow?.(obj);
                         return (
                             <tr key={obj.id} className={`cursor-pointer hover:bg-muted group ${selectedObject?.id === obj.id ? 'bg-muted' : ''} ${isHighlighted ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`} onClick={() => {
-                                onRowClick && onRowClick(obj)
+                                onRowClick?.(obj)
                             }}>
                                 {selection &&
+                                    // biome-ignore lint/a11y/useKeyWithClickEvents: stop-propagation wrapper to prevent inner checkbox clicks from triggering row activation; not a user-facing interaction.
                                     <td onClick={ev => ev.stopPropagation()}>
                                         <input checked={selection.isSelected(obj.id)} type="checkbox" className={`${!selection.isSelected(obj.id) ? 'hidden group-hover:block' : ''}`}
                                             onChange={(ev: ChangeEvent<HTMLInputElement>) => onSelectionChange(obj, ev)} />

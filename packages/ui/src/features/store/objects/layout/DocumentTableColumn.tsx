@@ -6,16 +6,26 @@ import renderers from './renderers';
 
 const defaultRenderer = renderers.string();
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
+}
+
 function resolveField(object: ContentObjectItem, path: string[]) {
-    let p = object as any;
+    let p = object as unknown;
     if (!p) return undefined;
     if (!path.length) return p;
     const last = path.length - 1;
     for (let i = 0; i < last; i++) {
+        if (!isRecord(p)) {
+            return undefined;
+        }
         p = p[path[i]];
         if (!p) {
             return undefined;
         }
+    }
+    if (!isRecord(p)) {
+        return undefined;
     }
     return p[path[last]];
 }
@@ -34,7 +44,7 @@ export interface ExtendedColumnLayout extends Omit<ColumnLayout, 'field'> {
 }
 
 export class DocumentTableColumn {
-    renderer: (value: any, index: number) => React.ReactNode = defaultRenderer;
+    renderer: (value: unknown, index: number) => React.ReactNode = defaultRenderer;
     path: string[];
     fallbackPath?: string[];
     previewObject?: (objectId: string) => void;
@@ -45,7 +55,7 @@ export class DocumentTableColumn {
 
         // If there's a custom render function, use it
         if (layout.render) {
-            this.renderer = (_value: any, _index: number) => null; // Placeholder, we'll use render directly
+            this.renderer = (_value: unknown, _index: number) => null; // Placeholder, we'll use render directly
         } else {
             // Otherwise use the type-based renderer
             const type = layout.type || 'string';

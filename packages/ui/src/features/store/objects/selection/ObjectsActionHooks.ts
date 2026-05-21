@@ -3,7 +3,7 @@ import { ObjectsActionContext, type ObjectsActionCallback } from './ObjectsActio
 
 export { type ObjectsActionCallback };
 
-export const ObjectsActionContextReact = createContext<ObjectsActionContext>(undefined as any);
+export const ObjectsActionContextReact = createContext<ObjectsActionContext | undefined>(undefined);
 
 export function useObjectsActionContext() {
     const ctx = useContext(ObjectsActionContextReact);

@@ -75,7 +75,7 @@ export abstract class Node<SchemaT extends Schema = Schema, ValueT = JSONSchemaT
                 return;
             };
         }
-        this.parent && this.parent.onChange(node);
+        this.parent?.onChange(node);
     }
 
 }

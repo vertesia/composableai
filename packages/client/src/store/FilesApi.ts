@@ -37,7 +37,7 @@ export class FilesApi extends ApiTopic {
     }
 
     async deleteFile(path: string, prefix?: boolean): Promise<DeleteFileResult> {
-        return this.delete(`/${path}`, { query: { prefix } });
+        return this.del(`/${path}`, { query: { prefix } });
     }
 
     /**

@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/packages",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
@@ -10,6 +10,7 @@
     "build": "pnpm exec turbo run build",
     "ci:test": "pnpm exec turbo run test --filter=@vertesia/api-fetch-client --filter=@vertesia/client --filter=@vertesia/converters --filter=@vertesia/json --filter=@vertesia/workflow --filter=@vertesia/ui",
     "test": "pnpm -r test",
+    "typecheck:test": "pnpm -r --if-present typecheck:test",
     "clean": "rimraf ./node_modules && pnpm -r clean",
     "prepublishOnly": "pnpm build",
     "lint": "pnpm exec biome lint",

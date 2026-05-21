@@ -52,11 +52,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, size = "md", variant = "default", clearable = true, onChange, value, invalid, ...props }, ref) => {
 
     const _onClear = () => {
-      onChange && onChange('');
+      onChange?.('');
     };
 
     const _onChange = (ev: ChangeEvent<HTMLInputElement>) => {
-      onChange && onChange(ev.target.value);
+      onChange?.(ev.target.value);
     };
 
     // Map `invalid` to aria-invalid unless the consumer already set it explicitly.

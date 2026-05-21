@@ -177,10 +177,18 @@ export function SectionRenderer({
 
   return (
     <div style={styles.section}>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: onClick is no-op when not collapsible; interactive role/keyboard only added when isCollapsible is true. */}
       <div
         style={headerStyle}
         onClick={handleHeaderClick}
+        onKeyDown={isCollapsible ? (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleHeaderClick();
+          }
+        } : undefined}
         role={isCollapsible ? 'button' : undefined}
+        tabIndex={isCollapsible ? 0 : undefined}
         aria-expanded={isCollapsible ? !isCollapsed : undefined}
       >
         {isCollapsible && <ChevronIcon collapsed={isCollapsed} />}

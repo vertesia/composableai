@@ -190,7 +190,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
     const copyRunId = useCallback((runId: string) => {
         navigator.clipboard.writeText(runId);
         toast({ status: 'success', title: t('agent.runIdCopied'), duration: 2000 });
-    }, [toast]);
+    }, [t, toast]);
 
     const downloadConversation = useCallback(async (runId: string) => {
         try {
@@ -199,7 +199,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
         } catch {
             toast({ status: 'error', title: t('agent.failedToDownload') });
         }
-    }, [client, toast]);
+    }, [client, t, toast]);
 
     if (workstreams.length === 0) {
         return (

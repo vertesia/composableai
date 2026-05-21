@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ComponentRoute, LazyComponentRoute, useRouterContext } from "./Router";
+import { ComponentRoute, LazyComponentRoute, LazyRouteModule, useRouterContext } from "./Router";
 
 interface RouteComponentProps {
     spinner?: React.ReactNode;
@@ -23,7 +23,7 @@ interface LazyRouteComponentProps {
     spinner?: React.ReactNode;
 }
 function LazyRouteComponent({ route, spinner }: LazyRouteComponentProps) {
-    const [Component, setComponent] = useState<React.ComponentType<any> | null>(null);
+    const [Component, setComponent] = useState<LazyRouteModule["default"] | null>(null);
     useEffect(() => {
         route.LazyComponent().then(module => {
             if (!module.default) {

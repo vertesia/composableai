@@ -64,7 +64,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
             return;
         }
         setFbUser(user);
-    }, [fbUser]);
+    }, []);
 
     const isValid = () => {
         if (!accountType) {
