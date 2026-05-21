@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { ChangeEvent, useEffect, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 
 import { useUserSession } from '@vertesia/ui/session';
 import { ContentObjectItem } from '@vertesia/common';
@@ -28,11 +28,11 @@ export function DocumentInput({ object }: DocumentInputProps) {
         object.value = value;
     };
 
-    const clearValue = () => {
+    const clearValue = useCallback(() => {
         setValue('');
         object.value = '';
         setDoc(undefined);
-    };
+    }, [object]);
 
     const onSelect = (value?: ContentObjectItem) => {
         if (value) {
@@ -59,7 +59,7 @@ export function DocumentInput({ object }: DocumentInputProps) {
         }).catch(() => {
             clearValue();
         });
-    }, [actualValue]);
+    }, [actualValue, client.objects.retrieve, clearValue, doc]);
 
     return (
         <div>

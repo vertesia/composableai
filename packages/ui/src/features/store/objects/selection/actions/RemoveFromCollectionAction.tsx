@@ -60,7 +60,7 @@ export function RemoveFromCollectionActionComponent({ action, objectIds, collect
                 duration: 5000
             });
         });
-    }, [objectIds, collectionId]);
+    }, [client.store.collections.deleteMembers, collectionId, ctx.params?.selection?.removeAll, objectIds, search, search?.search, t, toast]);
 
     return (
         <ConfirmAction action={action} callback={callback}>

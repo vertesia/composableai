@@ -92,7 +92,7 @@ export function DocumentSelectionProvider({ value, collectionId, children }: Doc
     useEffect(() => {
         const selection = new DocumentSelection(value, collectionId, {}, setSelection);
         setSelection(selection);
-    }, [value]);
+    }, [collectionId, value]);
     return selection && (
         <DocumentSelectionContext.Provider value={selection}>{children}</DocumentSelectionContext.Provider>
     )

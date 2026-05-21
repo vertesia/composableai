@@ -71,7 +71,7 @@ function SelectDocumentImpl({ onRowClick, selectedIds }: Readonly<SelectDocument
             .finally(() => {
                 setIsReady(true);
             });
-    }, []);
+    }, [search]);
 
     const facets = useWatchDocumentSearchFacets();
     const facetSearch = useDocumentSearch();

@@ -38,7 +38,7 @@ function Textarea({ className, minLines, maxLines, value, ...props }: TextareaPr
 
   useLayoutEffect(() => {
     if (growing) resize()
-  }, [value, growing, resize])
+  })
 
   return (
     <textarea

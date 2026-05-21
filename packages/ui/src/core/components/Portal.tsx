@@ -22,7 +22,7 @@ export function Portal({ children }: PortalProps) {
             }
             setPortalEl(portalEl);
         }
-    }, [tempNode.current]);
+    }, []);
 
     if (portalEl) {
         return createPortal(children, portalEl);
