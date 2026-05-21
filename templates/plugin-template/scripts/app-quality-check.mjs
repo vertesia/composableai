@@ -12,6 +12,7 @@ const blockedAdminShellTokens = [
 const report = {
     ok: true,
     scanned_files: 0,
+    artifacts: {},
     errors: [],
     warnings: [],
 };
@@ -48,6 +49,27 @@ function includesAny(text, values) {
     return values.some((value) => text.includes(value));
 }
 
+function namesFromFiles(files, baseDir) {
+    return [
+        ...new Set(
+            files
+                .map((file) => rel(file))
+                .filter((file) => file.startsWith(baseDir))
+                .map((file) => file.slice(baseDir.length))
+                .map((file) => file.split('/')[0])
+                .filter((name) => name && name !== 'index.ts' && name !== 'index.tsx'),
+        ),
+    ].sort();
+}
+
+function directFiles(files, baseDir, extensions) {
+    return files
+        .map((file) => rel(file))
+        .filter((file) => file.startsWith(baseDir))
+        .filter((file) => extensions.some((extension) => file.endsWith(extension)))
+        .sort();
+}
+
 function isSourceFile(file) {
     return /\.(ts|tsx|js|jsx|mjs|cjs|hbs|md|yaml|yml)$/.test(file);
 }
@@ -64,6 +86,24 @@ const packageWriterFiles = scriptFiles.filter((file) => rel(file) === 'scripts/w
 const interactionFiles = toolServerFiles.filter((file) => rel(file).includes('/interactions/'));
 const processFiles = toolServerFiles.filter((file) => rel(file).includes('/processes/'));
 const packageJsonPath = path.join(cwd, 'package.json');
+
+report.artifacts = {
+    types: namesFromFiles(toolServerFiles, 'src/tool-server/types/'),
+    interactions: namesFromFiles(toolServerFiles, 'src/tool-server/interactions/'),
+    prompts: directFiles(toolServerFiles, 'src/tool-server/interactions/', ['.hbs']),
+    processes: directFiles(toolServerFiles, 'src/tool-server/processes/', ['.yaml', '.yml', '.ts']),
+    dashboards: directFiles(toolServerFiles, 'src/tool-server/dashboards/', ['.ts', '.tsx']),
+    templates: namesFromFiles(toolServerFiles, 'src/tool-server/templates/'),
+    tools: namesFromFiles(toolServerFiles, 'src/tool-server/tools/'),
+    skills: namesFromFiles(toolServerFiles, 'src/tool-server/skills/'),
+    activities: namesFromFiles(toolServerFiles, 'src/tool-server/activities/'),
+    widgets: directFiles(sourceFiles, 'src/widgets/', ['.ts', '.tsx']),
+    ui_routes: directFiles(sourceFiles, 'src/ui/app/', ['.ts', '.tsx']),
+    seed_scripts: scriptFiles
+        .map((file) => rel(file))
+        .filter((file) => file.startsWith('scripts/') && /seed/i.test(file))
+        .sort(),
+};
 
 async function readPackageJson() {
     try {
@@ -86,23 +126,24 @@ function hasDependency(name) {
 
 function requireDependency(name, reason) {
     if (hasDependency(name)) return;
-    add(
-        'errors',
-        'missing-template-dependency',
-        `${name} must stay in package.json. ${reason}`,
-        packageJsonPath,
-    );
+    add('errors', 'missing-template-dependency', `${name} must stay in package.json. ${reason}`, packageJsonPath);
 }
 
 if (uiFiles.length > 0) {
     requireDependency('@vertesia/ui', 'Generated app UI uses Vertesia shell/session/components by default.');
-    requireDependency('@vertesia/client', 'Generated app UI should call Vertesia APIs through useUserSession().client.');
+    requireDependency(
+        '@vertesia/client',
+        'Generated app UI should call Vertesia APIs through useUserSession().client.',
+    );
     requireDependency('@vertesia/common', 'Generated app UI and client calls use shared Vertesia wire types.');
 }
 
 if (toolServerFiles.length > 0) {
     requireDependency('@vertesia/tools-sdk', 'Service-target apps use it to create the package/tool server.');
-    requireDependency('@vertesia/common', 'Service-target apps use shared package, process, type, and interaction definitions.');
+    requireDependency(
+        '@vertesia/common',
+        'Service-target apps use shared package, process, type, and interaction definitions.',
+    );
     requireDependency('hono', 'Service-target apps expose a Hono runtime imported by app-runtime.');
 }
 
@@ -244,6 +285,14 @@ for (const item of report.errors) {
 }
 for (const item of report.warnings) {
     console.warn(`[app-quality:warning] ${item.rule}${item.file ? ` ${item.file}` : ''}: ${item.message}`);
+}
+
+console.log('App source artifacts:');
+for (const [key, value] of Object.entries(report.artifacts)) {
+    const list = Array.isArray(value) ? value : [];
+    console.log(
+        `  ${key}: ${list.length}${list.length > 0 ? ` (${list.slice(0, 20).join(', ')}${list.length > 20 ? ', ...' : ''})` : ''}`,
+    );
 }
 
 if (!report.ok) {

@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { getProcessDefinitionValidationResult } from '@vertesia/common';
 import { ServerConfig } from '../lib/config.js';
 import server from '../lib/server.js';
@@ -7,6 +7,14 @@ const PACKAGE_BUILD_ORIGIN = 'https://app-package-build.local';
 
 function names(items, selector) {
     return (items || []).map(selector).filter(Boolean).sort();
+}
+
+async function readJsonIfExists(path) {
+    try {
+        return JSON.parse(await readFile(path, 'utf8'));
+    } catch {
+        return undefined;
+    }
 }
 
 function normalizePrefix(prefix) {
@@ -108,10 +116,20 @@ function summarizeAppPackage(pkg) {
 function printSummary(summary) {
     console.log('App package artifacts:');
     for (const [key, value] of Object.entries(summary)) {
+        if (key === 'source_artifacts') continue;
         if (Array.isArray(value)) {
             console.log(`  ${key}: ${value.length}${value.length > 0 ? ` (${value.join(', ')})` : ''}`);
         } else {
             console.log(`  ${key}: ${value ? 'yes' : 'no'}`);
+        }
+    }
+    if (summary.source_artifacts && typeof summary.source_artifacts === 'object') {
+        console.log('App source artifacts:');
+        for (const [key, value] of Object.entries(summary.source_artifacts)) {
+            const list = Array.isArray(value) ? value : [];
+            console.log(
+                `  ${key}: ${list.length}${list.length > 0 ? ` (${list.slice(0, 20).join(', ')}${list.length > 20 ? ', ...' : ''})` : ''}`,
+            );
         }
     }
 }
@@ -121,6 +139,10 @@ await mkdir('dist', { recursive: true });
 const pkg = await readAppPackage();
 validatePackageProcesses(pkg);
 const summary = summarizeAppPackage(pkg);
+const qualityReport = await readJsonIfExists('dist/app-quality-report.json');
+if (qualityReport?.artifacts && typeof qualityReport.artifacts === 'object') {
+    summary.source_artifacts = qualityReport.artifacts;
+}
 
 await writeFile('dist/app-package.json', `${JSON.stringify(pkg, null, 2)}\n`);
 await writeFile('dist/app-package-summary.json', `${JSON.stringify(summary, null, 2)}\n`);
