@@ -12,7 +12,6 @@ interface TenantConfig {
 }
 
 export function useCurrentTenant() {
-    const t = i18nInstance.getFixedT(null, NAMESPACE);
     const { user } = useUserSession();
     const [currentTenant, setCurrentTenant] = useState<TenantConfig | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +56,7 @@ export function useCurrentTenant() {
                 }
             } catch (error) {
                 console.error('Error loading current tenant:', error);
-                setError(t('errors.failedToLoadTenantConfig'));
+                setError(i18nInstance.getFixedT(null, NAMESPACE)('errors.failedToLoadTenantConfig'));
                 setCurrentTenant(null);
             } finally {
                 setIsLoading(false);

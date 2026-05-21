@@ -140,7 +140,7 @@ function EditDescriptionModalForm({ value, onSave }: EditDescriptionModalFormPro
     const [currentValue, setCurrentValue] = useState(value || '');
     useEffect(() => {
         ref.current?.focus();
-    }, [ref.current]);
+    }, []);
     return (
         <>
             <ModalBody className="h-max">

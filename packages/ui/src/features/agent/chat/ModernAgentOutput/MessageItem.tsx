@@ -391,12 +391,10 @@ function MessageItemComponent({
         { displayName: string; artifactPath: string; url: string; isImage: boolean }[]
     >([]);
 
-    // Create stable key from message for dependency tracking
     const runId = message.workflow_run_id;
     const details = message.details;
     // Check both outputFiles (from execute_shell) and files (from tool results like dashboard tools)
     const outputFiles = details?.outputFiles ?? details?.files;
-    const outputFilesKey = Array.isArray(outputFiles) ? outputFiles.join(",") : "";
 
     useEffect(() => {
         const loadArtifacts = async () => {
@@ -461,7 +459,7 @@ function MessageItemComponent({
         };
 
         loadArtifacts();
-    }, [runId, outputFilesKey]);
+    }, [runId, outputFiles]);
 
     const workstreamId = getWorkstreamId(message);
     const { Icon } = resolvedStyle;

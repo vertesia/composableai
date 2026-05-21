@@ -9,11 +9,20 @@ const USER_CACHE: Record<string, Promise<User>> = {};
 const GROUP_CACHE: Record<string, Promise<UserGroup>> = {};
 const APIKEY_CACHE: Record<string, Promise<ApiKey>> = {};
 
+function isNotFoundError(error: unknown) {
+    return typeof error === 'object'
+        && error !== null
+        && 'status' in error
+        && error.status === 404;
+}
+
 function cachedFetch<T>(cache: Record<string, Promise<T>>, key: string, fetcher: () => Promise<T>): Promise<T> {
     let entry = cache[key];
     if (!entry) {
         entry = fetcher().catch((err) => {
-            delete cache[key]; // evict on failure so retries work
+            if (!isNotFoundError(err)) {
+                delete cache[key]; // evict transient failures so retries work
+            }
             throw err;
         });
         cache[key] = entry;
@@ -29,7 +38,10 @@ function cachedFetch<T>(cache: Record<string, Promise<T>>, key: string, fetcher:
 export function useFetchUserInfo(userId: string) {
     const { client } = useUserSession();
 
-    return useFetch(() => cachedFetch(USER_CACHE, userId, () => client.users.retrieve(userId)), [userId]);
+    return useFetch(() => cachedFetch(USER_CACHE, userId, () => client.users.retrieve(userId)), {
+        deps: [userId],
+        condition: () => !!userId,
+    });
 }
 
 /**
@@ -39,7 +51,10 @@ export function useFetchUserInfo(userId: string) {
 export function useFetchGroupInfo(groupId: string) {
     const { client } = useUserSession();
 
-    return useFetch(() => cachedFetch(GROUP_CACHE, groupId, () => client.iam.groups.retrieve(groupId)), [groupId]);
+    return useFetch(() => cachedFetch(GROUP_CACHE, groupId, () => client.iam.groups.retrieve(groupId)), {
+        deps: [groupId],
+        condition: () => !!groupId,
+    });
 }
 
 /**
@@ -49,7 +64,10 @@ export function useFetchGroupInfo(groupId: string) {
 export function useFetchApiKeyInfo(keyId: string) {
     const { client } = useUserSession();
 
-    return useFetch(() => cachedFetch(APIKEY_CACHE, keyId, () => client.apikeys.retrieve(keyId)), [keyId]);
+    return useFetch(() => cachedFetch(APIKEY_CACHE, keyId, () => client.apikeys.retrieve(keyId)), {
+        deps: [keyId],
+        condition: () => !!keyId,
+    });
 }
 
 function AvatarPlaceholder() {
@@ -251,6 +269,19 @@ function ErrorAvatar({ title = "Error", error, showTitle = false, size = "md" }:
     );
 }
 
+function MissingPrincipalAvatar({ showTitle = false, size = "md", color }: InfoProps & { color?: string }) {
+    const { t } = useUITranslation();
+    return (
+        <UnknownAvatar
+            title={t('user.unknownUser')}
+            message={t('user.unknownUserDescription')}
+            color={color}
+            showTitle={showTitle}
+            size={size}
+        />
+    );
+}
+
 interface UserInfoProps extends InfoProps {
     /**
      * The user reference is a string that contains the type and id of the user.
@@ -385,6 +416,9 @@ function GroupAvatar({ userId, showTitle = false, size = "md" }: GroupAvatarProp
     const { data: group, error } = useFetchGroupInfo(userId);
 
     if (error) {
+        if (isNotFoundError(error)) {
+            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-indigo-500" />
+        }
         return <ErrorAvatar title={t('user.failedToFetchGroup')} error={error} showTitle={showTitle} size={size} />
     }
 
@@ -424,6 +458,9 @@ function UserAvatar({ userId, showTitle = false, size = "md" }: UserAvatarProps)
     const { data: user, error } = useFetchUserInfo(userId);
 
     if (error) {
+        if (isNotFoundError(error)) {
+            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-indigo-500" />
+        }
         return <ErrorAvatar title={t('user.failedToFetchUser')} error={error} showTitle={showTitle} size={size} />
     }
 
@@ -453,6 +490,9 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = "md" }: ApiKeyAv
     const { data, error } = useFetchApiKeyInfo(keyId);
 
     if (error) {
+        if (isNotFoundError(error)) {
+            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-pink-500" />
+        }
         return <ErrorAvatar title={t('user.failedToFetchApiKey')} error={error} showTitle={showTitle} size={size} />
     }
 

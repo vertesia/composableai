@@ -93,7 +93,7 @@ const Tabs = ({
     if (currentValue && currentValue !== value) {
       setValue(currentValue);
     }
-  }, [current]);
+  }, [current, value]);
 
   // Listen to hash changes only when there's no current prop being controlled externally
   React.useEffect(() => {
@@ -119,7 +119,7 @@ const Tabs = ({
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, [current, visibleTabs, defaultValue]);
 
-  const handleValueChange = (newValue: string) => {
+  const handleValueChange = React.useCallback((newValue: string) => {
     setValue(newValue);
 
     // Update the URL hash when tab changes (only if updateHash is true and not controlled by parent)
@@ -133,7 +133,7 @@ const Tabs = ({
     if (onTabChange) {
       onTabChange(newValue);
     }
-  };
+  }, [current, onTabChange, updateHash]);
 
   const setTab = React.useCallback((tabName: string) => {
     handleValueChange(tabName);

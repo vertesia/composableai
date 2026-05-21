@@ -47,7 +47,21 @@ export function useAgentPlans(
             lastProcessedIndex.current = -1;
             knownPlanTimestamps.current.clear();
         }
-    }, [messages.length === 0, isModal]);
+    }, [messages.length, isModal]);
+
+    // Helper to determine showInput from the latest message
+    const updateShowInput = useCallback((msgs: AgentMessage[]) => {
+        const lastMessage = msgs[msgs.length - 1];
+        if (!lastMessage) return;
+
+        if (lastMessage.type === AgentMessageType.TERMINATED) {
+            setShowInput(false);
+        } else if (interactive) {
+            setShowInput(true);
+        } else {
+            setShowInput(lastMessage.type === AgentMessageType.REQUEST_INPUT);
+        }
+    }, [interactive]);
 
     // Process new messages incrementally
     useEffect(() => {
@@ -141,7 +155,7 @@ export function useAgentPlans(
         }
 
         updateShowInput(messages);
-    }, [messages, interactive]);
+    }, [messages, updateShowInput]);
 
     // Auto-show plan panel for the first plan (once only)
     useEffect(() => {
@@ -157,20 +171,6 @@ export function useAgentPlans(
             return () => clearTimeout(notificationTimeout);
         }
     }, [plans.length, showSlidingPanel]);
-
-    // Helper to determine showInput from the latest message
-    const updateShowInput = useCallback((msgs: AgentMessage[]) => {
-        const lastMessage = msgs[msgs.length - 1];
-        if (!lastMessage) return;
-
-        if (lastMessage.type === AgentMessageType.TERMINATED) {
-            setShowInput(false);
-        } else if (interactive) {
-            setShowInput(true);
-        } else {
-            setShowInput(lastMessage.type === AgentMessageType.REQUEST_INPUT);
-        }
-    }, [interactive]);
 
     return {
         plans,

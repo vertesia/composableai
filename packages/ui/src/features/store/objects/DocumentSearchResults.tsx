@@ -7,14 +7,14 @@ import {
     FilterBtn,
     FilterClear,
     FilterProvider,
-    SidePanel, Spinner, useIntersectionObserver, useToast
+    SidePanel, Spinner, useIntersectionObserver, useToast, VTooltip
 } from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from '@vertesia/ui/session';
 import { TypeRegistry } from '../types/TypeRegistry.js';
 import { useTypeRegistry } from '../types/TypeRegistryProvider.js';
 import { Download, ExternalLink, RefreshCw } from 'lucide-react';
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
 import { ContentDispositionButton } from './components/ContentDispositionButton';
 import { ContentOverview } from './components/ContentOverview';
@@ -54,14 +54,17 @@ export function DocumentSearchResultsWithDropZone({ onUploadDone = async () => {
     const { t } = useUITranslation();
 
     // Create a wrapper around the onUploadDone callback that also refreshes the search
-    const handleUploadDone = async (objectIds: string[]) => {
+    const handleUploadDone = useCallback(async (objectIds: string[]) => {
         // First, call the original callback
         await onUploadDone(objectIds);
 
         // Use a timeout to let the backend catch up, then refresh the search results
         setTimeout(() => {
             console.log('Delayed refresh after upload to ensure backend consistency');
-            search.search().then(() => {
+            void search.search().then((refreshed) => {
+                if (!refreshed) {
+                    return;
+                }
                 // Notify the user that the list has been refreshed
                 toast({
                     title: t('store.documentListRefreshed'),
@@ -73,17 +76,17 @@ export function DocumentSearchResultsWithDropZone({ onUploadDone = async () => {
                 console.error('Failed to refresh search results:', err);
             });
         }, 1000); // 1-second delay for backend processing
-    };
+    }, [onUploadDone, search, t, toast]);
 
     // Use the enhanced standard upload handler with smart processing
     const uploadHandler = useDocumentUploadHandler(handleUploadDone);
 
     // Wrap the uploadHandler to ensure the collectionId is passed
-    const wrappedUploadHandler = (files: File[], type: string | null) => {
+    const wrappedUploadHandler = useCallback((files: File[], type: string | null) => {
         // Get the collection ID from the search context
         const collectionId = search.collectionId;
         return uploadHandler(files, type, collectionId);
-    };
+    }, [search, uploadHandler]);
 
     return <DocumentSearchResults layout={layout} onUpload={wrappedUploadHandler} />;
 }
@@ -121,20 +124,45 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const loadMoreRef = useRef<HTMLDivElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    const settleSearch = useCallback((promise: Promise<unknown>, errorMessage: string) => {
+        setIsReady(false);
+        void promise
+            .catch((err: unknown) => {
+                console.error(errorMessage, err);
+            })
+            .finally(() => {
+                setIsReady(true);
+            });
+    }, []);
+
     // Trigger initial search when component mounts
     useEffect(() => {
-        if (!isReady && objects.length === 0) {
-            setLoaded(0);
-            // Manually set loading state to show spinner during initial load
-            search._updateRunningState(true);
-            search.search().then(() => {
-                setIsReady(true);
-            }).catch(err => {
-                console.error('Initial search failed:', err);
-                search._updateRunningState(false);
-            });
+        let cancelled = false;
+        if (search.initialized) {
+            setIsReady(true);
+            return () => {
+                cancelled = true;
+            };
         }
-    }, []);
+
+        setIsReady(false);
+        setLoaded(0);
+        void search.search()
+            .catch((err: unknown) => {
+                if (!cancelled) {
+                    console.error('Initial search failed:', err);
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setIsReady(true);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [search]);
 
     useEffect(() => {
         if (objects.length < loaded) {
@@ -145,10 +173,14 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     useIntersectionObserver(loadMoreRef, () => {
         if (isReady && objects.length > 0 && objects.length != loaded) {
             setIsReady(false);
-            search.loadMore().finally(() => {
-                setLoaded(objects.length)
-                setIsReady(true);
-            });
+            void search.loadMore()
+                .catch((err: unknown) => {
+                    console.error('Failed to load more search results:', err);
+                })
+                .finally(() => {
+                    setLoaded(objects.length)
+                    setIsReady(true);
+                });
         }
     }, { deps: [isReady, objects.length] });
 
@@ -176,21 +208,21 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 ];
                 setActualLayout(layout);
             }
-            search.search().then(() => setIsReady(true));
+            settleSearch(search.search(), 'Vector search failed:');
         } else if (query && query.full_text) {
             search.query.full_text = query.full_text;
             if (query.limit !== undefined) {
                 search.limit = query.limit;
                 search.query.limit = query.limit;
             }
-            search.search().then(() => setIsReady(true));
+            settleSearch(search.search(), 'Text search failed:');
         } else if (query === undefined) {
             // Only clear search if this is a user-initiated clear (not initialization)
             // The VectorSearchWidget calls onChange(undefined) during initialization
             if (isReady) {
                 delete search.query.vector;
                 delete search.query.full_text;
-                search.search().then(() => setIsReady(true));
+                settleSearch(search.search(), 'Search reset failed:');
             }
         }
     };
@@ -199,7 +231,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const facetSearch = useDocumentSearch();
 
     const handleRefetch = () => {
-        search.search().then(() => setIsReady(true));
+        settleSearch(search.search(), 'Search refresh failed:');
     };
 
     // Use DocumentsFacetsNav hooks for cleaner organization
@@ -356,7 +388,11 @@ function Toolsbar(props: ToolsbarProps) {
                 )
             }
             <div className="flex gap-1 items-center">
-                <Button variant="outline" onClick={handleRefetch} alt={t('store.refresh')}><RefreshCw size={16} /></Button>
+                <VTooltip description={t('store.refresh')} asChild size="xs" placement="top">
+                    <Button variant="outline" onClick={handleRefetch} aria-label={t('store.refresh')}>
+                        <RefreshCw size={16} />
+                    </Button>
+                </VTooltip>
                 <ContentDispositionButton onUpdate={setIsGridView} />
             </div>
         </div>

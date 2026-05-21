@@ -66,7 +66,7 @@ export function DeleteObjectsActionComponent({ action, objectIds, children }: Ac
                 duration: 5000
             });
         });
-    }, [objectIds]);
+    }, [client.store.objects.delete, ctx.params?.selection?.removeAll, navigate, objectIds, search, search.facets, search.resetFacets, search.search, t, toast]);
 
     return (
         <ConfirmAction action={action} callback={callback}>

@@ -43,7 +43,7 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
                 }
             }
         }
-    }, [typeRegistry, defaultValue, multiple])
+    }, [isMounted, typeRegistry, defaultValue, multiple])
 
     const _onChange = (option: ContentObjectTypeItem | null) => {
         setSelectedType(option || undefined);

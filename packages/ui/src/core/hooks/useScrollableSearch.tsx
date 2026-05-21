@@ -149,7 +149,7 @@ export function useScrollableSearch<ResultT, PayloadT, PageT = number>(opts: Scr
                 setIsSearching(false);
             }
         });
-    }, [...dependencies, lastPayload, page]);
+    }, [...dependencies, lastPayload, opts.search, page, pageSize]);
 
     // Intersection observer for infinite scrolling
     useIntersectionObserver(opts.nextPageTrigger, () => {

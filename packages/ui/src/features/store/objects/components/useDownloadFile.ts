@@ -70,7 +70,7 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
         } finally {
             setIsDownloading(false);
         }
-    }, [client, toast]);
+    }, [client, toast, t]);
 
     /**
      * Download a file from a direct URL (already signed or public).
@@ -142,7 +142,7 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
         } finally {
             setIsDownloading(false);
         }
-    }, [handleRenderResult, toast]);
+    }, [handleRenderResult, toast, t]);
 
     /**
      * Render markdown content and download the result.
@@ -179,7 +179,7 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
         } finally {
             setIsDownloading(false);
         }
-    }, [handleRenderResult, toast]);
+    }, [handleRenderResult, toast, t]);
 
     return {
         downloadFromContentSource,

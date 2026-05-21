@@ -499,6 +499,7 @@ function StartWorkflowView({
     }, []);
 
     useEffect(() => {
+        void inputValue;
         adjustTextareaHeight();
     }, [inputValue, adjustTextareaHeight]);
 
@@ -1006,7 +1007,7 @@ const handleCloseRightPanel = useCallback(() => {
                 {children}
             </a>
         ),
-        [openDocInPanel, setRightPanelTab]
+        [openDocInPanel]
     );
 
     const effectiveStoreLinkComponent = StoreLinkComponent ?? internalStoreLinkComponent;
@@ -1186,7 +1187,7 @@ const handleCloseRightPanel = useCallback(() => {
             .finally(() => {
                 setIsSending(false);
             });
-    }, [agentRunId, client, toast, getAttachedDocs, getMessageContext, onAttachmentsSent, addOptimisticMessage, removeOptimisticMessages]);
+    }, [agentRunId, client, toast, getAttachedDocs, getMessageContext, onAttachmentsSent, addOptimisticMessage, removeOptimisticMessages, t]);
 
     // Drag and drop handlers for full-panel file upload
     const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -1250,7 +1251,7 @@ const handleCloseRightPanel = useCallback(() => {
         } finally {
             setIsStopping(false);
         }
-    }, [isStopping, client, agentRunId, toast]);
+    }, [isStopping, client, agentRunId, toast, t]);
 
     // Expose stop handler to external callers via ref
     useEffect(() => {

@@ -266,6 +266,7 @@ export default function MessageInput({
     }, []);
 
     useEffect(() => {
+        void value;
         adjustTextareaHeight();
     }, [value, adjustTextareaHeight]);
 

@@ -21,7 +21,7 @@ function useDeprecationWarning(propName: string, isUsed: boolean, message: strin
       warnedDeprecatedProps.add(propName)
       console.warn(`[@vertesia/ui] ${propName} is deprecated: ${message}`)
     }
-  }, [isUsed])
+  }, [isUsed, message, propName])
 }
 
 const buttonVariants = cva(

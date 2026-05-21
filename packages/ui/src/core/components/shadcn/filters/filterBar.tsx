@@ -41,6 +41,7 @@ interface FilterProviderProps {
 const FilterProvider = ({ filters, setFilters, filterGroups, children, inModal }: FilterProviderProps) => {
   const url = new URL(window.location.href);
   const searchParams = url.searchParams;
+  const searchParamsString = searchParams.toString();
   const [initialFiltersParam] = React.useState(() => new URLSearchParams(window.location.search).get('filters'));
   const processedUrlFilters = React.useRef<Set<string>>(new Set());
   const hasRestoredFromUrl = React.useRef(inModal || !initialFiltersParam);
@@ -49,7 +50,7 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children, inModal }
     if (inModal) return;
     if (!hasRestoredFromUrl.current) return;
     try {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams(searchParamsString);
       if (filters.length > 0) {
         const filterString = filters.map(filter => {
           let values: string;
@@ -85,7 +86,7 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children, inModal }
     } catch (error) {
       console.error("Failed to update URL with filters:", error);
     }
-  }, [filters]);
+  }, [filters, inModal, searchParamsString]);
 
   useEffect(() => {
     if (inModal || !initialFiltersParam || filterGroups.length === 0) return;
@@ -159,7 +160,7 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children, inModal }
     } catch (_error) {
       // ignore parse errors
     }
-  }, [filterGroups, initialFiltersParam]);
+  }, [filterGroups, inModal, initialFiltersParam, setFilters]);
 
   return (
     <FilterContext.Provider value={{ filters, setFilters, filterGroups }}>

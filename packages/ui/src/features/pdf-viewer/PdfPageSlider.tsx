@@ -94,10 +94,10 @@ export function PdfPageSlider({
     }, [compact]);
 
     // Legacy function for resize preservation - kept for backwards compatibility
-    const getItemHeight = (width: number | undefined, ratio: number) => {
+    const getItemHeight = useCallback((width: number | undefined, ratio: number) => {
         const placeholderHeight = width ? Math.round(width / ratio) : 200;
         return calculateItemHeight(placeholderHeight);
-    };
+    }, [calculateItemHeight]);
 
     // Single ResizeObserver at parent level to measure thumbnail width
     // Debounced to avoid excessive re-renders during resize
@@ -161,7 +161,7 @@ export function PdfPageSlider({
             if (debounceTimer) clearTimeout(debounceTimer);
             resizeObserver.disconnect();
         };
-    }, [aspectRatio]);
+    }, [aspectRatio, getItemHeight]);
 
     // Track whether we're programmatically scrolling to avoid feedback loops
     const isProgrammaticScrollRef = useRef(false);

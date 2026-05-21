@@ -158,7 +158,7 @@ export function SkillWidgetProvider({ children }: SkillWidgetProviderProperties)
                 ...widgets,
             })
         })
-    }, []);
+    }, [client]);
 
 
     return (

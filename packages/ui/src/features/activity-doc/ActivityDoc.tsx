@@ -100,7 +100,7 @@ function PropertyDetails({ property, className }: { className?: string, property
         } else {
             return null;
         }
-    }, [property.type.innerType]);
+    }, [property.type]);
     return (
         <div className={clsx("py-2", className)}>
             <PropertySignature property={property} />
