@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { FixLinks } from "./FixLinks";
-import { PathMatch } from "./PathMatcher";
 import { createRoute404 } from "./Route404";
 import { RouteComponent } from "./RouteComponent";
 import { NestedRouter, ReactRouterContext, Route, useRouterContext } from "./Router";
@@ -18,7 +17,6 @@ interface RouterProviderProps {
 }
 export function NestedRouterProvider({ routes, index, children, fixLinks = false }: RouterProviderProps) {
     const ctx = useRouterContext();
-    const [nestedRouteMatch, setNestedRouteMatch] = useState<PathMatch<Route> | undefined>(undefined);
     const nestedRouter = useMemo(() => {
         if (typeof window === 'undefined') return null;
         const basePath = ctx.matchedRoutePath;
@@ -27,17 +25,15 @@ export function NestedRouterProvider({ routes, index, children, fixLinks = false
         return nestedRouter;
     }, [ctx.matchedRoutePath, ctx.router, index, routes]);
 
-
-    useEffect(() => {
-        if (nestedRouter) {
-            if (ctx.matchedRoutePath !== nestedRouter.basePath) {
-                // the change doesn't belong to this nested router
-                // it should be handled by the top level router which will change the page or the nested router
-                return;
-            }
-            const route = nestedRouter.match(ctx.remainingPath || '/') || createRoute404();
-            setNestedRouteMatch(route);
+    const nestedRouteMatch = useMemo(() => {
+        if (!nestedRouter) {
+            return undefined;
         }
+        if (ctx.matchedRoutePath !== nestedRouter.basePath) {
+            // The change belongs to another router level and will be handled there.
+            return undefined;
+        }
+        return nestedRouter.match(ctx.remainingPath || '/') || createRoute404();
     }, [ctx.matchedRoutePath, ctx.remainingPath, nestedRouter]);
 
 

@@ -29,6 +29,7 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
     const isReady = !!project && (!!config?.embeddings.text || !!config?.embeddings.image);
     const [status, setStatus] = useState<string | undefined>(undefined);
     const refreshRef = useRef(refresh);
+    const previousSearchTextRef = useRef<string | undefined>(undefined);
 
     const [showSettings, setShowSettings] = useState(false);
     // Default to all types, or use prop if provided
@@ -75,7 +76,10 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
     }, [status, toast]);
 
     useEffect(() => {
-        if (!searchText || searchText.length === 0) {
+        const previousSearchText = previousSearchTextRef.current;
+        previousSearchTextRef.current = searchText;
+
+        if (previousSearchText && (!searchText || searchText.length === 0)) {
             onChange(undefined);
         }
     }, [onChange, searchText]);

@@ -61,7 +61,10 @@ export function DocumentSearchResultsWithDropZone({ onUploadDone = async () => {
         // Use a timeout to let the backend catch up, then refresh the search results
         setTimeout(() => {
             console.log('Delayed refresh after upload to ensure backend consistency');
-            search.search().then(() => {
+            void search.search().then((refreshed) => {
+                if (!refreshed) {
+                    return;
+                }
                 // Notify the user that the list has been refreshed
                 toast({
                     title: t('store.documentListRefreshed'),
@@ -121,20 +124,45 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const loadMoreRef = useRef<HTMLDivElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    const settleSearch = useCallback((promise: Promise<unknown>, errorMessage: string) => {
+        setIsReady(false);
+        void promise
+            .catch((err: unknown) => {
+                console.error(errorMessage, err);
+            })
+            .finally(() => {
+                setIsReady(true);
+            });
+    }, []);
+
     // Trigger initial search when component mounts
     useEffect(() => {
-        if (!isReady && objects.length === 0) {
-            setLoaded(0);
-            // Manually set loading state to show spinner during initial load
-            search._updateRunningState(true);
-            search.search().then(() => {
-                setIsReady(true);
-            }).catch(err => {
-                console.error('Initial search failed:', err);
-                search._updateRunningState(false);
-            });
+        let cancelled = false;
+        if (search.initialized) {
+            setIsReady(true);
+            return () => {
+                cancelled = true;
+            };
         }
-    }, [isReady, objects.length, search]);
+
+        setIsReady(false);
+        setLoaded(0);
+        void search.search()
+            .catch((err: unknown) => {
+                if (!cancelled) {
+                    console.error('Initial search failed:', err);
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setIsReady(true);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [search]);
 
     useEffect(() => {
         if (objects.length < loaded) {
@@ -145,10 +173,14 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     useIntersectionObserver(loadMoreRef, () => {
         if (isReady && objects.length > 0 && objects.length != loaded) {
             setIsReady(false);
-            search.loadMore().finally(() => {
-                setLoaded(objects.length)
-                setIsReady(true);
-            });
+            void search.loadMore()
+                .catch((err: unknown) => {
+                    console.error('Failed to load more search results:', err);
+                })
+                .finally(() => {
+                    setLoaded(objects.length)
+                    setIsReady(true);
+                });
         }
     }, { deps: [isReady, objects.length] });
 
@@ -176,21 +208,21 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 ];
                 setActualLayout(layout);
             }
-            search.search().then(() => setIsReady(true));
+            settleSearch(search.search(), 'Vector search failed:');
         } else if (query && query.full_text) {
             search.query.full_text = query.full_text;
             if (query.limit !== undefined) {
                 search.limit = query.limit;
                 search.query.limit = query.limit;
             }
-            search.search().then(() => setIsReady(true));
+            settleSearch(search.search(), 'Text search failed:');
         } else if (query === undefined) {
             // Only clear search if this is a user-initiated clear (not initialization)
             // The VectorSearchWidget calls onChange(undefined) during initialization
             if (isReady) {
                 delete search.query.vector;
                 delete search.query.full_text;
-                search.search().then(() => setIsReady(true));
+                settleSearch(search.search(), 'Search reset failed:');
             }
         }
     };
@@ -199,7 +231,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const facetSearch = useDocumentSearch();
 
     const handleRefetch = () => {
-        search.search().then(() => setIsReady(true));
+        settleSearch(search.search(), 'Search refresh failed:');
     };
 
     // Use DocumentsFacetsNav hooks for cleaner organization
@@ -356,7 +388,7 @@ function Toolsbar(props: ToolsbarProps) {
                 )
             }
             <div className="flex gap-1 items-center">
-                <Button variant="outline" onClick={handleRefetch} alt={t('store.refresh')}><RefreshCw size={16} /></Button>
+                <Button variant="outline" onClick={handleRefetch} aria-label={t('store.refresh')}><RefreshCw size={16} /></Button>
                 <ContentDispositionButton onUpdate={setIsGridView} />
             </div>
         </div>
