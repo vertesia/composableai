@@ -181,8 +181,11 @@ print_config "Template Integration Test"
 start_verdaccio
 publish_to_verdaccio
 
-# Point npm/npx to verdaccio for bootstrap and build
+# Point npm/npx to verdaccio for bootstrap and build.
+# pnpm does not reliably honor npm_config_registry, so set pnpm_config_registry too —
+# templates may cascade through `pnpm run …` even when bootstrapped with npm.
 export npm_config_registry="${VERDACCIO_URL}"
+export pnpm_config_registry="${VERDACCIO_URL}"
 
 # Use local templates so integration tests don't need a git tag on GitHub
 TEMPLATES_PATH="$(cd "${SCRIPT_DIR}/../.." && pwd)/templates"
