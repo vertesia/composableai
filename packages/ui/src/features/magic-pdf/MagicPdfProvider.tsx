@@ -251,7 +251,7 @@ export function MagicPdfProvider({ children, object }: MagicPdfProviderProps) {
             // For XML processor, no pre-loading needed - images load on demand
             setInfo(prev => ({ ...prev, pdfUrlLoading: false }));
         }
-    }, [object.id, client, isMarkdownProcessor, page_count]);
+    }, [client, isMarkdownProcessor, object.metadata, object.content?.type, object.content?.source]);
 
     return (
         <MagicPdfContext.Provider value={info}>

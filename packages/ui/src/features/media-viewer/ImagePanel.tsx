@@ -78,7 +78,7 @@ export function ImagePanel({ url, source, object, className }: ImagePanelProps) 
         } else {
             setIsLoading(false);
         }
-    }, [url, source, object?.id, object?.content?.type, object?.content?.source, object?.metadata, client]);
+    }, [url, source, object, client]);
 
     if (isLoading) {
         return (

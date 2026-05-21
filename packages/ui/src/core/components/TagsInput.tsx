@@ -80,11 +80,6 @@ function TagsInputContent({
     // Total number of items (filtered options + create option if shown)
     const totalItems = filteredOptions.length + (showCreateOption ? 1 : 0);
 
-    // Reset highlighted index when filtered options change
-    useEffect(() => {
-        setHighlightedIndex(0);
-    }, [searchTerm, showCreateOption]);
-
     // Clear pending delete when user starts typing
     useEffect(() => {
         if (searchTerm !== '') {
@@ -94,7 +89,7 @@ function TagsInputContent({
 
     // Scroll highlighted item into view
     useEffect(() => {
-        if (isOpen && highlightedItemRef.current && dropdownRef.current) {
+        if (isOpen && highlightedIndex >= 0 && highlightedItemRef.current && dropdownRef.current) {
             highlightedItemRef.current.scrollIntoView({
                 block: 'nearest',
                 behavior: 'smooth'
@@ -294,7 +289,10 @@ function TagsInputContent({
                         ref={inputRef}
                         type="text"
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setHighlightedIndex(0);
+                        }}
                         onKeyDown={handleKeyDown}
                         onClick={handleInputClick}
                         onFocus={handleInputFocus}

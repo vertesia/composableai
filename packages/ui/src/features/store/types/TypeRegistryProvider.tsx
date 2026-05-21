@@ -26,6 +26,7 @@ export function TypeRegistryProvider({ children }: TypeRegistryProviderProps) {
     const [registry, setRegistry] = useState<TypeRegistry | undefined>();
     const [isLoading, setIsLoading] = useState(false);
     const fetchRef = useRef(false);
+    const projectIdRef = useRef(project?.id);
 
     const load = useCallback(async () => {
         if (!project || fetchRef.current) return;
@@ -49,9 +50,12 @@ export function TypeRegistryProvider({ children }: TypeRegistryProviderProps) {
 
     // Reset when project changes
     useEffect(() => {
-        setRegistry(undefined);
-        fetchRef.current = false;
-    }, [project]);
+        if (projectIdRef.current !== project?.id) {
+            projectIdRef.current = project?.id;
+            setRegistry(undefined);
+            fetchRef.current = false;
+        }
+    });
 
     return (
         <TypeRegistryContext.Provider value={{ registry, isLoading, load, reload }}>
@@ -67,7 +71,7 @@ export function useTypeRegistry() {
         if (!ctx.registry && !ctx.isLoading) {
             ctx.load();
         }
-    }, [ctx.registry, ctx.isLoading]);
+    }, [ctx.registry, ctx.isLoading, ctx.load]);
 
     return ctx;
 }

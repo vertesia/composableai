@@ -19,7 +19,7 @@ export function SharedPropsEditor({ collection }: SharedPropsEditorProps) {
         if (collection.type?.id) {
             client.store.types.retrieve(collection.type.id).then(setColType);
         }
-    }, [collection.type?.id]);
+    }, [client.store.types.retrieve, collection.type?.id]);
 
     const options: string[] = colType ? Object.keys(colType.object_schema?.properties || {}) : [];
 

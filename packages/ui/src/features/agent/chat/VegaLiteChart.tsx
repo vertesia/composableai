@@ -960,6 +960,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
 
     // Clear error when spec changes
     useEffect(() => {
+        void vegaSpec;
         setError(null);
     }, [vegaSpec]);
 

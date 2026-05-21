@@ -15,7 +15,7 @@ import {
   Maximize2,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface DocumentPreviewPanelProps {
@@ -39,6 +39,45 @@ export function DocumentPreviewPanel({
   const [currentTab, setCurrentTab] = useState("preview");
   const { t } = useUITranslation();
   const toast = useToast();
+
+  const loadObjectText = useCallback(async (id: string) => {
+    setLoadingText(true);
+    try {
+      const result = await store.objects.getObjectText(id);
+      setText(result.text);
+    } catch (error) {
+      console.error("Error loading text:", error);
+    } finally {
+      setLoadingText(false);
+    }
+  }, [store.objects]);
+
+  const loadImageUrl = useCallback(async (obj: ContentObject) => {
+    if (!obj.content?.source) {
+      return;
+    }
+
+    try {
+      // Try to get a rendition first
+      const rendition = await client.objects.getRendition(obj.id, {
+        format: ImageRenditionFormat.jpeg,
+        generate_if_missing: false,
+      });
+
+      // Don't use rendition object to avoid type issues
+      if (rendition.status === "found") {
+        console.log("Found rendition");
+      }
+
+      // Get download URL
+      const downloadUrlResult = await client.files.getDownloadUrl(
+        obj.content.source,
+      );
+      setImageUrl(downloadUrlResult.url);
+    } catch (error) {
+      console.error("Error loading image:", error);
+    }
+  }, [client.files, client.objects]);
 
   useEffect(() => {
     if (objectId && isOpen) {
@@ -84,46 +123,7 @@ export function DocumentPreviewPanel({
       setText(undefined);
       setImageUrl(undefined);
     }
-  }, [objectId, isOpen, store.objects]);
-
-  const loadObjectText = async (id: string) => {
-    setLoadingText(true);
-    try {
-      const result = await store.objects.getObjectText(id);
-      setText(result.text);
-    } catch (error) {
-      console.error("Error loading text:", error);
-    } finally {
-      setLoadingText(false);
-    }
-  };
-
-  const loadImageUrl = async (obj: ContentObject) => {
-    if (!obj.content?.source) {
-      return;
-    }
-
-    try {
-      // Try to get a rendition first
-      const rendition = await client.objects.getRendition(obj.id, {
-        format: ImageRenditionFormat.jpeg,
-        generate_if_missing: false,
-      });
-
-      // Don't use rendition object to avoid type issues
-      if (rendition.status === "found") {
-        console.log("Found rendition");
-      }
-
-      // Get download URL
-      const downloadUrlResult = await client.files.getDownloadUrl(
-        obj.content.source,
-      );
-      setImageUrl(downloadUrlResult.url);
-    } catch (error) {
-      console.error("Error loading image:", error);
-    }
-  };
+  }, [objectId, isOpen, store.objects, loadObjectText, loadImageUrl, t, toast]);
 
   const handleViewFullDocument = () => {
     if (object) {

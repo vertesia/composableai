@@ -78,7 +78,7 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
         } else {
             setIsLoading(false);
         }
-    }, [url, source, object?.id, object?.content?.type, object?.content?.source, object?.metadata, audioRendition, isOriginalWebSupported, client]);
+    }, [url, source, object, audioRendition, isOriginalWebSupported, client]);
 
     if (showsObjectFallbackEmpty) {
         return (

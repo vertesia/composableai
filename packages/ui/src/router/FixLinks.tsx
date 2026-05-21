@@ -21,7 +21,7 @@ export function FixLinks({ basePath, children }: FixLinksProps) {
                 divElem.removeEventListener('click', listener);
             }
         }
-    }, [ref.current]);
+    }, [basePath]);
     return (
         <div ref={ref} className="h-full w-full">{children}</div>
     )
