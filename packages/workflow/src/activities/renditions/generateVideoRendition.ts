@@ -1,6 +1,6 @@
 import { log } from "@temporalio/activity";
 import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
-import { exec } from "child_process";
+import { execFile as execFileCallback } from "child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -13,7 +13,7 @@ import {
     uploadRenditionPages,
 } from "../../utils/renditions.js";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFileCallback);
 
 interface GenerateVideoRenditionParams extends ImageRenditionParams { }
 
@@ -35,9 +35,9 @@ interface VideoMetadata {
 
 async function getVideoMetadata(videoPath: string): Promise<VideoMetadata> {
     try {
-        const command = `ffprobe -v quiet -print_format json -show_format -show_streams "${videoPath}"`;
-        const { stdout } = await execAsync(command);
-        const metadata = JSON.parse(stdout) as {
+        const args = ["-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", videoPath];
+        const { stdout } = await execFileAsync("ffprobe", args);
+        const metadata = JSON.parse(stdout.toString()) as {
             streams?: Array<{ codec_type?: string; width?: number; height?: number }>;
             format?: { duration?: string };
         };
@@ -77,28 +77,28 @@ async function generateThumbnail(
     const scaleFilter = `scale=${maxSize}:${maxSize}:force_original_aspect_ratio=decrease`;
 
     const command = [
-        "ffmpeg",
         "-y", // Overwrite output files
         "-ss",
         timestamp.toString(), // Seek to timestamp
         "-i",
-        `"${videoPath}"`, // Input file
+        videoPath, // Input file
         "-vframes",
         "1", // Extract only 1 frame
         "-vf",
-        `"${scaleFilter}"`, // Scale maintaining aspect ratio
+        scaleFilter, // Scale maintaining aspect ratio
         "-q:v",
         "2", // High quality
-        `"${outputFile}"`,
-    ].join(" ");
-    log.info(`Generating thumbnail at ${timestamp}s`, { command });
+        outputFile,
+    ];
+    log.info(`Generating thumbnail at ${timestamp}s`, { command: "ffmpeg", args: command });
     try {
-        const { stderr } = await execAsync(command);
+        const { stderr } = await execFileAsync("ffmpeg", command);
+        const stderrText = stderr.toString();
 
         // Log any warnings from ffmpeg
-        if (stderr && !stderr.includes("frame=")) {
+        if (stderrText && !stderrText.includes("frame=")) {
             log.debug(
-                `FFmpeg stderr for thumbnail at ${timestamp}s: ${stderr}`,
+                `FFmpeg stderr for thumbnail at ${timestamp}s: ${stderrText}`,
             );
         }
 

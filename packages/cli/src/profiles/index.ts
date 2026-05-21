@@ -89,13 +89,21 @@ function isDevDeploymentTarget(value: string): boolean {
 }
 
 export function getCloudTypeFromConfigUrl(url: string) {
-    if (url.startsWith("https://localhost")) {
+    let parsedUrl: URL;
+    try {
+        parsedUrl = new URL(url);
+    } catch {
+        throw new Error("Unknown cloud env type");
+    }
+
+    const { hostname, protocol } = parsedUrl;
+    if (protocol === "https:" && hostname === "localhost") {
         return "staging";
-    } else if (url.includes(".ui.dev1.vertesia.io")) {
+    } else if (hostname.endsWith(".ui.dev1.vertesia.io")) {
         return "staging";
-    } else if (url.startsWith("https://preview.")) {
+    } else if (protocol === "https:" && hostname.startsWith("preview.")) {
         return "preview";
-    } else if (url.startsWith("https://cloud.")) {
+    } else if (protocol === "https:" && hostname.startsWith("cloud.")) {
         return "production";
     } else {
         throw new Error("Unknown cloud env type");

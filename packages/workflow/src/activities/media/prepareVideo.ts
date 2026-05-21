@@ -1,6 +1,6 @@
 import { ApplicationFailure, log } from '@temporalio/activity';
 import { DSLActivityExecutionPayload, DSLActivitySpec, VideoMetadata, VideoRendition, POSTER_RENDITION_NAME, AUDIO_RENDITION_NAME, WEB_VIDEO_RENDITION_NAME, ContentNature } from '@vertesia/common';
-import { exec } from 'child_process';
+import { execFile as execFileCallback } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -11,7 +11,7 @@ import { saveBlobToTempFile } from '../../utils/blobs.js';
 import { VertesiaClient } from '@vertesia/client';
 import { RequestError } from '@vertesia/api-fetch-client';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFileCallback);
 
 // Default configuration constants
 const DEFAULT_MAX_RESOLUTION = 1920; // Max resolution for video rendition (produces 1080p)
@@ -75,9 +75,9 @@ interface FFProbeOutput {
  */
 async function getVideoMetadata(videoPath: string): Promise<VideoMetadataExtended> {
     try {
-        const command = `ffprobe -v quiet -print_format json -show_format -show_streams "${videoPath}"`;
-        const { stdout } = await execAsync(command);
-        const metadata = JSON.parse(stdout) as FFProbeOutput;
+        const args = ['-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', videoPath];
+        const { stdout } = await execFileAsync('ffprobe', args);
+        const metadata = JSON.parse(stdout.toString()) as FFProbeOutput;
 
         const videoStream = metadata.streams.find(
             (stream) => stream.codec_type === 'video',
@@ -196,10 +196,9 @@ async function generateVideoRendition(
     const videoFilters = `scale=${dimensions.width}:${dimensions.height},format=yuv420p`;
 
     const command = [
-        'ffmpeg',
         '-y', // Overwrite output
-        '-i', `"${videoPath}"`,
-        '-vf', `"${videoFilters}"`,
+        '-i', videoPath,
+        '-vf', videoFilters,
         '-c:v', 'libx264', // H.264 codec
         '-preset', 'medium', // Balance between speed and compression
         '-crf', VIDEO_CRF, // Constant Rate Factor (18-28, lower = better quality)
@@ -208,16 +207,17 @@ async function generateVideoRendition(
         '-b:a', AUDIO_BITRATE, // Audio bitrate
         '-movflags', '+faststart', // Enable streaming
         '-max_muxing_queue_size', '1024', // Prevent muxing issues
-        `"${outputFile}"`,
-    ].join(' ');
+        outputFile,
+    ];
 
-    log.info(`Generating ${maxResolution}p video rendition`, { command });
+    log.info(`Generating ${maxResolution}p video rendition`, { command: 'ffmpeg', args: command });
 
     try {
-        const { stderr } = await execAsync(command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const { stderr } = await execFileAsync('ffmpeg', command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const stderrText = stderr.toString();
 
-        if (stderr && !stderr.includes('frame=')) {
-            log.debug(`FFmpeg stderr for video rendition: ${stderr}`);
+        if (stderrText && !stderrText.includes('frame=')) {
+            log.debug(`FFmpeg stderr for video rendition: ${stderrText}`);
         }
 
         // Verify output file was created
@@ -251,22 +251,22 @@ async function generateAudioRendition(
     const outputFile = path.join(outputDir, 'audio.m4a');
 
     const command = [
-        'ffmpeg',
         '-y', // Overwrite output
-        '-i', `"${videoPath}"`,
+        '-i', videoPath,
         '-vn', // No video
         '-c:a', 'aac', // Audio codec
         '-b:a', AUDIO_BITRATE, // Audio bitrate
-        `"${outputFile}"`,
-    ].join(' ');
+        outputFile,
+    ];
 
-    log.info('Generating audio-only rendition', { command });
+    log.info('Generating audio-only rendition', { command: 'ffmpeg', args: command });
 
     try {
-        const { stderr } = await execAsync(command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const { stderr } = await execFileAsync('ffmpeg', command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const stderrText = stderr.toString();
 
-        if (stderr && !stderr.includes('frame=')) {
-            log.debug(`FFmpeg stderr for audio rendition: ${stderr}`);
+        if (stderrText && !stderrText.includes('frame=')) {
+            log.debug(`FFmpeg stderr for audio rendition: ${stderrText}`);
         }
 
         // Verify output file was created
@@ -305,23 +305,23 @@ async function generateScreenshot(
     const scaleFilter = `scale=${dimensions.width}:${dimensions.height}`;
 
     const command = [
-        'ffmpeg',
         '-y',
         '-ss', timestamp.toString(),
-        '-i', `"${videoPath}"`,
+        '-i', videoPath,
         '-vframes', '1',
-        '-vf', `"${scaleFilter}"`,
+        '-vf', scaleFilter,
         '-q:v', JPEG_QUALITY, // High quality JPEG
-        `"${outputFile}"`,
-    ].join(' ');
+        outputFile,
+    ];
 
-    log.info(`Generating ${name} at ${timestamp}s`, { command });
+    log.info(`Generating ${name} at ${timestamp}s`, { command: 'ffmpeg', args: command });
 
     try {
-        const { stderr } = await execAsync(command);
+        const { stderr } = await execFileAsync('ffmpeg', command);
+        const stderrText = stderr.toString();
 
-        if (stderr && !stderr.includes('frame=')) {
-            log.debug(`FFmpeg stderr for ${name}: ${stderr}`);
+        if (stderrText && !stderrText.includes('frame=')) {
+            log.debug(`FFmpeg stderr for ${name}: ${stderrText}`);
         }
 
         // Verify output file was created
