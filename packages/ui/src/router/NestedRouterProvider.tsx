@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { FixLinks } from "./FixLinks";
 import { createRoute404 } from "./Route404";
 import { RouteComponent } from "./RouteComponent";
@@ -17,13 +17,18 @@ interface RouterProviderProps {
 }
 export function NestedRouterProvider({ routes, index, children, fixLinks = false }: RouterProviderProps) {
     const ctx = useRouterContext();
+    // Capture basePath once at mount. When the parent router switches to a different
+    // top-level route (e.g. /store -> /studio), the lazy loader briefly keeps rendering
+    // this (now-stale) module with a new ctx. Keeping basePath stable lets the
+    // ctx.matchedRoutePath !== nestedRouter.basePath check below detect the mismatch and
+    // skip rendering instead of running match() against the wrong route table.
+    const basePathRef = useRef(ctx.matchedRoutePath);
     const nestedRouter = useMemo(() => {
         if (typeof window === 'undefined') return null;
-        const basePath = ctx.matchedRoutePath;
-        const nestedRouter = new NestedRouter(ctx.router, basePath, routes);
+        const nestedRouter = new NestedRouter(ctx.router, basePathRef.current, routes);
         nestedRouter.index = index;
         return nestedRouter;
-    }, [ctx.matchedRoutePath, ctx.router, index, routes]);
+    }, [ctx.router, index, routes]);
 
     const nestedRouteMatch = useMemo(() => {
         if (!nestedRouter) {

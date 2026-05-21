@@ -1,8 +1,11 @@
 import { ComplexSearchPayload, ContentObjectItem, FindPayload } from "@vertesia/common";
 import { errorMessage, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
+import { useCallback } from "react";
 import { Md5 } from "ts-md5";
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
+
+const t = i18nInstance.getFixedT(null, NAMESPACE);
 
 /**
  * Types of actions that can be taken with a file
@@ -110,7 +113,6 @@ async function prepareFilesWithMetadata(files: File[], selectedFolder?: string |
 export function useSmartFileUploadProcessing() {
     const { client } = useUserSession();
     const toast = useToast();
-    const t = i18nInstance.getFixedT(null, NAMESPACE);
 
     /**
      * Check files to determine if they need to be created, updated, or skipped
@@ -119,7 +121,7 @@ export function useSmartFileUploadProcessing() {
      * @param collectionId limit the check to a collection
      * @returns Promise with information about actions to take for each file
      */
-    const prepareFilesForUpload = async (
+    const prepareFilesForUpload = useCallback(async (
         files: File[],
         selectedFolder?: string | null,
         limitToCollectionId?: string,
@@ -245,7 +247,7 @@ export function useSmartFileUploadProcessing() {
             console.log("Error in file upload processing check", error);
             throw new Error("Error in file upload processing check: " + errorMessage(error), { cause: error });
         }
-    };
+    }, [client, toast]);
 
     return {
         checkDocumentProcessing: prepareFilesForUpload,
