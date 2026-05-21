@@ -83,6 +83,7 @@ export class WorkflowsApi extends ApiTopic {
         options?: {
             includeHistory?: boolean;
             historyFormat?: 'events' | 'tasks' | 'agent';
+            hydratePayloads?: boolean;
         }
     ): Promise<WorkflowRunWithDetails> {
         const query: NonNullable<IRequestParams["query"]> = {};
@@ -95,6 +96,10 @@ export class WorkflowsApi extends ApiTopic {
         // Support new historyFormat parameter
         if (options?.historyFormat !== undefined) {
             query.history_format = options.historyFormat;
+        }
+
+        if (options?.hydratePayloads !== undefined) {
+            query.hydrate_payloads = options.hydratePayloads;
         }
 
         return this.get(`/runs/${workflowId}/${runId}`, { query });

@@ -451,6 +451,7 @@ export interface StreamAgentRunQuery extends AgentRunUpdatesQuery {
 
 export interface AgentRunDetailsQuery {
     include_history?: boolean;
+    hydrate_payloads?: boolean;
 }
 
 export type AgentArtifactVisibility = 'user' | 'internal' | 'all';
