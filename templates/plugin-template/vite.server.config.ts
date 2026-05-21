@@ -5,7 +5,7 @@ import { vertesiaDevServerPlugin } from '@vertesia/build-tools/vite';
 export default defineConfig({
     plugins: [
         vertesiaDevServerPlugin(),
-        devServer({ entry: 'tools/server.ts' }) as PluginOption, //type assertion, helps when TS gets confused between 2 vite installs.
+        devServer({ entry: 'src/tool-server/server.ts' }) as PluginOption, // type assertion helps when TS gets confused between two Vite installs.
     ],
     build: {
         target: 'esnext',

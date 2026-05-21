@@ -1,10 +1,6 @@
-import commonjs from '@rollup/plugin-commonjs';
-import json from '@rollup/plugin-json';
-import nodeResolve from '@rollup/plugin-node-resolve';
-import terser from '@rollup/plugin-terser';
 import fs from 'fs';
 import path from 'path';
-import { defineConfig } from 'rollup';
+import { defineConfig } from 'rolldown';
 import { EXTERNALS } from './externals.js';
 
 const outputDir = path.resolve('lib');
@@ -27,21 +23,19 @@ const entries = fs.readdirSync(esmOutputDir).filter((name) => {
 
 const jsEntries = entries.map((name) => ({
     input: path.join(outputDir, 'esm', name, 'index.js'),
+    platform: 'browser',
+    resolve: {
+        mainFields: ['browser', 'module', 'main'],
+        conditionNames: ['browser', 'import', 'default'],
+    },
     output: {
         file: path.join(outputDir, `vertesia-ui-${name}.js`),
         format: 'es',
         sourcemap: true,
+        minify: true,
     },
     external: EXTERNALS,
-    plugins: [
-        nodeResolve({
-            browser: true,
-            exportConditions: ['browser', 'module', 'import'],
-        }),
-        json(),
-        commonjs(),
-        terser(),
-    ],
+    plugins: [],
 }));
 
 export default defineConfig([...jsEntries]);

@@ -1,5 +1,5 @@
 /**
- * Rollup Configuration for Widget Bundles
+ * Rolldown Configuration for Widget Bundles
  *
  * This configuration:
  * 1. Finds all .tsx files in src/skills/ directories (next to SKILL.md files)
@@ -8,12 +8,10 @@
  *
  * Output: dist/widgets/{widget-name}.js
  */
-import { nodeResolve } from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
-import typescript from '@rollup/plugin-typescript';
-import terser from '@rollup/plugin-terser';
+import { defineConfig } from 'rolldown';
 import { globSync } from 'fs';
 import path from 'path';
+import { typescriptTypecheckPlugin } from '@vertesia/build-tools';
 
 const outputDir = './dist/widgets';
 
@@ -57,18 +55,29 @@ function findWidgetEntryPoints() {
 
 // Find all widget entry points
 const widgets = findWidgetEntryPoints();
+const typecheckPlugin = typescriptTypecheckPlugin({
+    tsconfig: './tsconfig.widgets.json',
+});
 
 console.log(`Found ${widgets.length} widget(s):`, widgets.map(w => w.name).join(', '));
 
 // Create a bundle configuration for each widget
 const widgetBundles = widgets.map(({ name, path: widgetPath }) => ({
     input: widgetPath,
+    platform: 'browser',
+    tsconfig: './tsconfig.widgets.json',
+    resolve: {
+        extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
+        mainFields: ['browser', 'module', 'main'],
+        conditionNames: ['browser', 'import', 'default'],
+    },
     output: {
         dir: outputDir,
         entryFileNames: `${name}.js`,
         format: 'es',
         sourcemap: true,
-        inlineDynamicImports: true
+        codeSplitting: false,
+        minify: true,
     },
     external: [
         // Externalize React dependencies - they should be provided by the host application
@@ -78,40 +87,7 @@ const widgetBundles = widgets.map(({ name, path: widgetPath }) => ({
         'react/jsx-dev-runtime',
         'react-dom/client'
     ],
-    // Treat TypeScript diagnostics from @rollup/plugin-typescript as build errors
-    // instead of warnings, so type issues fail the build.
-    onwarn(warning, defaultHandler) {
-        if (warning.plugin === 'typescript') {
-            throw new Error(warning.message ?? String(warning));
-        }
-        defaultHandler(warning);
-    },
-    plugins: [
-        typescript({
-            tsconfig: './tsconfig.widgets.json',
-            declaration: false,
-            sourceMap: true
-        }),
-        nodeResolve({
-            browser: true,
-            preferBuiltins: false,
-            extensions: ['.tsx', '.ts', '.jsx', '.js']
-        }),
-        commonjs(),
-        terser({
-            compress: {
-                drop_console: false
-            }
-        })
-    ]
+    plugins: [typecheckPlugin],
 }));
 
-// Rollup requires at least one config, so export empty config if no widgets found
-export default widgetBundles.length > 0 ? widgetBundles : {
-    input: 'src/widgets/index.ts',  // Dummy input
-    output: {
-        file: '/dev/null',  // No output
-        format: 'es'
-    },
-    plugins: []
-};
+export default defineConfig(widgetBundles);

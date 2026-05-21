@@ -20,7 +20,7 @@
     "hooks"
   ],
   "scripts": {
-    "build": "pnpm exec rimraf ./lib && tsc -b && pnpm exec rollup -c",
+    "build": "rimraf ./lib && tsc -b && rolldown -c rollup.config.js",
     "lint": "biome lint src && pnpm run check:rtl-classes",
     "lint:fix": "biome lint --write src",
     "check:rtl-classes": "node scripts/check-rtl-classes.mjs --mode=strict",
@@ -102,10 +102,6 @@
     "vega-lite": "^6.4.1"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^28.0.3",
-    "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "^16.0.1",
-    "@rollup/plugin-terser": "^0.4.4",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/hast": "^3.0.4",
@@ -119,7 +115,7 @@
     "i18next-cli": "^1.51.5",
     "jsdom": "^25.0.1",
     "rimraf": "^6.1.2",
-    "rollup": "^4.59.0",
+    "rolldown": "^1.0.2",
     "typescript": "^6.0.2",
     "vitest": "^4.0.16",
     "vitest-axe": "^0.1.0",

@@ -2,7 +2,7 @@
  * Vite-specific helpers for tool server development.
  *
  * Provides a pre-configured Vite plugin that handles SKILL.md, prompt,
- * and raw file imports — the same transforms used by rollup at build time.
+ * and raw file imports — the same transforms used by Rolldown at build time.
  *
  * @example
  * ```typescript
@@ -20,10 +20,11 @@
  * ```
  */
 
-import type { Plugin } from 'rollup';
 import { vertesiaImportPlugin } from './plugin.js';
 import { skillTransformer, rawTransformer, promptTransformer } from './presets/index.js';
 import type { PluginConfig } from './types.js';
+
+type ViteCompatiblePlugin = ReturnType<typeof vertesiaImportPlugin>;
 
 /**
  * Creates a pre-configured Vite plugin for tool server dev mode.
@@ -32,7 +33,7 @@ import type { PluginConfig } from './types.js';
  *
  * @param overrides - Optional overrides for the plugin config
  */
-export function vertesiaDevServerPlugin(overrides?: Partial<PluginConfig>): Plugin {
+export function vertesiaDevServerPlugin(overrides?: Partial<PluginConfig>): ViteCompatiblePlugin {
     return vertesiaImportPlugin({
         transformers: [
             skillTransformer,

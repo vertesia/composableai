@@ -13,7 +13,7 @@
     "lint": "biome lint src",
     "test": "vitest run",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
-    "build": "pnpm exec tsmod build && pnpm exec rollup -c",
+    "build": "pnpm exec tsmod build && tsc -p tsconfig.web.json --noEmit && pnpm exec rolldown -c rollup.config.js",
     "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
   },
   "exports": {
@@ -22,11 +22,7 @@
     "require": "./lib/cjs/index.js"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^28.0.3",
-    "@rollup/plugin-node-resolve": "^16.0.1",
-    "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^12.1.2",
-    "rollup": "^4.59.0",
+    "rolldown": "^1.0.2",
     "ts-dual-module": "^0.6.3",
     "typescript": "^6.0.2",
     "vitest": "^4.0.16"

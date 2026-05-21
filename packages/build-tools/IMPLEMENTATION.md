@@ -207,7 +207,7 @@ The generic architecture allows easy addition of new transformers:
 
 Uses ts-dual-module for dual ESM/CJS builds:
 1. `tsmod build` - Compiles TypeScript to ESM and CJS
-2. `rollup -c` - Bundles ESM build for distribution
+2. `rolldown -c` - Bundles ESM build for distribution
 
 ## License
 
@@ -216,4 +216,4 @@ Apache-2.0
 ## Repository
 
 Part of the Vertesia ComposableAI monorepo:
-`composableai/packages/rollup-plugin-imports`
+`composableai/packages/build-tools`

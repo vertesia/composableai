@@ -1,5 +1,5 @@
 /**
- * Rollup Configuration for Server Build
+ * Rolldown Configuration for Server Build
  *
  * This configuration handles:
  * 1. TypeScript compilation (src → lib) with preserveModules
@@ -9,32 +9,33 @@
  *
  * Browser bundles are in rollup.config.browser.js
  */
-import json from '@rollup/plugin-json';
-import typescript from '@rollup/plugin-typescript';
-import { vertesiaImportPlugin, skillTransformer, rawTransformer, skillCollectionTransformer, templateTransformer, templateCollectionTransformer, promptTransformer } from '@vertesia/build-tools';
-
-// ============================================================================
-// Exit Plugin - Forces process exit after build completes
-// This prevents TypeScript plugin from keeping the process alive
-// ============================================================================
-function exitPlugin() {
-    return {
-        name: 'force-exit',
-        closeBundle() {
-            console.log('Tool server build Done');
-            // Force exit after bundle completes to prevent hanging
-            setImmediate(() => process.exit(0));
-        }
-    };
-}
+import { defineConfig } from 'rolldown';
+import {
+    vertesiaImportPlugin,
+    skillTransformer,
+    rawTransformer,
+    skillCollectionTransformer,
+    templateTransformer,
+    templateCollectionTransformer,
+    promptTransformer,
+    typescriptTypecheckPlugin,
+} from '@vertesia/build-tools';
 
 // ============================================================================
 // Server Build Configuration (TypeScript → JavaScript)
 // ============================================================================
-const serverBuild = {
+const serverBuild = defineConfig({
     input: {
         server: './src/tool-server/server.ts',
         'server-node': './src/tool-server/server-node.ts',
+    },
+    platform: 'node',
+    tsconfig: './tsconfig.tool-server.json',
+    resolve: {
+        extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
+        extensionAlias: {
+            '.js': ['.ts', '.tsx', '.js'],
+        },
     },
     output: {
         dir: 'lib',
@@ -52,15 +53,11 @@ const serverBuild = {
         // Externalize all node modules and absolute imports
         return true;
     },
-    // Treat TypeScript diagnostics from @rollup/plugin-typescript as build errors
-    // instead of warnings, so type issues fail the build.
-    onwarn(warning, defaultHandler) {
-        if (warning.plugin === 'typescript') {
-            throw new Error(warning.message ?? String(warning));
-        }
-        defaultHandler(warning);
-    },
     plugins: [
+        typescriptTypecheckPlugin({
+            tsconfig: './tsconfig.tool-server.json',
+            mode: 'emitDeclarationOnly',
+        }),
         vertesiaImportPlugin({
             transformers: [
                 skillTransformer,              // Handles .md?skill imports
@@ -77,16 +74,8 @@ const serverBuild = {
             }
 
         }),
-        typescript({
-            tsconfig: './tsconfig.tool-server.json',
-            declaration: true,
-            declarationDir: 'lib',
-            sourceMap: true
-        }),
-        json(),
-        exitPlugin()
     ]
-};
+});
 
 // ============================================================================
 // Export server build configuration only

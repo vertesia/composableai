@@ -18,6 +18,9 @@ minimumReleaseAgeStrict: true
 minimumReleaseAgeExclude:
   - "@vertesia/*"
   - "@llumiverse/*"
+  - "rolldown@1.0.2"
+  - "@rolldown/*"
+  - "@oxc-project/types@0.132.0"
   - "turbo@2.9.14"
   - "@turbo/darwin-64@2.9.14"
   - "@turbo/darwin-arm64@2.9.14"

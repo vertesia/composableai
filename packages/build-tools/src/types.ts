@@ -1,8 +1,8 @@
 /**
- * Type definitions for the Vertesia Rollup Import Plugin
+ * Type definitions for the Vertesia Rolldown Import Plugin
  */
 
-import type { Plugin } from 'rollup';
+import type { Plugin } from 'rolldown';
 import type { z } from 'zod';
 
 /**
@@ -73,7 +73,7 @@ export interface TransformerRule {
 export interface WidgetConfig {
     /**
      * External dependencies that should not be bundled
-     * Default: ['react', 'react-dom', 'react/jsx-runtime']
+     * Default: ['react', 'react-dom', 'react/jsx-runtime', '@vertesia/ui/core']
      */
     external?: string[];
 
@@ -84,7 +84,7 @@ export interface WidgetConfig {
     tsconfig?: string;
 
     /**
-     * Additional options to pass to @rollup/plugin-typescript
+     * @deprecated Rolldown handles TypeScript and JSX natively.
      */
     typescript?: Record<string, unknown>;
 

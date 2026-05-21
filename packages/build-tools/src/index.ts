@@ -1,7 +1,7 @@
 /**
- * Vertesia Rollup Import Plugin
+ * Vertesia Rolldown Import Plugin
  *
- * A flexible Rollup plugin for transforming imports with custom compilers and validation.
+ * A flexible Rolldown plugin for transforming imports with custom compilers and validation.
  * Supports preset transformers for common use cases (skills, raw files) and custom transformers.
  *
  * @example
@@ -20,6 +20,8 @@
 
 // Core plugin
 export { vertesiaImportPlugin } from './plugin.js';
+export { typescriptTypecheckPlugin } from './typescript-typecheck-plugin.js';
+export type { TypeScriptTypecheckPluginOptions } from './typescript-typecheck-plugin.js';
 
 // Types
 export type {

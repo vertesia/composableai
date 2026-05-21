@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Plugin } from "vite";
 import { extractTailwindUtilitiesLayer } from "./parse-css.js";
@@ -36,7 +36,10 @@ export function vertesiaPluginBuilder({
         load(id) {
             if (id === 'virtual:vertesia-plugin-css-entry') {
                 // This creates a virtual JS file that imports your actual CSS
-                return `import "${inputRelative}";`;
+                return {
+                    code: `import "${inputRelative}";`,
+                    moduleType: 'js' as const,
+                };
             }
             return null;
         },
@@ -48,18 +51,12 @@ export function vertesiaPluginBuilder({
                 id: 'virtual:vertesia-plugin-css-entry',
             });
         },
-        generateBundle(_options, bundle) {
-            const virtualChunkFileName = 'virtual-vertesia-plugin-css-entry.js';
-            delete bundle[virtualChunkFileName];
-            // Remove references to the virtual chunk from Rollup metadata first.
-            for (const chunk of Object.values(bundle)) {
-                if (chunk.type === 'chunk' && chunk.code) {
-                    chunk.imports = chunk.imports.filter((entry) => !entry.endsWith(virtualChunkFileName));
-                    chunk.dynamicImports = chunk.dynamicImports.filter((entry) => !entry.endsWith(virtualChunkFileName));
-                }
-            }
-        },
         writeBundle(this, options, bundle) {
+            const virtualChunkFileName = join(options.dir!, 'virtual-vertesia-plugin-css-entry.js');
+            if (existsSync(virtualChunkFileName)) {
+                unlinkSync(virtualChunkFileName);
+            }
+
             if (!inlineCss) return;
             // Look for the generated CSS file in the output directory
             const keys = Object.keys(bundle).filter(k => k === output);

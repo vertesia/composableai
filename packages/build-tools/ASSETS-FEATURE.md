@@ -77,8 +77,8 @@ vertesiaImportPlugin({
 - **`widgetConfig`**: Widget compilation configuration (optional)
   - **`external`**: Array of external dependencies (default: React and React DOM)
   - **`tsconfig`**: Path to TypeScript config file (default: `'./tsconfig.json'`)
-  - **`typescript`**: Additional options passed to `@rollup/plugin-typescript`
-  - **`minify`**: Enable minification with terser (default: `false`)
+  - **`typescript`**: Deprecated; Rolldown handles TypeScript and JSX natively
+  - **`minify`**: Enable Rolldown minification (default: `false`)
 
 ## How It Works
 
@@ -294,7 +294,7 @@ Enable minification for production builds:
 
 ```typescript
 widgetConfig: {
-  minify: true  // Uses rollup-plugin-terser
+  minify: true
 }
 ```
 

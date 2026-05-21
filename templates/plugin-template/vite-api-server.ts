@@ -6,7 +6,7 @@
  *
  * In both modes the API is served on the same port as the UI under /api.
  *
- * Includes the Rollup-compatible import transformers (?skill, ?template, ?prompt, ?raw)
+ * Includes the Rolldown-compatible import transformers (?skill, ?template, ?prompt, ?raw)
  * needed by ssrLoadModule to process tool server source files.
  */
 import { resolve } from 'node:path';
@@ -56,7 +56,7 @@ export function apiServerPlugin(options: ApiServerPluginOptions = {}): Plugin[] 
     const absoluteCompiledEntry = resolve(__dirname, compiledEntry);
 
     return [
-        // Rollup-compatible transformers for tool server imports (?skill, ?template, etc.)
+        // Rolldown-compatible transformers for tool server imports (?skill, ?template, etc.)
         vertesiaImportPlugin({
             transformers: [
                 skillTransformer,

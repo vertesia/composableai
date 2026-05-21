@@ -1,17 +1,26 @@
-import commonjs from '@rollup/plugin-commonjs';
-import nodeResolve from '@rollup/plugin-node-resolve';
-import replace from '@rollup/plugin-replace';
-import terser from '@rollup/plugin-terser';
+import { defineConfig } from 'rolldown';
 
 const TARGET_FILE = 'lib/vertesia-fusion-ux.js';
 
-export default {
+export default defineConfig({
     input: 'lib/esm/index.js',
+    platform: 'browser',
+    transform: {
+        define: {
+            'process.env.NODE_ENV': JSON.stringify('production'),
+            'process.env': JSON.stringify({}),
+        },
+    },
+    resolve: {
+        mainFields: ['browser', 'module', 'main'],
+        conditionNames: ['browser', 'import', 'default'],
+    },
     output: {
         file: TARGET_FILE,
         format: 'es',
         sourcemap: true,
-        inlineDynamicImports: true,
+        codeSplitting: false,
+        minify: true,
     },
     external: [
         // React packages (handled by CDN react-all bundle)
@@ -22,17 +31,5 @@ export default {
         // Third-party packages (handled by CDN)
         'ajv',
     ],
-    plugins: [
-        replace({
-            preventAssignment: true,
-            'process.env.NODE_ENV': JSON.stringify('production'),
-            'process.env': JSON.stringify({}),
-        }),
-        nodeResolve({
-            browser: true,
-            exportConditions: ['browser', 'module', 'import'],
-        }),
-        commonjs(),
-        terser(),
-    ],
-};
+    plugins: [],
+});

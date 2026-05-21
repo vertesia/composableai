@@ -1,8 +1,8 @@
 /**
- * Core Rollup plugin implementation for transforming imports
+ * Core Rolldown plugin implementation for transforming imports
  */
 
-import type { Plugin } from 'rollup';
+import type { Plugin } from 'rolldown';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { PluginConfig, TransformerRule, AssetFile } from './types.js';
@@ -11,7 +11,7 @@ import { compileWidgets } from './utils/widget-compiler.js';
 import type { WidgetMetadata } from './utils/asset-discovery.js';
 
 /**
- * Creates a Rollup plugin that transforms imports based on configured rules
+ * Creates a Rolldown-compatible plugin that transforms imports based on configured rules
  */
 export function vertesiaImportPlugin(config: PluginConfig): Plugin {
     const { transformers, assetsDir = './dist', widgetConfig } = config;
@@ -114,14 +114,16 @@ export function vertesiaImportPlugin(config: PluginConfig): Plugin {
 
                 // Generate code
                 const imports = result.imports ? result.imports.join('\n') + '\n\n' : '';
-                if (result.code) {
+                const code = result.code
                     // Custom code provided - prepend imports
-                    return imports + result.code;
-                } else {
+                    ? imports + result.code
                     // Default: export data (escape if string, otherwise stringify as JSON)
-                    const dataJson = JSON.stringify(result.data, null, 2);
-                    return `${imports}export default ${dataJson};`;
-                }
+                    : `${imports}export default ${JSON.stringify(result.data, null, 2)};`;
+
+                return {
+                    code,
+                    moduleType: 'js',
+                };
             } catch (error) {
                 const message = error instanceof Error ? error.message : String(error);
                 this.error(`Failed to transform ${id}: ${message}`);

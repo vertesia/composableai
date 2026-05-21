@@ -294,7 +294,7 @@ export const skillTransformer: TransformerPreset = {
         const hasProperties = existsSync(propertiesPath);
 
         // If properties.ts exists, generate custom code with import and merge
-        // Rollup will handle transpiling properties.ts to properties.js
+        // The bundler will handle transpiling properties.ts to properties.js
         if (hasProperties) {
             const skillDataJson = JSON.stringify(skillData, null, 2);
             const code = `import properties from './properties.js';
