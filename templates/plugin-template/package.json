@@ -1,6 +1,6 @@
 {
   "name": "plugin-template",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "description": "A unified template for building custom UI plugins and tool servers for Vertesia",
   "type": "module",
   "main": "lib/server.js",
