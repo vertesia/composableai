@@ -2,8 +2,28 @@ import { AccessControlPrincipalType, AccessControlResourceType, ProjectRoles } f
 import { Command } from 'commander';
 import colors from 'ansi-colors';
 import { getClient } from '../client.js';
+import { getStringOption, type CliOptions } from '../utils/options.js';
 
-export async function listAces(program: Command, _options: Record<string, any>) {
+type CreateAceOptions = CliOptions<{
+    principal?: string;
+    principalType?: AccessControlPrincipalType;
+    resource?: string;
+    resourceType?: AccessControlResourceType;
+    role?: ProjectRoles;
+    principalProps?: string;
+    resourceProps?: string;
+    patterns?: string;
+}>;
+
+type CreateDenialOptions = CliOptions<{
+    principal?: string;
+    principalType?: AccessControlPrincipalType;
+    patterns?: string;
+    resourceName?: string;
+    principalProps?: string;
+}>;
+
+export async function listAces(program: Command, _options: Record<string, unknown>) {
     const client = await getClient(program);
     const aces = await client.iam.aces.listProjectAces();
 
@@ -23,36 +43,42 @@ export async function listAces(program: Command, _options: Record<string, any>) 
  * Parse a comma-separated patterns option (e.g. "ui:studio,tool:create_*") into
  * a string array. Trims whitespace and filters out empty entries.
  */
-function parsePatterns(value: string | undefined): string[] | undefined {
-    if (!value) return undefined;
-    const list = value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+function parsePatterns(value: unknown): string[] | undefined {
+    const str = getStringOption(value);
+    if (!str) return undefined;
+    const list = str.split(',').map(s => s.trim()).filter(s => s.length > 0);
     return list.length > 0 ? list : undefined;
 }
 
-export async function createAce(program: Command, options: Record<string, any>) {
+export async function createAce(program: Command, options: CreateAceOptions) {
     const client = await getClient(program);
 
-    const conditions: Record<string, any> = {};
-    if (options.principalProps) {
-        conditions.principal_props = JSON.parse(options.principalProps);
+    const conditions: Record<string, unknown> = {};
+    const principalProps = getStringOption(options.principalProps);
+    const resourceProps = getStringOption(options.resourceProps);
+    if (principalProps) {
+        conditions.principal_props = JSON.parse(principalProps);
     }
-    if (options.resourceProps) {
-        conditions.resource_props = JSON.parse(options.resourceProps);
+    if (resourceProps) {
+        conditions.resource_props = JSON.parse(resourceProps);
     }
     // Shortcut: --patterns "ui:studio,tool:create_*" → conditions.resource_props.patterns
     const patterns = parsePatterns(options.patterns);
     if (patterns) {
-        conditions.resource_props = { ...(conditions.resource_props ?? {}), patterns };
+        conditions.resource_props = {
+            ...((conditions.resource_props as Record<string, unknown> | undefined) ?? {}),
+            patterns,
+        };
     }
 
     const hasConditions = Object.keys(conditions).length > 0;
 
     const ace = await client.iam.aces.create({
-        principal: options.principal,
-        principal_type: options.principalType as AccessControlPrincipalType,
-        resource: options.resource,
-        resource_type: options.resourceType as AccessControlResourceType,
-        role: options.role,
+        principal: requireStringOption(options.principal, '--principal'),
+        principal_type: requireEnumOption(options.principalType, '--principal-type'),
+        resource: requireStringOption(options.resource, '--resource'),
+        resource_type: requireEnumOption(options.resourceType, '--resource-type'),
+        role: requireEnumOption(options.role, '--role'),
         conditions: hasConditions ? conditions : undefined,
     });
 
@@ -66,7 +92,7 @@ export async function createAce(program: Command, options: Record<string, any>) 
  * need to provide the principal and patterns. Patterns are passed as a
  * comma-separated list (e.g. "ui:studio,tool:create_*").
  */
-export async function createDenial(program: Command, options: Record<string, any>) {
+export async function createDenial(program: Command, options: CreateDenialOptions) {
     const client = await getClient(program);
 
     const patterns = parsePatterns(options.patterns);
@@ -75,17 +101,18 @@ export async function createDenial(program: Command, options: Record<string, any
         process.exit(1);
     }
 
-    const conditions: Record<string, any> = {
+    const conditions: Record<string, unknown> = {
         resource_props: { patterns },
     };
-    if (options.principalProps) {
-        conditions.principal_props = JSON.parse(options.principalProps);
+    const principalProps = getStringOption(options.principalProps);
+    if (principalProps) {
+        conditions.principal_props = JSON.parse(principalProps);
     }
 
     const ace = await client.iam.aces.create({
-        principal: options.principal,
-        principal_type: options.principalType as AccessControlPrincipalType,
-        resource: options.resourceName ?? 'Denial Rule',
+        principal: requireStringOption(options.principal, '--principal'),
+        principal_type: requireEnumOption(options.principalType, '--principal-type'),
+        resource: getStringOption(options.resourceName) ?? 'Denial Rule',
         resource_type: AccessControlResourceType.contribution_set,
         role: ProjectRoles.none,
         conditions,
@@ -93,6 +120,23 @@ export async function createDenial(program: Command, options: Record<string, any
 
     console.log(`${colors.green('✓')} Denial rule created: ${ace.id}`);
     console.log(colors.gray(`  ${patterns.length} pattern(s): ${patterns.join(', ')}`));
+}
+
+function requireStringOption(value: unknown, name: string): string {
+    const option = getStringOption(value);
+    if (!option) {
+        console.error(`${colors.red('✗')} ${name} is required`);
+        process.exit(1);
+    }
+    return option;
+}
+
+function requireEnumOption<T extends string>(value: T | undefined, name: string): T {
+    if (!value) {
+        console.error(`${colors.red('✗')} ${name} is required`);
+        process.exit(1);
+    }
+    return value;
 }
 
 export async function deleteAce(program: Command, aceId: string) {

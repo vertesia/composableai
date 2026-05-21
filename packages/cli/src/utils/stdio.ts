@@ -1,5 +1,6 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
+import { hasErrorCode } from "./options.js";
 
 export async function readStdin() {
     const chunks = [];
@@ -32,8 +33,8 @@ export function writeJsonFile(file: string, data: object) {
 export function makeDir(dir: string) {
     try {
         return mkdirSync(dir, { recursive: true });
-    } catch (err: any) {
-        if (err.code !== 'EEXIST') {
+    } catch (err: unknown) {
+        if (!hasErrorCode(err, 'EEXIST')) {
             throw err;
         }
     }

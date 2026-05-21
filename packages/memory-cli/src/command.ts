@@ -14,7 +14,7 @@ export function setupMemoCommand(command: Command, publish?: (file: string, name
         .option('-o, --out <file>', 'The output file. Defaults to "memory.tar".')
         .option('-t, --test', 'Test the memory script without building it.')
         .argument('<recipe>', 'The recipe script to build the memory from.')
-        .action((_arg: string, options: Record<string, any>, command: Command) => {
+        .action((_arg: string, options: Record<string, unknown>, command: Command) => {
             memoAction(command, { ...options, publish }).catch((err: Error) => {
                 console.error("Failed to run command: ", err);
                 process.exit(1);
@@ -25,7 +25,7 @@ export function setupMemoCommand(command: Command, publish?: (file: string, name
     exportCmd.option('--map <mapping>', 'The mapping to use. An inline JSON object or a path to a JSOn file prefixed with @')
         .option('-i, --indent <spaces>', 'The number of spaces to indent the JSON result. No indentation is done by default.')
         .argument('<pack>', 'The uncompressed memory pack to use (i.e. a .tar file).')
-        .action((arg: string, options: Record<string, any>, command: Command) => {
+        .action((arg: string, options: Record<string, unknown>, command: Command) => {
             exportAction(command, arg, options).catch((err: Error) => {
                 console.error("Failed to run command: ", err);
                 process.exit(1);
@@ -37,7 +37,7 @@ export function setupMemoCommand(command: Command, publish?: (file: string, name
     return command;
 }
 
-function memoAction(command: Command, options: Record<string, any>) {
+function memoAction(command: Command, options: Record<string, unknown>) {
     const { script, vars } = parseArgs(command.args);
     if (options.indent) {
         options.indent = parseInt(options.indent);
@@ -58,7 +58,7 @@ function parseArgs(args: string[]) {
         process.exit(1);
     }
     let script: string | undefined;
-    const vars: Record<string, any> = {};
+    const vars: Record<string, unknown> = {};
     let lastKey: string | undefined;
     let lastCommittedOption: string | undefined;
     for (const arg of args) {
@@ -90,12 +90,12 @@ function parseArgs(args: string[]) {
     return { script, vars };
 }
 
-async function exportAction(_command: Command, packFile: string, options: Record<string, any>) {
+async function exportAction(_command: Command, packFile: string, options: Record<string, unknown>) {
     let mapParam = options.map;
     if (mapParam.startsWith('@')) {
         mapParam = await readFile(mapParam.substring(1), "utf-8");
     }
-    const mapping: Record<string, any> = JSON.parse(mapParam);
+    const mapping: Record<string, unknown> = JSON.parse(mapParam);
     const pack = await loadMemoryPack(packFile);
     const obj = await pack.exportObject(mapping);
     console.log(JSON.stringify(obj, null, options.indent || 2));

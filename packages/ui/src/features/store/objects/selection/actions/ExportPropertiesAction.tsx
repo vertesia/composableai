@@ -70,7 +70,7 @@ export function ExportPropertiesComponent({ action, objectIds }: ActionComponent
                     const data = new Blob([response.data], { type: response.type });
 
                     const url = window.URL.createObjectURL(data);
-                    const a: any = document.createElement('a');
+                    const a = document.createElement('a');
                     a.download = response.name;
                     a.href = url;
                     a.click();

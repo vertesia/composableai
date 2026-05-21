@@ -1,5 +1,5 @@
 import { log } from "@temporalio/activity";
-import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
+import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec, JSONObject } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFoundError, DocumentNotFoundError } from "../../errors.js";
 
@@ -56,13 +56,15 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
 
     log.debug("Creating document from interaction result", { runId, objectTypeName });
 
-    const run = await client.runs.retrieve(runId).catch((e) => {
-        throw new DocumentNotFoundError(`Error fetching run ${runId}: ${e.message}`);
+    const run = await client.runs.retrieve<Record<string, unknown>, Record<string, unknown>>(runId).catch((e: unknown) => {
+        const message = e instanceof Error ? e.message : String(e);
+        throw new DocumentNotFoundError(`Error fetching run ${runId}: ${message}`);
     });
 
     const type = objectTypeName ?
-        await client.types.getTypeByName(objectTypeName).catch((e) => {
-            throw new DocumentNotFoundError(`Error fetching type ${objectTypeName}: ${e.message}`);
+        await client.types.getTypeByName(objectTypeName).catch((e: unknown) => {
+            const message = e instanceof Error ? e.message : String(e);
+            throw new DocumentNotFoundError(`Error fetching type ${objectTypeName}: ${message}`);
         })
         : undefined;
 
@@ -71,14 +73,15 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
     const inputData = run.parameters;
 
     // Try to parse result as JSON, fallback to text if not valid JSON
-    let jsonResult: any = null;
+    let jsonResult: JSONObject | null = null;
     try {
-        jsonResult = result.object();
+        jsonResult = result.object<JSONObject>();
     } catch (e) {
         log.debug("Result is not valid JSON, will use text content instead", { error: e instanceof Error ? e.message : String(e) });
     }
 
-    const name = jsonResult?.['name'] || jsonResult?.["title"] || inputData['name'] || params.fallback_name || undefined;
+    const nameValue = jsonResult?.['name'] || jsonResult?.["title"] || inputData['name'] || params.fallback_name || undefined;
+    const name = typeof nameValue === "string" ? nameValue : undefined;
 
     const docPayload = {
         name,
@@ -97,7 +100,7 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
 
     if (params.update_text_from_property) {
         const text = docPayload.properties[params.update_text_from_property];
-        if (text) {
+        if (typeof text === "string") {
             docPayload.text = text;
         }
     }

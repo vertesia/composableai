@@ -55,8 +55,7 @@ if (globalThis.TextDecoderStream && typeof globalThis.TextDecoderStream === 'fun
             }
         }
     }
-    _TextDecoderStream = MyTextDecoderStream as any;
+    _TextDecoderStream = MyTextDecoderStream as typeof TextDecoderStream;
 }
 
 export { _TextDecoderStream as TextDecoderStream };
-

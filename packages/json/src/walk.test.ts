@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 import { ObjectWalker, AsyncObjectWalker } from "./walk.js";
 
+/** Permissive recursive type for navigating untyped walker results in test assertions. */
+type Tree = { readonly [key: string]: Tree };
+
 describe('walk object', () => {
 
     test('find string values', () => {
@@ -24,7 +27,7 @@ describe('walk object', () => {
         const values = ["foo", "bar", "baz", "file"].sort().join(',');
         const found: string[] = [];
         new ObjectWalker().walk(obj, {
-            onValue(key, value) {
+            onValue(_key, value) {
                 if (typeof value === "string") {
                     found.push(value);
                 }
@@ -56,7 +59,7 @@ describe('walk object', () => {
                 return String(value)
             }
             return value;
-        });
+        }) as Tree;
         expect(r.age).toBe("42");
         expect(r.children[0].age).toBe("12");
         expect(r.children[1].age).toBe("15");
@@ -70,7 +73,7 @@ describe('walk object', () => {
                 return String(value)
             }
             return value;
-        });
+        }) as unknown as Tree;
         expect(r.length).toBe(4);
         expect(r[0]).toBe("123");
         expect(r[1].x).toBe("1");
@@ -80,7 +83,7 @@ describe('walk object', () => {
 
     test('async map', async () => {
         const obj = { ar: [123, { x: 1 }, { y: { a: 1, b: [2] } }] };
-        const r: any = await new AsyncObjectWalker().map(obj, async (_key, value) => {
+        const r = await new AsyncObjectWalker().map(obj, async (_key, value) => {
             if (typeof value === "number") {
                 return new Promise((resolve) => {
                     return setTimeout(() => {
@@ -89,12 +92,12 @@ describe('walk object', () => {
                 });
             }
             return value;
-        });
+        }) as Tree;
         expect(Array.isArray(r.ar)).toBe(true);
         expect(r.ar.length).toBe(obj.ar.length);
         expect(r.ar[0]).toBe("123");
         expect(r.ar[1].x).toBe("1");
-        const y: any = r.ar[2].y;
+        const y = r.ar[2].y;
         expect(y.a).toBe("1");
         console.log(y.b);
         expect(Array.isArray(y.b)).toBe(true);

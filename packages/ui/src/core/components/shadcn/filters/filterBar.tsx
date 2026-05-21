@@ -5,7 +5,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "../popover";
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from "../command";
 import { ListFilter } from "lucide-react";
 
-import { Filter, FilterGroup } from "./types";
+import { Filter, FilterGroup, FilterOption } from "./types";
 import Filters from "./filters";
 
 import TextFilter from "./filter/TextFilter";
@@ -18,7 +18,11 @@ const FilterContext = React.createContext<{
   filters: Filter[];
   setFilters: Dispatch<SetStateAction<Filter[]>>;
   filterGroups: FilterGroup[];
-}>({} as any);
+}>({
+  filters: [],
+  setFilters: () => undefined,
+  filterGroups: [],
+});
 
 interface FilterProviderProps {
   filters: Filter[];
@@ -48,14 +52,14 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children, inModal }
       const params = new URLSearchParams(searchParams.toString());
       if (filters.length > 0) {
         const filterString = filters.map(filter => {
-          let values;
+          let values: string;
           if (filter.type === 'stringList' && Array.isArray(filter.value) && typeof filter.value[0] === 'string') {
             values = `[${(filter.value as string[]).map(item => encodeURIComponent(item)).join(',')}]`;
           } else if (Array.isArray(filter.value)) {
             if (filter.multiple) {
-              values = `[${filter.value.map((item: any) => encodeURIComponent(item.value || item || '')).join(',')}]`;
+              values = `[${filter.value.map(item => encodeURIComponent(readFilterValue(item))).join(',')}]`;
             } else if (filter.value.length > 1) {
-              values = `[${filter.value.map((item: any) => encodeURIComponent(item.value || item || '')).join(',')}]`;
+              values = `[${filter.value.map(item => encodeURIComponent(readFilterValue(item))).join(',')}]`;
             } else {
               const firstValue = filter.value[0];
               if (typeof firstValue === 'string') {
@@ -108,7 +112,7 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children, inModal }
           values = [decodeURIComponent(valuesString)];
         }
 
-        let filterValue;
+        let filterValue: FilterOption[] | string[];
 
         if (group.type === 'stringList') {
           filterValue = values;
@@ -191,7 +195,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
           return filter.name === group.name &&
             (Array.isArray(filter.value) && typeof filter.value[0] === 'string'
               ? filter.value.some(val => val === option.value)
-              : filter.value.some(val => (val as any).value === option.value));
+              : filter.value.some(val => readFilterValue(val) === option.value));
         })
       )
     })).filter(group =>
@@ -365,5 +369,9 @@ const FilterClear = ({ className }: { className?: string }) => {
     </Button>
   );
 };
+
+function readFilterValue(item: string | FilterOption): string {
+  return typeof item === 'string' ? item : item.value || '';
+}
 
 export { FilterProvider, FilterBtn, FilterBar, FilterClear };

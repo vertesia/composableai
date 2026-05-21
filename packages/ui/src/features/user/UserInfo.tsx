@@ -1,5 +1,5 @@
 import { ApiKey, PrincipalType, User, UserGroup } from "@vertesia/common";
-import { Avatar, Popover, PopoverContent, PopoverTrigger, Table, useFetch } from "@vertesia/ui/core";
+import { Avatar, Popover, PopoverContent, PopoverTrigger, Table, errorMessage, useFetch } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Users, Users2 } from "lucide-react";
 import { ReactNode } from "react";
@@ -243,11 +243,11 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
 
 interface ErrorInfoProps extends InfoProps {
     title?: string;
-    error: Error | string;
+    error: unknown;
 }
 function ErrorAvatar({ title = "Error", error, showTitle = false, size = "md" }: ErrorInfoProps) {
     return (
-        <UnknownAvatar title={title} message={typeof error === 'string' ? error : error.message} color="bg-red-500" showTitle={showTitle} size={size} />
+        <UnknownAvatar title={title} message={errorMessage(error)} color="bg-red-500" showTitle={showTitle} size={size} />
     );
 }
 

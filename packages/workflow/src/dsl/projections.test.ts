@@ -1,11 +1,10 @@
 import { describe, test, expect } from "vitest";
-import { Vars } from "./vars.ts";
-import { makeProjection } from "./projections.ts";
+import { makeProjection } from "./projections.js";
 
 describe('Result Projections', () => {
 
-    test('simple projection', () => {
-        const params: Record<string, any> = {
+    test('should make a simple projection', () => {
+        const params: Record<string, unknown> = {
             docTypes: [{ id: 1, name: "type1" }, { id: 2, name: "type2" }],
             objectId: "123"
         }
@@ -30,8 +29,8 @@ describe('Result Projections', () => {
         expect(out.foo).toBeUndefined();
     })
 
-    test('$element match', () => {
-        const params: Record<string, any> = {
+    test('should resolve $element match', () => {
+        const params: Record<string, unknown> = {
             docTypes: [{ id: 1, name: "type1" }, { id: 2, name: "type2" }],
             objectId: "123"
         }
@@ -63,8 +62,8 @@ describe('Result Projections', () => {
         expect(out.isNewType).toBe(false);
     })
 
-    test('$element does not match', () => {
-        const params: Record<string, any> = {
+    test('should resolve $element fallback when it does not match', () => {
+        const params: Record<string, unknown> = {
             docTypes: [{ id: 1, name: "type1" }, { id: 2, name: "type2" }],
             objectId: "123"
         }
@@ -96,8 +95,8 @@ describe('Result Projections', () => {
         expect(out.isNewType).toBe(true);
     })
 
-    test('$element with field', () => {
-        const params: Record<string, any> = {
+    test('should resolve $element with field', () => {
+        const params: Record<string, unknown> = {
             docTypes: [{ id: 1, name: "type1" }, { id: 2, name: "type2" }],
             objectId: "123"
         }
@@ -126,8 +125,8 @@ describe('Result Projections', () => {
         expect(out).toStrictEqual({ id: 2, name: "type2", other: null });
     })
 
-    test('$element with field - no match', () => {
-        const params: Record<string, any> = {
+    test('should resolve $element with field fallback when it does not match', () => {
+        const params: Record<string, unknown> = {
             docTypes: [{ id: 1, name: "type1" }, { id: 2, name: "type2" }],
             objectId: "123"
         }

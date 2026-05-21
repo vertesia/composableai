@@ -15,8 +15,8 @@ export function NestedNavigationContext({ basePath, fixLinks = false, children }
     const ctx = useRouterContext();
 
     const wrapWithFixLinks = fixLinks ?
-        (elem: any) => <FixLinks basePath={ctx.matchedRoutePath}>{elem}</FixLinks>
-        : (elem: any) => elem;
+        (elem: React.ReactNode) => <FixLinks basePath={ctx.matchedRoutePath}>{elem}</FixLinks>
+        : (elem: React.ReactNode) => elem;
 
     return (
         <ReactRouterContext.Provider value={{

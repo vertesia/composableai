@@ -39,7 +39,7 @@ export async function saveAgentArtifact(
     try {
         const source = new NodeStreamSource(fileContent, `${id}-${basename(filePath)}`, mimeType, filePath);
         return await client.files.uploadFile(source);
-    } catch (err: any) {
+    } catch (err: unknown) {
         log.error(`Failed to save agent artifact for run ${id}`, {
             err,
             file: filePath,

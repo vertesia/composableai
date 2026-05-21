@@ -177,7 +177,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
                 } else {
                     this.tokenServerUrl = "https://sts.dev1.vertesia.io";
                 }
-            } catch (e) {
+            } catch {
                 this.tokenServerUrl = "https://sts.dev1.vertesia.io";
             }
         } else {

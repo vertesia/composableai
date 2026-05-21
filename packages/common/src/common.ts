@@ -1,5 +1,5 @@
 export interface FindPayload {
-    query: Record<string, any>;
+    query: Record<string, unknown>;
     offset?: number;
     limit?: number;
     select?: string;
@@ -11,8 +11,8 @@ export interface FindPayload {
 export interface GenericCommandResponse {
     status: string;
     message: string;
-    err?: any;
-    details?: any;
+    err?: unknown;
+    details?: unknown;
 }
 
 export interface DeleteByIdResult {
@@ -51,7 +51,7 @@ export interface BulkOperationPayload {
     /**
      * The operation parameters.
      */
-    params: Record<string, any>;
+    params: Record<string, unknown>;
 }
 
 export interface BulkOperationResult<TOperation extends string = "generic"> {

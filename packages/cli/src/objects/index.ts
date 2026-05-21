@@ -22,34 +22,34 @@ export function registerObjectsCommand(program: Command) {
         .option('--mime [mime]', 'The mime-type of the file content. If not specified the mime type will be inferred from the file name extension.')
         .option('--path [parentPath]', 'The path of the parent folder where the object is created. If not specified the object will be created in the root of the store.')
         .option('-r, --recursive', 'Recurse directory if the file argument is a directory. The default is to not recurse.')
-        .action(async (files: string[], options: Record<string, any>) => {
+        .action(async (files: string[], options: Record<string, unknown>) => {
             await createObject(program, files, options);
         });
     store.command("update <objectId> <type>")
         .description("Update an existing object type given its ID")
-        .action(async (objectId: string, type: string, options: Record<string, any>) => {
+        .action(async (objectId: string, type: string, options: Record<string, unknown>) => {
             await updateObject(program, objectId, type, options);
         });
     store.command('delete <objectId>')
         .description("Delete an existing object given its ID")
-        .action(async (objectId: string, options: Record<string, any>) => {
+        .action(async (objectId: string, options: Record<string, unknown>) => {
             await deleteObject(program, objectId, options);
         });
     store.command('get <objectId>')
         .description("Get an existing object given its ID")
-        .action(async (objectId: string, options: Record<string, any>) => {
+        .action(async (objectId: string, options: Record<string, unknown>) => {
             await getObject(program, objectId, options);
         });
     store.command('text <objectId>')
         .description("Get the extracted text for an existing object")
         .option('--json', 'Print raw JSON instead of plain text')
-        .action(async (objectId: string, options: Record<string, any>) => {
+        .action(async (objectId: string, options: Record<string, unknown>) => {
             await getObjectText(program, objectId, options);
         });
     store.command('download <objectId>')
         .description("Download an object's content to a file")
         .option('-o, --output [path]', 'Output file path (defaults to object name)')
-        .action(async (objectId: string, options: Record<string, any>) => {
+        .action(async (objectId: string, options: Record<string, unknown>) => {
             await downloadObjectContent(program, objectId, options);
         });
     store.command('list [folderPath]')
@@ -57,7 +57,7 @@ export function registerObjectsCommand(program: Command) {
         .option('-l,--limit [limit]', 'Limit the number of objects returned. The default limit is 100. Useful for pagination.')
         .option('-s,--skip [skip]', 'Skip the number of objects to skip. Default is 0. Useful for pagination.')
         .option('--json', 'Print raw JSON')
-        .action(async (folderPath: string | undefined, options: Record<string, any>) => {
+        .action(async (folderPath: string | undefined, options: Record<string, unknown>) => {
             await listObjects(program, folderPath, options);
         });
     store.command('search <query>')
@@ -67,14 +67,14 @@ export function registerObjectsCommand(program: Command) {
         .option('--path [path]', 'Filter by object location/path')
         .option('--select [fields]', 'Selection string for returned fields')
         .option('--json', 'Print raw JSON')
-        .action(async (query: string, options: Record<string, any>) => {
+        .action(async (query: string, options: Record<string, unknown>) => {
             await searchObjects(program, query, options);
         });
     store.command('query')
         .description("Query indexed documents using raw Elasticsearch DSL")
         .option('--dsl [json]', 'Raw Elasticsearch DSL as a JSON string')
         .option('--json', 'Print raw JSON')
-        .action(async (options: Record<string, any>) => {
+        .action(async (options: Record<string, unknown>) => {
             await queryObjects(program, options);
         });
 }

@@ -1,17 +1,15 @@
 import { ActivityOptions, proxyActivities } from "@temporalio/workflow";
 import { DSLActivityExecutionPayload, WorkflowExecutionBaseParams, WorkflowExecutionPayload } from "@vertesia/common";
 
-export interface DslActivityFunction<ParamsT extends Record<string, any> = any, ReturnT = any> {
+export interface DslActivityFunction<ParamsT extends object = Record<string, unknown>, ReturnT = unknown> {
     (payload: DSLActivityExecutionPayload<ParamsT>): Promise<ReturnT>;
 }
 
-export interface DslSimplifiedActivityFunction<ParamsT = any, ReturnT = any> {
-    (payload: WorkflowExecutionBaseParams, params: ParamsT): Promise<ReturnT>;
+export interface DslSimplifiedActivityFunction<ParamsT extends object = Record<string, unknown>, ReturnT = unknown> {
+    (payload: WorkflowExecutionBaseParams<unknown>, params: ParamsT): Promise<ReturnT>;
 }
 
-export function dslProxyActivities<
-    ActivitiesT extends Record<string, DslActivityFunction<any, any>>
->(workflowName: string, options: ActivityOptions = {}) {
+export function dslProxyActivities<ActivitiesT extends object>(workflowName: string, options: ActivityOptions = {}) {
     type DslActivities = {
         [K in keyof ActivitiesT]: ActivitiesT[K] extends DslActivityFunction<infer ParamsT, infer ReturnT>
         ? DslSimplifiedActivityFunction<ParamsT, ReturnT>
@@ -22,8 +20,8 @@ export function dslProxyActivities<
 
     return new Proxy({}, {
         get(_target, prop) {
-            const activityFn = activities[prop as keyof ActivitiesT] as DslActivityFunction;
-            return (payload: WorkflowExecutionPayload, params: any) => {
+            const activityFn = activities[prop as keyof ActivitiesT] as unknown as DslActivityFunction<Record<string, unknown>, unknown>;
+            return (payload: WorkflowExecutionPayload, params: Record<string, unknown>) => {
                 return activityFn({
                     ...payload,
                     activity: {

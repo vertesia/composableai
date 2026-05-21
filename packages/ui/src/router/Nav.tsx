@@ -36,6 +36,8 @@ export function Nav({ children, to, onClick, replace = true }: NavProps) {
         }
     }
     return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: span intercepts clicks on inner <a>; keyboard a11y comes from the anchor (Enter triggers click natively).
+        // biome-ignore lint/a11y/useKeyWithClickEvents: same — the inner <a> provides keyboard activation natively.
         <span onClick={_onClick}>{children}</span>
     )
 }

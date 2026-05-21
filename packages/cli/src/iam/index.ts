@@ -9,7 +9,7 @@ export function registerIamCommand(program: Command) {
 
     iam.command('list')
         .description('List all access control entries for the current project')
-        .action(async (options: Record<string, any>) => {
+        .action(async (options: Record<string, unknown>) => {
             await listAces(program, options);
         });
 
@@ -23,7 +23,7 @@ export function registerIamCommand(program: Command) {
         .option('--principal-props <json>', 'Principal conditions JSON (for principal_set)')
         .option('--resource-props <json>', 'Resource conditions JSON (for content_set)')
         .option('--patterns <list>', 'Comma-separated contribution patterns (for contribution_set). E.g. "ui:studio,tool:create_*,app:slack" (app: hides everything from an app)')
-        .action(async (options: Record<string, any>) => {
+        .action(async (options: Record<string, unknown>) => {
             await createAce(program, options);
         });
 
@@ -34,7 +34,7 @@ export function registerIamCommand(program: Command) {
         .requiredOption('--patterns <list>', 'Comma-separated contribution patterns. Kinds: ui:<app>, tool:<app>:<collection>:<tool>, app:<app> (hides everything). E.g. "ui:studio,tool:create_*,app:slack"')
         .option('--resource-name <name>', 'Display name for this denial rule', 'Denial Rule')
         .option('--principal-props <json>', 'Principal conditions JSON (for principal_set)')
-        .action(async (options: Record<string, any>) => {
+        .action(async (options: Record<string, unknown>) => {
             await createDenial(program, options);
         });
 

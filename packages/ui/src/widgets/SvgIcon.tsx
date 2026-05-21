@@ -21,7 +21,7 @@ export function SvgIcon({ content, ...props }: SvgIconProps) {
         }
 
         // Apply all passed props to the SVG element
-        props && Object.entries(props).forEach(([key, value]) => {
+        Object.entries(props).forEach(([key, value]) => {
             if (value == null) return;
 
             const attrName = key === 'className' ? 'class' : key;

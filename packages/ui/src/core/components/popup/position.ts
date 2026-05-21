@@ -192,7 +192,7 @@ class PositionResolver {
 
     computePosition(constraints: Constraints, elemRect: DOMRect, anchorRect: DOMRect): Position {
         this.position(constraints.position, anchorRect, elemRect);
-        constraints.align && this.align(constraints.align, anchorRect, elemRect);
+        if (constraints.align) this.align(constraints.align, anchorRect, elemRect);
         if (!this.left && !this.top) {
             throw new Error("Invalid position. Cannot compute x,y coordinates");
         }

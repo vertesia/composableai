@@ -60,7 +60,7 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
                 if (!object) return;
                 if (object.metadata?.type !== ContentNature.Video) return;
 
-                let downloadUrl;
+                let downloadUrl: Awaited<ReturnType<typeof client.files.getDownloadUrl>> | undefined;
                 if (webRendition?.content?.source) {
                     downloadUrl = await client.files.getDownloadUrl(webRendition.content.source);
                 } else if (isOriginalWebSupported && object.content?.source) {

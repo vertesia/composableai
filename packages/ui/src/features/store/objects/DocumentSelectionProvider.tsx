@@ -68,7 +68,7 @@ export class DocumentSelection {
     }
 }
 
-const DocumentSelectionContext = createContext<DocumentSelection>(undefined as any);
+const DocumentSelectionContext = createContext<DocumentSelection | undefined>(undefined);
 
 export function useDocumentSelection() {
     const selection = useContext(DocumentSelectionContext);

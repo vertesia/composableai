@@ -18,7 +18,7 @@ export async function wordCount(
     payload: RemoteActivityExecutionPayload,
     _context: ActivityExecutionContext
 ): Promise<WordCountResult> {
-    const { text } = payload.params as WordCountParams;
+    const text = payload.params.text;
     if (!text || typeof text !== 'string') {
         throw new Error('Missing or invalid "text" parameter');
     }

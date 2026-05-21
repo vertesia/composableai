@@ -1,9 +1,12 @@
 import { Permission } from "@vertesia/common";
 
+type PermissionSet = Permission[] & {
+    __AnyOf__?: boolean;
+};
 
 export function AnyOf(...permissions: Permission[]): Permission[] {
-    const p = Array.from(permissions);
-    (p as any).__AnyOf__ = true;
+    const p: PermissionSet = Array.from(permissions);
+    p.__AnyOf__ = true;
     return p;
 }
 
@@ -12,5 +15,5 @@ export function AllOf(...permissions: Permission[]): Permission[] {
 }
 
 export function isAnyOf(permissions: Permission[]) {
-    return (permissions as any).__AnyOf__ === true;
+    return (permissions as PermissionSet).__AnyOf__ === true;
 }

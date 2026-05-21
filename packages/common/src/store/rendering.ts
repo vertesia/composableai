@@ -12,7 +12,7 @@ import { WorkflowExecutionStatus, WorkflowRunStatus } from "./workflow.js";
 // ============================================================================
 
 /** Base vars shared by all rendition types */
-interface BaseRenditionVars {
+interface BaseRenditionVars extends Record<string, unknown> {
     mime_type?: string;
     /** Custom upload path — overrides the default renditions/{etag}/{name} path */
     outputPath?: string;

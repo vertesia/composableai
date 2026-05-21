@@ -4,22 +4,38 @@ import { Vars } from "./vars.js";
 
 
 interface ProjectOperation {
-    (arg: any, vars: Vars): any
+    (arg: unknown, vars: Vars): unknown
 }
 
 interface ElementOperation {
     field?: string,
-    from: any[],
-    where: Record<string, any>,
-    else: any
+    from: unknown[],
+    where: Record<string, unknown>,
+    else: unknown
 }
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function asRecord(value: object): Record<string, unknown> {
+    return value as Record<string, unknown>;
+}
+
+function isElementOperation(value: unknown): value is ElementOperation {
+    return isRecord(value) && Array.isArray(value.from) && isRecord(value.where);
+}
+
 const operations: Record<string, ProjectOperation> = {
-    $element(arg: ElementOperation, _vars: Vars) {
+    $element(arg: unknown, _vars: Vars) {
+        if (!isElementOperation(arg)) {
+            return undefined;
+        }
         const where = arg.where;
         const whereKeys = Object.keys(where);
-        const r = arg.from.find((elem: any) => {
+        const r = arg.from.find((elem: unknown) => {
             for (const key of whereKeys) {
-                const value = key === '_' ? elem : elem[key];
+                const value = key === '_' ? elem : isRecord(elem) ? elem[key] : undefined;
                 if (matchCondition(value, where[key])) {
                     return true;
                 }
@@ -27,18 +43,18 @@ const operations: Record<string, ProjectOperation> = {
             return false;
         })
         if (arg.field) {
-            return r ? r[arg.field] : arg.else;
+            return isRecord(r) ? r[arg.field] : arg.else;
         } else {
             return r || arg.else;
         }
     },
-    $eval(arg: any, vars: Vars) {
-        return vars.match(arg);
+    $eval(arg: unknown, vars: Vars) {
+        return isRecord(arg) ? vars.match(arg) : false;
     }
 }
 
-function runProjection(obj: any, vars: Vars) {
-    if (obj && !Array.isArray(obj) && typeof obj === "object") {
+function runProjection(obj: unknown, vars: Vars) {
+    if (isRecord(obj)) {
         const keys = Object.keys(obj)
         if (keys.length === 1) {
             const key = keys[0];
@@ -51,11 +67,11 @@ function runProjection(obj: any, vars: Vars) {
     return obj; // return the value as is
 }
 
-export function projectResult<TParams extends Record<string, any>>(payload: DSLActivityExecutionPayload<TParams>, params: Record<string, any>, result: any, fallback: any) {
-    return payload.activity.projection ? makeProjection(payload.activity.projection, params, result) : fallback;
+export function projectResult<TParams extends object>(payload: DSLActivityExecutionPayload<TParams>, params: TParams, result: unknown, fallback: unknown) {
+    return payload.activity.projection ? makeProjection(payload.activity.projection, asRecord(params), result) : fallback;
 }
 
-export function makeProjection(spec: Record<string, any>, params: Record<string, any>, result: any) {
+export function makeProjection(spec: Record<string, unknown>, params: Record<string, unknown>, result: unknown) {
     const vars = new Vars({
         ...params,
         '#': result,
@@ -63,7 +79,7 @@ export function makeProjection(spec: Record<string, any>, params: Record<string,
 
     const projection = vars.resolveParams(spec);
 
-    const out: any = {}
+    const out: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(projection)) {
         out[key] = runProjection(value, vars);
     }

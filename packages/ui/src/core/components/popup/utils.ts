@@ -72,7 +72,7 @@ export function getScrollableParents(element: HTMLElement, root: HTMLElement = d
     let parent = element.parentElement;
 
     while (parent && parent !== root) {
-        isScrollable(parent) && parents.push(parent);
+        if (isScrollable(parent)) parents.push(parent);
         parent = parent.parentElement;
     }
 

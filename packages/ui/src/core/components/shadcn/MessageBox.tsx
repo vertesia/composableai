@@ -10,7 +10,7 @@ interface MessageBoxProps {
 }
 export function MessageBox({ icon, status, title, children, className }: MessageBoxProps) {
 
-    let defaultIcon, titleColor, textColor, bgColor;
+    let defaultIcon: React.ReactNode, titleColor: string, textColor: string, bgColor: string;
     switch (status) {
         case 'error': {
             defaultIcon = <CircleX className="size-5 text-destructive" aria-hidden="true" />

@@ -5,7 +5,7 @@ import { VTooltip } from './shadcn/tooltip';
 import { Info } from 'lucide-react';
 
 interface FormItemProps {
-    label: any;
+    label: ReactNode;
     children: ReactNode;
     /** Explicit id for the control. When omitted and FormItem can wire a single
      *  element child, an id is auto-generated via useId(). */

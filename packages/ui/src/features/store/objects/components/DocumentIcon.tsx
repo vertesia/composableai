@@ -11,7 +11,7 @@ import { CheckIcon, Eye } from 'lucide-react'
 interface DocumentIconProps {
     document: ContentObjectItem
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
-    selection: DocumentSelection;
+    selection?: DocumentSelection;
     onRowClick?: (object: ContentObjectItem) => void;
     highlightRow?: (item: ContentObjectItem) => boolean;
     previewObject?: (objectId: string) => void;
@@ -53,6 +53,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
     const [renditionUrl, setRenditionUrl] = useState<string | undefined>(undefined)
     const [renditionAlt, setRenditionAlt] = useState<string | undefined>(undefined)
     const [renditionStatus, setRenditionStatus] = useState<string | undefined>(undefined)
+    const title = typeof document.properties?.title === 'string' ? document.properties.title : document.name;
 
 
     const handleSelect = (ev: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,8 +119,8 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
                 <div className="flex flex-col overflow-hidden">
                     <VTooltip
                         placement='top'
-                        description={document.properties?.title ?? document.name}>
-                        <h3 className="text-start font-medium leading-none truncate">{document.properties?.title ?? document.name}</h3>
+                        description={title}>
+                        <h3 className="text-start font-medium leading-none truncate">{title}</h3>
                     </VTooltip>
                     {
                         document?.type?.name ? (

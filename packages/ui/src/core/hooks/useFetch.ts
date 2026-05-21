@@ -4,32 +4,37 @@ export interface FetchOpts<T> {
     start?: () => void,
     end?: () => void,
     defaultValue?: T | (() => T),
-    deps?: any[] | undefined,
+    deps?: unknown[] | undefined,
     condition?: () => boolean,
     onSuccess?: (data: T) => void,
-    onError?: (err: any) => void,
+    onError?: (err: unknown) => void,
 }
 
-export function useFetch<T = any>(fetcher: () => Promise<T>, opts?: FetchOpts<T> | any[] | undefined | null) {
+function toError(error: unknown) {
+    return error instanceof Error ? error : new Error(String(error));
+}
+
+export function useFetch<T = unknown>(fetcher: () => Promise<T>, opts?: FetchOpts<T> | unknown[] | undefined | null) {
     if (Array.isArray(opts)) {
         opts = { deps: opts };
     }
     const options = (opts || {}) as FetchOpts<T>;
-    const [error, setError] = useState<any>(null);
+    const [error, setError] = useState<Error | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
     const [data, setData] = useState<T | undefined>(options.defaultValue);
     const fetch = () => {
-        options.start && options.start();
+        options.start?.();
         setIsLoading(true);
         return fetcher().then((result: T) => {
             setData(result);
-            options.onSuccess && options.onSuccess(result);
+            options.onSuccess?.(result);
         }).catch(error => {
-            setError(error);
-            options.onError && options.onError(error);
+            const err = toError(error);
+            setError(err);
+            options.onError?.(err);
         }).finally(() => {
             setIsLoading(false);
-            options.end && options.end();
+            options.end?.();
         });
     }
     useEffect(() => {
@@ -41,7 +46,7 @@ export function useFetch<T = any>(fetcher: () => Promise<T>, opts?: FetchOpts<T>
     return { data, isLoading, error, setData, refetch: fetch };
 }
 
-export function useFetchOnce<T>(fetcher: () => Promise<T>, opts?: FetchOpts<T> | any[] | undefined | null) {
+export function useFetchOnce<T>(fetcher: () => Promise<T>, opts?: FetchOpts<T> | unknown[] | undefined | null) {
     if (!opts || Array.isArray(opts)) {
         opts = { deps: [] };
     } else if (opts) {

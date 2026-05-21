@@ -1,5 +1,5 @@
 import { Collection, CreateCollectionPayload, getContentTypeRefId, JSONSchemaObject, SecurityLevelLabels } from "@vertesia/common";
-import { Badge, Button, ErrorBox, FormItem, Input, Panel, SelectBox, Styles, Textarea, useFetch, useToast, useTheme } from "@vertesia/ui/core";
+import { Badge, Button, ErrorBox, FormItem, Input, Panel, SelectBox, Styles, Textarea, errorMessage, useFetch, useToast, useTheme } from "@vertesia/ui/core";
 import { SharedPropsEditor, SyncMemberHeadsToggle, UserInfo } from "@vertesia/ui/features";
 import { useUserSession } from "@vertesia/ui/session";
 import { MonacoEditor, EditorApi, GeneratedForm, ManagedObject, Node } from "@vertesia/ui/widgets";
@@ -24,6 +24,11 @@ interface EditCollectionViewProps {
     collection: Collection;
     refetch: () => void;
 }
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 export function EditCollectionView({ refetch, collection }: EditCollectionViewProps) {
     const { t } = useUITranslation();
     const typeId = collection.type ? getContentTypeRefId(collection.type) : undefined;
@@ -50,13 +55,17 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
     }, [collection.table_layout]);
 
     const onSubmit = () => {
-        let query: any;
+        let query: Record<string, unknown> | undefined;
         try {
-            query = metadata.query ? JSON.parse(metadata.query) : undefined;
-        } catch (err: any) {
+            const parsedQuery = metadata.query ? JSON.parse(metadata.query) : undefined;
+            if (parsedQuery !== undefined && !isRecord(parsedQuery)) {
+                throw new Error(t('store.invalidQueryJson'));
+            }
+            query = parsedQuery;
+        } catch (err: unknown) {
             toast({
                 title: t('store.invalidQueryJson'),
-                description: err.message,
+                description: errorMessage(err),
                 status: "error",
                 duration: 5000,
             });
@@ -78,7 +87,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             error = t('type.nameRequired');
         }
         if (!payload.type) {
-            (payload as any).type = null;
+            payload.type = null;
         }
         if (error) {
             toast({
@@ -94,10 +103,10 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             if (layout) {
                 try {
                     payload.table_layout = JSON.parse(layout);
-                } catch (err: any) {
+                } catch (err: unknown) {
                     toast({
                         title: t('store.invalidTableLayout'),
-                        description: err.message,
+                        description: errorMessage(err),
                         status: "error",
                         duration: 5000,
                     });
@@ -127,7 +136,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             .catch((err) => {
                 toast({
                     title: t('store.failedToUpdateCollection'),
-                    description: err.message,
+                    description: errorMessage(err),
                     status: "error",
                     duration: 5000,
                 });
@@ -137,7 +146,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             });
     };
 
-    const setField = (name: string, value: any) => {
+    const setField = (name: string, value: unknown) => {
         setMetadata({
             ...metadata,
             [name]: value,
@@ -301,10 +310,10 @@ function PropertiesEditor({ typeId, collection }: PropertiesEditorProps) {
 
     const { data: type, error } = useFetch(() => client.store.types.catalog.resolve(typeId), [typeId]);
     const schema = type?.object_schema || {};
-    const object = useMemo(() => new ManagedObject(schema, collection.properties || {}), [schema, collection.properties]);
+    const object = useMemo(() => new ManagedObject(schema, (collection.properties as JSONSchemaObject | undefined) || {}), [schema, collection.properties]);
 
     if (error) {
-        return <ErrorBox title={t('store.failedToLoadType')}>{error.message}</ErrorBox>;
+        return <ErrorBox title={t('store.failedToLoadType')}>{errorMessage(error)}</ErrorBox>;
     }
 
     if (!type) {
@@ -331,7 +340,7 @@ function PropertiesEditor({ typeId, collection }: PropertiesEditorProps) {
             .catch((err) => {
                 toast({
                     title: t('store.failedToUpdateCollectionProperties'),
-                    description: err.message,
+                    description: errorMessage(err),
                     status: "error",
                     duration: 5000,
                 });

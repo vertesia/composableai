@@ -4,6 +4,9 @@ import { ActivityCollection, ActivityDefinition } from "../ActivityCollection.js
 import { createActivitiesRoute } from "./activities.js";
 import { ToolServerConfig } from "./types.js";
 
+/** Permissive recursive type for navigating JSON response bodies in tests. */
+type Tree = { readonly [key: string]: Tree };
+
 // Mock authorize to avoid JWT verification
 vi.mock("../auth.js", () => ({
     authorize: vi.fn().mockResolvedValue({ token: "test-token" }),
@@ -50,7 +53,7 @@ describe("Activities server routes", () => {
         it("returns all activity definitions across collections", async () => {
             const app = createApp(createTestCollections());
             const res = await app.request("/api/activities");
-            const body = await res.json() as any;
+            const body = await res.json() as unknown as Tree;
 
             expect(res.status).toBe(200);
             expect(body.activities).toHaveLength(2);
@@ -62,7 +65,7 @@ describe("Activities server routes", () => {
         it("returns empty when no collections configured", async () => {
             const app = createApp([]);
             const res = await app.request("/api/activities");
-            const body = await res.json() as any;
+            const body = await res.json() as unknown as Tree;
 
             expect(res.status).toBe(200);
             expect(body.activities).toHaveLength(0);
@@ -73,7 +76,7 @@ describe("Activities server routes", () => {
         it("returns activities for a specific collection", async () => {
             const app = createApp(createTestCollections());
             const res = await app.request("/api/activities/nlp");
-            const body = await res.json() as any;
+            const body = await res.json() as unknown as Tree;
 
             expect(res.status).toBe(200);
             expect(body.name).toBe("nlp");
@@ -103,7 +106,7 @@ describe("Activities server routes", () => {
             });
 
             expect(res.status).toBe(200);
-            const body = await res.json() as any;
+            const body = await res.json() as unknown as Tree;
             expect(body.result).toEqual({ score: 0.95 });
             expect(body.is_error).toBe(false);
         });
@@ -158,7 +161,7 @@ describe("Activities server routes", () => {
             });
 
             expect(res.status).toBe(200);
-            const body = await res.json() as any;
+            const body = await res.json() as unknown as Tree;
             expect(body.result).toEqual({ entities: ["foo"] });
         });
     });

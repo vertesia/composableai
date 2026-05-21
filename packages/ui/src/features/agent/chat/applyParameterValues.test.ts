@@ -21,7 +21,7 @@ describe('applyParameterValues', () => {
 
         const result = applyParameterValues(spec, {});
 
-        expect(result.params[0].value).toBe(50);
+        expect(result.params?.[0].value).toBe(50);
     });
 
     it('should update root-level param value', () => {
@@ -35,9 +35,9 @@ describe('applyParameterValues', () => {
 
         const result = applyParameterValues(spec, { threshold: 75 });
 
-        expect(result.params[0].value).toBe(75);
-        expect(result.params[0].name).toBe('threshold');
-        expect(result.params[0].bind).toEqual({ input: 'range' });
+        expect(result.params?.[0].value).toBe(75);
+        expect(result.params?.[0].name).toBe('threshold');
+        expect(result.params?.[0].bind).toEqual({ input: 'range' });
     });
 
     it('should update multiple root-level params', () => {
@@ -55,9 +55,9 @@ describe('applyParameterValues', () => {
             colorScheme: 'tableau10'
         });
 
-        expect(result.params[0].value).toBe(100);
-        expect(result.params[1].value).toBe('tableau10');
-        expect(result.params[2].value).toBe(true); // unchanged
+        expect(result.params?.[0].value).toBe(100);
+        expect(result.params?.[1].value).toBe('tableau10');
+        expect(result.params?.[2].value).toBe(true); // unchanged
     });
 
     it('should not modify original spec (immutability)', () => {
@@ -102,8 +102,8 @@ describe('applyParameterValues', () => {
             filterY: 'category_a'
         });
 
-        expect(result.vconcat[0].params[0].value).toEqual([0, 100]);
-        expect(result.vconcat[1].params[0].value).toBe('category_a');
+        expect(result.vconcat?.[0].params?.[0].value).toEqual([0, 100]);
+        expect(result.vconcat?.[1].params?.[0].value).toBe('category_a');
     });
 
     it('should update params in hconcat views', () => {
@@ -125,8 +125,8 @@ describe('applyParameterValues', () => {
             rightParam: 20
         });
 
-        expect(result.hconcat[0].params[0].value).toBe(10);
-        expect(result.hconcat[1].params[0].value).toBe(20);
+        expect(result.hconcat?.[0].params?.[0].value).toBe(10);
+        expect(result.hconcat?.[1].params?.[0].value).toBe(20);
     });
 
     it('should update params in concat views', () => {
@@ -140,8 +140,8 @@ describe('applyParameterValues', () => {
 
         const result = applyParameterValues(spec, { p1: 'x', p2: 'y' });
 
-        expect(result.concat[0].params[0].value).toBe('x');
-        expect(result.concat[1].params[0].value).toBe('y');
+        expect(result.concat?.[0].params?.[0].value).toBe('x');
+        expect(result.concat?.[1].params?.[0].value).toBe('y');
     });
 
     it('should update params in nested layer views', () => {
@@ -159,7 +159,7 @@ describe('applyParameterValues', () => {
 
         const result = applyParameterValues(spec, { layerParam: 'updated' });
 
-        expect(result.layer[0].params[0].value).toBe('updated');
+        expect(result.layer?.[0].params?.[0].value).toBe('updated');
     });
 
     it('should update params in deeply nested vconcat > layer', () => {
@@ -178,7 +178,7 @@ describe('applyParameterValues', () => {
 
         const result = applyParameterValues(spec, { deepParam: 999 });
 
-        expect(result.vconcat[0].layer[0].params[0].value).toBe(999);
+        expect(result.vconcat?.[0].layer?.[0].params?.[0].value).toBe(999);
     });
 
     it('should handle both root and nested params', () => {
@@ -197,8 +197,8 @@ describe('applyParameterValues', () => {
             nestedParam: 'updated_nested'
         });
 
-        expect(result.params[0].value).toBe('updated_root');
-        expect(result.vconcat[0].params[0].value).toBe('updated_nested');
+        expect(result.params?.[0].value).toBe('updated_root');
+        expect(result.vconcat?.[0].params?.[0].value).toBe('updated_nested');
     });
 
     it('should apply only matching parameterValues (non-matching are ignored by applyParameterValues)', () => {
@@ -214,8 +214,8 @@ describe('applyParameterValues', () => {
             existing: 20
         });
 
-        expect(result.params[0].value).toBe(20);
-        expect(result.params.length).toBe(1);
+        expect(result.params?.[0].value).toBe(20);
+        expect(result.params?.length).toBe(1);
     });
 
     it('should handle selection params (point/interval)', () => {
@@ -234,7 +234,7 @@ describe('applyParameterValues', () => {
             brush: { x: [10, 50] }
         });
 
-        expect(result.params[0].value).toEqual({ x: [10, 50] });
+        expect(result.params?.[0].value).toEqual({ x: [10, 50] });
     });
 
     it('should handle recursive vconcat > vconcat', () => {
@@ -253,6 +253,6 @@ describe('applyParameterValues', () => {
 
         const result = applyParameterValues(spec, { deeplyNested: 'changed' });
 
-        expect(result.vconcat[0].vconcat[0].params[0].value).toBe('changed');
+        expect(result.vconcat?.[0].vconcat?.[0].params?.[0].value).toBe('changed');
     });
 });

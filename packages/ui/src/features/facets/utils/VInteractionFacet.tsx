@@ -1,7 +1,7 @@
 import { FacetBucket, InteractionStatus } from '@vertesia/common';
 import { Badge, FilterGroup } from '@vertesia/ui/core';
 
-interface EnrichedFacetBucket extends FacetBucket {
+export interface EnrichedFacetBucket extends FacetBucket {
     name?: string;
     status?: string;
     version?: number;

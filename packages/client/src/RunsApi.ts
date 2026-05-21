@@ -66,12 +66,12 @@ export class RunsApi extends ApiTopic {
      * @param id
      * @returns InteractionResult
      **/
-    async retrieve<ResultT = any, ParamsT = any>(id: string): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
-        const r = await this.get("/" + id);
+    async retrieve<ResultT = unknown, ParamsT = unknown>(id: string): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
+        const r = await this.get<ExecutionRun<ParamsT>>("/" + id);
         return enhanceExecutionRun<ResultT, ParamsT>(r);
     }
 
-    retrievePopulated<P = any>(id: string): Promise<PopulatedExecutionRun<P>> {
+    retrievePopulated<P = unknown>(id: string): Promise<PopulatedExecutionRun<P>> {
         return this.get("/" + id, {
             query: { populate: "true" },
         });
@@ -88,7 +88,7 @@ export class RunsApi extends ApiTopic {
         return this.get(`/filter-options/${field}`, { query });
     }
 
-    async create<ResultT = any, ParamsT = any>(payload: RunCreatePayload): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
+    async create<ResultT = unknown, ParamsT = unknown>(payload: RunCreatePayload): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
         const sessionTags = (this.client as VertesiaClient).sessionTags;
         if (sessionTags) {
             let tags = Array.isArray(sessionTags) ? sessionTags : [sessionTags];
@@ -99,7 +99,7 @@ export class RunsApi extends ApiTopic {
             }
             payload = { ...payload, tags };
         }
-        const r = await this.post("/", {
+        const r = await this.post<ExecutionRun<ParamsT>>("/", {
             payload,
         });
         return enhanceExecutionRun<ResultT, ParamsT>(r);

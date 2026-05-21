@@ -30,7 +30,7 @@ export interface BuildOptions {
     /**
      * Vars to be injected into the script context as the vars object
      */
-    vars?: Record<string, any>;
+    vars?: Record<string, unknown>;
 
     /**
      * Optional publish action
@@ -46,7 +46,7 @@ export interface BuildOptions {
 }
 
 export interface Commands {
-    vars: () => Record<string, any>;
+    vars: () => Record<string, unknown>;
     tmpdir: () => string;
     exec: (cmd: string, options?: ExecOptions) => Promise<void | string>;
     from: (location: string, options?: FromOptions) => Promise<void>;
@@ -69,7 +69,7 @@ export class Builder implements Commands {
         return Builder.instance;
     }
 
-    _vars: Record<string, any>;
+    _vars: Record<string, unknown>;
     _tmpdir?: string;
     memory: MemoryPackBuilder;
 
@@ -79,7 +79,7 @@ export class Builder implements Commands {
         Builder.instance = this;
     }
 
-    vars(): Record<string, any> {
+    vars(): Record<string, unknown> {
         return this._vars;
     }
 
@@ -157,7 +157,7 @@ export class Builder implements Commands {
         }
     }
 
-    async build(object: Record<string, any>) {
+    async build(object: Record<string, unknown>) {
         try {
             const outputNames = this._getOutputNames();
             const publishName = outputNames.publishName;
@@ -174,7 +174,7 @@ export class Builder implements Commands {
                     rmSync(fileName);
                 }
             }
-            this.options.quiet || console.log(`Memory saved to ${target}`);
+            if (!this.options.quiet) console.log(`Memory saved to ${target}`);
             return target;
         } finally {
             if (this._tmpdir) {
@@ -208,7 +208,7 @@ export class Builder implements Commands {
 
 }
 
-function resolveContextObject(object: Record<string, any>): Promise<Record<string, any>> {
+function resolveContextObject(object: Record<string, unknown>): Promise<Record<string, unknown>> {
     return new AsyncObjectWalker().map(object, async (_key, value) => {
         if (value instanceof ContentObject) {
             return await value.getText();
@@ -223,7 +223,7 @@ function createTmpBaseName(tmpdir: string) {
 }
 
 
-export function buildMemoryPack(recipeFn: (commands: Commands) => Promise<Record<string, any>>, options: BuildOptions): Promise<string> {
+export function buildMemoryPack(recipeFn: (commands: Commands) => Promise<Record<string, unknown>>, options: BuildOptions): Promise<string> {
     const builder = new Builder(options);
     return recipeFn({
         vars: builder.vars.bind(builder),

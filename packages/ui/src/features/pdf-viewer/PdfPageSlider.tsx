@@ -340,12 +340,16 @@ export function PdfPageSlider({
                     calculateItemHeight={calculateItemHeight}
                     renderThumbnail={({ pageNumber, isSelected, pageElement, onSelect }) => (
                         <div key={pageNumber} className={clsx("hover:bg-muted rounded-md w-full", compact ? "p-1" : "p-2")}>
-                            <div
+                            <Button
+                                variant="unstyled"
+                                size="none"
+                                aria-pressed={isSelected}
+                                aria-label={`Page ${pageNumber}`}
                                 className={clsx('relative border-[2px] cursor-pointer overflow-hidden', isSelected ? "border-primary" : "border-border")}
                                 onClick={onSelect}
                             >
                                 {pageElement}
-                            </div>
+                            </Button>
                             <Center className={clsx("text-muted-foreground font-semibold", compact ? "text-xs pt-0.5" : "text-sm pt-1")}>{pageNumber}</Center>
                         </div>
                     )}

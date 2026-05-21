@@ -139,7 +139,7 @@ function EditDescriptionModalForm({ value, onSave }: EditDescriptionModalFormPro
     const ref = useRef<HTMLTextAreaElement>(null);
     const [currentValue, setCurrentValue] = useState(value || '');
     useEffect(() => {
-        ref.current && ref.current.focus();
+        ref.current?.focus();
     }, [ref.current]);
     return (
         <>
