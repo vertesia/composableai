@@ -320,6 +320,10 @@ export interface DSLWorkflowDefinition extends BaseObject, DSLWorkflowSpecBase {
     steps?: DSLWorkflowStep[];
 }
 
+export interface DSLWorkflowDefinitionResponse extends DSLWorkflowDefinition {
+    spec_format: 'steps' | 'activities';
+}
+
 export interface WorkflowDefinitionRef {
     id: string;
     name: string;
