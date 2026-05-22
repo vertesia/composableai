@@ -627,6 +627,7 @@
   "user.failedToFetchUser": "Impossibile recuperare l'utente",
   "user.groupId": "ID gruppo: {{id}}",
   "user.key": "Chiave:",
+  "user.mcpServer": "Server MCP",
   "user.organizationId": "ID organizzazione",
   "user.organizationRoles": "Ruoli organizzazione",
   "user.privateKey": "Chiave privata",

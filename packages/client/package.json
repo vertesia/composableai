@@ -42,6 +42,7 @@
       "import": "./lib/esm/index.js",
       "require": "./lib/cjs/index.js"
     },
+    "./package.json": "./package.json",
     "./node": {
       "types": "./lib/types/nodejs/index.d.ts",
       "import": "./lib/esm/nodejs/index.js",

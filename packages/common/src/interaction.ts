@@ -1349,6 +1349,8 @@ export interface SystemSkillCatalogEntry {
     description: string;
     /** Tool names this skill enables (unlocks) when called */
     tools: string[];
+    /** Whether this skill is part of the default agent toolkit */
+    default?: boolean;
 }
 
 /**
