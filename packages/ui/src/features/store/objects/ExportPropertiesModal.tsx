@@ -77,7 +77,7 @@ function SelectPanel({ onClose }: SelectPanelProps) {
     )
 }
 
-interface WaitingPanelProps { }
+type WaitingPanelProps = {}
 function WaitingPanel(_props: WaitingPanelProps) {
     const { t } = useUITranslation();
     return (

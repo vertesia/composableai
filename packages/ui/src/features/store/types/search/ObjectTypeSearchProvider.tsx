@@ -10,7 +10,7 @@ interface SearchProviderProps {
     name?: string;
     chunkable?: boolean;
 }
-export function ObjectTypeSearchProvider({ children, limit, name, chunkable: chunkable }: SearchProviderProps) {
+export function ObjectTypeSearchProvider({ children, limit, name, chunkable }: SearchProviderProps) {
     const { store } = useUserSession();
     const search = useMemo(() => {
         const search = new ObjectTypeSearch(store, limit);

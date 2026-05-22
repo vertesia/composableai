@@ -188,7 +188,7 @@ export async function generateOrAssignContentType(
 
 
   //if type is not identified or not present in the database, generate a new type
-  let selectedType: { id: string; name: string } | undefined = undefined;
+  let selectedType: { id: string; name: string } | undefined ;
 
   selectedType = types.find((t) => t.name === jsonResult.document_type);
 

@@ -160,7 +160,7 @@ export class ObjectsApi extends ApiTopic {
         // upload the file content to the signed URL
         /*const res = await this.fetch(url, {
             method: 'PUT',
-            //@ts-ignore: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
+            //@ts-expect-error: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
             duplex: isStream ? "half" : undefined,
             body: isStream ? source.stream : source,
             headers: {

@@ -37,6 +37,7 @@ export function Breadcrumbs({ path, maxItems = 3, className, separator }: Breadc
       <Breadcrumb className={cn("w-full flex items-center", className)}>
         <BreadcrumbList>
           {items.map((item, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
             <React.Fragment key={index}>
               <BreadcrumbItem>
                 {renderBreadcrumbItem(item)}
@@ -62,6 +63,7 @@ export function Breadcrumbs({ path, maxItems = 3, className, separator }: Breadc
         <BreadcrumbSeparator>{separator ?? <ChevronRight className="cn-rtl-flip" />}</BreadcrumbSeparator>
 
         {lastThreeItems.map((item, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
           <React.Fragment key={index}>
             <BreadcrumbItem>
               {renderBreadcrumbItem(item)}

@@ -24,14 +24,14 @@ export function mutoolPdfToText(buffer: Buffer): Promise<string> {
 
         const command = spawn("mutool", ["convert", "-o", targetFileName, inputFile.name]);
 
-        command.on('exit', function (code) {
+        command.on('exit', (code) => {
             if (code) {
                 reject(new Error(`mutool exited with code ${code}`));
             }
         });
 
 
-        command.on('close', function (code) {
+        command.on('close', (code) => {
             if (code) {
                 reject(new Error(`mutool exited with code ${code}`));
             } else {
@@ -91,7 +91,7 @@ export async function pdfToImages(file: Buffer | string, pages?: number[]): Prom
             errors += data;
         });
 
-        command.on('exit', function (code) {
+        command.on('exit', (code) => {
 
             if (code) {
                 log.error(`mutool exited with code ${code}`, { errors });
@@ -99,7 +99,7 @@ export async function pdfToImages(file: Buffer | string, pages?: number[]): Prom
             }
         });
 
-        command.on('close', function (code) {
+        command.on('close', (code) => {
             if (code) {
                 reject(new Error(`mutool finished with code ${code}`));
             } else {
@@ -152,7 +152,7 @@ export async function pdfExtractPages(file: Buffer | string, pages: number[]): P
             errors += data;
         });
 
-        command.on('exit', function (code) {
+        command.on('exit', (code) => {
 
             if (code) {
                 log.error(`mutool exited with code ${code}`, { errors });
@@ -160,7 +160,7 @@ export async function pdfExtractPages(file: Buffer | string, pages: number[]): P
             }
         });
 
-        command.on('close', function (code) {
+        command.on('close', (code) => {
             if (code) {
                 reject(new Error(`mutool finished with code ${code}`));
             } else {

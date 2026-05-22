@@ -181,7 +181,6 @@ where ExecutionRun contains a result property with the new completion result for
 
 */
 
-//@ts-ignore
 async function createOldRequestBody(payload: WorkflowExecutionBaseParams<unknown>, params: NotifyWebhookParams): Promise<string> {
     let data = params.detail;
     const runId = typeof data?.run_id === "string" ? data.run_id : undefined;

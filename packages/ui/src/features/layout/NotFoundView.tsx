@@ -1,8 +1,7 @@
 
 import { useUITranslation } from '@vertesia/ui/i18n';
 
-interface NotFoundViewProps {
-}
+type NotFoundViewProps = {}
 export function NotFoundView(_props: NotFoundViewProps) {
     const { t } = useUITranslation();
     return (

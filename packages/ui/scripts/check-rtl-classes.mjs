@@ -126,9 +126,7 @@ function scanFile(file) {
         // Also skip if the line above marks an rtl-ok exemption.
         if (i > 0 && RTL_OK.test(lines[i - 1])) continue;
         for (const { category, klass, re } of ALL_PATTERNS) {
-            re.lastIndex = 0;
-            let m;
-            while ((m = re.exec(line)) !== null) {
+            for (const m of line.matchAll(re)) {
                 // The match itself may start with an `rtl:` variant — that's
                 // deliberate RTL-aware code, not a violation. Skip it.
                 if (m[0].includes('rtl:')) continue;

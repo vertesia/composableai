@@ -18,7 +18,7 @@ import { type TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 import { Readable } from "node:stream";
 
 //Example:
-//@ts-ignore
+//@ts-expect-error
 const _JSON: DSLActivitySpec = {
     name: "executeInteraction",
     import: ["defaultModel", "guidlineId", "docTypeId"],
@@ -270,7 +270,7 @@ export async function executeInteractionFromActivity(
         activity_type: info.activityType,
     };
 
-    let previousStudioExecutionRun: ExecutionRun | undefined = undefined;
+    let previousStudioExecutionRun: ExecutionRun | undefined ;
     if (params.include_previous_error) {
         //retrieve last failed run if any
         if (info.attempt > 1) {

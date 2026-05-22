@@ -203,7 +203,7 @@ export class HistoryNavigator {
         const _popStateListener = (ev: PopStateEvent) => {
             let type: LocationChangeType;
             const to = new URL(window.location.href);
-            let state: unknown = undefined;
+            let state: unknown ;
             if (ev.state) {
                 type = 'popState';
                 state = ev.state.data;

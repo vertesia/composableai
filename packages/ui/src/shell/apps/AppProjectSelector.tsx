@@ -45,7 +45,7 @@ function SelectProject({ initialValue, projects, onChange, placeholder = "Select
         setValue(value)
         onChange(value)
     }
-    let actualValue = !value && initialValue ? projects.find(p => p.id === initialValue) : value;
+    const actualValue = !value && initialValue ? projects.find(p => p.id === initialValue) : value;
     return (
         <SelectBox
             by="id"

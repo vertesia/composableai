@@ -178,7 +178,7 @@ export async function generateVideoRendition(
     }
 
     //array of rendition files to upload
-    let renditionPages: string[] = [];
+    const renditionPages: string[] = [];
 
     const videoFile = await saveBlobToTempFile(
         client,

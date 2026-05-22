@@ -308,7 +308,7 @@ function addImportVar(varPath: string, asName: string | undefined, vars: Vars, r
         isRequired = true;
         varPath = varPath.slice(0, -1);
     }
-    let value = vars.getValue(varPath);
+    const value = vars.getValue(varPath);
     if (value === undefined && isRequired) {
         throw new Error(`Import variable ${varPath} is required but not found`);
     }

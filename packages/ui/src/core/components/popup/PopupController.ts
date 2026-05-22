@@ -65,7 +65,7 @@ export class PopupController {
             }
             // register in the next event loop cycle since the current one
             // is may be triggered by a click event
-            window.setTimeout(function () {
+            window.setTimeout(() => {
                 if (closeOnClick) document.addEventListener('click', closeOnClick);
             }, 0);
         }
@@ -76,7 +76,7 @@ export class PopupController {
                     this.tryClose();
                 }
             }
-            window.setTimeout(function () {
+            window.setTimeout(() => {
                 if (closeOnEsc) document.addEventListener('keydown', closeOnEsc);
             }, 0);
         }

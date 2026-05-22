@@ -68,6 +68,7 @@ export function SelectList<T>({ value, options, onChange, className, optionLayou
                     layout = defaultOptionLayout(option, isSelected);
                 }
                 return (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     <SelectListOption key={i}
                         option={option}
                         onSelect={onSelect}

@@ -117,9 +117,7 @@ function validateExternals() {
     for (const dependency of pkgDependencies) {
         if (externals.has(dependency)) {
             externals.delete(dependency);
-            continue;
         } else if (regexps.some((regexp) => regexp.test(dependency))) {
-            continue;
         } else if (!inlinedDeps.has(dependency)) {
             unmatched.add(dependency);
         }

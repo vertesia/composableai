@@ -160,8 +160,7 @@ function extractMarkdownPages(content: string, totalPages: number): string[] {
 
     // Find all page markers and their positions
     const markers: { page: number; index: number }[] = [];
-    let match: RegExpExecArray | null;
-    while ((match = pageDelimiterRegex.exec(content)) !== null) {
+    for (const match of content.matchAll(pageDelimiterRegex)) {
         markers.push({
             page: parseInt(match[1], 10),
             index: match.index + match[0].length,

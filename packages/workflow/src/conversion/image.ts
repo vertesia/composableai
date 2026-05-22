@@ -76,7 +76,7 @@ export async function imageResizer(
         log.debug(`Resizing image using ImageMagick: ${inputPath} -> ${outputPath}`);
 
         const command = `convert`
-        let args = [inputPath];
+        const args = [inputPath];
 
         // Add JPEG shrink-on-load optimization
         args.push("-define", `jpeg:size=${max_hw * 3}x${max_hw * 3}`);

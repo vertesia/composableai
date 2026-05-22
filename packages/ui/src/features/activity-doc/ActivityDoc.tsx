@@ -121,6 +121,7 @@ interface EnumValuesPanelProps {
 }
 function EnumValuesPanel({ values }: EnumValuesPanelProps) {
     return <div className="flex flex-wrap items-center gap-2">{
+        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
         values.map((v, i) => <Badge secondary key={i}>{v}</Badge>)
     }</div>
 }

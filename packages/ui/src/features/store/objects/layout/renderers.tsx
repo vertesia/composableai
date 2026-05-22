@@ -31,7 +31,7 @@ function renderableValue(value: unknown): React.ReactNode {
 
 const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string) => void) => (value: unknown, index: number) => React.ReactNode> = {
     string(params?: URLSearchParams, _onClick?: (id: string) => void) {
-        let transforms: ((value: string) => string)[] = [];
+        const transforms: ((value: string) => string)[] = [];
         if (params) {
             const slice = params.get("slice");
             if (slice) {
@@ -82,7 +82,7 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
                         fileSize = "0 Bytes";
                     } else {
                         const i = Math.floor(Math.log(bytes) / Math.log(1024));
-                        fileSize = `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+                        fileSize = `${(bytes / 1024 ** i).toFixed(2)} ${sizes[i]}`;
                     }
                 } else {
                     fileSize = String(value);
@@ -104,7 +104,7 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
 
         return (value: unknown, index: number) => {
             const numberValue = Number(value);
-            let v = new Intl.NumberFormat("en-US", {
+            const v = new Intl.NumberFormat("en-US", {
                 style: currency ? "currency" : "decimal",
                 currency,
                 maximumFractionDigits: digits,
@@ -113,7 +113,7 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
         };
     },
     objectId(params?: URLSearchParams, onClick?: (id: string) => void) {
-        let transforms: ((value: string) => string)[] = [];
+        const transforms: ((value: string) => string)[] = [];
         let hasSlice = false;
         if (params) {
             const slice = params.get("slice");

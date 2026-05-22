@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect } from 'react';
 import type { ObjectsActionContext, ObjectsActionCallback } from './ObjectsActionContextClass';
 
-export { type ObjectsActionCallback };
+export type { ObjectsActionCallback };
 
 export const ObjectsActionContextReact = createContext<ObjectsActionContext | undefined>(undefined);
 

@@ -1,5 +1,5 @@
 import { log } from "@temporalio/activity";
-import { ContentObjectStatus, type DSLActivityExecutionPayload, type DSLActivitySpec, type JSONObject } from "@vertesia/common";
+import { ContentObjectStatus, type ContentObject, type DSLActivityExecutionPayload, type DSLActivitySpec, type JSONObject } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFoundError, DocumentNotFoundError } from "../../errors.js";
 
@@ -107,7 +107,7 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
 
     //create or update the document
     let newDoc: boolean = false;
-    let doc = undefined;
+    let doc: ContentObject;
     if (params.update_existing_id) {
         log.debug(`Updating existing document ${params.update_existing_id}`);
         doc = await client.objects.update(params.update_existing_id, docPayload, { suppressWorkflows: true });

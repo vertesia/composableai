@@ -109,6 +109,7 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
 
     return (
         <div className={`flex flex-col items-center gap-4 ${className ?? ''}`.trim()}>
+            {/* biome-ignore lint/a11y/useMediaCaption: caption tracks are not authored for user-uploaded media; falls back to browser controls and transcript metadata */}
             <audio
                 src={audioUrl}
                 controls

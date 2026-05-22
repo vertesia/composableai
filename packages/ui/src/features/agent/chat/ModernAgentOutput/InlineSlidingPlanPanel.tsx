@@ -151,6 +151,7 @@ function InlineSlidingPlanPanelComponent({
                 }
 
                 return (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                   <div key={index} className="flex p-3 my-1">
                     <div className={`me-2 mt-0.5 flex-shrink-0 text-muted`}>
                       {taskId}

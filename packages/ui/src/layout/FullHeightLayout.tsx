@@ -59,14 +59,14 @@ FullHeightLayout.Body = function Body({ className, children }: BodyProps) {
     );
 }
 
-interface VDividerProps { }
+type VDividerProps = {}
 FullHeightLayout.VR = function VDivider(_props: VDividerProps) {
     return (
         <div className="w-[1px] border border-red-200"></div>
     );
 }
 
-interface HDividerProps { }
+type HDividerProps = {}
 FullHeightLayout.HR = function HDivider(_props: HDividerProps) {
     return (
         <div className="w-full h-1 border-b border-red-200"></div>

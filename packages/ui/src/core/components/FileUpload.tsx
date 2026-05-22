@@ -110,14 +110,14 @@ export function DropZone({ onUpload }: DropZoneProps) {
 
 function _onDragEnter(el: DragCounterElement | null) {
     if (!el) return false;
-    let cnt = el.__dragOver_cnt__ || 0;
+    const cnt = el.__dragOver_cnt__ || 0;
     el.__dragOver_cnt__ = cnt + 1;
     return !cnt; // true if first drag o ver false if dragover already recorded
 }
 
 function _onDragLeave(el: DragCounterElement | null) {
     if (!el) return false;
-    let cnt = el.__dragOver_cnt__;
+    const cnt = el.__dragOver_cnt__;
     if (!cnt) return false;
     el.__dragOver_cnt__ = cnt - 1;
     return cnt === 1; // true if leave false if not

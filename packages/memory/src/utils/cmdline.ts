@@ -19,7 +19,6 @@ function readQuotedArg(text: string, index: number, quote: string): [string, num
         const c = text[i];
         if (c === '\\') {
             i += 2;
-            continue;
         } else if (c === quote) {
             return [text.substring(index, i), i + 1];
         } else {

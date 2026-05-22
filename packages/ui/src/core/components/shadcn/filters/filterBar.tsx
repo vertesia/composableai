@@ -186,7 +186,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
   };
 
   const getAvailableFilterGroups = () => {
-    let options = filterGroups.map(group => ({
+    const options = filterGroups.map(group => ({
       ...group,
       options: (group.options ?? []).filter(option =>
         !filters.some(filter => {
@@ -212,6 +212,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
 
     return options.map((group: FilterGroup, index: number) => (
       <CommandItem
+        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
         key={index}
         onSelect={() => handleSelect(group.name)}
         className="group flex gap-2 items-center hover:bg-muted"

@@ -150,6 +150,7 @@ function ListField({ object }: ListFieldProps) {
             {!object.isListItem && <div className='text-gray-900 dark:text-gray-200 font-semibold'>{object.title}</div>}
             {
                 object.items.map((item, index) => {
+                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     return <ListItem key={`${index}-${String(value[index] ?? '')}`} object={item} list={object} onDelete={() => deleteItem(index)} disabled={disabled} />;
                 })
             }

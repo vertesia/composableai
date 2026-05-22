@@ -42,7 +42,7 @@ interface SidebarSectionProps {
 export function SidebarSection({ children, title, action, isFooter = false, className }: SidebarSectionProps) {
     const { isOpen } = useSidebarToggle();
 
-    let header = isOpen ? <>
+    const header = isOpen ? <>
         {title || ""}
         {action}
     </> : <Dot className='size-6' />

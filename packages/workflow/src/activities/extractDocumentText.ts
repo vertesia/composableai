@@ -20,7 +20,7 @@ import {
 } from "../utils/text-preview-utils.js";
 import { countTokens } from "../utils/tokens.js";
 
-//@ts-ignore
+//@ts-expect-error
 const _JSON: DSLActivitySpec = {
     name: "extractDocumentText",
 };

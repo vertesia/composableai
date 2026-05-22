@@ -119,6 +119,7 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
     }
 
     return (
+        // biome-ignore lint/a11y/useMediaCaption: caption tracks are not authored for user-uploaded media; falls back to browser controls
         <video
             src={videoUrl}
             poster={posterUrl}

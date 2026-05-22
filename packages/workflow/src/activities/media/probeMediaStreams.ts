@@ -15,7 +15,7 @@ export interface ProbeMediaStreamsResult {
     hasAudio: boolean;
 }
 
-export interface ProbeMediaStreamsParams {}
+export type ProbeMediaStreamsParams = {}
 
 export interface ProbeMediaStreams extends DSLActivitySpec<ProbeMediaStreamsParams> {
     name: 'probeMediaStreams';

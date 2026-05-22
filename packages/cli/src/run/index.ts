@@ -53,7 +53,7 @@ export default async function runInteraction(program: Command, interactionSpec: 
         const hasMultiOutputs = (Array.isArray(data) && data.length > 1) || count > 1;
         const totalSize = Array.isArray(data) ? data.length * count : count;
 
-        let onChunk: ((chunk: string) => void) | undefined = undefined;
+        let onChunk: ((chunk: string) => void) | undefined ;
         // TODO we can add an option --async to be able to force sync mode and use streaming for array data inputs?
         if (!hasMultiOutputs && options.stream) { // stream to stdout
             onChunk = (chunk) => {

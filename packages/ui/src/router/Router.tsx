@@ -53,7 +53,7 @@ export class Router extends BaseRouter {
     constructor(routes: Route[], updateState: (route: RouteMatch | null) => void) {
         super(routes);
         this.navigator.addListener((event: LocationChangeEvent) => {
-            if (event.isCancelable && this.prompt && !!this.prompt.when) {
+            if (event.isCancelable && this.prompt?.when) {
                 if (!window.confirm(this.prompt.message)) return;
             }
             if (this.observer) {
@@ -220,7 +220,7 @@ export function useNavigationPrompt(prompt: NavigationPrompt) {
     useEffect(() => {
         if (prompt.when) {
             const doBlock = prompt.when;
-            const listener = function (ev: Event) {
+            const listener = (ev: Event) => {
                 if (doBlock) {
                     ev.preventDefault();
                     (ev as BeforeUnloadEvent).returnValue = "";

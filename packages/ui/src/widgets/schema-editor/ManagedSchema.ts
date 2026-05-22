@@ -114,7 +114,7 @@ export class SchemaNode {
         this.name = name;
         this.type = getTypeSignature(schema);
         if (this.parent) {
-            let required = this.parent._getPropertiesSchema().required;
+            const required = this.parent._getPropertiesSchema().required;
             this.isRequired = required && Array.isArray(required) ? required.includes(name) : false;
         }
     }
@@ -221,7 +221,7 @@ export class SchemaNode {
         if (!this.children) {
             this.children = [];
         }
-        let schema = this._getPropertiesSchema();
+        const schema = this._getPropertiesSchema();
         const childSchema = addProperty(schema, name, type, isRequired);
         const child = new SchemaNode(name, childSchema, this.loader, this);
         this.children.push(child);

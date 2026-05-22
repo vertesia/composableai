@@ -96,7 +96,7 @@ function enrichDocumentProperty(obj: Record<string, unknown>): void {
 
 export function mergeJSONSchemas(schemas: JSONSchema[]) {
     const props: Record<string, JSONSchema> = {};
-    let required: string[] = [];
+    const required: string[] = [];
     for (const schema of schemas) {
         if (schema.properties) {
             if (schema.required) {
@@ -113,7 +113,7 @@ export function mergeJSONSchemas(schemas: JSONSchema[]) {
 
 export function _mergePromptsSchema(prompts: ExecutablePromptSegmentDef[]) {
     const props: Record<string, JSONSchema> = {};
-    let required = new Set<string>();
+    const required = new Set<string>();
     for (const prompt of prompts) {
         if (prompt.template?.inputSchema?.properties) {
             const schema = prompt.template?.inputSchema;
@@ -158,7 +158,7 @@ export function mergePromptsSchema(interaction: InteractionRefWithSchema | Popul
 
 export function mergeInCodePromptSchemas(prompts: InCodePrompt[]) {
     const props: Record<string, JSONSchema> = {};
-    let required = new Set<string>();
+    const required = new Set<string>();
     for (const prompt of prompts) {
         if (prompt.schema?.properties) {
             const schema = prompt.schema;

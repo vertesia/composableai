@@ -118,8 +118,7 @@ export function MonacoEditor({
         const model = editor.getModel();
         if (!model) return;
         const codeBlockRegExp = /```[\s\S]*?```/g;
-        let match: RegExpExecArray | null;
-        while ((match = codeBlockRegExp.exec(model.getValue())) !== null) {
+        for (const match of model.getValue().matchAll(codeBlockRegExp)) {
             const startLine = model.getPositionAt(match.index).lineNumber;
             const endLine = model.getPositionAt(match.index + match[0].length).lineNumber;
             editor.setSelection(new monacoInstance.Selection(startLine, 1, endLine, 1));

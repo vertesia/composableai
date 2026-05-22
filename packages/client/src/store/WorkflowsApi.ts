@@ -187,7 +187,7 @@ export class WorkflowsApi extends ApiTopic {
             const maxDelay = 30000; // 30 seconds max delay
 
             const calculateBackoffDelay = (attempts: number): number => {
-                const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
+                const exponentialDelay = Math.min(baseDelay * 2 ** attempts, maxDelay);
                 // Add jitter to prevent thundering herd
                 const jitter = Math.random() * 0.1 * exponentialDelay;
                 return exponentialDelay + jitter;
@@ -406,7 +406,7 @@ export class WorkflowsApi extends ApiTopic {
             let isClosed = false;
 
             const calculateBackoffDelay = (attempts: number): number => {
-                const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
+                const exponentialDelay = Math.min(baseDelay * 2 ** attempts, maxDelay);
                 const jitter = Math.random() * 0.1 * exponentialDelay;
                 return exponentialDelay + jitter;
             };

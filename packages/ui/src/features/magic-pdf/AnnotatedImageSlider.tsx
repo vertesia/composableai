@@ -287,6 +287,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
             <div ref={scrollContainerRef} className='flex flex-col items-center gap-2 flex-1 overflow-y-auto px-2'>
                 {Array.from({ length: count }, (_, index) => (
                     <PageThumbnail
+                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                         key={index}
                         currentPage={currentPage}
                         pageNumber={index + 1}

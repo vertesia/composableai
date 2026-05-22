@@ -69,6 +69,7 @@ export default function SlidingMessages({ messages, isCompleted }: SlidingMessag
             {/* Display permanent messages */}
             {sortedPermanentMessages.map((message, index) => (
                 <MessageItem
+                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     key={`${message.timestamp}-${index}`}
                     message={message}
                 />

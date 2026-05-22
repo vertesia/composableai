@@ -516,7 +516,7 @@ function convertDSLActivityOptions(options?: DSLActivityOptions): ActivityOption
     if (!options) {
         return {};
     }
-    let result: ActivityOptions = {};
+    const result: ActivityOptions = {};
     if (options.startToCloseTimeout) {
         result.startToCloseTimeout = ms(options.startToCloseTimeout as StringValue);
     }

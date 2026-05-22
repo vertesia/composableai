@@ -26,7 +26,7 @@ export default function SelectFilter({
     if (!group) {
       return [];
     }
-    let filteredOptions = group.options || [];
+    const filteredOptions = group.options || [];
 
     if (!commandInput.trim()) {
       return filteredOptions;

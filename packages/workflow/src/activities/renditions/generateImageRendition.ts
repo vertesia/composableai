@@ -79,7 +79,7 @@ export async function generateImageRendition(
     }
 
     //array of rendition files to upload
-    let renditionPages: string[] = [];
+    const renditionPages: string[] = [];
 
     const imageFile = await saveBlobToTempFile(
         client,

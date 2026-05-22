@@ -10,8 +10,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 
 dayjs.extend(relativeTime);
 
-interface CollectionsTableProps {
-}
+type CollectionsTableProps = {}
 export function CollectionsTable(_props: CollectionsTableProps) {
     const { client } = useUserSession();
     const toast = useToast();

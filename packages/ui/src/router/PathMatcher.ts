@@ -112,7 +112,7 @@ class ParentSegmentNode<T = unknown> implements SegmentNode<T> {
     }
 
     match(segment: string, params: PathMatchParams): SegmentNode<T> | null {
-        let node = this.children[segment];
+        const node = this.children[segment];
         if (node) {
             return node;
         } else if (this.wildcard) {

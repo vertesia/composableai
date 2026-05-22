@@ -3,9 +3,7 @@ import { matchCondition } from "./conditions.js";
 import { Vars } from "./vars.js";
 
 
-interface ProjectOperation {
-    (arg: unknown, vars: Vars): unknown
-}
+type ProjectOperation = (arg: unknown, vars: Vars) => unknown
 
 interface ElementOperation {
     field?: string,

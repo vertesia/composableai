@@ -99,6 +99,7 @@ function ArrayProperty({ name, value }: ArrayPropertyProps) {
     return isInline ? (
         <div className='flex gap-2 flex-wrap'>
             {name && <PropertyTitle name={`${name}:`} />}
+            {/* biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render */}
             {value.map((item, index) => <DotBadge key={index}>{String(item)}</DotBadge>)}
         </div>
     ) : (
@@ -106,6 +107,7 @@ function ArrayProperty({ name, value }: ArrayPropertyProps) {
             {name && <PropertyTitle name={name} />}
             <div className='flex flex-col gap-2'>
                 {
+                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     (value as JSONArray).map((value, index) => <ItemProperty key={index} index={index} value={value} useBullet={useBullet} />)
                 }
             </div>

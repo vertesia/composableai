@@ -33,6 +33,7 @@ export function RowSkeleton({ columns }: { columns: number }) {
     return (
         <tr className="hover:bg-muted">
             {Array(columns).fill(0).map((_, index) =>
+                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                 <td key={index}>
                     <div className="animate-pulse rounded-xs h-5 bg-muted"></div>
                 </td>
@@ -52,6 +53,7 @@ export function TBody({ isLoading = false, columns, rows = 3, children }: Readon
         <tbody>
             {
                 (isLoading) ? (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     Array(rows).fill(0).map((_, index) => <RowSkeleton columns={columns} key={index} />)
                 ) : (
                     children

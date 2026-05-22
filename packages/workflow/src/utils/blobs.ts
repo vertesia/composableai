@@ -24,7 +24,7 @@ export async function fetchBlobAsStream(client: VertesiaClient, blobUri: string)
     }
 }
 export async function fetchBlobAsBuffer(client: VertesiaClient, blobUri: string): Promise<Buffer> {
-    let stream = await fetchBlobAsStream(client, blobUri);
+    const stream = await fetchBlobAsStream(client, blobUri);
     const buffers: Uint8Array[] = [];
     for await (const data of stream) {
         buffers.push(data);
