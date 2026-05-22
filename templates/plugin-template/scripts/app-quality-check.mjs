@@ -49,6 +49,19 @@ function includesAny(text, values) {
     return values.some((value) => text.includes(value));
 }
 
+function nestedRouterProviderTags(text) {
+    return [...text.matchAll(/<NestedRouterProvider\b[^>]*>/g)].map((match) => match[0]);
+}
+
+function nestedRouterProviderUsesFixLinks(tag) {
+    if (/\bfixLinks\s*=\s*(?:\{\s*false\s*\}|["']false["'])/.test(tag)) return false;
+    return /\bfixLinks(?:\s*=\s*(?:\{\s*true\s*\}|["']true["']))?(?=[\s/>])/.test(tag);
+}
+
+function hasAppNavigation(text) {
+    return /<NavLink\b|<SidebarItem\b|<aside\b|<nav\b|useNavigate\s*\(/.test(text);
+}
+
 function namesFromFiles(files, baseDir) {
     return [
         ...new Set(
@@ -207,6 +220,28 @@ for (const file of appUiFiles) {
             'errors',
             'mount-safe-navigation',
             'Avoid window.location.href redirects; use app router/navigation that stays under the /app/ mount.',
+            file,
+        );
+    }
+
+    const nestedRouterTags = nestedRouterProviderTags(text);
+    for (const tag of nestedRouterTags) {
+        if (!nestedRouterProviderUsesFixLinks(tag)) {
+            add(
+                'errors',
+                'nested-router-fixlinks',
+                'NestedRouterProvider must set fixLinks so app-internal hrefs stay under the current /app/ mount.',
+                file,
+            );
+            break;
+        }
+    }
+
+    if (nestedRouterTags.some((tag) => tag.endsWith('/>')) && hasAppNavigation(text)) {
+        add(
+            'errors',
+            'nested-router-wraps-navigation',
+            'Do not render sidebars/nav as siblings or parents of a self-closing NestedRouterProvider; wrap the full app layout inside <NestedRouterProvider ... fixLinks> or use NestedNavigationContext for external navigation.',
             file,
         );
     }

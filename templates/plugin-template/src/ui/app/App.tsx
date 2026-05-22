@@ -7,7 +7,7 @@ export function App() {
     return (
         <ContentObjectsListStateProvider>
             <ConversationsListStateProvider>
-                <NestedRouterProvider routes={routes} />
+                <NestedRouterProvider routes={routes} fixLinks />
             </ConversationsListStateProvider>
         </ContentObjectsListStateProvider>
     )
