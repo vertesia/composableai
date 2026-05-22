@@ -616,6 +616,7 @@
   "user.failedToFetchUser": "Kullanıcı getirilemedi",
   "user.groupId": "Grup ID: {{id}}",
   "user.key": "Anahtar:",
+  "user.mcpServer": "MCP Sunucusu",
   "user.organizationId": "Kuruluş ID",
   "user.organizationRoles": "Kuruluş Rolleri",
   "user.privateKey": "Özel Anahtar",

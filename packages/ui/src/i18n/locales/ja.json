@@ -616,6 +616,7 @@
   "user.failedToFetchUser": "ユーザーの取得に失敗しました",
   "user.groupId": "グループID：{{id}}",
   "user.key": "キー：",
+  "user.mcpServer": "MCPサーバー",
   "user.organizationId": "組織ID",
   "user.organizationRoles": "組織ロール",
   "user.privateKey": "秘密鍵",
