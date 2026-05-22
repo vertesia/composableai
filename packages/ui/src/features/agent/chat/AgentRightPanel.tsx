@@ -81,13 +81,14 @@ function UploadedDocumentsTab({ files }: UploadedDocumentsProps) {
     };
 
     return (
-        <div className="p-3">
+        <div className="">
             {filesArray.length === 0 ? (
-                <div className="text-sm text-muted text-center py-8">
+                <div className="flex flex-col items-center justify-center text-sm text-muted text-center py-8">
+                    <FileTextIcon className="size-8 mb-2" />
                     {t('agent.noFilesUploadedYet')}
                 </div>
             ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 p-2">
                     {filesArray.map((file) => (
                         <div
                             key={file.id}
@@ -402,7 +403,7 @@ function AgentRightPanelComponent({
         onTabChange?.(name as RightPanelTab);
     };
 
-// Determine which tabs have content (for badges/indicators)
+    // Determine which tabs have content (for badges/indicators)
     const hasWorkstreams = !hideWorkstreams && activeWorkstreams.length > 0;
     const hasDocuments = openDocuments.length > 0;
     const hasUploads = processingFiles ? processingFiles.size > 0 : false;
