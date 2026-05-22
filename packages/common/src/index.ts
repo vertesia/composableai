@@ -24,6 +24,7 @@ export * from './oauth-server.js';
 export * from './model_utility.js';
 export * from './oauth.js';
 export * from './payload.js';
+export * from './principal-context.js';
 export * from "./Progress.js";
 export * from './project.js';
 export * from './prompt.js';
