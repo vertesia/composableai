@@ -13,7 +13,7 @@ export function FixLinks({ basePath, children }: FixLinksProps) {
             const listener = (ev: MouseEvent) => {
                 const elem = ev.target as HTMLElement;
                 if (elem.tagName.toLowerCase() === 'a') {
-                    (ev as any)[BASE_PATH] = basePath;
+                    (ev as MouseEvent & Record<typeof BASE_PATH, string>)[BASE_PATH] = basePath;
                 }
             }
             divElem.addEventListener('click', listener);
@@ -21,7 +21,7 @@ export function FixLinks({ basePath, children }: FixLinksProps) {
                 divElem.removeEventListener('click', listener);
             }
         }
-    }, [ref.current]);
+    }, [basePath]);
     return (
         <div ref={ref} className="h-full w-full">{children}</div>
     )

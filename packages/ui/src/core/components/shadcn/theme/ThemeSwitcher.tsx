@@ -2,7 +2,7 @@ import { Computer, Moon, Sun } from "lucide-react"
 
 import { Button } from "../button"
 import { useTheme } from "./ThemeProvider"
-import { useUITranslation } from "../../../../i18n/index.js"
+import { useUITranslation } from '@vertesia/ui/i18n'
 
 interface ModeOptionProps {
   current: string;

@@ -10,11 +10,11 @@ export default class TrainingApi extends ApiTopic {
     }
 
     listSessions(query: ListTrainingSessionsQuery = {}): Promise<TrainingSessionRef[]> {
-        return this.get('/', { query: query as any });
+        return this.get('/', { query: { ...query } });
     }
 
     listSessionNames(query: ListTrainingSessionsQuery = {}): Promise<{ id: string, name: string }[]> {
-        return this.get('/names', { query: query as any });
+        return this.get('/names', { query: { ...query } });
     }
 
     createSession(payload: TrainingSessionCreatePayload): Promise<TrainingSession> {
@@ -25,7 +25,7 @@ export default class TrainingApi extends ApiTopic {
         return this.get('/' + sessionId)
     }
 
-    addToSession(sessionId: string, runs: string[]): Promise<any> {
+    addToSession(sessionId: string, runs: string[]): Promise<unknown> {
         return this.post('/' + sessionId + '/add', { payload: { runs } })
     }
 
@@ -64,7 +64,7 @@ export default class TrainingApi extends ApiTopic {
         });
     }
 
-    setDataset(sessionId: string, name: string = "default"): Promise<any> {
+    setDataset(sessionId: string, name: string = "default"): Promise<unknown> {
         return this.post('/' + sessionId + '/dataset', { payload: { dataset: name } })
     }
 

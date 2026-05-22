@@ -1,10 +1,10 @@
 import type { ToolDefinition, ToolUse } from "@llumiverse/common";
 import { VertesiaClient } from "@vertesia/client";
-import { AgentToolDefinition, AuthTokenPayload, ProjectConfiguration, RenderingTemplateDefinition, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
+import { AgentToolDefinition, AuthTokenPayload, MCPToolAnnotations, ProjectConfiguration, RenderingTemplateDefinition, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
 
 export type { ToolExecutionMetadata };
 
-export type ICollection<T = any> = CollectionProperties & Iterable<T>
+export type ICollection<T = object> = CollectionProperties & Iterable<T>
 
 export interface CollectionProperties {
     /**
@@ -48,7 +48,7 @@ export interface ToolExecutionResult extends ToolResultContent {
     /**
      * Medata can be used to return more info on the tool execution like stats or user messages.
      */
-    meta?: Record<string, any>;
+    meta?: Record<string, unknown>;
 }
 
 export interface ToolExecutionResponse extends ToolExecutionResult, ToolResult {
@@ -74,10 +74,10 @@ export interface ToolExecutionResponseError {
     /**
      * Additional context information
      */
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
 }
 
-export interface ToolExecutionPayload<ParamsT extends Record<string, any>> {
+export interface ToolExecutionPayload<ParamsT extends object = object> {
     tool_use: ToolUse<ParamsT>,
     /**
      * Optional metadata related to the current execution request
@@ -85,7 +85,7 @@ export interface ToolExecutionPayload<ParamsT extends Record<string, any>> {
     metadata?: ToolExecutionMetadata,
 }
 
-export type ToolFn<ParamsT extends Record<string, any>> = (payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext) => Promise<ToolExecutionResult>;
+export type ToolFn<ParamsT extends object = object> = (payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext) => Promise<ToolExecutionResult>;
 
 export interface ToolUseContext {
     project_id?: string,
@@ -93,24 +93,38 @@ export interface ToolUseContext {
     project_name?: string,
     project_ns?: string,
     configuration?: ProjectConfiguration;
-    vars?: Record<string, any>;
+    vars?: Record<string, unknown>;
 }
 
-export interface Tool<ParamsT extends Record<string, any>> extends ToolDefinition {
-    run: ToolFn<ParamsT>;
+export interface Tool<ParamsT extends object = object> extends ToolDefinition {
+    run(payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext): Promise<ToolExecutionResult>;
     /**
      * Whether this tool is available by default.
      * - true/undefined: Tool is always available to agents
-     * - false: Tool is only available when activated by a skill's related_tools
+     * - false: Tool is only available when activated by a skill's tools
      */
     default?: boolean;
+
+    /**
+     * MCP-style annotations (destructiveHint, readOnlyHint, etc). Propagated
+     * into the AgentToolDefinition on catalog / package responses.
+     */
+    annotations?: MCPToolAnnotations;
+
+    /**
+     * When true, agents must obtain explicit user confirmation via `ask_user`
+     * (Yes/No) before invoking this tool. If the user answers No, the tool
+     * must not run. Stronger than `annotations.destructiveHint` — this is a
+     * hard contract.
+     */
+    requires_user_confirmation?: boolean;
 
     /**
      * Optional filter to check if the tool is enabled for the given project configuration.
      * This can be used to dynamically enable/disable tools based on project settings, environment variables, or any other logic.
      * If no filter is provided, the tool will be enabled by default.
-     * @param payload 
-     * @returns 
+     * @param payload
+     * @returns
      */
     isEnabled?: (payload: ToolUseContext) => boolean;
 }
@@ -234,7 +248,7 @@ export interface SkillDefinition {
      */
     input_schema?: {
         type: 'object';
-        properties?: Record<string, any>;
+        properties?: Record<string, unknown>;
         required?: string[];
     };
     /**
@@ -246,9 +260,10 @@ export interface SkillDefinition {
      */
     execution?: SkillExecution;
     /**
-     * Related tools that work well with this skill
+     * Tool names this skill enables (unlocks) when called. Matches the
+     * `tools:` key used in SKILL.md frontmatter.
      */
-    related_tools?: string[];
+    tools?: string[];
     /**
      * Scripts bundled with this skill (synced to sandbox when skill is used)
      */
@@ -284,7 +299,7 @@ export interface SkillExecutionPayload {
     /**
      * Data context for JST template rendering
      */
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
     /**
      * Whether to execute the code template (if present)
      */

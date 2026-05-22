@@ -1,6 +1,6 @@
 import { log } from "@temporalio/activity";
 import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
-import { exec } from "child_process";
+import { execFile as execFileCallback } from "child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -13,9 +13,14 @@ import {
     uploadRenditionPages,
 } from "../../utils/renditions.js";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFileCallback);
 
 interface GenerateVideoRenditionParams extends ImageRenditionParams { }
+
+interface LegacyVideoRenditionParams {
+    maxHeightWidth?: number;
+    format_output?: ImageRenditionParams["format"];
+}
 
 export interface GenerateVideoRendition
     extends DSLActivitySpec<GenerateVideoRenditionParams> {
@@ -30,14 +35,17 @@ interface VideoMetadata {
 
 async function getVideoMetadata(videoPath: string): Promise<VideoMetadata> {
     try {
-        const command = `ffprobe -v quiet -print_format json -show_format -show_streams "${videoPath}"`;
-        const { stdout } = await execAsync(command);
-        const metadata = JSON.parse(stdout);
+        const args = ["-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", videoPath];
+        const { stdout } = await execFileAsync("ffprobe", args);
+        const metadata = JSON.parse(stdout.toString()) as {
+            streams?: Array<{ codec_type?: string; width?: number; height?: number }>;
+            format?: { duration?: string };
+        };
 
-        const videoStream = metadata.streams.find(
-            (stream: any) => stream.codec_type === "video",
+        const videoStream = metadata.streams?.find(
+            (stream) => stream.codec_type === "video",
         );
-        const duration = parseFloat(metadata.format.duration) || 0;
+        const duration = parseFloat(metadata.format?.duration ?? "") || 0;
         const width = videoStream?.width || 0;
         const height = videoStream?.height || 0;
 
@@ -69,28 +77,28 @@ async function generateThumbnail(
     const scaleFilter = `scale=${maxSize}:${maxSize}:force_original_aspect_ratio=decrease`;
 
     const command = [
-        "ffmpeg",
         "-y", // Overwrite output files
         "-ss",
         timestamp.toString(), // Seek to timestamp
         "-i",
-        `"${videoPath}"`, // Input file
+        videoPath, // Input file
         "-vframes",
         "1", // Extract only 1 frame
         "-vf",
-        `"${scaleFilter}"`, // Scale maintaining aspect ratio
+        scaleFilter, // Scale maintaining aspect ratio
         "-q:v",
         "2", // High quality
-        `"${outputFile}"`,
-    ].join(" ");
-    log.info(`Generating thumbnail at ${timestamp}s`), { command };
+        outputFile,
+    ];
+    log.info(`Generating thumbnail at ${timestamp}s`, { command: "ffmpeg", args: command });
     try {
-        const { stderr } = await execAsync(command);
+        const { stderr } = await execFileAsync("ffmpeg", command);
+        const stderrText = stderr.toString();
 
         // Log any warnings from ffmpeg
-        if (stderr && !stderr.includes("frame=")) {
+        if (stderrText && !stderrText.includes("frame=")) {
             log.debug(
-                `FFmpeg stderr for thumbnail at ${timestamp}s: ${stderr}`,
+                `FFmpeg stderr for thumbnail at ${timestamp}s: ${stderrText}`,
             );
         }
 
@@ -120,12 +128,13 @@ export async function generateVideoRendition(
     } = await setupActivity<GenerateVideoRenditionParams>(payload);
 
     // Fix: Use maxHeightWidth if max_hw is not provided
+    const legacyParams = originParams as LegacyVideoRenditionParams;
     const params = {
         ...originParams,
         max_hw:
-            originParams.max_hw || (originParams as any).maxHeightWidth || 1024, // Default to 1024 if both are missing
+            originParams.max_hw || legacyParams.maxHeightWidth || 1024, // Default to 1024 if both are missing
         format:
-            originParams.format || (originParams as any).format_output || "png", // Default to png if format is missing
+            originParams.format || legacyParams.format_output || "png", // Default to png if format is missing
     };
 
     log.info(`Generating video rendition for ${objectId}`, {
@@ -133,9 +142,10 @@ export async function generateVideoRendition(
         params,
     });
 
-    const inputObject = await client.objects.retrieve(objectId).catch((err) => {
+    const inputObject = await client.objects.retrieve(objectId).catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
         log.error(`Failed to retrieve document ${objectId}`, { err });
-        if (err.message.includes("not found")) {
+        if (message.includes("not found")) {
             throw new DocumentNotFoundError(`Document ${objectId} not found`, [
                 objectId,
             ]);
@@ -266,7 +276,7 @@ export async function generateVideoRendition(
             if (fs.existsSync(videoFile)) {
                 fs.unlinkSync(videoFile);
             }
-        } catch (cleanupError) {
+        } catch {
             log.warn(`Failed to cleanup temporary video file: ${videoFile}`);
         }
     }

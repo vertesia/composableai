@@ -10,7 +10,7 @@ interface MessageBoxProps {
 }
 export function MessageBox({ icon, status, title, children, className }: MessageBoxProps) {
 
-    let defaultIcon, titleColor, textColor, bgColor;
+    let defaultIcon: React.ReactNode, titleColor: string, textColor: string, bgColor: string;
     switch (status) {
         case 'error': {
             defaultIcon = <CircleX className="size-5 text-destructive" aria-hidden="true" />
@@ -62,7 +62,7 @@ export function MessageBox({ icon, status, title, children, className }: Message
                 <div className="shrink-0">
                     {icon ?? defaultIcon}
                 </div>
-                <div className="w-full ml-2 px-1">
+                <div className="w-full ms-2 px-1">
                     {title && <h3 className={`text-sm font-medium mb-2 ${titleColor}`}>{title}</h3>}
                     <div className={`text-sm ${textColor} break-words`}>
                         {children}

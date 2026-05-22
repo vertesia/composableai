@@ -1,9 +1,23 @@
 
-function createMessage(message: string, request: Request, status: number, payload: any, displayDetails: boolean) {
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object';
+}
+
+function getDetails(payload: unknown): unknown {
+    if (!isRecord(payload)) {
+        return undefined;
+    }
+    if (payload.details) {
+        return payload.details;
+    }
+    return isRecord(payload.error) ? payload.error.details : undefined;
+}
+
+function createMessage(message: string, request: Request, status: number, payload: unknown, displayDetails: boolean) {
     let msg = message;
     if (displayDetails) {
         msg += '\nRequest: ' + request.method + ' ' + request.url + ' => ' + status;
-        const details = payload?.details || payload?.error?.details;
+        const details = getDetails(payload);
         if (details) {
             const detailsType = typeof details;
             if (detailsType === 'string') {
@@ -19,12 +33,12 @@ function createMessage(message: string, request: Request, status: number, payloa
 
 export class RequestError extends Error {
     status: number;
-    payload: any;
+    payload: unknown;
     request: Request;
     request_info: string;
     displayDetails: boolean;
     original_message: string;
-    constructor(message: string, request: Request, status: number, payload: any, displayDetails = true) {
+    constructor(message: string, request: Request, status: number, payload: unknown, displayDetails = true) {
         super(createMessage(message, request, status, payload, displayDetails));
         this.original_message = message;
         this.request = request;
@@ -35,19 +49,20 @@ export class RequestError extends Error {
     }
 
     get details() {
-        return this.payload?.details || this.payload?.error?.details;
+        return getDetails(this.payload);
     }
 
 }
 
 export class ServerError extends RequestError {
-    constructor(message: string, req: Request, status: number, payload: any, displayDetails = true) {
+    constructor(message: string, req: Request, status: number, payload: unknown, displayDetails = true) {
         super(message, req, status, payload, displayDetails);
     }
 
-    updateDetails(details: any) {
+    updateDetails(details: unknown) {
         if (details !== this.details) {
-            return new ServerError(this.original_message, this.request, this.status, { ...this.payload, details }, this.displayDetails)
+            const payload = isRecord(this.payload) ? { ...this.payload, details } : { details };
+            return new ServerError(this.original_message, this.request, this.status, payload, this.displayDetails)
         } else {
             return this;
         }

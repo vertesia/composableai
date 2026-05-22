@@ -6,6 +6,19 @@ function isAuthorizationHeaderSet(headers: HeadersInit | undefined): boolean {
     return "authorization" in headers;
 }
 
+function isServerFetchRuntime(): boolean {
+    const runtime = globalThis as typeof globalThis & {
+        Bun?: unknown;
+        process?: { versions?: { bun?: string; node?: string } };
+        window?: unknown;
+    };
+    return typeof runtime.window === "undefined" && (
+        typeof runtime.process?.versions?.node === "string"
+        || typeof runtime.process?.versions?.bun === "string"
+        || typeof runtime.Bun !== "undefined"
+    );
+}
+
 export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends ClientBase {
 
     headers: Record<string, string>;
@@ -23,7 +36,11 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
     }
 
     get initialHeaders() {
-        return { accept: 'application/json' };
+        const headers: Record<string, string> = { accept: 'application/json' };
+        if (isServerFetchRuntime()) {
+            headers['accept-encoding'] = 'br, gzip, deflate';
+        }
+        return headers;
     }
 
     /**
@@ -80,14 +97,14 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
         }
         this.response = undefined;
         const request = await super.createRequest(url, init);
-        this.onRequest && this.onRequest(request);
+        this.onRequest?.(request);
         return request;
     }
 
-    async handleResponse(req: Request, res: Response, params: IRequestParamsWithPayload | undefined) {
+    async handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): Promise<T> {
         this.response = res; // store last response
-        this.onResponse && this.onResponse(res, req);
-        return super.handleResponse(req, res, params);
+        this.onResponse?.(res, req);
+        return super.handleResponse<T>(req, res, params);
     }
 
 }
@@ -115,8 +132,8 @@ export abstract class ApiTopic extends ClientBase {
         return this.client.createRequest(url, init);
     }
 
-    handleResponse(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): Promise<any> {
-        return this.client.handleResponse(req, res, params);
+    handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): T | Promise<T> {
+        return this.client.handleResponse<T>(req, res, params);
     }
 
     get headers() {

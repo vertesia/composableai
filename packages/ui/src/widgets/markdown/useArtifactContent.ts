@@ -101,8 +101,6 @@ export function useArtifactContent<T = unknown>({
         contentType: undefined,
     });
 
-    const [retryCount, setRetryCount] = useState(0);
-
     const fetchContent = useCallback(async () => {
         if (!runId) {
             setState({
@@ -210,7 +208,7 @@ export function useArtifactContent<T = unknown>({
 
     useEffect(() => {
         fetchContent();
-    }, [fetchContent, retryCount]);
+    }, [fetchContent]);
 
     const retry = useCallback(() => {
         setState({
@@ -220,8 +218,8 @@ export function useArtifactContent<T = unknown>({
             error: undefined,
             contentType: undefined,
         });
-        setRetryCount(c => c + 1);
-    }, []);
+        void fetchContent();
+    }, [fetchContent]);
 
     return {
         data: state.data,

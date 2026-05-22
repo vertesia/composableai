@@ -2,7 +2,7 @@ import { ContentObject, DocumentMetadata } from "@vertesia/common";
 import { Button, Popover, PopoverContent, PopoverTrigger } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Download } from "lucide-react";
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { getResourceUrl } from "./MagicPdfProvider";
 
 interface DownloadPopoverProps {
@@ -25,7 +25,7 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
 
     const processorType = getProcessorType();
 
-    const buttonClass = "p-2 cursor-pointer hover:bg-muted text-left text-sm";
+    const buttonClass = "p-2 cursor-pointer hover:bg-muted text-start text-sm";
 
     // For markdown processor, only one download option - render simple button
     if (processorType === "markdown") {
@@ -55,15 +55,15 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
             </PopoverTrigger>
             <PopoverContent align="start" className="p-0 w-auto">
                 <div className="min-w-[200px] flex flex-col divide-y divide-border">
-                    <button className={buttonClass} onClick={() => onDownload("annotated.pdf")}>
+                    <Button variant="unstyled" className={buttonClass} onClick={() => onDownload("annotated.pdf")}>
                         annotated.pdf
-                    </button>
-                    <button className={buttonClass} onClick={() => onDownload("document.xml")}>
+                    </Button>
+                    <Button variant="unstyled" className={buttonClass} onClick={() => onDownload("document.xml")}>
                         document.xml
-                    </button>
-                    <button className={buttonClass} onClick={() => onDownload("analyzed-pages.json")}>
+                    </Button>
+                    <Button variant="unstyled" className={buttonClass} onClick={() => onDownload("analyzed-pages.json")}>
                         analyzed-pages.json
-                    </button>
+                    </Button>
                 </div>
             </PopoverContent>
         </Popover>

@@ -33,14 +33,14 @@ const createPayload = (objectId = 'test-object-id'): DSLActivityExecutionPayload
     auth_token: 'mock-token',
     account_id: 'test-account',
     project_id: 'test-project',
-    params: {},
+    params: {} satisfies ProbeMediaStreamsParams,
     config: { studio_url: 'http://mock-studio', store_url: 'http://mock-store' },
     workflow_name: 'test-workflow',
     event: ContentEventName.create,
     objectIds: [objectId],
     input: { inputType: 'objectIds', objectIds: [objectId] },
     vars: {},
-    activity: { name: 'probeMediaStreams', params: {} },
+    activity: { name: 'probeMediaStreams', params: {} satisfies ProbeMediaStreamsParams },
 });
 
 function mockExec(stdout: string) {
@@ -68,7 +68,7 @@ async function setupMockContext(objectId: string, signedUrl: string): Promise<vo
 }
 
 describe('probeMediaStreams', () => {
-    it('returns hasVideo=true and hasAudio=true for a video+audio container', async () => {
+    it('should return hasVideo=true and hasAudio=true for a video+audio container', async () => {
         await setupMockContext('test-object-id', 'https://storage.example.com/file.mp4?token=abc');
         mockExec(JSON.stringify({ streams: [{ codec_type: 'video' }, { codec_type: 'audio' }] }));
 
@@ -77,7 +77,7 @@ describe('probeMediaStreams', () => {
         expect(result).toEqual({ hasVideo: true, hasAudio: true });
     });
 
-    it('returns hasVideo=true and hasAudio=false for a video-only container', async () => {
+    it('should return hasVideo=true and hasAudio=false for a video-only container', async () => {
         await setupMockContext('test-object-id', 'https://storage.example.com/file.mp4');
         mockExec(JSON.stringify({ streams: [{ codec_type: 'video' }] }));
 
@@ -86,7 +86,7 @@ describe('probeMediaStreams', () => {
         expect(result).toEqual({ hasVideo: true, hasAudio: false });
     });
 
-    it('returns hasVideo=false and hasAudio=true for an audio-only container (the bug case)', async () => {
+    it('should return hasVideo=false and hasAudio=true for an audio-only container (the bug case)', async () => {
         await setupMockContext('test-object-id', 'https://storage.example.com/audio-only.mp4');
         mockExec(JSON.stringify({ streams: [{ codec_type: 'audio' }] }));
 
@@ -95,7 +95,7 @@ describe('probeMediaStreams', () => {
         expect(result).toEqual({ hasVideo: false, hasAudio: true });
     });
 
-    it('throws nonRetryable ApplicationFailure when no usable streams are found', async () => {
+    it('should throw nonRetryable ApplicationFailure when no usable streams are found', async () => {
         await setupMockContext('test-object-id', 'https://storage.example.com/bad.mp4');
         mockExec(JSON.stringify({ streams: [] }));
 
@@ -104,7 +104,7 @@ describe('probeMediaStreams', () => {
         );
     });
 
-    it('throws DocumentNotFoundError when the object has no source', async () => {
+    it('should throw DocumentNotFoundError when the object has no source', async () => {
         const { setupActivity } = await import('../../dsl/setup/ActivityContext.js');
         const mockClient = {
             objects: {
@@ -116,7 +116,7 @@ describe('probeMediaStreams', () => {
             client: mockClient,
             objectId: 'test-object-id',
             inputType: 'objectIds',
-            params: {},
+            params: {} satisfies ProbeMediaStreamsParams,
         } as unknown as ActivityContext<ProbeMediaStreamsParams>);
 
         await expect(testEnv.run(probeMediaStreams, createPayload())).rejects.toThrow(

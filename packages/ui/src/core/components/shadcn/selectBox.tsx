@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { isEqual } from 'lodash-es';
 import { AlertTriangle, Check, ChevronsUpDown, LoaderCircle, SearchIcon, SquarePlus, X } from 'lucide-react';
-import { useState, useEffect, useRef, useMemo, ReactNode } from 'react';
+import { useState, useEffect, useRef, useMemo, useId, ReactNode } from 'react';
 
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from './popover';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from './command';
@@ -33,6 +33,17 @@ export interface SelectBoxBaseProps<T> {
     warnOnMissingValue?: boolean;
     /** Custom warning message when value is not in options */
     missingValueWarning?: string;
+    /** Accessible name. Defaults to the `label` prop when provided. Required when icon-only. */
+    'aria-label'?: string;
+    /** Id of an element that labels the trigger. Use when there is a visible external label. */
+    'aria-labelledby'?: string;
+    /** Id forwarded to the trigger button. Required for FormItem's auto-wiring to work. */
+    id?: string;
+    /** Ids of elements describing the control (e.g. FormItem helpText/error). Forwarded to the trigger. */
+    'aria-describedby'?: string;
+    /** Marks the control invalid. Forwarded to the trigger and combined with the internal
+     *  missing-value detection (either being truthy yields aria-invalid="true"). */
+    'aria-invalid'?: boolean | 'true' | 'false';
 }
 
 interface SelectBoxSingleProps<T> extends SelectBoxBaseProps<T> {
@@ -49,11 +60,41 @@ interface SelectBoxMultipleProps<T> extends SelectBoxBaseProps<T> {
 
 type SelectBoxProps<T> = SelectBoxSingleProps<T> | SelectBoxMultipleProps<T>;
 
-export function SelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by, inline = false, isLoading = false, warnOnMissingValue = true, missingValueWarning = "Value not in options list, may not be valid", clearIcon, clearTitle }: Readonly<SelectBoxProps<T>>) {
-    const triggerRef = useRef<HTMLDivElement>(null);
+export function SelectBox<T = unknown>({
+    options,
+    optionLabel,
+    value,
+    onChange,
+    addNew,
+    addNewLabel,
+    disabled,
+    filterBy,
+    label,
+    placeholder,
+    className,
+    popupClass,
+    isClearable,
+    border = true,
+    multiple = false,
+    by,
+    inline = false,
+    isLoading = false,
+    warnOnMissingValue = true,
+    missingValueWarning = "Value not in options list, may not be valid",
+    clearIcon,
+    clearTitle,
+    'aria-label': ariaLabelProp,
+    'aria-labelledby': ariaLabelledByProp,
+    id: idProp,
+    'aria-describedby': ariaDescribedByProp,
+    'aria-invalid': ariaInvalidProp,
+}: Readonly<SelectBoxProps<T>>) {
+    const wrapperRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [width, setWidth] = useState<number>(0);
     const [filterValue, setFilterValue] = useState('');
+    const popupId = useId();
+    const labelId = useId();
 
     // Check if value is in options list (for single select only)
     const isMissingValue = useMemo(() => {
@@ -61,7 +102,7 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
         // Use the isOptionsEqual helper which respects the 'by' comparator
         return !options.some(opt => {
             if (typeof by === 'string') {
-                return (opt as any)[by] === (value as any)[by];
+                return getProperty(opt, by) === getProperty(value, by);
             } else if (typeof by === 'function') {
                 return by(opt, value as T);
             } else {
@@ -71,7 +112,7 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
     }, [warnOnMissingValue, multiple, value, options, by]);
 
     useEffect(() => {
-        const element = triggerRef.current;
+        const element = wrapperRef.current;
         if (!element) {
             return;
         }
@@ -93,15 +134,7 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
         };
     }, []);
 
-    const handleTriggerClick = (e: React.MouseEvent) => {
-        if (disabled || isLoading) {
-            e.preventDefault();
-            return;
-        }
-        setOpen(!open);
-    };
-
-    const _onClick = (opt: any) => {
+    const _onClick = (opt: T) => {
         if (multiple) {
             const currentValues = Array.isArray(value) ? value : [];
             const isSelected = isOptionSelected(opt, currentValues);
@@ -116,7 +149,8 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
             }
             // Don't close the popover in multiple mode
         } else {
-            setOpen(false);
+            // Single-select non-inline: PopoverClose (in the rendered CommandItem) dispatches
+            // the close to Radix, which calls onOpenChange and updates our `open` mirror.
             (onChange as (option: T) => void)(opt);
         }
     };
@@ -133,9 +167,9 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
         if (a == null || b == null) {
             return a === b;
         }
-        
+
         if (typeof by === 'string') {
-            return (a as any)[by] === (b as any)[by];
+                return getProperty(a, by) === getProperty(b, by);
         } else if (typeof by === 'function') {
             return by(a, b);
         } else {
@@ -149,7 +183,7 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
         if (!filterBy) {
             return (o: T) => String(o).toLowerCase();
         } else if (typeof filterBy === 'string') {
-            return (o: any) => String(o[filterBy]).toLowerCase();
+            return (o: T) => String(getProperty(o, filterBy)).toLowerCase();
         } else {
             return filterBy;
         }
@@ -225,14 +259,14 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
                                 >
                                     {multiple || inline ? (
                                         <div className='w-full flex justify-between items-center cursor-pointer'>
-                                            <div className='w-full truncate text-left'>
+                                            <div className='w-full truncate text-start'>
                                                 {optionLabel ? optionLabel(opt) : opt as String}
                                             </div>
                                             {isSelected && <Check className="size-4" />}
                                         </div>
                                     ) : (
                                         <PopoverClose className='w-full flex justify-between items-center'>
-                                            <div className='w-full truncate text-left'>
+                                            <div className='w-full truncate text-start'>
                                                 {optionLabel ? optionLabel(opt) : opt as String}
                                             </div>
                                             {isSelected && <Check className="size-4" />}
@@ -246,15 +280,16 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
             </Command>
             {addNew && (
                 <div className='p-1'>
-                    <a
+                    <button
+                        type="button"
                         onClick={addNew}
                         className={clsx(
-                            'gap-x-2 px-2 py-1.5 truncate group flex rounded-md items-center text-sm cursor-pointer hover:bg-accent',
+                            'w-full text-start gap-x-2 px-2 py-1.5 truncate group flex rounded-md items-center text-sm cursor-pointer hover:bg-accent bg-transparent border-0',
                         )}
                     >
                         <SquarePlus size={16} strokeWidth={1.25} absoluteStrokeWidth />
                         {addNewLabel}
-                    </a>
+                    </button>
                 </div>
             )}
         </>
@@ -276,72 +311,114 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
         );
     }
 
+    // Accessible name resolution: explicit aria-label > visual label text > none.
+    // When `label` is set we also expose it via aria-labelledby pointing at the
+    // visible label element rendered inside the trigger.
+    const hasVisualLabel = !!label;
+    const ariaLabel = ariaLabelProp ?? (hasVisualLabel ? undefined : (typeof placeholder === 'string' ? placeholder : undefined));
+    const ariaLabelledBy = ariaLabelledByProp ?? (hasVisualLabel ? labelId : undefined);
+
+    const showClear = !!isClearable && !!value && (Array.isArray(value) ? value.length > 0 : true);
+
+    // aria-invalid resolves to true if either the consumer set it or the
+    // internal missing-value check fires. Either truthy yields "true".
+    const ariaInvalid = ariaInvalidProp === true || ariaInvalidProp === 'true' || isMissingValue
+        ? true
+        : (ariaInvalidProp === false || ariaInvalidProp === 'false' ? false : undefined);
+
     return (
-        <Popover>
-            <PopoverTrigger asChild>
-                <div
-                    ref={triggerRef}
-                    onClick={handleTriggerClick}
-                    className={clsx(
-                        className,
-                        isLoading
-                            ? 'flex justify-center items-center gap-2 border border-border rounded-md p-2 text-muted text-sm'
-                            : clsx(
-                                border && (isMissingValue ? 'border border-destructive' : 'border border-border'),
-                                'flex flex-row gap-2 items-center justify-between p-2 rounded-md group relative [&:hover_.clear-button]:opacity-100',
-                                !disabled ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed text-muted",
-                            ),
-                    )}
-                >
-                    {isLoading ? (
-                        <LoaderCircle className="size-4 animate-spin" />
-                    ) : (
-                        <>
-                            <div
-                                className={clsx(
-                                    "flex flex-col w-full rounded-md text-sm min-h-6 items-center justify-center truncate",
-                                    !disabled && "",
-                                    isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && "pr-2"
-                                )}
-                            >
-                                {label && <div className='w-full text-left text-xs font-semibold'>{label}</div>}
-                                <div className={clsx('w-full text-left ', !disabled && '', isMissingValue && 'text-destructive')}>
-                                    {isMissingValue && (
-                                        <VTooltip description={missingValueWarning} placement="top" asChild>
-                                            <AlertTriangle className="inline-block size-4 mr-1 -mt-0.5 cursor-help" />
-                                        </VTooltip>
+        // The Vertesia Popover wrapper is uncontrolled; onOpenChange mirrors Radix's
+        // own open/close into our local `open` so we can drive aria-expanded correctly.
+        <Popover onOpenChange={setOpen}>
+            {/* Consumer `className` is applied to the wrapper (the visible bounding box)
+                so width/spacing overrides size the popover correctly. The trigger button
+                is always w-full of the wrapper; the absolutely-positioned clear button
+                is positioned relative to the wrapper. */}
+            <div ref={wrapperRef} className={clsx("relative", className)}>
+                <PopoverTrigger asChild>
+                    <button
+                        type="button"
+                        id={idProp}
+                        disabled={disabled || isLoading}
+                        aria-haspopup="dialog"
+                        aria-expanded={open}
+                        aria-controls={popupId}
+                        aria-label={ariaLabel}
+                        aria-labelledby={ariaLabelledBy}
+                        aria-describedby={ariaDescribedByProp}
+                        aria-invalid={ariaInvalid}
+                        className={clsx(
+                            isLoading
+                                ? 'flex w-full justify-center items-center gap-2 border border-border rounded-md p-2 text-muted text-sm bg-transparent'
+                                : clsx(
+                                    border && (isMissingValue || ariaInvalid ? 'border border-destructive' : 'border border-border'),
+                                    'flex w-full flex-row gap-2 items-center justify-between p-2 rounded-md group bg-transparent text-inherit text-start',
+                                    'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                                    !disabled ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed text-muted",
+                                    // Leave room for the absolutely-positioned clear button on the right.
+                                    showClear && 'pe-10',
+                                ),
+                        )}
+                    >
+                        {isLoading ? (
+                            <LoaderCircle className="size-4 animate-spin" />
+                        ) : (
+                            <>
+                                <div
+                                    className={clsx(
+                                        "flex flex-col w-full rounded-md text-sm min-h-6 items-center justify-center truncate",
                                     )}
-                                    {multiple ? renderMultipleValue() : renderSingleValue()}
+                                >
+                                    {label && (
+                                        <div id={labelId} className='w-full text-start text-xs font-semibold'>{label}</div>
+                                    )}
+                                    <div className={clsx('w-full text-start ', isMissingValue && 'text-destructive')}>
+                                        {isMissingValue && (
+                                            <VTooltip description={missingValueWarning} placement="top" asChild>
+                                                <AlertTriangle className="inline-block size-4 me-1 -mt-0.5 cursor-help" />
+                                            </VTooltip>
+                                        )}
+                                        {multiple ? renderMultipleValue() : renderSingleValue()}
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex items-center gap-1 group">
-                                {isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && (
-                                    <Button variant={"link"} size={"icon"}
-                                        disabled={disabled}
-                                        alt={clearTitle || "Clear selection"}
-                                        onClick={(e: { stopPropagation: () => void; }) => {
-                                            e.stopPropagation();
-                                            if (multiple) {
-                                                (onChange as (options: T[]) => void)([] as T[]);
-                                            } else {
-                                                (onChange as (option: T) => void)(undefined as any);
-                                            }
-                                        }}
-                                        className="cursor-pointer hover:bg-muted/20 clear-button opacity-0 transition-opacity duration-200 rounded p-1"
-                                    >
-                                        {clearIcon ? clearIcon : <X className="size-4" />}
-                                    </Button>
-                                )}
                                 {!disabled && (
-                                    <ChevronsUpDown className="size-4 opacity-50" />
+                                    <ChevronsUpDown className="size-4 opacity-50 shrink-0" aria-hidden="true" />
                                 )}
-                            </div>
-                        </>
-                    )}
-                </div>
-            </PopoverTrigger>
+                            </>
+                        )}
+                    </button>
+                </PopoverTrigger>
+                {showClear && !isLoading && (
+                    // Clear is a sibling of the trigger button (not nested) to satisfy
+                    // the no-nested-interactives rule. Pointer/keyboard events are
+                    // stopped so they don't bubble up and toggle the popover.
+                    <Button
+                        variant="link"
+                        size="icon"
+                        disabled={disabled}
+                        aria-label={clearTitle || "Clear selection"}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (multiple) {
+                                (onChange as (options: T[]) => void)([] as T[]);
+                            } else {
+                                (onChange as (option: T) => void)(undefined as T);
+                            }
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.stopPropagation();
+                            }
+                        }}
+                        className="absolute end-8 top-1/2 -translate-y-1/2 hover:bg-muted/20 rounded p-1"
+                    >
+                        {clearIcon ? clearIcon : <X className="size-4" />}
+                    </Button>
+                )}
+            </div>
 
             <PopoverContent
+                id={popupId}
                 style={{ width: `${width}px`, zIndex: 1000000 }}
                 className={clsx(
                     "min-w-[8rem] w-64 bg-popover p-1 border shadow",
@@ -353,4 +430,8 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
             </PopoverContent>
         </Popover>
     );
+}
+
+function getProperty(value: unknown, key: string): unknown {
+    return typeof value === 'object' && value !== null ? (value as Record<string, unknown>)[key] : undefined;
 }

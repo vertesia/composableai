@@ -66,7 +66,7 @@ function isCodeFile(filePath: string): boolean {
  * Replace variables in text files (HTML, JSON, Markdown, etc.)
  * Uses {{VARIABLE}} placeholder pattern
  */
-function replaceInTextFile(content: string, answers: Record<string, any>): { content: string; modified: boolean } {
+function replaceInTextFile(content: string, answers: Record<string, unknown>): { content: string; modified: boolean } {
   let modified = false;
 
   for (const [key, value] of Object.entries(answers)) {
@@ -86,7 +86,7 @@ function replaceInTextFile(content: string, answers: Record<string, any>): { con
  * 1. const CONFIG__variableName = value; - Constant value replacement
  * 2. TEMPLATE__IdentifierName - Identifier name replacement (functions, classes, variables)
  */
-function replaceInCodeFile(content: string, answers: Record<string, any>): { content: string; modified: boolean } {
+function replaceInCodeFile(content: string, answers: Record<string, unknown>): { content: string; modified: boolean } {
   let modified = false;
 
   for (const [key, value] of Object.entries(answers)) {
@@ -98,7 +98,7 @@ function replaceInCodeFile(content: string, answers: Record<string, any>): { con
       'gm'
     );
     if (content.match(configPattern)) {
-      content = content.replace(configPattern, (match, prefix, oldValue, suffix) => {
+      content = content.replace(configPattern, (_match, prefix, _oldValue, suffix) => {
         return `${prefix}${JSON.stringify(value)}${suffix}`;
       });
       modified = true;
@@ -128,7 +128,7 @@ function replaceInCodeFile(content: string, answers: Record<string, any>): { con
 export function replaceVariables(
   projectName: string,
   templateConfig: TemplateConfig,
-  answers: Record<string, any>
+  answers: Record<string, unknown>
 ): void {
   if (!templateConfig.files) {
     return;
@@ -172,7 +172,12 @@ export function replaceVariables(
  * 1. Sets the package name to PROJECT_NAME
  * 2. Resolves workspace:* dependencies to actual latest versions
  */
-export function adjustPackageJson(projectName: string, answers: Record<string, any>, isDev: boolean): void {
+export function adjustPackageJson(
+  projectName: string,
+  answers: Record<string, unknown>,
+  isDev: boolean,
+  packageManager: string
+): void {
   console.log(chalk.blue('📝 Adjusting package.json...\n'));
 
   const packageJsonPath = path.join(projectName, 'package.json');
@@ -191,6 +196,12 @@ export function adjustPackageJson(projectName: string, answers: Record<string, a
     if (packageJson.name !== newName) {
       packageJson.name = newName;
       console.log(chalk.gray(`   ✓ Set package name to "${newName}"`));
+    }
+
+    // Pin the chosen package manager via Corepack
+    if (answers.PM_VERSION) {
+      packageJson.packageManager = `${packageManager}@${answers.PM_VERSION}`;
+      console.log(chalk.gray(`   ✓ Set packageManager to "${packageJson.packageManager}"`));
     }
 
     // 2. Replace workspace:* with pinned versions
@@ -248,7 +259,7 @@ export function adjustPackageJson(projectName: string, answers: Record<string, a
 export function handleConditionalRemoves(
   projectName: string,
   templateConfig: TemplateConfig,
-  answers: Record<string, any>
+  answers: Record<string, unknown>
 ): void {
   if (!templateConfig.conditionalRemove) return;
 

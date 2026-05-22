@@ -1,6 +1,7 @@
 import { useState, createContext, useContext, useCallback, ReactNode } from "react";
+import { Button, onActivateKey } from "@vertesia/ui/core";
 import { X, ExternalLink } from "lucide-react";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface ImageLightboxContextValue {
     openImage: (src: string, alt?: string) => void;
@@ -42,9 +43,14 @@ export function ImageLightboxProvider({ children }: ImageLightboxProviderProps) 
         <ImageLightboxContext.Provider value={{ openImage, closeImage }}>
             {children}
             {image && (
+                // biome-ignore lint/a11y/useSemanticElements: backdrop contains nested Button + <a> tags; button-in-button is invalid HTML so role="button" on a div is the pragmatic choice.
                 <div
+                    role="button"
+                    tabIndex={-1}
+                    aria-label={t('agent.close')}
                     className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
                     onClick={closeImage}
+                    onKeyDown={onActivateKey(closeImage)}
                 >
                     <div className="relative max-w-[90vw] max-h-[90vh]">
                         <img
@@ -53,19 +59,21 @@ export function ImageLightboxProvider({ children }: ImageLightboxProviderProps) 
                             className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
                         />
                         {/* Close button */}
-                        <button
-                            className="absolute top-2 right-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
+                        <Button
+                            variant="unstyled"
+                            className="absolute top-2 end-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
                             onClick={closeImage}
                             title={t('agent.close')}
+                            aria-label={t('agent.close')}
                         >
                             <X className="size-6" />
-                        </button>
+                        </Button>
                         {/* Open in new tab button */}
                         <a
                             href={image.src}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="absolute bottom-2 right-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
+                            className="absolute bottom-2 end-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
                             onClick={(e) => e.stopPropagation()}
                             title={t('agent.openInNewTab')}
                         >
@@ -88,15 +96,23 @@ interface LightboxImageProps {
 export function LightboxImage({ src, alt, className }: LightboxImageProps) {
     const { openImage } = useImageLightbox();
 
+    const open = () => openImage(src, alt);
+
     return (
-        <img
-            src={src}
-            alt={alt}
-            className={`cursor-pointer hover:opacity-90 transition-opacity ${className || ""}`}
+        <Button
+            variant="unstyled"
+            className="block p-0"
             onClick={(e) => {
                 e.stopPropagation();
-                openImage(src, alt);
+                open();
             }}
-        />
+            aria-label={alt || src}
+        >
+            <img
+                src={src}
+                alt={alt}
+                className={`cursor-pointer hover:opacity-90 transition-opacity ${className || ""}`}
+            />
+        </Button>
     );
 }

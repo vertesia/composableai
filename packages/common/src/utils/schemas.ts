@@ -5,7 +5,7 @@ import { ExecutablePromptSegmentDef, PromptSegmentDefType } from "../prompt.js";
 
 /**
  * Sanitize a tool definition to only include fields expected by LLM APIs.
- * Removes extra fields like 'category', 'default', 'related_tools' that are
+ * Removes extra fields like 'category', 'default', 'tools' that are
  * used internally but should not be sent to the LLM.
  */
 export function sanitizeToolDefinition(tool: ToolDefinition): ToolDefinition {
@@ -34,7 +34,7 @@ export function removeExtraProperties<T>(schema: T): T {
             removeExtraProperties(item);
         }
     } else if (typeof schema === 'object') {
-        const obj = schema as Record<string, any>;
+        const obj = schema as Record<string, unknown>;
 
         // If this looks like a property definition (has editor/format for document/media),
         // enrich it with type and description hints before stripping.
@@ -59,7 +59,7 @@ export function removeExtraProperties<T>(schema: T): T {
  * Returns true if the schema property represents a document reference
  * (identified by editor: "document" or format: "document" / "media").
  */
-function isDocumentProperty(obj: Record<string, any>): boolean {
+function isDocumentProperty(obj: Record<string, unknown>): boolean {
     return obj.editor === 'document' ||
         obj.format === 'document' ||
         obj.format === 'media';
@@ -78,7 +78,7 @@ export const DOCUMENT_STORE_HINT = "Use 'store:<document_id>' format to referenc
  * - Sets type to "string" if not already set
  * - Appends a store: prefix hint to the description
  */
-function enrichDocumentProperty(obj: Record<string, any>): void {
+function enrichDocumentProperty(obj: Record<string, unknown>): void {
     // Set type to string if missing (document references are string IDs)
     if (!obj.type) {
         obj.type = 'string';
@@ -89,7 +89,7 @@ function enrichDocumentProperty(obj: Record<string, any>): void {
     // after serialization when only the description survives.
     if (!obj.description) {
         obj.description = DOCUMENT_STORE_HINT;
-    } else if (!obj.description.includes(DOCUMENT_STORE_HINT)) {
+    } else if (typeof obj.description === 'string' && !obj.description.includes(DOCUMENT_STORE_HINT)) {
         obj.description = `${obj.description} ${DOCUMENT_STORE_HINT}`;
     }
 }

@@ -11,7 +11,7 @@ import { ContentDispositionButton } from "./ContentDispositionButton";
 
 import { ColumnLayout, ContentObjectItem } from "@vertesia/common";
 import { Button, ErrorBox, Spinner, useIntersectionObserver } from "@vertesia/ui/core";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 const layout: ColumnLayout[] = [
     { "name": "Name", "field": "properties.title", "type": "string", "fallback": "name" },
@@ -71,7 +71,7 @@ function SelectDocumentImpl({ onRowClick, selectedIds }: Readonly<SelectDocument
             .finally(() => {
                 setIsReady(true);
             });
-    }, []);
+    }, [search]);
 
     const facets = useWatchDocumentSearchFacets();
     const facetSearch = useDocumentSearch();

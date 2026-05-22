@@ -33,6 +33,9 @@ export interface InteractiveChannel {
 /**
  * Union of all supported user communication channel types.
  */
+/**
+ * @discriminator type
+ */
 export type UserChannel = EmailChannel | InteractiveChannel;
 
 /**

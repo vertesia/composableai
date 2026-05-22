@@ -86,7 +86,7 @@ export class SkillCollection implements ICollection<SkillDefinition> {
      * Get skills exposed as tool definitions.
      * This allows skills to appear alongside regular tools.
      * When called, they return rendered instructions.
-     * Includes related_tools for dynamic tool discovery.
+     * Includes tools for dynamic tool discovery.
      */
     getToolDefinitions(filterContext?: ToolUseContext): AgentToolDefinition[] {
         const defaultSchema: ToolDefinition['input_schema'] = {
@@ -109,8 +109,8 @@ export class SkillCollection implements ICollection<SkillDefinition> {
         return skills.map(skill => {
             // Build description with related tools info if available
             let description = `[Skill] ${skill.description}. Returns contextual instructions for this task.`;
-            if (skill.related_tools && skill.related_tools.length > 0) {
-                description += ` Unlocks tools: ${skill.related_tools.join(', ')}.`;
+            if (skill.tools && skill.tools.length > 0) {
+                description += ` Unlocks tools: ${skill.tools.join(', ')}.`;
             }
 
             return {
@@ -118,7 +118,7 @@ export class SkillCollection implements ICollection<SkillDefinition> {
                 name: `learn_${skill.name}`,
                 description,
                 input_schema: skill.input_schema || defaultSchema,
-                related_tools: skill.related_tools,
+                tools: skill.tools,
                 category: this.name,
             };
         });
@@ -164,19 +164,14 @@ export class SkillCollection implements ICollection<SkillDefinition> {
      * @param ctx - Hono context
      * @param preParsedPayload - Optional pre-parsed payload (used when routing from root endpoint)
      */
-    async execute(ctx: Context, preParsedPayload?: ToolExecutionPayload<Record<string, any>>): Promise<Response> {
+    async execute(ctx: Context, preParsedPayload?: ToolExecutionPayload): Promise<Response> {
         const toolCtx = ctx as ToolContext;
-        let payload: ToolExecutionPayload<Record<string, any>> | undefined = preParsedPayload;
+        const payload = preParsedPayload ?? toolCtx.payload;
         try {
             if (!payload) {
-                // Check if body was already parsed and validated by middleware
-                if (toolCtx.payload) {
-                    payload = toolCtx.payload;
-                } else {
-                    throw new HTTPException(400, {
-                        message: 'Invalid or missing skill execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }'
-                    });
-                }
+                throw new HTTPException(400, {
+                    message: 'Invalid or missing skill execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }'
+                });
             }
 
             const toolName = payload.tool_use.tool_name;
@@ -200,7 +195,8 @@ export class SkillCollection implements ICollection<SkillDefinition> {
                 });
             }
 
-            const data = payload.tool_use.tool_input || {};
+            const input = payload.tool_use.tool_input;
+            const data = typeof input === 'object' && input !== null && !Array.isArray(input) ? input as Record<string, unknown> : {};
             const result = await this.renderSkill(skill, data);
 
             // TODO: If skill.execution is set, run via Daytona
@@ -216,8 +212,10 @@ export class SkillCollection implements ICollection<SkillDefinition> {
                     execution: skill.execution,
                 }
             } satisfies ToolExecutionResult & { tool_use_id: string });
-        } catch (err: any) {
-            const status = err.status || 500;
+        } catch (err: unknown) {
+            const status = err instanceof HTTPException ? err.status : 500;
+            const message = err instanceof Error ? err.message : "Error executing skill";
+            const stack = err instanceof Error ? err.stack : undefined;
             const toolName = payload?.tool_use?.tool_name;
             const toolUseId = payload?.tool_use?.id;
 
@@ -226,17 +224,17 @@ export class SkillCollection implements ICollection<SkillDefinition> {
                     collection: this.name,
                     skill: toolName,
                     toolUseId,
-                    error: err.message,
+                    error: message,
                     status,
                     toolInput: payload?.tool_use?.tool_input,
-                    stack: err.stack,
+                    stack,
                 });
             }
 
             return ctx.json({
                 tool_use_id: toolUseId || "unknown",
                 is_error: true,
-                content: err.message || "Error executing skill",
+                content: message,
             }, status);
         }
     }
@@ -267,9 +265,9 @@ export class SkillCollection implements ICollection<SkillDefinition> {
 // ================== Skill Parser ==================
 
 interface SkillFrontmatter {
-    name: string;
+    name?: string;
     title?: string;
-    description: string;
+    description?: string;
     keywords?: string[];
     tools?: string[];
     data_patterns?: string[];
@@ -357,7 +355,7 @@ export function parseSkillFile(
 
     // Related tools from frontmatter
     if (frontmatter.tools) {
-        skill.related_tools = frontmatter.tools;
+        skill.tools = frontmatter.tools;
     }
 
     return skill;
@@ -367,7 +365,7 @@ export function parseSkillFile(
  * Simple YAML frontmatter parser (handles basic key: value and arrays)
  */
 function parseYamlFrontmatter(yaml: string): SkillFrontmatter {
-    const result: Record<string, any> = {};
+    const result: Record<string, unknown> = {};
     const lines = yaml.split('\n');
 
     for (const line of lines) {
@@ -394,7 +392,27 @@ function parseYamlFrontmatter(yaml: string): SkillFrontmatter {
         }
     }
 
-    return result as SkillFrontmatter;
+    return {
+        name: asString(result.name),
+        title: asString(result.title),
+        description: asString(result.description),
+        keywords: asStringArray(result.keywords),
+        tools: asStringArray(result.tools),
+        data_patterns: asStringArray(result.data_patterns),
+        language: asString(result.language),
+        packages: asStringArray(result.packages),
+        system_packages: asStringArray(result.system_packages),
+        widgets: asStringArray(result.widgets),
+        scripts: asStringArray(result.scripts),
+    };
+}
+
+function asString(value: unknown): string | undefined {
+    return typeof value === 'string' ? value : undefined;
+}
+
+function asStringArray(value: unknown): string[] | undefined {
+    return Array.isArray(value) && value.every((item) => typeof item === 'string') ? value : undefined;
 }
 
 /**

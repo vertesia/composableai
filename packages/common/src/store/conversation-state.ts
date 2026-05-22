@@ -121,7 +121,7 @@ export interface ConversationState {
     /**
      * Tools that have been unlocked by skills during the conversation.
      * These tools were initially hidden (default: false) but became available
-     * when a skill with related_tools was called.
+     * when a skill with tools was called.
      */
     unlocked_tools?: string[];
 

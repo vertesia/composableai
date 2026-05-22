@@ -14,6 +14,7 @@ import { createTemplatesRoute } from "./server/templates.js";
 import { createWidgetsRoute } from "./server/widgets.js";
 import { createPackageRoute } from "./server/app-package.js";
 import { createContentTypesRoute } from "./server/content-types.js";
+import { createProcessesRoute } from "./server/processes.js";
 
 // Schema for tool execution payload
 const ToolExecutionPayloadSchema = z.object({
@@ -68,7 +69,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
                 const body = JSON.parse(text);
                 const result = ToolExecutionPayloadSchema.safeParse(body);
                 if (result.success) {
-                    ctx.payload = result.data as ToolExecutionPayload<any>;
+                    ctx.payload = result.data as ToolExecutionPayload;
                     ctx.toolUseId = result.data.tool_use.id;
                     ctx.toolName = result.data.tool_use.tool_name;
                 }
@@ -96,13 +97,14 @@ export function createToolServer(config: ToolServerConfig): Hono {
         return c.json({
             message: 'Vertesia Tools API',
             version: '1.0.0',
-            endpoints: {
-                tools: allToolEndpoints,
-                interactions: interactions.map(col => `${prefix}/interactions/${col.name}`),
-                templates: templates.map(col => `${prefix}/templates/${col.name}`),
-                activities: activities.map(col => `${prefix}/activities/${col.name}`),
-                mcp: mcpProviders.map(p => `${prefix}/mcp/${p.name}`),
-            }
+        endpoints: {
+            tools: allToolEndpoints,
+            interactions: interactions.map(col => `${prefix}/interactions/${col.name}`),
+            templates: templates.map(col => `${prefix}/templates/${col.name}`),
+            processes: `${prefix}/processes`,
+            activities: activities.map(col => `${prefix}/activities/${col.name}`),
+            mcp: mcpProviders.map(p => `${prefix}/mcp/${p.name}`),
+        }
         });
     });
 
@@ -115,6 +117,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
     createInteractionsRoute(app, `${prefix}/interactions`, config);
     createTemplatesRoute(app, `${prefix}/templates`, config);
     createContentTypesRoute(app, `${prefix}/types`, config);
+    createProcessesRoute(app, `${prefix}/processes`, config);
     createMcpRoute(app, `${prefix}/mcp`, config);
 
 
@@ -170,4 +173,3 @@ export function createDevServer(config: ToolServerConfig & {
 
     return app;
 }
-

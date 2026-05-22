@@ -1,8 +1,8 @@
 import { Button, DialogDescription, Heading, Modal, ModalBody, ModalFooter, ModalTitle, Portal, Tabs, TabsBar, TabsPanel, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
-import { useUITranslation } from '../../../../../i18n/index.js';
-import { i18nInstance, NAMESPACE } from '../../../../../i18n/instance.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { CreateCollectionForm, SelectCollection } from "../../../collections";
 import { useObjectsActionCallback } from "../ObjectsActionHooks";
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
@@ -90,7 +90,7 @@ function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
         });
     }
 
-    const onCollectionChange = (collectionId: string | string[] | undefined, _collection?: any) => {
+    const onCollectionChange = (collectionId: string | string[] | undefined, _collection?: unknown) => {
         if (typeof collectionId === "string" || typeof collectionId === "undefined") {
             setSelectedCollectionId(collectionId);
         } else if (Array.isArray(collectionId) && collectionId.length > 0) {

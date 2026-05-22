@@ -11,6 +11,7 @@
     "lib"
   ],
   "scripts": {
+    "lint": "biome lint src",
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "node lib/index.js test-project",

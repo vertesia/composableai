@@ -20,6 +20,8 @@ const TemplateFrontmatterSchema = z.object({
     type: z.enum(['presentation', 'document']),
 }).strict();
 
+type TemplateFrontmatter = z.infer<typeof TemplateFrontmatterSchema>;
+
 /**
  * MUST be kept in sync with @vertesia/tools-sdk RenderingTemplateDefinition
  * Zod schema for template definition
@@ -88,6 +90,7 @@ export const templateTransformer: TransformerPreset = {
                 `Invalid frontmatter in ${filePath}:\n${errors}`
             );
         }
+        const validatedFrontmatter: TemplateFrontmatter = frontmatterValidation.data;
 
         // Derive template path from directory structure
         const { category, templateName, relative: templatePath } = deriveTemplatePathInfo(filePath);
@@ -100,11 +103,11 @@ export const templateTransformer: TransformerPreset = {
         const templateData: RenderingTemplateDefinition = {
             id: `${category}:${templateName}`,
             name: templateName,
-            title: frontmatter.title,
-            description: frontmatter.description,
+            title: validatedFrontmatter.title,
+            description: validatedFrontmatter.description,
             instructions: markdown,
-            tags: frontmatter.tags,
-            type: frontmatter.type,
+            tags: validatedFrontmatter.tags,
+            type: validatedFrontmatter.type,
             assets: assets.fileNames.map(f => `/templates/${templatePath}/${f}`),
         };
 

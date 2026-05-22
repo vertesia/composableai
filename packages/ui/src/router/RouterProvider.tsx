@@ -39,13 +39,13 @@ export function RouterProvider({ routes, index, onChange, children }: RouterProv
         }).withObserver(onChange);
         router.index = index;
         return router;
-    }, []);
+    }, [index, onChange, routes]);
     useSafeLayoutEffect(() => {
-        router && router.start();
+        router?.start();
         return () => {
-            router && router.stop();
+            router?.stop();
         }
-    }, []);
+    }, [router]);
 
     return state && (
         <ReactRouterContext.Provider value={state}>

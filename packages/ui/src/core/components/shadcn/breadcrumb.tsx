@@ -42,7 +42,7 @@ export function Breadcrumbs({ path, maxItems = 3, className, separator }: Breadc
                 {renderBreadcrumbItem(item)}
               </BreadcrumbItem>
               {index < items.length - 1 &&
-                <BreadcrumbSeparator>{separator ?? <ChevronRight />}</BreadcrumbSeparator>
+                <BreadcrumbSeparator>{separator ?? <ChevronRight className="cn-rtl-flip" />}</BreadcrumbSeparator>
               }
             </React.Fragment>
           ))}
@@ -59,14 +59,14 @@ export function Breadcrumbs({ path, maxItems = 3, className, separator }: Breadc
         <BreadcrumbItem>
           <BreadcrumbEllipsis />
         </BreadcrumbItem>
-        <BreadcrumbSeparator>{separator ?? <ChevronRight />}</BreadcrumbSeparator>
+        <BreadcrumbSeparator>{separator ?? <ChevronRight className="cn-rtl-flip" />}</BreadcrumbSeparator>
 
         {lastThreeItems.map((item, index) => (
           <React.Fragment key={index}>
             <BreadcrumbItem>
               {renderBreadcrumbItem(item)}
             </BreadcrumbItem>
-            {index < lastThreeItems.length - 1 && <BreadcrumbSeparator>{separator ?? <ChevronRight />}</BreadcrumbSeparator>
+            {index < lastThreeItems.length - 1 && <BreadcrumbSeparator>{separator ?? <ChevronRight className="cn-rtl-flip" />}</BreadcrumbSeparator>
             }
           </React.Fragment>
         ))}
@@ -158,8 +158,6 @@ const BreadcrumbPage = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <span
     ref={ref}
-    role="link"
-    aria-disabled="true"
     aria-current="page"
     className={cn("font-normal text-foreground", className)}
     {...props}
@@ -178,7 +176,7 @@ const BreadcrumbSeparator = ({
     className={cn("[&>svg]:w-3.5 [&>svg]:h-3.5", className)}
     {...props}
   >
-    {children ?? <ChevronRight />}
+    {children ?? <ChevronRight className="cn-rtl-flip" />}
   </li>
 )
 BreadcrumbSeparator.displayName = "BreadcrumbSeparator"

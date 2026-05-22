@@ -19,7 +19,7 @@ export function PropertiesView({ className, properties }: PropertiesViewProps) {
                                     <VTooltip
                                         description={property.description}
                                         placement="top">
-                                        <Info className="size-3 ml-2 text-muted-foreground" />
+                                        <Info className="size-3 ms-2 text-muted-foreground" />
                                     </VTooltip>
                                 }
                             </td>

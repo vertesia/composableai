@@ -4,7 +4,7 @@ import ReactCalendar from "react-calendar";
 import { Button } from "../../button";
 import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
 import { calendarStyles } from "../filter-styles";
-import { useUITranslation } from '../../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export const DateCombobox = ({
     filterValues,
@@ -63,7 +63,7 @@ export const DateCombobox = ({
         }
     };
 
-    const handleDateChange = (date: any) => {
+    const handleDateChange = (date: unknown) => {
         if (isRange) {
             // Update local state immediately for visual feedback
             if (Array.isArray(date)) {
@@ -136,10 +136,10 @@ export const DateCombobox = ({
                                                     const endDate = dateRange[1].getTime();
 
                                                     if (currentDate === startDate) {
-                                                        return 'bg-primary text-primary-foreground rounded-l-md font-semibold';
+                                                        return 'bg-primary text-primary-foreground rounded-s-md font-semibold';
                                                     }
                                                     if (currentDate === endDate) {
-                                                        return 'bg-primary text-primary-foreground rounded-r-md font-semibold';
+                                                        return 'bg-primary text-primary-foreground rounded-e-md font-semibold';
                                                     }
                                                     if (currentDate > startDate && currentDate < endDate) {
                                                         return 'bg-primary/20 text-primary font-medium';

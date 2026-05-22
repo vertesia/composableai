@@ -1,9 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tools Admin UI — Dev</title>
+    <script>
+      // Apply language + dir before the React bundle loads to avoid an LTR-to-RTL
+      // flash. Must mirror @vertesia/ui/i18n's resolveLanguage / isRTL logic.
+      (function () {
+        try {
+          var supported = ['ar','de','en','es','fr','it','ja','ko','pt','ru','tr','zh','zh-TW'];
+          var rtl = ['ar','he','fa','ur'];
+          var stored = localStorage.getItem('vertesia-ui-language');
+          var navLng = (navigator.language || 'en');
+          var raw = stored || navLng;
+          var lng = supported.indexOf(raw) >= 0
+            ? raw
+            : (supported.indexOf(raw.split('-')[0]) >= 0 ? raw.split('-')[0] : 'en');
+          document.documentElement.lang = lng;
+          document.documentElement.dir = rtl.indexOf(lng.split('-')[0]) >= 0 ? 'rtl' : 'ltr';
+        } catch (_e) {}
+      })();
+    </script>
 </head>
 <body>
     <div id="root"></div>

@@ -1,5 +1,5 @@
 import { log } from "@temporalio/activity";
-import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
+import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec, JSONObject } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFoundError, DocumentNotFoundError } from "../../errors.js";
 
@@ -54,15 +54,17 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
         throw new ActivityParamNotFoundError("object_type", payload.activity);
     }
 
-    log.info("Creating document from interaction result", { runId, objectTypeName });
+    log.debug("Creating document from interaction result", { runId, objectTypeName });
 
-    const run = await client.runs.retrieve(runId).catch((e) => {
-        throw new DocumentNotFoundError(`Error fetching run ${runId}: ${e.message}`);
+    const run = await client.runs.retrieve<Record<string, unknown>, Record<string, unknown>>(runId).catch((e: unknown) => {
+        const message = e instanceof Error ? e.message : String(e);
+        throw new DocumentNotFoundError(`Error fetching run ${runId}: ${message}`);
     });
 
     const type = objectTypeName ?
-        await client.types.getTypeByName(objectTypeName).catch((e) => {
-            throw new DocumentNotFoundError(`Error fetching type ${objectTypeName}: ${e.message}`);
+        await client.types.getTypeByName(objectTypeName).catch((e: unknown) => {
+            const message = e instanceof Error ? e.message : String(e);
+            throw new DocumentNotFoundError(`Error fetching type ${objectTypeName}: ${message}`);
         })
         : undefined;
 
@@ -71,14 +73,15 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
     const inputData = run.parameters;
 
     // Try to parse result as JSON, fallback to text if not valid JSON
-    let jsonResult: any = null;
+    let jsonResult: JSONObject | null = null;
     try {
-        jsonResult = result.object();
+        jsonResult = result.object<JSONObject>();
     } catch (e) {
-        log.info("Result is not valid JSON, will use text content instead", { error: e instanceof Error ? e.message : String(e) });
+        log.debug("Result is not valid JSON, will use text content instead", { error: e instanceof Error ? e.message : String(e) });
     }
 
-    const name = jsonResult?.['name'] || jsonResult?.["title"] || inputData['name'] || params.fallback_name || undefined;
+    const nameValue = jsonResult?.['name'] || jsonResult?.["title"] || inputData['name'] || params.fallback_name || undefined;
+    const name = typeof nameValue === "string" ? nameValue : undefined;
 
     const docPayload = {
         name,
@@ -97,7 +100,7 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
 
     if (params.update_text_from_property) {
         const text = docPayload.properties[params.update_text_from_property];
-        if (text) {
+        if (typeof text === "string") {
             docPayload.text = text;
         }
     }
@@ -106,14 +109,14 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
     let newDoc: boolean = false;
     let doc = undefined;
     if (params.update_existing_id) {
-        log.info(`Updating existing document ${params.update_existing_id}`);
+        log.debug(`Updating existing document ${params.update_existing_id}`);
         doc = await client.objects.update(params.update_existing_id, docPayload, { suppressWorkflows: true });
     } else {
-        log.info(`Creating new document of type ${objectTypeName}`);
+        log.debug(`Creating new document of type ${objectTypeName}`);
         doc = await client.objects.create(docPayload);
         newDoc = true;
     }
 
-    log.info(`Document ${objectTypeName + ' '}${doc.id}(${doc.name}) ${newDoc ? 'created' : 'updated'}`);
+    log.debug(`Document ${objectTypeName + ' '}${doc.id}(${doc.name}) ${newDoc ? 'created' : 'updated'}`);
     return { id: doc.id, isNew: newDoc, type: name }
 }

@@ -19,6 +19,7 @@ export const EXTERNALS = [
     "@radix-ui/react-checkbox",
     "@radix-ui/react-collapsible",
     "@radix-ui/react-dialog",
+    "@radix-ui/react-direction",
     "@radix-ui/react-label",
     "@radix-ui/react-popover",
     "@radix-ui/react-separator",

@@ -20,7 +20,8 @@ export interface RunListingFilters {
     tag?: string,
     fromDate?: string,
     toDate?: string,
-    parent?: string | false,
+    parent?: string | string[],
+    is_root?: boolean,
     workflow_run_ids?: string[],
 }
 
@@ -88,7 +89,8 @@ export interface RunSearchQuery extends SimpleSearchQuery {
     tags?: string[];
     query?: string;
     default_query_path?: string;
-    parent?: string[] | false;
+    parent?: string[];
+    is_root?: boolean;
     object?: string;
     start?: string;
     end?: string;
@@ -137,9 +139,9 @@ export interface ComplexSearchQuery extends ObjectSearchQuery {
      */
     score_aggregation?: scoreAggregationTypes;
 
-    match?: Record<string, any>;
+    match?: Record<string, unknown>;
 }
 
 export interface ComplexCollectionSearchQuery extends CollectionSearchPayload {
-    match?: Record<string, any>;
+    match?: Record<string, unknown>;
 }

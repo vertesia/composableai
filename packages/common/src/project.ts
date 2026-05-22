@@ -1,3 +1,4 @@
+import type { JSONSchemaType } from "ajv";
 import { SupportedIntegrations } from "./integrations.js";
 import { ContentObjectTypeRef } from "./store/store.js";
 import { WorkflowRunStatus } from "./store/workflow.js";
@@ -158,13 +159,112 @@ export interface ProjectModelDefaults {
     system?: SystemDefaults;
 }
 
+export type BrowserUseRiskPolicy = "read_only" | "low_write" | "requires_approval" | "unrestricted";
+
+export type BrowserUseScreenshotCapture = "off" | "on_action" | "each_turn";
+
+export interface BrowserUseProjectConfiguration {
+    /**
+     * Enable the browser_use workflow-level tool for this project.
+     * Defaults to true when omitted.
+     */
+    enabled?: boolean;
+    /**
+     * Risk policy used when the tool call does not specify one.
+     * Defaults to low_write.
+     */
+    default_policy?: BrowserUseRiskPolicy;
+    /**
+     * Maximum policy a tool call may request. Requested policies above this
+     * are clamped down to the project maximum. Defaults to unrestricted.
+     */
+    max_policy?: BrowserUseRiskPolicy;
+    /**
+     * Optional project-wide host allowlist. When present, browser_use calls
+     * can only request hosts contained by this list.
+     */
+    allowed_hosts?: string[];
+    /**
+     * Allow saved Playwright scripts to hydrate artifacts/documents as files
+     * inside the browser sandbox for upload flows. Defaults to true.
+     */
+    allow_file_uploads?: boolean;
+    /**
+     * Allow the browser_playwright_script tool in browser workstreams.
+     * Defaults to true.
+     */
+    allow_playwright_scripts?: boolean;
+    /**
+     * Persist browser screenshots for UI progress. Defaults to on_action.
+     */
+    capture_screenshots?: BrowserUseScreenshotCapture;
+    /**
+     * Prefer unannotated screenshots in the browser-use UI widget when both
+     * raw and annotated captures are available. Defaults to true.
+     */
+    prefer_raw_screenshots?: boolean;
+}
+
+export const BrowserUseProjectConfigurationSchema: JSONSchemaType<BrowserUseProjectConfiguration> = {
+    type: "object",
+    properties: {
+        enabled: {
+            type: "boolean",
+            nullable: true,
+            description: "Enable the browser_use workflow-level tool for this project. Defaults to true.",
+        },
+        default_policy: {
+            type: "string",
+            nullable: true,
+            enum: ["read_only", "low_write", "requires_approval", "unrestricted"],
+            description: "Risk policy used when a browser_use call does not specify one. Defaults to low_write.",
+        },
+        max_policy: {
+            type: "string",
+            nullable: true,
+            enum: ["read_only", "low_write", "requires_approval", "unrestricted"],
+            description: "Maximum risk policy a browser_use call may request. Defaults to unrestricted.",
+        },
+        allowed_hosts: {
+            type: "array",
+            nullable: true,
+            items: { type: "string" },
+            description:
+                "Optional project-wide host allowlist. When present, browser_use calls can only request hosts contained by this list.",
+        },
+        allow_file_uploads: {
+            type: "boolean",
+            nullable: true,
+            description: "Allow replay scripts to hydrate artifacts/documents as files in the browser sandbox. Defaults to true.",
+        },
+        allow_playwright_scripts: {
+            type: "boolean",
+            nullable: true,
+            description: "Allow browser_playwright_script in browser workstreams. Defaults to true.",
+        },
+        capture_screenshots: {
+            type: "string",
+            nullable: true,
+            enum: ["off", "on_action", "each_turn"],
+            description: "Persist browser screenshots for UI progress. Defaults to on_action.",
+        },
+        prefer_raw_screenshots: {
+            type: "boolean",
+            nullable: true,
+            description: "Prefer unannotated screenshots in the browser-use UI widget. Defaults to true.",
+        },
+    },
+    required: [],
+    additionalProperties: false,
+};
+
 // ==========================================
 // Project Configuration
 // ==========================================
 
 export interface ProjectConfiguration {
 
-    human_context: string;
+    human_context?: string;
 
     defaults?: ProjectModelDefaults;
 
@@ -173,9 +273,9 @@ export interface ProjectConfiguration {
     sync_content_properties?: boolean;
 
     embeddings: {
-        text?: ProjectConfigurationEmbeddings;
-        image?: ProjectConfigurationEmbeddings;
-        properties?: ProjectConfigurationEmbeddings
+        text?: ProjectConfigurationEmbedding;
+        image?: ProjectConfigurationEmbedding;
+        properties?: ProjectConfigurationEmbedding
     }
 
     datacenter?: string;
@@ -212,6 +312,11 @@ export interface ProjectConfiguration {
     main_language?: string;
 
     /**
+     * Project defaults and caps for browser_use agent workstreams.
+     */
+    browser_use?: BrowserUseProjectConfiguration;
+
+    /**
      * Object ID of a content object containing a custom LaTeX template (.latex file)
      * to use as the branded PDF template. When set, "Export as Branded PDF" uses this
      * template instead of the built-in Vertesia default template.
@@ -244,13 +349,22 @@ export const SearchTypes = {
     ...FullTextType
 } as const;
 
-export interface ProjectConfigurationEmbeddings {
-    environment: string;
+export interface ProjectConfigurationEmbedding {
+    environment?: string;
     enabled: boolean;
-    dimensions: number;
+    dimensions?: number;
     max_tokens?: number;
     model?: string;
 }
+
+export interface ProjectConfigurationEmbeddingEnablePayload {
+    environment: string;
+    max_tokens?: number;
+    model?: string;
+}
+
+/** @deprecated Use ProjectConfigurationEmbedding for a single embedding configuration. */
+export type ProjectConfigurationEmbeddings = ProjectConfigurationEmbedding;
 
 export interface Project {
     id: string;
@@ -259,7 +373,7 @@ export interface Project {
     description?: string;
     account: string;
     configuration: ProjectConfiguration;
-    integrations: Map<string, any>;
+    integrations?: Map<string, unknown>;
     plugins: string[];
     created_by: string,
     updated_by: string,

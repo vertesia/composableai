@@ -6,9 +6,19 @@ import { computeTitleFromName } from "../form/ManagedObject.js";
 
 
 interface JSONViewProps {
-    value: JSONObject;
+    value: JSONValue;
 }
 export function JSONView({ value }: JSONViewProps) {
+    if (Array.isArray(value)) {
+        return <div className="flex flex-col gap-4 px-2 h-full overflow-auto">
+            <ArrayProperty value={value} />
+        </div>
+    }
+    if (typeof value !== 'object' || value == null) {
+        return <div className="flex flex-col gap-4 px-2 h-full overflow-auto">
+            <PropertyElement name="value" value={value} />
+        </div>
+    }
     return <div className="flex flex-col gap-4 px-2 h-full overflow-auto">
         {
             Object.entries(value).map(([key, value]) =>
@@ -32,7 +42,7 @@ interface BlockElementProps {
     className?: string;
 }
 function BlockElement({ children, className }: BlockElementProps) {
-    return (<div className={clsx('flex flex-col gap-4 py-2 pl-4 border-l-4 border-l-solid border-l-slate-100 dark:border-l-slate-600', className)}>
+    return (<div className={clsx('flex flex-col gap-4 py-2 ps-4 border-s-4 border-s-solid border-s-slate-100 dark:border-s-slate-600', className)}>
         {children}
     </div>)
 }
@@ -111,7 +121,7 @@ interface ItemPropertyProps {
 function ItemProperty({ index, value, useBullet }: ItemPropertyProps) {
     const bullet = useBullet ? <span className='text-xl'>&bull;</span> : <span>{index + 1}.</span>
     const info = getValueInfo(value);
-    let content;
+    let content: React.ReactNode;
     switch (info.type) {
         case ValueType.Object:
             content = <BlockElement>
@@ -129,7 +139,7 @@ function ItemProperty({ index, value, useBullet }: ItemPropertyProps) {
             break;
     }
     return (
-        <div className='flex gap-4 hover:bg-slate-50 dark:hover:bg-slate-800 py-2 pr-2 pl-4'>
+        <div className='flex gap-4 hover:bg-slate-50 dark:hover:bg-slate-800 py-2 pe-2 ps-4'>
             <div className='font-semibold text-gray-600 dark:text-gray-400'>{bullet}</div>
             <div>{content}</div>
         </div>
@@ -143,7 +153,12 @@ enum ValueType {
     Array,
     Object
 }
-function getValueInfo(value: JSONValue): { value: any, type: ValueType } {
+type ValueInfo =
+    | { value: string; type: ValueType.Inline | ValueType.Paragraph | ValueType.Prose }
+    | { value: JSONArray; type: ValueType.Array }
+    | { value: JSONObject; type: ValueType.Object };
+
+function getValueInfo(value: JSONValue): ValueInfo {
     if (value == null) {
         return {
             value: '-',
@@ -156,27 +171,27 @@ function getValueInfo(value: JSONValue): { value: any, type: ValueType } {
             type: ValueType.Array
         }
     }
-    const type = typeof value;
-    if (type === 'string') {
-        const len = (value as string).length;
-        let type;
+    if (typeof value === 'string') {
+        const len = value.length;
+        let valueType: ValueType.Inline | ValueType.Paragraph | ValueType.Prose;
+        let displayValue = value;
         if (len < 80) {
-            type = ValueType.Inline;
+            valueType = ValueType.Inline;
         } else if (len > 400) {
-            type = ValueType.Prose;
+            valueType = ValueType.Prose;
         } else {
-            type = ValueType.Paragraph;
-            value = (value as string).replace(/(?:\n\n)+/g, '\n\n')
+            valueType = ValueType.Paragraph;
+            displayValue = value.replace(/(?:\n\n)+/g, '\n\n')
         }
-        return { type, value };
-    } else if (type === 'number' || type === 'boolean') {
+        return { type: valueType, value: displayValue };
+    } else if (typeof value === 'number' || typeof value === 'boolean') {
         return {
             value: String(value),
             type: ValueType.Inline
         }
     } else {
         return {
-            value,
+            value: value as JSONObject,
             type: ValueType.Object
         }
     }

@@ -1,7 +1,7 @@
 import { FacetBucket, InteractionStatus } from '@vertesia/common';
 import { Badge, FilterGroup } from '@vertesia/ui/core';
 
-interface EnrichedFacetBucket extends FacetBucket {
+export interface EnrichedFacetBucket extends FacetBucket {
     name?: string;
     status?: string;
     version?: number;
@@ -58,7 +58,7 @@ export function VInteractionFacet({ buckets, name, placeholder }: InteractionFac
                             </Badge>
                         )}
                     </div>
-                    {(bucket?.count ?? 0) > 0 && <span className="ml-2 text-xs shrink-0">({bucket!.count})</span>}
+                    {(bucket?.count ?? 0) > 0 && <span className="ms-2 text-xs shrink-0">({bucket!.count})</span>}
                 </div>
             );
         },
