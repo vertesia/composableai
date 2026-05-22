@@ -1,10 +1,10 @@
-import { existsSync, mkdirSync, statSync } from "fs";
+import { existsSync, mkdirSync, statSync } from "node:fs";
 import jwt from 'jsonwebtoken';
 import os from "node:os";
-import { join } from "path";
+import { join } from "node:path";
 import { readJsonFile, writeJsonFile } from "../utils/stdio.js";
 import { hasErrorCode } from "../utils/options.js";
-import { ConfigPayload, ConfigResult, startConfigSession } from "./server/index.js";
+import { type ConfigPayload, type ConfigResult, startConfigSession } from "./server/index.js";
 import type { OnResultCallback } from "./commands.js";
 import { canUseOAuthProfile, OAuthUnavailableError, startOAuthSession } from "./oauth.js";
 import { deleteAuthBundle, getAccessTokenExpiry, hasStoredAccessToken, isKeyringAvailable, readAuthBundle, readProfileAccessToken, writeAuthBundle } from "./keyring.js";

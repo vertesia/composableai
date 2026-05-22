@@ -1,5 +1,5 @@
-import { readFileSync, rmSync, writeFileSync } from "fs";
-import { basename, resolve } from "path";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import * as ts from "typescript";
 
 function compile(fileNames: string[], options: ts.CompilerOptions): { errors: number, emittedFiles: string[] | undefined } {
@@ -65,7 +65,7 @@ function tryDeleteFile(file: string) {
 
 export function importTsFile(file: string, outdir: string = '.'): Promise<unknown> {
     if (!file.endsWith('.ts')) {
-        throw new Error("Not a type script file: " + file);
+        throw new Error(`Not a type script file: ${file}`);
     }
     file = resolve(file);
     const baseOptions = {

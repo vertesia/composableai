@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import { ToastProps } from "./ToastProps.js";
+import type { ToastProps } from "./ToastProps.js";
 
 export function useToast() {
     return useContext(ToastContext);

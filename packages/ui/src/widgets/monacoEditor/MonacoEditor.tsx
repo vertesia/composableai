@@ -2,7 +2,7 @@ import { Editor } from '@monaco-editor/react';
 import { useTheme } from '@vertesia/ui/core';
 import debounce from 'debounce';
 import clsx from 'clsx';
-import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type * as monaco from 'monaco-editor';
 import { registerCustomFoldingProviders } from './foldingProviders.js';
 

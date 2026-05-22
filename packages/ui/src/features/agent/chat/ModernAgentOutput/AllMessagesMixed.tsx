@@ -1,5 +1,5 @@
-import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@vertesia/common";
-import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
+import { type AgentMessage, AgentMessageType, type BatchProgressDetails, type Plan } from "@vertesia/common";
+import React, { useEffect, useMemo, useState, useRef, useCallback, Component, type ReactNode } from "react";
 import { cn } from "@vertesia/ui/core";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
@@ -10,7 +10,7 @@ import MessageItem, { type MessageItemClassNames, type MessageItemProps } from "
 import StreamingMessage, { type StreamingMessageClassNames } from "./StreamingMessage";
 import ToolCallGroup, { type ToolCallGroupClassNames } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { DONE_STATES, getSlidingViewMessageBuckets, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, RenderableGroup, shouldCollapseAdjacentRenderedMessage, StreamingData } from "./utils";
+import { DONE_STATES, getSlidingViewMessageBuckets, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, type RenderableGroup, shouldCollapseAdjacentRenderedMessage, type StreamingData } from "./utils";
 import { ThinkingMessages } from "../WaitingMessages";
 
 /** Extended group that may carry preamble info (text from a preceding single/streaming message) */

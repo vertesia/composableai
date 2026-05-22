@@ -1,37 +1,37 @@
 import { ApiTopic } from "@vertesia/api-fetch-client";
 import {
-    BulkObjectCreateResult,
-    BulkObjectDeleteResult,
-    BulkObjectUpdateResult,
+    type BulkObjectCreateResult,
+    type BulkObjectDeleteResult,
+    type BulkObjectUpdateResult,
     canGenerateRendition,
-    Collection,
-    ComplexSearchPayload,
-    ComputeObjectFacetPayload,
-    ContentObject,
+    type Collection,
+    type ComplexSearchPayload,
+    type ComputeObjectFacetPayload,
+    type ContentObject,
     ContentObjectApiHeaders,
-    ContentObjectItem,
-    ContentObjectProcessingPriority,
-    ContentSource,
-    ContentObjectTextResponse,
-    CreateContentObjectPayload,
-    DeleteContentObjectResult,
-    Embedding,
-    ObjectSearchResponse,
-    ComputedFacetResponse,
-    ExportPropertiesPayload,
-    ExportPropertiesResponse,
-    FindPayload,
-    GetFileUrlPayload,
-    GetFileUrlResponse,
-    GetRenditionParams,
-    GetRenditionResponse,
+    type ContentObjectItem,
+    type ContentObjectProcessingPriority,
+    type ContentSource,
+    type ContentObjectTextResponse,
+    type CreateContentObjectPayload,
+    type DeleteContentObjectResult,
+    type Embedding,
+    type ObjectSearchResponse,
+    type ComputedFacetResponse,
+    type ExportPropertiesPayload,
+    type ExportPropertiesResponse,
+    type FindPayload,
+    type GetFileUrlPayload,
+    type GetFileUrlResponse,
+    type GetRenditionParams,
+    type GetRenditionResponse,
 
-    GetUploadUrlPayload,
-    ListWorkflowRunsResponse,
-    ObjectSearchPayload,
-    ObjectSearchQuery,
-    SetObjectEmbeddingsResponse,
-    SupportedEmbeddingTypes,
+    type GetUploadUrlPayload,
+    type ListWorkflowRunsResponse,
+    type ObjectSearchPayload,
+    type ObjectSearchQuery,
+    type SetObjectEmbeddingsResponse,
+    type SupportedEmbeddingTypes,
 } from "@vertesia/common";
 
 // Re-export rendition utilities for consumers
@@ -40,7 +40,7 @@ export { getSupportedRenditionFormats, supportsVisualRendition } from "@vertesia
 
 import { StreamSource } from "../StreamSource.js";
 import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
-import { ZenoClient } from "./client.js";
+import type { ZenoClient } from "./client.js";
 
 type ContentObjectWritePayload = Omit<CreateContentObjectPayload, "content"> & {
     content?: ContentSource | File | StreamSource;

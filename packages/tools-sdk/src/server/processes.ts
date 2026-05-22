@@ -1,9 +1,9 @@
 // ================== Process Definition Endpoints ==================
 
-import { InCodeProcessDefinition } from "@vertesia/common";
-import { Hono } from "hono";
+import type { InCodeProcessDefinition } from "@vertesia/common";
+import type { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { ToolServerConfig } from "./types.js";
+import type { ToolServerConfig } from "./types.js";
 
 export function createProcessesRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { processes = [] } = config;
@@ -21,7 +21,7 @@ export function createProcessesRoute(app: Hono, basePath: string, config: ToolSe
         const process = findProcess(processes, name);
         if (!process) {
             throw new HTTPException(404, {
-                message: "No process found with name: " + name,
+                message: `No process found with name: ${name}`,
             });
         }
         return c.json(process);

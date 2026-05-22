@@ -1,9 +1,9 @@
-import { BuildOptions, loadMemoryPack } from '@vertesia/memory';
+import { type BuildOptions, loadMemoryPack } from '@vertesia/memory';
 import { build } from '@vertesia/memory-commands';
 import { Command } from 'commander';
-import { readFile } from 'fs/promises';
-import { dirname } from 'path';
-import url from 'url';
+import { readFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
+import url from 'node:url';
 
 export function setupMemoCommand(command: Command, publish?: (file: string, name: string) => Promise<string>) {
     const buildCmd = new Command("build").description("Build a memory pack from a recipe script.");
@@ -40,7 +40,7 @@ export function setupMemoCommand(command: Command, publish?: (file: string, name
 function memoAction(command: Command, options: Record<string, unknown>) {
     const { script, vars } = parseArgs(command.args);
     if (options.indent) {
-        options.indent = parseInt(options.indent);
+        options.indent = parseInt(options.indent, 10);
     }
     if (!options.transpileDir) {
         options.transpileDir = dirname(url.fileURLToPath(import.meta.url));

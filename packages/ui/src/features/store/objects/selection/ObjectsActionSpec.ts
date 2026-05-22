@@ -1,8 +1,8 @@
-import { VertesiaClient } from "@vertesia/client";
-import { ColumnLayout, ContentObjectTypeItem } from "@vertesia/common";
-import { ToastFn } from "@vertesia/ui/core";
-import { DocumentSelection } from '../DocumentSelectionProvider';
-import { DocumentSearch } from '../search/DocumentSearchContext';
+import type { VertesiaClient } from "@vertesia/client";
+import type { ColumnLayout, ContentObjectTypeItem } from "@vertesia/common";
+import type { ToastFn } from "@vertesia/ui/core";
+import type { DocumentSelection } from '../DocumentSelectionProvider';
+import type { DocumentSearch } from '../search/DocumentSearchContext';
 
 export interface ObjectsActionSpec {
     id: string;

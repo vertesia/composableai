@@ -175,7 +175,7 @@ function fileTotals(violations) {
 }
 
 function fmt(o) {
-    return JSON.stringify(o, null, 2) + '\n';
+    return `${JSON.stringify(o, null, 2)}\n`;
 }
 
 function parseArgs(argv) {

@@ -1,4 +1,4 @@
-import { DragEventHandler, RefObject, ReactNode, useRef } from "react";
+import { type DragEventHandler, type RefObject, type ReactNode, useRef } from "react";
 
 type DragCounterElement = HTMLElement & {
     __dragOver_cnt__?: number;
@@ -174,7 +174,7 @@ export function useDropZone<T extends HTMLElement = HTMLDivElement>({
                                     Promise.all(entries).then((filesArrays) => resolve(filesArrays.flat()));
                                 } else {
                                     for (const entry of results) {
-                                        entries.push(traverseFileTree(entry, path + item.name + "/"));
+                                        entries.push(traverseFileTree(entry, `${path + item.name}/`));
                                     }
                                     readEntries();
                                 }

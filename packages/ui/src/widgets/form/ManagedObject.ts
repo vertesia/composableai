@@ -1,5 +1,5 @@
 import type { JSONSchema, JSONSchemaArray, JSONSchemaObject, JSONSchemaType } from "@vertesia/common";
-import { ArrayPropertySchema, PropertySchema, Schema } from "./schema.js";
+import { type ArrayPropertySchema, type PropertySchema, Schema } from "./schema.js";
 
 export function computeTitleFromName(name: string) {
     name = name.replace(/_/g, ' ').replace(/([a-z0-9])&([A-Z])/g, "$1 $2");
@@ -282,7 +282,7 @@ export class ManageObjectEntry extends ManagedObjectBase {
         if (parent.value[index] === undefined) {
             parent.value[index] = {};
         }
-        this.key = this.name + '@' + Date.now();
+        this.key = `${this.name}@${Date.now()}`;
     }
 
     get isListItem(): boolean {
@@ -308,7 +308,7 @@ export class ManagedScalarEntry extends Node<ArrayPropertySchema> {
         if (parent.value[index] === undefined && parent.schema.defaultValue !== undefined) {
             parent.value[index] = parent.schema.defaultValue;
         }
-        this.key = this.name + '@' + Date.now();
+        this.key = `${this.name}@${Date.now()}`;
     }
 
     get isScalar(): boolean {

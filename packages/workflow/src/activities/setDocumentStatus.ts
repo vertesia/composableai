@@ -1,5 +1,5 @@
 import { log } from "@temporalio/activity";
-import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
+import type { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 
 export interface SetDocumentStatusParams {

@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import React, { ChangeEvent, useEffect } from "react";
+import React, { type ChangeEvent, useEffect } from "react";
 import { Styles } from "./styles.js";
 
 function numberToString(value: number | undefined) {

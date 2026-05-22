@@ -1,4 +1,4 @@
-import { computePosition, Constraints, Position } from "./position";
+import { computePosition, type Constraints, type Position } from "./position";
 import { computeVisibleClientRect, getScrollableParents } from "./utils";
 
 
@@ -159,13 +159,13 @@ export class PopupController {
         this.context.position = position || undefined;
         if (position) {
             if (position.constrainHeight) {
-                element.style.height = position.rect.height + 'px';
+                element.style.height = `${position.rect.height}px`;
             }
             if (position.constrainWidth) {
-                element.style.width = position.rect.width + 'px';
+                element.style.width = `${position.rect.width}px`;
             }
-            element.style.left = position.rect.left + 'px';
-            element.style.top = position.rect.top + 'px';
+            element.style.left = `${position.rect.left}px`;
+            element.style.top = `${position.rect.top}px`;
             element.style.visibility = "visible";
         }
     }

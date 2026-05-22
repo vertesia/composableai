@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import clsx from "clsx";
-import { ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useUITranslation } from "@vertesia/ui/i18n";
 import { Button, Input } from "./shadcn";
 

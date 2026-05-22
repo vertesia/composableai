@@ -1,4 +1,4 @@
-import { AgentMessage, AgentMessageType, CompactMessage } from "@vertesia/common";
+import { type AgentMessage, AgentMessageType, type CompactMessage } from "@vertesia/common";
 
 type MessageDetails = AgentMessage["details"] | CompactMessage["d"];
 

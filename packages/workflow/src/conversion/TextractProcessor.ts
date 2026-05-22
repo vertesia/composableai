@@ -420,7 +420,7 @@ export class TextractProcessor {
                         // so you can strip it out if you want them truly "merged" into one paragraph:
                         const mergedText = formatted.replace(/^\s*\n/, " ");
     
-                        currentTextContent += " " + mergedText.trim();
+                        currentTextContent += ` ${mergedText.trim()}`;
                     } else {
                         // If there's an existing text block, push it
                         if (currentTextContent.trim().length > 0) {
@@ -437,7 +437,7 @@ export class TextractProcessor {
                 // IMAGES (if detectImages)
                 else if (this.detectImages) {
                     const geometry = block.Geometry?.BoundingBox;
-                    if (geometry && geometry.Width && geometry.Height) {
+                    if (geometry?.Width && geometry.Height) {
                         const imagePlaceholder = this.getImagePlaceholder(block);
                         if (imagePlaceholder) {
                             // If there's a pending text block, push it first

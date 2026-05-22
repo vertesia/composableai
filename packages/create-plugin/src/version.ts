@@ -3,9 +3,9 @@
  *
  * Reads the CLI's own package.json to get version and templateVersions map.
  */
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

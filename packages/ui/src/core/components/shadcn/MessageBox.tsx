@@ -1,5 +1,5 @@
 import { CircleX, CircleCheck, AlertTriangle, Info } from 'lucide-react';
-import React from 'react';
+import type React from 'react';
 
 interface MessageBoxProps {
     status: 'error' | 'info' | 'warning' | 'success' | 'default' | 'done'

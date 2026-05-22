@@ -1,7 +1,7 @@
 
 import { log, workflowInfo } from "@temporalio/workflow";
-import { WebHookSpec, WorkflowExecutionPayload } from "@vertesia/common";
-import * as activities from "../activities/notifyWebhook.js";
+import type { WebHookSpec, WorkflowExecutionPayload } from "@vertesia/common";
+import type * as activities from "../activities/notifyWebhook.js";
 import { dslProxyActivities } from "../dsl/dslProxyActivities.js";
 import { WF_NON_RETRYABLE_ERRORS } from "../errors.js";
 

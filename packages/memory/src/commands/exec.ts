@@ -1,7 +1,7 @@
-import { ChildProcess, spawn } from 'child_process';
-import fs from 'fs';
-import { Stream, Writable } from 'stream';
-import { Command, splitPipeCommands } from '../utils/cmdline.js';
+import { type ChildProcess, spawn } from 'node:child_process';
+import fs from 'node:fs';
+import type { Stream, Writable } from 'node:stream';
+import { type Command, splitPipeCommands } from '../utils/cmdline.js';
 import { BufferWritableStream } from '../utils/stream.js';
 
 export interface ExecOptions {
@@ -13,7 +13,7 @@ export async function exec(commandLine: string, options: ExecOptions = {}): Prom
     commandLine = commandLine.trim();
     const { commands, out } = splitPipeCommands(commandLine);
     if (!commands.length) {
-        throw new Error('Invalid command line. No command: ' + commandLine);
+        throw new Error(`Invalid command line. No command: ${commandLine}`);
     }
 
     let outStream: Writable;

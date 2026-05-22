@@ -1,4 +1,4 @@
-import { AUDIO_RENDITION_NAME, AudioMetadata, ContentNature, ContentObject } from "@vertesia/common";
+import { AUDIO_RENDITION_NAME, type AudioMetadata, ContentNature, type ContentObject } from "@vertesia/common";
 import { Spinner } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";

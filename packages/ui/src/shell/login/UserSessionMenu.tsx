@@ -1,4 +1,4 @@
-import { AuthTokenPayload, Permission } from "@vertesia/common";
+import { type AuthTokenPayload, Permission } from "@vertesia/common";
 import { Avatar, Button, MenuList, ModeToggle, Popover, PopoverContent, PopoverTrigger, Spinner } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import clsx from "clsx";

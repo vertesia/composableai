@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import type { Hono } from "hono";
 import {
     activityCollectionPage,
     contentTypeCollectionPage,
@@ -9,7 +9,7 @@ import {
     templateCollectionPage,
     toolCollectionPage
 } from "../site/templates.js";
-import { ToolServerConfig } from "./types.js";
+import type { ToolServerConfig } from "./types.js";
 
 
 export function createSiteRoute(app: Hono, basePath: string, config: ToolServerConfig) {

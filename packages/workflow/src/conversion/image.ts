@@ -1,8 +1,8 @@
 import { log } from "@temporalio/activity";
-import { execFile as execFileCallback } from "child_process";
-import fs from "fs";
+import { execFile as execFileCallback } from "node:child_process";
+import fs from "node:fs";
 import { file } from "tmp-promise";
-import { promisify } from "util";
+import { promisify } from "node:util";
 const execFile = promisify(execFileCallback);
 
 /**

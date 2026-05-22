@@ -1,4 +1,4 @@
-import { ContentNature, ContentObject, ImageRenditionFormat } from "@vertesia/common";
+import { ContentNature, type ContentObject, ImageRenditionFormat } from "@vertesia/common";
 import { Spinner } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";

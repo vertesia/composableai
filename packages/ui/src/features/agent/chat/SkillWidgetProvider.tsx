@@ -1,10 +1,10 @@
-import { VertesiaClient } from "@vertesia/client";
+import type { VertesiaClient } from "@vertesia/client";
 import { normalizeToolCollection } from "@vertesia/common";
 import { FusionFragmentHandler } from "@vertesia/fusion-ux";
 import { useUserSession } from "@vertesia/ui/session";
-import { CodeBlockRendererProps, CodeBlockRendererProvider } from "@vertesia/ui/widgets";
+import { type CodeBlockRendererProps, CodeBlockRendererProvider } from "@vertesia/ui/widgets";
 import { memo, useEffect, useMemo, useState } from "react";
-import { VegaLiteChartSpec } from "./AgentChart";
+import type { VegaLiteChartSpec } from "./AgentChart";
 import { VegaLiteChart } from "./VegaLiteChart";
 
 interface SkillWidgetProviderProperties {
@@ -103,7 +103,7 @@ async function fetchSkillWidgets(client: VertesiaClient): Promise<Record<string,
                     const i = collUrl.indexOf("/api/");
                     if (i > 0) {
                         const url = collUrl.substring(0, i);
-                        urls.add(url + '/api/widgets');
+                        urls.add(`${url}/api/widgets`);
                     }
                 }
             }

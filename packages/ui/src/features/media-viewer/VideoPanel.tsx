@@ -1,4 +1,4 @@
-import { ContentNature, ContentObject, POSTER_RENDITION_NAME, VideoMetadata } from "@vertesia/common";
+import { ContentNature, type ContentObject, POSTER_RENDITION_NAME, type VideoMetadata } from "@vertesia/common";
 import { Spinner } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";

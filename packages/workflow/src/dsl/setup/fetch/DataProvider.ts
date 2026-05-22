@@ -1,4 +1,4 @@
-import { FindPayload } from "@vertesia/common";
+import type { FindPayload } from "@vertesia/common";
 
 function parseSelector(selector: string) {
     const parts = selector.split(/\s+/);

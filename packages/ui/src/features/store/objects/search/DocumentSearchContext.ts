@@ -1,9 +1,9 @@
 import { createContext, useContext } from 'react';
 
 import { SharedState, useWatchSharedState } from '@vertesia/ui/core';
-import { ZenoClient } from '@vertesia/client';
-import { ComplexSearchPayload, ComplexSearchQuery, ComputeObjectFacetPayload, ComputedFacetResponse, ContentObjectItem, FacetBucket, FacetSpec, ObjectSearchQuery } from '@vertesia/common';
-import { SearchInterface } from '@vertesia/ui/features'
+import type { ZenoClient } from '@vertesia/client';
+import type { ComplexSearchPayload, ComplexSearchQuery, ComputeObjectFacetPayload, ComputedFacetResponse, ContentObjectItem, FacetBucket, FacetSpec, ObjectSearchQuery } from '@vertesia/common';
+import type { SearchInterface } from '@vertesia/ui/features'
 
 interface DocumentSearchResult {
     objects: ContentObjectItem[],

@@ -1,6 +1,6 @@
 import { log } from "@temporalio/activity";
-import { VertesiaClient } from "@vertesia/client";
-import {
+import type { VertesiaClient } from "@vertesia/client";
+import type {
     ContentObject,
     CreateContentObjectPayload,
     DSLActivityExecutionPayload,
@@ -12,7 +12,7 @@ import { mutoolPdfToText } from "../conversion/mutool.js";
 import { markdownWithPandoc } from "../conversion/pandoc.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../errors.js";
-import { TextExtractionResult, TextExtractionStatus } from "../result-types.js";
+import { type TextExtractionResult, TextExtractionStatus } from "../result-types.js";
 import { fetchBlobAsBuffer, md5 } from "../utils/blobs.js";
 import {
     createFileSourceResult,

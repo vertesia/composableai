@@ -209,7 +209,7 @@ function processSkippingInlineCode(text: string): string {
  * Skips fenced code blocks and inline code spans.
  */
 export function preprocessMathDelimiters(markdown: string): string {
-    if (!markdown || !markdown.includes("$")) {
+    if (!markdown?.includes("$")) {
         return markdown;
     }
 

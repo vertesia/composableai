@@ -15,13 +15,13 @@ describe('createDefaultCodeBlockHandlers', () => {
     it('should use dedicated handler for vega-lite code blocks', () => {
         const handlers = createDefaultCodeBlockHandlers();
         // vega-lite code blocks use a dedicated handler that always treats content as Vega-Lite
-        expect(handlers['vega-lite']).not.toBe(handlers['chart']);
-        expect(handlers['vega-lite']).toBe(handlers['vegalite']);
+        expect(handlers['vega-lite']).not.toBe(handlers.chart);
+        expect(handlers['vega-lite']).toBe(handlers.vegalite);
     });
 
     it('should use same handler for proposal and askuser', () => {
         const handlers = createDefaultCodeBlockHandlers();
-        expect(handlers['proposal']).toBe(handlers['askuser']);
+        expect(handlers.proposal).toBe(handlers.askuser);
     });
 });
 

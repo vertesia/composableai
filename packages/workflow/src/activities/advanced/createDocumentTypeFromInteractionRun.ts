@@ -1,6 +1,6 @@
 import { log } from "@temporalio/activity";
 import { InteractionOutput } from "@vertesia/client";
-import { CreateContentObjectTypePayload, DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun } from "@vertesia/common";
+import type { CreateContentObjectTypePayload, DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun } from "@vertesia/common";
 import { projectResult } from "../../dsl/projections.js";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFoundError } from "../../errors.js";
@@ -38,7 +38,7 @@ export async function createDocumentTypeFromInteractionRun(payload: DSLActivityE
     const jsonResult = InteractionOutput.from<GeneratedDocumentTypeResult>(params.run.result).object();
 
     if (!jsonResult.document_type) {
-        log.error("No name generated for type: " + JSON.stringify(jsonResult), { jsonResult });
+        log.error(`No name generated for type: ${JSON.stringify(jsonResult)}`, { jsonResult });
         throw new Error("No name generated for type");
     }
 

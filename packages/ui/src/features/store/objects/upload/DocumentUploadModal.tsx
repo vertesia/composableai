@@ -1,13 +1,13 @@
-import { Collection, ContentObjectTypeItem, DynamicCollection } from "@vertesia/common";
+import type { Collection, ContentObjectTypeItem, DynamicCollection } from "@vertesia/common";
 import { Button, MessageBox, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, Spinner, errorMessage, useToast, VTooltip } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useTypeRegistry } from "../../types/TypeRegistryProvider.js";
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from "lucide-react";
-import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { FileUploadAction, FileWithMetadata, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
-import { DocumentUploadResult } from "./useUploadHandler";
+import { FileUploadAction, type FileWithMetadata, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
+import type { DocumentUploadResult } from "./useUploadHandler";
 
 
 /**
@@ -371,7 +371,7 @@ export function DocumentUploadModal({
                                     },
                                     {
                                         createRevision: true,
-                                        revisionLabel: "upload on " + new Date().toISOString(),
+                                        revisionLabel: `upload on ${new Date().toISOString()}`,
                                     },
                                 );
 

@@ -1,5 +1,5 @@
 import type { TrainingJob } from "@llumiverse/common";
-import { ExecutionEnvironmentRef } from "./environment.js";
+import type { ExecutionEnvironmentRef } from "./environment.js";
 
 export enum TrainingSessionStatus {
     'created' = 'created',

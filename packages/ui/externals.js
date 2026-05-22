@@ -3,7 +3,7 @@
  * And it checks if the external dependencies are covering the dependencies for package.json.
  */
 
-import { readFileSync } from "fs";
+import { readFileSync } from "node:fs";
 
 export const EXTERNALS = [
     "react",

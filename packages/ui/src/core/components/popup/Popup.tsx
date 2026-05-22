@@ -1,7 +1,7 @@
-import { createContext, RefObject, ReactNode, useContext, useEffect, useRef, useState } from "react";
+import { createContext, type RefObject, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { PopupController, PopupControllerOptions } from "./PopupController";
-import { Constraints } from "./position";
+import { PopupController, type PopupControllerOptions } from "./PopupController";
+import type { Constraints } from "./position";
 
 
 const PopupContext = createContext<PopupController | undefined>(undefined);

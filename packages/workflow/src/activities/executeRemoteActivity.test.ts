@@ -1,7 +1,7 @@
 import { MockActivityEnvironment } from "@temporalio/testing";
-import { ContentEventName, DSLActivityExecutionPayload } from "@vertesia/common";
+import { ContentEventName, type DSLActivityExecutionPayload } from "@vertesia/common";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { executeRemoteActivity, ExecuteRemoteActivityParams } from "./executeRemoteActivity.js";
+import { executeRemoteActivity, type ExecuteRemoteActivityParams } from "./executeRemoteActivity.js";
 
 vi.stubGlobal("fetch", vi.fn());
 
@@ -73,7 +73,7 @@ describe("executeRemoteActivity", () => {
             Accept: "application/json",
         });
         // Verify the auth header is forwarded
-        expect((opts?.headers as Record<string, string>)["Authorization"]).toMatch(/^Bearer /);
+        expect((opts?.headers as Record<string, string>).Authorization).toMatch(/^Bearer /);
 
         // Verify the body structure
         const body = JSON.parse(opts?.body as string);

@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState, type RefObject } from "react";
 
-import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, MarkdownRenditionFormat, PDF_RENDITION_NAME, Permission, WorkflowExecutionStatus } from "@vertesia/common";
+import { ContentNature, type ContentObject, ContentObjectStatus, type DocAnalyzerProgress, type DocProcessorOutputFormat, type DocumentMetadata, MarkdownRenditionFormat, PDF_RENDITION_NAME, Permission, WorkflowExecutionStatus } from "@vertesia/common";
 import { Button, Dropdown, MenuItem, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useFetch, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
@@ -578,8 +578,7 @@ function TextActions({
     const pdfTemplateObjectId = fullProject?.configuration?.pdf_template_object_id;
 
     const isMarkdown =
-        content &&
-        content.type &&
+        content?.type &&
         content.type === "text/markdown";
 
     // Get content processor type for file extension detection
@@ -729,8 +728,7 @@ const TextPanel = memo(({
 
     // Check if content type is markdown or plain text
     const isMarkdownOrText =
-        content &&
-        content.type &&
+        content?.type &&
         (content.type === "text/markdown" || content.type === "text/plain");
 
     // Render as markdown if it's markdown/text type OR if text looks like markdown (but not if XML)

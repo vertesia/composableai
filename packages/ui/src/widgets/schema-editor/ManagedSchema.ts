@@ -1,5 +1,5 @@
 import type { JSONSchema } from "@vertesia/common";
-import { TypeNames, TypeSignature, parseTypeSignature } from "./type-signature.js";
+import { TypeNames, type TypeSignature, parseTypeSignature } from "./type-signature.js";
 import { addProperty, getTypeSignature, removeProperty, setPropertyName, setPropertyType, setRequireProperty } from "./json-schema4-utils.js";
 
 
@@ -232,7 +232,7 @@ export class SchemaNode {
      * Remove this node
      */
     remove() {
-        if (this.parent && this.parent.type.isObject) {
+        if (this.parent?.type.isObject) {
             const schema = this.parent._getPropertiesSchema();
             removeProperty(schema, this.name);
             if (this.parent.children) {

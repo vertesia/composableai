@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect } from 'react';
-import { ObjectsActionContext, type ObjectsActionCallback } from './ObjectsActionContextClass';
+import type { ObjectsActionContext, ObjectsActionCallback } from './ObjectsActionContextClass';
 
 export { type ObjectsActionCallback };
 

@@ -1,10 +1,10 @@
-import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup, useIsInModal } from '@vertesia/ui/core';
+import { type Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, type FilterGroup, useIsInModal } from '@vertesia/ui/core';
 import { useState } from 'react';
-import { ComputedFacetResponse } from '@vertesia/common';
+import type { ComputedFacetResponse } from '@vertesia/common';
 import { useTypeRegistry } from '../store/types/TypeRegistryProvider.js';
 import { VStringFacet } from './utils/VStringFacet';
 import { VTypeFacet } from './utils/VTypeFacet';
-import { filterValueToQueryValue, SearchInterface, setSearchQueryValue, unwrapFilterOptionValue } from './utils/SearchInterface';
+import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue, unwrapFilterOptionValue } from './utils/SearchInterface';
 
 interface DocumentsFacetsNavProps {
     facets: ComputedFacetResponse;

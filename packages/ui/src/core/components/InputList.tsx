@@ -1,5 +1,6 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 
 import { Badge } from './shadcn/badge';
 import { Input } from './shadcn/input';
@@ -19,7 +20,7 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
 
     const onBlur = (ev: React.FocusEvent<HTMLInputElement>) => {
         const v = ev.currentTarget.value;
-        if (v && v.trim()) {
+        if (v?.trim()) {
             onChange([...value, v.trim()])
             setText('')
         }

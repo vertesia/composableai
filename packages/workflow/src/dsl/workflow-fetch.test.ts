@@ -1,7 +1,7 @@
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker, bundleWorkflowCode, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
-import { VertesiaClient } from '@vertesia/client';
-import { ContentEventName, DSLActivityExecutionPayload, DSLActivitySpec, DSLWorkflowExecutionPayload, FindPayload } from '@vertesia/common';
+import type { VertesiaClient } from '@vertesia/client';
+import { ContentEventName, type DSLActivityExecutionPayload, type DSLActivitySpec, type DSLWorkflowExecutionPayload, type FindPayload } from '@vertesia/common';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { dslWorkflow } from './dsl-workflow.js';
 import { setupActivity } from "./setup/ActivityContext.js";

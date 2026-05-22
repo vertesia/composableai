@@ -1,4 +1,4 @@
-import { AgentMessage, AgentMessageType } from "@vertesia/common";
+import { type AgentMessage, AgentMessageType } from "@vertesia/common";
 import { Button, cn } from "@vertesia/ui/core";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";

@@ -1,4 +1,4 @@
-import { ContentObject, DocumentMetadata } from "@vertesia/common";
+import type { ContentObject, DocumentMetadata } from "@vertesia/common";
 import { Button, Popover, PopoverContent, PopoverTrigger } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Download } from "lucide-react";

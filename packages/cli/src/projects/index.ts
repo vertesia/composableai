@@ -1,5 +1,5 @@
 import colors from "ansi-colors";
-import { Command } from "commander";
+import type { Command } from "commander";
 import { getClient } from "../client.js";
 import { config } from "../profiles/index.js";
 import { refreshCurrentProfileAuthentication } from "../profiles/auth.js";
@@ -24,9 +24,9 @@ export async function listProjects(program: Command) {
     const activeProjectId = project.id;
     const projects = await client.projects.list();
     projects.map(project => {
-        const check = activeProjectId === project.id ? " " + colors.symbols.check : "";
+        const check = activeProjectId === project.id ? ` ${colors.symbols.check}` : "";
         const restricted = project.restricted ? ` ${colors.dim('(restricted)')}` : "";
-        console.log(project.name + ` [${project.id}]` + restricted + check);
+        console.log(`${project.name} [${project.id}]${restricted}${check}`);
     })
 }
 

@@ -1,4 +1,4 @@
-import { basename, dirname, extname, join } from "path";
+import { basename, dirname, extname, join } from "node:path";
 
 /**
  * The path argument is the empty string when mapping streams or buffers not related to a file system file.
@@ -48,7 +48,7 @@ function buildPathRewrite(path: string, truncPath: (path: string) => string): Pa
             parts.push(() => literal);
         }
         if (m[1]) { // %d/
-            parts.push((path: Path) => path.dirname ? path.dirname + '/' : '');
+            parts.push((path: Path) => path.dirname ? `${path.dirname}/` : '');
         } else if (m[2]) { // .?%e
             if (m[2][0] === '.') {
                 parts.push((path: Path) => path.extname || '');

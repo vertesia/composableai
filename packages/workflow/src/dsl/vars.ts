@@ -1,6 +1,6 @@
-import { ImportSpec } from "@vertesia/common";
+import type { ImportSpec } from "@vertesia/common";
 import { matchCondition } from "./conditions.js";
-import { ObjectKey, ObjectVisitor, ObjectWalker } from "./walk.js";
+import { type ObjectKey, type ObjectVisitor, ObjectWalker } from "./walk.js";
 
 const FALLBACK_VALUE_SEP = "??";
 
@@ -10,7 +10,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function decodeLiteralValue(value: string) {
     if (value.startsWith("'") && value.endsWith("'")) {
-        value = '"' + value.slice(1, -1).replace(/(?<!\\)"/g, '\\"') + '"'
+        value = `"${value.slice(1, -1).replace(/(?<!\\)"/g, '\\"')}"`
     }
     return JSON.parse(value);
 }
@@ -99,7 +99,7 @@ class RefValue extends Value {
     }
 
     stringify() {
-        return "${" + this.path.join('.') + "}";
+        return `\${${this.path.join('.')}}`;
     }
 }
 
@@ -123,7 +123,7 @@ class ExprValue extends Value {
         for (const seg of this.parts) {
             out.push(seg.stringify());
         }
-        return "${" + out.join('') + "}";
+        return `\${${out.join('')}}`;
     }
 
 }
@@ -239,7 +239,7 @@ export class Vars {
             ref = ref.substring(0, index).trim();
         }
         if (ref === '.' || ref.indexOf('..') > -1) {
-            throw new Error("Invalid variable reference: " + ref)
+            throw new Error(`Invalid variable reference: ${ref}`)
         }
         return new RefValue(this, splitPath(ref), defaultValue);
     }

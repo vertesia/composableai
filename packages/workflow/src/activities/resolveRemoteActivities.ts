@@ -1,11 +1,11 @@
 import { log } from "@temporalio/activity";
-import {
+import type {
     AppInstallationWithManifest,
     AppPackage,
     DSLActivityExecutionPayload,
     RemoteActivityDefinition,
 } from "@vertesia/common";
-import { VertesiaClient } from "@vertesia/client";
+import type { VertesiaClient } from "@vertesia/client";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { URLValidationError, safeFetch } from "../security/ssrf.js";
 

@@ -2,7 +2,7 @@ import { jwtDecode } from 'jwt-decode';
 import { createContext, useContext } from 'react';
 
 import { VertesiaClient } from '@vertesia/client';
-import { AuthTokenPayload } from '@vertesia/common';
+import type { AuthTokenPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 
 import { getComposableToken } from './auth/composable';
@@ -100,7 +100,7 @@ class UserSession {
 
         //store selected account in local storage
         localStorage.setItem(LastSelectedAccountId_KEY, this.authToken.account.id);
-        localStorage.setItem(LastSelectedProjectId_KEY + '-' + this.authToken.account.id, this.authToken.project?.id ?? '');
+        localStorage.setItem(`${LastSelectedProjectId_KEY}-${this.authToken.account.id}`, this.authToken.project?.id ?? '');
         // notify the host app of the login
         Env.onLogin?.(this.authToken);
 
@@ -162,21 +162,21 @@ class UserSession {
         localStorage.setItem(LastSelectedAccountId_KEY, targetAccountId);
         if (this) {
             if (this.account && this.project) {
-                localStorage.setItem(LastSelectedProjectId_KEY + '-' + this.account.id, this.project.id);
+                localStorage.setItem(`${LastSelectedProjectId_KEY}-${this.account.id}`, this.project.id);
             } else if (this.account) {
-                localStorage.removeItem(LastSelectedProjectId_KEY + '-' + this.account.id);
+                localStorage.removeItem(`${LastSelectedProjectId_KEY}-${this.account.id}`);
             }
         }
 
-        window.location.replace('/?a=' + targetAccountId);
+        window.location.replace(`/?a=${targetAccountId}`);
     }
 
     async switchProject(targetProjectId: string) {
         if (this.account) {
-            localStorage.setItem(LastSelectedProjectId_KEY + '-' + this.account.id, targetProjectId);
+            localStorage.setItem(`${LastSelectedProjectId_KEY}-${this.account.id}`, targetProjectId);
         }
 
-        window.location.replace('/?a=' + this.account?.id + '&p=' + targetProjectId);
+        window.location.replace(`/?a=${this.account?.id}&p=${targetProjectId}`);
     }
 
     async fetchAccounts() {

@@ -1,6 +1,6 @@
 import { log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
-import { ApiVersions, DSLActivityExecutionPayload, DSLActivitySpec, WebHookSpec, WorkflowExecutionBaseParams } from "@vertesia/common";
+import { ApiVersions, type DSLActivityExecutionPayload, type DSLActivitySpec, type WebHookSpec, type WorkflowExecutionBaseParams } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { WorkflowParamNotFoundError } from "../errors.js";
 import { getVertesiaClientOptions } from "../utils/client.js";

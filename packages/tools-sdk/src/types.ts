@@ -1,6 +1,6 @@
 import type { ToolDefinition, ToolUse } from "@llumiverse/common";
-import { VertesiaClient } from "@vertesia/client";
-import { AgentToolDefinition, AuthTokenPayload, MCPToolAnnotations, ProjectConfiguration, RenderingTemplateDefinition, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
+import type { VertesiaClient } from "@vertesia/client";
+import type { AgentToolDefinition, AuthTokenPayload, MCPToolAnnotations, ProjectConfiguration, RenderingTemplateDefinition, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
 
 export type { ToolExecutionMetadata };
 

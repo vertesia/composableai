@@ -1,7 +1,7 @@
 import { Button, Center } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp, Maximize, Minus, Plus } from "lucide-react";
-import { ReactNode, useRef, useEffect, useState, useCallback, KeyboardEvent } from "react";
+import { type ReactNode, useRef, useEffect, useState, useCallback, type KeyboardEvent } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { PdfThumbnailList } from "./PdfPageRenderer";
 

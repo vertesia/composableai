@@ -1,7 +1,7 @@
 import micromatch from 'micromatch';
-import { extname } from "path";
+import { extname } from "node:path";
 import { AbstractContentSource } from "./ContentSource.js";
-import { loadTarIndex, TarEntryIndex, TarIndex } from "./utils/tar.js";
+import { loadTarIndex, type TarEntryIndex, type TarIndex } from "./utils/tar.js";
 
 export const MEMORY_METADATA_ENTRY = "metadata.json";
 

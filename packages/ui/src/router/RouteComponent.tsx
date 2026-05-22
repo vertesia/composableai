@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ComponentRoute, LazyComponentRoute, LazyRouteModule, useRouterContext } from "./Router";
+import { type ComponentRoute, type LazyComponentRoute, type LazyRouteModule, useRouterContext } from "./Router";
 
 interface RouteComponentProps {
     spinner?: React.ReactNode;

@@ -10,11 +10,11 @@ import type {
     ToolUse,
 } from "@llumiverse/common";
 
-import { ExecutionTokenUsage } from "@llumiverse/common";
+import type { ExecutionTokenUsage } from "@llumiverse/common";
 
-import { ExecutionEnvironmentRef } from "./environment.js";
-import { ProjectRef } from "./project.js";
-import {
+import type { ExecutionEnvironmentRef } from "./environment.js";
+import type { ProjectRef } from "./project.js";
+import type {
     ExecutablePromptSegmentDef,
     PopulatedPromptSegmentDef,
     PromptSegmentDef,
@@ -23,12 +23,12 @@ import {
     PromptTemplateRefWithSchema,
     TemplateType,
 } from "./prompt.js";
-import { ExecutionRunDocRef } from "./runs.js";
-import { ConversationState } from "./store/conversation-state.js";
-import { AccountRef } from "./user.js";
-import { LlmCallType } from "./workflow-analytics.js";
+import type { ExecutionRunDocRef } from "./runs.js";
+import type { ConversationState } from "./store/conversation-state.js";
+import type { AccountRef } from "./user.js";
+import type { LlmCallType } from "./workflow-analytics.js";
 import type { MCPToolAnnotations } from "./apps.js";
-import { PrincipalType } from "./apikey.js";
+import type { PrincipalType } from "./apikey.js";
 
 export interface InteractionExecutionError {
     code: string;

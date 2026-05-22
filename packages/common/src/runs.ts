@@ -1,5 +1,5 @@
-import { FacetResult } from './facets.js';
-import { NamedInteractionExecutionPayload } from './interaction.js';
+import type { FacetResult } from './facets.js';
+import type { NamedInteractionExecutionPayload } from './interaction.js';
 
 /**
  * The run ref is used to identify a run document in the storage

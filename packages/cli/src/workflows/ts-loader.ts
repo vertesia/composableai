@@ -1,6 +1,6 @@
-import { DSLWorkflowSpec } from "@vertesia/common";
-import { readFileSync, rmSync, writeFileSync } from "fs";
-import { basename, resolve } from "path";
+import type { DSLWorkflowSpec } from "@vertesia/common";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import * as ts from "typescript";
 import { ValidationError, validateWorkflow } from "./validation.js";
 
@@ -67,7 +67,7 @@ function tryDeleteFile(file: string) {
 
 export function loadTsWorkflowDefinition(file: string, skipValidation: boolean = false): Promise<DSLWorkflowSpec> {
     if (!file.endsWith('.ts')) {
-        throw new Error("Not a type script file: " + file);
+        throw new Error(`Not a type script file: ${file}`);
     }
     file = resolve(file);
     const baseOptions = {

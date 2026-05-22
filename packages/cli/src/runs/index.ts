@@ -1,5 +1,5 @@
-import { Command } from "commander";
-import { ExecutionRunStatus } from "@vertesia/common";
+import type { Command } from "commander";
+import type { ExecutionRunStatus } from "@vertesia/common";
 import { getClient } from "../client.js";
 import { writeFile } from "../utils/stdio.js";
 import { getStringOption, type CliOptions } from "../utils/options.js";
@@ -56,7 +56,7 @@ export async function runHistory(program: Command, interactionId: string | undef
     } else if (options.format === 'csv') {
         throw new Error('CSV format is not supported yet');
     } else {
-        throw new Error('Unknown format:' + options.format);
+        throw new Error(`Unknown format:${options.format}`);
     }
 
     if (typeof options.output === 'string') {

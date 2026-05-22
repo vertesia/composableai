@@ -1,4 +1,4 @@
-import { SyntheticEvent } from "react";
+import type { SyntheticEvent } from "react";
 import { useNavigate, useRouterContext } from "./Router";
 
 /**

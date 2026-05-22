@@ -1,51 +1,51 @@
-import { ApiTopic, ClientBase, type IRequestParams } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase, type IRequestParams } from "@vertesia/api-fetch-client";
 import {
-    ActivityCatalog,
-    AgentEvent,
-    AgentMessage,
+    type ActivityCatalog,
+    type AgentEvent,
+    type AgentMessage,
     AgentMessageType,
-    CompactMessage,
-    CreateWorkflowRulePayload,
-    DSLWorkflowDefinition,
-    DSLWorkflowSpec,
-    ErrorAnalyticsResponse,
-    ExecuteWorkflowPayload,
-    FirstResponseBehaviorAnalyticsResponse,
-    LatencyAnalyticsResponse,
-    ListWorkflowInteractionsResponse,
-    ListWorkflowRunsPayload,
-    ListWorkflowRunsResponse,
+    type CompactMessage,
+    type CreateWorkflowRulePayload,
+    type DSLWorkflowDefinition,
+    type DSLWorkflowSpec,
+    type ErrorAnalyticsResponse,
+    type ExecuteWorkflowPayload,
+    type FirstResponseBehaviorAnalyticsResponse,
+    type LatencyAnalyticsResponse,
+    type ListWorkflowInteractionsResponse,
+    type ListWorkflowRunsPayload,
+    type ListWorkflowRunsResponse,
     parseMessage,
     toAgentMessage,
-    PromptSizeAnalyticsResponse,
-    RunsByAgentAnalyticsResponse,
-    SignalAgentResponse,
-    SignalAgentPayload,
-    TimeToFirstResponseAnalyticsResponse,
-    TokenUsageAnalyticsResponse,
-    ToolAnalyticsResponse,
-    ToolParameterAnalyticsResponse,
-    TopPrincipalsAnalyticsResponse,
-    WebSocketClientMessage,
-    WebSocketServerMessage,
-    WorkflowActionPayload,
-    WorkflowAnalyticsFilterOptionsResponse,
-    WorkflowAnalyticsSummaryQuery,
-    WorkflowAnalyticsSummaryResponse,
-    WorkflowAnalyticsTimeSeriesQuery,
-    WorkflowActionResponse,
-    WorkflowDefinitionRef,
-    WorkflowExecutionStartResult,
-    WorkflowQueryResult,
-    WorkflowRule,
-    WorkflowRuleItem,
-    WorkflowRunUpdatesResponse,
-    WorkflowRunWithDetails,
-    WorkflowToolParametersQuery,
-    WorkflowUpdatePublishResponse,
-    UploadWorkflowRulePayload,
+    type PromptSizeAnalyticsResponse,
+    type RunsByAgentAnalyticsResponse,
+    type SignalAgentResponse,
+    type SignalAgentPayload,
+    type TimeToFirstResponseAnalyticsResponse,
+    type TokenUsageAnalyticsResponse,
+    type ToolAnalyticsResponse,
+    type ToolParameterAnalyticsResponse,
+    type TopPrincipalsAnalyticsResponse,
+    type WebSocketClientMessage,
+    type WebSocketServerMessage,
+    type WorkflowActionPayload,
+    type WorkflowAnalyticsFilterOptionsResponse,
+    type WorkflowAnalyticsSummaryQuery,
+    type WorkflowAnalyticsSummaryResponse,
+    type WorkflowAnalyticsTimeSeriesQuery,
+    type WorkflowActionResponse,
+    type WorkflowDefinitionRef,
+    type WorkflowExecutionStartResult,
+    type WorkflowQueryResult,
+    type WorkflowRule,
+    type WorkflowRuleItem,
+    type WorkflowRunUpdatesResponse,
+    type WorkflowRunWithDetails,
+    type WorkflowToolParametersQuery,
+    type WorkflowUpdatePublishResponse,
+    type UploadWorkflowRulePayload,
 } from "@vertesia/common";
-import { VertesiaClient } from "../client.js";
+import type { VertesiaClient } from "../client.js";
 import { EventSourceProvider } from "../execute.js";
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from "./stream-termination.js";
 
@@ -236,7 +236,7 @@ export class WorkflowsApi extends ApiTopic {
                 try {
                     const EventSourceImpl = await EventSourceProvider();
                     const client = this.client as VertesiaClient;
-                    const streamUrl = new URL(client.workflows.baseUrl + `/runs/${workflowId}/${runId}/stream`);
+                    const streamUrl = new URL(`${client.workflows.baseUrl}/runs/${workflowId}/${runId}/stream`);
 
                     // Use the timestamp of the last received message for reconnection
                     if (lastMessageTimestamp > 0) {
@@ -416,7 +416,7 @@ export class WorkflowsApi extends ApiTopic {
 
                 try {
                     const client = this.client as VertesiaClient;
-                    const wsUrl = new URL(client.workflows.baseUrl + `/runs/${workflowId}/${runId}/ws`);
+                    const wsUrl = new URL(`${client.workflows.baseUrl}/runs/${workflowId}/${runId}/ws`);
 
                     // Replace http/https with ws/wss
                     wsUrl.protocol = wsUrl.protocol.replace('http', 'ws');

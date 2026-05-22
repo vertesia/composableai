@@ -1,6 +1,6 @@
 import { log } from "@temporalio/activity";
-import { spawn } from "child_process";
-import { PassThrough } from "stream";
+import { spawn } from "node:child_process";
+import { PassThrough } from "node:stream";
 
 export function markdownWithPandoc(buffer: Buffer, fromFormat: string): Promise<string> {
     const fromType = undefined;

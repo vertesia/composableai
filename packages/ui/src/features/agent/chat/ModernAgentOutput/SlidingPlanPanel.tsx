@@ -1,4 +1,4 @@
-import { Plan } from "@vertesia/common";
+import type { Plan } from "@vertesia/common";
 import { AlertCircle, CheckCircle, Circle, Clock } from "lucide-react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import SlideInPanel from "./SlideInPanel";
@@ -23,7 +23,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                             <div
                                 className="bg-info h-2.5 rounded-full"
                                 style={{
-                                    width: `${plan.plan && plan.plan.length
+                                    width: `${plan.plan?.length
                                         ? Math.round(
                                             (Array.from(workstreamStatus.values()).filter(
                                                 (status) => status === "completed",
@@ -37,7 +37,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                             />
                         </div>
                         <span className="text-xs text-muted">
-                            {plan.plan && plan.plan.length
+                            {plan.plan?.length
                                 ? `${Array.from(workstreamStatus.values()).filter((status) => status === "completed").length}/${workstreamStatus.size}`
                                 : "0/0"}
                         </span>

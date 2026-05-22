@@ -1,4 +1,4 @@
-import { ContentObjectItem } from "@vertesia/common";
+import type { ContentObjectItem } from "@vertesia/common";
 import { createContext, useContext, useEffect, useState } from "react";
 
 export class DocumentSelection {

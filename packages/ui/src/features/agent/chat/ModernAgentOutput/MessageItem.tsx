@@ -1,11 +1,12 @@
-import { AgentMessage, AgentMessageType, AskUserMessageDetails, MarkdownRenditionFormat } from "@vertesia/common";
+import { type AgentMessage, AgentMessageType, type AskUserMessageDetails, MarkdownRenditionFormat } from "@vertesia/common";
 import { Badge, Button, cn, Dropdown, MenuItem, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, type LucideIcon, MessageSquare, RefreshCcw, User } from "lucide-react";
-import React, { useEffect, useState, useMemo, memo, useRef } from "react";
+import type React from "react";
+import { useEffect, useState, useMemo, memo, useRef } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { AskUserWidget } from "../AskUserWidget";
@@ -256,7 +257,7 @@ function MessageItemComponent({
                     ? JSON.stringify(message.details, null, 2)
                     : "";
 
-        const textToCopy = [content, detailsContent ? "\n\nDetails:\n" + detailsContent : ""].join("").trim();
+        const textToCopy = [content, detailsContent ? `\n\nDetails:\n${detailsContent}` : ""].join("").trim();
 
         navigator.clipboard.writeText(textToCopy).then(() => {
             toast({

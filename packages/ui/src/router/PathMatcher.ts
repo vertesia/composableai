@@ -1,4 +1,4 @@
-import { PathMatchParams, getPathSegments, toSegments } from "./path";
+import { type PathMatchParams, getPathSegments, toSegments } from "./path";
 
 export interface PathMatch<T = unknown> {
     params: PathMatchParams;
@@ -33,12 +33,12 @@ export class PathMatcher<T = unknown> {
                     childNode = new VariableSegmentNode<T>(segment);
                     node.wildcard = childNode;
                 } else if (!(childNode instanceof VariableSegmentNode)) {
-                    throw new Error(`Failed to index path segments: ${segments.join('/')}. A wildcard ":" segment will overwrite an existing wildcard segment at path: ${'/' + segments.slice(0, i).join("/")}`);
+                    throw new Error(`Failed to index path segments: ${segments.join('/')}. A wildcard ":" segment will overwrite an existing wildcard segment at path: ${`/${segments.slice(0, i).join("/")}`}`);
                 }
                 node = childNode as VariableSegmentNode<T>;
             } else if (segment === '*') {
                 if (node.wildcard) {
-                    throw new Error(`Failed to index path segments: ${segments.join('/')}. A wildcard "*" segment already exists at path: ${'/' + segments.slice(0, i).join("/")}`);
+                    throw new Error(`Failed to index path segments: ${segments.join('/')}. A wildcard "*" segment already exists at path: ${`/${segments.slice(0, i).join("/")}`}`);
                 }
                 node.wildcard = new WildcardSegmentNode(segment, value);
                 if (i < l - 1) {
@@ -55,7 +55,7 @@ export class PathMatcher<T = unknown> {
             }
         }
         if (node.value !== undefined) {
-            throw new Error(`Failed to index path segments: ${segments.join('/')}. A value already exists at path: ${'/' + segments.join("/")}`);
+            throw new Error(`Failed to index path segments: ${segments.join('/')}. A value already exists at path: ${`/${segments.join("/")}`}`);
         }
         node.value = value;
     }
@@ -122,7 +122,7 @@ class ParentSegmentNode<T = unknown> implements SegmentNode<T> {
                 params[this.wildcard.paramName] = segment;
                 return this.wildcard;
             } else {
-                throw new Error("Unknown wildcard segment node type: " + this.wildcard.constructor.name);
+                throw new Error(`Unknown wildcard segment node type: ${this.wildcard.constructor.name}`);
             }
         } else {
             return null;

@@ -1,9 +1,10 @@
-import React, { useMemo, useRef } from "react";
+import type React from "react";
+import { useMemo, useRef } from "react";
 import { FixLinks } from "./FixLinks";
 import { createRoute404 } from "./Route404";
 import { RouteComponent } from "./RouteComponent";
-import { NestedRouter, ReactRouterContext, Route, useRouterContext } from "./Router";
-import { NavigateOptions } from "./HistoryNavigator";
+import { NestedRouter, ReactRouterContext, type Route, useRouterContext } from "./Router";
+import type { NavigateOptions } from "./HistoryNavigator";
 
 
 interface RouterProviderProps {
@@ -52,8 +53,8 @@ export function NestedRouterProvider({ routes, index, children, fixLinks = false
             router: nestedRouter!,
             route: nestedRouteMatch.value,
             params: nestedRouteMatch.params,
-            matchedRoutePath: '/' + nestedRouteMatch.matchedSegments.join('/'),
-            remainingPath: nestedRouteMatch.remainingSegments ? '/' + nestedRouteMatch.remainingSegments.join('/') : undefined,
+            matchedRoutePath: `/${nestedRouteMatch.matchedSegments.join('/')}`,
+            remainingPath: nestedRouteMatch.remainingSegments ? `/${nestedRouteMatch.remainingSegments.join('/')}` : undefined,
             navigate: (to: string, options?: NavigateOptions) => {
                 if (nestedRouter) {
                     return nestedRouter.navigate(to, options);

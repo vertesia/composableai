@@ -1,6 +1,6 @@
-import { FacetBucket } from "@vertesia/common";
-import { FilterGroup } from "@vertesia/ui/core";
-import { TypeRegistry } from "../../store/types/TypeRegistry.js";
+import type { FacetBucket } from "@vertesia/common";
+import type { FilterGroup } from "@vertesia/ui/core";
+import type { TypeRegistry } from "../../store/types/TypeRegistry.js";
 
 interface VTypeFacetProps {
     buckets: FacetBucket[];

@@ -5,7 +5,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { ExportPropertiesModal } from "../../ExportPropertiesModal";
 import { useObjectsActionCallback } from "../ObjectsActionHooks";
-import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
+import type { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 export function ExportPropertiesComponent({ action, objectIds }: ActionComponentTypeProps) {
     const { t } = useUITranslation();

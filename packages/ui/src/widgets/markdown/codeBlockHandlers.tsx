@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import type React from 'react';
+import { useMemo } from 'react';
 import type { VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
 import { AskUserWidget, type AskUserWidgetProps } from '../../features/agent/chat/AskUserWidget';
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';

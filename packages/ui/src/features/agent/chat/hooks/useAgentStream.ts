@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { VertesiaClient } from '@vertesia/client';
+import type { VertesiaClient } from '@vertesia/client';
 import {
-    AgentMessage,
+    type AgentMessage,
     AgentMessageType,
-    ConversationFile,
-    FileProcessingDetails,
+    type ConversationFile,
+    type FileProcessingDetails,
     // biome-ignore lint/suspicious/noDeprecatedImports: legacy AgentMessage stream still uses StreamingChunkDetails; migration to CompactMessage tracked separately
-    StreamingChunkDetails,
+    type StreamingChunkDetails,
 } from '@vertesia/common';
 import { insertMessageInTimeline, isInProgress } from '../ModernAgentOutput/utils';
 

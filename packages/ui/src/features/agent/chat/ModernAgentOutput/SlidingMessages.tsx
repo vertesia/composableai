@@ -1,5 +1,5 @@
 import React from "react";
-import { AgentMessage, AgentMessageType } from "@vertesia/common";
+import { type AgentMessage, AgentMessageType } from "@vertesia/common";
 import MessageItem from "./MessageItem";
 import { ThinkingMessages } from "../WaitingMessages";
 

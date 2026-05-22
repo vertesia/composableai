@@ -1,6 +1,6 @@
 import { MockActivityEnvironment } from '@temporalio/testing';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { beforeAll, expect, test } from 'vitest';
 import { mutoolPdfToText, pdfExtractPages, pdfToImages } from './mutool.js';
 

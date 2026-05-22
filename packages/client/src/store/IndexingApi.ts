@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase, ServerSentEvent } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase, type ServerSentEvent } from "@vertesia/api-fetch-client";
+import type {
     IndexingStatusResponse,
     GenericCommandResponse,
     ElasticsearchDocumentData,
@@ -347,7 +347,7 @@ export class IndexingApi extends ApiTopic {
         onEvent?: ((event: ServerSentEvent) => void) | null,
         dryRun?: boolean,
     ): Promise<ReindexViaBulkResult> {
-        const bulkUrl = this.zenoBulkBaseUrl + '/reindex';
+        const bulkUrl = `${this.zenoBulkBaseUrl}/reindex`;
         const payload = {
             tenant_id: tenantId,
             dry_run: dryRun ?? false,

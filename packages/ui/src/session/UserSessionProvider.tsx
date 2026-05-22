@@ -1,6 +1,6 @@
 import { Env } from "@vertesia/ui/env";
 import { onAuthStateChanged } from "firebase/auth";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { STSError, UserNotFoundError, getComposableToken } from "./auth/composable";
 import { shouldRedirectToCentralAuth } from "./auth/domainRouting";
 import { getFirebaseAuth } from "./auth/firebase";
@@ -48,7 +48,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
             currentUrl.searchParams.get("a") ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined;
         const selectedProject =
             currentUrl.searchParams.get("p") ??
-            localStorage.getItem(LastSelectedProjectId_KEY + "-" + selectedAccount) ??
+            localStorage.getItem(`${LastSelectedProjectId_KEY}-${selectedAccount}`) ??
             undefined;
         console.log("Auth: selected account", selectedAccount);
         console.log("Auth: selected project", selectedProject);

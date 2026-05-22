@@ -1,4 +1,4 @@
-import { SVGAttributes } from 'react';
+import type { SVGAttributes } from 'react';
 import { useXMLViewerContext } from '../../context/xml-viewer-context';
 
 export interface CollapseIconProps {

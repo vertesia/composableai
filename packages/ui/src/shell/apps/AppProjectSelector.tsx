@@ -1,4 +1,4 @@
-import { ProjectRef, RequireAtLeastOne } from "@vertesia/common";
+import type { ProjectRef, RequireAtLeastOne } from "@vertesia/common";
 import { SelectBox, errorMessage, useFetch } from "@vertesia/ui/core";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from "@vertesia/ui/session";
 import { useState } from "react";
@@ -23,7 +23,7 @@ export function AppProjectSelector({ app, onChange, placeholder }: AppProjectSel
         }
         // default on change
         localStorage.setItem(LastSelectedAccountId_KEY, project.account);
-        localStorage.setItem(LastSelectedProjectId_KEY + '-' + project.account, project.id);
+        localStorage.setItem(`${LastSelectedProjectId_KEY}-${project.account}`, project.id);
         window.location.reload();
     }
 

@@ -1,5 +1,5 @@
-import { ChangeEvent, ComponentType, createContext, useContext } from "react";
-import { ManagedObject, ManagedObjectBase, Node } from "./ManagedObject.js";
+import { type ChangeEvent, type ComponentType, createContext, useContext } from "react";
+import type { ManagedObject, ManagedObjectBase, Node } from "./ManagedObject.js";
 
 const FieldSetContext = createContext<ManagedObjectBase | undefined>(undefined);
 const FieldSetContextProvider = FieldSetContext.Provider;

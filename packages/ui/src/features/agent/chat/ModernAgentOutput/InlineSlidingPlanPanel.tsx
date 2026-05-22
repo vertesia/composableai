@@ -1,4 +1,4 @@
-import { Plan } from "@vertesia/common";
+import type { Plan } from "@vertesia/common";
 import { Badge, Button, cn } from "@vertesia/ui/core";
 import { AlertCircle, CheckCircle, Circle, Clock } from "lucide-react";
 import React from "react";
@@ -54,7 +54,7 @@ function InlineSlidingPlanPanelComponent({
               if (totalTasks > 0) {
                 // Count each completed task from the plan
                 planTasks.forEach((task) => {
-                  if (task && task.id) {
+                  if (task?.id) {
                     const taskId = task.id.toString();
                     const taskStatus = workstreamStatus.get(taskId);
 
@@ -192,7 +192,7 @@ function InlineSlidingPlanPanelComponent({
           // Get all task IDs from the plan for filtering
           const planTaskIds = new Set(
             (plan.plan || [])
-              .filter((task) => task && task.id)
+              .filter((task) => task?.id)
               .map((task) => task.id.toString()),
           );
 

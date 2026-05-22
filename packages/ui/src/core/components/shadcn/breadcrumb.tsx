@@ -21,7 +21,7 @@ export function Breadcrumbs({ path, maxItems = 3, className, separator }: Breadc
 
   const renderBreadcrumbItem = (item: BreadcrumbProps) => {
     const shortenedLabel = typeof item.label === "string" && item.label.length > 20
-      ? item.label.slice(0, 17) + "..."
+      ? `${item.label.slice(0, 17)}...`
       : item.label;
     if (item.onClick) {
       return <BreadcrumbButton onClick={item.onClick} href={item.href} title={typeof item.label === 'string' ? item.label : undefined}>{shortenedLabel}</BreadcrumbButton>;

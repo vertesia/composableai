@@ -1,4 +1,4 @@
-import { AgentMessage, AgentMessageType } from "@vertesia/common";
+import { type AgentMessage, AgentMessageType } from "@vertesia/common";
 import { Button, cn, onActivateKey, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
@@ -9,7 +9,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { useImageLightbox } from "../ImageLightbox";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
-import { ToolExecutionStatus } from "./utils";
+import type { ToolExecutionStatus } from "./utils";
 
 /** Keys that are internal metadata and not interesting to display */
 const META_KEYS = new Set([
@@ -325,7 +325,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
     const copyToClipboard = () => {
         const textToCopy = [
             messageContent,
-            details ? "\n\nDetails:\n" + JSON.stringify(details, null, 2) : ""
+            details ? `\n\nDetails:\n${JSON.stringify(details, null, 2)}` : ""
         ].join("").trim();
 
         navigator.clipboard.writeText(textToCopy).then(() => {

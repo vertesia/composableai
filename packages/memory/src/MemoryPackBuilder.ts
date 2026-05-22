@@ -1,6 +1,6 @@
-import { Builder } from "./Builder.js";
-import { ContentSource } from "./ContentSource.js";
-import { MEMORY_METADATA_ENTRY, MemoryPack, ProjectionProperties } from "./MemoryPack.js";
+import type { Builder } from "./Builder.js";
+import type { ContentSource } from "./ContentSource.js";
+import { MEMORY_METADATA_ENTRY, type MemoryPack, type ProjectionProperties } from "./MemoryPack.js";
 import { normalizePath, TarBuilder } from "./utils/tar.js";
 
 export interface FromOptions {

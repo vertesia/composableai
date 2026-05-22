@@ -5,9 +5,9 @@
 import {
     decodeJWT,
     VertesiaClient,
-    VertesiaClientProps,
+    type VertesiaClientProps,
 } from "@vertesia/client";
-import { WorkflowExecutionBaseParams } from "@vertesia/common";
+import type { WorkflowExecutionBaseParams } from "@vertesia/common";
 import { WorkflowParamNotFoundError } from "../errors.js";
 
 export function getVertesiaClient(payload: WorkflowExecutionBaseParams<unknown>) {

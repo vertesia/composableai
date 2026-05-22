@@ -1,6 +1,6 @@
 import { VertesiaClient } from "@vertesia/client";
-import { Command } from "commander";
-import { config, Profile } from "./profiles/index.js";
+import type { Command } from "commander";
+import { config, type Profile } from "./profiles/index.js";
 import { ensureProfileAccessToken } from "./profiles/auth.js";
 import { isKeyringAvailable } from "./profiles/keyring.js";
 

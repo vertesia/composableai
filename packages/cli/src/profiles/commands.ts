@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import {
     AVAILABLE_REGIONS,
     DEFAULT_REGION,
-    Region,
+    type Region,
     config,
     getConfigUrl,
     getServerUrls,
@@ -19,7 +19,7 @@ import {
     writeAuthBundle,
 } from "./keyring.js";
 import { ensureProfileAccessToken, refreshCurrentProfileAuthentication, refreshProfileAuthentication } from './auth.js';
-import { ConfigResult } from './server/index.js';
+import type { ConfigResult } from './server/index.js';
 const { prompt } = enquirer;
 
 export type OnResultCallback = (result: ConfigResult | undefined) => void | Promise<void>;
@@ -84,7 +84,7 @@ interface AuthDetailsPayload {
 export async function listProfiles() {
     const selected = config.current?.name;
     for (const profile of config.profiles) {
-        console.log(profile.name + (selected === profile.name ? " " + colors.symbols.check : ""));
+        console.log(profile.name + (selected === profile.name ? ` ${colors.symbols.check}` : ""));
     }
     if (!config.profiles.length) {
         console.log("No profiles are defined. Run `vertesia profiles add` to add a new profile.");

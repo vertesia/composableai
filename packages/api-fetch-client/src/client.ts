@@ -1,5 +1,5 @@
-import { ClientBase, FETCH_FN, IRequestParamsWithPayload } from "./base.js";
-import { RequestError } from "./errors.js";
+import { ClientBase, type FETCH_FN, type IRequestParamsWithPayload } from "./base.js";
+import type { RequestError } from "./errors.js";
 
 function isAuthorizationHeaderSet(headers: HeadersInit | undefined): boolean {
     if (!headers) return false;
@@ -92,7 +92,7 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
             init.headers = headers;
             const auth = await this._auth();
             if (auth) {
-                init.headers["authorization"] = auth;
+                init.headers.authorization = auth;
             }
         }
         this.response = undefined;

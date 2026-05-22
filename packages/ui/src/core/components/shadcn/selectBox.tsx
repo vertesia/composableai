@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { isEqual } from 'lodash-es';
 import { AlertTriangle, Check, ChevronsUpDown, LoaderCircle, SearchIcon, SquarePlus, X } from 'lucide-react';
-import { useState, useEffect, useRef, useMemo, useId, ReactNode } from 'react';
+import { useState, useEffect, useRef, useMemo, useId, type ReactNode } from 'react';
 
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from './popover';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from './command';

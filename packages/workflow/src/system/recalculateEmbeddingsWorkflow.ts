@@ -1,6 +1,6 @@
 
-import { SupportedEmbeddingTypes, WorkflowExecutionPayload } from "@vertesia/common";
-import * as activities from "../activities/index-dsl.js";
+import { SupportedEmbeddingTypes, type WorkflowExecutionPayload } from "@vertesia/common";
+import type * as activities from "../activities/index-dsl.js";
 import { dslProxyActivities } from "../dsl/dslProxyActivities.js";
 import { WF_NON_RETRYABLE_ERRORS } from "../errors.js";
 

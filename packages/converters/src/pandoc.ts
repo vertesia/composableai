@@ -1,5 +1,5 @@
-import { spawn } from 'child_process';
-import { PassThrough } from 'stream';
+import { spawn } from 'node:child_process';
+import { PassThrough } from 'node:stream';
 
 export function manyToMarkdownFromBuffer(buffer: Buffer, fromFormat: string): Promise<string> {
   const input = new PassThrough();

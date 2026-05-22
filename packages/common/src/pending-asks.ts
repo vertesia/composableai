@@ -3,7 +3,7 @@
  * Used to notify external systems when agents are waiting for user input.
  */
 
-import { UserChannel } from "./email.js";
+import type { UserChannel } from "./email.js";
 import type { TaskField } from "./store/task.js";
 
 // ================= Pending Ask Data ====================

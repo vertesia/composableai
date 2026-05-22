@@ -1,56 +1,56 @@
-import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import {
-    ActiveWorkstreamsQueryResult,
-    AgentEvent,
-    AgentArtifactUrlResponse,
-    AgentMessage,
-    AgentRun,
-    AgentRunDetailsStreamEvent,
-    AgentRunInternals,
-    AgentRunResponse,
-    AgentRunUpdatesResponse,
-    BindRunWorkflowPayload,
-    CompactMessage,
-    CreateAgentRunPayload,
-    CreateProcessRunPayload,
-    ErrorAnalyticsResponse,
-    FirstResponseBehaviorAnalyticsResponse,
-    LatencyAnalyticsResponse,
-    ListAgentRunsQuery,
-    ListAgentRunsResponse,
-    ListWorkflowRunsResponse,
+    type ActiveWorkstreamsQueryResult,
+    type AgentEvent,
+    type AgentArtifactUrlResponse,
+    type AgentMessage,
+    type AgentRun,
+    type AgentRunDetailsStreamEvent,
+    type AgentRunInternals,
+    type AgentRunResponse,
+    type AgentRunUpdatesResponse,
+    type BindRunWorkflowPayload,
+    type CompactMessage,
+    type CreateAgentRunPayload,
+    type CreateProcessRunPayload,
+    type ErrorAnalyticsResponse,
+    type FirstResponseBehaviorAnalyticsResponse,
+    type LatencyAnalyticsResponse,
+    type ListAgentRunsQuery,
+    type ListAgentRunsResponse,
+    type ListWorkflowRunsResponse,
     parseMessage,
-    PromptSizeAnalyticsResponse,
-    PostAgentRunUpdatePayload,
-    PostAgentRunUpdateResponse,
-    ProcessRun,
-    ProcessState,
-    RecordAgentRunPayload,
-    RecordProcessRunPayload,
-    RecordRunPayload,
-    RunsByAgentAnalyticsResponse,
-    SearchAgentRunsQuery,
-    SearchAgentRunsResponse,
-    SignalAgentPayload,
-    SignalAgentResponse,
-    TimeToFirstResponseAnalyticsResponse,
-    TerminateAgentRunResponse,
+    type PromptSizeAnalyticsResponse,
+    type PostAgentRunUpdatePayload,
+    type PostAgentRunUpdateResponse,
+    type ProcessRun,
+    type ProcessState,
+    type RecordAgentRunPayload,
+    type RecordProcessRunPayload,
+    type RecordRunPayload,
+    type RunsByAgentAnalyticsResponse,
+    type SearchAgentRunsQuery,
+    type SearchAgentRunsResponse,
+    type SignalAgentPayload,
+    type SignalAgentResponse,
+    type TimeToFirstResponseAnalyticsResponse,
+    type TerminateAgentRunResponse,
     toAgentMessage,
-    TokenUsageAnalyticsResponse,
-    ToolAnalyticsResponse,
-    ToolParameterAnalyticsResponse,
-    TopPrincipalsAnalyticsResponse,
-    UpdateAgentRunStatusPayload,
-    WorkflowAnalyticsFilterOptionsResponse,
-    WorkflowAnalyticsSummaryQuery,
-    WorkflowAnalyticsSummaryResponse,
-    WorkflowAnalyticsTimeSeriesQuery,
-    WorkflowRunWithDetails,
-    WorkflowToolParametersQuery,
-    IngestAgentEventsPayload,
-    IngestAgentEventsResponse,
+    type TokenUsageAnalyticsResponse,
+    type ToolAnalyticsResponse,
+    type ToolParameterAnalyticsResponse,
+    type TopPrincipalsAnalyticsResponse,
+    type UpdateAgentRunStatusPayload,
+    type WorkflowAnalyticsFilterOptionsResponse,
+    type WorkflowAnalyticsSummaryQuery,
+    type WorkflowAnalyticsSummaryResponse,
+    type WorkflowAnalyticsTimeSeriesQuery,
+    type WorkflowRunWithDetails,
+    type WorkflowToolParametersQuery,
+    type IngestAgentEventsPayload,
+    type IngestAgentEventsResponse,
 } from '@vertesia/common';
-import { VertesiaClient } from '../client.js';
+import type { VertesiaClient } from '../client.js';
 import { EventSourceProvider } from '../execute.js';
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
 
@@ -382,7 +382,7 @@ export class AgentsApi extends ApiTopic {
                 const EventSourceImpl = await EventSourceProvider();
                 if (isClosed) return;
                 const client = this.client as VertesiaClient;
-                const streamUrl = new URL(client.agents.baseUrl + `/${id}/stream`);
+                const streamUrl = new URL(`${client.agents.baseUrl}/${id}/stream`);
 
                 if (lastMessageTimestamp > 0) {
                     streamUrl.searchParams.set('since', lastMessageTimestamp.toString());
@@ -529,7 +529,7 @@ export class AgentsApi extends ApiTopic {
     ): Promise<void> {
         const EventSourceImpl = await EventSourceProvider();
         const client = this.client as VertesiaClient;
-        const streamUrl = new URL(client.agents.baseUrl + `/${id}/details/stream`);
+        const streamUrl = new URL(`${client.agents.baseUrl}/${id}/details/stream`);
 
         const bearerToken = client._auth ? await client._auth() : undefined;
         if (!bearerToken) {

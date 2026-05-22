@@ -1,11 +1,11 @@
-import React, { Dispatch, SetStateAction, useEffect } from "react";
+import React, { type Dispatch, type SetStateAction, useEffect } from "react";
 import { cn } from "../../libs/utils";
 import { Button } from "../button";
 import { Popover, PopoverTrigger, PopoverContent } from "../popover";
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from "../command";
 import { ListFilter } from "lucide-react";
 
-import { Filter, FilterGroup, FilterOption } from "./types";
+import type { Filter, FilterGroup, FilterOption } from "./types";
 import Filters from "./filters";
 
 import TextFilter from "./filter/TextFilter";

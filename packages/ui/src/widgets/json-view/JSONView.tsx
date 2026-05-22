@@ -1,7 +1,7 @@
 import type { JSONArray, JSONObject, JSONValue } from "@vertesia/json";
 import { DotBadge } from "@vertesia/ui/core";
 import clsx from "clsx";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { computeTitleFromName } from "../form/ManagedObject.js";
 
 
@@ -56,7 +56,7 @@ function PropertyElement({ name, value }: PropertyElementProps) {
     switch (info.type) {
         case ValueType.Inline:
             return (<div className='w-full flex gap-2'>
-                <PropertyTitle name={name + ':'} />
+                <PropertyTitle name={`${name}:`} />
                 <p>{info.value}</p>
             </div>)
         case ValueType.Paragraph:
@@ -98,7 +98,7 @@ function ArrayProperty({ name, value }: ArrayPropertyProps) {
     const useBullet = value.length > 9;
     return isInline ? (
         <div className='flex gap-2 flex-wrap'>
-            {name && <PropertyTitle name={name + ':'} />}
+            {name && <PropertyTitle name={`${name}:`} />}
             {value.map((item, index) => <DotBadge key={index}>{String(item)}</DotBadge>)}
         </div>
     ) : (

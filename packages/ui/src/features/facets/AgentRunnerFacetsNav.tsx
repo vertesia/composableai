@@ -1,10 +1,10 @@
-import { Button, Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
+import { Button, type Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, type FilterGroup } from '@vertesia/ui/core';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { VInteractionFacet } from './utils/VInteractionFacet';
 import type { EnrichedFacetBucket } from './utils/VInteractionFacet';
 import { VStringFacet } from './utils/VStringFacet';
 import { VUserFacet } from './utils/VUserFacet';
-import { filterValueToQueryValue, SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
+import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
 import { RefreshCw } from 'lucide-react';
 import type { FacetBucket } from '@vertesia/common';
 

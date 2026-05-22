@@ -1,5 +1,5 @@
-import { AbstractFetchClient, RequestError } from "@vertesia/api-fetch-client";
-import { BulkOperationPayload, BulkOperationResponse } from "@vertesia/common";
+import { AbstractFetchClient, type RequestError } from "@vertesia/api-fetch-client";
+import type { BulkOperationPayload, BulkOperationResponse } from "@vertesia/common";
 import { AgentsApi } from "./AgentsApi.js";
 import { CollectionsApi } from "./CollectionsApi.js";
 import { CostApi } from "./CostApi.js";

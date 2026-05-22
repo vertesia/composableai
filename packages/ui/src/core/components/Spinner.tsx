@@ -8,7 +8,7 @@ function getRealSize(size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') {
         case 'lg': return 'size-5';
         case 'xl': return 'size-7';
         case '2xl': return 'size-10';
-        default: throw new Error('Unexpected size: ' + size);
+        default: throw new Error(`Unexpected size: ${size}`);
     }
 }
 

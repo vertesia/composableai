@@ -11,13 +11,13 @@
  */
 
 import { fromWebToken } from "@aws-sdk/credential-providers";
-import { AwsConfiguration, CreateContentObjectPayload, DSLActivityExecutionPayload, DSLActivitySpec, SupportedIntegrations } from "@vertesia/common";
+import { type AwsConfiguration, type CreateContentObjectPayload, type DSLActivityExecutionPayload, type DSLActivitySpec, SupportedIntegrations } from "@vertesia/common";
 import type { AwsCredentialIdentityProvider } from "@smithy/types";
 import { log } from "@temporalio/activity";
 import { TextractProcessor } from "../../conversion/TextractProcessor.js";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../../errors.js";
-import { TextExtractionResult, TextExtractionStatus } from "../../result-types.js";
+import { type TextExtractionResult, TextExtractionStatus } from "../../result-types.js";
 import { fetchBlobAsBuffer, md5 } from "../../utils/blobs.js";
 import { countTokens } from "../../utils/tokens.js";
 
@@ -122,7 +122,7 @@ export async function convertPdfToStructuredText(payload: DSLActivityExecutionPa
 export async function getS3AWSCredentials(awsConfig: AwsConfiguration, composableAuthToken: string, projectId: string): Promise<AwsCredentialIdentityProvider> {
 
     // fetch s3 role ARN
-    if (!awsConfig || !awsConfig.enabled) {
+    if (!awsConfig?.enabled) {
         throw new DocumentNotFoundError("AWS integration is not enabled for this project");
     }
     if (!awsConfig.s3_role_arn) {

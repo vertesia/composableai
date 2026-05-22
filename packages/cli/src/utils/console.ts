@@ -1,6 +1,6 @@
 import ansiColors from "ansi-colors";
 import ansiEscapes from "ansi-escapes";
-import { WriteStream } from "node:tty";
+import type { WriteStream } from "node:tty";
 import { onExit } from "signal-exit";
 /**
  * See https://github.com/sindresorhus/cli-spinners/blob/HEAD/spinners.json for more spinners
@@ -69,8 +69,8 @@ export class Spinner {
         };
 
         // Store handlers so we can remove them later
-        this.signalHandlers['SIGINT'] = handleSignal;
-        this.signalHandlers['SIGTERM'] = handleSignal;
+        this.signalHandlers.SIGINT = handleSignal;
+        this.signalHandlers.SIGTERM = handleSignal;
 
         // Register handlers
         process.on('SIGINT', handleSignal);

@@ -1,7 +1,7 @@
 import type { JSONSchema, ToolDefinition } from "@llumiverse/common";
 import { PromptRole } from "@llumiverse/common";
-import { InCodePrompt, InteractionRefWithSchema, PopulatedInteraction } from "../interaction.js";
-import { ExecutablePromptSegmentDef, PromptSegmentDefType } from "../prompt.js";
+import type { InCodePrompt, InteractionRefWithSchema, PopulatedInteraction } from "../interaction.js";
+import { type ExecutablePromptSegmentDef, PromptSegmentDefType } from "../prompt.js";
 
 /**
  * Sanitize a tool definition to only include fields expected by LLM APIs.

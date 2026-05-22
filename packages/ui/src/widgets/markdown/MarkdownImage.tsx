@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { useResolvedUrl, parseUrlScheme } from './useResolvedUrl';
 import { CodeBlockPlaceholder } from './CodeBlockPlaceholder';
 

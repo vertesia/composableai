@@ -1,6 +1,6 @@
 import { log } from "@temporalio/activity";
-import { spawn } from "child_process";
-import fs from "fs";
+import { spawn } from "node:child_process";
+import fs from "node:fs";
 import tmp from "tmp";
 
 export function markdownWithMarkitdown(buffer: Buffer, ext?: string): Promise<string> {

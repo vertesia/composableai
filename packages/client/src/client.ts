@@ -1,5 +1,5 @@
 import { AbstractFetchClient } from "@vertesia/api-fetch-client";
-import { AuthTokenPayload, AuthTokenResponse } from "@vertesia/common";
+import type { AuthTokenPayload, AuthTokenResponse } from "@vertesia/common";
 import AccountApi from "./AccountApi.js";
 import AccountsApi from "./AccountsApi.js";
 import AnalyticsApi from "./AnalyticsApi.js";

@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { CommandItem } from "../../command";
 import { Button } from "../../button";
-import { Filter, FilterGroup, FilterGroupOption, FilterOption } from "../types";
+import type { Filter, FilterGroup, FilterGroupOption, FilterOption } from "../types";
 import { DynamicLabel } from "../DynamicLabel";
 
 interface SelectFilterProps {

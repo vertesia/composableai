@@ -35,11 +35,11 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
         if (params) {
             const slice = params.get("slice");
             if (slice) {
-                transforms.push((value: string) => value.slice(parseInt(slice)));
+                transforms.push((value: string) => value.slice(parseInt(slice, 10)));
             }
             const max_length = params.get("max_length");
             if (max_length) {
-                transforms.push((value: string) => value.slice(0, parseInt(max_length)));
+                transforms.push((value: string) => value.slice(0, parseInt(max_length, 10)));
             }
             if (params.has("upper")) {
                 transforms.push((value: string) => value.toUpperCase());
@@ -51,7 +51,7 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
                 transforms.push((value: string) => value[0].toUpperCase() + value.substring(1));
             }
             if (params.has("ellipsis")) {
-                transforms.push((value: string) => value + "...");
+                transforms.push((value: string) => `${value}...`);
             }
         }
         return (value: unknown, index: number) => {
@@ -100,7 +100,7 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
             decimals = params.get("decimals") || undefined;
         }
 
-        const digits = decimals ? parseInt(decimals) : 2;
+        const digits = decimals ? parseInt(decimals, 10) : 2;
 
         return (value: unknown, index: number) => {
             const numberValue = Number(value);
@@ -119,7 +119,7 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
             const slice = params.get("slice");
             if (slice) {
                 hasSlice = true;
-                transforms.push((value) => value.slice(parseInt(slice)));
+                transforms.push((value) => value.slice(parseInt(slice, 10)));
             }
         }
         return (value: unknown, index: number) => {

@@ -14,7 +14,7 @@ export function joinPath(path1: string, path2: string) {
     } else if (path2.startsWith('/')) {
         path2 = path1 + path2;
     } else {
-        path2 = path1 + '/' + path2;
+        path2 = `${path1}/${path2}`;
     }
     return path2;
 }

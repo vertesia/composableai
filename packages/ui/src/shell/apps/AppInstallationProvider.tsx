@@ -1,5 +1,5 @@
-import { AppInstallationWithManifest } from "@vertesia/common";
-import { createContext, ReactNode, useContext } from "react";
+import type { AppInstallationWithManifest } from "@vertesia/common";
+import { createContext, type ReactNode, useContext } from "react";
 
 
 export const AppInstallationContext = createContext<AppInstallationWithManifest | null>(null);

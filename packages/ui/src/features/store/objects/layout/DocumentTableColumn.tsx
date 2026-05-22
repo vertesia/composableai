@@ -1,6 +1,6 @@
-import React from 'react';
+import type React from 'react';
 
-import { ColumnLayout, ContentObjectItem } from '@vertesia/common';
+import type { ColumnLayout, ContentObjectItem } from '@vertesia/common';
 
 import renderers from './renderers';
 

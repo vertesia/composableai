@@ -289,7 +289,7 @@ async function generateImageEmbeddings({
     config,
     force,
 }: ExecuteGenerateEmbeddingsParams) {
-    log.debug("Generating image embeddings for document " + document.id, {
+    log.debug(`Generating image embeddings for document ${document.id}`, {
         content: document.content,
     });
     if (

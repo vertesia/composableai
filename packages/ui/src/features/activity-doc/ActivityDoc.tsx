@@ -1,8 +1,9 @@
-import { ActivityDefinition, ActivityPropertyDefinition, ActivityTypeDefinition } from "@vertesia/common";
+import type { ActivityDefinition, ActivityPropertyDefinition, ActivityTypeDefinition } from "@vertesia/common";
 import { Button } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "motion/react";
-import React, { useMemo, useState } from "react";
+import type React from "react";
+import { useMemo, useState } from "react";
 
 function Badge({ children, secondary = false }: { children: React.ReactNode, secondary?: boolean }) {
     const className = secondary ? "bg-secondary text-primary" : "text-foreground bg-muted";

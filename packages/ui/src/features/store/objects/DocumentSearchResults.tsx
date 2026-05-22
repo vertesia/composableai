@@ -1,7 +1,7 @@
-import { ColumnLayout, ComplexSearchQuery, ContentObject, ContentObjectItem } from '@vertesia/common';
+import type { ColumnLayout, ComplexSearchQuery, ContentObject, ContentObjectItem } from '@vertesia/common';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import {
-    Filter as BaseFilter,
+    type Filter as BaseFilter,
     Button, Divider, ErrorBox,
     FilterBar,
     FilterBtn,
@@ -11,7 +11,7 @@ import {
 } from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from '@vertesia/ui/session';
-import { TypeRegistry } from '../types/TypeRegistry.js';
+import type { TypeRegistry } from '../types/TypeRegistry.js';
 import { useTypeRegistry } from '../types/TypeRegistryProvider.js';
 import { Download, ExternalLink, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -21,7 +21,7 @@ import { ContentOverview } from './components/ContentOverview';
 import { useDownloadFile } from './components/useDownloadFile';
 import { VectorSearchWidget } from './components/VectorSearchWidget';
 import { DocumentTable } from './DocumentTable';
-import { ExtendedColumnLayout } from './layout/DocumentTableColumn';
+import type { ExtendedColumnLayout } from './layout/DocumentTableColumn';
 import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from './search/DocumentSearchContext';
 import { useDocumentUploadHandler } from './upload/useUploadHandler';
 
@@ -187,7 +187,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
 
     // Handler for vector search widget
     const handleVectorSearch = (query?: ComplexSearchQuery) => {
-        if (query && query.vector) {
+        if (query?.vector) {
             search.query.vector = query.vector;
             search.query.full_text = query.full_text;
             search.query.weights = query.weights;
@@ -209,7 +209,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 setActualLayout(layout);
             }
             settleSearch(search.search(), 'Vector search failed:');
-        } else if (query && query.full_text) {
+        } else if (query?.full_text) {
             search.query.full_text = query.full_text;
             if (query.limit !== undefined) {
                 search.limit = query.limit;

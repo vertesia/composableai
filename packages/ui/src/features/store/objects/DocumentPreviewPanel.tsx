@@ -1,5 +1,5 @@
 import {
-  ContentObject,
+  type ContentObject,
   ImageRenditionFormat
 } from "@vertesia/common";
 import { Button, Spinner, useToast } from "@vertesia/ui/core";
@@ -97,10 +97,8 @@ export function DocumentPreviewPanel({
           // If it's an image, load the image URL
           const content = result.content;
           const isImage =
-            content &&
-            content.source &&
-            content.type &&
-            content.type.startsWith("image/");
+            content?.source &&
+            content.type?.startsWith("image/");
           if (isImage) {
             loadImageUrl(result);
           }
@@ -136,7 +134,7 @@ export function DocumentPreviewPanel({
     text &&
     (text.startsWith("#") || text.includes("\n#") || text.includes("\n*"));
   const isImage =
-    object?.content?.type && object.content.type.startsWith("image/");
+    object?.content?.type?.startsWith("image/");
   const isPdf = object?.content?.type === "application/pdf";
 
   if (!isOpen) return null;
@@ -418,5 +416,5 @@ function formatFileSize(bytes: number): string {
   const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }

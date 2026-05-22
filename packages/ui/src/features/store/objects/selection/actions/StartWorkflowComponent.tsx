@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useObjectsActionContext, useObjectsActionCallback } from '../ObjectsActionHooks';
-import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
+import type { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 export function StartWorkflowComponent({ action, objectIds, collectionId }: ActionComponentTypeProps) {
     const { t } = useUITranslation();

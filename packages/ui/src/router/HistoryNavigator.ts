@@ -125,7 +125,7 @@ export class HistoryNavigator {
         if (options.basePath) {
             let basePath = options.basePath;
             if (!basePath.startsWith('/')) {
-                basePath = '/' + basePath;
+                basePath = `/${basePath}`;
             }
             to = joinPath(basePath, to);
         }
@@ -147,7 +147,7 @@ export class HistoryNavigator {
             title: options.title || document.title
         };
 
-        window.history['replaceState'](stateToStore, '', to.href);
+        window.history.replaceState(stateToStore, '', to.href);
         this.fireLocationChange(new AfterLocationChangeEvent('popState', to, options.state));
     }
 

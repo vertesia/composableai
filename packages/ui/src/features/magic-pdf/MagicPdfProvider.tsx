@@ -1,8 +1,8 @@
 import { useUserSession } from "@vertesia/ui/session";
-import { VertesiaClient } from "@vertesia/client";
+import type { VertesiaClient } from "@vertesia/client";
 import {
-    ContentObject,
-    DocumentMetadata,
+    type ContentObject,
+    type DocumentMetadata,
     PDF_RENDITION_NAME,
 } from "@vertesia/common";
 import React, { createContext, useEffect, useState } from "react";
@@ -120,7 +120,7 @@ class PageLayoutProvider {
         const response = await this.client.files.getDownloadUrl(path);
         const result = await fetch(response.url, { method: "GET" });
         if (!result.ok) {
-            throw new Error("Failed to fetch json layout: " + result.statusText);
+            throw new Error(`Failed to fetch json layout: ${result.statusText}`);
         }
         return result.text();
     }

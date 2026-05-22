@@ -1,8 +1,8 @@
-import { RemoteActivityDefinition, RemoteActivityExecutionPayload } from "@vertesia/common";
-import { Context, Hono } from "hono";
+import type { RemoteActivityDefinition, RemoteActivityExecutionPayload } from "@vertesia/common";
+import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { ActivityCollection } from "../ActivityCollection.js";
-import { ToolServerConfig } from "./types.js";
+import type { ActivityCollection } from "../ActivityCollection.js";
+import type { ToolServerConfig } from "./types.js";
 
 /**
  * Safely parse JSON from a request body. Throws HTTPException(400) on invalid JSON.

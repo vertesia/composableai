@@ -1,4 +1,4 @@
-import { ApplicationFailure } from '@temporalio/activity';
+import type { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import type { VertesiaClient } from '@vertesia/client';
 import { ContentEventName, type DSLActivityExecutionPayload } from '@vertesia/common';

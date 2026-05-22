@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
-import { ContentObjectTypeItem, ContentObjectTypeRef } from '@vertesia/common';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type { ContentObjectTypeItem, ContentObjectTypeRef } from '@vertesia/common';
 
 
 export class TypeCatalogApi extends ApiTopic {

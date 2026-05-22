@@ -1,5 +1,5 @@
 import type { JSONSchema, JSONSchemaTypeName } from "@vertesia/common";
-import { TypeNames, TypeSignature } from "./type-signature.js";
+import type { TypeNames, TypeSignature } from "./type-signature.js";
 
 
 export function setPropertyName(schema: JSONSchema, name: string, newName: string) {

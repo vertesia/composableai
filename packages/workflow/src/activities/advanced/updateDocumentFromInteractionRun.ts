@@ -1,5 +1,5 @@
 import { InteractionOutput } from "@vertesia/client";
-import { DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun } from "@vertesia/common";
+import type { DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFoundError } from "../../errors.js";
 

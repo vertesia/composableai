@@ -1,14 +1,14 @@
 import { ApplicationFailure, log } from '@temporalio/activity';
-import { DSLActivityExecutionPayload, DSLActivitySpec, VideoMetadata, RenditionWithDimensions, POSTER_RENDITION_NAME, AUDIO_RENDITION_NAME, WEB_VIDEO_RENDITION_NAME, ContentNature } from '@vertesia/common';
-import { execFile as execFileCallback } from 'child_process';
-import fs from 'fs';
-import os from 'os';
-import path from 'path';
-import { promisify } from 'util';
+import { type DSLActivityExecutionPayload, type DSLActivitySpec, type VideoMetadata, type RenditionWithDimensions, POSTER_RENDITION_NAME, AUDIO_RENDITION_NAME, WEB_VIDEO_RENDITION_NAME, ContentNature } from '@vertesia/common';
+import { execFile as execFileCallback } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { promisify } from 'node:util';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
 import { saveBlobToTempFile } from '../../utils/blobs.js';
-import { VertesiaClient } from '@vertesia/client';
+import type { VertesiaClient } from '@vertesia/client';
 import { RequestError } from '@vertesia/api-fetch-client';
 
 const execFileAsync = promisify(execFileCallback);
@@ -431,7 +431,7 @@ export async function prepareVideo(
         throw new DocumentNotFoundError(`Document ${objectId} has no source`, [objectId]);
     }
 
-    if (!inputObject.content.type || !inputObject.content.type.startsWith('video/')) {
+    if (!inputObject.content.type?.startsWith('video/')) {
         log.error(`Document ${objectId} is not a video: ${inputObject.content.type}`);
         throw new InvalidContentTypeError(
             objectId,

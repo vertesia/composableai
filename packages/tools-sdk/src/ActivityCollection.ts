@@ -1,8 +1,8 @@
-import { RemoteActivityDefinition, RemoteActivityExecutionPayload, RemoteActivityExecutionResponse } from "@vertesia/common";
-import { Context } from "hono";
+import type { RemoteActivityDefinition, RemoteActivityExecutionPayload, RemoteActivityExecutionResponse } from "@vertesia/common";
+import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { authorize } from "./auth.js";
-import { CollectionProperties, ICollection, ToolExecutionContext } from "./types.js";
+import type { CollectionProperties, ICollection, ToolExecutionContext } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
 
 /**

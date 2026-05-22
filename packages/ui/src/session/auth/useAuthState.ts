@@ -32,7 +32,7 @@ export function useAuthState() {
         }
 
         const savedState = sessionStorage.getItem(AUTH_STATE_KEY);
-        const expiryTime = parseInt(sessionStorage.getItem(STATE_EXPIRY_KEY) || '0');
+        const expiryTime = parseInt(sessionStorage.getItem(STATE_EXPIRY_KEY) || '0', 10);
         let reason: string | undefined;
 
         // Verify state matches and hasn't expired

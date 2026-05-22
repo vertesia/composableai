@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase, type ServerError } from "@vertesia/api-fetch-client";
+import type {
     CompositeAppConfig,
     CompositeAppConfigPayload,
     CountResult,

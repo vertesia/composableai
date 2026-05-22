@@ -1,6 +1,6 @@
-import { ReactNode, useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 
-import { ContentObjectTypeItem } from '@vertesia/common';
+import type { ContentObjectTypeItem } from '@vertesia/common';
 import { ErrorBox, errorMessage, useFetch, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { useUITranslation } from '@vertesia/ui/i18n';
@@ -15,7 +15,7 @@ import { RemoveFromCollectionAction } from './actions/RemoveFromCollectionAction
 import { StartWorkflowAction, StartWorkflowComponent } from './actions/StartWorkflowComponent';
 import { ObjectsActionContext } from './ObjectsActionContextClass';
 import { ObjectsActionContextReact, useObjectsActionContext } from './ObjectsActionHooks';
-import { ObjectsActionSpec } from './ObjectsActionSpec';
+import type { ObjectsActionSpec } from './ObjectsActionSpec';
 
 const DEFAULT_ACTIONS: ObjectsActionSpec[] = [
     ExportPropertiesAction,

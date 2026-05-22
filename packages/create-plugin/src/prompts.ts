@@ -3,7 +3,7 @@
  */
 import prompts from 'prompts';
 import chalk from 'chalk';
-import { PromptConfig, TemplateConfig } from './template-config.js';
+import type { PromptConfig, TemplateConfig } from './template-config.js';
 import { applyMapTransform, applyTransform, concatValues } from './transforms.js';
 
 type ProcessedPromptConfig = Omit<PromptConfig, 'validate'> & {

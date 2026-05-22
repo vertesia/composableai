@@ -1,8 +1,8 @@
 import type { JSONSchemaType } from "ajv";
-import { SupportedIntegrations } from "./integrations.js";
-import { ContentObjectTypeRef } from "./store/store.js";
-import { WorkflowRunStatus } from "./store/workflow.js";
-import { AccountRef } from "./user.js";
+import type { SupportedIntegrations } from "./integrations.js";
+import type { ContentObjectTypeRef } from "./store/store.js";
+import type { WorkflowRunStatus } from "./store/workflow.js";
+import type { AccountRef } from "./user.js";
 
 export interface ICreateProjectPayload {
     name: string;

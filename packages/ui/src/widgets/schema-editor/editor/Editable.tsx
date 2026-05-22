@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { ChangeEvent, ComponentType, KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { type ChangeEvent, type ComponentType, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 
 import { SquarePen, Trash2 } from 'lucide-react';
 import { Button, Styles, useClickOutside, useFlag } from '@vertesia/ui/core';

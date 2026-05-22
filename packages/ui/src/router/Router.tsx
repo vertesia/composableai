@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect } from "react";
-import { HistoryNavigator, LocationChangeEvent, NavigateOptions } from "./HistoryNavigator";
-import { PathMatch, PathMatcher } from "./PathMatcher";
-import { isRootPath, joinPath, PathMatchParams } from "./path";
+import { HistoryNavigator, type LocationChangeEvent, type NavigateOptions } from "./HistoryNavigator";
+import { type PathMatch, PathMatcher } from "./PathMatcher";
+import { isRootPath, joinPath, type PathMatchParams } from "./path";
 
 export type RouteComponentProps = PathMatchParams;
 export type LazyRouteModule = { default: React.ComponentType<Record<string, never>> };
@@ -62,7 +62,7 @@ export class Router extends BaseRouter {
             // only process afterChange events
             if (event.name === "afterChange") {
                 const match = this.match(event.location.pathname);
-                if (match && match.value) {
+                if (match?.value) {
                     updateState({
                         ...match,
                         state: event.state,

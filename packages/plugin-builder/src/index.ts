@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { Plugin } from "vite";
+import type { Plugin } from "vite";
 import { extractTailwindUtilitiesLayer } from "./parse-css.js";
 
 interface VertesiaPluginBuilderOptions {
