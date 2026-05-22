@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import {
     activityCollectionPage,
     contentTypeCollectionPage,
+    // biome-ignore lint/suspicious/noDeprecatedImports: index page is still served alongside the React site until that migration completes
     indexPage,
     interactionCollectionPage,
     skillCollectionPage,

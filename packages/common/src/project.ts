@@ -363,9 +363,6 @@ export interface ProjectConfigurationEmbeddingEnablePayload {
     model?: string;
 }
 
-/** @deprecated Use ProjectConfigurationEmbedding for a single embedding configuration. */
-export type ProjectConfigurationEmbeddings = ProjectConfigurationEmbedding;
-
 export interface Project {
     id: string;
     name: string;

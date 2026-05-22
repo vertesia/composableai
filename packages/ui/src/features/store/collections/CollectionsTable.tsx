@@ -77,7 +77,7 @@ export function CollectionsTable({ }: CollectionsTableProps) {
                                     return <TR key={c.id}>
                                         <td>
                                             <div className="flex items-center gap-2">
-                                                {collectionIcon(c.dynamic)}
+                                                <CollectionIcon isDynamic={c.dynamic} />
                                                 <NavLink href={`/collections/${c.id}`}>{c.name}</NavLink>
                                             </div>
                                         </td>
@@ -127,7 +127,3 @@ export function CollectionIcon({ isDynamic }: { isDynamic: boolean }) {
     );
 }
 
-/** @deprecated Use CollectionIcon component instead */
-export function collectionIcon(isDynamic: boolean) {
-    return <CollectionIcon isDynamic={isDynamic} />;
-}

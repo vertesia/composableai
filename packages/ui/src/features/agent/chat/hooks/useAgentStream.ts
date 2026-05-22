@@ -5,6 +5,7 @@ import {
     AgentMessageType,
     ConversationFile,
     FileProcessingDetails,
+    // biome-ignore lint/suspicious/noDeprecatedImports: legacy AgentMessage stream still uses StreamingChunkDetails; migration to CompactMessage tracked separately
     StreamingChunkDetails,
 } from '@vertesia/common';
 import { insertMessageInTimeline, isInProgress } from '../ModernAgentOutput/utils';

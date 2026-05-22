@@ -198,11 +198,6 @@ export interface RenditionWithDimensions extends Rendition {
     dimensions: Dimensions;
 }
 
-/**
- * @deprecated Use RenditionWithDimensions instead
- */
-export type VideoRendition = RenditionWithDimensions;
-
 export const POSTER_RENDITION_NAME = "Poster";
 export const AUDIO_RENDITION_NAME = "Audio";
 export const WEB_VIDEO_RENDITION_NAME = "Web";

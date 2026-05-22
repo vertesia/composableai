@@ -1,4 +1,4 @@
-import { createContext, MutableRefObject, ReactNode, useContext, useEffect, useRef, useState } from "react";
+import { createContext, RefObject, ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { PopupController, PopupControllerOptions } from "./PopupController";
 import { Constraints } from "./position";
@@ -24,7 +24,7 @@ interface DOMPopupProps extends Omit<PopupControllerOptions, 'anchor' | 'popup' 
     className?: string;
     id?: string;
     children: ReactNode | ReactNode[];
-    ctrlRef?: MutableRefObject<PopupController | undefined>;
+    ctrlRef?: RefObject<PopupController | undefined>;
 }
 export function DOMPopup({ ctrlRef, id, constraints, isOpen, children, className, onClose, onOpen, zIndex, position, anchor, root, closeOnClick, closeOnEsc, blockPageScroll }: DOMPopupProps) {
     const popupRef = useRef<HTMLDivElement>(null);

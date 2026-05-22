@@ -91,9 +91,6 @@ function RadioGroup<T = RadioGroupOption>({ onSelect, selected, options, adapter
   )
 }
 
-/** @deprecated use RadioGroupAdapter */
-export const RadioOptionAdapter = RadioGroupAdapter
-
 export { RadioGroup, RadioGroupItem }
 export type { RadioGroupOption, RadioGroupProps }
 

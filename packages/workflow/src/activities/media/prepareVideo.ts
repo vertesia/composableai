@@ -1,5 +1,5 @@
 import { ApplicationFailure, log } from '@temporalio/activity';
-import { DSLActivityExecutionPayload, DSLActivitySpec, VideoMetadata, VideoRendition, POSTER_RENDITION_NAME, AUDIO_RENDITION_NAME, WEB_VIDEO_RENDITION_NAME, ContentNature } from '@vertesia/common';
+import { DSLActivityExecutionPayload, DSLActivitySpec, VideoMetadata, RenditionWithDimensions, POSTER_RENDITION_NAME, AUDIO_RENDITION_NAME, WEB_VIDEO_RENDITION_NAME, ContentNature } from '@vertesia/common';
 import { execFile as execFileCallback } from 'child_process';
 import fs from 'fs';
 import os from 'os';
@@ -170,7 +170,7 @@ export interface PrepareVideoMetadata {
 export interface PrepareVideoResult {
     objectId: string;
     metadata: PrepareVideoMetadata;
-    renditions: VideoRendition[];
+    renditions: RenditionWithDimensions[];
     status: 'success';
 }
 
@@ -178,7 +178,7 @@ export interface PrepareVideoResult {
  * Generate a video rendition with resolution limited to maxResolution (e.g., 1080p)
  * Uses H.264 codec for broad compatibility
  */
-async function generateVideoRendition(
+async function generateRenditionWithDimensions(
     videoPath: string,
     outputDir: string,
     metadata: VideoMetadataExtended,
@@ -376,7 +376,7 @@ async function uploadMediaAsRendition(
     mimeType: string,
     etag: string,
     pathSegment: string,
-): Promise<VideoRendition> {
+): Promise<RenditionWithDimensions> {
     const storagePath = `renditions/${etag}/${pathSegment}/${fileName}`;
     const uri = await uploadFile(client, result.file, mimeType, fileName, storagePath);
 
@@ -451,7 +451,7 @@ export async function prepareVideo(
 
         // Step 2: Generate video rendition
         log.info('Generating video rendition');
-        const renditionResult = await generateVideoRendition(
+        const renditionResult = await generateRenditionWithDimensions(
             videoFile,
             tempOutputDir,
             metadata,
@@ -492,7 +492,7 @@ export async function prepareVideo(
         }
 
         // Step 6: Upload generated files
-        const renditions: VideoRendition[] = [];
+        const renditions: RenditionWithDimensions[] = [];
         const etag = inputObject.content.etag ?? inputObject.id;
 
         if (renditionResult) {

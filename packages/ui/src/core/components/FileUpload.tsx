@@ -1,4 +1,4 @@
-import { DragEventHandler, MutableRefObject, ReactNode, useRef } from "react";
+import { DragEventHandler, RefObject, ReactNode, useRef } from "react";
 
 type DragCounterElement = HTMLElement & {
     __dragOver_cnt__?: number;
@@ -138,7 +138,7 @@ export interface IDropZoneProps<T> {
     onDragOver: DragEventHandler<T>;
     onDragEnter: DragEventHandler<T>;
     onDragLeave: DragEventHandler<T>;
-    ref: MutableRefObject<T | null>;
+    ref: RefObject<T | null>;
 }
 
 export function useDropZone<T extends HTMLElement = HTMLDivElement>({

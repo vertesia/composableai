@@ -35,7 +35,8 @@
       "suspicious": {
         "noExplicitAny": "error",
         "noImplicitAnyLet": "error",
-        "noUnusedExpressions": "error"
+        "noUnusedExpressions": "error",
+        "noDeprecatedImports": "error"
       },
       "a11y": {
         "useAltText": "error",
