@@ -13,6 +13,7 @@ import type {
 import { ExecutionTokenUsage } from "@llumiverse/common";
 
 import { ExecutionEnvironmentRef } from "./environment.js";
+import type { PermissionRequirement } from "./access-control.js";
 import { ProjectRef } from "./project.js";
 import {
     ExecutablePromptSegmentDef,
@@ -1332,6 +1333,12 @@ export interface BuiltinToolDefinition {
      * Used for display purposes only — not sent to LLMs.
      */
     annotations?: MCPToolAnnotations;
+
+    /**
+     * Internal catalog metadata for hiding tools from principals that cannot use
+     * the backing Vertesia APIs. Enforcement still happens in those APIs.
+     */
+    required_permissions?: PermissionRequirement;
 }
 
 /**
@@ -1351,6 +1358,11 @@ export interface SystemSkillCatalogEntry {
     tools: string[];
     /** Whether this skill is part of the default agent toolkit */
     default?: boolean;
+    /**
+     * Combined requirement for at least one tool unlocked by this skill.
+     * Exposed as catalog metadata; skill execution remains workflow-owned.
+     */
+    required_permissions?: PermissionRequirement;
 }
 
 /**

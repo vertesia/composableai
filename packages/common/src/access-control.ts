@@ -55,6 +55,16 @@ export enum Permission {
     studio_access = "studio:access",
 }
 
+/**
+ * Permission requirement metadata used by internal tool catalogs.
+ * `all` permissions must all be present; `any` requires at least one match.
+ * Empty or omitted requirements mean no catalog-level filter.
+ */
+export interface PermissionRequirement {
+    all?: Permission[];
+    any?: Permission[];
+}
+
 export enum AccessControlResourceType {
     project = "project",
     environment = "environment",

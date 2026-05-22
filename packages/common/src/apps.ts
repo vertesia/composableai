@@ -1,4 +1,5 @@
 import { JSONObject, JSONSchema, ToolDefinition } from "@llumiverse/common";
+import type { PermissionRequirement } from "./access-control.js";
 import { CatalogInteractionRef } from "./interaction.js";
 import { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from "./store/index.js";
 
@@ -343,6 +344,11 @@ export interface AgentToolDefinition extends ToolDefinition {
      * that perform irreversible or destructive actions (e.g. delete_*).
      */
     requires_user_confirmation?: boolean;
+    /**
+     * Internal catalog metadata for hiding tools from principals that cannot use
+     * the backing Vertesia APIs. Enforcement still happens in those APIs.
+     */
+    required_permissions?: PermissionRequirement;
 }
 
 /**
