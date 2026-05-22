@@ -171,7 +171,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     }, [objects.length, loaded]);
 
     useIntersectionObserver(loadMoreRef, () => {
-        if (isReady && objects.length > 0 && objects.length != loaded) {
+        if (isReady && objects.length > 0 && objects.length !== loaded) {
             setIsReady(false);
             void search.loadMore()
                 .catch((err: unknown) => {

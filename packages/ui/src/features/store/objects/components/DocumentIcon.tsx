@@ -106,7 +106,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
             </div>
 
             {
-                (renditionUrl && renditionStatus == 'ready') ? (
+                (renditionUrl && renditionStatus === 'ready') ? (
                     <img src={renditionUrl} alt={renditionAlt} className="w-auto h-48 object-cover rounded-t-xl" />
                 ) : (
                     <div className="h-48 bg-gray-700 rounded-t-xl flex items-center justify-center text-muted">

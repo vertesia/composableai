@@ -50,7 +50,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
     };
 
     useEffect(() => {
-        search.query.chunkable = chunkable ? chunkable == "Yes" : undefined
+        search.query.chunkable = chunkable ? chunkable === "Yes" : undefined
         search.search()
             .then(() => setIsReady(true));
     }, [chunkable, search]);

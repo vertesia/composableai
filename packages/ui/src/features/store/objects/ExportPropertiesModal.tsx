@@ -40,7 +40,7 @@ function SelectPanel({ onClose }: SelectPanelProps) {
     const selectionOption: string[] = ["Export selected objects", "Export all objects"];
 
     const exportAllBoolean = (option: string | undefined) => {
-        return option == selectionOption[1];
+        return option === selectionOption[1];
     }
 
     const onSubmit = () => {
@@ -78,7 +78,7 @@ function SelectPanel({ onClose }: SelectPanelProps) {
 }
 
 interface WaitingPanelProps { }
-function WaitingPanel({ }: WaitingPanelProps) {
+function WaitingPanel(_props: WaitingPanelProps) {
     const { t } = useUITranslation();
     return (
         <ModalBody className="min-h-[84px] pt-0">

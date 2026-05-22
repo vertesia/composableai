@@ -242,7 +242,7 @@ export function restoreCursorOnExit() {
     if (!restoreCursorIsRegistered) {
         restoreCursorIsRegistered = true;
         onExit(() => {
-            streamsToRestore.forEach(stream => showCursor(stream));
+            streamsToRestore.forEach(stream => { showCursor(stream); });
         });
     }
 }

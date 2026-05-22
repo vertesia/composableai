@@ -23,11 +23,11 @@ export async function listProjects(program: Command) {
     }
     const activeProjectId = project.id;
     const projects = await client.projects.list();
-    projects.map(project => {
+    for (const project of projects) {
         const check = activeProjectId === project.id ? ` ${colors.symbols.check}` : "";
         const restricted = project.restricted ? ` ${colors.dim('(restricted)')}` : "";
         console.log(`${project.name} [${project.id}]${restricted}${check}`);
-    })
+    }
 }
 
 export async function useProject(program: Command, projectId?: string) {

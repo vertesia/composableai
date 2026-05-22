@@ -11,9 +11,9 @@ export async function listInteractions(program: Command, interactionId: string |
     const client = await getClient(program);
     if (!interactionId) {
         const interactions = await client.interactions.list();
-        interactions.map(interaction => {
+        for (const interaction of interactions) {
             console.log(`${textToPascalCase(interaction.name)} [${interaction.id}]`);
-        });
+        }
         return;
     }
     const interaction = await client.interactions.retrieve(interactionId);

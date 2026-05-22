@@ -222,7 +222,7 @@ function resolveProperty(obj: Record<string, unknown>, key: string) {
         let value = obj;
         for (const k of keys) {
             value = value[k];
-            if (value == undefined) {
+            if (value === undefined) {
                 return undefined;
             }
         }

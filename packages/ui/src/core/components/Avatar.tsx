@@ -39,7 +39,7 @@ export function Avatar({ size, src, name, shape = "circle", color = 'bg-gray-500
         let text = second ? `${first[0]}${second[0]}` : `${first[0]}${first[1]}`;
         return (
             <span className={`inline-flex ${sizeClass} items-center justify-center ${rounded} ${color} ${className}`} title={name}>
-                <span className={`${(size != 'xs') ? 'text-xs' : 'text-[0.6rem]'} font-medium leading-none text-white`}>{text}</span>
+                <span className={`${(size !== 'xs') ? 'text-xs' : 'text-[0.6rem]'} font-medium leading-none text-white`}>{text}</span>
             </span>
         )
     }

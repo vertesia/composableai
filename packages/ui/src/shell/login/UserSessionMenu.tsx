@@ -12,7 +12,7 @@ interface UserSessionMenuProps {
     picture?: string;
     user?: AuthTokenPayload;
 }
-export function UserSessionMenu({ }: UserSessionMenuProps) {
+export function UserSessionMenu(_props: UserSessionMenuProps) {
     const { user, isLoading } = useUserSession();
     const [showModal, setShowModal] = useState(false)
 

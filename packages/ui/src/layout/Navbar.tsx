@@ -38,7 +38,7 @@ export function Navbar({ children, logo, onSearch, title }: NavbarProps) {
 interface SearchBoxProps {
     onSearch?: (query: string) => void
 }
-function SearchBox({ }: SearchBoxProps) {
+function SearchBox(_props: SearchBoxProps) {
     const { t } = useUITranslation();
     return (
         <form className="relative flex flex-1" action="#" method="GET">

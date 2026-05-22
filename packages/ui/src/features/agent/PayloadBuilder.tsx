@@ -32,7 +32,7 @@ export class PayloadBuilderStore {
     getSnapshot = () => this.snapshot;
 
     notify() {
-        this._listeners.forEach(listener => listener());
+        this._listeners.forEach(listener => { listener(); });
     }
 }
 

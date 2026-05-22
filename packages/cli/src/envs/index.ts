@@ -11,9 +11,9 @@ export async function listEnvironments(program: Command, envId: string | undefin
         printEnv(env, options);
     } else {
         const environments = await client.environments.list();
-        environments.map(env => {
+        for (const env of environments) {
             console.log(`${env.name} [${env.id}]`);
-        });
+        }
     }
 }
 

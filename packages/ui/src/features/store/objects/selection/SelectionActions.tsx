@@ -56,7 +56,7 @@ export function SelectionActions({ type }: SelectionActionsProps) {
 interface ActionsWrapperProps {
     selection: DocumentSelection;
 }
-function ActionsWrapper({ }: ActionsWrapperProps) {
+function ActionsWrapper(_props: ActionsWrapperProps) {
     return <StartWorkflowButton />;
 }
 

@@ -290,6 +290,7 @@ function extractXmlPages(xml: string): string[] {
 
 function cleanXml(xml: string) {
     const cleanedXML = xml
+        // biome-ignore lint/suspicious/noControlCharactersInRegex: deliberately stripping XML-illegal control characters
         .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
         .replace(/<\?xml.*?\?>/g, "");
     return cleanedXML;

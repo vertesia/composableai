@@ -45,7 +45,7 @@ export function VInteractionFacet({ buckets, name, placeholder }: InteractionFac
             }
 
             const badgeText = (bucket?.version && bucket?.status) ?
-                `v${bucket.version} ${bucket.status != InteractionStatus.unknown ? bucket.status : ''}` :
+                `v${bucket.version} ${bucket.status !== InteractionStatus.unknown ? bucket.status : ''}` :
                 bucket?.status || (bucket?.version ? `v${bucket.version}` : '');
 
             return (

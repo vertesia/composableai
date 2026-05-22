@@ -251,6 +251,7 @@ function MockupRenderer({ content }: { content: unknown }): ReactElement {
     return (
         <div
             style={{ margin: '16px 0', width: '100%', overflowX: 'auto' }}
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG content is processed/sanitized upstream for inline rendering
             dangerouslySetInnerHTML={{ __html: processedSvg }}
         />
     );

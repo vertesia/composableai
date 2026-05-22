@@ -12,7 +12,7 @@ dayjs.extend(relativeTime);
 
 interface CollectionsTableProps {
 }
-export function CollectionsTable({ }: CollectionsTableProps) {
+export function CollectionsTable(_props: CollectionsTableProps) {
     const { client } = useUserSession();
     const toast = useToast();
     const { t } = useUITranslation();
