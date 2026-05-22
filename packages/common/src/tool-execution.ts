@@ -39,7 +39,7 @@ export interface ToolExecutionMetadata {
     /**
      * App-specific settings
      */
-    app_settings?: Record<string, any>;
+    app_settings?: Record<string, unknown>;
     /**
      * Endpoint overrides from workflow config (takes precedence over JWT endpoints)
      */
@@ -47,5 +47,5 @@ export interface ToolExecutionMetadata {
     /**
      * Additional metadata fields
      */
-    [key: string]: any;
+    [key: string]: unknown;
 }

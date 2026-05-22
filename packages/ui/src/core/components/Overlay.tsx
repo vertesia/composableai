@@ -57,9 +57,14 @@ export function Overlay({
 
     return (
         <div className={`flex items-center justify-center w-full ${className}`}>
-            <div onClick={handleOpen} className={`w-full align-left cursor-pointer ${triggerClassName}`}>
+            <Button
+                variant="unstyled"
+                size="none"
+                onClick={handleOpen}
+                className={`w-full align-left cursor-pointer ${triggerClassName}`}
+            >
                 {children}
-            </div>
+            </Button>
             {
                 isOpen && (
                     <div className={`z-45 fixed inset-0 bg-black bg-opacity-50 ${backdropClassName}`}>
@@ -70,7 +75,7 @@ export function Overlay({
                         >
                             {
                                 showCloseButton && (
-                                    <div className="absolute top-2 right-2 z-10">
+                                    <div className="absolute top-2 end-2 z-10">
                                         <Button onClick={handleClose} variant="primary">
                                             <X />
                                         </Button>
@@ -112,18 +117,28 @@ function getAnimationProps(position: string) {
 function getPositionClasses(position: string, width?: string, height?: string) {
     const baseClasses = "fixed bg-white shadow-lg p-4 relative"
 
+    // `position` is a PHYSICAL prop ('left' | 'right' | 'top' | 'bottom' |
+    // 'center'), and the framer-motion animation x/y values above use physical
+    // axes, so the matching CSS positioning is intentionally physical too.
+    // Callers that want logical (start/end) behavior should choose 'left' or
+    // 'right' based on the active direction (see AppLayout.tsx for the
+    // pattern).
     switch (position) {
         case 'left':
+            // rtl-ok: physical position prop -> physical CSS
             return `${baseClasses} left-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
         case 'right':
+            // rtl-ok: physical position prop -> physical CSS
             return `${baseClasses} right-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
         case 'top':
-            return `${baseClasses} top-[var(--header-height)] left-0 right-0 ${height || 'h-80'}`
+            return `${baseClasses} top-[var(--header-height)] start-0 end-0 ${height || 'h-80'}`
         case 'bottom':
-            return `${baseClasses} bottom-0 left-0 right-0 ${height || 'h-80'}`
+            return `${baseClasses} bottom-0 start-0 end-0 ${height || 'h-80'}`
         case 'center':
+            // rtl-ok: symmetric centering — paired with -translate-x-1/2 which works the same way in both directions
             return `${baseClasses} top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${width || 'w-96'} ${height || 'max-h-96'}`
         default:
+            // rtl-ok: physical default
             return `${baseClasses} right-0 top-[var(--header-height)] h-full ${width || 'w-80'}`
     }
 }

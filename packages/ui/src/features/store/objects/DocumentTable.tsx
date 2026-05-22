@@ -1,6 +1,6 @@
 import { ContentObjectItem } from "@vertesia/common";
 import { Spinner, useToast } from "@vertesia/ui/core";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { DropZone } from '@vertesia/ui/widgets';
 import clsx from "clsx";
 import { ChangeEvent, useMemo, useState } from "react";
@@ -47,6 +47,11 @@ interface ObjectTableWithDropZoneProps extends DocumentTableProps {
     collectionId?: string;
     skipTypeModal?: boolean;
 }
+
+type UploadPromiseWithProcessedFiles = Promise<unknown> & {
+    processedFiles?: FileWithMetadata[] | null;
+};
+
 function ObjectTableWithDropZone({
     isGridView,
     onUpload,
@@ -118,7 +123,7 @@ function ObjectTableWithDropZone({
 
                 // Attach the processed files to the promise for parent components to use
                 if (uploadPromise && typeof uploadPromise === "object") {
-                    (uploadPromise as any).processedFiles = processedFiles;
+                    (uploadPromise as UploadPromiseWithProcessedFiles).processedFiles = processedFiles;
                 }
             } else {
                 // Otherwise, open our type selection modal
@@ -173,6 +178,7 @@ function ObjectTableWithDropZone({
     };
 
     return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target for file upload; selection is exposed via the upload UI.
         <div
             className="min-h-[400px] relative"
             onDragOver={handleDragOver}
@@ -326,7 +332,7 @@ function DocumentTableImpl({
 
     const _onSelectionChange = (object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => {
         if (selection) {
-            const isShift = (ev.nativeEvent as any).shiftKey;
+            const isShift = ev.nativeEvent instanceof MouseEvent && ev.nativeEvent.shiftKey;
             const checked = ev.target.checked;
             if (!checked) {
                 selection.remove(object.id);
@@ -353,7 +359,7 @@ function DocumentTableImpl({
                     }
                 }
             }
-            onSelectionChange && onSelectionChange(selection);
+            onSelectionChange?.(selection);
         }
     };
 

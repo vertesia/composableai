@@ -1,7 +1,7 @@
 import { DocAnalyzerProgress, DocProcessorOutputFormat, MarkdownRenditionFormat, WorkflowExecutionStatus } from "@vertesia/common";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useEffect, useState } from "react";
-import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 
 // Maximum text size before cropping (128K characters)
 const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
@@ -66,7 +66,7 @@ export function useObjectText(objectId: string, initialText?: string, loadOnMoun
         if (loadOnMount && !initialText) {
             loadText();
         }
-    }, [objectId, initialText, loadOnMount, loadText]);
+    }, [initialText, loadOnMount, loadText]);
 
     return {
         fullText,
@@ -211,7 +211,7 @@ export function useOfficePdfConversion(objectId: string, enabled: boolean) {
         };
 
         await pollForPdf(true);
-    }, [objectId, enabled, isConverting, client]);
+    }, [objectId, enabled, isConverting, client, t]);
 
     return {
         pdfUrl,

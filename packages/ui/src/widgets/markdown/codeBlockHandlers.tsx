@@ -255,7 +255,7 @@ export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
 
         try {
             const raw = code.trim();
-            const spec = JSON.parse(raw);
+            const spec = JSON.parse(raw) as ProposalSpec;
 
             if (!spec.options || (!spec.question && !spec.title)) {
                 return null;
@@ -265,7 +265,7 @@ export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
                 question: spec.question || spec.title || '',
                 description: spec.description,
                 options: Array.isArray(spec.options)
-                    ? spec.options.map((opt: any) => ({
+                    ? spec.options.map((opt) => ({
                         id: opt.id || opt.value || '',
                         label: opt.label || '',
                         description: opt.description,
@@ -311,6 +311,23 @@ export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
             <AskUserWidget {...widgetProps} />
         </CodeBlockErrorBoundary>
     );
+}
+
+interface ProposalOption {
+    id?: string;
+    value?: string;
+    label?: string;
+    description?: string;
+}
+
+interface ProposalSpec {
+    question?: string;
+    title?: string;
+    description?: string;
+    options?: ProposalOption[];
+    allowFreeResponse?: boolean;
+    multiple?: boolean;
+    variant?: AskUserWidgetProps["variant"];
 }
 
 /**

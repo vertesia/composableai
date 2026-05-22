@@ -3,612 +3,515 @@
 > React component library for building Vertesia UI plugins and applications.
 > This file documents component APIs and usage patterns for AI assistants.
 
-## Installation
+## Reference URLs
 
-```bash
-npm install @vertesia/ui
-# or
-pnpm add @vertesia/ui
-```
+- Visual style guide: https://docs-ui-style-shadcn.vertesia.dev
+- Markdown component guide: https://docs-ui-style-shadcn.vertesia.dev/components.md
+- LLM reference: https://docs-ui-style-shadcn.vertesia.dev/llms.txt
 
-## Import Paths
+# @vertesia/ui Component Reference
+
+> Markdown rendition of the Vertesia UI style guide for LLMs and text-first clients.
+> Visual style guide: https://docs-ui-style-shadcn.vertesia.dev
+
+Use this file when generating React UI for Vertesia apps or plugins. Prefer `@vertesia/ui`
+components over local duplicates, and use semantic color classes instead of hardcoded colors.
+
+# Import Paths
 
 ```tsx
-// Core components (buttons, cards, inputs, modals, tabs)
-import { Button, Card, Input, VModal, VTabs } from '@vertesia/ui/core';
-
-// Hooks (data fetching, toasts)
-import { useFetch, useToast } from '@vertesia/ui/core';
-
-// Router (navigation, nested routing for plugins)
-import { useNavigate, useParams, NavLink, NestedRouterProvider } from '@vertesia/ui/router';
-
-// Session (authentication, Vertesia client access)
-import { useUserSession } from '@vertesia/ui/session';
-
-// Layout components (sidebar, full-height containers)
-import { Sidebar, SidebarSection, SidebarItem, useSidebarToggle, FullHeightLayout } from '@vertesia/ui/layout';
-
-// Feature components (headers, navigation, agent conversation)
+import { Button, Input, Modal, SelectBox, Tabs } from '@vertesia/ui/core';
+import { FullHeightLayout, SidebarItem } from '@vertesia/ui/layout';
 import { GenericPageNavHeader, ModernAgentConversation } from '@vertesia/ui/features';
-
-// Shell (app wrapper with auth, routing, sidebar)
-import { VertesiaShell, StandaloneApp } from '@vertesia/ui/shell';
+import { NavLink, useLocation, useNavigate } from '@vertesia/ui/router';
+import { useUserSession } from '@vertesia/ui/session';
 ```
 
----
+# Catalog
 
-# Component API Reference
+## Classes
 
-## Input (Simplified API)
+- [Semantic](https://docs-ui-style-shadcn.vertesia.dev/semantic)
+- [Background](https://docs-ui-style-shadcn.vertesia.dev/classes/background)
+- [Text](https://docs-ui-style-shadcn.vertesia.dev/classes/text)
+- [Border & Ring](https://docs-ui-style-shadcn.vertesia.dev/classes/border)
+- [Icons](https://docs-ui-style-shadcn.vertesia.dev/classes/icons)
 
-**IMPORTANT:** Input passes the value directly to onChange, NOT an event object.
+## Components
 
-```tsx
-interface InputProps {
-  value?: string;
-  onChange?: (value: string) => void;  // Value directly, not event!
-  placeholder?: string;
-  disabled?: boolean;
-  clearable?: boolean;  // Shows X button to clear (default: true)
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  variant?: 'default' | 'unstyled' | 'noPadding' | 'legacy';
-}
+- [Heading](https://docs-ui-style-shadcn.vertesia.dev/components/heading)
+- [Buttons](https://docs-ui-style-shadcn.vertesia.dev/components/buttons)
+- [Badges](https://docs-ui-style-shadcn.vertesia.dev/components/badges)
+- [Dot Badges](https://docs-ui-style-shadcn.vertesia.dev/components/dotBadges)
+- [Message Box](https://docs-ui-style-shadcn.vertesia.dev/components/messageBox)
+- [Modal](https://docs-ui-style-shadcn.vertesia.dev/components/modal)
+- [Confirm Modal](https://docs-ui-style-shadcn.vertesia.dev/components/confirmModal)
+- [Delete Modal](https://docs-ui-style-shadcn.vertesia.dev/components/deleteModal)
+- [Filter](https://docs-ui-style-shadcn.vertesia.dev/components/filter)
+- [Tabs](https://docs-ui-style-shadcn.vertesia.dev/components/tabs)
+- [Tooltips](https://docs-ui-style-shadcn.vertesia.dev/components/tooltips)
+- [Switch](https://docs-ui-style-shadcn.vertesia.dev/components/switch)
+- [Side Panel](https://docs-ui-style-shadcn.vertesia.dev/components/sidePanel)
+- [SelectBox](https://docs-ui-style-shadcn.vertesia.dev/components/selectBox)
+- [Overlay](https://docs-ui-style-shadcn.vertesia.dev/components/overlay)
+- [Breadcrumbs](https://docs-ui-style-shadcn.vertesia.dev/components/breadcrumb)
+- [Monaco](https://docs-ui-style-shadcn.vertesia.dev/components/monaco)
+- [Card](https://docs-ui-style-shadcn.vertesia.dev/components/card)
+- [Checkbox](https://docs-ui-style-shadcn.vertesia.dev/components/checkbox)
+- [Collapsible](https://docs-ui-style-shadcn.vertesia.dev/components/collapsible)
+- [Command](https://docs-ui-style-shadcn.vertesia.dev/components/command)
+- [Dropdown](https://docs-ui-style-shadcn.vertesia.dev/components/dropdown)
+- [Label](https://docs-ui-style-shadcn.vertesia.dev/components/label)
+- [Panel](https://docs-ui-style-shadcn.vertesia.dev/components/panel)
+- [Popover](https://docs-ui-style-shadcn.vertesia.dev/components/popover)
+- [Radio Group](https://docs-ui-style-shadcn.vertesia.dev/components/radioGroup)
+- [Resizeable](https://docs-ui-style-shadcn.vertesia.dev/components/resizeable)
+- [Separator](https://docs-ui-style-shadcn.vertesia.dev/components/separator)
+- [Text](https://docs-ui-style-shadcn.vertesia.dev/components/text)
+- [Theme](https://docs-ui-style-shadcn.vertesia.dev/components/theme)
 
-// Usage - pass setState directly
-<Input value={name} onChange={setName} />
+## Layout & Structure
 
-// Or with transformation
-<Input value={name} onChange={(value) => setName(value.trim())} />
+- [Avatar](https://docs-ui-style-shadcn.vertesia.dev/components/avatar)
+- [Center](https://docs-ui-style-shadcn.vertesia.dev/components/center)
+- [Divider](https://docs-ui-style-shadcn.vertesia.dev/components/divider)
+- [Link](https://docs-ui-style-shadcn.vertesia.dev/components/link)
+- [Portal](https://docs-ui-style-shadcn.vertesia.dev/components/portal)
+- [Spinner](https://docs-ui-style-shadcn.vertesia.dev/components/spinner)
 
-// WRONG - this will NOT work:
-<Input onChange={(e) => setName(e.target.value)} />  // ❌ Error!
-```
+## Forms
 
-## Textarea (Standard React API)
+- [FormItem](https://docs-ui-style-shadcn.vertesia.dev/components/formItem)
+- [Inputs](https://docs-ui-style-shadcn.vertesia.dev/components/inputs)
+- [Textarea](https://docs-ui-style-shadcn.vertesia.dev/components/textarea)
+- [ComboBox](https://docs-ui-style-shadcn.vertesia.dev/components/comboBox)
+- [InputList](https://docs-ui-style-shadcn.vertesia.dev/components/inputList)
+- [MenuList](https://docs-ui-style-shadcn.vertesia.dev/components/menuList)
+- [NumberInput](https://docs-ui-style-shadcn.vertesia.dev/components/numberInput)
+- [SelectList](https://docs-ui-style-shadcn.vertesia.dev/components/selectList)
+- [TagsInput](https://docs-ui-style-shadcn.vertesia.dev/components/tagsInput)
 
-Textarea uses standard React event handling.
-
-```tsx
-// Standard React event object
-<Textarea
-  value={description}
-  onChange={(e) => setDescription(e.target.value)}
-/>
-```
+# Component Guidance
 
 ## Button
 
-```tsx
-interface ButtonProps {
-  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
-  size?: 'default' | 'sm' | 'lg' | 'icon';
-  disabled?: boolean;
-  onClick?: () => void;
-  children: React.ReactNode;
-}
+Primary action primitive with Vertesia variants, loading state, disabled state, and tooltip support.
 
-<Button onClick={handleClick}>Click Me</Button>
-<Button variant="outline" size="sm">Secondary</Button>
-<Button variant="destructive">Delete</Button>
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/buttons
+- Import path: `@vertesia/ui/core`
+- Exports: `Button`, `CopyButton`, `buttonVariants`
+
+### Use When
+
+- Use for commands, submissions, toolbar actions, and navigational actions that behave like buttons.
+- Use `variant="destructive"` only for dangerous or irreversible actions.
+- Use icon-size buttons with lucide icons for compact toolbars.
+
+### Notes
+
+- `alt` or `title` wraps the button in `VTooltip`.
+- `isDisabled` and `isLoading` both disable interaction; `isLoading` also renders a spinner.
+
+### Button Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| variant | 'primary' \| 'secondary' \| 'outline' \| 'ghost' \| 'destructive' \| 'unstyled' | 'primary' | Visual treatment. |
+| size | 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| 'icon' | 'md' | Control dimensions and text size. |
+| asChild | boolean | false | Render the child via Radix Slot. |
+| alt | string | - | Tooltip text. |
+| isDisabled | boolean | false | Disable interaction. |
+| isLoading | boolean | false | Show spinner and disable interaction. |
+| className | string | - | Additional Tailwind classes. |
+| children | React.ReactNode | - | Rendered child content. |
+
+### CopyButton Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| content * | string | - | Text copied to the clipboard. |
+| alt | string | - | Tooltip text; defaults to localized copy text. |
+| size | 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| 'icon' | - | Button size. |
+
+### Example
+
+```tsx
+import { Button } from '@vertesia/ui/core';
+
+<Button variant="primary" isLoading={saving} onClick={save}>
+  Save
+</Button>
 ```
 
-## Card Components
+## Input
+
+Single-line text input with a simplified value-based `onChange` callback.
+
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/inputs
+- Import path: `@vertesia/ui/core`
+- Exports: `Input`
+
+### Use When
+
+- Use for compact string fields in forms, filters, and search inputs.
+- Pass state setters directly because `onChange` receives the next value, not a DOM event.
+
+### Notes
+
+- Textarea intentionally uses standard React change events; do not copy Input handling to Textarea.
+
+### Input Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| value | string | - | Current input value. |
+| onChange | (value: string) => void | - | Called with the next value. |
+| placeholder | string | - | Placeholder text. |
+| disabled | boolean | - | Disable editing. |
+| clearable | boolean | - | Show a clear button when populated. |
+| size | 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' | 'md' | Input size. |
+| variant | 'default' \| 'unstyled' \| 'noPadding' \| 'legacy' | 'default' | Visual treatment. |
+
+### Example
 
 ```tsx
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@vertesia/ui/core';
+const [name, setName] = useState('');
 
-<Card>
-  <CardHeader>
-    <CardTitle>Title</CardTitle>
-    <CardDescription>Optional description</CardDescription>
-  </CardHeader>
-  <CardContent>
-    Main content here
-  </CardContent>
-  <CardFooter>
-    <Button>Action</Button>
-  </CardFooter>
-</Card>
+<Input value={name} onChange={setName} placeholder="Name" />
 ```
 
-## VModal (Modal Dialog)
+## Textarea
+
+Multi-line text control using standard React textarea event handling.
+
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/textarea
+- Import path: `@vertesia/ui/core`
+- Exports: `Textarea`
+
+### Use When
+
+- Use for descriptions, prompts, comments, and other multi-line text.
+
+### Notes
+
+- Unlike `Input`, `Textarea` passes a React change event to `onChange`.
+
+### Textarea Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| value | string | - | Current value. |
+| onChange | (event: React.ChangeEvent<HTMLTextAreaElement>) => void | - | Standard React textarea change handler. |
+| placeholder | string | - | Placeholder text. |
+| disabled | boolean | - | Disable editing. |
+
+### Example
 
 ```tsx
-import { VModal, VModalTitle, VModalBody, VModalFooter } from '@vertesia/ui/core';
-
-interface VModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
-}
-
-<VModal isOpen={open} onClose={() => setOpen(false)} size="md">
-  <VModalTitle description="Optional subtitle">
-    Modal Title
-  </VModalTitle>
-  <VModalBody>
-    <div className="space-y-4">
-      <Input value={name} onChange={setName} />
-    </div>
-  </VModalBody>
-  <VModalFooter>
-    <Button onClick={handleSubmit}>Submit</Button>
-    <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-  </VModalFooter>
-</VModal>
+<Textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
 ```
 
-**Note:** VModalFooter uses `flex-row-reverse`, so primary button should be first in code but appears on the right.
+## FormItem
 
-## VTabs (Tabbed Interface)
+Field wrapper for labels, required indicators, and help tooltips.
+
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/formItem
+- Import path: `@vertesia/ui/core`
+- Exports: `FormItem`
+
+### Use When
+
+- Use around most labeled fields in create/edit forms.
+- Use `description` instead of loose helper paragraphs when a tooltip is enough.
+
+### FormItem Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| label * | React.ReactNode | - | Field label. |
+| required | boolean | - | Render required marker. |
+| description | React.ReactNode | - | Help tooltip content. |
+| direction | 'column' \| 'row' | 'column' | Label/control layout. |
+| disabled | boolean | - | Dim the label. |
+| className | string | - | Additional Tailwind classes. |
+| children | React.ReactNode | - | Rendered child content. |
+
+### Example
 
 ```tsx
-import { VTabs, VTabsBar, VTabsPanel } from '@vertesia/ui/core';
-
-<VTabs
-  defaultValue="tab1"
-  tabs={[
-    { name: 'tab1', label: 'First Tab', content: <Tab1Content /> },
-    { name: 'tab2', label: 'Second Tab', content: <Tab2Content /> },
-    { name: 'tab3', label: 'Third Tab', content: <Tab3Content /> },
-  ]}
->
-  <VTabsBar />
-  <VTabsPanel />
-</VTabs>
-
-// With controlled value
-const [tab, setTab] = useState('tab1');
-<VTabs value={tab} onValueChange={setTab} tabs={[...]}>
+<FormItem label="Name" required description="Visible to users">
+  <Input value={name} onChange={setName} />
+</FormItem>
 ```
 
-## Label
+## Modal
+
+Accessible overlay dialog for focused tasks and forms.
+
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/modal
+- Import path: `@vertesia/ui/core`
+- Exports: `Modal`, `ModalTitle`, `ModalBody`, `ModalFooter`
+
+### Use When
+
+- Use for short create/edit flows, confirmations with custom content, and focused secondary tasks.
+- Use `disableCloseOnClickOutside` for forms with unsaved user input.
+
+### Modal Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| isOpen * | boolean | - | Whether the modal is visible. |
+| onClose * | () => void | - | Called when the user dismisses the modal. |
+| size | 'sm' \| 'md' \| 'lg' \| 'xl' | 'md' | Modal width. |
+| disableCloseOnClickOutside | boolean | - | Prevent accidental close from overlay click. |
+| noCloseButton | boolean | - | Hide the close button. |
+| allowOverflow | boolean | - | Allow content to overflow modal bounds. |
+
+### ModalFooter Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| align | 'left' \| 'center' \| 'right' | 'right' | Footer action alignment. |
+| className | string | - | Additional Tailwind classes. |
+| children | React.ReactNode | - | Rendered child content. |
+
+### Example
 
 ```tsx
-<Label htmlFor="input-id">Field Label</Label>
-<Input id="input-id" value={value} onChange={setValue} />
+<Modal isOpen={open} onClose={onClose} size="lg" disableCloseOnClickOutside>
+  <ModalTitle>Edit item</ModalTitle>
+  <ModalBody>...</ModalBody>
+  <ModalFooter>
+    <Button variant="outline" onClick={onClose}>Cancel</Button>
+    <Button onClick={save}>Save</Button>
+  </ModalFooter>
+</Modal>
 ```
 
-## Badge
+## ConfirmModal
+
+Confirmation dialog for actions that need explicit user consent.
+
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/confirmModal
+- Import path: `@vertesia/ui/core`
+- Exports: `ConfirmModal`
+
+### Use When
+
+- Use for consequential actions when a simple confirmation is enough.
+
+### ConfirmModal Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| isOpen * | boolean | - | Whether the dialog is visible. |
+| title * | React.ReactNode | - | Dialog title. |
+| content * | React.ReactNode | - | Dialog body. |
+| onConfirm * | () => void \| Promise<void> | - | Confirm handler. |
+| onCancel * | () => void | - | Cancel handler. |
+| isLoading | boolean | - | Show loading state while confirming. |
+
+## DeleteModal
+
+Delete-specific confirmation wrapper with async delete handling and toast feedback.
+
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/deleteModal
+- Import path: `@vertesia/ui/core`
+- Exports: `DeleteModal`
+
+### Use When
+
+- Use for deletion flows where the target is represented by an id.
+
+### Notes
+
+- Requires a `ToastProvider` ancestor.
+
+### DeleteModal Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| idToDelete * | string \| undefined | - | Open when populated. |
+| setIdToDelete * | (id: string \| undefined) => void | - | Closes/reset target. |
+| deleteApi * | (id: string) => Promise<void> | - | Async delete function. |
+| title * | React.ReactNode | - | Dialog title. |
+| content * | React.ReactNode | - | Dialog body. |
+
+## SelectBox
+
+Dropdown select for string or object options, with optional search, clear, and multi-select modes.
+
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/selectBox
+- Import path: `@vertesia/ui/core`
+- Exports: `SelectBox`
+
+### Use When
+
+- Use for choosing one or more values from a bounded list.
+- Use `filterBy` for large lists and `by` for stable object equality.
+
+### SelectBox Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| options * | T[] | - | Selectable options. |
+| value * | T \| T[] \| undefined | - | Selected value or values. |
+| onChange * | (value: T \| T[]) => void | - | Selection change handler. |
+| multiple | boolean | false | Enable multi-select. |
+| optionLabel | (option: T) => React.ReactNode | - | Custom option renderer. |
+| filterBy | keyof T \| ((option: T) => string) | - | Enable searchable filtering. |
+| by | keyof T \| ((a: T, b: T) => boolean) | - | Equality key or comparator. |
+| isClearable | boolean | false | Show clear action. |
+| placeholder | string | - | Placeholder when empty. |
+| disabled | boolean | - | Disable interaction. |
+
+### Example
 
 ```tsx
-import { Badge } from '@vertesia/ui/core';
-
-<Badge variant="default">Default</Badge>
-<Badge variant="secondary">Secondary</Badge>
-<Badge variant="destructive">Error</Badge>
-<Badge variant="outline">Outline</Badge>
-```
-
-## Spinner & ErrorBox
-
-```tsx
-import { Spinner, ErrorBox } from '@vertesia/ui/core';
-
-// Loading state
-if (isLoading) return <Spinner />;
-
-// Error state
-if (error) return <ErrorBox>{error.message}</ErrorBox>;
-```
-
-## Table
-
-```tsx
-import { Table, TBody, THead, Th, Tr, Td } from '@vertesia/ui/core';
-
-<Table>
-  <THead>
-    <Tr>
-      <Th>Name</Th>
-      <Th>Value</Th>
-    </Tr>
-  </THead>
-  <TBody>
-    {items.map(item => (
-      <Tr key={item.id}>
-        <Td>{item.name}</Td>
-        <Td>{item.value}</Td>
-      </Tr>
-    ))}
-  </TBody>
-</Table>
-```
-
----
-
-# Hooks
-
-## useFetch
-
-Data fetching hook with loading, error, and refetch support.
-
-```tsx
-import { useFetch } from '@vertesia/ui/core';
-
-const { data, isLoading, error, refetch } = useFetch(
-  async () => {
-    return await client.store.collections.list();
-  },
-  [dependency1, dependency2]  // Refetch when dependencies change
-);
-
-// With options
-const { data } = useFetch(
-  fetchFn,
-  [deps],
-  {
-    onSuccess: (data) => console.log('Loaded', data),
-    onError: (err) => console.error('Failed', err),
-  }
-);
-```
-
-## useToast
-
-Show toast notifications.
-
-```tsx
-import { useToast } from '@vertesia/ui/core';
-
-const toast = useToast();
-
-// Success toast
-toast({ title: 'Success', description: 'Item created' });
-
-// Error toast
-toast({ title: 'Error', description: error.message, variant: 'destructive' });
-```
-
-## useUserSession
-
-Access authenticated user and Vertesia client.
-
-```tsx
-import { useUserSession } from '@vertesia/ui/session';
-
-const { client, user, project } = useUserSession();
-
-// client is the Vertesia API client
-const collections = await client.store.collections.list();
-```
-
----
-
-# Router
-
-## NestedRouterProvider
-
-For plugin routing (nested within host app router).
-
-```tsx
-import { NestedRouterProvider } from '@vertesia/ui/router';
-
-const routes = [
-  { path: '/', Component: HomePage },
-  { path: '/items/:id', Component: ItemPage },
-  { path: '*', Component: NotFound },
-];
-
-<NestedRouterProvider routes={routes} index="/" />
-```
-
-## Navigation Hooks
-
-```tsx
-import { useNavigate, useParams, useSearchParams } from '@vertesia/ui/router';
-
-// Navigate programmatically
-const navigate = useNavigate();
-navigate('/items/123');
-navigate(-1);  // Go back
-
-// Get route params
-const { id } = useParams();  // From /items/:id
-
-// Get/set query params
-const [searchParams, setSearchParams] = useSearchParams();
-const query = searchParams.get('q');
-```
-
-## NavLink
-
-Navigation link component.
-
-```tsx
-import { NavLink } from '@vertesia/ui/router';
-
-<NavLink href="/items">Go to Items</NavLink>
-<NavLink href={`/items/${item.id}`}>View Item</NavLink>
-```
-
----
-
-# Layout & Features
-
-## GenericPageNavHeader
-
-Standard page header with breadcrumbs and actions.
-
-```tsx
-import { GenericPageNavHeader } from '@vertesia/ui/features';
-import { NavLink } from '@vertesia/ui/router';
-
-<GenericPageNavHeader
-  title="Page Title"
-  description="Optional page description"
-  breadcrumbs={[
-    <NavLink href="/" key="home">Home</NavLink>,
-    <NavLink href="/items" key="items">Items</NavLink>,
-    <span key="current">Current Page</span>,
-  ]}
-  actions={
-    <Button onClick={() => setShowCreate(true)}>
-      <Plus className="w-4 h-4 mr-2" />
-      Create New
-    </Button>
-  }
+<SelectBox<Person>
+  options={people}
+  value={person}
+  onChange={setPerson}
+  optionLabel={(option) => option.name}
+  filterBy="name"
+  by="id"
 />
 ```
 
-## FullHeightLayout
+## Tabs
 
-Full height container layout.
+Tab container driven by an array of tab objects and companion bar/panel components.
 
-```tsx
-import { FullHeightLayout } from '@vertesia/ui/layout';
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/tabs
+- Import path: `@vertesia/ui/core`
+- Exports: `Tabs`, `TabsBar`, `TabsPanel`, `VTabs`, `VTabsBar`, `VTabsPanel`
 
-<FullHeightLayout>
-  <div>Content fills available height</div>
-</FullHeightLayout>
-```
+### Use When
 
-## Sidebar Components
+- Use to switch between sibling views on the same page.
+- Prefer the current `Tabs` API shown in the style guide for new docs-ui code.
 
-Collapsible sidebar with sections and navigation items.
+### Tabs Props
 
-```tsx
-import { Sidebar, SidebarSection, SidebarItem, useSidebarToggle } from '@vertesia/ui/layout';
-```
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| tabs * | Tab[] | - | Tabs with name, label, and content. |
+| defaultValue | string | - | Initially selected tab. |
+| value | string | - | Controlled selected tab. |
+| onTabChange | (tabName: string) => void | - | Called when selection changes. |
+| variant | 'tabs' \| 'pills' | 'tabs' | Visual treatment. |
+| fullWidth | boolean | - | Stretch tabs across available width. |
+| responsive | boolean | - | Adapt tab layout at smaller widths. |
 
-### SidebarSection
+## Badge and DotBadge
 
-Groups sidebar items with an optional title header.
+Compact status and category labels.
 
-```tsx
-interface SidebarSectionProps {
-  title?: React.ReactNode;     // Section header (hidden when sidebar collapsed)
-  action?: React.ReactNode;    // Action element next to title
-  isFooter?: boolean;          // Pushes section to bottom (mt-auto)
-  className?: string;
-}
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/badges
+- Import path: `@vertesia/ui/core`
+- Exports: `Badge`, `DotBadge`
 
-<SidebarSection title="Navigation">
-  <SidebarItem ...>Home</SidebarItem>
-  <SidebarItem ...>Settings</SidebarItem>
-</SidebarSection>
+### Use When
 
-// Footer section (theme toggle, user menu, etc.)
-<SidebarSection isFooter>
-  <ModeToggle label={isOpen ? 'Theme' : false} />
-</SidebarSection>
-```
+- Use `Badge` for short textual labels.
+- Use `DotBadge` for status chips where the colored dot carries state.
 
-### SidebarItem
+### Notes
 
-Navigation link within a sidebar section.
+- Use semantic variants for status meaning instead of custom colors.
 
-```tsx
-interface SidebarItemProps {
-  href: string;
-  icon?: React.ComponentType;   // Lucide icon or similar
-  current?: boolean;            // Active/selected state
-  id?: string;
-  external?: boolean;           // Opens in new tab
-  replace?: boolean;            // Replace history entry
-  tools?: React.ReactNode;      // Right-side actions
-  className?: string;
-}
+## MessageBox
 
-<SidebarItem
-  href="/app/settings"
-  icon={SettingsIcon}
-  current={path === '/app/settings'}
->
-  Settings
-</SidebarItem>
+Semantic feedback box for success, attention, destructive, done, info, and muted messages.
 
-// For long text, wrap children to truncate
-<SidebarItem href={href} icon={MessageSquare} className="overflow-hidden">
-  <span className="truncate">{longLabel}</span>
-</SidebarItem>
-```
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/messageBox
+- Import path: `@vertesia/ui/core`
+- Exports: `MessageBox`
 
-### useSidebarToggle
+### Use When
 
-Access sidebar open/collapsed state.
+- Use for inline feedback, warnings, errors, and informational notices.
 
-```tsx
-const { isOpen, toggleMobile } = useSidebarToggle();
-// isOpen: boolean — true when sidebar is expanded
-// toggleMobile(open?: boolean) — toggle mobile sidebar
-```
+## Checkbox, Switch, and RadioGroup
 
-## ModeToggle (Dark/Light Theme)
+Choice controls for boolean values and mutually exclusive option sets.
 
-```tsx
-import { ModeToggle } from '@vertesia/ui/core';
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/checkbox
+- Import path: `@vertesia/ui/core`
+- Exports: `Checkbox`, `Switch`, `RadioGroup`, `RadioGroupItem`, `RadioGroupOption`
 
-<ModeToggle />                           // Icon only
-<ModeToggle label="Theme" />             // With label text
-<ModeToggle label={isOpen ? 'Theme' : false} />  // Label when sidebar open
-```
+### Use When
 
-## ModernAgentConversation
+- Use `Checkbox` for independent boolean fields.
+- Use `Switch` for settings that take effect immediately.
+- Use `RadioGroup` for one-of-many choices when all options should be visible.
 
-Full-featured agent chat interface with streaming messages, plan visualization, and workstream management.
+## Dropdown, Popover, Command, Tooltip
 
-```tsx
-import { ModernAgentConversation } from '@vertesia/ui/features';
+Overlay primitives for action menus, floating content, command palettes, and contextual help.
 
-interface ModernAgentConversationProps {
-  run?: { runId: string; workflowId: string };  // Active conversation (undefined = start view)
-  startWorkflow: (initialMessage?: string) => Promise<{ run_id: string; workflow_id: string } | undefined>;
-  resetWorkflow?: () => void;          // Called when user clicks "New conversation"
-  title?: string;                       // Header title (default: "Agent")
-  placeholder?: string;                 // Input placeholder text
-  startButtonText?: string;             // Start button label
-  hideObjectLinking?: boolean;          // Hide document linking UI
-  interactive?: boolean;                // Enable user input during conversation
-  fullWidth?: boolean;                  // Disable max-width constraint
-}
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/dropdown
+- Import path: `@vertesia/ui/core`
+- Exports: `Dropdown`, `MenuGroup`, `MenuItem`, `Popover`, `Command`, `VTooltip`, `Tooltip`
 
-// Basic usage
-<ModernAgentConversation
-  run={run ? { runId: run.run_id, workflowId: run.workflow_id } : undefined}
-  startWorkflow={startWorkflow}
-  resetWorkflow={handleReset}
-  title="My Assistant"
-  placeholder="Ask me anything..."
-  startButtonText="Start Conversation"
-  hideObjectLinking
-  interactive
-/>
-```
+### Use When
 
-**Two states:**
-- No `run` prop → shows start view with title, description area, and input to begin a conversation
-- With `run` prop → streams messages and shows the active conversation with real-time updates
+- Use `Dropdown` for action menus.
+- Use `Popover` for small interactive floating panels.
+- Use `Command` for searchable command or selection lists.
+- Use `VTooltip` or `Tooltip` for short hover/focus help.
 
----
+## Card and Panel
 
-# Styling
+Content containers for repeated items and framed tool surfaces.
 
-Use Tailwind CSS with semantic color classes:
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/card
+- Import path: `@vertesia/ui/core`
+- Exports: `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`, `Panel`
 
-```tsx
-// Status colors
-<span className="text-success">Success</span>
-<span className="text-attention">Warning</span>
-<span className="text-destructive">Error</span>
-<span className="text-muted-foreground">Muted</span>
+### Use When
 
-// Backgrounds with opacity
-<div className="bg-success/10 text-success">Success message</div>
-<div className="bg-destructive/10 text-destructive">Error message</div>
+- Use cards for repeated items, modal content groups, and genuinely framed tools.
+- Avoid putting cards inside cards or styling whole page sections as floating cards.
 
-// Common layout patterns
-<div className="p-4 space-y-4">         {/* Padding + vertical spacing */}
-<div className="flex items-center gap-2"> {/* Horizontal flex */}
-<div className="grid grid-cols-3 gap-4">  {/* Grid layout */}
-```
+## Layout Primitives
 
----
+Small primitives for display, separation, links, loading states, portals, and overlays.
 
-# Common Patterns
+- Route: https://docs-ui-style-shadcn.vertesia.dev/components/center
+- Import path: `@vertesia/ui/core`
+- Exports: `Avatar`, `SvgAvatar`, `Center`, `Divider`, `Link`, `Portal`, `Spinner`, `Separator`, `Overlay`
 
-## Form with Input and Textarea
+### Use When
 
-```tsx
-function MyForm() {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+- Use `Spinner` for loading states and `Center` to center short empty/loading content.
+- Use `Separator` for semantic separators and `Divider` for a simple visual rule.
+- Use `Avatar` for users or entities with image, initials, or fallback display.
 
-  return (
-    <form className="space-y-4">
-      <div>
-        <Label htmlFor="name">Name</Label>
-        <Input id="name" value={name} onChange={setName} />
-      </div>
-      <div>
-        <Label htmlFor="desc">Description</Label>
-        <Textarea
-          id="desc"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </div>
-      <Button type="submit">Submit</Button>
-    </form>
-  );
-}
-```
+## Semantic Colors and Icons
 
-## Data List with Loading/Error States
+Semantic Tailwind classes and approved lucide-react icon guidance for Vertesia apps.
 
-```tsx
-function ItemList() {
-  const { client } = useUserSession();
-  const { data, isLoading, error, refetch } = useFetch(
-    () => client.store.collections.list(),
-    []
-  );
+- Route: https://docs-ui-style-shadcn.vertesia.dev/semantic
+- Import path: `@vertesia/ui/core`
+- Exports: `ModeToggle`
 
-  if (isLoading) return <Spinner />;
-  if (error) return <ErrorBox>{error.message}</ErrorBox>;
+### Use When
 
-  return (
-    <div className="space-y-2">
-      {data?.map(item => (
-        <Card key={item.id}>
-          <CardHeader>
-            <CardTitle>{item.name}</CardTitle>
-          </CardHeader>
-        </Card>
-      ))}
-    </div>
-  );
-}
-```
+- Use semantic colors: success, attention, destructive, done, info, muted.
+- Use lucide-react icons in buttons and toolbars when an icon exists.
+- Use `ModeToggle` for light/dark theme control.
 
-## Modal with Form
+### Notes
 
-```tsx
-function CreateModal({ open, onClose, onCreated }) {
-  const [name, setName] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { client } = useUserSession();
-  const toast = useToast();
+- Examples: `text-success`, `bg-attention`, `border-destructive`, `bg-mixer-muted/30`.
+- Avoid hardcoded color values in application UI.
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      await client.store.collections.create({ name });
-      toast({ title: 'Created successfully' });
-      onCreated();
-      onClose();
-    } catch (err) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+# Key Rules
 
-  return (
-    <VModal isOpen={open} onClose={onClose} size="md">
-      <VModalTitle>Create Item</VModalTitle>
-      <VModalBody>
-        <Label>Name</Label>
-        <Input value={name} onChange={setName} disabled={isSubmitting} />
-      </VModalBody>
-      <VModalFooter>
-        <Button onClick={handleSubmit} disabled={!name || isSubmitting}>
-          {isSubmitting ? 'Creating...' : 'Create'}
-        </Button>
-        <Button variant="outline" onClick={onClose}>Cancel</Button>
-      </VModalFooter>
-    </VModal>
-  );
-}
-```
-
----
-
-# Key Differences from Standard React
-
-1. **Input onChange** passes value directly: `onChange={setValue}` not `onChange={(e) => setValue(e.target.value)}`
-2. **Textarea onChange** uses standard React events
-3. **VModalFooter** uses flex-row-reverse (primary button first in code, appears right)
-4. **NestedRouterProvider** for plugin routing (instead of BrowserRouter)
-5. **useUserSession** provides pre-authenticated Vertesia client
+- `Input` passes a string value to `onChange`; `Textarea` passes a React change event.
+- Use `FormItem` for labeled form fields in create/edit forms.
+- Use semantic colors: `success`, `attention`, `destructive`, `done`, `info`, and `muted`.
+- Use lucide-react icons in icon buttons and compact toolbars.
+- Avoid nested cards and avoid styling whole page sections as cards.

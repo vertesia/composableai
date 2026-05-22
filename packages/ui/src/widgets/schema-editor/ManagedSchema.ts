@@ -120,7 +120,7 @@ export class SchemaNode {
     }
 
     get title() {
-        return this.schema.title;
+        return typeof this.schema.title === 'string' ? this.schema.title : undefined;
     }
 
     set title(value: string | undefined) {
@@ -204,7 +204,7 @@ export class SchemaNode {
 
     findAvailableChildName(prefix: string) {
         const properties = this._getPropertiesSchema().properties || {};
-        let name;
+        let name: string;
         do {
             name = prefix + (++new_prop_name_cnt);
         } while (properties[name]);

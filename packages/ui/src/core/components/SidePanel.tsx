@@ -43,10 +43,19 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
         document.addEventListener('mouseup', handleMouseUp);
     };
 
+    // The `side` prop is PHYSICAL ('left' | 'right') — the panel anchors to
+    // that physical edge regardless of dir. Callers that want a logical
+    // start-anchored panel in RTL should pass `side='right'` explicitly (see
+    // AppLayout.tsx). Using physical classes here keeps the contract honest;
+    // the codemod (and inventory in strict mode) is exempted via rtl-ok.
     const isLeft = side === 'left';
+    // rtl-ok: physical-side prop maps 1:1 to physical CSS
     const positionClass = isLeft ? 'left-0' : 'right-0';
+    // rtl-ok: padding/border/drag-handle mirror the physical side of the panel
     const paddingClass = isLeft ? 'pr-10 sm:pr-16' : 'pl-10 sm:pl-16';
+    // rtl-ok: see above
     const borderClass = isLeft ? 'border-r' : 'border-l';
+    // rtl-ok: see above
     const dragHandleClass = isLeft ? '-right-1' : '-left-1';
     const initialX = isLeft ? "-100%" : "100%";
 
@@ -79,7 +88,9 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
                                     <div className="relative flex h-full">
                                         {/* Drag Handle */}
                                         {resizable && (
+                                            // biome-ignore lint/a11y/noStaticElementInteractions: drag handle is pointer-only (no keyboard equivalent for continuous resize); ARIA role omitted to avoid useAriaPropsForRole false positive.
                                             <div
+                                                aria-label="Resize panel"
                                                 className={`absolute ${dragHandleClass} top-0 bottom-0 w-3 cursor-ew-resize hover:bg-indigo-500 transition-colors flex items-center justify-center`}
                                                 onMouseDown={handleDragStart}
                                             >
@@ -94,7 +105,7 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
                                                         <h2 className="w-full text-base font-semibold leading-6">
                                                             <div className="text-2xl">{title ?? ""}</div>
                                                         </h2>
-                                                        <div className="ml-3 flex h-7 items-center">
+                                                        <div className="ms-3 flex h-7 items-center">
                                                             <CloseButton onClose={onClose} />
                                                         </div>
                                                     </div>

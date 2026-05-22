@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
-import { Button, useToast } from '@vertesia/ui/core';
+import { Button, errorMessage, useToast } from '@vertesia/ui/core';
 
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { ManagedSchema, SchemaNode } from '../ManagedSchema.js';
 import { TypeNames } from '../type-signature.js';
 import { Editable } from './Editable.js';
@@ -68,12 +68,20 @@ function ParentItem({ property, readonly }: ParentItemProps) {
     return (
         <li>
             <div className='flex items-center w-full'>
-                <button onClick={() => setOpen(!isOpen)}><Icon className="size-4" /></button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setOpen(!isOpen)}
+                    aria-label={isOpen ? `Collapse ${property.name}` : `Expand ${property.name}`}
+                    aria-expanded={isOpen}
+                >
+                    <Icon className="size-4 cn-rtl-flip" />
+                </Button>
                 <div className='flex-1'><PropertyTitleBar property={property} readonly={readonly} /></div>
             </div>
             {
                 isOpen &&
-                <ul className="ml-4 border-l border-gray-400 border-dashed">
+                <ul className="ms-4 border-s border-gray-400 border-dashed">
                     {
                         (property.children || []).map(prop => renderProperty(prop, readonly))
                     }
@@ -115,11 +123,11 @@ function PropertyTitleBar({ property, readonly }: PropertyTitleBarProps) {
             if (property.update({ ...update, description: value.description })) {
                 property.reloadTree();
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast({
                 status: 'error',
                 title: t('widgets.schema.invalidPropertyDeclaration'),
-                description: err.message,
+                description: errorMessage(err),
                 duration: 9000
             })
             return false;

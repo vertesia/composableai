@@ -1,16 +1,17 @@
 import { useUserSession } from '@vertesia/ui/session';
-import { useState, useRef, useEffect } from 'react';
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import {
     Button,
     Modal,
     ModalBody,
     ModalFooter,
     ModalTitle,
+    errorMessage,
     useToast,
     useTheme
 } from '@vertesia/ui/core';
-import { ContentObject } from '@vertesia/common';
+import { ContentObject, JSONSchema } from '@vertesia/common';
 import { useNavigate } from "@vertesia/ui/router";
 
 // Import Monaco Editor wrapper
@@ -35,11 +36,23 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
     const [isLoading, setIsLoading] = useState(false);
     const [propertiesJson, setPropertiesJson] = useState('');
     const [showConfirmation, setShowConfirmation] = useState(false);
-    const [parsedProperties, setParsedProperties] = useState<any>(null);
+    const [parsedProperties, setParsedProperties] = useState<unknown>(null);
     const editorRef = useRef<IEditorApi | undefined>(undefined);
-    const [jsonSchema, setJsonSchema] = useState<any>(null);
+    const [jsonSchema, setJsonSchema] = useState<JSONSchema | null>(null);
     //TODO  state not used
     const [_newVersionId, setNewVersionId] = useState<string | null>(null);
+
+    // Fetch JSON schema for the object type
+    const fetchJsonSchema = useCallback(async (typeId: string) => {
+        try {
+            const typeDetails = await store.types.retrieve(typeId);
+            if (typeDetails.object_schema) {
+                setJsonSchema(typeDetails.object_schema);
+            }
+        } catch (error) {
+            console.error('Failed to fetch JSON schema:', error);
+        }
+    }, [store.types]);
 
     // Initialize editor content when modal opens
     useEffect(() => {
@@ -51,19 +64,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                 fetchJsonSchema(object.type.id);
             }
         }
-    }, [isOpen, object]);
-
-    // Fetch JSON schema for the object type
-    async function fetchJsonSchema(typeId: string) {
-        try {
-            const typeDetails = await store.types.retrieve(typeId);
-            if (typeDetails.object_schema) {
-                setJsonSchema(typeDetails.object_schema);
-            }
-        } catch (error) {
-            console.error('Failed to fetch JSON schema:', error);
-        }
-    }
+    }, [isOpen, object, fetchJsonSchema]);
 
     // Configure Monaco editor with JSON schema validation
     const beforeMount = (monaco: typeof import('monaco-editor')) => {
@@ -91,7 +92,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
             const properties = JSON.parse(editorValue);
             setParsedProperties(properties);
             setShowConfirmation(true);
-        } catch (err) {
+        } catch {
             toast({
                 status: 'error',
                 title: t('store.invalidJson'),
@@ -171,11 +172,11 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                 setShowConfirmation(false);
                 onClose();
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 status: 'error',
                 title: t('store.errorUpdatingProperties'),
-                description: error.message || t('store.errorUpdatingPropertiesDefault'),
+                description: errorMessage(error, t('store.errorUpdatingPropertiesDefault')),
                 duration: 5000
             });
             setIsLoading(false);
@@ -203,8 +204,8 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                         ) : (
                             <span>{t('store.editingGenericDocument')}</span>
                         )}
-                        {jsonSchema && (
-                            <span className="ml-2 text-green-600">(JSON schema validation enabled)</span>
+                        {jsonSchema !== null && (
+                            <span className="ms-2 text-green-600">(JSON schema validation enabled)</span>
                         )}
                     </div>
                     <div className="h-[75vh] border rounded-md overflow-hidden">

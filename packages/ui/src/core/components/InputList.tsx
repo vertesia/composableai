@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 
 import { Badge } from './shadcn/badge';
 import { Input } from './shadcn/input';
-import { VTooltip } from '@vertesia/ui/core';
+import { VTooltip } from './shadcn/tooltip';
 
 interface InputListProps {
     value?: string[];
@@ -17,15 +17,15 @@ interface InputListProps {
 export function InputList({ value = [], onChange, className, delimiters = ", ", placeholder, autoFocus }: InputListProps) {
     const [text, setText] = useState<string>('');
 
-    const onBlur = (ev: any) => {
-        const v = ev.target.value;
+    const onBlur = (ev: React.FocusEvent<HTMLInputElement>) => {
+        const v = ev.currentTarget.value;
         if (v && v.trim()) {
             onChange([...value, v.trim()])
             setText('')
         }
     }
-    const onKeyDown = (ev: any) => {
-        const v = ev.target.value;
+    const onKeyDown = (ev: React.KeyboardEvent<HTMLInputElement>) => {
+        const v = ev.currentTarget.value;
         const isEmpty = !v.trim();
         const key = ev.key;
         if (key === 'Enter' || delimiters.indexOf(key) > -1) {
@@ -67,7 +67,7 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
         }
     }
 
-    const _onClick = (index: any): void => {
+    const _onClick = (index: number): void => {
         if (value && value.length > 0) {
             value.splice(index, 1);
             onChange([...value]);

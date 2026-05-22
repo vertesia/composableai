@@ -43,7 +43,7 @@ interface RemoteActivityEntry {
     activity_name: string;
     app_install_id: string;
     app_name: string;
-    app_settings?: Record<string, any>;
+    app_settings?: Record<string, unknown>;
 }
 type RemoteActivityMap = Record<string, RemoteActivityEntry>;
 
@@ -52,7 +52,7 @@ interface BaseActivityPayload extends WorkflowExecutionPayload {
     debug_mode?: boolean;
 }
 
-function dslActivityPayload<ParamsT extends Record<string, any>>(basePayload: BaseActivityPayload, activity: DSLActivitySpec, params: ParamsT) {
+function dslActivityPayload<ParamsT extends object>(basePayload: BaseActivityPayload, activity: DSLActivitySpec, params: ParamsT) {
     return {
         ...basePayload,
         activity,
@@ -89,7 +89,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
         workflow_name: definition.name,
         debug_mode: !!definition.debug_mode,
     }
-    delete (basePayload as any).workflow;
+    delete (basePayload as BaseActivityPayload & { workflow?: unknown }).workflow;
 
     const defaultOptions: ActivityOptions = {
         ...convertDSLActivityOptions(definition.options),
@@ -136,7 +136,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
         file: files[0],
     });
 
-    log.info("Executing workflow", { payload });
+    log.debug("Executing workflow", { payload });
 
     // Resolve remote activities from installed apps only if the workflow uses prefixed activity names
     let remoteActivities: RemoteActivityMap = {};
@@ -147,13 +147,13 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
             );
             remoteActivities = await defaultProxy.resolveRemoteActivities(resolvePayload) as RemoteActivityMap;
             if (Object.keys(remoteActivities).length > 0) {
-                log.info("Resolved remote activities", {
+                log.debug("Resolved remote activities", {
                     count: Object.keys(remoteActivities).length,
                     names: Object.keys(remoteActivities),
                 });
             }
-        } catch (e: any) {
-            log.warn("Failed to resolve remote activities, continuing without them", { error: e.message });
+        } catch (e: unknown) {
+            log.warn("Failed to resolve remote activities, continuing without them", { error: e instanceof Error ? e.message : String(e) });
         }
     }
 
@@ -210,16 +210,17 @@ function hasRemoteActivitySteps(definition: DSLWorkflowSpec): boolean {
     return steps.some(step => 'name' in step && step.name?.startsWith(REMOTE_ACTIVITY_PREFIX));
 }
 
-async function handleError(originalError: any, basePayload: BaseActivityPayload, defaultOptions: ActivityOptions) {
+async function handleError(originalError: unknown, basePayload: BaseActivityPayload, defaultOptions: ActivityOptions) {
     const { handleDslError } = proxyActivities<typeof activities>(defaultOptions);
+    const errorMessage = originalError instanceof Error ? originalError.message : String(originalError);
 
     const payload = dslActivityPayload(
         basePayload,
         {
             name: "handleDslError",
-            params: { errorMessage: originalError.message },
+            params: { errorMessage },
         } as DSLActivitySpec,
-        { errorMessage: originalError.message } satisfies HandleDslErrorParams,
+        { errorMessage } satisfies HandleDslErrorParams,
     )
 
     if (isCancellation(originalError)) {
@@ -238,7 +239,7 @@ async function handleError(originalError: any, basePayload: BaseActivityPayload,
 
 async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean, proxy?: ActivityInterfaceFor<UntypedActivities>, basePayload?: BaseActivityPayload) {
     if (step.condition && !vars.match(step.condition)) {
-        log.info("Child workflow skipped: condition not satisfied", { workflow: step.name, condition: step.condition });
+        log.debug("Child workflow skipped: condition not satisfied", { workflow: step.name, condition: step.condition });
         return;
     }
     if (step.name.startsWith('dsl:') && !step.spec && proxy && basePayload) {
@@ -285,7 +286,7 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
 
 async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean, proxy?: ActivityInterfaceFor<UntypedActivities>, basePayload?: BaseActivityPayload) {
     if (step.condition && !vars.match(step.condition)) {
-        log.info("Child workflow skipped: condition not satisfied", { workflow: step.name, condition: step.condition });
+        log.debug("Child workflow skipped: condition not satisfied", { workflow: step.name, condition: step.condition });
         return;
     }
     if (step.name.startsWith('dsl:') && !step.spec && proxy && basePayload) {
@@ -336,7 +337,7 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
     }
 }
 
-function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLActivityExecutionPayload<any>): RateLimitParams {
+function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLActivityExecutionPayload<Record<string, unknown>>): RateLimitParams {
     // resolve payload params
     const vars = new Vars({
         ...executionPayload.params, // imported params (doesn't contain expressions)
@@ -345,31 +346,35 @@ function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLAc
     const params = vars.resolve();
 
     let interactionId: string;
+    const interactionName = typeof params.interactionName === "string" ? params.interactionName : undefined;
+    const interactionNames = params.interactionNames && typeof params.interactionNames === "object"
+        ? params.interactionNames as { selectDocumentType?: unknown }
+        : undefined;
 
     switch (activity.name) {
         case "executeInteraction":
-            interactionId = params.interactionName;
+            interactionId = interactionName || "";
             break;
 
         case "generateDocumentProperties":
-            interactionId = params.interactionName || "sys:ExtractInformation";
+            interactionId = interactionName || "sys:ExtractInformation";
             break;
 
         case "identifyTextSections":
-            interactionId = params.interactionName || "sys:IdentifyTextSections";
+            interactionId = interactionName || "sys:IdentifyTextSections";
             break;
 
         case "generateOrAssignContentType":
-            interactionId = params.interactionNames?.selectDocumentType || "sys:SelectDocumentType";
+            interactionId = typeof interactionNames?.selectDocumentType === "string" ? interactionNames.selectDocumentType : "sys:SelectDocumentType";
             break;
 
         case "chunkDocument":
-            interactionId = params.interactionName || "sys:ChunkDocument";
+            interactionId = interactionName || "sys:ChunkDocument";
             break;
 
         default:
             // For any other rate-limited activities, try to extract what we can
-            interactionId = params.interactionName;
+            interactionId = interactionName || "";
             break;
     }
 
@@ -379,8 +384,8 @@ function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLAc
 
     return {
         interactionIdOrEndpoint: interactionId,
-        environmentId: params.environment,
-        modelId: params.model,
+        environmentId: typeof params.environment === "string" ? params.environment : undefined,
+        modelId: typeof params.model === "string" ? params.model : undefined,
     };
 }
 
@@ -389,7 +394,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         log.debug(`Workflow vars before executing activity ${activity.name}`, { vars: vars.resolve() });
     }
     if (activity.condition && !vars.match(activity.condition)) {
-        log.info("Activity skipped: condition not satisfied", activity.condition);
+        log.debug("Activity skipped: condition not satisfied", activity.condition);
         return;
     }
 
@@ -426,7 +431,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
             );
         }
         const remote = remoteActivities[activity.name];
-        log.info("Executing remote activity", {
+        log.debug("Executing remote activity", {
             activityName: activity.name,
             remoteName: remote.activity_name,
             app: remote.app_name,
@@ -482,7 +487,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
     const fn = proxy[activity.name];
     if (activity.parallel) {
         //TODO execute in parallel
-        log.info("Parallel execution not yet implemented");
+        log.debug("Parallel execution not yet implemented");
     } else {
         log.debug("Executing activity: " + activity.name, { importParams });
         const result = await fn(executionPayload);

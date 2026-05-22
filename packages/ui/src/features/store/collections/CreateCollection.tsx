@@ -4,7 +4,7 @@ import { SelectContentType } from "../types/SelectContentType";
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { useState } from "react";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface CreateCollectionFormProps {
     onClose: () => void;
@@ -23,7 +23,7 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
         description: "",
     });
 
-    function setPayloadProp(name: string, value: any) {
+    function setPayloadProp(name: string, value: unknown) {
         setPayload({
             ...payload,
             [name]: value,

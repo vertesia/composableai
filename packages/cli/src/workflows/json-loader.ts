@@ -1,12 +1,13 @@
 import { DSLWorkflowSpec } from "@vertesia/common";
 import { readFile } from "fs/promises";
+import { errorMessage } from "../utils/options.js";
 import { ValidationError, validateWorkflow } from "./validation.js";
 
 function parseJSON(content: string): DSLWorkflowSpec {
     try {
         return JSON.parse(content);
-    } catch (err: any) {
-        throw new ValidationError("Invalid JSON: " + err.message);
+    } catch (err: unknown) {
+        throw new ValidationError("Invalid JSON: " + errorMessage(err));
     }
 }
 

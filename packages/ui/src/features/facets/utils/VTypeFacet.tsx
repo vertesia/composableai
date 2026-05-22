@@ -16,7 +16,7 @@ export function VTypeFacet({ buckets, typeRegistry, type = 'select', multiple = 
         console.warn("Type names cannot be resolved");
     }
     buckets.forEach((bucket) => {
-        let name;
+        let name: string | undefined;
         let typeId = bucket._id;
 
         if (bucket._id == null) {
@@ -63,7 +63,7 @@ export function VTypeFacet({ buckets, typeRegistry, type = 'select', multiple = 
             return (
                 <div className="w-full flex items-center">
                     <span className="text-sm truncate">{typeData.name}</span>
-                    <span className="ml-2 text-xs">({typeData.count})</span>
+                    <span className="ms-2 text-xs">({typeData.count})</span>
                 </div>
             );
         },

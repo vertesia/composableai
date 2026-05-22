@@ -11,14 +11,16 @@ const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
 
 interface UserSessionProviderProps {
     children: ReactNode | ReactNode[];
+    loadOnboardingStatus?: boolean;
 }
-export function UserSessionProvider({ children }: UserSessionProviderProps) {
+export function UserSessionProvider({ children, loadOnboardingStatus = true }: UserSessionProviderProps) {
     const hashParams = new URLSearchParams(location.hash.substring(1));
     const token = hashParams.get("token");
     const state = hashParams.get("state");
     const [session, setSession] = useState<UserSession>(new UserSession());
     const { generateState, verifyState, clearState } = useAuthState();
     const hasInitiatedAuthRef = useRef(false);
+    const authFlowRef = useRef<(() => void | (() => void)) | undefined>(undefined);
 
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
         const url = new URL(`${CENTRAL_AUTH_REDIRECT}?sts=${Env.endpoints.sts ?? "https://sts.vertesia.io"}`);
@@ -31,7 +33,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
         location.replace(url.toString());
     };
 
-    useEffect(() => {
+    authFlowRef.current = () => {
         // Make this effect idempotent - only run auth flow once
         if (hasInitiatedAuthRef.current) {
             console.log("Auth: skipping duplicate auth flow initiation");
@@ -73,7 +75,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
             }
             getComposableToken(selectedAccount, selectedProject, token, false, shouldRedirectToCentralAuth())
                 .then((res) => {
-                    session.login(res.rawToken).then(() => {
+                    session.login(res.rawToken, { loadOnboardingStatus }).then(() => {
                         setSession(session.clone());
                         //cleanup the hash
                         window.location.hash = "";
@@ -163,7 +165,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
                 session.setSession = setSession;
                 await getComposableToken(selectedAccount, selectedProject, undefined, false, shouldRedirectToCentralAuth())
                     .then((res) => {
-                        session.login(res.rawToken).then(() => setSession(session.clone()));
+                        session.login(res.rawToken, { loadOnboardingStatus }).then(() => setSession(session.clone()));
                     })
                     .catch((err) => {
                         console.error("Failed to fetch user token from studio", err);
@@ -193,6 +195,10 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
                 setSession(session.clone());
             }
         });
+    };
+
+    useEffect(() => {
+        return authFlowRef.current?.();
     }, []);
 
     return <UserSessionContext.Provider value={session}>{children}</UserSessionContext.Provider>;

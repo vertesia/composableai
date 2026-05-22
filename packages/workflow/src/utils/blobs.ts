@@ -11,14 +11,15 @@ tmp.setGracefulCleanup();
 export async function fetchBlobAsStream(client: VertesiaClient, blobUri: string): Promise<ReadableStream<Uint8Array>> {
     try {
         return await client.files.downloadFile(blobUri);
-    } catch (err: any) {
-        if (err.message.includes("not found")) {
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (message.includes("not found")) {
             //TODO improve error handling with a fetch fail error class in the client
-            throw new DocumentNotFoundError(`Not found at ${blobUri}: ${err.message}`, []);
-        } else if (err.message.includes("forbidden")) {
-            throw new DocumentNotFoundError(`Forbidden at ${blobUri}: ${err.message}`);
+            throw new DocumentNotFoundError(`Not found at ${blobUri}: ${message}`, []);
+        } else if (message.includes("forbidden")) {
+            throw new DocumentNotFoundError(`Forbidden at ${blobUri}: ${message}`);
         } else {
-            throw new Error(`Failed to download blob ${blobUri}: ${err.message}`);
+            throw new Error(`Failed to download blob ${blobUri}: ${message}`);
         }
     }
 }

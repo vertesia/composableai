@@ -25,7 +25,7 @@ export interface RemoteActivityInfo {
     /** The app name */
     app_name: string;
     /** The app installation settings */
-    app_settings?: Record<string, any>;
+    app_settings?: Record<string, unknown>;
     /** The activity definition from the tool server */
     definition: RemoteActivityDefinition;
 }
@@ -36,7 +36,6 @@ export interface RemoteActivityInfo {
  */
 export type RemoteActivityMap = Record<string, RemoteActivityInfo>;
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface ResolveRemoteActivitiesParams {}
 
 /**

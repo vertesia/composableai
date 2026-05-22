@@ -1,16 +1,18 @@
 import { Button, Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { VInteractionFacet } from './utils/VInteractionFacet';
+import type { EnrichedFacetBucket } from './utils/VInteractionFacet';
 import { VStringFacet } from './utils/VStringFacet';
 import { VUserFacet } from './utils/VUserFacet';
-import { SearchInterface } from './utils/SearchInterface';
+import { filterValueToQueryValue, SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
 import { RefreshCw } from 'lucide-react';
+import type { FacetBucket } from '@vertesia/common';
 
 interface AgentRunnerFacetsNavProps {
     facets: {
-        statuses?: any[];
-        initiated_by?: any[];
-        interactions?: any[];
+        statuses?: FacetBucket[];
+        initiated_by?: FacetBucket[];
+        interactions?: EnrichedFacetBucket[];
     };
     search: SearchInterface;
     actions?: React.ReactNode[];
@@ -35,7 +37,6 @@ export function useAgentRunnerFilterGroups(facets: AgentRunnerFacetsNavProps['fa
     }));
 
     customFilterGroups.push(VStringFacet({
-        search: null as any, // This will be provided by the search context
         buckets: facets.statuses || [],
         name: 'status',
         placeholder: 'Status',
@@ -74,21 +75,8 @@ export function createAgentRunnerFilterHandler(search: SearchInterface) {
         newFilters.forEach(filter => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name;
-                let filterValue;
-                if (filter.multiple) {
-                    filterValue = Array.isArray(filter.value)
-                        ? filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v)
-                        : [typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value];
-                } else {
-                    // Single value - don't wrap in array
-                    filterValue = Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
-                        ? (filter.value[0] as any).value
-                        : Array.isArray(filter.value) && filter.value[0]
-                            ? filter.value[0]
-                            : filter.value;
-                }
-
-                search.query[filterName] = filterValue;
+                const filterValue = filterValueToQueryValue(filter);
+                setSearchQueryValue(search, filterName, filterValue);
             }
         });
 
@@ -142,7 +130,7 @@ export function AgentRunnerFacetsNav({ facets, search, selectionCount, actions }
                             </div>
                         )}
                         {actions && actions.length > 0 ? (
-                            <div className='flex items-center gap-2 mb-1 mr-2'>
+                            <div className='flex items-center gap-2 mb-1 me-2'>
                                 {actions.map((action, index) => (
                                     <div key={index}>{action}</div>
                                 ))}

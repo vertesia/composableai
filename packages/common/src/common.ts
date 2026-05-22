@@ -1,5 +1,5 @@
 export interface FindPayload {
-    query: Record<string, any>;
+    query: Record<string, unknown>;
     offset?: number;
     limit?: number;
     select?: string;
@@ -11,8 +11,8 @@ export interface FindPayload {
 export interface GenericCommandResponse {
     status: string;
     message: string;
-    err?: any;
-    details?: any;
+    err?: unknown;
+    details?: unknown;
 }
 
 export interface DeleteByIdResult {
@@ -51,28 +51,32 @@ export interface BulkOperationPayload {
     /**
      * The operation parameters.
      */
-    params: Record<string, any>;
+    params: Record<string, unknown>;
 }
 
-export interface BulkOperationResult {
+export interface BulkOperationResult<TOperation extends string = "generic"> {
+    operation: TOperation;
     status: "in_progress" | "completed" | "failed";
 }
 
-export interface BulkObjectDeleteResult extends BulkOperationResult {
+export interface BulkObjectDeleteResult extends BulkOperationResult<"delete"> {
+    operation: "delete";
     /** Number of documents deleted (including revisions) */
     deleted: number;
     /** IDs that were not found or user had no permission to delete */
     failed: string[];
 }
 
-export interface BulkObjectUpdateResult extends BulkOperationResult {
+export interface BulkObjectUpdateResult extends BulkOperationResult<"update"> {
+    operation: "update";
     /** Number of documents successfully updated */
     updated: number;
     /** IDs that were not found, not authorized, or failed to update */
     failed: string[];
 }
 
-export interface BulkObjectCreateResult extends BulkOperationResult {
+export interface BulkObjectCreateResult extends BulkOperationResult<"create"> {
+    operation: "create";
     /** Number of documents successfully created */
     created: number;
     /** Successfully created objects with their IDs */
@@ -81,6 +85,9 @@ export interface BulkObjectCreateResult extends BulkOperationResult {
     failed: { external_id?: string; index: number; error: string }[];
 }
 
+/**
+ * @discriminator operation
+ */
 export type BulkOperationResponse =
     | BulkOperationResult
     | BulkObjectCreateResult

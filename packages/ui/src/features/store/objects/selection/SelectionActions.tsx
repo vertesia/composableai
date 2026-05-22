@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { EllipsisVertical, X } from 'lucide-react';
 
 import { useState } from "react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { DocumentSelection, useDocumentSelection } from "../DocumentSelectionProvider.js";
 import { DocumentUploadModal } from "../upload/DocumentUploadModal.js";
 import { ExportPropertiesAction } from "./actions/ExportPropertiesAction";

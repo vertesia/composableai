@@ -33,7 +33,7 @@ interface TextractProcessorOptions {
     region: string;
     bucket: string;
     credentials?: AwsCredentialIdentityProvider;
-    log?: any;
+    log?: TextractLogger;
     detectImages?: boolean;
     /**
      * NEW: If true, includes cell-confidence information in the table CSV
@@ -41,12 +41,16 @@ interface TextractProcessorOptions {
     includeConfidenceInTables?: boolean;
 }
 
+interface TextractLogger {
+    info(message: string, metadata?: Record<string, unknown>): void;
+}
+
 export class TextractProcessor {
     private textractClient: TextractClient;
     private s3Client: S3Client;
     private fileKey: string;
     private bucket: string;
-    private log: any;
+    private log?: TextractLogger;
     private detectImages: boolean;
     /**
      * Whether or not to include confidence values in CSV output for tables.
@@ -239,7 +243,7 @@ export class TextractProcessor {
     }
 
     async upload(fileBuf: Buffer): Promise<void> {
-        this.log.info('Uploading file to S3', { fileKey: this.fileKey });
+        this.log?.info('Uploading file to S3', { fileKey: this.fileKey });
         const command = new PutObjectCommand({
             Bucket: this.bucket,
             Key: this.fileKey,

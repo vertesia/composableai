@@ -12,9 +12,9 @@ export interface CreateCollectionPayload {
     description?: string;
     skip_head_sync?: boolean;
     tags?: string[];
-    type?: string;
-    query?: Record<string, any>;
-    properties?: Record<string, any>;
+    type?: string | null;
+    query?: Record<string, unknown>;
+    properties?: Record<string, unknown>;
     parent?: string | null;
     table_layout?: ColumnLayout[] | null;
     allowed_types?: string[];
@@ -59,8 +59,8 @@ export interface CollectionItem extends BaseObject {
 }
 
 export interface Collection extends CollectionItem {
-    properties: Record<string, any>;
-    query?: Record<string, any>;
+    properties?: Record<string, unknown>;
+    query?: Record<string, unknown>;
     security?: Record<string, string[]>; // ACL for collection access
     /** BLP sensitivity level — propagated to member documents (max across collections) */
     sensitivity?: number;

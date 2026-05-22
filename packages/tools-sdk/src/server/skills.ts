@@ -39,7 +39,7 @@ export function createSkillsRoute(app: Hono, basePath: string, config: ToolServe
                 title: s.title,
                 description: s.description,
             })),
-        } satisfies ToolCollectionDefinition & { collections: any[] });
+        } satisfies ToolCollectionDefinition & { collections: unknown[] });
     });
 
     // POST /api/skills - Route to the correct collection based on tool_name

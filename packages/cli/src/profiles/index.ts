@@ -3,8 +3,11 @@ import jwt from 'jsonwebtoken';
 import os from "node:os";
 import { join } from "path";
 import { readJsonFile, writeJsonFile } from "../utils/stdio.js";
+import { hasErrorCode } from "../utils/options.js";
 import { ConfigPayload, ConfigResult, startConfigSession } from "./server/index.js";
-import { OnResultCallback } from "./commands.js";
+import type { OnResultCallback } from "./commands.js";
+import { canUseOAuthProfile, OAuthUnavailableError, startOAuthSession } from "./oauth.js";
+import { deleteAuthBundle, getAccessTokenExpiry, hasStoredAccessToken, isKeyringAvailable, readAuthBundle, readProfileAccessToken, writeAuthBundle } from "./keyring.js";
 
 export function getConfigFile(path?: string) {
     const dir = join(os.homedir(), '.vertesia');
@@ -21,6 +24,9 @@ export const AVAILABLE_REGIONS: Region[] = ['us1', 'eu1', 'jp1'];
 
 export type ConfigUrlRef = "local" | "dev-main" | "dev-preview" | "preview" | "prod" | string;
 export function getConfigUrl(value: ConfigUrlRef, region: Region = DEFAULT_REGION): string {
+    if (isDevDeploymentTarget(value)) {
+        return `https://${value}.ui.dev1.vertesia.io/cli`;
+    }
     switch (value) {
         case "local":
             return "https://localhost:5173/cli";
@@ -41,6 +47,12 @@ export function getConfigUrl(value: ConfigUrlRef, region: Region = DEFAULT_REGIO
     }
 }
 export function getServerUrls(value: ConfigUrlRef, region: Region = DEFAULT_REGION): { studio_server_url: string; zeno_server_url: string } {
+    if (isDevDeploymentTarget(value)) {
+        return {
+            studio_server_url: `https://studio-server-${value}.api.dev1.vertesia.io`,
+            zeno_server_url: `https://zeno-server-${value}.api.dev1.vertesia.io`,
+        };
+    }
     switch (value) {
         case "local":
             return {
@@ -71,14 +83,27 @@ export function getServerUrls(value: ConfigUrlRef, region: Region = DEFAULT_REGI
             throw new Error("Unable to detect server urls from custom target.");
     }
 }
+
+function isDevDeploymentTarget(value: string): boolean {
+    return value.startsWith('dev-');
+}
+
 export function getCloudTypeFromConfigUrl(url: string) {
-    if (url.startsWith("https://localhost")) {
+    let parsedUrl: URL;
+    try {
+        parsedUrl = new URL(url);
+    } catch {
+        throw new Error("Unknown cloud env type");
+    }
+
+    const { hostname, protocol } = parsedUrl;
+    if (protocol === "https:" && hostname === "localhost") {
         return "staging";
-    } else if (url.includes(".ui.dev1.vertesia.io")) {
+    } else if (hostname.endsWith(".ui.dev1.vertesia.io")) {
         return "staging";
-    } else if (url.startsWith("https://preview.")) {
+    } else if (protocol === "https:" && hostname.startsWith("preview.")) {
         return "preview";
-    } else if (url.startsWith("https://cloud.")) {
+    } else if (protocol === "https:" && hostname.startsWith("cloud.")) {
         return "production";
     } else {
         throw new Error("Unknown cloud env type");
@@ -88,7 +113,7 @@ export function getCloudTypeFromConfigUrl(url: string) {
 export interface Profile {
     name: string;
     config_url: string;
-    apikey: string;
+    apikey?: string;
     account: string;
     project: string;
     studio_server_url: string;
@@ -104,10 +129,13 @@ interface ProfilesData {
 }
 
 export function shouldRefreshProfileToken(profile: Profile, thresholdInSeconds = 1) {
-    if (profile.apikey) {
-        const token = jwt.decode(profile.apikey, { json: true });
-        if (token && token.exp) {
-            return (token.exp - thresholdInSeconds) * 1000 < Date.now();
+    const token = readProfileAccessToken(profile);
+    if (token) {
+        const bundle = readAuthBundle(profile.name);
+        const expiresAt = bundle?.accessTokenExpiresAt
+            ?? getAccessTokenExpiry(token);
+        if (expiresAt) {
+            return expiresAt - thresholdInSeconds * 1000 < Date.now();
         }
     }
     // if no token or no expiration set then refresh auth token
@@ -129,20 +157,30 @@ export class ConfigureProfile {
         }
     }
 
-    async applyConfigResult(result: ConfigResult | undefined) {
+    async persistConfigResult(result: ConfigResult | undefined) {
         if (!result) {
-            // Handle cancellation or no result
-            console.log('\nAuthentication canceled or failed.');
-            process.exit(1);
             return;
         }
         const oldName = this.data.name!;
+        const previousBundle = oldName ? readAuthBundle(oldName) : undefined;
         this.data.name = result.profile;
         this.data.account = result.account;
         this.data.project = result.project;
         this.data.studio_server_url = result.studio_server_url;
         this.data.zeno_server_url = result.zeno_server_url;
-        this.data.apikey = result.token;
+        delete this.data.apikey;
+        writeAuthBundle(result.profile, {
+            accessToken: result.token,
+            accessTokenExpiresAt: readResultAccessTokenExpiry(result),
+            idToken: result.id_token || previousBundle?.idToken,
+            refreshToken: result.refresh_token || previousBundle?.refreshToken,
+            refreshTokenExpiresAt: result.refresh_token_expires_at || previousBundle?.refreshTokenExpiresAt,
+            oauthClientId: result.oauth_client_id || previousBundle?.oauthClientId,
+            oauthResource: result.oauth_resource || previousBundle?.oauthResource,
+        });
+        if (oldName && oldName !== result.profile) {
+            deleteAuthBundle(oldName);
+        }
         this.config.remove(oldName);
         this.config.add(this.data as Profile);
         if (this.isNew) {
@@ -153,20 +191,51 @@ export class ConfigureProfile {
             await this.onResultCallback(result);
             this.onResultCallback = undefined;
         }
-        // force exit to close last prompt
-        console.log('\n');
-        console.log('Authentication completed.');
-        process.exit(0);
+    }
+
+    async applyConfigResult(
+        result: ConfigResult | undefined,
+        options: { logCompletion?: boolean; exitOnComplete?: boolean } = {},
+    ) {
+        if (!result) {
+            console.log('\nAuthentication canceled or failed.');
+            process.exit(1);
+            return;
+        }
+        await this.persistConfigResult(result);
+        if (options.logCompletion) {
+            console.log('\n');
+            console.log('Authentication completed.');
+        }
+        if (options.exitOnComplete) {
+            process.exit(0);
+        }
+    }
+
+    private async startLegacySession(signal?: AbortSignal) {
+        await startConfigSession(
+            this.data.config_url!,
+            this.getConfigPayload(),
+            (result) => this.applyConfigResult(result, { logCompletion: true, exitOnComplete: true }),
+            signal
+        );
     }
 
     async start(onResult?: OnResultCallback, signal?: AbortSignal) {
         this.onResultCallback = onResult;
-        await startConfigSession(
-            this.data.config_url!, 
-            this.getConfigPayload(), 
-            this.applyConfigResult.bind(this),
-            signal
-        );
+        if (canUseOAuthProfile(this.data)) {
+            try {
+                const result = await startOAuthSession(this.data as Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> & Partial<Pick<Profile, 'account' | 'config_url' | 'project'>>, signal);
+                await this.applyConfigResult(result, { logCompletion: true });
+                return;
+            } catch (error: unknown) {
+                if (!(error instanceof OAuthUnavailableError)) {
+                    throw error;
+                }
+                console.log('OAuth login is not available for this endpoint. Falling back to legacy CLI login.');
+            }
+        }
+        await this.startLegacySession(signal);
     }
 }
 
@@ -178,7 +247,7 @@ export class Config {
     constructor(data?: ProfilesData) {
         this.profiles = data?.profiles || [];
         if (data?.default) {
-            this.use(data.default);
+            this.current = this.profiles.find(p => p.name === data.default);
         }
     }
 
@@ -240,7 +309,7 @@ export class Config {
 
     createProfile(name: string, target: ConfigUrlRef, region: Region = DEFAULT_REGION) {
         const config_url = getConfigUrl(target, region);
-        return new ConfigureProfile(this, { name, config_url, region }, true);
+        return new ConfigureProfile(this, { name, config_url, region, ...readKnownServerUrls(target, region) }, true);
     }
 
     updateProfile(name: string) {
@@ -253,12 +322,13 @@ export class Config {
 
     createOrUpdateProfile(name: string, target?: ConfigUrlRef): ConfigureProfile {
         const config_url = target && getConfigUrl(target);
+        const knownServerUrls = target ? readKnownServerUrls(target) : {};
         const data = this.getProfile(name);
         if (config_url) { // create a new profile on config_url
             if (data) {
                 throw new ProfileAlreadyExistsError(`Profile ${name} already exists.`);
             } else {
-                return new ConfigureProfile(this, { name, config_url }, true);
+                return new ConfigureProfile(this, { name, config_url, ...knownServerUrls }, true);
             }
         } else { // update an existing profile
             if (data) {
@@ -277,7 +347,14 @@ export class Config {
         const file = getConfigFile('profiles.json');
         writeJsonFile(file, {
             default: this.current?.name,
-            profiles: this.profiles,
+            profiles: this.profiles.map(profile => {
+                if (profile.apikey && !hasStoredAccessToken(profile.name)) {
+                    return profile;
+                }
+                const { apikey, ...safeProfile } = profile;
+                void apikey;
+                return safeProfile;
+            }),
         });
         return this;
     }
@@ -288,21 +365,46 @@ export class Config {
             if (stats.isFile()) {
                 this.isDevMode = true;
             }
-        } catch (err: any) {
-            if (err.code !== 'ENOENT') {
+        } catch (err: unknown) {
+            if (!hasErrorCode(err, 'ENOENT')) {
                 throw err;
             }
         }
         try {
             const data = readJsonFile(getConfigFile('profiles.json')) as ProfilesData;
             this.profiles = data.profiles;
+            let needsSave = false;
+            if (isKeyringAvailable()) {
+                for (const profile of this.profiles) {
+                    if (!profile.apikey) {
+                        continue;
+                    }
+                    const existingBundle = readAuthBundle(profile.name);
+                    if (!existingBundle?.accessToken) {
+                        writeAuthBundle(profile.name, {
+                            accessToken: profile.apikey,
+                            accessTokenExpiresAt: readInlineTokenExpiry(profile.apikey),
+                            refreshToken: existingBundle?.refreshToken,
+                            refreshTokenExpiresAt: existingBundle?.refreshTokenExpiresAt,
+                        });
+                    }
+                    delete profile.apikey;
+                    needsSave = true;
+                }
+            }
             if (data.default) {
-                this.use(data.default)
+                this.current = this.profiles.find(p => p.name === data.default);
+                if (!this.current) {
+                    needsSave = true;
+                }
             } else {
                 this.current = undefined;
             }
-        } catch (err: any) {
-            if (err.code !== 'ENOENT') {
+            if (needsSave) {
+                this.save();
+            }
+        } catch (err: unknown) {
+            if (!hasErrorCode(err, 'ENOENT')) {
                 throw err;
             }
         }
@@ -334,3 +436,29 @@ export class InvalidConfigUrlError extends Error {
 const config = new Config().load();
 
 export { config };
+
+function readInlineTokenExpiry(token: string): number | undefined {
+    const decoded = jwt.decode(token, { json: true });
+    if (!decoded?.exp) {
+        return undefined;
+    }
+    return decoded.exp * 1000;
+}
+
+function readResultAccessTokenExpiry(result: ConfigResult): number | undefined {
+    if (typeof result.access_token_expires_at === 'number') {
+        return result.access_token_expires_at;
+    }
+    if (typeof result.expires_in === 'number') {
+        return Date.now() + result.expires_in * 1000;
+    }
+    return readInlineTokenExpiry(result.token);
+}
+
+function readKnownServerUrls(target: ConfigUrlRef, region: Region = DEFAULT_REGION): Partial<Pick<Profile, 'studio_server_url' | 'zeno_server_url'>> {
+    try {
+        return getServerUrls(target, region);
+    } catch {
+        return {};
+    }
+}

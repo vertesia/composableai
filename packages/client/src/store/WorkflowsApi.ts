@@ -1,4 +1,4 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, ClientBase, type IRequestParams } from "@vertesia/api-fetch-client";
 import {
     ActivityCatalog,
     AgentEvent,
@@ -20,6 +20,7 @@ import {
     PromptSizeAnalyticsResponse,
     RunsByAgentAnalyticsResponse,
     SignalAgentResponse,
+    SignalAgentPayload,
     TimeToFirstResponseAnalyticsResponse,
     TokenUsageAnalyticsResponse,
     ToolAnalyticsResponse,
@@ -42,9 +43,11 @@ import {
     WorkflowRunWithDetails,
     WorkflowToolParametersQuery,
     WorkflowUpdatePublishResponse,
+    UploadWorkflowRulePayload,
 } from "@vertesia/common";
 import { VertesiaClient } from "../client.js";
 import { EventSourceProvider } from "../execute.js";
+import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from "./stream-termination.js";
 
 export class WorkflowsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -70,7 +73,7 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs`, { payload: payload });
     }
 
-    sendSignal(workflowId: string, runId: string, signal: string, payload?: any): Promise<SignalAgentResponse> {
+    sendSignal(workflowId: string, runId: string, signal: string, payload?: SignalAgentPayload | null): Promise<SignalAgentResponse> {
         return this.post(`/runs/${workflowId}/${runId}/signal/${signal}`, { payload });
     }
 
@@ -80,9 +83,10 @@ export class WorkflowsApi extends ApiTopic {
         options?: {
             includeHistory?: boolean;
             historyFormat?: 'events' | 'tasks' | 'agent';
+            hydratePayloads?: boolean;
         }
     ): Promise<WorkflowRunWithDetails> {
-        const query: Record<string, any> = {};
+        const query: NonNullable<IRequestParams["query"]> = {};
 
         // Support legacy includeHistory parameter
         if (options?.includeHistory !== undefined) {
@@ -92,6 +96,10 @@ export class WorkflowsApi extends ApiTopic {
         // Support new historyFormat parameter
         if (options?.historyFormat !== undefined) {
             query.history_format = options.historyFormat;
+        }
+
+        if (options?.hydratePayloads !== undefined) {
+            query.hydrate_payloads = options.hydratePayloads;
         }
 
         return this.get(`/runs/${workflowId}/${runId}`, { query });
@@ -291,14 +299,7 @@ export class WorkflowsApi extends ApiTopic {
                                 onMessage(agentMessage, exit);
                             }
 
-                            // Get workstream ID (defaults to 'main' if not set)
-                            const workstreamId = compactMessage.w || 'main';
-
-                            const streamIsOver = compactMessage.t === AgentMessageType.TERMINATED ||
-                                (compactMessage.t === AgentMessageType.COMPLETE && workstreamId === 'main');
-
-                            // Only close the stream when the main workstream completes or terminates
-                            if (streamIsOver) {
+                            if (shouldCloseCompactRunStream(compactMessage, runId)) {
                                 console.log("Closing stream due to COMPLETE message from main workstream");
                                 if (!isClosed) {
                                     isClosed = true;
@@ -306,14 +307,14 @@ export class WorkflowsApi extends ApiTopic {
                                     resolve(null);
                                 }
                             } else if (compactMessage.t === AgentMessageType.COMPLETE) {
-                                console.log(`Received COMPLETE message from non-main workstream: ${workstreamId}, keeping stream open`);
+                                console.log(`Received COMPLETE message that does not close the root stream for run ${runId}`);
                             }
                         } catch (err) {
                             console.error("Failed to parse SSE message:", err, ev.data);
                         }
                     };
 
-                    sse.onerror = (err: any) => {
+                    sse.onerror = (err: unknown) => {
                         if (isClosed) return;
 
                         console.warn(`SSE stream error for run ${runId}:`, err);
@@ -364,10 +365,7 @@ export class WorkflowsApi extends ApiTopic {
                         if (onMessage) {
                             onMessage(msg, exit);
                         }
-                        const workstreamId = msg.workstream_id || 'main';
-                        const streamIsOver = msg.type === AgentMessageType.TERMINATED ||
-                            (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
-                        if (streamIsOver) {
+                        if (shouldCloseAgentRunStream(msg, runId)) {
                             exit(null);
                             return;
                         }
@@ -397,7 +395,7 @@ export class WorkflowsApi extends ApiTopic {
         runId: string,
         onMessage?: (message: CompactMessage) => void,
         since?: number
-    ): Promise<{ cleanup: () => void; sendSignal: (signalName: string, data: any) => void }> {
+    ): Promise<{ cleanup: () => void; sendSignal: (signalName: string, data: unknown) => void }> {
         return new Promise((resolve, reject) => {
             let reconnectAttempts = 0;
             const maxReconnectAttempts = 10;
@@ -459,7 +457,7 @@ export class WorkflowsApi extends ApiTopic {
                                         ws = null;
                                     }
                                 },
-                                sendSignal: (signalName: string, data: any) => {
+                                sendSignal: (signalName: string, data: unknown) => {
                                     if (ws?.readyState === WebSocket.OPEN) {
                                         const message: WebSocketClientMessage = {
                                             type: 'signal',
@@ -735,7 +733,7 @@ export class WorkflowsRulesApi extends ApiTopic {
         return this.get(`/${id}`);
     }
 
-    update(id: string, payload: any): Promise<WorkflowRule> {
+    update(id: string, payload: UploadWorkflowRulePayload): Promise<WorkflowRule> {
         return this.put(`/${id}`, {
             payload,
         });
@@ -754,7 +752,7 @@ export class WorkflowsRulesApi extends ApiTopic {
     execute(
         id: string,
         objectIds?: string[],
-        vars?: Record<string, any>,
+        vars?: Record<string, unknown>,
     ): Promise<({ run_id: string; workflow_id: string } | undefined)[]> {
         const payload: ExecuteWorkflowPayload = {
             objectIds,
@@ -779,7 +777,7 @@ export class WorkflowsDefinitionApi extends ApiTopic {
         return this.get(`/${id}`);
     }
 
-    update(id: string, payload: any): Promise<DSLWorkflowDefinition> {
+    update(id: string, payload: DSLWorkflowSpec): Promise<DSLWorkflowDefinition> {
         return this.put(`/${id}`, {
             payload,
         });

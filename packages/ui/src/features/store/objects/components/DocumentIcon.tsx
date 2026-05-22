@@ -11,7 +11,7 @@ import { CheckIcon, Eye } from 'lucide-react'
 interface DocumentIconProps {
     document: ContentObjectItem
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
-    selection: DocumentSelection;
+    selection?: DocumentSelection;
     onRowClick?: (object: ContentObjectItem) => void;
     highlightRow?: (item: ContentObjectItem) => boolean;
     previewObject?: (objectId: string) => void;
@@ -53,6 +53,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
     const [renditionUrl, setRenditionUrl] = useState<string | undefined>(undefined)
     const [renditionAlt, setRenditionAlt] = useState<string | undefined>(undefined)
     const [renditionStatus, setRenditionStatus] = useState<string | undefined>(undefined)
+    const title = typeof document.properties?.title === 'string' ? document.properties.title : document.name;
 
 
     const handleSelect = (ev: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,21 +67,21 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
         }
 
         retrieveRendition(client, document, setRenditionUrl, setRenditionAlt, setRenditionStatus)
-    }, [document])
+    }, [client, document])
 
     const isHighlighted = highlightRow?.(document);
 
     return (
         <Card className={`relative flex flex-col border h-fit w-full ${selectedObject?.id === document.id ? 'border-attention border-4' : ''} ${isHighlighted ? 'border-blue-400 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : ''}`} onClick={() => (onRowClick && onRowClick(document))}>
             {isHighlighted && (
-                <div className="absolute top-2 right-8 z-10">
+                <div className="absolute top-2 end-8 z-10">
                     <CheckIcon className="size-4 text-blue-600 dark:text-blue-400" />
                 </div>
             )}
             {
                 selection && (
                     <div
-                        className="absolute top-2 left-2 z-10 flex flex-col items-center gap-1"
+                        className="absolute top-2 start-2 z-10 flex flex-col items-center gap-1"
                     >
                         <input checked={selection.isSelected(document.id)}
                             type="checkbox"
@@ -92,7 +93,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
             }
 
             <div
-                className="absolute top-1 right-1 z-10 flex flex-col items-center"
+                className="absolute top-1 end-1 z-10 flex flex-col items-center"
             >
                 <Button
                     variant="ghost" size="sm" title="Preivew Object" onClick={(e) => {
@@ -118,8 +119,8 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
                 <div className="flex flex-col overflow-hidden">
                     <VTooltip
                         placement='top'
-                        description={document.properties?.title ?? document.name}>
-                        <h3 className="text-start font-medium leading-none truncate">{document.properties?.title ?? document.name}</h3>
+                        description={title}>
+                        <h3 className="text-start font-medium leading-none truncate">{title}</h3>
                     </VTooltip>
                     {
                         document?.type?.name ? (

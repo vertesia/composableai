@@ -1,4 +1,4 @@
-import { CompletionResult, ModelOptions, LlumiverseError } from "@llumiverse/common";
+import { CompletionResult, JSONSchema, ModelOptions, LlumiverseError } from "@llumiverse/common";
 import { activityInfo, ApplicationFailure, log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
@@ -19,7 +19,7 @@ import { Readable } from "stream";
 
 //Example:
 //@ts-ignore
-const JSON: DSLActivitySpec = {
+const _JSON: DSLActivitySpec = {
     name: "executeInteraction",
     import: ["defaultModel", "guidlineId", "docTypeId"],
     params: {
@@ -79,7 +79,7 @@ export interface InteractionExecutionParams {
     /**
      * Request a JSON schema for the result
      */
-    result_schema?: any;
+    result_schema?: JSONSchema | null;
 
     /** Wether to validate the result against the schema */
     validate_result?: boolean;
@@ -113,13 +113,13 @@ export interface InteractionExecutionParams {
 export interface ExecuteInteractionParams extends InteractionExecutionParams {
     //TODO rename to interaction as in InteractionAsyncExecutionPayload
     interactionName: string;
-    prompt_data: Record<string, any>;
+    prompt_data: Record<string, unknown>;
     /**
      * Additional prompt data passed by the workflow configuration. This will be merged with prompt_data if any.
      * You should use `import: ["static_prompt_data"]` to import the workflow prompt data as static_prompt_data param.
      * Otherwise the workflow prompt data will be ignored.
      */
-    static_prompt_data?: Record<string, any>;
+    static_prompt_data?: Record<string, unknown>;
     truncate?: Record<string, TruncateSpec>;
 }
 
@@ -143,7 +143,10 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
     if (params.truncate) {
         const truncate = params.truncate;
         for (const [key, value] of Object.entries(truncate)) {
-            prompt_data[key] = truncByMaxTokens(prompt_data[key], value);
+            const promptValue = prompt_data[key];
+            if (typeof promptValue === "string") {
+                prompt_data[key] = truncByMaxTokens(promptValue, value);
+            }
         }
     }
 
@@ -198,51 +201,52 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             result: completionResult,
         });
 
-    } catch (error: any) {
-        log.error(`Failed to execute interaction ${interactionName}`, { error });
-        if (error.statusCode === 429 && params.exit_on_resource_exhaustion) {
-            throw new ResourceExhaustedError(error.statusCode, "Resource exhausted - rate limit exceeded");
-        } else if (is4xxNonRetryable(error.status) || is4xxNonRetryable(error.statusCode) || is4xxNonRetryable(error.code) || error.retryable === false) {
+    } catch (error: unknown) {
+        const executionError = toExecutionError(error);
+        log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
+        if (executionError.statusCode === 429 && params.exit_on_resource_exhaustion) {
+            throw new ResourceExhaustedError(executionError.statusCode, "Resource exhausted - rate limit exceeded");
+        } else if (is4xxNonRetryable(executionError.status) || is4xxNonRetryable(executionError.statusCode) || is4xxNonRetryable(executionError.code) || executionError.retryable === false) {
             // 4xx HTTP errors (except retryable statuses) are permanent client errors
             // (e.g. model not found, invalid request).
             // Errors explicitly marked as non-retryable (e.g. LlumiverseError) also fall here.
             // They will not be resolved by retrying.
             throw ApplicationFailure.create({
-                message: `Interaction Execution failed ${interactionName}: ${error.message}`,
+                message: `Interaction Execution failed ${interactionName}: ${executionError.message}`,
                 nonRetryable: true,
             });
-        } else if (error.message.includes("Failed to validate merged prompt schema")) {
+        } else if (executionError.message.includes("Failed to validate merged prompt schema")) {
             //issue with the input data, don't retry
-            throw new ActivityParamInvalidError("prompt_data", payload.activity, error.message);
-        } else if (error.message.includes("modelId: Path `modelId` is required")) {
+            throw new ActivityParamInvalidError("prompt_data", payload.activity, executionError.message);
+        } else if (executionError.message.includes("modelId: Path `modelId` is required")) {
             //issue with the input data, don't retry
-            throw new ActivityParamInvalidError("model", payload.activity, error.message);
+            throw new ActivityParamInvalidError("model", payload.activity, executionError.message);
         }
         
         // Check retryability from error object (set by executeInteractionFromActivity)
         // or from LlumiverseError instance (direct driver errors in some paths)
-        const isRetryable = error.retryable !== undefined 
-            ? error.retryable !== false  // Treat undefined as retryable
+        const isRetryable = executionError.retryable !== undefined 
+            ? true
             : (error instanceof LlumiverseError ? error.retryable !== false : undefined);
         
         if (isRetryable !== undefined) {
             if (isRetryable) {
-                log.debug('Marking error as retryable', { interactionName, errorCode: error.errorCode });
+                log.debug('Marking error as retryable', { interactionName, errorCode: executionError.errorCode });
                 throw ApplicationFailure.create({
-                    message: `Interaction Execution failed ${interactionName}: ${error.message}`,
+                    message: `Interaction Execution failed ${interactionName}: ${executionError.message}`,
                     nonRetryable: false,
                 });
             } else {
-                log.debug('Marking error as non-retryable', { interactionName, errorCode: error.errorCode });
+                log.debug('Marking error as non-retryable', { interactionName, errorCode: executionError.errorCode });
                 throw ApplicationFailure.create({
-                    message: `Non-retryable Interaction Execution failed ${interactionName}: ${error.message}`,
+                    message: `Non-retryable Interaction Execution failed ${interactionName}: ${executionError.message}`,
                     nonRetryable: true,
                 });
             }
         }
         
         // Unknown retryability - rethrow as generic error (Temporal will use default retry policy)
-        throw new Error(`Interaction Execution failed ${interactionName}: ${error.message}`);
+        throw new Error(`Interaction Execution failed ${interactionName}: ${executionError.message}`);
     }
 }
 
@@ -250,7 +254,7 @@ export async function executeInteractionFromActivity(
     client: VertesiaClient,
     interactionName: string,
     params: InteractionExecutionParams,
-    prompt_data: any,
+    prompt_data: Record<string, unknown>,
     debug?: boolean,
 ) {
     const userTags = params.tags;
@@ -331,8 +335,9 @@ export async function executeInteractionFromActivity(
         const error = new Error(errorMessage);
         
         // Attach retryable property so the catch block can access it
-        (error as any).retryable = res.error?.retryable;
-        (error as any).errorCode = res.error?.code;
+        const executionError = error as Error & { retryable?: boolean; errorCode?: string };
+        executionError.retryable = res.error?.retryable;
+        executionError.errorCode = res.error?.code;
         
         throw error;
     }
@@ -348,4 +353,19 @@ export async function executeInteractionFromActivity(
 function is4xxNonRetryable(code: number | undefined): boolean {
     if (code === undefined || typeof code !== 'number') return false;
     return code >= 400 && code < 500 && code !== 412 && code !== 429;
+}
+
+interface ExecutionError extends Error {
+    status?: number;
+    statusCode?: number;
+    code?: number;
+    retryable?: boolean;
+    errorCode?: unknown;
+}
+
+function toExecutionError(error: unknown): ExecutionError {
+    if (error instanceof Error) {
+        return error as ExecutionError;
+    }
+    return new Error(String(error)) as ExecutionError;
 }

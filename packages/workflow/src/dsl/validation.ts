@@ -100,7 +100,7 @@ export function validateActivity(activity: DSLActivitySpec, workflowVars: Set<st
 }
 
 
-function validateExpressions(target: Record<string, any>, localVars: Record<string, boolean>, errors: string[], checkSelfReference = false) {
+function validateExpressions(target: Record<string, unknown>, localVars: Record<string, boolean>, errors: string[], checkSelfReference = false) {
     const vars = new Vars(localVars);
     const refs = vars.getUnknownReferences(target);
     for (const ref of refs) {

@@ -1,9 +1,9 @@
 import { useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
-import { useUITranslation } from '../../../../../i18n/index.js';
-import { i18nInstance, NAMESPACE } from '../../../../../i18n/instance.js';
-import { ExportPropertiesModal, ExportTypes } from "../../ExportPropertiesModal";
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
+import { ExportPropertiesModal } from "../../ExportPropertiesModal";
 import { useObjectsActionCallback } from "../ObjectsActionHooks";
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
@@ -67,19 +67,10 @@ export function ExportPropertiesComponent({ action, objectIds }: ActionComponent
                     query: exportAll && !query.vector ? { ...query, type: typeId } : { type: typeId },
                     table_layout: table_layout,
                 }).then((response) => {
-                    let data;
-
-                    if (exportType === ExportTypes.CSV) {
-                        data = new Blob([response.data], { type: response.type });
-                    } else if (exportType === ExportTypes.JSON) {
-                        data = new Blob([JSON.stringify(response.data)], { type: response.type });
-                    } else {
-                        const responseData: any = response.data
-                        data = new Blob([new Uint8Array(responseData.data)], { type: response.type });
-                    }
+                    const data = new Blob([response.data], { type: response.type });
 
                     const url = window.URL.createObjectURL(data);
-                    const a: any = document.createElement('a');
+                    const a = document.createElement('a');
                     a.download = response.name;
                     a.href = url;
                     a.click();

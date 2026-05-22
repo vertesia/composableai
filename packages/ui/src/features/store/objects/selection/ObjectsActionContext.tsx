@@ -1,9 +1,9 @@
 import { ReactNode, useMemo } from 'react';
 
 import { ContentObjectTypeItem } from '@vertesia/common';
-import { ErrorBox, useFetch, useToast } from '@vertesia/ui/core';
+import { ErrorBox, errorMessage, useFetch, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 import { useDocumentSelection } from '../DocumentSelectionProvider';
 import { useDocumentSearch } from '../search/DocumentSearchContext';
@@ -60,10 +60,10 @@ export function ObjectsActionContextProvider({ children, type }: ObjectsActionCo
         context.allActions = DEFAULT_ACTIONS;
         context.wfRules = rules!;
         return context;
-    }, [selection, rules, type]);
+    }, [client, search, selection, rules, toast, type]);
 
     if (error) {
-        return <ErrorBox title={t('store.failedToFetchWorkflows')}>{error.message}</ErrorBox>
+        return <ErrorBox title={t('store.failedToFetchWorkflows')}>{errorMessage(error)}</ErrorBox>
     }
 
     return (

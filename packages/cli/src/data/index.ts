@@ -8,7 +8,7 @@ export function registerDataCommand(program: Command) {
     data.command("list")
         .description("List data stores in the current project")
         .option("--json", "Output full JSON instead of tab-separated text")
-        .action(async (options: Record<string, any>) => {
+        .action(async (options: Record<string, unknown>) => {
             await listDataStores(program, options);
         });
 
@@ -21,7 +21,7 @@ export function registerDataCommand(program: Command) {
         .option("--mime [mimeType]", "MIME type for uploads from local files or stdin")
         .option("--prefix [pathPrefix]", "Custom staging prefix in project storage for uploaded local files")
         .option("--json", "Output full JSON instead of a short summary")
-        .action(async (storeId: string, tableName: string, input: string | undefined, options: Record<string, any>) => {
+        .action(async (storeId: string, tableName: string, input: string | undefined, options: Record<string, unknown>) => {
             await importData(program, storeId, tableName, input, options);
         });
 }
