@@ -485,7 +485,7 @@ function StartWorkflowView({
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            startWorkflowWithMessage();
+            void startWorkflowWithMessage();
         }
         // Shift+Enter allows newline (default textarea behavior)
     };
@@ -1083,7 +1083,7 @@ function ModernAgentConversationInner({
             }
         };
 
-        fetchActiveWorkstreams();
+        void fetchActiveWorkstreams();
         const pollHandle = window.setInterval(fetchActiveWorkstreams, 10000);
 
         return () => {
@@ -1223,7 +1223,7 @@ function ModernAgentConversationInner({
 
         if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
             const filesArray = Array.from(e.dataTransfer.files);
-            handleFileUpload(filesArray);
+            void handleFileUpload(filesArray);
         }
     }, [handleFileUpload]);
 

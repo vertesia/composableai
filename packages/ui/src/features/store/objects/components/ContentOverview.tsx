@@ -547,7 +547,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     onSaved={() => {
                         setIsEditing(false);
                         reloadText();
-                        refetch?.();
+                        void refetch?.();
                     }}
                 />
             )}

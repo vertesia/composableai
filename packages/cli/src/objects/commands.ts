@@ -220,7 +220,7 @@ export async function createObjectFromFiles(program: Command, files: string[], o
     if (!options) options = {};
     // split in 10 chunks
     const chunks = splitInChunks(files, 10);
-    Promise.all(chunks.map(async (chunk) => {
+    void Promise.all(chunks.map(async (chunk) => {
         for (const file of chunk) {
             await createObjectFromFile(program, file, options);
         }

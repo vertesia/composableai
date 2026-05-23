@@ -24,7 +24,7 @@ function mount(language: SupportedLanguage): LocaleFormat {
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
-    act(() => {
+    void act(() => {
         root?.render(
             <LanguageProvider>
                 <Probe />
@@ -39,7 +39,7 @@ describe('useLocaleFormat', () => {
         localStorage.clear();
     });
     afterEach(() => {
-        act(() => {
+        void act(() => {
             root?.unmount();
         });
         container?.remove();

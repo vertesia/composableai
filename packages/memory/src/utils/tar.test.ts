@@ -10,9 +10,9 @@ afterAll(() => {
 describe("Indexed tar format", () => {
     const builder = new TarBuilder(tarFile);
     test("build tar", async () => {
-        builder.add("file1.txt", Buffer.from("hello world!"));
-        builder.add("file2.txt", Buffer.from("bonjour monde!"));
-        builder.add("app/package.json", readFileSync("./package.json"));
+        await builder.add("file1.txt", Buffer.from("hello world!"));
+        await builder.add("file2.txt", Buffer.from("bonjour monde!"));
+        await builder.add("app/package.json", readFileSync("./package.json"));
         await builder.build();
         const stats = statSync(tarFile);
         expect(stats.isFile()).toBeTruthy();

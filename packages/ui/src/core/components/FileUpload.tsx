@@ -171,7 +171,7 @@ export function useDropZone<T extends HTMLElement = HTMLDivElement>({
                         const readEntries = () => {
                             dirReader.readEntries((results) => {
                                 if (!results.length) {
-                                    Promise.all(entries).then((filesArrays) => resolve(filesArrays.flat()));
+                                    void Promise.all(entries).then((filesArrays) => resolve(filesArrays.flat()));
                                 } else {
                                     for (const entry of results) {
                                         entries.push(traverseFileTree(entry, `${path + item.name}/`));
@@ -193,7 +193,7 @@ export function useDropZone<T extends HTMLElement = HTMLDivElement>({
                 }
             }
 
-            Promise.all(promises).then((filesArrays) => {
+            void Promise.all(promises).then((filesArrays) => {
                 const allFiles = filesArrays.flat();
                 if (allFiles.length) {
                     onUpload(allFiles);

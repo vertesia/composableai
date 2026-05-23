@@ -193,7 +193,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         });
 
         if (opts.apikey) {
-            this.withApiKey(opts.apikey);
+            void this.withApiKey(opts.apikey);
         }
 
         this.onRequest = opts.onRequest;

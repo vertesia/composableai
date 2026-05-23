@@ -80,7 +80,7 @@ export function createAgentRunnerFilterHandler(search: SearchInterface) {
             }
         });
 
-        search.search();
+        void search.search();
     };
 }
 
@@ -109,7 +109,7 @@ export function AgentRunnerFacetsNav({ facets, search, selectionCount, actions }
     }, [filters, handleFilterLogic]);
 
     const handleRefetch = () => {
-        search.search();
+        void search.search();
     };
 
     return (

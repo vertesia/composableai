@@ -731,7 +731,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
             }
         };
 
-        resolveArtifacts();
+        void resolveArtifacts();
 
         return () => {
             cancelled = true;

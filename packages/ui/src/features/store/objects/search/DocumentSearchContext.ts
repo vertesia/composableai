@@ -53,7 +53,7 @@ export class DocumentSearch implements SearchInterface {
     setFilterValue(name: string, value: unknown) {
         (this.query as Record<string, unknown>)[name] = value;
         // search now
-        this.search();
+        void this.search();
     }
 
     setDefaultKeys(keys: unknown[]) {
@@ -75,7 +75,7 @@ export class DocumentSearch implements SearchInterface {
         };
 
         if (autoSearch) {
-            this.search();
+            void this.search();
         }
     }
 

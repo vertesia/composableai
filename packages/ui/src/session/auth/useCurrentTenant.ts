@@ -63,7 +63,7 @@ export function useCurrentTenant() {
             }
         };
 
-        loadCurrentTenant();
+        void loadCurrentTenant();
     }, [user?.email]);
 
     return {

@@ -91,7 +91,7 @@ export function DocumentPreviewPanel({
             setText(result.text);
           } else {
             // Otherwise, fetch text
-            loadObjectText(result.id);
+            void loadObjectText(result.id);
           }
 
           // If it's an image, load the image URL
@@ -100,7 +100,7 @@ export function DocumentPreviewPanel({
             content?.source &&
             content.type?.startsWith("image/");
           if (isImage) {
-            loadImageUrl(result);
+            void loadImageUrl(result);
           }
         })
         .catch((error) => {

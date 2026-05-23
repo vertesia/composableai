@@ -101,7 +101,7 @@ function StandardSigninPanel({ authError, darkLogo, lightLogo, preservePath }: {
             signupData: data,
             firebaseToken: fbToken,
         };
-        fetch(`${Env.endpoints.studio}/auth/signup`, {
+        void fetch(`${Env.endpoints.studio}/auth/signup`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),

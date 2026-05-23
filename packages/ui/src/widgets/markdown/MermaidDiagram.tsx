@@ -162,7 +162,7 @@ export function MermaidDiagram({ code, className }: MermaidDiagramProps) {
             }
         };
 
-        renderDiagram();
+        void renderDiagram();
 
         return () => {
             cancelled = true;

@@ -83,6 +83,9 @@
         "noStaticElementInteractions": "error",
         "useAriaActivedescendantWithTabindex": "error",
         "noLabelWithoutControl": "error"
+      },
+      "nursery": {
+        "noFloatingPromises": "error"
       }
     }
   },

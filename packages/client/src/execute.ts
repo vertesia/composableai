@@ -75,7 +75,7 @@ export async function executeInteractionByName<P = unknown>(client: VertesiaClie
 
 function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk: string) => void) {
     return new Promise((resolve, reject) => {
-        (async () => {
+        void (async () => {
             try {
                 const EventSourceImpl = await EventSourceProvider();
                 const streamUrl = new URL(`${client.runs.baseUrl}/${runId}/stream`);

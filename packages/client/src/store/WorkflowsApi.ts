@@ -329,7 +329,7 @@ export class WorkflowsApi extends ApiTopic {
                             reconnectTimer = setTimeout(() => {
                                 reconnectTimer = null;
                                 if (!isClosed) {
-                                    setupStream(true);
+                                    void setupStream(true);
                                 }
                             }, delay);
                         } else {
@@ -346,7 +346,7 @@ export class WorkflowsApi extends ApiTopic {
                         reconnectTimer = setTimeout(() => {
                             reconnectTimer = null;
                             if (!isClosed) {
-                                setupStream(true);
+                                void setupStream(true);
                             }
                         }, delay);
                     } else {
@@ -375,7 +375,7 @@ export class WorkflowsApi extends ApiTopic {
                 }
 
                 // 2. Connect to SSE
-                setupStream(false);
+                void setupStream(false);
             };
 
             init().catch(reject);
@@ -551,7 +551,7 @@ export class WorkflowsApi extends ApiTopic {
                 }
             };
 
-            connect();
+            void connect();
         });
     }
 

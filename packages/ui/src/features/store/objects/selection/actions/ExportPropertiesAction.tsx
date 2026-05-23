@@ -58,7 +58,7 @@ export function ExportPropertiesComponent({ action, objectIds }: ActionComponent
             const typeId = ctx.params?.type?.id ?? query.type;
             const table_layout = ctx.params?.type?.table_layout ?? undefined;
 
-            getObjectIds().then((Ids) => {
+            void getObjectIds().then((Ids) => {
                 // When exporting all, send search result if a vector search was used
                 // otherwise send the query — always constrained to the current content type.
                 store.objects.exportProperties({

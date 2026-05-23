@@ -301,7 +301,7 @@ function MoreDropdown({
                     if (onDownload) {
                         onDownload();
                     } else {
-                        getConversationUrl(client, agentRunId).then((r) => window.open(r, "_blank"));
+                        void getConversationUrl(client, agentRunId).then((r) => window.open(r, "_blank"));
                     }
                 }}>
                     <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.downloadConversation')}

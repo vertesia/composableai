@@ -73,7 +73,7 @@ export function useCollectionsFilterHandler(search: SearchInterface) {
             }
         });
 
-        search.search();
+        void search.search();
     };
 }
 

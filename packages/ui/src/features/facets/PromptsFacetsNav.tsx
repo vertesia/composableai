@@ -64,7 +64,7 @@ export function usePromptsFilterHandler(search: SearchInterface) {
             }
         });
 
-        search.search();
+        void search.search();
     };
 }
 

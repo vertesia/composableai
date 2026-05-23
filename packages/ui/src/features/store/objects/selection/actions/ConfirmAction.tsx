@@ -33,7 +33,7 @@ export default function ConfirmAction({ action, callback, children }: ObjectsAct
 
     const onConfirm = () => {
         setShowConfirmModal(false);
-        callback({ ...ctx.params, action });
+        void callback({ ...ctx.params, action });
     };
 
     return (

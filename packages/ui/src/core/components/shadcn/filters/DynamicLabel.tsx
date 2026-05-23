@@ -34,7 +34,7 @@ export function DynamicLabel({ value, labelRenderer, fallbackLabel }: Readonly<D
       }
     };
 
-    renderLabel();
+    void renderLabel();
   }, [value, labelRenderer, fallbackLabel]);
 
   if (isLoading) {

@@ -460,7 +460,7 @@ export class AgentsApi extends ApiTopic {
                         reconnectAttempts++;
                         reconnectTimer = setTimeout(() => {
                             reconnectTimer = null;
-                            if (!isClosed) setupStream(true);
+                            if (!isClosed) void setupStream(true);
                         }, delay);
                     } else {
                         isClosed = true;
@@ -475,7 +475,7 @@ export class AgentsApi extends ApiTopic {
                     reconnectAttempts++;
                     reconnectTimer = setTimeout(() => {
                         reconnectTimer = null;
-                        if (!isClosed) setupStream(true);
+                        if (!isClosed) void setupStream(true);
                     }, delay);
                 } else {
                     isClosed = true;
@@ -485,7 +485,7 @@ export class AgentsApi extends ApiTopic {
             }
         };
 
-        setupStream(false);
+        void setupStream(false);
         return promise;
     }
 

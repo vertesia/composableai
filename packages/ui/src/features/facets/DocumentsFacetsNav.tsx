@@ -135,7 +135,7 @@ export function useDocumentFilterHandler(search: SearchInterface) {
             }
         });
 
-        search.search();
+        void search.search();
     };
 }
 

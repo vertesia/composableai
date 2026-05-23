@@ -25,7 +25,7 @@ interface LazyRouteComponentProps {
 function LazyRouteComponent({ route, spinner }: LazyRouteComponentProps) {
     const [Component, setComponent] = useState<LazyRouteModule["default"] | null>(null);
     useEffect(() => {
-        route.LazyComponent().then(module => {
+        void route.LazyComponent().then(module => {
             if (!module.default) {
                 throw new Error(`Lazy module for ${route.path} does not have a default export`);
             }

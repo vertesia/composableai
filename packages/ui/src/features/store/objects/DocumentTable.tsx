@@ -153,7 +153,7 @@ function ObjectTableWithDropZone({
                 collectionId,
             });
 
-            onUpload(filesToUpload, typeId, collectionId).finally(() => {
+            void onUpload(filesToUpload, typeId, collectionId).finally(() => {
                 setLoading(false);
                 search.search(); // Refresh the search results after upload
             });
@@ -205,7 +205,7 @@ function ObjectTableWithDropZone({
                             count: files.length,
                             message: `Preparing to upload ${files.length} file${files.length === 1 ? "" : "s"}...`,
                         };
-                        handleFileDrop(files, feedback);
+                        void handleFileDrop(files, feedback);
                     }
                 }
             }}

@@ -221,7 +221,7 @@ export function DocumentUploadModal({
             // Set initial files if provided
             if (initialFiles && initialFiles.length > 0) {
                 setFiles(initialFiles);
-                processFiles(initialFiles);
+                void processFiles(initialFiles);
             } else {
                 setFiles([]);
             }
@@ -256,7 +256,7 @@ export function DocumentUploadModal({
     const handleFileSelect = (newFiles: File[]) => {
         if (newFiles && newFiles.length > 0) {
             setFiles(newFiles);
-            processFiles(newFiles);
+            void processFiles(newFiles);
         }
     };
 

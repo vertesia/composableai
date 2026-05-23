@@ -62,7 +62,7 @@ export default function EnterpriseSigninButton({ redirectTo }: EnterpriseSigninB
         }
         // Env.firebase.tenantEmail = email;
         setIsLoading(true);
-        setFirebaseTenant(email).then((data) => {
+        void setFirebaseTenant(email).then((data) => {
             if (!data) {
                 toast({
                     title: t('auth.tenantNotFound'),

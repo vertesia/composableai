@@ -140,7 +140,7 @@ export function useArtifacts(
     useEffect(() => {
         void refreshKey;
         void manualRefreshKey;
-        fetchArtifacts();
+        void fetchArtifacts();
     }, [fetchArtifacts, refreshKey, manualRefreshKey]);
 
     const tree = useMemo(() => buildTree(flatFiles), [flatFiles]);

@@ -35,7 +35,7 @@ export class ObjectTypeSearch {
 
     setFilterValue(name: string, value: unknown) {
         (this.query as Record<string, unknown>)[name] = value;
-        this.search();
+        void this.search();
     }
 
     reset(isLoading = false) {

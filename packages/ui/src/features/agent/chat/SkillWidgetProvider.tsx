@@ -155,7 +155,7 @@ export function SkillWidgetProvider({ children }: SkillWidgetProviderProperties)
     const [components, setComponents] = useState<Record<string, React.FunctionComponent<CodeBlockRendererProps>>>(defaultComponents);
     useEffect(() => {
         // fetch all skill components
-        fetchSkillWidgets(client).then(widgets => {
+        void fetchSkillWidgets(client).then(widgets => {
             setComponents({
                 ...defaultComponents,
                 ...widgets,

@@ -61,7 +61,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
 
             // Try to fetch JSON schema if object has a type
             if (object.type?.id) {
-                fetchJsonSchema(object.type.id);
+                void fetchJsonSchema(object.type.id);
             }
         }
     }, [isOpen, object, fetchJsonSchema]);

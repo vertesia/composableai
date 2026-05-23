@@ -316,7 +316,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                 setResolvedFiles(resolved.filter((f): f is string => !!f));
             }
         };
-        resolveFiles();
+        void resolveFiles();
         return () => { cancelled = true; };
     }, [files, artifactRunId]);
 
@@ -511,7 +511,7 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
                 setResolvedFiles(resolved.filter((f): f is string => !!f));
             }
         };
-        resolveFiles();
+        void resolveFiles();
         return () => { cancelled = true; };
     }, [files, artifactRunId]);
 
@@ -594,7 +594,7 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
                 setResolvedImages(resolved.filter((f): f is string => !!f));
             }
         };
-        resolveFiles();
+        void resolveFiles();
         return () => { cancelled = true; };
     }, [messages, artifactRunId]);
 

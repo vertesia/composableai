@@ -12,7 +12,7 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession()
     const onDownload = (name: string) => {
-        getResourceUrl(client, object.id, name).then(url => window.open(url, '_blank'));
+        void getResourceUrl(client, object.id, name).then(url => window.open(url, '_blank'));
     }
 
     const getProcessorType = (): string => {

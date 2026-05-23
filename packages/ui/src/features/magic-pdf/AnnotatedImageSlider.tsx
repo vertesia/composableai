@@ -128,7 +128,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
 
         // Start all loads in parallel - prioritized pages will update state first
         // since they're fetched first in the loadOrder
-        loadOrder.forEach(page => { loadPage(page); });
+        loadOrder.forEach(page => { void loadPage(page); });
 
         return () => {
             cancelled = true;

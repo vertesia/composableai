@@ -459,7 +459,7 @@ function MessageItemComponent({
             }
         };
 
-        loadArtifacts();
+        void loadArtifacts();
     }, [runId, outputFiles]);
 
     const workstreamId = getWorkstreamId(message);

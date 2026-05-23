@@ -39,7 +39,7 @@ export function EnvironmentFacet({ search, buckets, placeholder = "All Environme
                     name
                 }
             })
-            Promise.all(options).then(resolvedOptions => {
+            void Promise.all(options).then(resolvedOptions => {
                 resolvedOptions.sort((a, b) => a.name.localeCompare(b.name));
                 setOptions(resolvedOptions);
             });

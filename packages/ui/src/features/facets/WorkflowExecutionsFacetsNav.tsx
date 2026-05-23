@@ -104,7 +104,7 @@ export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
             }
         });
 
-        search.search();
+        void search.search();
     };
 }
 

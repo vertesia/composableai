@@ -78,7 +78,7 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
 
         if (source || object) {
             setIsLoading(true);
-            load();
+            void load();
         } else {
             setIsLoading(false);
         }

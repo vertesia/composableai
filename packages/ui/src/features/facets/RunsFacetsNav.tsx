@@ -163,7 +163,7 @@ export function useRunsFilterHandler(search: SearchInterface) {
             }
         });
 
-        search.search();
+        void search.search();
     };
 }
 
@@ -180,7 +180,7 @@ export function RunsFacetsNav({ facets, search, actions, selectionCount }: RunsF
     };
 
     const handleRefetch = () => {
-        search.search();
+        void search.search();
     }
 
     return (

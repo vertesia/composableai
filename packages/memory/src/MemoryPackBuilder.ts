@@ -43,9 +43,9 @@ export class MemoryPackBuilder {
         const keys = Object.keys(this.entries).sort();
         for (const key of keys) {
             const source = this.entries[key];
-            tar.add(key, await source.getContent());
+            await tar.add(key, await source.getContent());
         }
-        tar.add(MEMORY_METADATA_ENTRY, Buffer.from(
+        await tar.add(MEMORY_METADATA_ENTRY, Buffer.from(
             JSON.stringify(metadata, undefined, this.builder.options.indent || undefined),
             "utf-8")
         );

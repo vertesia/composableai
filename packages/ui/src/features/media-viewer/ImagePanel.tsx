@@ -74,7 +74,7 @@ export function ImagePanel({ url, source, object, className }: ImagePanelProps) 
 
         if (source || object) {
             setIsLoading(true);
-            load();
+            void load();
         } else {
             setIsLoading(false);
         }

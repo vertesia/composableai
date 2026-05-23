@@ -25,7 +25,7 @@ function mount(node: React.ReactNode) {
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
-    act(() => {
+    void act(() => {
         root?.render(node);
     });
 }
@@ -37,7 +37,7 @@ describe('LanguageProvider', () => {
         document.documentElement.lang = '';
     });
     afterEach(() => {
-        act(() => {
+        void act(() => {
             root?.unmount();
         });
         container?.remove();
@@ -123,13 +123,13 @@ describe('LanguageProvider', () => {
         expect(document.documentElement.dir).toBe('ltr');
         expect(document.documentElement.lang).toBe('en');
 
-        act(() => {
+        void act(() => {
             snap.setLanguage('ar');
         });
         expect(document.documentElement.dir).toBe('rtl');
         expect(document.documentElement.lang).toBe('ar');
 
-        act(() => {
+        void act(() => {
             snap.setLanguage('fr');
         });
         expect(document.documentElement.dir).toBe('ltr');
@@ -147,7 +147,7 @@ describe('LanguageProvider', () => {
                 <Probe />
             </LanguageProvider>,
         );
-        act(() => {
+        void act(() => {
             snap.setLanguage('ar');
         });
         expect(localStorage.getItem(STORAGE_KEY)).toBe('ar');
@@ -164,7 +164,7 @@ describe('LanguageProvider', () => {
                 <Probe />
             </LanguageProvider>,
         );
-        act(() => {
+        void act(() => {
             snap.setLanguage('ar');
         });
         expect(localStorage.getItem('custom-lang-key')).toBe('ar');

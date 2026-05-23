@@ -74,7 +74,7 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
 
         if (source || object) {
             setIsLoading(true);
-            load();
+            void load();
         } else {
             setIsLoading(false);
         }
