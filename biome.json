@@ -9,12 +9,14 @@
     "ignoreUnknown": true,
     "includes": [
       "!!**/llumiverse",
-      "**/*.{js,cjs,mjs,jsx,ts,tsx,css}",
+      "**/*.{js,cjs,mjs,jsx,ts,tsx,css,html}",
       "!**/dist/**",
       "!**/lib/**",
       "!**/node_modules/**",
       "!**/build/**",
-      "!**/bin/**"
+      "!**/bin/**",
+      "!packages/tools-admin-ui/index.html",
+      "!templates/plugin-template/index.html"
     ]
   },
   "formatter": {
