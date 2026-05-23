@@ -25,7 +25,7 @@ const Input = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProp
         } else {
             object.value = ev.target.value;
         }
-        onChange && onChange(ev);
+        onChange?.(ev);
     }
     if (type === 'textarea') {
         return (

@@ -1,7 +1,7 @@
 import { Button, Spinner, Modal, ModalBody, ModalTitle, VTooltip, cn, Textarea } from "@vertesia/ui/core";
 import { Activity, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ConversationFile, FileProcessingStatus } from "@vertesia/common";
+import { ContentObjectItem, ConversationFile, FileProcessingStatus } from "@vertesia/common";
 import { SelectDocument } from "../../../store";
 import { useUITranslation } from '@vertesia/ui/i18n';
 
@@ -266,10 +266,11 @@ export default function MessageInput({
     }, []);
 
     useEffect(() => {
+        void value;
         adjustTextareaHeight();
     }, [value, adjustTextareaHeight]);
 
-    const handleObjectSelect = (object: any) => {
+    const handleObjectSelect = (object: ContentObjectItem) => {
         // Create a markdown link with the object title and ID
         const objectTitle = object.properties?.title || object.name || 'Object';
         const objectId = object.id;
@@ -299,6 +300,7 @@ export default function MessageInput({
 
 
     return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target only; file selection is also exposed via the upload button.
         <div
             className={cn("p-3 border-t border-muted flex-shrink-0 transition-all fixed lg:sticky bottom-0 start-0 end-0 lg:start-auto lg:end-auto w-full bg-background z-10", isDragOver && "bg-blue-50 dark:bg-blue-900/20 border-blue-400", className)}
             style={{ minHeight: "120px" }}

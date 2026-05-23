@@ -293,7 +293,7 @@ function MessageItemComponent({
 
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
     const markdownComponents = useMemo(() => ({
-        a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
+        a: ({ node, ref, ...props }: { node?: unknown; ref?: unknown; href?: string; children?: React.ReactNode }) => {
             const href = props.href || "";
             if (href.includes("/store/objects")) {
                 if (StoreLinkComponent) {
@@ -331,15 +331,21 @@ function MessageItemComponent({
                 />
             );
         },
-        img: ({ node, ref, ...props }: { node?: any; ref?: any; src?: string; alt?: string }) => {
+        img: ({ node, ref, ...props }: { node?: unknown; ref?: unknown; src?: string; alt?: string }) => {
             return (
-                <img
-                    {...props}
-                    alt={props.alt ?? ""}
-                    className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
-                    loading="lazy"
+                <Button
+                    variant="unstyled"
+                    className="block p-0"
                     onClick={() => props.src && openImage(props.src, props.alt)}
-                />
+                    aria-label={props.alt || props.src || 'image'}
+                >
+                    <img
+                        {...props}
+                        alt={props.alt ?? ""}
+                        className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
+                        loading="lazy"
+                    />
+                </Button>
             );
         },
     }), [openImage, StoreLinkComponent, CollectionLinkComponent]);
@@ -356,12 +362,12 @@ function MessageItemComponent({
         }
 
         // Handle string content with markdown - content is already processed
-        const runId = (message as any).workflow_run_id as string | undefined;
+        const runId = message.workflow_run_id;
 
         if (!runId && typeof content === 'string' && content.includes('artifact:')) {
             console.warn('[MessageItem] message contains artifact references but workflow_run_id is missing!', {
                 type: message.type,
-                workflow_run_id: (message as any).workflow_run_id,
+                workflow_run_id: message.workflow_run_id,
                 hasArtifact: content.includes('artifact:'),
             });
         }
@@ -385,12 +391,10 @@ function MessageItemComponent({
         { displayName: string; artifactPath: string; url: string; isImage: boolean }[]
     >([]);
 
-    // Create stable key from message for dependency tracking
-    const runId = (message as any).workflow_run_id as string | undefined;
-    const details = message.details as any;
+    const runId = message.workflow_run_id;
+    const details = message.details;
     // Check both outputFiles (from execute_shell) and files (from tool results like dashboard tools)
-    const outputFiles: unknown = details?.outputFiles ?? details?.files;
-    const outputFilesKey = Array.isArray(outputFiles) ? outputFiles.join(",") : "";
+    const outputFiles = details?.outputFiles ?? details?.files;
 
     useEffect(() => {
         const loadArtifacts = async () => {
@@ -455,7 +459,7 @@ function MessageItemComponent({
         };
 
         loadArtifacts();
-    }, [runId, outputFilesKey]);
+    }, [runId, outputFiles]);
 
     const workstreamId = getWorkstreamId(message);
     const { Icon } = resolvedStyle;
@@ -558,10 +562,12 @@ function MessageItemComponent({
                                 {artifactLinks
                                     .filter(a => a.isImage)
                                     .map(({ displayName, artifactPath, url }) => (
-                                        <div
+                                        <Button
+                                            variant="unstyled"
                                             key={`${artifactPath}-preview`}
-                                            className="max-w-xs cursor-pointer"
+                                            className="max-w-xs cursor-pointer text-start p-0"
                                             onClick={() => openImage(url, displayName)}
+                                            aria-label={displayName}
                                         >
                                             <img
                                                 src={url}
@@ -571,7 +577,7 @@ function MessageItemComponent({
                                             <div className="mt-1 text-[11px] text-muted truncate">
                                                 {displayName}
                                             </div>
-                                        </div>
+                                        </Button>
                                     ))}
                             </div>
                         )}

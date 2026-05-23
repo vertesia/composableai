@@ -3,9 +3,20 @@ import { getClient } from "../client.js";
 import { Spinner } from "../utils/console.js";
 import { readFile, readStdin, writeFile } from "../utils/stdio.js";
 import { CliExecutionResult, ExecutionQueue, ExecutionRequest } from "./executor.js";
+import { errorMessage, type CliOptions } from "../utils/options.js";
 
+type RunInteractionOptions = CliOptions<{
+    input?: string | boolean;
+    output?: string;
+    data?: string;
+    count?: string;
+    stream?: boolean;
+    verbose?: boolean;
+    jsonl?: boolean;
+    dataOnly?: boolean;
+}>;
 
-export default async function runInteraction(program: Command, interactionSpec: string, options: Record<string, any>) {
+export default async function runInteraction(program: Command, interactionSpec: string, options: RunInteractionOptions) {
     // Create abort controller for handling interruption
     const abortController = new AbortController();
     const { signal } = abortController;
@@ -34,7 +45,7 @@ export default async function runInteraction(program: Command, interactionSpec: 
         const data = await getInputData(options);
         const client = await getClient(program);
 
-        let count = options.count ? parseInt(options.count) : 1;
+        let count = options.count ? parseInt(options.count, 10) : 1;
         if (isNaN(count) || count < 0) {
             count = 1;
         }
@@ -42,10 +53,10 @@ export default async function runInteraction(program: Command, interactionSpec: 
         const hasMultiOutputs = (Array.isArray(data) && data.length > 1) || count > 1;
         const totalSize = Array.isArray(data) ? data.length * count : count;
 
-        let onChunk: ((chunk: any) => void) | undefined = undefined;
+        let onChunk: ((chunk: string) => void) | undefined = undefined;
         // TODO we can add an option --async to be able to force sync mode and use streaming for array data inputs?
         if (!hasMultiOutputs && options.stream) { // stream to stdout
-            onChunk = (chunk: string) => {
+            onChunk = (chunk) => {
                 if (chunk && !signal.aborted) {
                     process.stdout.write(chunk);
                 }
@@ -130,7 +141,7 @@ export default async function runInteraction(program: Command, interactionSpec: 
         process.off('SIGTERM', handleSignal);
         
         writeResult(result, hasMultiOutputs, options);
-    } catch (err: any) {
+    } catch (err: unknown) {
         // Clean up signal handlers
         process.off('SIGINT', handleSignal);
         process.off('SIGTERM', handleSignal);
@@ -141,14 +152,14 @@ export default async function runInteraction(program: Command, interactionSpec: 
         }
         
         if (spinner) spinner.done(false);
-        console.error("Failed to execute the interaction", err?.message);
+        console.error("Failed to execute the interaction", errorMessage(err));
         throw err;
     }
 }
 
-async function getInputData(options: Record<string, any>) {
+async function getInputData(options: RunInteractionOptions) {
     try {
-        let input: any;
+        let input: string | undefined;
         if (options.data) {
             input = options.data;
         } else if (options.input) {
@@ -159,13 +170,13 @@ async function getInputData(options: Record<string, any>) {
             }
         }
         return input ? JSON.parse(input) : undefined;
-    } catch (err: any) {
-        console.error('Invalid JSON data: ', err.message);
+    } catch (err: unknown) {
+        console.error('Invalid JSON data: ', errorMessage(err));
         process.exit(1);
     }
 }
 
-function writeResult(runs: CliExecutionResult[], hasMultiOutputs: boolean, options: Record<string, any>) {
+function writeResult(runs: CliExecutionResult[], hasMultiOutputs: boolean, options: RunInteractionOptions) {
     const out = formatResult(runs, hasMultiOutputs, options);
     if (typeof options.output === 'string') {
         writeFile(options.output, out);
@@ -174,7 +185,7 @@ function writeResult(runs: CliExecutionResult[], hasMultiOutputs: boolean, optio
     }
 }
 
-function formatResult(runs: CliExecutionResult[], hasMultiOutputs: boolean, options: Record<string, any>) {
+function formatResult(runs: CliExecutionResult[], hasMultiOutputs: boolean, options: RunInteractionOptions) {
     const outputData = options.dataOnly ? runs.map(run => run.result) : runs;
     let out: string;
     if (!hasMultiOutputs) {
@@ -191,7 +202,7 @@ function formatResult(runs: CliExecutionResult[], hasMultiOutputs: boolean, opti
     return out;
 }
 
-function toJson(data: any, space?: string | number | undefined) {
+function toJson(data: unknown, space?: string | number | undefined) {
     if (typeof data === 'string') {
         return data;
     } else {

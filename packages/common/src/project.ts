@@ -104,7 +104,8 @@ export enum SystemInteractionCategory {
     content_type = "content_type",
     intake = "intake",
     analysis = "analysis",
-    non_applicable = "non_applicable"
+    agent = "agent",
+    non_applicable = "non_applicable",
 }
 
 /**
@@ -123,6 +124,7 @@ export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCate
     "Mediator": SystemInteractionCategory.non_applicable,
     "AnalyzeConversation": SystemInteractionCategory.analysis,
     "GetAgentConversationTopic": SystemInteractionCategory.analysis,
+    "StudioAssistant": SystemInteractionCategory.agent,
 };
 
 /**
@@ -373,7 +375,7 @@ export interface Project {
     description?: string;
     account: string;
     configuration: ProjectConfiguration;
-    integrations?: Map<string, any>;
+    integrations?: Map<string, unknown>;
     plugins: string[];
     created_by: string,
     updated_by: string,

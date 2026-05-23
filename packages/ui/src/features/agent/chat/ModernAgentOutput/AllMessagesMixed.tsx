@@ -265,6 +265,9 @@ function AllMessagesMixedComponent({
     // Throttled to max 10 scrolls/sec to prevent layout thrashing
     // Skipped when the user has manually scrolled up to read earlier content
     useEffect(() => {
+        void messages.length;
+        void streamingMessages.size;
+        void streamingContentBucket;
         // Respect user's scroll position — don't yank them back to the bottom
         if (userScrolledUpRef.current) return;
 

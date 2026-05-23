@@ -16,6 +16,7 @@ export interface EnvProps {
         studio: string,
         sts: string, // Security Token Service endpoint
         git?: string, // Smart HTTP app source git endpoint
+        mcp?: string,
     },
     firebase?: {
         apiKey: string,
@@ -43,10 +44,10 @@ export interface EnvProps {
      */
     authTokenProvider?: () => Promise<string | undefined>,
     logger?: {
-        info: (msg: string, ...args: any) => void,
-        warn: (msg: string, ...args: any) => void,
-        error: (msg: string, ...args: any) => void,
-        debug: (msg: string, ...args: any) => void,
+        info: (msg: string, ...args: unknown[]) => void,
+        warn: (msg: string, ...args: unknown[]) => void,
+        error: (msg: string, ...args: unknown[]) => void,
+        debug: (msg: string, ...args: unknown[]) => void,
     }
     onLogin?: (token: AuthTokenPayload) => void,
     onLogout?: () => void,

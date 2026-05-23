@@ -36,7 +36,7 @@ registerFetchProviderFactory(
     InteractionRunProvider.factory,
 );
 
-export class ActivityContext<ParamsT extends Record<string, any>> {
+export class ActivityContext<ParamsT extends object> {
     client: VertesiaClient;
     _project?: Promise<Project | undefined>;
 
@@ -180,7 +180,7 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
     }
 }
 
-export async function setupActivity<ParamsT extends Record<string, any>>(
+export async function setupActivity<ParamsT extends object>(
     payload: DSLActivityExecutionPayload<ParamsT>,
 ) {
     const client = await getVertesiaClient(payload);

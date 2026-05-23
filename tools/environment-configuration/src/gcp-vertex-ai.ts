@@ -106,7 +106,7 @@ const getOrCreatePool = async (
   projectId: string,
   poolName: string,
 ) => {
-  let pool;
+  let pool: unknown;
 
   try {
     const { data } = await gcp.request({
@@ -164,7 +164,7 @@ const getOrCreateProvider = async (
   stsUrl?: string,
 ) => {
   // check if provider already exists. if not create it
-  let provider;
+  let provider: unknown;
 
   try {
     const { data } = await gcp.request({

@@ -90,7 +90,7 @@ function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
         });
     }
 
-    const onCollectionChange = (collectionId: string | string[] | undefined, _collection?: any) => {
+    const onCollectionChange = (collectionId: string | string[] | undefined, _collection?: unknown) => {
         if (typeof collectionId === "string" || typeof collectionId === "undefined") {
             setSelectedCollectionId(collectionId);
         } else if (Array.isArray(collectionId) && collectionId.length > 0) {

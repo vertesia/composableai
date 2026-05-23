@@ -16,7 +16,7 @@ export function ObjectTypeSearchProvider({ children, limit, name, chunkable: chu
         search.query.name = name;
         search.query.chunkable = chunkable;
         return search;
-    }, [limit]);
+    }, [chunkable, limit, name, store]);
 
     return (
         <ObjectTypeSearchContext.Provider value={search}>{children}</ObjectTypeSearchContext.Provider>

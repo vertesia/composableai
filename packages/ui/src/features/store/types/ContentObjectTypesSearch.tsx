@@ -30,22 +30,22 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
     useIntersectionObserver(loadMoreRef, () => {
-        isReady && search.loadMore();
-    }, { deps: [isReady] });
+        if (isReady) search.loadMore();
+    }, { deps: [isReady, search] });
 
     useEffect(() => {
         search.search()
             .then(() => setIsReady(true));
-    }, []);
+    }, [search]);
 
     useEffect(() => {
-        search.query.name = searchTerm;
+        search.query.name = debounceValue;
         search.search()
             .then(() => setIsReady(true));
-    }, [debounceValue]);
+    }, [debounceValue, search]);
 
-    const [chunkable, setChunkable] = useState(undefined);
-    const onChunkableChange = (data: any) => {
+    const [chunkable, setChunkable] = useState<string | undefined>(undefined);
+    const onChunkableChange = (data: string | undefined) => {
         setChunkable(data);
     };
 
@@ -53,13 +53,13 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
         search.query.chunkable = chunkable ? chunkable == "Yes" : undefined
         search.search()
             .then(() => setIsReady(true));
-    }, [chunkable]);
+    }, [chunkable, search]);
 
     useEffect(() => {
         if (isDirty && isReady) {
             search.search().then(() => setIsReady(true));
         }
-    }, [isDirty]);
+    }, [isDirty, isReady, search]);
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const onOpenCreateModal = () => {

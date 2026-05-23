@@ -1,12 +1,14 @@
 import { createContext, useContext, useEffect } from "react";
 import { HistoryNavigator, LocationChangeEvent, NavigateOptions } from "./HistoryNavigator";
 import { PathMatch, PathMatcher } from "./PathMatcher";
-import { isRootPath, joinPath } from "./path";
+import { isRootPath, joinPath, PathMatchParams } from "./path";
 
-export type LazyImportFn = () => Promise<any>;
+export type RouteComponentProps = PathMatchParams;
+export type LazyRouteModule = { default: React.ComponentType<Record<string, never>> };
+export type LazyImportFn = () => Promise<LazyRouteModule>;
 export interface ComponentRoute {
     path: string;
-    Component: React.ComponentType<any>;
+    Component: React.ComponentType<RouteComponentProps>;
 }
 export interface LazyComponentRoute {
     path: string;
@@ -15,7 +17,7 @@ export interface LazyComponentRoute {
 export type Route = ComponentRoute | LazyComponentRoute;
 
 export interface RouteMatch extends PathMatch<Route> {
-    state: any;
+    state: unknown;
 }
 
 export interface NavigationPrompt {
@@ -151,7 +153,7 @@ export interface RouterContext {
     route: Route;
     router: BaseRouter;
     params: Record<string, string>;
-    state: any;
+    state: unknown;
     /**
      * The path that matched the route. For wildcard `/*` paths this does not include the wildcard part.
      * You can get the wildcard path from `remainingPath`.
@@ -207,12 +209,13 @@ export function usePageTitle(title: string) {
 
 export function useNavigationPrompt(prompt: NavigationPrompt) {
     const { router } = useRouterContext();
+    const topRouter = router.getTopRouter();
     useEffect(() => {
-        router.getTopRouter().prompt = prompt;
+        topRouter.prompt = prompt;
         return () => {
-            router.getTopRouter().prompt = undefined;
+            topRouter.prompt = undefined;
         };
-    }, []);
+    }, [prompt, topRouter]);
 
     useEffect(() => {
         if (prompt.when) {
@@ -220,7 +223,7 @@ export function useNavigationPrompt(prompt: NavigationPrompt) {
             const listener = function (ev: Event) {
                 if (doBlock) {
                     ev.preventDefault();
-                    (ev as any).returnValue = "";
+                    (ev as BeforeUnloadEvent).returnValue = "";
                 }
             };
             window.addEventListener("beforeunload", listener);

@@ -100,7 +100,7 @@ function FullscreenDialog({
 }
 
 // Calculate height based on spec complexity
-function calculateAutoHeight(spec: Record<string, any>, mode: 'chart' | 'dashboard'): number {
+function calculateAutoHeight(spec: VegaSpecObject, mode: 'chart' | 'dashboard'): number {
     if (mode === 'chart') {
         return DEFAULT_CHART_HEIGHT;
     }
@@ -152,6 +152,53 @@ type ArtifactReference = {
     artifactPath: string;  // The artifact path (without "artifact:" prefix)
 };
 
+type VegaData = Record<string, unknown> & {
+    url?: string;
+    values?: unknown[];
+};
+
+type VegaChannel = Record<string, unknown> & {
+    field?: string;
+};
+
+type VegaSelect = Record<string, unknown> & {
+    fields?: string[];
+    bind?: string;
+};
+
+type VegaParam = Record<string, unknown> & {
+    name?: string;
+    select?: VegaSelect;
+    value?: unknown;
+};
+
+type VegaSpecObject = Record<string, unknown> & {
+    title?: unknown;
+    data?: VegaData;
+    encoding?: Record<string, VegaChannel>;
+    params?: VegaParam[];
+    layer?: VegaSpecObject[];
+    vconcat?: VegaSpecObject[];
+    hconcat?: VegaSpecObject[];
+    concat?: VegaSpecObject[];
+    spec?: VegaSpecObject;
+    repeat?: VegaSpecObject;
+    facet?: VegaSpecObject | unknown;
+    columns?: number;
+    spacing?: number;
+    width?: number | string;
+    height?: number | string;
+    config?: Record<string, unknown>;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isVegaSpecObject(value: unknown): value is VegaSpecObject {
+    return isRecord(value);
+}
+
 /**
  * Preprocess a Vega-Lite spec to fix duplicate signal names that occur
  * when params with selections are used in vconcat/hconcat layouts.
@@ -165,9 +212,9 @@ type ArtifactReference = {
  * (where selections typically originate). Cross-view references are preserved
  * so that clicking in one view filters other views.
  */
-function fixVegaLiteSelectionParams(spec: Record<string, any>): Record<string, any> {
+function fixVegaLiteSelectionParams(spec: VegaSpecObject): VegaSpecObject {
     // Deep clone the spec to avoid mutations
-    const result = JSON.parse(JSON.stringify(spec)) as Record<string, any>;
+    const result = JSON.parse(JSON.stringify(spec)) as VegaSpecObject;
 
     // Check if this is a concatenated spec with root-level selection params
     const concatKeys = ['vconcat', 'hconcat', 'concat'];
@@ -179,7 +226,7 @@ function fixVegaLiteSelectionParams(spec: Record<string, any>): Record<string, a
     }
 
     // Check for selection params at the root level
-    const rootSelectionParams: Array<{ name: string; param: Record<string, any> }> = [];
+    const rootSelectionParams: Array<{ name: string; param: VegaParam }> = [];
     if (Array.isArray(result.params)) {
         for (const param of result.params) {
             if (param && typeof param === 'object' && param.name && param.select) {
@@ -202,7 +249,7 @@ function fixVegaLiteSelectionParams(spec: Record<string, any>): Record<string, a
         const hasLegendBinding = param.select?.bind === 'legend';
 
         // Find the concat array
-        let concatArray: any[] | null = null;
+        let concatArray: VegaSpecObject[] | null = null;
         for (const key of concatKeys) {
             if (Array.isArray(result[key])) {
                 concatArray = result[key];
@@ -231,7 +278,8 @@ function fixVegaLiteSelectionParams(spec: Record<string, any>): Record<string, a
         targetView.params.push(param);
 
         // Remove the param from root level
-        result.params = result.params.filter((p: any) => p.name !== paramName);
+        const params = result.params ?? [];
+        result.params = params.filter((p) => p.name !== paramName);
 
         // Cross-view references are kept intact - Vega-Lite handles signal
         // propagation from the view where the selection is defined to other views
@@ -252,19 +300,19 @@ function fixVegaLiteSelectionParams(spec: Record<string, any>): Record<string, a
  * @exported for testing
  */
 export function applyParameterValues(
-    spec: Record<string, any>,
-    parameterValues: Record<string, any>
-): Record<string, any> {
+    spec: VegaSpecObject,
+    parameterValues: Record<string, unknown>
+): VegaSpecObject {
     if (!parameterValues || Object.keys(parameterValues).length === 0) {
         return spec;
     }
 
-    const result = JSON.parse(JSON.stringify(spec)) as Record<string, any>;
+    const result = JSON.parse(JSON.stringify(spec)) as VegaSpecObject;
 
     // Helper to update params in a view
-    const updateParams = (params: any[]) => {
+    const updateParams = (params: VegaParam[]) => {
         for (const param of params) {
-            if (param && typeof param === 'object' && param.name && param.name in parameterValues) {
+            if (param.name && param.name in parameterValues) {
                 param.value = parameterValues[param.name];
             }
         }
@@ -276,10 +324,10 @@ export function applyParameterValues(
     }
 
     // Update params in nested views (vconcat, hconcat, concat)
-    const updateNestedViews = (views: any[]) => {
+    const updateNestedViews = (views: VegaSpecObject[]) => {
         if (!Array.isArray(views)) return;
         for (const view of views) {
-            if (view && Array.isArray(view.params)) {
+            if (Array.isArray(view.params)) {
                 updateParams(view.params);
             }
             // Recursively handle nested concatenations
@@ -289,7 +337,7 @@ export function applyParameterValues(
             // Handle layers
             if (Array.isArray(view.layer)) {
                 for (const layer of view.layer) {
-                    if (layer && Array.isArray(layer.params)) {
+                    if (Array.isArray(layer.params)) {
                         updateParams(layer.params);
                     }
                 }
@@ -314,12 +362,12 @@ export function applyParameterValues(
 /**
  * Check if a view has encoding using any of the specified fields.
  */
-function viewHasField(view: Record<string, any>, fields: string[]): boolean {
+function viewHasField(view: VegaSpecObject, fields: string[]): boolean {
     if (!view || !view.encoding) return false;
 
     for (const field of fields) {
         for (const channel of Object.values(view.encoding)) {
-            if (channel && typeof channel === 'object' && (channel as any).field === field) {
+            if (channel.field === field) {
                 return true;
             }
         }
@@ -338,13 +386,13 @@ function viewHasField(view: Record<string, any>, fields: string[]): boolean {
 /**
  * Check if a view has color encoding using any of the specified fields.
  */
-function viewHasColorEncoding(view: Record<string, any>, fields: string[]): boolean {
+function viewHasColorEncoding(view: VegaSpecObject, fields: string[]): boolean {
     if (!view) return false;
 
-    const checkEncoding = (encoding: any): boolean => {
+    const checkEncoding = (encoding: Record<string, VegaChannel> | undefined): boolean => {
         if (!encoding) return false;
         const colorField = encoding.color?.field;
-        return colorField && fields.includes(colorField);
+        return !!colorField && fields.includes(colorField);
     };
 
     if (checkEncoding(view.encoding)) return true;
@@ -363,7 +411,7 @@ function viewHasColorEncoding(view: Record<string, any>, fields: string[]): bool
  * Walk the Vega-Lite spec and find all artifact: URL references in data.url fields.
  * Returns an array of references with their paths in the spec tree.
  */
-function findArtifactReferences(spec: Record<string, any>, currentPath: string[] = []): ArtifactReference[] {
+function findArtifactReferences(spec: VegaSpecObject, currentPath: string[] = []): ArtifactReference[] {
     const references: ArtifactReference[] = [];
 
     if (!spec || typeof spec !== 'object') {
@@ -388,9 +436,11 @@ function findArtifactReferences(spec: Record<string, any>, currentPath: string[]
             const value = spec[key];
             if (Array.isArray(value)) {
                 value.forEach((item, index) => {
-                    references.push(...findArtifactReferences(item, [...currentPath, key, String(index)]));
+                    if (isVegaSpecObject(item)) {
+                        references.push(...findArtifactReferences(item, [...currentPath, key, String(index)]));
+                    }
                 });
-            } else if (typeof value === 'object' && value !== null) {
+            } else if (isVegaSpecObject(value)) {
                 references.push(...findArtifactReferences(value, [...currentPath, key]));
             }
         }
@@ -403,28 +453,30 @@ function findArtifactReferences(spec: Record<string, any>, currentPath: string[]
  * Deep clone and update the spec by replacing artifact URLs with resolved data values.
  */
 function replaceArtifactData(
-    spec: Record<string, any>,
-    resolvedData: Map<string, any[]>
-): Record<string, any> {
-    const result = JSON.parse(JSON.stringify(spec)) as Record<string, any>;
+    spec: VegaSpecObject,
+    resolvedData: Map<string, unknown[]>
+): VegaSpecObject {
+    const result = JSON.parse(JSON.stringify(spec)) as VegaSpecObject;
 
     for (const [pathKey, data] of resolvedData) {
         const path = pathKey.split('.');
-        let current: any = result;
+        let current: Record<string, unknown> = result;
 
         // Navigate to the parent of the data object
         for (let i = 0; i < path.length - 1; i++) {
-            if (current[path[i]] === undefined) {
+            const next = current[path[i]];
+            if (!isRecord(next)) {
                 break;
             }
-            current = current[path[i]];
+            current = next;
         }
 
         // Replace data.url with data.values
         const lastKey = path[path.length - 1];
-        if (current[lastKey] && typeof current[lastKey] === 'object') {
-            delete current[lastKey].url;
-            current[lastKey].values = data;
+        const target = current[lastKey];
+        if (isRecord(target)) {
+            delete target.url;
+            target.values = data;
         }
     }
 
@@ -432,7 +484,7 @@ function replaceArtifactData(
 }
 
 // Get dark mode config for Vega with enhanced styling
-function getDarkModeConfig(isDark: boolean): Record<string, any> {
+function getDarkModeConfig(isDark: boolean): Record<string, unknown> {
     const baseConfig = {
         background: 'transparent',
         view: { stroke: 'transparent' },
@@ -545,7 +597,8 @@ function getDarkModeConfig(isDark: boolean): Record<string, any> {
 
 export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }: VegaLiteChartProps) {
     const { t } = useUITranslation();
-    const { title, description, spec: vegaSpec, options } = spec;
+    const { title, description, options } = spec;
+    const vegaSpec = spec.spec as VegaSpecObject;
     const [isExporting, setIsExporting] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -562,7 +615,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
     clientRef.current = client;
     const urlCacheRef = useRef(urlCache);
     urlCacheRef.current = urlCache;
-    const [resolvedSpec, setResolvedSpec] = useState<Record<string, any> | null>(null);
+    const [resolvedSpec, setResolvedSpec] = useState<VegaSpecObject | null>(null);
     const [isLoadingArtifacts, setIsLoadingArtifacts] = useState(false);
     const [artifactError, setArtifactError] = useState<string | null>(null);
 
@@ -600,7 +653,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         setArtifactError(null);
 
         const resolveArtifacts = async () => {
-            const resolvedData = new Map<string, any[]>();
+            const resolvedData = new Map<string, unknown[]>();
             const currentClient = clientRef.current;
             const currentUrlCache = urlCacheRef.current;
 
@@ -644,7 +697,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
 
                     // Detect CSV files by artifact path extension
                     const isCsv = ref.artifactPath.toLowerCase().endsWith('.csv');
-                    let data: any[];
+                    let data: unknown[];
 
                     if (isCsv) {
                         // Parse CSV to JSON array
@@ -654,7 +707,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
                             skipEmptyLines: true,
                             dynamicTyping: true, // Auto-convert numbers and booleans
                         });
-                        data = parseResult.data as any[];
+                        data = parseResult.data as unknown[];
                     } else {
                         // Parse as JSON
                         const jsonData = await response.json();
@@ -756,7 +809,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
     }, [resolvedSpec, vegaSpec, hasArtifactReferences, options?.parameterValues]);
 
     // Scale widths in concatenated views to fit container
-    const scaleSpecWidths = useCallback((spec: any, availableWidth: number): any => {
+    const scaleSpecWidths = useCallback((spec: VegaSpecObject, availableWidth: number): VegaSpecObject => {
         if (!spec || typeof spec !== 'object') return spec;
 
         // Handle hconcat - distribute width among children
@@ -768,7 +821,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
 
             return {
                 ...spec,
-                hconcat: spec.hconcat.map((child: any) => scaleSpecWidths(child, widthPerChild)),
+                hconcat: spec.hconcat.map((child) => scaleSpecWidths(child, widthPerChild)),
             };
         }
 
@@ -776,7 +829,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         if (spec.vconcat && Array.isArray(spec.vconcat)) {
             return {
                 ...spec,
-                vconcat: spec.vconcat.map((child: any) => scaleSpecWidths(child, availableWidth)),
+                vconcat: spec.vconcat.map((child) => scaleSpecWidths(child, availableWidth)),
             };
         }
 
@@ -789,7 +842,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
 
             return {
                 ...spec,
-                concat: spec.concat.map((child: any) => scaleSpecWidths(child, widthPerChild)),
+                concat: spec.concat.map((child) => scaleSpecWidths(child, widthPerChild)),
             };
         }
 
@@ -827,11 +880,11 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         }
 
         // Replace "container" width with our measured width - "container" relies on CSS which may not be ready
-        const specWidth = (scaledSpec as any).width;
+        const specWidth = scaledSpec.width;
         const width = isConcatenatedView ? undefined : (specWidth === 'container' ? calculatedWidth : (specWidth ?? calculatedWidth));
 
         // Destructure to remove width from spec so we can control it (only for non-concat views)
-        const { width: _specWidth, ...specWithoutWidth } = scaledSpec as any;
+        const { width: _specWidth, ...specWithoutWidth } = scaledSpec;
 
         return {
             $schema: 'https://vega.github.io/schema/vega-lite/v6.json',
@@ -846,7 +899,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
                 ...config,
                 ...processedSpec.config,
             },
-        };
+        } as VisualizationSpec;
     }, [processedSpec, title, isDarkMode, containerWidth, scaleSpecWidths]);
 
     const handleCopy = useCallback(async () => {
@@ -907,6 +960,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
 
     // Clear error when spec changes
     useEffect(() => {
+        void vegaSpec;
         setError(null);
     }, [vegaSpec]);
 
@@ -1021,8 +1075,8 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
     if (typeof window !== 'undefined' && localStorage.getItem('DEBUG_VEGA_RENDERS')) {
         console.log('VegaLite rendering with spec:', {
             title,
-            hasData: !!(chartSpec as any).data?.values,
-            dataLength: (chartSpec as any).data?.values?.length,
+            hasData: !!(chartSpec as VegaSpecObject).data?.values,
+            dataLength: (chartSpec as VegaSpecObject).data?.values?.length,
         });
     }
 

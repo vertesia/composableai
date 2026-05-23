@@ -288,6 +288,7 @@ export function Dropdown({ trigger, children, align = 'right', hover }: Dropdown
     // rtl-ok: 'center' uses symmetric left-1/2 + -translate-x-1/2 (same in LTR/RTL)
     const alignClass = align === 'right' ? 'end-0' : align === 'center' ? 'left-1/2 -translate-x-1/2' : 'start-0';
     return (
+      // biome-ignore lint/a11y/noStaticElementInteractions: hover wrapper only; the `trigger` child is responsible for focus/keyboard semantics.
       <div className="relative inline-flex" onMouseEnter={onEnter} onMouseLeave={onLeave}>
         {trigger}
         {open && (

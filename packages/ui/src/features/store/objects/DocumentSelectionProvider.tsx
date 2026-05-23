@@ -68,7 +68,7 @@ export class DocumentSelection {
     }
 }
 
-const DocumentSelectionContext = createContext<DocumentSelection>(undefined as any);
+const DocumentSelectionContext = createContext<DocumentSelection | undefined>(undefined);
 
 export function useDocumentSelection() {
     const selection = useContext(DocumentSelectionContext);
@@ -92,7 +92,7 @@ export function DocumentSelectionProvider({ value, collectionId, children }: Doc
     useEffect(() => {
         const selection = new DocumentSelection(value, collectionId, {}, setSelection);
         setSelection(selection);
-    }, [value]);
+    }, [collectionId, value]);
     return selection && (
         <DocumentSelectionContext.Provider value={selection}>{children}</DocumentSelectionContext.Provider>
     )

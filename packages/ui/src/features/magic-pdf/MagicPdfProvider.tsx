@@ -160,7 +160,7 @@ function extractMarkdownPages(content: string, totalPages: number): string[] {
 
     // Find all page markers and their positions
     const markers: { page: number; index: number }[] = [];
-    let match;
+    let match: RegExpExecArray | null;
     while ((match = pageDelimiterRegex.exec(content)) !== null) {
         markers.push({
             page: parseInt(match[1], 10),
@@ -251,7 +251,7 @@ export function MagicPdfProvider({ children, object }: MagicPdfProviderProps) {
             // For XML processor, no pre-loading needed - images load on demand
             setInfo(prev => ({ ...prev, pdfUrlLoading: false }));
         }
-    }, [object.id, client, isMarkdownProcessor, page_count]);
+    }, [client, isMarkdownProcessor, object.metadata, object.content?.type, object.content?.source]);
 
     return (
         <MagicPdfContext.Provider value={info}>

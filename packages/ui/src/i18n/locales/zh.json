@@ -616,6 +616,7 @@
   "user.failedToFetchUser": "获取用户失败",
   "user.groupId": "群组ID：{{id}}",
   "user.key": "密钥：",
+  "user.mcpServer": "MCP 服务器",
   "user.organizationId": "组织ID",
   "user.organizationRoles": "组织角色",
   "user.privateKey": "私钥",

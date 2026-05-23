@@ -7,14 +7,16 @@ import { ToolCollection } from "../ToolCollection.js";
 import { ToolExecutionPayload } from "../types.js";
 import { JSONSchema } from "@llumiverse/common";
 import { AppDashboardDefinition, AppUIConfig, InCodeProcessDefinition, ProjectConfiguration } from "@vertesia/common";
+import { AuthSession } from "../auth.js";
 import { ContentTypesCollection } from "../ContentTypesCollection.js";
+import { MCPConnectionDetails } from "../types.js";
 
 /**
  * Extended context with parsed payload for tool/skill execution
  */
 export interface ToolContext extends Context {
     /** The parsed request payload */
-    payload?: ToolExecutionPayload<any>;
+    payload?: ToolExecutionPayload;
     /** The tool_use.id from the payload */
     toolUseId?: string;
     /** The tool_use.tool_name from the payload */
@@ -27,11 +29,7 @@ export interface ToolContext extends Context {
 export interface MCPProviderConfig {
     name: string;
     description?: string;
-    createMCPConnection: (session: any, config: Record<string, any>) => Promise<{
-        name: string;
-        url: string;
-        token: string;
-    }>;
+    createMCPConnection: (session: AuthSession, config: Record<string, unknown>) => Promise<MCPConnectionDetails>;
 }
 
 /**

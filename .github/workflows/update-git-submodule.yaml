@@ -23,30 +23,33 @@ env:
   TARGET_COMPOSABLEAI_BRANCH: ${{ inputs.branch || github.event.client_payload.branch }}
 
 permissions:
-  contents: write # required for pushing changes to the repository, deleting old branches
-  pull-requests: write # required for creating new pull requests and closing old ones
+  contents: read
 
 jobs:
   update-submodule:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write       # required for pushing changes and deleting old branches
+      pull-requests: write  # required for creating new PRs and closing old ones
     steps:
       - name: Validate branch
         run: |
-          if [[ "${{ env.TARGET_COMPOSABLEAI_BRANCH }}" != "main" && "${{ env.TARGET_COMPOSABLEAI_BRANCH }}" != "preview" ]]; then
-            echo "::error::Invalid branch '${{ env.TARGET_COMPOSABLEAI_BRANCH }}'. Only 'main' and 'preview' branches are supported."
+          if [[ "${TARGET_COMPOSABLEAI_BRANCH}" != "main" && "${TARGET_COMPOSABLEAI_BRANCH}" != "preview" ]]; then
+            echo "::error::Invalid branch '${TARGET_COMPOSABLEAI_BRANCH}'. Only 'main' and 'preview' branches are supported."
             exit 1
           fi
-          echo "Branch '${{ env.TARGET_COMPOSABLEAI_BRANCH }}' is valid."
+          echo "Branch '${TARGET_COMPOSABLEAI_BRANCH}' is valid."
 
       - name: Checkout Repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
           fetch-depth: 0 # Fetch all history to ensure we can access the specified commit
           ref: ${{ env.TARGET_COMPOSABLEAI_BRANCH }}
+          persist-credentials: false
 
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v6
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 24
           cache: pnpm
@@ -56,7 +59,7 @@ jobs:
         run: |
           current_llumiverse_sha="$(git ls-tree --format='%(objectname)' HEAD llumiverse)"
 
-          if [ "$current_llumiverse_sha" = "${{ env.TARGET_LLUMIVERSE_SHA }}" ]; then
+          if [ "$current_llumiverse_sha" = "${TARGET_LLUMIVERSE_SHA}" ]; then
             echo "No update needed. Submodule 'llumiverse' is already at target SHA."
             echo "skip=true" >> $GITHUB_OUTPUT
           else
@@ -69,10 +72,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Fetching pull requests with labels: [branch:${{ env.TARGET_COMPOSABLEAI_BRANCH }}] and [workflow:update-llumiverse]..."
+          echo "Fetching pull requests with labels: [branch:${TARGET_COMPOSABLEAI_BRANCH}] and [workflow:update-llumiverse]..."
           pr_list=$(gh pr list \
             --repo vertesia/composableai \
-            --label branch:${{ env.TARGET_COMPOSABLEAI_BRANCH }} \
+            --label branch:${TARGET_COMPOSABLEAI_BRANCH} \
             --label workflow:update-llumiverse \
             --state open \
             --json number,title \
@@ -172,8 +175,8 @@ jobs:
           new_pr_url=$(gh pr create \
               --title "chore: update llumiverse to ${TARGET_LLUMIVERSE_SHA::7}" \
               --body "${pr_body}" \
-              --base ${{ env.TARGET_COMPOSABLEAI_BRANCH }} \
-              --label "branch:${{ env.TARGET_COMPOSABLEAI_BRANCH }}" \
+              --base ${TARGET_COMPOSABLEAI_BRANCH} \
+              --label "branch:${TARGET_COMPOSABLEAI_BRANCH}" \
               --label "workflow:update-llumiverse")
           new_pr_number=$(echo "$new_pr_url" | grep -oP '(?<=pull/)\d+')
 
@@ -190,9 +193,11 @@ jobs:
         if: ${{ steps.precheck.outputs.skip != 'true' && steps.update-submodule.outputs.author_login }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STEPS_UPDATE_SUBMODULE_OUTPUTS_NEW_PR_NUMBER: ${{ steps.update-submodule.outputs.new_pr_number }}
+          STEPS_UPDATE_SUBMODULE_OUTPUTS_AUTHOR_LOGIN: ${{ steps.update-submodule.outputs.author_login }}
         run: |
-          gh pr edit "${{ steps.update-submodule.outputs.new_pr_number }}" \
-            --add-assignee "${{ steps.update-submodule.outputs.author_login }}"
+          gh pr edit "${STEPS_UPDATE_SUBMODULE_OUTPUTS_NEW_PR_NUMBER}" \
+            --add-assignee "${STEPS_UPDATE_SUBMODULE_OUTPUTS_AUTHOR_LOGIN}"
 
       - name: Notify studio for Slack notification
         # Dispatch to the private studio repo so it can look up the developer's
@@ -209,7 +214,10 @@ jobs:
             -d '{
               "event_type": "composableai-pr-notification",
               "client_payload": {
-                "github_login": "${{ steps.update-submodule.outputs.author_login }}",
-                "message": "Please review this PR which brings your llumiverse changes to composableai: ${{ steps.update-submodule.outputs.new_pr_url }}"
+                "github_login": "${STEPS_UPDATE_SUBMODULE_OUTPUTS_AUTHOR_LOGIN}",
+                "message": "Please review this PR which brings your llumiverse changes to composableai: ${STEPS_UPDATE_SUBMODULE_OUTPUTS_NEW_PR_URL}"
               }
             }'
+        env:
+          STEPS_UPDATE_SUBMODULE_OUTPUTS_AUTHOR_LOGIN: ${{ steps.update-submodule.outputs.author_login }}
+          STEPS_UPDATE_SUBMODULE_OUTPUTS_NEW_PR_URL: ${{ steps.update-submodule.outputs.new_pr_url }}

@@ -6,6 +6,20 @@ import { InteractionExecutionParams, executeInteractionFromActivity } from "./ex
 
 const INT_CHUNK_DOCUMENT = "sys:ChunkDocument"
 
+interface RetryableError extends Error {
+    retryable?: boolean;
+}
+
+interface ChunkDocumentInteractionResult {
+    parts?: DocPart[];
+}
+
+function toRetryableError(error: unknown): RetryableError {
+    if (error instanceof Error) {
+        return error as RetryableError;
+    }
+    return new Error(String(error)) as RetryableError;
+}
 
 
 export interface ChunkDocumentResult {
@@ -79,29 +93,30 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
     const lines = document.text.split('\n')
     const instrumented = lines.map((l, i) => `{%${i}%}${l}`).join('\n')
 
-    let res;
+    let res: Awaited<ReturnType<typeof executeInteractionFromActivity>>;
     try {
         res = await executeInteractionFromActivity(client, interactionName, params, {
             objectId: objectId,
             content: instrumented
         });
-    } catch (error: any) {
-        log.error(`Failed to chunk document ${objectId}`, { error, retryable: error.retryable });
-        
+    } catch (error: unknown) {
+        const chunkError = toRetryableError(error);
+        log.error(`Failed to chunk document ${objectId}`, { error: chunkError, retryable: chunkError.retryable });
+
         // Check retryability and convert to ApplicationFailure for Temporal
-        const isRetryable = error.retryable !== undefined 
-            ? error.retryable !== false
+        const isRetryable = chunkError.retryable !== undefined
+            ? chunkError.retryable !== false
             : undefined;
-        
+
         if (isRetryable !== undefined) {
             if (isRetryable) {
                 throw ApplicationFailure.create({
-                    message: `Document chunking failed for ${objectId}: ${error.message}`,
+                    message: `Document chunking failed for ${objectId}: ${chunkError.message}`,
                     nonRetryable: false,
                 });
             } else {
                 throw ApplicationFailure.create({
-                    message: `Non-retryable document chunking failed for ${objectId}: ${error.message}`,
+                    message: `Non-retryable document chunking failed for ${objectId}: ${chunkError.message}`,
                     nonRetryable: true,
                 });
             }
@@ -111,9 +126,9 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
         throw error;
     }
 
-    const jsonResult = res.result.object();
+    const jsonResult = res.result.object<ChunkDocumentInteractionResult>();
 
-    const parts = jsonResult.parts as DocPart[];
+    const parts = jsonResult.parts;
     if (!parts || parts.length === 0) {
         log.warn('No parts found for object ID: ' + objectId, res);
         return { id: objectId, status: "failed", parts: [], message: "no parts found" }
@@ -145,7 +160,7 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
                 location: location(),
                 properties: {
                     part_number: i + 1,
-                    etag: document.text_etag,
+                    ...(document.text_etag !== undefined ? { etag: document.text_etag } : {}),
                     source_line_start: part.line_number_start,
                     source_line_end: part.line_number_end,
                     title: part.name

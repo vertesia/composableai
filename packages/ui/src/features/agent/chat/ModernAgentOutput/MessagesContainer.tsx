@@ -25,6 +25,7 @@ export default function MessagesContainer({
 
     // Auto-scroll to bottom when messages change
     useEffect(() => {
+        void messages;
         if (bottomRef.current) {
             bottomRef.current.scrollIntoView({ behavior: "smooth" });
         }

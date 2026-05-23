@@ -31,7 +31,7 @@ describe('Asset Discovery', () => {
     expect(scriptAssets).toHaveLength(2);
 
     // Widgets should NOT have asset files (compiled separately)
-    const widgetAssets = assets.assetFiles.filter(a => a.type === 'widget');
+    const widgetAssets = assets.assetFiles.filter(a => (a.type as string) === 'widget');
     expect(widgetAssets).toHaveLength(0);
   });
 

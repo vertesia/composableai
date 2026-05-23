@@ -7,7 +7,7 @@ import { z } from 'zod';
 import type { TransformerPreset } from '../types.js';
 import { parseFrontmatter } from '../parsers/frontmatter.js';
 import path from 'path';
-import { TemplateType } from '@vertesia/common';
+import { JSONSchema, TemplateType } from '@vertesia/common';
 import { PromptRole } from '@llumiverse/common';
 
 /**
@@ -44,7 +44,7 @@ export const PromptDefinitionSchema = z.object({
     role: z.nativeEnum(PromptRole),
     content: z.string(),
     content_type: z.nativeEnum(TemplateType),
-    schema: z.any().optional(),
+    schema: z.custom<JSONSchema>().optional(),
     name: z.string().optional(),
     externalId: z.string().optional(),
 });
@@ -53,6 +53,8 @@ export const PromptDefinitionSchema = z.object({
  * TypeScript type inferred from the Zod schema
  */
 export type PromptDefinition = z.infer<typeof PromptDefinitionSchema>;
+
+type PromptFrontmatter = z.infer<typeof PromptFrontmatterSchema>;
 
 /**
  * Normalize schema path for import
@@ -114,7 +116,7 @@ function inferContentType(filePath: string): TemplateType {
  * @returns Prompt definition object and optional imports
  */
 function buildPromptDefinition(
-    frontmatter: Record<string, any>,
+    frontmatter: PromptFrontmatter,
     content: string,
     filePath: string
 ): { prompt: PromptDefinition; imports?: string[]; schemaImportName?: string } {
@@ -184,9 +186,11 @@ export const promptTransformer: TransformerPreset = {
             );
         }
 
+        const validatedFrontmatter = frontmatterValidation.data;
+
         // Build prompt definition
         const { prompt, imports, schemaImportName } = buildPromptDefinition(
-            frontmatter,
+            validatedFrontmatter,
             promptContent,
             filePath
         );

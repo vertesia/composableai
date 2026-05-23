@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { JSX, ReactNode } from 'react';
+import { JSX, ReactElement, ReactNode } from 'react';
 
 import { ChevronRight, Info } from 'lucide-react';
 import { VTooltip, Breadcrumbs } from '@vertesia/ui/core';
@@ -10,11 +10,22 @@ interface GenericPageNavHeaderProps {
     title?: string | JSX.Element;
     description?: string | JSX.Element;
     actions?: ReactNode | ReactNode[];
-    breadcrumbs?: JSX.Element[]
+    breadcrumbs?: ReactElement<BreadcrumbElementProps>[]
     isCompact?: boolean
     children?: ReactNode
     className?: string
     useDynamicBreadcrumbs?: boolean;
+}
+
+interface BreadcrumbElementProps {
+    href?: string;
+    clearBreadcrumbs?: boolean;
+    children?: ReactNode;
+}
+
+interface BreadcrumbHistoryEntry {
+    title?: string;
+    href: string;
 }
 
 // Matches MongoDB ObjectId (24 hex), UUID (36 chars with dashes), or any segment containing digits mixed with letters
@@ -35,7 +46,7 @@ export function GenericPageNavHeader({ className, children, title, description, 
             .join(' ');
     }
 
-    const buildBreadcrumbLabel = (entry: any): string => {
+    const buildBreadcrumbLabel = (entry: BreadcrumbHistoryEntry): string => {
         if (entry?.title) {
             return entry.title;
         }
@@ -58,11 +69,12 @@ export function GenericPageNavHeader({ className, children, title, description, 
         const items: Array<{ label: string | ReactNode, href?: string, onClick?: () => void, clearHistory?: boolean }> = [];
 
         if (useDynamicBreadcrumbs && typeof window !== 'undefined') {
-            const historyChain = window.history.state?.historyChain;
+            const historyState = window.history.state as { historyChain?: BreadcrumbHistoryEntry[] } | null;
+            const historyChain = historyState?.historyChain;
 
-            if (historyChain) {
+            if (Array.isArray(historyChain)) {
                 // Use existing history chain
-                historyChain.forEach((entry: any, index: number) => {
+                historyChain.forEach((entry, index) => {
                     const stepsBack = historyChain.length - index;
                     items.push({
                         label: buildBreadcrumbLabel(entry),
@@ -88,14 +100,15 @@ export function GenericPageNavHeader({ className, children, title, description, 
 
         // Add current page breadcrumbs
         if (breadcrumbs && breadcrumbs.length > 0) {
-            breadcrumbs.forEach((breadcrumb: any) => {
+            breadcrumbs.forEach((breadcrumb) => {
                 // Preserve the entire React element as label
                 const label = breadcrumb.props?.children || breadcrumb;
+                const href = breadcrumb.props?.href;
 
-                items.push((breadcrumb?.props?.href) ? {
-                    href: breadcrumb?.props?.href,
+                items.push(href ? {
+                    href,
                     label: label,
-                    onClick: () => navigate(breadcrumb.props.href, { replace: breadcrumb.props.clearBreadcrumbs }),
+                    onClick: () => navigate(href, { replace: breadcrumb.props.clearBreadcrumbs }),
                 } : {
                     label: label
                 });
@@ -137,7 +150,7 @@ export function GenericPageNavHeader({ className, children, title, description, 
                         )
                     }
                 </div>
-                <div className="flex gap-x-2 shrink-0">{actions}</div>
+                <div className="flex gap-x-2 shrink-0 items-center">{actions}</div>
             </div>
             {children && <div className="w-full flex items-center">{children}</div>}
         </div>

@@ -58,12 +58,12 @@ function transpileFile(source: string, target: string, options: ts.CompilerOptio
 function tryDeleteFile(file: string) {
     try {
         rmSync(file)
-    } catch (_er: any) {
+    } catch (_er: unknown) {
         // ignore
     }
 }
 
-export function importTsFile(file: string, outdir: string = '.'): Promise<any> {
+export function importTsFile(file: string, outdir: string = '.'): Promise<unknown> {
     if (!file.endsWith('.ts')) {
         throw new Error("Not a type script file: " + file);
     }

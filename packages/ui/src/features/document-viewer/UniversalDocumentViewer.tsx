@@ -2,7 +2,7 @@ import { type ComponentType, type ReactNode, useCallback, useEffect, useMemo, us
 import { AlertCircleIcon, FileIcon, Loader2Icon } from 'lucide-react';
 import { Button, cn } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
-import { MarkdownRenderer, XMLViewer } from '@vertesia/ui/widgets';
+import { MarkdownRenderer, type MarkdownRendererProps, XMLViewer } from '@vertesia/ui/widgets';
 import { SimplePdfViewer } from '../pdf-viewer/SimplePdfViewer.js';
 
 export type UniversalDocumentRenditionTarget = 'pdf' | 'markdown' | 'text' | 'image';
@@ -78,7 +78,7 @@ export interface UniversalDocumentViewerProps {
         source: UniversalDocumentSource,
         target: UniversalDocumentRenditionTarget,
     ) => Promise<UniversalDocumentRendition | null>;
-    markdownComponents?: any;
+    markdownComponents?: MarkdownRendererProps['components'];
     showHeader?: boolean;
     onDownload?: (source: UniversalDocumentSource) => void;
 }
@@ -251,6 +251,9 @@ export function UniversalDocumentViewer({
 
     useEffect(() => {
         let cancelled = false;
+        // These values intentionally retrigger loading even when source object identity is stable.
+        void refreshKey;
+        void sourceKey;
         const currentSource = source;
         setError(null);
         setUrl(currentSource.url);
@@ -307,6 +310,7 @@ export function UniversalDocumentViewer({
         refreshKey,
         resolveDocumentUrl,
         selectedConverter,
+        source,
         sourceKey,
     ]);
 

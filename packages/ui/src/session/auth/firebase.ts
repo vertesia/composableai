@@ -84,7 +84,7 @@ export async function setFirebaseTenant(tenantEmail?: string) {
                     try {
                         const errorData = await response.json();
                         console.error("Failed to resolve tenant ID:", errorData.error);
-                    } catch (parseError) {
+                    } catch {
                         console.error(`Failed to resolve tenant ID: HTTP ${response.status}`);
                     }
 

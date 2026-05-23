@@ -22,11 +22,11 @@ export function build(script: string, options: BuildOptions = {}): Promise<void>
 
 async function _build(builder: Builder, script: string, transpileDir?: string): Promise<void> {
     const resolvedScript = resolve(script);
-    let module: any;
+    let module: unknown;
     if (resolvedScript.endsWith('.ts')) {
         try {
             module = await importTsFile(resolvedScript, transpileDir);
-        } catch (er: any) {
+        } catch (er: unknown) {
             console.error(er);
             process.exit(1);
         }

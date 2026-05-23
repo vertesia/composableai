@@ -56,7 +56,7 @@ export function executePipe(commands: Command[], finalOutput: Writable | undefin
         let input: Stream | undefined;
         let child: ChildProcess | undefined;
         for (const cmd of commands) {
-            verbose && console.log(`Running: ${cmd.name} ${cmd.args?.join(' ')}`);
+            if (verbose) console.log(`Running: ${cmd.name} ${cmd.args?.join(' ')}`);
             child = spawn(cmd.name, cmd.args, {
                 // in, out, err
                 stdio: ['pipe', 'pipe', 'inherit'],
@@ -74,7 +74,7 @@ export function executePipe(commands: Command[], finalOutput: Writable | undefin
             child.on("exit", (code: number | null, signal: string | null) => {
                 resolve(code !== null ? code : signal);
             });
-            finalOutput && child.stdout?.pipe(finalOutput);
+            if (finalOutput) child.stdout?.pipe(finalOutput);
         } else {
             reject(new Error("no child spawned"));
         }

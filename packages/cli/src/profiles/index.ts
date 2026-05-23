@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import os from "node:os";
 import { join } from "path";
 import { readJsonFile, writeJsonFile } from "../utils/stdio.js";
+import { hasErrorCode } from "../utils/options.js";
 import { ConfigPayload, ConfigResult, startConfigSession } from "./server/index.js";
 import type { OnResultCallback } from "./commands.js";
 import { canUseOAuthProfile, OAuthUnavailableError, startOAuthSession } from "./oauth.js";
@@ -61,13 +62,21 @@ export function getServerUrls(value: ConfigUrlRef, region: Region = DEFAULT_REGI
 }
 
 export function getCloudTypeFromConfigUrl(url: string) {
-    if (url.startsWith("http://localhost") || url.startsWith("https://localhost")) {
+    let parsedUrl: URL;
+    try {
+        parsedUrl = new URL(url);
+    } catch {
+        throw new Error("Unknown cloud env type");
+    }
+
+    const { hostname, protocol } = parsedUrl;
+    if ((protocol === "http:" || protocol === "https:") && hostname === "localhost") {
         return "staging";
-    } else if (url.includes(".ui.dev1.vertesia.io")) {
+    } else if (hostname.endsWith(".ui.dev1.vertesia.io")) {
         return "staging";
-    } else if (url.startsWith("https://preview.")) {
+    } else if (protocol === "https:" && hostname.startsWith("preview.")) {
         return "preview";
-    } else if (url.startsWith("https://cloud.")) {
+    } else if (protocol === "https:" && hostname.startsWith("cloud.")) {
         return "production";
     } else {
         throw new Error("Unknown cloud env type");
@@ -337,8 +346,8 @@ export class Config {
             if (stats.isFile()) {
                 this.isDevMode = true;
             }
-        } catch (err: any) {
-            if (err.code !== 'ENOENT') {
+        } catch (err: unknown) {
+            if (!hasErrorCode(err, 'ENOENT')) {
                 throw err;
             }
         }
@@ -379,8 +388,8 @@ export class Config {
             if (needsSave) {
                 this.save();
             }
-        } catch (err: any) {
-            if (err.code !== 'ENOENT') {
+        } catch (err: unknown) {
+            if (!hasErrorCode(err, 'ENOENT')) {
                 throw err;
             }
         }

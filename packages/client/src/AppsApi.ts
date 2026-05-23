@@ -145,7 +145,7 @@ export default class AppsApi extends ApiTopic {
      * @returns 
      */
     getAppInstallationByName(appName: string): Promise<AppInstallationWithManifest | null> {
-        return this.get(`/installations/name/${appName}`).catch((err: ServerError) => {
+        return this.get<AppInstallationWithManifest>(`/installations/name/${appName}`).catch((err: ServerError) => {
             if (err.status === 404) {
                 return null;
             } else {

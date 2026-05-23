@@ -26,26 +26,35 @@ interface DOMPopupProps extends Omit<PopupControllerOptions, 'anchor' | 'popup' 
     children: ReactNode | ReactNode[];
     ctrlRef?: MutableRefObject<PopupController | undefined>;
 }
-export function DOMPopup({ ctrlRef, id, constraints, isOpen, children, className, onClose, zIndex, position, ...props }: DOMPopupProps) {
+export function DOMPopup({ ctrlRef, id, constraints, isOpen, children, className, onClose, onOpen, zIndex, position, anchor, root, closeOnClick, closeOnEsc, blockPageScroll }: DOMPopupProps) {
     const popupRef = useRef<HTMLDivElement>(null);
     const [ctrl, setCtrl] = useState<PopupController | undefined>();
+    const onCloseRef = useRef(onClose);
+    const onOpenRef = useRef(onOpen);
+    onCloseRef.current = onClose;
+    onOpenRef.current = onOpen;
     useEffect(() => {
-        if (!props.anchor) throw new Error("Anchor element is required");
+        if (!anchor) throw new Error("Anchor element is required");
         const _ctrl = new PopupController({
-            ...props,
-            onClose
+            anchor,
+            root,
+            closeOnClick,
+            closeOnEsc,
+            blockPageScroll,
+            onClose: () => onCloseRef.current?.(),
+            onOpen: () => onOpenRef.current?.()
         });
         setCtrl(_ctrl);
         return () => {
             _ctrl.tryClose();
         }
-    }, []);
+    }, [anchor, blockPageScroll, closeOnClick, closeOnEsc, root]);
 
     useEffect(() => {
         if (ctrlRef) {
             ctrlRef.current = ctrl;
         }
-    }, [ctrl]);
+    }, [ctrl, ctrlRef]);
 
     // effect to open / close the popup
     useEffect(() => {
@@ -62,7 +71,7 @@ export function DOMPopup({ ctrlRef, id, constraints, isOpen, children, className
             // and the popupRef was destroyed by the isOpen && below
             ctrl.close();
         }
-    }, [isOpen, ctrl, popupRef.current]);
+    }, [constraints, isOpen, ctrl]);
 
     return (
         <PopupContext.Provider value={ctrl}>

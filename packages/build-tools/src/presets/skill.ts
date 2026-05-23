@@ -79,7 +79,7 @@ const SkillFrontmatterSchema = z.object({
     execution: SkillExecutionFrontmatterSchema.optional(),
     input_schema: z.object({
         type: z.literal('object'),
-        properties: z.record(z.any()).optional(),
+        properties: z.record(z.unknown()).optional(),
         required: z.array(z.string()).optional()
     }).optional(),
 
@@ -105,7 +105,7 @@ export const SkillDefinitionSchema = z.object({
     content_type: z.enum(['md', 'jst']),
     input_schema: z.object({
         type: z.literal('object'),
-        properties: z.record(z.any()).optional(),
+        properties: z.record(z.unknown()).optional(),
         required: z.array(z.string()).optional()
     }).optional(),
     context_triggers: SkillContextTriggersSchema,
@@ -130,6 +130,8 @@ export const SkillPropertiesSchema = SkillDefinitionSchema.partial().passthrough
  * Can also be imported from consumer packages for type safety
  */
 export type SkillDefinition = z.infer<typeof SkillDefinitionSchema>;
+
+type SkillFrontmatter = z.infer<typeof SkillFrontmatterSchema>;
 
 /**
  * Build a SkillDefinition from frontmatter and markdown content.
@@ -160,7 +162,7 @@ export type SkillDefinition = z.infer<typeof SkillDefinitionSchema>;
  * @returns Skill definition object
  */
 function buildSkillDefinition(
-    frontmatter: Record<string, any>,
+    frontmatter: SkillFrontmatter,
     instructions: string,
     contentType: SkillContentType,
     widgets: string[],
@@ -180,7 +182,7 @@ function buildSkillDefinition(
     // Nested: context_triggers: { keywords: [...], tool_names: [...] }
     // Flat: keywords: [...], tools: [...]
     const contextTriggers = frontmatter.context_triggers;
-    const hasNestedTriggers = contextTriggers && typeof contextTriggers === 'object';
+    const hasNestedTriggers = contextTriggers !== undefined;
     const hasFlatTriggers = frontmatter.keywords || frontmatter.tools || frontmatter.data_patterns;
 
     if (hasNestedTriggers || hasFlatTriggers) {
@@ -193,19 +195,25 @@ function buildSkillDefinition(
 
     // Build execution config - support both flat and nested structure
     const execution = frontmatter.execution;
-    const hasNestedExecution = execution && typeof execution === 'object';
-    const hasFlatExecution = frontmatter.language;
 
-    if (hasNestedExecution || hasFlatExecution) {
+    if (execution) {
         skill.execution = {
-            language: hasNestedExecution ? execution.language : frontmatter.language,
-            packages: hasNestedExecution ? execution.packages : frontmatter.packages,
-            system_packages: hasNestedExecution ? execution.system_packages : frontmatter.system_packages,
+            language: execution.language,
+            packages: execution.packages,
+            system_packages: execution.system_packages,
         };
+    } else if (frontmatter.language) {
+        skill.execution = {
+            language: frontmatter.language,
+            packages: frontmatter.packages,
+            system_packages: frontmatter.system_packages,
+        };
+    }
 
+    if (skill.execution) {
         // Extract code template from instructions if present
         const codeBlockMatch = instructions.match(/```(?:python|javascript|typescript|js|ts|py)\n([\s\S]*?)```/);
-        if (codeBlockMatch) {
+        if (codeBlockMatch?.[1]) {
             skill.execution.template = codeBlockMatch[1].trim();
         }
     }
@@ -263,15 +271,17 @@ export const skillTransformer: TransformerPreset = {
             );
         }
 
+        const validatedFrontmatter = frontmatterValidation.data;
+
         // Determine content type from frontmatter or file extension
-        const content_type: SkillContentType = frontmatter.content_type || 'md';
+        const content_type: SkillContentType = validatedFrontmatter.content_type || 'md';
 
         // Discover assets (scripts and widgets) in the skill directory
         const assets = discoverSkillAssets(filePath);
 
         // Build skill definition using the same logic as parseSkillFile in tools-sdk
         const skillData = buildSkillDefinition(
-            frontmatter,
+            validatedFrontmatter,
             markdown,
             content_type,
             assets.widgets,

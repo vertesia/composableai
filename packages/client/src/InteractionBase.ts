@@ -2,7 +2,7 @@ import { InteractionExecutionResult, InteractionUpdatePayload, InteractionExecut
 import { VertesiaClient, VertesiaClientProps } from "./client.js";
 import { executeInteraction } from "./execute.js";
 
-export class InteractionBase<P = any> {
+export class InteractionBase<P = unknown> {
     client: VertesiaClient;
 
     constructor(public id: string, clientOrOpts: VertesiaClient | VertesiaClientProps) {

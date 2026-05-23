@@ -15,7 +15,6 @@ import 'vitest';
 import type { AxeMatchers } from 'vitest-axe';
 
 declare module 'vitest' {
-    // biome-ignore lint/correctness/noUnusedVariables: T is the standard Assertion generic; required for declaration merging.
-    interface Assertion<T = any> extends AxeMatchers {}
+    interface Assertion<T = unknown> extends AxeMatchers {}
     interface AsymmetricMatchersContaining extends AxeMatchers {}
 }

@@ -71,7 +71,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
                 const body = JSON.parse(text);
                 const result = ToolExecutionPayloadSchema.safeParse(body);
                 if (result.success) {
-                    ctx.payload = result.data as ToolExecutionPayload<any>;
+                    ctx.payload = result.data as ToolExecutionPayload;
                     ctx.toolUseId = result.data.tool_use.id;
                     ctx.toolName = result.data.tool_use.tool_name;
                 }

@@ -77,7 +77,7 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
             setDocRefreshKey(0);
             lastProcessedIndex.current = -1;
         }
-    }, [messages.length === 0]);
+    }, [messages.length]);
 
     // Process new messages incrementally for document events
     useEffect(() => {

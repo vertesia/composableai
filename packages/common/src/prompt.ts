@@ -25,7 +25,7 @@ export interface PromptSegmentDef<
     id?: string;
     type: PromptSegmentDefType;
     template?: T; // the template id in case of a prompt template
-    configuration?: any; // the configuration if any in case of builtin prompts
+    configuration?: unknown; // the configuration if any in case of builtin prompts
 }
 
 export interface PromptSegmentRef<

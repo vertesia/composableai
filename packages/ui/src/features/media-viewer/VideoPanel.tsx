@@ -60,7 +60,7 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
                 if (!object) return;
                 if (object.metadata?.type !== ContentNature.Video) return;
 
-                let downloadUrl;
+                let downloadUrl: Awaited<ReturnType<typeof client.files.getDownloadUrl>> | undefined;
                 if (webRendition?.content?.source) {
                     downloadUrl = await client.files.getDownloadUrl(webRendition.content.source);
                 } else if (isOriginalWebSupported && object.content?.source) {
@@ -82,7 +82,7 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
         } else {
             setIsLoading(false);
         }
-    }, [url, source, object?.id, object?.content?.type, object?.content?.source, object?.metadata, webRendition, isOriginalWebSupported, client]);
+    }, [url, source, object, webRendition, isOriginalWebSupported, client]);
 
     useEffect(() => {
         if (!poster?.content?.source) return;

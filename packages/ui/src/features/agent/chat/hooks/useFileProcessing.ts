@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VertesiaClient } from '@vertesia/client';
 import {
     ConversationFile,
@@ -35,10 +35,14 @@ export function useFileProcessing(
     const t = i18nInstance.getFixedT(null, NAMESPACE);
     // Local optimistic file state (uploads initiated from the UI)
     const [localFiles, setLocalFiles] = useState<Map<string, ConversationFile>>(new Map());
+    const previousAgentRunId = useRef(agentRunId);
 
     // Reset when agentRunId changes
     useEffect(() => {
-        setLocalFiles(new Map());
+        if (previousAgentRunId.current !== agentRunId) {
+            previousAgentRunId.current = agentRunId;
+            setLocalFiles(new Map());
+        }
     }, [agentRunId]);
 
     // Merge local + server state (server takes precedence for same IDs)
@@ -121,7 +125,7 @@ export function useFileProcessing(
                 });
             }
         }
-    }, [client, agentRunId, toast]);
+    }, [client, agentRunId, toast, t]);
 
     return { processingFiles, hasProcessingFiles, handleFileUpload };
 }

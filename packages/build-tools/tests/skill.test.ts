@@ -38,7 +38,7 @@ Content here`;
 
     const result = await skillTransformer.transform(content, 'test.md');
     expect(result.data).toHaveProperty('context_triggers');
-    expect((result.data as any).context_triggers).toEqual({
+    expect((result.data as { context_triggers: { keywords: string[] } }).context_triggers).toEqual({
       keywords: ['foo', 'bar', 'baz']
     });
   });
@@ -54,7 +54,7 @@ Content`;
 
     const result = await skillTransformer.transform(content, 'test.md');
     expect(result.data).toHaveProperty('tools');
-    expect((result.data as any).tools).toEqual(['tool1', 'tool2']);
+    expect((result.data as { tools: string[] }).tools).toEqual(['tool1', 'tool2']);
   });
 
   it('should validate against schema successfully', () => {

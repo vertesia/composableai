@@ -120,7 +120,7 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
             }
         }) as GladiaTranscriptRequestResponse;
         log.info(`Transcription request sent to Gladia`, { storageId, res });
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof RequestError && error.status === 422) {
             return {
                 hasText: false,

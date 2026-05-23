@@ -138,6 +138,8 @@ export function useArtifacts(
     }, [client, runId]);
 
     useEffect(() => {
+        void refreshKey;
+        void manualRefreshKey;
         fetchArtifacts();
     }, [fetchArtifacts, refreshKey, manualRefreshKey]);
 

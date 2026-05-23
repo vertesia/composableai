@@ -25,30 +25,37 @@ after(() => server.stop());
 
 describe('Test requests', () => {
     it('get method works', done => {
-        client.get('/').then((payload: any) => {
-            assert(payload.message === "Hello World!");
+        client.get('/').then((payload) => {
+            assert((payload as { message: string }).message === "Hello World!");
             done();
         }).catch(done);
     });
     it('withHeaders works', done => {
-        client.get('/token').then((payload: any) => {
-            assert(payload.token === "1234");
+        client.get('/token').then((payload) => {
+            assert((payload as { token: string }).token === "1234");
             done();
         }).catch(done);
     });
     it('handles incorrect content type', done => {
-        client.get('/html').then((payload: any) => {
-            assert(payload.text === "<html><body>Hello!</body></html>");
+        client.get('/html').then((payload) => {
+            assert((payload as { text: string }).text === "<html><body>Hello!</body></html>");
             done();
         }).catch(done);
     });
     it('handles errors in incorrect content type', done => {
-        client.get('/html-error').catch((err: any) => {
-            assert(err.payload.text === "<html><body>Error!</body></html>");
-            assert(err.status === 401);
-            assert(err.original_message.startsWith("Server Error: 401"));
-            assert(err.original_message.includes("non-JSON response"));
-            assert(!err.message.includes("Unexpected token"));
+        type FetchErr = {
+            payload: { text: string };
+            status: number;
+            original_message: string;
+            message: string;
+        };
+        client.get('/html-error').catch((err: unknown) => {
+            const e = err as FetchErr;
+            assert(e.payload.text === "<html><body>Error!</body></html>");
+            assert(e.status === 401);
+            assert(e.original_message.startsWith("Server Error: 401"));
+            assert(e.original_message.includes("non-JSON response"));
+            assert(!e.message.includes("Unexpected token"));
             done();
         }).catch(done);
     });

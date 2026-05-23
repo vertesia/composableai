@@ -19,7 +19,7 @@ export async function EventSourceProvider(): Promise<typeof EventSource> {
  * @param payload InteractionExecutionPayload
  * @param onChunk callback to be called when the next chunk of the response is available
  */
-export async function executeInteraction<P = any>(client: VertesiaClient,
+export async function executeInteraction<P = unknown>(client: VertesiaClient,
     interactionId: string,
     payload: InteractionExecutionPayload = {},
     onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P>> {
@@ -52,12 +52,12 @@ export async function executeInteraction<P = any>(client: VertesiaClient,
  * @param onChunk
  * @returns
  */
-export async function executeInteractionByName<P = any>(client: VertesiaClient,
+export async function executeInteractionByName<P = unknown>(client: VertesiaClient,
     interaction: string,
     payload: InteractionExecutionPayload = {},
     onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P>> {
     const stream = !!onChunk;
-    const response = await client.post('/api/v1/execute', {
+    const response = await client.post<InteractionExecutionResult<P>>('/api/v1/execute', {
         payload: {
             ...payload,
             interaction,
@@ -93,7 +93,7 @@ function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk:
                     try {
                         const data = JSON.parse(ev.data);
                         if (data) {
-                            onChunk && onChunk(data);
+                            onChunk?.(data);
                         }
                     } catch (err) {
                         reject(err);

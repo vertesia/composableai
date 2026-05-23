@@ -56,7 +56,7 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
                 if (!object) return;
                 if (object.metadata?.type !== ContentNature.Audio) return;
 
-                let downloadUrl;
+                let downloadUrl: Awaited<ReturnType<typeof client.files.getDownloadUrl>> | undefined;
                 if (audioRendition?.content?.source) {
                     downloadUrl = await client.files.getDownloadUrl(audioRendition.content.source);
                 } else if (isOriginalWebSupported && object.content?.source) {
@@ -78,7 +78,7 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
         } else {
             setIsLoading(false);
         }
-    }, [url, source, object?.id, object?.content?.type, object?.content?.source, object?.metadata, audioRendition, isOriginalWebSupported, client]);
+    }, [url, source, object, audioRendition, isOriginalWebSupported, client]);
 
     if (showsObjectFallbackEmpty) {
         return (

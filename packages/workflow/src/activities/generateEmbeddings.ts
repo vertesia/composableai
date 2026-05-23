@@ -88,7 +88,7 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
         );
     }
 
-    let document;
+    let document: Awaited<ReturnType<typeof client.objects.retrieve>>;
     try {
         document = await client.objects.retrieve(objectId, '+text +parts +embeddings +tokens +properties');
     } catch (error) {
@@ -102,7 +102,10 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
         throw new DocumentNotFoundError('Document not found', [objectId]);
     }
 
-    let res;
+    let res:
+        | Awaited<ReturnType<typeof generateTextEmbeddings>>
+        | Awaited<ReturnType<typeof generateImageEmbeddings>>
+        | { id: string; status: string; message: string };
 
     switch (type) {
         case SupportedEmbeddingTypes.text:

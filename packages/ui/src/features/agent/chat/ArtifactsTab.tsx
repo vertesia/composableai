@@ -1,4 +1,4 @@
-import { Button, Modal, ModalBody, ModalTitle } from '@vertesia/ui/core';
+import { Button, ErrorBox, Modal, ModalBody, ModalTitle } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     ChevronDownIcon,
@@ -218,12 +218,10 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center py-8 text-muted">
-                <span className="text-sm text-destructive mb-2">{error}</span>
-                <Button variant="ghost" size="sm" onClick={refresh}>
-                    <RefreshCwIcon className="size-3.5 me-1.5" />
-                    {t('agent.retry')}
-                </Button>
+            <div className="flex flex-col items-center justify-center p-4 text-muted w-full">
+                <ErrorBox title="Fail to load Artifacts" className="w-full" action={refresh} actionLabel={<><RefreshCwIcon className="size-3.5 me-1.5" />{t('agent.retry')}</>}>
+                    <span className="break-all text-muted">{error}</span> <br />
+                </ErrorBox>
             </div>
         );
     }

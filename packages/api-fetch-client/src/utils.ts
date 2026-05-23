@@ -1,5 +1,5 @@
 
-export function buildQueryString(query: any) {
+export function buildQueryString(query: Record<string, unknown>) {
     const parts = [];
     for (const key of Object.keys(query)) {
         const val = query[key];

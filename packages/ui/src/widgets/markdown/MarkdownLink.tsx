@@ -10,7 +10,7 @@ export interface MarkdownLinkProps {
     className?: string;
     artifactRunId?: string;
     /** Existing link component to delegate to for standard URLs */
-    ExistingLink?: React.ComponentType<any>;
+    ExistingLink?: React.ComponentType<MarkdownLinkProps>;
 }
 
 /**

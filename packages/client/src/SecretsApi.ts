@@ -15,12 +15,12 @@ export default class SecretsApi extends ApiTopic {
     }
 
     list(projectId: string, query?: Omit<ListSecretsQuery, "project_id">): Promise<SecretRecord[]> {
-        return this.get('/', { query: { ...query, project_id: projectId } })
-            .then((res: { secrets: SecretRecord[] }) => res.secrets);
+        return this.get<{ secrets: SecretRecord[] }>('/', { query: { ...query, project_id: projectId } })
+            .then((res) => res.secrets);
     }
 
     retrieve(projectId: string, secretId: string, query?: { kind?: SecretKind }): Promise<SecretRecord | undefined> {
-        return this.get(`/${secretId}`, { query: { ...query, project_id: projectId } }).catch(err => {
+        return this.get<SecretRecord>(`/${secretId}`, { query: { ...query, project_id: projectId } }).catch(err => {
             if (err.status === 404) {
                 return undefined;
             }

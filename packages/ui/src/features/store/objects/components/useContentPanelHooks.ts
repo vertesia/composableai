@@ -66,7 +66,7 @@ export function useObjectText(objectId: string, initialText?: string, loadOnMoun
         if (loadOnMount && !initialText) {
             loadText();
         }
-    }, [objectId, initialText, loadOnMount, loadText]);
+    }, [initialText, loadOnMount, loadText]);
 
     return {
         fullText,
@@ -211,7 +211,7 @@ export function useOfficePdfConversion(objectId: string, enabled: boolean) {
         };
 
         await pollForPdf(true);
-    }, [objectId, enabled, isConverting, client]);
+    }, [objectId, enabled, isConverting, client, t]);
 
     return {
         pdfUrl,
