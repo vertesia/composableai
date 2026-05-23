@@ -25,6 +25,8 @@ minimumReleaseAgeExclude:
   - "@turbo/linux-arm64@2.9.14"
   - "@turbo/windows-64@2.9.14"
   - "@turbo/windows-arm64@2.9.14"
+  # Renovate security update: qs@>=6.0.0 <6.14.0@6.15.2
+  - qs@>=6.0.0 <6.14.0@6.15.2
 patchedDependencies:
   "ts-dual-module@0.6.3": patches/ts-dual-module@0.6.3.patch
 overrides:
@@ -51,7 +53,7 @@ overrides:
   "mdast-util-to-hast@>=13.0.0 <13.2.1": "^13.2.1"
   "jws@>=3.0.0 <3.2.3": "^3.2.3"
   "jws@>=4.0.0 <4.0.1": "^4.0.1"
-  "qs@>=6.0.0 <6.14.0": "^6.14.1"
+  "qs@>=6.0.0 <6.14.0": "^6.15.2"
   "lodash-es@<4.18.1": "^4.18.1"
   "lodash@<4.18.1": "^4.18.1"
   "fast-xml-parser@<5.7.2": "^5.7.2"
