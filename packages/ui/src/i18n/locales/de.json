@@ -616,6 +616,7 @@
   "user.failedToFetchUser": "Benutzer konnte nicht abgerufen werden",
   "user.groupId": "Gruppen-ID: {{id}}",
   "user.key": "Schlüssel:",
+  "user.mcpServer": "MCP-Server",
   "user.organizationId": "Organisations-ID",
   "user.organizationRoles": "Organisationsrollen",
   "user.privateKey": "Privater Schlüssel",

@@ -39,6 +39,7 @@ export default function InfoList() {
     const { account, project, client, authToken } = session;
     const server = new URL(client.baseUrl).hostname;
     const store = new URL(client.store.baseUrl).hostname;
+    const mcpServer = Env.endpoints.mcp ? new URL(Env.endpoints.mcp).hostname : t('user.unknown');
     const tenantId = project ? getTenantIdFromProject(project) : '';
 
     const tabs = [
@@ -63,6 +64,7 @@ export default function InfoList() {
                     <InfoItems title={t('user.environment')} value={Env.type} />
                     <InfoItems title={t('user.server')} value={server} />
                     <InfoItems title={t('user.store')} value={store} />
+                    <InfoItems title={t('user.mcpServer')} value={mcpServer} />
                     <InfoItems title={t('user.appVersion')} value={Env.version} />
                     <InfoItems title={t('user.sdkVersion')} value={Env.sdkVersion || t('user.unknown')} />
                 </div>

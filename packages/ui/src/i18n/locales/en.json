@@ -616,6 +616,7 @@
   "user.failedToFetchUser": "Failed to fetch user",
   "user.groupId": "Group ID: {{id}}",
   "user.key": "Key:",
+  "user.mcpServer": "MCP Server",
   "user.organizationId": "Organization ID",
   "user.organizationRoles": "Organization Roles",
   "user.privateKey": "Private Key",

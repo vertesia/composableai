@@ -660,6 +660,7 @@
   "user.failedToFetchUser": "فشل جلب المستخدم",
   "user.groupId": "معرف المجموعة: {{id}}",
   "user.key": "المفتاح:",
+  "user.mcpServer": "خادم MCP",
   "user.organizationId": "معرف المؤسسة",
   "user.organizationRoles": "أدوار المؤسسة",
   "user.privateKey": "المفتاح الخاص",

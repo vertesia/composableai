@@ -7,7 +7,6 @@ import type {
     AppInstallationWithManifest,
     AppManifest,
     AppManifestData,
-    AppPackage,
     AppToolCollection,
     CountResult,
     ProjectRef,
@@ -42,15 +41,6 @@ export default class AppsApi extends ApiTopic {
      */
     listAppInstallationTools(appInstallId: string): Promise<AppToolCollection[]> {
         return this.get(`/installations/${appInstallId}/tools`)
-    }
-
-    /**
-     * Fetch the always-on system tools package served by studio-server.
-     * Tools and skills (`learn_*`) are returned on separate fields so UIs can
-     * render them distinctly. URLs are already resolved per deployment.
-     */
-    getSystemToolsPackage(scope: string = 'tools'): Promise<AppPackage> {
-        return this.get('/studio-tools/package', { query: { scope } });
     }
 
     /**
