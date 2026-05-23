@@ -638,6 +638,7 @@
   "user.failedToFetchUser": "Не удалось получить пользователя",
   "user.groupId": "ID группы: {{id}}",
   "user.key": "Ключ:",
+  "user.mcpServer": "MCP-сервер",
   "user.organizationId": "ID организации",
   "user.organizationRoles": "Роли в организации",
   "user.privateKey": "Закрытый ключ",

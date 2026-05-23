@@ -37,7 +37,7 @@ function formatValue(value: unknown): JSX.Element | string {
 			<>
 				{value.map((item, index) => (
 					<div className="flex gap-1" key={index}>
-						<span className="text-xs align-top pr-2 font-medium">{index + 1}:</span>
+						<span className="text-xs align-top pe-2 font-medium">{index + 1}:</span>
 						<span className="text-xs">{formatValue(item)}</span>
 					</div>
 				))}
@@ -50,7 +50,7 @@ function formatValue(value: unknown): JSX.Element | string {
 			<>
 				{Object.entries(value as Record<string, unknown>).map(([subKey, subValue]) => (
 					<div className="flex gap-1" key={subKey}>
-						<span className="text-xs align-top pr-2 font-medium">{formatCamelCaseKey(subKey)}:</span>
+						<span className="text-xs align-top pe-2 font-medium">{formatCamelCaseKey(subKey)}:</span>
 						<span className="text-xs">{formatValue(subValue)}</span>
 					</div>
 				))}
@@ -69,7 +69,7 @@ export function JSONTable({ data, className }: JSONTableProps): JSX.Element {
 			<tbody>
 				{entries.map(([key, value]) => (
 					<tr key={key} className="align-top hover:bg-background border-y">
-						<td className="align-top pr-4 p-2">{formatCamelCaseKey(key)}</td>
+						<td className="align-top pe-4 p-2">{formatCamelCaseKey(key)}</td>
 						<td className="p-2">{formatValue(value)}</td>
 					</tr>
 				))}

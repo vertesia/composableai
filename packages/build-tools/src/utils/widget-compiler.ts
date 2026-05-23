@@ -10,6 +10,7 @@ import type { RollupTypescriptOptions } from '@rollup/plugin-typescript';
 import type { RollupJsonOptions } from '@rollup/plugin-json';
 import type { RollupNodeResolveOptions } from '@rollup/plugin-node-resolve';
 import type { Options as TerserOptions } from '@rollup/plugin-terser';
+import { createRollupTypescript } from './rollup-typescript.js';
 
 type PluginFactory<TOptions = undefined> = (options?: TOptions) => Plugin;
 
@@ -67,6 +68,7 @@ export async function compileWidgets(
             await import('@rollup/plugin-typescript'),
             '@rollup/plugin-typescript'
         );
+        const ts = await import('typescript');
         const nodeResolve = getPluginFactory<RollupNodeResolveOptions>(
             await import('@rollup/plugin-node-resolve'),
             '@rollup/plugin-node-resolve'
@@ -85,6 +87,7 @@ export async function compileWidgets(
                 tsconfig,
                 declaration: false,
                 sourceMap: true,
+                typescript: createRollupTypescript(ts, { watchMode: false }),
                 ...typescriptOptions
             }),
             // Order matters: json must come before node-resolve so .json imports
