@@ -47,6 +47,7 @@ export class TypeCatalogApi extends ApiTopic {
      * @param typeOrRef Type identifier string, or a ContentObjectTypeRef from a content object
      */
     resolve(typeOrRef: string | ContentObjectTypeRef): Promise<ContentObjectTypeItem> {
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         const typeId = typeof typeOrRef === 'string' ? typeOrRef : (typeOrRef.code || typeOrRef.id!);
         return this.get(`/resolve/${typeId}`);
     }

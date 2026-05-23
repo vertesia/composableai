@@ -55,7 +55,7 @@ const BASELINE_PATH = resolve(PKG_ROOT, '.rtl-baseline.json');
 // Variant prefix matcher: peer-focus:, hover:, md:, lg:, dark:, data-[..]:,
 // [&_th]:, etc. We allow 0+ variants, then capture the base utility.
 const VARIANT = String.raw`(?:(?:[a-z][a-z0-9-]*|\[[^\]]+\]|peer-[a-z-]+|group-[a-z-]+|data-\[[^\]]+\]|aria-\[[^\]]+\]|has-\[[^\]]+\]|not-[a-z-]+):)*`;
-const NEG = String.raw`-?`;
+const NEG = `-?`;
 
 // Class boundary — a directional utility must START at one of these to count
 // as its own class. Without this, `left-2` inside `slide-in-from-left-2`

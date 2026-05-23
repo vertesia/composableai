@@ -61,6 +61,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                 let status: "pending" | "in_progress" | "completed" | "skipped" =
                                     task.status || "pending";
                                 if (workstreamStatus.has(taskId)) {
+                                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                                     status = workstreamStatus.get(taskId)!;
                                 }
 

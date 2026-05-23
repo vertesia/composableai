@@ -77,8 +77,7 @@ function SelectPanel({ onClose }: SelectPanelProps) {
     )
 }
 
-type WaitingPanelProps = {}
-function WaitingPanel(_props: WaitingPanelProps) {
+function WaitingPanel() {
     const { t } = useUITranslation();
     return (
         <ModalBody className="min-h-[84px] pt-0">

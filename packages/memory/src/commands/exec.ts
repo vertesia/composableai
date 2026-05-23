@@ -62,8 +62,10 @@ export function executePipe(commands: Command[], finalOutput: Writable | undefin
                 stdio: ['pipe', 'pipe', 'inherit'],
             });
             if (input) {
+                // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                 input.pipe(child.stdin!);
             }
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             input = child.stdout!;
             child.on("error", (err: Error) => {
                 console.error(`Failed to run ${cmd.name}`, err);

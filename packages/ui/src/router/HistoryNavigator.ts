@@ -88,8 +88,6 @@ export class HistoryNavigator {
     _popStateListener?: (ev: PopStateEvent) => void;
     _linkNavListener?: (ev: MouseEvent) => void;
     _listeners: ((event: LocationChangeEvent) => void)[] = [];
-    constructor() {
-    }
 
     addListener(listener: (event: LocationChangeEvent) => void) {
         this._listeners.push(listener);

@@ -111,10 +111,6 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
 
 export class FetchClient extends AbstractFetchClient<FetchClient> {
 
-    constructor(baseUrl: string, fetchImpl?: FETCH_FN | Promise<FETCH_FN>) {
-        super(baseUrl, fetchImpl);
-    }
-
 }
 
 export abstract class ApiTopic extends ClientBase {

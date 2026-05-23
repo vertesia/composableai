@@ -36,7 +36,7 @@ export interface RemoteActivityInfo {
  */
 export type RemoteActivityMap = Record<string, RemoteActivityInfo>;
 
-export type ResolveRemoteActivitiesParams = {}
+export type ResolveRemoteActivitiesParams = Record<string, never>
 
 /**
  * Resolves remote activities from all installed apps that have the `tools` capability.

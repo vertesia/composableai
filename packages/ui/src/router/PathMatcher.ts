@@ -138,9 +138,6 @@ class RootSegmentNode<T = unknown> extends ParentSegmentNode<T> {
 }
 
 class LiteralSegmentNode<T = unknown> extends ParentSegmentNode<T> {
-    constructor(name: string, value?: T | undefined) {
-        super(name, value);
-    }
 }
 
 class VariableSegmentNode<T = unknown> extends ParentSegmentNode<T> {

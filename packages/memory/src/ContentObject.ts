@@ -80,9 +80,6 @@ export class MediaObject extends ContentObject {
 
 
 export class PdfObject extends ContentObject {
-    constructor(builder: Builder, source: ContentSource) {
-        super(builder, source);
-    }
     async getStream(): Promise<NodeJS.ReadableStream> {
         return Readable.from(await this.getContent());
     }
@@ -96,9 +93,6 @@ export class PdfObject extends ContentObject {
 
 
 export class DocxObject extends ContentObject {
-    constructor(builder: Builder, source: ContentSource) {
-        super(builder, source);
-    }
     async getBuffer(): Promise<Buffer> {
         return Buffer.from(await manyToMarkdown(await this.getStream(), "docx"), "utf-8");
     }

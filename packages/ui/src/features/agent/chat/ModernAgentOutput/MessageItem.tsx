@@ -533,6 +533,7 @@ function MessageItemComponent({
                 {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
                 {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux ? (
                     (() => {
+                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                         const uxConfig = (message.details as AskUserMessageDetails).ux!;
                         return (
                             <AskUserWidget

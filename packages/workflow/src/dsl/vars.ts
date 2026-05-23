@@ -37,7 +37,7 @@ function _prop(object: unknown, name: string) {
     object = _valueOf(object); // resolve Value objects
     if (Array.isArray(object)) {
         const index = +name;
-        if (isNaN(index)) {
+        if (Number.isNaN(index)) {
             // map array to property
             return object.map(item => isRecord(item) ? item[name] : undefined);
         } else {

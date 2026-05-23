@@ -144,6 +144,7 @@ export class TextractProcessor {
                                 for (const cellRel of cell.Relationships) {
                                     if (
                                         cellRel.Type === 'CHILD' &&
+                                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                                         cellRel.Ids?.includes(wordBlock.Id!)
                                     ) {
                                         return true;
@@ -263,12 +264,14 @@ export class TextractProcessor {
             FeatureTypes: ["TABLES"]
         });
         const response = await this.textractClient.send(command);
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         return response.JobId!;
     }
 
     async checkJobStatus(jobId: string): Promise<string> {
         const command = new GetDocumentAnalysisCommand({ JobId: jobId });
         const response = await this.textractClient.send(command);
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         return response.JobStatus!;
     }
 
@@ -348,6 +351,7 @@ export class TextractProcessor {
         // Create blocks map
         const blocksMap: BlocksMap = {};
         for (const block of allBlocks) {
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             blocksMap[block.Id!] = block;
         }
     

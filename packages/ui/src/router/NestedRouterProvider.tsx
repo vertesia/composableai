@@ -50,6 +50,7 @@ export function NestedRouterProvider({ routes, index, children, fixLinks = false
     return nestedRouteMatch && (
         <ReactRouterContext.Provider value={{
             ...ctx,
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             router: nestedRouter!,
             route: nestedRouteMatch.value,
             params: nestedRouteMatch.params,

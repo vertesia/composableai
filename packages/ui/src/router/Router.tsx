@@ -40,6 +40,7 @@ export abstract class BaseRouter {
 
     match(path: string): PathMatch<Route> | null {
         const useIndex = isRootPath(path) && this.index;
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         return this.matcher.match(useIndex ? this.index! : path);
     }
 

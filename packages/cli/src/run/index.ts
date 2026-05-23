@@ -46,7 +46,7 @@ export default async function runInteraction(program: Command, interactionSpec: 
         const client = await getClient(program);
 
         let count = options.count ? parseInt(options.count, 10) : 1;
-        if (isNaN(count) || count < 0) {
+        if (Number.isNaN(count) || count < 0) {
             count = 1;
         }
 

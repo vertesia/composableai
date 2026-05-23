@@ -58,6 +58,7 @@ export function ObjectsActionContextProvider({ children, type }: ObjectsActionCo
             selection, toast, client, search, type
         });
         context.allActions = DEFAULT_ACTIONS;
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         context.wfRules = rules!;
         return context;
     }, [client, search, selection, rules, toast, type]);

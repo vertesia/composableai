@@ -406,8 +406,6 @@ export function ArtifactContentRenderer({
                     <ImageRenderer content={content} path={path} />
                 </CodeBlockErrorBoundary>
             );
-
-        case 'code':
         default:
             return <CodeRenderer content={content} path={path} />;
     }

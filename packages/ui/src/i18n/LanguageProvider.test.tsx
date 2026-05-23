@@ -26,7 +26,7 @@ function mount(node: React.ReactNode) {
     document.body.appendChild(container);
     root = createRoot(container);
     act(() => {
-        root!.render(node);
+        root?.render(node);
     });
 }
 

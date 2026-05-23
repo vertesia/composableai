@@ -82,6 +82,7 @@ export default function WorkstreamTabs({
         >
           {/* Shorten long names for better UI */}
           {name.length > 20 ? `${name.substring(0, 18)}...` : name}
+          {/* biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here */}
           {count?.has(id) && count.get(id)! > 0 && (
             <div className="flex items-center space-x-1">
               <span

@@ -20,6 +20,7 @@ function readCliPackageJson(): CliPackageJson {
   if (_cached) return _cached;
   const pkgPath = path.resolve(__dirname, '..', 'package.json');
   _cached = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
   return _cached!;
 }
 

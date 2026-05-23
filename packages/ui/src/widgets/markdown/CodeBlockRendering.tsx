@@ -38,9 +38,7 @@ export function CodeBlockRendererProvider({ components, children }: CodeBlockRen
     }, [components]);
 
     return (
-        <>
-            <Context.Provider value={registry}>{children}</Context.Provider>
-        </>
+        <Context.Provider value={registry}>{children}</Context.Provider>
     )
 }
 

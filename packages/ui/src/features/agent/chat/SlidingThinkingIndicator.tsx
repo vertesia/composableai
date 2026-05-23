@@ -218,7 +218,6 @@ export function SlidingThinkingIndicator({
                 return "purple";
             case AgentMessageType.PLAN:
                 return "teal";
-            case AgentMessageType.UPDATE:
             default:
                 return "blue";
         }

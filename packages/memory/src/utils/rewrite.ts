@@ -43,6 +43,7 @@ function buildPathRewrite(path: string, truncPath: (path: string) => string): Pa
     const parts: ((path: Path, index: number) => string)[] = [];
     let lastIndex = 0;
     for (const m of path.matchAll(RX_PARTS)) {
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         if (m.index! > lastIndex) {
             const literal = path.substring(lastIndex, m.index);
             parts.push(() => literal);
@@ -78,6 +79,7 @@ function buildPathRewrite(path: string, truncPath: (path: string) => string): Pa
                 default: throw new Error(`Bug: should never happen`);
             }
         }
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         lastIndex = m.index! + m[0].length;
     }
     if (!parts.length) {

@@ -45,6 +45,7 @@ function memoAction(command: Command, options: Record<string, unknown>) {
     if (!options.transpileDir) {
         options.transpileDir = dirname(url.fileURLToPath(import.meta.url));
     }
+    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
     return build(script!, { ...options, vars } as BuildOptions)
 }
 

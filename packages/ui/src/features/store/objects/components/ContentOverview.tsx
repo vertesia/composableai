@@ -190,8 +190,7 @@ export function ContentOverview({
     };
 
     return (
-        <>
-            <ResizablePanelGroup direction="horizontal" className='h-full'>
+        <ResizablePanelGroup direction="horizontal" className='h-full'>
                 <ResizablePanel className="min-w-[100px]">
                     <PropertiesPanel object={object} refetch={refetch ?? (() => Promise.resolve())} handleCopyContent={handleCopyContent} />
                 </ResizablePanel>
@@ -201,8 +200,6 @@ export function ContentOverview({
                     <DataPanel object={object} loadText={loadText ?? false} handleCopyContent={handleCopyContent} refetch={refetch} />
                 </ResizablePanel>
             </ResizablePanelGroup>
-
-        </>
     );
 }
 
@@ -642,8 +639,7 @@ function TextActions({
     };
 
     return (
-        <>
-            <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
+        <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
                 <div className="flex items-center gap-2">
                     {fullText && (
                         <>
@@ -708,7 +704,6 @@ function TextActions({
 
                 </div>
             </div>
-        </>
     );
 }
 
@@ -993,7 +988,7 @@ function PdfProcessingPanel({ progress, status, outputFormat }: { progress?: Doc
     const isXmlProcessing = outputFormat === "xml";
 
     // Ensure percent is a valid number (handle undefined and NaN from division by zero)
-    const percent = progress?.percent != null && !isNaN(progress.percent) ? progress.percent : 0;
+    const percent = progress?.percent != null && !Number.isNaN(progress.percent) ? progress.percent : 0;
 
     return (
         <div className="px-4 py-4">

@@ -25,7 +25,7 @@ function mount(language: SupportedLanguage): LocaleFormat {
     document.body.appendChild(container);
     root = createRoot(container);
     act(() => {
-        root!.render(
+        root?.render(
             <LanguageProvider>
                 <Probe />
             </LanguageProvider>,

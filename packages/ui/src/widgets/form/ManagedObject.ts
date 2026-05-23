@@ -30,6 +30,7 @@ function getInputType(_name: string, schema: PropertySchema) {
 
 export abstract class Node<SchemaT extends Schema = Schema, ValueT = JSONSchemaType> {
     // change observer
+    // biome-ignore lint/suspicious/noConfusingVoidType: void in union is intentional — observers may return nothing or false to stop bubbling
     observer?: (node: Node) => void | false; // return false to stop bubbling
 
     abstract value: ValueT;
@@ -82,10 +83,6 @@ export abstract class Node<SchemaT extends Schema = Schema, ValueT = JSONSchemaT
 
 export abstract class ManagedObjectBase<SchemaT extends Schema = Schema> extends Node<SchemaT, JSONSchemaObject> {
     abstract value: JSONSchemaObject;
-
-    constructor(parent: Node | null, schema: SchemaT, name: string) {
-        super(parent, schema, name);
-    }
 
     get isObject(): boolean {
         return true;

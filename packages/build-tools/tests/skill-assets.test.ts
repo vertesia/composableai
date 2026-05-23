@@ -36,7 +36,7 @@ describe('Skill Transformer with Assets', () => {
     expect(result.assets).toBeDefined();
     expect(result.assets).toHaveLength(2); // 2 scripts, no widgets
 
-    const scriptAssets = result.assets!.filter(a => a.type === 'script');
+    const scriptAssets = result.assets?.filter(a => a.type === 'script');
     expect(scriptAssets).toHaveLength(2);
   });
 

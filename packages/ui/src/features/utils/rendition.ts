@@ -33,7 +33,7 @@ export async function retrieveRendition(
   }
 
   setRenditionStatus("Preparing preview...");
-  const currentTime = new Date().getTime() / 1000;
+  const currentTime = Date.now()/ 1000;
 
   const savedId = localStorage.getItem(
     `${RENDITION_ID}_${doc.id}_${RENDITION_OPTIONS.max_hw}`,
@@ -80,7 +80,7 @@ export async function retrieveRendition(
       );
       localStorage.setItem(
         `${RENDITION_ID}_${doc.id}_${RENDITION_OPTIONS.max_hw}_time`,
-        (new Date().getTime() / 1000).toString(),
+        (Date.now()/ 1000).toString(),
       );
       setRenditionUrl(rendition);
       setRenditionAlt(`${doc.name} Rendition`);

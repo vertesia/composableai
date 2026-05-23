@@ -5,7 +5,7 @@ import { useState } from "react";
 
 interface AppProjectSelectorProps {
     app: RequireAtLeastOne<{ id?: string, name?: string }, 'id' | 'name'>;
-    onChange?: (value: ProjectRef) => void | boolean;
+    onChange?: (value: ProjectRef) => undefined | boolean;
     placeholder?: string;
 }
 export function AppProjectSelector({ app, onChange, placeholder }: AppProjectSelectorProps) {

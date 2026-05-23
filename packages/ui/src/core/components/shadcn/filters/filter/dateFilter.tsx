@@ -223,8 +223,7 @@ export default function DateFilter({
           </div>
         </>
       ) : (
-        <>
-          <div className="calendar-wrapper">
+        <div className="calendar-wrapper">
             <style>{calendarStyles}</style>
             <Calendar
               value={selectedDate}
@@ -252,7 +251,6 @@ export default function DateFilter({
               }}
             />
           </div>
-        </>
       )}
     </div>
   );

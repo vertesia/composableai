@@ -223,7 +223,7 @@ export function toggleCursor(show: boolean, stream: WriteStream = process.stdout
 }
 
 export function showCursor(stream: WriteStream = process.stdout) {
-    const i = streamsToRestore.findIndex((s) => s === stream);
+    const i = streamsToRestore.indexOf(stream);
     if (i > -1) {
         streamsToRestore.splice(i, 1);
     }

@@ -28,17 +28,17 @@ describe("Indexed tar format", () => {
         expect(file1).toBeDefined();
         expect(file2).toBeDefined();
         expect(file3).toBeDefined();
-        expect(file1!.size).toBe(12);
-        expect(file2!.size).toBe(14);
-        expect(file3!.size).toBeGreaterThan(0);
+        expect(file1?.size).toBe(12);
+        expect(file2?.size).toBe(14);
+        expect(file3?.size).toBeGreaterThan(0);
 
         const content1 = await index.getContent('file1.txt');
         const content2 = await index.getContent('file2.txt');
         const content3 = await index.getContent('app/package.json');
 
-        expect(content1!.toString()).toBe("hello world!");
-        expect(content2!.toString()).toBe("bonjour monde!");
-        const pkg = JSON.parse(content3!.toString());
+        expect(content1?.toString()).toBe("hello world!");
+        expect(content2?.toString()).toBe("bonjour monde!");
+        const pkg = JSON.parse(content3?.toString());
         expect(pkg).toBeDefined();
         expect(pkg).toHaveProperty("name");
         expect(pkg).toHaveProperty("version");

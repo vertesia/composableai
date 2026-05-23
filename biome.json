@@ -9,7 +9,7 @@
     "ignoreUnknown": true,
     "includes": [
       "!!**/llumiverse",
-      "**/*.{js,cjs,mjs,jsx,ts,tsx}",
+      "**/*.{js,cjs,mjs,jsx,ts,tsx,css}",
       "!**/dist/**",
       "!**/lib/**",
       "!**/node_modules/**",
@@ -57,6 +57,7 @@
         "noExplicitAny": "error",
         "noImplicitAnyLet": "error",
         "noShadowRestrictedNames": "error",
+        "noTemplateCurlyInString": "off",
         "noUnusedExpressions": "error",
         "useBiomeIgnoreFolder": "off",
         "useIterableCallbackReturn": "error"

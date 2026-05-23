@@ -48,7 +48,7 @@ export interface BuildOptions {
 export interface Commands {
     vars: () => Record<string, unknown>;
     tmpdir: () => string;
-    exec: (cmd: string, options?: ExecOptions) => Promise<void | string>;
+    exec: (cmd: string, options?: ExecOptions) => Promise<undefined | string>;
     from: (location: string, options?: FromOptions) => Promise<void>;
     content: (location: string, encoding?: BufferEncoding) => ContentObject | ContentObject[];
     json: (location: string) => ContentObject | ContentObject[];
@@ -169,7 +169,7 @@ export class Builder implements Commands {
             let target: string = fileName;
             if (publishName) {
                 try {
-                    target = await this.options.publish!(fileName, publishName);
+                    target = await this.options.publish?.(fileName, publishName);
                 } finally {
                     rmSync(fileName);
                 }

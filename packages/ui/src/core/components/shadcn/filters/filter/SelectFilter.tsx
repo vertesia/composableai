@@ -36,7 +36,7 @@ export default function SelectFilter({
       const filterLc = commandInput.toLowerCase();
       const results = filteredOptions.filter(option => {
         if (option.value === undefined) return false;
-        return group.filterBy!(option.value, filterLc);
+        return group.filterBy?.(option.value, filterLc);
       });
       return results;
     }

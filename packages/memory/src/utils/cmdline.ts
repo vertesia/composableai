@@ -66,6 +66,7 @@ export function splitPipeCommands(text: string): CommandPipe {
             if (args.length < 1) {
                 throw new Error("Invalid pipe character. Expecting a command first.");
             }
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             const name = args.shift()!;
             commands.push({
                 name,
@@ -78,6 +79,7 @@ export function splitPipeCommands(text: string): CommandPipe {
     }
     let out: string | undefined;
     if (args.length > 0) {
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         const name = args.shift()!;
         if (args.length > 1 && args[args.length - 2] === ">") {
             out = args.pop();

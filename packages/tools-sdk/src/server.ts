@@ -163,7 +163,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
  * @deprecated Use tools server template 
  */
 export function createDevServer(config: ToolServerConfig & {
-    staticHandler?: (c: Context, next: () => Promise<void>) => Promise<Response | void>;
+    staticHandler?: (c: Context, next: () => Promise<void>) => Promise<Response | undefined>;
 }): Hono {
     const app = createToolServer(config);
 

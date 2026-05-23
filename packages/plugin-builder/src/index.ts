@@ -66,10 +66,12 @@ export function vertesiaPluginBuilder({
             if (keys.length === 1) {
                 const asset = bundle[jsOutput];
                 if (asset) {
+                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                     const cssContent = readFileSync(join(options.dir!, output), 'utf8')
                     if (cssContent) {
                         const exportedContent = extractTailwindUtilitiesLayer(cssContent);
                         if (exportedContent) {
+                            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                             const jsFile = join(options.dir!, jsOutput);
                             const jsContent = readFileSync(jsFile, 'utf8');
                             writeFileSync(jsFile, `${jsContent}\nexport const ${CSS_VAR} = \`\n${exportedContent}\n\`;\n`);

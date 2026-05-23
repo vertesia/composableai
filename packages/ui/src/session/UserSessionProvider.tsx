@@ -20,7 +20,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
     const [session, setSession] = useState<UserSession>(new UserSession());
     const { generateState, verifyState, clearState } = useAuthState();
     const hasInitiatedAuthRef = useRef(false);
-    const authFlowRef = useRef<(() => void | (() => void)) | undefined>(undefined);
+    const authFlowRef = useRef<(() => undefined | (() => void)) | undefined>(undefined);
 
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
         const url = new URL(`${CENTRAL_AUTH_REDIRECT}?sts=${Env.endpoints.sts ?? "https://sts.vertesia.io"}`);

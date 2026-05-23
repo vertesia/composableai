@@ -62,7 +62,7 @@ export function SidebarSection({ children, title, action, isFooter = false, clas
 export function SidebarTooltip({ children, text }: { children: React.ReactNode, text?: string }) {
     const { isOpen } = useSidebarToggle();
     return (
-        isOpen ? <>{children}</> :
+        isOpen ? children :
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>

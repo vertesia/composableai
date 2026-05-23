@@ -71,12 +71,10 @@ export function HamburgerButton() {
         }
     }
     return (
-        <>
-            <Button variant='ghost' size='icon' onClick={() => toggle()} //alt='sidebar toggle'
+        <Button variant='ghost' size='icon' onClick={() => toggle()} //alt='sidebar toggle'
                 className="p-2 rounded-full transition-colors w-full text-center ">
                 <Menu aria-hidden="true" size={24} />
             </Button>
-        </>
     )
 }
 

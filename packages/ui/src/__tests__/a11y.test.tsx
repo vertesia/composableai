@@ -175,9 +175,7 @@ describe('@vertesia/ui accessibility (axe)', () => {
     it('FormItem does NOT auto-wire a Fragment child (Fragment ignores cloned props)', async () => {
         const { container } = renderWithProviders(
             <FormItem label="Fragment example">
-                <>
-                    <Input value="" onChange={() => undefined} clearable={false} />
-                </>
+                <Input value="" onChange={() => undefined} clearable={false} />
             </FormItem>,
         );
         const label = container.querySelector('label');

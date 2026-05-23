@@ -28,8 +28,8 @@ export class TypesApi extends ApiTopic {
             query: {
                 limit,
                 offset,
-                layout: options?.layout ? true : false,
-                schema: options?.schema ? true : false,
+                layout: !!options?.layout,
+                schema: !!options?.schema,
                 ...query
             }
         });

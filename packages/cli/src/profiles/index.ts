@@ -161,6 +161,7 @@ export class ConfigureProfile {
         if (!result) {
             return;
         }
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         const oldName = this.data.name!;
         const previousBundle = oldName ? readAuthBundle(oldName) : undefined;
         this.data.name = result.profile;
@@ -184,6 +185,7 @@ export class ConfigureProfile {
         this.config.remove(oldName);
         this.config.add(this.data as Profile);
         if (this.isNew) {
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             this.config.use(this.data.name!);
         }
         this.config.save();
@@ -214,6 +216,7 @@ export class ConfigureProfile {
 
     private async startLegacySession(signal?: AbortSignal) {
         await startConfigSession(
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             this.data.config_url!,
             this.getConfigPayload(),
             (result) => this.applyConfigResult(result, { logCompletion: true, exitOnComplete: true }),

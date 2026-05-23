@@ -581,9 +581,7 @@ export function DocumentUploadModal({
                     filterBy="name"
                     isClearable
                 />
-                {selectedType ? (
-                    <></>
-                ) : (
+                {!selectedType && (
                     <div className="p-2 rounded-md">
                         <div className="flex items-center text-attention">
                             <CheckCircleIcon className="size-4 me-1" />

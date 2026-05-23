@@ -22,7 +22,7 @@ function evaluateExpression(expr: string): number {
     // Use Function constructor for safe evaluation (better than eval)
     try {
         const result = new Function(`'use strict'; return (${expr})`)();
-        if (typeof result !== 'number' || !isFinite(result)) {
+        if (typeof result !== 'number' || !Number.isFinite(result)) {
             throw new Error('Result is not a valid number');
         }
         return result;
@@ -36,6 +36,7 @@ export async function calculate(
     _context: ToolExecutionContext
 ): Promise<ToolResultContent> {
     try {
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         const { expression } = payload.tool_use.tool_input!;
         const result = evaluateExpression(expression);
 

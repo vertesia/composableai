@@ -76,7 +76,7 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
             let fileSize = "";
             if (value) {
                 const bytes = Number(value);
-                if (!isNaN(bytes)) {
+                if (!Number.isNaN(bytes)) {
                     const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
                     if (bytes === 0) {
                         fileSize = "0 Bytes";

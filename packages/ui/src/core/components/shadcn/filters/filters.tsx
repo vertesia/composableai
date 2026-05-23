@@ -79,7 +79,6 @@ function generateComboboxOptions(
                     }}
                 />
             );
-        case 'select':
         default: {
             const filterGroup = filterGroups.find(group => group.name === filter.name);
             return (

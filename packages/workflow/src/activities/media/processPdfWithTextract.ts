@@ -59,8 +59,11 @@ export async function convertPdfToStructuredText(payload: DSLActivityExecutionPa
     }
 
     const project = await client.getProject();
-    const awsConfig = (await client.projects.integrations.retrieve(project!.id, SupportedIntegrations.aws)) as AwsConfiguration;
-    const credentials = await getS3AWSCredentials(awsConfig, payload.auth_token, project!.id);
+    if (!project?.id) {
+        throw new Error("Project id not available on client");
+    }
+    const awsConfig = (await client.projects.integrations.retrieve(project.id, SupportedIntegrations.aws)) as AwsConfiguration;
+    const credentials = await getS3AWSCredentials(awsConfig, payload.auth_token, project.id);
 
     const processor = new TextractProcessor({
         fileKey: objectId,

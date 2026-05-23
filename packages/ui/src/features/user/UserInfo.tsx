@@ -193,23 +193,19 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
     const description = (
         <div className="space-y-2">
             {user && (
-                <>
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                         <Avatar src={user.picture} name={user.name} size="sm" />
                         <div>
                             <div className="font-medium">{user.name || user.email}</div>
                             {user.email && user.name && <div className="text-xs text-muted">{user.email}</div>}
                         </div>
                     </div>
-                </>
             )}
             {apiKey && (
-                <>
-                    <div>
+                <div>
                         <div className="font-medium">{apiKey.name}</div>
                         <div className="text-xs text-muted-foreground">Key ID: {apiKey.id}</div>
                     </div>
-                </>
             )}
             {!user && !apiKey && (
                 <>

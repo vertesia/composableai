@@ -278,6 +278,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                                         variant="ghost"
                                         size="sm"
                                         className="text-xs h-7 px-2 text-muted hover:text-foreground"
+                                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                                         onClick={() => copyRunId(ws.child_workflow_run_id!)}
                                     >
                                         <ClipboardCopyIcon className="size-3 me-1" />
@@ -287,6 +288,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                                         variant="ghost"
                                         size="sm"
                                         className="text-xs h-7 px-2 text-muted hover:text-foreground"
+                                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                                         onClick={() => downloadConversation(ws.child_workflow_run_id!)}
                                     >
                                         <DownloadCloudIcon className="size-3 me-1" />

@@ -68,7 +68,7 @@ function formatCellValue(value: unknown, column: ColumnTemplate): string {
   switch (column.format) {
     case 'number': {
       const num = typeof value === 'number' ? value : parseFloat(String(value));
-      if (isNaN(num)) return String(value);
+      if (Number.isNaN(num)) return String(value);
       return new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 0,
         maximumFractionDigits: column.decimals ?? 2,
@@ -77,7 +77,7 @@ function formatCellValue(value: unknown, column: ColumnTemplate): string {
 
     case 'currency': {
       const num = typeof value === 'number' ? value : parseFloat(String(value));
-      if (isNaN(num)) return String(value);
+      if (Number.isNaN(num)) return String(value);
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: column.currency || 'USD',
@@ -88,14 +88,14 @@ function formatCellValue(value: unknown, column: ColumnTemplate): string {
 
     case 'percent': {
       const num = typeof value === 'number' ? value : parseFloat(String(value));
-      if (isNaN(num)) return String(value);
+      if (Number.isNaN(num)) return String(value);
       const pct = num < 1 && num > -1 && num !== 0 ? num * 100 : num;
       return `${pct.toFixed(column.decimals ?? 1)}%`;
     }
 
     case 'date': {
       const date = value instanceof Date ? value : new Date(String(value));
-      if (isNaN(date.getTime())) return String(value);
+      if (Number.isNaN(date.getTime())) return String(value);
       return new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'short',

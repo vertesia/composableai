@@ -351,6 +351,7 @@ export async function createProfile(name?: string, options: CreateProfileOptions
     }
 
     if (options.apikey) {
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         const serverUrls = getServerUrls(target!, region);
         const tokenRefs = await resolveCredentialRefs(options.apikey, serverUrls);
         const account = options.account || tokenRefs.account;
@@ -367,15 +368,19 @@ export async function createProfile(name?: string, options: CreateProfileOptions
             account,
             project,
             name,
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             config_url: getConfigUrl(target!, region),
             region,
             ...serverUrls,
         });
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         config.use(name!).save();
     } else {
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         await config.createProfile(name!, target!, region).start(options.onResult);
     }
 
+    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
     return name!;
 }
 
@@ -397,6 +402,7 @@ export async function updateProfile(name?: string, onResult?: OnResultCallback, 
     if (!name) {
         name = await selectProfile("Select the profile to update");
     }
+    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
     const profile = config.getProfile(name!);
     if (!profile) {
         console.error(`Profile ${name} not found`);

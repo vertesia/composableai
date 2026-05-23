@@ -3,7 +3,7 @@ import React, { type ChangeEvent, useEffect } from "react";
 import { Styles } from "./styles.js";
 
 function numberToString(value: number | undefined) {
-    if (value == null || isNaN(value)) {
+    if (value == null || Number.isNaN(value)) {
         return '';
     } else {
         return value.toString();
@@ -39,7 +39,7 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(({ valu
 
     useEffect(() => {
         // we do not update if not empty and NaN
-        if (value == null || !isNaN(value)) {
+        if (value == null || !Number.isNaN(value)) {
             const text = numberToString(value);
             setTextValue(text);
         }
