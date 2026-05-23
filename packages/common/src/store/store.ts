@@ -565,6 +565,16 @@ export interface WorkflowRule extends WorkflowRuleItem {
      * Optional task queue name to use when starting workflows for this rule
      */
     task_queue?: string;
+
+    /**
+     * Event subscription migration status for legacy workflow-rule cutover.
+     */
+    event_subscription_migration_status?: 'migrated' | 'unsupported_match' | 'failed';
+
+    /**
+     * Migration failure or unsupported-match reason, when applicable.
+     */
+    event_subscription_migration_error?: string;
 }
 
 export interface CreateWorkflowRulePayload extends UploadWorkflowRulePayload {

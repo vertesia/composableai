@@ -43,6 +43,15 @@ export interface AuditMeter {
 
 export interface AuditTrailEvent {
     event_type: 'audit';
+    event_id?: string;
+    event_category?: 'audit';
+    source?: string | null;
+    root_event_id?: string;
+    caused_by_event_id?: string;
+    hop_count?: number;
+    replay_of?: string;
+    replay_root_event_id?: string;
+    replayed_by?: string;
     action: AuditAction;
     resource_type: string;
     resource_id: string;

@@ -6,6 +6,7 @@ import { CostApi } from "./CostApi.js";
 import { CommandsApi } from "./CommandsApi.js";
 import { DataApi } from "./DataApi.js";
 import { EmailApi } from "./EmailApi.js";
+import { EventSubscriptionsApi } from './EventSubscriptionsApi.js';
 import { IndexingApi } from "./IndexingApi.js";
 import { EmbeddingsApi } from "./EmbeddingsApi.js";
 import { ZenoClientNotFoundError } from "./errors.js";
@@ -101,6 +102,7 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     collections = new CollectionsApi(this);
     embeddings = new EmbeddingsApi(this);
     email = new EmailApi(this);
+    eventSubscriptions = new EventSubscriptionsApi(this);
     pendingAsks = new PendingAsksApi(this);
     data = new DataApi(this);
     tools = new ToolsApi(this);
