@@ -1,7 +1,7 @@
 import { JSONSchema } from "../json-schema.js";
 import { TaskField } from "./task.js";
 
-export type JsonLogicRule = Record<string, unknown>;
+export type JsonLogicRule = boolean | Record<string, unknown>;
 
 export type ProcessDefinitionStatus = 'draft' | 'published' | 'archived';
 export const PROCESS_DEFINITION_FORMAT_VERSION = 1 as const;

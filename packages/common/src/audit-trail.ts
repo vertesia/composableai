@@ -1,29 +1,32 @@
-export type AuditAction =
+export const AUDIT_ACTIONS = [
     // CRUD operations
-    | 'create'
-    | 'update'
-    | 'delete'
-    | 'bulk_create'
-    | 'bulk_change_type'
-    | 'bulk_update'
-    | 'bulk_delete'
-    | 'attach'
-    | 'detach'
-    | 'credentials_fill'
-    | 'credentials_totp_generation'
-    | 'publish'
-    | 'unpublish'
+    'create',
+    'update',
+    'delete',
+    'bulk_create',
+    'bulk_change_type',
+    'bulk_update',
+    'bulk_delete',
+    'attach',
+    'detach',
+    'credentials_fill',
+    'credentials_totp_generation',
+    'publish',
+    'unpublish',
     // Billable operations
-    | 'inference'
-    | 'embedding'
-    | 'image_generation';
-
-/** Billable audit actions for cost analytics queries */
-export const BILLABLE_AUDIT_ACTIONS: AuditAction[] = [
     'inference',
     'embedding',
     'image_generation',
-];
+] as const;
+
+export type AuditAction = typeof AUDIT_ACTIONS[number];
+
+/** Billable audit actions for cost analytics queries */
+export const BILLABLE_AUDIT_ACTIONS = [
+    'inference',
+    'embedding',
+    'image_generation',
+] satisfies AuditAction[];
 
 /**
  * Generic metering entry attached to audit events.

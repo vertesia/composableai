@@ -133,11 +133,14 @@ export interface WebHookSpec {
     result_path?: string;
 }
 
-export interface WorkflowExecutionPayload<T = Record<string, any>> extends WorkflowExecutionBaseParams<T> {
+export interface WorkflowExecutionPayload<
+    T = Record<string, any>,
+    EventName extends string = string,
+> extends WorkflowExecutionBaseParams<T> {
     /**
      * The event which started the workflow who created the activity.
      */
-    event: ContentEventName;
+    event: EventName;
 
     /*
      * The Workflow Rule ID if any. If the workflow was started by a rule this field will contain the rule ID
