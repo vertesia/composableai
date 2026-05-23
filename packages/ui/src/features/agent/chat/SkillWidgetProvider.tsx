@@ -5,6 +5,7 @@ import { useUserSession } from "@vertesia/ui/session";
 import { type CodeBlockRendererProps, CodeBlockRendererProvider } from "@vertesia/ui/widgets";
 import { memo, useEffect, useMemo, useState } from "react";
 import type { VegaLiteChartSpec } from "./AgentChart";
+import { ProposalCodeBlockHandler } from "./ProposalCodeBlockHandler";
 import { VegaLiteChart } from "./VegaLiteChart";
 
 interface SkillWidgetProviderProperties {
@@ -75,6 +76,8 @@ const defaultComponents: Record<string, React.FunctionComponent<CodeBlockRendere
     "vega-lite": VegaLiteChartWidget,
     "vegalite": VegaLiteChartWidget,
     "fusion-fragment": FusionFragmentHandler,
+    "proposal": ProposalCodeBlockHandler,
+    "askuser": ProposalCodeBlockHandler,
 }
 
 function RemoteWidgetComponent({ url, code }: { url: string, code: string }) {

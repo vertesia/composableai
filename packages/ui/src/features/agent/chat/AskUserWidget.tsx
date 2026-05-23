@@ -1,7 +1,6 @@
 import React from "react";
 import { Button } from "@vertesia/ui/core";
 import { useUITranslation } from "@vertesia/ui/i18n";
-// biome-ignore lint/suspicious/noImportCycles: cycle with widgets/markdown/codeBlockHandlers — tracked as design debt
 import { MarkdownRenderer } from "../../../widgets/markdown/MarkdownRenderer";
 import { MessageSquare, CheckCircle, XCircle, AlertCircle, HelpCircle, Send } from "lucide-react";
 

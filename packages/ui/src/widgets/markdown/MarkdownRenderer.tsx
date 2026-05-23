@@ -10,7 +10,6 @@ import remarkMath from 'remark-math';
 import remarkSupersub from 'remark-supersub';
 import { SKIP, visit } from 'unist-util-visit';
 import { CodeBlockHandlerProvider } from './CodeBlockContext';
-// biome-ignore lint/suspicious/noImportCycles: codeBlockHandlers renders agent-chat widgets that themselves render markdown — tracked as design debt
 import { createDefaultCodeBlockHandlers, ExpandCodeBlockHandler, isExpandLanguage } from './codeBlockHandlers';
 import { useCodeBlockRendererRegistry } from './CodeBlockRendering';
 import { preprocessMathDelimiters } from './preprocessMathDelimiters';
