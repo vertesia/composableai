@@ -14,7 +14,7 @@
     "lint": "biome lint src",
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "node lib/index.js test-project",
+    "test": "rimraf test-project && node lib/index.js test-project --yes --template \"Vertesia Plugin\" --local-templates ../../templates",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [
@@ -46,6 +46,7 @@
     "@types/degit": "^2.8.6",
     "@types/node": "^24.1.0",
     "@types/prompts": "^2.4.9",
+    "rimraf": "^6.0.0",
     "typescript": "^6.0.2"
   }
 }

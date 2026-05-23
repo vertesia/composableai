@@ -22,7 +22,7 @@
     "preview": "rollup -c && vite preview",
     "start": "rollup -c && vite preview",
     "start:vercel": "vercel dev",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"(no tests in template scaffold)\""
   },
   "keywords": [
     "plugin",
