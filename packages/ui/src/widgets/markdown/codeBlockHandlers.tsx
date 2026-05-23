@@ -1,7 +1,9 @@
 import type React from 'react';
 import { useMemo } from 'react';
 import type { VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
+// biome-ignore lint/suspicious/noImportCycles: widgets/markdown renders agent-chat widgets (AskUserWidget, VegaLiteChart); breaking this would require moving those widgets out of features or introducing a render-handler registry — tracked as design debt
 import { AskUserWidget, type AskUserWidgetProps } from '../../features/agent/chat/AskUserWidget';
+// biome-ignore lint/suspicious/noImportCycles: see above
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
 import { ArtifactContentRenderer, type ExpandRenderType, makeSvgResponsive, sanitizeSvg } from './ArtifactContentRenderer';
 import { useCodeBlockContext } from './CodeBlockContext';

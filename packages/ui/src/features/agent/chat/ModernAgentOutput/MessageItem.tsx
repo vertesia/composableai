@@ -14,7 +14,7 @@ import { useImageLightbox } from "../ImageLightbox";
 import { ThinkingMessages } from "../WaitingMessages";
 import { getWorkstreamId } from "./utils";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
-import { useDownloadFile } from "../../../store/index.js";
+import { useDownloadFile } from "../../../store/objects/components/useDownloadFile.js";
 
 // PERFORMANCE: Move pure function outside component to avoid recreation on every render
 // Process content to enhance markdown detection for lists and thinking messages

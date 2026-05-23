@@ -1,6 +1,8 @@
 import { type Collection, type CreateCollectionPayload, getContentTypeRefId, type JSONSchemaObject, SecurityLevelLabels } from "@vertesia/common";
 import { Badge, Button, ErrorBox, FormItem, Input, Panel, SelectBox, Styles, Textarea, errorMessage, useFetch, useToast, useTheme } from "@vertesia/ui/core";
-import { SharedPropsEditor, SyncMemberHeadsToggle, UserInfo } from "@vertesia/ui/features";
+import { SharedPropsEditor } from "./SharedPropsEditor";
+import { SyncMemberHeadsToggle } from "./SyncMemberHeadsToggle";
+import { UserInfo } from "../../user/UserInfo";
 import { useUserSession } from "@vertesia/ui/session";
 import { MonacoEditor, type EditorApi, GeneratedForm, ManagedObject, type Node } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
