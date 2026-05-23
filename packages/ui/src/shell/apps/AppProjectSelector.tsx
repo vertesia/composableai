@@ -5,7 +5,8 @@ import { useState } from "react";
 
 interface AppProjectSelectorProps {
     app: RequireAtLeastOne<{ id?: string, name?: string }, 'id' | 'name'>;
-    onChange?: (value: ProjectRef) => undefined | boolean;
+    // biome-ignore lint/suspicious/noConfusingVoidType: void in union is intentional — handlers return boolean (true delegates to default) or nothing
+    onChange?: (value: ProjectRef) => void | boolean;
     placeholder?: string;
 }
 export function AppProjectSelector({ app, onChange, placeholder }: AppProjectSelectorProps) {
