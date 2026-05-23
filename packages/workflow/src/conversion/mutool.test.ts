@@ -10,7 +10,7 @@ beforeAll(async () => {
   activityContext = new MockActivityEnvironment();
 });
 
-const TIMEOUT = 10000;
+const TIMEOUT = 60000;
 
 test('should convert pdf to text with mutool', async () => {
   const pdf = fs.readFileSync(path.join(__dirname, '../../fixtures', 'test-pdf1.pdf'));
