@@ -25,6 +25,8 @@ minimumReleaseAgeExclude:
   - "@turbo/linux-arm64@2.9.14"
   - "@turbo/windows-64@2.9.14"
   - "@turbo/windows-arm64@2.9.14"
+  # Renovate security update: protobufjs@<7.5.6@7.6.1
+  - protobufjs@<7.5.6@7.6.1
 patchedDependencies:
   "ts-dual-module@0.6.3": patches/ts-dual-module@0.6.3.patch
 overrides:
@@ -69,7 +71,7 @@ overrides:
   "yaml@>=2.0.0 <2.8.3": "^2.8.3"
   "picomatch@<2.3.2": "^2.3.2"
   "picomatch@>=4.0.0 <4.0.4": "^4.0.4"
-  "protobufjs@<7.5.6": "^7.5.6"
+  "protobufjs@<7.5.6": "^7.6.1"
   "postcss@<8.5.10": "^8.5.10"
   "uuid@>=11.0.0 <11.1.1": "^11.1.1"
   "fast-xml-builder@<=1.1.6": "^1.1.7"
