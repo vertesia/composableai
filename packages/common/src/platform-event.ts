@@ -1,3 +1,4 @@
+import type { AuditMeter } from './audit-trail.js';
 import type { JsonLogicRule, WorkflowRuleInputType } from './store/index.js';
 
 export type EventCategory = 'audit' | 'content' | 'workflow' | 'security' | 'system' | 'domain';
@@ -52,6 +53,8 @@ export interface PlatformEvent extends EventRef {
     roles?: string[];
     account_name?: string | null;
     project_name?: string | null;
+    provider?: string | null;
+    meters?: AuditMeter[];
     resource_data?: Record<string, unknown>;
     resource_version?: string;
     details?: Record<string, unknown>;
@@ -143,6 +146,21 @@ export interface UpdateEventSubscriptionPayload {
     target?: EventDeliveryTarget;
     enabled?: boolean;
     priority?: EventPriority;
+}
+
+export interface PublishPlatformEventPayload {
+    event: PlatformEvent;
+    priority?: EventPriority;
+}
+
+export interface PublishPlatformEventResponse {
+    event_id: string;
+    outbox_id: string;
+    status: EventOutboxStatus;
+    matched_subscription_count: number;
+    materialized_intent_count: number;
+    enqueued_intent_count: number;
+    audit_mirror_status: AuditMirrorStatus;
 }
 
 export interface WorkflowEventInput<T = Record<string, unknown>> {

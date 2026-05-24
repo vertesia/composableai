@@ -317,6 +317,10 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.data;
     }
 
+    get events() {
+        return this.store.events;
+    }
+
     get storeUrl() {
         return this.store.baseUrl;
     }
