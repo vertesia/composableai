@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useRef } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 
 /**
  * if leave option is true then callback will be called when the target leaves the viewport

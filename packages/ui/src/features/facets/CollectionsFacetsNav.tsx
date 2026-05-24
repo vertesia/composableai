@@ -1,7 +1,7 @@
-import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
+import { type Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, type FilterGroup } from '@vertesia/ui/core';
 import { useState } from 'react';
 import { useTypeRegistry } from '../store/types/TypeRegistryProvider.js';
-import { filterValueToQueryValue, SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
+import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
 import type { FacetBucket } from '@vertesia/common';
 
 interface CollectionsFacetsNavProps {
@@ -73,7 +73,7 @@ export function useCollectionsFilterHandler(search: SearchInterface) {
             }
         });
 
-        search.search();
+        void search.search();
     };
 }
 

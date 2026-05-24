@@ -1,17 +1,17 @@
-import { ContentObjectTypeItem } from '@vertesia/common';
+import type { ContentObjectTypeItem } from '@vertesia/common';
 import { Button, Popover, PopoverContent, PopoverTrigger, SelectList } from '@vertesia/ui/core';
 import clsx from 'clsx';
 import { EllipsisVertical, X } from 'lucide-react';
 
 import { useState } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { DocumentSelection, useDocumentSelection } from "../DocumentSelectionProvider.js";
+import { type DocumentSelection, useDocumentSelection } from "../DocumentSelectionProvider.js";
 import { DocumentUploadModal } from "../upload/DocumentUploadModal.js";
 import { ExportPropertiesAction } from "./actions/ExportPropertiesAction";
 import { StartWorkflowAction } from "./actions/StartWorkflowComponent";
 import { ObjectsActionContextProvider } from "./ObjectsActionContext";
 import { useObjectsActionContext } from "./ObjectsActionHooks";
-import { ObjectsActionSpec } from "./ObjectsActionSpec";
+import type { ObjectsActionSpec } from "./ObjectsActionSpec";
 
 interface SelectionActionsProps {
     type?: ContentObjectTypeItem;
@@ -56,7 +56,7 @@ export function SelectionActions({ type }: SelectionActionsProps) {
 interface ActionsWrapperProps {
     selection: DocumentSelection;
 }
-function ActionsWrapper({ }: ActionsWrapperProps) {
+function ActionsWrapper(_props: ActionsWrapperProps) {
     return <StartWorkflowButton />;
 }
 
@@ -80,7 +80,7 @@ export function UploadObjectsButton({ collectionId, allowFolders = true }: { col
                 files={files}
                 title="Upload Files"
                 onUploadComplete={(result) => {
-                    if (result && result.success) {
+                    if (result?.success) {
                         setFiles([]);
                     }
                 }}

@@ -1,7 +1,7 @@
 import type { RemoteActivityDefinition } from "@vertesia/common";
 import type { ActivityCollection } from "../ActivityCollection.js";
 import type { InteractionCollection } from "../InteractionCollection.js";
-import { ToolServerConfig } from "../server/types.js";
+import type { ToolServerConfig } from "../server/types.js";
 import type { SkillCollection } from "../SkillCollection.js";
 import type { RenderingTemplateCollection } from "../RenderingTemplateCollection.js";
 import type { ToolCollection } from "../ToolCollection.js";

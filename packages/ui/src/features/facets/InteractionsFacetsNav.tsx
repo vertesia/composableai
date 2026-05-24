@@ -1,7 +1,7 @@
-import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
+import { type Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, type FilterGroup } from '@vertesia/ui/core';
 import type { ComputedFacetResponse } from '@vertesia/common';
 import { useState } from 'react';
-import { filterValueToQueryValue, SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
+import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
 
 interface InteractionsFacetsNavProps {
     facets: ComputedFacetResponse;
@@ -73,7 +73,7 @@ export function useInteractionsFilterHandler(search: SearchInterface) {
             }
         });
 
-        search.search(true);
+        void search.search(true);
     };
 }
 

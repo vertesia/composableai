@@ -1,8 +1,8 @@
 import type { JSONSchemaType } from "ajv";
-import { SupportedIntegrations } from "./integrations.js";
-import { ContentObjectTypeRef } from "./store/store.js";
-import { WorkflowRunStatus } from "./store/workflow.js";
-import { AccountRef } from "./user.js";
+import type { SupportedIntegrations } from "./integrations.js";
+import type { ContentObjectTypeRef } from "./store/store.js";
+import type { WorkflowRunStatus } from "./store/workflow.js";
+import type { AccountRef } from "./user.js";
 
 export interface ICreateProjectPayload {
     name: string;
@@ -364,9 +364,6 @@ export interface ProjectConfigurationEmbeddingEnablePayload {
     max_tokens?: number;
     model?: string;
 }
-
-/** @deprecated Use ProjectConfigurationEmbedding for a single embedding configuration. */
-export type ProjectConfigurationEmbeddings = ProjectConfigurationEmbedding;
 
 export interface Project {
     id: string;

@@ -10,8 +10,9 @@ export {
 } from './CodeBlockContext';
 export {
     ChartCodeBlockHandler, ExpandCodeBlockHandler, MermaidCodeBlockHandler,
-    ProposalCodeBlockHandler, createDefaultCodeBlockHandlers,
-    isExpandLanguage
+    createDefaultCodeBlockHandlers,
+    isExpandLanguage,
+    isIncompleteJson,
 } from './codeBlockHandlers';
 export {
     CodeBlockErrorBoundary, CodeBlockPlaceholder, type CodeBlockPlaceholderProps,

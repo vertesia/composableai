@@ -176,7 +176,6 @@ export function ConversationsView() {
                     return hit.interaction ?? '';
                 case 'status':
                     return hit.status ?? '';
-                case 'started':
                 default:
                     return hit.started_at ?? '';
             }

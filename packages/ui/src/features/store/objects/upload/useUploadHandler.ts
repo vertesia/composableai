@@ -189,7 +189,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                                     },
                                     {
                                         createRevision: true,
-                                        revisionLabel: "upload on " + new Date().toISOString(),
+                                        revisionLabel: `upload on ${new Date().toISOString()}`,
                                     },
                                 );
 

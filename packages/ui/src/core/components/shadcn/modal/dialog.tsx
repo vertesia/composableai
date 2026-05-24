@@ -86,9 +86,7 @@ export function Modal({
                 <div className="top-4 end-4 absolute">
                     <div className="flex gap-2">
                         {action && (
-                            <>
-                                {action}
-                            </>
+                            action
                         )}
                         {!noCloseButton && (
                             <DialogClose onClick={() => handleOpenChange(false)} asChild autoFocus={false}>
@@ -128,8 +126,7 @@ export const ModalTitle = ({
         )
     }
     return (
-        <>
-            <DialogTitle
+        <DialogTitle
                 className={cn(
                     showDivider ? "border-b-solid border-b border-b-1 pb-2 mb-4" : "",
                     "text-lg font-semibold leading-6 tracking-tight", 
@@ -144,7 +141,6 @@ export const ModalTitle = ({
                     </DialogDescription>
                 )}
             </DialogTitle>
-        </>
     );
 };
 

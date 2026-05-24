@@ -1,4 +1,4 @@
-import { AgentMessage } from "@vertesia/common";
+import type { AgentMessage } from "@vertesia/common";
 import React, { useEffect } from "react";
 import StackedMessages from "./StackedMessages";
 

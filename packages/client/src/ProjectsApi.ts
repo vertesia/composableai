@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase, type ServerError } from "@vertesia/api-fetch-client";
+import type {
     CompositeAppConfig,
     CompositeAppConfigPayload,
     CountResult,
@@ -21,8 +21,11 @@ import {
 } from "@vertesia/common";
 
 export default class ProjectsApi extends ApiTopic {
+    integrations: IntegrationsConfigurationApi;
+
     constructor(parent: ClientBase) {
         super(parent, "/api/v1/projects");
+        this.integrations = new IntegrationsConfigurationApi(this);
     }
 
     list(account?: string[]): Promise<ProjectRef[]> {
@@ -54,8 +57,6 @@ export default class ProjectsApi extends ApiTopic {
             payload
         });
     }
-
-    integrations: IntegrationsConfigurationApi = new IntegrationsConfigurationApi(this);
 
     /**
      * List all tools available in the project with their app installation info.

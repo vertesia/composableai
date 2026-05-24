@@ -1,4 +1,4 @@
-import { useState, createContext, useContext, useCallback, ReactNode } from "react";
+import { useState, createContext, useContext, useCallback, type ReactNode } from "react";
 import { Button, onActivateKey } from "@vertesia/ui/core";
 import { X, ExternalLink } from "lucide-react";
 import { useUITranslation } from '@vertesia/ui/i18n';

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { VertesiaClient } from '@vertesia/client';
+import type { VertesiaClient } from '@vertesia/client';
 
 // ---------------------------------------------------------------------------
 // Tree node type
@@ -140,7 +140,7 @@ export function useArtifacts(
     useEffect(() => {
         void refreshKey;
         void manualRefreshKey;
-        fetchArtifacts();
+        void fetchArtifacts();
     }, [fetchArtifacts, refreshKey, manualRefreshKey]);
 
     const tree = useMemo(() => buildTree(flatFiles), [flatFiles]);

@@ -1,4 +1,4 @@
-import React, { ReactNode, useContext, useEffect, useState } from "react";
+import React, { type ReactNode, useContext, useEffect, useState } from "react";
 
 //type KeysOfType<T, V> = { [K in keyof T]-?: T[K] extends V ? K : never }[keyof T];
 //type KeysNotOfType<T, V> = { [K in keyof T]-?: T[K] extends V ? never : K }[keyof T];
@@ -85,7 +85,7 @@ export class Slot {
 export function useCompositeState<T>(StateClass: ConstructorOf<T>) {
     const context = (StateClass as unknown as ContextContainer<T>).Context;
     if (!context) {
-        throw new Error("Context not defined for " + StateClass.name);
+        throw new Error(`Context not defined for ${StateClass.name}`);
     }
     return useContext(context);
 }

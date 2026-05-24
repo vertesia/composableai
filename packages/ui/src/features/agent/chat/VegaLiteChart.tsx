@@ -363,7 +363,7 @@ export function applyParameterValues(
  * Check if a view has encoding using any of the specified fields.
  */
 function viewHasField(view: VegaSpecObject, fields: string[]): boolean {
-    if (!view || !view.encoding) return false;
+    if (!view?.encoding) return false;
 
     for (const field of fields) {
         for (const channel of Object.values(view.encoding)) {
@@ -731,7 +731,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
             }
         };
 
-        resolveArtifacts();
+        void resolveArtifacts();
 
         return () => {
             cancelled = true;

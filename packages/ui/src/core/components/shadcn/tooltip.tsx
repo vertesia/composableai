@@ -1,7 +1,7 @@
 import * as React from "react"
 import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 import { cn } from "../libs/utils"
-import { ReactNode } from "react"
+import type { ReactNode } from "react"
 import { usePortalContainer } from "../../hooks/PortalContainerProvider"
 
 const TooltipProvider: typeof TooltipPrimitive.Provider = TooltipPrimitive.Provider

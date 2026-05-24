@@ -1,8 +1,8 @@
-import { createReadStream } from "fs";
-import { readFile } from "fs/promises";
+import { createReadStream } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { globSync } from 'glob';
-import { basename, extname, resolve } from "path";
-import { Readable } from "stream";
+import { basename, extname, resolve } from "node:path";
+import { Readable } from "node:stream";
 
 export interface ContentSource {
     getContent(): Promise<Buffer>;
@@ -23,7 +23,7 @@ export abstract class AbstractContentSource implements ContentSource {
         } else if (source instanceof AbstractContentSource) {
             return source;
         }
-        throw new Error("Unsupported content source: " + source);
+        throw new Error(`Unsupported content source: ${source}`);
     }
 }
 

@@ -1,8 +1,8 @@
 import { log } from "@temporalio/activity";
-import { VertesiaClient } from "@vertesia/client";
+import type { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
-import { Readable } from "stream";
-import { TextExtractionResult, TextExtractionStatus } from "../result-types.js";
+import { Readable } from "node:stream";
+import { type TextExtractionResult, TextExtractionStatus } from "../result-types.js";
 
 /**
  * Uploads extracted text preview to cloud storage

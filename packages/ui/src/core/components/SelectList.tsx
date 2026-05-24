@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import clsx from "clsx";
-import { ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useUITranslation } from "@vertesia/ui/i18n";
 import { Button, Input } from "./shadcn";
 
@@ -68,6 +68,7 @@ export function SelectList<T>({ value, options, onChange, className, optionLayou
                     layout = defaultOptionLayout(option, isSelected);
                 }
                 return (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     <SelectListOption key={i}
                         option={option}
                         onSelect={onSelect}

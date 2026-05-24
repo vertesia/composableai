@@ -1,5 +1,5 @@
-import { ContentObjectType, ContentObjectTypeItem, CreateContentObjectTypePayload, FindPayload, ObjectTypeSearchQuery, ObjectTypeSearchPayload } from "@vertesia/common";
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import type { ContentObjectType, ContentObjectTypeItem, CreateContentObjectTypePayload, FindPayload, ObjectTypeSearchQuery, ObjectTypeSearchPayload } from "@vertesia/common";
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
 import { TypeCatalogApi } from "./TypeCatalogApi.js";
 
 
@@ -28,8 +28,8 @@ export class TypesApi extends ApiTopic {
             query: {
                 limit,
                 offset,
-                layout: options?.layout ? true : false,
-                schema: options?.schema ? true : false,
+                layout: !!options?.layout,
+                schema: !!options?.schema,
                 ...query
             }
         });

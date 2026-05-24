@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "node:assert";
 import { FetchClient } from '../src/index.js';
 import { KoaServer } from '@koa-stack/server';
 import Endpoints from './endpoints.js';

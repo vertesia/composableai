@@ -49,7 +49,6 @@ function getSampleValue(field: FieldTemplate): unknown {
       return new Date().toISOString().split('T')[0];
     case 'boolean':
       return true;
-    case 'text':
     default:
       return `Sample ${field.label}`;
   }

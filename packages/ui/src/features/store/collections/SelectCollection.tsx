@@ -1,7 +1,7 @@
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
-import { CollectionItem } from "@vertesia/common";
+import type { CollectionItem } from "@vertesia/common";
 import {
     Button, cn, ErrorBox, errorMessage, useDebounce, useFetch,
     Popover, PopoverContent, PopoverTrigger,

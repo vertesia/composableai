@@ -1,5 +1,5 @@
 
-import { readFileSync, writeFileSync, mkdirSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { hasErrorCode } from "./options.js";
 
 export async function readStdin() {

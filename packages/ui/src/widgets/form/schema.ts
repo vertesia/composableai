@@ -1,5 +1,5 @@
-import { JSONSchema, JSONSchemaType, JSONSchemaTypeName } from "@vertesia/common";
-import Ajv, { ErrorObject, ValidateFunction } from "ajv";
+import type { JSONSchema, JSONSchemaType, JSONSchemaTypeName } from "@vertesia/common";
+import Ajv, { type ErrorObject, type ValidateFunction } from "ajv";
 import addFormats from "ajv-formats";
 
 function createSchemaFromType(type: JSONSchemaTypeName): JSONSchema {

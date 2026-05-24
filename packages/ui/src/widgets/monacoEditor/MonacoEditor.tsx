@@ -2,7 +2,7 @@ import { Editor } from '@monaco-editor/react';
 import { useTheme } from '@vertesia/ui/core';
 import debounce from 'debounce';
 import clsx from 'clsx';
-import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type * as monaco from 'monaco-editor';
 import { registerCustomFoldingProviders } from './foldingProviders.js';
 
@@ -118,8 +118,7 @@ export function MonacoEditor({
         const model = editor.getModel();
         if (!model) return;
         const codeBlockRegExp = /```[\s\S]*?```/g;
-        let match: RegExpExecArray | null;
-        while ((match = codeBlockRegExp.exec(model.getValue())) !== null) {
+        for (const match of model.getValue().matchAll(codeBlockRegExp)) {
             const startLine = model.getPositionAt(match.index).lineNumber;
             const endLine = model.getPositionAt(match.index + match[0].length).lineNumber;
             editor.setSelection(new monacoInstance.Selection(startLine, 1, endLine, 1));

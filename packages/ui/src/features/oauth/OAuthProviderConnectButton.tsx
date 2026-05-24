@@ -36,13 +36,13 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
     }, [client, oauthProviderId]);
 
     useEffect(() => {
-        loadStatus();
+        void loadStatus();
     }, [loadStatus]);
 
     const { openOAuthPopup } = useOAuthPopup({
         onComplete: () => {
             setAuthenticating(false);
-            loadStatus();
+            void loadStatus();
             onAuthChange?.();
         },
         onError: (error) => {

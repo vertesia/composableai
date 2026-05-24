@@ -1,4 +1,4 @@
-import { AuthTokenPayload, UserRef } from "@vertesia/common";
+import type { AuthTokenPayload, UserRef } from "@vertesia/common";
 
 /**
  * UserAvatar

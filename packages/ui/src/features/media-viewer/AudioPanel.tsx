@@ -1,4 +1,4 @@
-import { AUDIO_RENDITION_NAME, AudioMetadata, ContentNature, ContentObject } from "@vertesia/common";
+import { AUDIO_RENDITION_NAME, type AudioMetadata, ContentNature, type ContentObject } from "@vertesia/common";
 import { Spinner } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";
@@ -74,7 +74,7 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
 
         if (source || object) {
             setIsLoading(true);
-            load();
+            void load();
         } else {
             setIsLoading(false);
         }
@@ -109,6 +109,7 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
 
     return (
         <div className={`flex flex-col items-center gap-4 ${className ?? ''}`.trim()}>
+            {/* biome-ignore lint/a11y/useMediaCaption: caption tracks are not authored for user-uploaded media; falls back to browser controls and transcript metadata */}
             <audio
                 src={audioUrl}
                 controls

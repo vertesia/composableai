@@ -2,10 +2,10 @@
  * Template file processing - variable replacement and adjustments
  */
 import chalk from 'chalk';
-import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import { TemplateConfig } from './template-config.js';
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import type { TemplateConfig } from './template-config.js';
 import { getTemplateVersions } from './version.js';
 
 /**
@@ -244,7 +244,7 @@ export function adjustPackageJson(
     }
 
     // Write back to file
-    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
+    fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
 
   } catch (error) {
     console.log(chalk.yellow(`   ⚠️  Failed to adjust package.json: ${error instanceof Error ? error.message : 'Unknown error'}`));

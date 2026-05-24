@@ -1,4 +1,4 @@
-import { FacetBucket } from "@vertesia/common";
+import type { FacetBucket } from "@vertesia/common";
 import { SelectBox } from "@vertesia/ui/core";
 import { useEffect, useState } from "react";
 import { useTypeRegistry } from "../../store/types/TypeRegistryProvider.js";

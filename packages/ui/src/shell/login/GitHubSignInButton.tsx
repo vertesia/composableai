@@ -6,7 +6,7 @@ import { useUITranslation } from "@vertesia/ui/i18n";
 interface GitHubSignInButtonProps {
     redirectTo?: string;
 }
-export default function GitHubSignInButton({ }: GitHubSignInButtonProps) {
+export default function GitHubSignInButton(_props: GitHubSignInButtonProps) {
     const { t } = useUITranslation();
     const signIn = () => {
         localStorage.removeItem("tenantName");
@@ -16,7 +16,7 @@ export default function GitHubSignInButton({ }: GitHubSignInButtonProps) {
         /*provider.setCustomParameters({
             redirect_uri: redirectPath,
         });*/
-        signInWithRedirect(getFirebaseAuth(), provider);
+        void signInWithRedirect(getFirebaseAuth(), provider);
     };
 
     return (

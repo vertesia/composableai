@@ -1,7 +1,7 @@
-import { Collection, getContentTypeRefId, ColumnLayout } from "@vertesia/common";
+import { type Collection, getContentTypeRefId, type ColumnLayout } from "@vertesia/common";
 import { useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
-import { TypeRegistry } from "../types/TypeRegistry.js";
+import type { TypeRegistry } from "../types/TypeRegistry.js";
 import { useTypeRegistry } from "../types/TypeRegistryProvider.js";
 import { DocumentSearchResults, DocumentSearchResultsWithDropZone } from "../objects/DocumentSearchResults";
 

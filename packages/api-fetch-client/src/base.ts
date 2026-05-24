@@ -1,5 +1,5 @@
-import { ConnectionError, RequestError, ServerError } from "./errors.js";
-import { sse, ServerSentEvent } from "./sse/index.js";
+import { ConnectionError, type RequestError, ServerError } from "./errors.js";
+import { sse, type ServerSentEvent } from "./sse/index.js";
 import { buildQueryString, join, removeTrailingSlash } from "./utils.js";
 
 export type FETCH_FN = (input: RequestInfo, init?: RequestInit) => Promise<Response>;
@@ -125,10 +125,10 @@ export abstract class ClientBase {
 
     createServerError(req: Request, res: Response, payload: unknown): RequestError {
         const status = res.status;
-        let message = 'Server Error: ' + status;
+        let message = `Server Error: ${status}`;
         if (payload) {
             if (isInvalidJsonPayload(payload)) {
-                message += res.statusText ? ' ' + res.statusText : '';
+                message += res.statusText ? ` ${res.statusText}` : '';
                 message += ': non-JSON response';
             } else if (isRecord(payload) && payload.message) {
                 message = String(payload.message);
@@ -174,7 +174,7 @@ export abstract class ClientBase {
      * @param res
      */
     handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): T | Promise<T> {
-        if (params && params.reader) {
+        if (params?.reader) {
             if (params.reader === 'sse') {
                 return sse(res) as T;
             } else {
@@ -194,7 +194,7 @@ export abstract class ClientBase {
     async request<T = unknown>(method: string, path: string, params?: IRequestParamsWithPayload): Promise<T> {
         let url = this.getUrl(path);
         if (params?.query) {
-            url += '?' + buildQueryString(params.query);
+            url += `?${buildQueryString(params.query)}`;
         }
         const headers = this.headers ? Object.assign({}, this.headers) : {};
         const paramsHeaders = params?.headers;
@@ -217,7 +217,7 @@ export abstract class ClientBase {
         }
         // When using SSE reader, ensure the Accept header requests event-stream
         if (params?.reader === 'sse' && !('accept' in headers)) {
-            headers['accept'] = 'text/event-stream';
+            headers.accept = 'text/event-stream';
         }
 
         const init: RequestInit = {

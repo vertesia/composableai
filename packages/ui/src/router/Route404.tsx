@@ -1,4 +1,4 @@
-import { RouteMatch, useRouterContext } from "./Router";
+import { type RouteMatch, useRouterContext } from "./Router";
 
 export function Route404Component() {
     const ctx = useRouterContext();

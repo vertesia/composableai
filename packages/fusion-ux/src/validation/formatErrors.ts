@@ -25,7 +25,7 @@ export function formatValidationErrors(errors: ValidationError[]): string {
     return message;
   });
 
-  return header + '\n' + formattedErrors.join('\n\n');
+  return `${header}\n${formattedErrors.join('\n\n')}`;
 }
 
 /**

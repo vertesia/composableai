@@ -1,5 +1,5 @@
 import React from "react";
-import { AgentMessage, AgentMessageType } from "@vertesia/common";
+import { type AgentMessage, AgentMessageType } from "@vertesia/common";
 import MessageItem from "./MessageItem";
 import { ThinkingMessages } from "../WaitingMessages";
 
@@ -69,6 +69,7 @@ export default function SlidingMessages({ messages, isCompleted }: SlidingMessag
             {/* Display permanent messages */}
             {sortedPermanentMessages.map((message, index) => (
                 <MessageItem
+                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     key={`${message.timestamp}-${index}`}
                     message={message}
                 />

@@ -1,4 +1,4 @@
-import { ContentObjectTypeItem } from "@vertesia/common";
+import type { ContentObjectTypeItem } from "@vertesia/common";
 
 export class TypeRegistry {
     map: Record<string, ContentObjectTypeItem> = {};

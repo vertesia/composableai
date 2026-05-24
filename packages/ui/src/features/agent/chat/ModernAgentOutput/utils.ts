@@ -1,5 +1,5 @@
-import { VertesiaClient } from "@vertesia/client";
-import { AgentMessage, AgentMessageType } from "@vertesia/common";
+import type { VertesiaClient } from "@vertesia/client";
+import { type AgentMessage, AgentMessageType } from "@vertesia/common";
 import dayjs from "dayjs";
 
 export function insertMessageInTimeline(arr: AgentMessage[], m: AgentMessage) {

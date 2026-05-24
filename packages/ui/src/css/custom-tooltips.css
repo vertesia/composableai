@@ -1,6 +1,6 @@
 /* Custom styling for title attribute tooltips */
 button[title], a[title] {
-  position: relative !important;
+  position: relative;
 }
 
 button[title]::before, a[title]::before {

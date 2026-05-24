@@ -1,11 +1,11 @@
-import { ColumnLayout, ContentObjectItem } from "@vertesia/common";
+import type { ColumnLayout, ContentObjectItem } from "@vertesia/common";
 import { Table, TBody, THead } from "@vertesia/ui/core";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { CheckIcon } from "lucide-react";
-import { ChangeEvent } from "react";
+import type { ChangeEvent } from "react";
 import { DocumentIcon, DocumentIconSkeleton } from "../components/DocumentIcon";
-import { DocumentSelection } from "../DocumentSelectionProvider";
-import { DocumentTableColumn } from "./DocumentTableColumn";
+import type { DocumentSelection } from "../DocumentSelectionProvider";
+import type { DocumentTableColumn } from "./DocumentTableColumn";
 
 interface ViewProps {
     objects: ContentObjectItem[];

@@ -162,7 +162,7 @@ export function MermaidDiagram({ code, className }: MermaidDiagramProps) {
             }
         };
 
-        renderDiagram();
+        void renderDiagram();
 
         return () => {
             cancelled = true;
@@ -186,6 +186,7 @@ export function MermaidDiagram({ code, className }: MermaidDiagramProps) {
         <div
             ref={containerRef}
             className={`my-4 w-full overflow-x-auto [&_svg]:mx-auto [&_svg]:w-full [&_svg]:h-auto [&_svg]:max-w-full ${className || ''}`}
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG is produced by Mermaid renderer from a known mermaid-source string
             dangerouslySetInnerHTML={{ __html: svg }}
         />
     );
