@@ -10,6 +10,12 @@ export type OAuthGrantType = 'authorization_code' | 'refresh_token' | 'urn:ietf:
 export type OAuthResponseType = 'code';
 export type OAuthAuthorizationRequestStatus = 'pending' | 'denied' | 'consumed';
 export type OAuthClientRegistrationMode = 'registered' | 'client_id_metadata_document';
+/**
+ * How Vertesia identified itself to a *remote* authorization server when connecting
+ * out as an OAuth client. Distinct from {@link OAuthClientRegistrationMode}, which
+ * describes how inbound clients identified themselves to Vertesia's own AS.
+ */
+export type RemoteOAuthRegistrationMode = 'dynamic_client_registration' | 'client_id_metadata_document';
 export type OAuthGrantStatus = 'active' | 'revoked' | 'expired';
 export type OAuthGrantSortField = 'granted_at' | 'client_name' | 'user_name' | 'resource' | 'last_used_at' | 'expires_at' | 'status';
 export type OAuthGrantSortOrder = 'asc' | 'desc';
