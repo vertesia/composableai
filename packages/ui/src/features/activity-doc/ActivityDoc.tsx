@@ -1,8 +1,9 @@
-import { ActivityDefinition, ActivityPropertyDefinition, ActivityTypeDefinition } from "@vertesia/common";
+import type { ActivityDefinition, ActivityPropertyDefinition, ActivityTypeDefinition } from "@vertesia/common";
 import { Button } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "motion/react";
-import React, { useMemo, useState } from "react";
+import type React from "react";
+import { useMemo, useState } from "react";
 
 function Badge({ children, secondary = false }: { children: React.ReactNode, secondary?: boolean }) {
     const className = secondary ? "bg-secondary text-primary" : "text-foreground bg-muted";
@@ -100,7 +101,7 @@ function PropertyDetails({ property, className }: { className?: string, property
         } else {
             return null;
         }
-    }, [property.type.innerType]);
+    }, [property.type]);
     return (
         <div className={clsx("py-2", className)}>
             <PropertySignature property={property} />
@@ -120,6 +121,7 @@ interface EnumValuesPanelProps {
 }
 function EnumValuesPanel({ values }: EnumValuesPanelProps) {
     return <div className="flex flex-wrap items-center gap-2">{
+        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
         values.map((v, i) => <Badge secondary key={i}>{v}</Badge>)
     }</div>
 }

@@ -1,5 +1,5 @@
-import { AppManifestData } from "@vertesia/common";
-import { Command } from "commander";
+import type { AppManifestData } from "@vertesia/common";
+import type { Command } from "commander";
 import {
     createApp,
     deleteAppInstallation,
@@ -52,13 +52,13 @@ export function registerAppsCommand(program: Command) {
 
     apps.command("list")
         .description("List all available app manifests")
-        .action(async (options: Record<string, any>) => {
+        .action(async (options: Record<string, unknown>) => {
             await listApps(program, options);
         });
 
     apps.command("get <appId>")
         .description("Get an app manifest by ID or name")
-        .action(async (appId: string, options: Record<string, any>) => {
+        .action(async (appId: string, options: Record<string, unknown>) => {
             await getApp(program, appId, options);
         });
 
@@ -72,7 +72,7 @@ Example manifest.json:
 
 ${JSON.stringify(exampleManifest, null, 2)}
 `)
-        .action(async (options: Record<string, any>) => {
+        .action(async (options: Record<string, unknown>) => {
             await createApp(program, options);
         });
 
@@ -85,7 +85,7 @@ Example manifest.json:
 
 ${JSON.stringify(exampleManifest, null, 2)}
 `)
-        .action(async (appId: string, options: Record<string, any>) => {
+        .action(async (appId: string, options: Record<string, unknown>) => {
             await updateApp(program, appId, options);
         });
 
@@ -93,27 +93,27 @@ ${JSON.stringify(exampleManifest, null, 2)}
         .description("Install an app in the current project")
         .option('-s, --settings <json>', 'Settings as JSON string')
         .option('-f, --settings-file <file>', 'Settings from a JSON file')
-        .action(async (appId: string, options: Record<string, any>) => {
+        .action(async (appId: string, options: Record<string, unknown>) => {
             await installApp(program, appId, options);
         });
 
     apps.command("uninstall <installationId>")
         .alias("remove")
         .description("Uninstall an app from the current project")
-        .action(async (installationId: string, options: Record<string, any>) => {
+        .action(async (installationId: string, options: Record<string, unknown>) => {
             await deleteAppInstallation(program, installationId, options);
         });
 
     apps.command("list-installed")
         .description("List installed apps you have access to in the current project")
         .option('-k, --kind <kind>', 'Filter by installation kind (e.g., agent, tool)')
-        .action(async (options: Record<string, any>) => {
+        .action(async (options: Record<string, unknown>) => {
             await listInstalledApps(program, options);
         });
 
     apps.command("get-installation <appName>")
         .description("Get an app installation by name")
-        .action(async (appName: string, options: Record<string, any>) => {
+        .action(async (appName: string, options: Record<string, unknown>) => {
             await getAppInstallation(program, appName, options);
         });
 
@@ -121,7 +121,7 @@ ${JSON.stringify(exampleManifest, null, 2)}
         .description("Update app installation settings")
         .option('-s, --settings <json>', 'Settings as JSON string')
         .option('-f, --settings-file <file>', 'Settings from a JSON file')
-        .action(async (appId: string, options: Record<string, any>) => {
+        .action(async (appId: string, options: Record<string, unknown>) => {
             await updateAppInstallationSettings(program, appId, options);
         });
 }

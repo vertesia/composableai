@@ -12,7 +12,7 @@ export interface TaskField {
     required?: boolean;
     label?: string;
     options?: string[];
-    default?: any;
+    default?: unknown;
 }
 
 export interface TaskSource {
@@ -31,7 +31,7 @@ export interface Task {
     status: DurableTaskStatus;
     assignee?: string;
     fields: TaskField[];
-    result?: Record<string, any>;
+    result?: Record<string, unknown>;
     source: TaskSource;
     due_at?: Date;
     created_at: Date;
@@ -58,7 +58,7 @@ export interface UpdateTaskPayload {
 }
 
 export interface CompleteTaskPayload {
-    result: Record<string, any>;
+    result: Record<string, unknown>;
 }
 
 export interface ListTasksQuery {

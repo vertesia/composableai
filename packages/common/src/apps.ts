@@ -1,6 +1,6 @@
-import { JSONObject, JSONSchema, ToolDefinition } from "@llumiverse/common";
-import { CatalogInteractionRef } from "./interaction.js";
-import { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from "./store/index.js";
+import type { JSONObject, JSONSchema, ToolDefinition } from "@llumiverse/common";
+import type { CatalogInteractionRef } from "./interaction.js";
+import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from "./store/index.js";
 
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ["default", "footer", "settings"] as const;
@@ -360,9 +360,9 @@ export interface RemoteActivityDefinition {
     /** Description of what the activity does */
     description?: string;
     /** JSON Schema for the activity input parameters */
-    input_schema?: Record<string, any>;
+    input_schema?: Record<string, unknown>;
     /** JSON Schema for the activity output */
-    output_schema?: Record<string, any>;
+    output_schema?: Record<string, unknown>;
     /**
      * The activity execution URL. Can be absolute or relative to the tool server base URL.
      * If not provided, the collection-specific activities endpoint is used.
@@ -751,7 +751,7 @@ export interface AppInstallation {
     id: string;
     project: string; // the project where the app is installed
     manifest: string; // the app manifest
-    settings?: Record<string, any>; // settings for the app installation
+    settings?: Record<string, unknown>; // settings for the app installation
     /**
      * Admin-managed allowlist of tool names permitted for this installation.
      * When undefined, all tools from the app are permitted.
@@ -804,7 +804,7 @@ export type AppOAuthProviderParams = Record<string, OAuthClientCredentials>;
 
 export interface AppInstallationPayload {
     app_id: string;
-    settings?: Record<string, any>;
+    settings?: Record<string, unknown>;
     /**
      * OAuth credentials for each collection, keyed by collection.id.
      * Legacy callers may still use collection.name for older manifests.
@@ -874,7 +874,7 @@ export interface ProjectToolInfo {
      * The app installation settings.
      * Only included for agent tokens, not user tokens (security: may contain API keys).
      */
-    settings?: Record<string, any>;
+    settings?: Record<string, unknown>;
 }
 
 /**

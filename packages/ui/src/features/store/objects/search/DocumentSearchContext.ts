@@ -1,9 +1,9 @@
 import { createContext, useContext } from 'react';
 
 import { SharedState, useWatchSharedState } from '@vertesia/ui/core';
-import { ZenoClient } from '@vertesia/client';
-import { ComplexSearchPayload, ComplexSearchQuery, ComputeObjectFacetPayload, ComputedFacetResponse, ContentObjectItem, FacetBucket, FacetSpec, ObjectSearchQuery } from '@vertesia/common';
-import { SearchInterface } from '@vertesia/ui/features'
+import type { ZenoClient } from '@vertesia/client';
+import type { ComplexSearchPayload, ComplexSearchQuery, ComputeObjectFacetPayload, ComputedFacetResponse, ContentObjectItem, FacetBucket, FacetSpec, ObjectSearchQuery } from '@vertesia/common';
+import type { SearchInterface } from '@vertesia/ui/features'
 
 interface DocumentSearchResult {
     objects: ContentObjectItem[],
@@ -18,6 +18,7 @@ export class DocumentSearch implements SearchInterface {
     collectionId?: string;
     facets = new SharedState<ComputedFacetResponse>({});
     result = new SharedState<DocumentSearchResult>({ objects: [], isLoading: false });
+    initialized = false;
 
     facetSpecs: FacetSpec[] = [];
     query: ComplexSearchQuery = {};
@@ -46,16 +47,16 @@ export class DocumentSearch implements SearchInterface {
     }
 
     getFilterValue(name: string) {
-        return (this.query as any)[name];
+        return (this.query as Record<string, unknown>)[name];
     }
 
-    setFilterValue(name: string, value: any) {
-        (this.query as any)[name] = value;
+    setFilterValue(name: string, value: unknown) {
+        (this.query as Record<string, unknown>)[name] = value;
         // search now
-        this.search();
+        void this.search();
     }
 
-    setDefaultKeys(keys: any[]) {
+    setDefaultKeys(keys: unknown[]) {
         void keys;
     }
 
@@ -74,7 +75,7 @@ export class DocumentSearch implements SearchInterface {
         };
 
         if (autoSearch) {
-            this.search();
+            void this.search();
         }
     }
 
@@ -88,6 +89,7 @@ export class DocumentSearch implements SearchInterface {
     }
 
     reset(isLoading = false) {
+        this.initialized = false;
         this.result.value = {
             objects: [],
             isLoading,
@@ -133,9 +135,13 @@ export class DocumentSearch implements SearchInterface {
         });
     }
 
-    _search(loadMore = false, noFacets = false) {
-        if (this.isRunning && loadMore) { // avoid searching when a search is pending, but allow initial search
-            return Promise.resolve(false);
+    async _search(loadMore = false, noFacets = false): Promise<boolean> {
+        if (this.isRunning && loadMore) {
+            return false;
+        }
+        const previous = this.result.value;
+        if (!loadMore) {
+            this.initialized = true;
         }
         this.result.value = {
             isLoading: true,
@@ -144,7 +150,8 @@ export class DocumentSearch implements SearchInterface {
         }
         const limit = this.limit;
         const offset = loadMore ? this.objects.length : 0;
-        return this._searchRequest(this.query, limit, offset, !noFacets).then(async (res) => {
+        try {
+            const res = await this._searchRequest(this.query, limit, offset, !noFacets);
             // Handle the new format with results and facets
             const results = res.results || [];
             const facets = res.facets || {};
@@ -161,25 +168,25 @@ export class DocumentSearch implements SearchInterface {
             }
 
             return true;
-        }).catch((err) => {
+        } catch (err: unknown) {
             // index_not_found_exception means the data store has no index yet — treat as empty
-            if (err?.status === 404) {
+            if (typeof err === 'object' && err !== null && 'status' in err && err.status === 404) {
                 this.result.value = { isLoading: false, objects: [], hasMore: false };
                 return false;
             }
+            const error = err instanceof Error ? err : new Error(String(err));
             this.result.value = {
-                error: err,
+                error,
                 isLoading: false,
-                objects: this.objects,
-                hasMore: this.result.value.hasMore
+                objects: previous.objects,
+                hasMore: false
             }
-            throw err;
-        })
+            return false;
+        }
     }
 
     search(noFacets = false) {
-        // Allow initial search even if isLoading is true (for initial page load)
-        if (this.isRunning && this.objects.length > 0) {
+        if (this.isRunning) {
             return Promise.resolve(false);
         }
         return this._search(false, noFacets);
@@ -198,6 +205,7 @@ export class DocumentSearch implements SearchInterface {
 const DocumentSearchContext = createContext<DocumentSearch | undefined>(undefined);
 
 export function useDocumentSearch() {
+    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
     return useContext(DocumentSearchContext)!;
 }
 

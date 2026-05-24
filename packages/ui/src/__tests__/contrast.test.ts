@@ -69,8 +69,7 @@ function parseBlock(css: string, selector: string): Record<string, string> {
     const body = m[1];
     const tokens: Record<string, string> = {};
     const declRe = /(--[\w-]+)\s*:\s*([^;]+);/g;
-    let d: RegExpExecArray | null;
-    while ((d = declRe.exec(body)) !== null) {
+    for (const d of body.matchAll(declRe)) {
         tokens[d[1]] = d[2].trim();
     }
     return tokens;

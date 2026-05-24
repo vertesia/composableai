@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 
-import { FacetBucket, FacetNameBucket } from '@vertesia/common';
+import type { FacetBucket, FacetNameBucket } from '@vertesia/common';
 import { SelectBox } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { facetOptionNameLabel } from './utils/utils';
+import type { SearchInterface } from './utils/SearchInterface';
 
 interface EnvironmentFacetProps {
-    search: any;
+    search: SearchInterface;
     buckets: FacetBucket[];
     placeholder?: string;
     className?: string;
@@ -24,7 +25,7 @@ export function EnvironmentFacet({ search, buckets, placeholder = "All Environme
     useEffect(() => {
         if (client) {
             const options = buckets.map(async (bucket) => {
-                let name;
+                let name: string | undefined;
                 await client.environments.retrieve(bucket._id).then((environment) => {
                     name = environment.name;
                 }).catch(() => {
@@ -38,7 +39,7 @@ export function EnvironmentFacet({ search, buckets, placeholder = "All Environme
                     name
                 }
             })
-            Promise.all(options).then(resolvedOptions => {
+            void Promise.all(options).then(resolvedOptions => {
                 resolvedOptions.sort((a, b) => a.name.localeCompare(b.name));
                 setOptions(resolvedOptions);
             });

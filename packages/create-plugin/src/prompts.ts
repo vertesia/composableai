@@ -3,14 +3,19 @@
  */
 import prompts from 'prompts';
 import chalk from 'chalk';
-import { TemplateConfig } from './template-config.js';
+import type { PromptConfig, TemplateConfig } from './template-config.js';
 import { applyMapTransform, applyTransform, concatValues } from './transforms.js';
+
+type ProcessedPromptConfig = Omit<PromptConfig, 'validate'> & {
+  choices?: Array<{ value: unknown }>;
+  validate?: string | ((value: string) => boolean | string);
+};
 
 /**
  * Prompt user for configuration values
  * @param nonInteractive - If true, skip prompts and use default/initial values
  */
-export async function promptUser(projectName: string, templateConfig: TemplateConfig, nonInteractive = false): Promise<Record<string, any>> {
+export async function promptUser(projectName: string, templateConfig: TemplateConfig, nonInteractive = false): Promise<Record<string, unknown>> {
   if (!templateConfig.prompts) {
     return {};
   }
@@ -19,8 +24,8 @@ export async function promptUser(projectName: string, templateConfig: TemplateCo
   const filteredPrompts = templateConfig.prompts.filter(p => p.name !== 'PROJECT_NAME');
 
   // Process prompts - replace ${PROJECT_NAME} and other variables in initial values
-  const processedPrompts = filteredPrompts.map(p => {
-    const prompt: any = { ...p };
+  const processedPrompts: ProcessedPromptConfig[] = filteredPrompts.map(p => {
+    const prompt: ProcessedPromptConfig = { ...p };
 
     // Replace ${PROJECT_NAME} in initial values
     if (typeof prompt.initial === 'string') {
@@ -32,8 +37,9 @@ export async function promptUser(projectName: string, templateConfig: TemplateCo
     if (typeof prompt.validate === 'string') {
       const validateStr = prompt.validate;
       if (validateStr.includes('=>') || validateStr.includes('function')) {
-        // It's a function string - evaluate it
+        // It's a function string - evaluate it (template authors author validators here)
         try {
+          // biome-ignore lint/security/noGlobalEval: plugin templates author trusted validator code that must run dynamically
           prompt.validate = eval(validateStr);
         } catch {
           // If eval fails, remove the validator
@@ -54,7 +60,7 @@ export async function promptUser(projectName: string, templateConfig: TemplateCo
     return prompt;
   });
 
-  let answers: Record<string, any> = { PROJECT_NAME: projectName };
+  let answers: Record<string, unknown> = { PROJECT_NAME: projectName };
 
   if (nonInteractive) {
     // Use default/initial values for all prompts
@@ -72,7 +78,7 @@ export async function promptUser(projectName: string, templateConfig: TemplateCo
   } else {
     console.log(chalk.blue('⚙️  Configure your project:\n'));
 
-    const userAnswers = await prompts(processedPrompts, {
+    const userAnswers = await prompts(processedPrompts as Parameters<typeof prompts>[0], {
       onCancel: () => {
         throw new Error('Installation cancelled by user');
       }

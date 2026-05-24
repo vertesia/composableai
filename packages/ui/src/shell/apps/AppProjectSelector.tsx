@@ -1,10 +1,11 @@
-import { ProjectRef, RequireAtLeastOne } from "@vertesia/common";
-import { SelectBox, useFetch } from "@vertesia/ui/core";
+import type { ProjectRef, RequireAtLeastOne } from "@vertesia/common";
+import { SelectBox, errorMessage, useFetch } from "@vertesia/ui/core";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from "@vertesia/ui/session";
 import { useState } from "react";
 
 interface AppProjectSelectorProps {
     app: RequireAtLeastOne<{ id?: string, name?: string }, 'id' | 'name'>;
+    // biome-ignore lint/suspicious/noConfusingVoidType: void in union is intentional — handlers return boolean (true delegates to default) or nothing
     onChange?: (value: ProjectRef) => void | boolean;
     placeholder?: string;
 }
@@ -23,12 +24,12 @@ export function AppProjectSelector({ app, onChange, placeholder }: AppProjectSel
         }
         // default on change
         localStorage.setItem(LastSelectedAccountId_KEY, project.account);
-        localStorage.setItem(LastSelectedProjectId_KEY + '-' + project.account, project.id);
+        localStorage.setItem(`${LastSelectedProjectId_KEY}-${project.account}`, project.id);
         window.location.reload();
     }
 
     if (error) {
-        return <span className='text-red-600'>Error: failed to fetch projects: {error.message}</span>
+        return <span className='text-red-600'>Error: failed to fetch projects: {errorMessage(error)}</span>
     }
     return <SelectProject placeholder={placeholder} initialValue={project?.id} projects={projects || []} onChange={_onChange} />
 }
@@ -45,7 +46,7 @@ function SelectProject({ initialValue, projects, onChange, placeholder = "Select
         setValue(value)
         onChange(value)
     }
-    let actualValue = !value && initialValue ? projects.find(p => p.id === initialValue) : value;
+    const actualValue = !value && initialValue ? projects.find(p => p.id === initialValue) : value;
     return (
         <SelectBox
             by="id"

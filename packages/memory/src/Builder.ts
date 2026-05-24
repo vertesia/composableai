@@ -1,13 +1,13 @@
 import { AsyncObjectWalker } from "@vertesia/json";
-import { mkdtempSync, rmSync } from "fs";
-import os from "os";
-import { join, resolve } from "path";
-import { copy, CopyOptions } from "./commands/copy.js";
-import { exec, ExecOptions } from "./commands/exec.js";
-import { ContentObject, DocxObject, JsonObject, MediaObject, MediaOptions, PdfObject } from "./ContentObject.js";
-import { AbstractContentSource, ContentSource, SourceSpec, TextSource } from "./ContentSource.js";
+import { mkdtempSync, rmSync } from "node:fs";
+import os from "node:os";
+import { join, resolve } from "node:path";
+import { copy, type CopyOptions } from "./commands/copy.js";
+import { exec, type ExecOptions } from "./commands/exec.js";
+import { ContentObject, DocxObject, JsonObject, MediaObject, type MediaOptions, PdfObject } from "./ContentObject.js";
+import { AbstractContentSource, type ContentSource, type SourceSpec, TextSource } from "./ContentSource.js";
 import { loadMemoryPack } from "./MemoryPack.js";
-import { FromOptions, MemoryPackBuilder } from "./MemoryPackBuilder.js";
+import { type FromOptions, MemoryPackBuilder } from "./MemoryPackBuilder.js";
 
 export interface BuildOptions {
     indent?: number;
@@ -30,7 +30,7 @@ export interface BuildOptions {
     /**
      * Vars to be injected into the script context as the vars object
      */
-    vars?: Record<string, any>;
+    vars?: Record<string, unknown>;
 
     /**
      * Optional publish action
@@ -46,9 +46,9 @@ export interface BuildOptions {
 }
 
 export interface Commands {
-    vars: () => Record<string, any>;
+    vars: () => Record<string, unknown>;
     tmpdir: () => string;
-    exec: (cmd: string, options?: ExecOptions) => Promise<void | string>;
+    exec: (cmd: string, options?: ExecOptions) => Promise<undefined | string>;
     from: (location: string, options?: FromOptions) => Promise<void>;
     content: (location: string, encoding?: BufferEncoding) => ContentObject | ContentObject[];
     json: (location: string) => ContentObject | ContentObject[];
@@ -69,7 +69,7 @@ export class Builder implements Commands {
         return Builder.instance;
     }
 
-    _vars: Record<string, any>;
+    _vars: Record<string, unknown>;
     _tmpdir?: string;
     memory: MemoryPackBuilder;
 
@@ -79,7 +79,7 @@ export class Builder implements Commands {
         Builder.instance = this;
     }
 
-    vars(): Record<string, any> {
+    vars(): Record<string, unknown> {
         return this._vars;
     }
 
@@ -157,7 +157,7 @@ export class Builder implements Commands {
         }
     }
 
-    async build(object: Record<string, any>) {
+    async build(object: Record<string, unknown>) {
         try {
             const outputNames = this._getOutputNames();
             const publishName = outputNames.publishName;
@@ -169,12 +169,12 @@ export class Builder implements Commands {
             let target: string = fileName;
             if (publishName) {
                 try {
-                    target = await this.options.publish!(fileName, publishName);
+                    target = await this.options.publish?.(fileName, publishName);
                 } finally {
                     rmSync(fileName);
                 }
             }
-            this.options.quiet || console.log(`Memory saved to ${target}`);
+            if (!this.options.quiet) console.log(`Memory saved to ${target}`);
             return target;
         } finally {
             if (this._tmpdir) {
@@ -208,7 +208,7 @@ export class Builder implements Commands {
 
 }
 
-function resolveContextObject(object: Record<string, any>): Promise<Record<string, any>> {
+function resolveContextObject(object: Record<string, unknown>): Promise<Record<string, unknown>> {
     return new AsyncObjectWalker().map(object, async (_key, value) => {
         if (value instanceof ContentObject) {
             return await value.getText();
@@ -223,7 +223,7 @@ function createTmpBaseName(tmpdir: string) {
 }
 
 
-export function buildMemoryPack(recipeFn: (commands: Commands) => Promise<Record<string, any>>, options: BuildOptions): Promise<string> {
+export function buildMemoryPack(recipeFn: (commands: Commands) => Promise<Record<string, unknown>>, options: BuildOptions): Promise<string> {
     const builder = new Builder(options);
     return recipeFn({
         vars: builder.vars.bind(builder),

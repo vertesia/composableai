@@ -1,5 +1,5 @@
 
-import { CssStylesheetAST, parse, stringify } from '@adobe/css-tools';
+import { type CssStylesheetAST, parse, stringify } from '@adobe/css-tools';
 
 export function extractTailwindUtilitiesLayer(content: string) {
     const obj = parse(content, {});

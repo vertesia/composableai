@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import type {
     Account,
     AccountProjectsResponse,
     GoogleProjectTokenResponse,
@@ -42,7 +42,7 @@ export default class AccountApi extends ApiTopic {
      * Get all projects for account
     */
     projects(): Promise<ProjectRef[]> {
-        return this.get('/projects').then((res: AccountProjectsResponse) => res.data);
+        return this.get<AccountProjectsResponse>('/projects').then((res) => res.data);
     }
 
     members(): Promise<User[]> {
@@ -85,7 +85,7 @@ export default class AccountApi extends ApiTopic {
      * @returns InviteDeclineResponse
      * */
     rejectInvite(id: string): Promise<InviteDeclineResponse> {
-        return this.delete(`/invites/${id}`);
+        return this.del(`/invites/${id}`);
     }
 
     /**

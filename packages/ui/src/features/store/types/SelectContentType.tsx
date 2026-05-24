@@ -1,4 +1,4 @@
-import { ContentObjectTypeItem } from "@vertesia/common";
+import type { ContentObjectTypeItem } from "@vertesia/common";
 import { SelectBox } from "@vertesia/ui/core";
 import { useEffect, useState } from "react";
 import { useTypeRegistry } from "./TypeRegistryProvider.js";
@@ -43,7 +43,7 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
                 }
             }
         }
-    }, [typeRegistry, defaultValue, multiple])
+    }, [isMounted, typeRegistry, defaultValue, multiple])
 
     const _onChange = (option: ContentObjectTypeItem | null) => {
         setSelectedType(option || undefined);
@@ -66,7 +66,7 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
                     optionLabel={optionLabel}
                     className={className || "text-sm bg-background"}
                     filterBy="name"
-                    isClearable={isClearable || false as any}
+                    isClearable={isClearable || false}
                     multiple
                 />
             </div>
@@ -83,7 +83,7 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
                 optionLabel={optionLabel}
                 className={className || "text-sm bg-background"}
                 filterBy="name"
-                isClearable={isClearable || false as any}
+                isClearable={isClearable || false}
             />
         </div>
     );

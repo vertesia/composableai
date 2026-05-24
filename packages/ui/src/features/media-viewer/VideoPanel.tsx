@@ -1,4 +1,4 @@
-import { ContentNature, ContentObject, POSTER_RENDITION_NAME, VideoMetadata } from "@vertesia/common";
+import { ContentNature, type ContentObject, POSTER_RENDITION_NAME, type VideoMetadata } from "@vertesia/common";
 import { Spinner } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";
@@ -60,7 +60,7 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
                 if (!object) return;
                 if (object.metadata?.type !== ContentNature.Video) return;
 
-                let downloadUrl;
+                let downloadUrl: Awaited<ReturnType<typeof client.files.getDownloadUrl>> | undefined;
                 if (webRendition?.content?.source) {
                     downloadUrl = await client.files.getDownloadUrl(webRendition.content.source);
                 } else if (isOriginalWebSupported && object.content?.source) {
@@ -78,11 +78,11 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
 
         if (source || object) {
             setIsLoading(true);
-            load();
+            void load();
         } else {
             setIsLoading(false);
         }
-    }, [url, source, object?.id, object?.content?.type, object?.content?.source, object?.metadata, webRendition, isOriginalWebSupported, client]);
+    }, [url, source, object, webRendition, isOriginalWebSupported, client]);
 
     useEffect(() => {
         if (!poster?.content?.source) return;
@@ -119,6 +119,7 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
     }
 
     return (
+        // biome-ignore lint/a11y/useMediaCaption: caption tracks are not authored for user-uploaded media; falls back to browser controls
         <video
             src={videoUrl}
             poster={posterUrl}

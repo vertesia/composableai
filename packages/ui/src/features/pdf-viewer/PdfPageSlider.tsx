@@ -1,7 +1,7 @@
 import { Button, Center } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp, Maximize, Minus, Plus } from "lucide-react";
-import { ReactNode, useRef, useEffect, useState, useCallback, KeyboardEvent } from "react";
+import { type ReactNode, useRef, useEffect, useState, useCallback, type KeyboardEvent } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { PdfThumbnailList } from "./PdfPageRenderer";
 
@@ -94,10 +94,10 @@ export function PdfPageSlider({
     }, [compact]);
 
     // Legacy function for resize preservation - kept for backwards compatibility
-    const getItemHeight = (width: number | undefined, ratio: number) => {
+    const getItemHeight = useCallback((width: number | undefined, ratio: number) => {
         const placeholderHeight = width ? Math.round(width / ratio) : 200;
         return calculateItemHeight(placeholderHeight);
-    };
+    }, [calculateItemHeight]);
 
     // Single ResizeObserver at parent level to measure thumbnail width
     // Debounced to avoid excessive re-renders during resize
@@ -161,7 +161,7 @@ export function PdfPageSlider({
             if (debounceTimer) clearTimeout(debounceTimer);
             resizeObserver.disconnect();
         };
-    }, [aspectRatio]);
+    }, [aspectRatio, getItemHeight]);
 
     // Track whether we're programmatically scrolling to avoid feedback loops
     const isProgrammaticScrollRef = useRef(false);
@@ -340,12 +340,16 @@ export function PdfPageSlider({
                     calculateItemHeight={calculateItemHeight}
                     renderThumbnail={({ pageNumber, isSelected, pageElement, onSelect }) => (
                         <div key={pageNumber} className={clsx("hover:bg-muted rounded-md w-full", compact ? "p-1" : "p-2")}>
-                            <div
+                            <Button
+                                variant="unstyled"
+                                size="none"
+                                aria-pressed={isSelected}
+                                aria-label={`Page ${pageNumber}`}
                                 className={clsx('relative border-[2px] cursor-pointer overflow-hidden', isSelected ? "border-primary" : "border-border")}
                                 onClick={onSelect}
                             >
                                 {pageElement}
-                            </div>
+                            </Button>
                             <Center className={clsx("text-muted-foreground font-semibold", compact ? "text-xs pt-0.5" : "text-sm pt-1")}>{pageNumber}</Center>
                         </div>
                     )}
@@ -377,7 +381,7 @@ function PageNavigator({ currentPage, totalPages, onChange }: PageNavigatorProps
 
     const handleSubmit = () => {
         const page = parseInt(inputValue, 10);
-        if (!isNaN(page) && page >= 1 && page <= totalPages) {
+        if (!Number.isNaN(page) && page >= 1 && page <= totalPages) {
             onChange(page);
         } else {
             // Reset to current page if invalid

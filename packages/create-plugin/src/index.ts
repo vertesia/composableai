@@ -8,9 +8,9 @@
  */
 
 import chalk from 'chalk';
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 import { Command } from 'commander';
-import fs from 'fs';
+import fs from 'node:fs';
 import { config, validation } from './configuration.js';
 import { downloadTemplate } from './download-template.js';
 import { installDependencies, selectPackageManager } from './package-manager.js';
@@ -90,7 +90,7 @@ Documentation: ${config.docsUrl}
 
     // Show the selected template name with branch if specified
     const branchInfo = branch ? chalk.gray(` (branch: ${branch})`) : '';
-    console.log(chalk.blue.bold(`\n🚀 Create ${selectedTemplate.name}`) + branchInfo + '\n');
+    console.log(`${chalk.blue.bold(`\n🚀 Create ${selectedTemplate.name}`) + branchInfo}\n`);
 
     // Step 2: Download template from GitHub (or copy from local path)
     await downloadTemplate(projectName, selectedTemplate.repository, localTemplates);

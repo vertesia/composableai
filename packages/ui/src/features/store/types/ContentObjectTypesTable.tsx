@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
-import { ContentObjectTypeItem } from "@vertesia/common";
+import type { ContentObjectTypeItem } from "@vertesia/common";
 import { Table, TBody, THead } from "@vertesia/ui/core";
 import { useNavigate } from "@vertesia/ui/router";
 import { useUITranslation } from '@vertesia/ui/i18n';
@@ -28,7 +28,7 @@ export function ContentObjectTypesTable({ objects, isLoading }: ContentObjectTyp
             </THead>
             <TBody isLoading={isLoading && (!objects || objects.length === 0)} columns={4}>
                 {
-                    objects?.map((obj: any) => (
+                    objects?.map((obj) => (
                         <tr key={obj.id} onClick={() => navigate(`/types/${obj.id}`)} className='cursor-pointer hover:bg-muted'>
                             <td>{obj.name}</td>
                             <td>{obj.strict_mode ? 'Yes' : 'No'}</td>

@@ -1,4 +1,4 @@
-import { Server, createServer, ServerResponse, IncomingMessage } from 'http';
+import { type Server, createServer, type ServerResponse, type IncomingMessage } from 'node:http';
 
 export async function startServer(cb: (req: IncomingMessage, res: ServerResponse) => void): Promise<Server> {
     const server = createServer(cb);
@@ -14,7 +14,7 @@ export async function startServer(cb: (req: IncomingMessage, res: ServerResponse
 export function readRequestBody(request: IncomingMessage) {
     return new Promise((resolve, reject) => {
         const chunks: Buffer[] = [];
-        let body;
+        let body: string;
         request.on('data', (chunk) => {
             chunks.push(chunk);
         }).on('end', () => {

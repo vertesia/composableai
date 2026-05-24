@@ -94,7 +94,7 @@ export async function generateEmbeddings(
         );
     }
 
-    let document;
+    let document: Awaited<ReturnType<typeof client.objects.retrieve>>;
     try {
         document = await client.objects.retrieve(
             objectId,
@@ -115,7 +115,10 @@ export async function generateEmbeddings(
         throw new DocumentNotFoundError("Document content not found", [objectId]);
     }
 
-    let res;
+    let res:
+        | Awaited<ReturnType<typeof generateTextEmbeddings>>
+        | Awaited<ReturnType<typeof generateImageEmbeddings>>
+        | { id: string; status: string; message: string };
 
     switch (type) {
         case SupportedEmbeddingTypes.text:
@@ -218,7 +221,7 @@ async function generateTextEmbeddings(
     }
 
     // Count tokens if needed, do not rely on existing token count
-    let tokenCount: number | undefined = undefined;
+    let tokenCount: number | undefined ;
     if (type === SupportedEmbeddingTypes.text && document.text) {
         tokenCount = countTokens(document.text).count;
     }
@@ -286,7 +289,7 @@ async function generateImageEmbeddings({
     config,
     force,
 }: ExecuteGenerateEmbeddingsParams) {
-    log.debug("Generating image embeddings for document " + document.id, {
+    log.debug(`Generating image embeddings for document ${document.id}`, {
         content: document.content,
     });
     if (

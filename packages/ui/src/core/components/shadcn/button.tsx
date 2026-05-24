@@ -21,7 +21,7 @@ function useDeprecationWarning(propName: string, isUsed: boolean, message: strin
       warnedDeprecatedProps.add(propName)
       console.warn(`[@vertesia/ui] ${propName} is deprecated: ${message}`)
     }
-  }, [isUsed])
+  }, [isUsed, message, propName])
 }
 
 const buttonVariants = cva(
@@ -49,6 +49,7 @@ const buttonVariants = cva(
         lg: "h-10 rounded-md px-3",
         xl: 'rounded-md px-3.5 py-2.5 text-sm gap-x-2',
         icon: "p-0 m-0 rounded-full",
+        none: "",
       },
     },
     defaultVariants: {
@@ -143,7 +144,7 @@ interface CopyButtonProps {
   'aria-label'?: string
   size?: "xs" | "sm" | "md" | "lg" | "xl" | "icon"
   toast?: {
-    toast: any,
+    toast: (options: { status: "success" | "error"; title: string; duration: number }) => void,
     message: string
   }
   className?: string
@@ -167,7 +168,7 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
       navigator.clipboard.writeText(content).then(() => {
         setIsCopied(true)
         setTimeout(() => setIsCopied(false), 2000)
-        if (!toast || !toast.toast) {
+        if (!toast?.toast) {
           return
         }
         toast.toast({
@@ -177,7 +178,7 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
         })
       }).catch((err) => {
         console.error("Failed to copy text: ", err)
-        if (toast && toast.toast)
+        if (toast?.toast)
           toast.toast({
             status: "error",
             title: t('misc.failedToCopy'),

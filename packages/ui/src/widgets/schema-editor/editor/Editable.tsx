@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { ChangeEvent, ComponentType, KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { type ChangeEvent, type ComponentType, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 
 import { SquarePen, Trash2 } from 'lucide-react';
 import { Button, Styles, useClickOutside, useFlag } from '@vertesia/ui/core';
@@ -15,7 +15,7 @@ export interface DataViewerProps<T> {
 
 export interface DataEditorProps<T> {
     value: T | undefined;
-    onChange: (value: any, autoSave?: boolean) => void
+    onChange: (value: T, autoSave?: boolean) => void
     onSave?: () => void
     onCancel?: () => void
 }
@@ -53,7 +53,7 @@ export function Editable<T>({ value, onChange, onDelete,
     const { on, off, isOn } = useFlag(isEditing);
     const [validationError, setValidationError] = useState<string | undefined>();
 
-    const _onChange = (value?: any) => {
+    const _onChange = (value: T) => {
         if (onValidate) {
             const err = onValidate(value);
             if (err) {
@@ -87,7 +87,7 @@ export function Editable<T>({ value, onChange, onDelete,
                         editor={editor}
                         skipClickOutside={_skipClickOutside}
                     />
-                    : <DataView value={value} onEdit={on} viewer={viewer}
+                    : <EditableDataView value={value} onEdit={on} viewer={viewer}
                         placeholder={placeholder}
                         outlineOnHover={outlineOnHover}
                         editOnClick={editOnClick}
@@ -103,7 +103,7 @@ export function Editable<T>({ value, onChange, onDelete,
     )
 }
 
-interface DataViewProps<T> {
+interface EditableDataViewProps<T> {
     value: T;
     viewer: ComponentType<DataViewerProps<T>>;
     onEdit: () => void;
@@ -113,9 +113,9 @@ interface DataViewProps<T> {
     onDelete?: () => void
     readonly?: boolean,
 }
-function DataView<T>({ viewer: Viewer, value, onEdit, editOnClick, outlineOnHover, placeholder, onDelete, readonly }: DataViewProps<T>) {
+function EditableDataView<T>({ viewer: Viewer, value, onEdit, editOnClick, outlineOnHover, placeholder, onDelete, readonly: isReadonly }: EditableDataViewProps<T>) {
     const onClick = () => {
-        editOnClick && onEdit();
+        if (editOnClick) onEdit();
     };
 
     const onKeyUp = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -127,17 +127,18 @@ function DataView<T>({ viewer: Viewer, value, onEdit, editOnClick, outlineOnHove
     const btnStyle = 'invisible group-hover:visible';
 
     return (
-        <div tabIndex={0} onKeyUp={onKeyUp} onClick={onClick} className={clsx("flex justify-start items-center group", outlineOnHover ? VIEW_BOX_HOVER : VIEW_BOX, { 'cursor-pointer': editOnClick })}>
+        // biome-ignore lint/a11y/noStaticElementInteractions: container is interactive only when editOnClick is true; role/keyboard provided conditionally and onClick is a no-op otherwise.
+        <div role={editOnClick ? "button" : undefined} tabIndex={0} onKeyUp={onKeyUp} onClick={onClick} className={clsx("flex justify-start items-center group", outlineOnHover ? VIEW_BOX_HOVER : VIEW_BOX, { 'cursor-pointer': editOnClick })}>
             <Viewer value={value} placeholder={placeholder} />
             <div className='ms-auto flex space-x-2'>
                 {
-                    !readonly && onDelete &&
+                    !isReadonly && onDelete &&
                     <Button variant="ghost" size="sm" className={btnStyle} onClick={onDelete}>
                         <Trash2 className="size-4" />
                     </Button>
                 }
                 {
-                    !readonly ?
+                    !isReadonly ?
                         <Button variant="ghost" size="sm" className={btnStyle} onClick={onEdit}>
                             <SquarePen className="size-4" />
                         </Button>
@@ -166,7 +167,7 @@ function DataEdit<T>({ editor: Editor, value, onSave, onCancel, skipClickOutside
 
     const ref = useClickOutside<HTMLDivElement>(handleSave, skipClickOutside);
 
-    const _onChange = (value: any, autoSave = false) => {
+    const _onChange = (value: T, autoSave = false) => {
         setActualValue(value);
         latestValue.current = value;
         if (autoSave) {
@@ -180,6 +181,8 @@ function DataEdit<T>({ editor: Editor, value, onSave, onCancel, skipClickOutside
     return (
         <div ref={ref}>
             <div className={EDIT_BOX}>
+                {/* biome-ignore lint/a11y/noStaticElementInteractions: stop-propagation wrapper to keep clicks inside the editor from triggering outer handlers; not a user-facing interaction. */}
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — wrapper exists only to stop event propagation, not as an interactive element. */}
                 <div className="w-full" onClick={(e) => e.stopPropagation()}>
                     <Editor
                         value={actualValue}

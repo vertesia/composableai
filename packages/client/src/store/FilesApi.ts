@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import type {
     BulkUploadUrlsPayload,
     BulkUploadUrlsResponse,
     DeleteFileResult,
@@ -18,7 +18,7 @@ export const MEMORIES_PREFIX = "memories";
 export const ARTIFACTS_PREFIX = "agents";
 
 export function getMemoryFilePath(name: string) {
-    const nameWithExt = name.endsWith(".tar.gz") ? name : name + ".tar.gz";
+    const nameWithExt = name.endsWith(".tar.gz") ? name : `${name}.tar.gz`;
     return `${MEMORIES_PREFIX}/${nameWithExt}`;
 }
 
@@ -37,7 +37,7 @@ export class FilesApi extends ApiTopic {
     }
 
     async deleteFile(path: string, prefix?: boolean): Promise<DeleteFileResult> {
-        return this.delete(`/${path}`, { query: { prefix } });
+        return this.del(`/${path}`, { query: { prefix } });
     }
 
     /**
@@ -247,7 +247,7 @@ export class FilesApi extends ApiTopic {
         const fileId = getMemoryFilePath(source.name);
         const nameWithExt = source.name.endsWith(".tar.gz")
             ? source.name
-            : source.name + ".tar.gz";
+            : `${source.name}.tar.gz`;
         if (source instanceof File) {
             const file = source as File;
             return this.uploadFile(

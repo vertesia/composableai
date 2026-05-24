@@ -1,7 +1,7 @@
-import React from "react";
+import type React from "react";
 import { Button } from "../../button";
 import { Input } from "../../input";
-import { Filter, FilterGroup } from "../types";
+import type { Filter, FilterGroup } from "../types";
 
 interface TextFilterProps {
   selectedView: string | null;

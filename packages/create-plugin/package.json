@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/create-plugin",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "CLI to create Vertesia plugins: UI plugins or tool servers",
   "type": "module",
   "bin": {
@@ -14,7 +14,7 @@
     "lint": "biome lint src",
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "node lib/index.js test-project",
+    "test": "node ./scripts/run-smoke-test.mjs",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [
@@ -28,8 +28,8 @@
   "author": "Vertesia",
   "license": "Apache-2.0",
   "templateVersions": {
-    "@vertesia": "1.2.0",
-    "@llumiverse": "1.1.1-dev.20260505.151157Z"
+    "@vertesia": "1.3.0",
+    "@llumiverse": "1.3.0"
   },
   "repository": {
     "type": "git",

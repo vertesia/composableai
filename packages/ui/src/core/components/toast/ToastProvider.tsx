@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Portal } from "../Portal.js";
 import { NotificationPanel } from "./NotificationPanel.js";
 import { ToastContext } from "./ToastContext.js";
-import { ToastProps } from "./ToastProps.js";
+import type { ToastProps } from "./ToastProps.js";
 
 
 interface ToastProviderProps {

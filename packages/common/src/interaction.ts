@@ -10,11 +10,11 @@ import type {
     ToolUse,
 } from "@llumiverse/common";
 
-import { ExecutionTokenUsage } from "@llumiverse/common";
+import type { ExecutionTokenUsage } from "@llumiverse/common";
 
-import { ExecutionEnvironmentRef } from "./environment.js";
-import { ProjectRef } from "./project.js";
-import {
+import type { ExecutionEnvironmentRef } from "./environment.js";
+import type { ProjectRef } from "./project.js";
+import type {
     ExecutablePromptSegmentDef,
     PopulatedPromptSegmentDef,
     PromptSegmentDef,
@@ -23,17 +23,17 @@ import {
     PromptTemplateRefWithSchema,
     TemplateType,
 } from "./prompt.js";
-import { ExecutionRunDocRef } from "./runs.js";
-import { ConversationState } from "./store/conversation-state.js";
-import { AccountRef } from "./user.js";
-import { LlmCallType } from "./workflow-analytics.js";
+import type { ExecutionRunDocRef } from "./runs.js";
+import type { ConversationState } from "./store/conversation-state.js";
+import type { AccountRef } from "./user.js";
+import type { LlmCallType } from "./workflow-analytics.js";
 import type { MCPToolAnnotations } from "./apps.js";
-import { PrincipalType } from "./apikey.js";
+import type { PrincipalType } from "./apikey.js";
 
 export interface InteractionExecutionError {
     code: string;
     message: string;
-    data?: any;
+    data?: unknown;
     retryable?: boolean;
 }
 
@@ -514,7 +514,7 @@ export interface InteractionUpdatePayload
             "result_schema" | "id" | "created_at" | "updated_at" | "created_by" | "updated_by" | "project"
         >
     > {
-    result_schema?: JSONSchema | null;
+    result_schema?: JSONSchema | SchemaRef | null;
 }
 
 export interface InteractionPublishPayload {
@@ -533,10 +533,10 @@ export interface InteractionExecutionPayload {
      * If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location.
      * and the other properties of the data will contain the memory pack mapping.
      */
-    data?: Record<string, any> | `memory:${string}`;
+    data?: Record<string, unknown> | `memory:${string}`;
     config?: InteractionExecutionConfiguration;
     //Use null to explicitly state no schema, will not fallback to interaction schema
-    result_schema?: JSONSchema | null;
+    result_schema?: JSONSchema | SchemaRef | null;
     stream?: boolean;
     do_validate?: boolean;
     tags?: string | string[]; // tags to be added to the execution run
@@ -585,7 +585,7 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
 // ================= async execution payloads ====================
 export type ToolRef = string | { name: string; description: string };
 
-interface AsyncExecutionPayloadBase extends Omit<NamedInteractionExecutionPayload, "toolDefinitions" | "stream"> {
+interface AsyncExecutionPayloadBase extends Omit<NamedInteractionExecutionPayload, "toolDefinitions" | "stream">, Record<string, unknown> {
     type: "conversation" | "interaction";
 
     /**
@@ -778,7 +778,7 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * When a workstream is spawned, the parent's `data` is preserved here so that
      * child tools can access it via metadata.parent_metadata.
      */
-    parent_metadata?: Record<string, any>;
+    parent_metadata?: Record<string, unknown>;
 
     /**
      * When true, subagent/workstream tool calls use fire-and-forget `startChild()`
@@ -949,7 +949,7 @@ export interface ToolResultContent {
     /**
      * Can contain metadata returned by the tool executor.
      */
-    meta?: Record<string, any>;
+    meta?: Record<string, unknown>;
 }
 
 export interface ToolResult extends ToolResultContent {
@@ -994,7 +994,7 @@ export interface RunSource {
     client_ip: string;
 }
 
-export interface BaseExecutionRun<P = any> {
+export interface BaseExecutionRun<P = unknown> {
     readonly id: string;
     /**
      * Only used by runs that were created by a virtual run to point toward the virtual run parent
@@ -1026,7 +1026,7 @@ export interface BaseExecutionRun<P = any> {
     ttl: number;
     status: ExecutionRunStatus;
     finish_reason?: string;
-    prompt?: any;
+    prompt?: unknown;
     token_use?: ExecutionTokenUsage;
     chunks?: number;
     execution_time?: number; // ms
@@ -1055,11 +1055,11 @@ export interface BaseExecutionRun<P = any> {
     workflow?: ExecutionRunWorkflow;
 }
 
-export interface ExecutionRun<P = any> extends BaseExecutionRun<P> {
+export interface ExecutionRun<P = unknown> extends BaseExecutionRun<P> {
     interaction?: Interaction;
 }
 
-export interface PopulatedExecutionRun<P = any> extends BaseExecutionRun<P> {
+export interface PopulatedExecutionRun<P = unknown> extends BaseExecutionRun<P> {
     interaction?: Interaction;
 }
 
@@ -1102,7 +1102,7 @@ export interface PromptModalities {
     hasImage: boolean;
 }
 
-export interface InteractionExecutionResult<P = any> extends Omit<ExecutionRun<P>, "account" | "project" | "interaction"> {
+export interface InteractionExecutionResult<P = unknown> extends Omit<ExecutionRun<P>, "account" | "project" | "interaction"> {
     account: string;
     project: string;
     interaction?: string;
@@ -1111,7 +1111,7 @@ export interface InteractionExecutionResult<P = any> extends Omit<ExecutionRun<P
     options?: StatelessExecutionOptions;
 }
 
-export interface LegacyInteractionExecutionResult<P = any>
+export interface LegacyInteractionExecutionResult<P = unknown>
     extends Omit<InteractionExecutionResult<P>, 'result' | 'account' | 'project'> {
     account: string | AccountRef;
     project: string | ProjectRef;
@@ -1349,6 +1349,8 @@ export interface SystemSkillCatalogEntry {
     description: string;
     /** Tool names this skill enables (unlocks) when called */
     tools: string[];
+    /** Whether this skill is part of the default agent toolkit */
+    default?: boolean;
 }
 
 /**

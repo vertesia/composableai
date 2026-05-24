@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { isEqual } from 'lodash-es';
 import { AlertTriangle, Check, ChevronsUpDown, LoaderCircle, SearchIcon, SquarePlus, X } from 'lucide-react';
-import { useState, useEffect, useRef, useMemo, useId, ReactNode } from 'react';
+import { useState, useEffect, useRef, useMemo, useId, type ReactNode } from 'react';
 
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from './popover';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from './command';
@@ -60,7 +60,7 @@ interface SelectBoxMultipleProps<T> extends SelectBoxBaseProps<T> {
 
 type SelectBoxProps<T> = SelectBoxSingleProps<T> | SelectBoxMultipleProps<T>;
 
-export function SelectBox<T = any>({
+export function SelectBox<T = unknown>({
     options,
     optionLabel,
     value,
@@ -102,7 +102,7 @@ export function SelectBox<T = any>({
         // Use the isOptionsEqual helper which respects the 'by' comparator
         return !options.some(opt => {
             if (typeof by === 'string') {
-                return (opt as any)[by] === (value as any)[by];
+                return getProperty(opt, by) === getProperty(value, by);
             } else if (typeof by === 'function') {
                 return by(opt, value as T);
             } else {
@@ -134,7 +134,7 @@ export function SelectBox<T = any>({
         };
     }, []);
 
-    const _onClick = (opt: any) => {
+    const _onClick = (opt: T) => {
         if (multiple) {
             const currentValues = Array.isArray(value) ? value : [];
             const isSelected = isOptionSelected(opt, currentValues);
@@ -169,7 +169,7 @@ export function SelectBox<T = any>({
         }
 
         if (typeof by === 'string') {
-            return (a as any)[by] === (b as any)[by];
+                return getProperty(a, by) === getProperty(b, by);
         } else if (typeof by === 'function') {
             return by(a, b);
         } else {
@@ -183,7 +183,7 @@ export function SelectBox<T = any>({
         if (!filterBy) {
             return (o: T) => String(o).toLowerCase();
         } else if (typeof filterBy === 'string') {
-            return (o: any) => String(o[filterBy]).toLowerCase();
+            return (o: T) => String(getProperty(o, filterBy)).toLowerCase();
         } else {
             return filterBy;
         }
@@ -215,6 +215,7 @@ export function SelectBox<T = any>({
         return (
             <div className="flex flex-wrap gap-1">
                 {arrayValue.slice(0, 1).map((item, index) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     <span key={index} className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-muted rounded">
                         {optionLabel ? optionLabel(item) : item as string}
                     </span>
@@ -253,6 +254,7 @@ export function SelectBox<T = any>({
 
                             return (
                                 <CommandItem
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                     key={index}
                                     onSelect={() => _onClick(opt)}
                                     className="w-full"
@@ -260,14 +262,14 @@ export function SelectBox<T = any>({
                                     {multiple || inline ? (
                                         <div className='w-full flex justify-between items-center cursor-pointer'>
                                             <div className='w-full truncate text-start'>
-                                                {optionLabel ? optionLabel(opt) : opt as String}
+                                                {optionLabel ? optionLabel(opt) : opt as string}
                                             </div>
                                             {isSelected && <Check className="size-4" />}
                                         </div>
                                     ) : (
                                         <PopoverClose className='w-full flex justify-between items-center'>
                                             <div className='w-full truncate text-start'>
-                                                {optionLabel ? optionLabel(opt) : opt as String}
+                                                {optionLabel ? optionLabel(opt) : opt as string}
                                             </div>
                                             {isSelected && <Check className="size-4" />}
                                         </PopoverClose>
@@ -402,7 +404,7 @@ export function SelectBox<T = any>({
                             if (multiple) {
                                 (onChange as (options: T[]) => void)([] as T[]);
                             } else {
-                                (onChange as (option: T) => void)(undefined as any);
+                                (onChange as (option: T) => void)(undefined as T);
                             }
                         }}
                         onKeyDown={(e) => {
@@ -430,4 +432,8 @@ export function SelectBox<T = any>({
             </PopoverContent>
         </Popover>
     );
+}
+
+function getProperty(value: unknown, key: string): unknown {
+    return typeof value === 'object' && value !== null ? (value as Record<string, unknown>)[key] : undefined;
 }

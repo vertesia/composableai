@@ -1,6 +1,6 @@
-import { Permission, ProjectRoles } from "@vertesia/common"
-import { ErrorBox, useFetch } from "@vertesia/ui/core"
-import { UserSession, useUserSession } from "@vertesia/ui/session"
+import type { Permission, ProjectRoles } from "@vertesia/common"
+import { ErrorBox, errorMessage, useFetch } from "@vertesia/ui/core"
+import { type UserSession, useUserSession } from "@vertesia/ui/session"
 import { createContext, useContext, useMemo } from "react"
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { isAnyOf } from "./helpers"
@@ -96,7 +96,7 @@ export function UserPermissionProvider({ children }: UserPermissionProviderProps
     }, [session, data, isLoading]);
 
     if (error) {
-        return <ErrorBox title={t('store.failedToFetchRoleMappings')}>{error.message}</ErrorBox>
+        return <ErrorBox title={t('store.failedToFetchRoleMappings')}>{errorMessage(error)}</ErrorBox>
     }
 
     return perms && (

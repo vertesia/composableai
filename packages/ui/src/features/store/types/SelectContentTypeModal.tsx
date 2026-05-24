@@ -1,4 +1,4 @@
-import { useState, ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
     Button,
     Modal,
@@ -8,7 +8,7 @@ import {
     SelectBox,
     VTooltip,
 } from "@vertesia/ui/core";
-import { ContentObjectTypeItem } from "@vertesia/common";
+import type { ContentObjectTypeItem } from "@vertesia/common";
 import { useTypeRegistry } from "./TypeRegistryProvider.js";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { CheckCircleIcon, Info } from "lucide-react";
@@ -81,9 +81,9 @@ export function SelectContentTypeModal({
 
                 {/* Type selection */}
                 <div className="mb-4 mt-4">
-                    <label className="block text-sm font-medium mb-2">
+                    <div className="block text-sm font-medium mb-2">
                         {t('store.contentType')} {allowNone && <span className="text-gray-500 font-normal">{t('store.optional')}</span>}
-                    </label>
+                    </div>
                     {allowNone ? (
                         <SelectBox
                             options={types}

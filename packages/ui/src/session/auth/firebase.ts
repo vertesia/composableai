@@ -1,8 +1,8 @@
-import { UIResolvedTenant } from "@vertesia/common";
+import type { UIResolvedTenant } from "@vertesia/common";
 import { Env } from "@vertesia/ui/env";
-import { Analytics, getAnalytics } from "firebase/analytics";
-import { FirebaseApp, initializeApp } from "firebase/app";
-import { Auth, getAuth } from "firebase/auth";
+import { type Analytics, getAnalytics } from "firebase/analytics";
+import { type FirebaseApp, initializeApp } from "firebase/app";
+import { type Auth, getAuth } from "firebase/auth";
 
 // Use lazy initialization to avoid accessing Env before it's initialized
 let _firebaseApp: FirebaseApp | null = null;
@@ -84,7 +84,7 @@ export async function setFirebaseTenant(tenantEmail?: string) {
                     try {
                         const errorData = await response.json();
                         console.error("Failed to resolve tenant ID:", errorData.error);
-                    } catch (parseError) {
+                    } catch {
                         console.error(`Failed to resolve tenant ID: HTTP ${response.status}`);
                     }
 
@@ -100,7 +100,7 @@ export async function setFirebaseTenant(tenantEmail?: string) {
                 // Successfully got a response, parse it
                 const data = (await response.json()) as UIResolvedTenant;
 
-                if (data && data.firebaseTenantId) {
+                if (data?.firebaseTenantId) {
                     const auth = getFirebaseAuth();
                     auth.tenantId = data.firebaseTenantId;
                     Env.firebase.providerType = data.provider ?? "oidc";

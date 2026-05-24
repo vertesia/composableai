@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
 
-import { useToast } from '@vertesia/ui/core';
+import { errorMessage, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useDocumentSearch } from '../../search';
 import { useObjectsActionContext } from '../ObjectsActionHooks';
-import { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
+import type { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
 import ConfirmAction from './ConfirmAction';
 
 export function RemoveFromCollectionActionComponent({ action, objectIds, collectionId }: ActionComponentTypeProps) {
@@ -19,7 +19,7 @@ export function RemoveFromCollectionActionComponent({ action, objectIds, collect
     const search = useDocumentSearch();
 
     const callback = useCallback(() => {
-        if (!objectIds || !objectIds.length) {
+        if (!objectIds?.length) {
             toast({
                 status: 'error',
                 title: t('store.actions.noObjectsSelected'),
@@ -52,15 +52,15 @@ export function RemoveFromCollectionActionComponent({ action, objectIds, collect
                 ctx.params?.selection?.removeAll();
                 search.search();
             }
-        }).catch((err: any) => {
+        }).catch((err: unknown) => {
             toast({
                 status: 'error',
                 title: t('store.actions.errorRemovingObjects'),
-                description: err.message,
+                description: errorMessage(err),
                 duration: 5000
             });
         });
-    }, [objectIds, collectionId]);
+    }, [client.store.collections.deleteMembers, collectionId, ctx.params?.selection?.removeAll, objectIds, search, search?.search, t, toast]);
 
     return (
         <ConfirmAction action={action} callback={callback}>

@@ -1,9 +1,8 @@
-import { AbstractFetchClient, RequestError } from "@vertesia/api-fetch-client";
-import { BulkOperationPayload, BulkOperationResponse } from "@vertesia/common";
+import { AbstractFetchClient, type RequestError } from "@vertesia/api-fetch-client";
+import type { BulkOperationPayload, BulkOperationResponse } from "@vertesia/common";
 import { AgentsApi } from "./AgentsApi.js";
 import { CollectionsApi } from "./CollectionsApi.js";
 import { CostApi } from "./CostApi.js";
-import { CommandsApi } from "./CommandsApi.js";
 import { DataApi } from "./DataApi.js";
 import { EmailApi } from "./EmailApi.js";
 import { EventSubscriptionsApi } from './EventSubscriptionsApi.js';
@@ -97,7 +96,6 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     processes = new ProcessApi(this);
     tasks = new TaskApi(this);
     files = new FilesApi(this);
-    commands = new CommandsApi(this);
     workers = new WorkersApi(this);
     collections = new CollectionsApi(this);
     embeddings = new EmbeddingsApi(this);

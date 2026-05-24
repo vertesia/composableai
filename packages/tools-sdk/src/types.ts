@@ -1,10 +1,10 @@
 import type { ToolDefinition, ToolUse } from "@llumiverse/common";
-import { VertesiaClient } from "@vertesia/client";
-import { AgentToolDefinition, AuthTokenPayload, MCPToolAnnotations, ProjectConfiguration, RenderingTemplateDefinition, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
+import type { VertesiaClient } from "@vertesia/client";
+import type { AgentToolDefinition, AuthTokenPayload, MCPToolAnnotations, ProjectConfiguration, RenderingTemplateDefinition, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
 
 export type { ToolExecutionMetadata };
 
-export type ICollection<T = any> = CollectionProperties & Iterable<T>
+export type ICollection<T = object> = CollectionProperties & Iterable<T>
 
 export interface CollectionProperties {
     /**
@@ -48,7 +48,7 @@ export interface ToolExecutionResult extends ToolResultContent {
     /**
      * Medata can be used to return more info on the tool execution like stats or user messages.
      */
-    meta?: Record<string, any>;
+    meta?: Record<string, unknown>;
 }
 
 export interface ToolExecutionResponse extends ToolExecutionResult, ToolResult {
@@ -74,10 +74,10 @@ export interface ToolExecutionResponseError {
     /**
      * Additional context information
      */
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
 }
 
-export interface ToolExecutionPayload<ParamsT extends Record<string, any>> {
+export interface ToolExecutionPayload<ParamsT extends object = object> {
     tool_use: ToolUse<ParamsT>,
     /**
      * Optional metadata related to the current execution request
@@ -85,7 +85,7 @@ export interface ToolExecutionPayload<ParamsT extends Record<string, any>> {
     metadata?: ToolExecutionMetadata,
 }
 
-export type ToolFn<ParamsT extends Record<string, any>> = (payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext) => Promise<ToolExecutionResult>;
+export type ToolFn<ParamsT extends object = object> = (payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext) => Promise<ToolExecutionResult>;
 
 export interface ToolUseContext {
     project_id?: string,
@@ -93,11 +93,11 @@ export interface ToolUseContext {
     project_name?: string,
     project_ns?: string,
     configuration?: ProjectConfiguration;
-    vars?: Record<string, any>;
+    vars?: Record<string, unknown>;
 }
 
-export interface Tool<ParamsT extends Record<string, any>> extends ToolDefinition {
-    run: ToolFn<ParamsT>;
+export interface Tool<ParamsT extends object = object> extends ToolDefinition {
+    run(payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext): Promise<ToolExecutionResult>;
     /**
      * Whether this tool is available by default.
      * - true/undefined: Tool is always available to agents
@@ -248,7 +248,7 @@ export interface SkillDefinition {
      */
     input_schema?: {
         type: 'object';
-        properties?: Record<string, any>;
+        properties?: Record<string, unknown>;
         required?: string[];
     };
     /**
@@ -299,7 +299,7 @@ export interface SkillExecutionPayload {
     /**
      * Data context for JST template rendering
      */
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
     /**
      * Whether to execute the code template (if present)
      */

@@ -1,5 +1,5 @@
-import { AccountRef, ProjectRef } from '@vertesia/common'
-import { Button, Center, ErrorBox, Input, SelectBox, Spinner, useFetch, useToast } from '@vertesia/ui/core'
+import type { AccountRef, ProjectRef } from '@vertesia/common'
+import { Button, Center, ErrorBox, Input, SelectBox, Spinner, errorMessage, useFetch, useToast } from '@vertesia/ui/core'
 import { Env } from "@vertesia/ui/env"
 import { useLocation } from "@vertesia/ui/router"
 import { fetchComposableTokenFromFirebaseToken, fetchComposableTokenFromVertesiaToken, getCurrentVertesiaToken, useUserSession } from '@vertesia/ui/session'
@@ -143,14 +143,14 @@ export function TerminalLogin() {
                     duration: 5000
                 })
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             if (payload) {
-                setError(err)
+                setError(err instanceof Error ? err : new Error(errorMessage(err)))
                 setPayload(payload)
             } else {
                 toast({
                     title: t('login.terminal.errorAuthorizingClient'),
-                    description: err.message,
+                    description: errorMessage(err),
                     status: 'error',
                     duration: 5000
                 })
@@ -185,7 +185,7 @@ function AuthAcceptScreen({ onAccept, clientInfo }: Readonly<AuthAcceptScreenPro
     const { t } = useUITranslation()
 
     if (error) {
-        return <ErrorBox title={t('login.terminal.errorLoadingProjects')}>{error.message}</ErrorBox>
+        return <ErrorBox title={t('login.terminal.errorLoadingProjects')}>{errorMessage(error)}</ErrorBox>
     }
 
     const getEnvironmentName = () => {

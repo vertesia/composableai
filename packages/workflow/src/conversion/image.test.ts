@@ -1,7 +1,7 @@
-import fs from "fs";
-import path from "path";
-import { exec } from "child_process";
-import { promisify } from "util";
+import fs from "node:fs";
+import path from "node:path";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
 import { expect, test, vi, describe } from "vitest";
 
 // Mock Temporal activity context
@@ -15,7 +15,7 @@ vi.mock("@temporalio/activity", () => ({
 }));
 
 // Import after mocking
-import { imageResizer } from "../conversion/image";
+import { imageResizer } from "../conversion/image.js";
 
 const execAsync = promisify(exec);
 
@@ -41,8 +41,8 @@ describe("ImageMagick image resizing", () => {
         console.log({ width, height, imageFormat });
 
         // Check dimensions
-        expect(parseInt(width)).to.be.lessThanOrEqual(max_hw);
-        expect(parseInt(height)).to.be.lessThanOrEqual(max_hw);
+        expect(parseInt(width, 10)).to.be.lessThanOrEqual(max_hw);
+        expect(parseInt(height, 10)).to.be.lessThanOrEqual(max_hw);
 
         // Check format (JPEG)
         expect(imageFormat.toLowerCase()).to.equal("jpeg");

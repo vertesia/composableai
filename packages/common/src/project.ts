@@ -1,8 +1,8 @@
 import type { JSONSchemaType } from "ajv";
-import { SupportedIntegrations } from "./integrations.js";
-import { ContentObjectTypeRef } from "./store/store.js";
-import { WorkflowRunStatus } from "./store/workflow.js";
-import { AccountRef } from "./user.js";
+import type { SupportedIntegrations } from "./integrations.js";
+import type { ContentObjectTypeRef } from "./store/store.js";
+import type { WorkflowRunStatus } from "./store/workflow.js";
+import type { AccountRef } from "./user.js";
 
 export interface ICreateProjectPayload {
     name: string;
@@ -104,7 +104,8 @@ export enum SystemInteractionCategory {
     content_type = "content_type",
     intake = "intake",
     analysis = "analysis",
-    non_applicable = "non_applicable"
+    agent = "agent",
+    non_applicable = "non_applicable",
 }
 
 /**
@@ -123,6 +124,7 @@ export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCate
     "Mediator": SystemInteractionCategory.non_applicable,
     "AnalyzeConversation": SystemInteractionCategory.analysis,
     "GetAgentConversationTopic": SystemInteractionCategory.analysis,
+    "StudioAssistant": SystemInteractionCategory.agent,
 };
 
 /**
@@ -363,9 +365,6 @@ export interface ProjectConfigurationEmbeddingEnablePayload {
     model?: string;
 }
 
-/** @deprecated Use ProjectConfigurationEmbedding for a single embedding configuration. */
-export type ProjectConfigurationEmbeddings = ProjectConfigurationEmbedding;
-
 export interface Project {
     id: string;
     name: string;
@@ -373,7 +372,7 @@ export interface Project {
     description?: string;
     account: string;
     configuration: ProjectConfiguration;
-    integrations?: Map<string, any>;
+    integrations?: Map<string, unknown>;
     plugins: string[];
     created_by: string,
     updated_by: string,

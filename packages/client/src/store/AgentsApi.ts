@@ -1,56 +1,56 @@
-import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import {
-    ActiveWorkstreamsQueryResult,
-    AgentEvent,
-    AgentArtifactUrlResponse,
-    AgentMessage,
-    AgentRun,
-    AgentRunDetailsStreamEvent,
-    AgentRunInternals,
-    AgentRunResponse,
-    AgentRunUpdatesResponse,
-    BindRunWorkflowPayload,
-    CompactMessage,
-    CreateAgentRunPayload,
-    CreateProcessRunPayload,
-    ErrorAnalyticsResponse,
-    FirstResponseBehaviorAnalyticsResponse,
-    LatencyAnalyticsResponse,
-    ListAgentRunsQuery,
-    ListAgentRunsResponse,
-    ListWorkflowRunsResponse,
+    type ActiveWorkstreamsQueryResult,
+    type AgentEvent,
+    type AgentArtifactUrlResponse,
+    type AgentMessage,
+    type AgentRun,
+    type AgentRunDetailsStreamEvent,
+    type AgentRunInternals,
+    type AgentRunResponse,
+    type AgentRunUpdatesResponse,
+    type BindRunWorkflowPayload,
+    type CompactMessage,
+    type CreateAgentRunPayload,
+    type CreateProcessRunPayload,
+    type ErrorAnalyticsResponse,
+    type FirstResponseBehaviorAnalyticsResponse,
+    type LatencyAnalyticsResponse,
+    type ListAgentRunsQuery,
+    type ListAgentRunsResponse,
+    type ListWorkflowRunsResponse,
     parseMessage,
-    PromptSizeAnalyticsResponse,
-    PostAgentRunUpdatePayload,
-    PostAgentRunUpdateResponse,
-    ProcessRun,
-    ProcessState,
-    RecordAgentRunPayload,
-    RecordProcessRunPayload,
-    RecordRunPayload,
-    RunsByAgentAnalyticsResponse,
-    SearchAgentRunsQuery,
-    SearchAgentRunsResponse,
-    SignalAgentPayload,
-    SignalAgentResponse,
-    TimeToFirstResponseAnalyticsResponse,
-    TerminateAgentRunResponse,
+    type PromptSizeAnalyticsResponse,
+    type PostAgentRunUpdatePayload,
+    type PostAgentRunUpdateResponse,
+    type ProcessRun,
+    type ProcessState,
+    type RecordAgentRunPayload,
+    type RecordProcessRunPayload,
+    type RecordRunPayload,
+    type RunsByAgentAnalyticsResponse,
+    type SearchAgentRunsQuery,
+    type SearchAgentRunsResponse,
+    type SignalAgentPayload,
+    type SignalAgentResponse,
+    type TimeToFirstResponseAnalyticsResponse,
+    type TerminateAgentRunResponse,
     toAgentMessage,
-    TokenUsageAnalyticsResponse,
-    ToolAnalyticsResponse,
-    ToolParameterAnalyticsResponse,
-    TopPrincipalsAnalyticsResponse,
-    UpdateAgentRunStatusPayload,
-    WorkflowAnalyticsFilterOptionsResponse,
-    WorkflowAnalyticsSummaryQuery,
-    WorkflowAnalyticsSummaryResponse,
-    WorkflowAnalyticsTimeSeriesQuery,
-    WorkflowRunWithDetails,
-    WorkflowToolParametersQuery,
-    IngestAgentEventsPayload,
-    IngestAgentEventsResponse,
+    type TokenUsageAnalyticsResponse,
+    type ToolAnalyticsResponse,
+    type ToolParameterAnalyticsResponse,
+    type TopPrincipalsAnalyticsResponse,
+    type UpdateAgentRunStatusPayload,
+    type WorkflowAnalyticsFilterOptionsResponse,
+    type WorkflowAnalyticsSummaryQuery,
+    type WorkflowAnalyticsSummaryResponse,
+    type WorkflowAnalyticsTimeSeriesQuery,
+    type WorkflowRunWithDetails,
+    type WorkflowToolParametersQuery,
+    type IngestAgentEventsPayload,
+    type IngestAgentEventsResponse,
 } from '@vertesia/common';
-import { VertesiaClient } from '../client.js';
+import type { VertesiaClient } from '../client.js';
 import { EventSourceProvider } from '../execute.js';
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
 
@@ -70,10 +70,10 @@ export class AgentsApi extends ApiTopic {
     start<TData = Record<string, unknown>>(
         payload: CreateAgentRunPayload<TData>,
     ): Promise<AgentRun<TData>>;
-    start<TData = Record<string, any>>(
+    start<TData = Record<string, unknown>>(
         payload: CreateProcessRunPayload<TData>,
     ): Promise<ProcessRun>;
-    start<TData = Record<string, any>>(
+    start<TData = Record<string, unknown>>(
         payload: CreateAgentRunPayload<TData> | CreateProcessRunPayload<TData>,
     ): Promise<AgentRun<TData> | ProcessRun> {
         return this.post('/', { payload });
@@ -85,9 +85,9 @@ export class AgentsApi extends ApiTopic {
      *
      * @internal
      */
-    recordRun<TData = Record<string, any>>(payload: RecordAgentRunPayload<TData>): Promise<AgentRun<TData>>;
-    recordRun<TData = Record<string, any>>(payload: RecordProcessRunPayload<TData>): Promise<ProcessRun>;
-    recordRun<TData = Record<string, any>>(payload: RecordRunPayload<TData>): Promise<AgentRun<TData> | ProcessRun> {
+    recordRun<TData = Record<string, unknown>>(payload: RecordAgentRunPayload<TData>): Promise<AgentRun<TData>>;
+    recordRun<TData = Record<string, unknown>>(payload: RecordProcessRunPayload<TData>): Promise<ProcessRun>;
+    recordRun<TData = Record<string, unknown>>(payload: RecordRunPayload<TData>): Promise<AgentRun<TData> | ProcessRun> {
         return this.post('/record', { payload });
     }
 
@@ -198,7 +198,7 @@ export class AgentsApi extends ApiTopic {
         return this.post(`/${id}/fork`, {});
     }
 
-    getContext(id: string): Promise<{ run_id: string; current_node: string; context: Record<string, any> }> {
+    getContext(id: string): Promise<{ run_id: string; current_node: string; context: Record<string, unknown> }> {
         return this.get(`/${id}/context`);
     }
 
@@ -219,7 +219,7 @@ export class AgentsApi extends ApiTopic {
         return this.post(`/${id}/retry-node`, { payload: payload ?? {} });
     }
 
-    answerTask(id: string, taskId: string, result: Record<string, any>): Promise<{ message: string }> {
+    answerTask(id: string, taskId: string, result: Record<string, unknown>): Promise<{ message: string }> {
         return this.post(`/${id}/answer-task`, { payload: { task_id: taskId, result } });
     }
 
@@ -327,7 +327,7 @@ export class AgentsApi extends ApiTopic {
         const maxDelay = 30000;
 
         const calculateBackoffDelay = (attempts: number): number => {
-            const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
+            const exponentialDelay = Math.min(baseDelay * 2 ** attempts, maxDelay);
             const jitter = Math.random() * 0.1 * exponentialDelay;
             return exponentialDelay + jitter;
         };
@@ -382,7 +382,7 @@ export class AgentsApi extends ApiTopic {
                 const EventSourceImpl = await EventSourceProvider();
                 if (isClosed) return;
                 const client = this.client as VertesiaClient;
-                const streamUrl = new URL(client.agents.baseUrl + `/${id}/stream`);
+                const streamUrl = new URL(`${client.agents.baseUrl}/${id}/stream`);
 
                 if (lastMessageTimestamp > 0) {
                     streamUrl.searchParams.set('since', lastMessageTimestamp.toString());
@@ -460,7 +460,7 @@ export class AgentsApi extends ApiTopic {
                         reconnectAttempts++;
                         reconnectTimer = setTimeout(() => {
                             reconnectTimer = null;
-                            if (!isClosed) setupStream(true);
+                            if (!isClosed) void setupStream(true);
                         }, delay);
                     } else {
                         isClosed = true;
@@ -475,7 +475,7 @@ export class AgentsApi extends ApiTopic {
                     reconnectAttempts++;
                     reconnectTimer = setTimeout(() => {
                         reconnectTimer = null;
-                        if (!isClosed) setupStream(true);
+                        if (!isClosed) void setupStream(true);
                     }, delay);
                 } else {
                     isClosed = true;
@@ -485,7 +485,7 @@ export class AgentsApi extends ApiTopic {
             }
         };
 
-        setupStream(false);
+        void setupStream(false);
         return promise;
     }
 
@@ -509,10 +509,12 @@ export class AgentsApi extends ApiTopic {
         id: string,
         options?: {
             includeHistory?: boolean;
+            hydratePayloads?: boolean;
         },
     ): Promise<WorkflowRunWithDetails> {
         const query: Record<string, string> = {};
         if (options?.includeHistory) query.include_history = 'true';
+        if (options?.hydratePayloads) query.hydrate_payloads = 'true';
         return this.get(`/${id}/details`, { query });
     }
 
@@ -527,7 +529,7 @@ export class AgentsApi extends ApiTopic {
     ): Promise<void> {
         const EventSourceImpl = await EventSourceProvider();
         const client = this.client as VertesiaClient;
-        const streamUrl = new URL(client.agents.baseUrl + `/${id}/details/stream`);
+        const streamUrl = new URL(`${client.agents.baseUrl}/${id}/details/stream`);
 
         const bearerToken = client._auth ? await client._auth() : undefined;
         if (!bearerToken) {
@@ -600,10 +602,11 @@ export class AgentsApi extends ApiTopic {
     getChildDetails(
         id: string,
         childWorkflowId: string,
-        options?: { includeHistory?: boolean },
+        options?: { includeHistory?: boolean; hydratePayloads?: boolean },
     ): Promise<WorkflowRunWithDetails> {
         const query: Record<string, string> = {};
         if (options?.includeHistory) query.include_history = 'true';
+        if (options?.hydratePayloads) query.hydrate_payloads = 'true';
         return this.get(`/${id}/children/${childWorkflowId}/details`, { query });
     }
 

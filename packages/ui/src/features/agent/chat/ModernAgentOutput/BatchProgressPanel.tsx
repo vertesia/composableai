@@ -1,5 +1,5 @@
-import { AgentMessage, BatchProgressDetails, BatchItemStatus } from "@vertesia/common";
-import { Button, cn, useToast } from "@vertesia/ui/core";
+import type { AgentMessage, BatchProgressDetails, BatchItemStatus } from "@vertesia/common";
+import { Button, cn, onActivateKey, useToast } from "@vertesia/ui/core";
 import dayjs from "dayjs";
 import {
     CheckCircle,
@@ -119,9 +119,14 @@ function BatchProgressPanelComponent({
     return (
         <div className={cn("border-s-4 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5", getBorderColor(), className)}>
             {/* Header */}
+            {/* biome-ignore lint/a11y/useSemanticElements: header contains nested Buttons (copy, etc.); button-in-button is invalid HTML so role="button" on a div is the pragmatic choice. */}
             <div
+                role="button"
+                tabIndex={0}
+                aria-expanded={isExpanded}
                 className={cn("flex items-center justify-between px-4 py-2 border-b border-gray-100/80 dark:border-gray-800/80 bg-blue-50/50 dark:bg-blue-900/10 cursor-pointer", headerClassName)}
                 onClick={() => setIsExpanded(!isExpanded)}
+                onKeyDown={onActivateKey(() => setIsExpanded(!isExpanded))}
             >
                 <div className="flex items-center gap-2">
                     {renderStatusIndicator()}

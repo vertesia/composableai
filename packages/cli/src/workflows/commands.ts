@@ -1,14 +1,48 @@
-import { ExecuteWorkflowPayload, WorkflowRuleInputType } from "@vertesia/common";
-import { Command } from "commander";
-import fs from "fs";
-import { resolve, join, basename } from "path";
+import { type CreateWorkflowRulePayload, type DSLWorkflowSpec, type ExecuteWorkflowPayload, type UploadWorkflowRulePayload, WorkflowRuleInputType } from "@vertesia/common";
+import type { Command } from "commander";
+import fs from "node:fs";
+import { resolve, join, basename } from "node:path";
 import { getClient } from "../client.js";
+import { getStringOption, isRecord, type CliOptions } from "../utils/options.js";
 import { loadJSONWorkflowDefinition } from "./json-loader.js";
 import { loadTsWorkflowDefinition } from "./ts-loader.js";
 import { ValidationError } from "./validation.js";
 import { streamRun } from "./streams.js";
 
-export async function createWorkflowRule(program: Command, options: Record<string, any>) {
+type CreateWorkflowRuleOptions = CliOptions<{
+    name?: string;
+    on?: string;
+    run?: string;
+    inputType?: WorkflowRuleInputType;
+}>;
+
+type WorkflowFileOptions = CliOptions<{
+    file?: string;
+    tags?: string[];
+    skipValidation?: boolean;
+}>;
+
+type WorkflowExecuteOptions = CliOptions<{
+    objectId?: string[];
+    vars?: string;
+    config?: Record<string, unknown>;
+    file?: string;
+    stream?: boolean;
+    interactive?: boolean;
+    output?: string;
+    outputFile?: string;
+    queue?: string;
+}>;
+
+type WorkflowOutputOptions = CliOptions<{
+    file?: string;
+}>;
+
+type TranspileWorkflowOptions = CliOptions<{
+    out?: string;
+}>;
+
+export async function createWorkflowRule(program: Command, options: CreateWorkflowRuleOptions) {
     const { name, on, run, inputType } = options;
     if (!name) {
         console.log("A name for the workflow rule is required. Use --name argument");
@@ -36,7 +70,7 @@ export async function createWorkflowRule(program: Command, options: Record<strin
     console.log("Created workflow rule", workflow.id);
 }
 
-export async function createOrUpdateWorkflowRule(program: Command, options: Record<string, any>) {
+export async function createOrUpdateWorkflowRule(program: Command, options: WorkflowFileOptions) {
     const { file, tags } = options;
 
     if (!file) {
@@ -45,7 +79,7 @@ export async function createOrUpdateWorkflowRule(program: Command, options: Reco
     }
 
     const payload = fs.readFileSync(file, "utf-8");
-    const json = JSON.parse(payload);
+    const json = readWorkflowRulePayload(JSON.parse(payload));
     if (tags) {
         json.tags = tags;
     }
@@ -56,13 +90,13 @@ export async function createOrUpdateWorkflowRule(program: Command, options: Reco
     console.log("Applied workflow rule", rule.id);
 }
 
-export async function deleteWorkflowRule(program: Command, ruleId: string, _options: Record<string, any>) {
+export async function deleteWorkflowRule(program: Command, ruleId: string, _options: Record<string, unknown>) {
     const client = await getClient(program);
     const res = await client.workflows.rules.delete(ruleId);
     console.log("Workflow rule deleted", res);
 }
 
-export async function getWorkflowRule(program: Command, ruleId: string, options: Record<string, any>) {
+export async function getWorkflowRule(program: Command, ruleId: string, options: WorkflowOutputOptions) {
     const client = await getClient(program);
     const res = await client.workflows.rules.retrieve(ruleId);
     const pretty = JSON.stringify(res, null, 2);
@@ -75,17 +109,17 @@ export async function getWorkflowRule(program: Command, ruleId: string, options:
     }
 }
 
-export async function executeWorkflowByName(program: Command, workflowName: string, options: Record<string, any>) {
+export async function executeWorkflowByName(program: Command, workflowName: string, options: WorkflowExecuteOptions) {
     const { objectId, vars, file, stream, interactive, output: outputFile } = options;
     console.debug("Executing interaction in workflow", workflowName, "with options", options);
 
     const mergedConfig = {
-        objectIds: objectId ? objectId : [],
-        vars: JSON.parse(vars || "{}") || {},
+        objectIds: normalizeStringArray(objectId),
+        vars: parseJsonObject(vars || "{}"),
     } as ExecuteWorkflowPayload;
 
     if (file) {
-        const payload = JSON.parse(fs.readFileSync(file, "utf-8"));
+        const payload = parseJsonObject(fs.readFileSync(file, "utf-8"));
         Object.assign(mergedConfig, payload);
     }
 
@@ -115,7 +149,7 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
     // Save the result to a file if outputFile is specified
     if (outputFile && runId) {
         const runDetails = await client.workflows.getRunDetails(runId, workflowId);
-        const output = runDetails.result?.output;
+        const output = isRecord(runDetails.result) ? runDetails.result.output : undefined;
         let outputContent: string;
         if (!output) {
             console.error("No output found for workflow run", runId);
@@ -133,38 +167,34 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
     }
 }
 
-export async function executeWorkflowRule(program: Command, workflowId: string, options: Record<string, any>) {
+export async function executeWorkflowRule(program: Command, workflowId: string, options: WorkflowExecuteOptions) {
     console.log("Executing workflow rule", workflowId, options);
     const { objectId, config, file } = options;
 
-    let mergedConfig = config
-        ? {
-              ...config,
-          }
-        : {};
+    let mergedConfig = config ? { ...config } : {};
 
     if (file) {
-        const payload = JSON.parse(fs.readFileSync(file, "utf-8"));
+        const payload = parseJsonObject(fs.readFileSync(file, "utf-8"));
         mergedConfig = {
             ...payload,
-            ...config,
+            ...mergedConfig,
         };
     }
 
     const client = await getClient(program);
-    const res = await client.workflows.rules.execute(workflowId, objectId, mergedConfig);
+    const res = await client.workflows.rules.execute(workflowId, normalizeStringArray(objectId), mergedConfig);
     console.log(res);
 }
 
-export async function listWorkflowsRule(program: Command, _options: Record<string, any>) {
+export async function listWorkflowsRule(program: Command, _options: Record<string, unknown>) {
     const client = await getClient(program);
     const res = await client.workflows.rules.list();
     const pretty = JSON.stringify(res, null, 2);
     console.log(pretty);
 }
 
-export async function transpileWorkflow(_program: Command, files: string[], options: Record<string, any>) {
-    if (!files || !files.length) {
+export async function transpileWorkflow(_program: Command, files: string[], options: TranspileWorkflowOptions) {
+    if (!files?.length) {
         console.log("A .ts file argument is required.");
         process.exit(1);
     }
@@ -174,7 +204,7 @@ export async function transpileWorkflow(_program: Command, files: string[], opti
         if (out && fs.lstatSync(out).isDirectory()) {
             saveToDir = true;
         }
-    } catch (err) {
+    } catch {
         //ignore
     }
     if (files.length > 1 && !saveToDir) {
@@ -186,7 +216,7 @@ export async function transpileWorkflow(_program: Command, files: string[], opti
         if (!out) {
             console.log(JSON.stringify(json, null, 2));
         } else {
-            let outFile;
+            let outFile: string;
             if (saveToDir) {
                 let fileName = basename(file);
                 fileName = fileName.replace(".ts", ".json");
@@ -204,7 +234,7 @@ export async function transpileWorkflow(_program: Command, files: string[], opti
 export async function createOrUpdateWorkflowDefinition(
     program: Command,
     workflowId: string | undefined,
-    options: Record<string, any>,
+    options: WorkflowFileOptions,
 ) {
     const { file, tags, skipValidation } = options;
 
@@ -215,13 +245,13 @@ export async function createOrUpdateWorkflowDefinition(
 
     const isTs = file.endsWith(".ts");
     const loadWorkflow = isTs ? loadTsWorkflowDefinition : loadJSONWorkflowDefinition;
-    let json: any;
+    let json: DSLWorkflowSpec;
     try {
         if (isTs) {
             console.log(`Transpiling file ${file} ...`);
         }
         json = await loadWorkflow(file, skipValidation);
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (err instanceof ValidationError) {
             console.log(err.message);
             process.exit(1);
@@ -244,13 +274,13 @@ export async function createOrUpdateWorkflowDefinition(
     }
 }
 
-export async function listWorkflowsDefinition(program: Command, _options: Record<string, any>) {
+export async function listWorkflowsDefinition(program: Command, _options: Record<string, unknown>) {
     const client = await getClient(program);
     const res = await client.workflows.definitions.list();
     console.log(res);
 }
 
-export async function getWorkflowDefinition(program: Command, objectId: string, options: Record<string, any>) {
+export async function getWorkflowDefinition(program: Command, objectId: string, options: WorkflowOutputOptions) {
     const client = await getClient(program);
     const res = await client.workflows.definitions.retrieve(objectId);
     const pretty = JSON.stringify(res, null, 2);
@@ -263,8 +293,33 @@ export async function getWorkflowDefinition(program: Command, objectId: string, 
     }
 }
 
-export async function deleteWorkflowDefinition(program: Command, objectId: string, _options: Record<string, any>) {
+export async function deleteWorkflowDefinition(program: Command, objectId: string, _options: Record<string, unknown>) {
     const client = await getClient(program);
     const res = await client.workflows.definitions.delete(objectId);
     console.log(res);
+}
+
+function parseJsonObject(content: string): Record<string, unknown> {
+    const value = JSON.parse(content);
+    if (!isRecord(value)) {
+        console.error("Expected a JSON object.");
+        process.exit(1);
+    }
+    return value;
+}
+
+function readWorkflowRulePayload(value: unknown): CreateWorkflowRulePayload {
+    if (!isRecord(value)) {
+        console.error("Expected workflow rule JSON to be an object.");
+        process.exit(1);
+    }
+    return value as UploadWorkflowRulePayload as CreateWorkflowRulePayload;
+}
+
+function normalizeStringArray(value: string[] | string | undefined): string[] | undefined {
+    if (Array.isArray(value)) {
+        return value;
+    }
+    const option = getStringOption(value);
+    return option ? [option] : undefined;
 }

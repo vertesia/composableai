@@ -1,37 +1,37 @@
 import { ApiTopic } from "@vertesia/api-fetch-client";
 import {
-    BulkObjectCreateResult,
-    BulkObjectDeleteResult,
-    BulkObjectUpdateResult,
+    type BulkObjectCreateResult,
+    type BulkObjectDeleteResult,
+    type BulkObjectUpdateResult,
     canGenerateRendition,
-    Collection,
-    ComplexSearchPayload,
-    ComputeObjectFacetPayload,
-    ContentObject,
+    type Collection,
+    type ComplexSearchPayload,
+    type ComputeObjectFacetPayload,
+    type ContentObject,
     ContentObjectApiHeaders,
-    ContentObjectItem,
-    ContentObjectProcessingPriority,
-    ContentSource,
-    ContentObjectTextResponse,
-    CreateContentObjectPayload,
-    DeleteContentObjectResult,
-    Embedding,
-    ObjectSearchResponse,
-    ComputedFacetResponse,
-    ExportPropertiesPayload,
-    ExportPropertiesResponse,
-    FindPayload,
-    GetFileUrlPayload,
-    GetFileUrlResponse,
-    GetRenditionParams,
-    GetRenditionResponse,
+    type ContentObjectItem,
+    type ContentObjectProcessingPriority,
+    type ContentSource,
+    type ContentObjectTextResponse,
+    type CreateContentObjectPayload,
+    type DeleteContentObjectResult,
+    type Embedding,
+    type ObjectSearchResponse,
+    type ComputedFacetResponse,
+    type ExportPropertiesPayload,
+    type ExportPropertiesResponse,
+    type FindPayload,
+    type GetFileUrlPayload,
+    type GetFileUrlResponse,
+    type GetRenditionParams,
+    type GetRenditionResponse,
 
-    GetUploadUrlPayload,
-    ListWorkflowRunsResponse,
-    ObjectSearchPayload,
-    ObjectSearchQuery,
-    SetObjectEmbeddingsResponse,
-    SupportedEmbeddingTypes,
+    type GetUploadUrlPayload,
+    type ListWorkflowRunsResponse,
+    type ObjectSearchPayload,
+    type ObjectSearchQuery,
+    type SetObjectEmbeddingsResponse,
+    type SupportedEmbeddingTypes,
 } from "@vertesia/common";
 
 // Re-export rendition utilities for consumers
@@ -40,7 +40,11 @@ export { getSupportedRenditionFormats, supportsVisualRendition } from "@vertesia
 
 import { StreamSource } from "../StreamSource.js";
 import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
-import { ZenoClient } from "./client.js";
+import type { ZenoClient } from "./client.js";
+
+type ContentObjectWritePayload = Omit<CreateContentObjectPayload, "content"> & {
+    content?: ContentSource | File | StreamSource;
+};
 
 export class ObjectsApi extends ApiTopic {
     declare client: ZenoClient;
@@ -79,7 +83,7 @@ export class ObjectsApi extends ApiTopic {
      * @param payload Search/filter parameters
      * @returns Matching content objects
      */
-    list<T = any>(
+    list<T = unknown>(
         payload: ObjectSearchPayload = {},
     ): Promise<ContentObjectItem<T>[]> {
         const limit = payload.limit || 100;
@@ -156,7 +160,7 @@ export class ObjectsApi extends ApiTopic {
         // upload the file content to the signed URL
         /*const res = await this.fetch(url, {
             method: 'PUT',
-            //@ts-ignore: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
+            //@ts-expect-error: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
             duplex: isStream ? "half" : undefined,
             body: isStream ? source.stream : source,
             headers: {
@@ -206,20 +210,23 @@ export class ObjectsApi extends ApiTopic {
     }
 
     async create(
-        payload: CreateContentObjectPayload,
+        payload: ContentObjectWritePayload,
         options?: {
             collection_id?: string;
             processing_priority?: ContentObjectProcessingPriority;
         },
     ): Promise<ContentObject> {
+        const { content, ...payloadWithoutContent } = payload;
         const createPayload: CreateContentObjectPayload = {
-            ...payload,
+            ...payloadWithoutContent,
         };
         if (
-            payload.content instanceof StreamSource ||
-            payload.content instanceof File
+            content instanceof StreamSource ||
+            content instanceof File
         ) {
-            createPayload.content = await this.upload(payload.content);
+            createPayload.content = await this.upload(content);
+        } else {
+            createPayload.content = content;
         }
 
         const headers: Record<string, string> = {};
@@ -294,7 +301,7 @@ export class ObjectsApi extends ApiTopic {
      */
     async update(
         id: string,
-        payload: Partial<CreateContentObjectPayload>,
+        payload: Partial<ContentObjectWritePayload>,
         options?: {
             createRevision?: boolean;
             revisionLabel?: string;
@@ -304,16 +311,19 @@ export class ObjectsApi extends ApiTopic {
             ifMatch?: string;
         },
     ): Promise<ContentObject> {
+        const { content, ...payloadWithoutContent } = payload;
         const updatePayload: Partial<CreateContentObjectPayload> = {
-            ...payload,
+            ...payloadWithoutContent,
         };
 
         // Handle file upload if content is provided as File or StreamSource
         if (
-            payload.content instanceof StreamSource ||
-            payload.content instanceof File
+            content instanceof StreamSource ||
+            content instanceof File
         ) {
-            updatePayload.content = await this.upload(payload.content);
+            updatePayload.content = await this.upload(content);
+        } else {
+            updatePayload.content = content;
         }
 
         const headers: Record<string, string> = {};
@@ -372,7 +382,7 @@ export class ObjectsApi extends ApiTopic {
         return this.del(`/${idOrIds}`);
     }
 
-    bulkUpdate(updates: Record<string, Record<string, any>>): Promise<BulkObjectUpdateResult> {
+    bulkUpdate(updates: Record<string, Record<string, unknown>>): Promise<BulkObjectUpdateResult> {
         const ids = Object.keys(updates);
         return this.client.runOperation({
             name: 'update',

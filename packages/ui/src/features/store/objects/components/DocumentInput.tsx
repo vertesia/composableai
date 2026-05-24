@@ -1,11 +1,11 @@
 import clsx from 'clsx';
-import { ChangeEvent, useEffect, useState } from 'react';
+import { type ChangeEvent, useCallback, useEffect, useState } from 'react';
 
 import { useUserSession } from '@vertesia/ui/session';
-import { ContentObjectItem } from '@vertesia/common';
+import type { ContentObjectItem } from '@vertesia/common';
 import { ChevronsUpDown, X } from 'lucide-react';
 import { Button, Styles, useFlag } from '@vertesia/ui/core';
-import { Node } from '@vertesia/ui/widgets';
+import type { Node } from '@vertesia/ui/widgets';
 
 import { SelectDocumentModal } from './SelectDocumentModal';
 
@@ -28,15 +28,15 @@ export function DocumentInput({ object }: DocumentInputProps) {
         object.value = value;
     };
 
-    const clearValue = () => {
+    const clearValue = useCallback(() => {
         setValue('');
         object.value = '';
         setDoc(undefined);
-    };
+    }, [object]);
 
     const onSelect = (value?: ContentObjectItem) => {
         if (value) {
-            const uri = "store:" + value.id;
+            const uri = `store:${value.id}`;
             setValue(uri);
             setDoc(value || undefined);
             object.value = uri;
@@ -54,12 +54,12 @@ export function DocumentInput({ object }: DocumentInputProps) {
             return;
         }
 
-        client.objects.get(match[1]).then((doc) => {
+        client.objects.retrieve(match[1]).then((doc) => {
             setDoc(doc);
         }).catch(() => {
             clearValue();
         });
-    }, [actualValue]);
+    }, [actualValue, client.objects.retrieve, clearValue, doc]);
 
     return (
         <div>
@@ -81,7 +81,7 @@ export function DocumentInput({ object }: DocumentInputProps) {
             </div>
             {doc &&
                 <div className="p-1 semibold text-sm text-gray-600 dark:text-slate-300">
-                    {doc.properties?.title || doc.name}
+                    {typeof doc.properties?.title === 'string' ? doc.properties.title : doc.name}
                 </div>
             }
         </div>

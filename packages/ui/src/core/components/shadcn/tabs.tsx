@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 
 import { cn } from "../libs/utils";
@@ -93,7 +93,7 @@ const Tabs = ({
     if (currentValue && currentValue !== value) {
       setValue(currentValue);
     }
-  }, [current]);
+  }, [current, value]);
 
   // Listen to hash changes only when there's no current prop being controlled externally
   React.useEffect(() => {
@@ -119,21 +119,21 @@ const Tabs = ({
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, [current, visibleTabs, defaultValue]);
 
-  const handleValueChange = (newValue: string) => {
+  const handleValueChange = React.useCallback((newValue: string) => {
     setValue(newValue);
 
     // Update the URL hash when tab changes (only if updateHash is true and not controlled by parent)
     if (updateHash && !current) {
       // Preserve existing history state when changing hash
       const currentState = window.history.state;
-      const newUrl = window.location.pathname + window.location.search + '#' + newValue;
+      const newUrl = `${window.location.pathname + window.location.search}#${newValue}`;
       window.history.pushState(currentState, '', newUrl);
     }
 
     if (onTabChange) {
       onTabChange(newValue);
     }
-  };
+  }, [current, onTabChange, updateHash]);
 
   const setTab = React.useCallback((tabName: string) => {
     handleValueChange(tabName);

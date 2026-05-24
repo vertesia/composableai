@@ -1,6 +1,6 @@
 import { facetOptionLabel } from './utils';
-import { FacetBucket } from '@vertesia/common';
-import { FilterGroup } from '@vertesia/ui/core';
+import type { FacetBucket } from '@vertesia/common';
+import type { FilterGroup } from '@vertesia/ui/core';
 
 interface StringFacetProps {
     buckets: FacetBucket[];
@@ -29,7 +29,6 @@ export function createStringFilterGroup({ buckets, name, placeholder, type = 'se
 }
 
 export function VStringFacet({ buckets, name, placeholder, type, multiple }: {
-    search: any;
     buckets: FacetBucket[];
     name: string;
     placeholder?: string;

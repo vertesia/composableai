@@ -7,5 +7,5 @@ export function useDarkMode(cb: (isDarkMode: boolean) => unknown) {
         mediaQuery.addEventListener('change', _cb);
         cb(mediaQuery.matches);
         return () => mediaQuery.removeEventListener('change', _cb);
-    }, []);
+    }, [cb]);
 }

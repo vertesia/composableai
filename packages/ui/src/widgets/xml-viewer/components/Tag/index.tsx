@@ -1,10 +1,10 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Attributes } from '../../components/Attributes';
 import { CollapseIcon } from '../../components/CollapseIcon';
 import { useXMLViewerContext } from '../../context/xml-viewer-context';
 import { hasAttributes } from '../../helpers';
 import { useCollapsible } from '../../hooks/useCollapsible';
-import { AttributesObject } from '../../types';
+import type { AttributesObject } from '../../types';
 
 export interface TagProps {
   indentation: string;

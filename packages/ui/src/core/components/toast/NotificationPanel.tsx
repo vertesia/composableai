@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion"
 import { CircleCheck, AlertTriangle, Info, CircleX, X } from "lucide-react"
-import { useEffect, useState, useRef } from "react"
-import { ToastProps } from "./ToastProps.js"
+import { useCallback, useEffect, useState, useRef } from "react"
+import type { ToastProps } from "./ToastProps.js"
 
 const icons = {
     success: CircleCheck,
@@ -25,26 +25,24 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
     const [show, setShow] = useState(true)
     const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-    const resetTimeout = () => {
-        if (timeoutRef.current) {
-            globalThis.clearTimeout(timeoutRef.current)
-        }
-        if (data.duration) {
-            timeoutRef.current = setTimeout(() => setShow(false), data.duration)
-        }
-    }
-
-    const clearCurrentTimeout = () => {
+    const clearCurrentTimeout = useCallback(() => {
         if (timeoutRef.current) {
             globalThis.clearTimeout(timeoutRef.current)
             timeoutRef.current = null
         }
-    }
+    }, [])
+
+    const resetTimeout = useCallback(() => {
+        clearCurrentTimeout()
+        if (data.duration) {
+            timeoutRef.current = setTimeout(() => setShow(false), data.duration)
+        }
+    }, [clearCurrentTimeout, data.duration])
 
     useEffect(() => {
         resetTimeout()
         return clearCurrentTimeout
-    }, [data.duration])
+    }, [clearCurrentTimeout, resetTimeout])
 
     const Icon = icons[data.status] || Info;
     const color = colors[data.status] || 'text-info';

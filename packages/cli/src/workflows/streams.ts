@@ -1,4 +1,4 @@
-import { AgentMessage, AgentMessageType, UserInputSignal } from "@vertesia/common";
+import { type AgentMessage, AgentMessageType, type UserInputSignal } from "@vertesia/common";
 import chalk from "chalk";
 import { getClient } from "../client.js";
 import boxen from "boxen";
@@ -8,6 +8,8 @@ import figures from "figures";
 import logUpdate from "log-update";
 import logSymbols from "log-symbols";
 import * as readline from "readline";
+import type { Command } from "commander";
+import { getStringOption, isRecord, type CliOptions } from "../utils/options.js";
 
 // Define emoji icons for different message types (using integer enum keys)
 const typeIcons: Partial<Record<AgentMessageType, string>> = {
@@ -21,7 +23,9 @@ const typeIcons: Partial<Record<AgentMessageType, string>> = {
 };
 
 // Enhanced color palette with gradients (using integer enum keys)
-const typeColors: Partial<Record<AgentMessageType, any>> = {
+type GradientAlias = typeof gradient.atlas;
+
+const typeColors: Partial<Record<AgentMessageType, GradientAlias>> = {
     [AgentMessageType.SYSTEM]: gradient.atlas,
     [AgentMessageType.THOUGHT]: gradient.mind,
     [AgentMessageType.PLAN]: gradient.passion,
@@ -61,9 +65,15 @@ const boxStyles: Partial<Record<AgentMessageType, { padding: number; margin: num
     },
 };
 
-export async function streamRun(workflowId: string, runId: string, program: any, options: Record<string, any> = {}) {
+type StreamRunOptions = CliOptions<{
+    since?: string;
+    interactive?: boolean;
+}>;
+
+export async function streamRun(workflowId: string, runId: string, program: Command, options: StreamRunOptions = {}) {
     const client = await getClient(program);
-    const since = options.since ? parseInt(options.since, 10) : undefined;
+    const sinceOption = getStringOption(options.since);
+    const since = sinceOption ? parseInt(sinceOption, 10) : undefined;
     const interactive = options.interactive === true;
 
     // Setup cleanup resources
@@ -168,10 +178,10 @@ export async function streamRun(workflowId: string, runId: string, program: any,
             heartbeatCount = 0;
 
             // Safely format the timestamp
-            let timeString;
+            let timeString: string;
             try {
                 timeString = message.timestamp ? new Date(message.timestamp).toISOString() : new Date().toISOString();
-            } catch (err) {
+            } catch {
                 console.warn(`Invalid timestamp in message: ${message.timestamp}`);
                 timeString = new Date().toISOString();
             }
@@ -213,23 +223,23 @@ export async function streamRun(workflowId: string, runId: string, program: any,
             // Check if message details are long plan or complex data
             if (message.details) {
                 // Special handling for plans - they can be very long
-                if (messageType === AgentMessageType.PLAN && typeof message.details === "object" && message.details.plan) {
+                if (messageType === AgentMessageType.PLAN && hasPlanDetails(message.details)) {
                     console.log(gradient.passion("\n▸ Plan Summary"));
 
                     try {
                         const plan = Array.isArray(message.details.plan)
                             ? message.details.plan
                             : JSON.parse(message.details.plan);
-                        plan.forEach((task: any, index: number) => {
+                        readPlanTasks(plan).forEach((task, index) => {
                             console.log(chalk.bold.cyan(`\n${index + 1}. ${task.goal}`));
-                            if (task.instructions && Array.isArray(task.instructions)) {
+                            if (task.instructions) {
                                 task.instructions.forEach((instruction: string) => {
                                     console.log(`   ${chalk.gray("•")} ${instruction}`);
                                 });
                             }
                         });
                         console.log(""); // add spacing
-                    } catch (e) {
+                    } catch {
                         // If parsing fails, fall back to standard formatting
                         formatDetails(message.details);
                     }
@@ -340,7 +350,7 @@ export async function streamRun(workflowId: string, runId: string, program: any,
         if (!isTerminating) {
             if (spinner) spinner.stop();
             console.error(
-                boxen(gradient.fruit("ERROR STREAMING MESSAGES") + "\n\n" + err, {
+                boxen(`${gradient.fruit("ERROR STREAMING MESSAGES")}\n\n${err}`, {
                     padding: 1,
                     margin: 1,
                     borderStyle: "round" as const,
@@ -357,7 +367,7 @@ export async function streamRun(workflowId: string, runId: string, program: any,
 }
 
 // Helper function to format message content
-function formatMessageContent(content: any): string {
+function formatMessageContent(content: unknown): string {
     if (typeof content === "string") {
         // Replace escaped newlines with actual newlines
         return content.replace(/\\n/g, "\n");
@@ -368,7 +378,7 @@ function formatMessageContent(content: any): string {
 }
 
 // Helper function to format details in a cleaner way
-function formatDetails(details: any): void {
+function formatDetails(details: unknown): void {
     // Check if details are empty or minimal
     const detailsStr = typeof details === "string" ? details : JSON.stringify(details);
 
@@ -401,7 +411,7 @@ function formatDetails(details: any): void {
                                 "\n" +
                                 formatColorizedJSON(value)
                                     .split("\n")
-                                    .map((line) => "  " + line)
+                                    .map((line) => `  ${line}`)
                                     .join("\n");
                         }
                     } else {
@@ -445,7 +455,7 @@ function formatDetails(details: any): void {
                 // For complex objects, fall back to pretty-printed JSON
                 console.log(formatColorizedJSON(details));
             }
-        } catch (err) {
+        } catch {
             // Fall back to colorized JSON if formatting fails
             console.log(formatColorizedJSON(details));
         }
@@ -458,7 +468,7 @@ function formatDetails(details: any): void {
 }
 
 // Helper function to format JSON with colors
-function formatColorizedJSON(obj: any): string {
+function formatColorizedJSON(obj: unknown): string {
     const jsonString = JSON.stringify(obj, null, 2);
 
     // Colorize different parts of the JSON
@@ -468,4 +478,36 @@ function formatColorizedJSON(obj: any): string {
         .replace(/: (\d+)/g, (_, value) => `: ${chalk.yellow(value)}`)
         .replace(/: (true|false)/g, (_, value) => `: ${chalk.magenta(value)}`)
         .replace(/: null/g, `: ${chalk.red("null")}`);
+}
+
+interface PlanDetails {
+    plan: unknown[] | string;
+}
+
+interface PlanTask {
+    goal: string;
+    instructions?: string[];
+}
+
+function hasPlanDetails(details: unknown): details is PlanDetails {
+    return isRecord(details) && (Array.isArray(details.plan) || typeof details.plan === "string");
+}
+
+function readPlanTasks(value: unknown): PlanTask[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+    return value.flatMap((task) => {
+        if (!isRecord(task)) {
+            return [];
+        }
+        const goal = getStringOption(task.goal);
+        if (!goal) {
+            return [];
+        }
+        const instructions = Array.isArray(task.instructions)
+            ? task.instructions.filter((instruction): instruction is string => typeof instruction === "string")
+            : undefined;
+        return [{ goal, instructions }];
+    });
 }

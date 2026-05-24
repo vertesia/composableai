@@ -1,9 +1,13 @@
-import { ConnectionError, RequestError, ServerError } from "./errors.js";
-import { sse, ServerSentEvent } from "./sse/index.js";
+import { ConnectionError, type RequestError, ServerError } from "./errors.js";
+import { sse, type ServerSentEvent } from "./sse/index.js";
 import { buildQueryString, join, removeTrailingSlash } from "./utils.js";
 
 export type FETCH_FN = (input: RequestInfo, init?: RequestInit) => Promise<Response>;
 type IPrimitives = string | number | boolean | null | undefined | string[] | number[] | boolean[];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object';
+}
 
 export interface IRequestParams {
     query?: Record<string, IPrimitives> | null;
@@ -17,7 +21,7 @@ export interface IRequestParams {
      * If set to 'sse' the response will be treated as a server-sent event stream
      * and the request will return a Promise<ReadableStream<ServerSentEvent>> object
      */
-    reader?: 'sse' | ((response: Response) => any);
+    reader?: 'sse' | ((response: Response) => unknown);
     /**
      * Set to false to disable automatic JSON payload serialization
      * If you need to post other data than a json payload, set this to false and use the `payload` property to set the desired payload
@@ -42,8 +46,8 @@ export function fetchPromise(fetchImpl?: FETCH_FN | Promise<FETCH_FN>) {
     }
 }
 
-function isInvalidJsonPayload(payload: any) {
-    return payload?.error === "Not a valid JSON payload" && typeof payload.text === "string";
+function isInvalidJsonPayload(payload: unknown) {
+    return isRecord(payload) && payload.error === "Not a valid JSON payload" && typeof payload.text === "string";
 }
 
 export abstract class ClientBase {
@@ -79,24 +83,24 @@ export abstract class ClientBase {
         return removeTrailingSlash(join(this.baseUrl, path));
     }
 
-    get(path: string, params?: IRequestParams) {
-        return this.request('GET', path, params);
+    get<T = unknown>(path: string, params?: IRequestParams): Promise<T> {
+        return this.request<T>('GET', path, params);
     }
 
-    del(path: string, params?: IRequestParams) {
+    del<T = unknown>(path: string, params?: IRequestParams): Promise<T> {
+        return this.request<T>('DELETE', path, params);
+    }
+
+    delete(path: string, params?: IRequestParams): Promise<unknown> {
         return this.request('DELETE', path, params);
     }
 
-    delete(path: string, params?: IRequestParams) {
-        return this.request('DELETE', path, params);
+    post<T = unknown>(path: string, params?: IRequestParamsWithPayload): Promise<T> {
+        return this.request<T>('POST', path, params);
     }
 
-    post(path: string, params?: IRequestParamsWithPayload) {
-        return this.request('POST', path, params);
-    }
-
-    put(path: string, params?: IRequestParamsWithPayload) {
-        return this.request('PUT', path, params);
+    put<T = unknown>(path: string, params?: IRequestParamsWithPayload): Promise<T> {
+        return this.request<T>('PUT', path, params);
     }
 
     /**
@@ -104,7 +108,7 @@ export abstract class ClientBase {
      * @param text
      * @returns
      */
-    jsonParse(text: string) {
+    jsonParse(text: string): unknown {
         return JSON.parse(text);
     }
 
@@ -119,20 +123,20 @@ export abstract class ClientBase {
         return Promise.resolve(new Request(url, init));
     }
 
-    createServerError(req: Request, res: Response, payload: any): RequestError {
+    createServerError(req: Request, res: Response, payload: unknown): RequestError {
         const status = res.status;
-        let message = 'Server Error: ' + status;
+        let message = `Server Error: ${status}`;
         if (payload) {
             if (isInvalidJsonPayload(payload)) {
-                message += res.statusText ? ' ' + res.statusText : '';
+                message += res.statusText ? ` ${res.statusText}` : '';
                 message += ': non-JSON response';
-            } else if (payload.message) {
+            } else if (isRecord(payload) && payload.message) {
                 message = String(payload.message);
-            } else if (payload.error) {
+            } else if (isRecord(payload) && payload.error) {
                 if (typeof payload.error === 'string') {
                     message = String(payload.error);
-                } else if (typeof payload.error.message === 'string') {
-                    message = String(payload.error.message);
+                } else if (isRecord(payload.error) && typeof payload.error.message === 'string') {
+                    message = payload.error.message;
                 }
             }
         }
@@ -147,20 +151,20 @@ export abstract class ClientBase {
             } else {
                 try {
                     return this.jsonParse(text);
-                } catch (err: any) {
+                } catch (err: unknown) {
                     return {
                         status: res.status,
                         error: "Not a valid JSON payload",
-                        message: err.message,
+                        message: err instanceof Error ? err.message : String(err),
                         text: text,
                     };
                 }
             }
-        }).catch((err) => {
+        }).catch((err: unknown) => {
             return {
                 status: res.status,
                 error: "Unable to load response content",
-                message: err.message,
+                message: err instanceof Error ? err.message : String(err),
             };
         });
     }
@@ -169,17 +173,17 @@ export abstract class ClientBase {
      * Subclasses You can override this to do something with the response
      * @param res
      */
-    handleResponse(req: Request, res: Response, params: IRequestParamsWithPayload | undefined) {
-        if (params && params.reader) {
+    handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): T | Promise<T> {
+        if (params?.reader) {
             if (params.reader === 'sse') {
-                return sse(res);
+                return sse(res) as T;
             } else {
-                return params.reader.call(this, res);
+                return params.reader.call(this, res) as T | Promise<T>;
             }
         } else {
             return this.readJSONPayload(res).then((payload) => {
                 if (res.ok) {
-                    return payload;
+                    return payload as T;
                 } else {
                     this.throwError(this.createServerError(req, res, payload));
                 }
@@ -187,10 +191,10 @@ export abstract class ClientBase {
         }
     }
 
-    async request(method: string, path: string, params?: IRequestParamsWithPayload) {
+    async request<T = unknown>(method: string, path: string, params?: IRequestParamsWithPayload): Promise<T> {
         let url = this.getUrl(path);
         if (params?.query) {
-            url += '?' + buildQueryString(params.query);
+            url += `?${buildQueryString(params.query)}`;
         }
         const headers = this.headers ? Object.assign({}, this.headers) : {};
         const paramsHeaders = params?.headers;
@@ -213,7 +217,7 @@ export abstract class ClientBase {
         }
         // When using SSE reader, ensure the Accept header requests event-stream
         if (params?.reader === 'sse' && !('accept' in headers)) {
-            headers['accept'] = 'text/event-stream';
+            headers.accept = 'text/event-stream';
         }
 
         const init: RequestInit = {
@@ -226,7 +230,7 @@ export abstract class ClientBase {
             console.error(`Failed to connect to ${url}`, err);
             this.throwError(new ConnectionError(req, err));
         }).then(res => {
-            return this.handleResponse(req, res, params);
+            return this.handleResponse<T>(req, res, params);
         }));
     }
 

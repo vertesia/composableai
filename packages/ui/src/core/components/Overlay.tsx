@@ -1,6 +1,6 @@
 import { motion } from "framer-motion"
 import { X } from "lucide-react"
-import { useState, ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 
 import { Button } from "./shadcn/button"
 
@@ -57,9 +57,14 @@ export function Overlay({
 
     return (
         <div className={`flex items-center justify-center w-full ${className}`}>
-            <div onClick={handleOpen} className={`w-full align-left cursor-pointer ${triggerClassName}`}>
+            <Button
+                variant="unstyled"
+                size="none"
+                onClick={handleOpen}
+                className={`w-full align-left cursor-pointer ${triggerClassName}`}
+            >
                 {children}
-            </div>
+            </Button>
             {
                 isOpen && (
                     <div className={`z-45 fixed inset-0 bg-black bg-opacity-50 ${backdropClassName}`}>

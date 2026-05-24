@@ -35,7 +35,9 @@ function getConversationLabel(
     formatTime: (date: Date | string | number | null | undefined) => string,
 ): string {
     if (conv.topic) return conv.topic;
-    const prompt = conv.input?.data?.user_prompt;
+    const input = typeof conv.input === 'object' && conv.input !== null ? conv.input as { data?: unknown } : undefined;
+    const inputData = typeof input?.data === 'object' && input.data !== null ? input.data as Record<string, unknown> : undefined;
+    const prompt = inputData?.user_prompt;
     if (typeof prompt === 'string' && prompt.trim()) return prompt.trim();
     if (conv.started_at) return formatTime(conv.started_at);
     return t('nav.conversation');

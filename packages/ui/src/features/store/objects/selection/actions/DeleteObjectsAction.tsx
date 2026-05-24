@@ -8,7 +8,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useDocumentSearch } from '../../search/DocumentSearchContext';
 import { useObjectsActionContext } from '../ObjectsActionHooks';
-import { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
+import type { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
 import ConfirmAction from './ConfirmAction';
 
 export function DeleteObjectsActionComponent({ action, objectIds, children }: ActionComponentTypeProps) {
@@ -21,7 +21,7 @@ export function DeleteObjectsActionComponent({ action, objectIds, children }: Ac
     const navigate = useNavigate();
 
     const callback = useCallback(() => {
-        if (!objectIds || !objectIds.length) {
+        if (!objectIds?.length) {
             toast({
                 status: 'error',
                 title: t('store.actions.noObjectsSelected'),
@@ -66,7 +66,7 @@ export function DeleteObjectsActionComponent({ action, objectIds, children }: Ac
                 duration: 5000
             });
         });
-    }, [objectIds]);
+    }, [client.store.objects.delete, ctx.params?.selection?.removeAll, navigate, objectIds, search, search?.facets, search?.resetFacets, search?.search, t, toast]);
 
     return (
         <ConfirmAction action={action} callback={callback}>

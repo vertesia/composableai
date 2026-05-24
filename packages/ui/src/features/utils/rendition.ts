@@ -1,6 +1,6 @@
 import { isImage, isPdf, isVideo } from "./mimeType.js";
-import { VertesiaClient } from "@vertesia/client";
-import { ContentObjectItem, ImageRenditionFormat } from "@vertesia/common";
+import type { VertesiaClient } from "@vertesia/client";
+import { type ContentObjectItem, ImageRenditionFormat } from "@vertesia/common";
 
 //TODO we must use a setting in Env.
 const env = import.meta.env;
@@ -33,7 +33,7 @@ export async function retrieveRendition(
   }
 
   setRenditionStatus("Preparing preview...");
-  const currentTime = new Date().getTime() / 1000;
+  const currentTime = Date.now()/ 1000;
 
   const savedId = localStorage.getItem(
     `${RENDITION_ID}_${doc.id}_${RENDITION_OPTIONS.max_hw}`,
@@ -45,7 +45,7 @@ export async function retrieveRendition(
   if (
     savedId?.length &&
     elapsedTime &&
-    Math.abs(currentTime - parseInt(elapsedTime)) <= 900
+    Math.abs(currentTime - parseInt(elapsedTime, 10)) <= 900
   ) {
     setRenditionUrl(savedId);
     setRenditionAlt(`${doc.name} Rendition`);
@@ -80,7 +80,7 @@ export async function retrieveRendition(
       );
       localStorage.setItem(
         `${RENDITION_ID}_${doc.id}_${RENDITION_OPTIONS.max_hw}_time`,
-        (new Date().getTime() / 1000).toString(),
+        (Date.now()/ 1000).toString(),
       );
       setRenditionUrl(rendition);
       setRenditionAlt(`${doc.name} Rendition`);

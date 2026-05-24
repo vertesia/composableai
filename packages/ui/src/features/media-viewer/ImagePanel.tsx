@@ -1,4 +1,4 @@
-import { ContentNature, ContentObject, ImageRenditionFormat } from "@vertesia/common";
+import { ContentNature, type ContentObject, ImageRenditionFormat } from "@vertesia/common";
 import { Spinner } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";
@@ -74,11 +74,11 @@ export function ImagePanel({ url, source, object, className }: ImagePanelProps) 
 
         if (source || object) {
             setIsLoading(true);
-            load();
+            void load();
         } else {
             setIsLoading(false);
         }
-    }, [url, source, object?.id, object?.content?.type, object?.content?.source, object?.metadata, client]);
+    }, [url, source, object, client]);
 
     if (isLoading) {
         return (

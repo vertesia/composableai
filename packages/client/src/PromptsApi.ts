@@ -1,6 +1,6 @@
-import { ComputePromptFacetPayload, PromptSearchPayload, PromptSearchQuery, PromptTemplate, PromptTemplateForkPayload, PromptTemplateCreatePayload, PromptTemplateRef, PromptTemplateUpdatePayload, TemplateType } from "@vertesia/common";
-import { PromptRole } from "@llumiverse/common";
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import type { ComputePromptFacetPayload, PromptSearchPayload, PromptSearchQuery, PromptTemplate, PromptTemplateForkPayload, PromptTemplateCreatePayload, PromptTemplateRef, PromptTemplateUpdatePayload, TemplateType } from "@vertesia/common";
+import type { PromptRole } from "@llumiverse/common";
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
 
 export interface ComputePromptFacetsResponse {
     role?: { _id: string, count: number }[];

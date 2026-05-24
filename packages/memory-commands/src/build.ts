@@ -1,6 +1,6 @@
-import { Builder, BuildOptions } from "@vertesia/memory";
+import { Builder, type BuildOptions } from "@vertesia/memory";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { resolve } from "path";
+import { resolve } from "node:path";
 import { importTsFile } from "./ts-loader.js";
 
 const als = new AsyncLocalStorage<Builder>();
@@ -22,11 +22,11 @@ export function build(script: string, options: BuildOptions = {}): Promise<void>
 
 async function _build(builder: Builder, script: string, transpileDir?: string): Promise<void> {
     const resolvedScript = resolve(script);
-    let module: any;
+    let module: unknown;
     if (resolvedScript.endsWith('.ts')) {
         try {
             module = await importTsFile(resolvedScript, transpileDir);
-        } catch (er: any) {
+        } catch (er: unknown) {
             console.error(er);
             process.exit(1);
         }

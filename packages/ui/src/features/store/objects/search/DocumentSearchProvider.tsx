@@ -1,6 +1,7 @@
 import { useUserSession } from "@vertesia/ui/session";
-import { FacetSpec } from "@vertesia/common";
-import React, { useMemo } from "react";
+import type { FacetSpec } from "@vertesia/common";
+import type React from "react";
+import { useMemo } from "react";
 import { DocumentSearch, SearchContext } from "./DocumentSearchContext";
 
 interface DocumentSearchProviderProps {
@@ -45,7 +46,7 @@ export function DocumentSearchProvider({ children, limit, parent, typeId, facets
             search.query.all_revisions = true;
         }
         return search;
-    }, [typeId, limit, collectionId]);
+    }, [collectionId, facets, limit, name, parent, store, typeId]);
 
     return (
         <SearchContext.Provider value={search}>{children}</SearchContext.Provider>

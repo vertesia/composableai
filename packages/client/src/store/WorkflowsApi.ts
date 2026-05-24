@@ -1,49 +1,51 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase, type IRequestParams } from "@vertesia/api-fetch-client";
 import {
-    ActivityCatalog,
-    AgentEvent,
-    AgentMessage,
+    type ActivityCatalog,
+    type AgentEvent,
+    type AgentMessage,
     AgentMessageType,
-    CompactMessage,
-    CreateWorkflowRulePayload,
-    DSLWorkflowDefinition,
-    DSLWorkflowSpec,
-    ErrorAnalyticsResponse,
-    ExecuteWorkflowPayload,
-    FirstResponseBehaviorAnalyticsResponse,
-    LatencyAnalyticsResponse,
-    ListWorkflowInteractionsResponse,
-    ListWorkflowRunsPayload,
-    ListWorkflowRunsResponse,
+    type CompactMessage,
+    type CreateWorkflowRulePayload,
+    type DSLWorkflowDefinition,
+    type DSLWorkflowSpec,
+    type ErrorAnalyticsResponse,
+    type ExecuteWorkflowPayload,
+    type FirstResponseBehaviorAnalyticsResponse,
+    type LatencyAnalyticsResponse,
+    type ListWorkflowInteractionsResponse,
+    type ListWorkflowRunsPayload,
+    type ListWorkflowRunsResponse,
     parseMessage,
     toAgentMessage,
-    PromptSizeAnalyticsResponse,
-    RunsByAgentAnalyticsResponse,
-    SignalAgentResponse,
-    TimeToFirstResponseAnalyticsResponse,
-    TokenUsageAnalyticsResponse,
-    ToolAnalyticsResponse,
-    ToolParameterAnalyticsResponse,
-    TopPrincipalsAnalyticsResponse,
-    WebSocketClientMessage,
-    WebSocketServerMessage,
-    WorkflowActionPayload,
-    WorkflowAnalyticsFilterOptionsResponse,
-    WorkflowAnalyticsSummaryQuery,
-    WorkflowAnalyticsSummaryResponse,
-    WorkflowAnalyticsTimeSeriesQuery,
-    WorkflowActionResponse,
-    WorkflowDefinitionRef,
-    WorkflowExecutionStartResult,
-    WorkflowQueryResult,
-    WorkflowRule,
-    WorkflowRuleItem,
-    WorkflowRunUpdatesResponse,
-    WorkflowRunWithDetails,
-    WorkflowToolParametersQuery,
-    WorkflowUpdatePublishResponse,
+    type PromptSizeAnalyticsResponse,
+    type RunsByAgentAnalyticsResponse,
+    type SignalAgentResponse,
+    type SignalAgentPayload,
+    type TimeToFirstResponseAnalyticsResponse,
+    type TokenUsageAnalyticsResponse,
+    type ToolAnalyticsResponse,
+    type ToolParameterAnalyticsResponse,
+    type TopPrincipalsAnalyticsResponse,
+    type WebSocketClientMessage,
+    type WebSocketServerMessage,
+    type WorkflowActionPayload,
+    type WorkflowAnalyticsFilterOptionsResponse,
+    type WorkflowAnalyticsSummaryQuery,
+    type WorkflowAnalyticsSummaryResponse,
+    type WorkflowAnalyticsTimeSeriesQuery,
+    type WorkflowActionResponse,
+    type WorkflowDefinitionRef,
+    type WorkflowExecutionStartResult,
+    type WorkflowQueryResult,
+    type WorkflowRule,
+    type WorkflowRuleItem,
+    type WorkflowRunUpdatesResponse,
+    type WorkflowRunWithDetails,
+    type WorkflowToolParametersQuery,
+    type WorkflowUpdatePublishResponse,
+    type UploadWorkflowRulePayload,
 } from "@vertesia/common";
-import { VertesiaClient } from "../client.js";
+import type { VertesiaClient } from "../client.js";
 import { EventSourceProvider } from "../execute.js";
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from "./stream-termination.js";
 
@@ -71,7 +73,7 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs`, { payload: payload });
     }
 
-    sendSignal(workflowId: string, runId: string, signal: string, payload?: any): Promise<SignalAgentResponse> {
+    sendSignal(workflowId: string, runId: string, signal: string, payload?: SignalAgentPayload | null): Promise<SignalAgentResponse> {
         return this.post(`/runs/${workflowId}/${runId}/signal/${signal}`, { payload });
     }
 
@@ -81,9 +83,10 @@ export class WorkflowsApi extends ApiTopic {
         options?: {
             includeHistory?: boolean;
             historyFormat?: 'events' | 'tasks' | 'agent';
+            hydratePayloads?: boolean;
         }
     ): Promise<WorkflowRunWithDetails> {
-        const query: Record<string, any> = {};
+        const query: NonNullable<IRequestParams["query"]> = {};
 
         // Support legacy includeHistory parameter
         if (options?.includeHistory !== undefined) {
@@ -93,6 +96,10 @@ export class WorkflowsApi extends ApiTopic {
         // Support new historyFormat parameter
         if (options?.historyFormat !== undefined) {
             query.history_format = options.historyFormat;
+        }
+
+        if (options?.hydratePayloads !== undefined) {
+            query.hydrate_payloads = options.hydratePayloads;
         }
 
         return this.get(`/runs/${workflowId}/${runId}`, { query });
@@ -180,7 +187,7 @@ export class WorkflowsApi extends ApiTopic {
             const maxDelay = 30000; // 30 seconds max delay
 
             const calculateBackoffDelay = (attempts: number): number => {
-                const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
+                const exponentialDelay = Math.min(baseDelay * 2 ** attempts, maxDelay);
                 // Add jitter to prevent thundering herd
                 const jitter = Math.random() * 0.1 * exponentialDelay;
                 return exponentialDelay + jitter;
@@ -229,7 +236,7 @@ export class WorkflowsApi extends ApiTopic {
                 try {
                     const EventSourceImpl = await EventSourceProvider();
                     const client = this.client as VertesiaClient;
-                    const streamUrl = new URL(client.workflows.baseUrl + `/runs/${workflowId}/${runId}/stream`);
+                    const streamUrl = new URL(`${client.workflows.baseUrl}/runs/${workflowId}/${runId}/stream`);
 
                     // Use the timestamp of the last received message for reconnection
                     if (lastMessageTimestamp > 0) {
@@ -307,7 +314,7 @@ export class WorkflowsApi extends ApiTopic {
                         }
                     };
 
-                    sse.onerror = (err: any) => {
+                    sse.onerror = (err: unknown) => {
                         if (isClosed) return;
 
                         console.warn(`SSE stream error for run ${runId}:`, err);
@@ -322,7 +329,7 @@ export class WorkflowsApi extends ApiTopic {
                             reconnectTimer = setTimeout(() => {
                                 reconnectTimer = null;
                                 if (!isClosed) {
-                                    setupStream(true);
+                                    void setupStream(true);
                                 }
                             }, delay);
                         } else {
@@ -339,7 +346,7 @@ export class WorkflowsApi extends ApiTopic {
                         reconnectTimer = setTimeout(() => {
                             reconnectTimer = null;
                             if (!isClosed) {
-                                setupStream(true);
+                                void setupStream(true);
                             }
                         }, delay);
                     } else {
@@ -368,7 +375,7 @@ export class WorkflowsApi extends ApiTopic {
                 }
 
                 // 2. Connect to SSE
-                setupStream(false);
+                void setupStream(false);
             };
 
             init().catch(reject);
@@ -388,7 +395,7 @@ export class WorkflowsApi extends ApiTopic {
         runId: string,
         onMessage?: (message: CompactMessage) => void,
         since?: number
-    ): Promise<{ cleanup: () => void; sendSignal: (signalName: string, data: any) => void }> {
+    ): Promise<{ cleanup: () => void; sendSignal: (signalName: string, data: unknown) => void }> {
         return new Promise((resolve, reject) => {
             let reconnectAttempts = 0;
             const maxReconnectAttempts = 10;
@@ -399,7 +406,7 @@ export class WorkflowsApi extends ApiTopic {
             let isClosed = false;
 
             const calculateBackoffDelay = (attempts: number): number => {
-                const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
+                const exponentialDelay = Math.min(baseDelay * 2 ** attempts, maxDelay);
                 const jitter = Math.random() * 0.1 * exponentialDelay;
                 return exponentialDelay + jitter;
             };
@@ -409,7 +416,7 @@ export class WorkflowsApi extends ApiTopic {
 
                 try {
                     const client = this.client as VertesiaClient;
-                    const wsUrl = new URL(client.workflows.baseUrl + `/runs/${workflowId}/${runId}/ws`);
+                    const wsUrl = new URL(`${client.workflows.baseUrl}/runs/${workflowId}/${runId}/ws`);
 
                     // Replace http/https with ws/wss
                     wsUrl.protocol = wsUrl.protocol.replace('http', 'ws');
@@ -450,7 +457,7 @@ export class WorkflowsApi extends ApiTopic {
                                         ws = null;
                                     }
                                 },
-                                sendSignal: (signalName: string, data: any) => {
+                                sendSignal: (signalName: string, data: unknown) => {
                                     if (ws?.readyState === WebSocket.OPEN) {
                                         const message: WebSocketClientMessage = {
                                             type: 'signal',
@@ -544,7 +551,7 @@ export class WorkflowsApi extends ApiTopic {
                 }
             };
 
-            connect();
+            void connect();
         });
     }
 
@@ -726,7 +733,7 @@ export class WorkflowsRulesApi extends ApiTopic {
         return this.get(`/${id}`);
     }
 
-    update(id: string, payload: any): Promise<WorkflowRule> {
+    update(id: string, payload: UploadWorkflowRulePayload): Promise<WorkflowRule> {
         return this.put(`/${id}`, {
             payload,
         });
@@ -745,7 +752,7 @@ export class WorkflowsRulesApi extends ApiTopic {
     execute(
         id: string,
         objectIds?: string[],
-        vars?: Record<string, any>,
+        vars?: Record<string, unknown>,
     ): Promise<({ run_id: string; workflow_id: string } | undefined)[]> {
         const payload: ExecuteWorkflowPayload = {
             objectIds,
@@ -770,7 +777,7 @@ export class WorkflowsDefinitionApi extends ApiTopic {
         return this.get(`/${id}`);
     }
 
-    update(id: string, payload: any): Promise<DSLWorkflowDefinition> {
+    update(id: string, payload: DSLWorkflowSpec): Promise<DSLWorkflowDefinition> {
         return this.put(`/${id}`, {
             payload,
         });

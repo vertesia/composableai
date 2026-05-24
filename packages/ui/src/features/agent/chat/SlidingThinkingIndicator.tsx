@@ -1,7 +1,7 @@
-import { AgentMessage, AgentMessageType } from "@vertesia/common";
+import { type AgentMessage, AgentMessageType } from "@vertesia/common";
 import { Button, cn } from "@vertesia/ui/core";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { AnimatedThinkingDots, PulsatingCircle, PulsingMessageLoader } from "./AnimatedThinkingDots";
 import MessageItem from "./ModernAgentOutput/MessageItem";
@@ -73,12 +73,12 @@ export function SlidingThinkingIndicator({
     }, []);
 
     // Filter for thinking-type messages
-    const thinkingMessages = messages.filter(
+    const thinkingMessages = useMemo(() => messages.filter(
         (msg) =>
             msg.type === AgentMessageType.THOUGHT ||
             msg.type === AgentMessageType.UPDATE ||
             msg.type === AgentMessageType.PLAN,
-    );
+    ), [messages]);
 
     // Track recent messages for cascading display
     const [recentMessages, setRecentMessages] = useState<AgentMessage[]>([]);
@@ -207,7 +207,7 @@ export function SlidingThinkingIndicator({
                 clearTimeout(timeoutRef.current);
             }
         };
-    }, [messages, isCompleted, showDetails, prevPermanentCount]);
+    }, [messages, thinkingMessages, isCompleted, showDetails, prevPermanentCount, recentMessages.length, visibleMessage]);
 
     // Choose the color based on message type (using valid color values)
     const getThinkingColor = (message: AgentMessage | null): "blue" | "purple" | "teal" | "green" => {
@@ -218,7 +218,6 @@ export function SlidingThinkingIndicator({
                 return "purple";
             case AgentMessageType.PLAN:
                 return "teal";
-            case AgentMessageType.UPDATE:
             default:
                 return "blue";
         }
@@ -300,6 +299,7 @@ export function SlidingThinkingIndicator({
                     <div className="space-y-1 space-y-reverse max-h-[300px] overflow-y-auto pe-1 flex flex-col-reverse">
                         {sortedThinkingMessages.map((message, index) => (
                             <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                 key={`${message.timestamp}-${index}`}
                                 className="animate-slide-in-bottom"
                                 data-workstream-id={message.workstream_id || "main"}
@@ -321,6 +321,7 @@ export function SlidingThinkingIndicator({
                             {/* For each recent message, render with different opacity based on recency */}
                             {recentMessages.map((message, index) => (
                                 <div
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                     key={`${message.timestamp}-${index}`}
                                     className={cn(
                                         "flex items-center", // Align items horizontally on same line
@@ -412,6 +413,7 @@ export function SlidingThinkingIndicator({
                         <div className="space-y-1 space-y-reverse max-h-[300px] overflow-y-auto pe-1 flex flex-col-reverse">
                             {sortedThinkingMessages.map((message, index) => (
                                 <div
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                     key={`${message.timestamp}-${index}`}
                                     className="animate-slide-in-bottom"
                                     data-workstream-id={message.workstream_id || "main"}

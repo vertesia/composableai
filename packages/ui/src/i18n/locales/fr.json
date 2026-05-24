@@ -627,6 +627,7 @@
   "user.failedToFetchUser": "Échec de la récupération de l'utilisateur",
   "user.groupId": "ID du groupe : {{id}}",
   "user.key": "Clé :",
+  "user.mcpServer": "Serveur MCP",
   "user.organizationId": "ID de l'organisation",
   "user.organizationRoles": "Rôles dans l'organisation",
   "user.privateKey": "Clé privée",

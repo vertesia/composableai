@@ -1,5 +1,6 @@
+import { Button } from './button';
 import { CircleX, CircleCheck, AlertTriangle, Info } from 'lucide-react';
-import React from 'react';
+import type React from 'react';
 
 interface MessageBoxProps {
     status: 'error' | 'info' | 'warning' | 'success' | 'default' | 'done'
@@ -10,11 +11,11 @@ interface MessageBoxProps {
 }
 export function MessageBox({ icon, status, title, children, className }: MessageBoxProps) {
 
-    let defaultIcon, titleColor, textColor, bgColor;
+    let defaultIcon: React.ReactNode, titleColor: string, textColor: string, bgColor: string;
     switch (status) {
         case 'error': {
             defaultIcon = <CircleX className="size-5 text-destructive" aria-hidden="true" />
-            titleColor = "";
+            titleColor = "text-destructive";
             textColor = "text-foreground";
             bgColor = "bg-destructive border border-destructive";
             break;
@@ -63,7 +64,7 @@ export function MessageBox({ icon, status, title, children, className }: Message
                     {icon ?? defaultIcon}
                 </div>
                 <div className="w-full ms-2 px-1">
-                    {title && <h3 className={`text-sm font-medium mb-2 ${titleColor}`}>{title}</h3>}
+                    {title && <h3 className={`text-md font-medium mb-2 ${titleColor}`}>{title}</h3>}
                     <div className={`text-sm ${textColor} break-words`}>
                         {children}
                     </div>
@@ -73,12 +74,15 @@ export function MessageBox({ icon, status, title, children, className }: Message
     )
 }
 
-export function ErrorBox({ title, className, children }: { title: string, className?:string, children: React.ReactNode }) {
+export function ErrorBox({ title, className, children, action, actionLabel }: { title: string, className?:string, children: React.ReactNode, action?: () => void, actionLabel?: React.ReactNode }) {
     return (
-        <MessageBox status="error" title={title} className={className}>
+        <MessageBox status="error" title={title} className={`${className} flex flex-col items-center justify-center text-center`}>
             <pre className="whitespace-pre-wrap break-words">
                 {children}
             </pre>
+            {action && actionLabel && <Button onClick={action} variant="ghost" size="sm" className="mt-4">
+                {actionLabel}
+            </Button>}
         </MessageBox>
     );
 }

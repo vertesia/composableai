@@ -1,4 +1,4 @@
-import { ActivityDefinition } from "@vertesia/tools-sdk";
+import type { ActivityDefinition } from "@vertesia/tools-sdk";
 import { wordCount } from "./word_count.js";
 
 export const WordCountActivity = {

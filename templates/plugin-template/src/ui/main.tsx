@@ -30,6 +30,7 @@ const routes: Route[] = [
     },
 ]
 
+// biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <VertesiaShell>

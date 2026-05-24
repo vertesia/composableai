@@ -1,6 +1,7 @@
-import { VertesiaClient } from "@vertesia/client";
-import { ConfigModes, InteractionExecutionResult, RunDataStorageLevel } from "@vertesia/common";
-import { TextFallbackOptions } from "@llumiverse/common";
+import type { VertesiaClient } from "@vertesia/client";
+import { ConfigModes, type InteractionExecutionPayload, type InteractionExecutionResult, RunDataStorageLevel } from "@vertesia/common";
+import type { TextFallbackOptions } from "@llumiverse/common";
+import { getStringOption, type CliOptions } from "../utils/options.js";
 
 export type CliExecutionResult = InteractionExecutionResult & {
     runNumber?: number;
@@ -22,7 +23,7 @@ export class ExecutionQueue {
         this.abortController.abort();
     }
 
-    async run(onBatch: (completed: CliExecutionResult[]) => void, onChunk?: ((chunk: any) => void), signal?: AbortSignal) {
+    async run(onBatch: (completed: CliExecutionResult[]) => void, onChunk?: ((chunk: string) => void), signal?: AbortSignal) {
         // If an external signal is provided, link it to our local abort controller
         if (signal) {
             if (signal.aborted) {
@@ -77,12 +78,12 @@ export class ExecutionQueue {
     }
 }
 
-function convertRunData(raw_run_data: any): RunDataStorageLevel | undefined {
+function convertRunData(raw_run_data: unknown): RunDataStorageLevel | undefined {
     const levelStr: string = typeof raw_run_data === 'string' ? raw_run_data.toUpperCase() : "";
     return Object.values(RunDataStorageLevel).includes(levelStr as RunDataStorageLevel) ? levelStr as RunDataStorageLevel : undefined;
 }
 
-function convertConfigMode(raw_config_mode: any): ConfigModes | undefined {
+function convertConfigMode(raw_config_mode: unknown): ConfigModes | undefined {
     const configStr: string = typeof raw_config_mode === 'string' ? raw_config_mode.toUpperCase() : "";
     return Object.values(ConfigModes).includes(configStr as ConfigModes) ? configStr as ConfigModes : undefined;
 }
@@ -94,11 +95,11 @@ export class ExecutionRequest {
     constructor(
         public readonly client: VertesiaClient,
         public interactionSpec: string, // namespace:name@version
-        public data: any,
-        public options: Record<string, any>) {
+        public data: unknown,
+        public options: CliOptions) {
     }
 
-    async run(onChunk?: ((chunk: any) => void), signal?: AbortSignal): Promise<CliExecutionResult> {
+    async run(onChunk?: ((chunk: string) => void), signal?: AbortSignal): Promise<CliExecutionResult> {
         // Check if already aborted
         if (signal?.aborted) {
             throw new Error("Operation aborted");
@@ -110,12 +111,12 @@ export class ExecutionRequest {
         const model_options: TextFallbackOptions = {
             _option_id: "text-fallback",
             temperature: typeof options.temperature === 'string' ? parseFloat(options.temperature) : undefined,
-            max_tokens: typeof options.maxTokens === 'string' ? parseInt(options.maxTokens) : undefined,
+            max_tokens: typeof options.maxTokens === 'string' ? parseInt(options.maxTokens, 10) : undefined,
             top_p: typeof options.topP === 'string' ? parseFloat(options.topP) : undefined,
-            top_k: typeof options.topK === 'string' ? parseInt(options.topK) : undefined,
+            top_k: typeof options.topK === 'string' ? parseInt(options.topK, 10) : undefined,
             presence_penalty: typeof options.presencePenalty === 'string' ? parseFloat(options.presencePenalty) : undefined,
             frequency_penalty: typeof options.frequencyPenalty === 'string' ? parseFloat(options.frequencyPenalty) : undefined,
-            stop_sequence: options.stopSequence ? options.stopSequence.trim().split(/\s*,\s*/) : undefined,
+            stop_sequence: getStringOption(options.stopSequence)?.split(/\s*,\s*/),
         };
 
         const config = {
@@ -125,10 +126,10 @@ export class ExecutionRequest {
             configMode: convertConfigMode(options.configMode),
             run_data: convertRunData(options.runData),
         };
-        const tags = options.tags ? options.tags.trim().split(/\s,*\s*/) : undefined;
+        const tags = getStringOption(options.tags)?.split(/\s,*\s*/);
 
         // Create a wrapper for the onChunk callback that checks for abort
-        const abortAwareChunkHandler = onChunk ? (chunk: any) => {
+        const abortAwareChunkHandler = onChunk ? (chunk: string) => {
             if (signal?.aborted) return;
             onChunk(chunk);
         } : undefined;
@@ -137,13 +138,13 @@ export class ExecutionRequest {
         try {
             if (this.options.byId) {
                 run = await this.client.interactions.execute(this.interactionSpec, {
-                    data: this.data,
+                    data: readInteractionData(this.data),
                     config,
                     tags
                 }, abortAwareChunkHandler);
             } else {
                 run = await this.client.interactions.executeByName(this.interactionSpec, {
-                    data: this.data,
+                    data: readInteractionData(this.data),
                     config,
                     tags
                 }, abortAwareChunkHandler);
@@ -168,4 +169,8 @@ export class ExecutionRequest {
             throw error;
         }
     }
+}
+
+function readInteractionData(data: unknown): InteractionExecutionPayload["data"] {
+    return data as InteractionExecutionPayload["data"];
 }

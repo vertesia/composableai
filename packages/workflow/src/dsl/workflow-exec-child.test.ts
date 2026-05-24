@@ -1,7 +1,7 @@
 import * as protos from '@temporalio/proto';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker, bundleWorkflowCode, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
-import { ContentEventName, DSLActivityExecutionPayload, DSLWorkflowExecutionPayload, DSLWorkflowStep } from '@vertesia/common';
+import { ContentEventName, type DSLActivityExecutionPayload, type DSLWorkflowExecutionPayload, type DSLWorkflowStep } from '@vertesia/common';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { dslWorkflow } from './dsl-workflow.js';
 import { setupActivity } from './setup/ActivityContext.js';
@@ -70,6 +70,7 @@ const steps2: DSLWorkflowStep[] = [
         name: 'dslWorkflow',
         output: 'child',
         spec: {
+            spec_format: 'steps',
             name: 'testChildWorkflow',
             steps: childSteps,
             vars: {}
@@ -95,6 +96,7 @@ const steps3: DSLWorkflowStep[] = [
         name: 'dslWorkflow',
         output: 'child',
         spec: {
+            spec_format: 'steps',
             name: 'testChildWorkflow',
             steps: childSteps,
             vars: {}
@@ -143,7 +145,7 @@ describe('DSL Workflow with child workflows', () => {
         await testEnv?.teardown();
     });
 
-    test('execute child workflow', async () => {
+    test('should execute child workflow', async () => {
         const { client, nativeConnection } = testEnv;
         const taskQueue = 'test';
 
@@ -169,6 +171,7 @@ describe('DSL Workflow with child workflows', () => {
                 store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
+                spec_format: 'steps',
                 steps: steps1,
                 vars: {
                     name,
@@ -187,7 +190,7 @@ describe('DSL Workflow with child workflows', () => {
 
     });
 
-    test('execute DSL child workflow', async () => {
+    test('should execute DSL child workflow', async () => {
         const { client, nativeConnection } = testEnv;
         const taskQueue = 'test';
 
@@ -213,6 +216,7 @@ describe('DSL Workflow with child workflows', () => {
                 store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
+                spec_format: 'steps',
                 steps: steps2,
                 vars: {
                     name,
@@ -231,7 +235,7 @@ describe('DSL Workflow with child workflows', () => {
 
     });
 
-    test('execute DSL child workflow with variable resolution', async () => {
+    test('should execute DSL child workflow with variable resolution', async () => {
         const { client, nativeConnection } = testEnv;
         const taskQueue = 'test';
 
@@ -257,6 +261,7 @@ describe('DSL Workflow with child workflows', () => {
                 store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
+                spec_format: 'steps',
                 steps: steps3,
                 vars: {
                     name,

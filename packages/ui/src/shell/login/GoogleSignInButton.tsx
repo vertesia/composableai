@@ -13,7 +13,7 @@ export default function GoogleSignInButton({ redirectTo }: GoogleSignInButtonPro
         localStorage.removeItem("tenantName");
         let redirectPath = redirectTo || window.location.pathname || '/';
         if (redirectPath[0] !== '/') {
-            redirectPath = '/' + redirectPath;
+            redirectPath = `/${redirectPath}`;
         }
         const provider = new GoogleAuthProvider();
         provider.addScope('profile');
@@ -24,7 +24,7 @@ export default function GoogleSignInButton({ redirectTo }: GoogleSignInButtonPro
             prompt: 'select_account',
             redirect_uri: window.location.origin + redirectPath
         });
-        signInWithRedirect(getFirebaseAuth(), provider);
+        void signInWithRedirect(getFirebaseAuth(), provider);
     };
 
     return (

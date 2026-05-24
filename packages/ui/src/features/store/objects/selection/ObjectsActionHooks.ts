@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect } from 'react';
-import { ObjectsActionContext, type ObjectsActionCallback } from './ObjectsActionContextClass';
+import type { ObjectsActionContext, ObjectsActionCallback } from './ObjectsActionContextClass';
 
-export { type ObjectsActionCallback };
+export type { ObjectsActionCallback };
 
-export const ObjectsActionContextReact = createContext<ObjectsActionContext>(undefined as any);
+export const ObjectsActionContextReact = createContext<ObjectsActionContext | undefined>(undefined);
 
 export function useObjectsActionContext() {
     const ctx = useContext(ObjectsActionContextReact);

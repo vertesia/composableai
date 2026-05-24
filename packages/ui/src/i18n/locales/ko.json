@@ -616,6 +616,7 @@
   "user.failedToFetchUser": "사용자 가져오기 실패",
   "user.groupId": "그룹 ID: {{id}}",
   "user.key": "키:",
+  "user.mcpServer": "MCP 서버",
   "user.organizationId": "조직 ID",
   "user.organizationRoles": "조직 역할",
   "user.privateKey": "개인 키",

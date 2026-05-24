@@ -1,6 +1,7 @@
-import * as React from "react"
+import type * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "../libs/utils"
+import { onActivateKey } from "../../utils/a11y.js"
 
 // Base badge variants
 const badgeVariants = cva(
@@ -33,10 +34,13 @@ interface BaseBadgeProps
 
 // Base Badge component
 export function Badge({ className, variant, children, onClick, ...props }: BaseBadgeProps) {
+  const interactiveProps = onClick
+    ? { role: "button", tabIndex: 0, onClick, onKeyDown: onActivateKey(onClick) }
+    : {};
   return (
     <span
       className={cn(badgeVariants({ variant }), className)}
-      onClick={onClick}
+      {...interactiveProps}
       {...props}
     >
       {children}

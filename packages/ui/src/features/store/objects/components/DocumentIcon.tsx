@@ -1,17 +1,17 @@
-import { ChangeEvent, useEffect, useState } from 'react'
+import { type ChangeEvent, useEffect, useState } from 'react'
 
 import { retrieveRendition } from '../../../utils'
 
-import { ContentObjectItem } from '@vertesia/common'
+import type { ContentObjectItem } from '@vertesia/common'
 import { Button, Card, CardContent, Separator, VTooltip } from "@vertesia/ui/core"
 import { useUserSession } from "@vertesia/ui/session"
-import { DocumentSelection } from '../DocumentSelectionProvider'
+import type { DocumentSelection } from '../DocumentSelectionProvider'
 import { CheckIcon, Eye } from 'lucide-react'
 
 interface DocumentIconProps {
     document: ContentObjectItem
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
-    selection: DocumentSelection;
+    selection?: DocumentSelection;
     onRowClick?: (object: ContentObjectItem) => void;
     highlightRow?: (item: ContentObjectItem) => boolean;
     previewObject?: (objectId: string) => void;
@@ -25,6 +25,7 @@ export function DocumentIconSkeleton({ isLoading = false, counts = 6 }: { isLoad
     return (
         <div className='flex flex-wrap gap-2 justify-between'>
             {Array(counts).fill(0).map((_, index) =>
+                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                 <div key={index} className="w-[15vw] animate-pulse">
                     <Card className="relative flex flex-col border h-fit">
                         <div className="h-48 bg-muted rounded-t-xl flex items-center justify-center text-muted">
@@ -53,6 +54,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
     const [renditionUrl, setRenditionUrl] = useState<string | undefined>(undefined)
     const [renditionAlt, setRenditionAlt] = useState<string | undefined>(undefined)
     const [renditionStatus, setRenditionStatus] = useState<string | undefined>(undefined)
+    const title = typeof document.properties?.title === 'string' ? document.properties.title : document.name;
 
 
     const handleSelect = (ev: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,13 +67,13 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
             return
         }
 
-        retrieveRendition(client, document, setRenditionUrl, setRenditionAlt, setRenditionStatus)
-    }, [document])
+        void retrieveRendition(client, document, setRenditionUrl, setRenditionAlt, setRenditionStatus)
+    }, [client, document])
 
     const isHighlighted = highlightRow?.(document);
 
     return (
-        <Card className={`relative flex flex-col border h-fit w-full ${selectedObject?.id === document.id ? 'border-attention border-4' : ''} ${isHighlighted ? 'border-blue-400 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : ''}`} onClick={() => (onRowClick && onRowClick(document))}>
+        <Card className={`relative flex flex-col border h-fit w-full ${selectedObject?.id === document.id ? 'border-attention border-4' : ''} ${isHighlighted ? 'border-blue-400 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : ''}`} onClick={() => (onRowClick?.(document))}>
             {isHighlighted && (
                 <div className="absolute top-2 end-8 z-10">
                     <CheckIcon className="size-4 text-blue-600 dark:text-blue-400" />
@@ -105,7 +107,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
             </div>
 
             {
-                (renditionUrl && renditionStatus == 'ready') ? (
+                (renditionUrl && renditionStatus === 'ready') ? (
                     <img src={renditionUrl} alt={renditionAlt} className="w-auto h-48 object-cover rounded-t-xl" />
                 ) : (
                     <div className="h-48 bg-gray-700 rounded-t-xl flex items-center justify-center text-muted">
@@ -118,8 +120,8 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
                 <div className="flex flex-col overflow-hidden">
                     <VTooltip
                         placement='top'
-                        description={document.properties?.title ?? document.name}>
-                        <h3 className="text-start font-medium leading-none truncate">{document.properties?.title ?? document.name}</h3>
+                        description={title}>
+                        <h3 className="text-start font-medium leading-none truncate">{title}</h3>
                     </VTooltip>
                     {
                         document?.type?.name ? (

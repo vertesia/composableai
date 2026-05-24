@@ -7,7 +7,7 @@ import {
   DECLARATION_TAG,
   TAG,
 } from '../constants';
-import { AttributesObject, Element, ElementObject } from '../types';
+import type { AttributesObject, Element, ElementObject } from '../types';
 
 export function getIndentationString(size: number, level: number) {
   return new Array(level * size + 1).join(' ');

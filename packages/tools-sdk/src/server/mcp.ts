@@ -1,10 +1,10 @@
 // ================== MCP Endpoints ==================
 
-import { Context, Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { authorize } from "../auth.js";
-import { ToolServerConfig } from "../index.js";
-import { MCPProviderConfig } from "./types.js";
+import type { ToolServerConfig } from "../index.js";
+import type { MCPProviderConfig } from "./types.js";
 
 
 
@@ -37,15 +37,16 @@ function createMCPEndpoints(providers: MCPProviderConfig[]): Hono {
     return endpoint;
 }
 
-async function readJsonBody(ctx: Context): Promise<Record<string, any>> {
+async function readJsonBody(ctx: Context): Promise<Record<string, unknown>> {
     try {
         const text = await ctx.req.text();
         const jsonContent = text?.trim() || '';
         if (!jsonContent) return {};
-        return JSON.parse(jsonContent) as Record<string, any>;
-    } catch (err: any) {
+        return JSON.parse(jsonContent) as Record<string, unknown>;
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
         throw new HTTPException(400, {
-            message: "Failed to parse JSON body: " + err.message
+            message: `Failed to parse JSON body: ${message}`
         });
     }
 }

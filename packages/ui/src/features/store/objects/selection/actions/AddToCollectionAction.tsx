@@ -5,7 +5,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { CreateCollectionForm, SelectCollection } from "../../../collections";
 import { useObjectsActionCallback } from "../ObjectsActionHooks";
-import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
+import type { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 export function AddToCollectionActionComponent({ action, objectIds }: ActionComponentTypeProps) {
     const [showModal, setShowModal] = useState(false);
@@ -90,7 +90,7 @@ function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
         });
     }
 
-    const onCollectionChange = (collectionId: string | string[] | undefined, _collection?: any) => {
+    const onCollectionChange = (collectionId: string | string[] | undefined, _collection?: unknown) => {
         if (typeof collectionId === "string" || typeof collectionId === "undefined") {
             setSelectedCollectionId(collectionId);
         } else if (Array.isArray(collectionId) && collectionId.length > 0) {

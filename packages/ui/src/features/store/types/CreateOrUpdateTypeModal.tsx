@@ -33,7 +33,7 @@ export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initi
             return;
         }
         const payload = { name, description, strict_mode: strictMode };
-        onClose(payload).then(() => onClose());
+        void onClose(payload).then(() => onClose());
     };
 
     return (
@@ -42,11 +42,11 @@ export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initi
             <ModalBody className="pt-0">
                 <div className='h-full flex flex-col gap-4 content-between'>
                     <div>
-                        <label className="block text-sm font-medium text-muted">{t('type.name')}</label>
+                        <div className="block text-sm font-medium text-muted">{t('type.name')}</div>
                         <Input value={name} onChange={setName} />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-muted">{t('type.description')}</label>
+                        <div className="block text-sm font-medium text-muted">{t('type.description')}</div>
                         <Textarea value={description} onChange={e => setDescription(e.target.value)} minLines={5}/>
                     </div>
                 </div>

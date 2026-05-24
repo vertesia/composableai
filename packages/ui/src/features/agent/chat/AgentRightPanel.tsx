@@ -81,13 +81,14 @@ function UploadedDocumentsTab({ files }: UploadedDocumentsProps) {
     };
 
     return (
-        <div className="p-3">
+        <div className="">
             {filesArray.length === 0 ? (
-                <div className="text-sm text-muted text-center py-8">
+                <div className="flex flex-col items-center justify-center text-sm text-muted text-center py-8">
+                    <FileTextIcon className="size-8 mb-2" />
                     {t('agent.noFilesUploadedYet')}
                 </div>
             ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 p-2">
                     {filesArray.map((file) => (
                         <div
                             key={file.id}
@@ -190,7 +191,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
     const copyRunId = useCallback((runId: string) => {
         navigator.clipboard.writeText(runId);
         toast({ status: 'success', title: t('agent.runIdCopied'), duration: 2000 });
-    }, [toast]);
+    }, [t, toast]);
 
     const downloadConversation = useCallback(async (runId: string) => {
         try {
@@ -199,7 +200,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
         } catch {
             toast({ status: 'error', title: t('agent.failedToDownload') });
         }
-    }, [client, toast]);
+    }, [client, t, toast]);
 
     if (workstreams.length === 0) {
         return (
@@ -277,6 +278,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                                         variant="ghost"
                                         size="sm"
                                         className="text-xs h-7 px-2 text-muted hover:text-foreground"
+                                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                                         onClick={() => copyRunId(ws.child_workflow_run_id!)}
                                     >
                                         <ClipboardCopyIcon className="size-3 me-1" />
@@ -286,6 +288,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                                         variant="ghost"
                                         size="sm"
                                         className="text-xs h-7 px-2 text-muted hover:text-foreground"
+                                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                                         onClick={() => downloadConversation(ws.child_workflow_run_id!)}
                                     >
                                         <DownloadCloudIcon className="size-3 me-1" />
@@ -402,7 +405,7 @@ function AgentRightPanelComponent({
         onTabChange?.(name as RightPanelTab);
     };
 
-// Determine which tabs have content (for badges/indicators)
+    // Determine which tabs have content (for badges/indicators)
     const hasWorkstreams = !hideWorkstreams && activeWorkstreams.length > 0;
     const hasDocuments = openDocuments.length > 0;
     const hasUploads = processingFiles ? processingFiles.size > 0 : false;

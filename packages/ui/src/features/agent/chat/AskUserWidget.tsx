@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "@vertesia/ui/core";
 import { useUITranslation } from "@vertesia/ui/i18n";
-import { MarkdownRenderer } from "@vertesia/ui/widgets";
+import { MarkdownRenderer } from "../../../widgets/markdown/MarkdownRenderer";
 import { MessageSquare, CheckCircle, XCircle, AlertCircle, HelpCircle, Send } from "lucide-react";
 
 /** Option for user to select */

@@ -55,12 +55,13 @@ function DocumentPanelComponent({
         } finally {
             setIsLoading(false);
         }
-    }, [client, onUpdateDocumentTitle]);
+    }, [client, onUpdateDocumentTitle, t]);
 
     // Fetch content when active document changes or refreshKey bumps
     useEffect(() => {
+        void refreshKey;
         if (activeDocumentId && isOpen) {
-            fetchContent(activeDocumentId);
+            void fetchContent(activeDocumentId);
         }
     }, [activeDocumentId, refreshKey, isOpen, fetchContent]);
 

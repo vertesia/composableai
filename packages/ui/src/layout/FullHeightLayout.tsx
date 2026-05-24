@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React from 'react';
+import type React from 'react';
 
 interface FlexibleHeightLayoutProps {
     children: React.ReactNode;
@@ -59,15 +59,13 @@ FullHeightLayout.Body = function Body({ className, children }: BodyProps) {
     );
 }
 
-interface VDividerProps { }
-FullHeightLayout.VR = function VDivider({ }: VDividerProps) {
+FullHeightLayout.VR = function VDivider() {
     return (
         <div className="w-[1px] border border-red-200"></div>
     );
 }
 
-interface HDividerProps { }
-FullHeightLayout.HR = function HDivider({ }: HDividerProps) {
+FullHeightLayout.HR = function HDivider() {
     return (
         <div className="w-full h-1 border-b border-red-200"></div>
     );

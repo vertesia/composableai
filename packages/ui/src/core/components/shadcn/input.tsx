@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "../libs/utils"
 import { X } from "lucide-react";
-import { ChangeEvent } from "react";
+import type { ChangeEvent } from "react";
 import { Button } from "./button";
 
 const variants = cva(
@@ -52,11 +52,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, size = "md", variant = "default", clearable = true, onChange, value, invalid, ...props }, ref) => {
 
     const _onClear = () => {
-      onChange && onChange('');
+      onChange?.('');
     };
 
     const _onChange = (ev: ChangeEvent<HTMLInputElement>) => {
-      onChange && onChange(ev.target.value);
+      onChange?.(ev.target.value);
     };
 
     // Map `invalid` to aria-invalid unless the consumer already set it explicitly.

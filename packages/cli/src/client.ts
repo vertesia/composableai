@@ -1,6 +1,6 @@
 import { VertesiaClient } from "@vertesia/client";
-import { Command } from "commander";
-import { config, Profile } from "./profiles/index.js";
+import type { Command } from "commander";
+import { config, type Profile } from "./profiles/index.js";
 import { ensureProfileAccessToken } from "./profiles/auth.js";
 import { isKeyringAvailable } from "./profiles/keyring.js";
 
@@ -31,8 +31,10 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
         apikey: process.env.VERTESIA_APIKEY
             || process.env.COMPOSABLE_PROMPTS_APIKEY,
         serverUrl: process.env.VERTESIA_SERVER_URL
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             || process.env.COMPOSABLE_PROMPTS_SERVER_URL!,
         storeUrl: process.env.VERTESIA_STORE_URL
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             || process.env.ZENO_SERVER_URL!,
         projectId: process.env.VERTESIA_PROJECT_ID
             || process.env.COMPOSABLE_PROMPTS_PROJECT_ID

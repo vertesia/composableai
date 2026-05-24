@@ -98,7 +98,7 @@ export interface ExecutionEnvironment {
      * Stored alongside the encrypted key so the UI can display which key is configured.
      */
     apikey_hint?: string;
-    config?: any;
+    config?: unknown;
     /**
      * Additional provider-specific settings passed through to the driver.
      * For example, custom headers for Apigee-proxied endpoints.

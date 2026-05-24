@@ -7,7 +7,7 @@
 import { FusionFragmentHandler, FusionFragmentProvider } from '@vertesia/fusion-ux';
 import DOMPurify from 'dompurify';
 import { useMemo, type ReactElement } from 'react';
-import { type VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
+import type { VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
 import { useCodeBlockContext } from './CodeBlockContext';
 import { CodeBlockErrorBoundary, CodeBlockPlaceholder } from './CodeBlockPlaceholder';
@@ -154,6 +154,7 @@ function TableRenderer({ content }: { content: unknown }): ReactElement {
                 <thead>
                     <tr className="border-b">
                         {headers.map((h, i) => (
+                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                             <th key={i} className="px-3 py-2 text-start font-medium text-muted">
                                 {h}
                             </th>
@@ -162,8 +163,10 @@ function TableRenderer({ content }: { content: unknown }): ReactElement {
                 </thead>
                 <tbody>
                     {rows.slice(0, 100).map((row, i) => (
+                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                         <tr key={i} className="border-b border-muted/20">
                             {row.map((cell, j) => (
+                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                 <td key={j} className="px-3 py-2">
                                     {cell}
                                 </td>
@@ -251,6 +254,7 @@ function MockupRenderer({ content }: { content: unknown }): ReactElement {
     return (
         <div
             style={{ margin: '16px 0', width: '100%', overflowX: 'auto' }}
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG content is processed/sanitized upstream for inline rendering
             dangerouslySetInnerHTML={{ __html: processedSvg }}
         />
     );
@@ -402,8 +406,6 @@ export function ArtifactContentRenderer({
                     <ImageRenderer content={content} path={path} />
                 </CodeBlockErrorBoundary>
             );
-
-        case 'code':
         default:
             return <CodeRenderer content={content} path={path} />;
     }

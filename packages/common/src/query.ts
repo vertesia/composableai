@@ -1,6 +1,6 @@
-import { ExecutionRunStatus } from './interaction.js';
-import { CollectionSearchPayload } from './store/collections.js';
-import { SearchTypes, SupportedEmbeddingTypes } from "./project.js";
+import type { ExecutionRunStatus } from './interaction.js';
+import type { CollectionSearchPayload } from './store/collections.js';
+import type { SearchTypes, SupportedEmbeddingTypes } from "./project.js";
 
 export type EmbeddingSearchConfig = Partial<Record<SupportedEmbeddingTypes, boolean>>;
 
@@ -139,9 +139,9 @@ export interface ComplexSearchQuery extends ObjectSearchQuery {
      */
     score_aggregation?: scoreAggregationTypes;
 
-    match?: Record<string, any>;
+    match?: Record<string, unknown>;
 }
 
 export interface ComplexCollectionSearchQuery extends CollectionSearchPayload {
-    match?: Record<string, any>;
+    match?: Record<string, unknown>;
 }

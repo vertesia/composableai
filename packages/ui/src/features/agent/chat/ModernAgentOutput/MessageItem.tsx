@@ -1,11 +1,12 @@
-import { AgentMessage, AgentMessageType, AskUserMessageDetails, MarkdownRenditionFormat } from "@vertesia/common";
+import { type AgentMessage, AgentMessageType, type AskUserMessageDetails, MarkdownRenditionFormat } from "@vertesia/common";
 import { Badge, Button, cn, Dropdown, MenuItem, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, type LucideIcon, MessageSquare, RefreshCcw, User } from "lucide-react";
-import React, { useEffect, useState, useMemo, memo, useRef } from "react";
+import type React from "react";
+import { useEffect, useState, useMemo, memo, useRef } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { AskUserWidget } from "../AskUserWidget";
@@ -13,7 +14,7 @@ import { useImageLightbox } from "../ImageLightbox";
 import { ThinkingMessages } from "../WaitingMessages";
 import { getWorkstreamId } from "./utils";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
-import { useDownloadFile } from "../../../store/index.js";
+import { useDownloadFile } from "../../../store/objects/components/useDownloadFile.js";
 
 // PERFORMANCE: Move pure function outside component to avoid recreation on every render
 // Process content to enhance markdown detection for lists and thinking messages
@@ -256,7 +257,7 @@ function MessageItemComponent({
                     ? JSON.stringify(message.details, null, 2)
                     : "";
 
-        const textToCopy = [content, detailsContent ? "\n\nDetails:\n" + detailsContent : ""].join("").trim();
+        const textToCopy = [content, detailsContent ? `\n\nDetails:\n${detailsContent}` : ""].join("").trim();
 
         navigator.clipboard.writeText(textToCopy).then(() => {
             toast({
@@ -293,7 +294,7 @@ function MessageItemComponent({
 
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
     const markdownComponents = useMemo(() => ({
-        a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
+        a: ({ node, ref, ...props }: { node?: unknown; ref?: unknown; href?: string; children?: React.ReactNode }) => {
             const href = props.href || "";
             if (href.includes("/store/objects")) {
                 if (StoreLinkComponent) {
@@ -331,15 +332,21 @@ function MessageItemComponent({
                 />
             );
         },
-        img: ({ node, ref, ...props }: { node?: any; ref?: any; src?: string; alt?: string }) => {
+        img: ({ node, ref, ...props }: { node?: unknown; ref?: unknown; src?: string; alt?: string }) => {
             return (
-                <img
-                    {...props}
-                    alt={props.alt ?? ""}
-                    className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
-                    loading="lazy"
+                <Button
+                    variant="unstyled"
+                    className="block p-0"
                     onClick={() => props.src && openImage(props.src, props.alt)}
-                />
+                    aria-label={props.alt || props.src || 'image'}
+                >
+                    <img
+                        {...props}
+                        alt={props.alt ?? ""}
+                        className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
+                        loading="lazy"
+                    />
+                </Button>
             );
         },
     }), [openImage, StoreLinkComponent, CollectionLinkComponent]);
@@ -356,12 +363,12 @@ function MessageItemComponent({
         }
 
         // Handle string content with markdown - content is already processed
-        const runId = (message as any).workflow_run_id as string | undefined;
+        const runId = message.workflow_run_id;
 
         if (!runId && typeof content === 'string' && content.includes('artifact:')) {
             console.warn('[MessageItem] message contains artifact references but workflow_run_id is missing!', {
                 type: message.type,
-                workflow_run_id: (message as any).workflow_run_id,
+                workflow_run_id: message.workflow_run_id,
                 hasArtifact: content.includes('artifact:'),
             });
         }
@@ -385,12 +392,10 @@ function MessageItemComponent({
         { displayName: string; artifactPath: string; url: string; isImage: boolean }[]
     >([]);
 
-    // Create stable key from message for dependency tracking
-    const runId = (message as any).workflow_run_id as string | undefined;
-    const details = message.details as any;
+    const runId = message.workflow_run_id;
+    const details = message.details;
     // Check both outputFiles (from execute_shell) and files (from tool results like dashboard tools)
-    const outputFiles: unknown = details?.outputFiles ?? details?.files;
-    const outputFilesKey = Array.isArray(outputFiles) ? outputFiles.join(",") : "";
+    const outputFiles = details?.outputFiles ?? details?.files;
 
     useEffect(() => {
         const loadArtifacts = async () => {
@@ -454,8 +459,8 @@ function MessageItemComponent({
             }
         };
 
-        loadArtifacts();
-    }, [runId, outputFilesKey]);
+        void loadArtifacts();
+    }, [runId, outputFiles]);
 
     const workstreamId = getWorkstreamId(message);
     const { Icon } = resolvedStyle;
@@ -528,6 +533,7 @@ function MessageItemComponent({
                 {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
                 {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux ? (
                     (() => {
+                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                         const uxConfig = (message.details as AskUserMessageDetails).ux!;
                         return (
                             <AskUserWidget
@@ -558,10 +564,12 @@ function MessageItemComponent({
                                 {artifactLinks
                                     .filter(a => a.isImage)
                                     .map(({ displayName, artifactPath, url }) => (
-                                        <div
+                                        <Button
+                                            variant="unstyled"
                                             key={`${artifactPath}-preview`}
-                                            className="max-w-xs cursor-pointer"
+                                            className="max-w-xs cursor-pointer text-start p-0"
                                             onClick={() => openImage(url, displayName)}
+                                            aria-label={displayName}
                                         >
                                             <img
                                                 src={url}
@@ -571,7 +579,7 @@ function MessageItemComponent({
                                             <div className="mt-1 text-[11px] text-muted truncate">
                                                 {displayName}
                                             </div>
-                                        </div>
+                                        </Button>
                                     ))}
                             </div>
                         )}
@@ -609,6 +617,7 @@ function MessageItemComponent({
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
+                                aria-hidden="true"
                             >
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>

@@ -66,7 +66,7 @@ function formatValue(value: unknown, field: FieldTemplate): string {
   switch (field.format) {
     case 'number': {
       const num = typeof value === 'number' ? value : parseFloat(String(value));
-      if (isNaN(num)) return String(value);
+      if (Number.isNaN(num)) return String(value);
 
       const options: Intl.NumberFormatOptions = {
         minimumFractionDigits: field.decimals ?? 0,
@@ -77,7 +77,7 @@ function formatValue(value: unknown, field: FieldTemplate): string {
 
     case 'currency': {
       const num = typeof value === 'number' ? value : parseFloat(String(value));
-      if (isNaN(num)) return String(value);
+      if (Number.isNaN(num)) return String(value);
 
       const options: Intl.NumberFormatOptions = {
         style: 'currency',
@@ -90,7 +90,7 @@ function formatValue(value: unknown, field: FieldTemplate): string {
 
     case 'percent': {
       const num = typeof value === 'number' ? value : parseFloat(String(value));
-      if (isNaN(num)) return String(value);
+      if (Number.isNaN(num)) return String(value);
 
       // Assume value is already a percentage (e.g., 25 for 25%)
       // If it's a decimal (e.g., 0.25), multiply by 100
@@ -103,7 +103,7 @@ function formatValue(value: unknown, field: FieldTemplate): string {
       if (!value) return '\u2014';
 
       const date = value instanceof Date ? value : new Date(String(value));
-      if (isNaN(date.getTime())) return String(value);
+      if (Number.isNaN(date.getTime())) return String(value);
 
       return new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
@@ -116,8 +116,6 @@ function formatValue(value: unknown, field: FieldTemplate): string {
       const bool = typeof value === 'boolean' ? value : value === 'true' || value === '1';
       return bool ? 'Yes' : 'No';
     }
-
-    case 'text':
     default:
       return String(value);
   }
@@ -178,12 +176,19 @@ export function FieldRenderer({
   }, [isNull, field.highlight, isEditable, isHovered]);
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: hover handlers used for visual feedback only; interactive click+keyboard only added when isEditable is true.
     <div
       style={styles.container}
       title={field.tooltip}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleClick}
+      onKeyDown={isEditable ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleClick();
+        }
+      } : undefined}
       role={isEditable ? 'button' : undefined}
       tabIndex={isEditable ? 0 : undefined}
     >

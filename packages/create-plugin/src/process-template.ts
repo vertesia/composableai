@@ -2,10 +2,10 @@
  * Template file processing - variable replacement and adjustments
  */
 import chalk from 'chalk';
-import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import { TemplateConfig } from './template-config.js';
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import type { TemplateConfig } from './template-config.js';
 import { getTemplateVersions } from './version.js';
 
 /**
@@ -66,7 +66,7 @@ function isCodeFile(filePath: string): boolean {
  * Replace variables in text files (HTML, JSON, Markdown, etc.)
  * Uses {{VARIABLE}} placeholder pattern
  */
-function replaceInTextFile(content: string, answers: Record<string, any>): { content: string; modified: boolean } {
+function replaceInTextFile(content: string, answers: Record<string, unknown>): { content: string; modified: boolean } {
   let modified = false;
 
   for (const [key, value] of Object.entries(answers)) {
@@ -86,7 +86,7 @@ function replaceInTextFile(content: string, answers: Record<string, any>): { con
  * 1. const CONFIG__variableName = value; - Constant value replacement
  * 2. TEMPLATE__IdentifierName - Identifier name replacement (functions, classes, variables)
  */
-function replaceInCodeFile(content: string, answers: Record<string, any>): { content: string; modified: boolean } {
+function replaceInCodeFile(content: string, answers: Record<string, unknown>): { content: string; modified: boolean } {
   let modified = false;
 
   for (const [key, value] of Object.entries(answers)) {
@@ -98,7 +98,7 @@ function replaceInCodeFile(content: string, answers: Record<string, any>): { con
       'gm'
     );
     if (content.match(configPattern)) {
-      content = content.replace(configPattern, (match, prefix, oldValue, suffix) => {
+      content = content.replace(configPattern, (_match, prefix, _oldValue, suffix) => {
         return `${prefix}${JSON.stringify(value)}${suffix}`;
       });
       modified = true;
@@ -128,7 +128,7 @@ function replaceInCodeFile(content: string, answers: Record<string, any>): { con
 export function replaceVariables(
   projectName: string,
   templateConfig: TemplateConfig,
-  answers: Record<string, any>
+  answers: Record<string, unknown>
 ): void {
   if (!templateConfig.files) {
     return;
@@ -174,7 +174,7 @@ export function replaceVariables(
  */
 export function adjustPackageJson(
   projectName: string,
-  answers: Record<string, any>,
+  answers: Record<string, unknown>,
   isDev: boolean,
   packageManager: string
 ): void {
@@ -244,7 +244,7 @@ export function adjustPackageJson(
     }
 
     // Write back to file
-    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
+    fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
 
   } catch (error) {
     console.log(chalk.yellow(`   ⚠️  Failed to adjust package.json: ${error instanceof Error ? error.message : 'Unknown error'}`));
@@ -259,7 +259,7 @@ export function adjustPackageJson(
 export function handleConditionalRemoves(
   projectName: string,
   templateConfig: TemplateConfig,
-  answers: Record<string, any>
+  answers: Record<string, unknown>
 ): void {
   if (!templateConfig.conditionalRemove) return;
 

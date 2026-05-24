@@ -1,8 +1,8 @@
-import fs from "fs";
-import { FileHandle, open } from "fs/promises";
-import { pipeline } from "stream/promises";
+import fs from "node:fs";
+import { type FileHandle, open } from "node:fs/promises";
+import { pipeline } from "node:stream/promises";
 import tar from "tar-stream";
-import zlib from "zlib";
+import zlib from "node:zlib";
 
 export interface TarEntry {
     name: string;
@@ -55,7 +55,7 @@ export class TarBuilder {
     async build() {
         const pack = this.pack;
         // Convert index data to string and calculate its size
-        const indexContent = this.indexData.join('\n') + '\n';
+        const indexContent = `${this.indexData.join('\n')}\n`;
         const indexContentSize = Buffer.byteLength(indexContent);
 
         // Add the .index entry to the tar
@@ -104,7 +104,7 @@ async function readTarIndex(fd: FileHandle) {
             const indexDataOffset = offset + 512;
             const indexDataEnd = indexDataOffset + indexSize;
             if (indexDataEnd > size - 1024) {
-                throw new Error('Invalid index data offsets: [' + indexDataOffset + ':' + indexDataEnd + ']');
+                throw new Error(`Invalid index data offsets: [${indexDataOffset}:${indexDataEnd}]`);
             }
             const dataBuffer = Buffer.alloc(indexSize);
             await fd.read(dataBuffer, 0, indexSize, indexDataOffset);
@@ -133,8 +133,8 @@ export class TarIndex {
             if (line) {
                 const [name, value] = line.split(':');
                 const [offsetStr, sizeStr] = value.split(',');
-                const offset = parseInt(offsetStr);
-                const size = parseInt(sizeStr);
+                const offset = parseInt(offsetStr, 10);
+                const size = parseInt(sizeStr, 10);
                 this.entries[name] = { offset, size };
             }
         }

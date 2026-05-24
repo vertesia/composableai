@@ -1,4 +1,4 @@
-import { AUDIO_RENDITION_NAME, AudioMetadata, ContentNature, ContentObject } from "@vertesia/common";
+import { AUDIO_RENDITION_NAME, type AudioMetadata, ContentNature, type ContentObject } from "@vertesia/common";
 import { Spinner } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";
@@ -56,7 +56,7 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
                 if (!object) return;
                 if (object.metadata?.type !== ContentNature.Audio) return;
 
-                let downloadUrl;
+                let downloadUrl: Awaited<ReturnType<typeof client.files.getDownloadUrl>> | undefined;
                 if (audioRendition?.content?.source) {
                     downloadUrl = await client.files.getDownloadUrl(audioRendition.content.source);
                 } else if (isOriginalWebSupported && object.content?.source) {
@@ -74,11 +74,11 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
 
         if (source || object) {
             setIsLoading(true);
-            load();
+            void load();
         } else {
             setIsLoading(false);
         }
-    }, [url, source, object?.id, object?.content?.type, object?.content?.source, object?.metadata, audioRendition, isOriginalWebSupported, client]);
+    }, [url, source, object, audioRendition, isOriginalWebSupported, client]);
 
     if (showsObjectFallbackEmpty) {
         return (
@@ -109,6 +109,7 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
 
     return (
         <div className={`flex flex-col items-center gap-4 ${className ?? ''}`.trim()}>
+            {/* biome-ignore lint/a11y/useMediaCaption: caption tracks are not authored for user-uploaded media; falls back to browser controls and transcript metadata */}
             <audio
                 src={audioUrl}
                 controls

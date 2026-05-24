@@ -1,18 +1,19 @@
-import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
+import type React from 'react';
+import { type ChangeEvent, useEffect, useRef, useState } from 'react'
 
 import { AlignLeft } from 'lucide-react';
 import { Button, Modal, ModalBody, ModalFooter, ModalTitle, Styles, SelectBox } from '@vertesia/ui/core';
 
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { TypeNames } from '../type-signature.js';
-import { DataEditorProps } from './Editable.js';
-import { EditableSchemaProperty } from './EditableSchemaProperty.js';
+import type { DataEditorProps } from './Editable.js';
+import type { EditableSchemaProperty } from './EditableSchemaProperty.js';
 
 function makeTypeOptions() {
     const types: string[] = Object.values(TypeNames)
     const options = [...types]
     for (const type of types) {
-        options.push(type + '[]');
+        options.push(`${type}[]`);
     }
     types.sort();
     return options;
@@ -139,8 +140,8 @@ function EditDescriptionModalForm({ value, onSave }: EditDescriptionModalFormPro
     const ref = useRef<HTMLTextAreaElement>(null);
     const [currentValue, setCurrentValue] = useState(value || '');
     useEffect(() => {
-        ref.current && ref.current.focus();
-    }, [ref.current]);
+        ref.current?.focus();
+    }, []);
     return (
         <>
             <ModalBody className="h-max">

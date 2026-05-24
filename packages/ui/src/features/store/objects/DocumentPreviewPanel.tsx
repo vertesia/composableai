@@ -1,5 +1,5 @@
 import {
-  ContentObject,
+  type ContentObject,
   ImageRenditionFormat
 } from "@vertesia/common";
 import { Button, Spinner, useToast } from "@vertesia/ui/core";
@@ -15,7 +15,7 @@ import {
   Maximize2,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface DocumentPreviewPanelProps {
@@ -40,53 +40,7 @@ export function DocumentPreviewPanel({
   const { t } = useUITranslation();
   const toast = useToast();
 
-  useEffect(() => {
-    if (objectId && isOpen) {
-      setIsLoading(true);
-      store.objects
-        .retrieve(objectId, "+embeddings")
-        .then((result) => {
-          setObject(result);
-          // If the object has text, use it
-          if (result.text) {
-            setText(result.text);
-          } else {
-            // Otherwise, fetch text
-            loadObjectText(result.id);
-          }
-
-          // If it's an image, load the image URL
-          const content = result.content;
-          const isImage =
-            content &&
-            content.source &&
-            content.type &&
-            content.type.startsWith("image/");
-          if (isImage) {
-            loadImageUrl(result);
-          }
-        })
-        .catch((error) => {
-          console.error("Error loading object:", error);
-          toast({
-            title: t('agent.error'),
-            description: t('store.failedToLoadDocument'),
-            status: "error",
-            duration: 3000,
-          });
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    } else {
-      // Reset state when panel closes
-      setObject(null);
-      setText(undefined);
-      setImageUrl(undefined);
-    }
-  }, [objectId, isOpen, store.objects]);
-
-  const loadObjectText = async (id: string) => {
+  const loadObjectText = useCallback(async (id: string) => {
     setLoadingText(true);
     try {
       const result = await store.objects.getObjectText(id);
@@ -96,9 +50,9 @@ export function DocumentPreviewPanel({
     } finally {
       setLoadingText(false);
     }
-  };
+  }, [store.objects]);
 
-  const loadImageUrl = async (obj: ContentObject) => {
+  const loadImageUrl = useCallback(async (obj: ContentObject) => {
     if (!obj.content?.source) {
       return;
     }
@@ -123,7 +77,51 @@ export function DocumentPreviewPanel({
     } catch (error) {
       console.error("Error loading image:", error);
     }
-  };
+  }, [client.files, client.objects]);
+
+  useEffect(() => {
+    if (objectId && isOpen) {
+      setIsLoading(true);
+      store.objects
+        .retrieve(objectId, "+embeddings")
+        .then((result) => {
+          setObject(result);
+          // If the object has text, use it
+          if (result.text) {
+            setText(result.text);
+          } else {
+            // Otherwise, fetch text
+            void loadObjectText(result.id);
+          }
+
+          // If it's an image, load the image URL
+          const content = result.content;
+          const isImage =
+            content?.source &&
+            content.type?.startsWith("image/");
+          if (isImage) {
+            void loadImageUrl(result);
+          }
+        })
+        .catch((error) => {
+          console.error("Error loading object:", error);
+          toast({
+            title: t('agent.error'),
+            description: t('store.failedToLoadDocument'),
+            status: "error",
+            duration: 3000,
+          });
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else {
+      // Reset state when panel closes
+      setObject(null);
+      setText(undefined);
+      setImageUrl(undefined);
+    }
+  }, [objectId, isOpen, store.objects, loadObjectText, loadImageUrl, t, toast]);
 
   const handleViewFullDocument = () => {
     if (object) {
@@ -136,7 +134,7 @@ export function DocumentPreviewPanel({
     text &&
     (text.startsWith("#") || text.includes("\n#") || text.includes("\n*"));
   const isImage =
-    object?.content?.type && object.content.type.startsWith("image/");
+    object?.content?.type?.startsWith("image/");
   const isPdf = object?.content?.type === "application/pdf";
 
   if (!isOpen) return null;
@@ -418,5 +416,5 @@ function formatFileSize(bytes: number): string {
   const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 }

@@ -1,9 +1,9 @@
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
-import { CollectionItem } from "@vertesia/common";
+import type { CollectionItem } from "@vertesia/common";
 import {
-    Button, cn, ErrorBox, useDebounce, useFetch,
+    Button, cn, ErrorBox, errorMessage, useDebounce, useFetch,
     Popover, PopoverContent, PopoverTrigger,
     Command, CommandEmpty, CommandGroup, CommandItem, CommandInput
 } from "@vertesia/ui/core";
@@ -157,7 +157,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
     if (error) {
         return (
             <ErrorBox title={t('store.collectionFetchFailed')}>
-                {error.message}
+                {errorMessage(error)}
             </ErrorBox>
         );
     }

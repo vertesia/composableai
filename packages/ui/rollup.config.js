@@ -2,8 +2,8 @@ import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { defineConfig } from 'rollup';
 import { EXTERNALS } from './externals.js';
 
@@ -18,7 +18,7 @@ const entries = fs.readdirSync(esmOutputDir).filter((name) => {
         if (fs.statSync(dir).isDirectory()) {
             return fs.existsSync(path.join(dir, 'index.js'));
         }
-    } catch (e) {
+    } catch {
         // ignore
     }
     return false;

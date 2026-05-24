@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
-import { ColumnLayout, ContentObjectType } from '@vertesia/common';
-import { Button, useToast, useTheme, Panel } from '@vertesia/ui/core';
+import type { ColumnLayout, ContentObjectType } from '@vertesia/common';
+import { Button, errorMessage, useToast, useTheme, Panel } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
-import { MonacoEditor, EditorApi } from '@vertesia/ui/widgets';
+import { MonacoEditor, type EditorApi } from '@vertesia/ui/widgets';
 import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface TableLayoutEditorProps {
@@ -44,15 +44,15 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate, readonly = false
         } else {
             try {
                 table_layout = JSON.parse(value);
-            } catch (err: any) {
-                return validationError('Invalid JSON', err.message);
+            } catch (err: unknown) {
+                return validationError('Invalid JSON', errorMessage(err));
             }
         }
 
         if (!Array.isArray(table_layout)) {
             return validationError('Invalid JSON', 'The table layout must be an array');
         }
-        if (table_layout.some((col) => !col || !col.name || !col.field)) {
+        if (table_layout.some((col) => !col?.name || !col.field)) {
             return validationError('Invalid JSON', 'A table layout entry must contain the following properties:] {field, name, converter?}');
         }
 
@@ -98,7 +98,7 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate, readonly = false
 }
 
 
-export function stringifyTableLayout(obj: any) {
+export function stringifyTableLayout(obj: unknown) {
     if (!obj) {
         return '[\n\n]';
     }
