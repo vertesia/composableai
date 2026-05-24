@@ -265,6 +265,7 @@ export const BrowserUseProjectConfigurationSchema: JSONSchemaType<BrowserUseProj
 // ==========================================
 
 export type ProjectSearchTier = "standard" | "performance";
+export type ElasticsearchBackend = 'serverless' | 'hosted';
 
 export interface ProjectConfiguration {
 
@@ -316,7 +317,7 @@ export interface ProjectConfiguration {
          * Elasticsearch backend override for this project.
          * Prefer search_tier for project configuration unless an explicit backend override is needed.
          */
-        backend?: 'serverless' | 'hosted';
+        backend?: ElasticsearchBackend;
     };
 
     /**
@@ -539,6 +540,7 @@ export interface CreateReindexTargetResult {
     index_name: string;
     alias_name: string;
     version: number;
+    backend?: ElasticsearchBackend;
     dimensions?: {
         text?: number;
         image?: number;
@@ -598,6 +600,7 @@ export interface ComputeShardsRequest {
     tenant_id: string;
     shard_size?: number;
     updated_since?: string;
+    backend?: ElasticsearchBackend;
 }
 
 export interface ComputeShardsResult {
@@ -610,6 +613,7 @@ export interface IndexShardParams {
     target_index: string;
     shard_min: string;
     shard_max?: string;
+    backend?: ElasticsearchBackend;
     embedding_dimensions?: {
         text?: number;
         image?: number;
@@ -649,6 +653,7 @@ export interface IndexShardResult {
 export interface SwapAliasRequest {
     tenant_id: string;
     target_index: string;
+    backend?: ElasticsearchBackend;
     /** ES alias name. If not provided, the Go service derives it from the tenant ID. */
     alias?: string;
 }
@@ -662,6 +667,7 @@ export interface SwapAliasResult {
 
 export interface ReindexViaBulkRequest {
     tenant_id: string;
+    backend?: ElasticsearchBackend;
     dry_run?: boolean;
 }
 
@@ -685,6 +691,7 @@ export interface ReindexViaBulkResult {
  */
 export interface ElasticsearchIndexStats {
     enabled: boolean;
+    backend?: ElasticsearchBackend;
     exists?: boolean;
     document_count?: number;
     size_in_bytes?: number;
