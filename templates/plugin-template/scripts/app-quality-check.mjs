@@ -49,6 +49,16 @@ function includesAny(text, values) {
     return values.some((value) => text.includes(value));
 }
 
+function stringLiterals(text) {
+    return [...text.matchAll(/(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/g)].map((match) => match[2]);
+}
+
+function firstEndUserSeedControl(text) {
+    return stringLiterals(text).find((literal) =>
+        /\bseed\s*(?:\/\s*sync|\s+(?:data|records?|objects?|store|samples?|demo|continuity)|\s*marker)\b/i.test(literal),
+    );
+}
+
 function nestedRouterProviderTags(text) {
     return [...text.matchAll(/<NestedRouterProvider\b[^>]*>/g)].map((match) => match[0]);
 }
@@ -127,6 +137,8 @@ async function readPackageJson() {
 }
 
 const packageJson = await readPackageJson();
+const packageName = typeof packageJson?.name === 'string' ? packageJson.name : undefined;
+const isPluginTemplatePackage = packageName === 'plugin-template';
 
 function hasDependency(name) {
     if (!packageJson || typeof packageJson !== 'object') return false;
@@ -160,6 +172,24 @@ if (toolServerFiles.length > 0) {
     requireDependency('hono', 'Service-target apps expose a Hono runtime imported by app-runtime.');
 }
 
+if (!isPluginTemplatePackage) {
+    const templateExamples = [
+        ...report.artifacts.tools.filter((name) => name === 'calculator' || name === 'examples'),
+        ...report.artifacts.skills.filter((name) => name === 'learn_user-select' || name === 'examples'),
+        ...report.artifacts.templates.filter((name) => name === 'examples'),
+        ...report.artifacts.activities.filter((name) => name === 'examples'),
+        ...report.artifacts.widgets.filter((name) => /user-select/i.test(name)),
+    ];
+    if (templateExamples.length > 0) {
+        add(
+            'errors',
+            'no-template-example-artifacts',
+            `Generated business apps must remove template example artifacts: ${[...new Set(templateExamples)].join(', ')}.`,
+            path.join(cwd, 'src/tool-server'),
+        );
+    }
+}
+
 for (const file of uiFiles) {
     const text = await readFile(file, 'utf8');
 
@@ -188,6 +218,15 @@ for (const file of uiFiles) {
             file,
         );
     }
+
+    if (/https:\/\/api(?:[.-][a-z0-9-]+)*\.vertesia\.io\/api\/v1/i.test(text)) {
+        add(
+            'errors',
+            'no-hardcoded-vertesia-api-base',
+            'Normal app screens must use useUserSession().client so the host supplies the correct API base and auth token.',
+            file,
+        );
+    }
 }
 
 for (const file of appUiFiles) {
@@ -213,6 +252,16 @@ for (const file of appUiFiles) {
 
     if (/\bconsole\.(log|debug)\s*\(/.test(text)) {
         add('errors', 'no-debug-console', 'Remove console.log/console.debug from final UI code.', file);
+    }
+
+    const seedControl = firstEndUserSeedControl(text);
+    if (seedControl) {
+        add(
+            'errors',
+            'no-end-user-seed-controls',
+            `Do not expose seed/setup controls in normal end-user UI. Seed data must be created during the build/test loop, not by a visible "${seedControl}" control.`,
+            file,
+        );
     }
 
     if (/window\.location\.href\s*=/.test(text)) {

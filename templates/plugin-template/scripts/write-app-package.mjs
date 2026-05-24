@@ -1,9 +1,24 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { getProcessDefinitionValidationResult } from '@vertesia/common';
+import { existsSync } from 'node:fs';
+import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import {
+    getProcessDefinitionValidationResult,
+    getProcessInteractionValidationSelectors,
+} from '@vertesia/common';
 import { ServerConfig } from '../lib/config.js';
 import server from '../lib/server.js';
 
 const PACKAGE_BUILD_ORIGIN = 'https://app-package-build.local';
+const cwd = process.cwd();
+const SYSTEM_INTERACTION_SELECTORS = [
+    'sys:GeneralAgent',
+    'sys:StudioAssistant',
+    'sys:AppDeveloper',
+    'sys:AppDesigner',
+    'sys:AppTester',
+    'sys:AppReviewer',
+    'sys:AppSolutionArchitect',
+];
 
 function names(items, selector) {
     return (items || []).map(selector).filter(Boolean).sort();
@@ -15,6 +30,33 @@ async function readJsonIfExists(path) {
     } catch {
         return undefined;
     }
+}
+
+async function walk(root) {
+    if (!existsSync(root)) return [];
+    const out = [];
+    async function visit(dir) {
+        for (const entry of await readdir(dir)) {
+            if (entry === 'node_modules' || entry === 'dist' || entry === '.git') continue;
+            const full = path.join(dir, entry);
+            const info = await stat(full);
+            if (info.isDirectory()) {
+                await visit(full);
+            } else {
+                out.push(full);
+            }
+        }
+    }
+    await visit(root);
+    return out;
+}
+
+function rel(file) {
+    return path.relative(cwd, file).replaceAll(path.sep, '/');
+}
+
+function isSourceFile(file) {
+    return /\.(ts|tsx|js|jsx|mjs|cjs|hbs|md|yaml|yml)$/.test(file);
 }
 
 function normalizePrefix(prefix) {
@@ -38,11 +80,110 @@ function processLabel(process, index) {
     return `#${index + 1}`;
 }
 
-function validatePackageProcesses(pkg) {
-    const processes = Array.isArray(pkg.processes) ? pkg.processes : [];
+function packageJsonName(packageJson) {
+    return typeof packageJson?.name === 'string' && packageJson.name ? packageJson.name : undefined;
+}
+
+function itemId(item) {
+    if (!item || typeof item !== 'object') return undefined;
+    if (typeof item.id === 'string' && item.id) return item.id;
+    if (typeof item.name === 'string' && item.name) return item.name;
+    return undefined;
+}
+
+function validateLocalCapabilityIds(pkg, appName) {
+    if (appName === 'plugin-template') return [];
+
     const errors = [];
+    const groups = [
+        ['types', 'type'],
+        ['interactions', 'interaction'],
+        ['processes', 'process'],
+        ['dashboards', 'dashboard'],
+        ['templates', 'template'],
+    ];
+
+    for (const [key, label] of groups) {
+        const items = Array.isArray(pkg[key]) ? pkg[key] : [];
+        items.forEach((item, index) => {
+            const id = itemId(item);
+            if (!id) return;
+            if (id.startsWith('app:')) {
+                errors.push(`${label} ${id} must use a package-local id; runtime refs become app:<app-name>:${id.slice(4)}`);
+            }
+            if (id === 'examples' || id.startsWith('examples:') || id.startsWith('examples/')) {
+                errors.push(`${label} #${index + 1} is still using template example id "${id}"`);
+            }
+        });
+    }
+
+    return errors;
+}
+
+function packageInteractionSelectors(pkg, appName) {
+    const selectors = new Set(SYSTEM_INTERACTION_SELECTORS);
+    const interactions = Array.isArray(pkg.interactions) ? pkg.interactions : [];
+    for (const selector of getProcessInteractionValidationSelectors(interactions)) {
+        selectors.add(selector);
+    }
+
+    for (const interaction of interactions) {
+        const localIds = [interaction?.id, interaction?.name].filter(
+            (value) => typeof value === 'string' && value,
+        );
+        for (const localId of localIds) {
+            selectors.add(localId);
+            if (appName && !localId.startsWith('app:') && !localId.startsWith('sys:')) {
+                selectors.add(`app:${appName}:${localId}`);
+            }
+        }
+    }
+    return selectors;
+}
+
+function packageCapabilityIds(pkg) {
+    const ids = new Set();
+    const groups = ['types', 'interactions', 'processes', 'dashboards', 'templates'];
+    for (const key of groups) {
+        const items = Array.isArray(pkg[key]) ? pkg[key] : [];
+        for (const item of items) {
+            const id = itemId(item);
+            if (id) ids.add(id);
+        }
+    }
+    return ids;
+}
+
+async function validateSourceAppRefs(pkg, appName) {
+    if (!appName || appName === 'plugin-template') return [];
+    const knownIds = packageCapabilityIds(pkg);
+    if (knownIds.size === 0) return [];
+
+    const files = (await walk(path.join(cwd, 'src'))).filter(isSourceFile);
+    const errors = [];
+    const refPattern = new RegExp(`app:${appName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}:([A-Za-z0-9._:-]+)`, 'g');
+
+    for (const file of files) {
+        const text = await readFile(file, 'utf8');
+        for (const match of text.matchAll(refPattern)) {
+            const localRef = match[1];
+            if (!knownIds.has(localRef)) {
+                errors.push(
+                    `${rel(file)} references app:${appName}:${localRef}, but no package capability exposes local id "${localRef}". Known ids: ${[...knownIds].sort().join(', ')}`,
+                );
+            }
+        }
+    }
+
+    return errors;
+}
+
+async function validatePackageProcesses(pkg, appName) {
+    const processes = Array.isArray(pkg.processes) ? pkg.processes : [];
+    const errors = validateLocalCapabilityIds(pkg, appName);
     const seenIds = new Set();
     const seenNames = new Set();
+    const knownInteractions = packageInteractionSelectors(pkg, appName);
 
     processes.forEach((process, index) => {
         const label = processLabel(process, index);
@@ -69,14 +210,16 @@ function validatePackageProcesses(pkg) {
             return;
         }
 
-        const result = getProcessDefinitionValidationResult(process.definition);
+        const result = getProcessDefinitionValidationResult(process.definition, { knownInteractions });
         for (const error of result.errors) {
             errors.push(`process ${label}: ${error}`);
         }
     });
 
+    errors.push(...await validateSourceAppRefs(pkg, appName));
+
     if (errors.length > 0) {
-        throw new Error(`App package process validation failed:\n- ${errors.join('\n- ')}`);
+        throw new Error(`App package validation failed:\n- ${errors.join('\n- ')}`);
     }
 }
 
@@ -137,7 +280,8 @@ function printSummary(summary) {
 await mkdir('dist', { recursive: true });
 
 const pkg = await readAppPackage();
-validatePackageProcesses(pkg);
+const packageJson = await readJsonIfExists('package.json');
+await validatePackageProcesses(pkg, packageJsonName(packageJson));
 const summary = summarizeAppPackage(pkg);
 const qualityReport = await readJsonIfExists('dist/app-quality-report.json');
 if (qualityReport?.artifacts && typeof qualityReport.artifacts === 'object') {
