@@ -306,10 +306,11 @@ export class IndexingApi extends ApiTopic {
      * Compute shard boundaries for a tenant via zeno-bulk.
      * Creates the target index and returns shard ranges for parallel indexing.
      */
-    computeShards(tenantId: string, shardSize?: number): Promise<ComputeShardsResult> {
+    computeShards(tenantId: string, shardSize?: number, updatedSince?: string): Promise<ComputeShardsResult> {
         return this.zenoBulkPost('/reindex/compute-shards', {
             tenant_id: tenantId,
             shard_size: shardSize ?? 50000,
+            updated_since: updatedSince,
         } satisfies ComputeShardsRequest);
     }
 
