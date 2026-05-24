@@ -264,6 +264,8 @@ export const BrowserUseProjectConfigurationSchema: JSONSchemaType<BrowserUseProj
 // Project Configuration
 // ==========================================
 
+export type ProjectSearchTier = "standard" | "performance";
+
 export interface ProjectConfiguration {
 
     human_context?: string;
@@ -301,6 +303,20 @@ export interface ProjectConfiguration {
          * Defaults to true - indexing is always on when ES infrastructure is available.
          */
         enabled?: boolean;
+
+        /**
+         * Search tier for this project.
+         * standard uses the regional hosted Elasticsearch deployment.
+         * performance uses the regional serverless Elasticsearch project.
+         * Defaults to standard when omitted.
+         */
+        search_tier?: ProjectSearchTier;
+
+        /**
+         * Elasticsearch backend override for this project.
+         * Prefer search_tier for project configuration unless an explicit backend override is needed.
+         */
+        backend?: 'serverless' | 'hosted';
     };
 
     /**
