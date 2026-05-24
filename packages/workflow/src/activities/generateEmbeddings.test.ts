@@ -25,19 +25,22 @@ beforeEach(() => {
     vi.clearAllMocks();
 });
 
-const createPayload = (params: GenerateEmbeddingsParams): DSLActivityExecutionPayload<GenerateEmbeddingsParams> => ({
-    auth_token: 'mock-token',
-    account_id: 'test-account',
-    project_id: 'test-project',
-    params,
-    config: { studio_url: 'http://mock-studio', store_url: 'http://mock-store' },
-    workflow_name: 'StandardDocumentIntake',
-    event: ContentEventName.create,
-    objectIds: ['properties-only-object'],
-    input: { inputType: 'objectIds', objectIds: ['properties-only-object'] },
-    vars: {},
-    activity: { name: 'generateEmbeddings', params },
-});
+const createPayload = (params: GenerateEmbeddingsParams): DSLActivityExecutionPayload<GenerateEmbeddingsParams> => {
+    const activityParams: GenerateEmbeddingsParams & Record<string, unknown> = { ...params };
+    return {
+        auth_token: 'mock-token',
+        account_id: 'test-account',
+        project_id: 'test-project',
+        params,
+        config: { studio_url: 'http://mock-studio', store_url: 'http://mock-store' },
+        workflow_name: 'StandardDocumentIntake',
+        event: ContentEventName.create,
+        objectIds: ['properties-only-object'],
+        input: { inputType: 'objectIds', objectIds: ['properties-only-object'] },
+        vars: {},
+        activity: { name: 'generateEmbeddings', params: activityParams },
+    };
+};
 
 describe('generateEmbeddings', () => {
     it('should generate property embeddings for an object without content', async () => {

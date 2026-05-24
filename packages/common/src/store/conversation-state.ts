@@ -29,11 +29,15 @@ export interface TextArtifactReference {
  */
 export interface ExternalizedToolInputRef {
     tool_name: string;
-    input_path: string[];
+    input_path: ['content'];
     ref: TextArtifactReference;
 }
 
 export type ExternalizedToolInputRefs = Record<string, ExternalizedToolInputRef[]>;
+
+export function toolInputRefsArtifactPath(storageId: string): string {
+    return `agents/${storageId}/tool-input-refs.json`;
+}
 
 /**
  * Conversation state passed between workflow activities.
