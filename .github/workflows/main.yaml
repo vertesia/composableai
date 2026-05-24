@@ -70,7 +70,7 @@ jobs:
               "event_type": "update-git-submodule-request",
               "client_payload": {
                 "composableai_sha": "${{ github.sha }}",
-                "branch": "${GITHUB_REF_NAME}",
-                "sender": "${GITHUB_ACTOR}"
+                "branch": "${{ github.ref_name }}",
+                "sender": "${{ github.actor }}"
               }
             }'
