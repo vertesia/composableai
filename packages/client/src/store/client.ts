@@ -1,4 +1,4 @@
-import { AbstractFetchClient, type RequestError } from "@vertesia/api-fetch-client";
+import { AbstractFetchClient, type IRequestRetryPolicy, type RequestError } from "@vertesia/api-fetch-client";
 import type { BulkOperationPayload, BulkOperationResponse } from "@vertesia/common";
 import { AgentsApi } from "./AgentsApi.js";
 import { CollectionsApi } from "./CollectionsApi.js";
@@ -29,6 +29,7 @@ export interface ZenoClientProps {
     apikey?: string;
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
+    retryPolicy?: IRequestRetryPolicy;
 }
 
 function ensureDefined(serverUrl: string | undefined) {
@@ -46,6 +47,9 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
         super(ensureDefined(opts.serverUrl));
         if (opts.apikey) {
             this.withApiKey(opts.apikey);
+        }
+        if (opts.retryPolicy) {
+            this.withRetryPolicy(opts.retryPolicy);
         }
         this.onRequest = opts.onRequest;
         this.onResponse = opts.onResponse;
