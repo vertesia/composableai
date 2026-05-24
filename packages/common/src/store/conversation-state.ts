@@ -13,6 +13,28 @@ export interface ToolReference {
     stored_at: string;
 }
 
+/** Reference to text content externalized to agent artifact storage. */
+export interface TextArtifactReference {
+    storage_id: string;
+    artifact_path: string;
+    display_ref: string;
+    sha256: string;
+    size_bytes: number;
+    content_type: string;
+}
+
+/**
+ * Sidecar metadata for generated tool input fields that were stored outside
+ * model-visible tool_input. Keyed by tool_use.id on ConversationState.
+ */
+export interface ExternalizedToolInputRef {
+    tool_name: string;
+    input_path: string[];
+    ref: TextArtifactReference;
+}
+
+export type ExternalizedToolInputRefs = Record<string, ExternalizedToolInputRef[]>;
+
 /**
  * Conversation state passed between workflow activities.
  * Contains all context needed to continue a multi-turn agent conversation.
@@ -37,6 +59,15 @@ export interface ConversationState {
      * The tools to call next.
      */
     tool_use?: ToolUse[];
+
+    /**
+     * Transport sidecar for large generated tool input fields.
+     *
+     * These refs are intentionally kept out of tool_use.tool_input so they are
+     * not shown to the model. Tool execution hydrates them from artifact storage
+     * immediately before activity validation.
+     */
+    tool_input_refs?: ExternalizedToolInputRefs;
 
     /**
      * The output of the this conversation step
