@@ -19,14 +19,15 @@ export const AUDIT_ACTIONS = [
     'image_generation',
 ] as const;
 
-export type AuditAction = typeof AUDIT_ACTIONS[number];
+export type KnownAuditAction = typeof AUDIT_ACTIONS[number];
+export type AuditAction = KnownAuditAction | (string & {});
 
 /** Billable audit actions for cost analytics queries */
 export const BILLABLE_AUDIT_ACTIONS = [
     'inference',
     'embedding',
     'image_generation',
-] satisfies AuditAction[];
+] satisfies KnownAuditAction[];
 
 /**
  * Generic metering entry attached to audit events.
