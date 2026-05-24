@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
-import { ActivityCollection, ActivityDefinition } from "../ActivityCollection.js";
+import { ActivityCollection, type ActivityDefinition } from "../ActivityCollection.js";
 import { createActivitiesRoute } from "./activities.js";
-import { ToolServerConfig } from "./types.js";
+import type { ToolServerConfig } from "./types.js";
 
 /** Permissive recursive type for navigating JSON response bodies in tests. */
 type Tree = { readonly [key: string]: Tree };

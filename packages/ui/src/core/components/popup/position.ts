@@ -198,9 +198,12 @@ class PositionResolver {
         }
         const constrainWidth = this.width != null;
         const constrainHeight = this.height != null;
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         const width = constrainWidth ? this.width! : elemRect.width;
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         const height = constrainHeight ? this.height! : elemRect.height;
         return {
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             rect: new DOMRect(this.left!, this.top!, width, height),
             constrainWidth,
             constrainHeight,

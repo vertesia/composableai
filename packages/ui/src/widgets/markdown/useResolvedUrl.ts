@@ -215,7 +215,7 @@ export function useResolvedUrl({
         };
 
         if (!cancelled) {
-            doFetch();
+            void doFetch();
         }
 
         return () => {

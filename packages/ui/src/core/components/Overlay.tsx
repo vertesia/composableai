@@ -1,6 +1,6 @@
 import { motion } from "framer-motion"
 import { X } from "lucide-react"
-import { useState, ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 
 import { Button } from "./shadcn/button"
 

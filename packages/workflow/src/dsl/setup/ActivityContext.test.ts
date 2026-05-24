@@ -1,4 +1,4 @@
-import { ContentEventName, DSLActivityExecutionPayload } from "@vertesia/common";
+import { ContentEventName, type DSLActivityExecutionPayload } from "@vertesia/common";
 import { describe, expect, it } from "vitest";
 import { setupActivity } from "./ActivityContext.js";
 

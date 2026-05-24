@@ -33,7 +33,7 @@ export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initi
             return;
         }
         const payload = { name, description, strict_mode: strictMode };
-        onClose(payload).then(() => onClose());
+        void onClose(payload).then(() => onClose());
     };
 
     return (

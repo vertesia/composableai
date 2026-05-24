@@ -1,10 +1,10 @@
-import { AgentRun } from "@vertesia/common";
+import type { AgentRun } from "@vertesia/common";
 import { Button, Dropdown, MenuGroup, MenuItem, cn, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, GitFork, InfoIcon, MoreVertical, RefreshCcw, XIcon } from "lucide-react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
-import { type AgentConversationViewMode } from "./AllMessagesMixed";
+import type { AgentConversationViewMode } from "./AllMessagesMixed";
 import { getConversationUrl } from "./utils";
 
 export interface HeaderProps {
@@ -301,7 +301,7 @@ function MoreDropdown({
                     if (onDownload) {
                         onDownload();
                     } else {
-                        getConversationUrl(client, agentRunId).then((r) => window.open(r, "_blank"));
+                        void getConversationUrl(client, agentRunId).then((r) => window.open(r, "_blank"));
                     }
                 }}>
                     <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.downloadConversation')}

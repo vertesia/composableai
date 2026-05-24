@@ -1,8 +1,8 @@
 import { ApplicationFailure, log } from "@temporalio/activity";
-import { DSLActivityExecutionPayload, DSLActivitySpec, JSONObject } from "@vertesia/common";
+import type { DSLActivityExecutionPayload, DSLActivitySpec, JSONObject } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
-import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
+import { type TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
+import { type InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
 
 const INT_EXTRACT_INFORMATION = "sys:ExtractInformation";
 
@@ -56,18 +56,18 @@ export async function generateDocumentProperties(
         return { status: "failed", error: "no-text" };
     }
 
-    if (!type || !type.object_schema) {
+    if (!type?.object_schema) {
         log.info(`Object ${objectId} has no schema`);
         return { document: objectId, status: "skipped", message: "no schema defined on type" };
     }
 
     const getImageRef = () => {
         if (doc.content?.type?.startsWith("image/")) {
-            return "store:" + doc.id;
+            return `store:${doc.id}`;
         }
 
         if (params.use_vision && doc.content?.type?.startsWith("application/pdf")) {
-            return "store:" + doc.id;
+            return `store:${doc.id}`;
         }
 
         log.info(`Object ${objectId} is not an image or pdf`);
@@ -135,7 +135,7 @@ export async function generateDocumentProperties(
         let text = "";
         const jsonResult = infoRes.result.object<GeneratedPropertiesSummary>();
         if (typeof jsonResult.title === "string") {
-            text += jsonResult.title + "\n";
+            text += `${jsonResult.title}\n`;
         }
         if (typeof jsonResult.description === "string") {
             text += jsonResult.description;

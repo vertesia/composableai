@@ -1,4 +1,4 @@
-import { AgentMessage, AgentMessageType, UserInputSignal } from "@vertesia/common";
+import { type AgentMessage, AgentMessageType, type UserInputSignal } from "@vertesia/common";
 import chalk from "chalk";
 import { getClient } from "../client.js";
 import boxen from "boxen";
@@ -350,7 +350,7 @@ export async function streamRun(workflowId: string, runId: string, program: Comm
         if (!isTerminating) {
             if (spinner) spinner.stop();
             console.error(
-                boxen(gradient.fruit("ERROR STREAMING MESSAGES") + "\n\n" + err, {
+                boxen(`${gradient.fruit("ERROR STREAMING MESSAGES")}\n\n${err}`, {
                     padding: 1,
                     margin: 1,
                     borderStyle: "round" as const,
@@ -411,7 +411,7 @@ function formatDetails(details: unknown): void {
                                 "\n" +
                                 formatColorizedJSON(value)
                                     .split("\n")
-                                    .map((line) => "  " + line)
+                                    .map((line) => `  ${line}`)
                                     .join("\n");
                         }
                     } else {

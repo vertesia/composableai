@@ -1,4 +1,4 @@
-import { ContentObjectTypeItem } from "@vertesia/common";
+import type { ContentObjectTypeItem } from "@vertesia/common";
 import { SelectBox } from "@vertesia/ui/core";
 import { useEffect, useState } from "react";
 import { useTypeRegistry } from "./TypeRegistryProvider.js";

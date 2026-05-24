@@ -1,11 +1,11 @@
 import { log } from "@temporalio/activity";
-import {
+import type {
     AppInstallationWithManifest,
     AppPackage,
     DSLActivityExecutionPayload,
     RemoteActivityDefinition,
 } from "@vertesia/common";
-import { VertesiaClient } from "@vertesia/client";
+import type { VertesiaClient } from "@vertesia/client";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { URLValidationError, safeFetch } from "../security/ssrf.js";
 
@@ -36,7 +36,7 @@ export interface RemoteActivityInfo {
  */
 export type RemoteActivityMap = Record<string, RemoteActivityInfo>;
 
-export interface ResolveRemoteActivitiesParams {}
+export type ResolveRemoteActivitiesParams = Record<string, never>
 
 /**
  * Resolves remote activities from all installed apps that have the `tools` capability.

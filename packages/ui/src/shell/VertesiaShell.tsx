@@ -4,7 +4,7 @@ import { LanguageBoundI18nProvider, LanguageProvider, type SupportedLanguage } f
 import { UserSessionProvider } from "@vertesia/ui/session";
 import { SplashScreen } from "./SplashScreen";
 import { SigninScreen } from "./login/SigninScreen";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 
 interface VertesiaShellProps {

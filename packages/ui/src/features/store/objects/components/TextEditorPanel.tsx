@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
-import { ContentObject } from '@vertesia/common';
+import type { ContentObject } from '@vertesia/common';
 import { Button, errorMessage, useToast, useTheme } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { useNavigate } from '@vertesia/ui/router';
-import { MonacoEditor, IEditorApi } from '@vertesia/ui/widgets';
+import { MonacoEditor, type IEditorApi } from '@vertesia/ui/widgets';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { SaveVersionConfirmModal } from './SaveVersionConfirmModal.js';
 

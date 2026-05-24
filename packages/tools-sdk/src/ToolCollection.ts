@@ -1,11 +1,11 @@
-import { AgentToolDefinition } from "@vertesia/common";
-import { existsSync, readdirSync, statSync } from "fs";
-import { Context } from "hono";
+import type { AgentToolDefinition } from "@vertesia/common";
+import { existsSync, readdirSync, statSync } from "node:fs";
+import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { join } from "path";
-import { pathToFileURL } from "url";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { authorize } from "./auth.js";
-import { ToolContext } from "./server/types.js";
+import type { ToolContext } from "./server/types.js";
 import { ToolRegistry } from "./ToolRegistry.js";
 import type { CollectionProperties, ICollection, Tool, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError, ToolUseContext } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";

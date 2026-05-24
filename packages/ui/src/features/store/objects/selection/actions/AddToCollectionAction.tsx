@@ -5,7 +5,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { CreateCollectionForm, SelectCollection } from "../../../collections";
 import { useObjectsActionCallback } from "../ObjectsActionHooks";
-import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
+import type { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 export function AddToCollectionActionComponent({ action, objectIds }: ActionComponentTypeProps) {
     const [showModal, setShowModal] = useState(false);

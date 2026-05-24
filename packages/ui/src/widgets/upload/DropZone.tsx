@@ -204,7 +204,7 @@ export function DropZone({
 
             // Check if there are directories (with webkitRelativePath)
             const hasDirectories = fileArray.some(
-                (file) => file.webkitRelativePath && file.webkitRelativePath.includes("/"),
+                (file) => file.webkitRelativePath?.includes("/"),
             );
 
             if (hasDirectories) {

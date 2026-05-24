@@ -1,6 +1,6 @@
-import { VertesiaClient } from "@vertesia/client";
-import { ConfigModes, InteractionExecutionPayload, InteractionExecutionResult, RunDataStorageLevel } from "@vertesia/common";
-import { TextFallbackOptions } from "@llumiverse/common";
+import type { VertesiaClient } from "@vertesia/client";
+import { ConfigModes, type InteractionExecutionPayload, type InteractionExecutionResult, RunDataStorageLevel } from "@vertesia/common";
+import type { TextFallbackOptions } from "@llumiverse/common";
 import { getStringOption, type CliOptions } from "../utils/options.js";
 
 export type CliExecutionResult = InteractionExecutionResult & {
@@ -111,9 +111,9 @@ export class ExecutionRequest {
         const model_options: TextFallbackOptions = {
             _option_id: "text-fallback",
             temperature: typeof options.temperature === 'string' ? parseFloat(options.temperature) : undefined,
-            max_tokens: typeof options.maxTokens === 'string' ? parseInt(options.maxTokens) : undefined,
+            max_tokens: typeof options.maxTokens === 'string' ? parseInt(options.maxTokens, 10) : undefined,
             top_p: typeof options.topP === 'string' ? parseFloat(options.topP) : undefined,
-            top_k: typeof options.topK === 'string' ? parseInt(options.topK) : undefined,
+            top_k: typeof options.topK === 'string' ? parseInt(options.topK, 10) : undefined,
             presence_penalty: typeof options.presencePenalty === 'string' ? parseFloat(options.presencePenalty) : undefined,
             frequency_penalty: typeof options.frequencyPenalty === 'string' ? parseFloat(options.frequencyPenalty) : undefined,
             stop_sequence: getStringOption(options.stopSequence)?.split(/\s*,\s*/),

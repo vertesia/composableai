@@ -1,9 +1,9 @@
 import { X } from "lucide-react";
-import { Dispatch, SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { Button } from "../button";
 
 import { DateCombobox, SelectionCombobox, TextCombobox, StringListCombobox } from "./comboBox/comboBox";
-import { Filter, FilterGroup, FilterOption } from "./types";
+import type { Filter, FilterGroup, FilterOption } from "./types";
 import dayjs from "dayjs";
 
 interface FiltersProps {
@@ -79,7 +79,6 @@ function generateComboboxOptions(
                     }}
                 />
             );
-        case 'select':
         default: {
             const filterGroup = filterGroups.find(group => group.name === filter.name);
             return (
@@ -114,7 +113,7 @@ export default function Filters({
             {filters
                 .filter((filter) => filter.value?.length > 0)
                 .map((filter) => (
-                    <div className="flex gap-[1px] items-center text-sm" key={filter.name + '-' + (filter.type == 'date' ? 'date' : filter.type === 'stringList' && typeof filter.value[0] === 'string' ? (filter.value as string[]).join(',') : Array.isArray(filter.value) ? (filter.value as FilterOption[]).map((v) => v.value).join(',') : '')}>
+                    <div className="flex gap-[1px] items-center text-sm" key={`${filter.name}-${filter.type === 'date' ? 'date' : filter.type === 'stringList' && typeof filter.value[0] === 'string' ? (filter.value as string[]).join(',') : Array.isArray(filter.value) ? (filter.value as FilterOption[]).map((v) => v.value).join(',') : ''}`}>
                         <div className="flex gap-1.5 shrink-0 rounded-s bg-muted p-1.5 h-8 items-center">
                             {filter.placeholder || filter.name}
                         </div>

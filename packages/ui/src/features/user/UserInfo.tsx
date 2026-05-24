@@ -1,8 +1,8 @@
-import { ApiKey, PrincipalType, User, UserGroup } from "@vertesia/common";
+import { type ApiKey, PrincipalType, type User, type UserGroup } from "@vertesia/common";
 import { Avatar, Popover, PopoverContent, PopoverTrigger, Table, errorMessage, useFetch } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Users, Users2 } from "lucide-react";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 
 const USER_CACHE: Record<string, Promise<User>> = {};
@@ -187,29 +187,25 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
 
     // Determine title and description
     const shortenedAgentId = agentId.slice(-6);
-    const title = user ? t('user.agentOnBehalfOf') : apiKey ? t('user.agentOnBehalfOfApiKey') : t('user.serviceAccount') + `~${shortenedAgentId}`;
+    const title = user ? t('user.agentOnBehalfOf') : apiKey ? t('user.agentOnBehalfOfApiKey') : `${t('user.serviceAccount')}~${shortenedAgentId}`;
     const _title = isScheduleAgent ? t('user.schedule', { title }) : title;
 
     const description = (
         <div className="space-y-2">
             {user && (
-                <>
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                         <Avatar src={user.picture} name={user.name} size="sm" />
                         <div>
                             <div className="font-medium">{user.name || user.email}</div>
                             {user.email && user.name && <div className="text-xs text-muted">{user.email}</div>}
                         </div>
                     </div>
-                </>
             )}
             {apiKey && (
-                <>
-                    <div>
+                <div>
                         <div className="font-medium">{apiKey.name}</div>
                         <div className="text-xs text-muted-foreground">Key ID: {apiKey.id}</div>
                     </div>
-                </>
             )}
             {!user && !apiKey && (
                 <>

@@ -1,5 +1,5 @@
-import { RemoteActivityExecutionPayload } from "@vertesia/common";
-import { ActivityExecutionContext } from "@vertesia/tools-sdk";
+import type { RemoteActivityExecutionPayload } from "@vertesia/common";
+import type { ActivityExecutionContext } from "@vertesia/tools-sdk";
 
 export interface WordCountParams {
     text: string;

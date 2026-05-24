@@ -1,8 +1,8 @@
 import { log } from "@temporalio/activity";
-import { execFile as execFileCallback } from "child_process";
-import fs from "fs";
+import { execFile as execFileCallback } from "node:child_process";
+import fs from "node:fs";
 import { file } from "tmp-promise";
-import { promisify } from "util";
+import { promisify } from "node:util";
 const execFile = promisify(execFileCallback);
 
 /**
@@ -76,7 +76,7 @@ export async function imageResizer(
         log.debug(`Resizing image using ImageMagick: ${inputPath} -> ${outputPath}`);
 
         const command = `convert`
-        let args = [inputPath];
+        const args = [inputPath];
 
         // Add JPEG shrink-on-load optimization
         args.push("-define", `jpeg:size=${max_hw * 3}x${max_hw * 3}`);

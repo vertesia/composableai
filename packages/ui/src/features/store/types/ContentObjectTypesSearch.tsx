@@ -8,7 +8,7 @@ import { useUserSession } from "@vertesia/ui/session";
 import { useTypeRegistry } from "./TypeRegistryProvider.js";
 import { useUITranslation } from '@vertesia/ui/i18n';
 
-import { CreateOrUpdateTypeModal, CreateOrUpdateTypePayload } from "./CreateOrUpdateTypeModal";
+import { CreateOrUpdateTypeModal, type CreateOrUpdateTypePayload } from "./CreateOrUpdateTypeModal";
 
 enum ChunkableOptions { true = "Yes", false = "No" };
 
@@ -50,7 +50,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
     };
 
     useEffect(() => {
-        search.query.chunkable = chunkable ? chunkable == "Yes" : undefined
+        search.query.chunkable = chunkable ? chunkable === "Yes" : undefined
         search.search()
             .then(() => setIsReady(true));
     }, [chunkable, search]);

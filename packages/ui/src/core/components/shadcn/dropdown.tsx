@@ -361,7 +361,7 @@ export function MenuItem({ children, href, onClick, isDisabled = false, variant 
       onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
       asChild={!!href}
     >
-      {href ? <a href={href}>{children}</a> : <>{children}</>}
+      {href ? <a href={href}>{children}</a> : children}
     </DropdownMenuItem>
   );
 }

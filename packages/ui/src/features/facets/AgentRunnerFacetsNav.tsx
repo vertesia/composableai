@@ -1,10 +1,10 @@
-import { Button, Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
+import { Button, type Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, type FilterGroup } from '@vertesia/ui/core';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { VInteractionFacet } from './utils/VInteractionFacet';
 import type { EnrichedFacetBucket } from './utils/VInteractionFacet';
 import { VStringFacet } from './utils/VStringFacet';
 import { VUserFacet } from './utils/VUserFacet';
-import { filterValueToQueryValue, SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
+import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
 import { RefreshCw } from 'lucide-react';
 import type { FacetBucket } from '@vertesia/common';
 
@@ -80,7 +80,7 @@ export function createAgentRunnerFilterHandler(search: SearchInterface) {
             }
         });
 
-        search.search();
+        void search.search();
     };
 }
 
@@ -109,7 +109,7 @@ export function AgentRunnerFacetsNav({ facets, search, selectionCount, actions }
     }, [filters, handleFilterLogic]);
 
     const handleRefetch = () => {
-        search.search();
+        void search.search();
     };
 
     return (
@@ -132,6 +132,7 @@ export function AgentRunnerFacetsNav({ facets, search, selectionCount, actions }
                         {actions && actions.length > 0 ? (
                             <div className='flex items-center gap-2 mb-1 me-2'>
                                 {actions.map((action, index) => (
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                     <div key={index}>{action}</div>
                                 ))}
                             </div>

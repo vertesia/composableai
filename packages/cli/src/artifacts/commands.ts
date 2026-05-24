@@ -1,13 +1,13 @@
-import { Command } from "commander";
-import { createReadStream, createWriteStream } from "fs";
-import { basename } from "path";
-import { pipeline } from "stream/promises";
-import { Readable } from "stream";
+import type { Command } from "commander";
+import { createReadStream, createWriteStream } from "node:fs";
+import { basename } from "node:path";
+import { pipeline } from "node:stream/promises";
+import { Readable } from "node:stream";
 import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import { NodeStreamSource } from "@vertesia/client/node";
 import { getArtifactStorageId } from "../agent-context.js";
 import { getClient } from "../client.js";
-import { type CliOptions } from "../utils/options.js";
+import type { CliOptions } from "../utils/options.js";
 
 // Artifact storage prefix - matches the client's ARTIFACTS_PREFIX
 const ARTIFACTS_PREFIX = "agents";

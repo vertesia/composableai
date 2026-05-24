@@ -1,5 +1,6 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 
 import { Badge } from './shadcn/badge';
 import { Input } from './shadcn/input';
@@ -19,7 +20,7 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
 
     const onBlur = (ev: React.FocusEvent<HTMLInputElement>) => {
         const v = ev.currentTarget.value;
-        if (v && v.trim()) {
+        if (v?.trim()) {
             onChange([...value, v.trim()])
             setText('')
         }
@@ -81,9 +82,11 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
             {
                 value && value.length > 0 &&
                 (value.map((v, index) =>
+                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     <VTooltip description={'click to remove'} key={index}>
                         <Badge
                             variant={"secondary"}
+                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                             key={index}
                             onClick={() => _onClick(index)}
                             className='cursor-pointer flex-shrink-0 hover:bg-destructive hover:text-destructive transition-colors'

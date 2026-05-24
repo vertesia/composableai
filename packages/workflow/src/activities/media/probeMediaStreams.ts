@@ -1,8 +1,8 @@
 import { ApplicationFailure, log } from '@temporalio/activity';
-import { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
+import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { RequestError } from '@vertesia/api-fetch-client';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError } from '../../errors.js';
 
@@ -15,7 +15,7 @@ export interface ProbeMediaStreamsResult {
     hasAudio: boolean;
 }
 
-export interface ProbeMediaStreamsParams {}
+export type ProbeMediaStreamsParams = Record<string, never>
 
 export interface ProbeMediaStreams extends DSLActivitySpec<ProbeMediaStreamsParams> {
     name: 'probeMediaStreams';

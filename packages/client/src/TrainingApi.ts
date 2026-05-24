@@ -1,6 +1,6 @@
 import type { TrainingJob } from "@llumiverse/common";
-import { ExecutionRunRef, ListTrainingSessionsQuery, TrainingSession, TrainingSessionCreatePayload, TrainingSessionRef } from "@vertesia/common";
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import type { ExecutionRunRef, ListTrainingSessionsQuery, TrainingSession, TrainingSessionCreatePayload, TrainingSessionRef } from "@vertesia/common";
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
 
 
 export default class TrainingApi extends ApiTopic {
@@ -22,36 +22,36 @@ export default class TrainingApi extends ApiTopic {
     }
 
     getSession(sessionId: string): Promise<TrainingSession> {
-        return this.get('/' + sessionId)
+        return this.get(`/${sessionId}`)
     }
 
     addToSession(sessionId: string, runs: string[]): Promise<unknown> {
-        return this.post('/' + sessionId + '/add', { payload: { runs } })
+        return this.post(`/${sessionId}/add`, { payload: { runs } })
     }
 
     listSessionRuns(sessionId: string, limit = 100, offset = 0): Promise<ExecutionRunRef[]> {
-        return this.get('/' + sessionId + '/runs', { query: { limit, offset } });
+        return this.get(`/${sessionId}/runs`, { query: { limit, offset } });
     }
 
     buildSession(sessionId: string) {
-        return this.post('/' + sessionId + '/build');
+        return this.post(`/${sessionId}/build`);
     }
 
     getDataUrl(sessionId: string): Promise<{ url: string }> {
-        return this.get('/' + sessionId + '/url')
+        return this.get(`/${sessionId}/url`)
     }
 
     getDataUploadUrl(sessionId: string, isResumable = false): Promise<{ url: string }> {
-        return this.get('/' + sessionId + '/upload-url',
+        return this.get(`/${sessionId}/upload-url`,
             isResumable ? { query: { resumable: 'true' } } : {})
     }
 
     startTraining(sessionId: string): Promise<TrainingJob> {
-        return this.post('/' + sessionId + '/start');
+        return this.post(`/${sessionId}/start`);
     }
 
     cancelTraining(sessionId: string): Promise<TrainingJob> {
-        return this.post('/' + sessionId + '/cancel');
+        return this.post(`/${sessionId}/cancel`);
     }
 
     getTrainingJob(jobId: string): Promise<TrainingJob> {
@@ -65,7 +65,7 @@ export default class TrainingApi extends ApiTopic {
     }
 
     setDataset(sessionId: string, name: string = "default"): Promise<unknown> {
-        return this.post('/' + sessionId + '/dataset', { payload: { dataset: name } })
+        return this.post(`/${sessionId}/dataset`, { payload: { dataset: name } })
     }
 
 }

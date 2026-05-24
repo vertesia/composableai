@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AgentMessage, AgentMessageType, Plan } from '@vertesia/common';
+import { type AgentMessage, AgentMessageType, type Plan } from '@vertesia/common';
 
 export interface UseAgentPlansResult {
     plans: Array<{ plan: Plan; timestamp: number }>;

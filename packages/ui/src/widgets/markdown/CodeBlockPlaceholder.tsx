@@ -90,6 +90,7 @@ export function CodeBlockPlaceholder({
             <div className="flex gap-1">
                 {[...Array(3)].map((_, i) => (
                     <div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                         key={i}
                         className="h-2 w-2 rounded-full bg-muted animate-bounce"
                         style={{ animationDelay: `${i * 150}ms` }}

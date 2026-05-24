@@ -1,5 +1,5 @@
-import { ApiKey } from "./apikey.js";
-import { ProjectRef, ProjectRoles } from "./project.js";
+import type { ApiKey } from "./apikey.js";
+import type { ProjectRef, ProjectRoles } from "./project.js";
 
 export interface UserWithAccounts extends User {
     accounts: AccountRef[];

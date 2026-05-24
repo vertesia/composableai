@@ -1,6 +1,6 @@
-import { QueryResult, VertesiaClient } from "@vertesia/client";
+import type { QueryResult, VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
-import {
+import type {
     ComplexSearchPayload,
     ContentObject,
     ContentObjectItemApiResponse,
@@ -9,15 +9,15 @@ import {
     CreateContentObjectPayload,
     ObjectSearchPayload,
 } from "@vertesia/common";
-import { Command } from "commander";
+import type { Command } from "commander";
 import enquirer from "enquirer";
-import { Stats, createReadStream, createWriteStream, type Dirent } from "node:fs";
+import { type Stats, createReadStream, createWriteStream, type Dirent } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import { glob } from 'glob';
 import mime from "mime";
-import { basename, join, resolve } from "path";
-import { pipeline } from "stream/promises";
-import { Readable } from "stream";
+import { basename, join, resolve } from "node:path";
+import { pipeline } from "node:stream/promises";
+import { Readable } from "node:stream";
 import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import { getClient } from "../client.js";
 import { getStringOption, hasErrorCode, type CliOptions } from "../utils/options.js";
@@ -220,7 +220,7 @@ export async function createObjectFromFiles(program: Command, files: string[], o
     if (!options) options = {};
     // split in 10 chunks
     const chunks = splitInChunks(files, 10);
-    Promise.all(chunks.map(async (chunk) => {
+    void Promise.all(chunks.map(async (chunk) => {
         for (const file of chunk) {
             await createObjectFromFile(program, file, options);
         }

@@ -1,6 +1,6 @@
-import { spawn } from 'child_process';
-import fs from 'fs';
-import { readFile } from "fs/promises";
+import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import { readFile } from "node:fs/promises";
 import tmp from 'tmp';
 tmp.setGracefulCleanup();
 
@@ -9,13 +9,13 @@ export function pdfFileToText(input: string, output: string) {
 
         const command = spawn("mutool", ["convert", "-o", output, input]);
 
-        command.on('exit', function (code) {
+        command.on('exit', (code) => {
             if (code) {
                 reject(new Error(`mutool exited with code ${code}`));
             }
         });
 
-        command.on('close', function (code) {
+        command.on('close', (code) => {
             if (code) {
                 reject(new Error(`mutool exited with code ${code}`));
             } else {

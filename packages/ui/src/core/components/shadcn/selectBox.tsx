@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { isEqual } from 'lodash-es';
 import { AlertTriangle, Check, ChevronsUpDown, LoaderCircle, SearchIcon, SquarePlus, X } from 'lucide-react';
-import { useState, useEffect, useRef, useMemo, useId, ReactNode } from 'react';
+import { useState, useEffect, useRef, useMemo, useId, type ReactNode } from 'react';
 
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from './popover';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from './command';
@@ -215,6 +215,7 @@ export function SelectBox<T = unknown>({
         return (
             <div className="flex flex-wrap gap-1">
                 {arrayValue.slice(0, 1).map((item, index) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     <span key={index} className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-muted rounded">
                         {optionLabel ? optionLabel(item) : item as string}
                     </span>
@@ -253,6 +254,7 @@ export function SelectBox<T = unknown>({
 
                             return (
                                 <CommandItem
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                     key={index}
                                     onSelect={() => _onClick(opt)}
                                     className="w-full"
@@ -260,14 +262,14 @@ export function SelectBox<T = unknown>({
                                     {multiple || inline ? (
                                         <div className='w-full flex justify-between items-center cursor-pointer'>
                                             <div className='w-full truncate text-start'>
-                                                {optionLabel ? optionLabel(opt) : opt as String}
+                                                {optionLabel ? optionLabel(opt) : opt as string}
                                             </div>
                                             {isSelected && <Check className="size-4" />}
                                         </div>
                                     ) : (
                                         <PopoverClose className='w-full flex justify-between items-center'>
                                             <div className='w-full truncate text-start'>
-                                                {optionLabel ? optionLabel(opt) : opt as String}
+                                                {optionLabel ? optionLabel(opt) : opt as string}
                                             </div>
                                             {isSelected && <Check className="size-4" />}
                                         </PopoverClose>

@@ -1,4 +1,4 @@
-import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type { AuditTrailQuery, AuditTrailResponse } from '@vertesia/common';
 
 export default class AuditTrailApi extends ApiTopic {
@@ -22,6 +22,6 @@ export default class AuditTrailApi extends ApiTopic {
         if (query?.limit) params.set('limit', String(query.limit));
         if (query?.offset) params.set('offset', String(query.offset));
         const qs = params.toString();
-        return this.get('/' + (qs ? '?' + qs : ''));
+        return this.get(`/${qs ? `?${qs}` : ''}`);
     }
 }

@@ -1,4 +1,4 @@
-import { ReactNode, ComponentType } from "react"
+import type { ReactNode, ComponentType } from "react"
 import { ErrorBoundary } from "react-error-boundary";
 
 export interface ErrorFallbackComponentProps {

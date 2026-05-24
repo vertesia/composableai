@@ -236,7 +236,7 @@ export function ThinkingBar({ className, color = 'blue', width = 'md', message }
                 const timeBasedChange = speed * (deltaTime / 16); // Normalize to 60fps
 
                 // Calculate next progress based on direction
-                let next = direction === 'increasing'
+                const next = direction === 'increasing'
                     ? prev + timeBasedChange
                     : prev - timeBasedChange;
 
@@ -381,6 +381,7 @@ export function WavyThinking({ className, color = 'blue', size = 'md' }: WavyThi
         >
             {barHeights.map((height, i) => (
                 <div
+                    // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length array of 7 visual bars never re-orders
                     key={i}
                     className={cn(
                         sizeClasses[size].barWidth,

@@ -29,9 +29,7 @@ jobs:
       - run: pnpm install
       - name: Build workspace
         run: pnpm build
-      - name: Typecheck tests
-        run: pnpm typecheck:test
-      - name: Run package tests
+      - name: Typecheck and run package tests
         run: pnpm ci:test
 
   template-smoke-test:

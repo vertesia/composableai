@@ -3,9 +3,9 @@ import type { JSONSchemaObject } from "@vertesia/common";
 import { Button, FormItem } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { Plus, Trash2 } from "lucide-react";
-import { ComponentType, ReactNode, SyntheticEvent, useState } from "react";
-import { FormContext, FormContextProvider, InputChangeEvent, InputComponentProps, useForm } from "./FormContext.js";
-import { ManagedListProperty, ManagedObject, ManagedObjectBase, ManagedProperty, Node } from "./ManagedObject.js";
+import { type ComponentType, type ReactNode, type SyntheticEvent, useState } from "react";
+import { FormContext, FormContextProvider, type InputChangeEvent, type InputComponentProps, useForm } from "./FormContext.js";
+import type { ManagedListProperty, ManagedObject, ManagedObjectBase, ManagedProperty, Node } from "./ManagedObject.js";
 import { Input } from "./inputs.js";
 
 interface FormProps {
@@ -150,6 +150,7 @@ function ListField({ object }: ListFieldProps) {
             {!object.isListItem && <div className='text-gray-900 dark:text-gray-200 font-semibold'>{object.title}</div>}
             {
                 object.items.map((item, index) => {
+                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     return <ListItem key={`${index}-${String(value[index] ?? '')}`} object={item} list={object} onDelete={() => deleteItem(index)} disabled={disabled} />;
                 })
             }

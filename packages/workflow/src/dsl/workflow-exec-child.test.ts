@@ -1,7 +1,7 @@
 import * as protos from '@temporalio/proto';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker, bundleWorkflowCode, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
-import { ContentEventName, DSLActivityExecutionPayload, DSLWorkflowExecutionPayload, DSLWorkflowStep } from '@vertesia/common';
+import { ContentEventName, type DSLActivityExecutionPayload, type DSLWorkflowExecutionPayload, type DSLWorkflowStep } from '@vertesia/common';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { dslWorkflow } from './dsl-workflow.js';
 import { setupActivity } from './setup/ActivityContext.js';

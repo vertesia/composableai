@@ -1,4 +1,4 @@
-import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase, type ServerError } from "@vertesia/api-fetch-client";
 import type {
     AppInstallation,
     AppInstallationKind,

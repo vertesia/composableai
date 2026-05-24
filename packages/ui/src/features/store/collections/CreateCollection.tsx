@@ -1,4 +1,4 @@
-import { CreateCollectionPayload } from "@vertesia/common";
+import type { CreateCollectionPayload } from "@vertesia/common";
 import { useToast, ModalBody, FormItem, ModalFooter, Input, Switch, Button, Modal, ModalTitle, Textarea } from "@vertesia/ui/core";
 import { SelectContentType } from "../types/SelectContentType";
 import { useNavigate } from "@vertesia/ui/router";
@@ -31,7 +31,7 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
     }
 
     const onCreate = () => {
-        if (!payload?.name || !payload.name.trim()) {
+        if (!payload?.name?.trim()) {
             toast({
                 title: t('type.nameRequired'),
                 description: t('store.pleaseProvideName'),

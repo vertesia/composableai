@@ -1,7 +1,7 @@
-import { AccessControlPrincipalType, AccessControlResourceType, AppInstallationKind, AppManifestData, ProjectRoles } from "@vertesia/common";
+import { AccessControlPrincipalType, AccessControlResourceType, type AppInstallationKind, type AppManifestData, ProjectRoles } from "@vertesia/common";
 import colors from "ansi-colors";
-import { Command } from "commander";
-import { readFile } from "fs/promises";
+import type { Command } from "commander";
+import { readFile } from "node:fs/promises";
 import { getClient } from "../client.js";
 import { hasErrorCode, isRecord, type CliOptions } from "../utils/options.js";
 
@@ -98,7 +98,7 @@ export async function createApp(program: Command, options: ManifestOptions) {
         // Get current user ID from JWT
         const jwt = await client.getDecodedJWT();
         
-        if (jwt && jwt.sub) {
+        if (jwt?.sub) {
             // Grant app_member role to the current user
             await client.iam.aces.create({
                 principal: jwt.sub,

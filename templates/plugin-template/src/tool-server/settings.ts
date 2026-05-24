@@ -1,4 +1,4 @@
-import { JSONSchema } from "@llumiverse/common";
+import type { JSONSchema } from "@llumiverse/common";
 
 /**
  * App Settings JSON Schema

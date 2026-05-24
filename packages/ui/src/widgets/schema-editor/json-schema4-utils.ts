@@ -1,5 +1,5 @@
 import type { JSONSchema, JSONSchemaTypeName } from "@vertesia/common";
-import { TypeNames, TypeSignature } from "./type-signature.js";
+import type { TypeNames, TypeSignature } from "./type-signature.js";
 
 
 export function setPropertyName(schema: JSONSchema, name: string, newName: string) {
@@ -40,7 +40,7 @@ export function setRequireProperty(schema: JSONSchema, name: string, isRequired:
 
 export function setPropertyType(schema: JSONSchema, type: TypeSignature) {
     const isAny = type.name === "any";
-    let typeObj: JSONSchemaTypeName | JSONSchemaTypeName[] | undefined = isAny ?
+    const typeObj: JSONSchemaTypeName | JSONSchemaTypeName[] | undefined = isAny ?
         undefined
         : (type.isNullable ?
             [type.name, "null"] as JSONSchemaTypeName[]

@@ -4,8 +4,8 @@
  * Types for rendering content to various formats (PDF, DOCX, images)
  */
 
-import { ImageRenditionFormat, MarkdownRenditionFormat } from "./store.js";
-import { WorkflowExecutionStatus, WorkflowRunStatus } from "./workflow.js";
+import type { ImageRenditionFormat, MarkdownRenditionFormat } from "./store.js";
+import { WorkflowExecutionStatus, type WorkflowRunStatus } from "./workflow.js";
 
 // ============================================================================
 // Workflow Vars Types (Discriminated Union)

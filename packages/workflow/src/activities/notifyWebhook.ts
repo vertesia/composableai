@@ -1,6 +1,6 @@
 import { log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
-import { ApiVersions, DSLActivityExecutionPayload, DSLActivitySpec, WebHookSpec, WorkflowExecutionBaseParams } from "@vertesia/common";
+import { ApiVersions, type DSLActivityExecutionPayload, type DSLActivitySpec, type WebHookSpec, type WorkflowExecutionBaseParams } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { WorkflowParamNotFoundError } from "../errors.js";
 import { getVertesiaClientOptions } from "../utils/client.js";
@@ -181,7 +181,6 @@ where ExecutionRun contains a result property with the new completion result for
 
 */
 
-//@ts-ignore
 async function createOldRequestBody(payload: WorkflowExecutionBaseParams<unknown>, params: NotifyWebhookParams): Promise<string> {
     let data = params.detail;
     const runId = typeof data?.run_id === "string" ? data.run_id : undefined;

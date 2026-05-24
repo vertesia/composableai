@@ -1,5 +1,5 @@
-import { AccessControlPrincipalType, AccessControlResourceType, ProjectRoles } from '@vertesia/common';
-import { Command } from 'commander';
+import type { AccessControlPrincipalType, AccessControlResourceType, ProjectRoles } from '@vertesia/common';
+import type { Command } from 'commander';
 import colors from 'ansi-colors';
 import { getClient } from '../client.js';
 import { getStringOption, type CliOptions } from '../utils/options.js';

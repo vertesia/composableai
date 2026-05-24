@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Minus, X } from 'lucide-react';
 import { Button } from './shadcn/button';
@@ -89,6 +90,7 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
                                         {/* Drag Handle */}
                                         {resizable && (
                                             // biome-ignore lint/a11y/noStaticElementInteractions: drag handle is pointer-only (no keyboard equivalent for continuous resize); ARIA role omitted to avoid useAriaPropsForRole false positive.
+                                            // biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-label kept for AT users; div has no semantic role because separator/slider would require valuenow/min/max
                                             <div
                                                 aria-label="Resize panel"
                                                 className={`absolute ${dragHandleClass} top-0 bottom-0 w-3 cursor-ew-resize hover:bg-indigo-500 transition-colors flex items-center justify-center`}

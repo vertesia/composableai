@@ -42,7 +42,7 @@ interface SidebarSectionProps {
 export function SidebarSection({ children, title, action, isFooter = false, className }: SidebarSectionProps) {
     const { isOpen } = useSidebarToggle();
 
-    let header = isOpen ? <>
+    const header = isOpen ? <>
         {title || ""}
         {action}
     </> : <Dot className='size-6' />
@@ -62,7 +62,7 @@ export function SidebarSection({ children, title, action, isFooter = false, clas
 export function SidebarTooltip({ children, text }: { children: React.ReactNode, text?: string }) {
     const { isOpen } = useSidebarToggle();
     return (
-        isOpen ? <>{children}</> :
+        isOpen ? children :
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>

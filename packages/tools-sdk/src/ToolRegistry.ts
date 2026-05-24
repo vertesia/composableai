@@ -1,6 +1,6 @@
-import { AgentToolDefinition } from "@vertesia/common";
+import type { AgentToolDefinition } from "@vertesia/common";
 import { HTTPException } from "hono/http-exception";
-import { Tool, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult, ToolUseContext } from "./types.js";
+import type { Tool, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult, ToolUseContext } from "./types.js";
 
 
 export class ToolRegistry {
@@ -67,7 +67,7 @@ export class ToolRegistry {
 
 export class ToolNotFoundError extends HTTPException {
     constructor(name: string) {
-        super(404, { message: "Tool function not found: " + name });
+        super(404, { message: `Tool function not found: ${name}` });
         this.name = "ToolNotFoundError";
     }
 }

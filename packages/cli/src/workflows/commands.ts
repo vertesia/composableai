@@ -1,7 +1,7 @@
-import { CreateWorkflowRulePayload, DSLWorkflowSpec, ExecuteWorkflowPayload, UploadWorkflowRulePayload, WorkflowRuleInputType } from "@vertesia/common";
-import { Command } from "commander";
-import fs from "fs";
-import { resolve, join, basename } from "path";
+import { type CreateWorkflowRulePayload, type DSLWorkflowSpec, type ExecuteWorkflowPayload, type UploadWorkflowRulePayload, WorkflowRuleInputType } from "@vertesia/common";
+import type { Command } from "commander";
+import fs from "node:fs";
+import { resolve, join, basename } from "node:path";
 import { getClient } from "../client.js";
 import { getStringOption, isRecord, type CliOptions } from "../utils/options.js";
 import { loadJSONWorkflowDefinition } from "./json-loader.js";
@@ -194,7 +194,7 @@ export async function listWorkflowsRule(program: Command, _options: Record<strin
 }
 
 export async function transpileWorkflow(_program: Command, files: string[], options: TranspileWorkflowOptions) {
-    if (!files || !files.length) {
+    if (!files?.length) {
         console.log("A .ts file argument is required.");
         process.exit(1);
     }

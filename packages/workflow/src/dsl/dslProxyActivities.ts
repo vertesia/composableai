@@ -1,13 +1,9 @@
-import { ActivityOptions, proxyActivities } from "@temporalio/workflow";
-import { DSLActivityExecutionPayload, WorkflowExecutionBaseParams, WorkflowExecutionPayload } from "@vertesia/common";
+import { type ActivityOptions, proxyActivities } from "@temporalio/workflow";
+import type { DSLActivityExecutionPayload, WorkflowExecutionBaseParams, WorkflowExecutionPayload } from "@vertesia/common";
 
-export interface DslActivityFunction<ParamsT extends object = Record<string, unknown>, ReturnT = unknown> {
-    (payload: DSLActivityExecutionPayload<ParamsT>): Promise<ReturnT>;
-}
+export type DslActivityFunction<ParamsT extends object = Record<string, unknown>, ReturnT = unknown> = (payload: DSLActivityExecutionPayload<ParamsT>) => Promise<ReturnT>
 
-export interface DslSimplifiedActivityFunction<ParamsT extends object = Record<string, unknown>, ReturnT = unknown> {
-    (payload: WorkflowExecutionBaseParams<unknown>, params: ParamsT): Promise<ReturnT>;
-}
+export type DslSimplifiedActivityFunction<ParamsT extends object = Record<string, unknown>, ReturnT = unknown> = (payload: WorkflowExecutionBaseParams<unknown>, params: ParamsT) => Promise<ReturnT>
 
 export function dslProxyActivities<ActivitiesT extends object>(workflowName: string, options: ActivityOptions = {}) {
     type DslActivities = {

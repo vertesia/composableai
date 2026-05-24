@@ -1,11 +1,11 @@
-import React, { Dispatch, SetStateAction, useEffect } from "react";
+import React, { type Dispatch, type SetStateAction, useEffect } from "react";
 import { cn } from "../../libs/utils";
 import { Button } from "../button";
 import { Popover, PopoverTrigger, PopoverContent } from "../popover";
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from "../command";
 import { ListFilter } from "lucide-react";
 
-import { Filter, FilterGroup, FilterOption } from "./types";
+import type { Filter, FilterGroup, FilterOption } from "./types";
 import Filters from "./filters";
 
 import TextFilter from "./filter/TextFilter";
@@ -186,7 +186,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
   };
 
   const getAvailableFilterGroups = () => {
-    let options = filterGroups.map(group => ({
+    const options = filterGroups.map(group => ({
       ...group,
       options: (group.options ?? []).filter(option =>
         !filters.some(filter => {
@@ -212,6 +212,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
 
     return options.map((group: FilterGroup, index: number) => (
       <CommandItem
+        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
         key={index}
         onSelect={() => handleSelect(group.name)}
         className="group flex gap-2 items-center hover:bg-muted"

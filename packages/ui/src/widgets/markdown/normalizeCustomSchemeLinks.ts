@@ -50,10 +50,8 @@ function normalizeCustomLinksInText(text: string): string {
 function normalizeOutsideInlineCode(text: string): string {
     let result = '';
     let lastIndex = 0;
-    let match: RegExpExecArray | null;
 
-    INLINE_CODE_REGEX.lastIndex = 0;
-    while ((match = INLINE_CODE_REGEX.exec(text)) !== null) {
+    for (const match of text.matchAll(INLINE_CODE_REGEX)) {
         result += normalizeCustomLinksInText(text.slice(lastIndex, match.index));
         result += match[0];
         lastIndex = match.index + match[0].length;
@@ -77,10 +75,8 @@ export function normalizeCustomSchemeLinks(markdown: string): string {
 
     let result = '';
     let lastIndex = 0;
-    let match: RegExpExecArray | null;
 
-    FENCED_CODE_BLOCK_REGEX.lastIndex = 0;
-    while ((match = FENCED_CODE_BLOCK_REGEX.exec(markdown)) !== null) {
+    for (const match of markdown.matchAll(FENCED_CODE_BLOCK_REGEX)) {
         result += normalizeOutsideInlineCode(markdown.slice(lastIndex, match.index));
         result += match[0];
         lastIndex = match.index + match[0].length;

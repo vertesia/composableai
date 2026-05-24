@@ -1,6 +1,6 @@
-import { DSLWorkflowSpec } from "@vertesia/common";
-import { readFileSync, rmSync, writeFileSync } from "fs";
-import { basename, resolve } from "path";
+import type { DSLWorkflowSpec } from "@vertesia/common";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import * as ts from "typescript";
 import { ValidationError, validateWorkflow } from "./validation.js";
 
@@ -33,6 +33,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions): { errors: nu
             }
         }
         if (diagnostic.file) {
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             const { line, character } = ts.getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start!);
             const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
             console.log(`${prefix}${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
@@ -67,7 +68,7 @@ function tryDeleteFile(file: string) {
 
 export function loadTsWorkflowDefinition(file: string, skipValidation: boolean = false): Promise<DSLWorkflowSpec> {
     if (!file.endsWith('.ts')) {
-        throw new Error("Not a type script file: " + file);
+        throw new Error(`Not a type script file: ${file}`);
     }
     file = resolve(file);
     const baseOptions = {

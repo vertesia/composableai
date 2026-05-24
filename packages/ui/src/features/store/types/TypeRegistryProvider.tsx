@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { useUserSession } from '@vertesia/ui/session';
 import { TypeRegistry } from './TypeRegistry.js';

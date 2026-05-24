@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { CollapseIcon } from '../../components/CollapseIcon';
 import { useXMLViewerContext } from '../../context/xml-viewer-context';
 import { useCollapsible } from '../../hooks/useCollapsible';

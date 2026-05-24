@@ -1,4 +1,4 @@
-import { DocAnalyzerProgress, DocProcessorOutputFormat, MarkdownRenditionFormat, WorkflowExecutionStatus } from "@vertesia/common";
+import { type DocAnalyzerProgress, type DocProcessorOutputFormat, MarkdownRenditionFormat, WorkflowExecutionStatus } from "@vertesia/common";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useEffect, useState } from "react";
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';

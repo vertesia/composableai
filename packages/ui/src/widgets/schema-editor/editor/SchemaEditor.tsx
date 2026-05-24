@@ -4,17 +4,17 @@ import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { Button, errorMessage, useToast } from '@vertesia/ui/core';
 
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { ManagedSchema, SchemaNode } from '../ManagedSchema.js';
+import type { ManagedSchema, SchemaNode } from '../ManagedSchema.js';
 import { TypeNames } from '../type-signature.js';
 import { Editable } from './Editable.js';
-import { EditableSchemaProperty, getEditableSchemaProperty } from './EditableSchemaProperty.js';
+import { type EditableSchemaProperty, getEditableSchemaProperty } from './EditableSchemaProperty.js';
 import { PropertyEditor } from './PropertyEditor.js';
 import { PropertyViewer } from './PropertyViewer.js';
 
 // do not exit edit mode when user is clicking inside the type suggestion popup
 function skipClickOutside(e: MouseEvent) {
     const target = e.target as HTMLElement;
-    return !!(target.closest && target.closest('.schema-type-suggest-popup'));
+    return !!(target.closest?.('.schema-type-suggest-popup'));
 };
 
 interface SchemaTreeProps {

@@ -1,6 +1,6 @@
-import React from "react";
+import type React from "react";
 import { FixLinks } from "./FixLinks";
-import { NavigateOptions } from "./HistoryNavigator";
+import type { NavigateOptions } from "./HistoryNavigator";
 import { RouteComponent } from "./RouteComponent";
 import { ReactRouterContext, useRouterContext } from "./Router";
 import { joinPath } from "./path";

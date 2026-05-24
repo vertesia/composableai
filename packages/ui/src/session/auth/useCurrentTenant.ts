@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useUserSession } from "@vertesia/ui/session";
+import { useUserSession } from "../UserSession";
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 
 interface TenantConfig {
@@ -63,7 +63,7 @@ export function useCurrentTenant() {
             }
         };
 
-        loadCurrentTenant();
+        void loadCurrentTenant();
     }, [user?.email]);
 
     return {

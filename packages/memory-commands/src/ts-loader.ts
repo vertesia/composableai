@@ -1,5 +1,5 @@
-import { readFileSync, rmSync, writeFileSync } from "fs";
-import { basename, resolve } from "path";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import * as ts from "typescript";
 
 function compile(fileNames: string[], options: ts.CompilerOptions): { errors: number, emittedFiles: string[] | undefined } {
@@ -31,6 +31,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions): { errors: nu
             }
         }
         if (diagnostic.file) {
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             const { line, character } = ts.getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start!);
             const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
             console.log(`${prefix}${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
@@ -65,7 +66,7 @@ function tryDeleteFile(file: string) {
 
 export function importTsFile(file: string, outdir: string = '.'): Promise<unknown> {
     if (!file.endsWith('.ts')) {
-        throw new Error("Not a type script file: " + file);
+        throw new Error(`Not a type script file: ${file}`);
     }
     file = resolve(file);
     const baseOptions = {

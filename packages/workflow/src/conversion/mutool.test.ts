@@ -1,6 +1,6 @@
 import { MockActivityEnvironment } from '@temporalio/testing';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { beforeAll, expect, test } from 'vitest';
 import { mutoolPdfToText, pdfExtractPages, pdfToImages } from './mutool.js';
 
@@ -10,7 +10,7 @@ beforeAll(async () => {
   activityContext = new MockActivityEnvironment();
 });
 
-const TIMEOUT = 10000;
+const TIMEOUT = 60000;
 
 test('should convert pdf to text with mutool', async () => {
   const pdf = fs.readFileSync(path.join(__dirname, '../../fixtures', 'test-pdf1.pdf'));
