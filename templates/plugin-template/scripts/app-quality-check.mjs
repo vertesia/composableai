@@ -102,6 +102,19 @@ function isSourceFile(file) {
     return /\.(ts|tsx|js|jsx|mjs|cjs|hbs|md|yaml|yml)$/.test(file);
 }
 
+function isCodeFile(file) {
+    return /\.(ts|tsx|js|jsx|mjs|cjs)$/.test(file);
+}
+
+function hasDetachedVertesiaClientMethod(text) {
+    const apiTopics = '(objects|agents|interactions|files|types|apps|store|data|prompts|skills|collections|runs)';
+    const detachedAssignment = new RegExp(
+        `\\bconst\\s+\\w+\\s*=\\s*client\\.${apiTopics}\\??\\.\\w+\\s*;`,
+    );
+    const destructuredTopic = new RegExp(`\\bconst\\s*\\{[^}]+\\}\\s*=\\s*client\\.${apiTopics}\\b`);
+    return detachedAssignment.test(text) || destructuredTopic.test(text);
+}
+
 const sourceFiles = (await walk(path.join(cwd, 'src'))).filter(isSourceFile);
 const scriptFiles = (await walk(path.join(cwd, 'scripts'))).filter(isSourceFile);
 const allFiles = [...sourceFiles, ...scriptFiles];
@@ -195,6 +208,19 @@ if (!isTemplateScaffoldPackage) {
             'no-template-example-artifacts',
             `Generated business apps must remove template example artifacts: ${[...new Set(templateExamples)].join(', ')}.`,
             path.join(cwd, 'src/tool-server'),
+        );
+    }
+}
+
+for (const file of allFiles.filter(isCodeFile)) {
+    const text = await readFile(file, 'utf8');
+
+    if (hasDetachedVertesiaClientMethod(text)) {
+        add(
+            'errors',
+            'no-detached-vertesia-client-method',
+            'Do not assign or destructure Vertesia SDK methods from client topics. Call through the client object, e.g. client.objects.search(...), so the SDK keeps its request context.',
+            file,
         );
     }
 }
