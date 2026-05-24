@@ -53,10 +53,15 @@ function stringLiterals(text) {
     return [...text.matchAll(/(["'`])((?:\\.|(?!\1)[\s\S])*?)\1/g)].map((match) => match[2]);
 }
 
+function jsxTextNodes(text) {
+    return [...text.matchAll(/>([^<>{}\n]*(?:seed|Seed)[^<>{}\n]*)</g)]
+        .map((match) => match[1].replace(/\s+/g, ' ').trim())
+        .filter(Boolean);
+}
+
 function firstEndUserSeedControl(text) {
-    return stringLiterals(text).find((literal) =>
-        /\bseed\s*(?:\/\s*sync|\s+(?:data|records?|objects?|store|samples?|demo|continuity)|\s*marker)\b/i.test(literal),
-    );
+    const pattern = /\bseed\s*(?:\/\s*sync|\s+(?:data|records?|objects?|store|samples?|demo|continuity)|\s*marker)\b/i;
+    return [...stringLiterals(text), ...jsxTextNodes(text)].find((literal) => pattern.test(literal));
 }
 
 function nestedRouterProviderTags(text) {
