@@ -24,7 +24,7 @@ export default function GoogleSignInButton({ redirectTo }: GoogleSignInButtonPro
             prompt: 'select_account',
             redirect_uri: window.location.origin + redirectPath
         });
-        signInWithRedirect(getFirebaseAuth(), provider);
+        void signInWithRedirect(getFirebaseAuth(), provider);
     };
 
     return (

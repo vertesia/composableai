@@ -141,7 +141,7 @@ class UserSession {
             console.log('Using Firebase logout');
             const wasLoggedIn = !!this.authToken;
             if (this.authToken) {
-                getFirebaseAuth().signOut();
+                void getFirebaseAuth().signOut();
             }
             this.authError = undefined;
             this.isLoading = false;

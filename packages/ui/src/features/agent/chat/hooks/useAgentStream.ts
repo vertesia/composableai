@@ -5,9 +5,9 @@ import {
     AgentMessageType,
     type ConversationFile,
     type FileProcessingDetails,
-    // biome-ignore lint/suspicious/noDeprecatedImports: legacy AgentMessage stream still uses StreamingChunkDetails; migration to CompactMessage tracked separately
-    type StreamingChunkDetails,
 } from '@vertesia/common';
+// biome-ignore lint/suspicious/noDeprecatedImports: legacy AgentMessage stream still uses StreamingChunkDetails; migration to CompactMessage tracked separately
+import type { StreamingChunkDetails } from '@vertesia/common';
 import { insertMessageInTimeline, isInProgress } from '../ModernAgentOutput/utils';
 
 /** Streaming data for a single active stream, keyed by streaming/activity ID */

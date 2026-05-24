@@ -16,7 +16,7 @@ export default function GitHubSignInButton(_props: GitHubSignInButtonProps) {
         /*provider.setCustomParameters({
             redirect_uri: redirectPath,
         });*/
-        signInWithRedirect(getFirebaseAuth(), provider);
+        void signInWithRedirect(getFirebaseAuth(), provider);
     };
 
     return (

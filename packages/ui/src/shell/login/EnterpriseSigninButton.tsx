@@ -85,7 +85,7 @@ export default function EnterpriseSigninButton({ redirectTo }: EnterpriseSigninB
                 },
             });
 
-            signInWithRedirect(getFirebaseAuth(), provider);
+            void signInWithRedirect(getFirebaseAuth(), provider);
             setIsLoading(false);
         });
     };
