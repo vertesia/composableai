@@ -33,7 +33,9 @@ export interface ExternalizedToolInputRef {
     ref: TextArtifactReference;
 }
 
-export type ExternalizedToolInputRefs = Record<string, ExternalizedToolInputRef[]>;
+export interface ExternalizedToolInputRefs {
+    [toolUseId: string]: ExternalizedToolInputRef[];
+}
 
 export function toolInputRefsArtifactPath(storageId: string): string {
     return `agents/${storageId}/tool-input-refs.json`;
