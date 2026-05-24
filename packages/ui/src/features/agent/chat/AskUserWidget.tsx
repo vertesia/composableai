@@ -259,7 +259,7 @@ export function AskUserWidget({
                                         key={option.id}
                                         onClick={() => onSelect?.(option.id)}
                                         disabled={isLoading}
-                                        className={`w-full text-start px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700
+                                        className={`w-full h-auto whitespace-normal text-start px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700
                                             bg-white dark:bg-gray-800
                                             hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600
                                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
@@ -274,7 +274,7 @@ export function AskUserWidget({
                                                 </span>
                                             )}
                                             <div className="flex-1 overflow-hidden">
-                                                <div className="font-medium text-sm text-gray-900 dark:text-gray-100 break-words">
+                                                <div className="font-medium text-sm text-gray-900 dark:text-gray-100 break-words text-center">
                                                     {option.label}
                                                 </div>
                                                 {option.description && (
