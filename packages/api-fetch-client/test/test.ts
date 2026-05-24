@@ -66,4 +66,111 @@ describe('Test requests', () => {
             done();
         }).catch(done);
     });
+    it('does not retry by default', async () => {
+        let attempts = 0;
+        const noRetryClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            return new Response(JSON.stringify({ message: 'unavailable' }), {
+                status: 503,
+                headers: { 'content-type': 'application/json' },
+            });
+        });
+
+        let error: unknown;
+        try {
+            await noRetryClient.get('/unstable');
+        } catch (err: unknown) {
+            error = err;
+        }
+
+        assert.equal(attempts, 1);
+        assert.equal((error as { status?: number }).status, 503);
+    });
+    it('retries opted-in transient responses for idempotent methods', async () => {
+        let attempts = 0;
+        const retryClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            return new Response(JSON.stringify({ attempts }), {
+                status: attempts === 1 ? 503 : 200,
+                headers: { 'content-type': 'application/json' },
+            });
+        }).withRetryPolicy({
+            attempts: 2,
+            baseDelayMs: 0,
+            jitter: false,
+        });
+
+        const payload = await retryClient.get('/unstable') as { attempts: number };
+
+        assert.equal(attempts, 2);
+        assert.equal(payload.attempts, 2);
+    });
+    it('does not retry POST unless the request opts in', async () => {
+        let attempts = 0;
+        const retryClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            return new Response(JSON.stringify({ message: 'unavailable' }), {
+                status: 503,
+                headers: { 'content-type': 'application/json' },
+            });
+        }).withRetryPolicy({
+            attempts: 2,
+            baseDelayMs: 0,
+            jitter: false,
+        });
+
+        let error: unknown;
+        try {
+            await retryClient.post('/unstable', { payload: { value: true } });
+        } catch (err: unknown) {
+            error = err;
+        }
+
+        assert.equal(attempts, 1);
+        assert.equal((error as { status?: number }).status, 503);
+    });
+    it('retries POST when the request policy explicitly allows it', async () => {
+        let attempts = 0;
+        const retryClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            return new Response(JSON.stringify({ attempts }), {
+                status: attempts === 1 ? 503 : 200,
+                headers: { 'content-type': 'application/json' },
+            });
+        }).withRetryPolicy({
+            attempts: 2,
+            baseDelayMs: 0,
+            jitter: false,
+        });
+
+        const payload = await retryClient.post('/unstable', {
+            payload: { value: true },
+            retryPolicy: { methods: ['POST'] },
+        }) as { attempts: number };
+
+        assert.equal(attempts, 2);
+        assert.equal(payload.attempts, 2);
+    });
+    it('retries opted-in connection errors', async () => {
+        let attempts = 0;
+        const retryClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            if (attempts === 1) {
+                throw new TypeError('connection reset');
+            }
+            return new Response(JSON.stringify({ attempts }), {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
+            });
+        }).withRetryPolicy({
+            attempts: 2,
+            baseDelayMs: 0,
+            jitter: false,
+        });
+
+        const payload = await retryClient.get('/unstable') as { attempts: number };
+
+        assert.equal(attempts, 2);
+        assert.equal(payload.attempts, 2);
+    });
 });
