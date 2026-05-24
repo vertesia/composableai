@@ -265,7 +265,7 @@ export const BrowserUseProjectConfigurationSchema: JSONSchemaType<BrowserUseProj
 // ==========================================
 
 export type ProjectSearchTier = "standard" | "performance";
-export type ElasticsearchBackend = 'serverless' | 'hosted';
+export type ElasticsearchBackend = "serverless" | "hosted";
 
 export interface ProjectConfiguration {
 
