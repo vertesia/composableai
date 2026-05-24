@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase, ServerError } from "@vertesia/api-fetch-client";
+import type {
     AsyncExecutionPayload, AsyncExecutionResult, ComputeInteractionFacetPayload, ComputedFacetResponse, GenerateInteractionPayload, GenerateTestDataPayload, GeneratedInteractionDefinition, GeneratedTestDataRecord, ImprovePromptPayload,
     ImprovePromptPayloadConfig,
     Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery,
@@ -8,10 +8,14 @@ import {
     InteractionsExportPayload, InteractionTags, InteractionUpdatePayload, PromptImprovementResponse,
     RateLimitRequestPayload, RateLimitRequestResponse, ResolvedInteractionExecutionInfo
 } from "@vertesia/common";
-import { VertesiaClient } from "./client.js";
+import type { VertesiaClient } from "./client.js";
 import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
 import { InteractionCatalogApi } from "./InteractionCatalogApi.js";
-import { EnhancedInteractionExecutionResult, enhanceInteractionExecutionResult } from "./InteractionOutput.js";
+import { type EnhancedInteractionExecutionResult, enhanceInteractionExecutionResult } from "./InteractionOutput.js";
+
+function hasIdPayload(payload: unknown): payload is { id: string } {
+    return !!payload && typeof payload === "object" && "id" in payload && typeof payload.id === "string";
+}
 
 export default class InteractionsApi extends ApiTopic {
     catalog: InteractionCatalogApi;
@@ -34,6 +38,7 @@ export default class InteractionsApi extends ApiTopic {
             }
         });
     }
+
     /**
      * Find interactions given a mongo match query.
      * You can also specify if prompts schemas are included in the result
@@ -148,10 +153,10 @@ export default class InteractionsApi extends ApiTopic {
      * @throws 500 if interaction execution fails
      * @throws 500 if interaction execution times out
      **/
-    async execute<ResultT = any, ParamsT = any>(id: string, payload: InteractionExecutionPayload = {},
+    async execute<ResultT = unknown, ParamsT = unknown>(id: string, payload: InteractionExecutionPayload = {},
         onChunk?: (chunk: string) => void): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
         const r = await executeInteraction<ParamsT>(this.client as VertesiaClient, id, payload, onChunk).catch(err => {
-            if (err instanceof ServerError && err.payload?.id) {
+            if (err instanceof ServerError && hasIdPayload(err.payload)) {
                 throw err.updateDetails({ run_id: err.payload.id });
             } else {
                 throw err;
@@ -175,10 +180,10 @@ export default class InteractionsApi extends ApiTopic {
      * @param onChunk
      * @returns
      */
-    async executeByName<ResultT = any, ParamsT = any>(nameWithTag: string, payload: InteractionExecutionPayload = {},
+    async executeByName<ResultT = unknown, ParamsT = unknown>(nameWithTag: string, payload: InteractionExecutionPayload = {},
         onChunk?: (chunk: string) => void): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
         const r = await executeInteractionByName<ParamsT>(this.client as VertesiaClient, nameWithTag, payload, onChunk).catch(err => {
-            if (err instanceof ServerError && err.payload?.id) {
+            if (err instanceof ServerError && hasIdPayload(err.payload)) {
                 throw err.updateDetails({ run_id: err.payload.id });
             } else {
                 throw err;

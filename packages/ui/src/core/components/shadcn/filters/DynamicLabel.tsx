@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 
 interface DynamicLabelProps {
   value: string;
@@ -33,7 +34,7 @@ export function DynamicLabel({ value, labelRenderer, fallbackLabel }: Readonly<D
       }
     };
 
-    renderLabel();
+    void renderLabel();
   }, [value, labelRenderer, fallbackLabel]);
 
   if (isLoading) {

@@ -1,8 +1,8 @@
-import { Plan } from "@vertesia/common";
+import type { Plan } from "@vertesia/common";
 import { Badge, Button, cn } from "@vertesia/ui/core";
 import { AlertCircle, CheckCircle, Circle, Clock } from "lucide-react";
 import React from "react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface InlinePlanPanelProps {
   plan: Plan;
@@ -54,7 +54,7 @@ function InlineSlidingPlanPanelComponent({
               if (totalTasks > 0) {
                 // Count each completed task from the plan
                 planTasks.forEach((task) => {
-                  if (task && task.id) {
+                  if (task?.id) {
                     const taskId = task.id.toString();
                     const taskStatus = workstreamStatus.get(taskId);
 
@@ -135,6 +135,7 @@ function InlineSlidingPlanPanelComponent({
                   | "completed"
                   | "skipped" = task.status || "pending";
                 if (workstreamStatus.has(taskId)) {
+                  // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                   status = workstreamStatus.get(taskId)!;
                 }
 
@@ -151,8 +152,9 @@ function InlineSlidingPlanPanelComponent({
                 }
 
                 return (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                   <div key={index} className="flex p-3 my-1">
-                    <div className={`mr-2 mt-0.5 flex-shrink-0 text-muted`}>
+                    <div className={`me-2 mt-0.5 flex-shrink-0 text-muted`}>
                       {taskId}
                     </div>
                     <div className="w-full">
@@ -160,7 +162,7 @@ function InlineSlidingPlanPanelComponent({
                         {taskGoal}
                       </div>
                       <div className="mt-1 flex justify-end items-center">
-                        <div className={`mr-2 mt-0.5 flex-shrink-0 ${statusColor}`}>
+                        <div className={`me-2 mt-0.5 flex-shrink-0 ${statusColor}`}>
                           <StatusIcon className="size-3.5" />
                         </div>
                         <Badge variant={status === "completed" ? "success" : status === "in_progress" ? "info" : "default"}>
@@ -192,7 +194,7 @@ function InlineSlidingPlanPanelComponent({
           // Get all task IDs from the plan for filtering
           const planTaskIds = new Set(
             (plan.plan || [])
-              .filter((task) => task && task.id)
+              .filter((task) => task?.id)
               .map((task) => task.id.toString()),
           );
 
@@ -232,7 +234,7 @@ function InlineSlidingPlanPanelComponent({
                         key={id}
                         className={cn("flex items-center p-1.5 rounded", statusBg)}
                       >
-                        <div className={`mr-1.5 ${statusColor}`}>
+                        <div className={`me-1.5 ${statusColor}`}>
                           <StatusIcon className="h-3.5 w-3.5" />
                         </div>
                         <div className="flex-1">

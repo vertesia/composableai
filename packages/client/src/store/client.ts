@@ -1,9 +1,8 @@
-import { AbstractFetchClient, RequestError } from "@vertesia/api-fetch-client";
-import { BulkOperationPayload, BulkOperationResponse } from "@vertesia/common";
+import { AbstractFetchClient, type IRequestRetryPolicy, type RequestError } from "@vertesia/api-fetch-client";
+import type { BulkOperationPayload, BulkOperationResponse } from "@vertesia/common";
 import { AgentsApi } from "./AgentsApi.js";
 import { CollectionsApi } from "./CollectionsApi.js";
 import { CostApi } from "./CostApi.js";
-import { CommandsApi } from "./CommandsApi.js";
 import { DataApi } from "./DataApi.js";
 import { EmailApi } from "./EmailApi.js";
 import { IndexingApi } from "./IndexingApi.js";
@@ -13,9 +12,11 @@ import { FilesApi } from "./FilesApi.js";
 import { HiveMemoryApi } from "./HiveMemoryApi.js";
 import { ObjectsApi } from "./ObjectsApi.js";
 import { PendingAsksApi } from "./PendingAsksApi.js";
+import { ProcessApi } from "./ProcessApi.js";
 import { QueryApi } from "./QueryApi.js";
 import { RenderingApi } from "./RenderingApi.js";
 import { SchedulesApi } from "./SchedulesApi.js";
+import { TaskApi } from "./TaskApi.js";
 import { ToolsApi } from "./ToolsApi.js";
 import { TypesApi } from "./TypesApi.js";
 import { VERSION, VERSION_HEADER } from "./version.js";
@@ -28,6 +29,7 @@ export interface ZenoClientProps {
     apikey?: string;
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
+    retryPolicy?: IRequestRetryPolicy;
 }
 
 function ensureDefined(serverUrl: string | undefined) {
@@ -45,6 +47,9 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
         super(ensureDefined(opts.serverUrl));
         if (opts.apikey) {
             this.withApiKey(opts.apikey);
+        }
+        if (opts.retryPolicy) {
+            this.withRetryPolicy(opts.retryPolicy);
         }
         this.onRequest = opts.onRequest;
         this.onResponse = opts.onResponse;
@@ -91,8 +96,9 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     types = new TypesApi(this);
     workflows = new WorkflowsApi(this);
     schedules = new SchedulesApi(this);
+    processes = new ProcessApi(this);
+    tasks = new TaskApi(this);
     files = new FilesApi(this);
-    commands = new CommandsApi(this);
     workers = new WorkersApi(this);
     collections = new CollectionsApi(this);
     embeddings = new EmbeddingsApi(this);

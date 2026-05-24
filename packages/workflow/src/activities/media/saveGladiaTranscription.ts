@@ -1,8 +1,8 @@
 import { log } from "@temporalio/activity";
 import { FetchClient } from "@vertesia/api-fetch-client";
-import { AudioMetadata, DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations, TranscriptSegment, VideoMetadata } from "@vertesia/common";
+import { type AudioMetadata, type DSLActivityExecutionPayload, type DSLActivitySpec, type GladiaConfigurationWithSecrets, SupportedIntegrations, type TranscriptSegment, type VideoMetadata } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
-import { TextExtractionResult, TextExtractionStatus } from "../../result-types.js";
+import { type TextExtractionResult, TextExtractionStatus } from "../../result-types.js";
 
 export interface SaveGladiaTranscriptionParams {
     gladiaTranscriptionId: string;
@@ -23,8 +23,8 @@ export async function saveGladiaTranscription(payload: DSLActivityExecutionPaylo
     const context = await setupActivity<SaveGladiaTranscriptionParams>(payload);
     const { params, client, inputType } = context;
 
-    const gladiaConfig = await client.projects.integrations.retrieve(payload.project_id, SupportedIntegrations.gladia) as GladiaConfiguration | undefined;
-    if (!gladiaConfig || !gladiaConfig.enabled) {
+    const gladiaConfig = await client.projects.integrations.retrieve(payload.project_id, SupportedIntegrations.gladia) as GladiaConfigurationWithSecrets | undefined;
+    if (!gladiaConfig?.enabled) {
         return {
             hasText: false,
             objectId: inputType === 'objectIds' ? context.objectId : undefined,

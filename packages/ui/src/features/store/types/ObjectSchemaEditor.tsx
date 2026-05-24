@@ -1,15 +1,15 @@
 import { useMemo, useRef, useState } from 'react';
 
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { MonacoEditor, EditorApi, SchemaEditor, useSchema } from '@vertesia/ui/widgets';
-import { Button, useToast, useTheme, Panel } from '@vertesia/ui/core';
-import { ContentObjectType } from '@vertesia/common';
+import { MonacoEditor, type EditorApi, SchemaEditor, useSchema } from '@vertesia/ui/widgets';
+import { Button, errorMessage, useToast, useTheme, Panel } from '@vertesia/ui/core';
+import type { ContentObjectType } from '@vertesia/common';
 import { Ajv } from "ajv";
 
 interface ObjectSchemaEditorProps {
     objectType: ContentObjectType;
-    onSchemaUpdate: (jsonSchema: any) => void;
+    onSchemaUpdate: (jsonSchema: unknown) => void;
     readonly?: boolean;
 }
 export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = false }: ObjectSchemaEditorProps) {
@@ -72,11 +72,11 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = fals
                 const newSchema = contentToJson(value);
                 validateSchema(newSchema);
                 schema.replaceSchema(newSchema);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 toast({
                     status: 'error',
                     title: t('store.invalidJsonSchema'),
-                    description: err.message,
+                    description: errorMessage(err),
                     duration: 5000
                 })
                 return false;
@@ -118,7 +118,7 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = fals
     );
 }
 
-function jsonToContent(json: any | undefined | null) {
+function jsonToContent(json: unknown | undefined | null) {
     if (!json) {
         return ''
     }
@@ -134,7 +134,7 @@ function contentToJson(content: string | undefined | null) {
     return JSON.parse(content.trim());
 }
 
-const validateSchema = (schema: Record<string, any>) => {
+const validateSchema = (schema: Record<string, unknown>) => {
     try {
         const ajv = new Ajv({
             strict: false, // Enable strict mode to ensure all properties are validated
@@ -142,7 +142,7 @@ const validateSchema = (schema: Record<string, any>) => {
         // Compile the schema. This implicitly validates the schema definition
         // against the JSON Schema draft that ajv supports by default.
         ajv.compile(schema);
-    } catch (error: any) {
-        throw new Error(`Invalid JSON Schema definition: ${error.message}`, { cause: error });
+    } catch (error: unknown) {
+        throw new Error(`Invalid JSON Schema definition: ${errorMessage(error)}`, { cause: error });
     }
 };

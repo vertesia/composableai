@@ -4,7 +4,7 @@
  * Access control interfaces
  */
 
-import { ProjectRoles } from "./project.js";
+import type { ProjectRoles } from "./project.js";
 
 export enum Permission {
     int_read = "interaction:read",
@@ -46,6 +46,9 @@ export enum Permission {
     workflow_admin = "workflow:admin",
     workflow_superadmin = "workflow:superadmin",
 
+    task_read = "task:read",
+    task_manage = "task:manage",
+
     iam_impersonate = "iam:impersonate",
 
     /** whether the user has access to Sutdio App. */
@@ -75,7 +78,7 @@ export enum AccessControlPrincipalType {
 /**
  * MongoDB query syntax subset for matching properties.
  * Keys are property names, values are either direct match values or operator objects.
- * Supported operators: `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$exists`.
+ * Supported operators: `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$exists`, `$empty`, `$like`.
  *
  * In `resource_props`, values can reference principal properties using the `$principal.` prefix.
  * These are resolved at token time by substituting the user's merged property value.
@@ -87,8 +90,8 @@ export enum AccessControlPrincipalType {
  * { region: { $in: ["us-east", "eu-west"] } }               // set membership (literal)
  * { security_level: { $lte: "$principal.access_level" } }   // cross-reference (resolved at token time)
  */
-/** A single condition value: literal, or operator object (e.g. { $lte: 3 }) */
-export type PropertyConditionValue = string | number | boolean | Record<string, any>;
+/** A single condition value. Resolved and evaluated dynamically by token/content security code. */
+export type PropertyConditionValue = unknown;
 
 export type PropertyConditions = Record<string, PropertyConditionValue>;
 

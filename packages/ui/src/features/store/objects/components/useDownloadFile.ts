@@ -1,8 +1,8 @@
-import { VertesiaClient, ZenoClient } from "@vertesia/client";
-import { MarkdownRenditionFormat, RenderMarkdownPayload } from "@vertesia/common";
+import type { VertesiaClient, ZenoClient } from "@vertesia/client";
+import type { MarkdownRenditionFormat, RenderMarkdownPayload } from "@vertesia/common";
 import { useCallback, useState } from "react";
-import { ToastFn } from "@vertesia/ui/core";
-import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
+import type { ToastFn } from "@vertesia/ui/core";
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 
 export interface UseDownloadFileOptions {
     client: VertesiaClient | ZenoClient;
@@ -70,7 +70,7 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
         } finally {
             setIsDownloading(false);
         }
-    }, [client, toast]);
+    }, [client, toast, t]);
 
     /**
      * Download a file from a direct URL (already signed or public).
@@ -142,7 +142,7 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
         } finally {
             setIsDownloading(false);
         }
-    }, [handleRenderResult, toast]);
+    }, [handleRenderResult, toast, t]);
 
     /**
      * Render markdown content and download the result.
@@ -179,7 +179,7 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
         } finally {
             setIsDownloading(false);
         }
-    }, [handleRenderResult, toast]);
+    }, [handleRenderResult, toast, t]);
 
     return {
         downloadFromContentSource,

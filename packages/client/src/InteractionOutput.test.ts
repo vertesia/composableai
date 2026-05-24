@@ -1,4 +1,4 @@
-import { CompletionResult } from '@llumiverse/common';
+import type { CompletionResult } from '@llumiverse/common';
 import { describe, expect, it } from 'vitest';
 import { InteractionOutput, IS_INTERACTION_OUTPUT } from './InteractionOutput.js';
 
@@ -190,9 +190,10 @@ describe('InteractionOutput', () => {
 
         it('should be marked with IS_INTERACTION_OUTPUT symbol', () => {
             const output = InteractionOutput.from(sampleResults);
+            const markedOutput = output as { [IS_INTERACTION_OUTPUT]?: boolean };
 
             // Check that the symbol marker is present
-            expect((output as any)[IS_INTERACTION_OUTPUT]).toBe(true);
+            expect(markedOutput[IS_INTERACTION_OUTPUT]).toBe(true);
         });
 
         it('should return the same instance when calling from() on an already wrapped array', () => {

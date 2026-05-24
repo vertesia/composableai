@@ -1,8 +1,8 @@
-import { RemoteActivityDefinition, RemoteActivityExecutionPayload, RemoteActivityExecutionResponse } from "@vertesia/common";
-import { Context } from "hono";
+import type { RemoteActivityDefinition, RemoteActivityExecutionPayload, RemoteActivityExecutionResponse } from "@vertesia/common";
+import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { authorize } from "./auth.js";
-import { CollectionProperties, ICollection, ToolExecutionContext } from "./types.js";
+import type { CollectionProperties, ICollection, ToolExecutionContext } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
 
 /**
@@ -14,15 +14,15 @@ export type ActivityExecutionContext = ToolExecutionContext;
 /**
  * Function signature for a remote activity handler.
  */
-export type ActivityFn<ParamsT extends Record<string, any> = Record<string, any>> = (
+export type ActivityFn<ParamsT extends object = Record<string, unknown>> = (
     payload: RemoteActivityExecutionPayload<ParamsT>,
     context: ActivityExecutionContext
-) => Promise<any>;
+) => Promise<unknown>;
 
 /**
  * An activity definition within an ActivityCollection.
  */
-export interface ActivityDefinition<ParamsT extends Record<string, any> = Record<string, any>> {
+export interface ActivityDefinition<ParamsT extends object = Record<string, unknown>> {
     /** Activity name (snake_case) */
     name: string;
     /** Display title */
@@ -30,9 +30,9 @@ export interface ActivityDefinition<ParamsT extends Record<string, any> = Record
     /** Description of what the activity does */
     description?: string;
     /** JSON Schema for the activity input parameters */
-    input_schema?: Record<string, any>;
+    input_schema?: Record<string, unknown>;
     /** JSON Schema for the activity output */
-    output_schema?: Record<string, any>;
+    output_schema?: Record<string, unknown>;
     /** The activity handler function */
     run: ActivityFn<ParamsT>;
 }

@@ -12,7 +12,7 @@ export class LocationChangeEvent {
         public name: LocationChangeEventName,
         public type: LocationChangeType,
         public location: URL,
-        public state?: any) {
+        public state?: unknown) {
     }
 
     get isPageLoad() {
@@ -45,19 +45,19 @@ export class LocationChangeEvent {
 }
 
 export class BeforeLocationChangeEvent extends LocationChangeEvent {
-    constructor(type: LocationChangeType, location: URL, state?: any) {
+    constructor(type: LocationChangeType, location: URL, state?: unknown) {
         super('beforeChange', type, location, state);
     }
 }
 export class AfterLocationChangeEvent extends LocationChangeEvent {
-    constructor(type: LocationChangeType, location: URL, state?: any) {
+    constructor(type: LocationChangeType, location: URL, state?: unknown) {
         super('afterChange', type, location, state);
     }
 }
 
 export interface NavigateOptions {
     replace?: boolean;
-    state?: any;
+    state?: unknown;
     /**
      * if defined prepend the basePath to the `to` argument
      */
@@ -88,8 +88,6 @@ export class HistoryNavigator {
     _popStateListener?: (ev: PopStateEvent) => void;
     _linkNavListener?: (ev: MouseEvent) => void;
     _listeners: ((event: LocationChangeEvent) => void)[] = [];
-    constructor() {
-    }
 
     addListener(listener: (event: LocationChangeEvent) => void) {
         this._listeners.push(listener);
@@ -125,7 +123,7 @@ export class HistoryNavigator {
         if (options.basePath) {
             let basePath = options.basePath;
             if (!basePath.startsWith('/')) {
-                basePath = '/' + basePath;
+                basePath = `/${basePath}`;
             }
             to = joinPath(basePath, to);
         }
@@ -147,7 +145,7 @@ export class HistoryNavigator {
             title: options.title || document.title
         };
 
-        window.history['replaceState'](stateToStore, '', to.href);
+        window.history.replaceState(stateToStore, '', to.href);
         this.fireLocationChange(new AfterLocationChangeEvent('popState', to, options.state));
     }
 
@@ -203,7 +201,7 @@ export class HistoryNavigator {
         const _popStateListener = (ev: PopStateEvent) => {
             let type: LocationChangeType;
             const to = new URL(window.location.href);
-            let state: any = undefined;
+            let state: unknown ;
             if (ev.state) {
                 type = 'popState';
                 state = ev.state.data;
@@ -225,7 +223,8 @@ export class HistoryNavigator {
             if (url && url.origin === window.location.origin) {
                 ev.preventDefault();
                 const to = new URL(this.addStickyParams(url.href));
-                const basePath = (ev as any)[BASE_PATH] || (ev.target as any)[BASE_PATH];
+                const basePath = (ev as MouseEvent & Partial<Record<typeof BASE_PATH, string>>)[BASE_PATH]
+                    || (ev.target as HTMLElement & Partial<Record<typeof BASE_PATH, string>>)[BASE_PATH];
                 if (basePath) {
                     to.pathname = joinPath(basePath, to.pathname);
                 }
@@ -239,7 +238,7 @@ export class HistoryNavigator {
     }
 
     stop() {
-        this._popStateListener && window.removeEventListener('popstate', this._popStateListener);
-        this._linkNavListener && document.body.removeEventListener('click', this._linkNavListener);
+        if (this._popStateListener) window.removeEventListener('popstate', this._popStateListener);
+        if (this._linkNavListener) document.body.removeEventListener('click', this._linkNavListener);
     }
 }

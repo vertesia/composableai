@@ -1,13 +1,13 @@
-import { Collection, ContentObjectTypeItem, DynamicCollection } from "@vertesia/common";
-import { Button, MessageBox, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, Spinner, useToast, VTooltip } from "@vertesia/ui/core";
+import type { Collection, ContentObjectTypeItem, DynamicCollection } from "@vertesia/common";
+import { Button, MessageBox, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, Spinner, errorMessage, useToast, VTooltip } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useTypeRegistry } from "../../types/TypeRegistryProvider.js";
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from "lucide-react";
-import { ReactNode, useEffect, useMemo, useState } from "react";
-import { useUITranslation } from '../../../../i18n/index.js';
-import { FileUploadAction, FileWithMetadata, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
-import { DocumentUploadResult } from "./useUploadHandler";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { FileUploadAction, type FileWithMetadata, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
+import type { DocumentUploadResult } from "./useUploadHandler";
 
 
 /**
@@ -94,7 +94,7 @@ export function DocumentUploadModal({
     useEffect(() => {
         if (!collectionId) return;
         client.store.collections.retrieve(collectionId).then(setCollectionData);
-    }, [collectionId]);
+    }, [client.store.collections.retrieve, collectionId]);
 
     // Update title and description based on current state
     useEffect(() => {
@@ -128,13 +128,13 @@ export function DocumentUploadModal({
                 <div className="text-sm mt-1">
                     {collectionData && (
                         <div className="flex items-center">
-                            <span className="mr-1">{t('upload.collectionLabel')}</span>
+                            <span className="me-1">{t('upload.collectionLabel')}</span>
                             <span className="font-medium">{collectionData.name}</span>
                         </div>
                     )}
                     {selectedFolder && (
                         <div className="flex items-center mt-1">
-                            <span className="mr-1">{t('upload.folderLabel')}</span>
+                            <span className="me-1">{t('upload.folderLabel')}</span>
                             <span className="font-medium">{selectedFolder}</span>
                         </div>
                     )}
@@ -158,66 +158,8 @@ export function DocumentUploadModal({
         return typeRegistry?.types || [];
     }, [typeRegistry?.types]);
 
-    // Reset state when modal opens/closes
-    useEffect(() => {
-        if (isOpen) {
-            // Always reset state first
-            setProcessedFiles([]);
-            setProcessingDone(false);
-            setSelectedType(null);
-            setFileStatuses([]);
-            setIsUploading(false);
-            setUploadComplete(false);
-            setOverallProgress(0);
-            setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
-            setResult(null);
-            setTitle(resolvedTitle);
-            setDescription("");
-
-            // Set initial files if provided
-            if (initialFiles && initialFiles.length > 0) {
-                setFiles(initialFiles);
-                processFiles(initialFiles);
-            } else {
-                setFiles([]);
-            }
-
-            // Create a new key to ensure the modal is fresh
-            setModalKey(Date.now());
-        }
-    }, [isOpen, initialFiles]);
-
-    // Complete cleanup when modal closes
-    const handleClose = () => {
-        // Reset all state to initial values to prevent memory leaks
-        setFiles([]);
-        setProcessedFiles([]);
-        setProcessingDone(false);
-        setSelectedType(null);
-        setFileStatuses([]);
-        setIsUploading(false);
-        setUploadComplete(false);
-        setOverallProgress(0);
-        setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
-        setResult(null);
-        setTitle(resolvedTitle);
-        setDescription("");
-        setModalKey(Date.now());
-
-        // Call the provided onClose function
-        onClose();
-    };
-
-    // Handle file drop/selection
-    const handleFileSelect = (newFiles: File[]) => {
-        if (newFiles && newFiles.length > 0) {
-            setFiles(newFiles);
-            processFiles(newFiles);
-        }
-    };
-
     // Process files to determine create/update/skip status
-    const processFiles = async (filesToProcess: File[]) => {
+    const processFiles = useCallback(async (filesToProcess: File[]) => {
         if (!filesToProcess.length) return;
 
         try {
@@ -257,6 +199,64 @@ export function DocumentUploadModal({
                 status: "error",
                 duration: 5000,
             });
+        }
+    }, [checkDocumentProcessing, collectionId, selectedFolder, t, toast]);
+
+    // Reset state when modal opens/closes
+    useEffect(() => {
+        if (isOpen) {
+            // Always reset state first
+            setProcessedFiles([]);
+            setProcessingDone(false);
+            setSelectedType(null);
+            setFileStatuses([]);
+            setIsUploading(false);
+            setUploadComplete(false);
+            setOverallProgress(0);
+            setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
+            setResult(null);
+            setTitle(resolvedTitle);
+            setDescription("");
+
+            // Set initial files if provided
+            if (initialFiles && initialFiles.length > 0) {
+                setFiles(initialFiles);
+                void processFiles(initialFiles);
+            } else {
+                setFiles([]);
+            }
+
+            // Create a new key to ensure the modal is fresh
+            setModalKey(Date.now());
+        }
+    }, [isOpen, initialFiles, processFiles, resolvedTitle]);
+
+    // Complete cleanup when modal closes
+    const handleClose = () => {
+        // Reset all state to initial values to prevent memory leaks
+        setFiles([]);
+        setProcessedFiles([]);
+        setProcessingDone(false);
+        setSelectedType(null);
+        setFileStatuses([]);
+        setIsUploading(false);
+        setUploadComplete(false);
+        setOverallProgress(0);
+        setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
+        setResult(null);
+        setTitle(resolvedTitle);
+        setDescription("");
+        setModalKey(Date.now());
+
+        // Call the provided onClose function
+        onClose();
+    };
+
+    // Handle file drop/selection
+    const handleFileSelect = (newFiles: File[]) => {
+        if (newFiles && newFiles.length > 0) {
+            setFiles(newFiles);
+            void processFiles(newFiles);
         }
     };
 
@@ -371,7 +371,7 @@ export function DocumentUploadModal({
                                     },
                                     {
                                         createRevision: true,
-                                        revisionLabel: "upload on " + new Date().toISOString(),
+                                        revisionLabel: `upload on ${new Date().toISOString()}`,
                                     },
                                 );
 
@@ -426,7 +426,7 @@ export function DocumentUploadModal({
                                     location: fileInfo.location,
                                 });
                             }
-                        } catch (error: any) {
+                        } catch (error: unknown) {
                             console.error(`Failed to process file ${fileInfo.name}:`, error);
 
                             // Update status to error
@@ -437,7 +437,7 @@ export function DocumentUploadModal({
                                             ...status,
                                             status: "error",
                                             progress: 100,
-                                            message: error.message || "Unknown error",
+                                            message: errorMessage(error, "Unknown error"),
                                         }
                                         : status,
                                 ),
@@ -446,7 +446,7 @@ export function DocumentUploadModal({
                             // Add to failed result
                             result.failedFiles.push({
                                 name: fileInfo.name,
-                                error: error.message || "Unknown error",
+                                error: errorMessage(error, "Unknown error"),
                                 status: "failed",
                                 location: fileInfo.location,
                                 type: typeId,
@@ -563,15 +563,15 @@ export function DocumentUploadModal({
     const typeSelection = () => {
         return (
             <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">
+                <div className="block text-sm font-medium mb-2">
                     {t('store.contentType')} <span className="text-muted font-normal">{t('store.optional')}</span>
                     <VTooltip
                         description={t('upload.contentTypeTooltip')}
                         placement="top" size="xs"
                     >
-                        <Info className="size-3 ml-2" />
+                        <Info className="size-3 ms-2" />
                     </VTooltip>
-                </label>
+                </div>
                 <SelectBox
                     options={types}
                     value={selectedType}
@@ -581,18 +581,16 @@ export function DocumentUploadModal({
                     filterBy="name"
                     isClearable
                 />
-                {selectedType ? (
-                    <></>
-                ) : (
+                {!selectedType && (
                     <div className="p-2 rounded-md">
                         <div className="flex items-center text-attention">
-                            <CheckCircleIcon className="size-4 mr-1" />
+                            <CheckCircleIcon className="size-4 me-1" />
                             {t('store.automaticTypeDetection')}
                             <VTooltip
                                 description={t('store.automaticTypeDetectionDescription')}
                                 placement="top" size="xs"
                             >
-                                <Info className="size-3 ml-2" />
+                                <Info className="size-3 ms-2" />
                             </VTooltip>
                         </div>
                     </div>
@@ -735,10 +733,11 @@ export function DocumentUploadModal({
                     <div className="max-h-96 overflow-y-auto">
                         {fileStatuses.map((fileStatus, index) => (
                             <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                 key={`${fileStatus.file.name}-${index}`}
                                 className="flex items-center py-2 border-b border-border last:border-b-0"
                             >
-                                <div className="mr-3">
+                                <div className="me-3">
                                     {fileStatus.status === "pending" && (
                                         <FileIcon className="size-5 text-muted" />
                                     )}

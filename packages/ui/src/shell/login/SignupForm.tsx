@@ -1,9 +1,9 @@
-import { SignupData } from "@vertesia/common";
+import type { SignupData } from "@vertesia/common";
 import { Button, Input, RadioGroup, SelectBox } from "@vertesia/ui/core";
-import { User } from "firebase/auth";
+import type { User } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { getFirebaseAuth } from "@vertesia/ui/session";
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 
 interface CompanySizeOption {
@@ -64,7 +64,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
             return;
         }
         setFbUser(user);
-    }, [fbUser]);
+    }, []);
 
     const isValid = () => {
         if (!accountType) {

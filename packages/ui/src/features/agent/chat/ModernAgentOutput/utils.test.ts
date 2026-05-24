@@ -1,4 +1,4 @@
-import { AgentMessage, AgentMessageType } from "@vertesia/common";
+import { type AgentMessage, AgentMessageType } from "@vertesia/common";
 import { describe, expect, it } from "vitest";
 import { getSlidingViewMessageBuckets, groupMessagesWithStreaming, isToolActivityMessage, mergeConsecutiveToolGroups, shouldCollapseAdjacentRenderedMessage } from "./utils";
 

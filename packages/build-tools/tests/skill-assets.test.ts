@@ -4,9 +4,9 @@
 
 import { describe, it, expect } from 'vitest';
 import { skillTransformer, SkillDefinitionSchema } from '../src/presets/skill.js';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,7 +21,7 @@ describe('Skill Transformer with Assets', () => {
     expect(result.data).toHaveProperty('scripts');
     expect(result.data).toHaveProperty('widgets');
 
-    const data = result.data as any;
+    const data = result.data as { scripts?: string[]; widgets?: string[] };
     expect(data.scripts).toContain('helper.js');
     expect(data.scripts).toContain('script.py');
     expect(data.widgets).toContain('widget');
@@ -36,7 +36,7 @@ describe('Skill Transformer with Assets', () => {
     expect(result.assets).toBeDefined();
     expect(result.assets).toHaveLength(2); // 2 scripts, no widgets
 
-    const scriptAssets = result.assets!.filter(a => a.type === 'script');
+    const scriptAssets = result.assets?.filter(a => a.type === 'script');
     expect(scriptAssets).toHaveLength(2);
   });
 
@@ -61,7 +61,7 @@ describe('Skill Transformer with Assets', () => {
 
     const result = await skillTransformer.transform(content, filePath);
 
-    const data = result.data as any;
+    const data = result.data as { scripts?: string[]; widgets?: string[] };
     expect(data.scripts).toBeUndefined();
     expect(data.widgets).toBeUndefined();
   });

@@ -1,11 +1,11 @@
 import { CompleteAsyncError } from "@temporalio/activity";
 import { MockActivityEnvironment } from "@temporalio/testing";
 import type { VertesiaClient } from "@vertesia/client";
-import { AUDIO_RENDITION_NAME, ContentEventName, ContentNature, DSLActivityExecutionPayload } from "@vertesia/common";
+import { AUDIO_RENDITION_NAME, ContentEventName, ContentNature, type DSLActivityExecutionPayload } from "@vertesia/common";
 import type { ActivityContext } from "@vertesia/workflow";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { TextExtractionStatus } from "../../result-types.js";
-import { transcribeMedia, TranscriptMediaParams, TranscriptMediaResult } from "./transcribeMediaWithGladia.js";
+import { transcribeMedia, type TranscriptMediaParams, type TranscriptMediaResult } from "./transcribeMediaWithGladia.js";
 
 // Mock setupActivity from the relative path used by the activity
 vi.mock("../../dsl/setup/ActivityContext.js", async (importOriginal) => {
@@ -60,7 +60,7 @@ const createTestPayload = (
             ? { inputType: 'objectIds' as const, objectIds: [objectId] }
             : undefined,
         vars: {},
-        activity: { name: "TranscribeMedia", params }
+        activity: { name: "TranscribeMedia", params: params as unknown as Record<string, unknown> }
     };
 };
 
@@ -76,8 +76,8 @@ describe("TranscribeMedia", () => {
                 result_url: "https://api.gladia.io/v2/transcription/test-transcription-id",
             }),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -109,7 +109,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -147,8 +147,8 @@ describe("TranscribeMedia", () => {
                 result_url: "https://api.gladia.io/v2/transcription/test-transcription-id",
             }),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -191,7 +191,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -230,7 +230,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -261,8 +261,8 @@ describe("TranscribeMedia", () => {
                 result_url: "https://api.gladia.io/v2/transcription/test-transcription-id",
             }),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -293,9 +293,9 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {
+        const params = {
             force: true,
-        };
+        } satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -322,8 +322,8 @@ describe("TranscribeMedia", () => {
                 result_url: "https://api.gladia.io/v2/transcription/test-transcription-id",
             }),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -346,9 +346,9 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {
+        const params = {
             output_storage_path: "test-storage-path",
-        };
+        } satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -383,7 +383,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -416,7 +416,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -455,7 +455,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -486,8 +486,8 @@ describe("TranscribeMedia", () => {
                 new RequestError("Invalid audio format", mockRequest, 422, { error: "Invalid audio format" })
             ),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -518,7 +518,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -565,7 +565,7 @@ describe("TranscribeMedia", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: TranscriptMediaParams = {};
+        const params = {} satisfies TranscriptMediaParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,

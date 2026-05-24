@@ -85,7 +85,7 @@ program
   )
   .option("--sts-url <sts_url>", "The Vertesia STS issuer URL to trust", process.env.VERTESIA_STS_URL)
   .action((options) => {
-    configureVertexAiEnvironment(
+    void configureVertexAiEnvironment(
       vertesia,
       options.env,
       options.region,

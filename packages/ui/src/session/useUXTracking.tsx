@@ -1,5 +1,5 @@
 import { Env } from '@vertesia/ui/env';
-import { AuthTokenPayload } from '@vertesia/common';
+import type { AuthTokenPayload } from '@vertesia/common';
 import { logEvent } from "firebase/analytics";
 import { getFirebaseAnalytics } from "./auth/firebase";
 
@@ -19,7 +19,7 @@ export function useUXTracking() {
     }
 
     //send event to analytics and UX systems
-    const trackEvent = (eventName: string, eventProperties?: any) => {
+    const trackEvent = (eventName: string, eventProperties?: Record<string, unknown>) => {
 
         if (!Env.isProd) {
             console.debug('track event', eventName, eventProperties);

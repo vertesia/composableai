@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { CreateWorkerDeploymentRequest } from "@vertesia/common";
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import type { CreateWorkerDeploymentRequest } from "@vertesia/common";
 
 
 export class WorkersApi extends ApiTopic {

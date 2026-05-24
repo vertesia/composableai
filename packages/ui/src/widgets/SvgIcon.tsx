@@ -21,7 +21,7 @@ export function SvgIcon({ content, ...props }: SvgIconProps) {
         }
 
         // Apply all passed props to the SVG element
-        props && Object.entries(props).forEach(([key, value]) => {
+        Object.entries(props).forEach(([key, value]) => {
             if (value == null) return;
 
             const attrName = key === 'className' ? 'class' : key;
@@ -31,7 +31,7 @@ export function SvgIcon({ content, ...props }: SvgIconProps) {
         // Clear and append the new SVG
         containerRef.current.innerHTML = '';
         containerRef.current.appendChild(svgEl);
-    }, [content, props]);
+    });
 
     return <span ref={containerRef} />;
 }

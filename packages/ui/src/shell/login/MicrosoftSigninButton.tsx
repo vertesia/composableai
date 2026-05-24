@@ -14,7 +14,7 @@ export default function MicrosoftSignInButton({ redirectTo: _redirectTo }: Googl
         const provider = new OAuthProvider('microsoft.com');
         provider.addScope('profile');
         provider.addScope('email');
-        signInWithRedirect(getFirebaseAuth(), provider);
+        void signInWithRedirect(getFirebaseAuth(), provider);
     };
 
     return (

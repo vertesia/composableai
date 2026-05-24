@@ -1,4 +1,4 @@
-import { computePosition, Constraints, Position } from "./position";
+import { computePosition, type Constraints, type Position } from "./position";
 import { computeVisibleClientRect, getScrollableParents } from "./utils";
 
 
@@ -65,8 +65,8 @@ export class PopupController {
             }
             // register in the next event loop cycle since the current one
             // is may be triggered by a click event
-            window.setTimeout(function () {
-                closeOnClick && document.addEventListener('click', closeOnClick);
+            window.setTimeout(() => {
+                if (closeOnClick) document.addEventListener('click', closeOnClick);
             }, 0);
         }
         let closeOnEsc: ((ev: KeyboardEvent) => void) | undefined;
@@ -76,8 +76,8 @@ export class PopupController {
                     this.tryClose();
                 }
             }
-            window.setTimeout(function () {
-                closeOnEsc && document.addEventListener('keydown', closeOnEsc);
+            window.setTimeout(() => {
+                if (closeOnEsc) document.addEventListener('keydown', closeOnEsc);
             }, 0);
         }
         const blockPageScroll = this.options.blockPageScroll;
@@ -90,8 +90,8 @@ export class PopupController {
             for (const parent of parents) {
                 parent.removeEventListener('scroll', updateHandler);
             }
-            closeOnClick && document.removeEventListener('click', closeOnClick);
-            closeOnEsc && document.removeEventListener('keydown', closeOnEsc);
+            if (closeOnClick) document.removeEventListener('click', closeOnClick);
+            if (closeOnEsc) document.removeEventListener('keydown', closeOnEsc);
             if (blockPageScroll) {
                 document.body.style.overflow = "";
                 document.body.style.height = "";
@@ -119,7 +119,7 @@ export class PopupController {
         element.style.visibility = "hidden";
         // update the popup position
         this.update();
-        this.options.onOpen && this.options.onOpen(this);
+        this.options.onOpen?.(this);
     }
 
     close() {
@@ -132,7 +132,7 @@ export class PopupController {
         if (!this.context) {
             return; // do nothing if the popup is not open
         }
-        this.options.onClose && this.options.onClose(this);
+        this.options.onClose?.(this);
         this.context.cleanup();
         //TODO
         this.context.element.style.display = "none";
@@ -159,13 +159,13 @@ export class PopupController {
         this.context.position = position || undefined;
         if (position) {
             if (position.constrainHeight) {
-                element.style.height = position.rect.height + 'px';
+                element.style.height = `${position.rect.height}px`;
             }
             if (position.constrainWidth) {
-                element.style.width = position.rect.width + 'px';
+                element.style.width = `${position.rect.width}px`;
             }
-            element.style.left = position.rect.left + 'px';
-            element.style.top = position.rect.top + 'px';
+            element.style.left = `${position.rect.left}px`;
+            element.style.top = `${position.rect.top}px`;
             element.style.visibility = "visible";
         }
     }

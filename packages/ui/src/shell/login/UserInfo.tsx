@@ -5,7 +5,7 @@ import { useUserSession } from "@vertesia/ui/session";
 // Package version is now passed as prop from the consuming application
 import { Check, CopyIcon } from "lucide-react";
 import { useState } from "react";
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export function InfoItems({ title, value }: { title: string, value: string }) {
     function copyToClipboard(value: string) {
@@ -19,7 +19,7 @@ export function InfoItems({ title, value }: { title: string, value: string }) {
             <div className="flex flex-col w-[calc(100%-3rem)]">
                 <div className='text-sm px-2 dark:text-slate-200'>{title}</div>
                 <VTooltip description={value} size="xs" placement="left">
-                    <div className='text-xs truncate text-muted w-full text-left px-2'>{value} </div>
+                    <div className='text-xs truncate text-muted w-full text-start px-2'>{value} </div>
                 </VTooltip>
             </div>
             {isCopied ?
@@ -39,6 +39,7 @@ export default function InfoList() {
     const { account, project, client, authToken } = session;
     const server = new URL(client.baseUrl).hostname;
     const store = new URL(client.store.baseUrl).hostname;
+    const mcpServer = Env.endpoints.mcp ? new URL(Env.endpoints.mcp).hostname : t('user.unknown');
     const tenantId = project ? getTenantIdFromProject(project) : '';
 
     const tabs = [
@@ -63,6 +64,7 @@ export default function InfoList() {
                     <InfoItems title={t('user.environment')} value={Env.type} />
                     <InfoItems title={t('user.server')} value={server} />
                     <InfoItems title={t('user.store')} value={store} />
+                    <InfoItems title={t('user.mcpServer')} value={mcpServer} />
                     <InfoItems title={t('user.appVersion')} value={Env.version} />
                     <InfoItems title={t('user.sdkVersion')} value={Env.sdkVersion || t('user.unknown')} />
                 </div>

@@ -1,22 +1,22 @@
 import * as protos from '@temporalio/proto';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker, bundleWorkflowCode, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
-import { ContentEventName, DSLActivityExecutionPayload, DSLActivitySpec, DSLWorkflowExecutionPayload } from '@vertesia/common';
+import { ContentEventName, type DSLActivityExecutionPayload, type DSLActivitySpec, type DSLWorkflowExecutionPayload } from '@vertesia/common';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { dslWorkflow } from './dsl-workflow.js';
 import { setupActivity } from "./setup/ActivityContext.js";
 
-async function sayHello(payload: DSLActivityExecutionPayload<Record<string, any>>): Promise<string> {
+async function sayHello(payload: DSLActivityExecutionPayload<Record<string, unknown>>): Promise<string> {
     const { params } = await setupActivity(payload);
     return params.lang === 'fr' ? "Bonjour" : "Hello";
 }
 
-async function sayName(payload: DSLActivityExecutionPayload<Record<string, any>>): Promise<string> {
+async function sayName(payload: DSLActivityExecutionPayload<Record<string, unknown>>): Promise<string> {
     const { params } = await setupActivity(payload);
     return params.lang === 'fr' ? "Monde" : "World";
 }
 
-async function sayGreeting(payload: DSLActivityExecutionPayload<Record<string, any>>): Promise<string> {
+async function sayGreeting(payload: DSLActivityExecutionPayload<Record<string, unknown>>): Promise<string> {
     const { params } = await setupActivity(payload);
     return `${params.hello}, ${params.name}!`;
 }
@@ -74,7 +74,7 @@ describe('DSL Workflow', () => {
         await testEnv?.teardown();
     });
 
-    it('successfully completes a mock workflow', async () => {
+    it('should successfully complete a mock workflow', async () => {
         const { client, nativeConnection } = testEnv;
         const taskQueue = 'test';
 
@@ -100,6 +100,7 @@ describe('DSL Workflow', () => {
                 store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
+                spec_format: 'activities',
                 activities,
                 vars: {
                     lang,

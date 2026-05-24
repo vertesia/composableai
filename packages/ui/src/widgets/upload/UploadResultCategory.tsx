@@ -1,5 +1,5 @@
 import { CheckCircleIcon } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useUITranslation } from "@vertesia/ui/i18n";
 
 /**
@@ -35,37 +35,45 @@ export function UploadResultCategory({
 }: UploadResultCategoryProps) {
     const { t } = useUITranslation();
     const [isExpanded, setIsExpanded] = useState(false);
+    const panelId = useId();
 
     return (
         <div className="border border-color-border rounded-md overflow-hidden">
-            <div
-                className="flex items-center justify-between p-3 bg-color-muted/10 cursor-pointer"
+            {/* The header IS the toggle: a real <button> with aria-expanded/aria-controls so
+                keyboard users can operate it (Enter / Space) and screen readers announce state. */}
+            <button
+                type="button"
+                aria-expanded={isExpanded}
+                aria-controls={panelId}
+                className="w-full flex items-center justify-between p-3 bg-color-muted/10 cursor-pointer text-start bg-transparent border-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 onClick={() => setIsExpanded(!isExpanded)}
             >
-                <div className="flex items-center">
-                    <span className="mr-2">{icon}</span>
+                <span className="flex items-center">
+                    <span className="me-2">{icon}</span>
                     <span className="font-medium">{title}</span>
-                    <span className="ml-2 px-2 py-0.5 bg-color-muted/20 rounded-full text-xs">
+                    <span className="ms-2 px-2 py-0.5 bg-color-muted/20 rounded-full text-xs">
                         {count}
                     </span>
-                </div>
-                <button className="text-muted">
+                </span>
+                <span className="text-muted" aria-hidden="true">
                     <svg
                         className={`h-5 w-5 transition-transform ${isExpanded ? 'transform rotate-180' : ''}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
+                        aria-hidden="true"
                     >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
-                </button>
-            </div>
+                </span>
+            </button>
 
             {isExpanded && (
-                <div className="p-3 border-t border-color-border max-h-48 overflow-y-auto">
+                <div id={panelId} className="p-3 border-t border-color-border max-h-48 overflow-y-auto">
                     {items.length > 0 ? (
                         <ul className="space-y-1">
                             {items.map((item, index) => (
+                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                 <li key={index} className="text-sm py-1 px-2 rounded hover:bg-color-muted/10">
                                     {item}
                                 </li>

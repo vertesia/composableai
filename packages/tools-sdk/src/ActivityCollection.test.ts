@@ -1,6 +1,13 @@
-import { RemoteActivityExecutionPayload } from "@vertesia/common";
+import type { RemoteActivityExecutionPayload } from "@vertesia/common";
+import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ActivityCollection, ActivityDefinition } from "./ActivityCollection.js";
+import { ActivityCollection, type ActivityDefinition } from "./ActivityCollection.js";
+
+type MockContext = Context & {
+    json: ReturnType<typeof vi.fn>;
+    req: { header: ReturnType<typeof vi.fn>; url: string };
+    set: ReturnType<typeof vi.fn>;
+};
 
 vi.mock("./auth.js", () => ({
     authorize: vi.fn().mockResolvedValue({ token: "test-token" }),
@@ -93,7 +100,7 @@ describe("ActivityCollection", () => {
     });
 
     describe("execute", () => {
-        const createMockContext = () => {
+        const createMockContext = (): MockContext => {
             const jsonFn = vi.fn().mockReturnThis();
             return {
                 json: jsonFn,
@@ -102,7 +109,7 @@ describe("ActivityCollection", () => {
                     url: "http://localhost/api/activities",
                 },
                 set: vi.fn(),
-            } as any;
+            } as unknown as MockContext;
         };
 
         const payload: RemoteActivityExecutionPayload = {

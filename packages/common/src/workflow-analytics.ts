@@ -58,7 +58,7 @@ export enum TelemetryToolType {
  */
 export interface BaseAgentEvent {
     /** Type of the event */
-    eventType: string;
+    eventType: AgentEventType;
     /** ISO 8601 timestamp */
     timestamp: string;
     /** Globally unique ID for this agent run */
@@ -138,7 +138,7 @@ export interface AgentRunCompletedEvent extends BaseAgentEvent {
  * Emitted for each LLM call (start/resume conversation)
  * Note: model, environmentId, environmentType are required (override base optional)
  */
-export interface LlmCallEvent extends BaseAgentEvent {
+interface BaseLlmCallEvent extends BaseAgentEvent {
     eventType: AgentEventType.LlmCall;
     /** Number of input/prompt tokens */
     promptTokens: number;
@@ -165,6 +165,8 @@ export interface LlmCallEvent extends BaseAgentEvent {
     /** Error type if failed */
     errorType?: string;
 }
+
+export interface LlmCallEvent extends BaseLlmCallEvent {}
 
 // ============================================================================
 // Tool Call Events
@@ -243,13 +245,14 @@ export interface NestedInteractionEvent extends LlmCallEvent {
 // Union type for all events
 // ============================================================================
 
+/**
+ * @discriminator eventType
+ */
 export type AgentEvent =
     | AgentRunStartedEvent
     | AgentRunCompletedEvent
     | LlmCallEvent
-    | ToolCallEvent
-    | CheckpointCreatedEvent
-    | NestedInteractionEvent;   
+    | ToolCallEvent;
 
 /**
  * Workflow Analytics Types

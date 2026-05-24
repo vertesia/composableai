@@ -1,6 +1,8 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import type { AIModel, EmbeddingsOptions, EmbeddingsResult, ModelSearchPayload } from "@llumiverse/common";
-import {
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import type { AIModel, ModelSearchPayload } from "@llumiverse/common";
+import type {
+    EmbeddingsApiRequest,
+    EmbeddingsApiResult,
     ExecutionEnvironment,
     ExecutionEnvironmentCreatePayload,
     ExecutionEnvironmentRef,
@@ -33,11 +35,11 @@ export default class EnvironmentsApi extends ApiTopic {
     }
 
     retrieve(id: string): Promise<ExecutionEnvironment> {
-        return this.get('/' + id);
+        return this.get(`/${id}`);
     }
 
     update(id: string, payload: ExecutionEnvironmentUpdatePayload): Promise<ExecutionEnvironment> {
-        return this.put('/' + id, {
+        return this.put(`/${id}`, {
             payload
         });
     }
@@ -55,13 +57,13 @@ export default class EnvironmentsApi extends ApiTopic {
         enabled_models?: AIModel[],
         config?: MediatorEnvConfig | LoadBalancingEnvConfig
     }): Promise<ExecutionEnvironment> {
-        return this.put('/' + id + '/config', {
+        return this.put(`/${id}/config`, {
             payload
         });
     }
 
     listModels(id: string, payload?: ModelSearchPayload): Promise<AIModel[]> {
-        return this.get('/' + id + '/models', {
+        return this.get(`/${id}/models`, {
             query: payload ? { ...payload } : undefined
         });
     }
@@ -70,8 +72,8 @@ export default class EnvironmentsApi extends ApiTopic {
         return this.get(`/${id}/trainable-models`);
     }
 
-    embeddings(id: string, payload?: EmbeddingsOptions): Promise<EmbeddingsResult> {
-        return this.post('/' + id + '/embeddings', {
+    embeddings(id: string, payload: EmbeddingsApiRequest): Promise<EmbeddingsApiResult> {
+        return this.post(`/${id}/embeddings`, {
             payload
         });
     }

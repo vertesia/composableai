@@ -1,5 +1,5 @@
 import { ApplicationFailure } from "@temporalio/workflow";
-import { DSLActivitySpec, DSLWorkflowSpec } from "@vertesia/common";
+import type { DSLActivitySpec, DSLWorkflowSpec } from "@vertesia/common";
 
 export class DocumentNotFoundError extends ApplicationFailure {
     constructor(message: string, public ids?: string[]) {

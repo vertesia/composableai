@@ -1,10 +1,10 @@
 import { MockActivityEnvironment } from "@temporalio/testing";
-import { ContentEventName, DSLActivityExecutionPayload } from "@vertesia/common";
+import { ContentEventName, type DSLActivityExecutionPayload } from "@vertesia/common";
 import type { VertesiaClient } from "@vertesia/client";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ActivityContext, TextExtractionResult } from "@vertesia/workflow";
 import { TextExtractionStatus } from "../../result-types.js";
-import { saveGladiaTranscription, SaveGladiaTranscriptionParams } from "./saveGladiaTranscription.js";
+import { saveGladiaTranscription, type SaveGladiaTranscriptionParams } from "./saveGladiaTranscription.js";
 
 // Mock setupActivity from the relative path used by the activity
 vi.mock("../../dsl/setup/ActivityContext.js", async (importOriginal) => {
@@ -58,7 +58,7 @@ const createTestPayload = (
             ? { inputType: 'objectIds' as const, objectIds: [objectId] }
             : undefined,
         vars: {},
-        activity: { name: "SaveGladiaTranscription", params }
+        activity: { name: "SaveGladiaTranscription", params: params as unknown as Record<string, unknown> }
     };
 };
 
@@ -110,8 +110,8 @@ describe("SaveGladiaTranscription", () => {
             withHeaders: vi.fn().mockReturnThis(),
             get: vi.fn().mockResolvedValue(mockGladiaTranscriptionResult),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         // Mock client
@@ -133,9 +133,9 @@ describe("SaveGladiaTranscription", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: SaveGladiaTranscriptionParams = {
+        const params = {
             gladiaTranscriptionId: "test-transcription-id",
-        };
+        } satisfies SaveGladiaTranscriptionParams;
 
         // Mock setupActivity
         vi.mocked(setupActivity).mockResolvedValue({
@@ -164,8 +164,8 @@ describe("SaveGladiaTranscription", () => {
             withHeaders: vi.fn().mockReturnThis(),
             get: vi.fn().mockResolvedValue(mockGladiaTranscriptionResult),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -183,10 +183,10 @@ describe("SaveGladiaTranscription", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: SaveGladiaTranscriptionParams = {
+        const params = {
             gladiaTranscriptionId: "test-transcription-id",
             output_storage_path: "test-storage-path",
-        };
+        } satisfies SaveGladiaTranscriptionParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -223,9 +223,9 @@ describe("SaveGladiaTranscription", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: SaveGladiaTranscriptionParams = {
+        const params = {
             gladiaTranscriptionId: "test-transcription-id",
-        };
+        } satisfies SaveGladiaTranscriptionParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -256,8 +256,8 @@ describe("SaveGladiaTranscription", () => {
                 status: "error",
             }),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -272,9 +272,9 @@ describe("SaveGladiaTranscription", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: SaveGladiaTranscriptionParams = {
+        const params = {
             gladiaTranscriptionId: "test-transcription-id",
-        };
+        } satisfies SaveGladiaTranscriptionParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -305,8 +305,8 @@ describe("SaveGladiaTranscription", () => {
                 status: "processing",
             }),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -321,9 +321,9 @@ describe("SaveGladiaTranscription", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: SaveGladiaTranscriptionParams = {
+        const params = {
             gladiaTranscriptionId: "test-transcription-id",
-        };
+        } satisfies SaveGladiaTranscriptionParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
@@ -361,8 +361,8 @@ describe("SaveGladiaTranscription", () => {
                 },
             }),
         };
-        vi.mocked(FetchClient).mockImplementation(function(this: any) {
-            return mockFetchClient as any;
+        vi.mocked(FetchClient).mockImplementation(function(this: unknown) {
+            return mockFetchClient as unknown;
         });
 
         const mockClient = {
@@ -383,9 +383,9 @@ describe("SaveGladiaTranscription", () => {
             },
         } as unknown as VertesiaClient;
 
-        const params: SaveGladiaTranscriptionParams = {
+        const params = {
             gladiaTranscriptionId: "test-transcription-id",
-        };
+        } satisfies SaveGladiaTranscriptionParams;
 
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,

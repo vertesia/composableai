@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { AdaptedTable, AdaptTablesRequest, DocAnalyzerResultResponse, DocAnalyzeRunStatusResponse, DocImage, DocTableCsv, DocTableJson, ExportTableFormats, GetAdaptedTablesRequestQuery, PdfToRichtextOptions, WorkflowRunStatus } from "@vertesia/common";
+import { ApiTopic, type ClientBase, type IRequestParams } from "@vertesia/api-fetch-client";
+import type { AdaptedTable, AdaptTablesRequest, DocAnalyzerResultResponse, DocAnalyzeRunStatusResponse, DocImage, DocTableCsv, DocTableJson, ExportTableFormats, GetAdaptedTablesRequestQuery, PdfToRichtextOptions, WorkflowRunStatus } from "@vertesia/common";
 
 export class AnalyzeDocApi extends ApiTopic {
     constructor(parent: ClientBase, public objectId: string) {
@@ -26,12 +26,12 @@ export class AnalyzeDocApi extends ApiTopic {
         const path = runId ? `/adapt_tables/${runId}` : "/adapt_tables";
         
         // Build query parameters
-        const queryParams: any = {};
+        const queryParams: NonNullable<IRequestParams["query"]> = {};
         if (query?.format) queryParams.format = query.format;
         if (query?.raw !== undefined) queryParams.raw = query.raw;
         
         // If format is CSV, set response type to text to avoid automatic JSON parsing
-        const options: any = { query: queryParams };
+        const options: IRequestParams & { responseType?: "text" } = { query: queryParams };
         if (query?.format === 'csv') {
             options.responseType = 'text';
         }
@@ -44,7 +44,7 @@ export class AnalyzeDocApi extends ApiTopic {
     }
 
     async getTables(format?: ExportTableFormats): Promise<DocTableCsv[] | DocTableJson[]> {
-        const options: any = {};
+        const options: IRequestParams = {};
         if (format) {
             options.query = {format: format}
         }

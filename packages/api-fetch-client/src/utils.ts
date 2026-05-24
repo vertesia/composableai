@@ -1,10 +1,10 @@
 
-export function buildQueryString(query: any) {
+export function buildQueryString(query: Record<string, unknown>) {
     const parts = [];
     for (const key of Object.keys(query)) {
         const val = query[key];
         if (val != null) {
-            parts.push(encodeURIComponent(key) + "=" + encodeURIComponent(String(val)));
+            parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(val))}`);
         }
     }
     return parts.join("&");
@@ -20,7 +20,7 @@ export function join(left: string, right: string) {
     } else if (right.startsWith('/')) {
         return left + right;
     } else {
-        return left + '/' + right;
+        return `${left}/${right}`;
     }
 }
 export function removeTrailingSlash(path: string) {

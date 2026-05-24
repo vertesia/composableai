@@ -1,5 +1,5 @@
-import { InteractionSpec } from "@vertesia/common";
-import { CollectionProperties, ICollection } from "./types.js";
+import type { InteractionSpec } from "@vertesia/common";
+import type { CollectionProperties, ICollection } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
 
 export interface InteractionCollectionProps extends CollectionProperties {

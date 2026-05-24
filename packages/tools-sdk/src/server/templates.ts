@@ -1,10 +1,10 @@
 // ================== Template Endpoints ==================
 
-import { RenderingTemplateDefinition, RenderingTemplateDefinitionRef } from "@vertesia/common";
-import { Context, Hono } from "hono";
+import type { RenderingTemplateDefinition, RenderingTemplateDefinitionRef } from "@vertesia/common";
+import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { RenderingTemplateCollection } from "../RenderingTemplateCollection.js";
-import { ToolServerConfig } from "./types.js";
+import type { RenderingTemplateCollection } from "../RenderingTemplateCollection.js";
+import type { ToolServerConfig } from "./types.js";
 
 function toRef(basePath: string, collectionName: string, { instructions: _, ...ref }: RenderingTemplateDefinition): RenderingTemplateDefinitionRef {
     return { ...ref, path: `${basePath}/${collectionName}/${ref.name}` };
@@ -53,7 +53,7 @@ export function createTemplatesRoute(app: Hono, basePath: string, config: ToolSe
         }
 
         throw new HTTPException(404, {
-            message: "No template found with id: " + id
+            message: `No template found with id: ${id}`
         });
     });
 }
@@ -70,7 +70,7 @@ function createTemplateEndpoints(basePath: string, coll: RenderingTemplateCollec
         const template = coll.templates.find(t => t.name === name);
         if (!template) {
             throw new HTTPException(404, {
-                message: "No template found with name: " + name
+                message: `No template found with name: ${name}`
             });
         }
         return c.json(template);

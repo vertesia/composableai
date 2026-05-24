@@ -21,7 +21,7 @@ export function Breadcrumbs({ path, maxItems = 3, className, separator }: Breadc
 
   const renderBreadcrumbItem = (item: BreadcrumbProps) => {
     const shortenedLabel = typeof item.label === "string" && item.label.length > 20
-      ? item.label.slice(0, 17) + "..."
+      ? `${item.label.slice(0, 17)}...`
       : item.label;
     if (item.onClick) {
       return <BreadcrumbButton onClick={item.onClick} href={item.href} title={typeof item.label === 'string' ? item.label : undefined}>{shortenedLabel}</BreadcrumbButton>;
@@ -37,12 +37,13 @@ export function Breadcrumbs({ path, maxItems = 3, className, separator }: Breadc
       <Breadcrumb className={cn("w-full flex items-center", className)}>
         <BreadcrumbList>
           {items.map((item, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
             <React.Fragment key={index}>
               <BreadcrumbItem>
                 {renderBreadcrumbItem(item)}
               </BreadcrumbItem>
               {index < items.length - 1 &&
-                <BreadcrumbSeparator>{separator ?? <ChevronRight />}</BreadcrumbSeparator>
+                <BreadcrumbSeparator>{separator ?? <ChevronRight className="cn-rtl-flip" />}</BreadcrumbSeparator>
               }
             </React.Fragment>
           ))}
@@ -59,14 +60,15 @@ export function Breadcrumbs({ path, maxItems = 3, className, separator }: Breadc
         <BreadcrumbItem>
           <BreadcrumbEllipsis />
         </BreadcrumbItem>
-        <BreadcrumbSeparator>{separator ?? <ChevronRight />}</BreadcrumbSeparator>
+        <BreadcrumbSeparator>{separator ?? <ChevronRight className="cn-rtl-flip" />}</BreadcrumbSeparator>
 
         {lastThreeItems.map((item, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
           <React.Fragment key={index}>
             <BreadcrumbItem>
               {renderBreadcrumbItem(item)}
             </BreadcrumbItem>
-            {index < lastThreeItems.length - 1 && <BreadcrumbSeparator>{separator ?? <ChevronRight />}</BreadcrumbSeparator>
+            {index < lastThreeItems.length - 1 && <BreadcrumbSeparator>{separator ?? <ChevronRight className="cn-rtl-flip" />}</BreadcrumbSeparator>
             }
           </React.Fragment>
         ))}
@@ -158,8 +160,6 @@ const BreadcrumbPage = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <span
     ref={ref}
-    role="link"
-    aria-disabled="true"
     aria-current="page"
     className={cn("font-normal text-foreground", className)}
     {...props}
@@ -178,7 +178,7 @@ const BreadcrumbSeparator = ({
     className={cn("[&>svg]:w-3.5 [&>svg]:h-3.5", className)}
     {...props}
   >
-    {children ?? <ChevronRight />}
+    {children ?? <ChevronRight className="cn-rtl-flip" />}
   </li>
 )
 BreadcrumbSeparator.displayName = "BreadcrumbSeparator"

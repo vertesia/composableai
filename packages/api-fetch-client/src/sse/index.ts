@@ -1,6 +1,6 @@
 import { TextDecoderStream } from "./TextDecoderStream.js";
 import { EventSourceParserStream } from "./EventSourceParserStream.js";
-import { ParsedEvent, ReconnectInterval } from "eventsource-parser";
+import type { ParsedEvent, ReconnectInterval } from "eventsource-parser";
 
 export type ServerSentEvent = ParsedEvent | ReconnectInterval;
 /**
@@ -13,8 +13,8 @@ export type ServerSentEvent = ParsedEvent | ReconnectInterval;
 export async function sse(response: Response): Promise<ReadableStream<ServerSentEvent>> {
     if (!response.ok) {
         const text = await response.text();
-        const error = new Error("SSE error: " + response.status + ". Content:\n" + text);
-        (error as any).status = response.status;
+        const error = new Error(`SSE error: ${response.status}. Content:\n${text}`) as Error & { status?: number };
+        error.status = response.status;
         throw error;
     }
     if (!response.body) {

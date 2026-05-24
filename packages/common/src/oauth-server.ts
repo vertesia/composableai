@@ -1,4 +1,4 @@
-import type { AuthTokenPayload } from './apikey.js';
+import type { PrincipalType, AuthTokenPayload } from './apikey.js';
 import type { ProjectRef } from './project.js';
 
 export type OAuthClientType = 'public' | 'confidential';
@@ -6,7 +6,7 @@ export type OAuthClientStatus = 'active' | 'disabled';
 export type OAuthRegistrationSource = 'admin' | 'dynamic';
 export type OAuthProjectBindingMode = 'user_select' | 'fixed';
 export type OAuthTokenEndpointAuthMethod = 'none' | 'client_secret_post' | 'client_secret_basic';
-export type OAuthGrantType = 'authorization_code' | 'refresh_token';
+export type OAuthGrantType = 'authorization_code' | 'refresh_token' | 'urn:ietf:params:oauth:grant-type:device_code';
 export type OAuthResponseType = 'code';
 export type OAuthAuthorizationRequestStatus = 'pending' | 'denied' | 'consumed';
 export type OAuthClientRegistrationMode = 'registered' | 'client_id_metadata_document';
@@ -22,6 +22,7 @@ export interface OAuthClientData {
     response_types: OAuthResponseType[];
     token_endpoint_auth_method: OAuthTokenEndpointAuthMethod;
     allowed_scopes: string[];
+    default_scopes?: string[];
     registration_source: OAuthRegistrationSource;
     status: OAuthClientStatus;
     project_binding_mode: OAuthProjectBindingMode;
@@ -98,6 +99,7 @@ export interface CreateOAuthClientPayload {
     response_types?: OAuthResponseType[];
     token_endpoint_auth_method?: OAuthTokenEndpointAuthMethod;
     allowed_scopes?: string[];
+    default_scopes?: string[];
     project_binding_mode?: OAuthProjectBindingMode;
     fixed_project_id?: string;
     client_secret?: string;
@@ -111,6 +113,7 @@ export interface UpdateOAuthClientPayload {
     response_types?: OAuthResponseType[];
     token_endpoint_auth_method?: OAuthTokenEndpointAuthMethod;
     allowed_scopes?: string[];
+    default_scopes?: string[];
     status?: OAuthClientStatus;
     project_binding_mode?: OAuthProjectBindingMode;
     fixed_project_id?: string;
@@ -131,6 +134,7 @@ export interface OAuthAuthorizationServerMetadata {
     token_endpoint_auth_methods_supported: string[];
     scopes_supported: string[];
     client_id_metadata_document_supported?: boolean;
+    device_authorization_endpoint?: string;
 }
 
 export interface OAuthClientMetadataDocument {
@@ -194,6 +198,22 @@ export interface OAuthAuthorizationDecisionResponse {
     redirect_url: string;
 }
 
+export interface OAuthDeviceAuthorizationRequest {
+    client_id: string;
+    resource?: string;
+    scope?: string;
+    project_id?: string;
+}
+
+export interface OAuthDeviceAuthorizationResponse {
+    device_code: string;
+    user_code: string;
+    verification_uri: string;
+    verification_uri_complete: string;
+    expires_in: number;
+    interval: number;
+}
+
 export interface OAuthTokenRequestAuthorizationCode {
     grant_type: 'authorization_code';
     code: string;
@@ -209,10 +229,18 @@ export interface OAuthTokenRequestRefreshToken {
     refresh_token: string;
     client_id: string;
     resource?: string;
+    project_id?: string;
     client_secret?: string;
 }
 
-export type OAuthTokenRequest = OAuthTokenRequestAuthorizationCode | OAuthTokenRequestRefreshToken;
+export interface OAuthTokenRequestDeviceCode {
+    grant_type: 'urn:ietf:params:oauth:grant-type:device_code';
+    device_code: string;
+    client_id: string;
+    client_secret?: string;
+}
+
+export type OAuthTokenRequest = OAuthTokenRequestAuthorizationCode | OAuthTokenRequestRefreshToken | OAuthTokenRequestDeviceCode;
 
 export interface OAuthTokenResponse {
     access_token: string;
@@ -248,7 +276,7 @@ export interface OAuthConsentRecord {
 }
 
 export interface OAuthAccessTokenPayload extends Omit<AuthTokenPayload, 'type' | 'project'> {
-    type: 'oauth_access';
+    type: PrincipalType.OAuthAccess;
     client_id: string;
     scope: string;
     user_id: string;

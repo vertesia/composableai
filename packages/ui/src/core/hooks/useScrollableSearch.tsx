@@ -1,4 +1,4 @@
-import { useIntersectionObserver } from "@vertesia/ui/core";
+import { useIntersectionObserver } from "./useIntersectionObserver";
 import { useEffect, useRef, useState } from "react";
 
 interface SearchResponse<ResultT, PageT> {
@@ -91,7 +91,7 @@ interface ScrollableSearchResult<ResultT, PayloadT, PageT = number> {
 /**
  * A hook that provides paginated search functionality with infinite scrolling support.
  */
-export function useScrollableSearch<ResultT, PayloadT, PageT = number>(opts: ScrollableSearchOptions<ResultT, PayloadT, PageT>, dependencies: any[] = []): ScrollableSearchResult<ResultT, PayloadT, PageT> {
+export function useScrollableSearch<ResultT, PayloadT, PageT = number>(opts: ScrollableSearchOptions<ResultT, PayloadT, PageT>, dependencies: unknown[] = []): ScrollableSearchResult<ResultT, PayloadT, PageT> {
     const pageSize = opts.pageSize || 50;
     const [page, setPage] = useState<PageT | null>(null);
     const [lastPayload, setLastPayload] = useState<PayloadT>(opts.payload);
@@ -149,7 +149,7 @@ export function useScrollableSearch<ResultT, PayloadT, PageT = number>(opts: Scr
                 setIsSearching(false);
             }
         });
-    }, [...dependencies, lastPayload, page]);
+    }, [...dependencies, lastPayload, opts.search, page, pageSize]);
 
     // Intersection observer for infinite scrolling
     useIntersectionObserver(opts.nextPageTrigger, () => {
@@ -176,7 +176,7 @@ interface DefaultScrollableSearchOptions<ResultT, PayloadT> extends Omit<Scrolla
     search: DefaultSearchFn<PayloadT, ResultT>;
 }
 
-export function useDefaultScrollableSearch<ResultT, PayloadT>(opts: DefaultScrollableSearchOptions<ResultT, PayloadT>, dependencies: any[] = []): ScrollableSearchResult<ResultT, PayloadT, number> {
+export function useDefaultScrollableSearch<ResultT, PayloadT>(opts: DefaultScrollableSearchOptions<ResultT, PayloadT>, dependencies: unknown[] = []): ScrollableSearchResult<ResultT, PayloadT, number> {
     const actualOpts: ScrollableSearchOptions<ResultT, PayloadT, number> = {
         ...opts,
         async search(payload, page, pageSize) {

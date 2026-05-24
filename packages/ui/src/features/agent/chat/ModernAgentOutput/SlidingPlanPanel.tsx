@@ -1,6 +1,6 @@
-import { Plan } from "@vertesia/common";
+import type { Plan } from "@vertesia/common";
 import { AlertCircle, CheckCircle, Circle, Clock } from "lucide-react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import SlideInPanel from "./SlideInPanel";
 
 interface PlanPanelProps {
@@ -23,7 +23,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                             <div
                                 className="bg-info h-2.5 rounded-full"
                                 style={{
-                                    width: `${plan.plan && plan.plan.length
+                                    width: `${plan.plan?.length
                                         ? Math.round(
                                             (Array.from(workstreamStatus.values()).filter(
                                                 (status) => status === "completed",
@@ -37,7 +37,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                             />
                         </div>
                         <span className="text-xs text-muted">
-                            {plan.plan && plan.plan.length
+                            {plan.plan?.length
                                 ? `${Array.from(workstreamStatus.values()).filter((status) => status === "completed").length}/${workstreamStatus.size}`
                                 : "0/0"}
                         </span>
@@ -61,6 +61,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                 let status: "pending" | "in_progress" | "completed" | "skipped" =
                                     task.status || "pending";
                                 if (workstreamStatus.has(taskId)) {
+                                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                                     status = workstreamStatus.get(taskId)!;
                                 }
 
@@ -79,8 +80,9 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                 }
 
                                 return (
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                     <div key={index} className={`flex p-3 ${bgColor}`}>
-                                        <div className={`mr-3 mt-0.5 flex-shrink-0 ${statusColor}`}>
+                                        <div className={`me-3 mt-0.5 flex-shrink-0 ${statusColor}`}>
                                             <StatusIcon className="h-4 w-4" />
                                         </div>
                                         <div>
@@ -90,7 +92,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                                     {taskId}
                                                 </span>
                                                 <span
-                                                    className={`ml-2 text-xs ${status === "completed"
+                                                    className={`ms-2 text-xs ${status === "completed"
                                                         ? "text-green-600 dark:text-green-400"
                                                         : status === "in_progress"
                                                             ? "text-blue-600 dark:text-blue-400"
@@ -165,7 +167,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
 
                                         return (
                                             <div key={id} className={`flex items-center p-2 rounded ${statusBg}`}>
-                                                <div className={`mr-2 ${statusColor}`}>
+                                                <div className={`me-2 ${statusColor}`}>
                                                     <StatusIcon className="h-4 w-4" />
                                                 </div>
                                                 <div className="flex-1">

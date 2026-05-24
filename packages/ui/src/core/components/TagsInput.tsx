@@ -1,7 +1,9 @@
 import clsx from 'clsx';
 import { X } from 'lucide-react';
 import { useContext, useEffect, useRef, useState } from 'react';
+import { Button } from './shadcn/button';
 import { Popover, PopoverContent, PopoverContext, PopoverTrigger } from './shadcn/popover';
+import { onActivateKey } from '../utils/a11y.js';
 
 interface TagsInputProps {
     options: string[];
@@ -78,11 +80,6 @@ function TagsInputContent({
     // Total number of items (filtered options + create option if shown)
     const totalItems = filteredOptions.length + (showCreateOption ? 1 : 0);
 
-    // Reset highlighted index when filtered options change
-    useEffect(() => {
-        setHighlightedIndex(0);
-    }, [searchTerm, showCreateOption]);
-
     // Clear pending delete when user starts typing
     useEffect(() => {
         if (searchTerm !== '') {
@@ -92,7 +89,7 @@ function TagsInputContent({
 
     // Scroll highlighted item into view
     useEffect(() => {
-        if (isOpen && highlightedItemRef.current && dropdownRef.current) {
+        if (isOpen && highlightedIndex >= 0 && highlightedItemRef.current && dropdownRef.current) {
             highlightedItemRef.current.scrollIntoView({
                 block: 'nearest',
                 behavior: 'smooth'
@@ -226,6 +223,8 @@ function TagsInputContent({
     return (
         <div className={clsx('relative', className)}>
             <PopoverTrigger asChild>
+                {/* biome-ignore lint/a11y/noStaticElementInteractions: PopoverTrigger asChild forwards button semantics + keyboard to this div; container click is a focus delegation pattern. */}
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — keyboard is handled by the input and PopoverTrigger. */}
                 <div
                     ref={triggerRef}
                     className={clsx(
@@ -290,7 +289,10 @@ function TagsInputContent({
                         ref={inputRef}
                         type="text"
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setHighlightedIndex(0);
+                        }}
                         onKeyDown={handleKeyDown}
                         onClick={handleInputClick}
                         onFocus={handleInputFocus}
@@ -333,7 +335,12 @@ function TagsInputContent({
                                                     highlightedItemRef.current = el;
                                                 }
                                             }}
+                                            // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: ARIA listbox pattern uses <li role="option"> for combobox suggestions
+                                            role="option"
+                                            aria-selected={index === highlightedIndex}
+                                            tabIndex={0}
                                             onClick={() => handleSelect(option)}
+                                            onKeyDown={onActivateKey(() => handleSelect(option))}
                                             onMouseEnter={() => setHighlightedIndex(index)}
                                             className={clsx(
                                                 'px-3 py-2 text-sm cursor-pointer transition-colors',
@@ -352,23 +359,25 @@ function TagsInputContent({
                                     {filteredOptions.length > 0 && (
                                         <div className="border-t border-border" />
                                     )}
-                                    <div
+                                    <Button
                                         ref={(el) => {
                                             if (highlightedIndex === filteredOptions.length) {
                                                 highlightedItemRef.current = el;
                                             }
                                         }}
+                                        variant="unstyled"
+                                        size="none"
                                         onClick={() => handleCreate(searchTerm)}
                                         onMouseEnter={() => setHighlightedIndex(filteredOptions.length)}
                                         className={clsx(
-                                            'px-3 py-2 text-sm cursor-pointer transition-colors text-primary',
+                                            '!flex w-full justify-start px-3 py-2 text-sm cursor-pointer transition-colors text-primary',
                                             highlightedIndex === filteredOptions.length
                                                 ? 'bg-blue-500/20'
                                                 : 'hover:bg-accent/50'
                                         )}
                                     >
                                         {createText.replace('%value%', searchTerm)}
-                                    </div>
+                                    </Button>
                                 </>
                             )}
                         </>

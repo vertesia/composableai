@@ -1,6 +1,6 @@
-import { useToast } from "@vertesia/ui/core";
+import { errorMessage, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
-import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useDocumentSearch } from "../search/DocumentSearchContext";
 import { FileUploadAction, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
 
@@ -189,7 +189,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                                     },
                                     {
                                         createRevision: true,
-                                        revisionLabel: "upload on " + new Date().toISOString(),
+                                        revisionLabel: `upload on ${new Date().toISOString()}`,
                                     },
                                 );
 
@@ -234,13 +234,13 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                                     location: fileInfo.location,
                                 });
                             }
-                        } catch (error: any) {
+                        } catch (error: unknown) {
                             console.error(`Failed to process file ${fileInfo.name}:`, error);
 
                             // Track failed upload
                             failedFilesInfo.push({
                                 name: fileInfo.name,
-                                error: error.message || "Unknown error",
+                                error: errorMessage(error, "Unknown error"),
                                 status: "failed",
                                 location: fileInfo.location,
                                 type,
@@ -249,7 +249,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                             toast({
                                 status: "error",
                                 title: t('store.processingFailedFor', { name: fileInfo.name }),
-                                description: error.message,
+                                description: errorMessage(error),
                                 duration: 4000,
                             });
                         }

@@ -2,7 +2,7 @@ import { Editor } from '@monaco-editor/react';
 import { useTheme } from '@vertesia/ui/core';
 import debounce from 'debounce';
 import clsx from 'clsx';
-import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type * as monaco from 'monaco-editor';
 import { registerCustomFoldingProviders } from './foldingProviders.js';
 
@@ -41,6 +41,7 @@ interface MonacoEditorProps {
     className?: string;
     editorRef?: RefObject<IEditorApi | undefined>;
     language?: string;
+    path?: string;
     onChange?: (update: ViewUpdate) => void;
     debounceTimeout?: number;
     theme?: string;
@@ -57,6 +58,7 @@ export function MonacoEditor({
     className,
     editorRef,
     language = 'javascript',
+    path,
     debounceTimeout = 0,
     options = {},
     beforeMount,
@@ -71,6 +73,7 @@ export function MonacoEditor({
     const resolvedTheme = theme === 'system'
         ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
         : theme;
+    const effectiveValue = value || defaultValue || '';
 
     const getValueRef = useRef(() => editorValue);
     const setValueRef = useRef((newValue: string) => {
@@ -115,8 +118,7 @@ export function MonacoEditor({
         const model = editor.getModel();
         if (!model) return;
         const codeBlockRegExp = /```[\s\S]*?```/g;
-        let match;
-        while ((match = codeBlockRegExp.exec(model.getValue())) !== null) {
+        for (const match of model.getValue().matchAll(codeBlockRegExp)) {
             const startLine = model.getPositionAt(match.index).lineNumber;
             const endLine = model.getPositionAt(match.index + match[0].length).lineNumber;
             editor.setSelection(new monacoInstance.Selection(startLine, 1, endLine, 1));
@@ -129,7 +131,7 @@ export function MonacoEditor({
         setEditorValue(actualValue);
 
         if (debouncedOnChange) {
-            const update = {
+            const update: ViewUpdate = {
                 docChanged: true,
                 state: {
                     doc: {
@@ -137,8 +139,7 @@ export function MonacoEditor({
                         length: actualValue.length
                     }
                 }
-            } as unknown as ViewUpdate;
-            // Using type assertion through unknown to avoid complex type mocking
+            };
 
             debouncedOnChange(update);
         }
@@ -181,23 +182,25 @@ export function MonacoEditor({
 
     // Update editor value when prop changes from outside
     useEffect(() => {
-        const effectiveValue = value || defaultValue || '';
-        if (effectiveValue !== editorValue) {
-            setEditorValue(effectiveValue);
+        setEditorValue(currentValue => {
+            if (effectiveValue === currentValue) {
+                return currentValue;
+            }
             if (editorInstanceRef.current) {
                 editorInstanceRef.current.setValue(effectiveValue);
             }
-        }
-    }, [value]); // Only depend on value prop, not editorValue
+            return effectiveValue;
+        });
+    }, [effectiveValue]);
 
     // Re-fold code blocks when value prop changes externally
     useEffect(() => {
-        if (!useCustomFolding || !editorInstanceRef.current || !monacoInstanceRef.current) return;
+        if (!effectiveValue || !useCustomFolding || !editorInstanceRef.current || !monacoInstanceRef.current) return;
         const editor = editorInstanceRef.current;
         const monacoInstance = monacoInstanceRef.current;
         const timer = setTimeout(() => foldAllCodeBlocks(editor, monacoInstance), 300);
         return () => clearTimeout(timer);
-    }, [value, useCustomFolding, foldAllCodeBlocks]);
+    }, [effectiveValue, useCustomFolding, foldAllCodeBlocks]);
 
     const defaultOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
         fontSize: 14,
@@ -237,6 +240,7 @@ export function MonacoEditor({
                 height="100%"
                 theme={resolvedTheme === 'dark' ? 'vs-dark' : 'light'}
                 language={language}
+                path={path}
                 value={editorValue}
                 onChange={handleEditorChange}
                 onMount={handleEditorDidMount}

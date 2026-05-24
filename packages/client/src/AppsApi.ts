@@ -1,4 +1,4 @@
-import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase, type ServerError } from "@vertesia/api-fetch-client";
 import type {
     AppInstallation,
     AppInstallationKind,
@@ -16,6 +16,10 @@ import type {
     ValidateUrlResponse,
 } from "@vertesia/common";
 
+export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest'> {
+    manifest: null,
+}
+
 export default class AppsApi extends ApiTopic {
 
     constructor(parent: ClientBase) {
@@ -32,8 +36,8 @@ export default class AppsApi extends ApiTopic {
 
     /**
      * Get the list if tools provided by the given app.
-     * @param appId 
-     * @returns 
+     * @param appId
+     * @returns
      */
     listAppInstallationTools(appInstallId: string): Promise<AppToolCollection[]> {
         return this.get(`/installations/${appInstallId}/tools`)
@@ -81,7 +85,7 @@ export default class AppsApi extends ApiTopic {
      * @returns 
      */
     getAppInstallationByName(appName: string): Promise<AppInstallationWithManifest | null> {
-        return this.get(`/installations/name/${appName}`).catch((err: ServerError) => {
+        return this.get<AppInstallationWithManifest>(`/installations/name/${appName}`).catch((err: ServerError) => {
             if (err.status === 404) {
                 return null;
             } else {

@@ -3,9 +3,9 @@ import { Checkbox } from "../../checkbox";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "../../command";
 import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
 import { AnimateChangeInHeight } from "../animateChangeInHeight";
-import { FilterGroupOption, FilterOption } from "../types";
+import type { FilterGroupOption, FilterOption } from "../types";
 import { DynamicLabel } from "../DynamicLabel";
-import { useUITranslation } from '../../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export const SelectionCombobox = ({
     filterType,

@@ -1,8 +1,8 @@
-import { RemoteActivityDefinition, RemoteActivityExecutionPayload } from "@vertesia/common";
-import { Context, Hono } from "hono";
+import type { RemoteActivityDefinition, RemoteActivityExecutionPayload } from "@vertesia/common";
+import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { ActivityCollection } from "../ActivityCollection.js";
-import { ToolServerConfig } from "./types.js";
+import type { ActivityCollection } from "../ActivityCollection.js";
+import type { ToolServerConfig } from "./types.js";
 
 /**
  * Safely parse JSON from a request body. Throws HTTPException(400) on invalid JSON.
@@ -17,6 +17,10 @@ async function safeParseJson(c: Context): Promise<unknown> {
     }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return !!value && typeof value === 'object';
+}
+
 /**
  * Validates the structure of a RemoteActivityExecutionPayload.
  * Returns the parsed payload or throws HTTPException(400).
@@ -27,7 +31,7 @@ function parseActivityPayload(body: unknown): RemoteActivityExecutionPayload {
             message: 'Invalid or missing activity execution payload.'
         });
     }
-    const obj = body as Record<string, any>;
+    const obj = body as Record<string, unknown>;
     if (typeof obj.activity_name !== 'string' || !obj.activity_name) {
         throw new HTTPException(400, {
             message: 'Missing required field: activity_name'
@@ -35,8 +39,8 @@ function parseActivityPayload(body: unknown): RemoteActivityExecutionPayload {
     }
     return {
         activity_name: obj.activity_name,
-        params: obj.params || {},
-        metadata: obj.metadata || {},
+        params: isRecord(obj.params) ? obj.params : {},
+        metadata: isRecord(obj.metadata) ? obj.metadata : {},
     };
 }
 

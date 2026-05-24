@@ -1,10 +1,10 @@
 import type { JSONObject } from "../json.js";
-import { WorkflowExecutionPayload, WorkflowRunStatus } from "./workflow.js";
+import type { WorkflowExecutionPayload, WorkflowRunStatus } from "./workflow.js";
 
 export interface PdfToRichtextOptions {
     features?: string[];
     debug?: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export interface PdfToRichTextWorkflowPayload extends Omit<WorkflowExecutionPayload, "vars"> {
@@ -68,6 +68,8 @@ export interface DocTableJson extends DocTable {
     data: JSONObject[];
 }
 
+export type DocTableResponse = DocTableCsv | DocTableJson;
+
 /**
  * Output format for document processing workflows
  */
@@ -84,7 +86,7 @@ export interface DocAnalyzeRunStatusResponse extends WorkflowRunStatus {
 
 export interface DocAnalyzerResultResponse {
     document?: string;
-    tables?: DocTableCsv[] | DocTableJson[];
+    tables?: DocTableResponse[];
     images?: DocImage[];
     annotated?: string | null;
 }
@@ -170,5 +172,11 @@ export interface GetAdaptedTablesRequestQuery {
  */
 export interface AdaptedTable {
     comment?: string;
-    data: Record<string, any>[];
+    data: Record<string, unknown>[];
+}
+
+export type AdaptedTableResponse = Record<string, AdaptedTable>;
+
+export interface AnnotatedPdfResponse {
+    url: string | null;
 }

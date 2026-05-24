@@ -3,7 +3,8 @@
  * Used to notify external systems when agents are waiting for user input.
  */
 
-import { UserChannel } from "./email.js";
+import type { UserChannel } from "./email.js";
+import type { TaskField } from "./store/task.js";
 
 // ================= Pending Ask Data ====================
 
@@ -42,6 +43,8 @@ export interface PendingAskData {
     expiresAt: number;
     /** Current status of the ask */
     status: PendingAskStatus;
+    /** Durable task created for this ask_user request. */
+    taskId?: string;
     /** Timestamp when resolved (ms since epoch) */
     resolvedAt?: number;
     /** User's response (after resolution) */
@@ -103,4 +106,8 @@ export interface AskUserWebhookEvent {
  */
 export interface ListPendingAsksResponse {
     asks: PendingAskData[];
+}
+
+export interface AskUserTaskMetadata {
+    taskFields?: TaskField[];
 }

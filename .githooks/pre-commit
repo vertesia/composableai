@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Pre-commit hook:
+# - Uses lint-staged to run biome on staged files only (fast feedback).
+# - Standalone clone or local `pnpm install`: lint-staged is reachable via pnpm exec.
+# - Submodule mode (no local node_modules): falls back to the parent workspace's
+#   lint-staged + biome binaries at `../node_modules/.bin/`. Uses this repo's
+#   lint-staged config (passed via --config) so it lints with this repo's biome.
+
+set -euo pipefail
+
+if [ -d node_modules ]; then
+    pnpm exec lint-staged
+    exit $?
+fi
+
+# Submodule mode
+PARENT_LINT_STAGED="../node_modules/.bin/lint-staged"
+if [ -x "$PARENT_LINT_STAGED" ]; then
+    echo "[pre-commit] lint-staged not installed locally — falling back to parent workspace's: $PARENT_LINT_STAGED"
+    # Make sure biome from parent is on PATH so the spawned command resolves.
+    PATH="$(cd .. && pwd)/node_modules/.bin:$PATH" "$PARENT_LINT_STAGED" --config package.json
+    exit $?
+fi
+
+echo "Error: lint-staged not found in this workspace or its parent."
+echo "Run 'pnpm install' from inside composableai to install local devDeps,"
+echo "or commit with --no-verify to skip this check."
+exit 1

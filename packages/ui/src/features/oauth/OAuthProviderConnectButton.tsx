@@ -3,7 +3,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { CheckCircle2, ExternalLink } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Spinner } from '../../core/index.js';
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useOAuthPopup } from './useOAuthPopup.js';
 
 interface OAuthProviderConnectButtonProps {
@@ -36,13 +36,13 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
     }, [client, oauthProviderId]);
 
     useEffect(() => {
-        loadStatus();
+        void loadStatus();
     }, [loadStatus]);
 
     const { openOAuthPopup } = useOAuthPopup({
         onComplete: () => {
             setAuthenticating(false);
-            loadStatus();
+            void loadStatus();
             onAuthChange?.();
         },
         onError: (error) => {
@@ -116,7 +116,7 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
                 </>
             ) : (
                 <>
-                    <ExternalLink className="size-4 mr-1" />
+                    <ExternalLink className="size-4 me-1" />
                     <span>{t('oauthProvider.authenticate')}</span>
                 </>
             )}

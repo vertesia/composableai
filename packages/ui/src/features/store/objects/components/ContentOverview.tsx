@@ -1,13 +1,14 @@
 import { memo, useEffect, useRef, useState, type RefObject } from "react";
 
-import { AUDIO_RENDITION_NAME, AudioMetadata, ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, MarkdownRenditionFormat, PDF_RENDITION_NAME, Permission, POSTER_RENDITION_NAME, VideoMetadata, WorkflowExecutionStatus } from "@vertesia/common";
+import { ContentNature, type ContentObject, ContentObjectStatus, type DocAnalyzerProgress, type DocProcessorOutputFormat, type DocumentMetadata, MarkdownRenditionFormat, PDF_RENDITION_NAME, Permission, WorkflowExecutionStatus } from "@vertesia/common";
 import { Button, Dropdown, MenuItem, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useFetch, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
 import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from "lucide-react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { MagicPdfView } from "../../../magic-pdf";
+import { AudioPanel, ImagePanel, VideoPanel } from "../../../media-viewer";
 import { SimplePdfViewer } from "../../../pdf-viewer";
 import { SecureButton } from "../../../permissions/SecureButton.js";
 import { getWorkflowStatusColor, getWorkflowStatusName, isPreviewableAsPdf } from "../../../utils/index.js";
@@ -15,23 +16,6 @@ import { PropertiesEditorModal } from "./PropertiesEditorModal";
 import { TextEditorPanel } from "./TextEditorPanel.js";
 import { useObjectText, useOfficePdfConversion, usePdfProcessingStatus } from "./useContentPanelHooks.js";
 import { useDownloadFile } from "./useDownloadFile.js";
-
-// Web-supported image formats for browser display
-const WEB_SUPPORTED_IMAGE_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-
-// Web-supported video formats for browser display
-const WEB_SUPPORTED_VIDEO_FORMATS = ['video/mp4', 'video/webm'];
-
-// Web-supported audio formats for browser display
-const WEB_SUPPORTED_AUDIO_FORMATS = [
-    'audio/mp4',    // M4A/AAC (official MIME type)
-    'audio/m4a',    // M4A (alternative MIME type)
-    'audio/x-m4a',  // M4A (legacy MIME type)
-    'audio/mpeg',   // MP3
-    'audio/ogg',    // Ogg Vorbis
-    'audio/wav',    // WAV
-    'audio/webm',   // WebM audio
-];
 
 // ----- Type Definitions -----
 
@@ -206,8 +190,7 @@ export function ContentOverview({
     };
 
     return (
-        <>
-            <ResizablePanelGroup direction="horizontal" className='h-full'>
+        <ResizablePanelGroup direction="horizontal" className='h-full'>
                 <ResizablePanel className="min-w-[100px]">
                     <PropertiesPanel object={object} refetch={refetch ?? (() => Promise.resolve())} handleCopyContent={handleCopyContent} />
                 </ResizablePanel>
@@ -217,8 +200,6 @@ export function ContentOverview({
                     <DataPanel object={object} loadText={loadText ?? false} handleCopyContent={handleCopyContent} refetch={refetch} />
                 </ResizablePanel>
             </ResizablePanelGroup>
-
-        </>
     );
 }
 
@@ -566,7 +547,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     onSaved={() => {
                         setIsEditing(false);
                         reloadText();
-                        refetch?.();
+                        void refetch?.();
                     }}
                 />
             )}
@@ -594,8 +575,7 @@ function TextActions({
     const pdfTemplateObjectId = fullProject?.configuration?.pdf_template_object_id;
 
     const isMarkdown =
-        content &&
-        content.type &&
+        content?.type &&
         content.type === "text/markdown";
 
     // Get content processor type for file extension detection
@@ -659,8 +639,7 @@ function TextActions({
     };
 
     return (
-        <>
-            <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
+        <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
                 <div className="flex items-center gap-2">
                     {fullText && (
                         <>
@@ -725,7 +704,6 @@ function TextActions({
 
                 </div>
             </div>
-        </>
     );
 }
 
@@ -745,8 +723,7 @@ const TextPanel = memo(({
 
     // Check if content type is markdown or plain text
     const isMarkdownOrText =
-        content &&
-        content.type &&
+        content?.type &&
         (content.type === "text/markdown" || content.type === "text/plain");
 
     // Render as markdown if it's markdown/text type OR if text looks like markdown (but not if XML)
@@ -756,7 +733,7 @@ const TextPanel = memo(({
         text ? (
             <>
                 {isTextCropped && (
-                    <div className="px-2 py-2 bg-attention/10 border-l-4 border-attention mx-2 mb-2 rounded">
+                    <div className="px-2 py-2 bg-attention/10 border-s-4 border-attention mx-2 mb-2 rounded">
                         <div className="flex items-center gap-2 text-attention">
                             <AlertTriangle className="size-4" />
                             <span className="text-sm font-semibold">{t('store.showingFirst128K')}</span>
@@ -790,267 +767,6 @@ const TextPanel = memo(({
             </div>
     );
 });
-
-function ImagePanel({ object }: { object: ContentObject }) {
-    const { client } = useUserSession();
-    const [imageUrl, setImageUrl] = useState<string>();
-
-    const content = object.content;
-    const isImage = object.metadata && object.metadata.type === ContentNature.Image;
-
-    useEffect(() => {
-        if (isImage) {
-            // Reset image URL when object changes
-            setImageUrl(undefined);
-
-            const loadImage = async () => {
-                const isOriginalWebSupported = content?.type && WEB_SUPPORTED_IMAGE_FORMATS.includes(content.type);
-
-                try {
-                    const rendition = await client.objects.getRendition(object.id, {
-                        format: ImageRenditionFormat.jpeg,
-                        generate_if_missing: false,
-                        sign_url: true,
-                    });
-
-                    if (rendition.status === "found" && rendition.renditions?.length) {
-                        // Use rendition URL directly
-                        setImageUrl(rendition.renditions[0]);
-                    } else if (isOriginalWebSupported) {
-                        // Fall back to original file only if web-supported
-                        const downloadUrl = await client.files.getDownloadUrl(object.content.source!);
-                        setImageUrl(downloadUrl.url);
-                    }
-                } catch (error) {
-                    // Fall back to original file only if web-supported
-                    if (isOriginalWebSupported) {
-                        const downloadUrl = await client.files.getDownloadUrl(object.content.source!);
-                        setImageUrl(downloadUrl.url);
-                    }
-                }
-            };
-
-            loadImage();
-        }
-    }, [object.id, isImage, content?.type, content?.source, client]);
-
-    return (
-        <div className="mb-4 px-2">
-            {imageUrl ? (
-                <img
-                    src={imageUrl}
-                    alt={object.name}
-                    className="w-full object-contain"
-                />
-            ) : (
-                <Spinner size="md" />
-            )}
-        </div>
-    );
-}
-
-function VideoPanel({ object }: { object: ContentObject }) {
-    const { t } = useUITranslation();
-    const { client } = useUserSession();
-    const [videoUrl, setVideoUrl] = useState<string>();
-    const [posterUrl, setPosterUrl] = useState<string>();
-    const [isLoading, setIsLoading] = useState<boolean>(true);
-
-    const content = object.content;
-    const isVideo = object.metadata?.type === ContentNature.Video;
-
-    // Check if there are mp4 or webm renditions available in metadata
-    const metadata = object.metadata as VideoMetadata;
-    const renditions = metadata?.renditions || [];
-
-    // Find mp4 or webm rendition by mime type, preferring mp4
-    const webRendition = renditions.find(r => r.content.type === 'video/mp4') ||
-        renditions.find(r => r.content.type === 'video/webm');
-
-    // Check if original file is web-compatible
-    const isOriginalWebSupported = content?.type && WEB_SUPPORTED_VIDEO_FORMATS.includes(content.type);
-
-    // Get poster
-    const poster = renditions.find(r => r.name === POSTER_RENDITION_NAME);
-
-    // Reset state when object changes
-    useEffect(() => {
-        setVideoUrl(undefined);
-        setPosterUrl(undefined);
-        setIsLoading(true);
-    }, [object.id]);
-
-    useEffect(() => {
-        const loadPoster = async () => {
-            if (poster?.content?.source) {
-                try {
-                    const response = await client.files.getDownloadUrl(poster.content.source);
-                    setPosterUrl(response.url);
-                } catch (error) {
-                    console.error("Failed to load poster image", error);
-                }
-            }
-        };
-        loadPoster();
-    }, [poster, client]);
-
-    useEffect(() => {
-        if (isVideo && (webRendition?.content?.source || isOriginalWebSupported)) {
-            const loadVideoUrl = async () => {
-                try {
-                    let downloadUrl;
-                    if (webRendition?.content?.source) {
-                        // Use rendition if available
-                        downloadUrl = await client.files.getDownloadUrl(webRendition.content.source);
-                    } else if (isOriginalWebSupported && content?.source) {
-                        // Fall back to original file if web-supported
-                        downloadUrl = await client.files.getDownloadUrl(content.source);
-                    }
-                    if (downloadUrl) {
-                        setVideoUrl(downloadUrl.url);
-                    }
-                } catch (error) {
-                    console.error("Failed to get video URL", error);
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-            loadVideoUrl();
-        } else {
-            setIsLoading(false);
-        }
-    }, [isVideo, webRendition, isOriginalWebSupported, content?.source, client]);
-
-    return (
-        <div className="mb-4 px-2 w-full h-full">
-            {!webRendition && !isOriginalWebSupported ? (
-                <div className="flex justify-center items-center h-[400px] text-muted">
-                    <div className="text-center">
-                        <p>{t('store.noVideoRendition')}</p>
-                        <p className="text-sm mt-2">{t('store.videoFormatRequired')}</p>
-                    </div>
-                </div>
-            ) : isLoading ? (
-                <div className="flex justify-center items-center h-[400px]">
-                    <Spinner size="md" />
-                </div>
-            ) : videoUrl ? (
-                <video
-                    src={videoUrl}
-                    poster={posterUrl}
-                    controls
-                    className={`w-full h-full object-contain`}
-                >
-                    Your browser does not support the video tag.
-                </video>
-            ) : (
-                <div className="flex justify-center items-center h-[400px] text-muted">
-                    Failed to load video
-                </div>
-            )}
-        </div>
-    );
-}
-
-function AudioPanel({ object }: { object: ContentObject }) {
-    const { t } = useUITranslation();
-    const { client } = useUserSession();
-    const [audioUrl, setAudioUrl] = useState<string>();
-    const [isLoading, setIsLoading] = useState<boolean>(true);
-
-    const content = object.content;
-    const isAudio = object.metadata?.type === ContentNature.Audio;
-
-    // Check if there are audio renditions available in metadata
-    const metadata = object.metadata as AudioMetadata;
-    const renditions = metadata?.renditions || [];
-
-    // Find audio rendition by name (AUDIO_RENDITION_NAME = "Audio")
-    const audioRendition = renditions.find(r => r.name === AUDIO_RENDITION_NAME);
-
-    // Check if original file is web-compatible
-    const isOriginalWebSupported = content?.type && WEB_SUPPORTED_AUDIO_FORMATS.includes(content.type);
-
-    // Reset state when object changes
-    useEffect(() => {
-        setAudioUrl(undefined);
-        setIsLoading(true);
-    }, [object.id]);
-
-    useEffect(() => {
-        if (isAudio && (audioRendition?.content?.source || isOriginalWebSupported)) {
-            const loadAudioUrl = async () => {
-                try {
-                    let downloadUrl;
-                    if (audioRendition?.content?.source) {
-                        // Use rendition if available
-                        downloadUrl = await client.files.getDownloadUrl(audioRendition.content.source);
-                    } else if (isOriginalWebSupported && content?.source) {
-                        // Fall back to original file if web-supported
-                        downloadUrl = await client.files.getDownloadUrl(content.source);
-                    }
-                    if (downloadUrl) {
-                        setAudioUrl(downloadUrl.url);
-                    }
-                } catch (error) {
-                    console.error("Failed to get audio URL", error);
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-            loadAudioUrl();
-        } else {
-            setIsLoading(false);
-        }
-    }, [isAudio, audioRendition, isOriginalWebSupported, content?.source, client]);
-
-    return (
-        <div className="mb-4 px-2">
-            {!audioRendition && !isOriginalWebSupported ? (
-                <div className="flex justify-center items-center h-[200px] text-muted">
-                    <div className="text-center">
-                        <p>{t('store.noAudioRendition')}</p>
-                        <p className="text-sm mt-2">{t('store.audioFormatRequired')}</p>
-                    </div>
-                </div>
-            ) : isLoading ? (
-                <div className="flex justify-center items-center h-[200px]">
-                    <Spinner size="md" />
-                </div>
-            ) : audioUrl ? (
-                <div className="flex flex-col items-center gap-4">
-                    <audio
-                        src={audioUrl}
-                        controls
-                        className="w-full max-w-2xl"
-                    >
-                        Your browser does not support the audio tag.
-                    </audio>
-                    {metadata?.duration && (
-                        <div className="text-sm text-muted">
-                            Duration: {formatDuration(metadata.duration)}
-                        </div>
-                    )}
-                </div>
-            ) : (
-                <div className="flex justify-center items-center h-[200px] text-muted">
-                    Failed to load audio
-                </div>
-            )}
-        </div>
-    );
-}
-
-function formatDuration(seconds: number): string {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-
-    if (hours > 0) {
-        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-}
 
 function TranscriptPanel({ object, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
     const { t } = useUITranslation();
@@ -1090,6 +806,7 @@ function TranscriptPanel({ object, handleCopyContent }: { object: ContentObject,
                 {segments && segments.length > 0 ? (
                     <div className="space-y-2">
                         {segments.map((segment, idx) => (
+                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                             <div key={idx} className="flex gap-3 text-sm">
                                 <span className="text-muted font-mono text-xs shrink-0 pt-0.5">
                                     {formatTimestamp(segment.start)}
@@ -1271,7 +988,7 @@ function PdfProcessingPanel({ progress, status, outputFormat }: { progress?: Doc
     const isXmlProcessing = outputFormat === "xml";
 
     // Ensure percent is a valid number (handle undefined and NaN from division by zero)
-    const percent = progress?.percent != null && !isNaN(progress.percent) ? progress.percent : 0;
+    const percent = progress?.percent != null && !Number.isNaN(progress.percent) ? progress.percent : 0;
 
     return (
         <div className="px-4 py-4">

@@ -61,9 +61,7 @@ export const skillCollectionTransformer: TransformerPreset = {
                         names.push(identifier);
                     }
                 }
-            } catch (err) {
-                // Skip entries that can't be read
-                continue;
+            } catch {
             }
         }
 

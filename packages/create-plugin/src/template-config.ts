@@ -1,8 +1,8 @@
 /**
  * Template configuration types and reading
  */
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { config } from './configuration.js';
 
 /**
@@ -89,11 +89,14 @@ export interface DerivedVariable {
   /** Source variable name(s) to derive from. Can be a single string or array of strings for concat transform */
   from: string | string[];
 
-  /** Transformation to apply: "pascalCase", "camelCase", "kebabCase", "snakeCase", "titleCase", "upperCase", "lowerCase", "concat" */
+  /** Transformation to apply: "pascalCase", "camelCase", "kebabCase", "snakeCase", "titleCase", "upperCase", "lowerCase", "concat", "map" */
   transform: string;
 
   /** Separator for concat transform (default: "") */
   separator?: string;
+
+  /** Lookup table for the "map" transform: { sourceValue: derivedValue } */
+  map?: Record<string, string>;
 }
 
 /**

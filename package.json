@@ -5,22 +5,35 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "bump": "pnpm exec wst bump minor -x llumiverse",
-    "release": "pnpm -r publish --access public",
     "build": "pnpm exec turbo run build",
-    "ci:test": "pnpm exec turbo run test --filter=@vertesia/api-fetch-client --filter=@vertesia/client --filter=@vertesia/converters --filter=@vertesia/json --filter=@vertesia/workflow",
-    "test": "pnpm -r test",
+    "bump": "pnpm exec wst bump minor -x llumiverse",
+    "ci:local": "pnpm run lint && pnpm run build && pnpm run ci:test",
+    "ci:test": "pnpm exec turbo run typecheck:test test --filter='./packages/*' --filter='./llumiverse/*' --filter='./templates/*'",
+    "ci:typecheck:test": "pnpm exec turbo run typecheck:test --filter='./packages/*' --filter='./llumiverse/*' --filter='./templates/*'",
     "clean": "rimraf ./node_modules && pnpm -r clean",
+    "format": "pnpm exec biome format --write .",
+    "format:check": "pnpm exec biome format .",
+    "lint": "pnpm exec biome lint",
+    "lint:fix": "pnpm exec biome lint --write",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
     "prepublishOnly": "pnpm build",
-    "lint": "pnpm -r --filter='!@llumiverse/*' lint"
+    "release": "pnpm -r publish --access public",
+    "test": "pnpm -r test",
+    "typecheck:test": "pnpm -r --if-present typecheck:test"
   },
   "devDependencies": {
-    "eslint": "^10.0.2",
+    "@biomejs/biome": "^2.4.4",
+    "lint-staged": "^17.0.5",
     "npm-ws-tools": "^0.3.0",
     "rimraf": "^5.0.5",
     "turbo": "^2.9.14",
     "typescript": "^6.0.2",
     "vite": "^7.3.2"
+  },
+  "lint-staged": {
+    "*.{js,cjs,mjs,jsx,ts,tsx,css,html}": [
+      "pnpm exec biome lint --no-errors-on-unmatched --files-ignore-unknown=true --diagnostic-level=error"
+    ]
   },
   "packageManager": "pnpm@11.1.2"
 }

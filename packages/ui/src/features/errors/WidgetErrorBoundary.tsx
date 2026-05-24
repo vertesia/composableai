@@ -1,5 +1,5 @@
-import { VertesiaErrorBoundary } from './VertesiaErrorBoundary';
-import { ReactNode } from 'react';
+import { type ErrorFallbackComponentProps, VertesiaErrorBoundary } from './VertesiaErrorBoundary';
+import type { ReactNode } from 'react';
 
 export function WidgetErrorBoundary({ children }: { children: ReactNode }) {
 
@@ -10,16 +10,17 @@ export function WidgetErrorBoundary({ children }: { children: ReactNode }) {
     )
 }
 
-function WidgetErrorFallback({ error }: { error?: Error }) {
+function WidgetErrorFallback({ error }: ErrorFallbackComponentProps) {
+    const message = error instanceof Error ? error.message : undefined;
 
     console.log('WidgetError', error);
 
     return (
         <div className="text-sm">
             Sorry, this area cannot be loaded or rendered.
-            {error?.message &&
+            {message &&
                 <pre>
-                    {error.message}
+                    {message}
                 </pre>
             }
         </div>

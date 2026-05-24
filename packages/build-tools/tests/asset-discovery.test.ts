@@ -4,8 +4,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { discoverSkillAssets } from '../src/utils/asset-discovery.js';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,7 +31,7 @@ describe('Asset Discovery', () => {
     expect(scriptAssets).toHaveLength(2);
 
     // Widgets should NOT have asset files (compiled separately)
-    const widgetAssets = assets.assetFiles.filter(a => a.type === 'widget');
+    const widgetAssets = assets.assetFiles.filter(a => (a.type as string) === 'widget');
     expect(widgetAssets).toHaveLength(0);
   });
 

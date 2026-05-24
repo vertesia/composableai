@@ -113,7 +113,7 @@ export function vertesiaImportPlugin(config: PluginConfig): Plugin {
                 }
 
                 // Generate code
-                const imports = result.imports ? result.imports.join('\n') + '\n\n' : '';
+                const imports = result.imports ? `${result.imports.join('\n')}\n\n` : '';
                 if (result.code) {
                     // Custom code provided - prepend imports
                     return imports + result.code;

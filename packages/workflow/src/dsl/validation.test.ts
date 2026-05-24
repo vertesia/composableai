@@ -1,61 +1,62 @@
+import type { DSLWorkflowSpec } from "@vertesia/common";
 import { describe, expect, test } from "vitest";
-import { validateWorkflow } from "./validation.ts";
+import { validateWorkflow } from "./validation.js";
 
 describe('workflow validation', () => {
 
-    test('empty object is not a valid workflow', () => {
-        const workflow: any = {
+    test('should reject an empty object as a workflow', () => {
+        const workflow = {
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(2);
     })
 
-    test('activities is required', () => {
-        const workflow: any = {
+    test('should require activities', () => {
+        const workflow = {
             name: "test",
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(1);
     })
 
-    test('activities should be an array', () => {
-        const workflow: any = {
+    test('should require activities to be an array', () => {
+        const workflow = {
             name: "test",
             activities: {}
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(1);
     })
 
-    test('activities array should have at least one item', () => {
-        const workflow: any = {
+    test('should require activities array to have at least one item', () => {
+        const workflow = {
             name: "test",
             activities: []
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(1);
     })
 
-    test('activity should have a name', () => {
-        const workflow: any = {
+    test('should require activity to have a name', () => {
+        const workflow = {
             name: "test",
             activities: [{}]
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(1);
     })
 
-    test('allow empty activity', () => {
-        const workflow: any = {
+    test('should allow empty activity', () => {
+        const workflow = {
             name: "test",
             activities: [{ name: "test" }]
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(0);
     })
 
-    test('import undeclared var', () => {
-        const workflow: any = {
+    test('should reject imported undeclared vars', () => {
+        const workflow = {
             name: "test",
             vars: { "foo": true },
             activities: [{
@@ -63,13 +64,13 @@ describe('workflow validation', () => {
                 import: ["foo", "bar"]
             }]
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(1);
     })
 
 
-    test('import declared vars', () => {
-        const workflow: any = {
+    test('should allow importing declared vars', () => {
+        const workflow = {
             name: "test",
             vars: { "foo": true, "bar": true },
             activities: [{
@@ -77,12 +78,12 @@ describe('workflow validation', () => {
                 import: ["foo", "bar"]
             }]
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(0);
     })
 
-    test('import unknown imported var through expressions', () => {
-        const workflow: any = {
+    test('should reject unknown imported vars through expressions', () => {
+        const workflow = {
             name: "test",
             vars: { "foo": true },
             activities: [{
@@ -90,12 +91,12 @@ describe('workflow validation', () => {
                 import: [{ "foo": "foo", "barLen": "bar.length" }]
             }]
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(1);
     })
 
-    test('import declared vars through expressions', () => {
-        const workflow: any = {
+    test('should allow declared vars through expressions', () => {
+        const workflow = {
             name: "test",
             vars: { "foo": true, "bar": "true" },
             activities: [{
@@ -103,12 +104,12 @@ describe('workflow validation', () => {
                 import: [{ "foo": "foo", "barLen": "bar.length" }]
             }]
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(0);
     })
 
-    test('detect self references', () => {
-        const workflow: any = {
+    test('should detect self references', () => {
+        const workflow = {
             name: "test",
             vars: { "object_type": "thetype" },
             activities: [{
@@ -119,13 +120,13 @@ describe('workflow validation', () => {
                 }
             }]
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(1);
         expect(errors[0].includes("Self referencing parameter")).toBe(true);
     })
 
-    test('reference known vars in fetch', () => {
-        const workflow: any = {
+    test('should allow known vars in fetch', () => {
+        const workflow = {
             name: "test",
             vars: { "foo": true, "bar": "true" },
             activities: [{
@@ -141,14 +142,14 @@ describe('workflow validation', () => {
                 }
             }]
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         console.log('##############errors', errors);
 
         expect(errors.length).toBe(0);
     })
 
-    test('reference unknown vars in fetch', () => {
-        const workflow: any = {
+    test('should reject unknown vars in fetch', () => {
+        const workflow = {
             name: "test",
             vars: { "foo": true, "bar": "true" },
             activities: [{
@@ -164,12 +165,12 @@ describe('workflow validation', () => {
                 }
             }]
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(2);
     })
 
-    test('reference one unknown and one known var in fetch', () => {
-        const workflow: any = {
+    test('should reject one unknown var in fetch while allowing known vars', () => {
+        const workflow = {
             name: "test",
             vars: { "foo": true, "bar": "true" },
             activities: [{
@@ -185,12 +186,12 @@ describe('workflow validation', () => {
                 }
             }]
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(1);
     })
 
-    test('reference 2 unknown vars in params', () => {
-        const workflow: any = {
+    test('should reject two unknown vars in params', () => {
+        const workflow = {
             name: "test",
             vars: { "foo": true, "bar": "true" },
             activities: [{
@@ -202,12 +203,12 @@ describe('workflow validation', () => {
                 }
             }]
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(2);
     })
 
-    test('reference 1 unknown vars in params', () => {
-        const workflow: any = {
+    test('should reject one unknown var in params', () => {
+        const workflow = {
             name: "test",
             vars: { "foo": true, "bar": "true" },
             activities: [{
@@ -219,12 +220,12 @@ describe('workflow validation', () => {
                 }
             }]
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(1);
     })
 
-    test('reference known vars in params', () => {
-        const workflow: any = {
+    test('should allow known vars in params', () => {
+        const workflow = {
             name: "test",
             vars: { "foo": true, "bar": "true" },
             activities: [
@@ -250,7 +251,7 @@ describe('workflow validation', () => {
                     }
                 }]
         }
-        const errors = validateWorkflow(workflow);
+        const errors = validateWorkflow(workflow as unknown as DSLWorkflowSpec);
         expect(errors.length).toBe(0);
     })
 

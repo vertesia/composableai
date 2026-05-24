@@ -1,4 +1,4 @@
-import { ContentObjectStatus, DSLActivityExecutionPayload } from "@vertesia/common";
+import { ContentObjectStatus, type DSLActivityExecutionPayload } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { log } from "@temporalio/activity"
 
@@ -27,7 +27,21 @@ export async function handleDslError(payload: DSLActivityExecutionPayload<Handle
     try {
         await client.objects.update(objectId, { status: ContentObjectStatus.failed });
     } catch (e) {
-        log.error("Failed to handle error", { error: e });
+        // Recovery path: the upstream workflow has already failed (and that
+        // original error is logged by the completion interceptor). What's
+        // happening here is that we *also* couldn't mark the content object
+        // as failed. Stay at error so it remains in dashboards — recurring
+        // recovery failures are a real signal — but enrich the message so
+        // it's clearly distinct from the upstream error rather than reading
+        // like a duplicate.
+        log.error(
+            `Recovery failed: could not update object ${objectId} status to failed`,
+            {
+                error: e,
+                upstreamError: params.errorMessage,
+                workflow_name: payload.workflow_name,
+            },
+        );
     }
     return;
 }

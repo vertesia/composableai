@@ -1,9 +1,9 @@
-import { ContentObject, DocumentMetadata } from "@vertesia/common";
-import { Button, ErrorBox, ResizableHandle, ResizablePanel, ResizablePanelGroup, useFetch } from "@vertesia/ui/core";
+import type { ContentObject, DocumentMetadata } from "@vertesia/common";
+import { Button, ErrorBox, ResizableHandle, ResizablePanel, ResizablePanelGroup, errorMessage, useFetch } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { X } from "lucide-react";
-import { Component, ErrorInfo, ReactNode, useState } from "react";
-import { useUITranslation, i18nInstance, NAMESPACE } from '../../i18n/index.js';
+import { Component, type ErrorInfo, type ReactNode, useState } from "react";
+import { useUITranslation, i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { PdfPageSlider } from "../pdf-viewer/PdfPageSlider";
 import { AnnotatedImageSlider } from "./AnnotatedImageSlider";
 import { DownloadPopover } from "./DownloadPopover";
@@ -69,7 +69,7 @@ export function MagicPdfView({ objectId, onClose }: MagicPdfViewProps) {
         return (
             <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4 p-8 max-w-md">
-                    <ErrorBox title={t('pdf.fetchingDocumentFailed')}>{error.message}</ErrorBox>
+                    <ErrorBox title={t('pdf.fetchingDocumentFailed')}>{errorMessage(error)}</ErrorBox>
                     {onClose && (
                         <Button variant="outline" onClick={onClose}>
                             Close

@@ -1,18 +1,18 @@
-import { EmbeddingsResult } from "@llumiverse/common";
 import { log } from "@temporalio/activity";
-import { VertesiaClient, ZenoClientNotFoundError } from "@vertesia/client";
+import { type VertesiaClient, ZenoClientNotFoundError } from "@vertesia/client";
 import {
-    ContentObject,
-    DSLActivityExecutionPayload,
-    DSLActivitySpec,
+    type ContentObject,
+    type DSLActivityExecutionPayload,
+    type DSLActivitySpec,
+    type EmbeddingsApiResult,
     ImageRenditionFormat,
-    ProjectConfigurationEmbeddings,
+    type ProjectConfigurationEmbedding,
     SupportedEmbeddingTypes,
 } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../errors.js";
 import { fetchBlobAsBase64, md5 } from "../utils/blobs.js";
-import { DocPart } from "../utils/chunks.js";
+import type { DocPart } from "../utils/chunks.js";
 import { countTokens } from "../utils/tokens.js";
 
 export interface GenerateEmbeddingsParams {
@@ -94,7 +94,7 @@ export async function generateEmbeddings(
         );
     }
 
-    let document;
+    let document: Awaited<ReturnType<typeof client.objects.retrieve>>;
     try {
         document = await client.objects.retrieve(
             objectId,
@@ -115,7 +115,10 @@ export async function generateEmbeddings(
         throw new DocumentNotFoundError("Document content not found", [objectId]);
     }
 
-    let res;
+    let res:
+        | Awaited<ReturnType<typeof generateTextEmbeddings>>
+        | Awaited<ReturnType<typeof generateImageEmbeddings>>
+        | { id: string; status: string; message: string };
 
     switch (type) {
         case SupportedEmbeddingTypes.text:
@@ -160,7 +163,7 @@ interface ExecuteGenerateEmbeddingsParams {
     document: ContentObject;
     client: VertesiaClient;
     type: SupportedEmbeddingTypes;
-    config: ProjectConfigurationEmbeddings;
+    config: ProjectConfigurationEmbedding;
     property?: string;
     force?: boolean;
 }
@@ -196,6 +199,11 @@ async function generateTextEmbeddings(
     }
 
     const { environment } = config;
+    if (!environment) {
+        throw new Error(
+            "No environment found in project configuration. Set environment in project configuration to generate embeddings.",
+        );
+    }
 
     // Compute text etag for comparison
     const textEtag = document.text_etag ?? (document.text ? md5(document.text) : undefined);
@@ -213,7 +221,7 @@ async function generateTextEmbeddings(
     }
 
     // Count tokens if needed, do not rely on existing token count
-    let tokenCount : number | undefined = undefined;
+    let tokenCount: number | undefined ;
     if (type === SupportedEmbeddingTypes.text && document.text) {
         tokenCount = countTokens(document.text).count;
     }
@@ -247,7 +255,8 @@ async function generateTextEmbeddings(
             environment,
             client,
         );
-        if (!res || !res.values) {
+        const values = res?.results?.[0]?.outputs?.[0]?.values;
+        if (!values) {
             return {
                 id: document.id,
                 status: "failed",
@@ -256,10 +265,10 @@ async function generateTextEmbeddings(
         }
 
         log.debug(`${type} embeddings generated for document ${document.id}`, {
-            len: res.values.length,
+            len: values.length,
         });
         await client.objects.setEmbedding(document.id, type, {
-            values: res.values,
+            values,
             model: res.model,
             etag: textEtag,
         });
@@ -268,7 +277,7 @@ async function generateTextEmbeddings(
             id: document.id,
             type,
             status: "completed",
-            len: res.values.length,
+            len: values.length,
         };
     }
 }
@@ -280,7 +289,7 @@ async function generateImageEmbeddings({
     config,
     force,
 }: ExecuteGenerateEmbeddingsParams) {
-    log.debug("Generating image embeddings for document " + document.id, {
+    log.debug(`Generating image embeddings for document ${document.id}`, {
         content: document.content,
     });
     if (
@@ -311,6 +320,11 @@ async function generateImageEmbeddings({
     }
 
     const { environment, model } = config;
+    if (!environment) {
+        throw new Error(
+            "No environment found in project configuration. Set environment in project configuration to generate embeddings.",
+        );
+    }
 
     const resRnd = await client.store.objects.getRendition(document.id, {
         format: ImageRenditionFormat.jpeg,
@@ -338,9 +352,14 @@ async function generateImageEmbeddings({
     const rendition = renditions[0];
     const image = await fetchBlobAsBase64(client, rendition);
 
+    // TODO(task_type): Document embedding task — image inputs do not carry task_type, but this is a document-indexing call.
+    // Revisit if task_type support is added to ImageEmbeddingInput in a later PR.
     const res = await client.environments
         .embeddings(environment, {
-            image,
+            inputs: [{
+                type: "image",
+                source: { base64: image, mime_type: "image/jpeg" },
+            }],
             model,
         })
         .then((res) => res)
@@ -349,7 +368,8 @@ async function generateImageEmbeddings({
             throw e;
         });
 
-    if (!res || !res.values) {
+    const values = res?.results?.[0]?.outputs?.[0]?.values;
+    if (!values) {
         return {
             id: document.id,
             status: "failed",
@@ -361,7 +381,7 @@ async function generateImageEmbeddings({
         document.id,
         SupportedEmbeddingTypes.image,
         {
-            values: res.values,
+            values,
             model: res.model,
             etag: contentEtag,
         },
@@ -371,7 +391,7 @@ async function generateImageEmbeddings({
         id: document.id,
         type,
         status: "completed",
-        len: res.values.length,
+        len: values.length,
     };
 }
 
@@ -380,14 +400,15 @@ async function generateEmbeddingsFromStudio(
     env: string,
     client: VertesiaClient,
     model?: string,
-): Promise<EmbeddingsResult> {
+): Promise<EmbeddingsApiResult> {
     log.debug(
         `Generating embeddings for text of ${text.length} chars with environment ${env}`,
     );
 
+    // TODO(task_type): Document embedding task — add task_type: "document" once task_type support is validated end-to-end.
     return client.environments
         .embeddings(env, {
-            text,
+            inputs: [{ type: "text", text }],
             model,
         })
         .then((res) => res)

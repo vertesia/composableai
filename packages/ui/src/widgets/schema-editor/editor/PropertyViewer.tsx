@@ -1,5 +1,5 @@
-import { DataViewerProps } from "./Editable.js";
-import { EditableSchemaProperty } from "./EditableSchemaProperty.js";
+import type { DataViewerProps } from "./Editable.js";
+import type { EditableSchemaProperty } from "./EditableSchemaProperty.js";
 
 export function PropertyViewer({ value }: DataViewerProps<EditableSchemaProperty>) {
     if (!value) return null;
@@ -9,7 +9,7 @@ export function PropertyViewer({ value }: DataViewerProps<EditableSchemaProperty
             <div>
                 {value.name || ''}
             </div>
-            <div className='ml-2 text-sm text-muted'>{value.type || ''}</div>
+            <div className='ms-2 text-sm text-muted'>{value.type || ''}</div>
         </div>
     )
 }

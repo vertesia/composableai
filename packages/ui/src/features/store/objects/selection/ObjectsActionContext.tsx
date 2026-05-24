@@ -1,9 +1,9 @@
-import { ReactNode, useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 
-import { ContentObjectTypeItem } from '@vertesia/common';
-import { ErrorBox, useFetch, useToast } from '@vertesia/ui/core';
+import type { ContentObjectTypeItem } from '@vertesia/common';
+import { ErrorBox, errorMessage, useFetch, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 import { useDocumentSelection } from '../DocumentSelectionProvider';
 import { useDocumentSearch } from '../search/DocumentSearchContext';
@@ -15,7 +15,7 @@ import { RemoveFromCollectionAction } from './actions/RemoveFromCollectionAction
 import { StartWorkflowAction, StartWorkflowComponent } from './actions/StartWorkflowComponent';
 import { ObjectsActionContext } from './ObjectsActionContextClass';
 import { ObjectsActionContextReact, useObjectsActionContext } from './ObjectsActionHooks';
-import { ObjectsActionSpec } from './ObjectsActionSpec';
+import type { ObjectsActionSpec } from './ObjectsActionSpec';
 
 const DEFAULT_ACTIONS: ObjectsActionSpec[] = [
     ExportPropertiesAction,
@@ -58,12 +58,13 @@ export function ObjectsActionContextProvider({ children, type }: ObjectsActionCo
             selection, toast, client, search, type
         });
         context.allActions = DEFAULT_ACTIONS;
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         context.wfRules = rules!;
         return context;
-    }, [selection, rules, type]);
+    }, [client, search, selection, rules, toast, type]);
 
     if (error) {
-        return <ErrorBox title={t('store.failedToFetchWorkflows')}>{error.message}</ErrorBox>
+        return <ErrorBox title={t('store.failedToFetchWorkflows')}>{errorMessage(error)}</ErrorBox>
     }
 
     return (

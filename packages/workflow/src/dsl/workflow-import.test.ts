@@ -1,12 +1,12 @@
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker, bundleWorkflowCode, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
-import { ContentEventName, DSLActivityExecutionPayload, DSLActivitySpec, DSLWorkflowExecutionPayload } from '@vertesia/common';
+import { ContentEventName, type DSLActivityExecutionPayload, type DSLActivitySpec, type DSLWorkflowExecutionPayload } from '@vertesia/common';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { dslWorkflow } from './dsl-workflow.js';
 import { setupActivity } from "./setup/ActivityContext.js";
 
 
-async function testImportedVars(payload: DSLActivityExecutionPayload<Record<string, any>>) {
+async function testImportedVars(payload: DSLActivityExecutionPayload<Record<string, unknown>>) {
     const { params } = await setupActivity(payload);
     if (!params.object_name) throw new Error('object_name is required');
     console.log('!!!!!!!!!!@@@@@@@@@@@@@@!!!!!!!!!!!!!!', params.object_name);
@@ -42,7 +42,7 @@ describe('DSL Workflow import vars', () => {
     });
 
 
-    it('import vars are part of activity params', async () => {
+    it('should include import vars in activity params', async () => {
 
 
         const { client, nativeConnection } = testEnv;
@@ -70,6 +70,7 @@ describe('DSL Workflow import vars', () => {
                 store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
+                spec_format: 'activities',
                 activities,
                 vars: {
                     object_name,

@@ -1,11 +1,11 @@
 import { ChevronDownIcon, ChevronUpIcon, XIcon } from 'lucide-react';
 import clsx from 'clsx';
-import React, { ReactNode, useEffect, useRef, useState } from 'react';
-import { AlignType, Popup, PopupController } from "./popup/index";
+import React, { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type AlignType, Popup, type PopupController } from "./popup/index";
 
 const INPUT_UNSTYLED = "block m-0 p-0 border-0 focus:outline-none focus:ring-0";
 const INPUT_NO_PADDING = "block sm:text-sm sm:leading-6 bg-muted rounded-md border-0 shadow-sm ring-1 ring-inset ring-muted placeholder:text-muted focus:ring-2 focus:ring-inset focus:ring-primary"
-const INPUT = INPUT_NO_PADDING + " py-1.5";
+const INPUT = `${INPUT_NO_PADDING} py-1.5`;
 const COMBOBOX_POPUP = "combobox-popup";
 
 function genComboboxPopupId() {
@@ -124,14 +124,14 @@ export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelec
     });
     useEffect(() => {
         if (inputRef.current) {
-            focusOnMount && inputRef.current.focus();
+            if (focusOnMount) inputRef.current.focus();
         }
-    }, [inputRef.current]);
+    }, [focusOnMount]);
     // the onSelect callback may change so we need to refresh it.
     useEffect(() => {
         ctrl.onSelect = onSelect
         ctrl.popupCtrl = popupCtrl.current;
-    }, [onSelect, popupCtrl.current]);
+    }, [ctrl, onSelect]);
     useEffect(() => {
         if (api && ctrl && inputRef.current) {
             api.current = {
@@ -147,7 +147,7 @@ export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelec
                 api.current = null;
             }
         }
-    }, [api, ctrl, inputRef.current]);
+    }, [api, ctrl]);
 
     const showMenu = ctrl.isMenuOpen && (ctrl.filteredItems.length > 0 || !!noMatchMessage);
 
@@ -198,6 +198,7 @@ function ComboInput<T>({ inputRef, placeholder, boxRef, ctrl, layout, clearable,
             <div style={{ position: 'absolute', right: `${layout.buttonRight}px`, top: 0, bottom: 0, display: 'flex', alignItems: 'center', gap: '2px' }}>
                 {showClear && (
                     <button
+                        type="button"
                         style={{ border: 'none', padding: 0, margin: 0, backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', width: `${layout.buttonWidth}px` }}
                         onClick={() => { ctrl.selectedItem = null; }}
                     >
@@ -205,7 +206,9 @@ function ComboInput<T>({ inputRef, placeholder, boxRef, ctrl, layout, clearable,
                     </button>
                 )}
                 {Toggle && (
+                    // Raw <button> — spreads ctrl.getToggleButtonProps() from downshift; props must attach to the DOM element directly.
                     <button
+                        type="button"
                         style={{ width: `${layout.buttonWidth}px`, border: 'none', padding: 0, margin: 0, backgroundColor: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         {...ctrl.getToggleButtonProps()}
                     >
@@ -272,7 +275,7 @@ export function useComboboxCtrl<ItemT>(props: ComboboxControllerProps<ItemT>): C
     const [ctrl, setCtrl] = useState<ComboboxController<ItemT>>(new ComboboxController(props));
     useEffect(() => {
         ctrl?.withState(setCtrl);
-    }, []);
+    }, [ctrl]);
     return ctrl;
 }
 

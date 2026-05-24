@@ -1,7 +1,7 @@
 // hook to initialize the environment and auth session
 // the main app must call this hook before rendering the page.
 
-import { AuthTokenPayload } from "@vertesia/common";
+import type { AuthTokenPayload } from "@vertesia/common";
 
 export interface EnvProps {
     name: string; // the app name
@@ -15,6 +15,7 @@ export interface EnvProps {
         zeno: string,
         studio: string,
         sts: string, // Security Token Service endpoint
+        mcp?: string,
     },
     firebase?: {
         apiKey: string,
@@ -27,10 +28,10 @@ export interface EnvProps {
     datadogRum?: boolean,
     datadogLogs?: boolean,
     logger?: {
-        info: (msg: string, ...args: any) => void,
-        warn: (msg: string, ...args: any) => void,
-        error: (msg: string, ...args: any) => void,
-        debug: (msg: string, ...args: any) => void,
+        info: (msg: string, ...args: unknown[]) => void,
+        warn: (msg: string, ...args: unknown[]) => void,
+        error: (msg: string, ...args: unknown[]) => void,
+        debug: (msg: string, ...args: unknown[]) => void,
     }
     onLogin?: (token: AuthTokenPayload) => void,
     onLogout?: () => void,

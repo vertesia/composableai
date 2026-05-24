@@ -2,7 +2,7 @@ import { jwtDecode } from 'jwt-decode';
 import { createContext, useContext } from 'react';
 
 import { VertesiaClient } from '@vertesia/client';
-import { AuthTokenPayload } from '@vertesia/common';
+import type { AuthTokenPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 
 import { getComposableToken } from './auth/composable';
@@ -14,6 +14,9 @@ export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
 
 const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
 
+export interface UserSessionLoginOptions {
+    loadOnboardingStatus?: boolean;
+}
 
 class UserSession {
 
@@ -88,7 +91,7 @@ class UserSession {
         return this.authToken?.account;
     }
 
-    async login(token: string) {
+    async login(token: string, options: UserSessionLoginOptions = {}) {
         this.authError = undefined;
         this.isLoading = false;
         this.client.withAuthCallback(() => this.authCallback)
@@ -97,11 +100,13 @@ class UserSession {
 
         //store selected account in local storage
         localStorage.setItem(LastSelectedAccountId_KEY, this.authToken.account.id);
-        localStorage.setItem(LastSelectedProjectId_KEY + '-' + this.authToken.account.id, this.authToken.project?.id ?? '');
+        localStorage.setItem(`${LastSelectedProjectId_KEY}-${this.authToken.account.id}`, this.authToken.project?.id ?? '');
         // notify the host app of the login
         Env.onLogin?.(this.authToken);
 
-        await this.fetchOnboardingStatus();
+        if (options.loadOnboardingStatus ?? true) {
+            await this.fetchOnboardingStatus();
+        }
 
         return Promise.resolve();
 
@@ -136,7 +141,7 @@ class UserSession {
             console.log('Using Firebase logout');
             const wasLoggedIn = !!this.authToken;
             if (this.authToken) {
-                getFirebaseAuth().signOut();
+                void getFirebaseAuth().signOut();
             }
             this.authError = undefined;
             this.isLoading = false;
@@ -157,21 +162,21 @@ class UserSession {
         localStorage.setItem(LastSelectedAccountId_KEY, targetAccountId);
         if (this) {
             if (this.account && this.project) {
-                localStorage.setItem(LastSelectedProjectId_KEY + '-' + this.account.id, this.project.id);
+                localStorage.setItem(`${LastSelectedProjectId_KEY}-${this.account.id}`, this.project.id);
             } else if (this.account) {
-                localStorage.removeItem(LastSelectedProjectId_KEY + '-' + this.account.id);
+                localStorage.removeItem(`${LastSelectedProjectId_KEY}-${this.account.id}`);
             }
         }
 
-        window.location.replace('/?a=' + targetAccountId);
+        window.location.replace(`/?a=${targetAccountId}`);
     }
 
     async switchProject(targetProjectId: string) {
         if (this.account) {
-            localStorage.setItem(LastSelectedProjectId_KEY + '-' + this.account.id, targetProjectId);
+            localStorage.setItem(`${LastSelectedProjectId_KEY}-${this.account.id}`, targetProjectId);
         }
 
-        window.location.replace('/?a=' + this.account?.id + '&p=' + targetProjectId);
+        window.location.replace(`/?a=${this.account?.id}&p=${targetProjectId}`);
     }
 
     async fetchAccounts() {
@@ -245,7 +250,7 @@ class UserSession {
     }
 }
 
-const UserSessionContext = createContext<UserSession>(undefined as any);
+const UserSessionContext = createContext<UserSession | undefined>(undefined);
 
 export function useUserSession() {
     const session = useContext(UserSessionContext);

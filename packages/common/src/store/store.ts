@@ -1,7 +1,9 @@
-import { SearchPayload } from "../payload.js";
-import { SupportedEmbeddingTypes } from "../project.js";
-import { ComplexSearchQuery } from "../query.js";
-import { BaseObject } from "./common.js";
+import type { ComputedFacetResponse } from "../facets.js";
+import type { SearchPayload } from "../payload.js";
+import type { SupportedEmbeddingTypes } from "../project.js";
+import type { ComplexSearchQuery } from "../query.js";
+import type { JSONObject } from "../json.js";
+import type { BaseObject } from "./common.js";
 
 export enum ContentObjectApiHeaders {
     COLLECTION_ID = 'x-collection-id',
@@ -98,11 +100,7 @@ export interface SetObjectEmbeddingsResponse {
     type?: Embedding;
 }
 
-export interface ContentObjectApiTypeRef {
-    id?: string;
-    code?: string;
-    name: string;
-}
+export type ContentObjectApiTypeRef = ContentObjectTypeRef;
 
 export interface ContentObjectApiRevision {
     parent?: string;
@@ -112,11 +110,11 @@ export interface ContentObjectApiRevision {
 }
 
 export interface ContentObjectItemApiResponse extends BaseObject {
-    parent: string;
+    parent?: string;
     location: string;
     status: ContentObjectStatus;
     type?: ContentObjectApiTypeRef;
-    content: ContentSource;
+    content?: ContentSource;
     external_id?: string;
     properties: Record<string, unknown>;
     metadata?: Record<string, unknown>;
@@ -143,7 +141,7 @@ export interface ContentObjectApiResponse extends ContentObjectItemApiResponse {
     inherited_properties?: InheritedPropertyMetadata[];
 }
 
-export interface ContentObject<T = any> extends ContentObjectItem<T> {
+export interface ContentObject<T = JSONObject> extends ContentObjectItem<T> {
     text?: string; // the text representation of the object
     text_etag?: string;
     embeddings: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
@@ -200,11 +198,6 @@ export interface RenditionWithDimensions extends Rendition {
     dimensions: Dimensions;
 }
 
-/**
- * @deprecated Use RenditionWithDimensions instead
- */
-export type VideoRendition = RenditionWithDimensions;
-
 export const POSTER_RENDITION_NAME = "Poster";
 export const AUDIO_RENDITION_NAME = "Audio";
 export const WEB_VIDEO_RENDITION_NAME = "Web";
@@ -216,7 +209,7 @@ export interface ContentMetadata {
     size?: number; // in bytes
     languages?: string[];
     location?: Location;
-    generation_runs: GenerationRunMetadata[];
+    generation_runs?: GenerationRunMetadata[];
     etag?: string;
     renditions?: Rendition[];
 }
@@ -258,8 +251,8 @@ export interface DocumentMetadata extends ContentMetadata {
         features_requested?: string[];
         zones_requested?: string[];
         table_count?: number;
-        image_count: number;
-        zone_count: number;
+        image_count?: number;
+        zone_count?: number;
         needs_ocr_count?: number;
     };
     sections?: TextSection[]; // List of sections with descriptions and line indexes
@@ -328,8 +321,8 @@ export interface RevisionInfo {
 /**
  * The content object item is a simplified version of the ContentObject that is returned by the store API when listing objects.
  */
-export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
-    parent: string; // the id of the direct parent object. The root object doesn't have the parent field set.
+export interface ContentObjectItem<T = JSONObject> extends BaseObject {
+    parent?: string; // the id of the direct parent object. The root object doesn't have the parent field set.
 
     /** An optional path based location for the object */
     location: string; // the path of the parent object
@@ -352,7 +345,7 @@ export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
     /**
      * Content source information, typically a link to an object store
      */
-    content: ContentSource;
+    content?: ContentSource;
 
     /**
      * External identifier for integration with other systems
@@ -408,7 +401,7 @@ export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
 /**
  * When creating from an uploaded file the content should be an URL to the uploaded file
  */
-export interface CreateContentObjectPayload<T = any>
+export interface CreateContentObjectPayload<T = JSONObject>
     extends Partial<
         Omit<
             ContentObject<T>,
@@ -424,12 +417,23 @@ export function getContentTypeRefId(type: ContentObjectTypeRef) {
     return (type as StoredTypeRef).id || (type as InCodeTypeRef).code;
 }
 
+export function withContentObjectTypeRefDiscriminator(type: ContentObjectTypeRef): ContentObjectTypeRef {
+    if ((type as StoredTypeRef).id) {
+        return { ...type, ref_type: 'stored' } as StoredTypeRef;
+    }
+    return { ...type, ref_type: 'incode' } as InCodeTypeRef;
+}
+
 /**
  * Reference to a content object type. Either `id` (stored type) or `code` (in-code type) must be set.
+ */
+/**
+ * @discriminator ref_type
  */
 export type ContentObjectTypeRef = StoredTypeRef | InCodeTypeRef;
 
 interface StoredTypeRef {
+    ref_type: 'stored';
     /**
      * MongoDB ObjectId string for stored types
      */
@@ -439,6 +443,7 @@ interface StoredTypeRef {
 }
 
 interface InCodeTypeRef {
+    ref_type: 'incode';
     id?: never;
     /**
      * Namespaced identifier for in-code types (e.g. "sys:Invoice", "app:myapp:Contract")
@@ -472,7 +477,7 @@ export interface ColumnLayout {
     /**
      * A default value to be used if the field is not present in the object
      */
-    default?: any;
+    default?: unknown;
 }
 export interface ContentObjectType extends ContentObjectTypeItem { }
 export interface ContentObjectTypeItem extends BaseObject {
@@ -486,7 +491,7 @@ export interface ContentObjectTypeItem extends BaseObject {
      * this is only included in ContentObjectTypeItem if explicitly requested
      * It is always included in ContentObjectType
      */
-    object_schema?: Record<string, any>; // an optional JSON schema for the object properties.
+    object_schema?: Record<string, unknown>; // an optional JSON schema for the object properties.
 
     /**
      * Determines if the content will be validated against the object schema a generation time and save/update time.
@@ -494,6 +499,12 @@ export interface ContentObjectTypeItem extends BaseObject {
     strict_mode?: boolean;
 }
 export type InCodeTypeDefinition = Pick<ContentObjectTypeItem, 'id' | 'name' | 'description' | 'tags' | 'object_schema' | 'table_layout' | 'is_chunkable' | 'strict_mode'>;
+export interface ContentObjectTypeCatalogEntry extends InCodeTypeDefinition {
+    updated_by?: string;
+    created_by?: string;
+    created_at?: string;
+    updated_at?: string;
+}
 /**
  * The itnerface to be used whend efining types in a plugin app.
  */
@@ -528,11 +539,11 @@ export interface WorkflowRule extends WorkflowRuleItem {
     /*
      * mongo matching rules for a content event
      */
-    match?: Record<string, any>;
+    match?: Record<string, unknown>;
     /**
      * Activities configuration if any.
      */
-    config?: Record<string, any>;
+    config?: Record<string, unknown>;
 
     /**
      * Debug mode for the rule
@@ -587,8 +598,8 @@ export interface GetRenditionResponse {
 }
 
 export interface ObjectSearchResponse {
-    results: ContentObjectItem<Record<string, unknown>>[];
-    facets: import('../facets.js').ComputedFacetResponse;
+    results: ContentObjectItem[];
+    facets: ComputedFacetResponse;
     aggregations?: Record<string, unknown>;
 }
 
@@ -643,7 +654,7 @@ export function canGenerateRendition(contentType: string | undefined, format: Re
 
     // Check exact match first
     const exactMatch = RENDITION_COMPATIBILITY[contentType];
-    if (exactMatch && exactMatch.some(f => f === formatStr)) {
+    if (exactMatch?.some(f => f === formatStr)) {
         return true;
     }
 
@@ -651,7 +662,7 @@ export function canGenerateRendition(contentType: string | undefined, format: Re
     const [category] = contentType.split('/');
     const wildcardKey = `${category}/*`;
     const wildcardMatch = RENDITION_COMPATIBILITY[wildcardKey];
-    if (wildcardMatch && wildcardMatch.some(f => f === formatStr)) {
+    if (wildcardMatch?.some(f => f === formatStr)) {
         return true;
     }
 

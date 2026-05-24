@@ -1,8 +1,8 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import type {
     EmbeddingsStatusResponse,
     GenericCommandResponse,
-    ProjectConfigurationEmbeddings,
+    ProjectConfigurationEmbeddingEnablePayload,
     SupportedEmbeddingTypes,
 } from "@vertesia/common";
 
@@ -16,24 +16,27 @@ export class EmbeddingsApi extends ApiTopic {
     }
 
     async status(type: SupportedEmbeddingTypes): Promise<EmbeddingsStatusResponse> {
-        return this.get(type + "/status");
+        return this.get(`${type}/status`);
     }
 
-    async activate(type: SupportedEmbeddingTypes, config: Partial<ProjectConfigurationEmbeddings>): Promise<GenericCommandResponse> {
+    async activate(
+        type: SupportedEmbeddingTypes,
+        config: ProjectConfigurationEmbeddingEnablePayload
+    ): Promise<GenericCommandResponse> {
 
         if (!config.environment) {
             throw new Error("Invalid configuration: select environment");
         }
 
-        return this.post(type + "/enable", { payload: config });
+        return this.post(`${type}/enable`, { payload: config });
     }
 
     async disable(type: SupportedEmbeddingTypes): Promise<GenericCommandResponse> {
-        return this.post(type + "/disable");
+        return this.post(`${type}/disable`);
     }
 
     async recalculate(type: SupportedEmbeddingTypes): Promise<GenericCommandResponse> {
-        return this.post(type + "/recalculate");
+        return this.post(`${type}/recalculate`);
     }
 
 }

@@ -3,6 +3,32 @@ import { UploadIcon } from "lucide-react";
 import { Button } from "@vertesia/ui/core";
 import { useUITranslation } from "@vertesia/ui/i18n";
 
+interface FileSystemEntry {
+    fullPath: string;
+    isFile: boolean;
+    isDirectory: boolean;
+}
+
+interface FileSystemFileEntry extends FileSystemEntry {
+    isFile: true;
+    file(callback: (file: File) => void): void;
+}
+
+interface FileSystemDirectoryEntry extends FileSystemEntry {
+    isDirectory: true;
+    createReader(): {
+        readEntries(callback: (entries: FileSystemEntry[]) => void): void;
+    };
+}
+
+function isFileEntry(entry: FileSystemEntry): entry is FileSystemFileEntry {
+    return entry.isFile;
+}
+
+function isDirectoryEntry(entry: FileSystemEntry): entry is FileSystemDirectoryEntry {
+    return entry.isDirectory;
+}
+
 /**
  * Props for the DropZone component
  */
@@ -82,8 +108,8 @@ export function DropZone({
             const files: File[] = [];
             const folders = new Set<string>();
 
-            const processEntry = async (entry: any) => {
-                if (entry.isFile) {
+            const processEntry = async (entry: FileSystemEntry) => {
+                if (isFileEntry(entry)) {
                     // Get file
                     const file = await new Promise<File>((resolve) => {
                         entry.file((file: File) => {
@@ -106,11 +132,11 @@ export function DropZone({
                     if (folderPath) {
                         folders.add(folderPath);
                     }
-                } else if (entry.isDirectory) {
+                } else if (isDirectoryEntry(entry)) {
                     // Get folder reader
                     const reader = entry.createReader();
-                    const entries = await new Promise<any[]>((resolve) => {
-                        reader.readEntries((entries: any[]) => {
+                    const entries = await new Promise<FileSystemEntry[]>((resolve) => {
+                        reader.readEntries((entries) => {
                             resolve(entries);
                         });
                     });
@@ -130,7 +156,7 @@ export function DropZone({
                 // Process all dropped items
                 await Promise.all(
                     items.map((item) => {
-                        const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : item;
+                        const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() as FileSystemEntry | null : item as unknown as FileSystemEntry;
                         if (entry) {
                             return processEntry(entry);
                         }
@@ -172,19 +198,19 @@ export function DropZone({
         }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            const fileArray = Array.from(e.target.files);
+    const handleInputFiles = (fileList: FileList | null) => {
+        if (fileList && fileList.length > 0) {
+            const fileArray = Array.from(fileList);
 
             // Check if there are directories (with webkitRelativePath)
             const hasDirectories = fileArray.some(
-                (file) => (file as any).webkitRelativePath && (file as any).webkitRelativePath.includes("/"),
+                (file) => file.webkitRelativePath?.includes("/"),
             );
 
             if (hasDirectories) {
                 // Count the unique top-level directories
                 const topLevelDirs = new Set(
-                    fileArray.map((file) => (file as any).webkitRelativePath?.split("/")[0]).filter(Boolean),
+                    fileArray.map((file) => file.webkitRelativePath.split("/")[0]).filter(Boolean),
                 );
 
                 const folderCount = topLevelDirs.size;
@@ -216,8 +242,8 @@ export function DropZone({
         fileInput.multiple = true;
         fileInput.accept = "*";
         fileInput?.click();
-        fileInput.onchange = (event) => {
-            handleChange(event as unknown as React.ChangeEvent<HTMLInputElement>);
+        fileInput.onchange = () => {
+            handleInputFiles(fileInput.files);
         };
     };
 
@@ -226,14 +252,15 @@ export function DropZone({
         folderInput.type = "file";
         folderInput.multiple = true;
         folderInput.accept = "*";
-        (folderInput as any).webkitdirectory = true; // webkitdirectory is not standard but widely supported
+        (folderInput as HTMLInputElement & { webkitdirectory: boolean }).webkitdirectory = true; // webkitdirectory is not standard but widely supported
         folderInput?.click();
-        folderInput.onchange = (event) => {
-            handleChange(event as unknown as React.ChangeEvent<HTMLInputElement>);
+        folderInput.onchange = () => {
+            handleInputFiles(folderInput.files);
         };
     };
 
     return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target; file selection is exposed via the buttons inside.
         <div
             className={`flex flex-col items-center justify-center py-12 border-2 rounded-lg transition-colors ${isDragging ? "border-color-primary bg-color-primary/10" : "border-dashed border-color-border"
                 } ${className}`}

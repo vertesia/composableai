@@ -23,6 +23,10 @@ import {
     rawTransformer,
 } from '@vertesia/build-tools';
 
+interface HonoApp {
+    fetch: (request: Request, env?: unknown, executionCtx?: unknown) => Response | Promise<Response>;
+}
+
 export interface ApiServerPluginOptions {
     /**
      * The tool server entry point (TypeScript source).
@@ -101,9 +105,9 @@ function createDevListener(server: ViteDevServer, entry: string) {
 
         try {
             const mod = await server.ssrLoadModule(entry);
-            const app = mod.default;
+            const app = mod.default as HonoApp;
             const requestListener = getRequestListener(app.fetch);
-            requestListener(req, res);
+            void requestListener(req, res);
         } catch (e) {
             next(e);
         }
@@ -116,8 +120,7 @@ function createDevListener(server: ViteDevServer, entry: string) {
  */
 function createPreviewListener(compiledEntry: string) {
     // Cache the app — no hot reload in preview mode
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let appPromise: Promise<any> | null = null;
+    let appPromise: Promise<HonoApp> | null = null;
 
     return async (
         req: Parameters<Connect.NextHandleFunction>[0],
@@ -134,7 +137,7 @@ function createPreviewListener(compiledEntry: string) {
             }
             const app = await appPromise;
             const requestListener = getRequestListener(app.fetch);
-            requestListener(req, res);
+            void requestListener(req, res);
         } catch (e) {
             next(e);
         }
@@ -142,12 +145,10 @@ function createPreviewListener(compiledEntry: string) {
 }
 
 // Connect types from Vite's internals
-// eslint-disable-next-line @typescript-eslint/no-namespace
 declare namespace Connect {
     type NextHandleFunction = (
         req: import('node:http').IncomingMessage,
         res: import('node:http').ServerResponse,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        next: (err?: any) => void,
+        next: (err?: unknown) => void,
     ) => void;
 }

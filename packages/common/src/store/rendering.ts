@@ -4,15 +4,15 @@
  * Types for rendering content to various formats (PDF, DOCX, images)
  */
 
-import { ImageRenditionFormat, MarkdownRenditionFormat } from "./store.js";
-import { WorkflowExecutionStatus, WorkflowRunStatus } from "./workflow.js";
+import type { ImageRenditionFormat, MarkdownRenditionFormat } from "./store.js";
+import { WorkflowExecutionStatus, type WorkflowRunStatus } from "./workflow.js";
 
 // ============================================================================
 // Workflow Vars Types (Discriminated Union)
 // ============================================================================
 
 /** Base vars shared by all rendition types */
-interface BaseRenditionVars {
+interface BaseRenditionVars extends Record<string, unknown> {
     mime_type?: string;
     /** Custom upload path — overrides the default renditions/{etag}/{name} path */
     outputPath?: string;

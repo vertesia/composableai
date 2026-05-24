@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     Button,
     Modal,
@@ -36,7 +36,7 @@ class SaveOptionAdapter extends RadioGroupAdapter<SaveOptionType> {
 
 export function SaveVersionConfirmModal({ isOpen, onClose, onConfirm, isLoading, uploadedFileName }: SaveVersionConfirmModalProps) {
     const { t } = useUITranslation();
-    const saveOptions: SaveOptionType[] = [
+    const saveOptions: SaveOptionType[] = useMemo(() => [
         {
             id: "update",
             label: t('modal.saveVersion.updateCurrent'),
@@ -51,7 +51,7 @@ export function SaveVersionConfirmModal({ isOpen, onClose, onConfirm, isLoading,
                 ? t('modal.saveVersion.createWithFileDescription')
                 : t('modal.saveVersion.createDescription')
         }
-    ];
+    ], [t, uploadedFileName]);
 
     // Default to "create new version" when replacing a file, "update current version" when editing properties
     const defaultOption = uploadedFileName ? saveOptions[1] : saveOptions[0];
@@ -65,7 +65,7 @@ export function SaveVersionConfirmModal({ isOpen, onClose, onConfirm, isLoading,
             setSelectedOption(defaultOption);
             setVersionLabel('');
         }
-    }, [isOpen, uploadedFileName]);
+    }, [defaultOption, isOpen]);
 
     const createVersion = selectedOption?.id === "new-version";
 
@@ -104,7 +104,7 @@ export function SaveVersionConfirmModal({ isOpen, onClose, onConfirm, isLoading,
                         <FormItem
                             label={t('modal.saveVersion.versionLabel')}
                             description={t('modal.saveVersion.versionLabelDescription')}
-                            className="mt-3 pl-8"
+                            className="mt-3 ps-8"
                         >
                             <Input
                                 value={versionLabel}

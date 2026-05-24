@@ -1,23 +1,35 @@
-import { setupMemoCommand } from '@vertesia/memory-cli';
 import { Command } from 'commander';
 import { registerAppsCommand } from './apps/index.js';
+import { registerAgentsCommand } from './agents/index.js';
 import { registerArtifactsCommand } from './artifacts/index.js';
-import runExport from './codegen/index.js';
 import { registerDataCommand } from './data/index.js';
-import { genTestData } from './datagen/index.js';
 import { registerIamCommand } from './iam/index.js';
 import { listEnvironments } from './envs/index.js';
 import { listInteractions } from './interactions/index.js';
-import { getPublishMemoryAction } from './memory/index.js';
 import { registerObjectsCommand } from './objects/index.js';
 import { getVersion, upgrade } from './package.js';
-import { createProfile, deleteProfile, listProfiles, showActiveAuthToken, showProfile, tryRefreshToken, updateCurrentProfile, updateProfile, useProfile } from './profiles/commands.js';
+import {
+    createProfile,
+    deleteProfile,
+    listProfiles,
+    loginProfile,
+    logoutProfile,
+    showActiveAuthToken,
+    showActiveIdToken,
+    showAuthDetails,
+    showProfile,
+    tryRefreshToken,
+    updateCurrentProfile,
+    updateProfile,
+    useProfile,
+    type CreateProfileOptions,
+} from './profiles/commands.js';
 import { AVAILABLE_REGIONS, DEFAULT_REGION, getConfigFile } from './profiles/index.js';
-import { listProjects } from './projects/index.js';
+import { listProjects, useProject } from './projects/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
-import { registerWorkerCommand } from './worker/index.js';
 import { registerWorkflowsCommand } from './workflows/index.js';
+import { getBooleanOption, hasStatus } from './utils/options.js';
 //warnIfNotLatest();
 
 const program = new Command();
@@ -27,64 +39,62 @@ program.version(getVersion());
 program.command("upgrade")
     .description("Upgrade to the latest version of the CLI")
     .option("-y, --yes", "Skip the confirmation prompt")
-    .action((options: Record<string, any> = {}) => upgrade(options.yes))
+    .action((options: Record<string, unknown> = {}) => upgrade(getBooleanOption(options.yes)))
 
-program.command("projects")
+const projectsRoot = program.command("projects")
     .description("List the projects you have access to")
-    .action(() => {
-        listProjects(program);
-    })
+    .action(() => listProjects(program));
+
+projectsRoot.command("use [project]")
+    .description("Switch the current profile to a project without running a browser OAuth flow")
+    .option("-p, --project <project>", "The project ID to use")
+    .action((project: string | undefined, options: { project?: string }) =>
+        useProject(program, options.project || project));
 
 const authRoot = program.command("auth")
     .description("Manage authentication")
 
+authRoot.command("login [profile]")
+    .description("Authenticate a profile, creating it when it does not exist")
+    .option("-t, --target <env>", "The target environment for a new profile. Possible values are: local, dev-main, dev-preview, preview, prod or a custom URL.")
+    .option("-r, --region <region>", `Deployment region for a new profile: ${AVAILABLE_REGIONS.join(', ')}. Defaults to ${DEFAULT_REGION}. Only applies to preview and prod targets.`)
+    .option("-p, --project <project>", "Authenticate for the given project ID")
+    .option("-a, --account <account>", "The account ID to use when creating a profile")
+    .action(async (profile: string | undefined, options: CreateProfileOptions) => {
+        await loginProfile(profile, options);
+    })
+
+authRoot.command("logout [profile]")
+    .description("Remove stored credentials for a profile without deleting the profile")
+    .action((profile: string | undefined) => logoutProfile(profile))
+
 authRoot.command("token")
     .description("Show the auth token used by the current selected profile.")
-    .action(() => {
-        showActiveAuthToken();
-    })
+    .action(() => showActiveAuthToken())
+
+authRoot.command("id-token")
+    .description("Show the ID token stored for the current selected profile.")
+    .action(() => showActiveIdToken())
+
+authRoot.command("details")
+    .alias("info")
+    .description("Show non-secret authentication details for the active credential.")
+    .option("--json", "Print authentication details as JSON.")
+    .action((options: { json?: boolean }) => showAuthDetails(options))
 
 authRoot.command("refresh")
     .description("Refresh the auth token used by the current profile. An alias to 'vertesia profiles refresh'.")
-    .action(() => {
-        updateCurrentProfile();
-    })
+    .option("-p, --project <project>", "Refresh the current profile token for the given project ID")
+    .action((options: { project?: string }) => updateCurrentProfile(undefined, undefined, options))
 
 program.command("envs [envId]")
     .description("List the environments you have access to")
-    .action((envId: string | undefined, options: Record<string, any>) => {
-        listEnvironments(program, envId, options);
-    })
+    .action((envId: string | undefined, options: Record<string, unknown>) =>
+        listEnvironments(program, envId, options));
 program.command("interactions [interaction]")
     .description("List the interactions available in the current project")
-    .action((interactionId: string | undefined, options: Record<string, any>) => {
-        listInteractions(program, interactionId, options);
-    })
-program.command("datagen <interaction>")
-    .description("Generate test input data, given an interaction ID")
-    .option('-e, --env [envId]', 'The environment ID to use to generating the test data')
-    .option('-m, --model [model]', 'The model to use to generating the test data. If the selected environment has a default model then this option is optional.')
-    .option('-t, --temperature [value]', 'The temperature used to generating the test data.')
-    .option('--max-tokens [max-tokens]', 'The maximum number of tokens to generate')
-    .option('--top-p [top-p]', 'The top P value to use')
-    .option('--top-k [top-k]', 'The top K value to use')
-    .option('--presence-penalty [presence-penalty]', 'The presence penalty value to use')
-    .option('--frequency-penalty [frequency-penalty]', 'The frequency penalty value to use')
-    .option('--stop-sequence [stop-sequence]', 'A comma separated list of sequences to stop the generation')
-    .option('--config-mode [config-mode]', 'The configuration mode to use.Possible values are: "run_and_interaction_config", "run_config_only", "interaction_config_only". Optional. If not specified, "run_and_interaction_config" is used.')
-    .option('-o, --output [file]', 'A file to save the generated test data. If not specified the data will be printed to stdout.')
-    .option('-c, --count [value]', 'The number of data objects to generate', '1')
-    .option('--message [value]', 'An optional message')
-    .action((interactionId: string, options: Record<string, any>) => {
-        genTestData(program, interactionId, options);
-    })
-program.command("codegen [interactionName]")
-    .description("Generate code given an interaction name of for all the interactions in the project if no interaction is specified.")
-    .option('--versions [versions]', 'A comma separated list of version selectors to include. A version selector is either a version number or "draft". The default is "draft"', "draft")
-    .option('-a, --all', 'When used, all the interaction versions will be exported')
-    .option('-d, --dir [file]', 'The output directory if any. Default to "./interactions" if not specified.', './interactions')
-    .option('-x, --export <version>', 'The version to export from index.ts. If not specified, the latest version will be exported or if no version is available, the draft version will be exported')
-    .action((interactionName: string | undefined, options) => runExport(program, interactionName, options));
+    .action((interactionId: string | undefined, options: Record<string, unknown>) =>
+        listInteractions(program, interactionId, options));
 program.command("run <interaction>")
     .description("Run an interaction by full name. The full name is composed by an optional namespace, a required endpoint name and an optional tag or version. Examples: name, namespace:name, namespace:name@version")
     .option('-i, --input [file]', 'The input data if any. If no file path is specified it will read from stdin')
@@ -108,7 +118,7 @@ program.command("run <interaction>")
     .option('--data-only', 'Write down only the data returned by the LLM and not the entire execution run. This mode is forced when streaming', false)
     .option('-r, --run-data [level]', 'Override the level of storage for the run data. Possible values are: "standard", "restricted", or "debug". Optional. If not specified, it uses the level defined in Studio.')
     .option('--by-id', 'When used, the interaction is selected by ID instead of by name')
-    .action((interaction: string, options: Record<string, any>) => runInteraction(program, interaction, options));
+    .action((interaction: string, options: Record<string, unknown>) => runInteraction(program, interaction, options));
 program.command("runs [interactionId]")
     .description('Search the run history for specific execution runs')
     .option('-t, --tags [tags]', 'A comma separated list of tags to filter the run history')
@@ -122,56 +132,48 @@ program.command("runs [interactionId]")
     .option("-o, --output [file]", "The output file if any. If not specified it will print to stdout")
     .option("--before [date]", "Filter runs before the given date. The date must be in ISO format")
     .option("--after [date]", "Filter runs after the given date. The date must be in ISO format")
-    .action((interactionId: string | undefined, options: Record<string, any>) => {
-        runHistory(program, interactionId, options);
-    });
+    .action((interactionId: string | undefined, options: Record<string, unknown>) =>
+        runHistory(program, interactionId, options));
 
-const memoCmd = program.command("memo");
-setupMemoCommand(memoCmd, getPublishMemoryAction(program));
-
-registerWorkerCommand(program);
 registerAppsCommand(program);
+registerAgentsCommand(program);
 registerArtifactsCommand(program);
 registerDataCommand(program);
 registerIamCommand(program);
 
 const profilesRoot = program.command("profiles")
     .description("Manage configuration profiles")
-    .action(() => {
-        listProfiles();
-    });
+    .action(async () => { await listProfiles(); });
 
+profilesRoot.command('list')
+    .description("List configuration profiles")
+    .action(async () => { await listProfiles(); });
 profilesRoot.command('show [name]')
     .description("Show the configured profiles or the profile with the given name")
-    .action((name?: string) => {
-        showProfile(name);
-    });
+    .action(async (name?: string) => { await showProfile(name); });
 profilesRoot.command('use [name]')
     .description("Switch to another configuration profile")
-    .action((name) => {
-        useProfile(name);
-    });
+    .action(async (name) => { await useProfile(name); });
 profilesRoot.command('add [name]')
     .alias('create')
     .option("-t, --target <env>", "The target environment for the profile. Possible values are: local, dev-main, dev-preview, preview, prod or a custom URL.")
     .option("-r, --region <region>", `Deployment region: ${AVAILABLE_REGIONS.join(', ')}. Defaults to ${DEFAULT_REGION}. Only applies to preview and prod targets.`)
-    .option("-k, --apikey <key>", "The API key to use for the profile")
+    .option("-k, --apikey <key>", "The API key or auth token to use for the profile")
     .option("-p, --project <project>", "The project ID to use for the profile")
     .option("-a, --account <account>", "The account ID to use for the profile")
     .description("Create a new configuration profile")
-    .action((name?: string, options?: Record<string, any>) => {
-        createProfile(name, options || {});
+    .action(async (name: string | undefined, options: CreateProfileOptions) => {
+        await createProfile(name, options);
     });
 profilesRoot.command('edit [name]')
     .alias('update')
     .description("Edit an existing configuration profile")
-    .action((name: string | undefined) => {
-        updateProfile(name);
-    });
+    .action(async (name: string | undefined) => { await updateProfile(name); });
 profilesRoot.command('refresh')
     .description("Refresh token for the current configuration profile")
-    .action(() => {
-        updateCurrentProfile();
+    .option("-p, --project <project>", "Refresh the current profile token for the given project ID")
+    .action(async (options: { project?: string }) => {
+        await updateCurrentProfile(undefined, undefined, options);
     });
 profilesRoot.command('delete <name>')
     .description("delete an existing configuration profile")
@@ -192,9 +194,9 @@ program.parseAsync(process.argv).catch(err => {
     process.exit(1);
 });
 
-process.on("unhandledRejection", (err: any) => {
-    if (err.status === 401) { // token expired?
+process.on("unhandledRejection", (err: unknown) => {
+    if (hasStatus(err, 401)) { // token expired?
         console.error("ERROR", err);
-        tryRefreshToken();
+        void tryRefreshToken();
     }
 })

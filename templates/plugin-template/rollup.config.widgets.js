@@ -12,8 +12,8 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
 import terser from '@rollup/plugin-terser';
-import { globSync } from 'fs';
-import path from 'path';
+import { globSync } from 'node:fs';
+import path from 'node:path';
 
 const outputDir = './dist/widgets';
 
@@ -78,6 +78,14 @@ const widgetBundles = widgets.map(({ name, path: widgetPath }) => ({
         'react/jsx-dev-runtime',
         'react-dom/client'
     ],
+    // Treat TypeScript diagnostics from @rollup/plugin-typescript as build errors
+    // instead of warnings, so type issues fail the build.
+    onwarn(warning, defaultHandler) {
+        if (warning.plugin === 'typescript') {
+            throw new Error(warning.message ?? String(warning));
+        }
+        defaultHandler(warning);
+    },
     plugins: [
         typescript({
             tsconfig: './tsconfig.widgets.json',

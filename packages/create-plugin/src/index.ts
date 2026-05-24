@@ -8,8 +8,9 @@
  */
 
 import chalk from 'chalk';
+import { execSync } from 'node:child_process';
 import { Command } from 'commander';
-import fs from 'fs';
+import fs from 'node:fs';
 import { config, validation } from './configuration.js';
 import { downloadTemplate } from './download-template.js';
 import { installDependencies, selectPackageManager } from './package-manager.js';
@@ -89,7 +90,7 @@ Documentation: ${config.docsUrl}
 
     // Show the selected template name with branch if specified
     const branchInfo = branch ? chalk.gray(` (branch: ${branch})`) : '';
-    console.log(chalk.blue.bold(`\n🚀 Create ${selectedTemplate.name}`) + branchInfo + '\n');
+    console.log(`${chalk.blue.bold(`\n🚀 Create ${selectedTemplate.name}`) + branchInfo}\n`);
 
     // Step 2: Download template from GitHub (or copy from local path)
     await downloadTemplate(projectName, selectedTemplate.repository, localTemplates);
@@ -106,11 +107,16 @@ Documentation: ${config.docsUrl}
     // Step 5: Prompt user for configuration
     const answers = await promptUser(projectName, templateConfig, nonInteractive);
 
+    // Inject package-manager metadata so templates can reference it via {{PM}}, {{PM_RUN}}, {{PM_VERSION}}
+    answers.PM = packageManager;
+    answers.PM_RUN = `${packageManager} run`;
+    answers.PM_VERSION = execSync(`${packageManager} --version`, { encoding: 'utf8' }).trim();
+
     // Step 5: Replace variables in files
     replaceVariables(projectName, templateConfig, answers);
 
     // Step 6: Adjust package.json (name and workspace dependencies)
-    adjustPackageJson(projectName, answers, dev);
+    adjustPackageJson(projectName, answers, dev, packageManager);
 
     // Step 7: Handle conditional removes
     if (templateConfig.conditionalRemove) {
@@ -163,7 +169,7 @@ function showSuccess(projectName: string, packageManager: string, templateName: 
   console.log(chalk.green.bold('✅ Project created successfully!\n'));
   console.log(chalk.gray('Next steps:\n'));
   console.log(chalk.cyan(`  cd ${projectName}`));
-  console.log(chalk.cyan(`  ${packageManager} dev`));
+  console.log(chalk.cyan(`  ${packageManager} run dev`));
   console.log();
   console.log(chalk.gray(`Documentation: ${config.docsUrl}`));
   console.log(chalk.gray(`Template: ${templateName}`));

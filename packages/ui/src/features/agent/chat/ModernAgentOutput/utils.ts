@@ -1,5 +1,5 @@
-import { VertesiaClient } from "@vertesia/client";
-import { AgentMessage, AgentMessageType } from "@vertesia/common";
+import type { VertesiaClient } from "@vertesia/client";
+import { type AgentMessage, AgentMessageType } from "@vertesia/common";
 import dayjs from "dayjs";
 
 export function insertMessageInTimeline(arr: AgentMessage[], m: AgentMessage) {
@@ -697,22 +697,16 @@ export function groupMessagesWithStreaming(
 }
 
 /**
- * Merge the ToolExecutionStatus of two groups.
- * Priority: error > warning > running > completed > undefined
+ * Merge visual group status using the newest available status.
+ * Individual rows still show their own failure badges; the group chrome should
+ * represent the current/latest activity rather than staying red forever after
+ * one failed attempt in a long sequence.
  */
 export function mergeToolStatus(
     a: ToolExecutionStatus | undefined,
     b: ToolExecutionStatus | undefined,
 ): ToolExecutionStatus | undefined {
-    const priority: Record<ToolExecutionStatus, number> = {
-        error: 4,
-        warning: 3,
-        running: 2,
-        completed: 1,
-    };
-    const pa = a ? priority[a] : 0;
-    const pb = b ? priority[b] : 0;
-    return pa >= pb ? (a ?? b) : b;
+    return b ?? a;
 }
 
 /**

@@ -1,9 +1,10 @@
-import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { AgentSearchScope, ConversationVisibility, ExecutionEnvironmentRef, InCodeInteraction, JSONSchema, mergeInCodePromptSchemas, supportsToolUse, UserChannel, WorkflowInteractionVars } from "@vertesia/common";
-import { JSONObject } from "@vertesia/json";
+import type { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
+import { AgentSearchScope, type ConversationVisibility, type ExecutionEnvironmentRef, type InCodeInteraction, type JSONSchema, mergeInCodePromptSchemas, supportsToolUse, type UserChannel, type WorkflowInteractionVars } from "@vertesia/common";
+import type { JSONObject } from "@vertesia/json";
 import { useUserSession } from "@vertesia/ui/session";
-import Ajv, { ValidateFunction } from "ajv";
-import React, { createContext, useContext, useState, useSyncExternalStore } from "react";
+import Ajv, { type ValidateFunction } from "ajv";
+import type React from "react";
+import { createContext, useContext, useState, useSyncExternalStore } from "react";
 
 export type WorkflowMode = 'start' | 'schedule';
 type ModelOptions = NonNullable<WorkflowInteractionVars["config"]["model_options"]>;
@@ -31,7 +32,7 @@ export class PayloadBuilderStore {
     getSnapshot = () => this.snapshot;
 
     notify() {
-        this._listeners.forEach(listener => listener());
+        this._listeners.forEach(listener => { listener(); });
     }
 }
 
@@ -48,7 +49,7 @@ export class PayloadBuilder {
     _interaction: InCodeInteraction | undefined;
     _environment: ExecutionEnvironmentRef | undefined;
     _model: string = '';
-    _model_options: ModelOptions | undefined;
+    _model_options: InCodeInteraction["model_options"] | undefined;
     _tool_names: string[] = [];
     _data: JSONObject | undefined;
     _mode: WorkflowMode = 'start';
@@ -256,6 +257,7 @@ export class PayloadBuilder {
         this._user_channels = context.user_channels;
         this._model_options = context.config?.model_options as ModelOptions | undefined;
         this.collection = context.collection_id ?? undefined;
+        this._model_options = context.config?.model_options as InCodeInteraction["model_options"] | undefined;
 
         // we need to trigger the setter to deal with default models
         this.environment = env;
@@ -318,13 +320,15 @@ export class PayloadBuilder {
         }
     }
 
-    get model_options() {
+    get model_options(): InCodeInteraction["model_options"] | undefined {
         return this._model_options;
     }
 
-    set model_options(modelOptions: ModelOptions | undefined) {
-        this._model_options = modelOptions;
-        this.onStateChanged();
+    set model_options(modelOptions: InCodeInteraction["model_options"] | undefined) {
+        if (JSON.stringify(modelOptions) !== JSON.stringify(this._model_options)) {
+            this._model_options = modelOptions;
+            this.onStateChanged();
+        }
     }
 
     get tool_names() {
@@ -364,7 +368,7 @@ export class PayloadBuilder {
     setInteraction(interaction: InCodeInteraction | undefined) { this.interaction = interaction; }
     setEnvironment(environment: ExecutionEnvironmentRef | undefined) { this.environment = environment; }
     setModel(model: string | undefined) { this.model = model; }
-    setModelOptions(modelOptions: ModelOptions | undefined) { this.model_options = modelOptions; }
+    setModelOptions(modelOptions: InCodeInteraction["model_options"] | undefined) { this.model_options = modelOptions; }
     setToolNames(tools: string[]) { this.tool_names = tools; }
     setCollection(collection: string | undefined) { this.collection = collection; }
     setInteractive(interactive: boolean) { this.interactive = interactive; }

@@ -1,5 +1,5 @@
 import * as React from "react"
-import { type DialogProps } from "@radix-ui/react-dialog"
+import type { DialogProps } from "@radix-ui/react-dialog"
 import { Command as CommandPrimitive } from "cmdk"
 import { Search } from "lucide-react"
 
@@ -154,7 +154,7 @@ const CommandShortcut = ({
   return (
     <span
       className={cn(
-        "ml-auto text-xs tracking-widest text-muted-foreground",
+        "ms-auto text-xs tracking-widest text-muted-foreground",
         className
       )}
       {...props}

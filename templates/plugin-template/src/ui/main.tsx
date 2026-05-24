@@ -1,4 +1,3 @@
-import { I18nProvider } from '@vertesia/ui/i18n'
 import { StandaloneApp, VertesiaShell } from '@vertesia/ui/shell'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -7,12 +6,12 @@ import './index.css'
 // initialize dev environment
 import { AdminApp } from '@vertesia/tools-admin-ui'
 import { RouterProvider, type Route } from '@vertesia/ui/router'
-import { App } from './app'
+import { App } from './app/App'
 import { setUsePluginAssets } from './assets'
 import "./env"
-import { OrgGate } from './OrgGate'
-import { PluginAccessDenied } from './PluginAccessDenied'
-import { PluginLayout } from './PluginLayout'
+import { OrgGate } from './app/layouts/OrgGate'
+import { PluginAccessDenied } from './app/layouts/PluginAccessDenied'
+import { PluginLayout } from './app/layouts/PluginLayout'
 
 setUsePluginAssets(false);
 
@@ -31,14 +30,13 @@ const routes: Route[] = [
     },
 ]
 
+// biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        <I18nProvider>
-            <VertesiaShell>
-                <OrgGate>
-                    <RouterProvider routes={routes} />
-                </OrgGate>
-            </VertesiaShell>
-        </I18nProvider>
+        <VertesiaShell>
+            <OrgGate>
+                <RouterProvider routes={routes} />
+            </OrgGate>
+        </VertesiaShell>
     </StrictMode>,
 )

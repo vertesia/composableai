@@ -1,7 +1,7 @@
-import { AppPackage, AppPackageScope, AppWidgetInfo, CatalogInteractionRef, InCodeTypeDefinition, RemoteActivityDefinition } from "@vertesia/common";
-import { Context, Hono } from "hono";
-import { ToolUseContext } from "../types.js";
-import { ToolServerConfig } from "./types.js";
+import type { AppPackage, AppPackageScope, AppWidgetInfo, CatalogInteractionRef, InCodeProcessDefinition, InCodeTypeDefinition, RemoteActivityDefinition } from "@vertesia/common";
+import type { Context, Hono } from "hono";
+import type { ToolUseContext } from "../types.js";
+import type { ToolServerConfig } from "./types.js";
 
 function getRequestPayload<T>(c: Context): Promise<T | undefined> {
     return c.req.method === "POST" ? c.req.json<T>() : Promise.resolve(undefined);
@@ -41,7 +41,7 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
             for (const inter of coll.interactions) {
                 allInteractions.push({
                     type: "app",
-                    id: coll.name + ":" + inter.name,
+                    id: `${coll.name}:${inter.name}`,
                     name: inter.name,
                     title: inter.title || inter.name,
                     description: inter.description,
@@ -57,11 +57,18 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
             for (const type of coll.types) {
                 allTypes.push({
                     ...type,
-                    id: coll.name + ":" + type.name
+                    id: `${coll.name}:${type.name}`
                 });
             }
         }
         pkg.types = allTypes;
+    },
+    async processes(pkg: AppPackage, config: ToolServerConfig) {
+        const allProcesses: InCodeProcessDefinition[] = [];
+        for (const process of config.processes || []) {
+            allProcesses.push(process);
+        }
+        pkg.processes = allProcesses;
     },
     async templates(pkg: AppPackage, config: ToolServerConfig) {
         const basePath = `${config.prefix || '/api'}/templates`;
@@ -125,6 +132,7 @@ async function handlePackageRequest(c: Context, config: ToolServerConfig) {
         await builders.tools(pkg, config, c);
         await builders.interactions(pkg, config, c);
         await builders.types(pkg, config, c);
+        await builders.processes(pkg, config, c);
         await builders.templates(pkg, config, c);
         await builders.widgets(pkg, config, c);
         await builders.ui(pkg, config, c);
@@ -139,6 +147,9 @@ async function handlePackageRequest(c: Context, config: ToolServerConfig) {
         }
         if (scopes.has('types')) {
             await builders.types(pkg, config, c);
+        }
+        if (scopes.has('processes')) {
+            await builders.processes(pkg, config, c);
         }
         if (scopes.has('templates')) {
             await builders.templates(pkg, config, c);

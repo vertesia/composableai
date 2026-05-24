@@ -1,5 +1,5 @@
-import { VertesiaErrorBoundary } from "./VertesiaErrorBoundary";
-import { ReactNode } from "react";
+import { type ErrorFallbackComponentProps, VertesiaErrorBoundary } from "./VertesiaErrorBoundary";
+import type { ReactNode } from "react";
 
 interface ErrorBoundaryProps {
     children: ReactNode;
@@ -15,13 +15,14 @@ export function RowErrorBoundary({ children }: ErrorBoundaryProps) {
     )
 }
 
-function RowErrorFallback({ error }: { error?: Error }) {
+function RowErrorFallback({ error }: ErrorFallbackComponentProps) {
+    const message = error instanceof Error ? error.message : undefined;
     return (
         <tr>
             <td colSpan={100}>
                 <span className="text-xs"> Cannot display row</span>
                 <br />
-                <span className="bg-gray-400">{error?.message}</span>
+                <span className="bg-gray-400">{message}</span>
             </td>
         </tr>
     )
