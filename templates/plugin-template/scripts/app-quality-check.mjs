@@ -144,6 +144,10 @@ async function readPackageJson() {
 const packageJson = await readPackageJson();
 const packageName = typeof packageJson?.name === 'string' ? packageJson.name : undefined;
 const isPluginTemplatePackage = packageName === 'plugin-template';
+// The package publishing smoke test bootstraps this exact template under a throwaway
+// package name. Keep the examples there so the test still validates the scaffold.
+const isPluginTemplateSmokePackage = /^integration-test-plugin-\d+$/.test(packageName ?? '');
+const isTemplateScaffoldPackage = isPluginTemplatePackage || isPluginTemplateSmokePackage;
 
 function hasDependency(name) {
     if (!packageJson || typeof packageJson !== 'object') return false;
@@ -177,7 +181,7 @@ if (toolServerFiles.length > 0) {
     requireDependency('hono', 'Service-target apps expose a Hono runtime imported by app-runtime.');
 }
 
-if (!isPluginTemplatePackage) {
+if (!isTemplateScaffoldPackage) {
     const templateExamples = [
         ...report.artifacts.tools.filter((name) => name === 'calculator' || name === 'examples'),
         ...report.artifacts.skills.filter((name) => name === 'learn_user-select' || name === 'examples'),
