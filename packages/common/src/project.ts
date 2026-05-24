@@ -597,6 +597,7 @@ export interface TriggerReindexResult {
 export interface ComputeShardsRequest {
     tenant_id: string;
     shard_size?: number;
+    updated_since?: string;
 }
 
 export interface ComputeShardsResult {
