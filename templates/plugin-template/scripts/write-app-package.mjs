@@ -84,6 +84,10 @@ function packageJsonName(packageJson) {
     return typeof packageJson?.name === 'string' && packageJson.name ? packageJson.name : undefined;
 }
 
+function isTemplateScaffoldPackageName(name) {
+    return name === 'plugin-template' || /^integration-test-plugin-\d+$/.test(name ?? '');
+}
+
 function itemId(item) {
     if (!item || typeof item !== 'object') return undefined;
     if (typeof item.id === 'string' && item.id) return item.id;
@@ -92,7 +96,7 @@ function itemId(item) {
 }
 
 function validateLocalCapabilityIds(pkg, appName) {
-    if (appName === 'plugin-template') return [];
+    if (isTemplateScaffoldPackageName(appName)) return [];
 
     const errors = [];
     const groups = [
@@ -155,7 +159,7 @@ function packageCapabilityIds(pkg) {
 }
 
 async function validateSourceAppRefs(pkg, appName) {
-    if (!appName || appName === 'plugin-template') return [];
+    if (!appName || isTemplateScaffoldPackageName(appName)) return [];
     const knownIds = packageCapabilityIds(pkg);
     if (knownIds.size === 0) return [];
 
