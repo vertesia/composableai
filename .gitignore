@@ -137,3 +137,5 @@ dist
 
 # Claude
 **/.claude/settings.local.json
+
+lib/
