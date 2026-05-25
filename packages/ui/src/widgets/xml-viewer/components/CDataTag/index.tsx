@@ -1,5 +1,5 @@
 import { useXMLViewerContext } from '../../context/xml-viewer-context';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 export interface CDataTagProps {
   indentation: string;

@@ -1,6 +1,6 @@
 import { log } from "@temporalio/activity";
-import { spawn } from "child_process";
-import fs from "fs";
+import { spawn } from "node:child_process";
+import fs from "node:fs";
 import tmp from "tmp";
 
 export function markdownWithMarkitdown(buffer: Buffer, ext?: string): Promise<string> {
@@ -15,13 +15,13 @@ export function markdownWithMarkitdown(buffer: Buffer, ext?: string): Promise<st
 
         const command = spawn(tool, [inputFile.name, "-o", targetFileName]);
 
-        command.on("exit", function (code) {
+        command.on("exit", (code) => {
             if (code) {
                 reject(new Error(`${tool} exited with code ${code}`));
             }
         });
 
-        command.on("close", function (code) {
+        command.on("close", (code) => {
             if (code) {
                 reject(new Error(`${tool} exited with code ${code}`));
             } else {

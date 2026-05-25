@@ -1,4 +1,4 @@
-import { AgentMessage, BatchProgressDetails, BatchItemStatus } from "@vertesia/common";
+import type { AgentMessage, BatchProgressDetails, BatchItemStatus } from "@vertesia/common";
 import { Button, cn, onActivateKey, useToast } from "@vertesia/ui/core";
 import dayjs from "dayjs";
 import {

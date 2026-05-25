@@ -10,9 +10,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 
 dayjs.extend(relativeTime);
 
-interface CollectionsTableProps {
-}
-export function CollectionsTable({ }: CollectionsTableProps) {
+export function CollectionsTable() {
     const { client } = useUserSession();
     const toast = useToast();
     const { t } = useUITranslation();
@@ -77,7 +75,7 @@ export function CollectionsTable({ }: CollectionsTableProps) {
                                     return <TR key={c.id}>
                                         <td>
                                             <div className="flex items-center gap-2">
-                                                {collectionIcon(c.dynamic)}
+                                                <CollectionIcon isDynamic={c.dynamic} />
                                                 <NavLink href={`/collections/${c.id}`}>{c.name}</NavLink>
                                             </div>
                                         </td>
@@ -127,7 +125,3 @@ export function CollectionIcon({ isDynamic }: { isDynamic: boolean }) {
     );
 }
 
-/** @deprecated Use CollectionIcon component instead */
-export function collectionIcon(isDynamic: boolean) {
-    return <CollectionIcon isDynamic={isDynamic} />;
-}

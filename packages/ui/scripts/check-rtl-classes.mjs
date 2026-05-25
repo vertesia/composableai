@@ -55,7 +55,7 @@ const BASELINE_PATH = resolve(PKG_ROOT, '.rtl-baseline.json');
 // Variant prefix matcher: peer-focus:, hover:, md:, lg:, dark:, data-[..]:,
 // [&_th]:, etc. We allow 0+ variants, then capture the base utility.
 const VARIANT = String.raw`(?:(?:[a-z][a-z0-9-]*|\[[^\]]+\]|peer-[a-z-]+|group-[a-z-]+|data-\[[^\]]+\]|aria-\[[^\]]+\]|has-\[[^\]]+\]|not-[a-z-]+):)*`;
-const NEG = String.raw`-?`;
+const NEG = `-?`;
 
 // Class boundary — a directional utility must START at one of these to count
 // as its own class. Without this, `left-2` inside `slide-in-from-left-2`
@@ -126,9 +126,7 @@ function scanFile(file) {
         // Also skip if the line above marks an rtl-ok exemption.
         if (i > 0 && RTL_OK.test(lines[i - 1])) continue;
         for (const { category, klass, re } of ALL_PATTERNS) {
-            re.lastIndex = 0;
-            let m;
-            while ((m = re.exec(line)) !== null) {
+            for (const m of line.matchAll(re)) {
                 // The match itself may start with an `rtl:` variant — that's
                 // deliberate RTL-aware code, not a violation. Skip it.
                 if (m[0].includes('rtl:')) continue;
@@ -175,7 +173,7 @@ function fileTotals(violations) {
 }
 
 function fmt(o) {
-    return JSON.stringify(o, null, 2) + '\n';
+    return `${JSON.stringify(o, null, 2)}\n`;
 }
 
 function parseArgs(argv) {

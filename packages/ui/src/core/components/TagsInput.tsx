@@ -335,6 +335,7 @@ function TagsInputContent({
                                                     highlightedItemRef.current = el;
                                                 }
                                             }}
+                                            // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: ARIA listbox pattern uses <li role="option"> for combobox suggestions
                                             role="option"
                                             aria-selected={index === highlightedIndex}
                                             tabIndex={0}

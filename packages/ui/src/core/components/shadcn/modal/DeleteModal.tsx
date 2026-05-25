@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useUITranslation } from "@vertesia/ui/i18n";
 import { ConfirmModal } from "./ConfirmModal.js";
 import { useToast } from "../../toast/index.js";

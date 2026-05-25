@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase, ServerSentEvent } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase, type ServerSentEvent } from "@vertesia/api-fetch-client";
+import type {
     IndexingStatusResponse,
     GenericCommandResponse,
     ElasticsearchDocumentData,
@@ -26,6 +26,7 @@ import {
     SwapAliasResult,
     ReindexViaBulkRequest,
     ReindexViaBulkResult,
+    ElasticsearchBackend,
 } from "@vertesia/common";
 
 /**
@@ -306,10 +307,17 @@ export class IndexingApi extends ApiTopic {
      * Compute shard boundaries for a tenant via zeno-bulk.
      * Creates the target index and returns shard ranges for parallel indexing.
      */
-    computeShards(tenantId: string, shardSize?: number): Promise<ComputeShardsResult> {
+    computeShards(
+        tenantId: string,
+        shardSize?: number,
+        updatedSince?: string,
+        backend?: ElasticsearchBackend,
+    ): Promise<ComputeShardsResult> {
         return this.zenoBulkPost('/reindex/compute-shards', {
             tenant_id: tenantId,
             shard_size: shardSize ?? 50000,
+            updated_since: updatedSince,
+            backend,
         } satisfies ComputeShardsRequest);
     }
 
@@ -325,11 +333,17 @@ export class IndexingApi extends ApiTopic {
      * Atomically swap ES alias via zeno-bulk.
      * @param alias Optional alias name. If not provided, the Go service derives it from the tenant ID.
      */
-    swapAlias(tenantId: string, targetIndex: string, alias?: string): Promise<SwapAliasResult> {
+    swapAlias(
+        tenantId: string,
+        targetIndex: string,
+        alias?: string,
+        backend?: ElasticsearchBackend,
+    ): Promise<SwapAliasResult> {
         return this.zenoBulkPost('/reindex/swap-alias', {
             tenant_id: tenantId,
             target_index: targetIndex,
             alias,
+            backend,
         } satisfies SwapAliasRequest);
     }
 
@@ -346,11 +360,13 @@ export class IndexingApi extends ApiTopic {
         tenantId: string,
         onEvent?: ((event: ServerSentEvent) => void) | null,
         dryRun?: boolean,
+        backend?: ElasticsearchBackend,
     ): Promise<ReindexViaBulkResult> {
-        const bulkUrl = this.zenoBulkBaseUrl + '/reindex';
+        const bulkUrl = `${this.zenoBulkBaseUrl}/reindex`;
         const payload = {
             tenant_id: tenantId,
             dry_run: dryRun ?? false,
+            backend,
         } satisfies ReindexViaBulkRequest;
 
         if (!onEvent) {

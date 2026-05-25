@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AgentMessage, AgentMessageType } from '@vertesia/common';
+import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import type { OpenDocument } from '../types/document.js';
 
 export interface UseDocumentPanelResult {

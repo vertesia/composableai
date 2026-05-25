@@ -1,10 +1,11 @@
-import { VertesiaClient } from "@vertesia/client";
+import type { VertesiaClient } from "@vertesia/client";
 import { normalizeToolCollection } from "@vertesia/common";
 import { FusionFragmentHandler } from "@vertesia/fusion-ux";
 import { useUserSession } from "@vertesia/ui/session";
-import { CodeBlockRendererProps, CodeBlockRendererProvider } from "@vertesia/ui/widgets";
+import { type CodeBlockRendererProps, CodeBlockRendererProvider } from "@vertesia/ui/widgets";
 import { memo, useEffect, useMemo, useState } from "react";
-import { VegaLiteChartSpec } from "./AgentChart";
+import type { VegaLiteChartSpec } from "./AgentChart";
+import { ProposalCodeBlockHandler } from "./ProposalCodeBlockHandler";
 import { VegaLiteChart } from "./VegaLiteChart";
 
 interface SkillWidgetProviderProperties {
@@ -75,6 +76,8 @@ const defaultComponents: Record<string, React.FunctionComponent<CodeBlockRendere
     "vega-lite": VegaLiteChartWidget,
     "vegalite": VegaLiteChartWidget,
     "fusion-fragment": FusionFragmentHandler,
+    "proposal": ProposalCodeBlockHandler,
+    "askuser": ProposalCodeBlockHandler,
 }
 
 function RemoteWidgetComponent({ url, code }: { url: string, code: string }) {
@@ -103,7 +106,7 @@ async function fetchSkillWidgets(client: VertesiaClient): Promise<Record<string,
                     const i = collUrl.indexOf("/api/");
                     if (i > 0) {
                         const url = collUrl.substring(0, i);
-                        urls.add(url + '/api/widgets');
+                        urls.add(`${url}/api/widgets`);
                     }
                 }
             }
@@ -152,7 +155,7 @@ export function SkillWidgetProvider({ children }: SkillWidgetProviderProperties)
     const [components, setComponents] = useState<Record<string, React.FunctionComponent<CodeBlockRendererProps>>>(defaultComponents);
     useEffect(() => {
         // fetch all skill components
-        fetchSkillWidgets(client).then(widgets => {
+        void fetchSkillWidgets(client).then(widgets => {
             setComponents({
                 ...defaultComponents,
                 ...widgets,

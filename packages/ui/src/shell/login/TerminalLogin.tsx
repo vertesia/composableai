@@ -1,4 +1,4 @@
-import { AccountRef, ProjectRef } from '@vertesia/common'
+import type { AccountRef, ProjectRef } from '@vertesia/common'
 import { Button, Center, ErrorBox, Input, SelectBox, Spinner, errorMessage, useFetch, useToast } from '@vertesia/ui/core'
 import { Env } from "@vertesia/ui/env"
 import { useLocation } from "@vertesia/ui/router"

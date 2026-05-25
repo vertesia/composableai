@@ -1,8 +1,9 @@
 import dayjs from "dayjs";
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import Calendar from "react-calendar";
 import { Button } from "../../button";
-import { Filter, FilterGroup } from "../types";
+import type { Filter, FilterGroup } from "../types";
 import { calendarStyles } from "../filter-styles";
 import { useUITranslation } from '@vertesia/ui/i18n';
 
@@ -222,8 +223,7 @@ export default function DateFilter({
           </div>
         </>
       ) : (
-        <>
-          <div className="calendar-wrapper">
+        <div className="calendar-wrapper">
             <style>{calendarStyles}</style>
             <Calendar
               value={selectedDate}
@@ -251,7 +251,6 @@ export default function DateFilter({
               }}
             />
           </div>
-        </>
       )}
     </div>
   );

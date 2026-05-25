@@ -1,6 +1,6 @@
-import React from 'react';
+import type React from 'react';
 
-import { ColumnLayout, ContentObjectItem } from '@vertesia/common';
+import type { ColumnLayout, ContentObjectItem } from '@vertesia/common';
 
 import renderers from './renderers';
 
@@ -98,7 +98,7 @@ export class DocumentTableColumn {
             const i = type.indexOf('?');
             const params = i > 0 ? new URLSearchParams(type.substring(i + 1)) : undefined;
             const renderer = renderers[baseType](params, (_id: string) => {
-                this.previewObject!(object.id);
+                this.previewObject?.(object.id);
             });
             return renderer(object, index);
         }

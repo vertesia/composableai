@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import type { Command } from 'commander';
 import { listAces, createAce, deleteAce, listRoles } from './commands.js';
 
 export function registerIamCommand(program: Command) {

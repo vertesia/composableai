@@ -5,7 +5,7 @@
  * Supports AI-manageable schemas and multi-table atomic operations.
  */
 
-import { BaseObject } from './store/common.js';
+import type { BaseObject } from './store/common.js';
 
 // ============================================================================
 // Column Types

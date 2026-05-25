@@ -1,4 +1,4 @@
-import { UserRef } from "./user.js";
+import type { UserRef } from "./user.js";
 
 
 export interface UserGroup {

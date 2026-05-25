@@ -1,4 +1,4 @@
-import { Plan } from "@vertesia/common";
+import type { Plan } from "@vertesia/common";
 import { Badge, Button, cn } from "@vertesia/ui/core";
 import { AlertCircle, CheckCircle, Circle, Clock } from "lucide-react";
 import React from "react";
@@ -54,7 +54,7 @@ function InlineSlidingPlanPanelComponent({
               if (totalTasks > 0) {
                 // Count each completed task from the plan
                 planTasks.forEach((task) => {
-                  if (task && task.id) {
+                  if (task?.id) {
                     const taskId = task.id.toString();
                     const taskStatus = workstreamStatus.get(taskId);
 
@@ -135,6 +135,7 @@ function InlineSlidingPlanPanelComponent({
                   | "completed"
                   | "skipped" = task.status || "pending";
                 if (workstreamStatus.has(taskId)) {
+                  // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                   status = workstreamStatus.get(taskId)!;
                 }
 
@@ -151,6 +152,7 @@ function InlineSlidingPlanPanelComponent({
                 }
 
                 return (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                   <div key={index} className="flex p-3 my-1">
                     <div className={`me-2 mt-0.5 flex-shrink-0 text-muted`}>
                       {taskId}
@@ -192,7 +194,7 @@ function InlineSlidingPlanPanelComponent({
           // Get all task IDs from the plan for filtering
           const planTaskIds = new Set(
             (plan.plan || [])
-              .filter((task) => task && task.id)
+              .filter((task) => task?.id)
               .map((task) => task.id.toString()),
           );
 

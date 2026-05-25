@@ -1,9 +1,9 @@
-import { ComputedFacetResponse } from "../facets.js";
-import { SearchPayload } from "../payload.js";
-import { SupportedEmbeddingTypes } from "../project.js";
-import { ComplexSearchQuery } from "../query.js";
-import { JSONObject } from "../json.js";
-import { BaseObject } from "./common.js";
+import type { ComputedFacetResponse } from "../facets.js";
+import type { SearchPayload } from "../payload.js";
+import type { SupportedEmbeddingTypes } from "../project.js";
+import type { ComplexSearchQuery } from "../query.js";
+import type { JSONObject } from "../json.js";
+import type { BaseObject } from "./common.js";
 
 export enum ContentObjectApiHeaders {
     COLLECTION_ID = 'x-collection-id',
@@ -197,11 +197,6 @@ export interface Rendition {
 export interface RenditionWithDimensions extends Rendition {
     dimensions: Dimensions;
 }
-
-/**
- * @deprecated Use RenditionWithDimensions instead
- */
-export type VideoRendition = RenditionWithDimensions;
 
 export const POSTER_RENDITION_NAME = "Poster";
 export const AUDIO_RENDITION_NAME = "Audio";
@@ -659,7 +654,7 @@ export function canGenerateRendition(contentType: string | undefined, format: Re
 
     // Check exact match first
     const exactMatch = RENDITION_COMPATIBILITY[contentType];
-    if (exactMatch && exactMatch.some(f => f === formatStr)) {
+    if (exactMatch?.some(f => f === formatStr)) {
         return true;
     }
 
@@ -667,7 +662,7 @@ export function canGenerateRendition(contentType: string | undefined, format: Re
     const [category] = contentType.split('/');
     const wildcardKey = `${category}/*`;
     const wildcardMatch = RENDITION_COMPATIBILITY[wildcardKey];
-    if (wildcardMatch && wildcardMatch.some(f => f === formatStr)) {
+    if (wildcardMatch?.some(f => f === formatStr)) {
         return true;
     }
 

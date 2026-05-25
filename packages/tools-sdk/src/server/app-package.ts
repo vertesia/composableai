@@ -8,9 +8,9 @@ import type {
     InCodeTypeDefinition,
     RemoteActivityDefinition,
 } from "@vertesia/common";
-import { Context, Hono } from "hono";
-import { ToolUseContext } from "../types.js";
-import { ToolServerConfig } from "./types.js";
+import type { Context, Hono } from "hono";
+import type { ToolUseContext } from "../types.js";
+import type { ToolServerConfig } from "./types.js";
 
 function getRequestPayload<T>(c: Context): Promise<T | undefined> {
     return c.req.method === "POST" ? c.req.json<T>() : Promise.resolve(undefined);
@@ -58,7 +58,7 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
             for (const inter of coll.interactions) {
                 allInteractions.push({
                     type: "app",
-                    id: coll.name + ":" + inter.name,
+                    id: `${coll.name}:${inter.name}`,
                     name: inter.name,
                     title: inter.title || inter.name,
                     description: inter.description,
@@ -74,7 +74,7 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
             for (const type of coll.types) {
                 allTypes.push({
                     ...type,
-                    id: coll.name + ":" + type.name
+                    id: `${coll.name}:${type.name}`
                 });
             }
         }

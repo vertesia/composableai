@@ -22,6 +22,7 @@ export function ChatPage() {
         const result = await store.agents.start(payload);
         if (result) {
             navigate(`/chat/${result.id}`);
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             return { agent_run_id: result.id! };
         }
         return undefined;

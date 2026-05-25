@@ -1,8 +1,8 @@
 import { log } from "@temporalio/activity";
-import { VertesiaClient } from "@vertesia/client";
+import type { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
-import { ImageRenditionFormat } from "@vertesia/common";
-import fs from "fs";
+import type { ImageRenditionFormat } from "@vertesia/common";
+import fs from "node:fs";
 import pLimit from 'p-limit';
 import { imageResizer } from "../conversion/image.js";
 
@@ -84,7 +84,7 @@ export async function uploadRenditionPages(
 
             // Create a read stream from the resized image file
             const fileStream = fs.createReadStream(resizedImagePath);
-            const format = "image/" + params.format;
+            const format = `image/${params.format}`;
             const fileId = pageId.split("/").pop() ?? pageId;
             const source = new NodeStreamSource(
                 fileStream,

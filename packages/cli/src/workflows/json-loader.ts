@@ -1,5 +1,5 @@
-import { DSLWorkflowSpec } from "@vertesia/common";
-import { readFile } from "fs/promises";
+import type { DSLWorkflowSpec } from "@vertesia/common";
+import { readFile } from "node:fs/promises";
 import { errorMessage } from "../utils/options.js";
 import { ValidationError, validateWorkflow } from "./validation.js";
 
@@ -7,7 +7,7 @@ function parseJSON(content: string): DSLWorkflowSpec {
     try {
         return JSON.parse(content);
     } catch (err: unknown) {
-        throw new ValidationError("Invalid JSON: " + errorMessage(err));
+        throw new ValidationError(`Invalid JSON: ${errorMessage(err)}`);
     }
 }
 

@@ -1,4 +1,4 @@
-import { ContentObject } from "@vertesia/common";
+import type { ContentObject } from "@vertesia/common";
 import { Button, Spinner, VTooltip } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Maximize2, X } from "lucide-react";

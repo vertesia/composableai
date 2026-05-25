@@ -1,9 +1,9 @@
 import { createContext, useContext } from 'react';
 
 import { SharedState, useWatchSharedState } from '@vertesia/ui/core';
-import { ZenoClient } from '@vertesia/client';
-import { ComplexSearchPayload, ComplexSearchQuery, ComputeObjectFacetPayload, ComputedFacetResponse, ContentObjectItem, FacetBucket, FacetSpec, ObjectSearchQuery } from '@vertesia/common';
-import { SearchInterface } from '@vertesia/ui/features'
+import type { ZenoClient } from '@vertesia/client';
+import type { ComplexSearchPayload, ComplexSearchQuery, ComputeObjectFacetPayload, ComputedFacetResponse, ContentObjectItem, FacetBucket, FacetSpec, ObjectSearchQuery } from '@vertesia/common';
+import type { SearchInterface } from '@vertesia/ui/features'
 
 interface DocumentSearchResult {
     objects: ContentObjectItem[],
@@ -53,7 +53,7 @@ export class DocumentSearch implements SearchInterface {
     setFilterValue(name: string, value: unknown) {
         (this.query as Record<string, unknown>)[name] = value;
         // search now
-        this.search();
+        void this.search();
     }
 
     setDefaultKeys(keys: unknown[]) {
@@ -75,7 +75,7 @@ export class DocumentSearch implements SearchInterface {
         };
 
         if (autoSearch) {
-            this.search();
+            void this.search();
         }
     }
 
@@ -205,6 +205,7 @@ export class DocumentSearch implements SearchInterface {
 const DocumentSearchContext = createContext<DocumentSearch | undefined>(undefined);
 
 export function useDocumentSearch() {
+    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
     return useContext(DocumentSearchContext)!;
 }
 

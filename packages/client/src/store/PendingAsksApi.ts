@@ -1,4 +1,4 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
 import type { ListPendingAsksResponse, PendingAskData, TaskField, UserChannel } from "@vertesia/common";
 
 /**

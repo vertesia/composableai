@@ -1,8 +1,8 @@
-import { spawn } from 'child_process';
+import { spawn } from 'node:child_process';
 import enquirer from "enquirer";
-import { readFileSync } from 'fs';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { readFileSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { getBooleanOption, getStringOption, isRecord } from './utils/options.js';
 
 const { prompt } = enquirer;
@@ -40,7 +40,7 @@ export async function upgrade(yes: boolean) {
     if (latestVersion && version !== latestVersion) {
         let doUpgrade = false;
         if (!yes) {
-            console.log('There is a new version available (v' + latestVersion + ').');
+            console.log(`There is a new version available (v${latestVersion}).`);
             const answer = await prompt<{ upgrade?: boolean }>({
                 name: 'upgrade',
                 type: 'confirm',

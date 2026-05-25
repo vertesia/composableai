@@ -1,8 +1,8 @@
 import { ApplicationFailure, log } from "@temporalio/activity";
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
+import type { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { DocPart } from "../utils/chunks.js";
-import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
+import type { DocPart } from "../utils/chunks.js";
+import { type InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
 
 const INT_CHUNK_DOCUMENT = "sys:ChunkDocument"
 
@@ -74,18 +74,18 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
         : undefined;
 
     if (!type?.is_chunkable) {
-        log.warn('Type is not chunkable for object ID: ' + objectId);
+        log.warn(`Type is not chunkable for object ID: ${objectId}`);
         return { id: objectId, status: "skipped", message: "type not chunkable" }
     }
 
     //check if text is present
     if (!document.text) {
-        log.warn('No text found for object ID: ' + objectId);
+        log.warn(`No text found for object ID: ${objectId}`);
         return { id: objectId, status: "failed", message: "no text found" }
     }
 
     if (!force && document.parts && document.parts.length > 0 && document.parts_etag === document.text_etag) {
-        log.info('Document already chunked for object ID: ' + objectId);
+        log.info(`Document already chunked for object ID: ${objectId}`);
         return { id: objectId, status: "skipped", message: "document already chunked with correct etag" }
     }
 
@@ -130,7 +130,7 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
 
     const parts = jsonResult.parts;
     if (!parts || parts.length === 0) {
-        log.warn('No parts found for object ID: ' + objectId, res);
+        log.warn(`No parts found for object ID: ${objectId}`, res);
         return { id: objectId, status: "failed", parts: [], message: "no parts found" }
     }
 
@@ -147,9 +147,9 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
             const location = () => {
                 let location = document.location;
                 if (location.endsWith('/')) {
-                    location += document.name + "/" + part.type
+                    location += `${document.name}/${part.type}`
                 }
-                location += '/' + document.name + "/" + part.type;
+                location += `/${document.name}/${part.type}`;
                 return location;
             }
 
@@ -171,7 +171,7 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
 
         //delete previous parts
         if (document.parts && document.parts.length > 0) {
-            log.info('Deleting previous parts for object ID: ' + objectId, { parts: document.parts });
+            log.info(`Deleting previous parts for object ID: ${objectId}`, { parts: document.parts });
             await client.objects.delete(document.parts);
         }
 

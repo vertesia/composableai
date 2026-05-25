@@ -140,6 +140,31 @@ try {
 }
 ```
 
+## Retries
+
+Retries are disabled by default. Enable them explicitly on a client or a single request:
+
+```typescript
+const client = new FetchClient('https://api.example.com')
+  .withRetryPolicy({
+    attempts: 3,
+    methods: ['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE'],
+    statuses: [502, 503, 504],
+    baseDelayMs: 250,
+    maxDelayMs: 4000
+  });
+
+// POST requests are not retried by the default method list. Opt in only when
+// the operation is safe to replay.
+await client.post('/workflow/execute', {
+  payload,
+  retryPolicy: { methods: ['POST'] }
+});
+
+// Disable a client-level retry policy for one request.
+await client.get('/no-retry', { retryPolicy: false });
+```
+
 ### Custom Error Factory
 
 Transform errors before they're thrown:

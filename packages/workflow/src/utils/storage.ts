@@ -1,9 +1,9 @@
 import { activityInfo, log } from "@temporalio/activity";
 import { ApplicationFailure } from "@temporalio/workflow";
-import { VertesiaClient } from "@vertesia/client";
+import type { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
-import { basename } from "path";
-import { Readable } from "stream";
+import { basename } from "node:path";
+import type { Readable } from "node:stream";
 import mime from "mime";
 import { fetchBlobAsBuffer } from "../utils/blobs.js";
 
@@ -34,7 +34,7 @@ export async function saveAgentArtifact(
     }
 
     //create the file path and append extension if needed
-    const filePath = agentStoragePath(id) + "/" + name + (ext && !name.endsWith(ext) ? "." + ext : "");
+    const filePath = `${agentStoragePath(id)}/${name}${ext && !name.endsWith(ext) ? `.${ext}` : ""}`;
 
     try {
         const source = new NodeStreamSource(fileContent, `${id}-${basename(filePath)}`, mimeType, filePath);
@@ -55,7 +55,7 @@ export async function saveAgentArtifact(
 }
 
 export async function fetchAgentArtifact(client: VertesiaClient, name: string, storageId?: string) {
-    const id = storageId || activityInfo().workflowExecution!.runId;
-    const filePath = agentStoragePath(id) + "/" + name;
+    const id = storageId || activityInfo().workflowExecution.runId;
+    const filePath = `${agentStoragePath(id)}/${name}`;
     return fetchBlobAsBuffer(client, filePath);
 }

@@ -1,7 +1,7 @@
 import type { ModelOptions } from "@llumiverse/common";
-import { ConversationVisibility, InteractionRef, UserChannel } from "../interaction.js";
-import { JSONSchema } from "../json-schema.js";
-import { JSONObject, JSONValue } from "../json.js";
+import type { ConversationVisibility, InteractionRef, UserChannel } from "../interaction.js";
+import type { JSONSchema } from "../json-schema.js";
+import type { JSONObject, JSONValue } from "../json.js";
 import type { WorkflowInput } from "./dsl-workflow.js";
 
 export enum ContentEventName {

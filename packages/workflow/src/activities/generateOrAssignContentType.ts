@@ -1,18 +1,18 @@
 import { ApplicationFailure, log } from "@temporalio/activity";
 import {
-  ContentObjectTypeItem,
-  CreateContentObjectTypePayload,
-  DSLActivityExecutionPayload,
-  DSLActivitySpec,
+  type ContentObjectTypeItem,
+  type CreateContentObjectTypePayload,
+  type DSLActivityExecutionPayload,
+  type DSLActivitySpec,
   ImageRenditionFormat,
 } from "@vertesia/common";
 import {
-  ActivityContext,
+  type ActivityContext,
   setupActivity,
 } from "../dsl/setup/ActivityContext.js";
-import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
+import { type TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 import {
-  InteractionExecutionParams,
+  type InteractionExecutionParams,
   executeInteractionFromActivity,
 } from "./executeInteraction.js";
 
@@ -75,7 +75,7 @@ export async function generateOrAssignContentType(
   const interactionName =
     params.interactionNames?.selectDocumentType ?? INT_SELECT_DOCUMENT_TYPE;
 
-  log.debug("SelectDocumentType for object: " + objectId, { payload });
+  log.debug(`SelectDocumentType for object: ${objectId}`, { payload });
 
   const object = await client.objects.retrieve(objectId, "+text");
 
@@ -87,7 +87,7 @@ export async function generateOrAssignContentType(
     log.warn(`Object ${objectId} has already a type. Skipping type creation.`);
     return {
       status: "skipped",
-      message: "Object already has a type: " + object.type.name,
+      message: `Object already has a type: ${object.type.name}`,
     };
   }
 
@@ -121,7 +121,7 @@ export async function generateOrAssignContentType(
       object.text?.length &&
       object.text?.length < 100
     ) {
-      return "store:" + objectId;
+      return `store:${objectId}`;
     }
     if (!object.content?.type?.startsWith("image/")) {
       return undefined;
@@ -134,7 +134,7 @@ export async function generateOrAssignContentType(
       //throw to try again
       throw new Error(`Rendition for object ${objectId} is in progress`);
     } else if (res.renditions) {
-      return "store:" + objectId;
+      return `store:${objectId}`;
     }
   };
 
@@ -184,11 +184,11 @@ export async function generateOrAssignContentType(
 
   const jsonResult = res.result.object<SelectDocumentTypeResult>();
 
-  log.debug("Selected Content Type Result: " + JSON.stringify(jsonResult));
+  log.debug(`Selected Content Type Result: ${JSON.stringify(jsonResult)}`);
 
 
   //if type is not identified or not present in the database, generate a new type
-  let selectedType: { id: string; name: string } | undefined = undefined;
+  let selectedType: { id: string; name: string } | undefined ;
 
   selectedType = types.find((t) => t.name === jsonResult.document_type);
 
@@ -205,7 +205,7 @@ export async function generateOrAssignContentType(
 
   if (!selectedType) {
     log.error("Type not found: ", res.result);
-    throw new Error("Type not found: " + jsonResult.document_type);
+    throw new Error(`Type not found: ${jsonResult.document_type}`);
   }
 
   //update object with selected type

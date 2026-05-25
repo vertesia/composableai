@@ -5,7 +5,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { ExportPropertiesModal } from "../../ExportPropertiesModal";
 import { useObjectsActionCallback } from "../ObjectsActionHooks";
-import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
+import type { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 export function ExportPropertiesComponent({ action, objectIds }: ActionComponentTypeProps) {
     const { t } = useUITranslation();
@@ -58,7 +58,7 @@ export function ExportPropertiesComponent({ action, objectIds }: ActionComponent
             const typeId = ctx.params?.type?.id ?? query.type;
             const table_layout = ctx.params?.type?.table_layout ?? undefined;
 
-            getObjectIds().then((Ids) => {
+            void getObjectIds().then((Ids) => {
                 // When exporting all, send search result if a vector search was used
                 // otherwise send the query — always constrained to the current content type.
                 store.objects.exportProperties({

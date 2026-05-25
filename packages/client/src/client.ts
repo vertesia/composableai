@@ -1,5 +1,5 @@
-import { AbstractFetchClient } from "@vertesia/api-fetch-client";
-import { AuthTokenPayload, AuthTokenResponse } from "@vertesia/common";
+import { AbstractFetchClient, type IRequestRetryPolicy } from "@vertesia/api-fetch-client";
+import type { AuthTokenPayload, AuthTokenResponse } from "@vertesia/common";
 import AccountApi from "./AccountApi.js";
 import AccountsApi from "./AccountsApi.js";
 import AnalyticsApi from "./AnalyticsApi.js";
@@ -63,6 +63,7 @@ export type VertesiaClientProps = {
     sessionTags?: string | string[];
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
+    retryPolicy?: IRequestRetryPolicy;
 };
 
 export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
@@ -190,10 +191,15 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             apikey: opts.apikey,
             onRequest: opts.onRequest,
             onResponse: opts.onResponse,
+            retryPolicy: opts.retryPolicy,
         });
 
+        if (opts.retryPolicy) {
+            this.withRetryPolicy(opts.retryPolicy);
+        }
+
         if (opts.apikey) {
-            this.withApiKey(opts.apikey);
+            void this.withApiKey(opts.apikey);
         }
 
         this.onRequest = opts.onRequest;
@@ -224,6 +230,11 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     withAuthCallback(authCb?: (() => Promise<string>) | null) {
         this.store.withAuthCallback(authCb);
         return super.withAuthCallback(authCb);
+    }
+
+    withRetryPolicy(policy?: IRequestRetryPolicy | null) {
+        this.store.withRetryPolicy(policy);
+        return super.withRetryPolicy(policy);
     }
 
     async withApiKey(apiKey: string | null) {

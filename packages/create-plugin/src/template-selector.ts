@@ -3,7 +3,7 @@
  */
 import chalk from 'chalk';
 import prompts from 'prompts';
-import { config, TemplateDefinition } from './configuration.js';
+import { config, type TemplateDefinition } from './configuration.js';
 import { getCliVersion } from './version.js';
 
 /**

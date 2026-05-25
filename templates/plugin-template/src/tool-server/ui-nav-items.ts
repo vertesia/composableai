@@ -1,4 +1,4 @@
-import { AppUINavItem } from "@vertesia/common";
+import type { AppUINavItem } from "@vertesia/common";
 
 /**
  * Optional App UI Navigation configuration

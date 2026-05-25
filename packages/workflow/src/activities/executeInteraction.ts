@@ -1,24 +1,24 @@
-import { CompletionResult, JSONSchema, ModelOptions, LlumiverseError } from "@llumiverse/common";
+import { type CompletionResult, type JSONSchema, type ModelOptions, LlumiverseError } from "@llumiverse/common";
 import { activityInfo, ApplicationFailure, log } from "@temporalio/activity";
-import { VertesiaClient } from "@vertesia/client";
+import type { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
 import {
-    DSLActivityExecutionPayload,
-    DSLActivitySpec,
-    ExecutionRun,
+    type DSLActivityExecutionPayload,
+    type DSLActivitySpec,
+    type ExecutionRun,
     ExecutionRunStatus,
-    ExecutionRunWorkflow,
-    InteractionExecutionConfiguration,
-    RunSearchPayload,
+    type ExecutionRunWorkflow,
+    type InteractionExecutionConfiguration,
+    type RunSearchPayload,
 } from "@vertesia/common";
 import { projectResult } from "../dsl/projections.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { ActivityParamInvalidError, ActivityParamNotFoundError, ResourceExhaustedError } from "../errors.js";
-import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
-import { Readable } from "stream";
+import { type TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
+import { Readable } from "node:stream";
 
 //Example:
-//@ts-ignore
+//@ts-expect-error
 const _JSON: DSLActivitySpec = {
     name: "executeInteraction",
     import: ["defaultModel", "guidlineId", "docTypeId"],
@@ -274,7 +274,7 @@ export async function executeInteractionFromActivity(
         activity_type: info.activityType,
     };
 
-    let previousStudioExecutionRun: ExecutionRun | undefined = undefined;
+    let previousStudioExecutionRun: ExecutionRun | undefined ;
     if (params.include_previous_error) {
         //retrieve last failed run if any
         if (info.attempt > 1) {

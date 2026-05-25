@@ -1,5 +1,5 @@
 import type { JSONSchema } from "@vertesia/common";
-import { TypeNames, TypeSignature, parseTypeSignature } from "./type-signature.js";
+import { TypeNames, type TypeSignature, parseTypeSignature } from "./type-signature.js";
 import { addProperty, getTypeSignature, removeProperty, setPropertyName, setPropertyType, setRequireProperty } from "./json-schema4-utils.js";
 
 
@@ -52,6 +52,7 @@ export class ManagedSchema implements SchemaLoader {
     }
 
     get children() {
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         return this.root.children!;
     }
 
@@ -114,7 +115,7 @@ export class SchemaNode {
         this.name = name;
         this.type = getTypeSignature(schema);
         if (this.parent) {
-            let required = this.parent._getPropertiesSchema().required;
+            const required = this.parent._getPropertiesSchema().required;
             this.isRequired = required && Array.isArray(required) ? required.includes(name) : false;
         }
     }
@@ -221,7 +222,7 @@ export class SchemaNode {
         if (!this.children) {
             this.children = [];
         }
-        let schema = this._getPropertiesSchema();
+        const schema = this._getPropertiesSchema();
         const childSchema = addProperty(schema, name, type, isRequired);
         const child = new SchemaNode(name, childSchema, this.loader, this);
         this.children.push(child);
@@ -232,7 +233,7 @@ export class SchemaNode {
      * Remove this node
      */
     remove() {
-        if (this.parent && this.parent.type.isObject) {
+        if (this.parent?.type.isObject) {
             const schema = this.parent._getPropertiesSchema();
             removeProperty(schema, this.name);
             if (this.parent.children) {

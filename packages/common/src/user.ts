@@ -1,5 +1,5 @@
-import { ApiKey } from "./apikey.js";
-import { ProjectRef, ProjectRoles } from "./project.js";
+import type { ApiKey } from "./apikey.js";
+import type { ProjectRef, ProjectRoles } from "./project.js";
 
 export interface UserWithAccounts extends User {
     accounts: AccountRef[];
@@ -136,13 +136,6 @@ export interface InviteDeclineResponse {
 export interface AccountProjectsResponse {
     data: ProjectRef[];
 }
-
-export interface GoogleProjectTokenResponse {
-    principal: string;
-    token: string;
-}
-
-
 
 type UserOrApiKey<T extends User | ApiKey> = T extends User ? User : ApiKey;
 type SessionType<T extends User | ApiKey> = T extends User ? "user" : "apikey";

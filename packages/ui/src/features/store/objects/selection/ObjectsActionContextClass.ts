@@ -1,4 +1,4 @@
-import { ObjectsActionParams, ObjectsActionSpec } from './ObjectsActionSpec';
+import type { ObjectsActionParams, ObjectsActionSpec } from './ObjectsActionSpec';
 
 export type ObjectsActionCallback = (params: ObjectsActionParams) => Promise<unknown>;
 

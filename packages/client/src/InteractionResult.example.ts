@@ -4,7 +4,7 @@
  * an array and has convenience methods.
  */
 
-import { CompletionResult } from '@llumiverse/common';
+import type { CompletionResult } from '@llumiverse/common';
 import { InteractionOutput } from './InteractionOutput.js';
 
 // Sample data

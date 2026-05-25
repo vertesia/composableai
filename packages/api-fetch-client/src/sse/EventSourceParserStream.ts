@@ -1,4 +1,4 @@
-import { createParser, ReconnectInterval, type EventSourceParser, type ParsedEvent } from 'eventsource-parser'
+import { createParser, type ReconnectInterval, type EventSourceParser, type ParsedEvent } from 'eventsource-parser'
 
 /**
  * We copied this file from the eventsource-parser/stream package and made it a part of our project.

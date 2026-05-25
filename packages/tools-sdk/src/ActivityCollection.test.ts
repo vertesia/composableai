@@ -1,7 +1,7 @@
-import { RemoteActivityExecutionPayload } from "@vertesia/common";
+import type { RemoteActivityExecutionPayload } from "@vertesia/common";
 import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ActivityCollection, ActivityDefinition } from "./ActivityCollection.js";
+import { ActivityCollection, type ActivityDefinition } from "./ActivityCollection.js";
 
 type MockContext = Context & {
     json: ReturnType<typeof vi.fn>;

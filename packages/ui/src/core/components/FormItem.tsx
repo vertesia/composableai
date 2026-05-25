@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Children, cloneElement, Fragment, isValidElement, ReactNode, useId, useRef } from 'react';
+import { Children, cloneElement, Fragment, isValidElement, type ReactNode, useId, useRef } from 'react';
 
 import { VTooltip } from './shadcn/tooltip';
 import { Info } from 'lucide-react';

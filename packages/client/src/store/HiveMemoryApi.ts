@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import type {
     CreateHiveMemoryPayload,
     FormattedMemoryForAgent,
     HiveMemory,

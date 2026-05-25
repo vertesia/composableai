@@ -14,7 +14,7 @@
     "lint": "biome lint src",
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "node lib/index.js test-project",
+    "test": "node ./scripts/run-smoke-test.mjs",
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [

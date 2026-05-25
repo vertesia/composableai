@@ -207,8 +207,7 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
     }
 
     // Count tokens if needed, do not rely on existing token count
-    let tokenCount: number | undefined = undefined;
-    tokenCount = countTokens(sourceText).count;
+    const tokenCount = countTokens(sourceText).count;
 
     const maxTokens = config.max_tokens ?? 8000;
 
@@ -253,8 +252,14 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
     }
 }
 
-async function generateImageEmbeddings({ document, client, type, config, force }: ExecuteGenerateEmbeddingsParams) {
-    log.debug('Generating image embeddings for document ' + document.id, {
+async function generateImageEmbeddings({
+    document,
+    client,
+    type,
+    config,
+    force,
+}: ExecuteGenerateEmbeddingsParams) {
+    log.debug(`Generating image embeddings for document ${document.id}`, {
         content: document.content,
     });
     if (!document.content?.type?.startsWith('image/') && !document.content?.type?.includes('pdf')) {

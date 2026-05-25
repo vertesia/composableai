@@ -1,4 +1,4 @@
-import { TransientToken, UserInviteTokenData } from "@vertesia/common"
+import type { TransientToken, UserInviteTokenData } from "@vertesia/common"
 import { Button, Modal, ModalBody, ModalTitle } from "@vertesia/ui/core"
 import { useEffect, useState } from "react"
 import { useUserSession } from "@vertesia/ui/session"

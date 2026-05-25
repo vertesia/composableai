@@ -104,7 +104,7 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
             // serve lib/plugin.js content in dev mode
             serveStatic([
                 {
-                    pattern: new RegExp("/plugin.(js|css)"),
+                    pattern: /\/plugin.(js|css)/,
                     resolve: (groups: string[]) => `./dist/lib/plugin.${groups[1]}`
                 },
             ]),

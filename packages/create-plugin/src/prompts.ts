@@ -3,7 +3,7 @@
  */
 import prompts from 'prompts';
 import chalk from 'chalk';
-import { PromptConfig, TemplateConfig } from './template-config.js';
+import type { PromptConfig, TemplateConfig } from './template-config.js';
 import { applyMapTransform, applyTransform, concatValues } from './transforms.js';
 
 type ProcessedPromptConfig = Omit<PromptConfig, 'validate'> & {
@@ -37,8 +37,9 @@ export async function promptUser(projectName: string, templateConfig: TemplateCo
     if (typeof prompt.validate === 'string') {
       const validateStr = prompt.validate;
       if (validateStr.includes('=>') || validateStr.includes('function')) {
-        // It's a function string - evaluate it
+        // It's a function string - evaluate it (template authors author validators here)
         try {
+          // biome-ignore lint/security/noGlobalEval: plugin templates author trusted validator code that must run dynamically
           prompt.validate = eval(validateStr);
         } catch {
           // If eval fails, remove the validator

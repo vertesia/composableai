@@ -1,7 +1,7 @@
-import { PropertyConditions } from "./access-control.js";
-import { UserGroupRef } from "./group.js";
-import { ProjectRef, ProjectRoles } from "./project.js";
-import { AccountRef } from "./user.js";
+import type { PropertyConditions } from "./access-control.js";
+import type { UserGroupRef } from "./group.js";
+import type { ProjectRef, ProjectRoles } from "./project.js";
+import type { AccountRef } from "./user.js";
 
 /**
  * Content security conditions in the JWT, keyed by permission type.

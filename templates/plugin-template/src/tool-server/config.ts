@@ -1,4 +1,4 @@
-import { ToolServerConfig } from "@vertesia/tools-sdk";
+import type { ToolServerConfig } from "@vertesia/tools-sdk";
 import { activities } from "./activities/index.js";
 import { dashboards } from "./dashboards/index.js";
 import { interactions } from "./interactions/index.js";

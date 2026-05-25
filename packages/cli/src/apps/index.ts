@@ -1,5 +1,5 @@
-import { AppManifestData } from "@vertesia/common";
-import { Command } from "commander";
+import type { AppManifestData } from "@vertesia/common";
+import type { Command } from "commander";
 import {
     createApp,
     deleteAppInstallation,

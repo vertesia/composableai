@@ -4,7 +4,7 @@ import {
   CreateRoleCommand,
   AttachRolePolicyCommand,
 } from "@aws-sdk/client-iam";
-import { VertesiaClient } from "@vertesia/client";
+import type { VertesiaClient } from "@vertesia/client";
 import { SupportedProviders } from "@vertesia/common";
 import { delay, getProviderUrl, getStsHost } from "./common.js";
 
@@ -23,7 +23,7 @@ export async function configureBedrockEnvironment(
   tags: Array<{ Key: string; Value: string }>,
   stsUrl?: string,
 ): Promise<void> {
-  const effectiveTags = tags && tags.length ? tags : defaultTags;
+  const effectiveTags = tags?.length ? tags : defaultTags;
 
   // 1. Get Organization and Project from Vertesia
   const account = await vertesia.account.info();

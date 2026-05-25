@@ -1,4 +1,4 @@
-import { InCodeTypeSpec } from "@vertesia/common";
+import type { InCodeTypeSpec } from "@vertesia/common";
 
 /**
  * Example content type: Article

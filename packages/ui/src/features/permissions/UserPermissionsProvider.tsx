@@ -1,4 +1,4 @@
-import { getPermissionsForRoles, listRoles, Permission, ProjectRoles, type AuthTokenPayload } from "@vertesia/common"
+import { getPermissionsForRoles, listRoles, type AuthTokenPayload, type Permission, type ProjectRoles } from "@vertesia/common"
 import { ErrorBox, errorMessage, useFetch } from "@vertesia/ui/core"
 import { useUITranslation } from "@vertesia/ui/i18n"
 import { useUserSession } from "@vertesia/ui/session"

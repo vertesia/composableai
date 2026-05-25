@@ -168,7 +168,7 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
       navigator.clipboard.writeText(content).then(() => {
         setIsCopied(true)
         setTimeout(() => setIsCopied(false), 2000)
-        if (!toast || !toast.toast) {
+        if (!toast?.toast) {
           return
         }
         toast.toast({
@@ -178,7 +178,7 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
         })
       }).catch((err) => {
         console.error("Failed to copy text: ", err)
-        if (toast && toast.toast)
+        if (toast?.toast)
           toast.toast({
             status: "error",
             title: t('misc.failedToCopy'),

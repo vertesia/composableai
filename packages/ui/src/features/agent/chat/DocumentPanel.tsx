@@ -61,7 +61,7 @@ function DocumentPanelComponent({
     useEffect(() => {
         void refreshKey;
         if (activeDocumentId && isOpen) {
-            fetchContent(activeDocumentId);
+            void fetchContent(activeDocumentId);
         }
     }, [activeDocumentId, refreshKey, isOpen, fetchContent]);
 

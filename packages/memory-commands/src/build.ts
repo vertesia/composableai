@@ -1,6 +1,6 @@
-import { Builder, BuildOptions } from "@vertesia/memory";
+import { Builder, type BuildOptions } from "@vertesia/memory";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { resolve } from "path";
+import { resolve } from "node:path";
 import { importTsFile } from "./ts-loader.js";
 
 const als = new AsyncLocalStorage<Builder>();

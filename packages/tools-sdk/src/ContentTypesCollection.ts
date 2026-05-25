@@ -1,5 +1,5 @@
-import { InCodeTypeSpec } from "@vertesia/common";
-import { CollectionProperties, ICollection } from "./types.js";
+import type { InCodeTypeSpec } from "@vertesia/common";
+import type { CollectionProperties, ICollection } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
 
 export interface ContentTypesCollectionProps extends CollectionProperties {

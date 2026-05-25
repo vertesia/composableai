@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { ChangeEvent, ComponentType, KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { type ChangeEvent, type ComponentType, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 
 import { SquarePen, Trash2 } from 'lucide-react';
 import { Button, Styles, useClickOutside, useFlag } from '@vertesia/ui/core';
@@ -87,7 +87,7 @@ export function Editable<T>({ value, onChange, onDelete,
                         editor={editor}
                         skipClickOutside={_skipClickOutside}
                     />
-                    : <DataView value={value} onEdit={on} viewer={viewer}
+                    : <EditableDataView value={value} onEdit={on} viewer={viewer}
                         placeholder={placeholder}
                         outlineOnHover={outlineOnHover}
                         editOnClick={editOnClick}
@@ -103,7 +103,7 @@ export function Editable<T>({ value, onChange, onDelete,
     )
 }
 
-interface DataViewProps<T> {
+interface EditableDataViewProps<T> {
     value: T;
     viewer: ComponentType<DataViewerProps<T>>;
     onEdit: () => void;
@@ -113,7 +113,7 @@ interface DataViewProps<T> {
     onDelete?: () => void
     readonly?: boolean,
 }
-function DataView<T>({ viewer: Viewer, value, onEdit, editOnClick, outlineOnHover, placeholder, onDelete, readonly }: DataViewProps<T>) {
+function EditableDataView<T>({ viewer: Viewer, value, onEdit, editOnClick, outlineOnHover, placeholder, onDelete, readonly: isReadonly }: EditableDataViewProps<T>) {
     const onClick = () => {
         if (editOnClick) onEdit();
     };
@@ -132,13 +132,13 @@ function DataView<T>({ viewer: Viewer, value, onEdit, editOnClick, outlineOnHove
             <Viewer value={value} placeholder={placeholder} />
             <div className='ms-auto flex space-x-2'>
                 {
-                    !readonly && onDelete &&
+                    !isReadonly && onDelete &&
                     <Button variant="ghost" size="sm" className={btnStyle} onClick={onDelete}>
                         <Trash2 className="size-4" />
                     </Button>
                 }
                 {
-                    !readonly ?
+                    !isReadonly ?
                         <Button variant="ghost" size="sm" className={btnStyle} onClick={onEdit}>
                             <SquarePen className="size-4" />
                         </Button>

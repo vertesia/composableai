@@ -1,5 +1,5 @@
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
-import * as React from "react"
+import type * as React from "react"
 
 import { cn } from "../libs/utils"
 
@@ -90,9 +90,6 @@ function RadioGroup<T = RadioGroupOption>({ onSelect, selected, options, adapter
     </RadioGroupPrimitive.Root>
   )
 }
-
-/** @deprecated use RadioGroupAdapter */
-export const RadioOptionAdapter = RadioGroupAdapter
 
 export { RadioGroup, RadioGroupItem }
 export type { RadioGroupOption, RadioGroupProps }

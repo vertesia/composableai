@@ -29,9 +29,9 @@ export function join(left: string, right: string) {
     } else if (right.startsWith('/')) {
         return left + right;
     } else if (right.startsWith('./')) {
-        return left + '/' + right.slice(2);
+        return `${left}/${right.slice(2)}`;
     } else {
-        return left + '/' + right;
+        return `${left}/${right}`;
     }
 }
 

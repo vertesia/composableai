@@ -17,7 +17,7 @@ function getProvider(redirectTo?: string) {
         case "google": {
             let redirectPath = redirectTo || window.location.pathname || '/';
             if (redirectPath[0] !== '/') {
-                redirectPath = '/' + redirectPath;
+                redirectPath = `/${redirectPath}`;
             }
             const provider = new GoogleAuthProvider();
             provider.addScope('profile');
@@ -62,7 +62,7 @@ export default function EnterpriseSigninButton({ redirectTo }: EnterpriseSigninB
         }
         // Env.firebase.tenantEmail = email;
         setIsLoading(true);
-        setFirebaseTenant(email).then((data) => {
+        void setFirebaseTenant(email).then((data) => {
             if (!data) {
                 toast({
                     title: t('auth.tenantNotFound'),
@@ -85,7 +85,7 @@ export default function EnterpriseSigninButton({ redirectTo }: EnterpriseSigninB
                 },
             });
 
-            signInWithRedirect(getFirebaseAuth(), provider);
+            void signInWithRedirect(getFirebaseAuth(), provider);
             setIsLoading(false);
         });
     };

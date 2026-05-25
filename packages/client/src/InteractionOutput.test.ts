@@ -1,4 +1,4 @@
-import { CompletionResult } from '@llumiverse/common';
+import type { CompletionResult } from '@llumiverse/common';
 import { describe, expect, it } from 'vitest';
 import { InteractionOutput, IS_INTERACTION_OUTPUT } from './InteractionOutput.js';
 
