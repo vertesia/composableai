@@ -334,8 +334,8 @@ export abstract class ClientBase {
             }
         }
         // When using SSE reader, ensure the Accept header requests event-stream
-        if (params?.reader === 'sse' && !('accept' in headers)) {
-            headers.accept = 'text/event-stream';
+        if (params?.reader === 'sse') {
+            headers['accept'] = 'text/event-stream';
         }
 
         const normalizedMethod = method.toUpperCase();

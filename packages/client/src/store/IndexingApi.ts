@@ -361,23 +361,25 @@ export class IndexingApi extends ApiTopic {
         onEvent?: ((event: ServerSentEvent) => void) | null,
         dryRun?: boolean,
         backend?: ElasticsearchBackend,
+        projectId?: string,
     ): Promise<ReindexViaBulkResult> {
-        const bulkUrl = `${this.zenoBulkBaseUrl}/reindex`;
-        const payload = {
+        const bulkUrl = this.zenoBulkBaseUrl + '/reindex';
+        const params = {
             tenant_id: tenantId,
+            project_id: projectId,
             dry_run: dryRun ?? false,
             backend,
         } satisfies ReindexViaBulkRequest;
 
         if (!onEvent) {
-            return this.client.post(bulkUrl, { payload });
+            return this.client.post(bulkUrl, { payload: { params } });
         }
 
         // SSE mode: stream progress events from zeno-bulk
         let lastResult: ReindexViaBulkResult | undefined;
 
         await this.client.sseRequest('POST', bulkUrl, {
-            payload,
+            payload: { params },
         }, (event) => {
             onEvent(event);
             if (event.type === 'event' && event.event === 'done') {

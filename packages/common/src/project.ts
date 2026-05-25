@@ -640,12 +640,20 @@ export interface IndexShardResult {
     written: number;
     skipped: number;
     errors: number;
+    embeddings_written?: number;
+    skipped_embeddings?: number;
     read_docs_s: string;
     write_docs_s: string;
     read_mb: string;
     write_mb: string;
+    mongo_read_mb?: string;
+    gcs_read_mb?: string;
+    es_bulk_mb?: string;
     read_mb_s: string;
     write_mb_s: string;
+    mongo_read_mb_s?: string;
+    gcs_read_mb_s?: string;
+    es_bulk_mb_s?: string;
     duration_sec: number;
     failed_projects?: Array<{ tenant: string; error: string }>;
 }
@@ -667,6 +675,7 @@ export interface SwapAliasResult {
 
 export interface ReindexViaBulkRequest {
     tenant_id: string;
+    project_id?: string;
     backend?: ElasticsearchBackend;
     dry_run?: boolean;
 }
@@ -679,10 +688,20 @@ export interface ReindexViaBulkResult {
     scanned: number;
     written: number;
     errors: number;
+    embeddings_written?: number;
+    skipped_embeddings?: number;
     read_docs_s: string;
     write_docs_s: string;
     read_mb: string;
     write_mb: string;
+    mongo_read_mb?: string;
+    gcs_read_mb?: string;
+    es_bulk_mb?: string;
+    read_mb_s?: string;
+    write_mb_s?: string;
+    mongo_read_mb_s?: string;
+    gcs_read_mb_s?: string;
+    es_bulk_mb_s?: string;
     duration_sec: number;
 }
 
