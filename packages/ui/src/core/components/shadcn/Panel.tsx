@@ -57,7 +57,7 @@ export function Panel({
     const footerPadding = isSmall ? 'px-4 pb-3' : 'px-4 pb-4';
 
     return (
-        <div className={`flex flex-col ${sectioned ? '' : 'p-4 gap-2'} rounded-sm border bg-card overflow-hidden ${className ?? ''}`}>
+        <div className={`flex flex-col ${sectioned ? '' : 'p-4 gap-2'} rounded-sm border bg-card ${useClickableHeader ? 'overflow-hidden' : ''} ${className ?? ''}`}>
             {useClickableHeader ? (
                 <button
                     type="button"
