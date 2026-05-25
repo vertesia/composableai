@@ -2,7 +2,6 @@ import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
 import type {
     Account,
     AccountProjectsResponse,
-    GoogleProjectTokenResponse,
     InviteAcceptanceResponse,
     InviteDeclineResponse,
     InviteUserRequestPayload,
@@ -93,15 +92,6 @@ export default class AccountApi extends ApiTopic {
      */
     onboardingProgress(): Promise<OnboardingProgress> {
         return this.get('/onboarding');
-    }
-
-    /**
-     * Get a google auth token for the current project.
-     * This token can be used to access exposed google cloud services
-     * @returns
-     */
-    getGoogleToken(): Promise<GoogleProjectTokenResponse> {
-        return this.get('/google-token');
     }
 
     getStripeBillingStatus(): Promise<StripeBillingStatusResponse> {
