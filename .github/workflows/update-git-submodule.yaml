@@ -1,4 +1,4 @@
-name: update-git-submodule
+name: (sync) Update Git submodule
 
 on:
   repository_dispatch:
@@ -35,9 +35,12 @@ jobs:
   update-submodule:
     name: Update submodule
     runs-on: ubuntu-latest
+    # Scopes secrets (GITHUB_TOKEN, REPO_STUDIO_ACCESS_TOKEN) to a dedicated
+    # environment (zizmor: secrets-outside-env).
+    environment: build
     permissions:
-      contents: write       # required for pushing changes and deleting old branches
-      pull-requests: write  # required for creating new PRs and closing old ones
+      contents: write       # required for pushing the temp branch and deleting old branches
+      pull-requests: write  # required for creating new PRs and closing superseded ones
     steps:
       - name: Validate branch
         run: |
