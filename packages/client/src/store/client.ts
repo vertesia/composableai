@@ -20,7 +20,6 @@ import { TaskApi } from "./TaskApi.js";
 import { ToolsApi } from "./ToolsApi.js";
 import { TypesApi } from "./TypesApi.js";
 import { VERSION, VERSION_HEADER } from "./version.js";
-import { WorkersApi } from "./WorkersApi.js";
 import { WorkflowsApi } from "./WorkflowsApi.js";
 
 export interface ZenoClientProps {
@@ -99,7 +98,6 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     processes = new ProcessApi(this);
     tasks = new TaskApi(this);
     files = new FilesApi(this);
-    workers = new WorkersApi(this);
     collections = new CollectionsApi(this);
     embeddings = new EmbeddingsApi(this);
     email = new EmailApi(this);
