@@ -1,4 +1,4 @@
-import { AbstractFetchClient, type RequestError } from "@vertesia/api-fetch-client";
+import { AbstractFetchClient, type IRequestRetryPolicy, type RequestError } from "@vertesia/api-fetch-client";
 import type { BulkOperationPayload, BulkOperationResponse } from "@vertesia/common";
 import { AgentsApi } from "./AgentsApi.js";
 import { CollectionsApi } from "./CollectionsApi.js";
@@ -21,7 +21,6 @@ import { TaskApi } from "./TaskApi.js";
 import { ToolsApi } from "./ToolsApi.js";
 import { TypesApi } from "./TypesApi.js";
 import { VERSION, VERSION_HEADER } from "./version.js";
-import { WorkersApi } from "./WorkersApi.js";
 import { WorkflowsApi } from "./WorkflowsApi.js";
 
 export interface ZenoClientProps {
@@ -30,6 +29,7 @@ export interface ZenoClientProps {
     apikey?: string;
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
+    retryPolicy?: IRequestRetryPolicy;
 }
 
 function ensureDefined(serverUrl: string | undefined) {
@@ -47,6 +47,9 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
         super(ensureDefined(opts.serverUrl));
         if (opts.apikey) {
             this.withApiKey(opts.apikey);
+        }
+        if (opts.retryPolicy) {
+            this.withRetryPolicy(opts.retryPolicy);
         }
         this.onRequest = opts.onRequest;
         this.onResponse = opts.onResponse;
@@ -96,7 +99,6 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     processes = new ProcessApi(this);
     tasks = new TaskApi(this);
     files = new FilesApi(this);
-    workers = new WorkersApi(this);
     collections = new CollectionsApi(this);
     embeddings = new EmbeddingsApi(this);
     email = new EmailApi(this);

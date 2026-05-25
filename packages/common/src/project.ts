@@ -264,6 +264,9 @@ export const BrowserUseProjectConfigurationSchema: JSONSchemaType<BrowserUseProj
 // Project Configuration
 // ==========================================
 
+export type ProjectSearchTier = "standard" | "performance";
+export type ElasticsearchBackend = "serverless" | "hosted";
+
 export interface ProjectConfiguration {
 
     human_context?: string;
@@ -301,6 +304,20 @@ export interface ProjectConfiguration {
          * Defaults to true - indexing is always on when ES infrastructure is available.
          */
         enabled?: boolean;
+
+        /**
+         * Search tier for this project.
+         * standard uses the regional hosted Elasticsearch deployment.
+         * performance uses the regional serverless Elasticsearch project.
+         * Defaults to standard when omitted.
+         */
+        search_tier?: ProjectSearchTier;
+
+        /**
+         * Elasticsearch backend override for this project.
+         * Prefer search_tier for project configuration unless an explicit backend override is needed.
+         */
+        backend?: ElasticsearchBackend;
     };
 
     /**
@@ -523,6 +540,7 @@ export interface CreateReindexTargetResult {
     index_name: string;
     alias_name: string;
     version: number;
+    backend?: ElasticsearchBackend;
     dimensions?: {
         text?: number;
         image?: number;
@@ -581,6 +599,8 @@ export interface TriggerReindexResult {
 export interface ComputeShardsRequest {
     tenant_id: string;
     shard_size?: number;
+    updated_since?: string;
+    backend?: ElasticsearchBackend;
 }
 
 export interface ComputeShardsResult {
@@ -593,6 +613,7 @@ export interface IndexShardParams {
     target_index: string;
     shard_min: string;
     shard_max?: string;
+    backend?: ElasticsearchBackend;
     embedding_dimensions?: {
         text?: number;
         image?: number;
@@ -632,6 +653,7 @@ export interface IndexShardResult {
 export interface SwapAliasRequest {
     tenant_id: string;
     target_index: string;
+    backend?: ElasticsearchBackend;
     /** ES alias name. If not provided, the Go service derives it from the tenant ID. */
     alias?: string;
 }
@@ -645,6 +667,7 @@ export interface SwapAliasResult {
 
 export interface ReindexViaBulkRequest {
     tenant_id: string;
+    backend?: ElasticsearchBackend;
     dry_run?: boolean;
 }
 
@@ -668,6 +691,7 @@ export interface ReindexViaBulkResult {
  */
 export interface ElasticsearchIndexStats {
     enabled: boolean;
+    backend?: ElasticsearchBackend;
     exists?: boolean;
     document_count?: number;
     size_in_bytes?: number;

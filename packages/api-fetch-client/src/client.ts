@@ -101,10 +101,9 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
         return request;
     }
 
-    async handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): Promise<T> {
+    handleFetchResponse(req: Request, res: Response): void {
         this.response = res; // store last response
         this.onResponse?.(res, req);
-        return super.handleResponse<T>(req, res, params);
     }
 
 }
@@ -130,6 +129,14 @@ export abstract class ApiTopic extends ClientBase {
 
     handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): T | Promise<T> {
         return this.client.handleResponse<T>(req, res, params);
+    }
+
+    handleFetchResponse(req: Request, res: Response): void {
+        this.client.handleFetchResponse(req, res);
+    }
+
+    getRetryPolicy() {
+        return this.client.getRetryPolicy();
     }
 
     get headers() {
