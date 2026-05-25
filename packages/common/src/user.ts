@@ -137,13 +137,6 @@ export interface AccountProjectsResponse {
     data: ProjectRef[];
 }
 
-export interface GoogleProjectTokenResponse {
-    principal: string;
-    token: string;
-}
-
-
-
 type UserOrApiKey<T extends User | ApiKey> = T extends User ? User : ApiKey;
 type SessionType<T extends User | ApiKey> = T extends User ? "user" : "apikey";
 export interface SessionInfo<T extends User | ApiKey> {
