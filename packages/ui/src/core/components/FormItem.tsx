@@ -81,7 +81,13 @@ export function FormItem({
             'aria-invalid': ariaInvalid,
         });
         wired = true;
-    } else if (process.env.NODE_ENV !== 'production' && !hasWarnedRef.current && (helpText || error || childrenId === undefined)) {
+        // typeof process guard: this code ships to browsers through the tsc-built
+        // `lib/esm/...` consumption path (see package.json `exports`), where Vite
+        // does NOT post-process `node_modules`. Without the guard, this branch
+        // would throw `ReferenceError: process is not defined` the first time a
+        // consumer renders a FormItem in an aria-unwireable shape. The dev warning
+        // still fires under Vitest / Storybook / SSR where `process` is defined.
+    } else if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production' && !hasWarnedRef.current && (helpText || error || childrenId === undefined)) {
         hasWarnedRef.current = true;
         // eslint-disable-next-line no-console
         console.warn(
