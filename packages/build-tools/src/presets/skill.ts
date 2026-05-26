@@ -79,7 +79,7 @@ const SkillFrontmatterSchema = z.object({
     execution: SkillExecutionFrontmatterSchema.optional(),
     input_schema: z.object({
         type: z.literal('object'),
-        properties: z.record(z.unknown()).optional(),
+        properties: z.record(z.string(), z.unknown()).optional(),
         required: z.array(z.string()).optional()
     }).optional(),
 
@@ -105,7 +105,7 @@ export const SkillDefinitionSchema = z.object({
     content_type: z.enum(['md', 'jst']),
     input_schema: z.object({
         type: z.literal('object'),
-        properties: z.record(z.unknown()).optional(),
+        properties: z.record(z.string(), z.unknown()).optional(),
         required: z.array(z.string()).optional()
     }).optional(),
     context_triggers: SkillContextTriggersSchema,
@@ -260,7 +260,7 @@ export const skillTransformer: TransformerPreset = {
         // Validate frontmatter first to catch unknown properties
         const frontmatterValidation = SkillFrontmatterSchema.safeParse(frontmatter);
         if (!frontmatterValidation.success) {
-            const errors = frontmatterValidation.error.errors
+            const errors = frontmatterValidation.error.issues
                 .map((err) => {
                     const pathStr = err.path.length > 0 ? err.path.join('.') : 'frontmatter';
                     return `  - ${pathStr}: ${err.message}`;
