@@ -194,7 +194,6 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             onResponse: opts.onResponse,
             retryPolicy: opts.retryPolicy,
             fetch: opts.fetch,
-            retryPolicy: opts.retryPolicy,
         });
 
         if (opts.retryPolicy) {
