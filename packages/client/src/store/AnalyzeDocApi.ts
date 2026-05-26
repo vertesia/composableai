@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase, type IRequestParams } from "@vertesia/api-fetch-client";
-import { AdaptedTable, AdaptTablesRequest, DocAnalyzerResultResponse, DocAnalyzeRunStatusResponse, DocImage, DocTableCsv, DocTableJson, ExportTableFormats, GetAdaptedTablesRequestQuery, PdfToRichtextOptions, WorkflowRunStatus } from "@vertesia/common";
+import { ApiTopic, type ClientBase, type IRequestParams } from "@vertesia/api-fetch-client";
+import type { AdaptedTable, AdaptTablesRequest, DocAnalyzerResultResponse, DocAnalyzeRunStatusResponse, DocImage, DocTableCsv, DocTableJson, ExportTableFormats, GetAdaptedTablesRequestQuery, PdfToRichtextOptions, WorkflowRunStatus } from "@vertesia/common";
 
 export class AnalyzeDocApi extends ApiTopic {
     constructor(parent: ClientBase, public objectId: string) {

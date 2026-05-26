@@ -1,5 +1,5 @@
-import { BaseObject } from "./common.js";
-import { ColumnLayout, ContentObjectTypeRef } from "./store.js";
+import type { BaseObject } from "./common.js";
+import type { ColumnLayout, ContentObjectTypeRef } from "./store.js";
 
 export enum CollectionStatus {
     active = "active",

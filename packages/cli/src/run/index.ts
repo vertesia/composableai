@@ -1,8 +1,8 @@
-import { Command } from "commander";
+import type { Command } from "commander";
 import { getClient } from "../client.js";
 import { Spinner } from "../utils/console.js";
 import { readFile, readStdin, writeFile } from "../utils/stdio.js";
-import { CliExecutionResult, ExecutionQueue, ExecutionRequest } from "./executor.js";
+import { type CliExecutionResult, ExecutionQueue, ExecutionRequest } from "./executor.js";
 import { errorMessage, type CliOptions } from "../utils/options.js";
 
 type RunInteractionOptions = CliOptions<{
@@ -46,14 +46,14 @@ export default async function runInteraction(program: Command, interactionSpec: 
         const client = await getClient(program);
 
         let count = options.count ? parseInt(options.count, 10) : 1;
-        if (isNaN(count) || count < 0) {
+        if (Number.isNaN(count) || count < 0) {
             count = 1;
         }
 
         const hasMultiOutputs = (Array.isArray(data) && data.length > 1) || count > 1;
         const totalSize = Array.isArray(data) ? data.length * count : count;
 
-        let onChunk: ((chunk: string) => void) | undefined = undefined;
+        let onChunk: ((chunk: string) => void) | undefined ;
         // TODO we can add an option --async to be able to force sync mode and use streaming for array data inputs?
         if (!hasMultiOutputs && options.stream) { // stream to stdout
             onChunk = (chunk) => {

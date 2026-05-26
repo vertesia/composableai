@@ -63,4 +63,4 @@ async function exampleGroupsUsage() {
 }
 
 // Run the example
-exampleGroupsUsage();
+void exampleGroupsUsage();

@@ -11,11 +11,11 @@ import {
     useToast,
     useTheme
 } from '@vertesia/ui/core';
-import { ContentObject, JSONSchema } from '@vertesia/common';
+import type { ContentObject, JSONSchema } from '@vertesia/common';
 import { useNavigate } from "@vertesia/ui/router";
 
 // Import Monaco Editor wrapper
-import { MonacoEditor, IEditorApi } from '@vertesia/ui/widgets';
+import { MonacoEditor, type IEditorApi } from '@vertesia/ui/widgets';
 
 // Import SaveVersionConfirmModal
 import { SaveVersionConfirmModal } from './SaveVersionConfirmModal';
@@ -61,7 +61,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
 
             // Try to fetch JSON schema if object has a type
             if (object.type?.id) {
-                fetchJsonSchema(object.type.id);
+                void fetchJsonSchema(object.type.id);
             }
         }
     }, [isOpen, object, fetchJsonSchema]);

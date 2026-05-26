@@ -1,8 +1,8 @@
 import type { JSONSchemaType } from "ajv";
-import { SupportedIntegrations } from "./integrations.js";
-import { ContentObjectTypeRef } from "./store/store.js";
-import { WorkflowRunStatus } from "./store/workflow.js";
-import { AccountRef } from "./user.js";
+import type { SupportedIntegrations } from "./integrations.js";
+import type { ContentObjectTypeRef } from "./store/store.js";
+import type { WorkflowRunStatus } from "./store/workflow.js";
+import type { AccountRef } from "./user.js";
 
 export interface ICreateProjectPayload {
     name: string;
@@ -264,6 +264,9 @@ export const BrowserUseProjectConfigurationSchema: JSONSchemaType<BrowserUseProj
 // Project Configuration
 // ==========================================
 
+export type ProjectSearchTier = "standard" | "performance";
+export type ElasticsearchBackend = "serverless" | "hosted";
+
 export interface ProjectConfiguration {
 
     human_context?: string;
@@ -301,6 +304,20 @@ export interface ProjectConfiguration {
          * Defaults to true - indexing is always on when ES infrastructure is available.
          */
         enabled?: boolean;
+
+        /**
+         * Search tier for this project.
+         * standard uses the regional hosted Elasticsearch deployment.
+         * performance uses the regional serverless Elasticsearch project.
+         * Defaults to standard when omitted.
+         */
+        search_tier?: ProjectSearchTier;
+
+        /**
+         * Elasticsearch backend override for this project.
+         * Prefer search_tier for project configuration unless an explicit backend override is needed.
+         */
+        backend?: ElasticsearchBackend;
     };
 
     /**
@@ -364,9 +381,6 @@ export interface ProjectConfigurationEmbeddingEnablePayload {
     max_tokens?: number;
     model?: string;
 }
-
-/** @deprecated Use ProjectConfigurationEmbedding for a single embedding configuration. */
-export type ProjectConfigurationEmbeddings = ProjectConfigurationEmbedding;
 
 export interface Project {
     id: string;
@@ -458,6 +472,22 @@ export interface IndexingStatusResponse {
         written: number;
         /** Documents that failed to index */
         errors: number;
+        /** Embedding vectors written to target index */
+        embeddings_written?: number;
+        /** Embedding vectors skipped because they were invalid or dimension-mismatched */
+        skipped_embeddings?: number;
+        /** Text embedding vectors written to target index */
+        embeddings_text_written?: number;
+        /** Image embedding vectors written to target index */
+        embeddings_image_written?: number;
+        /** Properties embedding vectors written to target index */
+        embeddings_properties_written?: number;
+        /** Text embedding vectors skipped because they were invalid or dimension-mismatched */
+        embeddings_text_skipped?: number;
+        /** Image embedding vectors skipped because they were invalid or dimension-mismatched */
+        embeddings_image_skipped?: number;
+        /** Properties embedding vectors skipped because they were invalid or dimension-mismatched */
+        embeddings_properties_skipped?: number;
         /** Documents processed per second */
         docs_per_second: number;
         /** Elapsed time in seconds */
@@ -479,6 +509,33 @@ export interface StartProjectReindexPayload {
     concurrency?: number;
     bulk_size_bytes?: number;
     bulk_concurrency?: number;
+}
+
+export interface ReindexAgentRunsPayload {
+    /**
+     * Drop any existing agent-runs index/alias family and recreate the stable concrete index before indexing.
+     * Defaults to true.
+     */
+    recreate_index?: boolean;
+    /** Number of MongoDB records to scan per batch. Defaults to 500. */
+    batch_size?: number;
+    /** Optional cap for partial/manual repair runs. Omit for all agent runs in the project. */
+    limit?: number;
+}
+
+export interface ReindexAgentRunsResponse {
+    status: string;
+    backend: ElasticsearchBackend;
+    index_name: string;
+    recreated: boolean;
+    total: number;
+    scanned: number;
+    indexed: number;
+    failed: number;
+    errors?: Array<{
+        id: string;
+        message: string;
+    }>;
 }
 
 // ============================================================================
@@ -526,6 +583,7 @@ export interface CreateReindexTargetResult {
     index_name: string;
     alias_name: string;
     version: number;
+    backend?: ElasticsearchBackend;
     dimensions?: {
         text?: number;
         image?: number;
@@ -584,6 +642,8 @@ export interface TriggerReindexResult {
 export interface ComputeShardsRequest {
     tenant_id: string;
     shard_size?: number;
+    updated_since?: string;
+    backend?: ElasticsearchBackend;
 }
 
 export interface ComputeShardsResult {
@@ -596,6 +656,7 @@ export interface IndexShardParams {
     target_index: string;
     shard_min: string;
     shard_max?: string;
+    backend?: ElasticsearchBackend;
     embedding_dimensions?: {
         text?: number;
         image?: number;
@@ -622,12 +683,26 @@ export interface IndexShardResult {
     written: number;
     skipped: number;
     errors: number;
+    embeddings_written?: number;
+    skipped_embeddings?: number;
+    embeddings_text_written?: number;
+    embeddings_image_written?: number;
+    embeddings_properties_written?: number;
+    embeddings_text_skipped?: number;
+    embeddings_image_skipped?: number;
+    embeddings_properties_skipped?: number;
     read_docs_s: string;
     write_docs_s: string;
     read_mb: string;
     write_mb: string;
+    mongo_read_mb?: string;
+    gcs_read_mb?: string;
+    es_bulk_mb?: string;
     read_mb_s: string;
     write_mb_s: string;
+    mongo_read_mb_s?: string;
+    gcs_read_mb_s?: string;
+    es_bulk_mb_s?: string;
     duration_sec: number;
     failed_projects?: Array<{ tenant: string; error: string }>;
 }
@@ -635,6 +710,7 @@ export interface IndexShardResult {
 export interface SwapAliasRequest {
     tenant_id: string;
     target_index: string;
+    backend?: ElasticsearchBackend;
     /** ES alias name. If not provided, the Go service derives it from the tenant ID. */
     alias?: string;
 }
@@ -648,6 +724,8 @@ export interface SwapAliasResult {
 
 export interface ReindexViaBulkRequest {
     tenant_id: string;
+    project_id?: string;
+    backend?: ElasticsearchBackend;
     dry_run?: boolean;
 }
 
@@ -659,10 +737,26 @@ export interface ReindexViaBulkResult {
     scanned: number;
     written: number;
     errors: number;
+    embeddings_written?: number;
+    skipped_embeddings?: number;
+    embeddings_text_written?: number;
+    embeddings_image_written?: number;
+    embeddings_properties_written?: number;
+    embeddings_text_skipped?: number;
+    embeddings_image_skipped?: number;
+    embeddings_properties_skipped?: number;
     read_docs_s: string;
     write_docs_s: string;
     read_mb: string;
     write_mb: string;
+    mongo_read_mb?: string;
+    gcs_read_mb?: string;
+    es_bulk_mb?: string;
+    read_mb_s?: string;
+    write_mb_s?: string;
+    mongo_read_mb_s?: string;
+    gcs_read_mb_s?: string;
+    es_bulk_mb_s?: string;
     duration_sec: number;
 }
 
@@ -671,6 +765,7 @@ export interface ReindexViaBulkResult {
  */
 export interface ElasticsearchIndexStats {
     enabled: boolean;
+    backend?: ElasticsearchBackend;
     exists?: boolean;
     document_count?: number;
     size_in_bytes?: number;

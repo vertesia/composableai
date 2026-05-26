@@ -1,4 +1,4 @@
-import { ComplexSearchPayload, ContentObjectItem, FindPayload } from "@vertesia/common";
+import type { ComplexSearchPayload, ContentObjectItem, FindPayload } from "@vertesia/common";
 import { errorMessage, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback } from "react";
@@ -245,7 +245,7 @@ export function useSmartFileUploadProcessing() {
                 description: errorMessage(error),
             });
             console.log("Error in file upload processing check", error);
-            throw new Error("Error in file upload processing check: " + errorMessage(error), { cause: error });
+            throw new Error(`Error in file upload processing check: ${errorMessage(error)}`, { cause: error });
         }
     }, [client, toast]);
 

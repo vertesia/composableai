@@ -88,8 +88,6 @@ export class HistoryNavigator {
     _popStateListener?: (ev: PopStateEvent) => void;
     _linkNavListener?: (ev: MouseEvent) => void;
     _listeners: ((event: LocationChangeEvent) => void)[] = [];
-    constructor() {
-    }
 
     addListener(listener: (event: LocationChangeEvent) => void) {
         this._listeners.push(listener);
@@ -125,7 +123,7 @@ export class HistoryNavigator {
         if (options.basePath) {
             let basePath = options.basePath;
             if (!basePath.startsWith('/')) {
-                basePath = '/' + basePath;
+                basePath = `/${basePath}`;
             }
             to = joinPath(basePath, to);
         }
@@ -147,7 +145,7 @@ export class HistoryNavigator {
             title: options.title || document.title
         };
 
-        window.history['replaceState'](stateToStore, '', to.href);
+        window.history.replaceState(stateToStore, '', to.href);
         this.fireLocationChange(new AfterLocationChangeEvent('popState', to, options.state));
     }
 
@@ -203,7 +201,7 @@ export class HistoryNavigator {
         const _popStateListener = (ev: PopStateEvent) => {
             let type: LocationChangeType;
             const to = new URL(window.location.href);
-            let state: unknown = undefined;
+            let state: unknown ;
             if (ev.state) {
                 type = 'popState';
                 state = ev.state.data;

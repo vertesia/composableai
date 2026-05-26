@@ -1,9 +1,9 @@
 import {
   MockActivityEnvironment,
 } from "@temporalio/testing";
-import { ApiVersions, ContentEventName, DSLActivityExecutionPayload, WebHookSpec } from "@vertesia/common";
+import { ApiVersions, ContentEventName, type DSLActivityExecutionPayload, type WebHookSpec } from "@vertesia/common";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { notifyWebhook, NotifyWebhookParams, NotifyWebhookResult, WebhookNotificationPayload } from "./notifyWebhook.js";
+import { notifyWebhook, type NotifyWebhookParams, type NotifyWebhookResult, type WebhookNotificationPayload } from "./notifyWebhook.js";
 
 // Mock fetch globally
 vi.stubGlobal('fetch', vi.fn());

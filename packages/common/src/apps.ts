@@ -1,6 +1,6 @@
-import { JSONObject, JSONSchema, ToolDefinition } from "@llumiverse/common";
-import { CatalogInteractionRef } from "./interaction.js";
-import { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from "./store/index.js";
+import type { JSONObject, JSONSchema, ToolDefinition } from "@llumiverse/common";
+import type { CatalogInteractionRef } from "./interaction.js";
+import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from "./store/index.js";
 
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ["default", "footer", "settings"] as const;

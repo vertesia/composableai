@@ -57,8 +57,7 @@ export function AppLayout({ sidebarClassName, className, title, children, logo, 
     }
 
     return (
-        <>
-            <div className='flex flex-col h-screen overflow-y-hidden'>
+        <div className='flex flex-col h-screen overflow-y-hidden'>
 
                 <SidebarContext.Provider value={sidebarContextValue}>
                     <div className='w-full'>
@@ -101,6 +100,5 @@ export function AppLayout({ sidebarClassName, className, title, children, logo, 
                     </div>
                 </SidebarContext.Provider>
             </div>
-        </>
     )
 }

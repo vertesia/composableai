@@ -11,6 +11,7 @@ import { AdminApp } from '../AdminApp.js';
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
+// biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
 const root = createRoot(document.getElementById('root')!);
 
 /**

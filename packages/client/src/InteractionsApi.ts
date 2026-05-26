@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase, ServerError } from "@vertesia/api-fetch-client";
+import type {
     AsyncExecutionPayload, AsyncExecutionResult, ComputeInteractionFacetPayload, ComputedFacetResponse, GenerateInteractionPayload, GenerateTestDataPayload, GeneratedInteractionDefinition, GeneratedTestDataRecord, ImprovePromptPayload,
     ImprovePromptPayloadConfig,
     Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery,
@@ -8,10 +8,10 @@ import {
     InteractionsExportPayload, InteractionTags, InteractionUpdatePayload, PromptImprovementResponse,
     RateLimitRequestPayload, RateLimitRequestResponse, ResolvedInteractionExecutionInfo
 } from "@vertesia/common";
-import { VertesiaClient } from "./client.js";
+import type { VertesiaClient } from "./client.js";
 import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
 import { InteractionCatalogApi } from "./InteractionCatalogApi.js";
-import { EnhancedInteractionExecutionResult, enhanceInteractionExecutionResult } from "./InteractionOutput.js";
+import { type EnhancedInteractionExecutionResult, enhanceInteractionExecutionResult } from "./InteractionOutput.js";
 
 function hasIdPayload(payload: unknown): payload is { id: string } {
     return !!payload && typeof payload === "object" && "id" in payload && typeof payload.id === "string";

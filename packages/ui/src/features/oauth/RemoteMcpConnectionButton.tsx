@@ -76,13 +76,13 @@ export function RemoteMcpConnectionButton({
     }, [client, appId, collectionId, providedAuthenticated]);
 
     useEffect(() => {
-        loadStatus();
+        void loadStatus();
     }, [loadStatus]);
 
     const { openOAuthPopup } = useOAuthPopup({
         onComplete: () => {
             setAuthenticating(false);
-            loadStatus();
+            void loadStatus();
             onAuthChange?.();
         },
         onError: (error) => {

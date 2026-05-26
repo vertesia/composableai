@@ -1,4 +1,4 @@
-import { JSX } from 'react';
+import type { JSX } from 'react';
 
 type JSONTableProps = {
 	data?: Record<string, unknown> | null;
@@ -36,6 +36,7 @@ function formatValue(value: unknown): JSX.Element | string {
 		return (
 			<>
 				{value.map((item, index) => (
+					// biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
 					<div className="flex gap-1" key={index}>
 						<span className="text-xs align-top pe-2 font-medium">{index + 1}:</span>
 						<span className="text-xs">{formatValue(item)}</span>

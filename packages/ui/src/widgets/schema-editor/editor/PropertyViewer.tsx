@@ -1,5 +1,5 @@
-import { DataViewerProps } from "./Editable.js";
-import { EditableSchemaProperty } from "./EditableSchemaProperty.js";
+import type { DataViewerProps } from "./Editable.js";
+import type { EditableSchemaProperty } from "./EditableSchemaProperty.js";
 
 export function PropertyViewer({ value }: DataViewerProps<EditableSchemaProperty>) {
     if (!value) return null;

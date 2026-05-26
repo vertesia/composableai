@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import type { Command } from "commander";
 import { downloadArtifact, getArtifactUrl, listArtifacts, uploadArtifact } from "./commands.js";
 
 export function registerArtifactsCommand(program: Command) {

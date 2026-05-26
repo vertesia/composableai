@@ -1,4 +1,4 @@
-import { EmailChannel, isEmailChannel, UserChannel } from "./interaction.js";
+import { type EmailChannel, isEmailChannel, type UserChannel } from "./interaction.js";
 
 /**
  * Find the email channel from a list of channels.

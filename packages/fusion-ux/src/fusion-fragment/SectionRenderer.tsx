@@ -97,6 +97,7 @@ function ChevronIcon({ collapsed }: { collapsed: boolean }): ReactElement {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      aria-hidden="true"
     >
       <polyline points="6 9 12 15 18 9" />
     </svg>
@@ -178,6 +179,7 @@ export function SectionRenderer({
   return (
     <div style={styles.section}>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: onClick is no-op when not collapsible; interactive role/keyboard only added when isCollapsible is true. */}
+      {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-expanded only emitted when role='button' is also set (both gated on isCollapsible). */}
       <div
         style={headerStyle}
         onClick={handleHeaderClick}

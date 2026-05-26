@@ -1,4 +1,4 @@
-import { SignupData, SignupPayload } from "@vertesia/common";
+import type { SignupData, SignupPayload } from "@vertesia/common";
 import { Button, useSafeLayoutEffect } from "@vertesia/ui/core";
 import { Env } from "@vertesia/ui/env";
 import { useUITranslation } from "@vertesia/ui/i18n";
@@ -34,7 +34,7 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
     return !isLoading && !user ? (
         <div
             style={{ zIndex: 999998 }}
-            className={(isNested ? "absolute" : "fixed") + "overflow-y-auto "}
+            className={`${isNested ? "absolute" : "fixed"}overflow-y-auto `}
         >
             <div
                 className={clsx(
@@ -101,7 +101,7 @@ function StandardSigninPanel({ authError, darkLogo, lightLogo, preservePath }: {
             signupData: data,
             firebaseToken: fbToken,
         };
-        fetch(Env.endpoints.studio + "/auth/signup", {
+        void fetch(`${Env.endpoints.studio}/auth/signup`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),

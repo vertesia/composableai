@@ -1,11 +1,11 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
 import {
     isWorkflowTerminalStatus,
-    RenderMarkdownPollOptions,
-    RenderMarkdownPayload,
-    RenderMarkdownStartResponse,
-    RenderMarkdownStatusResponse,
-    RenderMarkdownResponse,
+    type RenderMarkdownPollOptions,
+    type RenderMarkdownPayload,
+    type RenderMarkdownStartResponse,
+    type RenderMarkdownStatusResponse,
+    type RenderMarkdownResponse,
     WorkflowExecutionStatus,
 } from "@vertesia/common";
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { ComplexSearchQuery, ProjectConfiguration, SearchTypes, SupportedEmbeddingTypes } from '@vertesia/common';
+import { type ComplexSearchQuery, type ProjectConfiguration, SearchTypes, SupportedEmbeddingTypes } from '@vertesia/common';
 import { Button, Checkbox, Input, Label, Modal, ModalBody, ModalFooter, ModalTitle, NumberInput, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { Settings } from 'lucide-react';

@@ -1,5 +1,5 @@
 import { ApplicationFailure, log } from "@temporalio/activity";
-import {
+import type {
     DSLActivityExecutionPayload,
     RemoteActivityExecutionPayload,
     RemoteActivityExecutionResponse,
@@ -127,7 +127,7 @@ export async function executeRemoteActivity(
     try {
         responseJson = JSON.parse(responseText);
     } catch {
-        const preview = responseText.length > 200 ? responseText.slice(0, 200) + '...' : responseText;
+        const preview = responseText.length > 200 ? `${responseText.slice(0, 200)}...` : responseText;
         log.warn("Invalid JSON response from remote activity", {
             activity: activity_name, endpoint: url, runId, app_install_id,
             responsePreview: preview,

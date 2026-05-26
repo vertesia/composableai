@@ -6,7 +6,7 @@ import { TextElement } from '../../components/TextElement';
 import { ATTRIBUTE_CDATA, ATTRIBUTE_COMMENT, ATTRIBUTE_TEXT, DECLARATION_TAG } from '../../constants';
 import { useXMLViewerContext } from '../../context/xml-viewer-context';
 import { getIndentationString, getTagProps, isInlineTextElement } from '../../helpers';
-import { Element } from '../../types';
+import type { Element } from '../../types';
 
 export interface ElementsProps {
   elements: Element[];

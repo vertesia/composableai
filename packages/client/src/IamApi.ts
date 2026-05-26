@@ -1,5 +1,5 @@
-import { AccessControlEntry, ACECreatePayload, ACEUpdatePayload, AcesQueryOptions, DeleteByIdResult, PrincipalIdentity, RoleDefinition } from "@vertesia/common";
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import type { AccessControlEntry, ACECreatePayload, ACEUpdatePayload, AcesQueryOptions, DeleteByIdResult, PrincipalIdentity, RoleDefinition } from "@vertesia/common";
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
 import { GroupsApi } from "./GroupsApi.js";
 
 
@@ -75,7 +75,7 @@ export class AcesApi extends ApiTopic {
      * @returns InteractionResult
      **/
     retrieve(id: string): Promise<AccessControlEntry> {
-        return this.get('/' + id);
+        return this.get(`/${id}`);
     }
 
     create(payload: ACECreatePayload): Promise<AccessControlEntry> {
@@ -83,11 +83,11 @@ export class AcesApi extends ApiTopic {
     }
 
     update(id: string, payload: ACEUpdatePayload): Promise<AccessControlEntry> {
-        return this.put('/' + id, { payload })
+        return this.put(`/${id}`, { payload })
     }
 
     delete(id: string): Promise<DeleteByIdResult> {
-        return this.del('/' + id)
+        return this.del(`/${id}`)
     }
 
 }

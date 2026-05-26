@@ -28,6 +28,14 @@ export default class OAuthServerApi extends ClientBase {
         return this.parent.handleResponse<T>(req, res, params);
     }
 
+    handleFetchResponse(req: Request, res: Response): void {
+        this.parent.handleFetchResponse(req, res);
+    }
+
+    getRetryPolicy() {
+        return this.parent.getRetryPolicy();
+    }
+
     createAuthorizationRequest(payload: CreateOAuthAuthorizationRequestPayload): Promise<OAuthAuthorizationRequest> {
         return this.post('/requests', { payload });
     }

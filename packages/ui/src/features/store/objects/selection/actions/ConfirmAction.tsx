@@ -1,8 +1,8 @@
 import { ConfirmModal } from "@vertesia/ui/core";
 import { useCallback, useState } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { ObjectsActionCallback, useObjectsActionCallback } from '../ObjectsActionHooks';
-import { ObjectsActionParams, ObjectsActionSpec } from "../ObjectsActionSpec";
+import { type ObjectsActionCallback, useObjectsActionCallback } from '../ObjectsActionHooks';
+import type { ObjectsActionParams, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 interface ObjectsActionComponentProps {
     action: ObjectsActionSpec,
@@ -33,7 +33,7 @@ export default function ConfirmAction({ action, callback, children }: ObjectsAct
 
     const onConfirm = () => {
         setShowConfirmModal(false);
-        callback({ ...ctx.params, action });
+        void callback({ ...ctx.params, action });
     };
 
     return (

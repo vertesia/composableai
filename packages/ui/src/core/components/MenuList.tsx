@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { AnchorHTMLAttributes, forwardRef } from "react";
+import { type AnchorHTMLAttributes, forwardRef } from "react";
 
 interface MenuListProps {
     children: React.ReactNode | React.ReactNode[]

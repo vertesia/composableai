@@ -1,4 +1,4 @@
-import { BillingMethod } from "./user.js";
+import type { BillingMethod } from "./user.js";
 
 
 export interface MeterAdjustment {

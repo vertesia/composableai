@@ -1,6 +1,6 @@
-import { Permission, ProjectRoles } from "@vertesia/common"
+import type { Permission, ProjectRoles } from "@vertesia/common"
 import { ErrorBox, errorMessage, useFetch } from "@vertesia/ui/core"
-import { UserSession, useUserSession } from "@vertesia/ui/session"
+import { type UserSession, useUserSession } from "@vertesia/ui/session"
 import { createContext, useContext, useMemo } from "react"
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { isAnyOf } from "./helpers"

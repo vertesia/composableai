@@ -1,4 +1,4 @@
-import { computePosition, Constraints, Position } from "./position";
+import { computePosition, type Constraints, type Position } from "./position";
 import { computeVisibleClientRect, getScrollableParents } from "./utils";
 
 
@@ -65,7 +65,7 @@ export class PopupController {
             }
             // register in the next event loop cycle since the current one
             // is may be triggered by a click event
-            window.setTimeout(function () {
+            window.setTimeout(() => {
                 if (closeOnClick) document.addEventListener('click', closeOnClick);
             }, 0);
         }
@@ -76,7 +76,7 @@ export class PopupController {
                     this.tryClose();
                 }
             }
-            window.setTimeout(function () {
+            window.setTimeout(() => {
                 if (closeOnEsc) document.addEventListener('keydown', closeOnEsc);
             }, 0);
         }
@@ -159,13 +159,13 @@ export class PopupController {
         this.context.position = position || undefined;
         if (position) {
             if (position.constrainHeight) {
-                element.style.height = position.rect.height + 'px';
+                element.style.height = `${position.rect.height}px`;
             }
             if (position.constrainWidth) {
-                element.style.width = position.rect.width + 'px';
+                element.style.width = `${position.rect.width}px`;
             }
-            element.style.left = position.rect.left + 'px';
-            element.style.top = position.rect.top + 'px';
+            element.style.left = `${position.rect.left}px`;
+            element.style.top = `${position.rect.top}px`;
             element.style.visibility = "visible";
         }
     }

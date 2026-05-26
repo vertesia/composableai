@@ -1,29 +1,30 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bot, Cpu, FileTextIcon, SendIcon, UploadIcon, XIcon } from "lucide-react";
 import { useUserSession } from "@vertesia/ui/session";
 import {
-    ActiveWorkstreamEntry,
-    AgentMessage,
+    type ActiveWorkstreamEntry,
+    type AgentMessage,
     AgentMessageType,
-    AgentRun,
-    ConversationFile,
-    ConversationFileRef,
-    Plan,
-    UserInputSignal,
+    type AgentRun,
+    type ConversationFile,
+    type ConversationFileRef,
+    type Plan,
+    type UserInputSignal,
 } from "@vertesia/common";
 import { FusionFragmentProvider } from "@vertesia/fusion-ux";
 import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
-import { type AgentConversationViewMode } from "./ModernAgentOutput/AllMessagesMixed";
-import { type BatchProgressPanelClassNames } from "./ModernAgentOutput/BatchProgressPanel";
-import { type MessageItemClassNames } from "./ModernAgentOutput/MessageItem";
-import { type StreamingMessageClassNames } from "./ModernAgentOutput/StreamingMessage";
-import { type ToolCallGroupClassNames } from "./ModernAgentOutput/ToolCallGroup";
+import type { AgentConversationViewMode } from "./ModernAgentOutput/AllMessagesMixed";
+import type { BatchProgressPanelClassNames } from "./ModernAgentOutput/BatchProgressPanel";
+import type { MessageItemClassNames } from "./ModernAgentOutput/MessageItem";
+import type { StreamingMessageClassNames } from "./ModernAgentOutput/StreamingMessage";
+import type { ToolCallGroupClassNames } from "./ModernAgentOutput/ToolCallGroup";
 import { ImageLightboxProvider } from "./ImageLightbox";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
-import MessageInput, { UploadedFile, SelectedDocument } from "./ModernAgentOutput/MessageInput";
+import MessageInput, { type UploadedFile, type SelectedDocument } from "./ModernAgentOutput/MessageInput";
 import { getConversationUrl, getWorkstreamId } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
@@ -484,7 +485,7 @@ function StartWorkflowView({
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            startWorkflowWithMessage();
+            void startWorkflowWithMessage();
         }
         // Shift+Enter allows newline (default textarea behavior)
     };
@@ -599,6 +600,7 @@ function StartWorkflowView({
                         <div className="flex flex-wrap gap-2 mb-3">
                             {stagedFiles.map((file, index) => (
                                 <div
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                     key={`${file.name}-${index}`}
                                     className="flex items-center gap-1.5 px-2 py-1 bg-attention/10 text-attention rounded-md text-sm"
                                 >
@@ -1081,7 +1083,7 @@ function ModernAgentConversationInner({
             }
         };
 
-        fetchActiveWorkstreams();
+        void fetchActiveWorkstreams();
         const pollHandle = window.setInterval(fetchActiveWorkstreams, 10000);
 
         return () => {
@@ -1221,7 +1223,7 @@ function ModernAgentConversationInner({
 
         if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
             const filesArray = Array.from(e.dataTransfer.files);
-            handleFileUpload(filesArray);
+            void handleFileUpload(filesArray);
         }
     }, [handleFileUpload]);
 

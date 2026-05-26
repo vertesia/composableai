@@ -1,4 +1,4 @@
-import { ContentObjectStatus, DSLActivityExecutionPayload } from "@vertesia/common";
+import { ContentObjectStatus, type DSLActivityExecutionPayload } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { log } from "@temporalio/activity"
 

@@ -1,5 +1,5 @@
-import { spawn } from 'child_process';
-import { PassThrough } from 'stream';
+import { spawn } from 'node:child_process';
+import { PassThrough } from 'node:stream';
 
 export function manyToMarkdownFromBuffer(buffer: Buffer, fromFormat: string): Promise<string> {
   const input = new PassThrough();
@@ -14,22 +14,22 @@ export function manyToMarkdownFromBuffer(buffer: Buffer, fromFormat: string): Pr
 export function manyToMarkdown(input: NodeJS.ReadableStream, fromFormat: string): Promise<string> {
 
   return new Promise((resolve, reject) => {
-    let result: string[] = [];
+    const result: string[] = [];
 
     const command = spawn("pandoc", ["-t", "markdown", '-f', fromFormat], {
       stdio: 'pipe',
     });
     input.pipe(command.stdin);
 
-    command.stdout.on('data', function (data: string) {
+    command.stdout.on('data', (data: string) => {
       result.push(data.toString());
     });
-    command.on('exit', function (code) {
+    command.on('exit', (code) => {
       if (code) {
         reject(new Error(`pandoc exited with code ${code}`));
       }
     });
-    command.on('close', function (code) {
+    command.on('close', (code) => {
       if (code) {
         reject(new Error(`pandoc exited with code ${code}`));
       } else {

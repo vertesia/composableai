@@ -1,4 +1,4 @@
-import { AgentMessage } from "@vertesia/common";
+import type { AgentMessage } from "@vertesia/common";
 import { Button, cn } from "@vertesia/ui/core";
 import { CheckCircle, Clock } from "lucide-react";
 import { useUITranslation } from '@vertesia/ui/i18n';
@@ -81,8 +81,9 @@ export default function WorkstreamTabs({
           title={name.length > 20 ? name : undefined}
         >
           {/* Shorten long names for better UI */}
-          {name.length > 20 ? name.substring(0, 18) + "..." : name}
-          {count && count.has(id) && count.get(id)! > 0 && (
+          {name.length > 20 ? `${name.substring(0, 18)}...` : name}
+          {/* biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here */}
+          {count?.has(id) && count.get(id)! > 0 && (
             <div className="flex items-center space-x-1">
               <span
                 className={cn(

@@ -1,13 +1,13 @@
-import { Collection, ContentObjectTypeItem, DynamicCollection } from "@vertesia/common";
+import type { Collection, ContentObjectTypeItem, DynamicCollection } from "@vertesia/common";
 import { Button, MessageBox, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, Spinner, errorMessage, useToast, VTooltip } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useTypeRegistry } from "../../types/TypeRegistryProvider.js";
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from "lucide-react";
-import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { FileUploadAction, FileWithMetadata, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
-import { DocumentUploadResult } from "./useUploadHandler";
+import { FileUploadAction, type FileWithMetadata, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
+import type { DocumentUploadResult } from "./useUploadHandler";
 
 
 /**
@@ -221,7 +221,7 @@ export function DocumentUploadModal({
             // Set initial files if provided
             if (initialFiles && initialFiles.length > 0) {
                 setFiles(initialFiles);
-                processFiles(initialFiles);
+                void processFiles(initialFiles);
             } else {
                 setFiles([]);
             }
@@ -256,7 +256,7 @@ export function DocumentUploadModal({
     const handleFileSelect = (newFiles: File[]) => {
         if (newFiles && newFiles.length > 0) {
             setFiles(newFiles);
-            processFiles(newFiles);
+            void processFiles(newFiles);
         }
     };
 
@@ -371,7 +371,7 @@ export function DocumentUploadModal({
                                     },
                                     {
                                         createRevision: true,
-                                        revisionLabel: "upload on " + new Date().toISOString(),
+                                        revisionLabel: `upload on ${new Date().toISOString()}`,
                                     },
                                 );
 
@@ -581,9 +581,7 @@ export function DocumentUploadModal({
                     filterBy="name"
                     isClearable
                 />
-                {selectedType ? (
-                    <></>
-                ) : (
+                {!selectedType && (
                     <div className="p-2 rounded-md">
                         <div className="flex items-center text-attention">
                             <CheckCircleIcon className="size-4 me-1" />
@@ -735,6 +733,7 @@ export function DocumentUploadModal({
                     <div className="max-h-96 overflow-y-auto">
                         {fileStatuses.map((fileStatus, index) => (
                             <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                 key={`${fileStatus.file.name}-${index}`}
                                 className="flex items-center py-2 border-b border-border last:border-b-0"
                             >

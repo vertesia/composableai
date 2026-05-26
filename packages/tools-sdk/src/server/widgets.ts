@@ -1,6 +1,6 @@
-import { AppWidgetInfo } from "@vertesia/common";
-import { Hono } from "hono";
-import { ToolServerConfig } from "./types.js";
+import type { AppWidgetInfo } from "@vertesia/common";
+import type { Hono } from "hono";
+import type { ToolServerConfig } from "./types.js";
 
 
 export function createWidgetsRoute(app: Hono, basePath: string, config: ToolServerConfig) {

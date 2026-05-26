@@ -1,5 +1,5 @@
 import type { JSONObject } from "../json.js";
-import { WorkflowExecutionPayload, WorkflowRunStatus } from "./workflow.js";
+import type { WorkflowExecutionPayload, WorkflowRunStatus } from "./workflow.js";
 
 export interface PdfToRichtextOptions {
     features?: string[];

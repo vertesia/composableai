@@ -1,6 +1,6 @@
 import {
-    ActivityInterfaceFor,
-    ActivityOptions,
+    type ActivityInterfaceFor,
+    type ActivityOptions,
     CancellationScope,
     executeChild,
     isCancellation,
@@ -9,24 +9,24 @@ import {
     proxyActivities,
     sleep,
     startChild,
-    UntypedActivities,
+    type UntypedActivities,
 } from "@temporalio/workflow";
 import {
-    DSLActivityExecutionPayload,
-    DSLActivityOptions,
-    DSLActivitySpec,
-    DSLChildWorkflowStep,
-    DSLWorkflowExecutionPayload,
-    DSLWorkflowSpec,
+    type DSLActivityExecutionPayload,
+    type DSLActivityOptions,
+    type DSLActivitySpec,
+    type DSLChildWorkflowStep,
+    type DSLWorkflowExecutionPayload,
+    type DSLWorkflowSpec,
     getDocumentIds,
     getTenantId,
-    WorkflowExecutionPayload,
-    WorkflowInputFile
+    type WorkflowExecutionPayload,
+    type WorkflowInputFile
 } from "@vertesia/common";
-import ms, { StringValue } from 'ms';
-import { HandleDslErrorParams } from "../activities/handleError.js";
-import * as activities from "../activities/index.js";
-import { RateLimitParams } from "../activities/rateLimiter.js";
+import ms, { type StringValue } from 'ms';
+import type { HandleDslErrorParams } from "../activities/handleError.js";
+import type * as activities from "../activities/index.js";
+import type { RateLimitParams } from "../activities/rateLimiter.js";
 import { WF_NON_RETRYABLE_ERRORS, WorkflowParamNotFoundError } from "../errors.js";
 import { Vars } from "./vars.js";
 
@@ -400,7 +400,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
 
     const importParams = vars.createImportVars(activity.import);
     const executionPayload = dslActivityPayload(basePayload, activity, importParams);
-    log.debug("Executing activity: " + activity.name, { payload: executionPayload });
+    log.debug(`Executing activity: ${activity.name}`, { payload: executionPayload });
 
     let proxy = defaultProxy;
     if (activity.options) {
@@ -489,7 +489,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         //TODO execute in parallel
         log.debug("Parallel execution not yet implemented");
     } else {
-        log.debug("Executing activity: " + activity.name, { importParams });
+        log.debug(`Executing activity: ${activity.name}`, { importParams });
         const result = await fn(executionPayload);
         if (activity.output) {
             vars.setValue(activity.output, result);
@@ -516,7 +516,7 @@ function convertDSLActivityOptions(options?: DSLActivityOptions): ActivityOption
     if (!options) {
         return {};
     }
-    let result: ActivityOptions = {};
+    const result: ActivityOptions = {};
     if (options.startToCloseTimeout) {
         result.startToCloseTimeout = ms(options.startToCloseTimeout as StringValue);
     }

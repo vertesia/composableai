@@ -1,4 +1,4 @@
-//@ts-ignore
+//@ts-expect-error
 import { vars, exec, media, content, pdf } from "@vertesia/memory-commands";
 
 console.log('!!!!!!', vars);

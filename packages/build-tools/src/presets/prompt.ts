@@ -6,8 +6,8 @@
 import { z } from 'zod';
 import type { TransformerPreset } from '../types.js';
 import { parseFrontmatter } from '../parsers/frontmatter.js';
-import path from 'path';
-import { JSONSchema, TemplateType } from '@vertesia/common';
+import path from 'node:path';
+import { type JSONSchema, TemplateType } from '@vertesia/common';
 import { PromptRole } from '@llumiverse/common';
 
 /**
@@ -70,7 +70,7 @@ function normalizeSchemaPath(schemaPath: string): string {
 
     // Add './' prefix if not already a relative path
     if (!normalized.startsWith('.')) {
-        normalized = './' + normalized;
+        normalized = `./${normalized}`;
     }
 
     // Get the extension
@@ -78,10 +78,10 @@ function normalizeSchemaPath(schemaPath: string): string {
 
     if (ext === '.ts') {
         // Replace .ts with .js
-        normalized = normalized.slice(0, -3) + '.js';
+        normalized = `${normalized.slice(0, -3)}.js`;
     } else if (!ext) {
         // No extension, add .js
-        normalized = normalized + '.js';
+        normalized = `${normalized}.js`;
     }
     // If extension is already .js or something else, leave as is
 

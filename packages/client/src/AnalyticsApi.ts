@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { DateRangeQuery, RunsAnalyticsSummary, TokenUsageSummary } from "@vertesia/common";
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import type { DateRangeQuery, RunsAnalyticsSummary, TokenUsageSummary } from "@vertesia/common";
 
 export default class AnalyticsApi extends ApiTopic {
 
@@ -13,7 +13,7 @@ export default class AnalyticsApi extends ApiTopic {
         if (query?.end) params.set('end', query.end);
         if (environmentId) params.set('environment', environmentId);
         const qs = params.toString();
-        return this.get('/runs/summary' + (qs ? '?' + qs : ''));
+        return this.get(`/runs/summary${qs ? `?${qs}` : ''}`);
     }
 
     runsTimeSeries(query?: DateRangeQuery, environmentId?: string): Promise<Array<{ timestamp: Date; count: number }>> {
@@ -22,7 +22,7 @@ export default class AnalyticsApi extends ApiTopic {
         if (query?.end) params.set('end', query.end);
         if (environmentId) params.set('environment', environmentId);
         const qs = params.toString();
-        return this.get('/runs/time-series' + (qs ? '?' + qs : ''));
+        return this.get(`/runs/time-series${qs ? `?${qs}` : ''}`);
     }
 
     runsTokenUsage(query?: DateRangeQuery, environmentId?: string): Promise<TokenUsageSummary> {
@@ -31,7 +31,7 @@ export default class AnalyticsApi extends ApiTopic {
         if (query?.end) params.set('end', query.end);
         if (environmentId) params.set('environment', environmentId);
         const qs = params.toString();
-        return this.get('/runs/token-usage' + (qs ? '?' + qs : ''));
+        return this.get(`/runs/token-usage${qs ? `?${qs}` : ''}`);
     }
 
 }

@@ -32,7 +32,7 @@
 const SINGLE_LINE_DIRECTIVE = /^([ \t]*):::\s*(\w+)\s*(.*?)\s*:::[ \t]*$/gm;
 
 export function normalizeDirectives(markdown: string): string {
-    if (!markdown || !markdown.includes(':::')) {
+    if (!markdown?.includes(':::')) {
         return markdown;
     }
 

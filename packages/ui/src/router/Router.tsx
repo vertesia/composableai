@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect } from "react";
-import { HistoryNavigator, LocationChangeEvent, NavigateOptions } from "./HistoryNavigator";
-import { PathMatch, PathMatcher } from "./PathMatcher";
-import { isRootPath, joinPath, PathMatchParams } from "./path";
+import { HistoryNavigator, type LocationChangeEvent, type NavigateOptions } from "./HistoryNavigator";
+import { type PathMatch, PathMatcher } from "./PathMatcher";
+import { isRootPath, joinPath, type PathMatchParams } from "./path";
 
 export type RouteComponentProps = PathMatchParams;
 export type LazyRouteModule = { default: React.ComponentType<Record<string, never>> };
@@ -40,6 +40,7 @@ export abstract class BaseRouter {
 
     match(path: string): PathMatch<Route> | null {
         const useIndex = isRootPath(path) && this.index;
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         return this.matcher.match(useIndex ? this.index! : path);
     }
 
@@ -53,7 +54,7 @@ export class Router extends BaseRouter {
     constructor(routes: Route[], updateState: (route: RouteMatch | null) => void) {
         super(routes);
         this.navigator.addListener((event: LocationChangeEvent) => {
-            if (event.isCancelable && this.prompt && !!this.prompt.when) {
+            if (event.isCancelable && this.prompt?.when) {
                 if (!window.confirm(this.prompt.message)) return;
             }
             if (this.observer) {
@@ -62,7 +63,7 @@ export class Router extends BaseRouter {
             // only process afterChange events
             if (event.name === "afterChange") {
                 const match = this.match(event.location.pathname);
-                if (match && match.value) {
+                if (match?.value) {
                     updateState({
                         ...match,
                         state: event.state,
@@ -220,7 +221,7 @@ export function useNavigationPrompt(prompt: NavigationPrompt) {
     useEffect(() => {
         if (prompt.when) {
             const doBlock = prompt.when;
-            const listener = function (ev: Event) {
+            const listener = (ev: Event) => {
                 if (doBlock) {
                     ev.preventDefault();
                     (ev as BeforeUnloadEvent).returnValue = "";

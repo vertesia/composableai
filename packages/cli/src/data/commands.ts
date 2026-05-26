@@ -1,6 +1,6 @@
 import { NodeStreamSource } from "@vertesia/client/node";
-import { DataStoreItem, ImportDataFormat, ImportDataPayload, ImportTableData } from "@vertesia/common";
-import { Command } from "commander";
+import type { DataStoreItem, ImportDataFormat, ImportDataPayload, ImportTableData } from "@vertesia/common";
+import type { Command } from "commander";
 import mime from "mime";
 import { randomUUID } from "node:crypto";
 import { basename, resolve } from "node:path";

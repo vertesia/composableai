@@ -1,4 +1,4 @@
-import { FacetBucket } from '@vertesia/common';
+import type { FacetBucket } from '@vertesia/common';
 import { SelectBox } from '@vertesia/ui/core';
 import type { SearchInterface } from './SearchInterface';
 import { facetOptionLabel } from './utils';

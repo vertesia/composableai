@@ -79,7 +79,7 @@ What color is {{object}}?`;
 
     expect(result.imports).toBeDefined();
     expect(result.imports).toHaveLength(1);
-    expect(result.imports![0]).toContain("import __promptSchema from './schema.js'");
+    expect(result.imports?.[0]).toContain("import __promptSchema from './schema.js'");
     expect(result.code).toBeDefined();
     expect(result.code).toContain('schema: __promptSchema');
   });
@@ -93,7 +93,7 @@ What color is {{object}}?`;
 
     const result = await promptTransformer.transform(content, 'prompt.hbs');
 
-    expect(result.imports![0]).toContain("import __promptSchema from './schema.js'");
+    expect(result.imports?.[0]).toContain("import __promptSchema from './schema.js'");
   });
 
   it('should normalize schema path without ./ prefix', async () => {
@@ -105,7 +105,7 @@ What color is {{object}}?`;
 
     const result = await promptTransformer.transform(content, 'prompt.hbs');
 
-    expect(result.imports![0]).toContain("import __promptSchema from './schema.js'");
+    expect(result.imports?.[0]).toContain("import __promptSchema from './schema.js'");
   });
 
   it('should replace .ts with .js in schema path', async () => {
@@ -117,7 +117,7 @@ What color is {{object}}?`;
 
     const result = await promptTransformer.transform(content, 'prompt.hbs');
 
-    expect(result.imports![0]).toContain("import __promptSchema from './some/path/schema.js'");
+    expect(result.imports?.[0]).toContain("import __promptSchema from './some/path/schema.js'");
   });
 
   it('should validate against schema successfully', () => {

@@ -1,6 +1,6 @@
 import type { ExecutionResponse } from "@llumiverse/common";
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import type {
     ComputeRunFacetPayload,
     ExecutionRun,
     ExecutionRunRef,
@@ -15,8 +15,8 @@ import {
     ToolResultsPayload,
     UserMessagePayload,
 } from "@vertesia/common";
-import { VertesiaClient } from "./client.js";
-import { EnhancedExecutionRun, enhanceExecutionRun } from "./InteractionOutput.js";
+import type { VertesiaClient } from "./client.js";
+import { type EnhancedExecutionRun, enhanceExecutionRun } from "./InteractionOutput.js";
 
 export interface FilterOption {
     id: string;
@@ -67,12 +67,12 @@ export class RunsApi extends ApiTopic {
      * @returns InteractionResult
      **/
     async retrieve<ResultT = unknown, ParamsT = unknown>(id: string): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
-        const r = await this.get<ExecutionRun<ParamsT>>("/" + id);
+        const r = await this.get<ExecutionRun<ParamsT>>(`/${id}`);
         return enhanceExecutionRun<ResultT, ParamsT>(r);
     }
 
     retrievePopulated<P = unknown>(id: string): Promise<PopulatedExecutionRun<P>> {
-        return this.get("/" + id, {
+        return this.get(`/${id}`, {
             query: { populate: "true" },
         });
     }

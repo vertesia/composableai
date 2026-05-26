@@ -1,10 +1,10 @@
-import { existsSync, mkdirSync, statSync } from "fs";
+import { existsSync, mkdirSync, statSync } from "node:fs";
 import jwt from 'jsonwebtoken';
 import os from "node:os";
-import { join } from "path";
+import { join } from "node:path";
 import { readJsonFile, writeJsonFile } from "../utils/stdio.js";
 import { hasErrorCode } from "../utils/options.js";
-import { ConfigPayload, ConfigResult, startConfigSession } from "./server/index.js";
+import { type ConfigPayload, type ConfigResult, startConfigSession } from "./server/index.js";
 import type { OnResultCallback } from "./commands.js";
 import { canUseOAuthProfile, OAuthUnavailableError, startOAuthSession } from "./oauth.js";
 import { deleteAuthBundle, getAccessTokenExpiry, hasStoredAccessToken, isKeyringAvailable, readAuthBundle, readProfileAccessToken, writeAuthBundle } from "./keyring.js";
@@ -161,6 +161,7 @@ export class ConfigureProfile {
         if (!result) {
             return;
         }
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         const oldName = this.data.name!;
         const previousBundle = oldName ? readAuthBundle(oldName) : undefined;
         this.data.name = result.profile;
@@ -184,6 +185,7 @@ export class ConfigureProfile {
         this.config.remove(oldName);
         this.config.add(this.data as Profile);
         if (this.isNew) {
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             this.config.use(this.data.name!);
         }
         this.config.save();
@@ -214,6 +216,7 @@ export class ConfigureProfile {
 
     private async startLegacySession(signal?: AbortSignal) {
         await startConfigSession(
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             this.data.config_url!,
             this.getConfigPayload(),
             (result) => this.applyConfigResult(result, { logCompletion: true, exitOnComplete: true }),

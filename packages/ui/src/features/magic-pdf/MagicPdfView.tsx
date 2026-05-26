@@ -1,8 +1,8 @@
-import { ContentObject, DocumentMetadata } from "@vertesia/common";
+import type { ContentObject, DocumentMetadata } from "@vertesia/common";
 import { Button, ErrorBox, ResizableHandle, ResizablePanel, ResizablePanelGroup, errorMessage, useFetch } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { X } from "lucide-react";
-import { Component, ErrorInfo, ReactNode, useState } from "react";
+import { Component, type ErrorInfo, type ReactNode, useState } from "react";
 import { useUITranslation, i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { PdfPageSlider } from "../pdf-viewer/PdfPageSlider";
 import { AnnotatedImageSlider } from "./AnnotatedImageSlider";

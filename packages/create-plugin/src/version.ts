@@ -3,9 +3,9 @@
  *
  * Reads the CLI's own package.json to get version and templateVersions map.
  */
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -20,6 +20,7 @@ function readCliPackageJson(): CliPackageJson {
   if (_cached) return _cached;
   const pkgPath = path.resolve(__dirname, '..', 'package.json');
   _cached = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
   return _cached!;
 }
 

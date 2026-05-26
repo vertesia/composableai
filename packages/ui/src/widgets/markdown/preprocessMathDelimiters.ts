@@ -189,10 +189,8 @@ function processTextSegment(text: string): string {
 function processSkippingInlineCode(text: string): string {
     const parts: string[] = [];
     let lastIndex = 0;
-    let match: RegExpExecArray | null;
 
-    INLINE_CODE_REGEX.lastIndex = 0;
-    while ((match = INLINE_CODE_REGEX.exec(text)) !== null) {
+    for (const match of text.matchAll(INLINE_CODE_REGEX)) {
         parts.push(processTextSegment(text.slice(lastIndex, match.index)));
         parts.push(match[0]);
         lastIndex = match.index + match[0].length;
@@ -209,16 +207,14 @@ function processSkippingInlineCode(text: string): string {
  * Skips fenced code blocks and inline code spans.
  */
 export function preprocessMathDelimiters(markdown: string): string {
-    if (!markdown || !markdown.includes("$")) {
+    if (!markdown?.includes("$")) {
         return markdown;
     }
 
     const parts: string[] = [];
     let lastIndex = 0;
-    let match: RegExpExecArray | null;
 
-    FENCED_CODE_BLOCK_REGEX.lastIndex = 0;
-    while ((match = FENCED_CODE_BLOCK_REGEX.exec(markdown)) !== null) {
+    for (const match of markdown.matchAll(FENCED_CODE_BLOCK_REGEX)) {
         parts.push(processSkippingInlineCode(markdown.slice(lastIndex, match.index)));
         parts.push(match[0]);
         lastIndex = match.index + match[0].length;

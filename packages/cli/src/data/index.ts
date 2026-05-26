@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import type { Command } from "commander";
 import { importData, listDataStores } from "./commands.js";
 
 export function registerDataCommand(program: Command) {

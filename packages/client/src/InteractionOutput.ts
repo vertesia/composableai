@@ -1,5 +1,5 @@
-import { CompletionResult, JSONObject } from '@llumiverse/common';
-import { ExecutionRun, InteractionExecutionResult } from '@vertesia/common';
+import type { CompletionResult, JSONObject } from '@llumiverse/common';
+import type { ExecutionRun, InteractionExecutionResult } from '@vertesia/common';
 
 /**
  * Symbol used to mark InteractionOutputArray instances.

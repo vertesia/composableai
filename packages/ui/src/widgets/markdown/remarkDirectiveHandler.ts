@@ -52,7 +52,10 @@ export function remarkDirectiveHandler() {
             }
 
             const d = node as unknown as DirectiveNode;
-            const data = d.data || (d.data = {});
+            if (!d.data) {
+                d.data = {};
+            }
+            const data = d.data;
             const attrs = d.attributes || {};
             const name = d.name;
 

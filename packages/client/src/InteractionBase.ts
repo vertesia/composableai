@@ -1,5 +1,5 @@
-import { InteractionExecutionResult, InteractionUpdatePayload, InteractionExecutionPayload } from "@vertesia/common";
-import { VertesiaClient, VertesiaClientProps } from "./client.js";
+import type { InteractionExecutionResult, InteractionUpdatePayload, InteractionExecutionPayload } from "@vertesia/common";
+import { VertesiaClient, type VertesiaClientProps } from "./client.js";
 import { executeInteraction } from "./execute.js";
 
 export class InteractionBase<P = unknown> {

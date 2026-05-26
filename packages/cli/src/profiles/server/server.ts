@@ -1,4 +1,4 @@
-import { Server, createServer, ServerResponse, IncomingMessage } from 'http';
+import { type Server, createServer, type ServerResponse, type IncomingMessage } from 'node:http';
 
 export async function startServer(cb: (req: IncomingMessage, res: ServerResponse) => void): Promise<Server> {
     const server = createServer(cb);

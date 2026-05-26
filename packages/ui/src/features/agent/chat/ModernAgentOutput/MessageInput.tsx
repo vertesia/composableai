@@ -1,8 +1,9 @@
 import { Button, Spinner, Modal, ModalBody, ModalTitle, VTooltip, cn, Textarea } from "@vertesia/ui/core";
 import { Activity, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ContentObjectItem, ConversationFile, FileProcessingStatus } from "@vertesia/common";
-import { SelectDocument } from "../../../store";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { type ContentObjectItem, type ConversationFile, FileProcessingStatus } from "@vertesia/common";
+import { SelectDocument } from "../../../store/objects/components/SelectDocument";
 import { useUITranslation } from '@vertesia/ui/i18n';
 
 /** Represents an uploaded file attachment */

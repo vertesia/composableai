@@ -1,5 +1,6 @@
 import { TriangleAlert } from "lucide-react"
-import React, { useRef } from "react"
+import type React from "react"
+import { useRef } from "react"
 import { useUITranslation } from "@vertesia/ui/i18n"
 import { Modal, ModalTitle, ModalFooter } from "./dialog"
 import { Button } from "../button"

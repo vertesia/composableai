@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { EmailRouteData } from "@vertesia/common";
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import type { EmailRouteData } from "@vertesia/common";
 
 /**
  * Request payload for sending an email via the agent.

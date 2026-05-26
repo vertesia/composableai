@@ -144,6 +144,7 @@ export class TextractProcessor {
                                 for (const cellRel of cell.Relationships) {
                                     if (
                                         cellRel.Type === 'CHILD' &&
+                                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                                         cellRel.Ids?.includes(wordBlock.Id!)
                                     ) {
                                         return true;
@@ -263,12 +264,14 @@ export class TextractProcessor {
             FeatureTypes: ["TABLES"]
         });
         const response = await this.textractClient.send(command);
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         return response.JobId!;
     }
 
     async checkJobStatus(jobId: string): Promise<string> {
         const command = new GetDocumentAnalysisCommand({ JobId: jobId });
         const response = await this.textractClient.send(command);
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         return response.JobStatus!;
     }
 
@@ -348,6 +351,7 @@ export class TextractProcessor {
         // Create blocks map
         const blocksMap: BlocksMap = {};
         for (const block of allBlocks) {
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             blocksMap[block.Id!] = block;
         }
     
@@ -420,7 +424,7 @@ export class TextractProcessor {
                         // so you can strip it out if you want them truly "merged" into one paragraph:
                         const mergedText = formatted.replace(/^\s*\n/, " ");
     
-                        currentTextContent += " " + mergedText.trim();
+                        currentTextContent += ` ${mergedText.trim()}`;
                     } else {
                         // If there's an existing text block, push it
                         if (currentTextContent.trim().length > 0) {
@@ -437,7 +441,7 @@ export class TextractProcessor {
                 // IMAGES (if detectImages)
                 else if (this.detectImages) {
                     const geometry = block.Geometry?.BoundingBox;
-                    if (geometry && geometry.Width && geometry.Height) {
+                    if (geometry?.Width && geometry.Height) {
                         const imagePlaceholder = this.getImagePlaceholder(block);
                         if (imagePlaceholder) {
                             // If there's a pending text block, push it first

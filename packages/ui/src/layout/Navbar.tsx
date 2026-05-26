@@ -1,6 +1,6 @@
-import React from 'react'
+import type React from 'react'
 import { Menu, Search } from 'lucide-react'
-import { Button, HeroIcon } from '@vertesia/ui/core'
+import { Button, type HeroIcon } from '@vertesia/ui/core'
 import { useSidebarToggle } from './SidebarContext.js'
 import { TitleBar } from './TitleBar.js'
 import { useUITranslation } from '@vertesia/ui/i18n'
@@ -38,7 +38,7 @@ export function Navbar({ children, logo, onSearch, title }: NavbarProps) {
 interface SearchBoxProps {
     onSearch?: (query: string) => void
 }
-function SearchBox({ }: SearchBoxProps) {
+function SearchBox(_props: SearchBoxProps) {
     const { t } = useUITranslation();
     return (
         <form className="relative flex flex-1" action="#" method="GET">
@@ -71,12 +71,10 @@ export function HamburgerButton() {
         }
     }
     return (
-        <>
-            <Button variant='ghost' size='icon' onClick={() => toggle()} //alt='sidebar toggle'
+        <Button variant='ghost' size='icon' onClick={() => toggle()} //alt='sidebar toggle'
                 className="p-2 rounded-full transition-colors w-full text-center ">
                 <Menu aria-hidden="true" size={24} />
             </Button>
-        </>
     )
 }
 

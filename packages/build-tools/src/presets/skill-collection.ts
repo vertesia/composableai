@@ -62,8 +62,6 @@ export const skillCollectionTransformer: TransformerPreset = {
                     }
                 }
             } catch {
-                // Skip entries that can't be read
-                continue;
             }
         }
 

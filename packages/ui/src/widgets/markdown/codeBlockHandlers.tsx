@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import type React from 'react';
+import { useMemo } from 'react';
 import type { VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
-import { AskUserWidget, type AskUserWidgetProps } from '../../features/agent/chat/AskUserWidget';
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
 import { ArtifactContentRenderer, type ExpandRenderType, makeSvgResponsive, sanitizeSvg } from './ArtifactContentRenderer';
 import { useCodeBlockContext } from './CodeBlockContext';
@@ -13,7 +13,7 @@ import { useArtifactContent } from './useArtifactContent';
  * Check if JSON parsing failed due to incomplete content (streaming)
  * vs actually invalid JSON structure
  */
-function isIncompleteJson(code: string): boolean {
+export function isIncompleteJson(code: string): boolean {
     const trimmed = code.trim();
 
     // Empty or very short content is likely incomplete
@@ -242,95 +242,6 @@ export function MermaidCodeBlockHandler({ code }: CodeBlockRendererProps) {
 }
 
 /**
- * Proposal/AskUser code block handler
- */
-export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
-    const { onProposalSelect, onProposalSubmit } = useCodeBlockContext();
-
-    // Check if JSON is incomplete (streaming in progress)
-    const incomplete = useMemo(() => isIncompleteJson(code), [code]);
-
-    const widgetProps = useMemo((): AskUserWidgetProps | null => {
-        if (incomplete) return null;
-
-        try {
-            const raw = code.trim();
-            const spec = JSON.parse(raw) as ProposalSpec;
-
-            if (!spec.options || (!spec.question && !spec.title)) {
-                return null;
-            }
-
-            const props: AskUserWidgetProps = {
-                question: spec.question || spec.title || '',
-                description: spec.description,
-                options: Array.isArray(spec.options)
-                    ? spec.options.map((opt) => ({
-                        id: opt.id || opt.value || '',
-                        label: opt.label || '',
-                        description: opt.description,
-                    }))
-                    : undefined,
-                allowFreeResponse: spec.allowFreeResponse ?? spec.multiple,
-                variant: spec.variant,
-                onSelect: onProposalSelect,
-                onSubmit: onProposalSubmit,
-            };
-
-            if (!props.question || !props.options?.length) {
-                return null;
-            }
-
-            return props;
-        } catch {
-            return null;
-        }
-    }, [code, onProposalSelect, onProposalSubmit, incomplete]);
-
-    // Show loading placeholder for incomplete JSON (streaming)
-    if (incomplete) {
-        return (
-            <CodeBlockPlaceholder
-                type="proposal"
-                message="Loading options..."
-            />
-        );
-    }
-
-    if (!widgetProps) {
-        return (
-            <CodeBlockPlaceholder
-                type="proposal"
-                error="Invalid proposal specification"
-            />
-        );
-    }
-
-    return (
-        <CodeBlockErrorBoundary type="proposal" fallbackCode={code}>
-            <AskUserWidget {...widgetProps} />
-        </CodeBlockErrorBoundary>
-    );
-}
-
-interface ProposalOption {
-    id?: string;
-    value?: string;
-    label?: string;
-    description?: string;
-}
-
-interface ProposalSpec {
-    question?: string;
-    title?: string;
-    description?: string;
-    options?: ProposalOption[];
-    allowFreeResponse?: boolean;
-    multiple?: boolean;
-    variant?: AskUserWidgetProps["variant"];
-}
-
-/**
  * Mockup code block handler — renders inline SVG after sanitization.
  */
 export function MockupCodeBlockHandler({ code }: CodeBlockRendererProps) {
@@ -350,6 +261,7 @@ export function MockupCodeBlockHandler({ code }: CodeBlockRendererProps) {
         <CodeBlockErrorBoundary type="code" fallbackCode={code}>
             <div
                 style={{ margin: '16px 0', width: '100%', overflowX: 'auto' }}
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG content is processed/sanitized upstream for inline rendering
                 dangerouslySetInnerHTML={{ __html: processedSvg }}
             />
         </CodeBlockErrorBoundary>
@@ -479,8 +391,10 @@ export function createDefaultCodeBlockHandlers(): Record<
         mockup: MockupCodeBlockHandler,
         svg: MockupCodeBlockHandler,
 
-        // Proposal handlers
-        proposal: ProposalCodeBlockHandler,
-        askuser: ProposalCodeBlockHandler,
+        // Note: proposal/askuser handlers live in features/agent/chat
+        // (ProposalCodeBlockHandler.tsx). They're registered via
+        // SkillWidgetProvider/CodeBlockRendererProvider to keep
+        // widgets/markdown free of features/agent/chat imports (would
+        // create a runtime module cycle via MarkdownRenderer).
     };
 }

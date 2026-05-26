@@ -33,6 +33,7 @@ function ContentObjectRowImpl({ row, onAddFilter, onOpen }: ContentObjectRowProp
                         <InlineFilterButton
                             tooltip={row.typeFilterTooltip}
                             hoverClass="group-hover/type:opacity-100"
+                            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                             onClick={() => onAddFilter('type', row.typeId!, row.typeName)}
                         />
                     )}
@@ -45,6 +46,7 @@ function ContentObjectRowImpl({ row, onAddFilter, onOpen }: ContentObjectRowProp
                         <InlineFilterButton
                             tooltip={row.statusFilterTooltip}
                             hoverClass="group-hover/status:opacity-100"
+                            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                             onClick={() => onAddFilter('status', row.statusValue!, row.statusLabel)}
                         />
                     )}
