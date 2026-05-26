@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ComponentRoute, LazyComponentRoute, LazyRouteModule, useRouterContext } from "./Router";
+import { type ComponentRoute, type LazyComponentRoute, type LazyRouteModule, useRouterContext } from "./Router";
 
 interface RouteComponentProps {
     spinner?: React.ReactNode;
@@ -25,7 +25,7 @@ interface LazyRouteComponentProps {
 function LazyRouteComponent({ route, spinner }: LazyRouteComponentProps) {
     const [Component, setComponent] = useState<LazyRouteModule["default"] | null>(null);
     useEffect(() => {
-        route.LazyComponent().then(module => {
+        void route.LazyComponent().then(module => {
             if (!module.default) {
                 throw new Error(`Lazy module for ${route.path} does not have a default export`);
             }

@@ -1,7 +1,7 @@
-import { createContext, MutableRefObject, ReactNode, useContext, useEffect, useRef, useState } from "react";
+import { createContext, type RefObject, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { PopupController, PopupControllerOptions } from "./PopupController";
-import { Constraints } from "./position";
+import { PopupController, type PopupControllerOptions } from "./PopupController";
+import type { Constraints } from "./position";
 
 
 const PopupContext = createContext<PopupController | undefined>(undefined);
@@ -24,7 +24,7 @@ interface DOMPopupProps extends Omit<PopupControllerOptions, 'anchor' | 'popup' 
     className?: string;
     id?: string;
     children: ReactNode | ReactNode[];
-    ctrlRef?: MutableRefObject<PopupController | undefined>;
+    ctrlRef?: RefObject<PopupController | undefined>;
 }
 export function DOMPopup({ ctrlRef, id, constraints, isOpen, children, className, onClose, onOpen, zIndex, position, anchor, root, closeOnClick, closeOnEsc, blockPageScroll }: DOMPopupProps) {
     const popupRef = useRef<HTMLDivElement>(null);
@@ -96,6 +96,7 @@ export interface PopupProps extends Omit<DOMPopupProps, 'anchor' | 'root'> {
 }
 export function Popup({ anchor, root, children, ...others }: PopupProps) {
     return anchor.current && (!root || root.current) ? (
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         <DOMPopup anchor={anchor.current!} root={root?.current || undefined} {...others}>
             {children}
         </DOMPopup>

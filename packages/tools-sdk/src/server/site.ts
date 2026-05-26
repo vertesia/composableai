@@ -1,14 +1,15 @@
-import { Hono } from "hono";
+import type { Hono } from "hono";
 import {
     activityCollectionPage,
     contentTypeCollectionPage,
+    // biome-ignore lint/suspicious/noDeprecatedImports: index page is still served alongside the React site until that migration completes
     indexPage,
     interactionCollectionPage,
     skillCollectionPage,
     templateCollectionPage,
     toolCollectionPage
 } from "../site/templates.js";
-import { ToolServerConfig } from "./types.js";
+import type { ToolServerConfig } from "./types.js";
 
 
 export function createSiteRoute(app: Hono, basePath: string, config: ToolServerConfig) {

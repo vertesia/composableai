@@ -1,6 +1,6 @@
 import clsx from "clsx";
-import React, { ChangeEvent, InputHTMLAttributes, useState } from "react";
-import { ManagedProperty } from "./ManagedObject.js";
+import React, { type ChangeEvent, type InputHTMLAttributes, useState } from "react";
+import type { ManagedProperty } from "./ManagedObject.js";
 import { Styles } from "@vertesia/ui/core";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> {

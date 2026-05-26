@@ -43,16 +43,13 @@ program.command("upgrade")
 
 const projectsRoot = program.command("projects")
     .description("List the projects you have access to")
-    .action(() => {
-        listProjects(program);
-    });
+    .action(() => listProjects(program));
 
 projectsRoot.command("use [project]")
     .description("Switch the current profile to a project without running a browser OAuth flow")
     .option("-p, --project <project>", "The project ID to use")
-    .action((project: string | undefined, options: { project?: string }) => {
-        useProject(program, options.project || project);
-    });
+    .action((project: string | undefined, options: { project?: string }) =>
+        useProject(program, options.project || project));
 
 const authRoot = program.command("auth")
     .description("Manage authentication")
@@ -92,14 +89,12 @@ authRoot.command("refresh")
 
 program.command("envs [envId]")
     .description("List the environments you have access to")
-    .action((envId: string | undefined, options: Record<string, unknown>) => {
-        listEnvironments(program, envId, options);
-    })
+    .action((envId: string | undefined, options: Record<string, unknown>) =>
+        listEnvironments(program, envId, options));
 program.command("interactions [interaction]")
     .description("List the interactions available in the current project")
-    .action((interactionId: string | undefined, options: Record<string, unknown>) => {
-        listInteractions(program, interactionId, options);
-    })
+    .action((interactionId: string | undefined, options: Record<string, unknown>) =>
+        listInteractions(program, interactionId, options));
 program.command("run <interaction>")
     .description("Run an interaction by full name. The full name is composed by an optional namespace, a required endpoint name and an optional tag or version. Examples: name, namespace:name, namespace:name@version")
     .option('-i, --input [file]', 'The input data if any. If no file path is specified it will read from stdin')
@@ -137,9 +132,8 @@ program.command("runs [interactionId]")
     .option("-o, --output [file]", "The output file if any. If not specified it will print to stdout")
     .option("--before [date]", "Filter runs before the given date. The date must be in ISO format")
     .option("--after [date]", "Filter runs after the given date. The date must be in ISO format")
-    .action((interactionId: string | undefined, options: Record<string, unknown>) => {
-        runHistory(program, interactionId, options);
-    });
+    .action((interactionId: string | undefined, options: Record<string, unknown>) =>
+        runHistory(program, interactionId, options));
 
 registerAppsCommand(program);
 registerAgentsCommand(program);
@@ -149,25 +143,17 @@ registerIamCommand(program);
 
 const profilesRoot = program.command("profiles")
     .description("Manage configuration profiles")
-    .action(() => {
-        listProfiles();
-    });
+    .action(async () => { await listProfiles(); });
 
 profilesRoot.command('list')
     .description("List configuration profiles")
-    .action(() => {
-        listProfiles();
-    });
+    .action(async () => { await listProfiles(); });
 profilesRoot.command('show [name]')
     .description("Show the configured profiles or the profile with the given name")
-    .action((name?: string) => {
-        showProfile(name);
-    });
+    .action(async (name?: string) => { await showProfile(name); });
 profilesRoot.command('use [name]')
     .description("Switch to another configuration profile")
-    .action((name) => {
-        useProfile(name);
-    });
+    .action(async (name) => { await useProfile(name); });
 profilesRoot.command('add [name]')
     .alias('create')
     .option("-t, --target <env>", "The target environment for the profile. Possible values are: local, dev-main, dev-preview, preview, prod or a custom URL.")
@@ -182,14 +168,12 @@ profilesRoot.command('add [name]')
 profilesRoot.command('edit [name]')
     .alias('update')
     .description("Edit an existing configuration profile")
-    .action((name: string | undefined) => {
-        updateProfile(name);
-    });
+    .action(async (name: string | undefined) => { await updateProfile(name); });
 profilesRoot.command('refresh')
     .description("Refresh token for the current configuration profile")
     .option("-p, --project <project>", "Refresh the current profile token for the given project ID")
-    .action((options: { project?: string }) => {
-        updateCurrentProfile(undefined, undefined, options);
+    .action(async (options: { project?: string }) => {
+        await updateCurrentProfile(undefined, undefined, options);
     });
 profilesRoot.command('delete <name>')
     .description("delete an existing configuration profile")
@@ -213,6 +197,6 @@ program.parseAsync(process.argv).catch(err => {
 process.on("unhandledRejection", (err: unknown) => {
     if (hasStatus(err, 401)) { // token expired?
         console.error("ERROR", err);
-        tryRefreshToken();
+        void tryRefreshToken();
     }
 })

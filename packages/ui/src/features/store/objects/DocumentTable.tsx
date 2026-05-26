@@ -1,14 +1,14 @@
-import { ContentObjectItem } from "@vertesia/common";
+import type { ContentObjectItem } from "@vertesia/common";
 import { Spinner, useToast } from "@vertesia/ui/core";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { DropZone } from '@vertesia/ui/widgets';
 import clsx from "clsx";
-import { ChangeEvent, useMemo, useState } from "react";
-import { DocumentSelection, useOptionalDocumentSelection } from "./DocumentSelectionProvider";
-import { ExtendedColumnLayout, DocumentTableColumn } from "./layout/DocumentTableColumn";
+import { type ChangeEvent, useMemo, useState } from "react";
+import { type DocumentSelection, useOptionalDocumentSelection } from "./DocumentSelectionProvider";
+import { type ExtendedColumnLayout, DocumentTableColumn } from "./layout/DocumentTableColumn";
 import { DocumentGridView, DocumentTableView } from "./layout/documentLayout";
 import { useDocumentSearch } from "./search/DocumentSearchContext";
-import { FileWithMetadata, DocumentUploadModal, useSmartFileUploadProcessing } from "./upload";
+import { type FileWithMetadata, DocumentUploadModal, useSmartFileUploadProcessing } from "./upload";
 
 const defaultLayout: ExtendedColumnLayout[] = [
     { name: "ID", field: "id", type: "objectId?slice=-7" },
@@ -153,7 +153,7 @@ function ObjectTableWithDropZone({
                 collectionId,
             });
 
-            onUpload(filesToUpload, typeId, collectionId).finally(() => {
+            void onUpload(filesToUpload, typeId, collectionId).finally(() => {
                 setLoading(false);
                 search.search(); // Refresh the search results after upload
             });
@@ -205,7 +205,7 @@ function ObjectTableWithDropZone({
                             count: files.length,
                             message: `Preparing to upload ${files.length} file${files.length === 1 ? "" : "s"}...`,
                         };
-                        handleFileDrop(files, feedback);
+                        void handleFileDrop(files, feedback);
                     }
                 }
             }}
@@ -292,7 +292,7 @@ function ObjectTableWithDropZone({
                     setTypeSelectionOpen(false);
 
                     // Complete the upload process with type ID if successful
-                    if (result && result.success && result.objectIds.length > 0) {
+                    if (result?.success && result.objectIds.length > 0) {
                         // We don't have type information here, so pass null (process completed)
                         onDoUpload(null);
                     } else {

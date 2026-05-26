@@ -1,5 +1,5 @@
-import { ClientBase, FETCH_FN, IRequestParamsWithPayload } from "./base.js";
-import { RequestError } from "./errors.js";
+import { ClientBase, type FETCH_FN, type IRequestParamsWithPayload } from "./base.js";
+import type { RequestError } from "./errors.js";
 
 function isAuthorizationHeaderSet(headers: HeadersInit | undefined): boolean {
     if (!headers) return false;
@@ -92,7 +92,7 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
             init.headers = headers;
             const auth = await this._auth();
             if (auth) {
-                init.headers["authorization"] = auth;
+                init.headers.authorization = auth;
             }
         }
         this.response = undefined;
@@ -101,19 +101,14 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
         return request;
     }
 
-    async handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): Promise<T> {
+    handleFetchResponse(req: Request, res: Response): void {
         this.response = res; // store last response
         this.onResponse?.(res, req);
-        return super.handleResponse<T>(req, res, params);
     }
 
 }
 
 export class FetchClient extends AbstractFetchClient<FetchClient> {
-
-    constructor(baseUrl: string, fetchImpl?: FETCH_FN | Promise<FETCH_FN>) {
-        super(baseUrl, fetchImpl);
-    }
 
 }
 
@@ -134,6 +129,14 @@ export abstract class ApiTopic extends ClientBase {
 
     handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): T | Promise<T> {
         return this.client.handleResponse<T>(req, res, params);
+    }
+
+    handleFetchResponse(req: Request, res: Response): void {
+        this.client.handleFetchResponse(req, res);
+    }
+
+    getRetryPolicy() {
+        return this.client.getRetryPolicy();
     }
 
     get headers() {

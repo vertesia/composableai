@@ -1,4 +1,6 @@
-import { createParser, ReconnectInterval, type EventSourceParser, type ParsedEvent } from 'eventsource-parser'
+import { createParser, type EventSourceMessage, type EventSourceParser } from 'eventsource-parser'
+
+export type ParsedEvent = EventSourceMessage & { type: 'event' }
 
 /**
  * We copied this file from the eventsource-parser/stream package and made it a part of our project.
@@ -25,10 +27,11 @@ export class EventSourceParserStream extends TransformStream<string, ParsedEvent
 
         super({
             start(controller) {
-                parser = createParser((event: ParsedEvent | ReconnectInterval) => {
-                    if (event.type === 'event') {
-                        controller.enqueue(event)
-                    }
+                parser = createParser({
+                    onEvent(event) {
+                        const parsedEvent: ParsedEvent = { type: 'event', ...event }
+                        controller.enqueue(parsedEvent)
+                    },
                 })
             },
             transform(chunk) {

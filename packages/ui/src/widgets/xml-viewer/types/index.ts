@@ -1,4 +1,4 @@
-import { Theme } from '../components/types';
+import type { Theme } from '../components/types';
 import { ATTRIBUTE_TEXT } from '../constants';
 
 export interface ElementText {

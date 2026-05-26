@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState, type RefObject } from "react";
 
-import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, MarkdownRenditionFormat, PDF_RENDITION_NAME, Permission, WorkflowExecutionStatus } from "@vertesia/common";
+import { ContentNature, type ContentObject, ContentObjectStatus, type DocAnalyzerProgress, type DocProcessorOutputFormat, type DocumentMetadata, MarkdownRenditionFormat, PDF_RENDITION_NAME, Permission, WorkflowExecutionStatus } from "@vertesia/common";
 import { Button, Dropdown, MenuItem, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useFetch, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
@@ -190,8 +190,7 @@ export function ContentOverview({
     };
 
     return (
-        <>
-            <ResizablePanelGroup direction="horizontal" className='h-full'>
+        <ResizablePanelGroup direction="horizontal" className='h-full'>
                 <ResizablePanel className="min-w-[100px]">
                     <PropertiesPanel object={object} refetch={refetch ?? (() => Promise.resolve())} handleCopyContent={handleCopyContent} />
                 </ResizablePanel>
@@ -201,8 +200,6 @@ export function ContentOverview({
                     <DataPanel object={object} loadText={loadText ?? false} handleCopyContent={handleCopyContent} refetch={refetch} />
                 </ResizablePanel>
             </ResizablePanelGroup>
-
-        </>
     );
 }
 
@@ -550,7 +547,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     onSaved={() => {
                         setIsEditing(false);
                         reloadText();
-                        refetch?.();
+                        void refetch?.();
                     }}
                 />
             )}
@@ -578,8 +575,7 @@ function TextActions({
     const pdfTemplateObjectId = fullProject?.configuration?.pdf_template_object_id;
 
     const isMarkdown =
-        content &&
-        content.type &&
+        content?.type &&
         content.type === "text/markdown";
 
     // Get content processor type for file extension detection
@@ -643,8 +639,7 @@ function TextActions({
     };
 
     return (
-        <>
-            <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
+        <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
                 <div className="flex items-center gap-2">
                     {fullText && (
                         <>
@@ -709,7 +704,6 @@ function TextActions({
 
                 </div>
             </div>
-        </>
     );
 }
 
@@ -729,8 +723,7 @@ const TextPanel = memo(({
 
     // Check if content type is markdown or plain text
     const isMarkdownOrText =
-        content &&
-        content.type &&
+        content?.type &&
         (content.type === "text/markdown" || content.type === "text/plain");
 
     // Render as markdown if it's markdown/text type OR if text looks like markdown (but not if XML)
@@ -813,6 +806,7 @@ function TranscriptPanel({ object, handleCopyContent }: { object: ContentObject,
                 {segments && segments.length > 0 ? (
                     <div className="space-y-2">
                         {segments.map((segment, idx) => (
+                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                             <div key={idx} className="flex gap-3 text-sm">
                                 <span className="text-muted font-mono text-xs shrink-0 pt-0.5">
                                     {formatTimestamp(segment.start)}
@@ -994,7 +988,7 @@ function PdfProcessingPanel({ progress, status, outputFormat }: { progress?: Doc
     const isXmlProcessing = outputFormat === "xml";
 
     // Ensure percent is a valid number (handle undefined and NaN from division by zero)
-    const percent = progress?.percent != null && !isNaN(progress.percent) ? progress.percent : 0;
+    const percent = progress?.percent != null && !Number.isNaN(progress.percent) ? progress.percent : 0;
 
     return (
         <div className="px-4 py-4">

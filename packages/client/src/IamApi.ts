@@ -1,5 +1,5 @@
-import { AccessControlEntry, ACECreatePayload, ACEUpdatePayload, AcesQueryOptions, DeleteByIdResult, RoleDefinition } from "@vertesia/common";
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import type { AccessControlEntry, ACECreatePayload, ACEUpdatePayload, AcesQueryOptions, DeleteByIdResult, PrincipalIdentity, RoleDefinition } from "@vertesia/common";
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
 import { GroupsApi } from "./GroupsApi.js";
 
 
@@ -19,6 +19,17 @@ export class IamApi extends ApiTopic {
     aces = new AcesApi(this)
     roles = new RolesApi(this)
     groups = new GroupsApi(this)
+
+    /**
+     * Fetch the current user's principal identity — the id plus the merged
+     * ABAC principal context (clearance, compartments, email, tags, properties).
+     *
+     * Rejects with HTTP 400 if the caller is not a user principal
+     * (API keys, service accounts, etc. — they have no underlying user context).
+     */
+    getPrincipalIdentity(): Promise<PrincipalIdentity> {
+        return this.get('/users/identity');
+    }
 }
 
 export class RolesApi extends ApiTopic {
@@ -64,7 +75,7 @@ export class AcesApi extends ApiTopic {
      * @returns InteractionResult
      **/
     retrieve(id: string): Promise<AccessControlEntry> {
-        return this.get('/' + id);
+        return this.get(`/${id}`);
     }
 
     create(payload: ACECreatePayload): Promise<AccessControlEntry> {
@@ -72,11 +83,11 @@ export class AcesApi extends ApiTopic {
     }
 
     update(id: string, payload: ACEUpdatePayload): Promise<AccessControlEntry> {
-        return this.put('/' + id, { payload })
+        return this.put(`/${id}`, { payload })
     }
 
     delete(id: string): Promise<DeleteByIdResult> {
-        return this.del('/' + id)
+        return this.del(`/${id}`)
     }
 
 }

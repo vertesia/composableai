@@ -627,6 +627,7 @@
   "user.failedToFetchUser": "Error al obtener el usuario",
   "user.groupId": "ID del grupo: {{id}}",
   "user.key": "Clave:",
+  "user.mcpServer": "Servidor MCP",
   "user.organizationId": "ID de la organización",
   "user.organizationRoles": "Roles en la organización",
   "user.privateKey": "Clave privada",

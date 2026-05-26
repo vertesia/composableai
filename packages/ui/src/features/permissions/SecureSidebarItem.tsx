@@ -1,5 +1,5 @@
-import { Permission } from "@vertesia/common";
-import { SidebarItem, SidebarItemProps } from "@vertesia/ui/layout";
+import type { Permission } from "@vertesia/common";
+import { SidebarItem, type SidebarItemProps } from "@vertesia/ui/layout";
 import { useUserPermissions } from "./UserPermissionsProvider";
 
 

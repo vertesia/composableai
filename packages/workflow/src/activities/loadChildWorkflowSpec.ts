@@ -1,4 +1,4 @@
-import { DSLActivityExecutionPayload, DSLWorkflowSpec, withDSLWorkflowSpecDiscriminator } from '@vertesia/common';
+import { type DSLActivityExecutionPayload, type DSLWorkflowSpec, withDSLWorkflowSpecDiscriminator } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 
 export interface LoadChildWorkflowSpecParams {

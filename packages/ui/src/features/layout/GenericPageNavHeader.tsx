@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { JSX, ReactElement, ReactNode } from 'react';
+import type { JSX, ReactElement, ReactNode } from 'react';
 
 import { ChevronRight, Info } from 'lucide-react';
 import { VTooltip, Breadcrumbs } from '@vertesia/ui/core';
@@ -87,7 +87,7 @@ export function GenericPageNavHeader({ className, children, title, description, 
                 const segments = window.location.pathname.split('/').filter(s => s.length > 0);
                 for (let i = 0; i < segments.length; i++) {
                     if (isIdSegment(segments[i])) {
-                        const parentPath = '/' + segments.slice(0, i).join('/');
+                        const parentPath = `/${segments.slice(0, i).join('/')}`;
                         items.push({
                             label: formatTitle(segments[i - 1] || parentPath),
                             href: parentPath,
@@ -150,7 +150,7 @@ export function GenericPageNavHeader({ className, children, title, description, 
                         )
                     }
                 </div>
-                <div className="flex gap-x-2 shrink-0">{actions}</div>
+                <div className="flex gap-x-2 shrink-0 items-center">{actions}</div>
             </div>
             {children && <div className="w-full flex items-center">{children}</div>}
         </div>

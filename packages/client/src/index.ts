@@ -1,4 +1,4 @@
-import type { AsyncExecutionResult, ComputedFacetResponse } from '@vertesia/common';
+import type { AsyncExecutionResult } from '@vertesia/common';
 
 export type { OrphanedAppInstallation } from "@vertesia/common";
 export * from './client.js';
@@ -12,8 +12,6 @@ export { default as OAuthServerApi } from './OAuthServerApi.js';
 export { default as RemoteMcpConnectionsApi } from './RemoteMcpConnectionsApi.js';
 export { default as SecretsApi } from './SecretsApi.js';
 export type { AsyncExecutionResult };
-/** @deprecated Use `ComputedFacetResponse` from `@vertesia/common`. */
-export type ComputeInteractionFacetsResponse = ComputedFacetResponse;
 export type { ComputePromptFacetsResponse, ListInteractionsResponse } from './PromptsApi.js';
 export type { ComputeRunFacetsResponse, FilterOption } from './RunsApi.js';
 export * from "./store/index.js";

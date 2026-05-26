@@ -1,6 +1,6 @@
 
-import { Resource, Router } from "@koa-stack/router";
-import { Context } from "koa";
+import { Resource, type Router } from "@koa-stack/router";
+import type { Context } from "koa";
 
 export default class Endpoints extends Resource {
 

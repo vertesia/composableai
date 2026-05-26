@@ -1,4 +1,4 @@
-import { Context, Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -8,8 +8,8 @@ import { createMcpRoute } from "./server/mcp.js";
 import { createSiteRoute } from "./server/site.js";
 import { createSkillsRoute } from "./server/skills.js";
 import { createToolsRoute } from "./server/tools.js";
-import { ToolContext, ToolServerConfig } from "./server/types.js";
-import { ToolExecutionPayload } from "./types.js";
+import type { ToolContext, ToolServerConfig } from "./server/types.js";
+import type { ToolExecutionPayload } from "./types.js";
 import { createTemplatesRoute } from "./server/templates.js";
 import { createWidgetsRoute } from "./server/widgets.js";
 import { createPackageRoute } from "./server/app-package.js";
@@ -163,7 +163,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
  * @deprecated Use tools server template 
  */
 export function createDevServer(config: ToolServerConfig & {
-    staticHandler?: (c: Context, next: () => Promise<void>) => Promise<Response | void>;
+    staticHandler?: (c: Context, next: () => Promise<void>) => Promise<Response | undefined>;
 }): Hono {
     const app = createToolServer(config);
 

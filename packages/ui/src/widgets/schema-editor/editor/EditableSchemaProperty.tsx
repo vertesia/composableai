@@ -1,4 +1,4 @@
-import { SchemaNode } from "../ManagedSchema.js";
+import type { SchemaNode } from "../ManagedSchema.js";
 
 export interface EditableSchemaProperty {
     name: string;

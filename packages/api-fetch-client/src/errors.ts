@@ -16,14 +16,14 @@ function getDetails(payload: unknown): unknown {
 function createMessage(message: string, request: Request, status: number, payload: unknown, displayDetails: boolean) {
     let msg = message;
     if (displayDetails) {
-        msg += '\nRequest: ' + request.method + ' ' + request.url + ' => ' + status;
+        msg += `\nRequest: ${request.method} ${request.url} => ${status}`;
         const details = getDetails(payload);
         if (details) {
             const detailsType = typeof details;
             if (detailsType === 'string') {
-                msg += '\nDetails: ' + details;
+                msg += `\nDetails: ${details}`;
             } else if (detailsType === "object") {
-                msg += '\nDetails: ' + JSON.stringify(details, undefined, 2);
+                msg += `\nDetails: ${JSON.stringify(details, undefined, 2)}`;
             }
         }
         msg += '\nStack Trace: ';
@@ -44,7 +44,7 @@ export class RequestError extends Error {
         this.request = request;
         this.status = status;
         this.payload = payload;
-        this.request_info = request.method + ' ' + request.url + ' => ' + status;
+        this.request_info = `${request.method} ${request.url} => ${status}`;
         this.displayDetails = displayDetails;
     }
 
@@ -71,6 +71,6 @@ export class ServerError extends RequestError {
 
 export class ConnectionError extends RequestError {
     constructor(req: Request, err: Error) {
-        super("Failed to connect to server: " + err.message, req, 0, err);
+        super(`Failed to connect to server: ${err.message}`, req, 0, err);
     }
 }

@@ -12,13 +12,13 @@
  * (workflowId, runId) are internal server concerns.
  */
 
-import { AgentSearchScope, ConversationVisibility, InteractionExecutionConfiguration, InteractionRef, RunSource } from "../interaction.js";
-import { UserChannel } from "../email.js";
-import { AgentEvent } from "../workflow-analytics.js";
-import { UserInputSignal } from "./signals.js";
-import { ContentObjectTypeRef } from "./store.js";
-import { ProcessDefinitionBody, ProcessState } from "./process.js";
-import { AgentMessage, CompactMessage, ConversationActivityState, ConversationFileRef, WorkflowRunEvent } from "./workflow.js";
+import type { AgentSearchScope, ConversationVisibility, InteractionExecutionConfiguration, InteractionRef, RunSource } from "../interaction.js";
+import type { UserChannel } from "../email.js";
+import type { AgentEvent } from "../workflow-analytics.js";
+import type { UserInputSignal } from "./signals.js";
+import type { ContentObjectTypeRef } from "./store.js";
+import type { ProcessDefinitionBody, ProcessState } from "./process.js";
+import type { AgentMessage, CompactMessage, ConversationActivityState, ConversationFileRef, WorkflowRunEvent } from "./workflow.js";
 
 /**
  * Status of an agent run through its lifecycle.

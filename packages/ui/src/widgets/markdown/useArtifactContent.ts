@@ -207,7 +207,7 @@ export function useArtifactContent<T = unknown>({
     }, [runId, path, parseJson]);
 
     useEffect(() => {
-        fetchContent();
+        void fetchContent();
     }, [fetchContent]);
 
     const retry = useCallback(() => {

@@ -1,5 +1,5 @@
-import { AnyAuthClient, GoogleAuth } from "google-auth-library";
-import { VertesiaClient } from "@vertesia/client";
+import { type AnyAuthClient, GoogleAuth } from "google-auth-library";
+import type { VertesiaClient } from "@vertesia/client";
 import { delay, getProviderUrl } from "./common.js";
 import { SupportedProviders } from "@vertesia/common";
 

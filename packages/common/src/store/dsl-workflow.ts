@@ -1,8 +1,8 @@
-import { StringValue } from "ms";
-import { ToolExecutionMetadata } from "../tool-execution.js";
-import { BaseObject } from "./common.js";
-import { WorkflowExecutionPayload } from "./index.js";
-import { ParentClosePolicyType } from "./temporalio.js";
+import type { StringValue } from "ms";
+import type { ToolExecutionMetadata } from "../tool-execution.js";
+import type { BaseObject } from "./common.js";
+import type { WorkflowExecutionPayload } from "./index.js";
+import type { ParentClosePolicyType } from "./temporalio.js";
 
 export type DurationValue = StringValue | number;
 

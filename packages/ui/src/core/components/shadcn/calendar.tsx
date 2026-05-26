@@ -1,4 +1,4 @@
-import * as React from "react"
+import type * as React from "react"
 import DatePicker from "react-date-picker"
 
 export type CalendarProps = React.ComponentProps<typeof DatePicker> & {

@@ -2,7 +2,7 @@ import {
     createContext,
     useContext,
     type Dispatch,
-    type MutableRefObject,
+    type RefObject,
     type SetStateAction,
 } from 'react';
 import type { Filter } from '@vertesia/ui/core';
@@ -30,7 +30,7 @@ export interface ContentObjectsListStateValue {
     refetch: () => Promise<unknown>;
 
     // Scroll position (preserved across list/detail navigation)
-    scrollTopRef: MutableRefObject<number>;
+    scrollTopRef: RefObject<number>;
 }
 
 export const ContentObjectsListStateContext = createContext<

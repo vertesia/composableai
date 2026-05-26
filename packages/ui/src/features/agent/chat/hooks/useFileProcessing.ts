@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { VertesiaClient } from '@vertesia/client';
+import type { VertesiaClient } from '@vertesia/client';
 import {
-    ConversationFile,
-    ConversationFileRef,
+    type ConversationFile,
+    type ConversationFileRef,
     FileProcessingStatus,
 } from '@vertesia/common';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 
 import { cn } from "../libs/utils";
@@ -126,7 +126,7 @@ const Tabs = ({
     if (updateHash && !current) {
       // Preserve existing history state when changing hash
       const currentState = window.history.state;
-      const newUrl = window.location.pathname + window.location.search + '#' + newValue;
+      const newUrl = `${window.location.pathname + window.location.search}#${newValue}`;
       window.history.pushState(currentState, '', newUrl);
     }
 

@@ -107,7 +107,7 @@ function createDevListener(server: ViteDevServer, entry: string) {
             const mod = await server.ssrLoadModule(entry);
             const app = mod.default as HonoApp;
             const requestListener = getRequestListener(app.fetch);
-            requestListener(req, res);
+            void requestListener(req, res);
         } catch (e) {
             next(e);
         }
@@ -137,7 +137,7 @@ function createPreviewListener(compiledEntry: string) {
             }
             const app = await appPromise;
             const requestListener = getRequestListener(app.fetch);
-            requestListener(req, res);
+            void requestListener(req, res);
         } catch (e) {
             next(e);
         }

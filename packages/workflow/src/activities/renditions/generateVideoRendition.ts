@@ -1,15 +1,15 @@
 import { log } from "@temporalio/activity";
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
-import { execFile as execFileCallback } from "child_process";
-import fs from "fs";
-import os from "os";
-import path from "path";
-import { promisify } from "util";
+import type { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
+import { execFile as execFileCallback } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError, WorkflowParamNotFoundError } from "../../errors.js";
 import { saveBlobToTempFile } from "../../utils/blobs.js";
 import {
-    ImageRenditionParams,
+    type ImageRenditionParams,
     uploadRenditionPages,
 } from "../../utils/renditions.js";
 
@@ -166,7 +166,6 @@ export async function generateVideoRendition(
     }
 
     if (
-        !inputObject.content.type ||
         !inputObject.content.type?.startsWith("video/")
     ) {
         log.error(
@@ -179,7 +178,7 @@ export async function generateVideoRendition(
     }
 
     //array of rendition files to upload
-    let renditionPages: string[] = [];
+    const renditionPages: string[] = [];
 
     const videoFile = await saveBlobToTempFile(
         client,

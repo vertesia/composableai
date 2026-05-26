@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { GenericCommandResponse } from "@vertesia/common";
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import type { GenericCommandResponse } from "@vertesia/common";
 
 
 /**

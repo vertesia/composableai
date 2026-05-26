@@ -1,6 +1,6 @@
 import { Attributes } from '../../components/Attributes';
 import { useXMLViewerContext } from '../../context/xml-viewer-context';
-import { AttributesObject } from '../../types';
+import type { AttributesObject } from '../../types';
 
 export interface DeclarationTagProps {
   indentation: string;

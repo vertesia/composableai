@@ -61,6 +61,7 @@ export function UploadResultCategory({
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
+                        aria-hidden="true"
                     >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
@@ -72,6 +73,7 @@ export function UploadResultCategory({
                     {items.length > 0 ? (
                         <ul className="space-y-1">
                             {items.map((item, index) => (
+                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                 <li key={index} className="text-sm py-1 px-2 rounded hover:bg-color-muted/10">
                                     {item}
                                 </li>

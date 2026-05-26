@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, statSync } from "fs";
+import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { afterAll, describe, expect, test } from "vitest";
 import { Builder } from "./Builder";
 import { loadMemoryPack, MEMORY_METADATA_ENTRY } from "./MemoryPack";

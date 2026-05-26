@@ -1,4 +1,4 @@
-import { basename, dirname, extname, join } from "path";
+import { basename, dirname, extname, join } from "node:path";
 
 /**
  * The path argument is the empty string when mapping streams or buffers not related to a file system file.
@@ -43,12 +43,13 @@ function buildPathRewrite(path: string, truncPath: (path: string) => string): Pa
     const parts: ((path: Path, index: number) => string)[] = [];
     let lastIndex = 0;
     for (const m of path.matchAll(RX_PARTS)) {
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         if (m.index! > lastIndex) {
             const literal = path.substring(lastIndex, m.index);
             parts.push(() => literal);
         }
         if (m[1]) { // %d/
-            parts.push((path: Path) => path.dirname ? path.dirname + '/' : '');
+            parts.push((path: Path) => path.dirname ? `${path.dirname}/` : '');
         } else if (m[2]) { // .?%e
             if (m[2][0] === '.') {
                 parts.push((path: Path) => path.extname || '');
@@ -78,6 +79,7 @@ function buildPathRewrite(path: string, truncPath: (path: string) => string): Pa
                 default: throw new Error(`Bug: should never happen`);
             }
         }
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         lastIndex = m.index! + m[0].length;
     }
     if (!parts.length) {

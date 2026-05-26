@@ -1,6 +1,6 @@
-import { ToolExecutionContext, ToolExecutionPayload } from "@vertesia/tools-sdk";
-import { type CalculatorParams } from "./schema.js";
-import { ToolResultContent } from "@vertesia/common";
+import type { ToolExecutionContext, ToolExecutionPayload } from "@vertesia/tools-sdk";
+import type { CalculatorParams } from "./schema.js";
+import type { ToolResultContent } from "@vertesia/common";
 
 
 /**
@@ -22,7 +22,7 @@ function evaluateExpression(expr: string): number {
     // Use Function constructor for safe evaluation (better than eval)
     try {
         const result = new Function(`'use strict'; return (${expr})`)();
-        if (typeof result !== 'number' || !isFinite(result)) {
+        if (typeof result !== 'number' || !Number.isFinite(result)) {
             throw new Error('Result is not a valid number');
         }
         return result;
@@ -36,7 +36,11 @@ export async function calculate(
     _context: ToolExecutionContext
 ): Promise<ToolResultContent> {
     try {
-        const { expression } = payload.tool_use.tool_input!;
+        const input = payload.tool_use.tool_input;
+        if (!input) {
+            throw new Error('Missing calculator input');
+        }
+        const { expression } = input;
         const result = evaluateExpression(expression);
 
         return {

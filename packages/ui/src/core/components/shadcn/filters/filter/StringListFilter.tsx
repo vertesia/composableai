@@ -1,7 +1,7 @@
-import { Dispatch, SetStateAction, useState } from "react";
+import { type Dispatch, type SetStateAction, useState } from "react";
 import { InputList } from "../../../InputList";
 import { Button } from "../../button";
-import { Filter, FilterGroup } from "../types";
+import type { Filter, FilterGroup } from "../types";
 
 interface StringListFilterProps {
   selectedView: string;

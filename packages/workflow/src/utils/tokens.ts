@@ -1,5 +1,5 @@
 
-import { TiktokenEncoding, get_encoding } from "tiktoken";
+import { type TiktokenEncoding, get_encoding } from "tiktoken";
 
 
 export type TruncateSpec = number | {

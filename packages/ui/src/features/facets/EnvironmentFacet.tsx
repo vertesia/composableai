@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { FacetBucket, FacetNameBucket } from '@vertesia/common';
+import type { FacetBucket, FacetNameBucket } from '@vertesia/common';
 import { SelectBox } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { facetOptionNameLabel } from './utils/utils';
@@ -39,7 +39,7 @@ export function EnvironmentFacet({ search, buckets, placeholder = "All Environme
                     name
                 }
             })
-            Promise.all(options).then(resolvedOptions => {
+            void Promise.all(options).then(resolvedOptions => {
                 resolvedOptions.sort((a, b) => a.name.localeCompare(b.name));
                 setOptions(resolvedOptions);
             });

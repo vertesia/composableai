@@ -1,8 +1,8 @@
-import { VertesiaClient } from "@vertesia/client";
-import crypto from "crypto";
-import { createWriteStream } from "fs";
-import { Readable } from "stream";
-import { pipeline } from "stream/promises";
+import type { VertesiaClient } from "@vertesia/client";
+import crypto from "node:crypto";
+import { createWriteStream } from "node:fs";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import tmp from "tmp";
 import { DocumentNotFoundError } from "../errors.js";
 
@@ -24,7 +24,7 @@ export async function fetchBlobAsStream(client: VertesiaClient, blobUri: string)
     }
 }
 export async function fetchBlobAsBuffer(client: VertesiaClient, blobUri: string): Promise<Buffer> {
-    let stream = await fetchBlobAsStream(client, blobUri);
+    const stream = await fetchBlobAsStream(client, blobUri);
     const buffers: Uint8Array[] = [];
     for await (const data of stream) {
         buffers.push(data);
@@ -49,7 +49,7 @@ async function saveBlobToFile(client: VertesiaClient, blobUri: string, toFile: s
 export async function saveBlobToTempFile(client: VertesiaClient, blobUri: string, fileExt?: string): Promise<string> {
     const tmpFile = tmp.fileSync({
         prefix: "vertesia-activity-",
-        postfix: fileExt ? "." + fileExt : "",
+        postfix: fileExt ? `.${fileExt}` : "",
     });
     await saveBlobToFile(client, blobUri, tmpFile.name);
     return tmpFile.name;

@@ -44,6 +44,35 @@ export interface WebsiteCredentialMetadata {
     expires_at?: string;
 }
 
+export interface WebsiteCredentialRecord {
+    id: string;
+    credential_ref: string;
+    project: string;
+    name: string;
+    websites: WebsiteCredentialWebsite[];
+    username?: string;
+    username_hint?: string;
+    username_secret_enabled: boolean;
+    properties?: Record<string, unknown>;
+    tags?: string[];
+    enabled?: boolean;
+    capabilities?: WebsiteCredentialCapability[];
+    notes?: string;
+    totp_metadata?: WebsiteCredentialTotpMetadata;
+    /**
+     * Optional ISO timestamp after which the credential is no longer usable.
+     * Expired credentials are hidden from lookup and cannot be filled.
+     */
+    expires_at?: string;
+    created_at?: string;
+    updated_at?: string;
+    has_username_secret: boolean;
+    has_password: boolean;
+    has_totp: boolean;
+    has_oauth: boolean;
+    password_hint?: string;
+}
+
 export interface WebsiteCredentialSecretInput {
     /**
      * Optional encrypted username. Prefer metadata.username unless the username itself is sensitive.
@@ -61,19 +90,6 @@ export interface WebsiteCredentialSecretInput {
         token_owner?: 'user' | 'project';
         token_ref?: string;
     };
-}
-
-export interface WebsiteCredentialRecord extends WebsiteCredentialMetadata {
-    id: string;
-    credential_ref: string;
-    project: string;
-    created_at?: string;
-    updated_at?: string;
-    has_username_secret: boolean;
-    has_password: boolean;
-    has_totp: boolean;
-    has_oauth: boolean;
-    password_hint?: string;
 }
 
 export interface CreateWebsiteCredentialRequest extends WebsiteCredentialMetadata {

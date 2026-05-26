@@ -3,8 +3,8 @@
  */
 import degit from 'degit';
 import chalk from 'chalk';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { config } from './configuration.js';
 
 /**
@@ -15,6 +15,7 @@ function extractTemplateDirName(repository: string): string {
   // Strip the #ref suffix if present
   const repoPath = repository.split('#')[0];
   // Last segment is the template directory name
+  // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
   return repoPath.split('/').pop()!;
 }
 

@@ -1,6 +1,6 @@
-import { Tool } from "@vertesia/tools-sdk";
+import type { Tool } from "@vertesia/tools-sdk";
 import { calculate } from "./calculator.js";
-import { CalculatorParams, Schema } from "./schema.js";
+import { type CalculatorParams, Schema } from "./schema.js";
 
 export const CalculatorTool = {
     name: "calculator",

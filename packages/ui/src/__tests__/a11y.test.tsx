@@ -175,6 +175,7 @@ describe('@vertesia/ui accessibility (axe)', () => {
     it('FormItem does NOT auto-wire a Fragment child (Fragment ignores cloned props)', async () => {
         const { container } = renderWithProviders(
             <FormItem label="Fragment example">
+                {/* biome-ignore lint/complexity/noUselessFragments: this is the SUT — the test verifies FormItem short-circuits when the child is a Fragment. */}
                 <>
                     <Input value="" onChange={() => undefined} clearable={false} />
                 </>

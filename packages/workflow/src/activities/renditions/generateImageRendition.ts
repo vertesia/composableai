@@ -1,10 +1,10 @@
 import { log } from "@temporalio/activity";
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
+import type { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError, WorkflowParamNotFoundError } from "../../errors.js";
 import { saveBlobToTempFile } from "../../utils/blobs.js";
 import {
-    ImageRenditionParams,
+    type ImageRenditionParams,
     uploadRenditionPages,
 } from "../../utils/renditions.js";
 
@@ -67,7 +67,6 @@ export async function generateImageRendition(
     }
 
     if (
-        !inputObject.content.type ||
         !inputObject.content.type?.startsWith("image/")
     ) {
         log.error(
@@ -80,7 +79,7 @@ export async function generateImageRendition(
     }
 
     //array of rendition files to upload
-    let renditionPages: string[] = [];
+    const renditionPages: string[] = [];
 
     const imageFile = await saveBlobToTempFile(
         client,
@@ -103,7 +102,7 @@ export async function generateImageRendition(
         params,
     );
 
-    if (!uploaded || !uploaded.length || !uploaded[0]) {
+    if (!uploaded?.length || !uploaded[0]) {
         log.error(`Failed to upload rendition for ${objectId}`, { uploaded });
         throw new Error(
             `Failed to upload rendition for ${objectId} - upload object is empty`,

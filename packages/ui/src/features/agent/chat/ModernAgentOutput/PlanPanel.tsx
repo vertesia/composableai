@@ -1,4 +1,4 @@
-import { Plan } from "@vertesia/common";
+import type { Plan } from "@vertesia/common";
 import { AlertCircle, CheckCircle, Circle, Clock } from "lucide-react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 
@@ -28,6 +28,7 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
                         // Determine task status - use task.status if available or lookup from workstream
                         let status: "pending" | "in_progress" | "completed" | "skipped" = task.status || "pending";
                         if (workstreamStatus.has(taskId)) {
+                            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                             status = workstreamStatus.get(taskId)!;
                         }
 
@@ -44,6 +45,7 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
                         }
 
                         return (
+                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                             <div key={index} className="flex items-start">
                                 <div className={`me-1.5 mt-0.5 ${statusColor}`}>
                                     <StatusIcon className="h-3.5 w-3.5" />

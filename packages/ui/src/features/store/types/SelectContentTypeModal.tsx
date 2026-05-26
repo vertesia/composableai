@@ -1,4 +1,4 @@
-import { useState, ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
     Button,
     Modal,
@@ -8,7 +8,7 @@ import {
     SelectBox,
     VTooltip,
 } from "@vertesia/ui/core";
-import { ContentObjectTypeItem } from "@vertesia/common";
+import type { ContentObjectTypeItem } from "@vertesia/common";
 import { useTypeRegistry } from "./TypeRegistryProvider.js";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { CheckCircleIcon, Info } from "lucide-react";

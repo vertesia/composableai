@@ -19,6 +19,7 @@ export function TextElement(props: TextElementProps) {
         .split('\n')
         .filter((element) => !!element.trim())
         .map((line, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
           <div key={`${index}`}>{`${indentation}${line.trim()}`}</div>
         ))}
     </div>

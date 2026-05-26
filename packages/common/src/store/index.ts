@@ -16,5 +16,4 @@ export * from "./store.js";
 export * from "./task.js";
 export * from "./rendering.js";
 export * from "./temporalio.js";
-export * from "./worker.js";
 export * from "./workflow.js";

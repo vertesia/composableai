@@ -1,7 +1,7 @@
 import { Button, Center, VTooltip } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp, Image, Loader2, Maximize, Minus, Plus, ScanSearch } from "lucide-react";
-import { useRef, KeyboardEvent, useState, useEffect, useCallback } from "react";
+import { useRef, type KeyboardEvent, useState, useEffect, useCallback } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { ImageType, useMagicPdfContext } from "./MagicPdfProvider";
 
@@ -128,7 +128,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
 
         // Start all loads in parallel - prioritized pages will update state first
         // since they're fetched first in the loadOrder
-        loadOrder.forEach(page => loadPage(page));
+        loadOrder.forEach(page => { void loadPage(page); });
 
         return () => {
             cancelled = true;
@@ -287,6 +287,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
             <div ref={scrollContainerRef} className='flex flex-col items-center gap-2 flex-1 overflow-y-auto px-2'>
                 {Array.from({ length: count }, (_, index) => (
                     <PageThumbnail
+                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                         key={index}
                         currentPage={currentPage}
                         pageNumber={index + 1}
@@ -459,7 +460,7 @@ function PageNavigator({ currentPage, totalPages, onChange }: PageNavigatorProps
 
     const handleSubmit = () => {
         const page = parseInt(inputValue, 10);
-        if (!isNaN(page) && page >= 1 && page <= totalPages) {
+        if (!Number.isNaN(page) && page >= 1 && page <= totalPages) {
             onChange(page);
         } else {
             // Reset to current page if invalid

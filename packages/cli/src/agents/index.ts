@@ -1,20 +1,20 @@
 import {
-    AgentMessage,
+    type AgentMessage,
     AgentMessageType,
-    AgentRunResponse,
-    CreateAgentRunPayload,
-    CreateProcessRunPayload,
-    InteractionExecutionConfiguration,
+    type AgentRunResponse,
+    type CreateAgentRunPayload,
+    type CreateProcessRunPayload,
+    type InteractionExecutionConfiguration,
     PROCESS_DEFINITION_FORMAT_VERSION,
-    ProcessDefinitionBody,
-    ProcessRun,
-    ProcessRunConfig,
-    ProcessRunType,
-    Task,
-    UserInputSignal,
+    type ProcessDefinitionBody,
+    type ProcessRun,
+    type ProcessRunConfig,
+    type ProcessRunType,
+    type Task,
+    type UserInputSignal,
 } from "@vertesia/common";
 import chalk from "chalk";
-import { Command } from "commander";
+import type { Command } from "commander";
 import { setTimeout as delay } from "node:timers/promises";
 import * as readline from "readline";
 import { registerArtifactsCommand } from "../artifacts/index.js";

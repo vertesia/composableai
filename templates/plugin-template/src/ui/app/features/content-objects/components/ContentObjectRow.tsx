@@ -11,6 +11,9 @@ interface ContentObjectRowProps {
 }
 
 function ContentObjectRowImpl({ row, onAddFilter, onOpen }: ContentObjectRowProps) {
+    const typeId = row.typeId;
+    const statusValue = row.statusValue;
+
     return (
         <tr
             className="cursor-pointer hover:bg-muted/50"
@@ -29,11 +32,11 @@ function ContentObjectRowImpl({ row, onAddFilter, onOpen }: ContentObjectRowProp
             <td className="group/type">
                 <div className="flex items-center justify-between gap-2">
                     <span>{row.typeName}</span>
-                    {row.typeId && row.typeFilterTooltip && (
+                    {typeId && row.typeFilterTooltip && (
                         <InlineFilterButton
                             tooltip={row.typeFilterTooltip}
                             hoverClass="group-hover/type:opacity-100"
-                            onClick={() => onAddFilter('type', row.typeId!, row.typeName)}
+                            onClick={() => onAddFilter('type', typeId, row.typeName)}
                         />
                     )}
                 </div>
@@ -41,11 +44,11 @@ function ContentObjectRowImpl({ row, onAddFilter, onOpen }: ContentObjectRowProp
             <td className="group/status">
                 <div className="flex items-center justify-between gap-2">
                     <Badge variant={row.statusVariant}>{row.statusLabel}</Badge>
-                    {row.statusValue && row.statusFilterTooltip && (
+                    {statusValue && row.statusFilterTooltip && (
                         <InlineFilterButton
                             tooltip={row.statusFilterTooltip}
                             hoverClass="group-hover/status:opacity-100"
-                            onClick={() => onAddFilter('status', row.statusValue!, row.statusLabel)}
+                            onClick={() => onAddFilter('status', statusValue, row.statusLabel)}
                         />
                     )}
                 </div>

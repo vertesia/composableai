@@ -1,8 +1,8 @@
 import { useUserSession } from "@vertesia/ui/session";
-import { VertesiaClient } from "@vertesia/client";
+import type { VertesiaClient } from "@vertesia/client";
 import {
-    ContentObject,
-    DocumentMetadata,
+    type ContentObject,
+    type DocumentMetadata,
     PDF_RENDITION_NAME,
 } from "@vertesia/common";
 import React, { createContext, useEffect, useState } from "react";
@@ -120,7 +120,7 @@ class PageLayoutProvider {
         const response = await this.client.files.getDownloadUrl(path);
         const result = await fetch(response.url, { method: "GET" });
         if (!result.ok) {
-            throw new Error("Failed to fetch json layout: " + result.statusText);
+            throw new Error(`Failed to fetch json layout: ${result.statusText}`);
         }
         return result.text();
     }
@@ -160,8 +160,7 @@ function extractMarkdownPages(content: string, totalPages: number): string[] {
 
     // Find all page markers and their positions
     const markers: { page: number; index: number }[] = [];
-    let match: RegExpExecArray | null;
-    while ((match = pageDelimiterRegex.exec(content)) !== null) {
+    for (const match of content.matchAll(pageDelimiterRegex)) {
         markers.push({
             page: parseInt(match[1], 10),
             index: match.index + match[0].length,
@@ -182,6 +181,7 @@ function extractMarkdownPages(content: string, totalPages: number): string[] {
         // Find the actual end by looking for the next delimiter or end of content
         const nextDelimiterMatch = content.slice(startIndex).match(/<!--\s*\{\s*"page"\s*:\s*\d+\s*\}\s*-->/);
         const actualEndIndex = nextDelimiterMatch
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             ? startIndex + nextDelimiterMatch.index!
             : content.length;
 
@@ -290,6 +290,7 @@ function extractXmlPages(xml: string): string[] {
 
 function cleanXml(xml: string) {
     const cleanedXML = xml
+        // biome-ignore lint/suspicious/noControlCharactersInRegex: deliberately stripping XML-illegal control characters
         .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
         .replace(/<\?xml.*?\?>/g, "");
     return cleanedXML;

@@ -55,3 +55,8 @@ export {
 
 // Utilities
 export { parseFrontmatter, type FrontmatterResult } from './parsers/frontmatter.js';
+export {
+    createRollupTypescript,
+    isRollupWatchMode,
+    type RollupTypescriptOptions
+} from './utils/rollup-typescript.js';

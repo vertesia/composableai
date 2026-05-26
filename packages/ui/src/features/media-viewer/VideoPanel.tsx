@@ -1,4 +1,4 @@
-import { ContentNature, ContentObject, POSTER_RENDITION_NAME, VideoMetadata } from "@vertesia/common";
+import { ContentNature, type ContentObject, POSTER_RENDITION_NAME, type VideoMetadata } from "@vertesia/common";
 import { Spinner } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";
@@ -78,7 +78,7 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
 
         if (source || object) {
             setIsLoading(true);
-            load();
+            void load();
         } else {
             setIsLoading(false);
         }
@@ -119,6 +119,7 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
     }
 
     return (
+        // biome-ignore lint/a11y/useMediaCaption: caption tracks are not authored for user-uploaded media; falls back to browser controls
         <video
             src={videoUrl}
             poster={posterUrl}

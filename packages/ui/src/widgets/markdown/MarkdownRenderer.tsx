@@ -10,16 +10,12 @@ import remarkMath from 'remark-math';
 import remarkSupersub from 'remark-supersub';
 import { SKIP, visit } from 'unist-util-visit';
 import { CodeBlockHandlerProvider } from './CodeBlockContext';
-import {
-    createDefaultCodeBlockHandlers,
-    ExpandCodeBlockHandler,
-    isExpandLanguage,
-} from './codeBlockHandlers';
+import { createDefaultCodeBlockHandlers, ExpandCodeBlockHandler, isExpandLanguage } from './codeBlockHandlers';
 import { useCodeBlockRendererRegistry } from './CodeBlockRendering';
 import { preprocessMathDelimiters } from './preprocessMathDelimiters';
 import { MarkdownFigure } from './MarkdownFigure';
-import { MarkdownImage, MarkdownImageProps } from './MarkdownImage';
-import { MarkdownLink, MarkdownLinkProps } from './MarkdownLink';
+import { MarkdownImage, type MarkdownImageProps } from './MarkdownImage';
+import { MarkdownLink, type MarkdownLinkProps } from './MarkdownLink';
 import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
 import { normalizeDirectives } from './normalizeDirectives';
 import { remarkDirectiveHandler } from './remarkDirectiveHandler';

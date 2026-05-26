@@ -221,7 +221,7 @@ async function generateTextEmbeddings(
     }
 
     // Count tokens if needed, do not rely on existing token count
-    let tokenCount: number | undefined = undefined;
+    let tokenCount: number | undefined ;
     if (type === SupportedEmbeddingTypes.text && document.text) {
         tokenCount = countTokens(document.text).count;
     }
@@ -289,7 +289,7 @@ async function generateImageEmbeddings({
     config,
     force,
 }: ExecuteGenerateEmbeddingsParams) {
-    log.debug("Generating image embeddings for document " + document.id, {
+    log.debug(`Generating image embeddings for document ${document.id}`, {
         content: document.content,
     });
     if (

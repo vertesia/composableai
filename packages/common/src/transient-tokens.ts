@@ -1,5 +1,5 @@
-import { ProjectRef, ProjectRoles } from "./project.js";
-import { AccountRef, UserRef } from "./user.js";
+import type { ProjectRef, ProjectRoles } from "./project.js";
+import type { AccountRef, UserRef } from "./user.js";
 
 
 export enum TransientTokenType {

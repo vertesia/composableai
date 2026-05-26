@@ -1,11 +1,11 @@
 import clsx from 'clsx';
-import { ChangeEvent, useCallback, useEffect, useState } from 'react';
+import { type ChangeEvent, useCallback, useEffect, useState } from 'react';
 
 import { useUserSession } from '@vertesia/ui/session';
-import { ContentObjectItem } from '@vertesia/common';
+import type { ContentObjectItem } from '@vertesia/common';
 import { ChevronsUpDown, X } from 'lucide-react';
 import { Button, Styles, useFlag } from '@vertesia/ui/core';
-import { Node } from '@vertesia/ui/widgets';
+import type { Node } from '@vertesia/ui/widgets';
 
 import { SelectDocumentModal } from './SelectDocumentModal';
 
@@ -36,7 +36,7 @@ export function DocumentInput({ object }: DocumentInputProps) {
 
     const onSelect = (value?: ContentObjectItem) => {
         if (value) {
-            const uri = "store:" + value.id;
+            const uri = `store:${value.id}`;
             setValue(uri);
             setDoc(value || undefined);
             object.value = uri;

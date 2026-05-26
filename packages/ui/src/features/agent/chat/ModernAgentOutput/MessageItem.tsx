@@ -1,11 +1,12 @@
-import { AgentMessage, AgentMessageType, AskUserMessageDetails, MarkdownRenditionFormat } from "@vertesia/common";
+import { type AgentMessage, AgentMessageType, type AskUserMessageDetails, MarkdownRenditionFormat } from "@vertesia/common";
 import { Badge, Button, cn, Dropdown, MenuItem, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, type LucideIcon, MessageSquare, RefreshCcw, User } from "lucide-react";
-import React, { useEffect, useState, useMemo, memo, useRef } from "react";
+import type React from "react";
+import { useEffect, useState, useMemo, memo, useRef } from "react";
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { AskUserWidget } from "../AskUserWidget";
@@ -13,7 +14,7 @@ import { useImageLightbox } from "../ImageLightbox";
 import { ThinkingMessages } from "../WaitingMessages";
 import { getWorkstreamId } from "./utils";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
-import { useDownloadFile } from "../../../store/index.js";
+import { useDownloadFile } from "../../../store/objects/components/useDownloadFile.js";
 
 // PERFORMANCE: Move pure function outside component to avoid recreation on every render
 // Process content to enhance markdown detection for lists and thinking messages
@@ -256,7 +257,7 @@ function MessageItemComponent({
                     ? JSON.stringify(message.details, null, 2)
                     : "";
 
-        const textToCopy = [content, detailsContent ? "\n\nDetails:\n" + detailsContent : ""].join("").trim();
+        const textToCopy = [content, detailsContent ? `\n\nDetails:\n${detailsContent}` : ""].join("").trim();
 
         navigator.clipboard.writeText(textToCopy).then(() => {
             toast({
@@ -458,7 +459,7 @@ function MessageItemComponent({
             }
         };
 
-        loadArtifacts();
+        void loadArtifacts();
     }, [runId, outputFiles]);
 
     const workstreamId = getWorkstreamId(message);
@@ -532,6 +533,7 @@ function MessageItemComponent({
                 {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
                 {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux ? (
                     (() => {
+                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                         const uxConfig = (message.details as AskUserMessageDetails).ux!;
                         return (
                             <AskUserWidget
@@ -615,6 +617,7 @@ function MessageItemComponent({
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
+                                aria-hidden="true"
                             >
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
