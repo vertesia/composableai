@@ -18,6 +18,7 @@ jobs:
   zizmor:
     name: Run zizmor security audit
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       security-events: write # required to upload SARIF results to Code Scanning
       contents: read         # required for actions/checkout to read the repo tree
