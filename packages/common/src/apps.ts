@@ -374,6 +374,21 @@ export interface RemoteActivityDefinition {
 
 export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
+
+/**
+ * Access control policy for an app installation.
+ * Declares which access surfaces are gated by per-user ACEs.
+ *
+ * - 'all' (default): every surface (UI portal, tool/endpoint use, contributions) requires
+ *   an explicit app_member ACE — the historical behavior.
+ * - 'ui': UI portal visibility requires an ACE, but tool/endpoint use and contributions
+ *   are open to anyone in the project.
+ * - 'none': fully open within the project — no ACE required for any surface.
+ *
+ * Declared on the manifest as the app's default. May be overridden per-installation.
+ */
+export type AppAccessControl = 'all' | 'ui' | 'none';
+
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.
@@ -488,6 +503,13 @@ export interface AppManifestData {
      * controls that don't apply to synthetic installations.
      */
     tags?: string[];
+
+    /**
+     * Access control policy for the app. Defaults to 'all' (ACE-gated everywhere)
+     * when undefined. See {@link AppAccessControl} for semantics. May be overridden
+     * on the AppInstallation.
+     */
+    access_control?: AppAccessControl;
 }
 
 /**
@@ -770,6 +792,12 @@ export interface AppInstallation {
      * Multiple collections sharing the same provider all resolve to the same OAuth provider.
      */
     provider_bindings?: AppInstallationProviderBinding[];
+    /**
+     * Per-installation override of the manifest's access_control policy.
+     * When set, takes precedence over the manifest value. When undefined, the
+     * manifest value (or 'all' default) applies.
+     */
+    access_control?: AppAccessControl;
     created_at: string;
     updated_at: string;
 }
