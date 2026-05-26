@@ -27,6 +27,8 @@ import type {
     ReindexViaBulkRequest,
     ReindexViaBulkResult,
     ElasticsearchBackend,
+    ReindexAgentRunsPayload,
+    ReindexAgentRunsResponse,
 } from "@vertesia/common";
 
 /**
@@ -61,6 +63,13 @@ export class IndexingApi extends ApiTopic {
      */
     async reindex(options?: StartProjectReindexPayload): Promise<GenericCommandResponse> {
         return this.post("/reindex", { payload: options });
+    }
+
+    /**
+     * Rebuild the agent-run Elasticsearch index directly from MongoDB.
+     */
+    async reindexAgentRuns(options?: ReindexAgentRunsPayload): Promise<ReindexAgentRunsResponse> {
+        return this.post("/agent-runs/reindex", { payload: options });
     }
 
     /**

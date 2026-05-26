@@ -495,6 +495,33 @@ export interface StartProjectReindexPayload {
     bulk_concurrency?: number;
 }
 
+export interface ReindexAgentRunsPayload {
+    /**
+     * Drop any existing agent-runs index/alias family and recreate the stable concrete index before indexing.
+     * Defaults to true.
+     */
+    recreate_index?: boolean;
+    /** Number of MongoDB records to scan per batch. Defaults to 500. */
+    batch_size?: number;
+    /** Optional cap for partial/manual repair runs. Omit for all agent runs in the project. */
+    limit?: number;
+}
+
+export interface ReindexAgentRunsResponse {
+    status: string;
+    backend: ElasticsearchBackend;
+    index_name: string;
+    recreated: boolean;
+    total: number;
+    scanned: number;
+    indexed: number;
+    failed: number;
+    errors?: Array<{
+        id: string;
+        message: string;
+    }>;
+}
+
 // ============================================================================
 // Internal indexing types (used by Temporal workflows)
 // ============================================================================
