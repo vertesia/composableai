@@ -22,12 +22,12 @@
     "typecheck:test": "pnpm -r --if-present typecheck:test"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.4",
+    "@biomejs/biome": "^2.4.15",
     "lint-staged": "^17.0.5",
     "npm-ws-tools": "^0.3.0",
-    "rimraf": "^5.0.5",
+    "rimraf": "^5.0.10",
     "turbo": "^2.9.14",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "vite": "^7.3.2"
   },
   "lint-staged": {
