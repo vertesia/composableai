@@ -80,7 +80,7 @@ export const templateTransformer: TransformerPreset = {
         // Validate frontmatter
         const frontmatterValidation = TemplateFrontmatterSchema.safeParse(frontmatter);
         if (!frontmatterValidation.success) {
-            const errors = frontmatterValidation.error.errors
+            const errors = frontmatterValidation.error.issues
                 .map((err) => {
                     const pathStr = err.path.length > 0 ? err.path.join('.') : 'frontmatter';
                     return `  - ${pathStr}: ${err.message}`;

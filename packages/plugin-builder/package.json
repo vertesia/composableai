@@ -27,11 +27,11 @@
     "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc"
   },
   "devDependencies": {
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@adobe/css-tools": "^4.4.1",
-    "@types/node": "^25.9.1"
+    "@adobe/css-tools": "^4.5.0",
+    "@types/node": "^24.12.4"
   },
   "peerDependencies": {
     "vite": "^7.3.2"

@@ -80,7 +80,8 @@
         "mongoose",
         // web
         "@koa-stack/**",
-        "koa"
+        "koa",
+        "@types/koa"
       ],
       "rangeStrategy": "bump",
       "schedule": "* * * * 4" // Thursday

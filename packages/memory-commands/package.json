@@ -15,13 +15,13 @@
     "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
   },
   "devDependencies": {
-    "@types/node": "^25.9.1",
+    "@types/node": "^24.12.4",
     "ts-dual-module": "^0.6.3",
     "vitest": "^4.0.16"
   },
   "dependencies": {
     "@vertesia/memory": "workspace:*",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.3"
   },
   "ts_dual_module": {
     "outDir": "lib"

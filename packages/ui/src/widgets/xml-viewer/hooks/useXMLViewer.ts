@@ -1,4 +1,5 @@
-import { XMLParser, XMLValidator } from 'fast-xml-parser';
+import { XMLParser } from 'fast-xml-parser';
+import { SyntaxValidator } from 'fast-xml-validator';
 import { useMemo } from 'react';
 import { ATTRIBUTE_CDATA, ATTRIBUTE_COMMENT } from '../constants';
 
@@ -15,8 +16,9 @@ const parser = new XMLParser({
 export default function useXMLViewer(xml: string) {
   return useMemo(() => {
     try {
-      if (!XMLValidator.validate(xml)) {
-        throw new Error('Invalid XML!');
+      const validationResult = SyntaxValidator.validate(xml);
+      if (validationResult !== true) {
+        throw new Error(validationResult.err.msg || 'Invalid XML!');
       }
 
       const json = parser.parse(xml);

@@ -26,7 +26,7 @@ export type PromptContentType = TemplateType;
 const PromptFrontmatterSchema = z.object({
     // Required fields
     role: z.nativeEnum(PromptRole, {
-        errorMap: () => ({ message: 'Role must be one of: safety, system, user, assistant, negative' })
+        error: 'Role must be one of: safety, system, user, assistant, negative',
     }),
 
     // Optional fields
@@ -175,7 +175,7 @@ export const promptTransformer: TransformerPreset = {
         // Validate frontmatter
         const frontmatterValidation = PromptFrontmatterSchema.safeParse(frontmatter);
         if (!frontmatterValidation.success) {
-            const errors = frontmatterValidation.error.errors
+            const errors = frontmatterValidation.error.issues
                 .map((err) => {
                     const path = err.path.length > 0 ? err.path.join('.') : 'frontmatter';
                     return `  - ${path}: ${err.message}`;
