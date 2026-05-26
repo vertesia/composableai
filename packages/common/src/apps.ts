@@ -389,6 +389,22 @@ export type AppAvailableIn = 'app_portal' | 'composite_app';
  */
 export type AppAccessControl = 'all' | 'ui' | 'none';
 
+/**
+ * Resolve the effective access_control policy for an installed app:
+ * installation override wins, then manifest default, then `'all'`.
+ *
+ * Shared by the STS (JWT generation), the studio-server (validation), and the UI (badge display)
+ * so the resolution rule lives in exactly one place. Named `effectiveAppAccessControl` (not just
+ * `effectiveAccessControl`) because exports from `@vertesia/common` are flattened — the broader
+ * name would risk colliding with other access-control families added later.
+ */
+export function effectiveAppAccessControl(
+    installation: { access_control?: AppAccessControl } | null | undefined,
+    manifest: { access_control?: AppAccessControl } | null | undefined,
+): AppAccessControl {
+    return installation?.access_control ?? manifest?.access_control ?? 'all';
+}
+
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.
