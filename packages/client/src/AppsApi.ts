@@ -35,6 +35,15 @@ export default class AppsApi extends ApiTopic {
     }
 
     /**
+     * Delete an app manifest by id. The owning account must permit the operation.
+     * Note: also uninstall any existing installations of this manifest before deleting,
+     * otherwise the server may refuse or leave orphaned installation records.
+     */
+    delete(id: string): Promise<CountResult> {
+        return this.del(`/${id}`);
+    }
+
+    /**
      * Get the list if tools provided by the given app.
      * @param appId
      * @returns
