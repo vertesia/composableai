@@ -59,6 +59,7 @@ export const EXTERNALS = [
     "tailwind-merge",
     "debounce",
     "fast-xml-parser",
+    "fast-xml-validator",
     // verteisa deps
     "@llumiverse/common",
     "@vertesia/client",
@@ -95,7 +96,7 @@ export const EXTERNALS = [
     /^pdfjs-dist\/.*/
 ];
 
-// Put here exceptions - deps that shuld be inlined
+// Put here exceptions - deps that should be inlined
 const INLINED_DEPS = [];
 
 function resolve(path) {
