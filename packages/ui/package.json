@@ -63,6 +63,7 @@
     "debounce": "^2.2.0",
     "dompurify": "^3.4.5",
     "fast-xml-parser": "^5.8.0",
+    "fast-xml-validator": "^1.1.0",
     "firebase": "^10.14.1",
     "framer-motion": "^12.23.12",
     "i18next": "^26.2.0",
