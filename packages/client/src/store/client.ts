@@ -1,4 +1,4 @@
-import { AbstractFetchClient, RequestError } from "@vertesia/api-fetch-client";
+import { AbstractFetchClient, type FETCH_FN, RequestError } from "@vertesia/api-fetch-client";
 import { BulkOperationPayload, BulkOperationResponse } from "@vertesia/common";
 import { AgentsApi } from "./AgentsApi.js";
 import { CollectionsApi } from "./CollectionsApi.js";
@@ -28,6 +28,7 @@ export interface ZenoClientProps {
     apikey?: string;
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
+    fetch?: FETCH_FN | Promise<FETCH_FN>;
 }
 
 function ensureDefined(serverUrl: string | undefined) {
@@ -42,7 +43,7 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     constructor(
         opts: ZenoClientProps = {}
     ) {
-        super(ensureDefined(opts.serverUrl));
+        super(ensureDefined(opts.serverUrl), opts.fetch);
         if (opts.apikey) {
             this.withApiKey(opts.apikey);
         }
