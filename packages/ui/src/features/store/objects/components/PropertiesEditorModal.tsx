@@ -69,7 +69,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
     // Configure Monaco editor with JSON schema validation
     const beforeMount = (monaco: typeof import('monaco-editor')) => {
         if (jsonSchema) {
-            monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+            monaco.json.jsonDefaults.setDiagnosticsOptions({
                 validate: true,
                 schemas: [
                     {
