@@ -109,6 +109,18 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                 throw new UserNotFoundError('User not found - signup required', idTokenDecoded.email);
             }
 
+            if (ensureResponse.status === 403) {
+                // Customer-domain user with no pending invite — signup blocked.
+                // SigninScreen detects this message to render the invite-required view.
+                Env.logger.warn('403: Customer-domain user requires an invite to join', {
+                    vertesia: {
+                        account_id: accountId,
+                        project_id: projectId,
+                    },
+                });
+                throw new Error('Customer-domain user requires an invite to join');
+            }
+
             if (!ensureResponse.ok) {
                 console.error('Failed to ensure user exists', ensureResponse.status);
                 Env.logger.error('Failed to ensure user exists', {
