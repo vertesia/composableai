@@ -124,4 +124,3 @@ export function CollectionIcon({ isDynamic }: { isDynamic: boolean }) {
         </VTooltip>
     );
 }
-
