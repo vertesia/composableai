@@ -213,7 +213,7 @@ export abstract class ClientBase {
         }
         // When using SSE reader, ensure the Accept header requests event-stream
         if (params?.reader === 'sse') {
-            headers['accept'] = 'text/event-stream';
+            headers.accept = 'text/event-stream';
         }
 
         const init: RequestInit = {
