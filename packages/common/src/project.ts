@@ -322,6 +322,10 @@ export interface IndexingStatusResponse {
     indexing_enabled: boolean;
     /** @deprecated Now derived from indexing_enabled - queries automatically route to index when indexing is enabled */
     query_enabled: boolean;
+    /** Resolved Elasticsearch backend serving this project */
+    backend: ElasticsearchBackend;
+    /** Resolved search tier for this project */
+    search_tier: ProjectSearchTier;
     /** Index status */
     index: {
         /** Whether the index exists */
