@@ -363,7 +363,7 @@ export class IndexingApi extends ApiTopic {
         backend?: ElasticsearchBackend,
         projectId?: string,
     ): Promise<ReindexViaBulkResult> {
-        const bulkUrl = this.zenoBulkBaseUrl + '/reindex';
+        const bulkUrl = `${this.zenoBulkBaseUrl}/reindex`;
         const params = {
             tenant_id: tenantId,
             project_id: projectId,
