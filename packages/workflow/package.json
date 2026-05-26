@@ -53,6 +53,7 @@
     "tiktoken": "^1.0.22",
     "tmp": "^0.2.5",
     "tmp-promise": "^3.0.3",
+    "undici": "^7.25.0",
     "yaml": "^2.9.0"
   },
   "ts_dual_module": {

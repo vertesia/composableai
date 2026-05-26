@@ -472,6 +472,22 @@ export interface IndexingStatusResponse {
         written: number;
         /** Documents that failed to index */
         errors: number;
+        /** Embedding vectors written to target index */
+        embeddings_written?: number;
+        /** Embedding vectors skipped because they were invalid or dimension-mismatched */
+        skipped_embeddings?: number;
+        /** Text embedding vectors written to target index */
+        embeddings_text_written?: number;
+        /** Image embedding vectors written to target index */
+        embeddings_image_written?: number;
+        /** Properties embedding vectors written to target index */
+        embeddings_properties_written?: number;
+        /** Text embedding vectors skipped because they were invalid or dimension-mismatched */
+        embeddings_text_skipped?: number;
+        /** Image embedding vectors skipped because they were invalid or dimension-mismatched */
+        embeddings_image_skipped?: number;
+        /** Properties embedding vectors skipped because they were invalid or dimension-mismatched */
+        embeddings_properties_skipped?: number;
         /** Documents processed per second */
         docs_per_second: number;
         /** Elapsed time in seconds */
@@ -493,6 +509,33 @@ export interface StartProjectReindexPayload {
     concurrency?: number;
     bulk_size_bytes?: number;
     bulk_concurrency?: number;
+}
+
+export interface ReindexAgentRunsPayload {
+    /**
+     * Drop any existing agent-runs index/alias family and recreate the stable concrete index before indexing.
+     * Defaults to true.
+     */
+    recreate_index?: boolean;
+    /** Number of MongoDB records to scan per batch. Defaults to 500. */
+    batch_size?: number;
+    /** Optional cap for partial/manual repair runs. Omit for all agent runs in the project. */
+    limit?: number;
+}
+
+export interface ReindexAgentRunsResponse {
+    status: string;
+    backend: ElasticsearchBackend;
+    index_name: string;
+    recreated: boolean;
+    total: number;
+    scanned: number;
+    indexed: number;
+    failed: number;
+    errors?: Array<{
+        id: string;
+        message: string;
+    }>;
 }
 
 // ============================================================================
@@ -640,12 +683,26 @@ export interface IndexShardResult {
     written: number;
     skipped: number;
     errors: number;
+    embeddings_written?: number;
+    skipped_embeddings?: number;
+    embeddings_text_written?: number;
+    embeddings_image_written?: number;
+    embeddings_properties_written?: number;
+    embeddings_text_skipped?: number;
+    embeddings_image_skipped?: number;
+    embeddings_properties_skipped?: number;
     read_docs_s: string;
     write_docs_s: string;
     read_mb: string;
     write_mb: string;
+    mongo_read_mb?: string;
+    gcs_read_mb?: string;
+    es_bulk_mb?: string;
     read_mb_s: string;
     write_mb_s: string;
+    mongo_read_mb_s?: string;
+    gcs_read_mb_s?: string;
+    es_bulk_mb_s?: string;
     duration_sec: number;
     failed_projects?: Array<{ tenant: string; error: string }>;
 }
@@ -667,6 +724,7 @@ export interface SwapAliasResult {
 
 export interface ReindexViaBulkRequest {
     tenant_id: string;
+    project_id?: string;
     backend?: ElasticsearchBackend;
     dry_run?: boolean;
 }
@@ -679,10 +737,26 @@ export interface ReindexViaBulkResult {
     scanned: number;
     written: number;
     errors: number;
+    embeddings_written?: number;
+    skipped_embeddings?: number;
+    embeddings_text_written?: number;
+    embeddings_image_written?: number;
+    embeddings_properties_written?: number;
+    embeddings_text_skipped?: number;
+    embeddings_image_skipped?: number;
+    embeddings_properties_skipped?: number;
     read_docs_s: string;
     write_docs_s: string;
     read_mb: string;
     write_mb: string;
+    mongo_read_mb?: string;
+    gcs_read_mb?: string;
+    es_bulk_mb?: string;
+    read_mb_s?: string;
+    write_mb_s?: string;
+    mongo_read_mb_s?: string;
+    gcs_read_mb_s?: string;
+    es_bulk_mb_s?: string;
     duration_sec: number;
 }
 
