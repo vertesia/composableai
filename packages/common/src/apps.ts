@@ -834,6 +834,13 @@ export interface AppInstallationPayload {
     app_id: string;
     settings?: Record<string, unknown>;
     /**
+     * Per-installation override of the manifest's `access_control` policy. When provided, takes precedence
+     * over the manifest default for every access check. Sibling of `settings` — admin-controlled, not
+     * part of the app's own settings JSON. Omit to leave the existing override unchanged (on update) or
+     * fall back to the manifest default (on install).
+     */
+    access_control?: AppAccessControl;
+    /**
      * OAuth credentials for each collection, keyed by collection.id.
      * Legacy callers may still use collection.name for older manifests.
      * Collected from the user at install time for collections with oauth_config.required_at_install.
