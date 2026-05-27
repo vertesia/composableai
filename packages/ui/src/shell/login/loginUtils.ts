@@ -101,8 +101,9 @@ export async function startSignIn(
             clearPendingSignin();
             return { ok: false, reason: "tenant-not-found" };
         }
-        localStorage.setItem("tenantName", data.name ?? "");
-        writePendingSignin({ email, provider, tenantName: data.name ?? undefined });
+        const displayName = data.label || data.name || undefined;
+        localStorage.setItem("tenantName", displayName ?? "");
+        writePendingSignin({ email, provider, tenantName: displayName });
         const providerType = Env.firebase?.providerType;
         const ssoProvider =
             providerType === "google"

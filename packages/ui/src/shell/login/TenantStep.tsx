@@ -32,7 +32,7 @@ function providerDisplay(provider: string): string {
 
 export default function TenantStep({ email, tenant, onBack, onProviderClicked, redirectTo }: TenantStepProps) {
     const { t } = useUITranslation();
-    const tenantName = tenant.name || t("auth.blocked.tenantFallback");
+    const tenantName = tenant.label || tenant.name || t("auth.blocked.tenantFallback");
     const idpName = providerDisplay(tenant.provider ?? "");
 
     const onContinue = async () => {

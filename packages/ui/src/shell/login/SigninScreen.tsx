@@ -184,7 +184,7 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
         content = (
             <TenantBlockedStep
                 email={email || storedSession?.email || ""}
-                tenantName={tenant?.name || storedSession?.tenantName || readDemoTenantName() || undefined}
+                tenantName={tenant?.label || tenant?.name || storedSession?.tenantName || readDemoTenantName() || undefined}
                 onBack={goBackToFresh}
             />
         );
