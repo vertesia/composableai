@@ -1,6 +1,8 @@
 import { useUITranslation } from "@vertesia/ui/i18n";
-import { Lock, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
+import type { ComponentType } from "react";
 import type { TenantInfo } from "./EmailStep";
+import { GithubIcon, GoogleIcon, MicrosoftIcon, SsoIcon } from "./LoginIcons";
 import { startSignIn } from "./loginUtils";
 
 interface TenantStepProps {
@@ -22,7 +24,7 @@ function tenantInitials(name: string): string {
 
 function providerDisplay(provider: string): string {
     const map: Record<string, string> = {
-        google: "Google Workspace",
+        google: "Google",
         microsoft: "Microsoft Entra ID",
         oidc: "your identity provider",
         github: "GitHub",
@@ -30,10 +32,27 @@ function providerDisplay(provider: string): string {
     return map[provider] ?? "your identity provider";
 }
 
+const PROVIDER_ICONS: Record<string, ComponentType<{ className?: string }>> = {
+    google: GoogleIcon,
+    microsoft: MicrosoftIcon,
+    github: GithubIcon,
+};
+
+function providerIcon(provider: string): ComponentType<{ className?: string }> {
+    return PROVIDER_ICONS[provider] ?? SsoIcon;
+}
+
 export default function TenantStep({ email, tenant, onBack, onProviderClicked, redirectTo }: TenantStepProps) {
     const { t } = useUITranslation();
     const tenantName = tenant.label || tenant.name || t("auth.blocked.tenantFallback");
     const idpName = providerDisplay(tenant.provider ?? "");
+    const IdpIcon = providerIcon(tenant.provider ?? "");
+    // OIDC / unknown providers don't have a recognizable brand to put in
+    // "Continue with X" — use a generic CTA instead.
+    const isGenericIdp = !tenant.provider || tenant.provider === "oidc";
+    const buttonLabel = isGenericIdp
+        ? t("auth.tenant.continueGeneric")
+        : t("auth.tenant.continueWithIdp", { idp: idpName });
 
     const onContinue = async () => {
         onProviderClicked();
@@ -85,15 +104,15 @@ export default function TenantStep({ email, tenant, onBack, onProviderClicked, r
                 <button
                     type="button"
                     onClick={onContinue}
-                    className="h-[42px] inline-flex items-center justify-center gap-2.5 rounded-md bg-info text-info-foreground text-sm font-medium transition hover:opacity-90"
+                    className="cursor-pointer h-[42px] inline-flex items-center justify-center gap-2.5 rounded-md bg-foreground text-background text-sm font-medium transition hover:opacity-90"
                 >
-                    <Lock className="size-4" />
-                    {t("auth.tenant.continueWithIdp", { idp: idpName })}
+                    <IdpIcon className="size-[18px]" />
+                    {buttonLabel}
                 </button>
                 <button
                     type="button"
                     onClick={onBack}
-                    className="h-[36px] inline-flex items-center justify-center gap-2 rounded-md bg-transparent text-sm font-medium text-muted transition hover:bg-muted-background hover:text-foreground"
+                    className="cursor-pointer h-[36px] inline-flex items-center justify-center gap-2 rounded-md bg-transparent text-sm font-medium text-muted transition hover:bg-muted-background hover:text-foreground"
                 >
                     {t("auth.tenant.notPartOf", { name: tenantName })}
                 </button>
