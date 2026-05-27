@@ -1,7 +1,9 @@
+import { Key } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
     type DemoTokenInfo,
     clearDemoToken,
+    demoFlowFor,
     inspectDemoToken,
     readDemoTenantName,
     readDemoToken,
@@ -9,11 +11,13 @@ import {
     writeDemoToken,
 } from "./loginUtils";
 
-// Floating dev-only widget: paste a Firebase ID token into localStorage so the
-// SigninScreen's provider buttons bypass real OAuth and hit /auth/ensure-user
-// with this token instead. Lets us demo the blocked view on dev branch URLs
-// without completing real OAuth (which fails — those URLs aren't on the
-// provider redirect-URI allowlist).
+// Floating dev-only widget: paste a Firebase ID token into localStorage. The
+// flow that the SigninScreen runs when a provider button is clicked is inferred
+// from the token's email domain:
+//   • staff (vertesiahq.com) → hands the token off to UserSessionProvider's
+//     existing token+state branch via STS, so the app loads as signed-in.
+//   • anything else → posts to /auth/ensure-user, surfacing the real 403/412/200
+//     so the customer-domain block lands on TenantBlockedStep.
 
 function formatRemaining(expiresAt: Date | undefined, expired: boolean): string | null {
     if (expired) return "EXPIRED";
@@ -26,6 +30,13 @@ function formatRemaining(expiresAt: Date | undefined, expired: boolean): string 
     return min > 0 ? `${min}m ${sec}s` : `${sec}s`;
 }
 
+function flowLabel(info: DemoTokenInfo | null): string {
+    const flow = demoFlowFor(info);
+    if (flow === "success") return "→ Sign-in success";
+    if (flow === "blocked") return "→ Blocked (403)";
+    return "";
+}
+
 export default function DemoTokenPanel() {
     const [open, setOpen] = useState(false);
     const [info, setInfo] = useState<DemoTokenInfo | null>(() => readDemoToken());
@@ -33,10 +44,9 @@ export default function DemoTokenPanel() {
     const [draft, setDraft] = useState("");
     const [, setTick] = useState(0);
 
-    // Live-update the "remaining" countdown every 15s while a token is set.
     useEffect(() => {
         if (!info?.expiresAt) return;
-        const t = setInterval(() => setTick(n => n + 1), 15_000);
+        const t = setInterval(() => setTick((n) => n + 1), 15_000);
         return () => clearInterval(t);
     }, [info?.expiresAt]);
 
@@ -59,28 +69,21 @@ export default function DemoTokenPanel() {
     };
 
     const remaining = info ? formatRemaining(info.expiresAt, info.expired) : null;
-    const buttonBg = info?.expired ? "#fef2f2" : info ? "#fef3c7" : "#f3f4f6";
-    const buttonBorder = info?.expired ? "#fca5a5" : info ? "#fcd34d" : "#d1d5db";
-    const buttonColor = info?.expired ? "#991b1b" : "#374151";
+    const flow = demoFlowFor(info);
 
     return (
         <div style={{ position: "fixed", top: 16, right: 16, zIndex: 999999, fontFamily: "system-ui, sans-serif" }}>
             <button
                 type="button"
-                onClick={() => setOpen(o => !o)}
-                style={{
-                    background: buttonBg,
-                    border: `1px solid ${buttonBorder}`,
-                    color: buttonColor,
-                    padding: "6px 10px",
-                    borderRadius: 6,
-                    fontSize: 12,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-                }}
+                onClick={() => setOpen((o) => !o)}
+                aria-label="Demo sign-in panel"
+                className={
+                    "cursor-pointer inline-flex items-center gap-1.5 rounded-md border border-foreground bg-transparent px-2.5 py-1 text-xs font-medium text-foreground transition-opacity hover:opacity-100 focus-visible:opacity-100 " +
+                    (open ? "opacity-100" : "opacity-10")
+                }
             >
-                🔑 Demo{info ? ` · ${remaining}` : ""}
+                <Key className="size-3.5" />
+                <span>Demo{info ? ` · ${remaining}` : ""}</span>
             </button>
 
             {open && (
@@ -101,16 +104,16 @@ export default function DemoTokenPanel() {
                 >
                     <div style={{ fontWeight: 600, marginBottom: 6 }}>Demo sign-in (dev only)</div>
                     <div style={{ color: "#6b7280", fontSize: 12, marginBottom: 12, lineHeight: 1.4 }}>
-                        Paste a Firebase ID token below. When set, provider buttons skip OAuth and
-                        post the token directly to <code>/auth/ensure-user</code> for the real
-                        server response.
+                        Paste a Firebase ID token. Provider buttons on the sign-in screen will route automatically based
+                        on the token's email domain — staff (vertesiahq.com) signs in, customer domains hit the 403
+                        block.
                     </div>
 
                     {info && (
                         <div
                             style={{
-                                background: info.expired ? "#fef2f2" : "#f9fafb",
-                                border: `1px solid ${info.expired ? "#fca5a5" : "#e5e7eb"}`,
+                                background: info.expired ? "#fef2f2" : flow === "success" ? "#f0fdf4" : "#f9fafb",
+                                border: `1px solid ${info.expired ? "#fca5a5" : flow === "success" ? "#bbf7d0" : "#e5e7eb"}`,
                                 borderRadius: 6,
                                 padding: 10,
                                 marginBottom: 12,
@@ -122,12 +125,22 @@ export default function DemoTokenPanel() {
                                 <strong>email:</strong> {info.email ?? "—"}
                             </div>
                             <div>
-                                <strong>expires:</strong>{" "}
-                                {info.expiresAt ? info.expiresAt.toLocaleString() : "—"}
+                                <strong>expires:</strong> {info.expiresAt ? info.expiresAt.toLocaleString() : "—"}
                             </div>
                             {!info.expired && remaining && (
                                 <div>
                                     <strong>remaining:</strong> {remaining}
+                                </div>
+                            )}
+                            {flow && !info.expired && (
+                                <div
+                                    style={{
+                                        marginTop: 6,
+                                        fontWeight: 600,
+                                        color: flow === "success" ? "#166534" : "#92400e",
+                                    }}
+                                >
+                                    {flowLabel(info)}
                                 </div>
                             )}
                             {info.expired && (
@@ -140,7 +153,7 @@ export default function DemoTokenPanel() {
 
                     <textarea
                         value={draft}
-                        onChange={e => setDraft(e.target.value)}
+                        onChange={(e) => setDraft(e.target.value)}
                         placeholder="Paste Firebase ID token (eyJ...)"
                         style={{
                             width: "100%",
@@ -202,7 +215,7 @@ export default function DemoTokenPanel() {
                     <input
                         type="text"
                         value={tenantName}
-                        onChange={e => onTenantNameChange(e.target.value)}
+                        onChange={(e) => onTenantNameChange(e.target.value)}
                         placeholder="e.g. Charles Morman - Testing"
                         style={{
                             width: "100%",

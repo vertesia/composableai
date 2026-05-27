@@ -86,7 +86,7 @@ export async function startSignIn(
 ): Promise<{ ok: true } | { ok: false; reason: "tenant-not-found" | "no-email" }> {
     if (!email) return { ok: false, reason: "no-email" };
 
-    // Demo mode: SigninScreen drives the alternate flow off the pre-saved
+    // Demo mode: SigninScreen drives the alternate flow off a pre-saved
     // Firebase token. Skip the real OAuth redirect so the demo can complete
     // without the upstream OAuth provider rejecting the dev URL.
     if (getActiveDemoToken()) {
@@ -189,14 +189,36 @@ export function isInviteRequiredError(err: unknown): boolean {
     return msg.includes("Customer-domain user requires an invite to join");
 }
 
-// ─── Demo / dev-only signin helper ─────────────────────────────────────────
-// Lets a dev paste a pre-captured Firebase ID token into a UI panel; subsequent
-// provider clicks skip real OAuth and hit /auth/ensure-user directly with the
-// pasted token. Useful for demos on dev branch URLs where OAuth providers reject
-// the redirect URI. Cleared by clicking "Clear" or via clearDemoToken().
+// ─── Demo / dev-only signin helpers ────────────────────────────────────────
+// One pre-captured Firebase ID token is staged in localStorage from the
+// DemoTokenPanel widget. The flow it drives on a provider button click is
+// inferred from the token's email domain:
+//   • staff domain (vertesiahq.com) → hands the token off to
+//     UserSessionProvider's existing token+state hash branch via STS exchange,
+//     so the app loads as signed-in.
+//   • any other domain → posts the token to /auth/ensure-user directly so the
+//     real 403/412/200 response routes the SigninScreen as if OAuth had
+//     completed. (Customer-domain identities like cmorman.com will hit the
+//     blocked view.)
 
 const DEMO_TOKEN_KEY = "vt.demoToken";
 const DEMO_TENANT_NAME_KEY = "vt.demoTenantName";
+
+const STAFF_DEMO_DOMAINS = new Set(["vertesiahq.com"]);
+
+export function isStaffDemoEmail(email: string | undefined): boolean {
+    if (!email) return false;
+    const at = email.lastIndexOf("@");
+    if (at <= 0) return false;
+    return STAFF_DEMO_DOMAINS.has(email.slice(at + 1).toLowerCase());
+}
+
+export type DemoFlow = "success" | "blocked";
+
+export function demoFlowFor(info: DemoTokenInfo | null): DemoFlow | null {
+    if (!info || info.expired) return null;
+    return isStaffDemoEmail(info.email) ? "success" : "blocked";
+}
 
 function decodeJwtUnverified(token: string): Record<string, unknown> | null {
     try {
@@ -272,9 +294,38 @@ export function writeDemoTenantName(name: string): void {
     }
 }
 
-/** Returns the demo token string if present and unexpired, else null. */
+/** Returns the demo token string if staged and unexpired. */
 export function getActiveDemoToken(): string | null {
     const info = readDemoToken();
-    if (!info || info.expired) return null;
-    return info.token;
+    return info && !info.expired ? info.token : null;
+}
+
+/**
+ * Drives the success-flow demo. Seeds sessionStorage so UserSessionProvider's
+ * verifyState accepts the synthetic "demo" state, seeds pendingSignin so the
+ * post-auth lastSession write picks up the user's email + the supplied provider,
+ * then redirects to /#token=...&state=demo. The provider's existing token+state
+ * branch (see UserSessionProvider.tsx) takes over from there — exchanges the
+ * Firebase token via STS, runs session.login(), and the app re-renders signed-in.
+ */
+export function startDemoSuccessSignIn(provider: ProviderId = "google"): void {
+    const token = getActiveDemoToken();
+    if (!token) return;
+    const info = inspectDemoToken(token);
+
+    const stateValue = "demo";
+    sessionStorage.setItem("auth_state", stateValue);
+    sessionStorage.setItem("auth_state_expiry", String(Date.now() + 5 * 60 * 1000));
+
+    sessionStorage.setItem(
+        PENDING_SIGNIN_KEY,
+        JSON.stringify({
+            email: info.email ?? "demo@vertesiahq.com",
+            provider,
+        }),
+    );
+
+    const url = new URL(window.location.href);
+    url.hash = `token=${encodeURIComponent(token)}&state=${stateValue}`;
+    location.replace(url.toString());
 }

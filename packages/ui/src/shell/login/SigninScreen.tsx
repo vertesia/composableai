@@ -13,12 +13,15 @@ import {
     type ProviderId,
     clearLastSession,
     clearPendingSignin,
+    demoFlowFor,
     getActiveDemoToken,
     inspectDemoToken,
     isInviteRequiredError,
     readDemoTenantName,
+    readDemoToken,
     readLastSession,
     readPendingSignin,
+    startDemoSuccessSignIn,
     writeLastSession,
 } from "./loginUtils";
 import ProvidersStep from "./ProvidersStep";
@@ -120,12 +123,24 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
         setMode("pending");
 
         // Demo mode: if a Firebase token is staged in localStorage, skip real
-        // OAuth (which can't complete on a non-whitelisted dev URL) and POST it
-        // straight to /auth/ensure-user. The real 403/412/200 response then
-        // routes the SigninScreen as if OAuth had completed normally.
+        // OAuth and pick a flow based on the token's email domain:
+        //   • staff domain → hand off to UserSessionProvider's token+state hash
+        //     branch via startDemoSuccessSignIn → app loads as signed-in.
+        //   • everything else → POST to /auth/ensure-user and route on the real
+        //     403/412/200 response.
+        const demoInfo = readDemoToken();
+        const flow = demoFlowFor(demoInfo);
+        if (!flow || !demoInfo) return;
+
+        if (demoInfo.email) setEmail(demoInfo.email);
+
+        if (flow === "success") {
+            startDemoSuccessSignIn(provider);
+            return;
+        }
+
         const demoToken = getActiveDemoToken();
         if (!demoToken) return;
-
         const info = inspectDemoToken(demoToken);
         if (info.email) setEmail(info.email);
         try {
