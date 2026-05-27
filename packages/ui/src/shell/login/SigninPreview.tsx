@@ -172,14 +172,6 @@ export default function SigninPreview() {
                     </Frame>
 
                     <Frame
-                        title="Blocked — known tenant"
-                        sub="charles@cmorman.com — 403, tenantName from demo override or stored session."
-                        meta={{ customerBlock: "yes", authTenant: "no", providerKnown: "na" }}
-                    >
-                        <TenantBlockedStep email="charles@cmorman.com" tenantName="Charles Morman - Testing" onBack={noop} />
-                    </Frame>
-
-                    <Frame
                         title="Blocked — via SSO tenant"
                         sub="alice@acme-corp.com — domain in auth-tenants.json AND customer account → 403 after SSO. tenantName comes from tenant.label."
                         meta={{ customerBlock: "yes", authTenant: "yes", providerKnown: "na" }}
