@@ -58,7 +58,7 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                 </p>
             </div>
 
-            <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+            <form onSubmit={submit} noValidate className={`flex flex-col ${submitError ? "gap-2" : "gap-6"}`}>
                 <div className="flex flex-col gap-1.5">
                     <label htmlFor="vt-login-email" className="text-xs font-medium text-foreground/80">
                         {t("auth.email.label")}
@@ -84,9 +84,11 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                         data-lpignore="true"
                         data-form-type="other"
                     />
-                    <div className="text-xs text-destructive min-h-[14px]">
-                        {submitError ? t("auth.email.invalidError") : ""}
-                    </div>
+                    {submitError && (
+                        <div role="alert" className="text-xs text-destructive">
+                            {t("auth.email.invalidError")}
+                        </div>
+                    )}
                 </div>
 
                 <button
