@@ -387,6 +387,8 @@ export interface IndexingStatusResponse {
         batches_flushed?: number;
         /** Total ES bulk requests sent across all completed shards (cumulative) */
         bulk_chunks_written?: number;
+        /** Total per-document ES bulk-item failures across all shards (cumulative). Counts docs ES rejected — they aren't in the indexed set. */
+        bulk_errors?: number;
         /** Average documents per batch flush (written / batches_flushed) — useful to spot under/over-batching */
         avg_docs_per_batch?: number;
         /** Average chunks per batch (>1 means bulk_size_bytes cap is splitting batches frequently) */
@@ -613,6 +615,15 @@ export interface IndexShardResult {
     written: number;
     skipped: number;
     errors: number;
+    /** Per-document ES bulk-item errors (e.g. mapping timeouts). Doc-level data-quality, not pipeline failure. */
+    bulk_errors?: number;
+    /** Sampled details of bulk-item failures (capped at 100 per shard). */
+    bulk_error_sample?: Array<{
+        tenant?: string;
+        doc_id: string;
+        type: string;
+        reason: string;
+    }>;
     embeddings_written?: number;
     skipped_embeddings?: number;
     embeddings_text_written?: number;
