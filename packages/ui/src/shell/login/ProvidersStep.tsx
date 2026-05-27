@@ -1,7 +1,7 @@
 import { useUITranslation } from "@vertesia/ui/i18n";
 import { ArrowRight, Mail } from "lucide-react";
 import type { ComponentType } from "react";
-import { GithubIcon, GoogleIcon, MicrosoftIcon, SsoIcon } from "./LoginIcons";
+import { GithubIcon, GoogleIcon, MicrosoftIcon } from "./LoginIcons";
 import { type ProviderId, providerLabel, startSignIn } from "./loginUtils";
 
 interface ProvidersStepProps {
@@ -71,18 +71,6 @@ export default function ProvidersStep({
                         <ArrowRight className="size-3.5 text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition" />
                     </button>
                 ))}
-
-                <button
-                    type="button"
-                    onClick={() => pick("sso")}
-                    className="cursor-pointer group h-[42px] inline-flex items-center gap-3 pl-3.5 pr-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
-                >
-                    <SsoIcon className="size-[18px] shrink-0 text-foreground/70" />
-                    <span className="flex-1 text-left">
-                        {t("auth.continueWithProvider", { provider: providerLabel("sso") })}
-                    </span>
-                    <ArrowRight className="size-3.5 text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition" />
-                </button>
             </div>
         </div>
     );
