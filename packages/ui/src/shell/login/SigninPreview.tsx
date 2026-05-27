@@ -37,11 +37,18 @@ const MOCK_RETURNING_GOOGLE: LastSession = {
     lastProvider: "google",
 };
 
-const MOCK_RETURNING_SSO: LastSession = {
+const MOCK_RETURNING_SSO_MS: LastSession = {
     email: "alice@vertesia.io",
     name: "Alice Example",
-    lastProvider: "sso",
+    lastProvider: "microsoft",
     tenantName: "Vertesia",
+};
+
+const MOCK_RETURNING_SSO_OIDC: LastSession = {
+    email: "user@acme-corp.com",
+    name: "Generic User",
+    lastProvider: "oidc",
+    tenantName: "Acme Corp",
 };
 
 // What HAS been verified by the UI/server flow path that leads to this screen.
@@ -226,11 +233,11 @@ export default function SigninPreview() {
                     </Frame>
 
                     <Frame
-                        title="Auth pending — SSO"
-                        sub="SSO redirect in flight; auth-tenant must have matched to get here."
+                        title="Auth pending — generic SSO (OIDC)"
+                        sub="OIDC redirect in flight; auth-tenant must have matched to get here."
                         meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "yes", providerKnown: "yes" }}
                     >
-                        <AuthPending provider="sso" />
+                        <AuthPending provider="oidc" />
                     </Frame>
                 </Section>
 
@@ -266,22 +273,29 @@ export default function SigninPreview() {
                     <Section
                         title="Returning visitor (separate entry path)"
                         sub="Shown on revisit when vt.lastSession is present in localStorage — bypasses the email step."
-                        cols={2}
                     >
                         <Frame
-                            title="Returning — Google"
-                            sub="lastSession.lastProvider = google, no tenantName → last sign-in was personal OAuth."
+                            title="Returning — personal Google"
+                            sub="lastProvider=google, no tenantName → last sign-in was personal OAuth."
                             meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "no", providerKnown: "yes" }}
                         >
                             <ReturningStep session={MOCK_RETURNING_GOOGLE} onNotYou={noop} onProviderClicked={noop} />
                         </Frame>
 
                         <Frame
-                            title="Returning — SSO with tenant"
-                            sub="lastSession.lastProvider = sso, tenantName set → last sign-in was SSO."
+                            title="Returning — Microsoft SSO"
+                            sub="lastProvider=microsoft, tenantName set → branded SSO last time."
                             meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "yes", providerKnown: "yes" }}
                         >
-                            <ReturningStep session={MOCK_RETURNING_SSO} onNotYou={noop} onProviderClicked={noop} />
+                            <ReturningStep session={MOCK_RETURNING_SSO_MS} onNotYou={noop} onProviderClicked={noop} />
+                        </Frame>
+
+                        <Frame
+                            title="Returning — generic SSO (OIDC)"
+                            sub="lastProvider=oidc, tenantName set → generic/unbranded SSO last time."
+                            meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "yes", providerKnown: "yes" }}
+                        >
+                            <ReturningStep session={MOCK_RETURNING_SSO_OIDC} onNotYou={noop} onProviderClicked={noop} />
                         </Frame>
                     </Section>
                 </div>

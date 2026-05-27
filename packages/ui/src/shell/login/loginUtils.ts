@@ -1,8 +1,11 @@
-import { Env } from "@vertesia/ui/env";
 import { getFirebaseAuth, setFirebaseTenant } from "@vertesia/ui/session";
 import { GithubAuthProvider, GoogleAuthProvider, OAuthProvider, signInWithRedirect } from "firebase/auth";
 
-export type ProviderId = "google" | "github" | "microsoft" | "sso";
+// IdP types match auth-tenants.json `provider` values exactly. SSO vs personal
+// OAuth is no longer a separate ProviderId — it's derived from whether
+// setFirebaseTenant resolves a tenant for the email at sign-in time, and from
+// `tenantName` presence on the stored LastSession for the returning view.
+export type ProviderId = "google" | "github" | "microsoft" | "oidc";
 
 export interface LastSession {
     email: string;
@@ -79,11 +82,27 @@ function buildRedirectPath(redirectTo?: string): string {
     return path;
 }
 
+function buildFirebaseProvider(idp: ProviderId, redirectTo?: string) {
+    if (idp === "google") {
+        const p = new GoogleAuthProvider();
+        p.addScope("profile");
+        p.addScope("email");
+        p.setCustomParameters({
+            prompt: "select_account",
+            redirect_uri: window.location.origin + buildRedirectPath(redirectTo),
+        });
+        return p;
+    }
+    if (idp === "github") return new GithubAuthProvider();
+    if (idp === "microsoft") return new OAuthProvider("microsoft.com");
+    return new OAuthProvider("oidc.main");
+}
+
 export async function startSignIn(
     provider: ProviderId,
     email: string,
     redirectTo?: string,
-): Promise<{ ok: true } | { ok: false; reason: "tenant-not-found" | "no-email" }> {
+): Promise<{ ok: true } | { ok: false; reason: "no-email" }> {
     if (!email) return { ok: false, reason: "no-email" };
 
     // Demo mode: SigninScreen drives the alternate flow off a pre-saved
@@ -93,60 +112,29 @@ export async function startSignIn(
         return { ok: true };
     }
 
-    writePendingSignin({ email, provider });
-
-    if (provider === "sso") {
-        const data = await setFirebaseTenant(email);
-        if (!data) {
-            clearPendingSignin();
-            return { ok: false, reason: "tenant-not-found" };
-        }
-        const displayName = data.label || data.name || undefined;
-        localStorage.setItem("tenantName", displayName ?? "");
-        writePendingSignin({ email, provider, tenantName: displayName });
-        const providerType = Env.firebase?.providerType;
-        const ssoProvider =
-            providerType === "google"
-                ? (() => {
-                      const p = new GoogleAuthProvider();
-                      p.addScope("profile");
-                      p.addScope("email");
-                      p.setCustomParameters({
-                          prompt: "select_account",
-                          redirect_uri: window.location.origin + buildRedirectPath(redirectTo),
-                      });
-                      return p;
-                  })()
-                : providerType === "microsoft"
-                  ? new OAuthProvider("microsoft.com")
-                  : providerType === "github"
-                    ? new OAuthProvider("github.com")
-                    : new OAuthProvider("oidc.main");
-        void signInWithRedirect(getFirebaseAuth(), ssoProvider);
-        return { ok: true };
-    }
-
-    // Personal OAuth: clear any prior tenant routing so we don't accidentally
-    // sign in against an SSO tenant the user previously selected.
-    localStorage.removeItem("tenantName");
+    // Resolve the email's tenant. If present → SSO with that tenant's IdP
+    // (overriding the user's button pick — the IdP is dictated by the tenant
+    // config, not the click). If absent → personal OAuth with the picked IdP.
+    const tenant = await setFirebaseTenant(email);
     const auth = getFirebaseAuth();
-    if (auth.tenantId) auth.tenantId = null;
+    let effectiveIdp = provider;
+    let tenantName: string | undefined;
 
-    if (provider === "google") {
-        const p = new GoogleAuthProvider();
-        p.addScope("profile");
-        p.addScope("email");
-        p.setCustomParameters({
-            prompt: "select_account",
-            redirect_uri: window.location.origin + buildRedirectPath(redirectTo),
-        });
-        void signInWithRedirect(auth, p);
-    } else if (provider === "github") {
-        void signInWithRedirect(auth, new GithubAuthProvider());
-    } else if (provider === "microsoft") {
-        void signInWithRedirect(auth, new OAuthProvider("microsoft.com"));
+    if (tenant) {
+        // setFirebaseTenant already set auth.tenantId. Trust tenant.provider
+        // for IdP selection — that's the canonical source.
+        if (tenant.provider) effectiveIdp = tenant.provider as ProviderId;
+        tenantName = tenant.label || tenant.name || undefined;
+        localStorage.setItem("tenantName", tenantName ?? "");
+    } else {
+        // Personal OAuth: clear any stale tenant routing left over from a prior
+        // SSO attempt on a different email.
+        localStorage.removeItem("tenantName");
+        if (auth.tenantId) auth.tenantId = null;
     }
 
+    writePendingSignin({ email, provider: effectiveIdp, tenantName });
+    void signInWithRedirect(auth, buildFirebaseProvider(effectiveIdp, redirectTo));
     return { ok: true };
 }
 
@@ -154,7 +142,7 @@ export function providerLabel(id: ProviderId): string {
     if (id === "google") return "Google";
     if (id === "github") return "GitHub";
     if (id === "microsoft") return "Microsoft";
-    return "Enterprise SSO";
+    return "Sign In";
 }
 
 export function emailLocalPart(email: string): string {

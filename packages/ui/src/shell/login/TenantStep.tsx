@@ -3,7 +3,7 @@ import { Mail } from "lucide-react";
 import type { ComponentType } from "react";
 import type { TenantInfo } from "./EmailStep";
 import { GithubIcon, GoogleIcon, MicrosoftIcon, SsoIcon } from "./LoginIcons";
-import { startSignIn } from "./loginUtils";
+import { type ProviderId, startSignIn } from "./loginUtils";
 
 interface TenantStepProps {
     email: string;
@@ -56,9 +56,11 @@ export default function TenantStep({ email, tenant, onBack, onProviderClicked, r
 
     const onContinue = async () => {
         onProviderClicked();
-        // The tenant was already resolved + Firebase tenantId set during EmailStep —
-        // calling startSignIn("sso") will route through the configured IdP.
-        await startSignIn("sso", email, redirectTo);
+        // SSO mode is implicit: startSignIn re-runs setFirebaseTenant on the
+        // email, sees a tenant resolves, and dispatches with the tenant's IdP.
+        // We pass tenant.provider here mainly for type-correctness; startSignIn
+        // will override with the canonical tenant.provider anyway.
+        await startSignIn((tenant.provider ?? "oidc") as ProviderId, email, redirectTo);
     };
 
     return (

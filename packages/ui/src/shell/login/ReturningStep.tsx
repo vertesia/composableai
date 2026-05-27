@@ -22,7 +22,7 @@ const PROVIDER_ICONS: Record<ProviderId, ComponentType<{ className?: string }>> 
     google: GoogleIcon,
     github: GithubIcon,
     microsoft: MicrosoftIcon,
-    sso: SsoIcon,
+    oidc: SsoIcon,
 };
 
 export default function ReturningStep({ session, onNotYou, onProviderClicked, redirectTo }: ReturningStepProps) {
@@ -30,14 +30,17 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
     const [showOthers, setShowOthers] = useState(false);
     const firstName = session.name ? session.name.split(" ")[0]! : firstNameFromEmail(session.email);
     const LastIcon = PROVIDER_ICONS[session.lastProvider];
-    const primaryLabel =
-        session.lastProvider === "sso"
-            ? session.tenantName
-                ? t("auth.returning.continueWithTenantSso", { tenant: session.tenantName })
-                : t("auth.returning.continueWithSso")
-            : t("auth.continueWithProvider", { provider: providerLabel(session.lastProvider) });
+    // tenantName presence indicates the previous sign-in went through SSO.
+    // Brand icon comes from lastProvider; the tenant label dominates the
+    // button text when SSO so users recognize the org they're signing into.
+    const isSso = !!session.tenantName;
+    const primaryLabel = isSso
+        ? t("auth.returning.continueWithTenantSso", { tenant: session.tenantName })
+        : t("auth.continueWithProvider", { provider: providerLabel(session.lastProvider) });
 
-    const others: ProviderId[] = (["google", "github", "microsoft", "sso"] as ProviderId[]).filter(
+    // "Other ways" alternatives only show personal-OAuth IdPs. OIDC has no
+    // personal-OAuth path (it's tenant-driven only) so it's excluded.
+    const others: ProviderId[] = (["google", "github", "microsoft"] as ProviderId[]).filter(
         (p) => p !== session.lastProvider,
     );
 
@@ -47,7 +50,7 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
     };
 
     const isPrimaryDark = session.lastProvider === "github";
-    const isPrimaryInfo = session.lastProvider === "sso";
+    const isPrimaryInfo = isSso;
 
     return (
         <div className="w-full max-w-[420px] flex flex-col gap-6">
@@ -133,7 +136,7 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
                                     onClick={() => continueWith(p)}
                                     className="group h-[42px] inline-flex items-center gap-3 pl-3.5 pr-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
                                 >
-                                    <Icon className={p === "sso" ? "size-[18px] shrink-0 text-foreground/70" : "size-[18px] shrink-0"} />
+                                    <Icon className="size-[18px] shrink-0" />
                                     <span className="flex-1 text-left">
                                         {t("auth.continueWithProvider", { provider: providerLabel(p) })}
                                     </span>

@@ -13,7 +13,7 @@ const ICONS: Record<ProviderId, ComponentType<{ className?: string }>> = {
     google: GoogleIcon,
     github: GithubIcon,
     microsoft: MicrosoftIcon,
-    sso: SsoIcon,
+    oidc: SsoIcon,
 };
 
 export default function AuthPending({ provider, onCancel }: AuthPendingProps) {
@@ -24,7 +24,7 @@ export default function AuthPending({ provider, onCancel }: AuthPendingProps) {
         <div className="w-full max-w-[420px] flex flex-col gap-6 items-center text-center">
             <div>
                 <div className="inline-grid place-items-center size-14 rounded-xl bg-info-background border border-info/15 mb-3.5">
-                    <Icon className={provider === "sso" ? "size-6 text-info" : "size-6"} />
+                    <Icon className={provider === "oidc" ? "size-6 text-info" : "size-6"} />
                 </div>
                 <h1 className="text-foreground text-[22px] font-semibold tracking-tight leading-tight mb-1.5">
                     {t("auth.pending.title", { provider: providerLabel(provider) })}

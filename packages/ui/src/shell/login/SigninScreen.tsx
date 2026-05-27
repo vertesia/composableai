@@ -120,7 +120,11 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
     }, [signOut]);
 
     const onProviderClicked = useCallback(async (provider: ProviderId) => {
-        trackEvent(provider === "sso" ? "enterprise_signin" : "oauth_signin", { provider });
+        // SSO-vs-personal is derived from current state, not the ProviderId.
+        // If we have a resolved tenant on the email-step path or a tenantName
+        // in the returning session, this click is heading through SSO.
+        const isSso = !!tenant || !!storedSession?.tenantName;
+        trackEvent(isSso ? "enterprise_signin" : "oauth_signin", { provider });
         setPendingProvider(provider);
         setMode("pending");
 
@@ -154,7 +158,7 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
         } catch {
             setMode("blocked");
         }
-    }, [trackEvent, email, storedSession?.email]);
+    }, [trackEvent, email, storedSession?.email, storedSession?.tenantName, tenant]);
 
     const goBackToFresh = useCallback(() => {
         setEmail("");
@@ -196,7 +200,7 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
                 email={email}
                 tenant={tenant}
                 onBack={onBack}
-                onProviderClicked={() => onProviderClicked("sso")}
+                onProviderClicked={() => onProviderClicked((tenant.provider ?? "oidc") as ProviderId)}
             />
         );
     } else if (mode === "providers") {
