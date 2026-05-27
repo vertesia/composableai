@@ -371,6 +371,12 @@ export class IndexingApi extends ApiTopic {
         dryRun?: boolean,
         backend?: ElasticsearchBackend,
         projectId?: string,
+        tuning?: {
+            shardSize?: number;
+            bulkConcurrency?: number;
+            bulkSizeBytes?: number;
+            bulkMaxDocs?: number;
+        },
     ): Promise<ReindexViaBulkResult> {
         const bulkUrl = `${this.zenoBulkBaseUrl}/reindex`;
         const params = {
@@ -378,6 +384,10 @@ export class IndexingApi extends ApiTopic {
             project_id: projectId,
             dry_run: dryRun ?? false,
             backend,
+            shard_size: tuning?.shardSize,
+            bulk_concurrency: tuning?.bulkConcurrency,
+            bulk_size_bytes: tuning?.bulkSizeBytes,
+            bulk_max_docs: tuning?.bulkMaxDocs,
         } satisfies ReindexViaBulkRequest;
 
         if (!onEvent) {

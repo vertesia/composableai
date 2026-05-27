@@ -638,6 +638,14 @@ export interface ReindexViaBulkRequest {
     project_id?: string;
     backend?: ElasticsearchBackend;
     dry_run?: boolean;
+    /** Approximate documents per shard; drives auto-shard count (total / shard_size). Default 250_000. */
+    shard_size?: number;
+    /** Number of ES bulk-write workers per shard. Default 10. */
+    bulk_concurrency?: number;
+    /** Hard cap per ES bulk request body in bytes. Default 12 MB. */
+    bulk_size_bytes?: number;
+    /** Max documents per batcher flush (size cap still regulates ES bulk requests). Default 200. */
+    bulk_max_docs?: number;
 }
 
 export interface ReindexViaBulkResult {
