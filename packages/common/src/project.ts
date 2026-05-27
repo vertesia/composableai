@@ -528,15 +528,6 @@ export interface CreateReindexTargetResult {
 }
 
 /**
- * Result from getting reindex range
- */
-export interface ReindexRangeResult {
-    first: string | null;
-    last: string | null;
-    count: number;
-}
-
-/**
  * Result from fetching a batch
  */
 export interface FetchBatchResult {

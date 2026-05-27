@@ -5,7 +5,6 @@ import {
     ElasticsearchDocumentData,
     BulkIndexResult,
     CreateReindexTargetResult,
-    ReindexRangeResult,
     FetchBatchResult,
     NextIndexCursorResult,
     TriggerReindexResult,
@@ -179,16 +178,6 @@ export class IndexingApi extends ApiTopic {
      */
     getStats(): Promise<ElasticsearchIndexStats> {
         return this.post("/internal/stats", {
-            payload: {},
-        });
-    }
-
-    /**
-     * Get the _id range for reindexing (first, last, count)
-     * Used by workflow to set up cursor-based pagination
-     */
-    getReindexRange(): Promise<ReindexRangeResult> {
-        return this.post("/internal/reindex-range", {
             payload: {},
         });
     }
