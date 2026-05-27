@@ -383,6 +383,14 @@ export interface IndexingStatusResponse {
         properties_values_trimmed?: number;
         /** Total bytes dropped from oversized property values */
         properties_bytes_dropped?: number;
+        /** Total batcher flushes across all completed shards (cumulative) */
+        batches_flushed?: number;
+        /** Total ES bulk requests sent across all completed shards (cumulative) */
+        bulk_chunks_written?: number;
+        /** Average documents per batch flush (written / batches_flushed) — useful to spot under/over-batching */
+        avg_docs_per_batch?: number;
+        /** Average chunks per batch (>1 means bulk_size_bytes cap is splitting batches frequently) */
+        avg_chunks_per_batch?: number;
         /** Documents processed per second */
         docs_per_second: number;
         /** Elapsed time in seconds */
@@ -588,6 +596,12 @@ export interface IndexShardResult {
     embeddings_properties_skipped?: number;
     properties_values_trimmed?: number;
     properties_bytes_dropped?: number;
+    batches_flushed?: number;
+    bulk_chunks_written?: number;
+    avg_docs_per_batch?: number;
+    avg_chunks_per_batch?: number;
+    avg_bytes_per_doc?: number;
+    avg_bytes_per_chunk?: number;
     read_docs_s: string;
     write_docs_s: string;
     read_mb: string;
@@ -644,6 +658,12 @@ export interface ReindexViaBulkResult {
     embeddings_properties_skipped?: number;
     properties_values_trimmed?: number;
     properties_bytes_dropped?: number;
+    batches_flushed?: number;
+    bulk_chunks_written?: number;
+    avg_docs_per_batch?: number;
+    avg_chunks_per_batch?: number;
+    avg_bytes_per_doc?: number;
+    avg_bytes_per_chunk?: number;
     read_docs_s: string;
     write_docs_s: string;
     read_mb: string;
