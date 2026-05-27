@@ -1,6 +1,12 @@
 import { TextDecoderStream } from "./TextDecoderStream.js";
-import { EventSourceParserStream } from "./EventSourceParserStream.js";
-import type { ParsedEvent, ReconnectInterval } from "eventsource-parser";
+import { EventSourceParserStream, type ParsedEvent } from "./EventSourceParserStream.js";
+
+export type { ParsedEvent };
+
+export interface ReconnectInterval {
+    type: 'reconnect-interval';
+    value: number;
+}
 
 export type ServerSentEvent = ParsedEvent | ReconnectInterval;
 /**
