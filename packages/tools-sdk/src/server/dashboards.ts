@@ -1,7 +1,7 @@
-import { AppDashboardDefinition } from "@vertesia/common";
-import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
-import { ToolServerConfig } from "./types.js";
+import type { AppDashboardDefinition } from '@vertesia/common';
+import type { Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import type { ToolServerConfig } from './types.js';
 
 export function createDashboardsRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { dashboards = [] } = config;
@@ -19,7 +19,7 @@ export function createDashboardsRoute(app: Hono, basePath: string, config: ToolS
         const dashboard = findDashboard(dashboards, id);
         if (!dashboard) {
             throw new HTTPException(404, {
-                message: "No dashboard found with id: " + id,
+                message: `No dashboard found with id: ${id}`,
             });
         }
         return c.json(dashboard);
@@ -27,9 +27,5 @@ export function createDashboardsRoute(app: Hono, basePath: string, config: ToolS
 }
 
 function findDashboard(dashboards: AppDashboardDefinition[], id: string): AppDashboardDefinition | undefined {
-    return dashboards.find(dashboard =>
-        dashboard.id === id
-        || dashboard.name === id
-        || dashboard.title === id
-    );
+    return dashboards.find((dashboard) => dashboard.id === id || dashboard.name === id || dashboard.title === id);
 }
