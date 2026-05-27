@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import AuthPending from "./AuthPending";
 import DemoTokenPanel from "./DemoTokenPanel";
 import EmailStep, { type TenantInfo } from "./EmailStep";
+import SigninPreview from "./SigninPreview";
 import {
     type LastSession,
     type ProviderId,
@@ -41,6 +42,9 @@ export function SigninScreen({ allowedPrefix, isNested = false, lightLogo, darkL
     useSafeLayoutEffect(() => {
         if (allowedPrefix) setAllow(window.location.pathname.startsWith(allowedPrefix));
     }, [allowedPrefix]);
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "signin") {
+        return <SigninPreview />;
+    }
     return allow ? null : (
         <SigninScreenImpl isNested={isNested} lightLogo={lightLogo} darkLogo={darkLogo} preservePath={preservePath} />
     );
