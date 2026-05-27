@@ -1385,3 +1385,20 @@ export interface ValidateUrlRequest {
 export interface ValidateUrlResponse {
     valid: true;
 }
+
+/**
+ * Result of DELETE /api/v1/apps/:id. With `?confirm=true` the cascade runs and
+ * `deleted: true` is set; without it the endpoint returns a dry-run summary so
+ * the UI can show what would be removed.
+ */
+export interface AppDeleteSummary {
+    confirmed: boolean;
+    app_id: string;
+    app_name: string;
+    versions: number;
+    installations: number;
+    storage_prefix: string;
+    git_repo_url?: string;
+    deleted: boolean;
+    warnings: string[];
+}

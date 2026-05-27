@@ -1,5 +1,6 @@
 import { ApiTopic, type ClientBase, type ServerError } from "@vertesia/api-fetch-client";
 import type {
+    AppDeleteSummary,
     AppInstallation,
     AppInstallationKind,
     AppInstallationListEntry,
@@ -41,6 +42,23 @@ export default class AppsApi extends ApiTopic {
 
     update(id: string, manifest: AppManifestData): Promise<AppManifest> {
         return this.put(`/${id}`, { payload: manifest });
+    }
+
+    /**
+     * Preview what the cascade delete would remove. Calls DELETE without confirm,
+     * which the server treats as a dry-run and returns counts + paths.
+     */
+    previewDelete(id: string): Promise<AppDeleteSummary> {
+        return this.del(`/${id}`);
+    }
+
+    /**
+     * Cascade-delete an app and everything attached to it (versions,
+     * installations + ACEs, git repo on the app-git server). Pass through
+     * the dry-run summary; confirm flag is required server-side.
+     */
+    deleteApp(id: string): Promise<AppDeleteSummary> {
+        return this.del(`/${id}`, { query: { confirm: 'true' } });
     }
 
     listVersions(query?: AppVersionListQuery): Promise<AppVersionRecord[]> {
