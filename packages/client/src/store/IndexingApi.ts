@@ -362,6 +362,7 @@ export class IndexingApi extends ApiTopic {
         projectId?: string,
         tuning?: {
             shardSize?: number;
+            shards?: number;
             bulkConcurrency?: number;
             bulkSizeBytes?: number;
             bulkMaxDocs?: number;
@@ -374,6 +375,7 @@ export class IndexingApi extends ApiTopic {
             dry_run: dryRun ?? false,
             backend,
             shard_size: tuning?.shardSize,
+            shards: tuning?.shards,
             bulk_concurrency: tuning?.bulkConcurrency,
             bulk_size_bytes: tuning?.bulkSizeBytes,
             bulk_max_docs: tuning?.bulkMaxDocs,
