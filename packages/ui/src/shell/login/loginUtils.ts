@@ -86,6 +86,13 @@ export async function startSignIn(
 ): Promise<{ ok: true } | { ok: false; reason: "tenant-not-found" | "no-email" }> {
     if (!email) return { ok: false, reason: "no-email" };
 
+    // Demo mode: SigninScreen drives the alternate flow off the pre-saved
+    // Firebase token. Skip the real OAuth redirect so the demo can complete
+    // without the upstream OAuth provider rejecting the dev URL.
+    if (getActiveDemoToken()) {
+        return { ok: true };
+    }
+
     writePendingSignin({ email, provider });
 
     if (provider === "sso") {
@@ -180,4 +187,94 @@ export function isInviteRequiredError(err: unknown): boolean {
     if (!err) return false;
     const msg = err instanceof Error ? err.message : String(err);
     return msg.includes("Customer-domain user requires an invite to join");
+}
+
+// ─── Demo / dev-only signin helper ─────────────────────────────────────────
+// Lets a dev paste a pre-captured Firebase ID token into a UI panel; subsequent
+// provider clicks skip real OAuth and hit /auth/ensure-user directly with the
+// pasted token. Useful for demos on dev branch URLs where OAuth providers reject
+// the redirect URI. Cleared by clicking "Clear" or via clearDemoToken().
+
+const DEMO_TOKEN_KEY = "vt.demoToken";
+const DEMO_TENANT_NAME_KEY = "vt.demoTenantName";
+
+function decodeJwtUnverified(token: string): Record<string, unknown> | null {
+    try {
+        const parts = token.split(".");
+        if (parts.length !== 3) return null;
+        let payload = parts[1]!.replace(/-/g, "+").replace(/_/g, "/");
+        while (payload.length % 4 !== 0) payload += "=";
+        return JSON.parse(atob(payload)) as Record<string, unknown>;
+    } catch {
+        return null;
+    }
+}
+
+export interface DemoTokenInfo {
+    token: string;
+    email?: string;
+    expiresAt?: Date;
+    expired: boolean;
+}
+
+export function inspectDemoToken(token: string): DemoTokenInfo {
+    const payload = decodeJwtUnverified(token);
+    if (!payload) return { token, expired: false };
+    const exp = typeof payload.exp === "number" ? payload.exp : undefined;
+    const expiresAt = exp ? new Date(exp * 1000) : undefined;
+    return {
+        token,
+        email: typeof payload.email === "string" ? payload.email : undefined,
+        expiresAt,
+        expired: expiresAt ? expiresAt.getTime() <= Date.now() : false,
+    };
+}
+
+export function readDemoToken(): DemoTokenInfo | null {
+    try {
+        const t = localStorage.getItem(DEMO_TOKEN_KEY);
+        return t ? inspectDemoToken(t) : null;
+    } catch {
+        return null;
+    }
+}
+
+export function writeDemoToken(token: string): void {
+    try {
+        localStorage.setItem(DEMO_TOKEN_KEY, token.trim());
+    } catch {
+        // ignore
+    }
+}
+
+export function clearDemoToken(): void {
+    try {
+        localStorage.removeItem(DEMO_TOKEN_KEY);
+    } catch {
+        // ignore
+    }
+}
+
+export function readDemoTenantName(): string | null {
+    try {
+        return localStorage.getItem(DEMO_TENANT_NAME_KEY);
+    } catch {
+        return null;
+    }
+}
+
+export function writeDemoTenantName(name: string): void {
+    try {
+        if (name.trim()) localStorage.setItem(DEMO_TENANT_NAME_KEY, name.trim());
+        else localStorage.removeItem(DEMO_TENANT_NAME_KEY);
+    } catch {
+        // ignore
+    }
+}
+
+/** Returns the demo token string if present and unexpired, else null. */
+export function getActiveDemoToken(): string | null {
+    const info = readDemoToken();
+    if (!info || info.expired) return null;
+    return info.token;
 }

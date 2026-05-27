@@ -6,13 +6,17 @@ import { RegionTag } from "@vertesia/ui/layout";
 import { UserNotFoundError, useUserSession, useUXTracking } from "@vertesia/ui/session";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AuthPending from "./AuthPending";
+import DemoTokenPanel from "./DemoTokenPanel";
 import EmailStep, { type TenantInfo } from "./EmailStep";
 import {
     type LastSession,
     type ProviderId,
     clearLastSession,
     clearPendingSignin,
+    getActiveDemoToken,
+    inspectDemoToken,
     isInviteRequiredError,
+    readDemoTenantName,
     readLastSession,
     readPendingSignin,
     writeLastSession,
@@ -129,10 +133,31 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
         void signOut();
     }, [signOut]);
 
-    const onProviderClicked = useCallback((provider: ProviderId) => {
+    const onProviderClicked = useCallback(async (provider: ProviderId) => {
         trackEvent(provider === "sso" ? "enterprise_signin" : "oauth_signin", { provider });
         setPendingProvider(provider);
         setMode("pending");
+
+        // Demo mode: if a Firebase token is staged in localStorage, skip real
+        // OAuth (which can't complete on a non-whitelisted dev URL) and POST it
+        // straight to /auth/ensure-user. The real 403/412/200 response then
+        // routes the SigninScreen as if OAuth had completed normally.
+        const demoToken = getActiveDemoToken();
+        if (!demoToken) return;
+
+        const info = inspectDemoToken(demoToken);
+        if (info.email) setEmail(info.email);
+        try {
+            const res = await fetch(`${Env.endpoints.studio}/auth/ensure-user`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${demoToken}` },
+            });
+            if (res.status === 403) setMode("blocked");
+            else if (res.status === 412) setMode("signup");
+            else setMode("email");
+        } catch {
+            setMode("blocked");
+        }
     }, [trackEvent]);
 
     const goBackToFresh = useCallback(() => {
@@ -170,7 +195,7 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
         content = (
             <TenantBlockedStep
                 email={email || storedSession?.email || ""}
-                tenantName={tenant?.name || storedSession?.tenantName}
+                tenantName={tenant?.name || storedSession?.tenantName || readDemoTenantName() || undefined}
                 onBack={goBackToFresh}
             />
         );
@@ -211,6 +236,7 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
             style={{ zIndex: 999998 }}
             className={`${isNested ? "absolute" : "fixed"} inset-0 overflow-y-auto bg-background`}
         >
+            <DemoTokenPanel />
             <div className="min-h-full flex flex-col items-center justify-center py-12 px-4">
                 <div className="flex flex-col items-center w-full">
                     {(lightLogo || darkLogo) && (
