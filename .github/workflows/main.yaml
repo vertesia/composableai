@@ -17,6 +17,7 @@ jobs:
   unit-tests:
     name: Unit tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -38,15 +39,19 @@ jobs:
           sudo apt-get install -y imagemagick mupdf-tools
         shell: bash
       - name: Install workspace dependencies
+        timeout-minutes: 5
         run: pnpm install
       - name: Build workspace
+        timeout-minutes: 10
         run: pnpm build
       - name: Typecheck and run package tests
+        timeout-minutes: 10
         run: pnpm ci:test
 
   template-smoke-test:
     name: Template smoke test (Plugin)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -61,15 +66,19 @@ jobs:
           node-version: 24
           cache: "pnpm"
       - name: Install workspace dependencies
+        timeout-minutes: 5
         run: pnpm install
       - name: Build workspace
+        timeout-minutes: 10
         run: pnpm build
       - name: Template integration test - Plugin
+        timeout-minutes: 10
         run: ./.github/bin/test-template-integration.sh --release-type snapshot --template "Vertesia Plugin"
 
   notify-repo-studio:
     name: Notify vertesia/studio of new commit
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preview' || startsWith(github.ref, 'refs/heads/repo-dispatch')
     needs:
       - unit-tests

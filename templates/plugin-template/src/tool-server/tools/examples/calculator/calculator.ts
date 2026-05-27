@@ -36,8 +36,11 @@ export async function calculate(
     _context: ToolExecutionContext
 ): Promise<ToolResultContent> {
     try {
-        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-        const { expression } = payload.tool_use.tool_input!;
+        const input = payload.tool_use.tool_input;
+        if (!input) {
+            throw new Error('Missing calculator input');
+        }
+        const { expression } = input;
         const result = evaluateExpression(expression);
 
         return {

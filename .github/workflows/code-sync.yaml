@@ -31,6 +31,7 @@ jobs:
   sync:
     name: Sync code from preview to main
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write # required for pushing the temporary sync branch
       pull-requests: write # required for creating the conflict-resolution PR
@@ -167,6 +168,7 @@ jobs:
       - sync
     if: ${{ needs.sync.outputs.is_merged == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     # Scopes the DEPLOY_KEY secret to a dedicated environment (zizmor: secrets-outside-env).
     environment: build
     permissions:
@@ -203,6 +205,7 @@ jobs:
   notify:
     name: Notify developer of successful sync
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs:
       - push
     if: ${{ needs.push.result == 'success' && github.actor != 'github-actions[bot]' }}
@@ -231,6 +234,7 @@ jobs:
     needs: sync
     if: ${{ needs.sync.outputs.pr_number != '0' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     # Scopes the cross-repo dispatch token to a dedicated environment.
     environment: build
     steps:
@@ -254,6 +258,7 @@ jobs:
   cleanup:
     name: Cleanup temporary sync branch
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs:
       - sync
       - push

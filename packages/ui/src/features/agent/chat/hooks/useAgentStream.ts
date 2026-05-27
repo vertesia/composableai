@@ -6,8 +6,7 @@ import {
     type ConversationFile,
     type FileProcessingDetails,
 } from '@vertesia/common';
-// biome-ignore lint/suspicious/noDeprecatedImports: legacy AgentMessage stream still uses StreamingChunkDetails; migration to CompactMessage tracked separately
-import type { StreamingChunkDetails } from '@vertesia/common';
+import type * as Common from '@vertesia/common';
 import { insertMessageInTimeline, isInProgress } from '../ModernAgentOutput/utils';
 
 /** Streaming data for a single active stream, keyed by streaming/activity ID */
@@ -133,7 +132,7 @@ export function useAgentStream(
             // Handle streaming chunks separately for real-time aggregation
             // PERFORMANCE: Batch updates using RAF instead of immediate state updates
             if (message.type === AgentMessageType.STREAMING_CHUNK) {
-                const details = message.details as StreamingChunkDetails;
+                const details = message.details as Common.StreamingChunkDetails;
                 const streamKey = details?.activity_id || details?.streaming_id;
                 if (!streamKey) return;
 

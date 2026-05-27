@@ -48,17 +48,18 @@
   "devDependencies": {
     "@koa-stack/router": "^0.24.0",
     "@koa-stack/server": "^0.24.0",
-    "@types/koa": "^2.15.0",
+    "@types/koa": "^2.15.2",
     "@types/mocha": "^10.0.10",
+    "@types/node": "^24.12.4",
     "koa": "^2.16.4",
-    "mocha": "^10.2.0",
+    "mocha": "^11.7.6",
     "ts-dual-module": "^0.6.3",
     "ts-node": "^10.9.2",
-    "tsx": "^4.8.1",
-    "typescript": "^6.0.2",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3",
     "vitest": "^4.0.16"
   },
   "dependencies": {
-    "eventsource-parser": "^1.1.1"
+    "eventsource-parser": "^3.0.8"
   }
 }
