@@ -8,9 +8,23 @@ interface TenantBlockedStepProps {
     onBack: () => void;
 }
 
+function emailDomain(e: string): string {
+    const at = e.lastIndexOf("@");
+    return at > 0 ? e.slice(at + 1) : "";
+}
+
+function capitalizeFirst(s: string): string {
+    return s ? s[0]!.toUpperCase() + s.slice(1) : s;
+}
+
 export default function TenantBlockedStep({ email, tenantName, onBack }: TenantBlockedStepProps) {
     const { t } = useUITranslation();
-    const name = tenantName || t("auth.blocked.tenantFallback");
+    // Subheading keeps the i18n fallback ("your organization"). The callout
+    // box uses a "<Domain> Team" form so the user sees something concrete when
+    // we don't have a real tenant name.
+    const subheadingName = tenantName || t("auth.blocked.tenantFallback");
+    const domain = emailDomain(email);
+    const boxName = tenantName || (domain ? `${capitalizeFirst(domain)} Team` : t("auth.blocked.tenantFallback"));
 
     return (
         <div className="w-full max-w-[420px] flex flex-col gap-6">
@@ -22,17 +36,15 @@ export default function TenantBlockedStep({ email, tenantName, onBack }: TenantB
                     {t("auth.blocked.title")}
                 </h1>
                 <p className="text-muted text-sm leading-relaxed">
-                    {t("auth.blocked.body", { name, email })}
+                    {t("auth.blocked.body", { name: subheadingName, email })}
                 </p>
             </div>
 
             <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-destructive-background border border-destructive/20">
-                    <span className="size-6 rounded-md bg-destructive text-destructive-foreground grid place-items-center shrink-0">
-                        <ShieldOff className="size-3.5" />
-                    </span>
+                    <ShieldOff className="size-5 text-destructive shrink-0" />
                     <div className="flex-1 min-w-0 text-sm">
-                        <div className="font-semibold text-destructive">{name}</div>
+                        <div className="font-semibold text-destructive">{boxName}</div>
                         <div className="text-xs text-destructive/80">
                             {t("auth.blocked.tenantMeta", { email })}
                         </div>

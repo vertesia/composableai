@@ -19,6 +19,10 @@ const ICONS: Record<ProviderId, ComponentType<{ className?: string }>> = {
 export default function AuthPending({ provider, onCancel }: AuthPendingProps) {
     const { t } = useUITranslation();
     const Icon = ICONS[provider];
+    // OIDC has no brand name to drop into "Redirecting to X" — the title needs
+    // a noun phrase ("Sign-In Provider"), unlike the button CTA context where
+    // providerLabel's "Sign In" reads fine ("Continue with Sign In").
+    const titleProvider = provider === "oidc" ? "Sign-In Provider" : providerLabel(provider);
 
     return (
         <div className="w-full max-w-[420px] flex flex-col gap-6 items-center text-center">
@@ -27,7 +31,7 @@ export default function AuthPending({ provider, onCancel }: AuthPendingProps) {
                     <Icon className={provider === "oidc" ? "size-6 text-info" : "size-6"} />
                 </div>
                 <h1 className="text-foreground text-[22px] font-semibold tracking-tight leading-tight mb-1.5">
-                    {t("auth.pending.title", { provider: providerLabel(provider) })}
+                    {t("auth.pending.title", { provider: titleProvider })}
                 </h1>
                 <p className="text-muted text-sm leading-relaxed">{t("auth.pending.body")}</p>
             </div>
