@@ -414,6 +414,38 @@ export interface StartProjectReindexPayload {
     bulk_concurrency?: number;
 }
 
+/**
+ * Auto-tunes shard_size and parallel_shard_count based on project doc count.
+ *
+ * The default shard_size (250k) leaves small/medium projects under-sharded —
+ * a 48k-doc project runs as a single Mongo cursor feeding 10 bulk workers,
+ * which sit half-idle. This heuristic picks a shard size that produces
+ * roughly 4-20 shards per project, sized to keep cursors saturating the
+ * bulk pool without overwhelming Temporal coordination on huge projects.
+ *
+ * Explicit overrides should bypass this function and use user-provided values.
+ */
+export function autoTuneReindexParams(docCount: number): { shard_size: number; parallel_shard_count: number } {
+    if (docCount < 50_000) {
+        // Tiny/small project: aim for ~4 shards, with a 5k floor so we don't
+        // create more shards than is useful (each shard has ~constant overhead).
+        return {
+            shard_size: Math.max(Math.ceil(docCount / 4), 5_000),
+            parallel_shard_count: Math.min(4, Math.max(1, Math.ceil(docCount / 5_000))),
+        };
+    }
+    if (docCount < 500_000) {
+        // Medium project: 50k shards → 1-10 shards
+        return { shard_size: 50_000, parallel_shard_count: 8 };
+    }
+    if (docCount < 2_000_000) {
+        // Large project: 100k shards → 5-20 shards
+        return { shard_size: 100_000, parallel_shard_count: 8 };
+    }
+    // Huge project: stick to 250k shards to keep coordination overhead bounded.
+    return { shard_size: 250_000, parallel_shard_count: 8 };
+}
+
 export interface ReindexAgentRunsPayload {
     /**
      * Drop any existing agent-runs index/alias family and recreate the stable concrete index before indexing.
