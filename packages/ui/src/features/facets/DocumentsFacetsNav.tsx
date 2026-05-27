@@ -1,10 +1,10 @@
-import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup, useIsInModal } from '@vertesia/ui/core';
+import { type Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, type FilterGroup, useIsInModal } from '@vertesia/ui/core';
 import { useState } from 'react';
-import { ComputedFacetResponse } from '@vertesia/common';
+import type { ComputedFacetResponse } from '@vertesia/common';
 import { useTypeRegistry } from '../store/types/TypeRegistryProvider.js';
 import { VStringFacet } from './utils/VStringFacet';
 import { VTypeFacet } from './utils/VTypeFacet';
-import { SearchInterface } from './utils/SearchInterface';
+import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue, unwrapFilterOptionValue } from './utils/SearchInterface';
 
 interface DocumentsFacetsNavProps {
     facets: ComputedFacetResponse;
@@ -46,7 +46,6 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
 
     if (facets.status) {
         const statusFilterGroup = VStringFacet({
-            search: null as any, // This will be provided by the search context
             buckets: getBuckets(facets.status),
             name: 'status',
             placeholder: 'Status',
@@ -101,54 +100,42 @@ export function useDocumentFilterHandler(search: SearchInterface) {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name;
 
-                let filterValue;
+                let filterValue: unknown;
                 if (filter.type === 'date' && filter.multiple) {
                     // Handle date range filters
                     if (Array.isArray(filter.value) && filter.value.length > 0) {
                         if (filter.value.length === 1) {
                             // Single date - use as both start and end
-                            const dateValue = typeof filter.value[0] === 'object' ? (filter.value[0] as any).value : filter.value[0];
+                            const dateValue = unwrapFilterOptionValue(filter.value[0]);
                             filterValue = {
                                 gte: dateValue,
                                 lte: dateValue
                             };
                         } else if (filter.value.length === 2) {
                             // Date range - start and end dates
-                            const startDate = typeof filter.value[0] === 'object' ? (filter.value[0] as any).value : filter.value[0];
-                            const endDate = typeof filter.value[1] === 'object' ? (filter.value[1] as any).value : filter.value[1];
+                            const startDate = unwrapFilterOptionValue(filter.value[0]);
+                            const endDate = unwrapFilterOptionValue(filter.value[1]);
                             filterValue = {
                                 gte: startDate,
                                 lte: endDate
                             };
                         }
                     }
-                } else if (filter.multiple) {
-                    if (Array.isArray(filter.value)) {
-                        filterValue = filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v);
-                    } else {
-                        const singleValue = typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value;
-                        filterValue = [singleValue];
-                    }
                 } else {
-                    // Single value - don't wrap in array
-                    filterValue = Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
-                        ? (filter.value[0] as any).value
-                        : Array.isArray(filter.value) && filter.value[0]
-                            ? filter.value[0]
-                            : filter.value;
+                    filterValue = filterValueToQueryValue(filter);
                 }
 
                 if (filterName === 'name') {
-                    search.query.name = filterValue;
+                    setSearchQueryValue(search, 'name', filterValue);
                 } else if (filterName === 'id') {
-                    search.query.id = filterValue;
+                    setSearchQueryValue(search, 'id', filterValue);
                 } else {
-                    search.query[filterName] = filterValue;
+                    setSearchQueryValue(search, filterName, filterValue);
                 }
             }
         });
 
-        search.search();
+        void search.search();
     };
 }
 

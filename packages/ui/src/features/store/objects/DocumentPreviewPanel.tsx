@@ -1,5 +1,5 @@
 import {
-  ContentObject,
+  type ContentObject,
   ImageRenditionFormat
 } from "@vertesia/common";
 import { Button, Spinner, useToast } from "@vertesia/ui/core";
@@ -15,8 +15,8 @@ import {
   Maximize2,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useCallback, useEffect, useState } from "react";
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface DocumentPreviewPanelProps {
   objectId: string | null;
@@ -40,53 +40,7 @@ export function DocumentPreviewPanel({
   const { t } = useUITranslation();
   const toast = useToast();
 
-  useEffect(() => {
-    if (objectId && isOpen) {
-      setIsLoading(true);
-      store.objects
-        .retrieve(objectId, "+embeddings")
-        .then((result) => {
-          setObject(result);
-          // If the object has text, use it
-          if (result.text) {
-            setText(result.text);
-          } else {
-            // Otherwise, fetch text
-            loadObjectText(result.id);
-          }
-
-          // If it's an image, load the image URL
-          const content = result.content;
-          const isImage =
-            content &&
-            content.source &&
-            content.type &&
-            content.type.startsWith("image/");
-          if (isImage) {
-            loadImageUrl(result);
-          }
-        })
-        .catch((error) => {
-          console.error("Error loading object:", error);
-          toast({
-            title: t('agent.error'),
-            description: t('store.failedToLoadDocument'),
-            status: "error",
-            duration: 3000,
-          });
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    } else {
-      // Reset state when panel closes
-      setObject(null);
-      setText(undefined);
-      setImageUrl(undefined);
-    }
-  }, [objectId, isOpen, store.objects]);
-
-  const loadObjectText = async (id: string) => {
+  const loadObjectText = useCallback(async (id: string) => {
     setLoadingText(true);
     try {
       const result = await store.objects.getObjectText(id);
@@ -96,9 +50,9 @@ export function DocumentPreviewPanel({
     } finally {
       setLoadingText(false);
     }
-  };
+  }, [store.objects]);
 
-  const loadImageUrl = async (obj: ContentObject) => {
+  const loadImageUrl = useCallback(async (obj: ContentObject) => {
     if (!obj.content?.source) {
       return;
     }
@@ -123,7 +77,51 @@ export function DocumentPreviewPanel({
     } catch (error) {
       console.error("Error loading image:", error);
     }
-  };
+  }, [client.files, client.objects]);
+
+  useEffect(() => {
+    if (objectId && isOpen) {
+      setIsLoading(true);
+      store.objects
+        .retrieve(objectId, "+embeddings")
+        .then((result) => {
+          setObject(result);
+          // If the object has text, use it
+          if (result.text) {
+            setText(result.text);
+          } else {
+            // Otherwise, fetch text
+            void loadObjectText(result.id);
+          }
+
+          // If it's an image, load the image URL
+          const content = result.content;
+          const isImage =
+            content?.source &&
+            content.type?.startsWith("image/");
+          if (isImage) {
+            void loadImageUrl(result);
+          }
+        })
+        .catch((error) => {
+          console.error("Error loading object:", error);
+          toast({
+            title: t('agent.error'),
+            description: t('store.failedToLoadDocument'),
+            status: "error",
+            duration: 3000,
+          });
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else {
+      // Reset state when panel closes
+      setObject(null);
+      setText(undefined);
+      setImageUrl(undefined);
+    }
+  }, [objectId, isOpen, store.objects, loadObjectText, loadImageUrl, t, toast]);
 
   const handleViewFullDocument = () => {
     if (object) {
@@ -136,19 +134,19 @@ export function DocumentPreviewPanel({
     text &&
     (text.startsWith("#") || text.includes("\n#") || text.includes("\n*"));
   const isImage =
-    object?.content?.type && object.content.type.startsWith("image/");
+    object?.content?.type?.startsWith("image/");
   const isPdf = object?.content?.type === "application/pdf";
 
   if (!isOpen) return null;
 
   return (
     <div
-      className={`fixed inset-y-0 right-0 w-2/5 dark:bg-slate-900 shadow-xl z-50 flex flex-col transition-transform duration-300 transform ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+      className={`fixed inset-y-0 end-0 w-2/5 dark:bg-slate-900 shadow-xl z-50 flex flex-col transition-transform duration-300 transform ${isOpen ? "translate-x-0" : "translate-x-full rtl:-translate-x-full"}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-gray-50 dark:from-gray-800 dark:to-gray-900">
         <div className="flex items-center">
-          <FileText className="h-5 w-5 text-indigo-600 mr-2" />
+          <FileText className="h-5 w-5 text-indigo-600 me-2" />
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 truncate">
             {isLoading
               ? t('store.loadingDocument')
@@ -194,7 +192,8 @@ export function DocumentPreviewPanel({
           {/* Tabs */}
           <div className="border-b">
             <div className="flex px-4">
-              <button
+              <Button
+                variant="unstyled"
                 className={`py-2 px-4 font-medium border-b-2 ${currentTab === "preview"
                   ? "border-indigo-600 text-indigo-700 dark:text-indigo-300"
                   : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -205,8 +204,9 @@ export function DocumentPreviewPanel({
                   <LayoutGrid className="h-4 w-4" />
                   <span>{t('store.preview')}</span>
                 </div>
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="unstyled"
                 className={`py-2 px-4 font-medium border-b-2 ${currentTab === "properties"
                   ? "border-indigo-600 text-indigo-700 dark:text-indigo-300"
                   : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -217,7 +217,7 @@ export function DocumentPreviewPanel({
                   <Info className="h-4 w-4" />
                   <span>{t('store.properties')}</span>
                 </div>
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -392,7 +392,7 @@ export function DocumentPreviewPanel({
               variant="outline"
               className="text-indigo-600 border-indigo-300 hover:bg-indigo-50"
             >
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="h-4 w-4 me-2" />
               {t('pdf.download')}
             </Button>
           )}
@@ -402,7 +402,7 @@ export function DocumentPreviewPanel({
           className="bg-indigo-600 hover:bg-indigo-700 text-white"
         >
           {t('store.openFullDocument')}
-          <ChevronRight className="h-4 w-4 ml-2" />
+          <ChevronRight className="h-4 w-4 ms-2 cn-rtl-flip" />
         </Button>
       </div>
     </div>
@@ -416,5 +416,5 @@ function formatFileSize(bytes: number): string {
   const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 }

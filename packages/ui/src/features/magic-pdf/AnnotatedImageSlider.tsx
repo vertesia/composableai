@@ -1,8 +1,8 @@
 import { Button, Center, VTooltip } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp, Image, Loader2, Maximize, Minus, Plus, ScanSearch } from "lucide-react";
-import { useRef, KeyboardEvent, useState, useEffect, useCallback } from "react";
-import { useUITranslation } from '../../i18n/index.js';
+import { useRef, type KeyboardEvent, useState, useEffect, useCallback } from "react";
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { ImageType, useMagicPdfContext } from "./MagicPdfProvider";
 
 // Zoom levels as percentages (100 = fit to width)
@@ -128,7 +128,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
 
         // Start all loads in parallel - prioritized pages will update state first
         // since they're fetched first in the loadOrder
-        loadOrder.forEach(page => loadPage(page));
+        loadOrder.forEach(page => { void loadPage(page); });
 
         return () => {
             cancelled = true;
@@ -255,7 +255,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                 <Button variant="ghost" size="xs" onClick={goPrev} alt={t('pdf.previousPage')}>
                     <ChevronsUp className='size-4' />
                 </Button>
-                <div className="absolute left-2 flex items-center gap-x-1">
+                <div className="absolute start-2 flex items-center gap-x-1">
                     <ImageTypeButton
                         type={ImageType.original}
                         currentType={imageType}
@@ -280,13 +280,14 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                         canZoomOut={zoom > ZOOM_LEVELS[0]}
                     />
                 </div>
-                <div className="absolute right-2">
+                <div className="absolute end-2">
                     <PageNavigator currentPage={currentPage} totalPages={count} onChange={onChange} />
                 </div>
             </div>
             <div ref={scrollContainerRef} className='flex flex-col items-center gap-2 flex-1 overflow-y-auto px-2'>
                 {Array.from({ length: count }, (_, index) => (
                     <PageThumbnail
+                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                         key={index}
                         currentPage={currentPage}
                         pageNumber={index + 1}
@@ -317,7 +318,10 @@ function ImageTypeButton({ type, currentType, onClick, icon, tooltip }: ImageTyp
     const isSelected = type === currentType;
     return (
         <VTooltip description={tooltip} placement="bottom" size="xs">
-            <button
+            <Button
+                variant="unstyled"
+                aria-label={tooltip}
+                aria-pressed={isSelected}
                 className={clsx(
                     "p-1 rounded cursor-pointer transition-colors",
                     isSelected
@@ -327,7 +331,7 @@ function ImageTypeButton({ type, currentType, onClick, icon, tooltip }: ImageTyp
                 onClick={onClick}
             >
                 {icon}
-            </button>
+            </Button>
         </VTooltip>
     );
 }
@@ -345,7 +349,9 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
     return (
         <div className="flex items-center gap-x-0.5">
             <VTooltip description={t('pdf.zoomOut')} placement="bottom" size="xs">
-                <button
+                <Button
+                    variant="unstyled"
+                    aria-label={t('pdf.zoomOut')}
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
                         canZoomOut
@@ -356,13 +362,15 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
                     disabled={!canZoomOut}
                 >
                     <Minus className="size-4" />
-                </button>
+                </Button>
             </VTooltip>
             <span className="text-xs text-muted-foreground min-w-[32px] text-center">
                 {zoom}%
             </span>
             <VTooltip description={t('pdf.zoomIn')} placement="bottom" size="xs">
-                <button
+                <Button
+                    variant="unstyled"
+                    aria-label={t('pdf.zoomIn')}
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
                         canZoomIn
@@ -373,10 +381,12 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
                     disabled={!canZoomIn}
                 >
                     <Plus className="size-4" />
-                </button>
+                </Button>
             </VTooltip>
             <VTooltip description={t('pdf.fitToWidth')} placement="bottom" size="xs">
-                <button
+                <Button
+                    variant="unstyled"
+                    aria-label={t('pdf.fitToWidth')}
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
                         zoom !== DEFAULT_ZOOM
@@ -386,7 +396,7 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
                     onClick={onFitToView}
                 >
                     <Maximize className="size-4" />
-                </button>
+                </Button>
             </VTooltip>
         </div>
     );
@@ -410,9 +420,13 @@ function PageThumbnail({ pageNumber, currentPage, aspectRatio, zoom, url, onSele
             data-page={pageNumber}
             style={{ width: `${widthPercent}%` }}
         >
-            <div
+            <Button
+                variant="unstyled"
+                size="none"
+                aria-pressed={isSelected}
+                aria-label={`Page ${pageNumber}`}
                 className={clsx(
-                    'relative border-[2px] cursor-pointer overflow-hidden flex items-center justify-center bg-muted/50 w-full',
+                    'relative border-[2px] cursor-pointer overflow-hidden !flex items-center justify-center bg-muted/50 w-full',
                     isSelected ? "border-primary" : "border-border"
                 )}
                 style={{ aspectRatio: `1 / ${aspectRatio}` }}
@@ -423,7 +437,7 @@ function PageThumbnail({ pageNumber, currentPage, aspectRatio, zoom, url, onSele
                 ) : (
                     <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                 )}
-            </div>
+            </Button>
             <Center className="text-sm text-muted-foreground pt-1 font-semibold">{pageNumber}</Center>
         </div>
     );
@@ -446,7 +460,7 @@ function PageNavigator({ currentPage, totalPages, onChange }: PageNavigatorProps
 
     const handleSubmit = () => {
         const page = parseInt(inputValue, 10);
-        if (!isNaN(page) && page >= 1 && page <= totalPages) {
+        if (!Number.isNaN(page) && page >= 1 && page <= totalPages) {
             onChange(page);
         } else {
             // Reset to current page if invalid

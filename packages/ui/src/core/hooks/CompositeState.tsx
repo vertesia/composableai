@@ -1,9 +1,9 @@
-import React, { ReactNode, useContext, useEffect, useState } from "react";
+import React, { type ReactNode, useContext, useEffect, useState } from "react";
 
 //type KeysOfType<T, V> = { [K in keyof T]-?: T[K] extends V ? K : never }[keyof T];
 //type KeysNotOfType<T, V> = { [K in keyof T]-?: T[K] extends V ? never : K }[keyof T];
 
-export class Property<V = any> {
+export class Property<V = unknown> {
     private _value?: V;
     private watchers: ((value: V | undefined) => void)[] = [];
     /**
@@ -46,9 +46,9 @@ interface ContextContainer<T> {
     Context: React.Context<T>
 }
 
-type ConstructorOf<T = any> = new (...args: any[]) => T;
+type ConstructorOf<T = unknown> = new (...args: never[]) => T;
 export function createCompositeStateProvider<T>(StateClass: ConstructorOf<T>) {
-    const context = React.createContext<T>(undefined as any);
+    const context = React.createContext<T>(undefined as T);
     (StateClass as unknown as ContextContainer<T>).Context = context;
     return context.Provider;
 }
@@ -76,7 +76,7 @@ export class Slot {
 
     withConsumer(consume: ((content: ReactNode) => void) | undefined) {
         this.consume = consume;
-        consume && consume(this.current);
+        consume?.(this.current);
         return this;
     }
 }
@@ -85,7 +85,7 @@ export class Slot {
 export function useCompositeState<T>(StateClass: ConstructorOf<T>) {
     const context = (StateClass as unknown as ContextContainer<T>).Context;
     if (!context) {
-        throw new Error("Context not defined for " + StateClass.name);
+        throw new Error(`Context not defined for ${StateClass.name}`);
     }
     return useContext(context);
 }
@@ -219,7 +219,7 @@ export function useDefineSlot(slot: Slot, value: ReactNode | undefined) {
  * @important Remember to call dispose() when the ComputedProperty is no longer needed
  * to prevent memory leaks by unsubscribing from all dependencies.
  */
-export class ComputedProperty<V = any> {
+export class ComputedProperty<V = unknown> {
     private _value?: V;
     private watchers: ((value: V | undefined) => void)[] = [];
     private unsubscribers: (() => void)[] = [];
@@ -236,7 +236,7 @@ export class ComputedProperty<V = any> {
      */
     constructor(
         private compute: () => V,
-        dependencies: Property<any>[],
+        dependencies: Property<unknown>[],
         name?: string
     ) {
         this.name = name;

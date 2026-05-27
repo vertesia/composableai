@@ -4,9 +4,9 @@
 
 import { describe, it, expect } from 'vitest';
 import { skillTransformer, SkillDefinitionSchema } from '../src/presets/skill.js';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -38,7 +38,7 @@ Content here`;
 
     const result = await skillTransformer.transform(content, 'test.md');
     expect(result.data).toHaveProperty('context_triggers');
-    expect((result.data as any).context_triggers).toEqual({
+    expect((result.data as { context_triggers: { keywords: string[] } }).context_triggers).toEqual({
       keywords: ['foo', 'bar', 'baz']
     });
   });
@@ -54,7 +54,7 @@ Content`;
 
     const result = await skillTransformer.transform(content, 'test.md');
     expect(result.data).toHaveProperty('tools');
-    expect((result.data as any).tools).toEqual(['tool1', 'tool2']);
+    expect((result.data as { tools: string[] }).tools).toEqual(['tool1', 'tool2']);
   });
 
   it('should validate against schema successfully', () => {

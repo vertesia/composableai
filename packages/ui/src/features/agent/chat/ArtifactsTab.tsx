@@ -1,4 +1,4 @@
-import { Button } from '@vertesia/ui/core';
+import { Button, ErrorBox } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     ChevronDownIcon,
@@ -11,7 +11,7 @@ import {
     RefreshCwIcon,
 } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useArtifacts, type ArtifactTreeNode } from './hooks/useArtifacts.js';
 
 // ---------------------------------------------------------------------------
@@ -37,19 +37,20 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeP
     if (node.isDirectory) {
         return (
             <div>
-                <button
-                    className="flex items-center gap-1.5 w-full text-left py-1 px-1 rounded hover:bg-muted/30 text-sm"
+                <Button
+                    variant="unstyled"
+                    className="flex items-center gap-1.5 w-full text-start py-1 px-1 rounded hover:bg-muted/30 text-sm"
                     style={{ paddingLeft: `${depth * 16 + 4}px` }}
                     onClick={() => setExpanded((prev) => !prev)}
                 >
                     {expanded
                         ? <ChevronDownIcon className="size-3.5 shrink-0 text-muted" />
-                        : <ChevronRightIcon className="size-3.5 shrink-0 text-muted" />}
+                        : <ChevronRightIcon className="size-3.5 shrink-0 text-muted cn-rtl-flip" />}
                     {expanded
                         ? <FolderOpenIcon className="size-4 shrink-0 text-info" />
                         : <FolderIcon className="size-4 shrink-0 text-info" />}
                     <span className="truncate font-medium">{formatDirectoryLabel(node.name)}</span>
-                </button>
+                </Button>
                 {expanded && node.children.map((child) => (
                     <TreeNode
                         key={child.path}
@@ -67,8 +68,9 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeP
     const isDownloading = downloadingPath === node.path;
 
     return (
-        <button
-            className="flex items-center gap-1.5 w-full text-left py-1 px-1 rounded hover:bg-muted/30 text-sm"
+        <Button
+            variant="unstyled"
+            className="flex items-center gap-1.5 w-full text-start py-1 px-1 rounded hover:bg-muted/30 text-sm"
             style={{ paddingLeft: `${depth * 16 + 4}px` }}
             onClick={() => onDownload(node.path)}
             disabled={isDownloading}
@@ -78,7 +80,7 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeP
                 : <span className="size-3.5 shrink-0" />}
             <FileIcon className="size-4 shrink-0 text-muted" />
             <span className="truncate">{node.name}</span>
-        </button>
+        </Button>
     );
 }
 
@@ -136,12 +138,10 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center py-8 text-muted">
-                <span className="text-sm text-destructive mb-2">{error}</span>
-                <Button variant="ghost" size="sm" onClick={refresh}>
-                    <RefreshCwIcon className="size-3.5 mr-1.5" />
-                    {t('agent.retry')}
-                </Button>
+            <div className="flex flex-col items-center justify-center p-4 text-muted w-full">
+                <ErrorBox title="Fail to load Artifacts" className="w-full" action={refresh} actionLabel={<><RefreshCwIcon className="size-3.5 me-1.5" />{t('agent.retry')}</>}>
+                    <span className="break-all text-muted">{error}</span> <br />
+                </ErrorBox>
             </div>
         );
     }
@@ -152,7 +152,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
                 <PackageIcon className="size-8 mb-2" />
                 <span className="text-sm">{t('agent.noArtifactsYet')}</span>
                 <Button variant="ghost" size="sm" className="mt-2" onClick={refresh}>
-                    <RefreshCwIcon className="size-3.5 mr-1.5" />
+                    <RefreshCwIcon className="size-3.5 me-1.5" />
                     {t('agent.refresh')}
                 </Button>
             </div>

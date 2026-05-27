@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import type { Element } from 'hast';
 import { useResolvedUrl, parseUrlScheme, mapSchemeToRoute } from './useResolvedUrl';
 import { CodeBlockPlaceholder } from './CodeBlockPlaceholder';
@@ -10,7 +10,7 @@ export interface MarkdownLinkProps {
     className?: string;
     artifactRunId?: string;
     /** Existing link component to delegate to for standard URLs */
-    ExistingLink?: React.ComponentType<any>;
+    ExistingLink?: React.ComponentType<MarkdownLinkProps>;
 }
 
 /**

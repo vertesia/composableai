@@ -23,7 +23,7 @@ export function Sidebar({ children, logo, className }: SidebarProps) {
             }
             <div className="flex-1 min-h-0 overflow-hidden px-0 lg:px-2">
                 <nav className="h-full flex flex-col">
-                    <ul role="list" className="flex flex-col gap-y-2 overflow-y-auto h-full">
+                    <ul className="flex flex-col gap-y-2 overflow-y-auto h-full">
                         {children}
                     </ul>
                 </nav>
@@ -42,7 +42,7 @@ interface SidebarSectionProps {
 export function SidebarSection({ children, title, action, isFooter = false, className }: SidebarSectionProps) {
     const { isOpen } = useSidebarToggle();
 
-    let header = isOpen ? <>
+    const header = isOpen ? <>
         {title || ""}
         {action}
     </> : <Dot className='size-6' />
@@ -62,7 +62,7 @@ export function SidebarSection({ children, title, action, isFooter = false, clas
 export function SidebarTooltip({ children, text }: { children: React.ReactNode, text?: string }) {
     const { isOpen } = useSidebarToggle();
     return (
-        isOpen ? <>{children}</> :
+        isOpen ? children :
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -132,7 +132,7 @@ export function SidebarItem({ external, className, tools, children, icon: Icon, 
                             />
                         }
                         {children}
-                        {tools && <div className='flex items-center ml-auto'>{tools}</div>}
+                        {tools && <div className='flex items-center ms-auto'>{tools}</div>}
                     </a>
                 </SidebarTooltip>
             </Nav>

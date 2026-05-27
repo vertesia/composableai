@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { SortableTableHeaderCell, type SortDirection } from '@vertesia/ui/core';
 
 export type SortDir = 'asc' | 'desc';
 
@@ -11,6 +12,11 @@ interface SortableHeadProps<TField extends string> {
     className?: string;
 }
 
+const directionToAria: Record<SortDir, SortDirection> = {
+    asc: 'ascending',
+    desc: 'descending',
+};
+
 export function SortableHead<TField extends string>({
     field,
     label,
@@ -22,21 +28,18 @@ export function SortableHead<TField extends string>({
     const isActive = activeField === field;
     const Icon = isActive ? (direction === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
     return (
-        <th
-            scope="col"
-            aria-sort={
-                isActive ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'
-            }
-            className={`text-left cursor-pointer select-none${className ? ` ${className}` : ''}`}
-            onClick={() => onSort(field)}
-        >
-            <div className="flex items-center gap-1">
-                <span>{label}</span>
+        <SortableTableHeaderCell
+            sortDirection={isActive ? directionToAria[direction] : 'none'}
+            onSort={() => onSort(field)}
+            className={`text-start select-none${className ? ` ${className}` : ''}`}
+            sortIndicator={() => (
                 <Icon
                     className={`size-3 ${isActive ? '' : 'opacity-40'}`}
                     aria-hidden="true"
                 />
-            </div>
-        </th>
+            )}
+        >
+            {label}
+        </SortableTableHeaderCell>
     );
 }

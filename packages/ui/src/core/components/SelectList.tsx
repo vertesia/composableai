@@ -1,8 +1,8 @@
 import { Check } from "lucide-react";
 import clsx from "clsx";
-import { ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useUITranslation } from "@vertesia/ui/i18n";
-import { Input } from "./shadcn";
+import { Button, Input } from "./shadcn";
 
 const Default_Option_Style = "flex-1 px-2 py-2 hover:bg-accent nowrap";
 
@@ -68,6 +68,7 @@ export function SelectList<T>({ value, options, onChange, className, optionLayou
                     layout = defaultOptionLayout(option, isSelected);
                 }
                 return (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     <SelectListOption key={i}
                         option={option}
                         onSelect={onSelect}
@@ -88,10 +89,15 @@ interface SelectListOptionProps<T> {
 
 function SelectListOption<T>({ option, onSelect, layout, noCheck }: SelectListOptionProps<T>) {
     return (
-        <div className={clsx('group flex items-center cursor-pointer gap-x-2 hover:bg-muted',
-            layout.reverse && 'flex-row-reverse', layout.className)} onClick={() => onSelect(option)}>
+        <Button
+            variant="unstyled"
+            size="none"
+            className={clsx('group !flex w-full items-center cursor-pointer gap-x-2 hover:bg-muted',
+                layout.reverse && 'flex-row-reverse', layout.className)}
+            onClick={() => onSelect(option)}
+        >
             {noCheck ? null : <div className="">{layout.check}</div>}
             <div className='flex-1'>{layout.label}</div>
-        </div>
+        </Button>
     )
 }

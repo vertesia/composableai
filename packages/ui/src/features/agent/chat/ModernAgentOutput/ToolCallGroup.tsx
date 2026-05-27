@@ -1,21 +1,22 @@
-import { AgentMessage, AgentMessageType } from "@vertesia/common";
-import { Button, cn, useToast } from "@vertesia/ui/core";
+import { type AgentMessage, AgentMessageType } from "@vertesia/common";
+import { Button, cn, onActivateKey, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { Bot, ChevronDown, ChevronRight, CopyIcon, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
 import { useState, memo, useEffect, useRef } from "react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { useImageLightbox } from "../ImageLightbox";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
-import { ToolExecutionStatus } from "./utils";
+import type { ToolExecutionStatus } from "./utils";
 
 /** Keys that are internal metadata and not interesting to display */
 const META_KEYS = new Set([
     'tool', 'tool_run_id', 'activity_group_id', 'event_class',
     'tool_iteration', 'tool_status', 'tools', 'streamed',
     'files', 'outputFiles', 'display_role', 'observation',
+    'browseruse', 'browser_use',
 ]);
 
 /** Filter out internal metadata keys, return user-facing detail entries */
@@ -124,7 +125,7 @@ function mergeByToolRunId(messages: AgentMessage[]): AgentMessage[] {
         // message text from the running message (message_to_human) if the
         // completed message has no text or empty text.
         const base = msgs[msgs.length - 1];
-        const runningMsg = msgs.find(m => (m.details as any)?.tool_status === 'running');
+        const runningMsg = msgs.find(m => m.details?.tool_status === 'running');
 
         if (runningMsg && (!base.message || base.message.trim() === '') && runningMsg.message) {
             // Merge: use running message text with completed message details
@@ -179,22 +180,26 @@ function FileDisplay({ files, className: fileClassName }: { files: string[]; cla
                 const fileName = file.split('/').pop()?.split('?')[0] || 'file';
                 if (isImageUrl(file)) {
                     return (
-                        <div
+                        <Button
+                            variant="unstyled"
+                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                             key={idx}
-                            className="cursor-pointer"
+                            className="cursor-pointer p-0"
                             onClick={() => openImage(file, fileName)}
                             title={t('agent.clickToEnlarge')}
+                            aria-label={fileName}
                         >
                             <img
                                 src={file}
                                 alt={fileName}
                                 className="max-w-[300px] max-h-[200px] rounded border hover:opacity-80 transition-opacity hover:shadow-lg"
                             />
-                        </div>
+                        </Button>
                     );
                 }
                 return (
                     <a
+                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                         key={idx}
                         href={file}
                         target="_blank"
@@ -311,7 +316,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                 setResolvedFiles(resolved.filter((f): f is string => !!f));
             }
         };
-        resolveFiles();
+        void resolveFiles();
         return () => { cancelled = true; };
     }, [files, artifactRunId]);
 
@@ -322,7 +327,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
     const copyToClipboard = () => {
         const textToCopy = [
             messageContent,
-            details ? "\n\nDetails:\n" + JSON.stringify(details, null, 2) : ""
+            details ? `\n\nDetails:\n${JSON.stringify(details, null, 2)}` : ""
         ].join("").trim();
 
         navigator.clipboard.writeText(textToCopy).then(() => {
@@ -337,16 +342,20 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
     return (
         <div className={cn("border-b border-gray-100 dark:border-gray-800 last:border-b-0", classNames.itemClassName)}>
             {/* Collapsed header - always visible */}
+            {/* biome-ignore lint/a11y/useSemanticElements: header contains nested Buttons (copy); button-in-button is invalid HTML so role="button" on a div is the pragmatic choice. */}
             <div
+                role="button"
+                tabIndex={0}
                 className={cn("flex items-start justify-between px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", classNames.itemHeaderClassName)}
                 onClick={onToggle}
+                onKeyDown={onActivateKey(onToggle)}
             >
                 <div className="flex items-start gap-2 flex-1 min-w-0">
                     <div className="flex-shrink-0 pt-0.5">
                         {isExpanded ? (
                             <ChevronDown className="size-3 text-muted" />
                         ) : (
-                            <ChevronRight className="size-3 text-muted" />
+                            <ChevronRight className="size-3 text-muted cn-rtl-flip" />
                         )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -424,7 +433,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
 
                         {/* Show observation from details if available and different from header text */}
                         {(() => {
-                            const observation = (details as any)?.observation as string | undefined;
+                            const observation = typeof details?.observation === 'string' ? details.observation : undefined;
                             if (observation && observation !== messageContent) {
                                 return (
                                     <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
@@ -502,7 +511,7 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
                 setResolvedFiles(resolved.filter((f): f is string => !!f));
             }
         };
-        resolveFiles();
+        void resolveFiles();
         return () => { cancelled = true; };
     }, [files, artifactRunId]);
 
@@ -510,7 +519,7 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
     if (resolvedFiles.length === 0) return null;
 
     return (
-        <div className="pl-4 pr-2 pb-1.5">
+        <div className="ps-4 pe-2 pb-1.5">
             <FileDisplay files={resolvedFiles} />
         </div>
     );
@@ -585,7 +594,7 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
                 setResolvedImages(resolved.filter((f): f is string => !!f));
             }
         };
-        resolveFiles();
+        void resolveFiles();
         return () => { cancelled = true; };
     }, [messages, artifactRunId]);
 
@@ -625,8 +634,8 @@ function ToolCallGroupComponent({
     const toast = useToast();
 
     // Extract workflow_run_id from messages (any message in the group should have it)
-    const artifactRunId = messages.find(m => (m as any).workflow_run_id)?.workflow_run_id as string | undefined
-        ?? (messages[0] as any)?.workflow_run_id;
+    const artifactRunId = messages.find(m => m.workflow_run_id)?.workflow_run_id
+        ?? messages[0]?.workflow_run_id;
 
     // Render status indicator based on tool execution status
     const renderStatusIndicator = () => {
@@ -651,10 +660,10 @@ function ToolCallGroupComponent({
 
     // Get border color based on status
     const getBorderColor = () => {
-        if (toolStatus === "completed") return "border-l-success";
-        if (toolStatus === "error") return "border-l-destructive";
-        if (toolStatus === "warning") return "border-l-attention";
-        return "border-l-purple-500";
+        if (toolStatus === "completed") return "border-s-success";
+        if (toolStatus === "error") return "border-s-destructive";
+        if (toolStatus === "warning") return "border-s-attention";
+        return "border-s-purple-500";
     };
 
     // Animate new messages when they're added
@@ -724,12 +733,17 @@ function ToolCallGroupComponent({
 
     return (
         <div
-            className={cn("border-l-4 overflow-hidden bg-white dark:bg-gray-900 mb-4", getBorderColor(), rootClassName)}
+            className={cn("border-s-4 overflow-hidden bg-white dark:bg-gray-900 mb-4", getBorderColor(), rootClassName)}
         >
             {/* Compact header */}
+            {/* biome-ignore lint/a11y/useSemanticElements: header contains nested Buttons; button-in-button is invalid HTML so role="button" on a div is the pragmatic choice. */}
             <div
+                role="button"
+                tabIndex={0}
+                aria-expanded={!isCollapsed}
                 className={cn("flex items-center justify-between px-4 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", headerClassName)}
                 onClick={() => setIsCollapsed(!isCollapsed)}
+                onKeyDown={onActivateKey(() => setIsCollapsed(!isCollapsed))}
             >
                 <div className="flex items-center gap-1 flex-1 min-w-0">
                     {renderStatusIndicator()}
@@ -746,7 +760,7 @@ function ToolCallGroupComponent({
                         </>
                     )}
                     {isCollapsed ? (
-                        <ChevronRight className="size-3 text-muted flex-shrink-0" />
+                        <ChevronRight className="size-3 text-muted flex-shrink-0 cn-rtl-flip" />
                     ) : (
                         <ChevronDown className="size-3 text-muted flex-shrink-0" />
                     )}
@@ -784,7 +798,7 @@ function ToolCallGroupComponent({
             {isCollapsed && (
                 <div className="px-3 py-0.5 space-y-0">
                     {messages.map((m, idx) => {
-                        const details = m.details as { tool?: string; files?: string[]; outputFiles?: string[] } | undefined;
+                        const details = m.details as { tool?: string; files?: string[]; outputFiles?: string[]; observation?: string } | undefined;
                         const toolName = getMessageActivityLabel(m);
                         const badgeClass = getMessageBadgeClass(m);
                         const fullMessage = typeof m.message === "string" ? m.message : "";
@@ -794,6 +808,7 @@ function ToolCallGroupComponent({
 
                         return (
                             <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                 key={`${m.timestamp}-${idx}`}
                                 className={cn("border-b border-gray-100 dark:border-gray-800 last:border-b-0", itemClassName)}
                                 style={{
@@ -806,16 +821,21 @@ function ToolCallGroupComponent({
                                 }}
                             >
                                 {/* Row header - clickable to expand */}
+                                {/* biome-ignore lint/a11y/useSemanticElements: header contains nested Buttons; button-in-button is invalid HTML so role="button" on a div is the pragmatic choice. */}
                                 <div
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-expanded={isItemExpanded}
                                     className={cn("flex items-start gap-2 py-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50", itemHeaderClassName)}
                                     onClick={() => toggleItem(idx)}
+                                    onKeyDown={onActivateKey(() => toggleItem(idx))}
                                     title={fullMessage}
                                 >
                                     <div className="flex-shrink-0 pt-0.5">
                                         {isItemExpanded ? (
                                             <ChevronDown className="size-3 text-muted" />
                                         ) : (
-                                            <ChevronRight className="size-3 text-muted" />
+                                            <ChevronRight className="size-3 text-muted cn-rtl-flip" />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -842,7 +862,7 @@ function ToolCallGroupComponent({
                                     const toolStatusValue = (details as Record<string, unknown> | undefined)?.tool_status as ToolExecutionStatus | undefined;
                                     const interestingDetails = extractInterestingDetails(details as Record<string, unknown> | undefined);
                                     return (
-                                        <div className={cn("pl-5 pr-3 pb-2 text-sm", itemContentClassName)}>
+                                        <div className={cn("ps-5 pe-3 pb-2 text-sm", itemContentClassName)}>
                                             {/* Badges row: tool name + status + timestamp */}
                                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                                                 <span className={cn(badgeClass, toolBadgeClassName)}>
@@ -872,7 +892,7 @@ function ToolCallGroupComponent({
 
                                             {/* Show observation from details if different from header text */}
                                             {(() => {
-                                                const observation = (details as any)?.observation as string | undefined;
+                                                const observation = typeof details?.observation === 'string' ? details.observation : undefined;
                                                 if (observation && observation !== fullMessage) {
                                                     return (
                                                         <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
@@ -910,6 +930,7 @@ function ToolCallGroupComponent({
                 <div className="group">
                     {messages.map((message, index) => (
                         <ToolCallItem
+                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                             key={`${message.timestamp}-${index}`}
                             message={message}
                             isExpanded={expandedItems.has(index)}

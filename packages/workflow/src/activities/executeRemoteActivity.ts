@@ -1,5 +1,5 @@
 import { ApplicationFailure, log } from "@temporalio/activity";
-import {
+import type {
     DSLActivityExecutionPayload,
     RemoteActivityExecutionPayload,
     RemoteActivityExecutionResponse,
@@ -16,13 +16,13 @@ export interface ExecuteRemoteActivityParams {
     /** The activity name (unprefixed, as known by the tool server) */
     activity_name: string;
     /** The resolved parameters for the activity */
-    params: Record<string, any>;
+    params: Record<string, unknown>;
     /** App installation ID */
     app_install_id: string;
     /** App name */
     app_name: string;
     /** App installation settings */
-    app_settings?: Record<string, any>;
+    app_settings?: Record<string, unknown>;
 }
 
 /**
@@ -38,7 +38,7 @@ export interface ExecuteRemoteActivityParams {
  */
 export async function executeRemoteActivity(
     payload: DSLActivityExecutionPayload<ExecuteRemoteActivityParams>,
-): Promise<any> {
+): Promise<unknown> {
     const ctx = await setupActivity<ExecuteRemoteActivityParams>(payload);
     const { params, runId, client } = ctx;
     const { url, activity_name, params: activityParams, app_install_id, app_settings } = params;
@@ -126,8 +126,8 @@ export async function executeRemoteActivity(
     let responseJson: RemoteActivityExecutionResponse;
     try {
         responseJson = JSON.parse(responseText);
-    } catch (err: unknown) {
-        const preview = responseText.length > 200 ? responseText.slice(0, 200) + '...' : responseText;
+    } catch {
+        const preview = responseText.length > 200 ? `${responseText.slice(0, 200)}...` : responseText;
         log.warn("Invalid JSON response from remote activity", {
             activity: activity_name, endpoint: url, runId, app_install_id,
             responsePreview: preview,

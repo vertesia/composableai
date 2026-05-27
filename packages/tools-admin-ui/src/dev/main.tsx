@@ -2,7 +2,6 @@
 import './index.css';
 import "./env.js"
 
-import { I18nProvider } from '@vertesia/ui/i18n';
 import { VertesiaShell } from '@vertesia/ui/shell';
 import { RouterProvider } from '@vertesia/ui/router';
 import { StrictMode } from 'react';
@@ -12,6 +11,7 @@ import { AdminApp } from '../AdminApp.js';
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
+// biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
 const root = createRoot(document.getElementById('root')!);
 
 /**
@@ -33,11 +33,9 @@ if (!baseUrl) {
 } else {
     root.render(
         <StrictMode>
-            <I18nProvider lng="en">
-                <VertesiaShell>
-                    <RouterProvider routes={devRoutes} />
-                </VertesiaShell>
-            </I18nProvider>
+            <VertesiaShell>
+                <RouterProvider routes={devRoutes} />
+            </VertesiaShell>
         </StrictMode>,
     );
 }

@@ -1,7 +1,7 @@
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker, bundleWorkflowCode, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
-import { VertesiaClient } from '@vertesia/client';
-import { ContentEventName, DSLActivityExecutionPayload, DSLActivitySpec, DSLWorkflowExecutionPayload, FindPayload } from '@vertesia/common';
+import type { VertesiaClient } from '@vertesia/client';
+import { ContentEventName, type DSLActivityExecutionPayload, type DSLActivitySpec, type DSLWorkflowExecutionPayload, type FindPayload } from '@vertesia/common';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { dslWorkflow } from './dsl-workflow.js';
 import { setupActivity } from "./setup/ActivityContext.js";
@@ -20,7 +20,7 @@ class DocumentTestProvider extends DataProvider {
         super(DocumentTestProvider.ID, true);
     }
 
-    doFetch(payload: FindPayload): Promise<Record<string, any>[]> {
+    doFetch(payload: FindPayload): Promise<Record<string, unknown>[]> {
         const query = payload.query;
         console.log('query', query);
         if (query.lang === 'en') {
@@ -90,7 +90,7 @@ describe('DSL Workflow', () => {
         await testEnv?.teardown();
     });
 
-    it('successfully completes a mock workflow', async () => {
+    it('should successfully complete a mock workflow', async () => {
         const { client, nativeConnection } = testEnv;
         const taskQueue = 'test';
 
@@ -116,6 +116,7 @@ describe('DSL Workflow', () => {
                 store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
+                spec_format: 'activities',
                 activities,
                 vars: {
                     lang,

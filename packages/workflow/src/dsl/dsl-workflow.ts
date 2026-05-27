@@ -1,6 +1,6 @@
 import {
-    ActivityInterfaceFor,
-    ActivityOptions,
+    type ActivityInterfaceFor,
+    type ActivityOptions,
     CancellationScope,
     executeChild,
     isCancellation,
@@ -9,24 +9,24 @@ import {
     proxyActivities,
     sleep,
     startChild,
-    UntypedActivities,
+    type UntypedActivities,
 } from "@temporalio/workflow";
 import {
-    DSLActivityExecutionPayload,
-    DSLActivityOptions,
-    DSLActivitySpec,
-    DSLChildWorkflowStep,
-    DSLWorkflowExecutionPayload,
-    DSLWorkflowSpec,
+    type DSLActivityExecutionPayload,
+    type DSLActivityOptions,
+    type DSLActivitySpec,
+    type DSLChildWorkflowStep,
+    type DSLWorkflowExecutionPayload,
+    type DSLWorkflowSpec,
     getDocumentIds,
     getTenantId,
-    WorkflowExecutionPayload,
-    WorkflowInputFile
+    type WorkflowExecutionPayload,
+    type WorkflowInputFile
 } from "@vertesia/common";
-import ms, { StringValue } from 'ms';
-import { HandleDslErrorParams } from "../activities/handleError.js";
-import * as activities from "../activities/index.js";
-import { RateLimitParams } from "../activities/rateLimiter.js";
+import ms, { type StringValue } from 'ms';
+import type { HandleDslErrorParams } from "../activities/handleError.js";
+import type * as activities from "../activities/index.js";
+import type { RateLimitParams } from "../activities/rateLimiter.js";
 import { WF_NON_RETRYABLE_ERRORS, WorkflowParamNotFoundError } from "../errors.js";
 import { Vars } from "./vars.js";
 
@@ -43,7 +43,7 @@ interface RemoteActivityEntry {
     activity_name: string;
     app_install_id: string;
     app_name: string;
-    app_settings?: Record<string, any>;
+    app_settings?: Record<string, unknown>;
 }
 type RemoteActivityMap = Record<string, RemoteActivityEntry>;
 
@@ -52,7 +52,7 @@ interface BaseActivityPayload extends WorkflowExecutionPayload {
     debug_mode?: boolean;
 }
 
-function dslActivityPayload<ParamsT extends Record<string, any>>(basePayload: BaseActivityPayload, activity: DSLActivitySpec, params: ParamsT) {
+function dslActivityPayload<ParamsT extends object>(basePayload: BaseActivityPayload, activity: DSLActivitySpec, params: ParamsT) {
     return {
         ...basePayload,
         activity,
@@ -89,7 +89,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
         workflow_name: definition.name,
         debug_mode: !!definition.debug_mode,
     }
-    delete (basePayload as any).workflow;
+    delete (basePayload as BaseActivityPayload & { workflow?: unknown }).workflow;
 
     const defaultOptions: ActivityOptions = {
         ...convertDSLActivityOptions(definition.options),
@@ -152,8 +152,8 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
                     names: Object.keys(remoteActivities),
                 });
             }
-        } catch (e: any) {
-            log.warn("Failed to resolve remote activities, continuing without them", { error: e.message });
+        } catch (e: unknown) {
+            log.warn("Failed to resolve remote activities, continuing without them", { error: e instanceof Error ? e.message : String(e) });
         }
     }
 
@@ -210,16 +210,17 @@ function hasRemoteActivitySteps(definition: DSLWorkflowSpec): boolean {
     return steps.some(step => 'name' in step && step.name?.startsWith(REMOTE_ACTIVITY_PREFIX));
 }
 
-async function handleError(originalError: any, basePayload: BaseActivityPayload, defaultOptions: ActivityOptions) {
+async function handleError(originalError: unknown, basePayload: BaseActivityPayload, defaultOptions: ActivityOptions) {
     const { handleDslError } = proxyActivities<typeof activities>(defaultOptions);
+    const errorMessage = originalError instanceof Error ? originalError.message : String(originalError);
 
     const payload = dslActivityPayload(
         basePayload,
         {
             name: "handleDslError",
-            params: { errorMessage: originalError.message },
+            params: { errorMessage },
         } as DSLActivitySpec,
-        { errorMessage: originalError.message } satisfies HandleDslErrorParams,
+        { errorMessage } satisfies HandleDslErrorParams,
     )
 
     if (isCancellation(originalError)) {
@@ -336,7 +337,7 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
     }
 }
 
-function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLActivityExecutionPayload<any>): RateLimitParams {
+function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLActivityExecutionPayload<Record<string, unknown>>): RateLimitParams {
     // resolve payload params
     const vars = new Vars({
         ...executionPayload.params, // imported params (doesn't contain expressions)
@@ -345,31 +346,35 @@ function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLAc
     const params = vars.resolve();
 
     let interactionId: string;
+    const interactionName = typeof params.interactionName === "string" ? params.interactionName : undefined;
+    const interactionNames = params.interactionNames && typeof params.interactionNames === "object"
+        ? params.interactionNames as { selectDocumentType?: unknown }
+        : undefined;
 
     switch (activity.name) {
         case "executeInteraction":
-            interactionId = params.interactionName;
+            interactionId = interactionName || "";
             break;
 
         case "generateDocumentProperties":
-            interactionId = params.interactionName || "sys:ExtractInformation";
+            interactionId = interactionName || "sys:ExtractInformation";
             break;
 
         case "identifyTextSections":
-            interactionId = params.interactionName || "sys:IdentifyTextSections";
+            interactionId = interactionName || "sys:IdentifyTextSections";
             break;
 
         case "generateOrAssignContentType":
-            interactionId = params.interactionNames?.selectDocumentType || "sys:SelectDocumentType";
+            interactionId = typeof interactionNames?.selectDocumentType === "string" ? interactionNames.selectDocumentType : "sys:SelectDocumentType";
             break;
 
         case "chunkDocument":
-            interactionId = params.interactionName || "sys:ChunkDocument";
+            interactionId = interactionName || "sys:ChunkDocument";
             break;
 
         default:
             // For any other rate-limited activities, try to extract what we can
-            interactionId = params.interactionName;
+            interactionId = interactionName || "";
             break;
     }
 
@@ -379,8 +384,8 @@ function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLAc
 
     return {
         interactionIdOrEndpoint: interactionId,
-        environmentId: params.environment,
-        modelId: params.model,
+        environmentId: typeof params.environment === "string" ? params.environment : undefined,
+        modelId: typeof params.model === "string" ? params.model : undefined,
     };
 }
 
@@ -395,7 +400,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
 
     const importParams = vars.createImportVars(activity.import);
     const executionPayload = dslActivityPayload(basePayload, activity, importParams);
-    log.debug("Executing activity: " + activity.name, { payload: executionPayload });
+    log.debug(`Executing activity: ${activity.name}`, { payload: executionPayload });
 
     let proxy = defaultProxy;
     if (activity.options) {
@@ -484,7 +489,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         //TODO execute in parallel
         log.debug("Parallel execution not yet implemented");
     } else {
-        log.debug("Executing activity: " + activity.name, { importParams });
+        log.debug(`Executing activity: ${activity.name}`, { importParams });
         const result = await fn(executionPayload);
         if (activity.output) {
             vars.setValue(activity.output, result);
@@ -511,7 +516,7 @@ function convertDSLActivityOptions(options?: DSLActivityOptions): ActivityOption
     if (!options) {
         return {};
     }
-    let result: ActivityOptions = {};
+    const result: ActivityOptions = {};
     if (options.startToCloseTimeout) {
         result.startToCloseTimeout = ms(options.startToCloseTimeout as StringValue);
     }

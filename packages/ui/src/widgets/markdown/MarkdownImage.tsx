@@ -1,15 +1,15 @@
-import React from 'react';
+import type React from 'react';
 import { useResolvedUrl, parseUrlScheme } from './useResolvedUrl';
 import { CodeBlockPlaceholder } from './CodeBlockPlaceholder';
 
 export interface MarkdownImageProps {
-    node?: any;
+    node?: unknown;
     src?: string;
     alt?: string;
     className?: string;
     artifactRunId?: string;
     /** Existing image component to delegate to for standard URLs */
-    ExistingImg?: React.ComponentType<any>;
+    ExistingImg?: React.ComponentType<MarkdownImageProps>;
 }
 
 /**

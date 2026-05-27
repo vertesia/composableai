@@ -1,4 +1,11 @@
-export function getAgentRunId(options: Record<string, unknown> = {}): string {
+import { getStringOption, type CliOptions } from "./utils/options.js";
+
+type RunContextOptions = CliOptions<{
+    runId?: string;
+    storageId?: string;
+}>;
+
+export function getAgentRunId(options: RunContextOptions = {}): string {
     const runId =
         getStringOption(options.runId)
         || process.env.VERTESIA_AGENTRUN_ID
@@ -14,7 +21,7 @@ export function getAgentRunId(options: Record<string, unknown> = {}): string {
     return runId;
 }
 
-export function getArtifactStorageId(options: Record<string, unknown> = {}): string {
+export function getArtifactStorageId(options: RunContextOptions = {}): string {
     const storageId =
         getStringOption(options.runId)
         || getStringOption(options.storageId)
@@ -30,8 +37,4 @@ export function getArtifactStorageId(options: Record<string, unknown> = {}): str
     }
 
     return storageId;
-}
-
-function getStringOption(value: unknown): string | undefined {
-    return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 }

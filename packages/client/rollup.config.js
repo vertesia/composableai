@@ -16,6 +16,14 @@ export default {
         // Add any packages you want to keep external (e.g., use via import map)
         "@vertesia/common", "eventsource", "ajv"
     ],
+    // Treat TypeScript diagnostics from @rollup/plugin-typescript as build errors
+    // instead of warnings, so type issues fail the build.
+    onwarn(warning, defaultHandler) {
+        if (warning.plugin === 'typescript') {
+            throw new Error(warning.message ?? String(warning));
+        }
+        defaultHandler(warning);
+    },
     plugins: [
         nodeResolve({
             browser: true,  // Prefer browser-compatible versions of packages

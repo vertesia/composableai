@@ -25,24 +25,43 @@
     "rules": {
       "recommended": false,
       "correctness": {
-        "noUnusedFunctionParameters": "warn",
-        "noUnusedImports": "warn",
-        "noUnusedVariables": "warn",
+        "noUnusedFunctionParameters": "error",
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
         "useExhaustiveDependencies": "warn",
-        "useHookAtTopLevel": "warn"
+        "useHookAtTopLevel": "error"
       },
       "suspicious": {
-        "noExplicitAny": "warn",
-        "noImplicitAnyLet": "warn",
-        "noUnusedExpressions": "off"
+        "noExplicitAny": "error",
+        "noImplicitAnyLet": "error",
+        "noUnusedExpressions": "error"
       },
       "style": {
         "useComponentExportOnlyModules": {
-          "level": "warn",
+          "level": "error",
           "options": {
             "allowConstantExport": true
           }
         }
+      },
+      "a11y": {
+        "useAltText": "error",
+        "useAriaPropsForRole": "error",
+        "useValidAriaProps": "error",
+        "useValidAriaValues": "error",
+        "useHeadingContent": "error",
+        "useHtmlLang": "error",
+        "useIframeTitle": "error",
+        "noPositiveTabindex": "error",
+        "useAnchorContent": "error",
+        "useButtonType": "error",
+        "useFocusableInteractive": "error",
+        "useSemanticElements": "error",
+        "useKeyWithClickEvents": "error",
+        "useKeyWithMouseEvents": "error",
+        "noStaticElementInteractions": "error",
+        "useAriaActivedescendantWithTabindex": "error",
+        "noLabelWithoutControl": "error"
       }
     }
   },

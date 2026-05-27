@@ -1,7 +1,7 @@
 import micromatch from 'micromatch';
-import { extname } from "path";
+import { extname } from "node:path";
 import { AbstractContentSource } from "./ContentSource.js";
-import { loadTarIndex, TarEntryIndex, TarIndex } from "./utils/tar.js";
+import { loadTarIndex, type TarEntryIndex, type TarIndex } from "./utils/tar.js";
 
 export const MEMORY_METADATA_ENTRY = "metadata.json";
 
@@ -17,13 +17,13 @@ export interface ProjectionProperties {
     [key: string]: boolean | 0 | 1;
 }
 
-function applyProjection(projection: ProjectionProperties, object: any) {
+function applyProjection(projection: ProjectionProperties, object: unknown) {
     const keys = Object.keys(projection);
     if (keys.length < 1) {
         return object;
     }
     const isInclusion = !!projection[keys[0]];
-    const out: any = {};
+    const out: unknown = {};
     if (isInclusion) {
         for (const key of Object.keys(object)) {
             if (projection[key]) {
@@ -44,7 +44,7 @@ function applyProjection(projection: ProjectionProperties, object: any) {
 
 export abstract class MemoryPack {
     abstract readonly file: string;
-    abstract getMetadata(projection?: ProjectionProperties): Promise<Record<string, any>>;
+    abstract getMetadata(projection?: ProjectionProperties): Promise<Record<string, unknown>>;
     abstract getEntry(path: string): MemoryEntry | null;
     abstract getEntryContent(path: string): Promise<Buffer | null>;
     abstract getEntryText(path: string, encoding?: BufferEncoding): Promise<string | null>;
@@ -53,9 +53,9 @@ export abstract class MemoryPack {
     abstract getEntriesContent(filters?: string[]): Promise<Buffer[]>;
     abstract getEntriesText(filters?: string[], encoding?: BufferEncoding): Promise<string[]>;
 
-    async exportObject(mapping: Record<string, any>): Promise<Record<string, any>> {
-        let metadata: any;
-        const result: Record<string, any> = {};
+    async exportObject(mapping: Record<string, unknown>): Promise<Record<string, unknown>> {
+        let metadata: unknown;
+        const result: Record<string, unknown> = {};
         for (const key of Object.keys(mapping)) {
             const value = mapping[key];
             if (typeof value === 'string') {
@@ -123,7 +123,7 @@ export class TarMemoryPack extends MemoryPack {
             throw new Error("Invalid memory tar file. Context entry not found");
         }
     }
-    async getMetadata(projection?: ProjectionProperties): Promise<Record<string, any>> {
+    async getMetadata(projection?: ProjectionProperties): Promise<Record<string, unknown>> {
         const content = await this.index.getContent(MEMORY_METADATA_ENTRY);
         if (content) {
             let metadata = JSON.parse(content.toString('utf-8'));
@@ -216,13 +216,13 @@ function getTextEncodingForPath(path: string) {
 }
 
 
-function resolveProperty(obj: Record<string, any>, key: string) {
+function resolveProperty(obj: Record<string, unknown>, key: string) {
     if (key.includes('.')) {
         const keys = key.split('.');
         let value = obj;
         for (const k of keys) {
             value = value[k];
-            if (value == undefined) {
+            if (value === undefined) {
                 return undefined;
             }
         }

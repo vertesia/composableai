@@ -1,24 +1,28 @@
-import React, { Dispatch, SetStateAction, useEffect } from "react";
+import React, { type Dispatch, type SetStateAction, useEffect } from "react";
 import { cn } from "../../libs/utils";
 import { Button } from "../button";
 import { Popover, PopoverTrigger, PopoverContent } from "../popover";
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from "../command";
 import { ListFilter } from "lucide-react";
 
-import { Filter, FilterGroup } from "./types";
+import type { Filter, FilterGroup, FilterOption } from "./types";
 import Filters from "./filters";
 
 import TextFilter from "./filter/TextFilter";
 import DateFilter from "./filter/dateFilter";
 import SelectFilter from "./filter/SelectFilter";
 import StringListFilter from "./filter/StringListFilter";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 const FilterContext = React.createContext<{
   filters: Filter[];
   setFilters: Dispatch<SetStateAction<Filter[]>>;
   filterGroups: FilterGroup[];
-}>({} as any);
+}>({
+  filters: [],
+  setFilters: () => undefined,
+  filterGroups: [],
+});
 
 interface FilterProviderProps {
   filters: Filter[];
@@ -37,6 +41,7 @@ interface FilterProviderProps {
 const FilterProvider = ({ filters, setFilters, filterGroups, children, inModal }: FilterProviderProps) => {
   const url = new URL(window.location.href);
   const searchParams = url.searchParams;
+  const searchParamsString = searchParams.toString();
   const [initialFiltersParam] = React.useState(() => new URLSearchParams(window.location.search).get('filters'));
   const processedUrlFilters = React.useRef<Set<string>>(new Set());
   const hasRestoredFromUrl = React.useRef(inModal || !initialFiltersParam);
@@ -45,17 +50,17 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children, inModal }
     if (inModal) return;
     if (!hasRestoredFromUrl.current) return;
     try {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams(searchParamsString);
       if (filters.length > 0) {
         const filterString = filters.map(filter => {
-          let values;
+          let values: string;
           if (filter.type === 'stringList' && Array.isArray(filter.value) && typeof filter.value[0] === 'string') {
             values = `[${(filter.value as string[]).map(item => encodeURIComponent(item)).join(',')}]`;
           } else if (Array.isArray(filter.value)) {
             if (filter.multiple) {
-              values = `[${filter.value.map((item: any) => encodeURIComponent(item.value || item || '')).join(',')}]`;
+              values = `[${filter.value.map(item => encodeURIComponent(readFilterValue(item))).join(',')}]`;
             } else if (filter.value.length > 1) {
-              values = `[${filter.value.map((item: any) => encodeURIComponent(item.value || item || '')).join(',')}]`;
+              values = `[${filter.value.map(item => encodeURIComponent(readFilterValue(item))).join(',')}]`;
             } else {
               const firstValue = filter.value[0];
               if (typeof firstValue === 'string') {
@@ -81,7 +86,7 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children, inModal }
     } catch (error) {
       console.error("Failed to update URL with filters:", error);
     }
-  }, [filters]);
+  }, [filters, inModal, searchParamsString]);
 
   useEffect(() => {
     if (inModal || !initialFiltersParam || filterGroups.length === 0) return;
@@ -108,7 +113,7 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children, inModal }
           values = [decodeURIComponent(valuesString)];
         }
 
-        let filterValue;
+        let filterValue: FilterOption[] | string[];
 
         if (group.type === 'stringList') {
           filterValue = values;
@@ -155,7 +160,7 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children, inModal }
     } catch (_error) {
       // ignore parse errors
     }
-  }, [filterGroups, initialFiltersParam]);
+  }, [filterGroups, inModal, initialFiltersParam, setFilters]);
 
   return (
     <FilterContext.Provider value={{ filters, setFilters, filterGroups }}>
@@ -181,7 +186,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
   };
 
   const getAvailableFilterGroups = () => {
-    let options = filterGroups.map(group => ({
+    const options = filterGroups.map(group => ({
       ...group,
       options: (group.options ?? []).filter(option =>
         !filters.some(filter => {
@@ -191,7 +196,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
           return filter.name === group.name &&
             (Array.isArray(filter.value) && typeof filter.value[0] === 'string'
               ? filter.value.some(val => val === option.value)
-              : filter.value.some(val => (val as any).value === option.value));
+              : filter.value.some(val => readFilterValue(val) === option.value));
         })
       )
     })).filter(group =>
@@ -207,6 +212,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
 
     return options.map((group: FilterGroup, index: number) => (
       <CommandItem
+        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
         key={index}
         onSelect={() => handleSelect(group.name)}
         className="group flex gap-2 items-center hover:bg-muted"
@@ -365,5 +371,9 @@ const FilterClear = ({ className }: { className?: string }) => {
     </Button>
   );
 };
+
+function readFilterValue(item: string | FilterOption): string {
+  return typeof item === 'string' ? item : item.value || '';
+}
 
 export { FilterProvider, FilterBtn, FilterBar, FilterClear };

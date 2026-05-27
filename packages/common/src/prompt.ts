@@ -1,6 +1,6 @@
 import type { JSONObject, JSONSchema } from "@llumiverse/common";
-import { PromptRole } from "@llumiverse/common";
-import { ProjectRef } from "./project.js";
+import type { PromptRole } from "@llumiverse/common";
+import type { ProjectRef } from "./project.js";
 
 export interface ChatPromptSchema {
     role: PromptRole.user | PromptRole.assistant;
@@ -25,7 +25,7 @@ export interface PromptSegmentDef<
     id?: string;
     type: PromptSegmentDefType;
     template?: T; // the template id in case of a prompt template
-    configuration?: any; // the configuration if any in case of builtin prompts
+    configuration?: unknown; // the configuration if any in case of builtin prompts
 }
 
 export interface PromptSegmentRef<

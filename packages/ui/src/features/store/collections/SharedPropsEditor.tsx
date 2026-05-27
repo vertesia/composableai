@@ -1,8 +1,8 @@
-import { Collection, ContentObjectType } from "@vertesia/common";
+import type { Collection, ContentObjectType } from "@vertesia/common";
 import { Button, Panel, TagsInput, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface SharedPropsEditorProps {
     collection: Collection;
@@ -19,7 +19,7 @@ export function SharedPropsEditor({ collection }: SharedPropsEditorProps) {
         if (collection.type?.id) {
             client.store.types.retrieve(collection.type.id).then(setColType);
         }
-    }, [collection.type?.id]);
+    }, [client.store.types.retrieve, collection.type?.id]);
 
     const options: string[] = colType ? Object.keys(colType.object_schema?.properties || {}) : [];
 

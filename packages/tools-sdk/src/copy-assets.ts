@@ -10,8 +10,8 @@
  *   import { copyRuntimeAssets } from '@vertesia/tools-sdk';
  *   copyRuntimeAssets('./src', './dist');
  */
-import { existsSync, readdirSync, statSync, mkdirSync, copyFileSync } from "fs";
-import { dirname, join } from "path";
+import { existsSync, readdirSync, statSync, mkdirSync, copyFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 /**
  * Recursively copy files matching a filter

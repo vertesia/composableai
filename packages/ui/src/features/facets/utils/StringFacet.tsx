@@ -1,9 +1,10 @@
-import { FacetBucket } from '@vertesia/common';
+import type { FacetBucket } from '@vertesia/common';
 import { SelectBox } from '@vertesia/ui/core';
+import type { SearchInterface } from './SearchInterface';
 import { facetOptionLabel } from './utils';
 
 interface StringFacetProps {
-    search: any;
+    search: SearchInterface;
     buckets: FacetBucket[];
     name: string;
     placeholder?: string;

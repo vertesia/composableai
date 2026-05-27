@@ -1,8 +1,8 @@
-import { AgentMessage } from "@vertesia/common";
-import { cn } from "@vertesia/ui/core";
+import type { AgentMessage } from "@vertesia/common";
+import { Button, cn } from "@vertesia/ui/core";
 import { CheckCircle, Clock } from "lucide-react";
-import { useUITranslation } from '../../../../i18n/index.js';
-import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { getWorkstreamId } from "./utils";
 
 interface WorkstreamTabsProps {
@@ -68,7 +68,8 @@ export default function WorkstreamTabs({
   return (
     <div className="flex overflow-x-auto space-x-1 mb-1 bg-muted border-b border-muted/20 sticky top-0 z-10">
       {sortedWorkstreams.map(([id, name]) => (
-        <button
+        <Button
+          variant="unstyled"
           key={id}
           className={cn(
             "px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5",
@@ -80,8 +81,9 @@ export default function WorkstreamTabs({
           title={name.length > 20 ? name : undefined}
         >
           {/* Shorten long names for better UI */}
-          {name.length > 20 ? name.substring(0, 18) + "..." : name}
-          {count && count.has(id) && count.get(id)! > 0 && (
+          {name.length > 20 ? `${name.substring(0, 18)}...` : name}
+          {/* biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here */}
+          {count?.has(id) && count.get(id)! > 0 && (
             <div className="flex items-center space-x-1">
               <span
                 className={cn(
@@ -103,7 +105,7 @@ export default function WorkstreamTabs({
                 ))}
             </div>
           )}
-        </button>
+        </Button>
       ))}
     </div>
   );

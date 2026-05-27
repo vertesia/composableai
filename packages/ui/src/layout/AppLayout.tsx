@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { useEffect, useState } from 'react'
 import { SidePanel } from '@vertesia/ui/core'
+import { useLanguage } from '@vertesia/ui/i18n'
 // import { FullHeightLayout } from './FullHeightLayout.js'
 import { Navbar } from './Navbar.js'
 import { Sidebar } from './Sidebar.js'
@@ -22,6 +23,7 @@ export function AppLayout({ sidebarClassName, className, title, children, logo, 
         localStorage.setItem('desktopSidebarOpen', 'true');
     }
 
+    const { isRTL } = useLanguage()
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(localStorage.getItem('desktopSidebarOpen') === 'true')
     const [isLargeScreen, setIsLargeScreen] = useState(window.innerWidth >= 1024)
@@ -55,8 +57,7 @@ export function AppLayout({ sidebarClassName, className, title, children, logo, 
     }
 
     return (
-        <>
-            <div className='flex flex-col h-screen overflow-y-hidden'>
+        <div className='flex flex-col h-screen overflow-y-hidden'>
 
                 <SidebarContext.Provider value={sidebarContextValue}>
                     <div className='w-full'>
@@ -71,7 +72,7 @@ export function AppLayout({ sidebarClassName, className, title, children, logo, 
                                 className='bg-sidebar'
                                 isOpen={sidebarOpen}
                                 onClose={() => setSidebarOpen(false)}
-                                side="left"
+                                side={isRTL ? "right" : "left"}
                                 panelWidth={288}
                                 resizable={false}
                                 backdrop={true}
@@ -99,6 +100,5 @@ export function AppLayout({ sidebarClassName, className, title, children, logo, 
                     </div>
                 </SidebarContext.Provider>
             </div>
-        </>
     )
 }

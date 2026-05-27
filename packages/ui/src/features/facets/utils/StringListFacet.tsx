@@ -1,9 +1,10 @@
-import { FacetBucket } from '@vertesia/common';
+import type { FacetBucket } from '@vertesia/common';
 import { InputList } from '@vertesia/ui/core';
 import { useEffect, useState } from 'react';
+import type { SearchInterface } from './SearchInterface';
 
 interface StringListFacetProps {
-    search: any;
+    search: SearchInterface;
     buckets: FacetBucket[];
     name: string;
     placeholder?: string;
@@ -14,7 +15,7 @@ export function StringListFacet({ search, name, placeholder, className }: String
 
     useEffect(() => {
         search.setFilterValue(name, tags);
-    }, [tags]);
+    }, [name, search, tags]);
 
     return (
         <InputList className={className} value={tags} onChange={setTags} placeholder={placeholder} />

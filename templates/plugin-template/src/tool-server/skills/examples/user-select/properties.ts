@@ -5,7 +5,7 @@
  * The file must have a default export of a partial SkillDefinition 
  */
 
-import { SkillDefinition, ToolUseContext } from "@vertesia/tools-sdk";
+import type { SkillDefinition, ToolUseContext } from "@vertesia/tools-sdk";
 
 export default {
 

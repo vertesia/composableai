@@ -1,5 +1,5 @@
-import { ApiKey } from "./apikey.js";
-import { ProjectRef, ProjectRoles } from "./project.js";
+import type { ApiKey } from "./apikey.js";
+import type { ProjectRef, ProjectRoles } from "./project.js";
 
 export interface UserWithAccounts extends User {
     accounts: AccountRef[];
@@ -20,7 +20,7 @@ export interface User {
     source?: 'firebase' | 'scim';
     updated_by?: string;
     /** Custom properties for dynamic permission matching */
-    properties?: Record<string, any>;
+    properties?: Record<string, unknown>;
     /** BLP clearance level — determines max document sensitivity the user can access */
     clearance?: number;
     /** Compartments the user belongs to — restricts access to documents in matching compartments */
@@ -35,7 +35,7 @@ export interface UpdateUserPayload {
     language?: string;
     phone?: string;
     last_selected_account?: string;
-    properties?: Record<string, any>;
+    properties?: Record<string, unknown>;
     clearance?: number;
     compartments?: string[];
 }
@@ -136,13 +136,6 @@ export interface InviteDeclineResponse {
 export interface AccountProjectsResponse {
     data: ProjectRef[];
 }
-
-export interface GoogleProjectTokenResponse {
-    principal: string;
-    token: string;
-}
-
-
 
 type UserOrApiKey<T extends User | ApiKey> = T extends User ? User : ApiKey;
 type SessionType<T extends User | ApiKey> = T extends User ? "user" : "apikey";

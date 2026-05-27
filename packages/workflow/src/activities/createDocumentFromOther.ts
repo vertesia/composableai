@@ -1,7 +1,7 @@
 import { log } from "@temporalio/activity";
 import { NodeStreamSource } from "@vertesia/client/node";
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
-import fs from 'fs';
+import type { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
+import fs from 'node:fs';
 import { pdfExtractPages } from "../conversion/mutool.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../errors.js";
@@ -49,7 +49,7 @@ export async function createPdfDocumentFromSource(payload: DSLActivityExecutionP
         throw new DocumentNotFoundError(`Document ${objectId} has no source`, [objectId]);
     }
 
-    if (!inputObject.content.type || (!inputObject.content.type?.startsWith('application/pdf'))) {
+    if ((!inputObject.content.type?.startsWith('application/pdf'))) {
         log.error(`Document ${objectId} is not an image`);
         throw new DocumentNotFoundError(`Document ${objectId} is not an image or pdf: ${inputObject.content.type}`, [objectId]);
     }

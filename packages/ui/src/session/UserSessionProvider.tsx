@@ -1,6 +1,6 @@
 import { Env } from "@vertesia/ui/env";
 import { onAuthStateChanged } from "firebase/auth";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { STSError, UserNotFoundError, getComposableToken } from "./auth/composable";
 import { shouldRedirectToCentralAuth } from "./auth/domainRouting";
 import { getFirebaseAuth } from "./auth/firebase";
@@ -20,6 +20,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
     const [session, setSession] = useState<UserSession>(new UserSession());
     const { generateState, verifyState, clearState } = useAuthState();
     const hasInitiatedAuthRef = useRef(false);
+    const authFlowRef = useRef<(() => undefined | (() => void)) | undefined>(undefined);
 
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
         const url = new URL(`${CENTRAL_AUTH_REDIRECT}?sts=${Env.endpoints.sts ?? "https://sts.vertesia.io"}`);
@@ -32,7 +33,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
         location.replace(url.toString());
     };
 
-    useEffect(() => {
+    authFlowRef.current = () => {
         // Make this effect idempotent - only run auth flow once
         if (hasInitiatedAuthRef.current) {
             console.log("Auth: skipping duplicate auth flow initiation");
@@ -47,7 +48,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
             currentUrl.searchParams.get("a") ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined;
         const selectedProject =
             currentUrl.searchParams.get("p") ??
-            localStorage.getItem(LastSelectedProjectId_KEY + "-" + selectedAccount) ??
+            localStorage.getItem(`${LastSelectedProjectId_KEY}-${selectedAccount}`) ??
             undefined;
         console.log("Auth: selected account", selectedAccount);
         console.log("Auth: selected project", selectedProject);
@@ -194,6 +195,10 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                 setSession(session.clone());
             }
         });
+    };
+
+    useEffect(() => {
+        return authFlowRef.current?.();
     }, []);
 
     return <UserSessionContext.Provider value={session}>{children}</UserSessionContext.Provider>;

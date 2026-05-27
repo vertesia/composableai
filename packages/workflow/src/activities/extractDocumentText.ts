@@ -1,5 +1,6 @@
 import { log } from "@temporalio/activity";
-import {
+import type { VertesiaClient } from "@vertesia/client";
+import type {
     ContentObject,
     CreateContentObjectPayload,
     DSLActivityExecutionPayload,
@@ -11,7 +12,7 @@ import { mutoolPdfToText } from "../conversion/mutool.js";
 import { markdownWithPandoc } from "../conversion/pandoc.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../errors.js";
-import { TextExtractionResult, TextExtractionStatus } from "../result-types.js";
+import { type TextExtractionResult, TextExtractionStatus } from "../result-types.js";
 import { fetchBlobAsBuffer, md5 } from "../utils/blobs.js";
 import {
     createFileSourceResult,
@@ -19,8 +20,8 @@ import {
 } from "../utils/text-preview-utils.js";
 import { countTokens } from "../utils/tokens.js";
 
-//@ts-ignore
-const JSON: DSLActivitySpec = {
+//@ts-expect-error
+const _JSON: DSLActivitySpec = {
     name: "extractDocumentText",
 };
 
@@ -52,7 +53,7 @@ export async function extractDocumentText(
 }
 
 async function extractFromObject(
-    client: any,
+    client: VertesiaClient,
     objectId: string,
     objectIds: string[],
 ): Promise<TextExtractionResult> {
@@ -85,9 +86,10 @@ async function extractFromObject(
     let fileBuffer: Buffer;
     try {
         fileBuffer = await fetchBlobAsBuffer(client, doc.content.source);
-    } catch (e: any) {
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
         log.error(`Error reading file: ${e}`);
-        return createResponse(doc, "", TextExtractionStatus.error, e.message);
+        return createResponse(doc, "", TextExtractionStatus.error, message);
     }
 
     const txt = await extractTextFromBuffer(fileBuffer, doc.content.type);
@@ -118,7 +120,7 @@ async function extractFromObject(
 }
 
 async function extractFromFileSource(
-    client: any,
+    client: VertesiaClient,
     input_file: WorkflowInputFile,
     output_storage_path: string
 ): Promise<TextExtractionResult> {
@@ -127,7 +129,7 @@ async function extractFromFileSource(
     let fileBuffer: Buffer;
     try {
         fileBuffer = await fetchBlobAsBuffer(client, input_file.url);
-    } catch (e: any) {
+    } catch (e: unknown) {
         log.error(`Error reading file: ${e}`);
         return createFileSourceResult(input_file.url, output_storage_path, null);
     }
@@ -258,7 +260,7 @@ function sniffIfText(buf: Buffer) {
     try {
         const s = buf.toString("utf8");
         return s.length > 0 && !s.includes("\uFFFD"); // Replacement character
-    } catch (e) {
+    } catch {
         return false;
     }
 }

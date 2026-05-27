@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { useUserSession } from "@vertesia/ui/session";
 
 
@@ -51,7 +51,10 @@ function LoadingIcon() {
             className="w-8 h-8 text-indigo-600"
             viewBox="0 0 50 50"
             xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Loading"
         >
+            <title>Loading</title>
             <defs>
                 <linearGradient id="spinner-gradient" x1="1" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={stopColor1} stopOpacity="1" />

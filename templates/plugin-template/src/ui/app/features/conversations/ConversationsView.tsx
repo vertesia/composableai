@@ -176,7 +176,6 @@ export function ConversationsView() {
                     return hit.interaction ?? '';
                 case 'status':
                     return hit.status ?? '';
-                case 'started':
                 default:
                     return hit.started_at ?? '';
             }
@@ -283,7 +282,7 @@ export function ConversationsView() {
                             onClick={() => refetch()}
                             isDisabled={isLoading}
                             alt={t('conversations.refresh')}
-                            className="ml-auto"
+                            className="ms-auto"
                         >
                             <RefreshCw />
                         </Button>

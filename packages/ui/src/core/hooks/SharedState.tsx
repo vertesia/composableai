@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export class SharedState<V = any> {
+export class SharedState<V = unknown> {
     _value: V;
     watchers: ((value: V) => void)[] = [];
     constructor(value: V) {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { BarChart3, GitBranch, MessageSquare, Code, Image, Link, Download, Table, FileText } from 'lucide-react';
+import { Button } from '@vertesia/ui/core';
 
 export type CodeBlockType = 'chart' | 'mermaid' | 'proposal' | 'code' | 'image' | 'link' | 'expand' | 'table' | 'markdown' | 'fusion-fragment';
 
@@ -54,12 +55,13 @@ export function CodeBlockPlaceholder({
             >
                 <span className="text-destructive">Failed to load {config.label}</span>
                 {onRetry && (
-                    <button
+                    <Button
+                        variant="unstyled"
                         onClick={onRetry}
-                        className="ml-2 rounded bg-destructive/10 px-2 py-1 text-xs hover:bg-destructive/20 transition-colors"
+                        className="ms-2 rounded bg-destructive/10 px-2 py-1 text-xs hover:bg-destructive/20 transition-colors text-destructive"
                     >
                         Retry
-                    </button>
+                    </Button>
                 )}
             </div>
         );
@@ -88,6 +90,7 @@ export function CodeBlockPlaceholder({
             <div className="flex gap-1">
                 {[...Array(3)].map((_, i) => (
                     <div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                         key={i}
                         className="h-2 w-2 rounded-full bg-muted animate-bounce"
                         style={{ animationDelay: `${i * 150}ms` }}

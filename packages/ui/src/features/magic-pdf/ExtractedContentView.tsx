@@ -2,7 +2,7 @@ import { JSONCode, XMLViewer, MarkdownRenderer } from '@vertesia/ui/widgets';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from "react";
 import { useMagicPdfContext } from "./MagicPdfProvider";
-import { ViewType } from "./types";
+import type { ViewType } from "./types";
 
 function LoadingSpinner({ className }: { className?: string }) {
     return (

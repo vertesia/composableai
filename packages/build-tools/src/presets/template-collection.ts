@@ -59,8 +59,6 @@ export const templateCollectionTransformer: TransformerPreset = {
                     }
                 }
             } catch (_err) {
-                // Skip entries that can't be read
-                continue;
             }
         }
 

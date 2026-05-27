@@ -2,9 +2,10 @@
  * Install hooks for running commands before/after project creation
  */
 import chalk from 'chalk';
-import { spawn, spawnSync } from 'child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import prompts from 'prompts';
-import { PostInstallConfig, PreInstallConfig } from './template-config.js';
+import { buildPackageManagerEnv } from './package-manager.js';
+import type { PostInstallConfig, PreInstallConfig } from './template-config.js';
 
 /**
  * Check if a command exists in PATH
@@ -29,7 +30,8 @@ async function installGlobalPackage(packageName: string, packageManager: string)
 
     const child = spawn(packageManager, args, {
       stdio: 'inherit',
-      shell: true
+      shell: true,
+      env: buildPackageManagerEnv(packageManager)
     });
 
     child.on('close', (code) => {

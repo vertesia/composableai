@@ -1,4 +1,4 @@
-import { AuthTokenPayload, UserRef } from "@vertesia/common";
+import type { AuthTokenPayload, UserRef } from "@vertesia/common";
 
 /**
  * UserAvatar
@@ -25,7 +25,7 @@ export function UserAvatar({ user }: { user: AuthTokenPayload | UserRef; }) {
             <div className="w-9 h-9">
                 {userPicture()}
             </div>
-            <div className="ml-3">
+            <div className="ms-3">
                 <p className="text-sm font-medium text-gray-700 dark:text-slate-50 group-hover:text-gray-900">{user.name ?? 'Deleted User'}</p>
                 <p className="text-xs font-medium text-gray-500 dark:text-slate-300 group-hover:text-gray-700">{user.email ?? 'Deleted User'}</p>
             </div>

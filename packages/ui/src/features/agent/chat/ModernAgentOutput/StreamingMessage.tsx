@@ -3,7 +3,7 @@ import { Button, cn, useToast } from "@vertesia/ui/core";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import { Bot, CopyIcon } from "lucide-react";
 import dayjs from "dayjs";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 // PERFORMANCE: Unicode cursor character - rendered inline with text
 // This avoids expensive DOM manipulation with TreeWalker on every update
@@ -269,7 +269,7 @@ function StreamingMessageComponent({
         <div className={cn("w-full max-w-full", className)}>
             {/* Card wrapper matching MessageItem structure */}
             <div
-                className={cn("border-l-4 bg-white dark:bg-gray-900 mb-4 border-l-purple-500 w-full max-w-full overflow-hidden", cardClassName)}
+                className={cn("border-s-4 bg-white dark:bg-gray-900 mb-4 border-s-purple-500 w-full max-w-full overflow-hidden", cardClassName)}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}

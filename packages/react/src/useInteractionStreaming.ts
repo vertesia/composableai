@@ -1,5 +1,5 @@
-import { InteractionBase } from "@vertesia/client";
-import { InteractionExecutionPayload, InteractionExecutionResult } from "@vertesia/common";
+import type { InteractionBase } from "@vertesia/client";
+import type { InteractionExecutionPayload, InteractionExecutionResult } from "@vertesia/common";
 import { useMemo, useState } from "react";
 
 export function useInteractionStreaming<TProps>(interaction: InteractionBase<TProps>) {
@@ -23,7 +23,7 @@ export function useInteractionStreaming<TProps>(interaction: InteractionBase<TPr
         }).finally(() => {
             chunks = []
         });
-    }, []);
+    }, [interaction.execute, isRunning]);
 
     return { text, isRunning, execute }
 }

@@ -103,7 +103,7 @@ export function vertesiaImportPlugin(config: PluginConfig): Plugin {
                 if (matchedTransformer.schema) {
                     const validation = matchedTransformer.schema.safeParse(result.data);
                     if (!validation.success) {
-                        const errors = validation.error.errors
+                        const errors = validation.error.issues
                             .map((err) => `  - ${err.path.join('.')}: ${err.message}`)
                             .join('\n');
                         throw new Error(
@@ -113,7 +113,7 @@ export function vertesiaImportPlugin(config: PluginConfig): Plugin {
                 }
 
                 // Generate code
-                const imports = result.imports ? result.imports.join('\n') + '\n\n' : '';
+                const imports = result.imports ? `${result.imports.join('\n')}\n\n` : '';
                 if (result.code) {
                     // Custom code provided - prepend imports
                     return imports + result.code;

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
     AgentMessageType,
-    AgentMessage,
-    CompactMessage,
+    type AgentMessage,
+    type CompactMessage,
     normalizeMessageType,
     toCompactMessage,
     toAgentMessage,

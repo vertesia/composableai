@@ -1,6 +1,6 @@
 
-import { Resource, Router } from "@koa-stack/router";
-import { Context } from "koa";
+import { Resource, type Router } from "@koa-stack/router";
+import type { Context } from "koa";
 
 export default class Endpoints extends Resource {
 
@@ -12,7 +12,7 @@ export default class Endpoints extends Resource {
         router.get("/no-content", this.getNoContent, this);
     }
 
-    async getRoot(ctx: Context) {
+    async getRoot(_ctx: Context) {
         return { message: "Hello World!" };
     }
 

@@ -6,9 +6,9 @@ import { useWatchSearchResult } from "./search/ObjectTypeSearchContext";
 import { EmptyCollection, ErrorBox, Input, SelectBox, useDebounce, useIntersectionObserver, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useTypeRegistry } from "./TypeRegistryProvider.js";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
-import { CreateOrUpdateTypeModal, CreateOrUpdateTypePayload } from "./CreateOrUpdateTypeModal";
+import { CreateOrUpdateTypeModal, type CreateOrUpdateTypePayload } from "./CreateOrUpdateTypeModal";
 
 enum ChunkableOptions { true = "Yes", false = "No" };
 
@@ -30,36 +30,36 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
     useIntersectionObserver(loadMoreRef, () => {
-        isReady && search.loadMore();
-    }, { deps: [isReady] });
+        if (isReady) search.loadMore();
+    }, { deps: [isReady, search] });
 
     useEffect(() => {
         search.search()
             .then(() => setIsReady(true));
-    }, []);
+    }, [search]);
 
     useEffect(() => {
-        search.query.name = searchTerm;
+        search.query.name = debounceValue;
         search.search()
             .then(() => setIsReady(true));
-    }, [debounceValue]);
+    }, [debounceValue, search]);
 
-    const [chunkable, setChunkable] = useState(undefined);
-    const onChunkableChange = (data: any) => {
+    const [chunkable, setChunkable] = useState<string | undefined>(undefined);
+    const onChunkableChange = (data: string | undefined) => {
         setChunkable(data);
     };
 
     useEffect(() => {
-        search.query.chunkable = chunkable ? chunkable == "Yes" : undefined
+        search.query.chunkable = chunkable ? chunkable === "Yes" : undefined
         search.search()
             .then(() => setIsReady(true));
-    }, [chunkable]);
+    }, [chunkable, search]);
 
     useEffect(() => {
         if (isDirty && isReady) {
             search.search().then(() => setIsReady(true));
         }
-    }, [isDirty]);
+    }, [isDirty, isReady, search]);
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const onOpenCreateModal = () => {

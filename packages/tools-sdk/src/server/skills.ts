@@ -1,11 +1,11 @@
 // ================== Skill Endpoints ==================
 
-import { Context, Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { SkillCollection } from "../SkillCollection.js";
-import { SkillDefinition, ToolCollectionDefinition, ToolDefinition } from "../types.js";
+import type { SkillCollection } from "../SkillCollection.js";
+import type { SkillDefinition, ToolCollectionDefinition, ToolDefinition } from "../types.js";
 import { makeScriptUrl } from "../utils.js";
-import { ToolContext, ToolServerConfig } from "./types.js";
+import type { ToolContext, ToolServerConfig } from "./types.js";
 
 export function createSkillsRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { skills = [] } = config;
@@ -39,7 +39,7 @@ export function createSkillsRoute(app: Hono, basePath: string, config: ToolServe
                 title: s.title,
                 description: s.description,
             })),
-        } satisfies ToolCollectionDefinition & { collections: any[] });
+        } satisfies ToolCollectionDefinition & { collections: unknown[] });
     });
 
     // POST /api/skills - Route to the correct collection based on tool_name

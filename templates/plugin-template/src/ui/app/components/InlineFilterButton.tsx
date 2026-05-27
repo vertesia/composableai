@@ -12,7 +12,8 @@ export function InlineFilterButton({ tooltip, hoverClass, onClick }: InlineFilte
         <Button
             variant="ghost"
             size="sm"
-            alt={tooltip}
+            aria-label={tooltip}
+            title={tooltip}
             className={`h-6 w-6 p-0 opacity-0 transition-opacity focus-visible:opacity-100 ${hoverClass}`}
             onClick={(event) => {
                 event.stopPropagation();

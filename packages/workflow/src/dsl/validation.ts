@@ -1,4 +1,4 @@
-import { DSLActivitySpec, DSLWorkflowSpec, DSLWorkflowStep } from "@vertesia/common";
+import type { DSLActivitySpec, DSLWorkflowSpec, DSLWorkflowStep } from "@vertesia/common";
 import { Vars, splitPath } from "./vars.js";
 
 export function validateWorkflow(workflow: DSLWorkflowSpec, vars: string[] = []) {
@@ -100,7 +100,7 @@ export function validateActivity(activity: DSLActivitySpec, workflowVars: Set<st
 }
 
 
-function validateExpressions(target: Record<string, any>, localVars: Record<string, boolean>, errors: string[], checkSelfReference = false) {
+function validateExpressions(target: Record<string, unknown>, localVars: Record<string, boolean>, errors: string[], checkSelfReference = false) {
     const vars = new Vars(localVars);
     const refs = vars.getUnknownReferences(target);
     for (const ref of refs) {
@@ -110,7 +110,7 @@ function validateExpressions(target: Record<string, any>, localVars: Record<stri
         // check for self references like `"object_type": "${object_type}"`.
         for (const key of Object.keys(target)) {
             const value = target[key];
-            if (typeof value === 'string' && value.includes("${" + key + "}")) {
+            if (typeof value === 'string' && value.includes(`\${${key}}`)) {
                 errors.push(`Self referencing parameter "${key}" in expression "${value}"`);
             }
         }

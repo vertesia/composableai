@@ -1,12 +1,16 @@
-import { ImportSpec } from "@vertesia/common";
+import type { ImportSpec } from "@vertesia/common";
 import { matchCondition } from "./conditions.js";
-import { ObjectKey, ObjectVisitor, ObjectWalker } from "./walk.js";
+import { type ObjectKey, type ObjectVisitor, ObjectWalker } from "./walk.js";
 
 const FALLBACK_VALUE_SEP = "??";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
 function decodeLiteralValue(value: string) {
     if (value.startsWith("'") && value.endsWith("'")) {
-        value = '"' + value.slice(1, -1).replace(/(?<!\\)"/g, '\\"') + '"'
+        value = `"${value.slice(1, -1).replace(/(?<!\\)"/g, '\\"')}"`
     }
     return JSON.parse(value);
 }
@@ -26,31 +30,32 @@ export function splitPath(path: string) {
  * @param name the name of the property.
  * @returns the property value
  */
-function _prop(object: any, name: string) {
+function _prop(object: unknown, name: string) {
     if (object === undefined) {
         return undefined;
     }
     object = _valueOf(object); // resolve Value objects
     if (Array.isArray(object)) {
         const index = +name;
-        if (isNaN(index)) {
+        if (Number.isNaN(index)) {
             // map array to property
-            return object.map(item => item[name]);
+            return object.map(item => isRecord(item) ? item[name] : undefined);
         } else {
             return _valueOf(object[index]);
         }
-    } else {
+    } else if (isRecord(object)) {
         return _valueOf(object[name]);
     }
+    return undefined;
 
 }
 
-function _valueOf(value: any) {
+function _valueOf(value: unknown) {
     return value instanceof Value ? value.value : value;
 }
 
-export function resolveField(object: any, path: string[]) {
-    let p = object as any;
+export function resolveField(object: unknown, path: string[]) {
+    let p = object as unknown;
     if (!p) return p;
     if (!path.length) return _valueOf(p);
     const last = path.length - 1;
@@ -63,11 +68,11 @@ export function resolveField(object: any, path: string[]) {
     return _prop(p, path[last]);
 }
 
-abstract class Value<T = any> {
+abstract class Value<T = unknown> {
     abstract value: T;
     abstract stringify(): string;
 }
-class LiteralValue<T = any> extends Value<T> {
+class LiteralValue<T = unknown> extends Value<T> {
     constructor(public value: T) {
         super();
     }
@@ -77,7 +82,7 @@ class LiteralValue<T = any> extends Value<T> {
 }
 
 class RefValue extends Value {
-    constructor(public vars: Vars, public path: string[], public defaultValue?: any) {
+    constructor(public vars: Vars, public path: string[], public defaultValue?: unknown) {
         super();
     }
     get value() {
@@ -94,7 +99,7 @@ class RefValue extends Value {
     }
 
     stringify() {
-        return "${" + this.path.join('.') + "}";
+        return `\${${this.path.join('.')}}`;
     }
 }
 
@@ -118,14 +123,14 @@ class ExprValue extends Value {
         for (const seg of this.parts) {
             out.push(seg.stringify());
         }
-        return "${" + out.join('') + "}";
+        return `\${${out.join('')}}`;
     }
 
 }
 
 
 export class Vars {
-    map: Record<string, any>;
+    map: Record<string, unknown>;
     /**
      * This property is used when resolving params. It contains the list of references that should not be resolved to their value
      * but instead they need to return the string representation of the expression to be able to regenerate another Vars instance with the same expression
@@ -133,12 +138,12 @@ export class Vars {
     //TODO this feature is no more used - it was replaced by importVars so we can now delete `preserveRefs`
     preserveRefs: Set<string> | undefined;
 
-    constructor(vars?: Record<string, any>) {
+    constructor(vars?: Record<string, unknown>) {
         this.map = vars ? this.parse(vars) : {};
     }
 
-    parse(vars: Record<string, any>): Record<string, any> {
-        return new ObjectWalker().map(vars, (_key, value) => {
+    parse(vars: Record<string, unknown>): Record<string, unknown> {
+        return new ObjectWalker().map<Record<string, unknown>>(vars, (_key, value) => {
             if (typeof value === 'string') {
                 return this.createValue(this, value);
             } else {
@@ -147,7 +152,7 @@ export class Vars {
         });
     }
 
-    load(vars: Record<string, any>) {
+    load(vars: Record<string, unknown>) {
         const toAppend = this.parse(vars);
         this.map = Object.assign(this.map, toAppend);
         return this;
@@ -159,7 +164,7 @@ export class Vars {
      * @param name
      * @param value
      */
-    setValue(name: string, value: any) {
+    setValue(name: string, value: unknown) {
         this.map[name] = value;
     }
 
@@ -175,7 +180,7 @@ export class Vars {
         return this.map[name] !== undefined;
     }
 
-    match(match: Record<string, any>) {
+    match(match: Record<string, unknown>) {
         for (const name of Object.keys(match)) {
             const value = this.getValue(name);
             if (!matchCondition(value, match[name])) {
@@ -185,10 +190,10 @@ export class Vars {
         return true;
     }
 
-    resolveParams(params: Record<string, any>, preserveRefs?: Set<string>) {
+    resolveParams(params: Record<string, unknown>, preserveRefs?: Set<string>) {
         this.preserveRefs = preserveRefs;
         try {
-            return new ObjectWalker().map(params, (_key, value) => {
+            return new ObjectWalker().map<Record<string, unknown>>(params, (_key, value) => {
                 if (typeof value === 'string') {
                     const v = this.createValue(this, value)
                     return v instanceof Value ? v.value : v;
@@ -201,15 +206,15 @@ export class Vars {
         }
     }
 
-    resolve(preserveRefs?: Set<string>): Record<string, any> {
-        function map(_key: ObjectKey, value: any) {
+    resolve(preserveRefs?: Set<string>): Record<string, unknown> {
+        function map(_key: ObjectKey, value: unknown) {
             if (value instanceof Value) {
                 const v = value.value;
                 if (v && typeof v === 'object') {
                     if (Array.isArray(v) || v.constructor === Object) {
                         // an array or plain object - recurse into the
                         // value to find other nested Ref values if any...
-                        return new ObjectWalker().map(v, map);
+                        return new ObjectWalker().map<Record<string, unknown> | unknown[]>(v, map);
                     }
                 } else {
                     return v;
@@ -220,7 +225,7 @@ export class Vars {
         }
         try {
             this.preserveRefs = preserveRefs;
-            return new ObjectWalker().map(this.map, map);
+            return new ObjectWalker().map<Record<string, unknown>>(this.map, map);
         } finally {
             this.preserveRefs = undefined;
         }
@@ -228,18 +233,18 @@ export class Vars {
 
     createRefValue(ref: string) {
         const index = ref.indexOf(FALLBACK_VALUE_SEP);
-        let defaultValue: any;
+        let defaultValue: unknown;
         if (index > -1) {
             defaultValue = decodeLiteralValue(ref.substring(index + FALLBACK_VALUE_SEP.length).trim());
             ref = ref.substring(0, index).trim();
         }
         if (ref === '.' || ref.indexOf('..') > -1) {
-            throw new Error("Invalid variable reference: " + ref)
+            throw new Error(`Invalid variable reference: ${ref}`)
         }
         return new RefValue(this, splitPath(ref), defaultValue);
     }
 
-    createValue(vars: Vars, obj: any) {
+    createValue(vars: Vars, obj: unknown) {
         if (!obj) {
             return obj;
         }
@@ -276,7 +281,7 @@ export class Vars {
         if (!importSpec || importSpec.length === 0) {
             return {};
         }
-        const result: Record<string, any> = {};
+        const result: Record<string, unknown> = {};
 
         for (const importVar of importSpec) {
             if (typeof importVar === "string") {
@@ -290,20 +295,20 @@ export class Vars {
         return result;
     }
 
-    getUnknownReferences(obj: any) {
+    getUnknownReferences(obj: unknown) {
         const visitor = new UnknownReferencesVisitor(this);
         new ObjectWalker().walk(obj, visitor);
         return visitor.result;
     }
 }
 
-function addImportVar(varPath: string, asName: string | undefined, vars: Vars, result: Record<string, any>) {
+function addImportVar(varPath: string, asName: string | undefined, vars: Vars, result: Record<string, unknown>) {
     let isRequired = false;
     if (varPath.endsWith("!")) {
         isRequired = true;
         varPath = varPath.slice(0, -1);
     }
-    let value = vars.getValue(varPath);
+    const value = vars.getValue(varPath);
     if (value === undefined && isRequired) {
         throw new Error(`Import variable ${varPath} is required but not found`);
     }
@@ -318,7 +323,7 @@ class UnknownReferencesVisitor implements ObjectVisitor {
     constructor(public vars: Vars) {
     }
 
-    onValue(_key: ObjectKey, value: any) {
+    onValue(_key: ObjectKey, value: unknown) {
         const vars = this.vars;
         if (typeof value === "string") {
             const v = vars.createValue(vars, value);

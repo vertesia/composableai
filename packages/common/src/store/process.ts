@@ -1,5 +1,5 @@
-import { JSONSchema } from "../json-schema.js";
-import { TaskField } from "./task.js";
+import type { JSONSchema } from "../json-schema.js";
+import type { TaskField } from "./task.js";
 
 export type JsonLogicRule = Record<string, unknown>;
 
@@ -117,8 +117,8 @@ export interface NodeDefinition {
      */
     result_schema?: JSONSchema;
     prompt?: string;
-    input?: Record<string, any>;
-    config?: Record<string, any>;
+    input?: Record<string, unknown>;
+    config?: Record<string, unknown>;
     title?: string;
     description?: string;
     /**
@@ -156,7 +156,7 @@ export interface NodeDefinition {
 
 export interface ProcessContextDefinition {
     schema: JSONSchema;
-    initial: Record<string, any>;
+    initial: Record<string, unknown>;
 }
 
 export interface ProcessDefinitionBody {
@@ -221,7 +221,7 @@ export interface NodeHistoryEntry {
     entered_at: Date | string;
     exited_at?: Date | string;
     status: 'running' | 'completed' | 'skipped' | 'failed' | 'cancelled';
-    context_diff?: Record<string, any>;
+    context_diff?: Record<string, unknown>;
     data_ref?: string;
     sequence?: number;
     child_run_id?: string;
@@ -243,7 +243,7 @@ export interface ProcessHistoryCheckpoint {
 }
 
 export interface ProcessState {
-    context: Record<string, any>;
+    context: Record<string, unknown>;
     current_node: string;
     node_history: NodeHistoryEntry[];
     node_history_ref?: ProcessHistoryRef;

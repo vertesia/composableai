@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import type { Command } from 'commander';
 import { listAces, createAce, deleteAce, listRoles } from './commands.js';
 
 export function registerIamCommand(program: Command) {
@@ -9,7 +9,7 @@ export function registerIamCommand(program: Command) {
 
     iam.command('list')
         .description('List all access control entries for the current project')
-        .action(async (options: Record<string, any>) => {
+        .action(async (options: Record<string, unknown>) => {
             await listAces(program, options);
         });
 
@@ -22,7 +22,7 @@ export function registerIamCommand(program: Command) {
         .requiredOption('--role <role>', 'Role: owner, admin, developer, reader, member, etc.')
         .option('--principal-props <json>', 'Principal conditions JSON (for principal_set)')
         .option('--resource-props <json>', 'Resource conditions JSON (for content_set)')
-        .action(async (options: Record<string, any>) => {
+        .action(async (options: Record<string, unknown>) => {
             await createAce(program, options);
         });
 

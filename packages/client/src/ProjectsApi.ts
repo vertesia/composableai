@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase, type ServerError } from "@vertesia/api-fetch-client";
+import type {
     CompositeAppConfig,
     CompositeAppConfigPayload,
     CountResult,
@@ -21,8 +21,11 @@ import {
 } from "@vertesia/common";
 
 export default class ProjectsApi extends ApiTopic {
+    integrations: IntegrationsConfigurationApi;
+
     constructor(parent: ClientBase) {
         super(parent, "/api/v1/projects");
+        this.integrations = new IntegrationsConfigurationApi(this);
     }
 
     list(account?: string[]): Promise<ProjectRef[]> {
@@ -55,8 +58,6 @@ export default class ProjectsApi extends ApiTopic {
         });
     }
 
-    integrations: IntegrationsConfigurationApi = new IntegrationsConfigurationApi(this);
-
     /**
      * List all tools available in the project with their app installation info.
      * Settings are only included for agent tokens (security: may contain API keys).
@@ -70,7 +71,7 @@ export default class ProjectsApi extends ApiTopic {
      * Returns null if the tool is not found.
      */
     getToolByName(projectId: string, toolName: string): Promise<ProjectToolInfo | null> {
-        return this.get(`/${projectId}/tools/${toolName}`).catch((err: ServerError) => {
+        return this.get<ProjectToolInfo>(`/${projectId}/tools/${toolName}`).catch((err: ServerError) => {
             if (err.status === 404) {
                 return null;
             }
@@ -127,11 +128,11 @@ class IntegrationsConfigurationApi extends ApiTopic {
     }
 
     list(projectId: string): Promise<ProjectIntegrationListEntry[]> {
-        return this.get(`/${projectId}/integrations`).then((res: ProjectIntegrationListResponse) => res.integrations);
+        return this.get<ProjectIntegrationListResponse>(`/${projectId}/integrations`).then((res) => res.integrations);
     }
 
     retrieve(projectId: string, integrationId: SupportedIntegrations): Promise<ProjectIntegrationConfigResponse | undefined> {
-        return this.get(`/${projectId}/integrations/${integrationId}`).catch(err => {
+        return this.get<ProjectIntegrationConfigResponse>(`/${projectId}/integrations/${integrationId}`).catch(err => {
             if (err.status === 404) {
                 return undefined;
             }

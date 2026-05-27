@@ -1,5 +1,5 @@
-import { ContentObjectTypeItem, ObjectTypeSearchQuery } from "@vertesia/common";
-import { VertesiaClient, ZenoClient } from "@vertesia/client";
+import type { ContentObjectTypeItem, ObjectTypeSearchQuery } from "@vertesia/common";
+import type { VertesiaClient, ZenoClient } from "@vertesia/client";
 import { SharedState, useWatchSharedState } from "@vertesia/ui/core";
 import { createContext, useContext } from "react";
 
@@ -30,12 +30,12 @@ export class ObjectTypeSearch {
     }
 
     getFilterValue(name: string) {
-        return (this.query as any)[name];
+        return (this.query as Record<string, unknown>)[name];
     }
 
-    setFilterValue(name: string, value: any) {
-        (this.query as any)[name] = value;
-        this.search();
+    setFilterValue(name: string, value: unknown) {
+        (this.query as Record<string, unknown>)[name] = value;
+        void this.search();
     }
 
     reset(isLoading = false) {
@@ -102,6 +102,7 @@ export class ObjectTypeSearch {
 const ObjectTypeSearchContext = createContext<ObjectTypeSearch | undefined>(undefined);
 
 export function useSearch() {
+    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
     return useContext(ObjectTypeSearchContext)!;
 }
 

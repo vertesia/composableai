@@ -1,23 +1,46 @@
 import { ApplicationFailure, log } from "@temporalio/activity";
 import {
-  ContentObjectTypeItem,
-  CreateContentObjectTypePayload,
-  DSLActivityExecutionPayload,
-  DSLActivitySpec,
+  type ContentObjectTypeItem,
+  type CreateContentObjectTypePayload,
+  type DSLActivityExecutionPayload,
+  type DSLActivitySpec,
   ImageRenditionFormat,
 } from "@vertesia/common";
 import {
-  ActivityContext,
+  type ActivityContext,
   setupActivity,
 } from "../dsl/setup/ActivityContext.js";
-import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
+import { type TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 import {
-  InteractionExecutionParams,
+  type InteractionExecutionParams,
   executeInteractionFromActivity,
 } from "./executeInteraction.js";
 
 const INT_SELECT_DOCUMENT_TYPE = "sys:SelectDocumentType";
 const INT_GENERATE_METADATA_MODEL = "sys:GenerateMetadataModel";
+
+interface RetryableError extends Error {
+  retryable?: boolean;
+}
+
+interface SelectDocumentTypeResult {
+  document_type?: string;
+}
+
+interface GeneratedDocumentTypeResult {
+  document_type?: string;
+  document_type_description?: string;
+  metadata_schema?: CreateContentObjectTypePayload["object_schema"];
+  is_chunkable?: boolean;
+  table_layout?: CreateContentObjectTypePayload["table_layout"];
+}
+
+function toRetryableError(error: unknown): RetryableError {
+  if (error instanceof Error) {
+    return error as RetryableError;
+  }
+  return new Error(String(error)) as RetryableError;
+}
 
 export interface GenerateOrAssignContentTypeParams
   extends InteractionExecutionParams {
@@ -52,7 +75,7 @@ export async function generateOrAssignContentType(
   const interactionName =
     params.interactionNames?.selectDocumentType ?? INT_SELECT_DOCUMENT_TYPE;
 
-  log.debug("SelectDocumentType for object: " + objectId, { payload });
+  log.debug(`SelectDocumentType for object: ${objectId}`, { payload });
 
   const object = await client.objects.retrieve(objectId, "+text");
 
@@ -64,7 +87,7 @@ export async function generateOrAssignContentType(
     log.warn(`Object ${objectId} has already a type. Skipping type creation.`);
     return {
       status: "skipped",
-      message: "Object already has a type: " + object.type.name,
+      message: `Object already has a type: ${object.type.name}`,
     };
   }
 
@@ -98,7 +121,7 @@ export async function generateOrAssignContentType(
       object.text?.length &&
       object.text?.length < 100
     ) {
-      return "store:" + objectId;
+      return `store:${objectId}`;
     }
     if (!object.content?.type?.startsWith("image/")) {
       return undefined;
@@ -111,7 +134,7 @@ export async function generateOrAssignContentType(
       //throw to try again
       throw new Error(`Rendition for object ${objectId} is in progress`);
     } else if (res.renditions) {
-      return "store:" + objectId;
+      return `store:${objectId}`;
     }
   };
 
@@ -122,7 +145,7 @@ export async function generateOrAssignContentType(
     existing_types.filter((t) => !t.tags?.includes("system")),
   );
 
-  let res;
+  let res: Awaited<ReturnType<typeof executeInteractionFromActivity>>;
   try {
     res = await executeInteractionFromActivity(
       client,
@@ -134,22 +157,23 @@ export async function generateOrAssignContentType(
         image: fileRef,
       },
     );
-  } catch (error: any) {
-    log.error(`Failed to select document type`, { error, retryable: error.retryable });
+  } catch (error: unknown) {
+    const selectionError = toRetryableError(error);
+    log.error(`Failed to select document type`, { error: selectionError, retryable: selectionError.retryable });
     
-    const isRetryable = error.retryable !== undefined 
-      ? error.retryable !== false
+    const isRetryable = selectionError.retryable !== undefined 
+      ? selectionError.retryable !== false
       : undefined;
     
     if (isRetryable !== undefined) {
       if (isRetryable) {
         throw ApplicationFailure.create({
-          message: `Document type selection failed: ${error.message}`,
+          message: `Document type selection failed: ${selectionError.message}`,
           nonRetryable: false,
         });
       } else {
         throw ApplicationFailure.create({
-          message: `Non-retryable document type selection failed: ${error.message}`,
+          message: `Non-retryable document type selection failed: ${selectionError.message}`,
           nonRetryable: true,
         });
       }
@@ -158,13 +182,13 @@ export async function generateOrAssignContentType(
     throw error;
   }
 
-  const jsonResult = res.result.object();
+  const jsonResult = res.result.object<SelectDocumentTypeResult>();
 
-  log.debug("Selected Content Type Result: " + JSON.stringify(jsonResult));
+  log.debug(`Selected Content Type Result: ${JSON.stringify(jsonResult)}`);
 
 
   //if type is not identified or not present in the database, generate a new type
-  let selectedType: { id: string; name: string } | undefined = undefined;
+  let selectedType: { id: string; name: string } | undefined ;
 
   selectedType = types.find((t) => t.name === jsonResult.document_type);
 
@@ -181,7 +205,7 @@ export async function generateOrAssignContentType(
 
   if (!selectedType) {
     log.error("Type not found: ", res.result);
-    throw new Error("Type not found: " + jsonResult.document_type);
+    throw new Error(`Type not found: ${jsonResult.document_type}`);
   }
 
   //update object with selected type
@@ -209,7 +233,7 @@ async function generateNewType(
     params.interactionNames?.generateMetadataModel ??
     INT_GENERATE_METADATA_MODEL;
 
-  let genTypeRes;
+  let genTypeRes: Awaited<ReturnType<typeof executeInteractionFromActivity>>;
   try {
     genTypeRes = await executeInteractionFromActivity(
       client,
@@ -222,22 +246,23 @@ async function generateNewType(
         image: fileRef ? fileRef : undefined,
       },
     );
-  } catch (error: any) {
-    log.error(`Failed to generate new document type`, { error, retryable: error.retryable });
+  } catch (error: unknown) {
+    const generationError = toRetryableError(error);
+    log.error(`Failed to generate new document type`, { error: generationError, retryable: generationError.retryable });
     
-    const isRetryable = error.retryable !== undefined 
-      ? error.retryable !== false
+    const isRetryable = generationError.retryable !== undefined 
+      ? generationError.retryable !== false
       : undefined;
     
     if (isRetryable !== undefined) {
       if (isRetryable) {
         throw ApplicationFailure.create({
-          message: `Document type generation failed: ${error.message}`,
+          message: `Document type generation failed: ${generationError.message}`,
           nonRetryable: false,
         });
       } else {
         throw ApplicationFailure.create({
-          message: `Non-retryable document type generation failed: ${error.message}`,
+          message: `Non-retryable document type generation failed: ${generationError.message}`,
           nonRetryable: true,
         });
       }
@@ -246,7 +271,7 @@ async function generateNewType(
     throw error;
   }
 
-  const jsonResult = genTypeRes.result.object();
+  const jsonResult = genTypeRes.result.object<GeneratedDocumentTypeResult>();
 
   if (!jsonResult.document_type) {
     log.error("No name generated for type", genTypeRes);

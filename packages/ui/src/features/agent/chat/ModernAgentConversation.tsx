@@ -1,34 +1,35 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bot, Cpu, FileTextIcon, SendIcon, UploadIcon, XIcon } from "lucide-react";
 import { useUserSession } from "@vertesia/ui/session";
 import {
-    ActiveWorkstreamEntry,
-    AgentMessage,
+    type ActiveWorkstreamEntry,
+    type AgentMessage,
     AgentMessageType,
-    AgentRun,
-    ConversationFile,
-    ConversationFileRef,
-    Plan,
-    UserInputSignal,
+    type AgentRun,
+    type ConversationFile,
+    type ConversationFileRef,
+    type Plan,
+    type UserInputSignal,
 } from "@vertesia/common";
 import { FusionFragmentProvider } from "@vertesia/fusion-ux";
 import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
-import { type AgentConversationViewMode } from "./ModernAgentOutput/AllMessagesMixed";
-import { type BatchProgressPanelClassNames } from "./ModernAgentOutput/BatchProgressPanel";
-import { type MessageItemClassNames } from "./ModernAgentOutput/MessageItem";
-import { type StreamingMessageClassNames } from "./ModernAgentOutput/StreamingMessage";
-import { type ToolCallGroupClassNames } from "./ModernAgentOutput/ToolCallGroup";
+import type { AgentConversationViewMode } from "./ModernAgentOutput/AllMessagesMixed";
+import type { BatchProgressPanelClassNames } from "./ModernAgentOutput/BatchProgressPanel";
+import type { MessageItemClassNames } from "./ModernAgentOutput/MessageItem";
+import type { StreamingMessageClassNames } from "./ModernAgentOutput/StreamingMessage";
+import type { ToolCallGroupClassNames } from "./ModernAgentOutput/ToolCallGroup";
 import { ImageLightboxProvider } from "./ImageLightbox";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
-import MessageInput, { UploadedFile, SelectedDocument } from "./ModernAgentOutput/MessageInput";
+import MessageInput, { type UploadedFile, type SelectedDocument } from "./ModernAgentOutput/MessageInput";
 import { getConversationUrl, getWorkstreamId } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
-import { useUITranslation } from "../../../i18n/index.js";
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { VegaLiteChart } from "./VegaLiteChart";
 import { AgentRightPanel, type WorkstreamInfo } from "./AgentRightPanel.js";
 import { useAgentStream } from "./hooks/useAgentStream.js";
@@ -469,7 +470,7 @@ function StartWorkflowView({
                     duration: 3000,
                 });
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             toast({
                 title: t('agent.errorStarting'),
                 status: "error",
@@ -484,7 +485,7 @@ function StartWorkflowView({
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            startWorkflowWithMessage();
+            void startWorkflowWithMessage();
         }
         // Shift+Enter allows newline (default textarea behavior)
     };
@@ -499,6 +500,7 @@ function StartWorkflowView({
     }, []);
 
     useEffect(() => {
+        void inputValue;
         adjustTextareaHeight();
     }, [inputValue, adjustTextareaHeight]);
 
@@ -515,6 +517,7 @@ function StartWorkflowView({
 
     return (
         <div className="flex flex-col h-full bg-background items-center">
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target only; file selection is also exposed via the upload button. */}
             <div
                 className={cn(
                     "flex flex-col h-full w-full overflow-hidden border-0 relative",
@@ -573,93 +576,96 @@ function StartWorkflowView({
                 {/* Empty conversation area with instructions */}
                 <div className="flex-1 overflow-y-auto bg-background flex flex-col items-center justify-end">
                     <div className="w-full px-4 py-6">
-                        {initialMessage && (
-                            <div className="px-4 py-3 mb-4 bg-info-background border-l-2 border-info text-info">
+                        {initialMessage ? (
+                            <div className="px-4 py-3 mb-4 bg-info-background border-s-2 border-info text-info">
                                 {initialMessage}
                             </div>
+                        ) : (
+                            <div className="bg-card p-4 border-s-2 border-info">
+                                <div className="text-base text-foreground font-medium">
+                                    {t('agent.enterMessage')}
+                                </div>
+                                <div className="mt-3 text-sm text-muted">
+                                    {t('agent.typeQuestionBelow', { buttonText: resolvedStartButtonText })}
+                                </div>
+                            </div>
                         )}
-
-                        <div className="bg-card p-4 border-l-2 border-info">
-                            <div className="text-base text-foreground font-medium">
-                                {t('agent.enterMessage')}
-                            </div>
-                            <div className="mt-3 text-sm text-muted">
-                                {t('agent.typeQuestionBelow', { buttonText: resolvedStartButtonText })}
-                            </div>
-                        </div>
                     </div>
                 </div>
 
                 {/* Input Area */}
                 <div className="py-3 px-3 border-t border-border bg-background">
-                {/* Staged files display */}
-                {stagedFiles.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-3">
-                        {stagedFiles.map((file, index) => (
-                            <div
-                                key={`${file.name}-${index}`}
-                                className="flex items-center gap-1.5 px-2 py-1 bg-attention/10 text-attention rounded-md text-sm"
-                            >
-                                <FileTextIcon className="size-3.5" />
-                                <span className="max-w-[120px] truncate">{file.name}</span>
-                                <span className="text-xs opacity-70">{t('agent.staged')}</span>
-                                <button
-                                    onClick={() => removeStagedFile(index)}
-                                    className="ml-1 p-0.5 hover:bg-attention/20 rounded"
+                    {/* Staged files display */}
+                    {stagedFiles.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                            {stagedFiles.map((file, index) => (
+                                <div
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
+                                    key={`${file.name}-${index}`}
+                                    className="flex items-center gap-1.5 px-2 py-1 bg-attention/10 text-attention rounded-md text-sm"
                                 >
-                                    <XIcon className="size-3" />
-                                </button>
-                            </div>
-                        ))}
+                                    <FileTextIcon className="size-3.5" />
+                                    <span className="max-w-[120px] truncate">{file.name}</span>
+                                    <span className="text-xs opacity-70">{t('agent.staged')}</span>
+                                    <Button
+                                        variant="unstyled"
+                                        aria-label={`Remove staged file ${file.name}`}
+                                        onClick={() => removeStagedFile(index)}
+                                        className="ms-1 p-0.5 hover:bg-attention/20 rounded"
+                                    >
+                                        <XIcon className="size-3" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Upload button row */}
+                    <div className="flex gap-2 mb-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isSending || stagedFiles.length >= maxFiles}
+                            className="text-xs"
+                        >
+                            <UploadIcon className="size-3.5 me-1.5" />
+                            {t('agent.upload')}
+                        </Button>
                     </div>
-                )}
 
-                {/* Upload button row */}
-                <div className="flex gap-2 mb-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isSending || stagedFiles.length >= maxFiles}
-                        className="text-xs"
-                    >
-                        <UploadIcon className="size-3.5 mr-1.5" />
-                        {t('agent.upload')}
-                    </Button>
-                </div>
-
-                <div className="flex items-end gap-2">
-                    <textarea
-                        ref={inputRef}
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder={resolvedPlaceholder}
-                        disabled={isSending}
-                        rows={2}
-                        className="flex-1 py-2.5 px-3 text-sm border border-border bg-background text-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring rounded-md resize-none overflow-hidden"
-                        style={{ minHeight: '60px', maxHeight: '200px' }}
-                    />
-                    <Button
-                        onClick={startWorkflowWithMessage}
-                        disabled={!inputValue.trim() || isSending}
-                        className="px-3 py-2.5 text-xs rounded-md transition-colors"
-                    >
-                        {isSending ? (
-                            <Spinner size="sm" className="mr-1.5" />
-                        ) : (
-                            <SendIcon className="size-3.5 mr-1.5" />
-                        )}
-                        {resolvedStartButtonText}
-                    </Button>
-                </div>
-                <div className="text-xs text-muted mt-2 text-center">
-                    {stagedFiles.length > 0
-                        ? t('agent.filesStagedCount', { count: stagedFiles.length })
-                        : t('agent.enterToSend')}
+                    <div className="flex items-end gap-2">
+                        <textarea
+                            ref={inputRef}
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder={resolvedPlaceholder}
+                            disabled={isSending}
+                            rows={2}
+                            className="flex-1 py-2.5 px-3 text-sm border border-border bg-background text-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring rounded-md resize-none overflow-hidden"
+                            style={{ minHeight: '60px', maxHeight: '200px' }}
+                        />
+                        <Button
+                            onClick={startWorkflowWithMessage}
+                            disabled={!inputValue.trim() || isSending}
+                            className="px-3 py-2.5 text-xs rounded-md transition-colors"
+                        >
+                            {isSending ? (
+                                <Spinner size="sm" className="me-1.5" />
+                            ) : (
+                                <SendIcon className="size-3.5 me-1.5" />
+                            )}
+                            {resolvedStartButtonText}
+                        </Button>
+                    </div>
+                    <div className="text-xs text-muted mt-2 text-center">
+                        {stagedFiles.length > 0
+                            ? t('agent.filesStagedCount', { count: stagedFiles.length })
+                            : t('agent.enterToSend')}
+                    </div>
                 </div>
             </div>
-        </div>
         </div>
     );
 }
@@ -982,7 +988,7 @@ function ModernAgentConversationInner({
         };
     }, [isRightPanelResizing]);
 
-const handleCloseRightPanel = useCallback(() => {
+    const handleCloseRightPanel = useCallback(() => {
         setShowSlidingPanel(false);
         handleCloseDocPanel();
     }, [setShowSlidingPanel, handleCloseDocPanel]);
@@ -1003,7 +1009,7 @@ const handleCloseRightPanel = useCallback(() => {
                 {children}
             </a>
         ),
-        [openDocInPanel, setRightPanelTab]
+        [openDocInPanel]
     );
 
     const effectiveStoreLinkComponent = StoreLinkComponent ?? internalStoreLinkComponent;
@@ -1077,7 +1083,7 @@ const handleCloseRightPanel = useCallback(() => {
             }
         };
 
-        fetchActiveWorkstreams();
+        void fetchActiveWorkstreams();
         const pollHandle = window.setInterval(fetchActiveWorkstreams, 10000);
 
         return () => {
@@ -1171,7 +1177,7 @@ const handleCloseRightPanel = useCallback(() => {
             })
             .catch((err) => {
                 removeOptimisticMessages((m) =>
-                    (m.details as any)?._messageId === messageId
+                    m.details?._messageId === messageId
                 );
                 toast({
                     status: "error",
@@ -1183,7 +1189,7 @@ const handleCloseRightPanel = useCallback(() => {
             .finally(() => {
                 setIsSending(false);
             });
-    }, [agentRunId, client, toast, getAttachedDocs, getMessageContext, onAttachmentsSent, addOptimisticMessage, removeOptimisticMessages]);
+    }, [agentRunId, client, toast, getAttachedDocs, getMessageContext, onAttachmentsSent, addOptimisticMessage, removeOptimisticMessages, t]);
 
     // Drag and drop handlers for full-panel file upload
     const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -1217,7 +1223,7 @@ const handleCloseRightPanel = useCallback(() => {
 
         if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
             const filesArray = Array.from(e.dataTransfer.files);
-            handleFileUpload(filesArray);
+            void handleFileUpload(filesArray);
         }
     }, [handleFileUpload]);
 
@@ -1247,7 +1253,7 @@ const handleCloseRightPanel = useCallback(() => {
         } finally {
             setIsStopping(false);
         }
-    }, [isStopping, client, agentRunId, toast]);
+    }, [isStopping, client, agentRunId, toast, t]);
 
     // Expose stop handler to external callers via ref
     useEffect(() => {
@@ -1385,7 +1391,7 @@ const handleCloseRightPanel = useCallback(() => {
             if (task.id && task.goal) acc.set(task.id.toString(), task.goal);
             return acc;
         }, new Map<string, string>()),
-    [getActivePlan.plan]);
+        [getActivePlan.plan]);
 
     // Conversation area inner content — shared between main layout and conversationTab mode
     const conversationAreaJsx = (
@@ -1522,105 +1528,125 @@ const handleCloseRightPanel = useCallback(() => {
     // Main content - wrapped with FusionFragmentProvider when fusionData is provided
     const mainContent = (
         <ArtifactUrlCacheProvider>
-        <ImageLightboxProvider>
-        <div
-            ref={conversationLayoutRef}
-            className={cn("flex flex-col lg:flex-row gap-2 w-full h-full relative overflow-hidden", isDragOver && "ring-2 ring-blue-400 ring-inset", className)}
-            onDragEnter={handleDragEnter}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-        >
-            {/* Drag overlay for full-panel file drop */}
-            {isDragOver && (
-                <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg">
-                    <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-lg">
-                        <UploadIcon className="size-6" />
-                        Drop files to upload
-                    </div>
-                </div>
-            )}
-            {/* Conversation Area — hidden when conversationTab moves it into the right panel */}
-            {!conversationTab && conversationAreaJsx}
-
-            {/* Unified Right Panel — Plan | Workstreams | Documents | Uploads */}
-            {isRightPanelVisible && (
-                <>
-                    {!conversationTab && (
-                        <div
-                            className="hidden lg:block lg:w-1 lg:shrink-0 cursor-col-resize bg-border/70 hover:bg-border transition-colors"
-                            onMouseDown={() => setIsRightPanelResizing(true)}
-                            role="separator"
-                            aria-orientation="vertical"
-                            aria-label="Resize right panel"
-                        />
+            <ImageLightboxProvider>
+                {/* biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target only; file selection is also exposed via the upload button. */}
+                <div
+                    ref={conversationLayoutRef}
+                    className={cn("flex flex-col lg:flex-row gap-2 w-full h-full relative overflow-hidden", isDragOver && "ring-2 ring-blue-400 ring-inset", className)}
+                    onDragEnter={handleDragEnter}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                >
+                    {/* Drag overlay for full-panel file drop */}
+                    {isDragOver && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg">
+                            <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-lg">
+                                <UploadIcon className="size-6" />
+                                Drop files to upload
+                            </div>
+                        </div>
                     )}
-                    <div
-                        className={conversationTab
-                            ? "w-full h-full overflow-auto"
-                            : "w-full lg:w-[var(--agent-right-panel-width)] lg:shrink-0 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l"}
-                        style={!conversationTab ? ({ ['--agent-right-panel-width' as string]: `${rightPanelWidth}px` } as React.CSSProperties) : undefined}
-                    >
-                    <AgentRightPanel
-                        // Plan
-                        plan={getActivePlan.plan}
-                        workstreamStatus={getActivePlan.workstreamStatus}
-                        plans={plans}
-                        activePlanIndex={activePlanIndex}
-                        onChangePlan={handleChangePlan}
-                        showPlan={!hidePlanPanel && showSlidingPanel}
-                        // Workstreams
-                        activeWorkstreams={panelWorkstreams}
-                        hideWorkstreams={hideWorkstreamTabs}
-                        // Documents
-                        openDocuments={openDocuments}
-                        activeDocumentId={activeDocumentId}
-                        onSelectDocument={selectDocument}
-                        onCloseDocument={handleCloseDocument}
-                        onUpdateDocumentTitle={updateDocumentTitle}
-                        docRefreshKey={docRefreshKey}
-                        runId={agentRunId}
-                        // Uploads
-                        processingFiles={processingFilesProp ?? processingFiles}
-                        // Artifacts
-                        showArtifacts={showArtifacts}
-                        artifactRefreshKey={artifactRefreshKey}
-                        // Messages (for workstreams tab context)
-                        messages={messages}
-                        // Payload content
-                        payloadContent={payloadContent}
-                        // Conversation content
-                        conversationContent={conversationTab ? conversationAreaJsx : conversationContent}
-                        // Panel control
-                        onClose={handleCloseRightPanel}
-                        defaultTab={rightPanelTab}
-                        activeTab={rightPanelTab}
-                        onTabChange={setRightPanelTab}
-                    />
-                    </div>
-                </>
-            )}
-            <Modal isOpen={isPdfModalOpen} onClose={() => setIsPdfModalOpen(false)}>
-                <ModalTitle>Export conversation as PDF</ModalTitle>
-                <ModalBody>
-                    <p className="mb-2">
-                        This will open your browser&apos;s print dialog with the current conversation.
-                    </p>
-                    <p className="text-sm text-muted">
-                        To save a PDF, choose &quot;Save as PDF&quot; or a similar option in the print dialog.
-                    </p>
-                </ModalBody>
-                <ModalFooter align="right">
-                    <Button variant="ghost" size="sm" onClick={() => setIsPdfModalOpen(false)}>
-                        Cancel
-                    </Button>
-                    <Button size="sm" onClick={handleConfirmExportPdf}>
-                        Open print dialog
-                    </Button>
-                </ModalFooter>
-            </Modal>
-        </div>
-        </ImageLightboxProvider>
+                    {/* Conversation Area — hidden when conversationTab moves it into the right panel */}
+                    {!conversationTab && conversationAreaJsx}
+
+                    {/* Unified Right Panel — Plan | Workstreams | Documents | Uploads */}
+                    {isRightPanelVisible && (
+                        <>
+                            {!conversationTab && (
+                                // biome-ignore lint/a11y/useSemanticElements: <hr> has no semantics for a draggable resize handle; ARIA separator is the spec-recommended pattern.
+                                <div
+                                    role="separator"
+                                    aria-orientation="vertical"
+                                    aria-label="Resize right panel"
+                                    aria-valuenow={Math.round(rightPanelWidth)}
+                                    aria-valuemin={300}
+                                    aria-valuetext={`${Math.round(rightPanelWidth)} pixels`}
+                                    tabIndex={0}
+                                    className="hidden lg:block lg:w-1 lg:shrink-0 cursor-col-resize bg-border/70 hover:bg-border transition-colors"
+                                    onMouseDown={() => setIsRightPanelResizing(true)}
+                                    onKeyDown={(event) => {
+                                        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                                        event.preventDefault();
+                                        const step = event.shiftKey ? 32 : 16;
+                                        // Right panel is anchored to the right edge — ArrowLeft grows it, ArrowRight shrinks.
+                                        const delta = event.key === 'ArrowLeft' ? step : -step;
+                                        const container = conversationLayoutRef.current;
+                                        const minRightPanelWidth = 300;
+                                        const minConversationWidth = 420;
+                                        const maxRightPanelWidth = container
+                                            ? Math.max(minRightPanelWidth, container.getBoundingClientRect().width - minConversationWidth)
+                                            : minRightPanelWidth + 600;
+                                        setRightPanelWidth(w => Math.min(Math.max(w + delta, minRightPanelWidth), maxRightPanelWidth));
+                                    }}
+                                />
+                            )}
+                            <div
+                                className={conversationTab
+                                    ? "w-full h-full overflow-auto"
+                                    : "w-full lg:w-[var(--agent-right-panel-width)] lg:shrink-0 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-s"}
+                                style={!conversationTab ? ({ ['--agent-right-panel-width' as string]: `${rightPanelWidth}px` } as React.CSSProperties) : undefined}
+                            >
+                                <AgentRightPanel
+                                    // Plan
+                                    plan={getActivePlan.plan}
+                                    workstreamStatus={getActivePlan.workstreamStatus}
+                                    plans={plans}
+                                    activePlanIndex={activePlanIndex}
+                                    onChangePlan={handleChangePlan}
+                                    showPlan={!hidePlanPanel && showSlidingPanel}
+                                    // Workstreams
+                                    activeWorkstreams={panelWorkstreams}
+                                    hideWorkstreams={hideWorkstreamTabs}
+                                    // Documents
+                                    openDocuments={openDocuments}
+                                    activeDocumentId={activeDocumentId}
+                                    onSelectDocument={selectDocument}
+                                    onCloseDocument={handleCloseDocument}
+                                    onUpdateDocumentTitle={updateDocumentTitle}
+                                    docRefreshKey={docRefreshKey}
+                                    runId={agentRunId}
+                                    // Uploads
+                                    processingFiles={processingFilesProp ?? processingFiles}
+                                    // Artifacts
+                                    showArtifacts={showArtifacts}
+                                    artifactRefreshKey={artifactRefreshKey}
+                                    // Messages (for workstreams tab context)
+                                    messages={messages}
+                                    // Payload content
+                                    payloadContent={payloadContent}
+                                    // Conversation content
+                                    conversationContent={conversationTab ? conversationAreaJsx : conversationContent}
+                                    // Panel control
+                                    onClose={handleCloseRightPanel}
+                                    defaultTab={rightPanelTab}
+                                    activeTab={rightPanelTab}
+                                    onTabChange={setRightPanelTab}
+                                />
+                            </div>
+                        </>
+                    )}
+                    <Modal isOpen={isPdfModalOpen} onClose={() => setIsPdfModalOpen(false)}>
+                        <ModalTitle>Export conversation as PDF</ModalTitle>
+                        <ModalBody>
+                            <p className="mb-2">
+                                This will open your browser&apos;s print dialog with the current conversation.
+                            </p>
+                            <p className="text-sm text-muted">
+                                To save a PDF, choose &quot;Save as PDF&quot; or a similar option in the print dialog.
+                            </p>
+                        </ModalBody>
+                        <ModalFooter align="right">
+                            <Button variant="ghost" size="sm" onClick={() => setIsPdfModalOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button size="sm" onClick={handleConfirmExportPdf}>
+                                Open print dialog
+                            </Button>
+                        </ModalFooter>
+                    </Modal>
+                </div>
+            </ImageLightboxProvider>
         </ArtifactUrlCacheProvider>
     );
 

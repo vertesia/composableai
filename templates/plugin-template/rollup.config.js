@@ -52,6 +52,14 @@ const serverBuild = {
         // Externalize all node modules and absolute imports
         return true;
     },
+    // Treat TypeScript diagnostics from @rollup/plugin-typescript as build errors
+    // instead of warnings, so type issues fail the build.
+    onwarn(warning, defaultHandler) {
+        if (warning.plugin === 'typescript') {
+            throw new Error(warning.message ?? String(warning));
+        }
+        defaultHandler(warning);
+    },
     plugins: [
         vertesiaImportPlugin({
             transformers: [

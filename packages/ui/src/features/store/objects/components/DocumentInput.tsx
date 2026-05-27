@@ -1,11 +1,11 @@
 import clsx from 'clsx';
-import { ChangeEvent, useEffect, useState } from 'react';
+import { type ChangeEvent, useCallback, useEffect, useState } from 'react';
 
 import { useUserSession } from '@vertesia/ui/session';
-import { ContentObjectItem } from '@vertesia/common';
+import type { ContentObjectItem } from '@vertesia/common';
 import { ChevronsUpDown, X } from 'lucide-react';
 import { Button, Styles, useFlag } from '@vertesia/ui/core';
-import { Node } from '@vertesia/ui/widgets';
+import type { Node } from '@vertesia/ui/widgets';
 
 import { SelectDocumentModal } from './SelectDocumentModal';
 
@@ -28,15 +28,15 @@ export function DocumentInput({ object }: DocumentInputProps) {
         object.value = value;
     };
 
-    const clearValue = () => {
+    const clearValue = useCallback(() => {
         setValue('');
         object.value = '';
         setDoc(undefined);
-    };
+    }, [object]);
 
     const onSelect = (value?: ContentObjectItem) => {
         if (value) {
-            const uri = "store:" + value.id;
+            const uri = `store:${value.id}`;
             setValue(uri);
             setDoc(value || undefined);
             object.value = uri;
@@ -54,25 +54,25 @@ export function DocumentInput({ object }: DocumentInputProps) {
             return;
         }
 
-        client.objects.get(match[1]).then((doc) => {
+        client.objects.retrieve(match[1]).then((doc) => {
             setDoc(doc);
         }).catch(() => {
             clearValue();
         });
-    }, [actualValue]);
+    }, [actualValue, client.objects.retrieve, clearValue, doc]);
 
     return (
         <div>
             <div className="relative">
-                <input value={actualValue} onChange={_onChange} className={clsx(Styles.INPUT, "pr-10 w-full")} />
+                <input value={actualValue} onChange={_onChange} className={clsx(Styles.INPUT, "pe-10 w-full")} />
                 {doc &&
-                    <div className="absolute inset-y-0 right-10 flex items-center justify-center ">
+                    <div className="absolute inset-y-0 end-10 flex items-center justify-center ">
                         <Button onClick={clearValue} variant='unstyled' className='hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-600'>
                             <X className="size-5" />
                         </Button>
                     </div>
                 }
-                <div className="absolute inset-y-0 right-0 flex items-center justify-center">
+                <div className="absolute inset-y-0 end-0 flex items-center justify-center">
                     <Button onClick={on} variant='unstyled' className='hover:bg-gray-100 dark:hover:bg-gray-600'>
                         <ChevronsUpDown className="size-5" />
                     </Button>
@@ -81,7 +81,7 @@ export function DocumentInput({ object }: DocumentInputProps) {
             </div>
             {doc &&
                 <div className="p-1 semibold text-sm text-gray-600 dark:text-slate-300">
-                    {doc.properties?.title || doc.name}
+                    {typeof doc.properties?.title === 'string' ? doc.properties.title : doc.name}
                 </div>
             }
         </div>

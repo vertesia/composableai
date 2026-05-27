@@ -77,17 +77,16 @@ export function Modal({
             <DialogContent
                 className={cn(
                     "min-h-20 p-4",
+                    // rtl-ok: symmetric centering — left-[50%] + translate-x-[-50%] works in both LTR and RTL
                     "fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 sm:rounded-lg",
                     getSizeClasses(),
                     className
                 )}
             >
-                <div className="top-4 right-4 absolute">
+                <div className="top-4 end-4 absolute">
                     <div className="flex gap-2">
                         {action && (
-                            <>
-                                {action}
-                            </>
+                            action
                         )}
                         {!noCloseButton && (
                             <DialogClose onClick={() => handleOpenChange(false)} asChild autoFocus={false}>
@@ -127,8 +126,7 @@ export const ModalTitle = ({
         )
     }
     return (
-        <>
-            <DialogTitle
+        <DialogTitle
                 className={cn(
                     showDivider ? "border-b-solid border-b border-b-1 pb-2 mb-4" : "",
                     "text-lg font-semibold leading-6 tracking-tight", 
@@ -143,7 +141,6 @@ export const ModalTitle = ({
                     </DialogDescription>
                 )}
             </DialogTitle>
-        </>
     );
 };
 
@@ -225,6 +222,7 @@ const DialogContent = React.forwardRef<
                     event.preventDefault();
                 }}
                 className={cn(
+                    // rtl-ok: symmetric centering + slide animations from Radix — left-[50%]/translate-x-[-50%] are mirror-safe
                     "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
                     className
                 )}

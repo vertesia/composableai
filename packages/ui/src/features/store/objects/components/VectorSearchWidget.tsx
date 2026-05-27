@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import { ComplexSearchQuery, ProjectConfiguration, SearchTypes, SupportedEmbeddingTypes } from '@vertesia/common';
-import { Button, Checkbox, Input, Modal, ModalBody, ModalFooter, ModalTitle, NumberInput, useToast } from '@vertesia/ui/core';
+import { type ComplexSearchQuery, type ProjectConfiguration, SearchTypes, SupportedEmbeddingTypes } from '@vertesia/common';
+import { Button, Checkbox, Input, Label, Modal, ModalBody, ModalFooter, ModalTitle, NumberInput, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { Settings } from 'lucide-react';
 
-import { useUITranslation } from '../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface VectorSearchWidgetProps {
     onChange: (query?: ComplexSearchQuery) => void;
@@ -28,6 +28,8 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
     const [config, setConfig] = useState<ProjectConfiguration | undefined>(undefined);
     const isReady = !!project && (!!config?.embeddings.text || !!config?.embeddings.image);
     const [status, setStatus] = useState<string | undefined>(undefined);
+    const refreshRef = useRef(refresh);
+    const previousSearchTextRef = useRef<string | undefined>(undefined);
 
     const [showSettings, setShowSettings] = useState(false);
     // Default to all types, or use prop if provided
@@ -53,28 +55,34 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
     });
 
     useEffect(() => {
-        setSearchText(undefined);
-        setStatus(undefined);
-    }, [refresh]);
+        if (refreshRef.current !== refresh) {
+            refreshRef.current = refresh;
+            setSearchText(undefined);
+            setStatus(undefined);
+        }
+    });
 
     useEffect(() => {
         if (!project) return;
         client.projects.retrieve(project.id).then((project) => {
             setConfig(project.configuration);
         })
-    }, [project]);
+    }, [client.projects.retrieve, project]);
 
     useEffect(() => {
         if (status) {
             toast({ title: status, status: 'success', duration: 2000 });
         }
-    }, [status]);
+    }, [status, toast]);
 
     useEffect(() => {
-        if (!searchText || searchText.length === 0) {
+        const previousSearchText = previousSearchTextRef.current;
+        previousSearchTextRef.current = searchText;
+
+        if (previousSearchText && (!searchText || searchText.length === 0)) {
             onChange(undefined);
         }
-    }, [searchText]);
+    }, [onChange, searchText]);
 
     const fireSearch = () => {
         if (!isReady || !searchText) return;
@@ -108,30 +116,32 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
     return (
         <div className="flex gap-1 items-center">
             <Input placeholder={t('store.searchPlaceholder')} value={searchText} onChange={setSearchText} onKeyDown={handleKeyPress} className='min-w-[200px]' />
-            <Button variant="ghost" onClick={() => setShowSettings(true)} alt={t('store.semanticSearchSettings')} className="ml-1"><Settings size={18} /></Button>
+            <Button variant="ghost" onClick={() => setShowSettings(true)} alt={t('store.semanticSearchSettings')} className="ms-1"><Settings size={18} /></Button>
             <Modal isOpen={showSettings} onClose={() => setShowSettings(false)}>
                 <ModalTitle>{t('store.searchTypes')}</ModalTitle>
                 <ModalBody>
                     <div className="flex flex-col gap-2">
-                        <label className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <Checkbox
+                                id="search-type-full_text"
                                 checked={selectedTypes.includes(SearchTypes.full_text)}
                                 onCheckedChange={handleCheckboxChange(SearchTypes.full_text)}
                             />
-                            <span>{t('store.fullText')}</span>
-                        </label>
+                            <Label htmlFor="search-type-full_text">{t('store.fullText')}</Label>
+                        </div>
                         <div className="font-semibold mt-2 mb-1">{t('store.embeddings')}</div>
                         {embeddingTypes.map(type => (
-                            <label key={type} className="flex items-center gap-2">
+                            <div key={type} className="flex items-center gap-2">
                                 <Checkbox
+                                    id={`search-type-${type}`}
                                     checked={selectedTypes.includes(type)}
                                     onCheckedChange={handleCheckboxChange(type)}
                                 />
-                                <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
-                            </label>
+                                <Label htmlFor={`search-type-${type}`}>{type.charAt(0).toUpperCase() + type.slice(1)}</Label>
+                            </div>
                         ))}
                         <div className="mt-3">
-                            <span className="mr-2">{t('store.limit')}</span>
+                            <span className="me-2">{t('store.limit')}</span>
                             <NumberInput type="number" min={1} value={limit} onChange={v => setLimit(Number(v ?? 100))} style={{ width: 80 }} />
                         </div>
                     </div>

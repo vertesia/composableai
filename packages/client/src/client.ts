@@ -1,5 +1,5 @@
-import { AbstractFetchClient } from "@vertesia/api-fetch-client";
-import { AuthTokenPayload, AuthTokenResponse } from "@vertesia/common";
+import { AbstractFetchClient, type FETCH_FN, type IRequestRetryPolicy } from "@vertesia/api-fetch-client";
+import type { AuthTokenPayload, AuthTokenResponse } from "@vertesia/common";
 import AccountApi from "./AccountApi.js";
 import AccountsApi from "./AccountsApi.js";
 import AnalyticsApi from "./AnalyticsApi.js";
@@ -19,6 +19,7 @@ import PromptsApi from "./PromptsApi.js";
 import { RefsApi } from "./RefsApi.js";
 import RemoteMcpConnectionsApi from "./RemoteMcpConnectionsApi.js";
 import { RunsApi } from "./RunsApi.js";
+import SecretsApi from "./SecretsApi.js";
 import SkillsApi from "./SkillsApi.js";
 import { ZenoClient } from "./store/client.js";
 import { VERSION, VERSION_HEADER } from "./store/version.js";
@@ -62,6 +63,8 @@ export type VertesiaClientProps = {
     sessionTags?: string | string[];
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
+    retryPolicy?: IRequestRetryPolicy;
+    fetch?: FETCH_FN | Promise<FETCH_FN>;
 };
 
 export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
@@ -90,6 +93,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     oauthServer: OAuthServerApi;
     oauthProviders: OAuthProvidersApi;
     remoteMcpConnections: RemoteMcpConnectionsApi;
+    secrets: SecretsApi;
 
     /**
      * Create a client from the given token.
@@ -146,7 +150,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             );
         }
 
-        super(studioServerUrl);
+        super(studioServerUrl, opts.fetch);
 
         if (opts.tokenServerUrl) {
             this.tokenServerUrl = opts.tokenServerUrl;
@@ -175,7 +179,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
                 } else {
                     this.tokenServerUrl = "https://sts.dev1.vertesia.io";
                 }
-            } catch (e) {
+            } catch {
                 this.tokenServerUrl = "https://sts.dev1.vertesia.io";
             }
         } else {
@@ -188,10 +192,16 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             apikey: opts.apikey,
             onRequest: opts.onRequest,
             onResponse: opts.onResponse,
+            retryPolicy: opts.retryPolicy,
+            fetch: opts.fetch,
         });
 
+        if (opts.retryPolicy) {
+            this.withRetryPolicy(opts.retryPolicy);
+        }
+
         if (opts.apikey) {
-            this.withApiKey(opts.apikey);
+            void this.withApiKey(opts.apikey);
         }
 
         this.onRequest = opts.onRequest;
@@ -202,6 +212,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.oauthServer = new OAuthServerApi(this, this.tokenServerUrl);
         this.oauthProviders = new OAuthProvidersApi(this);
         this.remoteMcpConnections = new RemoteMcpConnectionsApi(this);
+        this.secrets = new SecretsApi(this);
     }
 
     withApiVersion(version: string | number | null) {
@@ -221,6 +232,11 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     withAuthCallback(authCb?: (() => Promise<string>) | null) {
         this.store.withAuthCallback(authCb);
         return super.withAuthCallback(authCb);
+    }
+
+    withRetryPolicy(policy?: IRequestRetryPolicy | null) {
+        this.store.withRetryPolicy(policy);
+        return super.withRetryPolicy(policy);
     }
 
     async withApiKey(apiKey: string | null) {

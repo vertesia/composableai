@@ -1,9 +1,7 @@
 
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
-interface NotFoundViewProps {
-}
-export function NotFoundView({ }: NotFoundViewProps) {
+export function NotFoundView() {
     const { t } = useUITranslation();
     return (
         <div className="text-center pt-32">

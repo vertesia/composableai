@@ -1,8 +1,8 @@
-import { Context, Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { ToolCollection } from "../ToolCollection.js";
-import { ToolCollectionDefinition, ToolDefinition } from "../types.js";
-import { ToolContext, ToolServerConfig } from "./types.js";
+import type { ToolCollection } from "../ToolCollection.js";
+import type { ToolCollectionDefinition, ToolDefinition } from "../types.js";
+import type { ToolContext, ToolServerConfig } from "./types.js";
 
 export function createToolsRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { tools = [] } = config;
@@ -39,7 +39,7 @@ export function createToolsRoute(app: Hono, basePath: string, config: ToolServer
                 title: t.title,
                 description: t.description,
             })),
-        } satisfies ToolCollectionDefinition & { collections: any[]; reserveToolCount?: number });
+        } satisfies ToolCollectionDefinition & { collections: unknown[]; reserveToolCount?: number });
     });
 
     // POST /api/tools - Route to the correct collection based on tool_name

@@ -1,5 +1,5 @@
-//@ts-ignore
-import { vars, exec, media, content, tmpdir, pdf } from "@vertesia/memory-commands";
+//@ts-expect-error
+import { vars, exec, media, content, pdf } from "@vertesia/memory-commands";
 
 console.log('!!!!!!', vars);
 

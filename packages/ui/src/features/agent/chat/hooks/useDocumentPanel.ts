@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AgentMessage, AgentMessageType } from '@vertesia/common';
+import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import type { OpenDocument } from '../types/document.js';
 
 export interface UseDocumentPanelResult {
@@ -77,7 +77,7 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
             setDocRefreshKey(0);
             lastProcessedIndex.current = -1;
         }
-    }, [messages.length === 0]);
+    }, [messages.length]);
 
     // Process new messages incrementally for document events
     useEffect(() => {

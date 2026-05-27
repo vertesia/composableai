@@ -1,4 +1,4 @@
-import { AgentMessage } from "@vertesia/common";
+import type { AgentMessage } from "@vertesia/common";
 import React, { useEffect } from "react";
 import StackedMessages from "./StackedMessages";
 
@@ -25,6 +25,7 @@ export default function MessagesContainer({
 
     // Auto-scroll to bottom when messages change
     useEffect(() => {
+        void messages;
         if (bottomRef.current) {
             bottomRef.current.scrollIntoView({ behavior: "smooth" });
         }

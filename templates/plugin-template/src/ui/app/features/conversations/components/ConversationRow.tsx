@@ -1,5 +1,6 @@
 import { Badge } from '@vertesia/ui/core';
 import type { AgentRunSearchHit } from '@vertesia/common';
+import { useLocaleFormat } from '@vertesia/ui/i18n';
 import { InlineFilterButton } from '../../../components/InlineFilterButton';
 import type { FilterableField } from '../types';
 import { statusVariant } from '../utils';
@@ -12,10 +13,11 @@ interface ConversationRowProps {
 }
 
 export function ConversationRow({ hit, t, onAddFilter, onOpen }: ConversationRowProps) {
+    const { formatDateTime } = useLocaleFormat();
     const topic = hit.topic || hit.title || t('conversations.untitled');
     const interaction = hit.interaction;
     const interactionLabel = hit.interaction_name || interaction;
-    const started = hit.started_at ? new Date(hit.started_at).toLocaleString() : '—';
+    const started = formatDateTime(hit.started_at);
     const status = hit.status;
 
     return (
@@ -24,7 +26,7 @@ export function ConversationRow({ hit, t, onAddFilter, onOpen }: ConversationRow
             onClick={() => onOpen(hit.id)}
         >
             <td className="max-w-0">
-                <div className="font-medium line-clamp-2 pr-4" title={topic}>
+                <div className="font-medium line-clamp-2 pe-4" title={topic}>
                     {topic}
                 </div>
             </td>

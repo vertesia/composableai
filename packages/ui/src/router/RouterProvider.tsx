@@ -1,10 +1,11 @@
 import { useSafeLayoutEffect } from "@vertesia/ui/core";
 //import { useSafeLayoutEffect } from "../core";
-import React, { useMemo, useState } from "react";
+import type React from "react";
+import { useMemo, useState } from "react";
 import { RouteComponent } from "./RouteComponent";
-import { ReactRouterContext, Route, Router, RouterContext } from "./Router";
+import { ReactRouterContext, type Route, Router, type RouterContext } from "./Router";
 import { createRoute404 } from "./Route404";
-import { LocationChangeEvent, NavigateOptions } from "./HistoryNavigator";
+import type { LocationChangeEvent, NavigateOptions } from "./HistoryNavigator";
 
 
 interface RouterProviderProps {
@@ -30,8 +31,8 @@ export function RouterProvider({ routes, index, onChange, children }: RouterProv
                 params: match.params,
                 state: match.state,
                 router: router,
-                matchedRoutePath: '/' + match.matchedSegments.join('/'),
-                remainingPath: match.remainingSegments ? '/' + match.remainingSegments.join('/') : undefined,
+                matchedRoutePath: `/${match.matchedSegments.join('/')}`,
+                remainingPath: match.remainingSegments ? `/${match.remainingSegments.join('/')}` : undefined,
                 navigate: (to: string, options?: NavigateOptions) => {
                     return router.navigate(to, options);
                 }
@@ -39,13 +40,13 @@ export function RouterProvider({ routes, index, onChange, children }: RouterProv
         }).withObserver(onChange);
         router.index = index;
         return router;
-    }, []);
+    }, [index, onChange, routes]);
     useSafeLayoutEffect(() => {
-        router && router.start();
+        router?.start();
         return () => {
-            router && router.stop();
+            router?.stop();
         }
-    }, []);
+    }, [router]);
 
     return state && (
         <ReactRouterContext.Provider value={state}>

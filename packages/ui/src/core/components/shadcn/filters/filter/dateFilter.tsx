@@ -1,10 +1,11 @@
 import dayjs from "dayjs";
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import Calendar from "react-calendar";
 import { Button } from "../../button";
-import { Filter, FilterGroup } from "../types";
+import type { Filter, FilterGroup } from "../types";
 import { calendarStyles } from "../filter-styles";
-import { useUITranslation } from '../../../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -190,10 +191,10 @@ export default function DateFilter({
                       const endDate = effectiveDateRange[1].getTime();
 
                       if (currentDate === startDate) {
-                        return 'bg-primary text-primary-foreground rounded-l-md font-semibold';
+                        return 'bg-primary text-primary-foreground rounded-s-md font-semibold';
                       }
                       if (currentDate === endDate) {
-                        return 'bg-primary text-primary-foreground rounded-r-md font-semibold';
+                        return 'bg-primary text-primary-foreground rounded-e-md font-semibold';
                       }
                       if (currentDate > startDate && currentDate < endDate) {
                         return 'bg-primary/20 text-primary font-medium';
@@ -222,8 +223,7 @@ export default function DateFilter({
           </div>
         </>
       ) : (
-        <>
-          <div className="calendar-wrapper">
+        <div className="calendar-wrapper">
             <style>{calendarStyles}</style>
             <Calendar
               value={selectedDate}
@@ -251,7 +251,6 @@ export default function DateFilter({
               }}
             />
           </div>
-        </>
       )}
     </div>
   );

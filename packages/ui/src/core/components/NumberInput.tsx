@@ -1,9 +1,9 @@
 import clsx from "clsx";
-import React, { ChangeEvent, useEffect } from "react";
+import React, { type ChangeEvent, useEffect } from "react";
 import { Styles } from "./styles.js";
 
 function numberToString(value: number | undefined) {
-    if (value == null || isNaN(value)) {
+    if (value == null || Number.isNaN(value)) {
         return '';
     } else {
         return value.toString();
@@ -30,16 +30,16 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(({ valu
         const value = ev.target.value;
         setTextValue(value)
         if (value === '') {
-            onChange && onChange(undefined, value)
+            onChange?.(undefined, value)
         } else {
             const num = parseFloat(value);
-            onChange && onChange(num, value)
+            onChange?.(num, value)
         }
     }
 
     useEffect(() => {
         // we do not update if not empty and NaN
-        if (value == null || !isNaN(value)) {
+        if (value == null || !Number.isNaN(value)) {
             const text = numberToString(value);
             setTextValue(text);
         }
@@ -47,7 +47,7 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(({ valu
 
     return (
         <input
-            onWheel={noScroll ? event => { (event.target as any).blur(); } : others.onWheel} /* avoid input change on wheel scroll */
+            onWheel={noScroll ? event => { event.currentTarget.blur(); } : others.onWheel} /* avoid input change on wheel scroll */
             type='number'
             value={textValue}
             onChange={_onChange}

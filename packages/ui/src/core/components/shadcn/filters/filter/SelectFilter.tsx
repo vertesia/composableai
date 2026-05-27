@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { CommandItem } from "../../command";
 import { Button } from "../../button";
-import { Filter, FilterGroup, FilterGroupOption, FilterOption } from "../types";
+import type { Filter, FilterGroup, FilterGroupOption, FilterOption } from "../types";
 import { DynamicLabel } from "../DynamicLabel";
 
 interface SelectFilterProps {
@@ -25,7 +26,7 @@ export default function SelectFilter({
     if (!group) {
       return [];
     }
-    let filteredOptions = group.options || [];
+    const filteredOptions = group.options || [];
 
     if (!commandInput.trim()) {
       return filteredOptions;
@@ -35,7 +36,7 @@ export default function SelectFilter({
       const filterLc = commandInput.toLowerCase();
       const results = filteredOptions.filter(option => {
         if (option.value === undefined) return false;
-        return group.filterBy!(option.value, filterLc);
+        return group.filterBy?.(option.value, filterLc);
       });
       return results;
     }
@@ -136,7 +137,7 @@ export default function SelectFilter({
                     fallbackLabel={option.label}
                   />
                   {selectedGroup?.multiple && isSelected && (
-                    <span className="ml-auto text-xs text-success">✓</span>
+                    <span className="ms-auto text-xs text-success">✓</span>
                   )}
                 </CommandItem>
               );

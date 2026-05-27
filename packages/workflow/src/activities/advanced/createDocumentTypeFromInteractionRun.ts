@@ -1,6 +1,6 @@
 import { log } from "@temporalio/activity";
 import { InteractionOutput } from "@vertesia/client";
-import { CreateContentObjectTypePayload, DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun } from "@vertesia/common";
+import type { CreateContentObjectTypePayload, DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun } from "@vertesia/common";
 import { projectResult } from "../../dsl/projections.js";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFoundError } from "../../errors.js";
@@ -22,6 +22,12 @@ export interface CreateDocumentTypeFromInteractionRun extends DSLActivitySpec<Cr
     name: 'createDocumentTypeFromInteractionRun';
 }
 
+interface GeneratedDocumentTypeResult {
+    document_type?: string;
+    metadata_schema?: CreateContentObjectTypePayload["object_schema"];
+    is_chunkable?: boolean;
+}
+
 export async function createDocumentTypeFromInteractionRun(payload: DSLActivityExecutionPayload<CreateDocumentTypeFromInteractionRunParams>) {
     const { params, client } = await setupActivity<CreateDocumentTypeFromInteractionRunParams>(payload);
 
@@ -29,10 +35,10 @@ export async function createDocumentTypeFromInteractionRun(payload: DSLActivityE
         throw new ActivityParamNotFoundError("run", payload.activity);
     }
 
-    const jsonResult = InteractionOutput.from(params.run.result).object();
+    const jsonResult = InteractionOutput.from<GeneratedDocumentTypeResult>(params.run.result).object();
 
     if (!jsonResult.document_type) {
-        log.error("No name generated for type: " + JSON.stringify(jsonResult), jsonResult);
+        log.error(`No name generated for type: ${JSON.stringify(jsonResult)}`, { jsonResult });
         throw new Error("No name generated for type");
     }
 

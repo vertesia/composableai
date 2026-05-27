@@ -1,4 +1,4 @@
-import { UserRef } from "./user.js";
+import type { UserRef } from "./user.js";
 
 
 export interface UserGroup {
@@ -12,7 +12,7 @@ export interface UserGroup {
     created_by?: string;
     updated_by?: string;
     /** Custom properties for dynamic permission matching */
-    properties?: Record<string, any>;
+    properties?: Record<string, unknown>;
     /** BLP clearance level — merged with user clearance using max() */
     clearance?: number;
     /** Compartments — merged with user compartments using array union */
@@ -33,7 +33,7 @@ export interface UpdateUserGroupPayload {
     name: string;
     description?: string;
     tags?: string[];
-    properties?: Record<string, any>;
+    properties?: Record<string, unknown>;
     clearance?: number;
     compartments?: string[];
 }
@@ -42,7 +42,7 @@ export interface UserGroupRef {
     id: string;
     name: string;
     tags?: string[];
-    properties?: Record<string, any>;
+    properties?: Record<string, unknown>;
     clearance?: number;
     compartments?: string[];
 }

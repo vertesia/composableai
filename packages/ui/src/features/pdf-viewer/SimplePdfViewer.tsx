@@ -1,9 +1,9 @@
-import { ContentObject } from "@vertesia/common";
+import type { ContentObject } from "@vertesia/common";
 import { Button, Spinner, VTooltip } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Maximize2, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { PdfPageSlider } from "./PdfPageSlider";
 
 interface SimplePdfViewerProps {
@@ -130,12 +130,14 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
                 compact
                 headerExtra={
                     <VTooltip description={t('pdf.fullscreen')} placement="bottom" size="xs">
-                        <button
+                        <Button
+                            variant="unstyled"
                             className="p-1 rounded cursor-pointer transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
                             onClick={() => setIsFullscreen(true)}
+                            aria-label={t('pdf.fullscreen')}
                         >
                             <Maximize2 className="size-4" />
-                        </button>
+                        </Button>
                     </VTooltip>
                 }
             />

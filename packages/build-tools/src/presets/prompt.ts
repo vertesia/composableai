@@ -6,8 +6,8 @@
 import { z } from 'zod';
 import type { TransformerPreset } from '../types.js';
 import { parseFrontmatter } from '../parsers/frontmatter.js';
-import path from 'path';
-import { TemplateType } from '@vertesia/common';
+import path from 'node:path';
+import { type JSONSchema, TemplateType } from '@vertesia/common';
 import { PromptRole } from '@llumiverse/common';
 
 /**
@@ -26,7 +26,7 @@ export type PromptContentType = TemplateType;
 const PromptFrontmatterSchema = z.object({
     // Required fields
     role: z.nativeEnum(PromptRole, {
-        errorMap: () => ({ message: 'Role must be one of: safety, system, user, assistant, negative' })
+        error: 'Role must be one of: safety, system, user, assistant, negative',
     }),
 
     // Optional fields
@@ -44,7 +44,7 @@ export const PromptDefinitionSchema = z.object({
     role: z.nativeEnum(PromptRole),
     content: z.string(),
     content_type: z.nativeEnum(TemplateType),
-    schema: z.any().optional(),
+    schema: z.custom<JSONSchema>().optional(),
     name: z.string().optional(),
     externalId: z.string().optional(),
 });
@@ -53,6 +53,8 @@ export const PromptDefinitionSchema = z.object({
  * TypeScript type inferred from the Zod schema
  */
 export type PromptDefinition = z.infer<typeof PromptDefinitionSchema>;
+
+type PromptFrontmatter = z.infer<typeof PromptFrontmatterSchema>;
 
 /**
  * Normalize schema path for import
@@ -68,7 +70,7 @@ function normalizeSchemaPath(schemaPath: string): string {
 
     // Add './' prefix if not already a relative path
     if (!normalized.startsWith('.')) {
-        normalized = './' + normalized;
+        normalized = `./${normalized}`;
     }
 
     // Get the extension
@@ -76,10 +78,10 @@ function normalizeSchemaPath(schemaPath: string): string {
 
     if (ext === '.ts') {
         // Replace .ts with .js
-        normalized = normalized.slice(0, -3) + '.js';
+        normalized = `${normalized.slice(0, -3)}.js`;
     } else if (!ext) {
         // No extension, add .js
-        normalized = normalized + '.js';
+        normalized = `${normalized}.js`;
     }
     // If extension is already .js or something else, leave as is
 
@@ -114,7 +116,7 @@ function inferContentType(filePath: string): TemplateType {
  * @returns Prompt definition object and optional imports
  */
 function buildPromptDefinition(
-    frontmatter: Record<string, any>,
+    frontmatter: PromptFrontmatter,
     content: string,
     filePath: string
 ): { prompt: PromptDefinition; imports?: string[]; schemaImportName?: string } {
@@ -173,7 +175,7 @@ export const promptTransformer: TransformerPreset = {
         // Validate frontmatter
         const frontmatterValidation = PromptFrontmatterSchema.safeParse(frontmatter);
         if (!frontmatterValidation.success) {
-            const errors = frontmatterValidation.error.errors
+            const errors = frontmatterValidation.error.issues
                 .map((err) => {
                     const path = err.path.length > 0 ? err.path.join('.') : 'frontmatter';
                     return `  - ${path}: ${err.message}`;
@@ -184,9 +186,11 @@ export const promptTransformer: TransformerPreset = {
             );
         }
 
+        const validatedFrontmatter = frontmatterValidation.data;
+
         // Build prompt definition
         const { prompt, imports, schemaImportName } = buildPromptDefinition(
-            frontmatter,
+            validatedFrontmatter,
             promptContent,
             filePath
         );

@@ -1,19 +1,20 @@
-import { AgentMessage, AgentMessageType, AskUserMessageDetails, MarkdownRenditionFormat } from "@vertesia/common";
+import { type AgentMessage, AgentMessageType, type AskUserMessageDetails, MarkdownRenditionFormat } from "@vertesia/common";
 import { Badge, Button, cn, Dropdown, MenuItem, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, type LucideIcon, MessageSquare, RefreshCcw, User } from "lucide-react";
-import React, { useEffect, useState, useMemo, memo, useRef } from "react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import type React from "react";
+import { useEffect, useState, useMemo, memo, useRef } from "react";
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { AskUserWidget } from "../AskUserWidget";
 import { useImageLightbox } from "../ImageLightbox";
 import { ThinkingMessages } from "../WaitingMessages";
 import { getWorkstreamId } from "./utils";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
-import { useDownloadFile } from "../../../store/index.js";
+import { useDownloadFile } from "../../../store/objects/components/useDownloadFile.js";
 
 // PERFORMANCE: Move pure function outside component to avoid recreation on every render
 // Process content to enhance markdown detection for lists and thinking messages
@@ -140,22 +141,22 @@ export interface MessageItemProps extends MessageItemClassNames {
 
 // Consolidated Studio/default message styling - single source of truth
 export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleConfig> = {
-    [AgentMessageType.ANSWER]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.COMPLETE]: { borderColor: 'border-l-success', iconColor: 'text-success', sender: 'Completed', Icon: CheckCircle },
-    [AgentMessageType.IDLE]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
-    [AgentMessageType.REQUEST_INPUT]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Input', Icon: User },
-    [AgentMessageType.QUESTION]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
-    [AgentMessageType.THOUGHT]: { borderColor: 'border-l-purple-500', iconColor: 'text-purple-600 dark:text-purple-400', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.ERROR]: { borderColor: 'border-l-destructive', iconColor: 'text-destructive', sender: 'Error', Icon: AlertCircle },
-    [AgentMessageType.UPDATE]: { borderColor: 'border-l-success', iconColor: 'text-success', sender: 'Update', Icon: Info },
-    [AgentMessageType.PLAN]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Plan', Icon: MessageSquare },
-    [AgentMessageType.TERMINATED]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'Terminated', Icon: CheckCircle },
-    [AgentMessageType.WARNING]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Warning', Icon: AlertCircle },
-    [AgentMessageType.SYSTEM]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
-    [AgentMessageType.STREAMING_CHUNK]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.BATCH_PROGRESS]: { borderColor: 'border-l-blue-500', iconColor: 'text-blue-600 dark:text-blue-400', sender: 'Batch', Icon: Layers },
-    [AgentMessageType.RESTARTING]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Restarting', Icon: RefreshCcw },
-    default: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.ANSWER]: { borderColor: 'border-s-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.COMPLETE]: { borderColor: 'border-s-success', iconColor: 'text-success', sender: 'Completed', Icon: CheckCircle },
+    [AgentMessageType.IDLE]: { borderColor: 'border-s-info', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
+    [AgentMessageType.REQUEST_INPUT]: { borderColor: 'border-s-attention', iconColor: 'text-attention', sender: 'Input', Icon: User },
+    [AgentMessageType.QUESTION]: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
+    [AgentMessageType.THOUGHT]: { borderColor: 'border-s-purple-500', iconColor: 'text-purple-600 dark:text-purple-400', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.ERROR]: { borderColor: 'border-s-destructive', iconColor: 'text-destructive', sender: 'Error', Icon: AlertCircle },
+    [AgentMessageType.UPDATE]: { borderColor: 'border-s-success', iconColor: 'text-success', sender: 'Update', Icon: Info },
+    [AgentMessageType.PLAN]: { borderColor: 'border-s-attention', iconColor: 'text-attention', sender: 'Plan', Icon: MessageSquare },
+    [AgentMessageType.TERMINATED]: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'Terminated', Icon: CheckCircle },
+    [AgentMessageType.WARNING]: { borderColor: 'border-s-attention', iconColor: 'text-attention', sender: 'Warning', Icon: AlertCircle },
+    [AgentMessageType.SYSTEM]: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
+    [AgentMessageType.STREAMING_CHUNK]: { borderColor: 'border-s-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.BATCH_PROGRESS]: { borderColor: 'border-s-blue-500', iconColor: 'text-blue-600 dark:text-blue-400', sender: 'Batch', Icon: Layers },
+    [AgentMessageType.RESTARTING]: { borderColor: 'border-s-attention', iconColor: 'text-attention', sender: 'Restarting', Icon: RefreshCcw },
+    default: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
 };
 
 function MessageItemComponent({
@@ -256,7 +257,7 @@ function MessageItemComponent({
                     ? JSON.stringify(message.details, null, 2)
                     : "";
 
-        const textToCopy = [content, detailsContent ? "\n\nDetails:\n" + detailsContent : ""].join("").trim();
+        const textToCopy = [content, detailsContent ? `\n\nDetails:\n${detailsContent}` : ""].join("").trim();
 
         navigator.clipboard.writeText(textToCopy).then(() => {
             toast({
@@ -293,7 +294,7 @@ function MessageItemComponent({
 
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
     const markdownComponents = useMemo(() => ({
-        a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
+        a: ({ node, ref, ...props }: { node?: unknown; ref?: unknown; href?: string; children?: React.ReactNode }) => {
             const href = props.href || "";
             if (href.includes("/store/objects")) {
                 if (StoreLinkComponent) {
@@ -331,14 +332,21 @@ function MessageItemComponent({
                 />
             );
         },
-        img: ({ node, ref, ...props }: { node?: any; ref?: any; src?: string; alt?: string }) => {
+        img: ({ node, ref, ...props }: { node?: unknown; ref?: unknown; src?: string; alt?: string }) => {
             return (
-                <img
-                    {...props}
-                    className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
-                    loading="lazy"
+                <Button
+                    variant="unstyled"
+                    className="block p-0"
                     onClick={() => props.src && openImage(props.src, props.alt)}
-                />
+                    aria-label={props.alt || props.src || 'image'}
+                >
+                    <img
+                        {...props}
+                        alt={props.alt ?? ""}
+                        className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
+                        loading="lazy"
+                    />
+                </Button>
             );
         },
     }), [openImage, StoreLinkComponent, CollectionLinkComponent]);
@@ -355,12 +363,12 @@ function MessageItemComponent({
         }
 
         // Handle string content with markdown - content is already processed
-        const runId = (message as any).workflow_run_id as string | undefined;
+        const runId = message.workflow_run_id;
 
         if (!runId && typeof content === 'string' && content.includes('artifact:')) {
             console.warn('[MessageItem] message contains artifact references but workflow_run_id is missing!', {
                 type: message.type,
-                workflow_run_id: (message as any).workflow_run_id,
+                workflow_run_id: message.workflow_run_id,
                 hasArtifact: content.includes('artifact:'),
             });
         }
@@ -384,12 +392,10 @@ function MessageItemComponent({
         { displayName: string; artifactPath: string; url: string; isImage: boolean }[]
     >([]);
 
-    // Create stable key from message for dependency tracking
-    const runId = (message as any).workflow_run_id as string | undefined;
-    const details = message.details as any;
+    const runId = message.workflow_run_id;
+    const details = message.details;
     // Check both outputFiles (from execute_shell) and files (from tool results like dashboard tools)
-    const outputFiles: unknown = details?.outputFiles ?? details?.files;
-    const outputFilesKey = Array.isArray(outputFiles) ? outputFiles.join(",") : "";
+    const outputFiles = details?.outputFiles ?? details?.files;
 
     useEffect(() => {
         const loadArtifacts = async () => {
@@ -453,8 +459,8 @@ function MessageItemComponent({
             }
         };
 
-        loadArtifacts();
-    }, [runId, outputFilesKey]);
+        void loadArtifacts();
+    }, [runId, outputFiles]);
 
     const workstreamId = getWorkstreamId(message);
     const { Icon } = resolvedStyle;
@@ -470,7 +476,7 @@ function MessageItemComponent({
     return (
         <div className={cn("w-full max-w-full", resolvedStyle.className)}>
             <div
-                className={cn("border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden", resolvedStyle.borderColor, resolvedStyle.cardClassName)}
+                className={cn("border-s-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden", resolvedStyle.borderColor, resolvedStyle.cardClassName)}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
@@ -481,7 +487,7 @@ function MessageItemComponent({
                         </div>
                         <span className={cn("text-xs font-medium text-muted", resolvedStyle.senderClassName)}>{SENDER_I18N_KEYS[resolvedStyle.sender] ? t(SENDER_I18N_KEYS[resolvedStyle.sender]) : resolvedStyle.sender}</span>
                         {workstreamId !== "main" && workstreamId !== "all" && (
-                            <Badge variant="default" className="text-xs text-muted ml-1">
+                            <Badge variant="default" className="text-xs text-muted ms-1">
                                 {workstreamId}
                             </Badge>
                         )}
@@ -527,6 +533,7 @@ function MessageItemComponent({
                 {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
                 {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux ? (
                     (() => {
+                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                         const uxConfig = (message.details as AskUserMessageDetails).ux!;
                         return (
                             <AskUserWidget
@@ -557,10 +564,12 @@ function MessageItemComponent({
                                 {artifactLinks
                                     .filter(a => a.isImage)
                                     .map(({ displayName, artifactPath, url }) => (
-                                        <div
+                                        <Button
+                                            variant="unstyled"
                                             key={`${artifactPath}-preview`}
-                                            className="max-w-xs cursor-pointer"
+                                            className="max-w-xs cursor-pointer text-start p-0"
                                             onClick={() => openImage(url, displayName)}
+                                            aria-label={displayName}
                                         >
                                             <img
                                                 src={url}
@@ -570,7 +579,7 @@ function MessageItemComponent({
                                             <div className="mt-1 text-[11px] text-muted truncate">
                                                 {displayName}
                                             </div>
-                                        </div>
+                                        </Button>
                                     ))}
                             </div>
                         )}
@@ -596,21 +605,23 @@ function MessageItemComponent({
                 {/* Optional details section */}
                 {message.details && (
                     <div className={cn("mt-2 print:hidden", resolvedStyle.detailsClassName)}>
-                        <button
+                        <Button
+                            variant="unstyled"
                             onClick={() => setShowDetails(!showDetails)}
                             className="text-[11px] text-muted flex items-center"
                         >
                             {showDetails ? t('agent.hideDetails') : t('agent.showDetails')}
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                className={`h-3 w-3 ml-1 transition-transform ${showDetails ? "rotate-180" : ""}`}
+                                className={`h-3 w-3 ms-1 transition-transform ${showDetails ? "rotate-180" : ""}`}
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
+                                aria-hidden="true"
                             >
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
-                        </button>
+                        </Button>
 
                         {showDetails && (
                             <div className="mt-1 p-1.5 bg-muted border border-mixer-muted/40 rounded text-sm">

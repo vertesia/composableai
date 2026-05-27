@@ -1,14 +1,14 @@
-import { TransientToken, UserInviteTokenData } from "@vertesia/common"
+import type { TransientToken, UserInviteTokenData } from "@vertesia/common"
 import { Button, Modal, ModalBody, ModalTitle } from "@vertesia/ui/core"
 import { useEffect, useState } from "react"
 import { useUserSession } from "@vertesia/ui/session"
-import { useUITranslation } from '../../i18n/index.js'
+import { useUITranslation } from '@vertesia/ui/i18n'
 
 
 export function InviteAcceptModal() {
 
     const session = useUserSession()
-    const { client, account } = session;
+    const { client } = session;
     const { t } = useUITranslation()
     const [showModal, setShowModal] = useState(false)
     const [invites, setInvites] = useState<TransientToken<UserInviteTokenData>[]>([])
@@ -33,7 +33,7 @@ export function InviteAcceptModal() {
         }).catch(err => {
             console.error("Error fetching invites", err);
         })
-    }, [account?.id])
+    }, [client.account.listInvites])
 
     const closeModal = () => setShowModal(false)
 

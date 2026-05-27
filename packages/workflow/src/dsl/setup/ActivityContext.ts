@@ -1,6 +1,6 @@
 import { log, activityInfo } from "@temporalio/activity";
-import { VertesiaClient } from "@vertesia/client";
-import {
+import type { VertesiaClient } from "@vertesia/client";
+import type {
     DSLActivityExecutionPayload,
     DSLWorkflowExecutionPayload,
     Project,
@@ -36,7 +36,7 @@ registerFetchProviderFactory(
     InteractionRunProvider.factory,
 );
 
-export class ActivityContext<ParamsT extends Record<string, any>> {
+export class ActivityContext<ParamsT extends object> {
     client: VertesiaClient;
     _project?: Promise<Project | undefined>;
 
@@ -54,7 +54,7 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
     }
 
     get objectId() {
-        const objectId = this.payload.objectIds && this.payload.objectIds[0];
+        const objectId = this.payload.objectIds?.[0];
         if (!objectId) {
             log.error("No objectId found in payload");
             throw new WorkflowParamNotFoundError(
@@ -180,7 +180,7 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
     }
 }
 
-export async function setupActivity<ParamsT extends Record<string, any>>(
+export async function setupActivity<ParamsT extends object>(
     payload: DSLActivityExecutionPayload<ParamsT>,
 ) {
     const client = await getVertesiaClient(payload);
@@ -243,7 +243,7 @@ export async function setupActivity<ParamsT extends Record<string, any>>(
                     }
                 } else if (fetchSpec.on_not_found === "throw") {
                     throw new DocumentNotFoundError(
-                        "No documents found for: " + JSON.stringify(fetchSpec),
+                        `No documents found for: ${JSON.stringify(fetchSpec)}`,
                     );
                 } else {
                     vars.setValue(key, null);

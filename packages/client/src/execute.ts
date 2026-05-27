@@ -1,5 +1,5 @@
-import { AsyncExecutionPayload, AsyncExecutionResult, ExecutionRunStatus, InteractionExecutionPayload, InteractionExecutionResult, NamedInteractionExecutionPayload, RateLimitRequestPayload, RateLimitRequestResponse } from '@vertesia/common';
-import { VertesiaClient } from './client.js';
+import { type AsyncExecutionPayload, type AsyncExecutionResult, ExecutionRunStatus, type InteractionExecutionPayload, type InteractionExecutionResult, type NamedInteractionExecutionPayload, type RateLimitRequestPayload, type RateLimitRequestResponse } from '@vertesia/common';
+import type { VertesiaClient } from './client.js';
 
 export async function EventSourceProvider(): Promise<typeof EventSource> {
     if (typeof globalThis.EventSource === 'function') {
@@ -19,7 +19,7 @@ export async function EventSourceProvider(): Promise<typeof EventSource> {
  * @param payload InteractionExecutionPayload
  * @param onChunk callback to be called when the next chunk of the response is available
  */
-export async function executeInteraction<P = any>(client: VertesiaClient,
+export async function executeInteraction<P = unknown>(client: VertesiaClient,
     interactionId: string,
     payload: InteractionExecutionPayload = {},
     onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P>> {
@@ -52,12 +52,12 @@ export async function executeInteraction<P = any>(client: VertesiaClient,
  * @param onChunk
  * @returns
  */
-export async function executeInteractionByName<P = any>(client: VertesiaClient,
+export async function executeInteractionByName<P = unknown>(client: VertesiaClient,
     interaction: string,
     payload: InteractionExecutionPayload = {},
     onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P>> {
     const stream = !!onChunk;
-    const response = await client.post('/api/v1/execute', {
+    const response = await client.post<InteractionExecutionResult<P>>('/api/v1/execute', {
         payload: {
             ...payload,
             interaction,
@@ -75,10 +75,10 @@ export async function executeInteractionByName<P = any>(client: VertesiaClient,
 
 function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk: string) => void) {
     return new Promise((resolve, reject) => {
-        (async () => {
+        void (async () => {
             try {
                 const EventSourceImpl = await EventSourceProvider();
-                const streamUrl = new URL(client.runs.baseUrl + '/' + runId + '/stream');
+                const streamUrl = new URL(`${client.runs.baseUrl}/${runId}/stream`);
                 const bearerToken = client._auth ? await client._auth() : undefined;
 
                 if (bearerToken) {
@@ -93,7 +93,7 @@ function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk:
                     try {
                         const data = JSON.parse(ev.data);
                         if (data) {
-                            onChunk && onChunk(data);
+                            onChunk?.(data);
                         }
                     } catch (err) {
                         reject(err);

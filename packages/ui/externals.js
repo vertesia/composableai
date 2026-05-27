@@ -3,7 +3,7 @@
  * And it checks if the external dependencies are covering the dependencies for package.json.
  */
 
-import { readFileSync } from "fs";
+import { readFileSync } from "node:fs";
 
 export const EXTERNALS = [
     "react",
@@ -19,6 +19,7 @@ export const EXTERNALS = [
     "@radix-ui/react-checkbox",
     "@radix-ui/react-collapsible",
     "@radix-ui/react-dialog",
+    "@radix-ui/react-direction",
     "@radix-ui/react-label",
     "@radix-ui/react-popover",
     "@radix-ui/react-separator",
@@ -58,6 +59,7 @@ export const EXTERNALS = [
     "tailwind-merge",
     "debounce",
     "fast-xml-parser",
+    "fast-xml-validator",
     // verteisa deps
     "@llumiverse/common",
     "@vertesia/client",
@@ -94,7 +96,7 @@ export const EXTERNALS = [
     /^pdfjs-dist\/.*/
 ];
 
-// Put here exceptions - deps that shuld be inlined
+// Put here exceptions - deps that should be inlined
 const INLINED_DEPS = [];
 
 function resolve(path) {
@@ -116,9 +118,7 @@ function validateExternals() {
     for (const dependency of pkgDependencies) {
         if (externals.has(dependency)) {
             externals.delete(dependency);
-            continue;
         } else if (regexps.some((regexp) => regexp.test(dependency))) {
-            continue;
         } else if (!inlinedDeps.has(dependency)) {
             unmatched.add(dependency);
         }

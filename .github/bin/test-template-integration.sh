@@ -132,7 +132,7 @@ publish_to_verdaccio() {
   while IFS= read -r pkg_dir; do
     pkg_name=$(basename "$pkg_dir")
     cd "$pkg_dir"
-    pkg_version=$(pnpm pkg get version | tr -d '"')
+    pkg_version=$(npm pkg get version | tr -d '"')
     echo "  Publishing @vertesia/${pkg_name}@${pkg_version}..."
     pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" > /dev/null 2>&1
     count=$((count + 1))
@@ -193,8 +193,11 @@ print_config "Template Integration Test"
 start_verdaccio
 publish_to_verdaccio
 
-# Point npm/npx to verdaccio for bootstrap and build
+# Point npm/npx to verdaccio for bootstrap and build.
+# pnpm does not reliably honor npm_config_registry, so set pnpm_config_registry too —
+# templates may cascade through `pnpm run …` even when bootstrapped with npm.
 export npm_config_registry="${VERDACCIO_URL}"
+export pnpm_config_registry="${VERDACCIO_URL}"
 
 # Use local templates so integration tests don't need a git tag on GitHub
 TEMPLATES_PATH="$(cd "${SCRIPT_DIR}/../.." && pwd)/templates"

@@ -1,4 +1,4 @@
-import { CollectionProperties, ICollection, RenderingTemplateDefinition } from "./types.js";
+import type { CollectionProperties, ICollection, RenderingTemplateDefinition } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
 
 export interface RenderingTemplateCollectionProps extends CollectionProperties {

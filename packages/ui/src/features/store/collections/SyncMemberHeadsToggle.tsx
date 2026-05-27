@@ -1,8 +1,8 @@
-import { Collection } from "@vertesia/common";
+import type { Collection } from "@vertesia/common";
 import { Panel, Switch, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useState } from "react";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface SyncMemberHeadsToggleProps {
     collection: Collection;

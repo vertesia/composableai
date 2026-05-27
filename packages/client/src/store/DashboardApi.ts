@@ -1,19 +1,19 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
 import {
-    CreateDashboardPayload,
-    CreateDashboardSnapshotPayload,
-    Dashboard,
-    DashboardArchiveResult,
-    DashboardBulkArchiveResult,
-    DashboardBulkDeleteResult,
-    DashboardItem,
-    DashboardStatus,
-    DashboardVersion,
-    DashboardVersionItem,
-    DashboardVersioningStatusResponse,
+    type CreateDashboardPayload,
+    type CreateDashboardSnapshotPayload,
+    type Dashboard,
+    type DashboardArchiveResult,
+    type DashboardBulkArchiveResult,
+    type DashboardBulkDeleteResult,
+    type DashboardItem,
+    type DashboardStatus,
+    type DashboardVersion,
+    type DashboardVersionItem,
+    type DashboardVersioningStatusResponse,
     DataStoreApiHeaders,
-    PromoteDashboardVersionPayload,
-    UpdateDashboardPayload,
+    type PromoteDashboardVersionPayload,
+    type UpdateDashboardPayload,
 } from "@vertesia/common";
 
 /**

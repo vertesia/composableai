@@ -1,6 +1,6 @@
 import ansiColors from "ansi-colors";
 import ansiEscapes from "ansi-escapes";
-import { WriteStream } from "node:tty";
+import type { WriteStream } from "node:tty";
 import { onExit } from "signal-exit";
 /**
  * See https://github.com/sindresorhus/cli-spinners/blob/HEAD/spinners.json for more spinners
@@ -69,8 +69,8 @@ export class Spinner {
         };
 
         // Store handlers so we can remove them later
-        this.signalHandlers['SIGINT'] = handleSignal;
-        this.signalHandlers['SIGTERM'] = handleSignal;
+        this.signalHandlers.SIGINT = handleSignal;
+        this.signalHandlers.SIGTERM = handleSignal;
 
         // Register handlers
         process.on('SIGINT', handleSignal);
@@ -123,7 +123,7 @@ export class Spinner {
             try {
                 const frames = this.data.frames;
                 this.log.print(this.prefix + frames[++i % frames.length] + this.suffix);
-            } catch (error) {
+            } catch {
                 // If we can't update, stop the spinner to prevent console issues
                 this.done(false);
             }
@@ -168,11 +168,11 @@ export class Spinner {
                 showCursor(this.log.stream);
                 this._restoreCursor = false;
             }
-        } catch (error) {
+        } catch {
             // If an error occurs during cleanup, make a best effort to restore the cursor
             try {
                 showCursor(this.log.stream);
-            } catch (_) {
+            } catch {
                 // Last resort - ignore errors in error handler
             }
         }
@@ -215,11 +215,15 @@ const streamsToRestore: WriteStream[] = [];
 let restoreCursorIsRegistered = false;
 
 export function toggleCursor(show: boolean, stream: WriteStream = process.stdout) {
-    show ? showCursor(stream) : hideCursor(stream);
+    if (show) {
+        showCursor(stream);
+    } else {
+        hideCursor(stream);
+    }
 }
 
 export function showCursor(stream: WriteStream = process.stdout) {
-    const i = streamsToRestore.findIndex((s) => s === stream);
+    const i = streamsToRestore.indexOf(stream);
     if (i > -1) {
         streamsToRestore.splice(i, 1);
     }
@@ -238,7 +242,7 @@ export function restoreCursorOnExit() {
     if (!restoreCursorIsRegistered) {
         restoreCursorIsRegistered = true;
         onExit(() => {
-            streamsToRestore.forEach(stream => showCursor(stream));
+            streamsToRestore.forEach(stream => { showCursor(stream); });
         });
     }
 }

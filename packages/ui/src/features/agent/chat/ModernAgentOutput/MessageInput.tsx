@@ -1,9 +1,10 @@
 import { Button, Spinner, Modal, ModalBody, ModalTitle, VTooltip, cn, Textarea } from "@vertesia/ui/core";
 import { Activity, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ConversationFile, FileProcessingStatus } from "@vertesia/common";
-import { SelectDocument } from "../../../store";
-import { useUITranslation } from "../../../../i18n/index.js";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { type ContentObjectItem, type ConversationFile, FileProcessingStatus } from "@vertesia/common";
+import { SelectDocument } from "../../../store/objects/components/SelectDocument";
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 /** Represents an uploaded file attachment */
 export interface UploadedFile {
@@ -266,10 +267,11 @@ export default function MessageInput({
     }, []);
 
     useEffect(() => {
+        void value;
         adjustTextareaHeight();
     }, [value, adjustTextareaHeight]);
 
-    const handleObjectSelect = (object: any) => {
+    const handleObjectSelect = (object: ContentObjectItem) => {
         // Create a markdown link with the object title and ID
         const objectTitle = object.properties?.title || object.name || 'Object';
         const objectId = object.id;
@@ -299,8 +301,9 @@ export default function MessageInput({
 
 
     return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target only; file selection is also exposed via the upload button.
         <div
-            className={cn("p-3 border-t border-muted flex-shrink-0 transition-all fixed lg:sticky bottom-0 left-0 right-0 lg:left-auto lg:right-auto w-full bg-background z-10", isDragOver && "bg-blue-50 dark:bg-blue-900/20 border-blue-400", className)}
+            className={cn("p-3 border-t border-muted flex-shrink-0 transition-all fixed lg:sticky bottom-0 start-0 end-0 lg:start-auto lg:end-auto w-full bg-background z-10", isDragOver && "bg-blue-50 dark:bg-blue-900/20 border-blue-400", className)}
             style={{ minHeight: "120px" }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -380,12 +383,14 @@ export default function MessageInput({
                                     <FileTextIcon className="size-3.5" />
                                     <span className="max-w-[120px] truncate">{file.name}</span>
                                     {onRemoveFile && (
-                                        <button
+                                        <Button
+                                            variant="unstyled"
+                                            aria-label={`Remove ${file.name}`}
                                             onClick={() => onRemoveFile(file.id)}
-                                            className="ml-1 p-0.5 hover:bg-success/20 rounded"
+                                            className="ms-1 p-0.5 hover:bg-success/20 rounded"
                                         >
                                             <XIcon className="size-3" />
-                                        </button>
+                                        </Button>
                                     )}
                                 </div>
                             ))}
@@ -418,12 +423,14 @@ export default function MessageInput({
                                 <FileTextIcon className="size-3.5" />
                                 <span className="max-w-[120px] truncate">{doc.name}</span>
                                 {onRemoveDocument && (
-                                    <button
+                                    <Button
+                                        variant="unstyled"
+                                        aria-label={`Remove ${doc.name}`}
                                         onClick={() => onRemoveDocument(doc.id)}
-                                        className="ml-1 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded"
+                                        className="ms-1 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded"
                                     >
                                         <XIcon className="size-3" />
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
                         ))}
@@ -442,7 +449,7 @@ export default function MessageInput({
                             disabled={disabled || uploadedFiles.length >= maxFiles}
                             className="text-xs"
                         >
-                            <UploadIcon className="size-3.5 mr-1.5" />
+                            <UploadIcon className="size-3.5 me-1.5" />
                             {t('agent.upload')}
                         </Button>
                     )}
@@ -454,10 +461,10 @@ export default function MessageInput({
                             disabled={disabled}
                             className="text-xs"
                         >
-                            <FileTextIcon className="size-3.5 mr-1.5" />
+                            <FileTextIcon className="size-3.5 me-1.5" />
                             {t('agent.searchDocuments')}
                             {selectedDocuments.length > 0 && (
-                                <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-blue-600 text-white">
+                                <span className="ms-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-blue-600 text-white">
                                     {selectedDocuments.length}
                                 </span>
                             )}
@@ -501,7 +508,7 @@ export default function MessageInput({
                         className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white"
                         title={t('agent.stopAgent')}
                     >
-                        {isStopping ? <Spinner size="sm" className="mr-2" /> : <StopCircleIcon className="size-4 mr-2" />} <span>{t('agent.stop')}</span>
+                        {isStopping ? <Spinner size="sm" className="me-2" /> : <StopCircleIcon className="size-4 me-2" />} <span>{t('agent.stop')}</span>
                     </Button>
                 ) : (
                     <Button
@@ -510,7 +517,7 @@ export default function MessageInput({
                         className="px-4 py-2.5"
                         title={hasProcessingFiles ? t('agent.waitForFiles') : undefined}
                     >
-                        {isSending ? <Spinner size="sm" className="mr-2" /> : <SendIcon className="size-4 mr-2" />}
+                        {isSending ? <Spinner size="sm" className="me-2" /> : <SendIcon className="size-4 me-2" />}
                         <span>{hasProcessingFiles ? t('agent.processing') : t('agent.send')}</span>
                     </Button>
                 )}
@@ -519,7 +526,7 @@ export default function MessageInput({
             <div className="text-xs text-muted mt-2 text-center">
                 {activeTaskCount > 0 ? (
                     <div className="flex items-center justify-center">
-                        <Activity className="h-3 w-3 mr-1 text-attention" />
+                        <Activity className="h-3 w-3 me-1 text-attention" />
                         <span>{t('agent.activeWorkstreams', { count: activeTaskCount })}</span>
                     </div>
                 ) : isStreaming

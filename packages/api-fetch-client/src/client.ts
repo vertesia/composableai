@@ -1,5 +1,5 @@
-import { ClientBase, FETCH_FN, IRequestParamsWithPayload } from "./base.js";
-import { RequestError } from "./errors.js";
+import { ClientBase, type FETCH_FN, type IRequestParamsWithPayload } from "./base.js";
+import type { RequestError } from "./errors.js";
 
 function isAuthorizationHeaderSet(headers: HeadersInit | undefined): boolean {
     if (!headers) return false;
@@ -92,28 +92,23 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
             init.headers = headers;
             const auth = await this._auth();
             if (auth) {
-                init.headers["authorization"] = auth;
+                init.headers.authorization = auth;
             }
         }
         this.response = undefined;
         const request = await super.createRequest(url, init);
-        this.onRequest && this.onRequest(request);
+        this.onRequest?.(request);
         return request;
     }
 
-    async handleResponse(req: Request, res: Response, params: IRequestParamsWithPayload | undefined) {
+    handleFetchResponse(req: Request, res: Response): void {
         this.response = res; // store last response
-        this.onResponse && this.onResponse(res, req);
-        return super.handleResponse(req, res, params);
+        this.onResponse?.(res, req);
     }
 
 }
 
 export class FetchClient extends AbstractFetchClient<FetchClient> {
-
-    constructor(baseUrl: string, fetchImpl?: FETCH_FN | Promise<FETCH_FN>) {
-        super(baseUrl, fetchImpl);
-    }
 
 }
 
@@ -132,8 +127,16 @@ export abstract class ApiTopic extends ClientBase {
         return this.client.createRequest(url, init);
     }
 
-    handleResponse(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): Promise<any> {
-        return this.client.handleResponse(req, res, params);
+    handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): T | Promise<T> {
+        return this.client.handleResponse<T>(req, res, params);
+    }
+
+    handleFetchResponse(req: Request, res: Response): void {
+        this.client.handleFetchResponse(req, res);
+    }
+
+    getRetryPolicy() {
+        return this.client.getRetryPolicy();
     }
 
     get headers() {

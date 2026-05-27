@@ -4,7 +4,7 @@ import { XMLViewerContext } from '../context/xml-viewer-context';
 import useXMLViewer from '../hooks/useXMLViewer';
 import { Elements } from './Elements';
 import { InvalidXml } from './InvalidXml';
-import { Theme, XMLViewerProps } from './types';
+import type { Theme, XMLViewerProps } from './types';
 
 export function XMLViewer(props: XMLViewerProps): React.ReactNode {
   const {

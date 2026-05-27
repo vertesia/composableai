@@ -1,7 +1,7 @@
 /**
  * Handle client caching and refresh of auth token
  */
-import { AuthTokenPayload } from "@vertesia/common";
+import type { AuthTokenPayload } from "@vertesia/common";
 import { jwtDecode } from "jwt-decode";
 import { Env } from '@vertesia/ui/env';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from '../constants';
@@ -46,7 +46,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
 
     try {
         // Call STS to generate a user token
-        const stsUrl = new URL(stsEndpoint + '/token/issue');
+        const stsUrl = new URL(`${stsEndpoint}/token/issue`);
         const requestBody = {
             type: 'user',
             account_id: accountId,
@@ -84,7 +84,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                 },
             });
 
-            const ensureResponse = await fetch(Env.endpoints.studio + '/auth/ensure-user', {
+            const ensureResponse = await fetch(`${Env.endpoints.studio}/auth/ensure-user`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${idToken}`,
@@ -101,7 +101,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                         project_id: projectId,
                     }
                 });
-                const idTokenDecoded = jwtDecode(idToken) as any;
+                const idTokenDecoded = jwtDecode<{ email?: string }>(idToken);
                 if (!idTokenDecoded?.email) {
                     Env.logger.error('No email found in id token');
                     throw new Error('No email found in id token');
@@ -141,7 +141,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                     status: stsRes?.status
                 },
             });
-            const idTokenDecoded = jwtDecode(idToken) as any;
+            const idTokenDecoded = jwtDecode<{ email?: string }>(idToken);
             if (!idTokenDecoded?.email) {
                 Env.logger.error('No email found in id token');
                 throw new Error('No email found in id token');
@@ -190,7 +190,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
             // Clear any stale account/project from localStorage
             localStorage.removeItem(LastSelectedAccountId_KEY);
             if (accountId) {
-                localStorage.removeItem(LastSelectedProjectId_KEY + '-' + accountId);
+                localStorage.removeItem(`${LastSelectedProjectId_KEY}-${accountId}`);
             }
 
             // Retry without account/project scope - let user log in to their default account
@@ -224,7 +224,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
         // Clear any stale account/project from localStorage on error
         localStorage.removeItem(LastSelectedAccountId_KEY);
         if (accountId) {
-            localStorage.removeItem(LastSelectedProjectId_KEY + '-' + accountId);
+            localStorage.removeItem(`${LastSelectedProjectId_KEY}-${accountId}`);
         }
         console.error('Failed to get composable token from STS', error);
         Env.logger.error('Failed to get composable token from STS', {
@@ -266,7 +266,7 @@ export function getCurrentVertesiaToken(): string | undefined {
 export async function getComposableToken(accountId?: string, projectId?: string, initToken?: string, forceRefresh = false, useInternalAuth = false): Promise<ComposableTokenResponse> {
 
     const selectedAccount = accountId ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined
-    const selectedProject = projectId ?? localStorage.getItem(LastSelectedProjectId_KEY + '-' + selectedAccount) ?? undefined
+    const selectedProject = projectId ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${selectedAccount}`) ?? undefined
 
     //token is still valid for more than 5 minutes
     if (!forceRefresh && AUTH_TOKEN_RAW && AUTH_TOKEN && AUTH_TOKEN.exp > (Date.now() / 1000 + 300)) {
@@ -294,7 +294,7 @@ export async function getComposableToken(accountId?: string, projectId?: string,
 
     AUTH_TOKEN = jwtDecode(AUTH_TOKEN_RAW) as AuthTokenPayload;
 
-    if (!AUTH_TOKEN || !AUTH_TOKEN.exp || !AUTH_TOKEN_RAW) {
+    if (!AUTH_TOKEN?.exp || !AUTH_TOKEN_RAW) {
         console.error('Invalid composable token', AUTH_TOKEN);
         Env.logger.error('Invalid composable token', {
             vertesia: {

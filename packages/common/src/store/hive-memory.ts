@@ -1,4 +1,4 @@
-import { BaseObject } from "./common.js";
+import type { BaseObject } from "./common.js";
 
 /**
  * Tool recommendation within a hive memory unit

@@ -1,9 +1,9 @@
 import {
   MockActivityEnvironment,
 } from "@temporalio/testing";
-import { ApiVersions, ContentEventName, DSLActivityExecutionPayload, WebHookSpec } from "@vertesia/common";
+import { ApiVersions, ContentEventName, type DSLActivityExecutionPayload, type WebHookSpec } from "@vertesia/common";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { notifyWebhook, NotifyWebhookParams, WebhookNotificationPayload } from "./notifyWebhook.js";
+import { notifyWebhook, type NotifyWebhookParams, type NotifyWebhookResult, type WebhookNotificationPayload } from "./notifyWebhook.js";
 
 // Mock fetch globally
 vi.stubGlobal('fetch', vi.fn());
@@ -50,7 +50,7 @@ const createTestPayload = (params: Partial<NotifyWebhookParams> = {}): DSLActivi
 };
 
 describe("Webhook should be notified", () => {
-  it("test POST success", async () => {
+  it("should send POST notification successfully", async () => {
     // Mock successful response
     const mockResponse = {
       ok: true,
@@ -61,7 +61,7 @@ describe("Webhook should be notified", () => {
     mockFetch.mockResolvedValueOnce(mockResponse as Response);
 
     const payload = createTestPayload();
-    const res = await testEnv.run(notifyWebhook, payload);
+    const res: NotifyWebhookResult = await testEnv.run(notifyWebhook, payload);
 
     // Verify fetch was called with correct parameters (old format wraps detail in result)
     expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
@@ -85,7 +85,7 @@ describe("Webhook should be notified", () => {
     });
   });
 
-  it("test POST server error", async () => {
+  it("should throw when POST returns server error", async () => {
     // Mock error response with response body
     const mockResponse = {
       ok: false,
@@ -121,7 +121,7 @@ describe("Webhook should be notified", () => {
     expect(mockResponse.text).toHaveBeenCalled();
   });
 
-  it("test POST network error", async () => {
+  it("should throw when POST fails with network error", async () => {
     // Mock fetch to throw a network error
     const networkError = new Error('Network request failed');
     mockFetch.mockRejectedValueOnce(networkError);
@@ -146,7 +146,7 @@ describe("Webhook should be notified", () => {
     });
   });
 
-  it("test POST with undefined detail still sends body with workflow info (new format)", async () => {
+  it("should send workflow info in new POST format when detail is undefined", async () => {
     // Mock successful response
     const mockResponse = {
       ok: true,
@@ -169,7 +169,7 @@ describe("Webhook should be notified", () => {
       event_name: 'workflow_failed'
     });
 
-    const res = await testEnv.run(notifyWebhook, payload);
+    const res: NotifyWebhookResult = await testEnv.run(notifyWebhook, payload);
 
     // Verify fetch was called
     expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -199,7 +199,7 @@ describe("Webhook should be notified", () => {
     });
   });
 
-  it("test POST with undefined detail still sends body with workflow info (old format)", async () => {
+  it("should send workflow info in old POST format when detail is undefined", async () => {
     // Mock successful response
     const mockResponse = {
       ok: true,
@@ -216,7 +216,7 @@ describe("Webhook should be notified", () => {
       event_name: 'workflow_completed'
     });
 
-    const res = await testEnv.run(notifyWebhook, payload);
+    const res: NotifyWebhookResult = await testEnv.run(notifyWebhook, payload);
 
     // Verify fetch was called
     expect(mockFetch).toHaveBeenCalledTimes(1);

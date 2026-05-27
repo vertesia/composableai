@@ -1,9 +1,9 @@
 import { decodeEndpoints, VertesiaClient } from "@vertesia/client";
-import { AuthTokenPayload } from "@vertesia/common";
-import { Context } from "hono";
+import type { AuthTokenPayload } from "@vertesia/common";
+import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { createLocalJWKSet, decodeJwt, JSONWebKeySet, jwtVerify, JWTVerifyGetKey } from "jose";
-import { ToolExecutionContext } from "./types.js";
+import { createLocalJWKSet, decodeJwt, type JSONWebKeySet, jwtVerify, type JWTVerifyGetKey } from "jose";
+import type { ToolExecutionContext } from "./types.js";
 const cache: Record<string, JWTVerifyGetKey> = {};
 
 export async function getJwks(url: string) {
@@ -13,9 +13,9 @@ export async function getJwks(url: string) {
             if (r.ok) {
                 return r.json() as Promise<JSONWebKeySet>;
             }
-            throw new Error("Fetching jwks failed with code: " + r.status);
+            throw new Error(`Fetching jwks failed with code: ${r.status}`);
         }).catch(err => {
-            throw new Error("Failed to fetch jwks: " + err.message);
+            throw new Error(`Failed to fetch jwks: ${err.message}`);
         })
         cache[url] = createLocalJWKSet(jwks);
     }
@@ -28,7 +28,7 @@ export async function verifyToken(token: string) {
         throw new Error("No issuer URL found in JWT");
     }
     if (!isAllowedIssuer(decodedJwt.iss)) {
-        throw new Error("Issuer is not allowed: " + decodedJwt.iss);
+        throw new Error(`Issuer is not allowed: ${decodedJwt.iss}`);
     }
     const jwks = await getJwks(`${decodedJwt.iss}/.well-known/jwks`);
     return await jwtVerify<AuthTokenPayload>(token, jwks);
@@ -71,10 +71,11 @@ export async function authorize(ctx: Context, endpointOverrides?: EndpointOverri
         const session = new AuthSession(value, payload, endpointOverrides, toolContext);
         ctx.set("auth", session);
         return session;
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (err instanceof HTTPException) throw err;
+        const message = err instanceof Error ? err.message : String(err);
         throw new HTTPException(401, {
-            message: err.message,
+            message,
             cause: err
         });
     }

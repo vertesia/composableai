@@ -1,17 +1,17 @@
 import { log } from '@temporalio/activity';
-import { DSLActivityExecutionPayload, DSLActivitySpec, AudioMetadata, AUDIO_RENDITION_NAME, ContentNature, Rendition } from '@vertesia/common';
-import { exec } from 'child_process';
-import fs from 'fs';
-import os from 'os';
-import path from 'path';
-import { promisify } from 'util';
+import { type DSLActivityExecutionPayload, type DSLActivitySpec, type AudioMetadata, AUDIO_RENDITION_NAME, ContentNature, type Rendition } from '@vertesia/common';
+import { execFile as execFileCallback } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { promisify } from 'node:util';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
 import { saveBlobToTempFile } from '../../utils/blobs.js';
-import { VertesiaClient } from '@vertesia/client';
+import type { VertesiaClient } from '@vertesia/client';
 import { RequestError } from '@vertesia/api-fetch-client';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFileCallback);
 
 // Default configuration constants
 const DEFAULT_AUDIO_BITRATE = '128k'; // Default audio bitrate for AAC encoding
@@ -71,9 +71,9 @@ export interface PrepareAudioResult {
  */
 async function getAudioMetadata(audioPath: string): Promise<AudioMetadataExtended> {
     try {
-        const command = `ffprobe -v quiet -print_format json -show_format -show_streams "${audioPath}"`;
-        const { stdout } = await execAsync(command);
-        const metadata = JSON.parse(stdout) as FFProbeOutput;
+        const args = ['-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', audioPath];
+        const { stdout } = await execFileAsync('ffprobe', args);
+        const metadata = JSON.parse(stdout.toString()) as FFProbeOutput;
 
         const audioStream = metadata.streams.find(
             (stream) => stream.codec_type === 'audio',
@@ -112,22 +112,22 @@ async function generateAudioRendition(
     const outputFile = path.join(outputDir, 'audio.m4a');
 
     const command = [
-        'ffmpeg',
         '-y', // Overwrite output
-        '-i', `"${audioPath}"`,
+        '-i', audioPath,
         '-c:a', 'aac', // AAC codec
         '-b:a', audioBitrate, // Audio bitrate
         '-movflags', '+faststart', // Enable streaming
-        `"${outputFile}"`,
-    ].join(' ');
+        outputFile,
+    ];
 
-    log.info('Generating web audio rendition (AAC M4A)', { command, audioBitrate });
+    log.info('Generating web audio rendition (AAC M4A)', { command: 'ffmpeg', args: command, audioBitrate });
 
     try {
-        const { stderr } = await execAsync(command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const { stderr } = await execFileAsync('ffmpeg', command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const stderrText = stderr.toString();
 
-        if (stderr && !stderr.includes('frame=')) {
-            log.debug(`FFmpeg stderr for audio rendition: ${stderr}`);
+        if (stderrText && !stderrText.includes('frame=')) {
+            log.debug(`FFmpeg stderr for audio rendition: ${stderrText}`);
         }
 
         // Verify output file was created

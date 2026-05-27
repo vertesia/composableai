@@ -1,5 +1,5 @@
 import type { JSONSchema, JSONSchemaArray, JSONSchemaObject, JSONSchemaType } from "@vertesia/common";
-import { ArrayPropertySchema, PropertySchema, Schema } from "./schema.js";
+import { type ArrayPropertySchema, type PropertySchema, Schema } from "./schema.js";
 
 export function computeTitleFromName(name: string) {
     name = name.replace(/_/g, ' ').replace(/([a-z0-9])&([A-Z])/g, "$1 $2");
@@ -30,6 +30,7 @@ function getInputType(_name: string, schema: PropertySchema) {
 
 export abstract class Node<SchemaT extends Schema = Schema, ValueT = JSONSchemaType> {
     // change observer
+    // biome-ignore lint/suspicious/noConfusingVoidType: void in union is intentional — observers may return nothing or false to stop bubbling
     observer?: (node: Node) => void | false; // return false to stop bubbling
 
     abstract value: ValueT;
@@ -75,17 +76,13 @@ export abstract class Node<SchemaT extends Schema = Schema, ValueT = JSONSchemaT
                 return;
             };
         }
-        this.parent && this.parent.onChange(node);
+        this.parent?.onChange(node);
     }
 
 }
 
 export abstract class ManagedObjectBase<SchemaT extends Schema = Schema> extends Node<SchemaT, JSONSchemaObject> {
     abstract value: JSONSchemaObject;
-
-    constructor(parent: Node | null, schema: SchemaT, name: string) {
-        super(parent, schema, name);
-    }
 
     get isObject(): boolean {
         return true;
@@ -282,7 +279,7 @@ export class ManageObjectEntry extends ManagedObjectBase {
         if (parent.value[index] === undefined) {
             parent.value[index] = {};
         }
-        this.key = this.name + '@' + Date.now();
+        this.key = `${this.name}@${Date.now()}`;
     }
 
     get isListItem(): boolean {
@@ -308,7 +305,7 @@ export class ManagedScalarEntry extends Node<ArrayPropertySchema> {
         if (parent.value[index] === undefined && parent.schema.defaultValue !== undefined) {
             parent.value[index] = parent.schema.defaultValue;
         }
-        this.key = this.name + '@' + Date.now();
+        this.key = `${this.name}@${Date.now()}`;
     }
 
     get isScalar(): boolean {

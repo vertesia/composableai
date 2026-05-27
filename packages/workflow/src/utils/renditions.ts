@@ -1,8 +1,8 @@
 import { log } from "@temporalio/activity";
-import { VertesiaClient } from "@vertesia/client";
+import type { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
-import { ImageRenditionFormat } from "@vertesia/common";
-import fs from "fs";
+import type { ImageRenditionFormat } from "@vertesia/common";
+import fs from "node:fs";
 import pLimit from 'p-limit';
 import { imageResizer } from "../conversion/image.js";
 
@@ -84,7 +84,7 @@ export async function uploadRenditionPages(
 
             // Create a read stream from the resized image file
             const fileStream = fs.createReadStream(resizedImagePath);
-            const format = "image/" + params.format;
+            const format = `image/${params.format}`;
             const fileId = pageId.split("/").pop() ?? pageId;
             const source = new NodeStreamSource(
                 fileStream,
@@ -105,27 +105,30 @@ export async function uploadRenditionPages(
 
             const result = await client.files
                 .uploadFile(source)
-                .catch((err) => {
+                .catch((err: unknown) => {
+                    const message = err instanceof Error ? err.message : String(err);
+                    const stack = err instanceof Error ? err.stack : undefined;
                     log.error(
                         `Failed to upload rendition for ${contentEtag} page ${i}`,
                         {
                             error: err,
-                            errorMessage: err.message,
-                            stack: err.stack,
+                            errorMessage: message,
+                            stack,
                         },
                     );
-                    return Promise.reject(`Upload failed: ${err.message}`);
+                    return Promise.reject(`Upload failed: ${message}`);
                 });
             log.debug(`Rendition uploaded for ${contentEtag} page ${i}`, {
                 result,
             });
 
             return result;
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
             log.error(`Failed to upload rendition for ${contentEtag} page ${i}`, {
                 error: err,
             });
-            return Promise.reject(`Upload failed: ${err.message}`);
+            return Promise.reject(`Upload failed: ${message}`);
         }
     }));
 
