@@ -14,7 +14,7 @@ export function RegionTag({ className }: { className?: string }) {
     return (
         <div
             className={cn(
-                'text-[0.6rem] font-semibold px-1.5 rounded-3xl leading-4',
+                'text-[0.6rem] font-semibold px-1.5 rounded-3xl leading-4 cursor-default',
                 'bg-info text-white',
                 className,
             )}

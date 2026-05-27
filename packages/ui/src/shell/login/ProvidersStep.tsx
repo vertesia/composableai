@@ -8,8 +8,6 @@ interface ProvidersStepProps {
     email: string;
     onBack: () => void;
     onProviderClicked: (provider: ProviderId) => void;
-    /** Domain pulled from email, when it's a non-consumer domain we haven't matched */
-    unknownDomain?: string;
     redirectTo?: string;
 }
 
@@ -23,7 +21,6 @@ export default function ProvidersStep({
     email,
     onBack,
     onProviderClicked,
-    unknownDomain,
     redirectTo,
 }: ProvidersStepProps) {
     const { t } = useUITranslation();
@@ -43,9 +40,7 @@ export default function ProvidersStep({
                     {t("auth.providers.title")}
                 </h1>
                 <p className="text-muted text-sm leading-relaxed">
-                    {unknownDomain
-                        ? t("auth.providers.bodyUnknown", { domain: unknownDomain })
-                        : t("auth.providers.bodyConsumer")}
+                    {t("auth.providers.bodyConsumer")}
                 </p>
             </div>
 
@@ -55,7 +50,7 @@ export default function ProvidersStep({
                 <button
                     type="button"
                     onClick={onBack}
-                    className="text-xs text-muted hover:text-foreground transition px-2 py-1 rounded underline decoration-transparent hover:decoration-current underline-offset-[3px]"
+                    className="cursor-pointer text-xs text-muted hover:text-foreground transition px-2 py-1 rounded underline decoration-transparent hover:decoration-current underline-offset-[3px]"
                 >
                     {t("auth.change")}
                 </button>
@@ -67,7 +62,7 @@ export default function ProvidersStep({
                         key={id}
                         type="button"
                         onClick={() => pick(id)}
-                        className="group h-[42px] inline-flex items-center gap-3 pl-3.5 pr-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
+                        className="cursor-pointer group h-[42px] inline-flex items-center gap-3 pl-3.5 pr-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
                     >
                         <Icon className="size-[18px] shrink-0" />
                         <span className="flex-1 text-left">
@@ -80,7 +75,7 @@ export default function ProvidersStep({
                 <button
                     type="button"
                     onClick={() => pick("sso")}
-                    className="group h-[42px] inline-flex items-center gap-3 pl-3.5 pr-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
+                    className="cursor-pointer group h-[42px] inline-flex items-center gap-3 pl-3.5 pr-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
                 >
                     <SsoIcon className="size-[18px] shrink-0 text-foreground/70" />
                     <span className="flex-1 text-left">

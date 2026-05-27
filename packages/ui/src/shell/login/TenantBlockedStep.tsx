@@ -47,14 +47,14 @@ export default function TenantBlockedStep({ email, tenantName, onBack }: TenantB
                 <button
                     type="button"
                     onClick={requestInvite}
-                    className="h-[42px] inline-flex items-center justify-center gap-2 rounded-md bg-foreground text-background text-sm font-medium transition hover:opacity-90"
+                    className="cursor-pointer h-[42px] inline-flex items-center justify-center gap-2 rounded-md bg-foreground text-background text-sm font-medium transition hover:opacity-90"
                 >
                     {t("auth.blocked.requestInvite")}
                 </button>
                 <button
                     type="button"
                     onClick={onBack}
-                    className="h-[42px] inline-flex items-center justify-center gap-2 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
+                    className="cursor-pointer h-[42px] inline-flex items-center justify-center gap-2 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
                 >
                     <ArrowLeft className="size-3.5" />
                     {t("auth.blocked.useDifferent")}

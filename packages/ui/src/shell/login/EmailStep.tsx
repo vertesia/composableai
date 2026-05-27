@@ -65,6 +65,7 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                     <input
                         ref={inputRef}
                         id="vt-login-email"
+                        name="vt-login-email"
                         type="email"
                         className="h-[42px] px-3.5 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-info focus:ring-4 focus:ring-info/15 aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/15"
                         placeholder={t("auth.email.placeholder")}
@@ -72,7 +73,13 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                         onChange={(e) => setEmail(e.target.value)}
                         onBlur={() => setTouched(true)}
                         aria-invalid={showError}
-                        autoComplete="email"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        data-1p-ignore
+                        data-lpignore="true"
+                        data-form-type="other"
                     />
                     <div className="text-xs text-destructive min-h-[14px]">
                         {showError ? t("auth.email.invalidError") : ""}
@@ -82,7 +89,7 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                 <button
                     type="submit"
                     disabled={!email || loading}
-                    className="h-[42px] inline-flex items-center justify-center gap-2.5 rounded-md bg-foreground text-background text-sm font-medium transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="cursor-pointer h-[42px] inline-flex items-center justify-center gap-2.5 rounded-md bg-foreground text-background text-sm font-medium transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {loading ? (
                         <Spinner />

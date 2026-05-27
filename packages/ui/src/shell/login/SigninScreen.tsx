@@ -4,7 +4,7 @@ import { Env } from "@vertesia/ui/env";
 import { useUITranslation } from "@vertesia/ui/i18n";
 import { RegionTag } from "@vertesia/ui/layout";
 import { UserNotFoundError, useUserSession, useUXTracking } from "@vertesia/ui/session";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AuthPending from "./AuthPending";
 import DemoTokenPanel from "./DemoTokenPanel";
 import EmailStep, { type TenantInfo } from "./EmailStep";
@@ -26,25 +26,6 @@ import ReturningStep from "./ReturningStep";
 import SignupForm from "./SignupForm";
 import TenantBlockedStep from "./TenantBlockedStep";
 import TenantStep from "./TenantStep";
-
-const CONSUMER_DOMAINS = new Set([
-    "gmail.com",
-    "googlemail.com",
-    "outlook.com",
-    "hotmail.com",
-    "live.com",
-    "yahoo.com",
-    "icloud.com",
-    "me.com",
-    "proton.me",
-    "protonmail.com",
-    "aol.com",
-]);
-
-function emailDomain(email: string): string | undefined {
-    const at = email.lastIndexOf("@");
-    return at > 0 ? email.slice(at + 1).toLowerCase() : undefined;
-}
 
 interface SigninScreenProps {
     isNested?: boolean;
@@ -179,13 +160,6 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
         });
     };
 
-    const unknownDomain = useMemo(() => {
-        const d = emailDomain(email);
-        if (!d) return undefined;
-        if (CONSUMER_DOMAINS.has(d)) return undefined;
-        return d;
-    }, [email]);
-
     if (isLoading || user) return null;
 
     let content: React.ReactNode = null;
@@ -216,7 +190,6 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
                 email={email}
                 onBack={onBack}
                 onProviderClicked={onProviderClicked}
-                unknownDomain={unknownDomain}
             />
         );
     } else if (mode === "returning" && storedSession) {
