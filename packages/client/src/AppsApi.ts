@@ -157,7 +157,11 @@ export default class AppsApi extends ApiTopic {
         return this.put(`/installations/settings/${settingsPayload.app_id}`, {
             payload: {
                 app_id: settingsPayload.app_id,
-                settings: settingsPayload.settings
+                settings: settingsPayload.settings,
+                // Forward access_control when the caller provided it (including explicit null to
+                // clear an override). The server uses `'access_control' in payload` to distinguish
+                // "leave unchanged" from "clear", so only spread the key when it was supplied.
+                ...(('access_control' in settingsPayload) ? { access_control: settingsPayload.access_control } : {}),
             } satisfies AppInstallationPayload
         });
     }
