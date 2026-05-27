@@ -192,7 +192,6 @@
   "auth.providers.eyebrow": "Choose How to Sign In",
   "auth.providers.title": "One more step",
   "auth.returning.body": "Your team's project is ready when you are. Continue with the last method you used, or switch things up.",
-  "auth.returning.continueWithTenantSso": "Continue with {{tenant}} SSO",
   "auth.returning.eyebrow": "Returning to Vertesia",
   "auth.returning.notYou": "Not you?",
   "auth.returning.otherWays": "Other ways",

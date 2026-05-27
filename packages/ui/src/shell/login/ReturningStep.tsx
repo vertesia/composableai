@@ -25,18 +25,32 @@ const PROVIDER_ICONS: Record<ProviderId, ComponentType<{ className?: string }>> 
     oidc: SsoIcon,
 };
 
+function tenantInitials(name: string): string {
+    return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((p) => p[0]!.toUpperCase())
+        .join("");
+}
+
+function ssoIdpDisplay(provider: ProviderId): string {
+    if (provider === "google") return "Google";
+    if (provider === "microsoft") return "Microsoft Entra ID";
+    if (provider === "github") return "GitHub";
+    return "your identity provider";
+}
+
 export default function ReturningStep({ session, onNotYou, onProviderClicked, redirectTo }: ReturningStepProps) {
     const { t } = useUITranslation();
     const [showOthers, setShowOthers] = useState(false);
     const firstName = session.name ? session.name.split(" ")[0]! : firstNameFromEmail(session.email);
     const LastIcon = PROVIDER_ICONS[session.lastProvider];
-    // tenantName presence indicates the previous sign-in went through SSO.
-    // Brand icon comes from lastProvider; the tenant label dominates the
-    // button text when SSO so users recognize the org they're signing into.
+    // tenantName presence indicates the previous sign-in went through SSO. The
+    // button itself looks the same as the personal case — SSO context is
+    // conveyed by the tenant card above the button, not by button styling.
     const isSso = !!session.tenantName;
-    const primaryLabel = isSso
-        ? t("auth.returning.continueWithTenantSso", { tenant: session.tenantName })
-        : t("auth.continueWithProvider", { provider: providerLabel(session.lastProvider) });
+    const primaryLabel = t("auth.continueWithProvider", { provider: providerLabel(session.lastProvider) });
 
     // "Other ways" alternatives only show personal-OAuth IdPs. OIDC has no
     // personal-OAuth path (it's tenant-driven only) so it's excluded.
@@ -50,7 +64,6 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
     };
 
     const isPrimaryDark = session.lastProvider === "github";
-    const isPrimaryInfo = isSso;
 
     return (
         <div className="w-full max-w-[420px] flex flex-col gap-6">
@@ -83,25 +96,37 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
                 </button>
             </div>
 
+            {isSso && session.tenantName && (
+                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-md border border-border bg-background">
+                    <span className="size-[30px] rounded-md bg-info text-info-foreground grid place-items-center text-[11px] font-semibold shrink-0">
+                        {tenantInitials(session.tenantName)}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                        <div className="text-[13.5px] font-semibold text-foreground leading-tight">
+                            {session.tenantName}
+                        </div>
+                        <div className="text-[11.5px] text-muted leading-tight mt-0.5">
+                            {t("auth.tenant.viaIdp", { idp: ssoIdpDisplay(session.lastProvider) })}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col gap-2">
                 <button
                     type="button"
                     onClick={() => continueWith(session.lastProvider)}
                     className={
-                        isPrimaryInfo
-                            ? "h-14 inline-flex items-center gap-3.5 pl-4 pr-3 rounded-md bg-info text-info-foreground text-[14.5px] font-medium transition hover:opacity-90"
-                            : isPrimaryDark
-                              ? "h-14 inline-flex items-center gap-3.5 pl-4 pr-3 rounded-md bg-foreground text-background text-[14.5px] font-medium transition hover:opacity-90"
-                              : "h-14 inline-flex items-center gap-3.5 pl-4 pr-3 rounded-md border border-border bg-background text-foreground text-[14.5px] font-medium transition hover:bg-muted-background"
+                        isPrimaryDark
+                            ? "cursor-pointer h-14 inline-flex items-center gap-3.5 pl-4 pr-3 rounded-md bg-foreground text-background text-[14.5px] font-medium transition hover:opacity-90"
+                            : "cursor-pointer h-14 inline-flex items-center gap-3.5 pl-4 pr-3 rounded-md border border-border bg-background text-foreground text-[14.5px] font-medium transition hover:bg-muted-background"
                     }
                 >
                     <span
                         className={
-                            isPrimaryInfo
-                                ? "size-8 rounded-md bg-info-foreground/20 grid place-items-center shrink-0"
-                                : isPrimaryDark
-                                  ? "size-8 rounded-md bg-background grid place-items-center shrink-0"
-                                  : "size-8 rounded-md bg-muted-background grid place-items-center shrink-0"
+                            isPrimaryDark
+                                ? "size-8 rounded-md bg-background grid place-items-center shrink-0"
+                                : "size-8 rounded-md bg-muted-background grid place-items-center shrink-0"
                         }
                     >
                         <LastIcon className="size-[18px]" />
