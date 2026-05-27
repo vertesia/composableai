@@ -6,6 +6,7 @@ packages:
   - "!packages/memory-commands"
   - templates/*
   - "!templates/worker-template"
+verifyDepsBeforeRun: false
 allowBuilds:
   '@firebase/util': true
   '@swc/core': true
