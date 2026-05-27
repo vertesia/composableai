@@ -173,7 +173,7 @@
   "auth.continueWithGoogle": "Continue with Google",
   "auth.continueWithMicrosoft": "Continue with Microsoft",
   "auth.continueWithProvider": "Continue with {{provider}}",
-  "auth.email.body": "Enter your work email and we'll route you to the right sign-in option.",
+  "auth.email.body": "Enter your work email and we'll route you to the right option to sign in or sign up.",
   "auth.email.eyebrow": "Sign In",
   "auth.email.invalidError": "Enter a valid email address.",
   "auth.email.label": "Email",

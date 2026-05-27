@@ -16,7 +16,7 @@ interface EmailStepProps {
 export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
     const { t } = useUITranslation();
     const [email, setEmail] = useState(initialEmail ?? "");
-    const [touched, setTouched] = useState(false);
+    const [submitError, setSubmitError] = useState(false);
     const [loading, setLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -24,13 +24,14 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
         inputRef.current?.focus();
     }, []);
 
-    const valid = isValidEmail(email);
-    const showError = touched && email.length > 0 && !valid;
-
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setTouched(true);
-        if (!valid || loading) return;
+        if (loading) return;
+        if (!isValidEmail(email)) {
+            setSubmitError(true);
+            return;
+        }
+        setSubmitError(false);
         setLoading(true);
         try {
             const tenant = await setFirebaseTenant(email.trim().toLowerCase());
@@ -70,9 +71,11 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                         className="h-[42px] px-3.5 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-info focus:ring-4 focus:ring-info/15 aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/15"
                         placeholder={t("auth.email.placeholder")}
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        onBlur={() => setTouched(true)}
-                        aria-invalid={showError}
+                        onChange={(e) => {
+                            setEmail(e.target.value);
+                            if (submitError) setSubmitError(false);
+                        }}
+                        aria-invalid={submitError}
                         autoComplete="off"
                         autoCorrect="off"
                         autoCapitalize="off"
@@ -82,13 +85,13 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                         data-form-type="other"
                     />
                     <div className="text-xs text-destructive min-h-[14px]">
-                        {showError ? t("auth.email.invalidError") : ""}
+                        {submitError ? t("auth.email.invalidError") : ""}
                     </div>
                 </div>
 
                 <button
                     type="submit"
-                    disabled={!email || loading}
+                    disabled={loading}
                     className="cursor-pointer h-[42px] inline-flex items-center justify-center gap-2.5 rounded-md bg-foreground text-background text-sm font-medium transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {loading ? (

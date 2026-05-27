@@ -74,7 +74,7 @@ export default function TenantStep({ email, tenant, onBack, onProviderClicked, r
                     <button
                         type="button"
                         onClick={onBack}
-                        className="text-xs text-muted hover:text-foreground transition px-2 py-1 rounded underline decoration-transparent hover:decoration-current underline-offset-[3px]"
+                        className="cursor-pointer text-xs text-muted hover:text-foreground transition px-2 py-1 rounded underline decoration-transparent hover:decoration-current underline-offset-[3px]"
                     >
                         {t("auth.change")}
                     </button>

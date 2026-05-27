@@ -74,7 +74,7 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
                 <button
                     type="button"
                     onClick={onNotYou}
-                    className="text-xs text-muted hover:text-foreground transition px-2 py-1 rounded underline decoration-transparent hover:decoration-current underline-offset-[3px]"
+                    className="cursor-pointer text-xs text-muted hover:text-foreground transition px-2 py-1 rounded underline decoration-transparent hover:decoration-current underline-offset-[3px]"
                 >
                     {t("auth.returning.notYou")}
                 </button>
