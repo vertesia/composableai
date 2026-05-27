@@ -89,7 +89,7 @@ export async function startSignIn(
     // Demo mode: SigninScreen drives the alternate flow off a pre-saved
     // Firebase token. Skip the real OAuth redirect so the demo can complete
     // without the upstream OAuth provider rejecting the dev URL.
-    if (getActiveDemoToken()) {
+    if (hasAnyDemoTokens()) {
         return { ok: true };
     }
 
@@ -190,9 +190,11 @@ export function isInviteRequiredError(err: unknown): boolean {
 }
 
 // ─── Demo / dev-only signin helpers ────────────────────────────────────────
-// One pre-captured Firebase ID token is staged in localStorage from the
-// DemoTokenPanel widget. The flow it drives on a provider button click is
-// inferred from the token's email domain:
+// Multiple pre-captured Firebase ID tokens can be staged in localStorage from
+// the DemoTokenPanel widget, keyed by lowercased email. When the user clicks a
+// provider button, the SigninScreen looks up the token whose email matches the
+// email they typed (or the email of the returning-session) and runs a flow
+// based on that token's domain:
 //   • staff domain (vertesiahq.com) → hands the token off to
 //     UserSessionProvider's existing token+state hash branch via STS exchange,
 //     so the app loads as signed-in.
@@ -201,7 +203,7 @@ export function isInviteRequiredError(err: unknown): boolean {
 //     completed. (Customer-domain identities like cmorman.com will hit the
 //     blocked view.)
 
-const DEMO_TOKEN_KEY = "vt.demoToken";
+const DEMO_TOKENS_KEY = "vt.demoTokens";
 const DEMO_TENANT_NAME_KEY = "vt.demoTenantName";
 
 const STAFF_DEMO_DOMAINS = new Set(["vertesiahq.com"]);
@@ -252,29 +254,64 @@ export function inspectDemoToken(token: string): DemoTokenInfo {
     };
 }
 
-export function readDemoToken(): DemoTokenInfo | null {
+function readStore(): Record<string, string> {
     try {
-        const t = localStorage.getItem(DEMO_TOKEN_KEY);
-        return t ? inspectDemoToken(t) : null;
+        const raw = localStorage.getItem(DEMO_TOKENS_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === "object" ? (parsed as Record<string, string>) : {};
     } catch {
-        return null;
+        return {};
     }
 }
 
-export function writeDemoToken(token: string): void {
+function writeStore(store: Record<string, string>): void {
     try {
-        localStorage.setItem(DEMO_TOKEN_KEY, token.trim());
+        if (Object.keys(store).length === 0) localStorage.removeItem(DEMO_TOKENS_KEY);
+        else localStorage.setItem(DEMO_TOKENS_KEY, JSON.stringify(store));
     } catch {
         // ignore
     }
 }
 
-export function clearDemoToken(): void {
-    try {
-        localStorage.removeItem(DEMO_TOKEN_KEY);
-    } catch {
-        // ignore
-    }
+/** Returns all staged demo tokens, fresh (with expiry computed at call time). */
+export function listDemoTokens(): DemoTokenInfo[] {
+    const store = readStore();
+    return Object.values(store).map(inspectDemoToken);
+}
+
+/** Decodes a pasted token, adds it to the store under its lowercased email. */
+export function addDemoToken(token: string): DemoTokenInfo | null {
+    const trimmed = token.trim();
+    if (!trimmed) return null;
+    const info = inspectDemoToken(trimmed);
+    if (!info.email) return null;
+    const store = readStore();
+    store[info.email.toLowerCase()] = trimmed;
+    writeStore(store);
+    return info;
+}
+
+export function removeDemoToken(email: string): void {
+    const store = readStore();
+    delete store[email.toLowerCase()];
+    writeStore(store);
+}
+
+export function clearAllDemoTokens(): void {
+    writeStore({});
+}
+
+/** Looks up a staged token by the email the user typed (case-insensitive). */
+export function lookupDemoToken(email: string | undefined): DemoTokenInfo | null {
+    if (!email) return null;
+    const store = readStore();
+    const raw = store[email.toLowerCase()];
+    return raw ? inspectDemoToken(raw) : null;
+}
+
+export function hasAnyDemoTokens(): boolean {
+    return Object.keys(readStore()).length > 0;
 }
 
 export function readDemoTenantName(): string | null {
@@ -294,12 +331,6 @@ export function writeDemoTenantName(name: string): void {
     }
 }
 
-/** Returns the demo token string if staged and unexpired. */
-export function getActiveDemoToken(): string | null {
-    const info = readDemoToken();
-    return info && !info.expired ? info.token : null;
-}
-
 /**
  * Drives the success-flow demo. Seeds sessionStorage so UserSessionProvider's
  * verifyState accepts the synthetic "demo" state, seeds pendingSignin so the
@@ -308,11 +339,7 @@ export function getActiveDemoToken(): string | null {
  * branch (see UserSessionProvider.tsx) takes over from there — exchanges the
  * Firebase token via STS, runs session.login(), and the app re-renders signed-in.
  */
-export function startDemoSuccessSignIn(provider: ProviderId = "google"): void {
-    const token = getActiveDemoToken();
-    if (!token) return;
-    const info = inspectDemoToken(token);
-
+export function startDemoSuccessSignIn(token: string, email: string | undefined, provider: ProviderId = "google"): void {
     const stateValue = "demo";
     sessionStorage.setItem("auth_state", stateValue);
     sessionStorage.setItem("auth_state_expiry", String(Date.now() + 5 * 60 * 1000));
@@ -320,7 +347,7 @@ export function startDemoSuccessSignIn(provider: ProviderId = "google"): void {
     sessionStorage.setItem(
         PENDING_SIGNIN_KEY,
         JSON.stringify({
-            email: info.email ?? "demo@vertesiahq.com",
+            email: email ?? "demo@vertesiahq.com",
             provider,
         }),
     );

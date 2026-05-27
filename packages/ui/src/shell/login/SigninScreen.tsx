@@ -14,11 +14,9 @@ import {
     clearLastSession,
     clearPendingSignin,
     demoFlowFor,
-    getActiveDemoToken,
-    inspectDemoToken,
     isInviteRequiredError,
+    lookupDemoToken,
     readDemoTenantName,
-    readDemoToken,
     readLastSession,
     readPendingSignin,
     startDemoSuccessSignIn,
@@ -122,31 +120,29 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
         setPendingProvider(provider);
         setMode("pending");
 
-        // Demo mode: if a Firebase token is staged in localStorage, skip real
-        // OAuth and pick a flow based on the token's email domain:
+        // Demo mode: look up a staged Firebase token whose email matches the
+        // one the user just typed (or the returning-session email). The flow
+        // depends on that token's email domain:
         //   • staff domain → hand off to UserSessionProvider's token+state hash
         //     branch via startDemoSuccessSignIn → app loads as signed-in.
         //   • everything else → POST to /auth/ensure-user and route on the real
         //     403/412/200 response.
-        const demoInfo = readDemoToken();
+        const lookupEmail = email || storedSession?.email;
+        const demoInfo = lookupDemoToken(lookupEmail);
         const flow = demoFlowFor(demoInfo);
         if (!flow || !demoInfo) return;
 
         if (demoInfo.email) setEmail(demoInfo.email);
 
         if (flow === "success") {
-            startDemoSuccessSignIn(provider);
+            startDemoSuccessSignIn(demoInfo.token, demoInfo.email, provider);
             return;
         }
 
-        const demoToken = getActiveDemoToken();
-        if (!demoToken) return;
-        const info = inspectDemoToken(demoToken);
-        if (info.email) setEmail(info.email);
         try {
             const res = await fetch(`${Env.endpoints.studio}/auth/ensure-user`, {
                 method: "POST",
-                headers: { "Authorization": `Bearer ${demoToken}` },
+                headers: { "Authorization": `Bearer ${demoInfo.token}` },
             });
             if (res.status === 403) setMode("blocked");
             else if (res.status === 412) setMode("signup");
@@ -154,7 +150,7 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
         } catch {
             setMode("blocked");
         }
-    }, [trackEvent]);
+    }, [trackEvent, email, storedSession?.email]);
 
     const goBackToFresh = useCallback(() => {
         setEmail("");

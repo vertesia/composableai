@@ -1,23 +1,22 @@
-import { Key } from "lucide-react";
+import { Key, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
     type DemoTokenInfo,
-    clearDemoToken,
+    addDemoToken,
+    clearAllDemoTokens,
     demoFlowFor,
-    inspectDemoToken,
+    listDemoTokens,
     readDemoTenantName,
-    readDemoToken,
+    removeDemoToken,
     writeDemoTenantName,
-    writeDemoToken,
 } from "./loginUtils";
 
-// Floating dev-only widget: paste a Firebase ID token into localStorage. The
-// flow that the SigninScreen runs when a provider button is clicked is inferred
-// from the token's email domain:
-//   • staff (vertesiahq.com) → hands the token off to UserSessionProvider's
-//     existing token+state branch via STS, so the app loads as signed-in.
-//   • anything else → posts to /auth/ensure-user, surfacing the real 403/412/200
-//     so the customer-domain block lands on TenantBlockedStep.
+// Floating dev-only widget. Multiple Firebase ID tokens can be staged, keyed by
+// their decoded email. When the user clicks a provider button on the
+// SigninScreen, the screen looks up a token by the typed (or returning-session)
+// email and runs a flow based on that token's domain:
+//   • staff (vertesiahq.com) → STS exchange → app loads as signed-in
+//   • everything else → POST /auth/ensure-user → real 403/412 routes the UI
 
 function formatRemaining(expiresAt: Date | undefined, expired: boolean): string | null {
     if (expired) return "EXPIRED";
@@ -30,37 +29,55 @@ function formatRemaining(expiresAt: Date | undefined, expired: boolean): string 
     return min > 0 ? `${min}m ${sec}s` : `${sec}s`;
 }
 
-function flowLabel(info: DemoTokenInfo | null): string {
+function flowLabel(info: DemoTokenInfo): string {
     const flow = demoFlowFor(info);
-    if (flow === "success") return "→ Sign-in success";
-    if (flow === "blocked") return "→ Blocked (403)";
-    return "";
+    if (flow === "success") return "Sign-in success";
+    if (flow === "blocked") return "Blocked (403)";
+    return "—";
+}
+
+function flowColor(info: DemoTokenInfo): { bg: string; border: string; text: string } {
+    if (info.expired) return { bg: "#fef2f2", border: "#fca5a5", text: "#991b1b" };
+    const flow = demoFlowFor(info);
+    if (flow === "success") return { bg: "#f0fdf4", border: "#bbf7d0", text: "#166534" };
+    return { bg: "#fffbeb", border: "#fcd34d", text: "#92400e" };
 }
 
 export default function DemoTokenPanel() {
     const [open, setOpen] = useState(false);
-    const [info, setInfo] = useState<DemoTokenInfo | null>(() => readDemoToken());
+    const [tokens, setTokens] = useState<DemoTokenInfo[]>(() => listDemoTokens());
     const [tenantName, setTenantName] = useState(() => readDemoTenantName() ?? "");
     const [draft, setDraft] = useState("");
+    const [error, setError] = useState<string | null>(null);
     const [, setTick] = useState(0);
 
+    // Live-update remaining countdowns while any token is staged.
     useEffect(() => {
-        if (!info?.expiresAt) return;
+        if (tokens.length === 0) return;
         const t = setInterval(() => setTick((n) => n + 1), 15_000);
         return () => clearInterval(t);
-    }, [info?.expiresAt]);
+    }, [tokens.length]);
 
     const save = () => {
-        const trimmed = draft.trim();
-        if (!trimmed) return;
-        writeDemoToken(trimmed);
-        setInfo(inspectDemoToken(trimmed));
+        setError(null);
+        const info = addDemoToken(draft);
+        if (!info) {
+            setError("Couldn't decode an email from that token.");
+            return;
+        }
+        setTokens(listDemoTokens());
         setDraft("");
     };
 
-    const clear = () => {
-        clearDemoToken();
-        setInfo(null);
+    const remove = (email: string | undefined) => {
+        if (!email) return;
+        removeDemoToken(email);
+        setTokens(listDemoTokens());
+    };
+
+    const clearAll = () => {
+        clearAllDemoTokens();
+        setTokens([]);
     };
 
     const onTenantNameChange = (next: string) => {
@@ -68,8 +85,8 @@ export default function DemoTokenPanel() {
         writeDemoTenantName(next);
     };
 
-    const remaining = info ? formatRemaining(info.expiresAt, info.expired) : null;
-    const flow = demoFlowFor(info);
+    const chipCount = tokens.length;
+    const hasExpired = tokens.some((t) => t.expired);
 
     return (
         <div style={{ position: "fixed", top: 16, right: 16, zIndex: 999999, fontFamily: "system-ui, sans-serif" }}>
@@ -83,7 +100,11 @@ export default function DemoTokenPanel() {
                 }
             >
                 <Key className="size-3.5" />
-                <span>Demo{info ? ` · ${remaining}` : ""}</span>
+                <span>
+                    Demo
+                    {chipCount > 0 ? ` · ${chipCount}` : ""}
+                    {hasExpired ? " · EXP" : ""}
+                </span>
             </button>
 
             {open && (
@@ -92,124 +113,143 @@ export default function DemoTokenPanel() {
                         position: "absolute",
                         top: 38,
                         right: 0,
-                        width: 380,
+                        width: 420,
+                        maxHeight: "80vh",
+                        overflowY: "auto",
                         background: "white",
                         border: "1px solid #d1d5db",
                         borderRadius: 8,
                         boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-                        padding: 16,
+                        padding: 14,
                         fontSize: 13,
                         color: "#111827",
                     }}
                 >
-                    <div style={{ fontWeight: 600, marginBottom: 6 }}>Demo sign-in (dev only)</div>
-                    <div style={{ color: "#6b7280", fontSize: 12, marginBottom: 12, lineHeight: 1.4 }}>
-                        Paste a Firebase ID token. Provider buttons on the sign-in screen will route automatically based
-                        on the token's email domain — staff (vertesiahq.com) signs in, customer domains hit the 403
-                        block.
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>Demo sign-in (dev only)</div>
+                    <div style={{ color: "#6b7280", fontSize: 11, marginBottom: 12, lineHeight: 1.4 }}>
+                        Paste Firebase ID tokens — one at a time. They're keyed by email; the SigninScreen picks the
+                        matching one based on the email the user typed.
                     </div>
 
-                    {info && (
-                        <div
-                            style={{
-                                background: info.expired ? "#fef2f2" : flow === "success" ? "#f0fdf4" : "#f9fafb",
-                                border: `1px solid ${info.expired ? "#fca5a5" : flow === "success" ? "#bbf7d0" : "#e5e7eb"}`,
-                                borderRadius: 6,
-                                padding: 10,
-                                marginBottom: 12,
-                                fontSize: 12,
-                                lineHeight: 1.5,
-                            }}
-                        >
-                            <div>
-                                <strong>email:</strong> {info.email ?? "—"}
-                            </div>
-                            <div>
-                                <strong>expires:</strong> {info.expiresAt ? info.expiresAt.toLocaleString() : "—"}
-                            </div>
-                            {!info.expired && remaining && (
-                                <div>
-                                    <strong>remaining:</strong> {remaining}
-                                </div>
-                            )}
-                            {flow && !info.expired && (
-                                <div
-                                    style={{
-                                        marginTop: 6,
-                                        fontWeight: 600,
-                                        color: flow === "success" ? "#166534" : "#92400e",
-                                    }}
-                                >
-                                    {flowLabel(info)}
-                                </div>
-                            )}
-                            {info.expired && (
-                                <div style={{ color: "#991b1b", fontWeight: 600, marginTop: 4 }}>
-                                    EXPIRED — grab a fresh token from dev-main and re-paste.
-                                </div>
-                            )}
+                    {tokens.length > 0 && (
+                        <div style={{ marginBottom: 12 }}>
+                            {tokens.map((info) => {
+                                const color = flowColor(info);
+                                const remaining = formatRemaining(info.expiresAt, info.expired);
+                                return (
+                                    <div
+                                        key={info.email ?? info.token.slice(-12)}
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                            background: color.bg,
+                                            border: `1px solid ${color.border}`,
+                                            borderRadius: 6,
+                                            padding: 8,
+                                            marginBottom: 6,
+                                            fontSize: 11,
+                                            lineHeight: 1.4,
+                                        }}
+                                    >
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div
+                                                style={{
+                                                    fontWeight: 600,
+                                                    color: color.text,
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap",
+                                                }}
+                                            >
+                                                {info.email ?? "(no email)"}
+                                            </div>
+                                            <div style={{ color: "#6b7280" }}>
+                                                {flowLabel(info)}
+                                                {remaining ? ` · ${remaining}` : ""}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            aria-label={`Remove ${info.email ?? "token"}`}
+                                            onClick={() => remove(info.email)}
+                                            style={{
+                                                background: "transparent",
+                                                border: "none",
+                                                color: color.text,
+                                                cursor: "pointer",
+                                                padding: 4,
+                                                display: "inline-flex",
+                                            }}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                            <button
+                                type="button"
+                                onClick={clearAll}
+                                style={{
+                                    background: "transparent",
+                                    border: "none",
+                                    color: "#6b7280",
+                                    fontSize: 11,
+                                    cursor: "pointer",
+                                    padding: 0,
+                                    textDecoration: "underline",
+                                }}
+                            >
+                                Clear all
+                            </button>
                         </div>
                     )}
 
                     <textarea
                         value={draft}
-                        onChange={(e) => setDraft(e.target.value)}
+                        onChange={(e) => {
+                            setDraft(e.target.value);
+                            if (error) setError(null);
+                        }}
                         placeholder="Paste Firebase ID token (eyJ...)"
                         style={{
                             width: "100%",
-                            minHeight: 80,
+                            minHeight: 70,
                             padding: 8,
-                            border: "1px solid #d1d5db",
+                            border: `1px solid ${error ? "#fca5a5" : "#d1d5db"}`,
                             borderRadius: 6,
                             fontFamily: "ui-monospace, monospace",
                             fontSize: 11,
                             resize: "vertical",
-                            marginBottom: 8,
+                            marginBottom: 6,
                             boxSizing: "border-box",
                         }}
                     />
-                    <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-                        <button
-                            type="button"
-                            onClick={save}
-                            disabled={!draft.trim()}
-                            style={{
-                                flex: 1,
-                                padding: "6px 12px",
-                                border: "1px solid #1f2937",
-                                background: "#1f2937",
-                                color: "white",
-                                borderRadius: 6,
-                                cursor: draft.trim() ? "pointer" : "not-allowed",
-                                opacity: draft.trim() ? 1 : 0.5,
-                                fontSize: 12,
-                                fontWeight: 500,
-                            }}
-                        >
-                            Save
-                        </button>
-                        <button
-                            type="button"
-                            onClick={clear}
-                            disabled={!info}
-                            style={{
-                                flex: 1,
-                                padding: "6px 12px",
-                                border: "1px solid #d1d5db",
-                                background: "white",
-                                color: "#374151",
-                                borderRadius: 6,
-                                cursor: info ? "pointer" : "not-allowed",
-                                opacity: info ? 1 : 0.5,
-                                fontSize: 12,
-                                fontWeight: 500,
-                            }}
-                        >
-                            Clear
-                        </button>
-                    </div>
+                    {error && (
+                        <div style={{ color: "#991b1b", fontSize: 11, marginBottom: 6 }}>{error}</div>
+                    )}
+                    <button
+                        type="button"
+                        onClick={save}
+                        disabled={!draft.trim()}
+                        style={{
+                            width: "100%",
+                            padding: "6px 12px",
+                            border: "1px solid #1f2937",
+                            background: "#1f2937",
+                            color: "white",
+                            borderRadius: 6,
+                            cursor: draft.trim() ? "pointer" : "not-allowed",
+                            opacity: draft.trim() ? 1 : 0.5,
+                            fontSize: 12,
+                            fontWeight: 500,
+                            marginBottom: 14,
+                        }}
+                    >
+                        Add token
+                    </button>
 
-                    <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>
+                    <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 4 }}>
                         Optional: tenant name shown in the blocked view
                     </div>
                     <input
@@ -219,10 +259,10 @@ export default function DemoTokenPanel() {
                         placeholder="e.g. Charles Morman - Testing"
                         style={{
                             width: "100%",
-                            padding: "6px 8px",
+                            padding: "5px 8px",
                             border: "1px solid #d1d5db",
                             borderRadius: 6,
-                            fontSize: 12,
+                            fontSize: 11,
                             boxSizing: "border-box",
                         }}
                     />
