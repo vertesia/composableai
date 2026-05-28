@@ -1,22 +1,22 @@
-import { useUITranslation } from "@vertesia/ui/i18n";
-import { Mail } from "lucide-react";
-import { useState } from "react";
-import { providerIcon } from "./LoginIcons";
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { Mail } from 'lucide-react';
+import { useState } from 'react';
 import {
     InlineLinkButton,
     OutlinedProviderButton,
-    PrimaryButton,
+    PlainLinkButton,
+    ProviderButton,
     StepHeader,
     StepLayout,
-} from "./LoginPrimitives";
+} from './LoginPrimitives';
 import {
-    type LastSession,
-    type ProviderId,
     emailInitial,
     firstNameFromEmail,
+    type LastSession,
+    type ProviderId,
     providerLabel,
     startSignIn,
-} from "./loginUtils";
+} from './loginUtils';
 
 interface ReturningStepProps {
     session: LastSession;
@@ -28,17 +28,16 @@ interface ReturningStepProps {
 export default function ReturningStep({ session, onNotYou, onProviderClicked, redirectTo }: ReturningStepProps) {
     const { t } = useUITranslation();
     const [showOthers, setShowOthers] = useState(false);
-    const firstName = session.name ? session.name.split(" ")[0]! : firstNameFromEmail(session.email);
-    const LastIcon = providerIcon(session.lastProvider);
+    const firstName = session.name ? session.name.split(' ')[0]! : firstNameFromEmail(session.email);
     // tenantName presence indicates the previous sign-in went through SSO. The
     // button itself looks the same as the personal case — SSO context is
     // conveyed by the tenant card above the button, not by button styling.
     const isSso = !!session.tenantName;
-    const primaryLabel = t("auth.continueWithProvider", { provider: providerLabel(session.lastProvider) });
+    const primaryLabel = t('auth.continueWithProvider', { provider: providerLabel(session.lastProvider) });
 
     // "Other ways" alternatives only show personal-OAuth IdPs. OIDC has no
     // personal-OAuth path (it's tenant-driven only) so it's excluded.
-    const others: ProviderId[] = (["google", "github", "microsoft"] as ProviderId[]).filter(
+    const others: ProviderId[] = (['google', 'github', 'microsoft'] as ProviderId[]).filter(
         (p) => p !== session.lastProvider,
     );
 
@@ -50,9 +49,9 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
     return (
         <StepLayout>
             <StepHeader
-                eyebrow={t("auth.returning.eyebrow")}
-                title={t("auth.returning.title", { name: firstName })}
-                body={t("auth.returning.body")}
+                eyebrow={t('auth.returning.eyebrow')}
+                title={t('auth.returning.title', { name: firstName })}
+                body={t('auth.returning.body')}
             />
 
             {isSso && session.tenantName ? (
@@ -77,7 +76,7 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
                         </div>
                         <span className="text-xs text-foreground/80 flex-1 truncate">{session.email}</span>
                         <InlineLinkButton size="smaller" onClick={onNotYou}>
-                            {t("auth.returning.notYou")}
+                            {t('auth.returning.notYou')}
                         </InlineLinkButton>
                     </div>
                 </div>
@@ -92,38 +91,36 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
                         </div>
                         <div className="text-xs text-muted truncate">{session.email}</div>
                     </div>
-                    <InlineLinkButton onClick={onNotYou}>{t("auth.returning.notYou")}</InlineLinkButton>
+                    <InlineLinkButton onClick={onNotYou}>{t('auth.returning.notYou')}</InlineLinkButton>
                 </div>
             )}
 
             <div className="flex flex-col gap-2">
-                <PrimaryButton onClick={() => continueWith(session.lastProvider)}>
-                    <LastIcon className="size-[18px]" />
-                    {primaryLabel}
-                </PrimaryButton>
+                <ProviderButton
+                    provider={session.lastProvider}
+                    label={primaryLabel}
+                    onClick={() => continueWith(session.lastProvider)}
+                    variant="filled"
+                />
 
                 {!showOthers && (
-                    <button
-                        type="button"
-                        onClick={() => setShowOthers(true)}
-                        className="cursor-pointer h-9 inline-flex items-center justify-center text-sm font-medium text-muted hover:text-foreground transition"
-                    >
-                        {t("auth.returning.useDifferent")}
-                    </button>
+                    <PlainLinkButton onClick={() => setShowOthers(true)}>
+                        {t('auth.returning.useDifferent')}
+                    </PlainLinkButton>
                 )}
 
                 {showOthers && (
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-3 my-2 text-muted-foreground text-[10.5px] uppercase tracking-widest">
                             <div className="flex-1 h-px bg-border" />
-                            <span>{t("auth.returning.otherWays")}</span>
+                            <span>{t('auth.returning.otherWays')}</span>
                             <div className="flex-1 h-px bg-border" />
                         </div>
                         {others.map((p) => (
                             <OutlinedProviderButton
                                 key={p}
                                 provider={p}
-                                label={t("auth.continueWithProvider", { provider: providerLabel(p) })}
+                                label={t('auth.continueWithProvider', { provider: providerLabel(p) })}
                                 onClick={() => continueWith(p)}
                             />
                         ))}

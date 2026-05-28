@@ -1,13 +1,26 @@
-import type { ComponentType, SVGProps } from "react";
-import type { ProviderId } from "./loginUtils";
+import { LockKeyhole } from 'lucide-react';
+import type { ComponentType, SVGProps } from 'react';
+import type { ProviderId } from './loginUtils';
 
 export function GoogleIcon(props: SVGProps<SVGSVGElement>) {
     return (
         <svg viewBox="0 0 48 48" aria-hidden="true" {...props}>
-            <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8a12 12 0 0 1 0-24c3 0 5.8 1.1 7.9 3l5.7-5.7A20 20 0 1 0 24 44c11 0 20-9 20-20 0-1.2-.1-2.3-.4-3.5z" />
-            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8A12 12 0 0 1 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7A20 20 0 0 0 6.3 14.7z" />
-            <path fill="#4CAF50" d="M24 44c5.2 0 10-2 13.6-5.2l-6.3-5.3A12 12 0 0 1 12.7 28.5l-6.6 5.1A20 20 0 0 0 24 44z" />
-            <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4 5.5l6.3 5.3C37.9 36.6 44 31 44 24c0-1.2-.1-2.3-.4-3.5z" />
+            <path
+                fill="#FFC107"
+                d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8a12 12 0 0 1 0-24c3 0 5.8 1.1 7.9 3l5.7-5.7A20 20 0 1 0 24 44c11 0 20-9 20-20 0-1.2-.1-2.3-.4-3.5z"
+            />
+            <path
+                fill="#FF3D00"
+                d="M6.3 14.7l6.6 4.8A12 12 0 0 1 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7A20 20 0 0 0 6.3 14.7z"
+            />
+            <path
+                fill="#4CAF50"
+                d="M24 44c5.2 0 10-2 13.6-5.2l-6.3-5.3A12 12 0 0 1 12.7 28.5l-6.6 5.1A20 20 0 0 0 24 44z"
+            />
+            <path
+                fill="#1976D2"
+                d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4 5.5l6.3 5.3C37.9 36.6 44 31 44 24c0-1.2-.1-2.3-.4-3.5z"
+            />
         </svg>
     );
 }
@@ -36,36 +49,18 @@ export function MicrosoftIcon(props: SVGProps<SVGSVGElement>) {
     );
 }
 
-export function SsoIcon(props: SVGProps<SVGSVGElement>) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-            {...props}
-        >
-            <rect x="3.5" y="10.5" width="17" height="10" rx="2" />
-            <path d="M7 10.5V7a5 5 0 0 1 10 0v3.5" />
-            <circle cx="12" cy="15.5" r="1.25" fill="currentColor" stroke="none" />
-        </svg>
-    );
-}
+// OIDC has no brand glyph — use a generic lock to signal "identity provider".
+export const OidcIcon = LockKeyhole;
 
-/** Single source for provider → brand icon. OIDC and unknowns fall back to the generic SSO icon. */
+/** Single source for provider → brand icon. OIDC and unknowns get a generic lock since they have no brand. */
 export const PROVIDER_ICONS: Record<ProviderId, ComponentType<{ className?: string }>> = {
     google: GoogleIcon,
     github: GithubIcon,
     microsoft: MicrosoftIcon,
-    oidc: SsoIcon,
+    oidc: OidcIcon,
 };
 
-export function providerIcon(
-    provider: ProviderId | string | undefined,
-): ComponentType<{ className?: string }> {
+export function providerIcon(provider: ProviderId | string | undefined): ComponentType<{ className?: string }> {
     if (provider && provider in PROVIDER_ICONS) return PROVIDER_ICONS[provider as ProviderId];
-    return SsoIcon;
+    return OidcIcon;
 }

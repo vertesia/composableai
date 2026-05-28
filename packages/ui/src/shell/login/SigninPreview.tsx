@@ -1,13 +1,17 @@
-import type { UIResolvedTenant } from "@vertesia/common";
-import { ArrowDown, Mail } from "lucide-react";
-import AuthPending from "./AuthPending";
-import EmailStep, { type TenantInfo } from "./EmailStep";
-import { type LastSession, emailInitial, firstNameFromEmail } from "./loginUtils";
-import ProvidersStep from "./ProvidersStep";
-import ReturningStep from "./ReturningStep";
-import SignupForm from "./SignupForm";
-import TenantBlockedStep from "./TenantBlockedStep";
-import TenantStep from "./TenantStep";
+import type { UIResolvedTenant } from '@vertesia/common';
+import { Button, Spinner } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { ArrowDown } from 'lucide-react';
+import AuthPending from './AuthPending';
+import EmailStep, { type TenantInfo } from './EmailStep';
+import { providerIcon } from './LoginIcons';
+import { OutlinedProviderButton, PlainLinkButton, PrimaryButton, ProviderButton } from './LoginPrimitives';
+import type { LastSession, ProviderId } from './loginUtils';
+import ProvidersStep from './ProvidersStep';
+import ReturningStep from './ReturningStep';
+import SignupForm from './SignupForm';
+import TenantBlockedStep from './TenantBlockedStep';
+import TenantStep from './TenantStep';
 
 // Dev-only overview. Renders every SigninScreen step with mock props so the
 // visual review (cursor states, semantic colors, spacing, copy) can happen on
@@ -18,107 +22,43 @@ const noop = () => {};
 // Shaped to match what /api/resolve-tenant actually returns: name = slug,
 // label = pretty display string. TenantStep now reads label first.
 const MOCK_TENANT_GOOGLE: UIResolvedTenant & TenantInfo = {
-    firebaseTenantId: "vertesia-tenant-id",
-    name: "vertesia",
-    label: "Vertesia",
-    provider: "google",
+    firebaseTenantId: 'vertesia-tenant-id',
+    name: 'vertesia',
+    label: 'Vertesia',
+    provider: 'google',
 };
 
 const MOCK_TENANT_OIDC: UIResolvedTenant & TenantInfo = {
-    firebaseTenantId: "acme-tenant-id",
-    name: "acme-corp",
-    label: "Acme Corp",
-    provider: "oidc",
+    firebaseTenantId: 'acme-tenant-id',
+    name: 'acme-corp',
+    label: 'Acme Corp',
+    provider: 'oidc',
 };
 
 const MOCK_RETURNING_GOOGLE: LastSession = {
-    email: "charles@vertesiahq.com",
-    name: "Charles Morman",
-    lastProvider: "google",
+    email: 'charles@vertesiahq.com',
+    name: 'Charles Morman',
+    lastProvider: 'google',
 };
 
 const MOCK_RETURNING_TENANT_MS: LastSession = {
-    email: "alice@vertesia.io",
-    name: "Alice Example",
-    lastProvider: "microsoft",
-    tenantName: "Vertesia",
+    email: 'alice@vertesia.io',
+    name: 'Alice Example',
+    lastProvider: 'microsoft',
+    tenantName: 'Vertesia',
 };
 
 const MOCK_RETURNING_TENANT_OIDC: LastSession = {
-    email: "user@acme-corp.com",
-    name: "Generic User",
-    lastProvider: "oidc",
-    tenantName: "Acme Corp",
+    email: 'user@acme-corp.com',
+    name: 'Generic User',
+    lastProvider: 'oidc',
+    tenantName: 'Acme Corp',
 };
-
-// Variant of the tenant-based returning user+org display: user name + company
-// on top, email + "Not you?" on the bottom (mirrors TenantStep's icon + email
-// + action row). This is the layout used by the live ReturningStep tenant path.
-function UserOrgDisplayEmailBottom({ session }: { session: LastSession }) {
-    return (
-        <div className="rounded-md border border-border bg-background overflow-hidden">
-            <div className="flex items-center gap-3 px-3.5 py-2.5">
-                <div className="size-9 rounded-full bg-info text-info-foreground grid place-items-center text-sm font-semibold ring-4 ring-background ring-offset-1 ring-offset-border shrink-0">
-                    {emailInitial(session.email)}
-                </div>
-                <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-foreground truncate">
-                        {session.name || firstNameFromEmail(session.email)}
-                    </div>
-                    {session.tenantName && (
-                        <div className="text-xs text-foreground/80 truncate">{session.tenantName}</div>
-                    )}
-                </div>
-            </div>
-            <div className="flex items-center gap-3 px-3.5 py-1 border-t border-border bg-muted-background">
-                <div className="w-9 h-6 grid place-items-center shrink-0">
-                    <Mail className="size-3.5 text-muted" />
-                </div>
-                <span className="text-xs text-foreground/80 flex-1 truncate">{session.email}</span>
-                <button
-                    type="button"
-                    className="cursor-pointer text-[11px] text-muted hover:text-foreground transition px-2 py-1 rounded underline decoration-transparent hover:decoration-current underline-offset-[3px]"
-                >
-                    Not you?
-                </button>
-            </div>
-        </div>
-    );
-}
-
-// Variant of the tenant-based returning user+org display: company sits between
-// name and email, all three stacked in a single section (no border-t bottom row).
-function UserOrgDisplaySingle({ session }: { session: LastSession }) {
-    return (
-        <div className="rounded-md border border-border bg-background overflow-hidden">
-            <div className="flex items-center gap-3 px-3.5 py-2.5">
-                <div className="size-9 rounded-full bg-info text-info-foreground grid place-items-center text-sm font-semibold ring-4 ring-background ring-offset-1 ring-offset-border shrink-0">
-                    {emailInitial(session.email)}
-                </div>
-                <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-foreground truncate">
-                        {session.name || firstNameFromEmail(session.email)}
-                    </div>
-                    {session.tenantName && (
-                        <div className="text-xs text-foreground/80 truncate">{session.tenantName}</div>
-                    )}
-                    <div className="text-xs text-muted truncate">{session.email}</div>
-                </div>
-                <button
-                    type="button"
-                    className="cursor-pointer text-xs text-muted hover:text-foreground transition px-2 py-1 rounded underline decoration-transparent hover:decoration-current underline-offset-[3px]"
-                >
-                    Not you?
-                </button>
-            </div>
-        </div>
-    );
-}
 
 // What HAS been verified by the UI/server flow path that leads to this screen.
 // Distinct from "what's true about the email in the abstract" — these badges
 // describe what's actually been checked.
-type GateState = "yes" | "no" | "na";
+type GateState = 'yes' | 'no' | 'na';
 
 interface GateMeta {
     /** Verified: a 403 from /auth/ensure-user → email's domain is on a customer account. */
@@ -140,14 +80,16 @@ interface FrameProps {
 
 function Badge({ label, state }: { label: string; state: GateState }) {
     const className =
-        state === "yes"
-            ? "text-success bg-success-background border-success/30"
-            : state === "no"
-              ? "text-destructive bg-destructive-background border-destructive/30"
-              : "text-muted bg-background border-border opacity-70";
-    const symbol = state === "yes" ? "✓" : state === "no" ? "✗" : "—";
+        state === 'yes'
+            ? 'text-success bg-success-background border-success/30'
+            : state === 'no'
+              ? 'text-destructive bg-destructive-background border-destructive/30'
+              : 'text-muted bg-background border-border opacity-70';
+    const symbol = state === 'yes' ? '✓' : state === 'no' ? '✗' : '—';
     return (
-        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-medium ${className}`}>
+        <span
+            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-medium ${className}`}
+        >
             <span>{symbol}</span>
             <span>{label}</span>
         </span>
@@ -171,8 +113,7 @@ interface SectionProps {
 }
 
 function Section({ title, sub, cols = 3, children }: SectionProps) {
-    const colsClass =
-        cols === 2 ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1 lg:grid-cols-2 xl:grid-cols-3";
+    const colsClass = cols === 2 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3';
     return (
         <div>
             <div className="mb-3">
@@ -204,7 +145,76 @@ function Frame({ title, sub, meta, children }: FrameProps) {
     );
 }
 
+// One frame's worth of "Continue with X" variants. Repeats the same five new
+// candidates (primary, secondary, ProviderButton outline/filled/start) plus a
+// pre-PR legacy replica, so the three providers (Google, Microsoft, GitHub)
+// can be compared side-by-side.
+interface ProviderComparisonFrameProps {
+    provider: ProviderId;
+    label: string;
+    /** Optional pre-PR replica. Omit for providers that have no legacy button (e.g. OIDC). */
+    legacyImgSrc?: string;
+    legacyImgAlt?: string;
+}
+
+function ProviderComparisonFrame({ provider, label, legacyImgSrc, legacyImgAlt }: ProviderComparisonFrameProps) {
+    const Icon = providerIcon(provider);
+    return (
+        <Frame title={label}>
+            <div className="w-full max-w-[420px] flex flex-col gap-4">
+                <div className="flex flex-col">
+                    <div className="text-[11px] font-medium text-muted mb-1.5">
+                        New — primary (returning user / tenant continue)
+                    </div>
+                    <PrimaryButton onClick={noop}>
+                        <Icon className="size-[18px]" />
+                        {label}
+                    </PrimaryButton>
+                </div>
+                <div className="flex flex-col">
+                    <div className="text-[11px] font-medium text-muted mb-1.5">
+                        New — secondary (providers list / other ways)
+                    </div>
+                    <OutlinedProviderButton provider={provider} label={label} onClick={noop} />
+                </div>
+                <div className="flex flex-col">
+                    <div className="text-[11px] font-medium text-muted mb-1.5">
+                        New — ProviderButton, outline (default)
+                    </div>
+                    <ProviderButton provider={provider} label={label} onClick={noop} />
+                </div>
+                <div className="flex flex-col">
+                    <div className="text-[11px] font-medium text-muted mb-1.5">New — ProviderButton, filled (dark)</div>
+                    <ProviderButton provider={provider} label={label} onClick={noop} variant="filled" />
+                </div>
+                <div className="flex flex-col">
+                    <div className="text-[11px] font-medium text-muted mb-1.5">
+                        New — ProviderButton, align=&quot;start&quot;
+                    </div>
+                    <ProviderButton provider={provider} label={label} onClick={noop} align="start" />
+                </div>
+                {legacyImgSrc && (
+                    <div className="flex flex-col">
+                        <div className="text-[11px] font-medium text-muted mb-1.5">
+                            Legacy — pre-PR shell with remote &lt;img&gt;
+                        </div>
+                        {/* Visual replica only — onClick omitted so the preview doesn't fire a real Firebase redirect. */}
+                        <Button
+                            variant="outline"
+                            className="w-full py-5 flex rounded-lg hover:shadow-sm transition duration-150 text-center"
+                        >
+                            <img className="size-6" src={legacyImgSrc} loading="lazy" alt={legacyImgAlt ?? ''} />
+                            <span className="text-sm font-semibold">{label}</span>
+                        </Button>
+                    </div>
+                )}
+            </div>
+        </Frame>
+    );
+}
+
 export default function SigninPreview() {
+    const { t } = useUITranslation();
     return (
         <div className="min-h-screen bg-muted-background p-6 overflow-y-auto">
             <div className="max-w-[1400px] mx-auto">
@@ -214,22 +224,22 @@ export default function SigninPreview() {
                         Dev preview. Visit without <code>?preview=signin</code> for the real flow.
                     </p>
                     <div className="text-xs text-muted mt-3">
-                        Badges describe what the UI / server flow has{" "}
+                        Badges describe what the UI / server flow has{' '}
                         <strong className="text-foreground">verified</strong> by the time the screen renders — not
                         speculative properties of the email. <strong className="text-foreground">—</strong> means the
                         gate hasn't been checked yet at this step.
                     </div>
                     <div className="text-xs text-muted mt-2 flex flex-wrap gap-3">
                         <span>
-                            <strong className="text-foreground">customer domain</strong> — confirmed via 403 from{" "}
+                            <strong className="text-foreground">customer domain</strong> — confirmed via 403 from{' '}
                             <code>/auth/ensure-user</code>
                         </span>
                         <span>
-                            <strong className="text-foreground">sign-up allowed</strong> — 412 from{" "}
+                            <strong className="text-foreground">sign-up allowed</strong> — 412 from{' '}
                             <code>/auth/ensure-user</code> (✓), or 403 fired (✗)
                         </span>
                         <span>
-                            <strong className="text-foreground">auth-tenant</strong> — <code>/api/resolve-tenant</code>{" "}
+                            <strong className="text-foreground">auth-tenant</strong> — <code>/api/resolve-tenant</code>{' '}
                             ran and matched (or didn't)
                         </span>
                         <span>
@@ -243,7 +253,7 @@ export default function SigninPreview() {
                     <Frame
                         title="Email step (empty)"
                         sub="Initial entry. No server check has run yet."
-                        meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "na", providerKnown: "na" }}
+                        meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'na', providerKnown: 'na' }}
                     >
                         <EmailStep onProceed={noop} />
                     </Frame>
@@ -251,7 +261,7 @@ export default function SigninPreview() {
                     <Frame
                         title="Email step (prefilled)"
                         sub="Same screen with text in the field — nothing checked, just a UI state."
-                        meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "na", providerKnown: "na" }}
+                        meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'na', providerKnown: 'na' }}
                     >
                         <EmailStep initialEmail="charles@vertesiahq.com" onProceed={noop} />
                     </Frame>
@@ -259,11 +269,14 @@ export default function SigninPreview() {
 
                 <FlowArrow label="POST /api/resolve-tenant" />
 
-                <Section title="2. Tenant step" sub="One of three variations renders based on the resolve-tenant result.">
+                <Section
+                    title="2. Tenant step"
+                    sub="One of three variations renders based on the resolve-tenant result."
+                >
                     <Frame
                         title="Tenant — no match"
                         sub="Reached because /api/resolve-tenant returned no match. Renders the generic providers list."
-                        meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "no", providerKnown: "na" }}
+                        meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'no', providerKnown: 'na' }}
                     >
                         <ProvidersStep email="charles@gmail.com" onBack={noop} onProviderClicked={noop} />
                     </Frame>
@@ -271,17 +284,27 @@ export default function SigninPreview() {
                     <Frame
                         title="Tenant — Google"
                         sub="Reached because /api/resolve-tenant returned a tenant with provider=google."
-                        meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "yes", providerKnown: "yes" }}
+                        meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'yes', providerKnown: 'yes' }}
                     >
-                        <TenantStep email="alice@vertesia.io" tenant={MOCK_TENANT_GOOGLE} onBack={noop} onProviderClicked={noop} />
+                        <TenantStep
+                            email="alice@vertesia.io"
+                            tenant={MOCK_TENANT_GOOGLE}
+                            onBack={noop}
+                            onProviderClicked={noop}
+                        />
                     </Frame>
 
                     <Frame
                         title="Tenant — generic OIDC"
                         sub="Reached with tenant.provider=oidc → no branded IdP, fallback wording."
-                        meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "yes", providerKnown: "no" }}
+                        meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'yes', providerKnown: 'no' }}
                     >
-                        <TenantStep email="user@acme.com" tenant={MOCK_TENANT_OIDC} onBack={noop} onProviderClicked={noop} />
+                        <TenantStep
+                            email="user@acme.com"
+                            tenant={MOCK_TENANT_OIDC}
+                            onBack={noop}
+                            onProviderClicked={noop}
+                        />
                     </Frame>
                 </Section>
 
@@ -291,7 +314,7 @@ export default function SigninPreview() {
                     <Frame
                         title="Auth pending — Google"
                         sub="Provider picked; OAuth redirect in flight. Server checks not started."
-                        meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "na", providerKnown: "yes" }}
+                        meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'na', providerKnown: 'yes' }}
                     >
                         <AuthPending provider="google" />
                     </Frame>
@@ -299,7 +322,7 @@ export default function SigninPreview() {
                     <Frame
                         title="Auth pending — OIDC / Fallback"
                         sub="OIDC redirect in flight; auth-tenant must have matched to get here."
-                        meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "yes", providerKnown: "yes" }}
+                        meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'yes', providerKnown: 'yes' }}
                     >
                         <AuthPending provider="oidc" />
                     </Frame>
@@ -311,7 +334,7 @@ export default function SigninPreview() {
                     <Frame
                         title="Blocked — Customer+Tenant w/o Invite"
                         sub="403 from /auth/ensure-user. Path went through auth-tenant match; tenantName from tenant.label."
-                        meta={{ customerDomain: "yes", signupAllowed: "no", authTenant: "yes", providerKnown: "na" }}
+                        meta={{ customerDomain: 'yes', signupAllowed: 'no', authTenant: 'yes', providerKnown: 'na' }}
                     >
                         <TenantBlockedStep email="alice@acme-corp.com" tenantName="Acme Corp" onBack={noop} />
                     </Frame>
@@ -319,7 +342,7 @@ export default function SigninPreview() {
                     <Frame
                         title="Blocked — Customer w/o Invite"
                         sub="403 with no auth-tenant in path → no tenant name available, i18n fallback used."
-                        meta={{ customerDomain: "yes", signupAllowed: "no", authTenant: "no", providerKnown: "na" }}
+                        meta={{ customerDomain: 'yes', signupAllowed: 'no', authTenant: 'no', providerKnown: 'na' }}
                     >
                         <TenantBlockedStep email="user@acme.com" onBack={noop} />
                     </Frame>
@@ -327,7 +350,7 @@ export default function SigninPreview() {
                     <Frame
                         title="Success — New Self-Serve User Onboard"
                         sub="412 from /auth/ensure-user — no customer block, no existing user, no invite."
-                        meta={{ customerDomain: "no", signupAllowed: "yes", authTenant: "na", providerKnown: "na" }}
+                        meta={{ customerDomain: 'no', signupAllowed: 'yes', authTenant: 'na', providerKnown: 'na' }}
                     >
                         <SignupForm onSignup={noop} goBack={noop} />
                     </Frame>
@@ -341,7 +364,7 @@ export default function SigninPreview() {
                         <Frame
                             title="Returning — personal Google"
                             sub="lastProvider=google, no tenantName → last sign-in was personal OAuth."
-                            meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "no", providerKnown: "yes" }}
+                            meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'no', providerKnown: 'yes' }}
                         >
                             <ReturningStep session={MOCK_RETURNING_GOOGLE} onNotYou={noop} onProviderClicked={noop} />
                         </Frame>
@@ -349,46 +372,150 @@ export default function SigninPreview() {
                         <Frame
                             title="Returning Tenant — Microsoft"
                             sub="lastProvider=microsoft, tenantName set → branded tenant last time."
-                            meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "yes", providerKnown: "yes" }}
+                            meta={{
+                                customerDomain: 'na',
+                                signupAllowed: 'na',
+                                authTenant: 'yes',
+                                providerKnown: 'yes',
+                            }}
                         >
-                            <ReturningStep session={MOCK_RETURNING_TENANT_MS} onNotYou={noop} onProviderClicked={noop} />
+                            <ReturningStep
+                                session={MOCK_RETURNING_TENANT_MS}
+                                onNotYou={noop}
+                                onProviderClicked={noop}
+                            />
                         </Frame>
 
                         <Frame
                             title="Returning Tenant — OIDC / Fallback"
                             sub="lastProvider=oidc, tenantName set → generic/unbranded tenant last time."
-                            meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "yes", providerKnown: "yes" }}
+                            meta={{
+                                customerDomain: 'na',
+                                signupAllowed: 'na',
+                                authTenant: 'yes',
+                                providerKnown: 'yes',
+                            }}
                         >
-                            <ReturningStep session={MOCK_RETURNING_TENANT_OIDC} onNotYou={noop} onProviderClicked={noop} />
+                            <ReturningStep
+                                session={MOCK_RETURNING_TENANT_OIDC}
+                                onNotYou={noop}
+                                onProviderClicked={noop}
+                            />
                         </Frame>
                     </Section>
 
                     <div className="mt-6">
                         <Section
-                            title="User + org display — alt A (single section)"
-                            sub="Company between user name and email, all in one section."
-                            cols={2}
+                            title="Provider buttons — new wrapper vs legacy"
+                            sub="Each column: PrimaryButton + OutlinedProviderButton + the new ProviderButton primitive in three variants, with the pre-PR shell at the bottom (OIDC has no pre-PR equivalent)."
+                            cols={3}
                         >
-                            <Frame title="Alt A — Tenant Microsoft">
-                                <UserOrgDisplaySingle session={MOCK_RETURNING_TENANT_MS} />
-                            </Frame>
-                            <Frame title="Alt A — Tenant OIDC / Fallback">
-                                <UserOrgDisplaySingle session={MOCK_RETURNING_TENANT_OIDC} />
-                            </Frame>
+                            <ProviderComparisonFrame
+                                provider="google"
+                                label={t('auth.continueWithGoogle')}
+                                legacyImgSrc="https://www.svgrepo.com/show/475656/google-color.svg"
+                                legacyImgAlt="google logo"
+                            />
+                            <ProviderComparisonFrame
+                                provider="microsoft"
+                                label={t('auth.continueWithMicrosoft')}
+                                legacyImgSrc="https://learn.microsoft.com/en-us/entra/identity-platform/media/howto-add-branding-in-apps/ms-symbollockup_mssymbol_19.svg"
+                                legacyImgAlt="microsoft logo"
+                            />
+                            <ProviderComparisonFrame
+                                provider="github"
+                                label={t('auth.continueWithGithub')}
+                                legacyImgSrc="https://www.svgrepo.com/show/503359/github.svg"
+                                legacyImgAlt="github logo"
+                            />
+                            <ProviderComparisonFrame provider="oidc" label={t('auth.tenant.continueGeneric')} />
                         </Section>
                     </div>
 
                     <div className="mt-6">
                         <Section
-                            title="User + org display — alt B (email on bottom)"
-                            sub="Name + company on top; email moved to a separate bottom row with Mail icon, matching TenantStep."
+                            title="Auxiliary buttons — raw vs composableai Button"
+                            sub="Comparing the existing raw &lt;button&gt; implementations against composableai-Button-based primitives. Bottom row is what the new step components actually render."
                             cols={2}
                         >
-                            <Frame title="Alt B — Tenant Microsoft">
-                                <UserOrgDisplayEmailBottom session={MOCK_RETURNING_TENANT_MS} />
+                            <Frame title="Plain link (Use a different sign-in method / Cancel)">
+                                <div className="w-full max-w-[420px] flex flex-col gap-4">
+                                    <div className="flex flex-col">
+                                        <div className="text-[11px] font-medium text-muted mb-1.5">
+                                            A — raw &lt;button&gt; (pre-conversion)
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="cursor-pointer h-9 inline-flex items-center justify-center text-sm font-medium text-muted hover:text-foreground transition"
+                                        >
+                                            Use a different sign-in method
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <div className="text-[11px] font-medium text-muted mb-1.5">
+                                            B — Button variant=&quot;link&quot;
+                                        </div>
+                                        <Button variant="link">Use a different sign-in method</Button>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <div className="text-[11px] font-medium text-muted mb-1.5">
+                                            C — Button variant=&quot;ghost&quot;
+                                        </div>
+                                        <Button variant="ghost">Use a different sign-in method</Button>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <div className="text-[11px] font-medium text-muted mb-1.5">
+                                            D — PlainLinkButton (new primitive, visually matches A)
+                                        </div>
+                                        <PlainLinkButton>Use a different sign-in method</PlainLinkButton>
+                                    </div>
+                                </div>
                             </Frame>
-                            <Frame title="Alt B — Tenant OIDC / Fallback">
-                                <UserOrgDisplayEmailBottom session={MOCK_RETURNING_TENANT_OIDC} />
+
+                            <Frame title="Loading state (Authenticating…)">
+                                <div className="w-full max-w-[420px] flex flex-col gap-4">
+                                    <div className="flex flex-col">
+                                        <div className="text-[11px] font-medium text-muted mb-1.5">
+                                            A — raw &lt;button&gt; disabled, opacity-90 (pre-conversion)
+                                        </div>
+                                        <button
+                                            type="button"
+                                            disabled
+                                            className="h-[42px] inline-flex items-center justify-center gap-2.5 rounded-md bg-foreground text-background text-sm font-medium opacity-90"
+                                        >
+                                            <Spinner />
+                                            <span>Authenticating</span>
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <div className="text-[11px] font-medium text-muted mb-1.5">
+                                            B — Button variant=&quot;primary&quot; disabled (different blue + 50%
+                                            opacity)
+                                        </div>
+                                        <Button variant="primary" disabled>
+                                            <Spinner />
+                                            <span>Authenticating</span>
+                                        </Button>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <div className="text-[11px] font-medium text-muted mb-1.5">
+                                            C — PrimaryButton disabled (50% opacity — looks muted)
+                                        </div>
+                                        <PrimaryButton disabled>
+                                            <Spinner />
+                                            <span>Authenticating</span>
+                                        </PrimaryButton>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <div className="text-[11px] font-medium text-muted mb-1.5">
+                                            D — PrimaryButton loading (90% opacity — &quot;active but waiting&quot;)
+                                        </div>
+                                        <PrimaryButton loading>
+                                            <Spinner />
+                                            <span>Authenticating</span>
+                                        </PrimaryButton>
+                                    </div>
+                                </div>
                             </Frame>
                         </Section>
                     </div>
