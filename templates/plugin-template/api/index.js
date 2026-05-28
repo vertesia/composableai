@@ -7,25 +7,25 @@
 import app from '../lib/server.js';
 
 export async function GET(request) {
-  return await app.fetch(request);
+    return await app.fetch(request);
 }
 
 export async function POST(request) {
-  return await app.fetch(request);
+    return await app.fetch(request);
 }
 
 export async function PUT(request) {
-  return await app.fetch(request);
+    return await app.fetch(request);
 }
 
 export async function PATCH(request) {
-  return await app.fetch(request);
+    return await app.fetch(request);
 }
 
 export async function DELETE(request) {
-  return await app.fetch(request);
+    return await app.fetch(request);
 }
 
 export async function OPTIONS(request) {
-  return await app.fetch(request);
+    return await app.fetch(request);
 }

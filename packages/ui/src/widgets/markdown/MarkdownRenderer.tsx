@@ -23,24 +23,17 @@ import { remarkDirectiveHandler } from './remarkDirectiveHandler';
 type MarkdownTree = Parameters<typeof visit>[0];
 type MarkdownNode = { value?: unknown };
 type MarkdownParent = { children?: unknown[] };
-type RemarkPluginList = NonNullable<React.ComponentProps<typeof Markdown>["remarkPlugins"]>;
+type RemarkPluginList = NonNullable<React.ComponentProps<typeof Markdown>['remarkPlugins']>;
 
 // Custom URL schemes that we handle in our components
-const ALLOWED_CUSTOM_SCHEMES = [
-    'artifact:',
-    'image:',
-    'store:',
-    'document:',
-    'document://',
-    'collection:',
-];
+const ALLOWED_CUSTOM_SCHEMES = ['artifact:', 'image:', 'store:', 'document:', 'document://', 'collection:'];
 
 /**
  * Custom URL transform that allows our custom schemes while using
  * the default transform for standard URLs (which sanitizes unsafe schemes).
  */
 function customUrlTransform(url: string): string {
-    if (ALLOWED_CUSTOM_SCHEMES.some(scheme => url.startsWith(scheme))) {
+    if (ALLOWED_CUSTOM_SCHEMES.some((scheme) => url.startsWith(scheme))) {
         return url;
     }
     return defaultUrlTransform(url);
@@ -109,7 +102,7 @@ export function MarkdownRenderer({
     const codeBlockRegistry = useCodeBlockRendererRegistry();
     const normalizedMarkdown = React.useMemo(
         () => normalizeDirectives(normalizeCustomSchemeLinks(preprocessMathDelimiters(children))),
-        [children]
+        [children],
     );
 
     // Remark plugins (markdown parsing)
@@ -136,11 +129,14 @@ export function MarkdownRenderer({
     const rehypePluginsArray = React.useMemo(() => [rehypeKatex], []);
 
     // Remark-rehype bridge options (custom AST handlers for definition lists)
-    const remarkRehypeOptions = React.useMemo(() => ({
-        handlers: {
-            ...defListHastHandlers,
-        },
-    }), []);
+    const remarkRehypeOptions = React.useMemo(
+        () => ({
+            handlers: {
+                ...defListHastHandlers,
+            },
+        }),
+        [],
+    );
 
     const componentsWithOverrides = React.useMemo(() => {
         const baseComponents = components || {};
@@ -214,11 +210,7 @@ export function MarkdownRenderer({
             );
         };
 
-        const LinkComponent = (props: {
-            node?: Element;
-            href?: string;
-            children?: React.ReactNode;
-        }) => {
+        const LinkComponent = (props: { node?: Element; href?: string; children?: React.ReactNode }) => {
             const { node, href, children: linkChildren, ...rest } = props;
             return (
                 <MarkdownLink
@@ -226,7 +218,11 @@ export function MarkdownRenderer({
                     href={href}
                     className={linkClassName}
                     artifactRunId={artifactRunId}
-                    ExistingLink={typeof ExistingLink === 'function' ? ExistingLink as React.ComponentType<MarkdownLinkProps> : undefined}
+                    ExistingLink={
+                        typeof ExistingLink === 'function'
+                            ? (ExistingLink as React.ComponentType<MarkdownLinkProps>)
+                            : undefined
+                    }
                     {...rest}
                 >
                     {linkChildren}
@@ -257,7 +253,11 @@ export function MarkdownRenderer({
                     alt={alt}
                     className={imageClassName}
                     artifactRunId={artifactRunId}
-                    ExistingImg={typeof ExistingImg === 'function' ? ExistingImg as React.ComponentType<MarkdownImageProps> : undefined}
+                    ExistingImg={
+                        typeof ExistingImg === 'function'
+                            ? (ExistingImg as React.ComponentType<MarkdownImageProps>)
+                            : undefined
+                    }
                     {...rest}
                 />
             );

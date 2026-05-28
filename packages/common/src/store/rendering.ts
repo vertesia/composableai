@@ -4,8 +4,8 @@
  * Types for rendering content to various formats (PDF, DOCX, images)
  */
 
-import type { ImageRenditionFormat, MarkdownRenditionFormat } from "./store.js";
-import { WorkflowExecutionStatus, type WorkflowRunStatus } from "./workflow.js";
+import type { ImageRenditionFormat, MarkdownRenditionFormat } from './store.js';
+import { WorkflowExecutionStatus, type WorkflowRunStatus } from './workflow.js';
 
 // ============================================================================
 // Workflow Vars Types (Discriminated Union)
@@ -84,9 +84,7 @@ export interface MarkdownRenditionVars extends BaseRenditionVars {
 export type GenerateRenditionVars = ImageRenditionVars | MarkdownRenditionVars;
 
 /** Type guard for markdown rendition vars */
-export function isMarkdownRenditionVars(
-    vars: GenerateRenditionVars
-): vars is MarkdownRenditionVars {
+export function isMarkdownRenditionVars(vars: GenerateRenditionVars): vars is MarkdownRenditionVars {
     return vars.format === 'pdf' || vars.format === 'docx';
 }
 
@@ -185,7 +183,7 @@ export interface GenerateRenditionsResult {
  */
 export interface RenderMarkdownResponse {
     /** Rendering status */
-    status: "success";
+    status: 'success';
     /** Output format */
     format: MarkdownRenditionFormat;
     /** Download URL for the rendered document */
@@ -240,9 +238,11 @@ export interface RenderSlidesDeckResult {
 }
 
 export function isWorkflowTerminalStatus(status: WorkflowExecutionStatus): boolean {
-    return status === WorkflowExecutionStatus.COMPLETED
-        || status === WorkflowExecutionStatus.FAILED
-        || status === WorkflowExecutionStatus.CANCELED
-        || status === WorkflowExecutionStatus.TERMINATED
-        || status === WorkflowExecutionStatus.TIMED_OUT;
+    return (
+        status === WorkflowExecutionStatus.COMPLETED ||
+        status === WorkflowExecutionStatus.FAILED ||
+        status === WorkflowExecutionStatus.CANCELED ||
+        status === WorkflowExecutionStatus.TERMINATED ||
+        status === WorkflowExecutionStatus.TIMED_OUT
+    );
 }

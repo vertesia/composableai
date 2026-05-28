@@ -13,11 +13,11 @@ export function PluginLayout({ children }: PluginLayoutProps) {
 
     return (
         <AppLayout
-            sidebar={(
+            sidebar={
                 <NestedNavigationContext basePath={basePath}>
                     <PluginSidebar />
                 </NestedNavigationContext>
-            )}
+            }
             sidebarClassName={sidebarBg}
             mainNav={<PluginTopNav />}
         >

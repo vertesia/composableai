@@ -1,5 +1,5 @@
-import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
-import type { EmailRouteData } from "@vertesia/common";
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type { EmailRouteData } from '@vertesia/common';
 
 /**
  * Request payload for sending an email via the agent.
@@ -110,7 +110,7 @@ export interface CreateRouteRequest {
  */
 export class EmailApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/email");
+        super(parent, '/api/v1/email');
     }
 
     /**
@@ -118,7 +118,7 @@ export class EmailApi extends ApiTopic {
      * Creates a route key if not provided, sends via Resend, and returns routing info.
      */
     send(request: SendEmailRequest): Promise<SendEmailResponse> {
-        return this.post("/send", { payload: request });
+        return this.post('/send', { payload: request });
     }
 
     /**
@@ -127,7 +127,7 @@ export class EmailApi extends ApiTopic {
      * @deprecated Use getRoute() instead
      */
     resolveRoute(routeKey: string): Promise<EmailRouteData> {
-        return this.post("/resolve-route", { payload: { route_key: routeKey } });
+        return this.post('/resolve-route', { payload: { route_key: routeKey } });
     }
 
     // ============================================================================
@@ -151,7 +151,7 @@ export class EmailApi extends ApiTopic {
      * ```
      */
     createRoute(request: CreateRouteRequest): Promise<CreateRouteResponse> {
-        return this.post("/routes", { payload: request });
+        return this.post('/routes', { payload: request });
     }
 
     /**

@@ -2,7 +2,12 @@ import type React from 'react';
 import { useMemo } from 'react';
 import type { VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
-import { ArtifactContentRenderer, type ExpandRenderType, makeSvgResponsive, sanitizeSvg } from './ArtifactContentRenderer';
+import {
+    ArtifactContentRenderer,
+    type ExpandRenderType,
+    makeSvgResponsive,
+    sanitizeSvg,
+} from './ArtifactContentRenderer';
 import { useCodeBlockContext } from './CodeBlockContext';
 import { CodeBlockErrorBoundary, CodeBlockPlaceholder } from './CodeBlockPlaceholder';
 import type { CodeBlockRendererProps } from './CodeBlockRendering';
@@ -30,15 +35,10 @@ export function isIncompleteJson(code: string): boolean {
         const message = e instanceof Error ? e.message : '';
 
         // Common indicators of incomplete JSON during streaming
-        const incompleteIndicators = [
-            'unexpected end',
-            'unterminated string',
-            'expected',
-            'unexpected token',
-        ];
+        const incompleteIndicators = ['unexpected end', 'unterminated string', 'expected', 'unexpected token'];
 
         const lowerMessage = message.toLowerCase();
-        if (incompleteIndicators.some(ind => lowerMessage.includes(ind))) {
+        if (incompleteIndicators.some((ind) => lowerMessage.includes(ind))) {
             // Additional check: count brackets to see if they're unbalanced
             let braceCount = 0;
             let bracketCount = 0;
@@ -96,12 +96,9 @@ function parseChartJson(code: string): Record<string, unknown> | null {
 /**
  * Detects the chart library from a parsed spec
  */
-function detectChartLibrary(
-    spec: Record<string, unknown>
-): 'vega-lite' | null {
+function detectChartLibrary(spec: Record<string, unknown>): 'vega-lite' | null {
     // Detect Vega-Lite by $schema containing "vega"
-    const hasVegaSchema =
-        typeof spec.$schema === 'string' && spec.$schema.includes('vega');
+    const hasVegaSchema = typeof spec.$schema === 'string' && spec.$schema.includes('vega');
     const isExplicitVegaLite = spec.library === 'vega-lite' && 'spec' in spec;
 
     if (hasVegaSchema || isExplicitVegaLite) {
@@ -136,21 +133,11 @@ export function VegaLiteCodeBlockHandler({ code }: CodeBlockRendererProps) {
 
     // Show loading placeholder for incomplete JSON (streaming)
     if (incomplete) {
-        return (
-            <CodeBlockPlaceholder
-                type="chart"
-                message="Loading chart..."
-            />
-        );
+        return <CodeBlockPlaceholder type="chart" message="Loading chart..." />;
     }
 
     if (!chartSpec) {
-        return (
-            <CodeBlockPlaceholder
-                type="chart"
-                error="Invalid Vega-Lite specification"
-            />
-        );
+        return <CodeBlockPlaceholder type="chart" error="Invalid Vega-Lite specification" />;
     }
 
     // Render VegaLiteChart directly - bypass AgentChart routing
@@ -195,21 +182,11 @@ export function ChartCodeBlockHandler({ code }: CodeBlockRendererProps) {
 
     // Show loading placeholder for incomplete JSON (streaming)
     if (incomplete) {
-        return (
-            <CodeBlockPlaceholder
-                type="chart"
-                message="Loading chart..."
-            />
-        );
+        return <CodeBlockPlaceholder type="chart" message="Loading chart..." />;
     }
 
     if (!chartSpec) {
-        return (
-            <CodeBlockPlaceholder
-                type="chart"
-                error="Invalid Vega-Lite chart specification"
-            />
-        );
+        return <CodeBlockPlaceholder type="chart" error="Invalid Vega-Lite chart specification" />;
     }
 
     return (
@@ -226,12 +203,7 @@ export function MermaidCodeBlockHandler({ code }: CodeBlockRendererProps) {
     const trimmedCode = code.trim();
 
     if (!trimmedCode) {
-        return (
-            <CodeBlockPlaceholder
-                type="mermaid"
-                error="Empty diagram"
-            />
-        );
+        return <CodeBlockPlaceholder type="mermaid" error="Empty diagram" />;
     }
 
     return (
@@ -252,9 +224,7 @@ export function MockupCodeBlockHandler({ code }: CodeBlockRendererProps) {
     }, [code]);
 
     if (!processedSvg) {
-        return (
-            <CodeBlockPlaceholder type="code" error="Empty mockup" />
-        );
+        return <CodeBlockPlaceholder type="code" error="Empty mockup" />;
     }
 
     return (
@@ -291,8 +261,15 @@ export function ExpandCodeBlockHandler({ code, language }: CodeBlockRendererProp
         const type = language.split(':')[1] as ExpandRenderType;
         // Validate known types
         const validTypes: ExpandRenderType[] = [
-            'chart', 'vega-lite', 'table', 'markdown',
-            'fusion-fragment', 'mockup', 'code', 'image', 'auto'
+            'chart',
+            'vega-lite',
+            'table',
+            'markdown',
+            'fusion-fragment',
+            'mockup',
+            'code',
+            'image',
+            'auto',
         ];
         return validTypes.includes(type) ? type : 'auto';
     }, [language]);
@@ -304,39 +281,19 @@ export function ExpandCodeBlockHandler({ code, language }: CodeBlockRendererProp
     });
 
     if (!artifactRunId) {
-        return (
-            <CodeBlockPlaceholder
-                type="expand"
-                error="No artifact run ID available"
-            />
-        );
+        return <CodeBlockPlaceholder type="expand" error="No artifact run ID available" />;
     }
 
     if (isLoading) {
-        return (
-            <CodeBlockPlaceholder
-                type="expand"
-                message={`Loading ${artifactPath}...`}
-            />
-        );
+        return <CodeBlockPlaceholder type="expand" message={`Loading ${artifactPath}...`} />;
     }
 
     if (error) {
-        return (
-            <CodeBlockPlaceholder
-                type="expand"
-                error={`Failed to load artifact: ${error}`}
-            />
-        );
+        return <CodeBlockPlaceholder type="expand" error={`Failed to load artifact: ${error}`} />;
     }
 
     if (data === undefined) {
-        return (
-            <CodeBlockPlaceholder
-                type="expand"
-                error="No content found in artifact"
-            />
-        );
+        return <CodeBlockPlaceholder type="expand" error="No content found in artifact" />;
     }
 
     // Render with explicit type
@@ -373,16 +330,13 @@ export function isExpandLanguage(language: string | undefined): boolean {
  * This allows users to override default behavior for specific languages
  * while still getting built-in support for charts, diagrams, and proposals.
  */
-export function createDefaultCodeBlockHandlers(): Record<
-    string,
-    React.FunctionComponent<CodeBlockRendererProps>
-> {
+export function createDefaultCodeBlockHandlers(): Record<string, React.FunctionComponent<CodeBlockRendererProps>> {
     return {
         // Chart handler for generic chart code blocks (Vega-Lite only)
         chart: ChartCodeBlockHandler,
         // Vega-Lite handlers - always treat as Vega-Lite
         'vega-lite': VegaLiteCodeBlockHandler,
-        'vegalite': VegaLiteCodeBlockHandler,
+        vegalite: VegaLiteCodeBlockHandler,
 
         // Mermaid handler
         mermaid: MermaidCodeBlockHandler,

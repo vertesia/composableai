@@ -20,7 +20,7 @@ function $ne(value: unknown, arg: unknown) {
     return !$eq(value, arg);
 }
 function $or(value: unknown, arg: unknown[]) {
-    return arg.some(c => matchCondition(value, c));
+    return arg.some((c) => matchCondition(value, c));
 }
 function $in(value: unknown, arg: unknown[]) {
     return arg.includes(value);
@@ -75,7 +75,7 @@ const conditionFns: Record<string, ConditionFn> = {
     $lte: (value, arg) => typeof value === 'number' && typeof arg === 'number' && $lte(value, arg),
     $gte: (value, arg) => typeof value === 'number' && typeof arg === 'number' && $gte(value, arg),
     $or: (value, arg) => Array.isArray(arg) && $or(value, arg),
-}
+};
 
 export function matchCondition(value: unknown, conditions: unknown) {
     if (!isRecord(conditions)) {

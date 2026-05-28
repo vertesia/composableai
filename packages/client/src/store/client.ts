@@ -1,26 +1,31 @@
-import { AbstractFetchClient, type FETCH_FN, type IRequestRetryPolicy, type RequestError } from "@vertesia/api-fetch-client";
-import type { BulkOperationPayload, BulkOperationResponse } from "@vertesia/common";
-import { AgentsApi } from "./AgentsApi.js";
-import { CollectionsApi } from "./CollectionsApi.js";
-import { CostApi } from "./CostApi.js";
-import { DataApi } from "./DataApi.js";
-import { EmailApi } from "./EmailApi.js";
-import { IndexingApi } from "./IndexingApi.js";
-import { EmbeddingsApi } from "./EmbeddingsApi.js";
-import { ZenoClientNotFoundError } from "./errors.js";
-import { FilesApi } from "./FilesApi.js";
-import { HiveMemoryApi } from "./HiveMemoryApi.js";
-import { ObjectsApi } from "./ObjectsApi.js";
-import { PendingAsksApi } from "./PendingAsksApi.js";
-import { ProcessApi } from "./ProcessApi.js";
-import { QueryApi } from "./QueryApi.js";
-import { RenderingApi } from "./RenderingApi.js";
-import { SchedulesApi } from "./SchedulesApi.js";
-import { TaskApi } from "./TaskApi.js";
-import { ToolsApi } from "./ToolsApi.js";
-import { TypesApi } from "./TypesApi.js";
-import { VERSION, VERSION_HEADER } from "./version.js";
-import { WorkflowsApi } from "./WorkflowsApi.js";
+import {
+    AbstractFetchClient,
+    type FETCH_FN,
+    type IRequestRetryPolicy,
+    type RequestError,
+} from '@vertesia/api-fetch-client';
+import type { BulkOperationPayload, BulkOperationResponse } from '@vertesia/common';
+import { AgentsApi } from './AgentsApi.js';
+import { CollectionsApi } from './CollectionsApi.js';
+import { CostApi } from './CostApi.js';
+import { DataApi } from './DataApi.js';
+import { EmailApi } from './EmailApi.js';
+import { IndexingApi } from './IndexingApi.js';
+import { EmbeddingsApi } from './EmbeddingsApi.js';
+import { ZenoClientNotFoundError } from './errors.js';
+import { FilesApi } from './FilesApi.js';
+import { HiveMemoryApi } from './HiveMemoryApi.js';
+import { ObjectsApi } from './ObjectsApi.js';
+import { PendingAsksApi } from './PendingAsksApi.js';
+import { ProcessApi } from './ProcessApi.js';
+import { QueryApi } from './QueryApi.js';
+import { RenderingApi } from './RenderingApi.js';
+import { SchedulesApi } from './SchedulesApi.js';
+import { TaskApi } from './TaskApi.js';
+import { ToolsApi } from './ToolsApi.js';
+import { TypesApi } from './TypesApi.js';
+import { VERSION, VERSION_HEADER } from './version.js';
+import { WorkflowsApi } from './WorkflowsApi.js';
 
 export interface ZenoClientProps {
     serverUrl?: string;
@@ -34,16 +39,13 @@ export interface ZenoClientProps {
 
 function ensureDefined(serverUrl: string | undefined) {
     if (!serverUrl) {
-        throw new Error("zeno client serverUrl is required");
+        throw new Error('zeno client serverUrl is required');
     }
     return serverUrl;
 }
 
 export class ZenoClient extends AbstractFetchClient<ZenoClient> {
-
-    constructor(
-        opts: ZenoClientProps = {}
-    ) {
+    constructor(opts: ZenoClientProps = {}) {
         super(ensureDefined(opts.serverUrl), opts.fetch);
         if (opts.apikey) {
             this.withApiKey(opts.apikey);
@@ -59,7 +61,7 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
             } else {
                 return err;
             }
-        }
+        };
     }
 
     withApiVersion(version: string | number | null) {
@@ -72,22 +74,20 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     }
 
     withApiKey(apiKey: string | null) {
-        return this.withAuthCallback(
-            apiKey ? () => Promise.resolve(`Bearer ${apiKey}`) : undefined
-        );
+        return this.withAuthCallback(apiKey ? () => Promise.resolve(`Bearer ${apiKey}`) : undefined);
     }
 
     runOperation(payload: BulkOperationPayload): Promise<BulkOperationResponse> {
-        return this.post("/api/v1/operations", {
-            payload
+        return this.post('/api/v1/operations', {
+            payload,
         });
     }
 
     get initialHeaders() {
         return {
             ...super.initialHeaders,
-            [VERSION_HEADER]: VERSION
-        }
+            [VERSION_HEADER]: VERSION,
+        };
     }
 
     agents = new AgentsApi(this);

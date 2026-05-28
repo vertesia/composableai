@@ -23,7 +23,7 @@ describe('CodeBlockPlaceholder types', () => {
 
     it('should have config for all code block types', () => {
         const types = ['chart', 'mermaid', 'proposal', 'code', 'image', 'link'];
-        types.forEach(type => {
+        types.forEach((type) => {
             expect(TYPE_LABELS[type]).toBeTruthy();
             expect(TYPE_HEIGHTS[type]).toBeGreaterThan(0);
         });

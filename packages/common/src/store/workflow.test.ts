@@ -78,12 +78,14 @@ describe('CompactMessage converters', () => {
     describe('isLegacyMessage', () => {
         it('returns true for legacy messages', () => {
             expect(isLegacyMessage({ type: AgentMessageType.UPDATE })).toBe(true);
-            expect(isLegacyMessage({
-                type: AgentMessageType.ANSWER,
-                timestamp: 12345,
-                workflow_run_id: 'run-1',
-                message: 'test'
-            })).toBe(true);
+            expect(
+                isLegacyMessage({
+                    type: AgentMessageType.ANSWER,
+                    timestamp: 12345,
+                    workflow_run_id: 'run-1',
+                    message: 'test',
+                }),
+            ).toBe(true);
         });
 
         it('returns false for compact messages', () => {

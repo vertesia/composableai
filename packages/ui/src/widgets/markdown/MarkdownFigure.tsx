@@ -15,13 +15,7 @@ export interface MarkdownFigureProps {
  *
  * Usage in markdown: ![alt text](image-url "Caption text")
  */
-export function MarkdownFigure({
-    src,
-    alt,
-    caption,
-    className,
-    artifactRunId,
-}: MarkdownFigureProps) {
+export function MarkdownFigure({ src, alt, caption, className, artifactRunId }: MarkdownFigureProps) {
     const rawSrc = src || '';
     const { scheme } = parseUrlScheme(rawSrc);
 
@@ -30,9 +24,7 @@ export function MarkdownFigure({
         return (
             <figure className="my-4">
                 <img src={src} alt={alt} className={className} />
-                <figcaption className="mt-2 text-sm text-muted text-center italic">
-                    {caption}
-                </figcaption>
+                <figcaption className="mt-2 text-sm text-muted text-center italic">{caption}</figcaption>
             </figure>
         );
     }
@@ -76,13 +68,7 @@ function ResolvedFigure({
     }
 
     if (error) {
-        return (
-            <CodeBlockPlaceholder
-                type="image"
-                error={error}
-                onRetry={retry}
-            />
-        );
+        return <CodeBlockPlaceholder type="image" error={error} onRetry={retry} />;
     }
 
     if (!url) {
@@ -92,9 +78,7 @@ function ResolvedFigure({
     return (
         <figure className="my-4">
             <img src={url} alt={alt} className={className} />
-            <figcaption className="mt-2 text-sm text-muted text-center italic">
-                {caption}
-            </figcaption>
+            <figcaption className="mt-2 text-sm text-muted text-center italic">{caption}</figcaption>
         </figure>
     );
 }

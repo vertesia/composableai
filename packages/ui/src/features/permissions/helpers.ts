@@ -1,4 +1,4 @@
-import type { Permission } from "@vertesia/common";
+import type { Permission } from '@vertesia/common';
 
 type PermissionSet = Permission[] & {
     __AnyOf__?: boolean;

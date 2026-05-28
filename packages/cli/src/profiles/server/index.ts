@@ -1,9 +1,9 @@
-import { randomInt } from "node:crypto";
-import enquirer from "enquirer";
-import type { Server } from "node:http";
-import open from "open";
-import { handleCors } from "./cors.js";
-import { readRequestBody, startServer } from "./server.js";
+import { randomInt } from 'node:crypto';
+import enquirer from 'enquirer';
+import type { Server } from 'node:http';
+import open from 'open';
+import { handleCors } from './cors.js';
+import { readRequestBody, startServer } from './server.js';
 
 const { prompt } = enquirer;
 
@@ -26,16 +26,17 @@ export interface ConfigResult extends Required<ConfigPayload> {
     oauth_resource?: string;
 }
 
-
 export async function startConfigSession(
     config_url: string,
     payload: ConfigPayload,
     callback: (response: ConfigResult | undefined) => void | Promise<void>,
-    signal?: AbortSignal
+    signal?: AbortSignal,
 ) {
     if (!config_url) {
-        console.error("You are trying to update a profile without a config_url. Your profile was likely created with a previous version of the cli.");
-        console.error("Please, delete the profile and create it again.");
+        console.error(
+            'You are trying to update a profile without a config_url. Your profile was likely created with a previous version of the cli.',
+        );
+        console.error('Please, delete the profile and create it again.');
         process.exit(1);
     }
     let server: Server | undefined;
@@ -80,7 +81,7 @@ export async function startConfigSession(
             completed = true;
             cleanup();
         }
-        console.log("\nAuthentication interrupted.");
+        console.log('\nAuthentication interrupted.');
         process.exit(130);
     }
 
@@ -138,7 +139,7 @@ export async function startConfigSession(
             } catch (error) {
                 res.statusCode = 500;
                 res.end();
-                console.error("Error processing request:", error);
+                console.error('Error processing request:', error);
             }
         });
 
@@ -155,9 +156,9 @@ export async function startConfigSession(
         if (payload.project) params.append('project', payload.project);
         const url = `${config_url}?${params.toString()}`;
 
-        console.log("Opening browser to", url);
-        open(url).catch(error => {
-            console.error("Unable to open browser:", error instanceof Error ? error.message : String(error));
+        console.log('Opening browser to', url);
+        open(url).catch((error) => {
+            console.error('Unable to open browser:', error instanceof Error ? error.message : String(error));
         });
         console.log(`The session code is ${code}`);
 
@@ -171,7 +172,7 @@ export async function startConfigSession(
             const answer = await prompt<{ result?: string }>({
                 name: 'result',
                 type: 'input',
-                message: "The browser failed to send the token? Copy the token here",
+                message: 'The browser failed to send the token? Copy the token here',
             });
 
             // Check if aborted after prompt
@@ -184,7 +185,7 @@ export async function startConfigSession(
                 try {
                     await complete(readConfigResult(resultText));
                 } catch {
-                    console.error("Invalid token");
+                    console.error('Invalid token');
                     process.exit(1);
                 }
             }
@@ -217,12 +218,14 @@ function isConfigResult(value: unknown): value is ConfigResult {
     if (!value || typeof value !== 'object') {
         return false;
     }
-    return hasStringField(value, 'profile')
-        && hasStringField(value, 'account')
-        && hasStringField(value, 'project')
-        && hasStringField(value, 'studio_server_url')
-        && hasStringField(value, 'zeno_server_url')
-        && hasStringField(value, 'token');
+    return (
+        hasStringField(value, 'profile') &&
+        hasStringField(value, 'account') &&
+        hasStringField(value, 'project') &&
+        hasStringField(value, 'studio_server_url') &&
+        hasStringField(value, 'zeno_server_url') &&
+        hasStringField(value, 'token')
+    );
 }
 
 function hasStringField(value: object, key: string): boolean {

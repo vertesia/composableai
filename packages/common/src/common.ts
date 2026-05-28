@@ -7,7 +7,6 @@ export interface FindPayload {
     from_root?: string;
 }
 
-
 export interface GenericCommandResponse {
     status: string;
     message: string;
@@ -41,7 +40,7 @@ export interface BulkOperationPayload {
     /**
      * The operation name
      */
-    name: "change_type" | "create" | "delete" | "start_workflow" | "update";
+    name: 'change_type' | 'create' | 'delete' | 'start_workflow' | 'update';
 
     /**
      * The IDs of the objects to operate on
@@ -54,29 +53,29 @@ export interface BulkOperationPayload {
     params: Record<string, unknown>;
 }
 
-export interface BulkOperationResult<TOperation extends string = "generic"> {
+export interface BulkOperationResult<TOperation extends string = 'generic'> {
     operation: TOperation;
-    status: "in_progress" | "completed" | "failed";
+    status: 'in_progress' | 'completed' | 'failed';
 }
 
-export interface BulkObjectDeleteResult extends BulkOperationResult<"delete"> {
-    operation: "delete";
+export interface BulkObjectDeleteResult extends BulkOperationResult<'delete'> {
+    operation: 'delete';
     /** Number of documents deleted (including revisions) */
     deleted: number;
     /** IDs that were not found or user had no permission to delete */
     failed: string[];
 }
 
-export interface BulkObjectUpdateResult extends BulkOperationResult<"update"> {
-    operation: "update";
+export interface BulkObjectUpdateResult extends BulkOperationResult<'update'> {
+    operation: 'update';
     /** Number of documents successfully updated */
     updated: number;
     /** IDs that were not found, not authorized, or failed to update */
     failed: string[];
 }
 
-export interface BulkObjectCreateResult extends BulkOperationResult<"create"> {
-    operation: "create";
+export interface BulkObjectCreateResult extends BulkOperationResult<'create'> {
+    operation: 'create';
     /** Number of documents successfully created */
     created: number;
     /** Successfully created objects with their IDs */

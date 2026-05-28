@@ -30,13 +30,7 @@ function getPluginFactory<TOptions>(module: unknown, packageName: string): Plugi
 /**
  * Default external dependencies for widgets
  */
-const DEFAULT_EXTERNALS = [
-    'react',
-    'react-dom',
-    'react/jsx-runtime',
-    'react/jsx-dev-runtime',
-    'react-dom/client'
-];
+const DEFAULT_EXTERNALS = ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom/client'];
 
 /**
  * Compile widgets using Rollup
@@ -49,7 +43,7 @@ const DEFAULT_EXTERNALS = [
 export async function compileWidgets(
     widgets: WidgetMetadata[],
     outputDir: string,
-    config: WidgetConfig = {}
+    config: WidgetConfig = {},
 ): Promise<number> {
     if (widgets.length === 0) {
         return 0;
@@ -59,28 +53,25 @@ export async function compileWidgets(
         external = DEFAULT_EXTERNALS,
         tsconfig = './tsconfig.json',
         typescript: typescriptOptions = {},
-        minify = false
+        minify = false,
     } = config;
 
     // Build each widget separately to get individual bundles
     const buildPromises = widgets.map(async (widget) => {
         const typescript = getPluginFactory<RollupTypescriptOptions>(
             await import('@rollup/plugin-typescript'),
-            '@rollup/plugin-typescript'
+            '@rollup/plugin-typescript',
         );
         const ts = await import('typescript');
         const nodeResolve = getPluginFactory<RollupNodeResolveOptions>(
             await import('@rollup/plugin-node-resolve'),
-            '@rollup/plugin-node-resolve'
+            '@rollup/plugin-node-resolve',
         );
         const commonjs = getPluginFactory(await import('@rollup/plugin-commonjs'), '@rollup/plugin-commonjs');
         // @rollup/plugin-json — required when widgets transitively import JSON files,
         // e.g. @vertesia/ui pulls in i18n locale JSON via lib/esm/i18n/locales/*.json.
         // Without this, Rollup tries to parse JSON as JS and bails.
-        const json = getPluginFactory<RollupJsonOptions>(
-            await import('@rollup/plugin-json'),
-            '@rollup/plugin-json'
-        );
+        const json = getPluginFactory<RollupJsonOptions>(await import('@rollup/plugin-json'), '@rollup/plugin-json');
 
         const plugins: Plugin[] = [
             typescript({
@@ -88,7 +79,7 @@ export async function compileWidgets(
                 declaration: false,
                 sourceMap: true,
                 typescript: createRollupTypescript(ts, { watchMode: false }),
-                ...typescriptOptions
+                ...typescriptOptions,
             }),
             // Order matters: json must come before node-resolve so .json imports
             // are handled by it rather than fed to the default loader.
@@ -96,23 +87,23 @@ export async function compileWidgets(
             nodeResolve({
                 browser: true,
                 preferBuiltins: false,
-                extensions: ['.tsx', '.ts', '.jsx', '.js']
+                extensions: ['.tsx', '.ts', '.jsx', '.js'],
             }),
-            commonjs()
+            commonjs(),
         ];
 
         // Add minification if requested
         if (minify) {
             const terser = getPluginFactory<TerserOptions>(
                 await import('@rollup/plugin-terser'),
-                '@rollup/plugin-terser'
+                '@rollup/plugin-terser',
             );
             plugins.push(
                 terser({
                     compress: {
-                        drop_console: false
-                    }
-                })
+                        drop_console: false,
+                    },
+                }),
             );
         }
 
@@ -120,7 +111,7 @@ export async function compileWidgets(
             file: path.join(outputDir, `${widget.name}.js`),
             format: 'es',
             sourcemap: true,
-            inlineDynamicImports: true
+            inlineDynamicImports: true,
         };
 
         const rollupConfig: RollupOptions = {
@@ -140,7 +131,7 @@ export async function compileWidgets(
                 if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
                 if (warning.code === 'THIS_IS_UNDEFINED') return;
                 defaultHandler(warning);
-            }
+            },
         };
 
         const bundle = await rollup(rollupConfig);

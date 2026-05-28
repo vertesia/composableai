@@ -1,8 +1,12 @@
-import { Trans, useUITranslation } from '@vertesia/ui/i18n'
-import { useUserSession } from '@vertesia/ui/session'
+import { Trans, useUITranslation } from '@vertesia/ui/i18n';
+import { useUserSession } from '@vertesia/ui/session';
 
 const allowedOrgs = import.meta.env.VITE_VERTESIA_ALLOWED_ORGS
-    ? new Set(import.meta.env.VITE_VERTESIA_ALLOWED_ORGS.split(',').map((s: string) => s.trim()).filter(Boolean))
+    ? new Set(
+          import.meta.env.VITE_VERTESIA_ALLOWED_ORGS.split(',')
+              .map((s: string) => s.trim())
+              .filter(Boolean),
+      )
     : null;
 
 export function OrgGate({ children }: { children: React.ReactNode }) {
@@ -10,7 +14,15 @@ export function OrgGate({ children }: { children: React.ReactNode }) {
     const { t, i18n } = useUITranslation();
     if (allowedOrgs && !allowedOrgs.has(session.account?.id)) {
         return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', padding: '2rem' }}>
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100vh',
+                    padding: '2rem',
+                }}
+            >
                 <div style={{ textAlign: 'center', maxWidth: '480px' }}>
                     <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{t('access.denied')}</h1>
                     <p style={{ color: '#666' }}>

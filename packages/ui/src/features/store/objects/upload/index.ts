@@ -1,3 +1,3 @@
-export * from "./DocumentUploadModal";
-export * from "./useSmartFileUploadProcessing";
-export * from "./useUploadHandler";
+export * from './DocumentUploadModal';
+export * from './useSmartFileUploadProcessing';
+export * from './useUploadHandler';

@@ -15,7 +15,7 @@ export enum AgentEventType {
     AgentRunStarted = 'agent_run_started',
     AgentRunCompleted = 'agent_run_completed',
     LlmCall = 'llm_call',
-    ToolCall = 'tool_call'
+    ToolCall = 'tool_call',
 }
 
 /**
@@ -32,7 +32,6 @@ export enum LlmCallType {
     Checkpoint = 'checkpoint',
     /** Nested interaction call from within tools */
     NestedInteraction = 'nested_interaction',
-
 }
 
 /**
@@ -240,7 +239,6 @@ export interface NestedInteractionEvent extends LlmCallEvent {
     toolType: TelemetryToolType;
 }
 
-
 // ============================================================================
 // Union type for all events
 // ============================================================================
@@ -248,11 +246,7 @@ export interface NestedInteractionEvent extends LlmCallEvent {
 /**
  * @discriminator eventType
  */
-export type AgentEvent =
-    | AgentRunStartedEvent
-    | AgentRunCompletedEvent
-    | LlmCallEvent
-    | ToolCallEvent;
+export type AgentEvent = AgentRunStartedEvent | AgentRunCompletedEvent | LlmCallEvent | ToolCallEvent;
 
 /**
  * Workflow Analytics Types
@@ -274,12 +268,12 @@ export type WorkflowAnalyticsResolution = 'minute' | 'hour' | 'day' | 'week' | '
  * Dimensions to group analytics by
  */
 export type WorkflowAnalyticsGroupBy =
-    | 'model'           // Group by LLM model (claude-3-5-sonnet, gemini-1.5-pro, etc.)
-    | 'environment'     // Group by environment/driver (vertexai, bedrock, openai)
-    | 'tool'            // Group by tool name
-    | 'toolType'        // Group by tool type (builtin, interaction, remote, skill)
-    | 'agent'           // Group by agent/interaction name
-    | 'errorType';      // Group by error type
+    | 'model' // Group by LLM model (claude-3-5-sonnet, gemini-1.5-pro, etc.)
+    | 'environment' // Group by environment/driver (vertexai, bedrock, openai)
+    | 'tool' // Group by tool name
+    | 'toolType' // Group by tool type (builtin, interaction, remote, skill)
+    | 'agent' // Group by agent/interaction name
+    | 'errorType'; // Group by error type
 
 /**
  * Filter criteria for workflow analytics queries

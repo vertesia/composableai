@@ -1,5 +1,5 @@
-import type { ExecutionResponse } from "@llumiverse/common";
-import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import type { ExecutionResponse } from '@llumiverse/common';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     ComputeRunFacetPayload,
     ExecutionRun,
@@ -14,9 +14,9 @@ import type {
     RunSearchPayload,
     ToolResultsPayload,
     UserMessagePayload,
-} from "@vertesia/common";
-import type { VertesiaClient } from "./client.js";
-import { type EnhancedExecutionRun, enhanceExecutionRun } from "./InteractionOutput.js";
+} from '@vertesia/common';
+import type { VertesiaClient } from './client.js';
+import { type EnhancedExecutionRun, enhanceExecutionRun } from './InteractionOutput.js';
 
 export interface FilterOption {
     id: string;
@@ -35,7 +35,7 @@ export interface ComputeRunFacetsResponse {
 
 export class RunsApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/runs");
+        super(parent, '/api/v1/runs');
     }
 
     /**
@@ -51,11 +51,11 @@ export class RunsApi extends ApiTopic {
             ...filters,
         };
 
-        return this.get("/", { query: query });
+        return this.get('/', { query: query });
     }
 
     find(payload: FindPayload): Promise<ExecutionRun[]> {
-        return this.post("/find", {
+        return this.post('/find', {
             payload,
         });
     }
@@ -73,7 +73,7 @@ export class RunsApi extends ApiTopic {
 
     retrievePopulated<P = unknown>(id: string): Promise<PopulatedExecutionRun<P>> {
         return this.get(`/${id}`, {
-            query: { populate: "true" },
+            query: { populate: 'true' },
         });
     }
 
@@ -88,7 +88,9 @@ export class RunsApi extends ApiTopic {
         return this.get(`/filter-options/${field}`, { query });
     }
 
-    async create<ResultT = unknown, ParamsT = unknown>(payload: RunCreatePayload): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
+    async create<ResultT = unknown, ParamsT = unknown>(
+        payload: RunCreatePayload,
+    ): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
         const sessionTags = (this.client as VertesiaClient).sessionTags;
         if (sessionTags) {
             let tags = Array.isArray(sessionTags) ? sessionTags : [sessionTags];
@@ -99,7 +101,7 @@ export class RunsApi extends ApiTopic {
             }
             payload = { ...payload, tags };
         }
-        const r = await this.post<ExecutionRun<ParamsT>>("/", {
+        const r = await this.post<ExecutionRun<ParamsT>>('/', {
             payload,
         });
         return enhanceExecutionRun<ResultT, ParamsT>(r);
@@ -133,13 +135,13 @@ export class RunsApi extends ApiTopic {
      * @returns ComputeRunFacetsResponse[]
      **/
     computeFacets(query: ComputeRunFacetPayload): Promise<ComputeRunFacetsResponse> {
-        return this.post("/facets", {
+        return this.post('/facets', {
             payload: query,
         });
     }
 
     search(payload: RunSearchPayload): Promise<ExecutionRunRef[]> {
-        return this.post("/search", {
+        return this.post('/search', {
             payload,
         });
     }

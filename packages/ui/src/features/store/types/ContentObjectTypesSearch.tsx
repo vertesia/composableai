@@ -1,16 +1,27 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
-import { ContentObjectTypesTable } from "./ContentObjectTypesTable";
-import { useWatchSearchResult } from "./search/ObjectTypeSearchContext";
+import { ContentObjectTypesTable } from './ContentObjectTypesTable';
+import { useWatchSearchResult } from './search/ObjectTypeSearchContext';
 
-import { EmptyCollection, ErrorBox, Input, SelectBox, useDebounce, useIntersectionObserver, useToast } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import { useTypeRegistry } from "./TypeRegistryProvider.js";
+import {
+    EmptyCollection,
+    ErrorBox,
+    Input,
+    SelectBox,
+    useDebounce,
+    useIntersectionObserver,
+    useToast,
+} from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
+import { useTypeRegistry } from './TypeRegistryProvider.js';
 import { useUITranslation } from '@vertesia/ui/i18n';
 
-import { CreateOrUpdateTypeModal, type CreateOrUpdateTypePayload } from "./CreateOrUpdateTypeModal";
+import { CreateOrUpdateTypeModal, type CreateOrUpdateTypePayload } from './CreateOrUpdateTypeModal';
 
-enum ChunkableOptions { true = "Yes", false = "No" };
+enum ChunkableOptions {
+    true = 'Yes',
+    false = 'No',
+}
 
 interface ContentObjectTypesSearchProps {
     isDirty?: boolean;
@@ -25,23 +36,25 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
     const [isReady, setIsReady] = useState(false);
     const { search, isLoading, error, objects } = useWatchSearchResult();
 
-    const [searchTerm, setSearchTerm] = useState<string>("");
+    const [searchTerm, setSearchTerm] = useState<string>('');
     const debounceValue = useDebounce(searchTerm, 500);
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
-    useIntersectionObserver(loadMoreRef, () => {
-        if (isReady) search.loadMore();
-    }, { deps: [isReady, search] });
+    useIntersectionObserver(
+        loadMoreRef,
+        () => {
+            if (isReady) search.loadMore();
+        },
+        { deps: [isReady, search] },
+    );
 
     useEffect(() => {
-        search.search()
-            .then(() => setIsReady(true));
+        search.search().then(() => setIsReady(true));
     }, [search]);
 
     useEffect(() => {
         search.query.name = debounceValue;
-        search.search()
-            .then(() => setIsReady(true));
+        search.search().then(() => setIsReady(true));
     }, [debounceValue, search]);
 
     const [chunkable, setChunkable] = useState<string | undefined>(undefined);
@@ -50,9 +63,8 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
     };
 
     useEffect(() => {
-        search.query.chunkable = chunkable ? chunkable === "Yes" : undefined
-        search.search()
-            .then(() => setIsReady(true));
+        search.query.chunkable = chunkable ? chunkable === 'Yes' : undefined;
+        search.search().then(() => setIsReady(true));
     }, [chunkable, search]);
 
     useEffect(() => {
@@ -67,57 +79,72 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
     };
 
     if (error) {
-        return (
-            <ErrorBox title={t('store.failedToFetchTypes')}>{error.message}</ErrorBox>
-        );
-    };
+        return <ErrorBox title={t('store.failedToFetchTypes')}>{error.message}</ErrorBox>;
+    }
 
     const onCloseCreateModal = async (payload?: CreateOrUpdateTypePayload) => {
         if (!payload) {
             setShowCreateModal(false);
             return Promise.resolve();
         }
-        return store.types.create(payload).then(async () => {
-            toast({
-                status: "success",
-                title: t('store.typeCreated'),
-                duration: 2000
+        return store.types
+            .create(payload)
+            .then(async () => {
+                toast({
+                    status: 'success',
+                    title: t('store.typeCreated'),
+                    duration: 2000,
+                });
+                reloadTypes();
+                search.search().then(() => setIsReady(true));
+            })
+            .catch((err) => {
+                toast({
+                    status: 'error',
+                    title: t('store.errorCreatingType'),
+                    description: err.message,
+                    duration: 5000,
+                });
             });
-            reloadTypes();
-            search.search().then(() => setIsReady(true));
-        }).catch(err => {
-            toast({
-                status: "error",
-                title: t('store.errorCreatingType'),
-                description: err.message,
-                duration: 5000
-            });
-        });
     };
 
     return (
         <div className="flex flex-col flex-1 min-h-0">
             <div className="flex flex-shrink-0 gap-4">
                 <Input placeholder={t('store.filterByName')} value={searchTerm} onChange={setSearchTerm} />
-                <SelectBox className="w-60" isClearable options={Object.values(ChunkableOptions)} value={chunkable} onChange={onChunkableChange} placeholder={t('store.isChunkable')} />
+                <SelectBox
+                    className="w-60"
+                    isClearable
+                    options={Object.values(ChunkableOptions)}
+                    value={chunkable}
+                    onChange={onChunkableChange}
+                    placeholder={t('store.isChunkable')}
+                />
             </div>
             <div className="flex flex-col w-full flex-1 min-h-0 border rounded-md my-2">
                 <div className="flex-1 min-h-0 overflow-y-auto">
-                    {
-                        (!isLoading && objects?.length === 0) ? (
-                            <EmptyCollection title={t('store.noType')} buttonLabel={t('store.createType')} onClick={onOpenCreateModal}>
-                                {t('store.getStartedTypes')}
-                            </EmptyCollection >
-                        ) : (
-                            <>
-                                <ContentObjectTypesTable objects={objects} isLoading={isLoading} />
-                                <div ref={loadMoreRef} className="h-4 w-full" />
-                            </>
-                        )
-                    }
-                    <CreateOrUpdateTypeModal okLabel="Create" title={t('store.createType')} isOpen={showCreateModal} onClose={onCloseCreateModal} />
+                    {!isLoading && objects?.length === 0 ? (
+                        <EmptyCollection
+                            title={t('store.noType')}
+                            buttonLabel={t('store.createType')}
+                            onClick={onOpenCreateModal}
+                        >
+                            {t('store.getStartedTypes')}
+                        </EmptyCollection>
+                    ) : (
+                        <>
+                            <ContentObjectTypesTable objects={objects} isLoading={isLoading} />
+                            <div ref={loadMoreRef} className="h-4 w-full" />
+                        </>
+                    )}
+                    <CreateOrUpdateTypeModal
+                        okLabel="Create"
+                        title={t('store.createType')}
+                        isOpen={showCreateModal}
+                        onClose={onCloseCreateModal}
+                    />
                 </div>
             </div>
         </div>
-    )
+    );
 }

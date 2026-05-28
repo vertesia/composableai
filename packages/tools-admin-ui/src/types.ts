@@ -106,7 +106,7 @@ export interface ResourceData {
  * Formats a kebab/snake-case name into a title.
  */
 function formatTitle(name: string): string {
-    return name.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return name.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /**
@@ -178,11 +178,7 @@ export function buildResourceData(
     }
 
     // --- Tools (url format: "tools/{collection}") ---
-    const toolCounts = countPerCollection(
-        toolsResp.tools,
-        toolsResp.collections,
-        (t) => t.url?.split('/').pop(),
-    );
+    const toolCounts = countPerCollection(toolsResp.tools, toolsResp.collections, (t) => t.url?.split('/').pop());
     for (const col of toolsResp.collections) {
         collections.push({
             name: col.name,
@@ -203,11 +199,7 @@ export function buildResourceData(
     }
 
     // --- Skills (url format: "skills/{collection}") ---
-    const skillCounts = countPerCollection(
-        skillsResp.tools,
-        skillsResp.collections,
-        (t) => t.url?.split('/').pop(),
-    );
+    const skillCounts = countPerCollection(skillsResp.tools, skillsResp.collections, (t) => t.url?.split('/').pop());
     for (const col of skillsResp.collections) {
         collections.push({
             name: col.name,
@@ -228,11 +220,7 @@ export function buildResourceData(
     }
 
     // --- Activities (use collection field from definition) ---
-    const actCounts = countPerCollection(
-        activitiesResp.activities,
-        activitiesResp.collections,
-        (a) => a.collection,
-    );
+    const actCounts = countPerCollection(activitiesResp.activities, activitiesResp.collections, (a) => a.collection);
     for (const col of activitiesResp.collections) {
         collections.push({
             name: col.name,
@@ -253,11 +241,7 @@ export function buildResourceData(
     }
 
     // --- Types (id format: "collection:pathName") ---
-    const typeCounts = countPerCollection(
-        typesResp.types,
-        typesResp.collections,
-        (t) => t.id?.split(':')[0],
-    );
+    const typeCounts = countPerCollection(typesResp.types, typesResp.collections, (t) => t.id?.split(':')[0]);
     for (const col of typesResp.collections) {
         collections.push({
             name: col.name,
@@ -278,14 +262,10 @@ export function buildResourceData(
     }
 
     // --- Templates (path format: "/api/templates/{collection}/{name}") ---
-    const tmplCounts = countPerCollection(
-        templatesResp.templates,
-        templatesResp.collections,
-        (t) => {
-            const segments = t.path?.split('/');
-            return segments && segments.length >= 4 ? segments[3] : undefined;
-        },
-    );
+    const tmplCounts = countPerCollection(templatesResp.templates, templatesResp.collections, (t) => {
+        const segments = t.path?.split('/');
+        return segments && segments.length >= 4 ? segments[3] : undefined;
+    });
     for (const col of templatesResp.collections) {
         collections.push({
             name: col.name,
@@ -327,11 +307,12 @@ export function buildResourceData(
 export function filterResources(items: ResourceItem[], query: string): ResourceItem[] {
     const q = query.toLowerCase().trim();
     if (!q) return items;
-    return items.filter(item =>
-        item.name.toLowerCase().includes(q) ||
-        item.title.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q) ||
-        item.type.includes(q) ||
-        item.tags?.some(t => t.toLowerCase().includes(q))
+    return items.filter(
+        (item) =>
+            item.name.toLowerCase().includes(q) ||
+            item.title.toLowerCase().includes(q) ||
+            item.description.toLowerCase().includes(q) ||
+            item.type.includes(q) ||
+            item.tags?.some((t) => t.toLowerCase().includes(q)),
     );
 }

@@ -1,8 +1,8 @@
-import { log } from "@temporalio/activity";
-import type { VertesiaClient } from "@vertesia/client";
-import { NodeStreamSource } from "@vertesia/client/node";
-import { Readable } from "node:stream";
-import { type TextExtractionResult, TextExtractionStatus } from "../result-types.js";
+import { log } from '@temporalio/activity';
+import type { VertesiaClient } from '@vertesia/client';
+import { NodeStreamSource } from '@vertesia/client/node';
+import { Readable } from 'node:stream';
+import { type TextExtractionResult, TextExtractionStatus } from '../result-types.js';
 
 /**
  * Uploads extracted text preview to cloud storage
@@ -11,15 +11,9 @@ export async function uploadTextPreviewToStorage(
     vertesia: VertesiaClient,
     text: string,
     storagePath: string,
-    fileType: string
+    fileType: string,
 ): Promise<string> {
-
-    const source = new NodeStreamSource(
-        Readable.from(text),
-        storagePath,
-        'text/markdown',
-        storagePath
-    );
+    const source = new NodeStreamSource(Readable.from(text), storagePath, 'text/markdown', storagePath);
 
     const uploadedPath = await vertesia.files.uploadFile(source);
     log.info(`Uploaded ${fileType} preview text to ${uploadedPath}`);
@@ -33,7 +27,7 @@ export async function uploadTextPreviewToStorage(
 export function createFileSourceResult(
     sourceUrl: string,
     storagePath: string,
-    text: string | null
+    text: string | null,
 ): TextExtractionResult {
     return {
         hasText: !!text,
@@ -48,11 +42,7 @@ export function createFileSourceResult(
 /**
  * Saves extracted text to an object in the object store
  */
-export async function saveTextToObject(
-    vertesia: VertesiaClient,
-    objectId: string,
-    text: string
-): Promise<void> {
+export async function saveTextToObject(vertesia: VertesiaClient, objectId: string, text: string): Promise<void> {
     const object = await vertesia.objects.retrieve(objectId);
     await vertesia.objects.update(objectId, {
         text: text,
