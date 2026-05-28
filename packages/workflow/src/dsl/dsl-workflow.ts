@@ -10,6 +10,7 @@ import {
     sleep,
     startChild,
     UntypedActivities,
+    uuid4,
 } from "@temporalio/workflow";
 import {
     DSLActivityExecutionPayload,
@@ -246,8 +247,7 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
         const specPayload = dslActivityPayload(basePayload, { name: 'loadChildWorkflowSpec' } as DSLActivitySpec, { workflowName });
         const spec = await proxy.loadChildWorkflowSpec(specPayload) as DSLWorkflowSpec;
         const humanName = spec.name.replace(/([A-Z])/g, ' $1').trim();
-        const objectIds = getDocumentIds(payload);
-        const workflowId = objectIds.length > 0 ? `${humanName}:${objectIds[0]}` : humanName;
+        const workflowId = `${humanName}:${uuid4()}`;
         step = { ...step, name: 'dslWorkflow', spec, options: { ...step.options, workflowId } };
     }
     const resolvedVars = vars.resolve();
@@ -293,8 +293,7 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
         const specPayload = dslActivityPayload(basePayload, { name: 'loadChildWorkflowSpec' } as DSLActivitySpec, { workflowName });
         const spec = await proxy.loadChildWorkflowSpec(specPayload) as DSLWorkflowSpec;
         const humanName = spec.name.replace(/([A-Z])/g, ' $1').trim();
-        const objectIds = getDocumentIds(payload);
-        const workflowId = objectIds.length > 0 ? `${humanName}:${objectIds[0]}` : humanName;
+        const workflowId = `${humanName}:${uuid4()}`;
         step = { ...step, name: 'dslWorkflow', spec, options: { ...step.options, workflowId } };
     }
     const resolvedVars = vars.resolve();
