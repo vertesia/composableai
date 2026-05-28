@@ -1,4 +1,3 @@
-
 import { useTheme } from '@vertesia/ui/core';
 import { MonacoEditor } from '../monacoEditor/MonacoEditor';
 import { useMemo } from 'react';

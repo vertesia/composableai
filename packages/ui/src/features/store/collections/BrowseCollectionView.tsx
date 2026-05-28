@@ -1,20 +1,18 @@
-import { type Collection, getContentTypeRefId, type ColumnLayout } from "@vertesia/common";
-import { useToast } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import type { TypeRegistry } from "../types/TypeRegistry.js";
-import { useTypeRegistry } from "../types/TypeRegistryProvider.js";
-import { DocumentSearchResults, DocumentSearchResultsWithDropZone } from "../objects/DocumentSearchResults";
-
+import { type Collection, getContentTypeRefId, type ColumnLayout } from '@vertesia/common';
+import { useToast } from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
+import type { TypeRegistry } from '../types/TypeRegistry.js';
+import { useTypeRegistry } from '../types/TypeRegistryProvider.js';
+import { DocumentSearchResults, DocumentSearchResultsWithDropZone } from '../objects/DocumentSearchResults';
 
 const collectionDefaultLayout: ColumnLayout[] = [
-    { name: "ID", field: "id", type: "objectId?slice=-7" },
-    { name: "Name", field: ".", type: "objectName" },
-    { name: "Revision", field: ".", type: "revision" },
-    { name: "Type", field: "type.name", type: "string" },
-    { name: "Status", field: "status", type: "string" },
-    { name: "Updated At", field: "updated_at", type: "date" },
+    { name: 'ID', field: 'id', type: 'objectId?slice=-7' },
+    { name: 'Name', field: '.', type: 'objectName' },
+    { name: 'Revision', field: '.', type: 'revision' },
+    { name: 'Type', field: 'type.name', type: 'string' },
+    { name: 'Status', field: 'status', type: 'string' },
+    { name: 'Updated At', field: 'updated_at', type: 'date' },
 ];
-
 
 interface BrowseCollectionViewProps {
     collection: Collection;
@@ -26,15 +24,15 @@ export function BrowseCollectionView({ collection }: BrowseCollectionViewProps) 
 
     const onUploadDone = async (objectIds: string[]) => {
         if (objectIds.length > 0) {
-            await client.store.collections.addMembers(collection.id, objectIds).catch(err => {
+            await client.store.collections.addMembers(collection.id, objectIds).catch((err) => {
                 toast({
                     title: 'Failed to add objects to collection',
                     description: err.message,
-                    status: 'error'
-                })
+                    status: 'error',
+                });
             });
         }
-    }
+    };
     const tableLayout = getTableLayout(collection, typeRegistry);
     return (
         <div className="flex flex-col h-full">
@@ -44,7 +42,7 @@ export function BrowseCollectionView({ collection }: BrowseCollectionViewProps) 
                 <DocumentSearchResultsWithDropZone onUploadDone={onUploadDone} layout={tableLayout} />
             )}
         </div>
-    )
+    );
 }
 
 function getTableLayout(collection: Collection, typeRegistry?: TypeRegistry | undefined) {

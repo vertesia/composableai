@@ -27,11 +27,7 @@ export function SearchBar({ value, onChange, placeholder, resultCount, totalCoun
                     Showing {resultCount} of {totalCount} resources
                 </p>
             )}
-            {noResults && (
-                <p className="mt-2 text-sm text-destructive">
-                    No resources match this search.
-                </p>
-            )}
+            {noResults && <p className="mt-2 text-sm text-destructive">No resources match this search.</p>}
         </div>
     );
 }

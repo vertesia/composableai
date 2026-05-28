@@ -1,4 +1,3 @@
-
 import { type CssStylesheetAST, parse, stringify } from '@adobe/css-tools';
 
 export function extractTailwindUtilitiesLayer(content: string) {
@@ -10,8 +9,8 @@ export function extractTailwindUtilitiesLayer(content: string) {
                 const output = {
                     type: 'stylesheet',
                     stylesheet: {
-                        rules: rule.rules
-                    }
+                        rules: rule.rules,
+                    },
                 } as CssStylesheetAST;
                 result = stringify(output, {});
             }

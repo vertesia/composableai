@@ -1,5 +1,4 @@
 export class PathWithParams {
-
     path: string;
     params: URLSearchParams;
     hash: string;

@@ -10,10 +10,16 @@ interface StringFacetProps {
     multiple?: boolean;
 }
 
-export function createStringFilterGroup({ buckets, name, placeholder, type = 'select', multiple = false }: StringFacetProps): FilterGroup {
+export function createStringFilterGroup({
+    buckets,
+    name,
+    placeholder,
+    type = 'select',
+    multiple = false,
+}: StringFacetProps): FilterGroup {
     const options = buckets.map((bucket) => ({
         label: facetOptionLabel(bucket),
-        value: bucket._id
+        value: bucket._id,
     }));
 
     const filterGroup: FilterGroup = {
@@ -22,13 +28,19 @@ export function createStringFilterGroup({ buckets, name, placeholder, type = 'se
         type: type,
         multiple: multiple,
         placeholder: `${placeholder ?? `${name.charAt(0).toUpperCase() + name.slice(1)}`}`,
-        ...({ allowCreate: false })
+        ...{ allowCreate: false },
     };
 
     return filterGroup;
 }
 
-export function VStringFacet({ buckets, name, placeholder, type, multiple }: {
+export function VStringFacet({
+    buckets,
+    name,
+    placeholder,
+    type,
+    multiple,
+}: {
     buckets: FacetBucket[];
     name: string;
     placeholder?: string;

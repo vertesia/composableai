@@ -20,14 +20,11 @@ export function PluginAccessDenied({ name }: PluginAccessDeniedProps) {
         return undefined;
     }, [selectedAccountId, accounts]);
 
-    const { data: allProjects } = useFetch(
-        () => user ? client.projects.list() : Promise.resolve([]),
-        [user]
-    );
+    const { data: allProjects } = useFetch(() => (user ? client.projects.list() : Promise.resolve([])), [user]);
 
     const filteredProjects = useMemo(() => {
         if (!allProjects || !effectiveAccountId) return [];
-        return allProjects.filter(p => p.account === effectiveAccountId);
+        return allProjects.filter((p) => p.account === effectiveAccountId);
     }, [allProjects, effectiveAccountId]);
 
     const onAccountChange = (selected: { id: string }) => {
@@ -52,7 +49,7 @@ export function PluginAccessDenied({ name }: PluginAccessDeniedProps) {
         );
     }
 
-    const selectedOrg = accounts?.find(a => a.id === effectiveAccountId);
+    const selectedOrg = accounts?.find((a) => a.id === effectiveAccountId);
 
     return (
         <div className="w-full flex flex-col items-center gap-4 mt-24">
@@ -66,9 +63,7 @@ export function PluginAccessDenied({ name }: PluginAccessDeniedProps) {
                 </div>
                 {showSelectors && (
                     <>
-                        <div className="mb-4 text-sm text-muted-foreground">
-                            {t('access.switchPrompt')}
-                        </div>
+                        <div className="mb-4 text-sm text-muted-foreground">{t('access.switchPrompt')}</div>
                         {hasMultipleAccounts && (
                             <div className="mb-4 flex flex-col gap-2">
                                 <span className="font-semibold text-muted-foreground">{t('access.account')}</span>

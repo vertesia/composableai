@@ -20,7 +20,7 @@ export interface SelectBoxBaseProps<T> {
     addNewLabel?: string;
     disabled?: boolean;
     filterBy?: string | ((o: T) => string);
-    by?: (keyof T & string) | ((a: T, z: T) => boolean)
+    by?: (keyof T & string) | ((a: T, z: T) => boolean);
     className?: string;
     popupClass?: string;
     isClearable?: boolean;
@@ -80,7 +80,7 @@ export function SelectBox<T = unknown>({
     inline = false,
     isLoading = false,
     warnOnMissingValue = true,
-    missingValueWarning = "Value not in options list, may not be valid",
+    missingValueWarning = 'Value not in options list, may not be valid',
     clearIcon,
     clearTitle,
     'aria-label': ariaLabelProp,
@@ -100,7 +100,7 @@ export function SelectBox<T = unknown>({
     const isMissingValue = useMemo(() => {
         if (!warnOnMissingValue || multiple || value == null || !options) return false;
         // Use the isOptionsEqual helper which respects the 'by' comparator
-        return !options.some(opt => {
+        return !options.some((opt) => {
             if (typeof by === 'string') {
                 return getProperty(opt, by) === getProperty(value, by);
             } else if (typeof by === 'function') {
@@ -141,7 +141,7 @@ export function SelectBox<T = unknown>({
 
             if (isSelected) {
                 // Remove from selection
-                const newValues = currentValues.filter(v => !isOptionsEqual(v, opt));
+                const newValues = currentValues.filter((v) => !isOptionsEqual(v, opt));
                 (onChange as (options: T[]) => void)(newValues);
             } else {
                 // Add to selection
@@ -158,7 +158,7 @@ export function SelectBox<T = unknown>({
     // Helper function to check if an option is selected
     const isOptionSelected = (option: T, selectedValues: T[]): boolean => {
         if (!selectedValues || selectedValues.length === 0) return false;
-        return selectedValues.some(v => isOptionsEqual(v, option));
+        return selectedValues.some((v) => isOptionsEqual(v, option));
     };
 
     // Helper function to compare options for equality
@@ -169,7 +169,7 @@ export function SelectBox<T = unknown>({
         }
 
         if (typeof by === 'string') {
-                return getProperty(a, by) === getProperty(b, by);
+            return getProperty(a, by) === getProperty(b, by);
         } else if (typeof by === 'function') {
             return by(a, b);
         } else {
@@ -191,25 +191,25 @@ export function SelectBox<T = unknown>({
 
     const filterLc = filterValue.toLowerCase();
     const filterFn = getFilterByFn(filterBy);
-    filteredOptions = filteredOptions.filter(o => filterFn(o).includes(filterLc))
+    filteredOptions = filteredOptions.filter((o) => filterFn(o).includes(filterLc));
 
     const renderSingleValue = () => {
         if (!value || (Array.isArray(value) && value.length === 0)) {
             return <span className="text-muted">{placeholder}</span>;
         }
         const singleValue = Array.isArray(value) ? value[0] : value;
-        return optionLabel ? optionLabel(singleValue) : singleValue as string;
+        return optionLabel ? optionLabel(singleValue) : (singleValue as string);
     };
 
     const renderMultipleValue = () => {
-        const arrayValue = Array.isArray(value) ? value : (value ? [value] : []);
+        const arrayValue = Array.isArray(value) ? value : value ? [value] : [];
 
         if (arrayValue.length === 0) {
             return <span className="text-muted">{placeholder}</span>;
         }
 
         if (arrayValue.length === 1) {
-            return optionLabel ? optionLabel(arrayValue[0]) : arrayValue[0] as string;
+            return optionLabel ? optionLabel(arrayValue[0]) : (arrayValue[0] as string);
         }
 
         return (
@@ -217,7 +217,7 @@ export function SelectBox<T = unknown>({
                 {arrayValue.slice(0, 1).map((item, index) => (
                     // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     <span key={index} className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-muted rounded">
-                        {optionLabel ? optionLabel(item) : item as string}
+                        {optionLabel ? optionLabel(item) : (item as string)}
                     </span>
                 ))}
                 {arrayValue.length > 1 && (
@@ -233,24 +233,34 @@ export function SelectBox<T = unknown>({
     const renderOptionsContent = () => (
         <>
             {filterBy && (
-                <div className='flex justify-start items-center mb-1'>
-                    <div className='mx-2'>
+                <div className="flex justify-start items-center mb-1">
+                    <div className="mx-2">
                         <SearchIcon className="size-4" />
                     </div>
-                    <Input variant='unstyled' value={filterValue} onChange={setFilterValue} className="w-full p-1 rounded-md" placeholder="Search..." />
+                    <Input
+                        variant="unstyled"
+                        value={filterValue}
+                        onChange={setFilterValue}
+                        className="w-full p-1 rounded-md"
+                        placeholder="Search..."
+                    />
                 </div>
             )}
             <Command className="overflow-hidden">
                 <CommandList
-                    className={inline ? "max-h-full overflow-y-auto" : "max-h-[200px] overflow-y-auto"}
-                    onWheel={(e) => { e.currentTarget.scrollTop += e.deltaY; }}
+                    className={inline ? 'max-h-full overflow-y-auto' : 'max-h-[200px] overflow-y-auto'}
+                    onWheel={(e) => {
+                        e.currentTarget.scrollTop += e.deltaY;
+                    }}
                 >
                     <CommandEmpty>No result found.</CommandEmpty>
                     <CommandGroup>
                         {filteredOptions?.map((opt, index) => {
                             const isSelected = multiple
                                 ? isOptionSelected(opt, Array.isArray(value) ? value : [])
-                                : value != null ? isOptionsEqual(value as T, opt) : false;
+                                : value != null
+                                  ? isOptionsEqual(value as T, opt)
+                                  : false;
 
                             return (
                                 <CommandItem
@@ -260,16 +270,16 @@ export function SelectBox<T = unknown>({
                                     className="w-full"
                                 >
                                     {multiple || inline ? (
-                                        <div className='w-full flex justify-between items-center cursor-pointer'>
-                                            <div className='w-full truncate text-start'>
-                                                {optionLabel ? optionLabel(opt) : opt as string}
+                                        <div className="w-full flex justify-between items-center cursor-pointer">
+                                            <div className="w-full truncate text-start">
+                                                {optionLabel ? optionLabel(opt) : (opt as string)}
                                             </div>
                                             {isSelected && <Check className="size-4" />}
                                         </div>
                                     ) : (
-                                        <PopoverClose className='w-full flex justify-between items-center'>
-                                            <div className='w-full truncate text-start'>
-                                                {optionLabel ? optionLabel(opt) : opt as string}
+                                        <PopoverClose className="w-full flex justify-between items-center">
+                                            <div className="w-full truncate text-start">
+                                                {optionLabel ? optionLabel(opt) : (opt as string)}
                                             </div>
                                             {isSelected && <Check className="size-4" />}
                                         </PopoverClose>
@@ -281,7 +291,7 @@ export function SelectBox<T = unknown>({
                 </CommandList>
             </Command>
             {addNew && (
-                <div className='p-1'>
+                <div className="p-1">
                     <button
                         type="button"
                         onClick={addNew}
@@ -299,16 +309,14 @@ export function SelectBox<T = unknown>({
 
     if (inline) {
         return (
-            <div className={clsx(
-                className,
-                border && 'border border-border rounded-md',
-                "bg-popover p-1",
-                popupClass
-            )}>
-                {isLoading
-                    ? <div className="flex justify-center items-center p-2 text-muted text-sm"><LoaderCircle className="size-4 animate-spin" /></div>
-                    : renderOptionsContent()
-                }
+            <div className={clsx(className, border && 'border border-border rounded-md', 'bg-popover p-1', popupClass)}>
+                {isLoading ? (
+                    <div className="flex justify-center items-center p-2 text-muted text-sm">
+                        <LoaderCircle className="size-4 animate-spin" />
+                    </div>
+                ) : (
+                    renderOptionsContent()
+                )}
             </div>
         );
     }
@@ -317,16 +325,20 @@ export function SelectBox<T = unknown>({
     // When `label` is set we also expose it via aria-labelledby pointing at the
     // visible label element rendered inside the trigger.
     const hasVisualLabel = !!label;
-    const ariaLabel = ariaLabelProp ?? (hasVisualLabel ? undefined : (typeof placeholder === 'string' ? placeholder : undefined));
+    const ariaLabel =
+        ariaLabelProp ?? (hasVisualLabel ? undefined : typeof placeholder === 'string' ? placeholder : undefined);
     const ariaLabelledBy = ariaLabelledByProp ?? (hasVisualLabel ? labelId : undefined);
 
     const showClear = !!isClearable && !!value && (Array.isArray(value) ? value.length > 0 : true);
 
     // aria-invalid resolves to true if either the consumer set it or the
     // internal missing-value check fires. Either truthy yields "true".
-    const ariaInvalid = ariaInvalidProp === true || ariaInvalidProp === 'true' || isMissingValue
-        ? true
-        : (ariaInvalidProp === false || ariaInvalidProp === 'false' ? false : undefined);
+    const ariaInvalid =
+        ariaInvalidProp === true || ariaInvalidProp === 'true' || isMissingValue
+            ? true
+            : ariaInvalidProp === false || ariaInvalidProp === 'false'
+              ? false
+              : undefined;
 
     return (
         // The Vertesia Popover wrapper is uncontrolled; onOpenChange mirrors Radix's
@@ -336,7 +348,7 @@ export function SelectBox<T = unknown>({
                 so width/spacing overrides size the popover correctly. The trigger button
                 is always w-full of the wrapper; the absolutely-positioned clear button
                 is positioned relative to the wrapper. */}
-            <div ref={wrapperRef} className={clsx("relative", className)}>
+            <div ref={wrapperRef} className={clsx('relative', className)}>
                 <PopoverTrigger asChild>
                     <button
                         type="button"
@@ -353,13 +365,16 @@ export function SelectBox<T = unknown>({
                             isLoading
                                 ? 'flex w-full justify-center items-center gap-2 border border-border rounded-md p-2 text-muted text-sm bg-transparent'
                                 : clsx(
-                                    border && (isMissingValue || ariaInvalid ? 'border border-destructive' : 'border border-border'),
-                                    'flex w-full flex-row gap-2 items-center justify-between p-2 rounded-md group bg-transparent text-inherit text-start',
-                                    'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                                    !disabled ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed text-muted",
-                                    // Leave room for the absolutely-positioned clear button on the right.
-                                    showClear && 'pe-10',
-                                ),
+                                      border &&
+                                          (isMissingValue || ariaInvalid
+                                              ? 'border border-destructive'
+                                              : 'border border-border'),
+                                      'flex w-full flex-row gap-2 items-center justify-between p-2 rounded-md group bg-transparent text-inherit text-start',
+                                      'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                                      !disabled ? 'cursor-pointer hover:bg-muted' : 'cursor-not-allowed text-muted',
+                                      // Leave room for the absolutely-positioned clear button on the right.
+                                      showClear && 'pe-10',
+                                  ),
                         )}
                     >
                         {isLoading ? (
@@ -368,11 +383,13 @@ export function SelectBox<T = unknown>({
                             <>
                                 <div
                                     className={clsx(
-                                        "flex flex-col w-full rounded-md text-sm min-h-6 items-center justify-center truncate",
+                                        'flex flex-col w-full rounded-md text-sm min-h-6 items-center justify-center truncate',
                                     )}
                                 >
                                     {label && (
-                                        <div id={labelId} className='w-full text-start text-xs font-semibold'>{label}</div>
+                                        <div id={labelId} className="w-full text-start text-xs font-semibold">
+                                            {label}
+                                        </div>
                                     )}
                                     <div className={clsx('w-full text-start ', isMissingValue && 'text-destructive')}>
                                         {isMissingValue && (
@@ -398,7 +415,7 @@ export function SelectBox<T = unknown>({
                         variant="link"
                         size="icon"
                         disabled={disabled}
-                        aria-label={clearTitle || "Clear selection"}
+                        aria-label={clearTitle || 'Clear selection'}
                         onClick={(e) => {
                             e.stopPropagation();
                             if (multiple) {
@@ -422,11 +439,7 @@ export function SelectBox<T = unknown>({
             <PopoverContent
                 id={popupId}
                 style={{ width: `${width}px`, zIndex: 1000000 }}
-                className={clsx(
-                    "min-w-[8rem] w-64 bg-popover p-1 border shadow",
-                    "divide-y divide-border",
-                    popupClass
-                )}
+                className={clsx('min-w-[8rem] w-64 bg-popover p-1 border shadow', 'divide-y divide-border', popupClass)}
             >
                 {renderOptionsContent()}
             </PopoverContent>

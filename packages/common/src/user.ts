@@ -1,10 +1,9 @@
-import type { ApiKey } from "./apikey.js";
-import type { ProjectRef, ProjectRoles } from "./project.js";
+import type { ApiKey } from './apikey.js';
+import type { ProjectRef, ProjectRoles } from './project.js';
 
 export interface UserWithAccounts extends User {
     accounts: AccountRef[];
 }
-
 
 export interface User {
     id: string;
@@ -27,7 +26,6 @@ export interface User {
     compartments?: string[];
 }
 
-
 export interface UpdateUserPayload {
     name?: string;
     username?: string;
@@ -40,7 +38,6 @@ export interface UpdateUserPayload {
     compartments?: string[];
 }
 
-
 export interface UserRef {
     id: string;
     name: string;
@@ -48,18 +45,17 @@ export interface UserRef {
     picture?: string;
 }
 
-export const UserRefPopulate = "id name email picture";
+export const UserRefPopulate = 'id name email picture';
 
 export enum Datacenters {
     aws = 'aws',
     gcp = 'gcp',
-    azure = 'azure'
+    azure = 'azure',
 }
-
 
 export enum BillingMethod {
     stripe = 'stripe',
-    invoice = 'invoice'
+    invoice = 'invoice',
 }
 
 export enum AccountType {
@@ -68,14 +64,13 @@ export enum AccountType {
     free = 'free',
     customer = 'customer',
     prospect = 'prospect',
-    unknown = 'unknown'
+    unknown = 'unknown',
 }
 
 export interface AccountBilling {
     method: BillingMethod;
     stripe_customer_id?: string;
 }
-
 
 export interface Account {
     id: string;
@@ -84,8 +79,8 @@ export interface Account {
     email_domains: string[];
 
     onboarding: {
-        completed: boolean,
-        completed_at: Date,
+        completed: boolean;
+        completed_at: Date;
     };
 
     datacenter: string;
@@ -100,26 +95,23 @@ export interface Account {
     updated_at: string;
 }
 
-
 export interface UpdateAccountPayload {
     name?: string;
     email_domains?: string[];
     billing?: AccountBilling;
 }
 
-
 export interface AccountRef {
     id: string;
     name: string;
 }
 
-export const AccountRefPopulate = "id name";
+export const AccountRefPopulate = 'id name';
 
 export interface InviteUserRequestPayload {
     email: string;
     role: ProjectRoles;
 }
-
 
 export interface InviteUserResponsePayload {
     action: 'invited' | 'added';
@@ -138,7 +130,7 @@ export interface AccountProjectsResponse {
 }
 
 type UserOrApiKey<T extends User | ApiKey> = T extends User ? User : ApiKey;
-type SessionType<T extends User | ApiKey> = T extends User ? "user" : "apikey";
+type SessionType<T extends User | ApiKey> = T extends User ? 'user' : 'apikey';
 export interface SessionInfo<T extends User | ApiKey> {
     isNew?: boolean;
     type: SessionType<T>;
@@ -149,18 +141,15 @@ export interface SessionInfo<T extends User | ApiKey> {
     accounts: AccountRef[];
 }
 
-
-export interface UserSessionInfo extends SessionInfo<User> { }
-export interface ApiKeySessionInfo extends SessionInfo<ApiKey> { }
+export interface UserSessionInfo extends SessionInfo<User> {}
+export interface ApiKeySessionInfo extends SessionInfo<ApiKey> {}
 
 export interface OnboardingProgress {
-    interactions: boolean,
-    prompts: boolean,
-    environments: boolean,
-    default_environment_defined: boolean,
+    interactions: boolean;
+    prompts: boolean;
+    environments: boolean;
+    default_environment_defined: boolean;
 }
-
-
 
 /**
  * Data collected at signup
@@ -173,7 +162,6 @@ export interface SignupData {
     companyWebsite?: string;
     maturity?: string;
 }
-
 
 /**
  * Signup Payload: used to create a new user

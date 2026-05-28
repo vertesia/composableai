@@ -8,12 +8,12 @@ import type {
     StatelessExecutionOptions,
     ToolDefinition,
     ToolUse,
-} from "@llumiverse/common";
+} from '@llumiverse/common';
 
-import type { ExecutionTokenUsage } from "@llumiverse/common";
+import type { ExecutionTokenUsage } from '@llumiverse/common';
 
-import type { ExecutionEnvironmentRef } from "./environment.js";
-import type { ProjectRef } from "./project.js";
+import type { ExecutionEnvironmentRef } from './environment.js';
+import type { ProjectRef } from './project.js';
 import type {
     ExecutablePromptSegmentDef,
     PopulatedPromptSegmentDef,
@@ -22,13 +22,13 @@ import type {
     PromptTemplateRef,
     PromptTemplateRefWithSchema,
     TemplateType,
-} from "./prompt.js";
-import type { ExecutionRunDocRef } from "./runs.js";
-import type { ConversationState } from "./store/conversation-state.js";
-import type { AccountRef } from "./user.js";
-import type { LlmCallType } from "./workflow-analytics.js";
-import type { MCPToolAnnotations } from "./apps.js";
-import type { PrincipalType } from "./apikey.js";
+} from './prompt.js';
+import type { ExecutionRunDocRef } from './runs.js';
+import type { ConversationState } from './store/conversation-state.js';
+import type { AccountRef } from './user.js';
+import type { LlmCallType } from './workflow-analytics.js';
+import type { MCPToolAnnotations } from './apps.js';
+import type { PrincipalType } from './apikey.js';
 
 export interface InteractionExecutionError {
     code: string;
@@ -69,7 +69,6 @@ export interface ConversationStripOptions {
     heartbeats_after_turns?: number;
 }
 
-
 // ------------------ in code interactions -----------------
 /**
  * Reference to an interaction in the catalog.
@@ -81,7 +80,7 @@ export interface CatalogInteractionRef {
     /**
      * The type of interaction
      */
-    type: "sys" | "app" | "stored" | "draft";
+    type: 'sys' | 'app' | 'stored' | 'draft';
 
     /**
      * the interaction id that can be used to execute the interaction.
@@ -152,8 +151,8 @@ export interface ResolveInteractionQuery {
 }
 
 export interface InCodePrompt {
-    role: PromptRole,
-    content: string,
+    role: PromptRole;
+    content: string;
     content_type: TemplateType;
     schema?: JSONSchema;
     /**
@@ -170,19 +169,19 @@ export interface InCodeInteraction {
     /**
      * The interaction type.
      */
-    type: "sys" | "app" | "stored" | "draft";
+    type: 'sys' | 'app' | 'stored' | 'draft';
 
     /**
      * The id of the interaction. Required.
      * The id is a unique identifier for the interaction.
-     * It is recommended to use a URL safe string and not include spaces. 
+     * It is recommended to use a URL safe string and not include spaces.
      * The id composaed  by some namespace or prefix and the interaction name.
      * Example: sys:generic_question, app:review_contract, tmp:my_temp_interaction
      */
     id: string;
 
     /**
-     * The interaction code name. Required. 
+     * The interaction code name. Required.
      * Should be a URL safe string and not include spaces. It is recommended to use kebab-case or camel-case.
      * The endpoints must satisfy the following regexp: /^[a-zA-Z0-9-_]+$/. No whitespaces or special characters are allowed.
      */
@@ -215,10 +214,10 @@ export interface InCodeInteraction {
     result_schema?: JSONSchema | SchemaRef;
 
     /**
-     * The modality of the interaction output. 
+     * The modality of the interaction output.
      * If not specified Modalities.Text is assumed.
      */
-    output_modality?: Modalities,
+    output_modality?: Modalities;
 
     /**
      * How to store the run data for executions of this interaction.
@@ -245,11 +244,11 @@ export interface InCodeInteraction {
     /**
      * The prompts composing the interaction. Required.
      */
-    prompts: InCodePrompt[]
+    prompts: InCodePrompt[];
 
     /**
      * Optional reference to an external resource if any.
-     * Used internally by the system to synchronize stored interactions with in-code interactions. 
+     * Used internally by the system to synchronize stored interactions with in-code interactions.
      */
     externalId?: string;
 
@@ -266,7 +265,7 @@ export interface InCodeInteraction {
      */
     runtime?: {
         /**
-         * Default target environment for the interaction execution         
+         * Default target environment for the interaction execution
          */
         environment?: string;
 
@@ -274,10 +273,9 @@ export interface InCodeInteraction {
          * Default (recommended) target model for the interaction execution
          */
         model?: string;
-    }
+    };
 }
-export interface InteractionSpec extends Omit<InCodeInteraction, 'id' | 'runtime' | 'type' | 'published' | 'version'> {
-}
+export interface InteractionSpec extends Omit<InCodeInteraction, 'id' | 'runtime' | 'type' | 'published' | 'version'> {}
 // ---------------------------------------------------------
 
 /**
@@ -365,12 +363,11 @@ export interface InteractionRef {
     updated_at: Date;
 }
 export const InteractionRefPopulate =
-    "id name endpoint parent description status version visibility tags agent_runner_options updated_at prompts";
+    'id name endpoint parent description status version visibility tags agent_runner_options updated_at prompts';
 
-export const InteractionRefWithSchemaPopulate =
-    `${InteractionRefPopulate} result_schema`;
+export const InteractionRefWithSchemaPopulate = `${InteractionRefPopulate} result_schema`;
 
-export interface InteractionRefWithSchema extends Omit<InteractionRef, "prompts"> {
+export interface InteractionRefWithSchema extends Omit<InteractionRef, 'prompts'> {
     result_schema?: JSONSchema;
     prompts?: PromptSegmentRef<PromptTemplateRefWithSchema>[];
 }
@@ -387,34 +384,34 @@ export interface InteractionsExportPayload {
     /*
      * if not specified, all versions will be exported
      */
-    versions?: (number | "draft" | "latest")[];
+    versions?: (number | 'draft' | 'latest')[];
 }
 
 export enum InteractionStatus {
-    draft = "draft",
-    published = "published",
-    archived = "archived",
-    code = "code", // for in-code interactions that are not stored in the database
-    unknown = "unknown", // for interactions with unknown status
+    draft = 'draft',
+    published = 'published',
+    archived = 'archived',
+    code = 'code', // for in-code interactions that are not stored in the database
+    unknown = 'unknown', // for interactions with unknown status
 }
 
 export enum ExecutionRunStatus {
-    created = "created",
-    processing = "processing",
-    completed = "completed",
-    failed = "failed",
+    created = 'created',
+    processing = 'processing',
+    completed = 'completed',
+    failed = 'failed',
 }
 
 export enum RunDataStorageLevel {
-    STANDARD = "STANDARD",
-    RESTRICTED = "RESTRICTED",
-    DEBUG = "DEBUG",
+    STANDARD = 'STANDARD',
+    RESTRICTED = 'RESTRICTED',
+    DEBUG = 'DEBUG',
 }
 
 export enum RunDataStorageDescription {
-    STANDARD = "Run data is stored for both the model inputs and output.",
-    RESTRICTED = "No run data is stored for the model inputs — only the model output.",
-    DEBUG = "Run data is stored for the model inputs and output, schema, and final prompt.",
+    STANDARD = 'Run data is stored for both the model inputs and output.',
+    RESTRICTED = 'No run data is stored for the model inputs — only the model output.',
+    DEBUG = 'Run data is stored for the model inputs and output, schema, and final prompt.',
 }
 
 export const RunDataStorageOptions: Record<RunDataStorageLevel, RunDataStorageDescription> = {
@@ -431,12 +428,12 @@ export interface SchemaRef {
     $uri: string;
 }
 export interface CachePolicy {
-    type: "cache" | "no_cache" | "cache_and_refresh";
+    type: 'cache' | 'no_cache' | 'cache_and_refresh';
     refresh_probability: number;
     varies_on: string[];
     ttl: number;
 }
-export type InteractionVisibility = "public" | "private";
+export type InteractionVisibility = 'public' | 'private';
 
 export interface InteractionData {
     readonly id: string;
@@ -475,7 +472,7 @@ export interface Interaction extends InteractionData {
     updated_at: Date;
 }
 
-export interface PopulatedInteraction extends Omit<Interaction, "prompts"> {
+export interface PopulatedInteraction extends Omit<Interaction, 'prompts'> {
     prompts: PopulatedPromptSegmentDef[];
 }
 
@@ -490,18 +487,18 @@ export interface ExecutableInteraction extends InteractionData {
 export interface InteractionCreatePayload
     extends Omit<
         Interaction,
-        | "id"
-        | "created_at"
-        | "updated_at"
-        | "created_by"
-        | "updated_by"
-        | "project"
-        | "formatter"
-        | "tags"
-        | "parent"
-        | "version"
-        | "visibility"
-        | "endpoint"
+        | 'id'
+        | 'created_at'
+        | 'updated_at'
+        | 'created_by'
+        | 'updated_by'
+        | 'project'
+        | 'formatter'
+        | 'tags'
+        | 'parent'
+        | 'version'
+        | 'visibility'
+        | 'endpoint'
     > {
     visibility?: InteractionVisibility;
     tags?: string[];
@@ -511,7 +508,7 @@ export interface InteractionUpdatePayload
     extends Partial<
         Omit<
             Interaction,
-            "result_schema" | "id" | "created_at" | "updated_at" | "created_by" | "updated_by" | "project"
+            'result_schema' | 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'project'
         >
     > {
     result_schema?: JSONSchema | SchemaRef | null;
@@ -585,8 +582,10 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
 // ================= async execution payloads ====================
 export type ToolRef = string | { name: string; description: string };
 
-interface AsyncExecutionPayloadBase extends Omit<NamedInteractionExecutionPayload, "toolDefinitions" | "stream">, Record<string, unknown> {
-    type: "conversation" | "interaction";
+interface AsyncExecutionPayloadBase
+    extends Omit<NamedInteractionExecutionPayload, 'toolDefinitions' | 'stream'>,
+        Record<string, unknown> {
+    type: 'conversation' | 'interaction';
 
     /**
      * An array of endpoint URLs to be notified upon execution
@@ -605,7 +604,7 @@ export enum AgentSearchScope {
     /**
      * Search is scoped to a specific collection.
      */
-    Collection = 'collection'
+    Collection = 'collection',
 }
 
 /**
@@ -686,25 +685,27 @@ export interface AgentRunnerOptions {
 
 // ================= User Communication Channels ====================
 // Import for local use
-import type { UserChannel } from "./email.js";
+import type { UserChannel } from './email.js';
 // Re-exported from email.ts for backwards compatibility
 export {
     isEmailChannel,
-    isInteractiveChannel
-} from "./email.js";
+    isInteractiveChannel,
+} from './email.js';
 export type {
-    EmailChannel, EmailRouteData, InteractiveChannel,
-    UserChannel
-} from "./email.js";
+    EmailChannel,
+    EmailRouteData,
+    InteractiveChannel,
+    UserChannel,
+} from './email.js';
 // ================= end user communication channels ====================
 
 export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {
-    type: "conversation";
+    type: 'conversation';
 
     /**
-    * Visibility determine if the conversation should be seen by the user only or by anyone with access to the project
-    * If not specified, the default is project
-    **/
+     * Visibility determine if the conversation should be seen by the user only or by anyone with access to the project
+     * If not specified, the default is project
+     **/
     visibility?: ConversationVisibility;
 
     /**
@@ -818,11 +819,10 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * Used by the workflow to create an AgentRun on first run if agent_run_id is absent.
      */
     schedule_id?: string;
-
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
-    type: "interaction";
+    type: 'interaction';
 
     /**
      * Only used for non conversation workflows to include the error on next retry.
@@ -935,7 +935,6 @@ interface ResumeConversationPayload {
     asyncCompletion?: AsyncCompletionOptions;
 }
 
-
 export interface ToolResultContent {
     content: string;
     is_error: boolean;
@@ -972,18 +971,18 @@ export interface UserMessagePayload extends ResumeConversationPayload {
     message: string;
 }
 
-export type CheckpointConversationPayload = Omit<ToolResultsPayload, "results" | "tools">
+export type CheckpointConversationPayload = Omit<ToolResultsPayload, 'results' | 'tools'>;
 
 // ================= end async execution payloads ====================
 
 export enum RunSourceTypes {
-    api = "api",
-    cli = "cli",
-    ui = "ui",
-    webhook = "webhook",
-    test = "test-data",
-    system = "system",
-    schedule = "schedule",
+    api = 'api',
+    cli = 'cli',
+    ui = 'ui',
+    webhook = 'webhook',
+    test = 'test-data',
+    system = 'system',
+    schedule = 'schedule',
 }
 
 export interface RunSource {
@@ -1005,7 +1004,7 @@ export interface BaseExecutionRun<P = unknown> {
         selected?: boolean;
         scores?: Record<string, number>;
     };
-    result: CompletionResult[] // Any new result will actually be CompletionResult[], the old typing is R, and R used to default to any.
+    result: CompletionResult[]; // Any new result will actually be CompletionResult[], the old typing is R, and R used to default to any.
     /**
      * The parameters used to create the interaction.
      * If the parameters contains the special property "@memory" it will be used
@@ -1102,7 +1101,8 @@ export interface PromptModalities {
     hasImage: boolean;
 }
 
-export interface InteractionExecutionResult<P = unknown> extends Omit<ExecutionRun<P>, "account" | "project" | "interaction"> {
+export interface InteractionExecutionResult<P = unknown>
+    extends Omit<ExecutionRun<P>, 'account' | 'project' | 'interaction'> {
     account: string;
     project: string;
     interaction?: string;
@@ -1118,23 +1118,23 @@ export interface LegacyInteractionExecutionResult<P = unknown>
     result?: JSONObject | string | null;
 }
 
-export interface ExecutionRunRef extends Omit<ExecutionRun, "result" | "parameters" | "interaction"> {
+export interface ExecutionRunRef extends Omit<ExecutionRun, 'result' | 'parameters' | 'interaction'> {
     interaction?: InteractionRef;
     interaction_code?: string;
 }
 
-export const ExecutionRunRefSelect = "-result -parameters -result_schema -prompt";
+export const ExecutionRunRefSelect = '-result -parameters -result_schema -prompt';
 
 export enum ConfigModes {
-    RUN_AND_INTERACTION_CONFIG = "RUN_AND_INTERACTION_CONFIG",
-    RUN_CONFIG_ONLY = "RUN_CONFIG_ONLY",
-    INTERACTION_CONFIG_ONLY = "INTERACTION_CONFIG_ONLY",
+    RUN_AND_INTERACTION_CONFIG = 'RUN_AND_INTERACTION_CONFIG',
+    RUN_CONFIG_ONLY = 'RUN_CONFIG_ONLY',
+    INTERACTION_CONFIG_ONLY = 'INTERACTION_CONFIG_ONLY',
 }
 
 export enum ConfigModesDescription {
-    RUN_AND_INTERACTION_CONFIG = "This run configuration is used. Undefined options are filled with interaction configuration.",
-    RUN_CONFIG_ONLY = "Only this run configuration is used. Undefined options remain undefined.",
-    INTERACTION_CONFIG_ONLY = "Only interaction configuration is used.",
+    RUN_AND_INTERACTION_CONFIG = 'This run configuration is used. Undefined options are filled with interaction configuration.',
+    RUN_CONFIG_ONLY = 'Only this run configuration is used. Undefined options remain undefined.',
+    INTERACTION_CONFIG_ONLY = 'Only interaction configuration is used.',
 }
 
 export const ConfigModesOptions: Record<ConfigModes, ConfigModesDescription> = {
@@ -1174,9 +1174,9 @@ export interface ImprovePromptPayloadConfig {
 
 export interface ImprovePromptPayload extends ImprovePromptPayloadConfig {
     interaction_name: string; // name of the interaction to improve
-    context?: string,
-    prompt: { name: string, content: string }[]; // prompt array
-    result_schema?: JSONSchema, // optional interactionr result schema
+    context?: string;
+    prompt: { name: string; content: string }[]; // prompt array
+    result_schema?: JSONSchema; // optional interactionr result schema
 }
 
 export interface GeneratedInteractionPromptTemplate {
@@ -1207,10 +1207,10 @@ export interface PromptImprovementResponse {
 }
 
 export interface RateLimitRequestPayload {
-    interaction: string,
-    environment_id?: string,
-    model_id?: string,
-    workflow_run_id?: string,
+    interaction: string;
+    environment_id?: string;
+    model_id?: string;
+    workflow_run_id?: string;
     modalities?: PromptModalities;
 }
 
@@ -1223,19 +1223,19 @@ export interface RateLimitRequestResponse {
  */
 export enum ModelSource {
     /** Model was explicitly provided in the execution config */
-    config = "config",
+    config = 'config',
     /** Model comes from the interaction definition */
-    interaction = "interaction",
+    interaction = 'interaction',
     /** Model comes from environment's default_model */
-    environmentDefault = "environmentDefault",
+    environmentDefault = 'environmentDefault',
     /** Model comes from project system interaction defaults */
-    projectSystemDefault = "projectSystemDefault",
+    projectSystemDefault = 'projectSystemDefault',
     /** Model comes from project base defaults */
-    projectBaseDefault = "projectBaseDefault",
+    projectBaseDefault = 'projectBaseDefault',
     /** Model comes from project modality-specific defaults */
-    projectModalityDefault = "projectModalityDefault",
+    projectModalityDefault = 'projectModalityDefault',
     /** Model comes from legacy project defaults */
-    projectLegacyDefault = "projectLegacyDefault",
+    projectLegacyDefault = 'projectLegacyDefault',
 }
 
 /**

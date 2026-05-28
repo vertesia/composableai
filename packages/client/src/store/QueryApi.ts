@@ -1,4 +1,4 @@
-import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 
 /**
  * Query payload for agent data access
@@ -47,8 +47,7 @@ export interface QueryResult {
  * All queries are automatically filtered based on the authenticated user's permissions.
  */
 export class QueryApi extends ApiTopic {
-
-    constructor(parent: ClientBase, basePath: string = "/api/v1/query") {
+    constructor(parent: ClientBase, basePath: string = '/api/v1/query') {
         super(parent, basePath);
     }
 
@@ -84,7 +83,7 @@ export class QueryApi extends ApiTopic {
      * ```
      */
     async execute(payload: QueryPayload): Promise<QueryResult> {
-        return this.post("/", { payload });
+        return this.post('/', { payload });
     }
 
     /**

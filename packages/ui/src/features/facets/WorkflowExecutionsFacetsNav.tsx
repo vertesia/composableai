@@ -1,4 +1,11 @@
-import { type Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, type FilterGroup } from '@vertesia/ui/core';
+import {
+    type Filter as BaseFilter,
+    FilterProvider,
+    FilterBtn,
+    FilterBar,
+    FilterClear,
+    type FilterGroup,
+} from '@vertesia/ui/core';
 import { useState } from 'react';
 import { VStringFacet } from './utils/VStringFacet';
 import { VUserFacet } from './utils/VUserFacet';
@@ -28,7 +35,7 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
         const statusFilterGroup = VStringFacet({
             buckets: facets.status || [],
             name: 'status',
-            placeholder: 'Status'
+            placeholder: 'Status',
         });
         customFilterGroups.push(statusFilterGroup);
     }
@@ -37,7 +44,7 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
         const initiatedByFilterGroup = VUserFacet({
             buckets: facets.initiated_by || [],
             name: 'initiated_by',
-            placeholder: 'Initiated By'
+            placeholder: 'Initiated By',
         });
         customFilterGroups.push(initiatedByFilterGroup);
     }
@@ -46,7 +53,7 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
         name: 'start',
         placeholder: 'Date After',
         type: 'date' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(dateAfterFilterGroup);
 
@@ -54,7 +61,7 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
         name: 'end',
         placeholder: 'Date Before',
         type: 'date' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(dateBeforeFilterGroup);
 
@@ -65,8 +72,8 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
         multiple: false,
         options: [
             { label: 'Yes', value: 'true' },
-            { label: 'No', value: 'false' }
-        ]
+            { label: 'No', value: 'false' },
+        ],
     };
     customFilterGroups.push(hasReportedErrorsFilterGroup);
 
@@ -83,7 +90,7 @@ export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
 
         search.clearFilters(false);
 
-        newFilters.forEach(filter => {
+        newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name;
                 const filterValue = filterValueToQueryValue(filter);
@@ -109,10 +116,7 @@ export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
 }
 
 // Legacy component for backward compatibility
-export function WorkflowExecutionsFacetsNav({
-    facets,
-    search,
-}: WorkflowExecutionsFacetsNavProps) {
+export function WorkflowExecutionsFacetsNav({ facets, search }: WorkflowExecutionsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
     const filterGroups = useWorkflowExecutionsFilterGroups(facets);
     const handleFilterLogic = useWorkflowExecutionsFilterHandler(search);
@@ -124,11 +128,7 @@ export function WorkflowExecutionsFacetsNav({
     };
 
     return (
-        <FilterProvider
-            filterGroups={filterGroups}
-            filters={filters}
-            setFilters={handleFilterChange}
-        >
+        <FilterProvider filterGroups={filterGroups} filters={filters} setFilters={handleFilterChange}>
             <div className="flex gap-2 items-center">
                 <FilterBtn />
                 <FilterBar />

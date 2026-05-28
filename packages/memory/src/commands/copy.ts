@@ -1,7 +1,7 @@
-import type { Builder } from "../Builder.js";
-import { DocxObject, MediaObject, type MediaOptions, PdfObject } from "../ContentObject.js";
-import { AbstractContentSource, type ContentSource, FileSource, type SourceSpec } from "../ContentSource.js";
-import { createPathRewrite, type PathMapperFn } from "../utils/rewrite.js";
+import type { Builder } from '../Builder.js';
+import { DocxObject, MediaObject, type MediaOptions, PdfObject } from '../ContentObject.js';
+import { AbstractContentSource, type ContentSource, FileSource, type SourceSpec } from '../ContentSource.js';
+import { createPathRewrite, type PathMapperFn } from '../utils/rewrite.js';
 
 function rewritePath(source: ContentSource, index: number, mapper: PathMapperFn) {
     const path = source instanceof FileSource ? source.file : '';
@@ -30,18 +30,18 @@ function copyOne(builder: Builder, source: ContentSource, toPath: string, option
         new MediaObject(builder, source, options.media).copyTo(toPath);
     } else if (options.extractText) {
         let type = options.extractText;
-        if (typeof type === "boolean") {
+        if (typeof type === 'boolean') {
             if (source instanceof FileSource) {
                 type = source.extname ? source.extname.slice(1) : source.extname;
             } else {
-                throw new Error("source type for extractText must be specified");
+                throw new Error('source type for extractText must be specified');
             }
         }
         switch (type) {
-            case "pdf":
+            case 'pdf':
                 new PdfObject(builder, source).copyTo(toPath);
                 break;
-            case "docx":
+            case 'docx':
                 new DocxObject(builder, source).copyTo(toPath);
                 break;
             default:

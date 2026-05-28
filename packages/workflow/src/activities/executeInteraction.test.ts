@@ -38,7 +38,9 @@ const createPayload = (): DSLActivityExecutionPayload<ExecuteInteractionParams> 
     activity: { name: 'executeInteraction', params: {} },
 });
 
-async function mockInteractionError(error: Error & { statusCode?: number; status?: number; code?: number }): Promise<void> {
+async function mockInteractionError(
+    error: Error & { statusCode?: number; status?: number; code?: number },
+): Promise<void> {
     const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
     const mockClient = {
         interactions: {

@@ -1,4 +1,11 @@
-import { type Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, type FilterGroup } from '@vertesia/ui/core';
+import {
+    type Filter as BaseFilter,
+    FilterProvider,
+    FilterBtn,
+    FilterBar,
+    FilterClear,
+    type FilterGroup,
+} from '@vertesia/ui/core';
 import { useState } from 'react';
 import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
 import type { FacetBucket } from '@vertesia/common';
@@ -22,7 +29,7 @@ export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']):
         name: 'name',
         placeholder: 'Name',
         type: 'text' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(nameFilterGroup);
 
@@ -35,7 +42,7 @@ export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']):
             options: facets.role.map((facet) => ({
                 label: facet._id,
                 value: facet._id,
-                count: facet.count
+                count: facet.count,
             })),
         };
         customFilterGroups.push(rolesFilterGroup);
@@ -56,7 +63,7 @@ export function usePromptsFilterHandler(search: SearchInterface) {
         // Clear all filters first without defaults, then apply new ones
         search.clearFilters(false, false);
 
-        newFilters.forEach(filter => {
+        newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name;
                 const filterValue = filterValueToQueryValue(filter);
@@ -81,11 +88,7 @@ export function PromptsFacetsNav({ facets, search }: PromptsFacetsNavProps) {
     };
 
     return (
-        <FilterProvider
-            filterGroups={filterGroups}
-            filters={filters}
-            setFilters={handleFilterChange}
-        >
+        <FilterProvider filterGroups={filterGroups} filters={filters} setFilters={handleFilterChange}>
             <div className="flex gap-2 items-center">
                 <FilterBtn />
                 <FilterBar />

@@ -1,11 +1,5 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
-import type {
-    CompleteTaskPayload,
-    CreateTaskPayload,
-    ListTasksQuery,
-    Task,
-    UpdateTaskPayload,
-} from '@vertesia/common';
+import type { CompleteTaskPayload, CreateTaskPayload, ListTasksQuery, Task, UpdateTaskPayload } from '@vertesia/common';
 
 export class TaskApi extends ApiTopic {
     constructor(parent: ClientBase) {

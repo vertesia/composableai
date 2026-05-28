@@ -18,11 +18,7 @@ export interface UseAgentPlansResult {
  * Key improvement: incremental processing. Instead of scanning ALL messages
  * on every change, tracks `lastProcessedIndex` and only scans new messages.
  */
-export function useAgentPlans(
-    messages: AgentMessage[],
-    interactive: boolean,
-    isModal = false,
-): UseAgentPlansResult {
+export function useAgentPlans(messages: AgentMessage[], interactive: boolean, isModal = false): UseAgentPlansResult {
     const [plans, setPlans] = useState<Array<{ plan: Plan; timestamp: number }>>([]);
     const [activePlanIndex, setActivePlanIndex] = useState<number>(0);
     const [workstreamStatusMap, setWorkstreamStatusMap] = useState<
@@ -50,18 +46,21 @@ export function useAgentPlans(
     }, [messages.length, isModal]);
 
     // Helper to determine showInput from the latest message
-    const updateShowInput = useCallback((msgs: AgentMessage[]) => {
-        const lastMessage = msgs[msgs.length - 1];
-        if (!lastMessage) return;
+    const updateShowInput = useCallback(
+        (msgs: AgentMessage[]) => {
+            const lastMessage = msgs[msgs.length - 1];
+            if (!lastMessage) return;
 
-        if (lastMessage.type === AgentMessageType.TERMINATED) {
-            setShowInput(false);
-        } else if (interactive) {
-            setShowInput(true);
-        } else {
-            setShowInput(lastMessage.type === AgentMessageType.REQUEST_INPUT);
-        }
-    }, [interactive]);
+            if (lastMessage.type === AgentMessageType.TERMINATED) {
+                setShowInput(false);
+            } else if (interactive) {
+                setShowInput(true);
+            } else {
+                setShowInput(lastMessage.type === AgentMessageType.REQUEST_INPUT);
+            }
+        },
+        [interactive],
+    );
 
     // Process new messages incrementally
     useEffect(() => {
@@ -159,11 +158,7 @@ export function useAgentPlans(
 
     // Auto-show plan panel for the first plan (once only)
     useEffect(() => {
-        if (
-            plans.length === 1 &&
-            !showSlidingPanel &&
-            !sessionStorage.getItem('plan-panel-shown')
-        ) {
+        if (plans.length === 1 && !showSlidingPanel && !sessionStorage.getItem('plan-panel-shown')) {
             const notificationTimeout = setTimeout(() => {
                 setShowSlidingPanel(true);
                 sessionStorage.setItem('plan-panel-shown', 'true');

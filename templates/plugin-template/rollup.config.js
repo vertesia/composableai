@@ -11,7 +11,15 @@
  */
 import json from '@rollup/plugin-json';
 import typescript from '@rollup/plugin-typescript';
-import { vertesiaImportPlugin, skillTransformer, rawTransformer, skillCollectionTransformer, templateTransformer, templateCollectionTransformer, promptTransformer } from '@vertesia/build-tools';
+import {
+    vertesiaImportPlugin,
+    skillTransformer,
+    rawTransformer,
+    skillCollectionTransformer,
+    templateTransformer,
+    templateCollectionTransformer,
+    promptTransformer,
+} from '@vertesia/build-tools';
 
 // ============================================================================
 // Exit Plugin - Forces process exit after build completes
@@ -24,7 +32,7 @@ function exitPlugin() {
             console.log('Tool server build Done');
             // Force exit after bundle completes to prevent hanging
             setImmediate(() => process.exit(0));
-        }
+        },
     };
 }
 
@@ -42,7 +50,7 @@ const serverBuild = {
         sourcemap: true,
         preserveModules: true,
         preserveModulesRoot: 'src/tool-server',
-        entryFileNames: '[name].js'
+        entryFileNames: '[name].js',
     },
     external: (id) => {
         // Keep relative imports as part of the bundle
@@ -63,29 +71,28 @@ const serverBuild = {
     plugins: [
         vertesiaImportPlugin({
             transformers: [
-                skillTransformer,              // Handles .md?skill imports
-                skillCollectionTransformer,    // Handles ?skills imports
-                templateTransformer,           // Handles TEMPLATE.md imports
+                skillTransformer, // Handles .md?skill imports
+                skillCollectionTransformer, // Handles ?skills imports
+                templateTransformer, // Handles TEMPLATE.md imports
                 templateCollectionTransformer, // Handles ?templates imports
-                promptTransformer,             // Handles ?prompt imports
-                rawTransformer                 // Handles ?raw imports
+                promptTransformer, // Handles ?prompt imports
+                rawTransformer, // Handles ?raw imports
             ],
             assetsDir: './dist',
             widgetConfig: {
                 minify: false,
-                tsconfig: './tsconfig.widgets.json'
-            }
-
+                tsconfig: './tsconfig.widgets.json',
+            },
         }),
         typescript({
             tsconfig: './tsconfig.tool-server.json',
             declaration: true,
             declarationDir: 'lib',
-            sourceMap: true
+            sourceMap: true,
         }),
         json(),
-        exitPlugin()
-    ]
+        exitPlugin(),
+    ],
 };
 
 // ============================================================================

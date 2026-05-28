@@ -16,5 +16,6 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
         unobserve(): void {}
         disconnect(): void {}
     }
-    (globalThis as unknown as { ResizeObserver: typeof ResizeObserverPolyfill }).ResizeObserver = ResizeObserverPolyfill;
+    (globalThis as unknown as { ResizeObserver: typeof ResizeObserverPolyfill }).ResizeObserver =
+        ResizeObserverPolyfill;
 }

@@ -2,18 +2,14 @@
  * get a zeno client for a given token
  */
 
-import {
-    decodeJWT,
-    VertesiaClient,
-    type VertesiaClientProps,
-} from "@vertesia/client";
-import type { FETCH_FN } from "@vertesia/api-fetch-client";
-import type { WorkflowExecutionBaseParams } from "@vertesia/common";
-import { Agent } from "undici";
-import { WorkflowParamNotFoundError } from "../errors.js";
+import { decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
+import type { FETCH_FN } from '@vertesia/api-fetch-client';
+import type { WorkflowExecutionBaseParams } from '@vertesia/common';
+import { Agent } from 'undici';
+import { WorkflowParamNotFoundError } from '../errors.js';
 
 const DEFAULT_WORKFLOW_FETCH_TIMEOUT_MS = 30 * 60 * 1000;
-const WORKFLOW_FETCH_TIMEOUT_ENV = "VERTESIA_WORKFLOW_FETCH_TIMEOUT_MS";
+const WORKFLOW_FETCH_TIMEOUT_ENV = 'VERTESIA_WORKFLOW_FETCH_TIMEOUT_MS';
 
 let workflowFetch: Promise<FETCH_FN> | undefined;
 
@@ -21,24 +17,20 @@ export function getVertesiaClient(payload: WorkflowExecutionBaseParams<unknown>)
     return new VertesiaClient(getVertesiaClientOptions(payload));
 }
 
-export function getVertesiaClientOptions(
-    payload: WorkflowExecutionBaseParams<unknown>,
-): VertesiaClientProps {
+export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<unknown>): VertesiaClientProps {
     if (!payload.auth_token) {
-        throw new WorkflowParamNotFoundError(
-            "Authentication Token is missing from WorkflowExecutionPayload.authToken",
-        );
+        throw new WorkflowParamNotFoundError('Authentication Token is missing from WorkflowExecutionPayload.authToken');
     }
 
     if (!payload.config?.studio_url) {
         throw new WorkflowParamNotFoundError(
-            "Content Store URL is missing from WorkflowExecutionPayload.servers.storeUrl",
+            'Content Store URL is missing from WorkflowExecutionPayload.servers.storeUrl',
         );
     }
 
     if (!payload.config?.store_url) {
         throw new WorkflowParamNotFoundError(
-            "Content Store URL is missing from WorkflowExecutionPayload.servers.storeUrl",
+            'Content Store URL is missing from WorkflowExecutionPayload.servers.storeUrl',
         );
     }
 
@@ -59,8 +51,8 @@ function getWorkflowFetch(): Promise<FETCH_FN> {
 }
 
 async function createWorkflowFetch(): Promise<FETCH_FN> {
-    if (typeof globalThis.fetch !== "function") {
-        throw new Error("No Fetch implementation found");
+    if (typeof globalThis.fetch !== 'function') {
+        throw new Error('No Fetch implementation found');
     }
 
     const timeoutMs = parseWorkflowFetchTimeoutMs();

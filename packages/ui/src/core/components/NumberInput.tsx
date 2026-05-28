@@ -1,6 +1,6 @@
-import clsx from "clsx";
-import React, { type ChangeEvent, useEffect } from "react";
-import { Styles } from "./styles.js";
+import clsx from 'clsx';
+import React, { type ChangeEvent, useEffect } from 'react';
+import { Styles } from './styles.js';
 
 function numberToString(value: number | undefined) {
     if (value == null || Number.isNaN(value)) {
@@ -12,9 +12,9 @@ function numberToString(value: number | undefined) {
 
 interface NumberInputProps extends Omit<React.HTMLProps<HTMLInputElement>, 'ref' | 'onChange' | 'value'> {
     value?: number;
-    onChange?: (value: undefined | number, text: string) => void
+    onChange?: (value: undefined | number, text: string) => void;
     noScroll?: boolean;
-    noSpinners?: boolean
+    noSpinners?: boolean;
 }
 
 /**
@@ -23,42 +23,53 @@ interface NumberInputProps extends Omit<React.HTMLProps<HTMLInputElement>, 'ref'
  * The onChange callback is called whenever the value changes. If the input cannot be parsed as a number
  * it will be returned as NaN.
  */
-const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(({ value, onChange, className, noScroll = false, noSpinners = false, ...others }: NumberInputProps, ref) => {
-    // we need to store the state here in string
-    const [textValue, setTextValue] = React.useState<string>(numberToString(value))
-    const _onChange = (ev: ChangeEvent<HTMLInputElement>) => {
-        const value = ev.target.value;
-        setTextValue(value)
-        if (value === '') {
-            onChange?.(undefined, value)
-        } else {
-            const num = parseFloat(value);
-            onChange?.(num, value)
-        }
-    }
+const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
+    ({ value, onChange, className, noScroll = false, noSpinners = false, ...others }: NumberInputProps, ref) => {
+        // we need to store the state here in string
+        const [textValue, setTextValue] = React.useState<string>(numberToString(value));
+        const _onChange = (ev: ChangeEvent<HTMLInputElement>) => {
+            const value = ev.target.value;
+            setTextValue(value);
+            if (value === '') {
+                onChange?.(undefined, value);
+            } else {
+                const num = parseFloat(value);
+                onChange?.(num, value);
+            }
+        };
 
-    useEffect(() => {
-        // we do not update if not empty and NaN
-        if (value == null || !Number.isNaN(value)) {
-            const text = numberToString(value);
-            setTextValue(text);
-        }
-    }, [value])
+        useEffect(() => {
+            // we do not update if not empty and NaN
+            if (value == null || !Number.isNaN(value)) {
+                const text = numberToString(value);
+                setTextValue(text);
+            }
+        }, [value]);
 
-    return (
-        <input
-            onWheel={noScroll ? event => { event.currentTarget.blur(); } : others.onWheel} /* avoid input change on wheel scroll */
-            type='number'
-            value={textValue}
-            onChange={_onChange}
-            className={clsx(className, Styles.INPUT, { "no-spinners": noSpinners },
-                noSpinners && "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            )}
-            ref={ref}
-            {...others}
-        />
-
-    )
-})
+        return (
+            <input
+                onWheel={
+                    noScroll
+                        ? (event) => {
+                              event.currentTarget.blur();
+                          }
+                        : others.onWheel
+                } /* avoid input change on wheel scroll */
+                type="number"
+                value={textValue}
+                onChange={_onChange}
+                className={clsx(
+                    className,
+                    Styles.INPUT,
+                    { 'no-spinners': noSpinners },
+                    noSpinners &&
+                        '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
+                )}
+                ref={ref}
+                {...others}
+            />
+        );
+    },
+);
 
 export { NumberInput };

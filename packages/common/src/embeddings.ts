@@ -1,4 +1,4 @@
-import type { EmbeddingsResult, EmbeddingTaskType } from "@llumiverse/common";
+import type { EmbeddingsResult, EmbeddingTaskType } from '@llumiverse/common';
 
 /**
  * Wire-format inputs accepted by the studio-server embeddings endpoint.
@@ -32,30 +32,30 @@ export interface EmbeddingsApiSource {
 }
 
 export interface EmbeddingsApiTextInput {
-    type: "text";
+    type: 'text';
     text: string;
     task_type?: EmbeddingTaskType;
     title?: string;
 }
 
 export interface EmbeddingsApiImageInput {
-    type: "image";
+    type: 'image';
     source: EmbeddingsApiSource;
 }
 
 export interface EmbeddingsApiVideoInput {
-    type: "video";
+    type: 'video';
     source: EmbeddingsApiSource;
     start_sec?: number;
     length_sec?: number;
     interval_sec?: number;
     use_fixed_length_sec?: boolean;
     min_clip_sec?: number;
-    embedding_option?: ("visual-text" | "visual-image" | "audio")[];
+    embedding_option?: ('visual-text' | 'visual-image' | 'audio')[];
 }
 
 export interface EmbeddingsApiAudioInput {
-    type: "audio";
+    type: 'audio';
     source: EmbeddingsApiSource;
     start_sec?: number;
     length_sec?: number;
