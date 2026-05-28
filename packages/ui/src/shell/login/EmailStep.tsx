@@ -1,11 +1,11 @@
-import type { UIResolvedTenant } from "@vertesia/common";
-import { Spinner } from "@vertesia/ui/core";
-import { useUITranslation } from "@vertesia/ui/i18n";
-import { setFirebaseTenant } from "@vertesia/ui/session";
-import { ArrowRight } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { PrimaryButton, StepHeader, StepLayout } from "./LoginPrimitives";
-import { isValidEmail } from "./loginUtils";
+import type { UIResolvedTenant } from '@vertesia/common';
+import { Spinner } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { setFirebaseTenant } from '@vertesia/ui/session';
+import { ArrowRight } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { PrimaryButton, StepHeader, StepLayout } from './LoginPrimitives';
+import { isValidEmail } from './loginUtils';
 
 export type TenantInfo = UIResolvedTenant;
 
@@ -16,7 +16,7 @@ interface EmailStepProps {
 
 export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
     const { t } = useUITranslation();
-    const [email, setEmail] = useState(initialEmail ?? "");
+    const [email, setEmail] = useState(initialEmail ?? '');
     const [submitError, setSubmitError] = useState(false);
     const [loading, setLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -47,16 +47,12 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
 
     return (
         <StepLayout>
-            <StepHeader
-                eyebrow={t("auth.email.eyebrow")}
-                title={t("auth.email.title")}
-                body={t("auth.email.body")}
-            />
+            <StepHeader eyebrow={t('auth.email.eyebrow')} title={t('auth.email.title')} body={t('auth.email.body')} />
 
-            <form onSubmit={submit} noValidate className={`flex flex-col ${submitError ? "gap-2" : "gap-6"}`}>
+            <form onSubmit={submit} noValidate className={`flex flex-col ${submitError ? 'gap-2' : 'gap-6'}`}>
                 <div className="flex flex-col gap-1.5">
                     <label htmlFor="vt-login-email" className="text-xs font-medium text-foreground/80">
-                        {t("auth.email.label")}
+                        {t('auth.email.label')}
                     </label>
                     <input
                         ref={inputRef}
@@ -64,7 +60,7 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                         name="vt-login-email"
                         type="email"
                         className="h-[42px] px-3.5 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-info focus:ring-4 focus:ring-info/15 aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/15"
-                        placeholder={t("auth.email.placeholder")}
+                        placeholder={t('auth.email.placeholder')}
                         value={email}
                         onChange={(e) => {
                             setEmail(e.target.value);
@@ -81,7 +77,7 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                     />
                     {submitError && (
                         <div role="alert" className="text-xs text-destructive">
-                            {t("auth.email.invalidError")}
+                            {t('auth.email.invalidError')}
                         </div>
                     )}
                 </div>
@@ -91,8 +87,8 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                         <Spinner />
                     ) : (
                         <>
-                            <span>{t("auth.continue")}</span>
-                            <ArrowRight className="size-3.5" />
+                            <span>{t('auth.continue')}</span>
+                            <ArrowRight className="!size-3.5" />
                         </>
                     )}
                 </PrimaryButton>

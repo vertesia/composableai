@@ -1,11 +1,11 @@
-import { getFirebaseAuth, setFirebaseTenant } from "@vertesia/ui/session";
-import { GithubAuthProvider, GoogleAuthProvider, OAuthProvider, signInWithRedirect } from "firebase/auth";
+import { getFirebaseAuth, setFirebaseTenant } from '@vertesia/ui/session';
+import { GithubAuthProvider, GoogleAuthProvider, OAuthProvider, signInWithRedirect } from 'firebase/auth';
 
 // IdP types match auth-tenants.json `provider` values exactly. SSO vs personal
 // OAuth is no longer a separate ProviderId — it's derived from whether
 // setFirebaseTenant resolves a tenant for the email at sign-in time, and from
 // `tenantName` presence on the stored LastSession for the returning view.
-export type ProviderId = "google" | "github" | "microsoft" | "oidc";
+export type ProviderId = 'google' | 'github' | 'microsoft' | 'oidc';
 
 export interface LastSession {
     email: string;
@@ -14,8 +14,8 @@ export interface LastSession {
     tenantName?: string;
 }
 
-const LAST_SESSION_KEY = "vt.lastSession";
-const PENDING_SIGNIN_KEY = "vt.pendingSignin";
+const LAST_SESSION_KEY = 'vt.lastSession';
+const PENDING_SIGNIN_KEY = 'vt.pendingSignin';
 
 export function readLastSession(): LastSession | null {
     try {
@@ -77,33 +77,33 @@ export function clearPendingSignin(): void {
 }
 
 function buildRedirectPath(redirectTo?: string): string {
-    let path = redirectTo || window.location.pathname || "/";
-    if (path[0] !== "/") path = `/${path}`;
+    let path = redirectTo || window.location.pathname || '/';
+    if (path[0] !== '/') path = `/${path}`;
     return path;
 }
 
 function buildFirebaseProvider(idp: ProviderId, redirectTo?: string) {
-    if (idp === "google") {
+    if (idp === 'google') {
         const p = new GoogleAuthProvider();
-        p.addScope("profile");
-        p.addScope("email");
+        p.addScope('profile');
+        p.addScope('email');
         p.setCustomParameters({
-            prompt: "select_account",
+            prompt: 'select_account',
             redirect_uri: window.location.origin + buildRedirectPath(redirectTo),
         });
         return p;
     }
-    if (idp === "github") return new GithubAuthProvider();
-    if (idp === "microsoft") return new OAuthProvider("microsoft.com");
-    return new OAuthProvider("oidc.main");
+    if (idp === 'github') return new GithubAuthProvider();
+    if (idp === 'microsoft') return new OAuthProvider('microsoft.com');
+    return new OAuthProvider('oidc.main');
 }
 
 export async function startSignIn(
     provider: ProviderId,
     email: string,
     redirectTo?: string,
-): Promise<{ ok: true } | { ok: false; reason: "no-email" }> {
-    if (!email) return { ok: false, reason: "no-email" };
+): Promise<{ ok: true } | { ok: false; reason: 'no-email' }> {
+    if (!email) return { ok: false, reason: 'no-email' };
 
     // Demo mode: SigninScreen drives the alternate flow off a pre-saved
     // Firebase token. Skip the real OAuth redirect so the demo can complete
@@ -125,11 +125,11 @@ export async function startSignIn(
         // for IdP selection — that's the canonical source.
         if (tenant.provider) effectiveIdp = tenant.provider as ProviderId;
         tenantName = tenant.label || tenant.name || undefined;
-        localStorage.setItem("tenantName", tenantName ?? "");
+        localStorage.setItem('tenantName', tenantName ?? '');
     } else {
         // Personal OAuth: clear any stale tenant routing left over from a prior
         // SSO attempt on a different email.
-        localStorage.removeItem("tenantName");
+        localStorage.removeItem('tenantName');
         if (auth.tenantId) auth.tenantId = null;
     }
 
@@ -139,22 +139,22 @@ export async function startSignIn(
 }
 
 export function providerLabel(id: ProviderId): string {
-    if (id === "google") return "Google";
-    if (id === "github") return "GitHub";
-    if (id === "microsoft") return "Microsoft";
-    return "Sign In";
+    if (id === 'google') return 'Google';
+    if (id === 'github') return 'GitHub';
+    if (id === 'microsoft') return 'Microsoft';
+    return 'Sign In';
 }
 
 export function emailLocalPart(email: string): string {
-    if (!email) return "";
-    const at = email.lastIndexOf("@");
+    if (!email) return '';
+    const at = email.lastIndexOf('@');
     return at > 0 ? email.slice(0, at) : email;
 }
 
 export function emailDomain(email: string): string {
-    if (!email) return "";
-    const at = email.lastIndexOf("@");
-    return at > 0 ? email.slice(at + 1) : "";
+    if (!email) return '';
+    const at = email.lastIndexOf('@');
+    return at > 0 ? email.slice(at + 1) : '';
 }
 
 export function capitalizeFirst(s: string): string {
@@ -162,18 +162,18 @@ export function capitalizeFirst(s: string): string {
 }
 
 export function emailInitial(email: string): string {
-    return (email || "?")[0]!.toUpperCase();
+    return (email || '?')[0]!.toUpperCase();
 }
 
 export function firstNameFromEmail(email: string): string {
     const local = emailLocalPart(email);
     const parts = local.split(/[._-]+/).filter(Boolean);
-    const first = parts[0] || "friend";
+    const first = parts[0] || 'friend';
     return first[0]!.toUpperCase() + first.slice(1).toLowerCase();
 }
 
 export function isValidEmail(email: string): boolean {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || "").trim());
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || '').trim());
 }
 
 /**
@@ -185,7 +185,7 @@ export function isValidEmail(email: string): boolean {
 export function isInviteRequiredError(err: unknown): boolean {
     if (!err) return false;
     const msg = err instanceof Error ? err.message : String(err);
-    return msg.includes("Customer-domain user requires an invite to join");
+    return msg.includes('Customer-domain user requires an invite to join');
 }
 
 // ─── Demo / dev-only signin helpers ────────────────────────────────────────
@@ -202,31 +202,31 @@ export function isInviteRequiredError(err: unknown): boolean {
 //     completed. (Customer-domain identities like cmorman.com will hit the
 //     blocked view.)
 
-const DEMO_TOKENS_KEY = "vt.demoTokens";
-const DEMO_TENANT_NAME_KEY = "vt.demoTenantName";
+const DEMO_TOKENS_KEY = 'vt.demoTokens';
+const DEMO_TENANT_NAME_KEY = 'vt.demoTenantName';
 
-const STAFF_DEMO_DOMAINS = new Set(["vertesiahq.com"]);
+const STAFF_DEMO_DOMAINS = new Set(['vertesiahq.com']);
 
 export function isStaffDemoEmail(email: string | undefined): boolean {
     if (!email) return false;
-    const at = email.lastIndexOf("@");
+    const at = email.lastIndexOf('@');
     if (at <= 0) return false;
     return STAFF_DEMO_DOMAINS.has(email.slice(at + 1).toLowerCase());
 }
 
-export type DemoFlow = "success" | "blocked";
+export type DemoFlow = 'success' | 'blocked';
 
 export function demoFlowFor(info: DemoTokenInfo | null): DemoFlow | null {
     if (!info || info.expired) return null;
-    return isStaffDemoEmail(info.email) ? "success" : "blocked";
+    return isStaffDemoEmail(info.email) ? 'success' : 'blocked';
 }
 
 function decodeJwtUnverified(token: string): Record<string, unknown> | null {
     try {
-        const parts = token.split(".");
+        const parts = token.split('.');
         if (parts.length !== 3) return null;
-        let payload = parts[1]!.replace(/-/g, "+").replace(/_/g, "/");
-        while (payload.length % 4 !== 0) payload += "=";
+        let payload = parts[1]!.replace(/-/g, '+').replace(/_/g, '/');
+        while (payload.length % 4 !== 0) payload += '=';
         return JSON.parse(atob(payload)) as Record<string, unknown>;
     } catch {
         return null;
@@ -243,11 +243,11 @@ export interface DemoTokenInfo {
 export function inspectDemoToken(token: string): DemoTokenInfo {
     const payload = decodeJwtUnverified(token);
     if (!payload) return { token, expired: false };
-    const exp = typeof payload.exp === "number" ? payload.exp : undefined;
+    const exp = typeof payload.exp === 'number' ? payload.exp : undefined;
     const expiresAt = exp ? new Date(exp * 1000) : undefined;
     return {
         token,
-        email: typeof payload.email === "string" ? payload.email : undefined,
+        email: typeof payload.email === 'string' ? payload.email : undefined,
         expiresAt,
         expired: expiresAt ? expiresAt.getTime() <= Date.now() : false,
     };
@@ -258,7 +258,7 @@ function readStore(): Record<string, string> {
         const raw = localStorage.getItem(DEMO_TOKENS_KEY);
         if (!raw) return {};
         const parsed = JSON.parse(raw);
-        return parsed && typeof parsed === "object" ? (parsed as Record<string, string>) : {};
+        return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {};
     } catch {
         return {};
     }
@@ -338,15 +338,19 @@ export function writeDemoTenantName(name: string): void {
  * branch (see UserSessionProvider.tsx) takes over from there — exchanges the
  * Firebase token via STS, runs session.login(), and the app re-renders signed-in.
  */
-export function startDemoSuccessSignIn(token: string, email: string | undefined, provider: ProviderId = "google"): void {
-    const stateValue = "demo";
-    sessionStorage.setItem("auth_state", stateValue);
-    sessionStorage.setItem("auth_state_expiry", String(Date.now() + 5 * 60 * 1000));
+export function startDemoSuccessSignIn(
+    token: string,
+    email: string | undefined,
+    provider: ProviderId = 'google',
+): void {
+    const stateValue = 'demo';
+    sessionStorage.setItem('auth_state', stateValue);
+    sessionStorage.setItem('auth_state_expiry', String(Date.now() + 5 * 60 * 1000));
 
     sessionStorage.setItem(
         PENDING_SIGNIN_KEY,
         JSON.stringify({
-            email: email ?? "demo@vertesiahq.com",
+            email: email ?? 'demo@vertesiahq.com',
             provider,
         }),
     );

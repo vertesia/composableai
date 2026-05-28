@@ -1,12 +1,7 @@
-import { useUITranslation } from "@vertesia/ui/i18n";
-import { Mail } from "lucide-react";
-import {
-    InlineLinkButton,
-    OutlinedProviderButton,
-    StepHeader,
-    StepLayout,
-} from "./LoginPrimitives";
-import { type ProviderId, providerLabel, startSignIn } from "./loginUtils";
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { Mail } from 'lucide-react';
+import { InlineLinkButton, OutlinedProviderButton, StepHeader, StepLayout } from './LoginPrimitives';
+import { type ProviderId, providerLabel, startSignIn } from './loginUtils';
 
 interface ProvidersStepProps {
     email: string;
@@ -15,7 +10,7 @@ interface ProvidersStepProps {
     redirectTo?: string;
 }
 
-const PROVIDERS: ProviderId[] = ["google", "github", "microsoft"];
+const PROVIDERS: ProviderId[] = ['google', 'github', 'microsoft'];
 
 export default function ProvidersStep({ email, onBack, onProviderClicked, redirectTo }: ProvidersStepProps) {
     const { t } = useUITranslation();
@@ -28,15 +23,15 @@ export default function ProvidersStep({ email, onBack, onProviderClicked, redire
     return (
         <StepLayout>
             <StepHeader
-                eyebrow={t("auth.providers.eyebrow")}
-                title={t("auth.providers.title")}
-                body={t("auth.providers.bodyConsumer")}
+                eyebrow={t('auth.providers.eyebrow')}
+                title={t('auth.providers.title')}
+                body={t('auth.providers.bodyConsumer')}
             />
 
             <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted-background">
                 <Mail className="size-4 text-muted shrink-0" />
                 <span className="text-sm text-foreground/80 flex-1 truncate">{email}</span>
-                <InlineLinkButton onClick={onBack}>{t("auth.change")}</InlineLinkButton>
+                <InlineLinkButton onClick={onBack}>{t('auth.change')}</InlineLinkButton>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -44,7 +39,7 @@ export default function ProvidersStep({ email, onBack, onProviderClicked, redire
                     <OutlinedProviderButton
                         key={id}
                         provider={id}
-                        label={t("auth.continueWithProvider", { provider: providerLabel(id) })}
+                        label={t('auth.continueWithProvider', { provider: providerLabel(id) })}
                         onClick={() => pick(id)}
                         arrowSlide
                     />
