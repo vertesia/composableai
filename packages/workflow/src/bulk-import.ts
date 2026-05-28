@@ -96,6 +96,7 @@ export interface BulkImportParams {
     partitionSize?: number;
     dryRun?: boolean;
     updateByContentSource?: boolean;
+    skipWorkflows?: boolean;
 }
 
 export interface PartitionError {
