@@ -72,6 +72,9 @@ bootstrap_template() {
   local pm_args=""
   [ -n "$pkg_manager" ] && pm_args="--package-manager ${pkg_manager}"
 
+  local dev_args=""
+  [ "$RELEASE_TYPE" = "snapshot" ] && dev_args="--dev"
+
   # npm exec: closest to the documented `npm init @vertesia/plugin` user command
   # --: tells npm exec to stop parsing flags and pass everything to create-plugin
   # env -i: strip pnpm-injected env vars (NODE_PATH, npm_config_*) to prevent npm from resolving
@@ -84,7 +87,7 @@ bootstrap_template() {
     npm_config_registry="${npm_config_registry:-}" \
     npm_config_package_lock="false" \
     npm_config_cache="${npm_cache_dir}" \
-    npm exec --yes -- "@vertesia/create-plugin@${NPM_TAG}" "$project_name" -t "${TEMPLATE_NAME}" --yes ${branch_args} ${pm_args} ${EXTRA_CREATE_ARGS:-})
+    npm exec --yes -- "@vertesia/create-plugin@${NPM_TAG}" "$project_name" -t "${TEMPLATE_NAME}" --yes ${branch_args} ${pm_args} ${dev_args} ${EXTRA_CREATE_ARGS:-})
   rm -rf "${npm_cache_dir}"
 }
 
