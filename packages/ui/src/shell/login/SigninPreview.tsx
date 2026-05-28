@@ -434,38 +434,27 @@ export default function SigninPreview() {
 
                     <div className="mt-6">
                         <Section
-                            title="Auxiliary buttons — raw vs composableai Button"
-                            sub="Comparing the existing raw &lt;button&gt; implementations against composableai-Button-based primitives. Bottom row is what the new step components actually render."
+                            title="Auxiliary buttons — composableai Button variants"
+                            sub="All composableai-Button-based. The labelled primitive in each frame is what the new step components actually render."
                             cols={2}
                         >
                             <Frame title="Plain link (Use a different sign-in method / Cancel)">
                                 <div className="w-full max-w-[420px] flex flex-col gap-4">
                                     <div className="flex flex-col">
                                         <div className="text-[11px] font-medium text-muted mb-1.5">
-                                            A — raw &lt;button&gt; (pre-conversion)
-                                        </div>
-                                        <button
-                                            type="button"
-                                            className="cursor-pointer h-9 inline-flex items-center justify-center text-sm font-medium text-muted hover:text-foreground transition"
-                                        >
-                                            Use a different sign-in method
-                                        </button>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <div className="text-[11px] font-medium text-muted mb-1.5">
-                                            B — Button variant=&quot;link&quot;
+                                            Button variant=&quot;link&quot;
                                         </div>
                                         <Button variant="link">Use a different sign-in method</Button>
                                     </div>
                                     <div className="flex flex-col">
                                         <div className="text-[11px] font-medium text-muted mb-1.5">
-                                            C — Button variant=&quot;ghost&quot;
+                                            Button variant=&quot;ghost&quot;
                                         </div>
                                         <Button variant="ghost">Use a different sign-in method</Button>
                                     </div>
                                     <div className="flex flex-col">
                                         <div className="text-[11px] font-medium text-muted mb-1.5">
-                                            D — PlainLinkButton (new primitive, visually matches A)
+                                            PlainLinkButton (what the step components render)
                                         </div>
                                         <PlainLinkButton>Use a different sign-in method</PlainLinkButton>
                                     </div>
@@ -476,21 +465,7 @@ export default function SigninPreview() {
                                 <div className="w-full max-w-[420px] flex flex-col gap-4">
                                     <div className="flex flex-col">
                                         <div className="text-[11px] font-medium text-muted mb-1.5">
-                                            A — raw &lt;button&gt; disabled, opacity-90 (pre-conversion)
-                                        </div>
-                                        <button
-                                            type="button"
-                                            disabled
-                                            className="h-[42px] inline-flex items-center justify-center gap-2.5 rounded-md bg-foreground text-background text-sm font-medium opacity-90"
-                                        >
-                                            <Spinner />
-                                            <span>Authenticating</span>
-                                        </button>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <div className="text-[11px] font-medium text-muted mb-1.5">
-                                            B — Button variant=&quot;primary&quot; disabled (different blue + 50%
-                                            opacity)
+                                            Button variant=&quot;primary&quot; disabled (different blue + 50% opacity)
                                         </div>
                                         <Button variant="primary" disabled>
                                             <Spinner />
@@ -499,7 +474,7 @@ export default function SigninPreview() {
                                     </div>
                                     <div className="flex flex-col">
                                         <div className="text-[11px] font-medium text-muted mb-1.5">
-                                            C — PrimaryButton disabled (50% opacity — looks muted)
+                                            PrimaryButton disabled (50% opacity — looks muted)
                                         </div>
                                         <PrimaryButton disabled>
                                             <Spinner />
@@ -508,7 +483,7 @@ export default function SigninPreview() {
                                     </div>
                                     <div className="flex flex-col">
                                         <div className="text-[11px] font-medium text-muted mb-1.5">
-                                            D — PrimaryButton loading (90% opacity — &quot;active but waiting&quot;)
+                                            PrimaryButton loading (90% opacity — what AuthPending renders)
                                         </div>
                                         <PrimaryButton loading>
                                             <Spinner />

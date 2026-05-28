@@ -1,15 +1,16 @@
-import { Key, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Button } from '@vertesia/ui/core';
+import { Key, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import {
-    type DemoTokenInfo,
     addDemoToken,
     clearAllDemoTokens,
+    type DemoTokenInfo,
     demoFlowFor,
     listDemoTokens,
     readDemoTenantName,
     removeDemoToken,
     writeDemoTenantName,
-} from "./loginUtils";
+} from './loginUtils';
 
 // Floating dev-only widget. Multiple Firebase ID tokens can be staged, keyed by
 // their decoded email. When the user clicks a provider button on the
@@ -19,10 +20,10 @@ import {
 //   • everything else → POST /auth/ensure-user → real 403/412 routes the UI
 
 function formatRemaining(expiresAt: Date | undefined, expired: boolean): string | null {
-    if (expired) return "EXPIRED";
+    if (expired) return 'EXPIRED';
     if (!expiresAt) return null;
     const ms = expiresAt.getTime() - Date.now();
-    if (ms <= 0) return "EXPIRED";
+    if (ms <= 0) return 'EXPIRED';
     const totalSec = Math.floor(ms / 1000);
     const min = Math.floor(totalSec / 60);
     const sec = totalSec % 60;
@@ -31,23 +32,23 @@ function formatRemaining(expiresAt: Date | undefined, expired: boolean): string 
 
 function flowLabel(info: DemoTokenInfo): string {
     const flow = demoFlowFor(info);
-    if (flow === "success") return "Sign-in success";
-    if (flow === "blocked") return "Blocked (403)";
-    return "—";
+    if (flow === 'success') return 'Sign-in success';
+    if (flow === 'blocked') return 'Blocked (403)';
+    return '—';
 }
 
 function flowColor(info: DemoTokenInfo): { bg: string; border: string; text: string } {
-    if (info.expired) return { bg: "#fef2f2", border: "#fca5a5", text: "#991b1b" };
+    if (info.expired) return { bg: '#fef2f2', border: '#fca5a5', text: '#991b1b' };
     const flow = demoFlowFor(info);
-    if (flow === "success") return { bg: "#f0fdf4", border: "#bbf7d0", text: "#166534" };
-    return { bg: "#fffbeb", border: "#fcd34d", text: "#92400e" };
+    if (flow === 'success') return { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534' };
+    return { bg: '#fffbeb', border: '#fcd34d', text: '#92400e' };
 }
 
 export default function DemoTokenPanel() {
     const [open, setOpen] = useState(false);
     const [tokens, setTokens] = useState<DemoTokenInfo[]>(() => listDemoTokens());
-    const [tenantName, setTenantName] = useState(() => readDemoTenantName() ?? "");
-    const [draft, setDraft] = useState("");
+    const [tenantName, setTenantName] = useState(() => readDemoTenantName() ?? '');
+    const [draft, setDraft] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [, setTick] = useState(0);
 
@@ -66,7 +67,7 @@ export default function DemoTokenPanel() {
             return;
         }
         setTokens(listDemoTokens());
-        setDraft("");
+        setDraft('');
     };
 
     const remove = (email: string | undefined) => {
@@ -89,44 +90,46 @@ export default function DemoTokenPanel() {
     const hasExpired = tokens.some((t) => t.expired);
 
     return (
-        <div style={{ position: "fixed", top: 16, right: 16, zIndex: 999999, fontFamily: "system-ui, sans-serif" }}>
-            <button
-                type="button"
+        <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 999999, fontFamily: 'system-ui, sans-serif' }}>
+            <Button
+                variant="unstyled"
+                size="none"
                 onClick={() => setOpen((o) => !o)}
                 aria-label="Demo sign-in panel"
                 className={
-                    "cursor-pointer inline-flex items-center gap-1.5 rounded-md border border-foreground bg-transparent px-2.5 py-1 text-xs font-medium text-foreground transition-opacity hover:opacity-100 focus-visible:opacity-100 " +
-                    (open ? "opacity-100" : "opacity-10")
+                    // `!`-overrides defeat the Button base's gap-2 / text-sm / transition-colors.
+                    'cursor-pointer inline-flex items-center !gap-1.5 rounded-md border border-foreground bg-transparent px-2.5 py-1 !text-xs font-medium text-foreground !transition-opacity hover:opacity-100 focus-visible:opacity-100 ' +
+                    (open ? 'opacity-100' : 'opacity-10')
                 }
             >
-                <Key className="size-3.5" />
+                <Key className="!size-3.5" />
                 <span>
                     Demo
-                    {chipCount > 0 ? ` · ${chipCount}` : ""}
-                    {hasExpired ? " · EXP" : ""}
+                    {chipCount > 0 ? ` · ${chipCount}` : ''}
+                    {hasExpired ? ' · EXP' : ''}
                 </span>
-            </button>
+            </Button>
 
             {open && (
                 <div
                     style={{
-                        position: "absolute",
+                        position: 'absolute',
                         top: 38,
                         right: 0,
                         width: 420,
-                        maxHeight: "80vh",
-                        overflowY: "auto",
-                        background: "white",
-                        border: "1px solid #d1d5db",
+                        maxHeight: '80vh',
+                        overflowY: 'auto',
+                        background: 'white',
+                        border: '1px solid #d1d5db',
                         borderRadius: 8,
-                        boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
                         padding: 14,
                         fontSize: 13,
-                        color: "#111827",
+                        color: '#111827',
                     }}
                 >
                     <div style={{ fontWeight: 600, marginBottom: 4 }}>Demo sign-in (dev only)</div>
-                    <div style={{ color: "#6b7280", fontSize: 11, marginBottom: 12, lineHeight: 1.4 }}>
+                    <div style={{ color: '#6b7280', fontSize: 11, marginBottom: 12, lineHeight: 1.4 }}>
                         Paste Firebase ID tokens — one at a time. They're keyed by email; the SigninScreen picks the
                         matching one based on the email the user typed.
                     </div>
@@ -140,8 +143,8 @@ export default function DemoTokenPanel() {
                                     <div
                                         key={info.email ?? info.token.slice(-12)}
                                         style={{
-                                            display: "flex",
-                                            alignItems: "center",
+                                            display: 'flex',
+                                            alignItems: 'center',
                                             gap: 8,
                                             background: color.bg,
                                             border: `1px solid ${color.border}`,
@@ -157,51 +160,57 @@ export default function DemoTokenPanel() {
                                                 style={{
                                                     fontWeight: 600,
                                                     color: color.text,
-                                                    overflow: "hidden",
-                                                    textOverflow: "ellipsis",
-                                                    whiteSpace: "nowrap",
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
                                                 }}
                                             >
-                                                {info.email ?? "(no email)"}
+                                                {info.email ?? '(no email)'}
                                             </div>
-                                            <div style={{ color: "#6b7280" }}>
+                                            <div style={{ color: '#6b7280' }}>
                                                 {flowLabel(info)}
-                                                {remaining ? ` · ${remaining}` : ""}
+                                                {remaining ? ` · ${remaining}` : ''}
                                             </div>
                                         </div>
-                                        <button
-                                            type="button"
-                                            aria-label={`Remove ${info.email ?? "token"}`}
+                                        <Button
+                                            variant="unstyled"
+                                            size="none"
+                                            aria-label={`Remove ${info.email ?? 'token'}`}
                                             onClick={() => remove(info.email)}
+                                            // keep Trash2 at 14px (defeat base [&_svg]:size-4)
+                                            className="[&_svg]:!size-3.5"
                                             style={{
-                                                background: "transparent",
-                                                border: "none",
+                                                background: 'transparent',
+                                                border: 'none',
                                                 color: color.text,
-                                                cursor: "pointer",
+                                                cursor: 'pointer',
                                                 padding: 4,
-                                                display: "inline-flex",
+                                                display: 'inline-flex',
                                             }}
                                         >
                                             <Trash2 size={14} />
-                                        </button>
+                                        </Button>
                                     </div>
                                 );
                             })}
-                            <button
-                                type="button"
+                            <Button
+                                variant="unstyled"
+                                size="none"
                                 onClick={clearAll}
+                                // !font-normal keeps the base font-medium from bolding this link
+                                className="!font-normal"
                                 style={{
-                                    background: "transparent",
-                                    border: "none",
-                                    color: "#6b7280",
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#6b7280',
                                     fontSize: 11,
-                                    cursor: "pointer",
+                                    cursor: 'pointer',
                                     padding: 0,
-                                    textDecoration: "underline",
+                                    textDecoration: 'underline',
                                 }}
                             >
                                 Clear all
-                            </button>
+                            </Button>
                         </div>
                     )}
 
@@ -213,33 +222,32 @@ export default function DemoTokenPanel() {
                         }}
                         placeholder="Paste Firebase ID token (eyJ...)"
                         style={{
-                            width: "100%",
+                            width: '100%',
                             minHeight: 70,
                             padding: 8,
-                            border: `1px solid ${error ? "#fca5a5" : "#d1d5db"}`,
+                            border: `1px solid ${error ? '#fca5a5' : '#d1d5db'}`,
                             borderRadius: 6,
-                            fontFamily: "ui-monospace, monospace",
+                            fontFamily: 'ui-monospace, monospace',
                             fontSize: 11,
-                            resize: "vertical",
+                            resize: 'vertical',
                             marginBottom: 6,
-                            boxSizing: "border-box",
+                            boxSizing: 'border-box',
                         }}
                     />
-                    {error && (
-                        <div style={{ color: "#991b1b", fontSize: 11, marginBottom: 6 }}>{error}</div>
-                    )}
-                    <button
-                        type="button"
+                    {error && <div style={{ color: '#991b1b', fontSize: 11, marginBottom: 6 }}>{error}</div>}
+                    <Button
+                        variant="unstyled"
+                        size="none"
                         onClick={save}
                         disabled={!draft.trim()}
                         style={{
-                            width: "100%",
-                            padding: "6px 12px",
-                            border: "1px solid #1f2937",
-                            background: "#1f2937",
-                            color: "white",
+                            width: '100%',
+                            padding: '6px 12px',
+                            border: '1px solid #1f2937',
+                            background: '#1f2937',
+                            color: 'white',
                             borderRadius: 6,
-                            cursor: draft.trim() ? "pointer" : "not-allowed",
+                            cursor: draft.trim() ? 'pointer' : 'not-allowed',
                             opacity: draft.trim() ? 1 : 0.5,
                             fontSize: 12,
                             fontWeight: 500,
@@ -247,9 +255,9 @@ export default function DemoTokenPanel() {
                         }}
                     >
                         Add token
-                    </button>
+                    </Button>
 
-                    <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 4 }}>
+                    <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>
                         Optional: tenant name shown in the blocked view
                     </div>
                     <input
@@ -258,12 +266,12 @@ export default function DemoTokenPanel() {
                         onChange={(e) => onTenantNameChange(e.target.value)}
                         placeholder="e.g. Charles Morman - Testing"
                         style={{
-                            width: "100%",
-                            padding: "5px 8px",
-                            border: "1px solid #d1d5db",
+                            width: '100%',
+                            padding: '5px 8px',
+                            border: '1px solid #d1d5db',
                             borderRadius: 6,
                             fontSize: 11,
-                            boxSizing: "border-box",
+                            boxSizing: 'border-box',
                         }}
                     />
                 </div>
