@@ -17,7 +17,5 @@ export function StringListFacet({ search, name, placeholder, className }: String
         search.setFilterValue(name, tags);
     }, [name, search, tags]);
 
-    return (
-        <InputList className={className} value={tags} onChange={setTags} placeholder={placeholder} />
-    )
+    return <InputList className={className} value={tags} onChange={setTags} placeholder={placeholder} />;
 }

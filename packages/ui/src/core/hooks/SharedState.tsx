@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 export class SharedState<V = unknown> {
     _value: V;
@@ -23,22 +23,22 @@ export class SharedState<V = unknown> {
     addWatcher(watcher: (value: V) => void) {
         this.watchers.push(watcher);
         return () => {
-            this.watchers = this.watchers.filter(w => w !== watcher);
-        }
+            this.watchers = this.watchers.filter((w) => w !== watcher);
+        };
     }
 }
 
 export function useWatchSharedState<T>(state: SharedState<T>) {
-    const [value, setValue] = useState(state.value)
+    const [value, setValue] = useState(state.value);
     useEffect(() => {
         return state.addWatcher((value) => {
             if (typeof value === 'function') {
-                setValue(() => value) // cannot directly store functions
+                setValue(() => value); // cannot directly store functions
             } else {
-                setValue(value)
+                setValue(value);
             }
         });
-    }, [state])
+    }, [state]);
     return value;
 }
 

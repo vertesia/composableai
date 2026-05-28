@@ -1,5 +1,5 @@
-import type { RemoteActivityExecutionPayload } from "@vertesia/common";
-import type { ActivityExecutionContext } from "@vertesia/tools-sdk";
+import type { RemoteActivityExecutionPayload } from '@vertesia/common';
+import type { ActivityExecutionContext } from '@vertesia/tools-sdk';
 
 export interface WordCountParams {
     text: string;
@@ -16,7 +16,7 @@ export interface WordCountResult {
  */
 export async function wordCount(
     payload: RemoteActivityExecutionPayload,
-    _context: ActivityExecutionContext
+    _context: ActivityExecutionContext,
 ): Promise<WordCountResult> {
     const text = payload.params.text;
     if (!text || typeof text !== 'string') {

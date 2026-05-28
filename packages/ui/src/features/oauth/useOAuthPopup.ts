@@ -69,7 +69,7 @@ export function useOAuthPopup({ onComplete, onError }: UseOAuthPopupOptions) {
         const popup = window.open(
             authorizationUrl,
             'oauth_popup',
-            `width=${width},height=${height},left=${left},top=${top},popup=yes`
+            `width=${width},height=${height},left=${left},top=${top},popup=yes`,
         );
 
         let messageReceived = false;

@@ -1,5 +1,5 @@
-import type { CollectionProperties, ICollection, RenderingTemplateDefinition } from "./types.js";
-import { kebabCaseToTitle } from "./utils.js";
+import type { CollectionProperties, ICollection, RenderingTemplateDefinition } from './types.js';
+import { kebabCaseToTitle } from './utils.js';
 
 export interface RenderingTemplateCollectionProps extends CollectionProperties {
     templates: RenderingTemplateDefinition[];
@@ -12,9 +12,7 @@ export class RenderingTemplateCollection implements ICollection<RenderingTemplat
     icon?: string;
     description?: string;
 
-    constructor({
-        name, title, icon, description, templates
-    }: RenderingTemplateCollectionProps) {
+    constructor({ name, title, icon, description, templates }: RenderingTemplateCollectionProps) {
         this.name = name;
         this.title = title || kebabCaseToTitle(name);
         this.icon = icon;
@@ -27,7 +25,7 @@ export class RenderingTemplateCollection implements ICollection<RenderingTemplat
     }
 
     getTemplate(name: string): RenderingTemplateDefinition | undefined {
-        return this.templates.find(t => t.name === name);
+        return this.templates.find((t) => t.name === name);
     }
 
     [Symbol.iterator](): Iterator<RenderingTemplateDefinition> {
@@ -41,7 +39,7 @@ export class RenderingTemplateCollection implements ICollection<RenderingTemplat
                 } else {
                     return { done: true, value: undefined };
                 }
-            }
+            },
         };
     }
 

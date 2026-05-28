@@ -15,7 +15,7 @@ export interface ProbeMediaStreamsResult {
     hasAudio: boolean;
 }
 
-export type ProbeMediaStreamsParams = Record<string, never>
+export type ProbeMediaStreamsParams = Record<string, never>;
 
 export interface ProbeMediaStreams extends DSLActivitySpec<ProbeMediaStreamsParams> {
     name: 'probeMediaStreams';
@@ -29,7 +29,9 @@ interface FFProbeOutput {
     streams: FFProbeStream[];
 }
 
-export async function probeMediaStreams(payload: DSLActivityExecutionPayload<ProbeMediaStreamsParams>): Promise<ProbeMediaStreamsResult> {
+export async function probeMediaStreams(
+    payload: DSLActivityExecutionPayload<ProbeMediaStreamsParams>,
+): Promise<ProbeMediaStreamsResult> {
     const { client, objectId } = await setupActivity<ProbeMediaStreamsParams>(payload);
 
     const inputObject = await client.objects.retrieve(objectId).catch((err: unknown) => {
@@ -54,10 +56,9 @@ export async function probeMediaStreams(payload: DSLActivityExecutionPayload<Pro
     // -probesize 32k caps the amount read from the network to ~32 KB.
     let stdout: string;
     try {
-        ({ stdout } = await execAsync(
-            `ffprobe -v quiet -probesize 32k -print_format json -show_streams "${url}"`,
-            { maxBuffer: FFPROBE_MAX_BUFFER },
-        ));
+        ({ stdout } = await execAsync(`ffprobe -v quiet -probesize 32k -print_format json -show_streams "${url}"`, {
+            maxBuffer: FFPROBE_MAX_BUFFER,
+        }));
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         log.error(`ffprobe failed for object ${objectId}: ${message}`);
@@ -65,15 +66,13 @@ export async function probeMediaStreams(payload: DSLActivityExecutionPayload<Pro
     }
 
     const { streams } = JSON.parse(stdout) as FFProbeOutput;
-    const hasVideo = streams.some(s => s.codec_type === 'video');
-    const hasAudio = streams.some(s => s.codec_type === 'audio');
+    const hasVideo = streams.some((s) => s.codec_type === 'video');
+    const hasAudio = streams.some((s) => s.codec_type === 'audio');
 
     log.info(`Media probe result for object ${objectId}`, { hasVideo, hasAudio });
 
     if (!hasVideo && !hasAudio) {
-        throw ApplicationFailure.nonRetryable(
-            `No audio or video streams found in container for object ${objectId}`,
-        );
+        throw ApplicationFailure.nonRetryable(`No audio or video streams found in container for object ${objectId}`);
     }
 
     return { hasVideo, hasAudio };

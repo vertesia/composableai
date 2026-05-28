@@ -43,11 +43,7 @@ interface DirectiveNode {
 export function remarkDirectiveHandler() {
     return (tree: RemarkTree) => {
         visit(tree, (node): VisitorResult => {
-            if (
-                node.type !== 'containerDirective' &&
-                node.type !== 'leafDirective' &&
-                node.type !== 'textDirective'
-            ) {
+            if (node.type !== 'containerDirective' && node.type !== 'leafDirective' && node.type !== 'textDirective') {
                 return;
             }
 
@@ -111,9 +107,7 @@ export function remarkDirectiveHandler() {
             data.hName = 'div';
             data.hProperties = {
                 className: `md-${name}`,
-                ...Object.fromEntries(
-                    Object.entries(attrs).filter(([k]) => k !== 'class'),
-                ),
+                ...Object.fromEntries(Object.entries(attrs).filter(([k]) => k !== 'class')),
             };
             if (attrs.class) {
                 data.hProperties.className += ` ${attrs.class}`;

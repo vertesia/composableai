@@ -61,8 +61,7 @@ export const skillCollectionTransformer: TransformerPreset = {
                         names.push(identifier);
                     }
                 }
-            } catch {
-            }
+            } catch {}
         }
 
         if (names.length === 0) {
@@ -70,15 +69,11 @@ export const skillCollectionTransformer: TransformerPreset = {
         }
 
         // Generate code that imports all skills and exports as array
-        const code = [
-            ...imports,
-            '',
-            `export default [${names.join(', ')}];`
-        ].join('\n');
+        const code = [...imports, '', `export default [${names.join(', ')}];`].join('\n');
 
         return {
             data: null, // Not used when custom code is provided
-            code
+            code,
         };
-    }
+    },
 };

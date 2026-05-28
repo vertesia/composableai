@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useUserSession } from "../UserSession";
+import { useUserSession } from '../UserSession';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 
 interface TenantConfig {
@@ -32,8 +32,8 @@ export function useCurrentTenant() {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        tenantEmail: user.email
-                    })
+                        tenantEmail: user.email,
+                    }),
                 });
 
                 if (response.ok) {
@@ -46,7 +46,7 @@ export function useCurrentTenant() {
                             domain: tenantData.domain || [],
                             firebaseTenantId: tenantData.firebaseTenantId,
                             provider: tenantData.provider,
-                            logo: tenantData.logo
+                            logo: tenantData.logo,
                         });
                     } else {
                         setCurrentTenant(null);
@@ -69,6 +69,6 @@ export function useCurrentTenant() {
     return {
         currentTenant,
         isLoading,
-        error
+        error,
     };
 }

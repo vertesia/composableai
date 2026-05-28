@@ -10,7 +10,8 @@
     @apply text-info hover:text-info/80;
 }
 
-.vprose pre, .vprose code {
+.vprose pre,
+.vprose code {
     @apply !bg-muted text-muted my-2;
 }
 

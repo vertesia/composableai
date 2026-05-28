@@ -1,6 +1,10 @@
 import jwt from 'jsonwebtoken';
 import open from 'open';
-import type { OAuthAuthorizationServerMetadata, OAuthDeviceAuthorizationResponse, OAuthTokenResponse } from '@vertesia/common';
+import type {
+    OAuthAuthorizationServerMetadata,
+    OAuthDeviceAuthorizationResponse,
+    OAuthTokenResponse,
+} from '@vertesia/common';
 import type { Profile } from './index.js';
 import type { StoredAuthBundle } from './keyring.js';
 import type { ConfigResult } from './server/index.js';
@@ -9,7 +13,8 @@ const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server
 const OAUTH_CLIENT_METADATA_PATH = '/.well-known/oauth-client/vertesia-cli';
 const DEFAULT_OAUTH_SCOPE = 'openid profile';
 
-type OAuthProfile = Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> & Partial<Pick<Profile, 'account' | 'config_url' | 'project'>>;
+type OAuthProfile = Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> &
+    Partial<Pick<Profile, 'account' | 'config_url' | 'project'>>;
 
 interface TokenRefs {
     account?: string;
@@ -97,7 +102,9 @@ export async function refreshOAuthSession(
     return buildConfigResult(profile, response, clientId, resource);
 }
 
-function assertOAuthProfile(profile: OAuthProfile): asserts profile is OAuthProfile & Required<Pick<OAuthProfile, 'name' | 'studio_server_url' | 'zeno_server_url'>> {
+function assertOAuthProfile(
+    profile: OAuthProfile,
+): asserts profile is OAuthProfile & Required<Pick<OAuthProfile, 'name' | 'studio_server_url' | 'zeno_server_url'>> {
     if (!profile.name) {
         throw new Error('Profile name is required for OAuth authentication.');
     }
@@ -113,7 +120,9 @@ function withTrailingSlash(url: string): string {
     return url.endsWith('/') ? url : `${url}/`;
 }
 
-async function discoverAuthorizationServer(profile: Pick<Profile, 'studio_server_url'> & Partial<Pick<Profile, 'config_url'>>): Promise<OAuthDiscovery> {
+async function discoverAuthorizationServer(
+    profile: Pick<Profile, 'studio_server_url'> & Partial<Pick<Profile, 'config_url'>>,
+): Promise<OAuthDiscovery> {
     const candidates = getOAuthServerUrlCandidates(profile);
     let unavailableError: OAuthUnavailableError | undefined;
     for (const candidate of candidates) {
@@ -131,7 +140,10 @@ async function discoverAuthorizationServer(profile: Pick<Profile, 'studio_server
             throw error;
         }
     }
-    throw unavailableError || new OAuthUnavailableError(`OAuth discovery is not available for ${profile.studio_server_url}.`);
+    throw (
+        unavailableError ||
+        new OAuthUnavailableError(`OAuth discovery is not available for ${profile.studio_server_url}.`)
+    );
 }
 
 function applyProfileAuthorizationEndpoint(
@@ -182,17 +194,21 @@ async function fetchAuthorizationServerMetadata(oauthServerUrl: string): Promise
             },
         });
     } catch (error) {
-        throw new OAuthUnavailableError(`OAuth discovery is not reachable at ${oauthServerUrl}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new OAuthUnavailableError(
+            `OAuth discovery is not reachable at ${oauthServerUrl}: ${error instanceof Error ? error.message : String(error)}`,
+        );
     }
 
     if (!response.ok) {
         if (response.status === 404 || response.status === 501) {
             throw new OAuthUnavailableError(`OAuth discovery is not available at ${oauthServerUrl}.`);
         }
-        throw new Error(`Failed to load OAuth authorization metadata from ${oauthServerUrl} (${response.status} ${response.statusText}).`);
+        throw new Error(
+            `Failed to load OAuth authorization metadata from ${oauthServerUrl} (${response.status} ${response.statusText}).`,
+        );
     }
 
-    const metadata = await response.json() as Partial<OAuthAuthorizationServerMetadata>;
+    const metadata = (await response.json()) as Partial<OAuthAuthorizationServerMetadata>;
     if (!metadata.authorization_endpoint || !metadata.token_endpoint || !metadata.issuer) {
         throw new Error(`Invalid OAuth authorization metadata returned by ${oauthServerUrl}.`);
     }
@@ -233,14 +249,22 @@ async function createDeviceAuthorization(
     if (!response.ok) {
         const error = await readOAuthError(response);
         if (response.status === 404 || response.status === 501) {
-            throw new OAuthUnavailableError(`OAuth device authorization is not available for this endpoint: ${error.message}`);
+            throw new OAuthUnavailableError(
+                `OAuth device authorization is not available for this endpoint: ${error.message}`,
+            );
         }
         throw new Error(`OAuth device authorization failed (${response.status}): ${error.message}`);
     }
 
-    const payload = await response.json() as Partial<OAuthDeviceAuthorizationResponse>;
-    if (!payload.device_code || !payload.user_code || !payload.verification_uri || !payload.verification_uri_complete
-        || typeof payload.expires_in !== 'number' || typeof payload.interval !== 'number') {
+    const payload = (await response.json()) as Partial<OAuthDeviceAuthorizationResponse>;
+    if (
+        !payload.device_code ||
+        !payload.user_code ||
+        !payload.verification_uri ||
+        !payload.verification_uri_complete ||
+        typeof payload.expires_in !== 'number' ||
+        typeof payload.interval !== 'number'
+    ) {
         throw new Error('OAuth device authorization endpoint returned an invalid response.');
     }
     return payload as OAuthDeviceAuthorizationResponse;
@@ -283,7 +307,7 @@ async function pollDeviceToken(
         });
 
         if (response.ok) {
-            const payload = await response.json() as Partial<OAuthTokenResponse>;
+            const payload = (await response.json()) as Partial<OAuthTokenResponse>;
             if (!payload.access_token || !payload.token_type || typeof payload.expires_in !== 'number') {
                 throw new Error('OAuth token endpoint returned an invalid response.');
             }
@@ -345,7 +369,7 @@ async function exchangeToken(endpoint: string, body: URLSearchParams): Promise<O
         throw new Error(`OAuth token exchange failed (${response.status}): ${await readErrorMessage(response)}`);
     }
 
-    const payload = await response.json() as Partial<OAuthTokenResponse>;
+    const payload = (await response.json()) as Partial<OAuthTokenResponse>;
     if (!payload.access_token || !payload.token_type || typeof payload.expires_in !== 'number') {
         throw new Error('OAuth token endpoint returned an invalid response.');
     }

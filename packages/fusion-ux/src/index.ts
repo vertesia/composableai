@@ -38,52 +38,52 @@
 
 // Types
 export type {
-  FragmentTemplate,
-  SectionTemplate,
-  FieldTemplate,
-  ColumnTemplate,
-  ChartTemplate,
-  VegaLiteSpec,
-  ValidationResult,
-  ValidationError,
-  FusionFragmentRendererProps,
-  SectionRendererProps,
-  FieldRendererProps,
-  FusionFragmentContextValue,
-  ValidateFusionFragmentInput,
+    FragmentTemplate,
+    SectionTemplate,
+    FieldTemplate,
+    ColumnTemplate,
+    ChartTemplate,
+    VegaLiteSpec,
+    ValidationResult,
+    ValidationError,
+    FusionFragmentRendererProps,
+    SectionRendererProps,
+    FieldRendererProps,
+    FusionFragmentContextValue,
+    ValidateFusionFragmentInput,
 } from './types.js';
 
 // Components
 export {
-  FusionFragmentRenderer,
-  SectionRenderer,
-  FieldRenderer,
-  FusionFragmentProvider,
-  FusionFragmentHandler,
-  useFusionFragmentContext,
-  useFusionFragmentContextSafe,
-  createFusionFragmentCodeBlockRenderer,
-  type FusionFragmentProviderProps,
-  type FusionFragmentHandlerProps,
+    FusionFragmentRenderer,
+    SectionRenderer,
+    FieldRenderer,
+    FusionFragmentProvider,
+    FusionFragmentHandler,
+    useFusionFragmentContext,
+    useFusionFragmentContextSafe,
+    createFusionFragmentCodeBlockRenderer,
+    type FusionFragmentProviderProps,
+    type FusionFragmentHandlerProps,
 } from './fusion-fragment/index.js';
 
 // Validation utilities
 export {
-  validateTemplate,
-  parseAndValidateTemplate,
-  FragmentTemplateSchema,
-  SectionTemplateSchema,
-  FieldTemplateSchema,
-  findClosestKey,
-  findSimilarKeys,
-  formatValidationErrors,
-  formatValidationSuccess,
-  formatAvailableKeys,
+    validateTemplate,
+    parseAndValidateTemplate,
+    FragmentTemplateSchema,
+    SectionTemplateSchema,
+    FieldTemplateSchema,
+    findClosestKey,
+    findSimilarKeys,
+    formatValidationErrors,
+    formatValidationSuccess,
+    formatAvailableKeys,
 } from './validation/index.js';
 
 // Render utilities (text preview only - image rendering is in apps/tools)
 export {
-  generateTextPreview,
-  generateSampleData,
-  generateCompactPreview,
+    generateTextPreview,
+    generateSampleData,
+    generateCompactPreview,
 } from './render/index.js';

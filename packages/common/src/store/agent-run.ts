@@ -12,13 +12,25 @@
  * (workflowId, runId) are internal server concerns.
  */
 
-import type { AgentSearchScope, ConversationVisibility, InteractionExecutionConfiguration, InteractionRef, RunSource } from "../interaction.js";
-import type { UserChannel } from "../email.js";
-import type { AgentEvent } from "../workflow-analytics.js";
-import type { UserInputSignal } from "./signals.js";
-import type { ContentObjectTypeRef } from "./store.js";
-import type { ProcessDefinitionBody, ProcessState } from "./process.js";
-import type { AgentMessage, CompactMessage, ConversationActivityState, ConversationFileRef, WorkflowRunEvent } from "./workflow.js";
+import type {
+    AgentSearchScope,
+    ConversationVisibility,
+    InteractionExecutionConfiguration,
+    InteractionRef,
+    RunSource,
+} from '../interaction.js';
+import type { UserChannel } from '../email.js';
+import type { AgentEvent } from '../workflow-analytics.js';
+import type { UserInputSignal } from './signals.js';
+import type { ContentObjectTypeRef } from './store.js';
+import type { ProcessDefinitionBody, ProcessState } from './process.js';
+import type {
+    AgentMessage,
+    CompactMessage,
+    ConversationActivityState,
+    ConversationFileRef,
+    WorkflowRunEvent,
+} from './workflow.js';
 
 /**
  * Status of an agent run through its lifecycle.
@@ -190,7 +202,9 @@ export interface AgentRunBase<TData = Record<string, unknown>, TProperties = Rec
  * @typeParam TData - The interaction's expected input data type.
  * @typeParam TProperties - The content type's property schema.
  */
-export interface AgentRun<TData = Record<string, unknown>, TProperties = Record<string, unknown>> extends RunBase, AgentRunBase<TData, TProperties> {
+export interface AgentRun<TData = Record<string, unknown>, TProperties = Record<string, unknown>>
+    extends RunBase,
+        AgentRunBase<TData, TProperties> {
     run_kind: 'agent';
     run_type: 'autonomous';
 
@@ -287,7 +301,10 @@ export interface ProcessRun extends RunBase {
 }
 
 export type AnyAgentRun = AgentRun | ProcessRun;
-export type AutonomousRunResponse<TData = Record<string, unknown>, TProperties = Record<string, unknown>> = AgentRun<TData, TProperties>;
+export type AutonomousRunResponse<TData = Record<string, unknown>, TProperties = Record<string, unknown>> = AgentRun<
+    TData,
+    TProperties
+>;
 export type SupervisedRunResponse = ProcessRun & { run_type: 'supervised' };
 export type ProgrammaticRunResponse = ProcessRun & { run_type: 'programmatic' };
 /**
@@ -342,7 +359,8 @@ export interface ProcessRunInputPayload<TData = Record<string, unknown>, TSource
     started_by?: string;
 }
 
-export interface CreateProcessRunPayload<TData = Record<string, unknown>, TSource = RunSource> extends ProcessRunInputPayload<TData, TSource> {
+export interface CreateProcessRunPayload<TData = Record<string, unknown>, TSource = RunSource>
+    extends ProcessRunInputPayload<TData, TSource> {
     run_type: ProcessRunType;
 }
 
@@ -372,7 +390,8 @@ export interface RecordAgentRunPayload<TData = Record<string, unknown>> extends 
  * starting its Temporal child workflow.
  */
 export interface RecordProcessRunPayload<TData = Record<string, unknown>, TSource = RunSource>
-    extends ProcessRunInputPayload<TData, TSource>, RecordRunWorkflowPayload {
+    extends ProcessRunInputPayload<TData, TSource>,
+        RecordRunWorkflowPayload {
     run_kind: 'process';
     run_type?: ProcessRunType;
 }
@@ -421,10 +440,7 @@ export interface UpdateAgentRunStatusPayload {
 /**
  * Generic signal payload sent to a running agent workflow.
  */
-export type SignalAgentPayload =
-    | UserInputSignal
-    | ConversationFileRef
-    | Record<string, unknown>;
+export type SignalAgentPayload = UserInputSignal | ConversationFileRef | Record<string, unknown>;
 
 /**
  * Response from signaling an agent workflow.
@@ -517,9 +533,7 @@ export interface AgentRunDetailsHistoryStreamEvent {
 /**
  * Control payload emitted by the agent details SSE stream.
  */
-export type AgentRunDetailsControlStreamEvent =
-    | { type: 'continueAsNew'; newRunId: string }
-    | { type: 'done' };
+export type AgentRunDetailsControlStreamEvent = { type: 'continueAsNew'; newRunId: string } | { type: 'done' };
 
 /**
  * Error payload emitted by the agent details SSE stream.

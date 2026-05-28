@@ -40,22 +40,26 @@ export function ObjectsActionContextProvider({ children, type }: ObjectsActionCo
 
     const { data: rules, error } = useFetch<ObjectsActionSpec[]>(() => {
         return client.workflows.rules.list().then((rules) => {
-            return rules.map(rule => (
-                {
+            return rules
+                .map((rule) => ({
                     id: rule.id,
                     name: rule.name,
                     description: rule.description,
                     confirm: false,
                     isWorkflow: true,
-                    component: StartWorkflowComponent
-                }
-            )).sort((a, b) => a.name.localeCompare(b.name));
+                    component: StartWorkflowComponent,
+                }))
+                .sort((a, b) => a.name.localeCompare(b.name));
         });
     }, []);
 
     const context = useMemo(() => {
         const context = new ObjectsActionContext({
-            selection, toast, client, search, type
+            selection,
+            toast,
+            client,
+            search,
+            type,
         });
         context.allActions = DEFAULT_ACTIONS;
         // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
@@ -64,7 +68,7 @@ export function ObjectsActionContextProvider({ children, type }: ObjectsActionCo
     }, [client, search, selection, rules, toast, type]);
 
     if (error) {
-        return <ErrorBox title={t('store.failedToFetchWorkflows')}>{errorMessage(error)}</ErrorBox>
+        return <ErrorBox title={t('store.failedToFetchWorkflows')}>{errorMessage(error)}</ErrorBox>;
     }
 
     return (
@@ -74,7 +78,7 @@ export function ObjectsActionContextProvider({ children, type }: ObjectsActionCo
                 {children}
             </ObjectsActionContextReact.Provider>
         )
-    )
+    );
 }
 
 function Actions() {
@@ -86,11 +90,14 @@ function Actions() {
 
     return (
         <div style={{ display: 'none' }}>
-            {
-                context.allActions.map(action => (
-                    <action.component key={action.id} action={action} objectIds={objectIds} collectionId={selection.collectionId} />
-                ))
-            }
+            {context.allActions.map((action) => (
+                <action.component
+                    key={action.id}
+                    action={action}
+                    objectIds={objectIds}
+                    collectionId={selection.collectionId}
+                />
+            ))}
         </div>
-    )
+    );
 }

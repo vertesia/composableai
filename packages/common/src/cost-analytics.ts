@@ -20,7 +20,15 @@ export interface CostAnalyticsQuery {
     /** End time (ISO string or epoch ms) */
     to?: string | number;
     /** Group results by this dimension */
-    group_by?: 'model' | 'environment' | 'account' | 'project' | 'project_tag' | 'provider' | 'interaction' | 'workflow';
+    group_by?:
+        | 'model'
+        | 'environment'
+        | 'account'
+        | 'project'
+        | 'project_tag'
+        | 'provider'
+        | 'interaction'
+        | 'workflow';
     /** Time series resolution */
     resolution?: 'hour' | 'day' | 'week' | 'month';
     /** Filter by model pattern */

@@ -1,2 +1,2 @@
-export * from "./GenericPageNavHeader";
-export * from "./NotFoundView";
+export * from './GenericPageNavHeader';
+export * from './NotFoundView';

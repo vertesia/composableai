@@ -1,5 +1,3 @@
-import { ExampleActivities } from "./examples/index.js";
+import { ExampleActivities } from './examples/index.js';
 
-export const activities = [
-    ExampleActivities,
-];
+export const activities = [ExampleActivities];

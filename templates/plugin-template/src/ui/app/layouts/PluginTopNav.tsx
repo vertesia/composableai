@@ -15,9 +15,7 @@ export function PluginTopNav() {
                 <li className="p-2">
                     <HamburgerButton />
                 </li>
-                <li className="text-sm font-semibold">
-                    {Env.name}
-                </li>
+                <li className="text-sm font-semibold">{Env.name}</li>
             </ul>
             <ul className="flex items-center justify-end mx-3 gap-2">
                 {user && (
@@ -26,12 +24,7 @@ export function PluginTopNav() {
                             <Avatar size="sm" name={user.name} color="bg-primary" />
                         </li>
                         <li>
-                            <Button
-                                variant="outline"
-                                size="xs"
-                                onClick={() => logout()}
-                                alt={t('nav.signOut')}
-                            >
+                            <Button variant="outline" size="xs" onClick={() => logout()} alt={t('nav.signOut')}>
                                 <LogOut className="size-3.5" />
                             </Button>
                         </li>

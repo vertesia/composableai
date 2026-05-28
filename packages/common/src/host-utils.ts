@@ -12,7 +12,14 @@ function looksLikeBareIpv6(host: string): boolean {
 }
 
 function hasWhitespace(host: string): boolean {
-    return host.includes(' ') || host.includes('\t') || host.includes('\n') || host.includes('\r') || host.includes('\f') || host.includes('\v');
+    return (
+        host.includes(' ') ||
+        host.includes('\t') ||
+        host.includes('\n') ||
+        host.includes('\r') ||
+        host.includes('\f') ||
+        host.includes('\v')
+    );
 }
 
 export function normalizeHost(value: unknown): string | undefined {
@@ -47,9 +54,7 @@ export function hostFromUrl(value: string, baseUrl?: string): string | undefined
 
 export function normalizeHostList(value: unknown): string[] {
     if (!Array.isArray(value)) return [];
-    return Array.from(
-        new Set(value.map((entry) => normalizeHost(entry)).filter((entry): entry is string => !!entry)),
-    );
+    return Array.from(new Set(value.map((entry) => normalizeHost(entry)).filter((entry): entry is string => !!entry)));
 }
 
 export function hostMatchesAny(host: string, allowlist: readonly string[] | undefined): boolean {
@@ -58,7 +63,9 @@ export function hostMatchesAny(host: string, allowlist: readonly string[] | unde
     if (!normalizedHost) return false;
     return allowlist.some((entry) => {
         const normalizedEntry = normalizeHost(entry);
-        return !!normalizedEntry && (normalizedHost === normalizedEntry || normalizedHost.endsWith(`.${normalizedEntry}`));
+        return (
+            !!normalizedEntry && (normalizedHost === normalizedEntry || normalizedHost.endsWith(`.${normalizedEntry}`))
+        );
     });
 }
 
@@ -70,12 +77,13 @@ export function urlMatchesAnyHost(url: string, allowlist: readonly string[] | un
 
 export function isLocalhostOrVertesiaHost(value: string | undefined): boolean {
     const host = normalizeHost(value);
-    return !!host && (
-        host === 'localhost' ||
-        host === '127.0.0.1' ||
-        host === '::1' ||
-        host === 'vertesia.io' ||
-        host.endsWith('.vertesia.io')
+    return (
+        !!host &&
+        (host === 'localhost' ||
+            host === '127.0.0.1' ||
+            host === '::1' ||
+            host === 'vertesia.io' ||
+            host.endsWith('.vertesia.io'))
     );
 }
 

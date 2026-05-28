@@ -1,11 +1,11 @@
-import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     AgentSchedule,
     AgentScheduleWithTemporalInfo,
     CreateSchedulePayload,
     ScheduleListItem,
     UpdateSchedulePayload,
-} from "@vertesia/common";
+} from '@vertesia/common';
 
 /**
  * Client API for managing agent schedules.
@@ -14,14 +14,14 @@ import type {
  */
 export class SchedulesApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/schedules");
+        super(parent, '/api/v1/schedules');
     }
 
     /**
      * List all schedules in the project.
      */
     list(): Promise<ScheduleListItem[]> {
-        return this.get("/");
+        return this.get('/');
     }
 
     /**
@@ -50,7 +50,7 @@ export class SchedulesApi extends ApiTopic {
      * ```
      */
     create(payload: CreateSchedulePayload): Promise<AgentSchedule> {
-        return this.post("/", { payload });
+        return this.post('/', { payload });
     }
 
     /**

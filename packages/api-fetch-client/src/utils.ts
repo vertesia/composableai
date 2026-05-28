@@ -1,4 +1,3 @@
-
 export function buildQueryString(query: Record<string, unknown>) {
     const parts = [];
     for (const key of Object.keys(query)) {
@@ -7,7 +6,7 @@ export function buildQueryString(query: Record<string, unknown>) {
             parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(val))}`);
         }
     }
-    return parts.join("&");
+    return parts.join('&');
 }
 
 export function join(left: string, right: string) {

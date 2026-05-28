@@ -10,9 +10,6 @@ function Providers({ children }: { children: ReactNode }) {
     return <I18nProvider lng="en">{children}</I18nProvider>;
 }
 
-export function renderWithProviders(
-    ui: ReactElement,
-    options?: Omit<RenderOptions, 'wrapper'>,
-): RenderResult {
+export function renderWithProviders(ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>): RenderResult {
     return render(ui, { wrapper: Providers, ...options });
 }

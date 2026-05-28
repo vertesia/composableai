@@ -90,12 +90,7 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
                     <CheckCircle2 className="size-4" />
                     <span>{t('oauthProvider.connected')}</span>
                 </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDisconnect}
-                    disabled={disconnecting}
-                >
+                <Button variant="outline" size="sm" onClick={handleDisconnect} disabled={disconnecting}>
                     {disconnecting ? <Spinner className="size-3" /> : t('oauthProvider.disconnect')}
                 </Button>
             </div>
@@ -103,12 +98,7 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
     }
 
     return (
-        <Button
-            variant="outline"
-            size="sm"
-            onClick={handleConnect}
-            disabled={authenticating}
-        >
+        <Button variant="outline" size="sm" onClick={handleConnect} disabled={authenticating}>
             {authenticating ? (
                 <>
                     <Spinner className="size-4" />
