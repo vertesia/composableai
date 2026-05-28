@@ -13,7 +13,10 @@ import {
     RefreshCwIcon,
 } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
-import { UniversalDocumentViewer, type UniversalDocumentSource } from '../../document-viewer/UniversalDocumentViewer.js';
+import {
+    UniversalDocumentViewer,
+    type UniversalDocumentSource,
+} from '../../document-viewer/UniversalDocumentViewer.js';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useArtifacts, type ArtifactTreeNode } from './hooks/useArtifacts.js';
 
@@ -31,9 +34,7 @@ interface TreeNodeProps {
 }
 //** Convert a raw directory segment (e.g. "out_files") into a readable label ("Out Files"). */
 function formatDirectoryLabel(name: string): string {
-    return name
-        .replace(/[_-]/g, ' ')
-        .replace(/\b\w/g, (c) => c.toUpperCase());
+    return name.replace(/[_-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 function TreeNode({ node, depth, runId, onPreview, onDownload, downloadingPath }: TreeNodeProps) {
     const [expanded, setExpanded] = useState(true);
@@ -47,25 +48,30 @@ function TreeNode({ node, depth, runId, onPreview, onDownload, downloadingPath }
                     style={{ paddingLeft: `${depth * 16 + 4}px` }}
                     onClick={() => setExpanded((prev) => !prev)}
                 >
-                    {expanded
-                        ? <ChevronDownIcon className="size-3.5 shrink-0 text-muted" />
-                        : <ChevronRightIcon className="size-3.5 shrink-0 text-muted cn-rtl-flip" />}
-                    {expanded
-                        ? <FolderOpenIcon className="size-4 shrink-0 text-info" />
-                        : <FolderIcon className="size-4 shrink-0 text-info" />}
+                    {expanded ? (
+                        <ChevronDownIcon className="size-3.5 shrink-0 text-muted" />
+                    ) : (
+                        <ChevronRightIcon className="size-3.5 shrink-0 text-muted cn-rtl-flip" />
+                    )}
+                    {expanded ? (
+                        <FolderOpenIcon className="size-4 shrink-0 text-info" />
+                    ) : (
+                        <FolderIcon className="size-4 shrink-0 text-info" />
+                    )}
                     <span className="truncate font-medium">{formatDirectoryLabel(node.name)}</span>
                 </Button>
-                {expanded && node.children.map((child) => (
-                    <TreeNode
-                        key={child.path}
-                        node={child}
-                        depth={depth + 1}
-                        runId={runId}
-                        onPreview={onPreview}
-                        onDownload={onDownload}
-                        downloadingPath={downloadingPath}
-                    />
-                ))}
+                {expanded &&
+                    node.children.map((child) => (
+                        <TreeNode
+                            key={child.path}
+                            node={child}
+                            depth={depth + 1}
+                            runId={runId}
+                            onPreview={onPreview}
+                            onDownload={onDownload}
+                            downloadingPath={downloadingPath}
+                        />
+                    ))}
             </div>
         );
     }
@@ -104,9 +110,11 @@ function TreeNode({ node, depth, runId, onPreview, onDownload, downloadingPath }
                     disabled={isDownloading}
                     alt="Download artifact"
                 >
-                    {isDownloading
-                        ? <Loader2Icon className="size-3.5 animate-spin text-info" />
-                        : <DownloadIcon className="size-3.5" />}
+                    {isDownloading ? (
+                        <Loader2Icon className="size-3.5 animate-spin text-info" />
+                    ) : (
+                        <DownloadIcon className="size-3.5" />
+                    )}
                 </Button>
             </div>
         </div>
@@ -165,38 +173,44 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
     const [downloadingPath, setDownloadingPath] = useState<string | null>(null);
     const [previewPath, setPreviewPath] = useState<string | null>(null);
 
-    const handleDownload = useCallback(async (relativePath: string) => {
-        if (!runId) return;
-        setDownloadingPath(relativePath);
-        // Open the tab synchronously (before the await) so the browser treats it as
-        // a direct user action and doesn't block it as a popup.
-        const newTab = window.open('', '_blank');
-        try {
-            const { url } = await client.files.getArtifactDownloadUrl(runId, relativePath, 'attachment');
-            if (newTab) {
-                newTab.location.href = url;
+    const handleDownload = useCallback(
+        async (relativePath: string) => {
+            if (!runId) return;
+            setDownloadingPath(relativePath);
+            // Open the tab synchronously (before the await) so the browser treats it as
+            // a direct user action and doesn't block it as a popup.
+            const newTab = window.open('', '_blank');
+            try {
+                const { url } = await client.files.getArtifactDownloadUrl(runId, relativePath, 'attachment');
+                if (newTab) {
+                    newTab.location.href = url;
+                }
+            } catch (err) {
+                console.error('Failed to get artifact download URL:', err);
+                newTab?.close();
+            } finally {
+                setDownloadingPath(null);
             }
-        } catch (err) {
-            console.error('Failed to get artifact download URL:', err);
-            newTab?.close();
-        } finally {
-            setDownloadingPath(null);
-        }
-    }, [client, runId]);
+        },
+        [client, runId],
+    );
 
     const handlePreview = useCallback((relativePath: string) => {
         setPreviewPath(relativePath);
     }, []);
 
-    const previewSource: UniversalDocumentSource | null = runId && previewPath ? {
-        title: previewPath.split('/').pop() || previewPath,
-        fileName: previewPath.split('/').pop() || previewPath,
-        contentType: getArtifactContentType(previewPath),
-        artifact: {
-            runId,
-            path: previewPath,
-        },
-    } : null;
+    const previewSource: UniversalDocumentSource | null =
+        runId && previewPath
+            ? {
+                  title: previewPath.split('/').pop() || previewPath,
+                  fileName: previewPath.split('/').pop() || previewPath,
+                  contentType: getArtifactContentType(previewPath),
+                  artifact: {
+                      runId,
+                      path: previewPath,
+                  },
+              }
+            : null;
 
     if (!runId) {
         return (
@@ -219,7 +233,17 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
     if (error) {
         return (
             <div className="flex flex-col items-center justify-center p-4 text-muted w-full">
-                <ErrorBox title="Fail to load Artifacts" className="w-full" action={refresh} actionLabel={<><RefreshCwIcon className="size-3.5 me-1.5" />{t('agent.retry')}</>}>
+                <ErrorBox
+                    title="Fail to load Artifacts"
+                    className="w-full"
+                    action={refresh}
+                    actionLabel={
+                        <>
+                            <RefreshCwIcon className="size-3.5 me-1.5" />
+                            {t('agent.retry')}
+                        </>
+                    }
+                >
                     <span className="break-all text-muted">{error}</span> <br />
                 </ErrorBox>
             </div>
@@ -246,13 +270,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
                 <span>
                     {flatFiles.length} file{flatFiles.length !== 1 ? 's' : ''}
                 </span>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={refresh}
-                    disabled={isLoading}
-                    className="h-6 w-6 p-0"
-                >
+                <Button variant="ghost" size="sm" onClick={refresh} disabled={isLoading} className="h-6 w-6 p-0">
                     <RefreshCwIcon className={`size-3.5 ${isLoading ? 'animate-spin' : ''}`} />
                 </Button>
             </div>

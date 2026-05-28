@@ -32,12 +32,7 @@ export function SortableHead<TField extends string>({
             sortDirection={isActive ? directionToAria[direction] : 'none'}
             onSort={() => onSort(field)}
             className={`text-start select-none${className ? ` ${className}` : ''}`}
-            sortIndicator={() => (
-                <Icon
-                    className={`size-3 ${isActive ? '' : 'opacity-40'}`}
-                    aria-hidden="true"
-                />
-            )}
+            sortIndicator={() => <Icon className={`size-3 ${isActive ? '' : 'opacity-40'}`} aria-hidden="true" />}
         >
             {label}
         </SortableTableHeaderCell>

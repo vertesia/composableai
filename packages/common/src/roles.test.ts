@@ -5,7 +5,11 @@ import { getPermissionsForRoles, getRoleByName, listRoles } from './roles.js';
 
 describe('role permission catalog', () => {
     test('lists all project roles', () => {
-        expect(listRoles().map(role => role.name).sort()).toEqual(Object.values(ProjectRoles).sort());
+        expect(
+            listRoles()
+                .map((role) => role.name)
+                .sort(),
+        ).toEqual(Object.values(ProjectRoles).sort());
     });
 
     test('derives developer permissions without administrative grants', () => {
@@ -21,6 +25,6 @@ describe('role permission catalog', () => {
 
         expect(permissions).toContain(Permission.account_member);
         expect(permissions).toContain(Permission.content_read);
-        expect(permissions.filter(permission => permission === Permission.account_member)).toHaveLength(1);
+        expect(permissions.filter((permission) => permission === Permission.account_member)).toHaveLength(1);
     });
 });

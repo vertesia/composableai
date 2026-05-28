@@ -20,7 +20,7 @@ export function DocumentInput({ object }: DocumentInputProps) {
 
     const { off, on, isOn } = useFlag();
     const [actualValue, setValue] = useState(object.value != null ? String(object.value) : '');
-    const [doc, setDoc] = useState<ContentObjectItem | undefined>(undefined)
+    const [doc, setDoc] = useState<ContentObjectItem | undefined>(undefined);
 
     const _onChange = (event: ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
@@ -54,36 +54,43 @@ export function DocumentInput({ object }: DocumentInputProps) {
             return;
         }
 
-        client.objects.retrieve(match[1]).then((doc) => {
-            setDoc(doc);
-        }).catch(() => {
-            clearValue();
-        });
+        client.objects
+            .retrieve(match[1])
+            .then((doc) => {
+                setDoc(doc);
+            })
+            .catch(() => {
+                clearValue();
+            });
     }, [actualValue, client.objects.retrieve, clearValue, doc]);
 
     return (
         <div>
             <div className="relative">
-                <input value={actualValue} onChange={_onChange} className={clsx(Styles.INPUT, "pe-10 w-full")} />
-                {doc &&
+                <input value={actualValue} onChange={_onChange} className={clsx(Styles.INPUT, 'pe-10 w-full')} />
+                {doc && (
                     <div className="absolute inset-y-0 end-10 flex items-center justify-center ">
-                        <Button onClick={clearValue} variant='unstyled' className='hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-600'>
+                        <Button
+                            onClick={clearValue}
+                            variant="unstyled"
+                            className="hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+                        >
                             <X className="size-5" />
                         </Button>
                     </div>
-                }
+                )}
                 <div className="absolute inset-y-0 end-0 flex items-center justify-center">
-                    <Button onClick={on} variant='unstyled' className='hover:bg-gray-100 dark:hover:bg-gray-600'>
+                    <Button onClick={on} variant="unstyled" className="hover:bg-gray-100 dark:hover:bg-gray-600">
                         <ChevronsUpDown className="size-5" />
                     </Button>
                 </div>
                 <SelectDocumentModal value={actualValue} isOpen={isOn} onClose={onSelect} />
             </div>
-            {doc &&
+            {doc && (
                 <div className="p-1 semibold text-sm text-gray-600 dark:text-slate-300">
                     {typeof doc.properties?.title === 'string' ? doc.properties.title : doc.name}
                 </div>
-            }
+            )}
         </div>
-    )
+    );
 }

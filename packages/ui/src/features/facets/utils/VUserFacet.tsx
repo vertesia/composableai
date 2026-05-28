@@ -12,7 +12,7 @@ export function createUserFilterGroup({ buckets, name, placeholder }: UserFacetP
     const options = buckets.map((bucket) => {
         return {
             value: bucket._id,
-            label: `(${bucket.count})`
+            label: `(${bucket.count})`,
         };
     });
 
@@ -25,12 +25,12 @@ export function createUserFilterGroup({ buckets, name, placeholder }: UserFacetP
 
             if (isUnknownUser) {
                 // Find the count for this user from buckets
-                const bucket = buckets.find(b => b._id === userRef);
+                const bucket = buckets.find((b) => b._id === userRef);
                 return `Unknown User (${bucket?.count || 0})`;
             }
 
             // For known users, render UserInfo with count
-            const bucket = buckets.find(b => b._id === userRef);
+            const bucket = buckets.find((b) => b._id === userRef);
             return (
                 <div className="flex items-center w-full gap-2">
                     <div className="flex-1 min-w-0 flex items-center truncate">

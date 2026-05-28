@@ -12,7 +12,13 @@ interface HeroSectionProps {
 }
 
 function getInitials(title: string): string {
-    return title.split(/\s+/).map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+    return title
+        .split(/\s+/)
+        .map((w) => w[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
 }
 
 function countByType(resources: ResourceItem[]): Record<string, number> {
@@ -45,7 +51,9 @@ export function HeroSection({ title, version, resources }: HeroSectionProps) {
                             {getInitials(title)}
                         </div>
                         <div>
-                            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Tools Server</p>
+                            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                                Tools Server
+                            </p>
                             <h1 className="-tracking-wide text-2xl font-bold text-foreground">{title}</h1>
                         </div>
                     </div>
@@ -85,7 +93,8 @@ export function HeroSection({ title, version, resources }: HeroSectionProps) {
                     <EndpointPanel label="Package endpoint" path="/api/package" />
                     <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                         Use <strong className="text-foreground">POST /api/tools/&lt;collection&gt;</strong> or{' '}
-                        <strong className="text-foreground">POST /api/skills/&lt;collection&gt;</strong> to call these from your apps or agents.
+                        <strong className="text-foreground">POST /api/skills/&lt;collection&gt;</strong> to call these
+                        from your apps or agents.
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">v{version}</p>
                 </aside>

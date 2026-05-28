@@ -1,11 +1,11 @@
 // ================== Interaction Endpoints ==================
 
-import type { CatalogInteractionRef } from "@vertesia/common";
-import { type Context, Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
-import { authorize } from "../auth.js";
-import type { InteractionCollection } from "../InteractionCollection.js";
-import type { ToolServerConfig } from "./types.js";
+import type { CatalogInteractionRef } from '@vertesia/common';
+import { type Context, Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import { authorize } from '../auth.js';
+import type { InteractionCollection } from '../InteractionCollection.js';
+import type { ToolServerConfig } from './types.js';
 
 export function createInteractionsRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { interactions = [] } = config;
@@ -17,7 +17,7 @@ export function createInteractionsRoute(app: Hono, basePath: string, config: Too
         for (const coll of interactions) {
             for (const inter of coll.interactions) {
                 allInteractions.push({
-                    type: "app",
+                    type: 'app',
                     id: `${coll.name}:${inter.name}`,
                     name: inter.name,
                     title: inter.title || inter.name,
@@ -31,7 +31,7 @@ export function createInteractionsRoute(app: Hono, basePath: string, config: Too
             title: 'All Interactions',
             description: 'All available interactions across all collections',
             interactions: allInteractions,
-            collections: interactions.map(i => ({
+            collections: interactions.map((i) => ({
                 name: i.name,
                 title: i.title,
                 description: i.description,
@@ -54,7 +54,7 @@ export function createInteractionsRoute(app: Hono, basePath: string, config: Too
             // Explicit collection:interaction format
             const collName = parts[0];
             const interName = parts[1];
-            const inter = interactions.find(t => t.name === collName)?.getInteractionByName(interName);
+            const inter = interactions.find((t) => t.name === collName)?.getInteractionByName(interName);
             if (inter) {
                 return c.json({ ...inter, id: `${collName}:${interName}` });
             }
@@ -69,27 +69,28 @@ export function createInteractionsRoute(app: Hono, basePath: string, config: Too
         }
 
         throw new HTTPException(404, {
-            message: `No interaction found with name: ${name}`
+            message: `No interaction found with name: ${name}`,
         });
     });
-
 }
-
-
-
 
 function createInteractionEndpoints(coll: InteractionCollection): Hono {
     const endpoint = new Hono();
 
     endpoint.get('/', (c: Context) => {
-        return c.json(coll.interactions.map(inter => ({
-            type: "app",
-            id: `${coll.name}:${inter.name}`,
-            name: inter.name,
-            title: inter.title || inter.name,
-            description: inter.description,
-            tags: inter.tags || [],
-        } satisfies CatalogInteractionRef)));
+        return c.json(
+            coll.interactions.map(
+                (inter) =>
+                    ({
+                        type: 'app',
+                        id: `${coll.name}:${inter.name}`,
+                        name: inter.name,
+                        title: inter.title || inter.name,
+                        description: inter.description,
+                        tags: inter.tags || [],
+                    }) satisfies CatalogInteractionRef,
+            ),
+        );
     });
 
     endpoint.get('/:name', async (c: Context) => {
@@ -97,13 +98,13 @@ function createInteractionEndpoints(coll: InteractionCollection): Hono {
         const name = c.req.param('name');
         if (!name) {
             throw new HTTPException(400, {
-                message: 'Interaction name is required'
+                message: 'Interaction name is required',
             });
         }
         const inter = coll.getInteractionByName(name);
         if (!inter) {
             throw new HTTPException(404, {
-                message: `No interaction found with name: ${name}`
+                message: `No interaction found with name: ${name}`,
             });
         }
         return c.json({

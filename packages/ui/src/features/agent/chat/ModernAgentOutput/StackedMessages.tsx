@@ -1,6 +1,6 @@
-import type { AgentMessage } from "@vertesia/common";
-import React from "react";
-import MessageItem from "./MessageItem";
+import type { AgentMessage } from '@vertesia/common';
+import React from 'react';
+import MessageItem from './MessageItem';
 
 interface StackedMessagesProps {
     messages: AgentMessage[];
@@ -12,11 +12,11 @@ export default function StackedMessages({ messages }: StackedMessagesProps) {
     const sortedMessages = React.useMemo(
         () =>
             [...messages].sort((a, b) => {
-                const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
-                const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
+                const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
+                const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
                 return timeA - timeB;
             }),
-        [messages]
+        [messages],
     );
 
     return (

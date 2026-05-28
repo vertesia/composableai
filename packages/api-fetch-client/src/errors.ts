@@ -1,4 +1,3 @@
-
 function isRecord(value: unknown): value is Record<string, unknown> {
     return value !== null && typeof value === 'object';
 }
@@ -22,7 +21,7 @@ function createMessage(message: string, request: Request, status: number, payloa
             const detailsType = typeof details;
             if (detailsType === 'string') {
                 msg += `\nDetails: ${details}`;
-            } else if (detailsType === "object") {
+            } else if (detailsType === 'object') {
                 msg += `\nDetails: ${JSON.stringify(details, undefined, 2)}`;
             }
         }
@@ -51,7 +50,6 @@ export class RequestError extends Error {
     get details() {
         return getDetails(this.payload);
     }
-
 }
 
 export class ServerError extends RequestError {
@@ -62,7 +60,7 @@ export class ServerError extends RequestError {
     updateDetails(details: unknown) {
         if (details !== this.details) {
             const payload = isRecord(this.payload) ? { ...this.payload, details } : { details };
-            return new ServerError(this.original_message, this.request, this.status, payload, this.displayDetails)
+            return new ServerError(this.original_message, this.request, this.status, payload, this.displayDetails);
         } else {
             return this;
         }

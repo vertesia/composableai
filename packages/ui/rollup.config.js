@@ -10,7 +10,6 @@ import { EXTERNALS } from './externals.js';
 const outputDir = path.resolve('lib');
 const esmOutputDir = path.join(outputDir, 'esm');
 
-
 // Get all directories with index.ts or index.tsx
 const entries = fs.readdirSync(esmOutputDir).filter((name) => {
     const dir = path.join(esmOutputDir, name);
@@ -23,7 +22,6 @@ const entries = fs.readdirSync(esmOutputDir).filter((name) => {
     }
     return false;
 });
-
 
 const jsEntries = entries.map((name) => ({
     input: path.join(outputDir, 'esm', name, 'index.js'),

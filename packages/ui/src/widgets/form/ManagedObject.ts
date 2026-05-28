@@ -1,8 +1,8 @@
-import type { JSONSchema, JSONSchemaArray, JSONSchemaObject, JSONSchemaType } from "@vertesia/common";
-import { type ArrayPropertySchema, type PropertySchema, Schema } from "./schema.js";
+import type { JSONSchema, JSONSchemaArray, JSONSchemaObject, JSONSchemaType } from '@vertesia/common';
+import { type ArrayPropertySchema, type PropertySchema, Schema } from './schema.js';
 
 export function computeTitleFromName(name: string) {
-    name = name.replace(/_/g, ' ').replace(/([a-z0-9])&([A-Z])/g, "$1 $2");
+    name = name.replace(/_/g, ' ').replace(/([a-z0-9])&([A-Z])/g, '$1 $2');
     return name[0].toUpperCase() + name.slice(1);
 }
 
@@ -21,12 +21,11 @@ function getInputType(_name: string, schema: PropertySchema) {
         case 'boolean':
             return 'checkbox';
         case 'string':
-            return "text";
+            return 'text';
         default:
             return 'text';
     }
 }
-
 
 export abstract class Node<SchemaT extends Schema = Schema, ValueT = JSONSchemaType> {
     // change observer
@@ -35,15 +34,18 @@ export abstract class Node<SchemaT extends Schema = Schema, ValueT = JSONSchemaT
 
     abstract value: ValueT;
 
-    constructor(public parent: Node | null, public schema: SchemaT, public name: string) {
-    }
+    constructor(
+        public parent: Node | null,
+        public schema: SchemaT,
+        public name: string,
+    ) {}
 
     get isRoot() {
         return !this.parent;
     }
 
     get root(): Node {
-        return this.parent ? this.parent.root : this as Node;
+        return this.parent ? this.parent.root : (this as Node);
     }
 
     get path(): string[] {
@@ -74,11 +76,10 @@ export abstract class Node<SchemaT extends Schema = Schema, ValueT = JSONSchemaT
         if (this.observer) {
             if (this.observer(this as Node) === false) {
                 return;
-            };
+            }
         }
         this.parent?.onChange(node);
     }
-
 }
 
 export abstract class ManagedObjectBase<SchemaT extends Schema = Schema> extends Node<SchemaT, JSONSchemaObject> {
@@ -131,9 +132,17 @@ export abstract class ManagedObjectBase<SchemaT extends Schema = Schema> extends
         const out: Node[] = [];
         for (const schema of Object.values(this.schema.properties)) {
             if (schema.isMulti) {
-                out.push(new ManagedListProperty(this, schema as ArrayPropertySchema, this.getOrInitArrayProperty(schema.name)));
+                out.push(
+                    new ManagedListProperty(
+                        this,
+                        schema as ArrayPropertySchema,
+                        this.getOrInitArrayProperty(schema.name),
+                    ),
+                );
             } else if (schema.isObject) {
-                out.push(new ManagedObjectProperty(this, schema, schema.name, this.getOrInitObjectProperty(schema.name)));
+                out.push(
+                    new ManagedObjectProperty(this, schema, schema.name, this.getOrInitObjectProperty(schema.name)),
+                );
             } else {
                 out.push(new ManagedProperty(this, schema));
             }
@@ -144,28 +153,29 @@ export abstract class ManagedObjectBase<SchemaT extends Schema = Schema> extends
     [Symbol.iterator]() {
         return this.properties[Symbol.iterator]();
     }
-
 }
 
 export class ManagedObject extends ManagedObjectBase<Schema> {
-
-    constructor(schema: Schema | JSONSchema, public value: JSONSchemaObject = {}) {
+    constructor(
+        schema: Schema | JSONSchema,
+        public value: JSONSchemaObject = {},
+    ) {
         super(null, schema instanceof Schema ? schema : new Schema(schema), '#root');
     }
-
 }
 
 export class ManagedObjectProperty extends ManagedObjectBase<PropertySchema> {
-
-    constructor(parent: Node, schema: PropertySchema, name: string, public value: JSONSchemaObject) {
+    constructor(
+        parent: Node,
+        schema: PropertySchema,
+        name: string,
+        public value: JSONSchemaObject,
+    ) {
         super(parent, schema, name);
     }
-
 }
 
-
 export class ManagedProperty extends Node<PropertySchema> {
-
     constructor(parent: ManagedObjectBase, schema: PropertySchema) {
         super(parent, schema, schema.name);
         if (parent.value[this.name] === undefined && schema.defaultValue !== undefined) {
@@ -191,14 +201,16 @@ export class ManagedProperty extends Node<PropertySchema> {
     getInputType() {
         return getInputType(this.name, this.schema);
     }
-
 }
 
 export class ManagedListProperty extends Node<ArrayPropertySchema, JSONSchemaArray> {
-
     items: MangedListItem[] = [];
 
-    constructor(parent: ManagedObjectBase, schema: ArrayPropertySchema, public value: JSONSchemaArray) {
+    constructor(
+        parent: ManagedObjectBase,
+        schema: ArrayPropertySchema,
+        public value: JSONSchemaArray,
+    ) {
         super(parent, schema, schema.name);
         for (const _v of this.value) {
             this.add();
@@ -226,7 +238,7 @@ export class ManagedListProperty extends Node<ArrayPropertySchema, JSONSchemaArr
     //TODO change is fired even if the removed item is transient
     // how to mark an item as transient (an added item not yet set by the user)
     remove(index: number) {
-        const value = this.value
+        const value = this.value;
         if (index >= 0 && index < this.items.length) {
             this.items.splice(index, 1);
             // update indexes
@@ -267,14 +279,15 @@ export class ManagedListProperty extends Node<ArrayPropertySchema, JSONSchemaArr
             this.items.pop();
         }
     }
-
 }
 
 export class ManageObjectEntry extends ManagedObjectBase {
-
     key: string;
 
-    constructor(parent: ManagedListProperty, public index: number) {
+    constructor(
+        parent: ManagedListProperty,
+        public index: number,
+    ) {
         super(parent, parent.schema, String(index));
         if (parent.value[index] === undefined) {
             parent.value[index] = {};
@@ -293,14 +306,15 @@ export class ManageObjectEntry extends ManagedObjectBase {
     get value() {
         return (this.parent as ManagedListProperty).value[this.index] as JSONSchemaObject;
     }
-
 }
 
 export class ManagedScalarEntry extends Node<ArrayPropertySchema> {
-
     key: string;
 
-    constructor(parent: ManagedListProperty, public index: number) {
+    constructor(
+        parent: ManagedListProperty,
+        public index: number,
+    ) {
         super(parent, parent.schema, String(index));
         if (parent.value[index] === undefined && parent.schema.defaultValue !== undefined) {
             parent.value[index] = parent.schema.defaultValue;
@@ -327,7 +341,6 @@ export class ManagedScalarEntry extends Node<ArrayPropertySchema> {
     getInputType() {
         return getInputType(this.name, this.schema);
     }
-
 }
 
 export type MangedListItem = ManagedScalarEntry | ManageObjectEntry;

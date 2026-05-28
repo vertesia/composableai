@@ -1,10 +1,9 @@
-import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
-import type { DateRangeQuery, RunsAnalyticsSummary, TokenUsageSummary } from "@vertesia/common";
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type { DateRangeQuery, RunsAnalyticsSummary, TokenUsageSummary } from '@vertesia/common';
 
 export default class AnalyticsApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/analytics")
+        super(parent, '/api/v1/analytics');
     }
 
     runsSummary(query?: DateRangeQuery, environmentId?: string): Promise<RunsAnalyticsSummary> {
@@ -33,5 +32,4 @@ export default class AnalyticsApi extends ApiTopic {
         const qs = params.toString();
         return this.get(`/runs/token-usage${qs ? `?${qs}` : ''}`);
     }
-
 }

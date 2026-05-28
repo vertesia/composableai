@@ -6,23 +6,23 @@ export const DECLARATION_TAG = 'DECLARATION_TAG';
 export const TAG = 'TAG';
 
 export const defaultTheme = {
-  tagColor: '#d43900',
-  textColor: '#333',
-  attributeKeyColor: '#2a7ab0',
-  attributeValueColor: '#008000',
-  separatorColor: '#333',
-  commentColor: '#aaa',
-  cdataColor: '#1d781d',
-  fontFamily: 'monospace',
+    tagColor: '#d43900',
+    textColor: '#333',
+    attributeKeyColor: '#2a7ab0',
+    attributeValueColor: '#008000',
+    separatorColor: '#333',
+    commentColor: '#aaa',
+    cdataColor: '#1d781d',
+    fontFamily: 'monospace',
 };
 
 export const darkTheme = {
-  attributeKeyColor: '#FFD700',
-  attributeValueColor: '#FF4500',
-  tagColor: '#87CEFA',
-  textColor: '#00FF00',
-  separatorColor: '#FFD700',
-  commentColor: '#BEBEBE',
-  cdataColor: '#33CC66',
-  fontFamily: 'monospace',
+    attributeKeyColor: '#FFD700',
+    attributeValueColor: '#FF4500',
+    tagColor: '#87CEFA',
+    textColor: '#00FF00',
+    separatorColor: '#FFD700',
+    commentColor: '#BEBEBE',
+    cdataColor: '#33CC66',
+    fontFamily: 'monospace',
 };

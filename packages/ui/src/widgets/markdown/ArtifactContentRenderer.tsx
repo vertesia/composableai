@@ -43,7 +43,7 @@ export interface ArtifactContentRendererProps {
 function autoDetectRenderType(
     content: unknown,
     path: string,
-    contentType?: 'json' | 'text' | 'binary'
+    contentType?: 'json' | 'text' | 'binary',
 ): ExpandRenderType {
     const ext = path.split('.').pop()?.toLowerCase();
 
@@ -130,22 +130,20 @@ function TableRenderer({ content }: { content: unknown }): ReactElement {
         }
 
         const headers = Object.keys(first);
-        const rows = content.map(row =>
-            headers.map(h => {
+        const rows = content.map((row) =>
+            headers.map((h) => {
                 const val = (row as Record<string, unknown>)[h];
                 if (val === null || val === undefined) return '';
                 if (typeof val === 'object') return JSON.stringify(val);
                 return String(val);
-            })
+            }),
         );
 
         return { headers, rows };
     }, [content]);
 
     if (headers.length === 0) {
-        return (
-            <CodeBlockPlaceholder type="table" error="No table data found" />
-        );
+        return <CodeBlockPlaceholder type="table" error="No table data found" />;
     }
 
     return (
@@ -175,11 +173,7 @@ function TableRenderer({ content }: { content: unknown }): ReactElement {
                     ))}
                 </tbody>
             </table>
-            {rows.length > 100 && (
-                <div className="text-sm text-muted py-2">
-                    Showing 100 of {rows.length} rows
-                </div>
-            )}
+            {rows.length > 100 && <div className="text-sm text-muted py-2">Showing 100 of {rows.length} rows</div>}
         </div>
     );
 }
@@ -225,8 +219,10 @@ export function makeSvgResponsive(svg: string): string {
             .replace(/\swidth\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i, '')
             .replace(/\sheight\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i, '');
         if (/style="/i.test(a)) {
-            a = a.replace(/style="([^"]*)"/i, (_: string, v: string) =>
-                `style="${v};width:100%;height:auto;display:block;max-width:100%;"`);
+            a = a.replace(
+                /style="([^"]*)"/i,
+                (_: string, v: string) => `style="${v};width:100%;height:auto;display:block;max-width:100%;"`,
+            );
         } else {
             a += ' style="width:100%;height:auto;display:block;max-width:100%;"';
         }
@@ -267,14 +263,7 @@ function ImageRenderer({ content, path }: { content: unknown; path: string }): R
     const url = typeof content === 'string' ? content : '';
     const alt = path.split('/').pop() || 'Artifact image';
 
-    return (
-        <img
-            src={url}
-            alt={alt}
-            className="max-w-full h-auto rounded"
-            loading="lazy"
-        />
-    );
+    return <img src={url} alt={alt} className="max-w-full h-auto rounded" loading="lazy" />;
 }
 
 /**
@@ -321,12 +310,7 @@ export function ArtifactContentRenderer({
         case 'vega-lite': {
             const spec = toVegaLiteSpec(content);
             if (!spec) {
-                return (
-                    <CodeBlockPlaceholder
-                        type="chart"
-                        error="Invalid Vega-Lite specification"
-                    />
-                );
+                return <CodeBlockPlaceholder type="chart" error="Invalid Vega-Lite specification" />;
             }
             return (
                 <CodeBlockErrorBoundary type="chart" fallbackCode={JSON.stringify(content, null, 2)}>
@@ -381,9 +365,7 @@ export function ArtifactContentRenderer({
             return (
                 <CodeBlockErrorBoundary type="markdown" fallbackCode={markdownContent}>
                     {MarkdownRenderer ? (
-                        <MarkdownRenderer artifactRunId={runId}>
-                            {markdownContent}
-                        </MarkdownRenderer>
+                        <MarkdownRenderer artifactRunId={runId}>{markdownContent}</MarkdownRenderer>
                     ) : (
                         <pre className="overflow-x-auto p-3 bg-muted/10 rounded text-sm">
                             <code>{markdownContent}</code>

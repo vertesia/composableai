@@ -4,4 +4,4 @@ export type {
     JSONSchemaObject,
     JSONSchemaType,
     JSONSchemaTypeName,
-} from "@llumiverse/common";
+} from '@llumiverse/common';

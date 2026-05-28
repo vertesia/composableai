@@ -91,7 +91,7 @@ function pickProfileForCredential(input: GitCredentialInput, profileName?: strin
     if (config.current && gitHostForProfile(config.current) === host) {
         return config.current;
     }
-    return config.profiles.find(profile => gitHostForProfile(profile) === host);
+    return config.profiles.find((profile) => gitHostForProfile(profile) === host);
 }
 
 function gitHostForProfile(profile: Profile): string | undefined {
@@ -103,9 +103,8 @@ function gitHostForProfile(profile: Profile): string | undefined {
 }
 
 function gitServerUrlForProfile(profile: Profile): string {
-    const override = process.env.VERTESIA_GIT_SERVER_URL
-        || process.env.APP_GIT_SERVER_URL
-        || process.env.APPGEN_GIT_SERVER_URL;
+    const override =
+        process.env.VERTESIA_GIT_SERVER_URL || process.env.APP_GIT_SERVER_URL || process.env.APPGEN_GIT_SERVER_URL;
     if (override) return normalizeGitBaseUrl(override);
 
     const sourceUrl = profile.studio_server_url || profile.zeno_server_url || profile.config_url;
@@ -196,7 +195,7 @@ function readStdin(): Promise<string> {
     return new Promise((resolve, reject) => {
         let text = '';
         process.stdin.setEncoding('utf8');
-        process.stdin.on('data', chunk => {
+        process.stdin.on('data', (chunk) => {
             text += chunk;
         });
         process.stdin.on('end', () => resolve(text));

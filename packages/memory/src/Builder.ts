@@ -1,13 +1,13 @@
-import { AsyncObjectWalker } from "@vertesia/json";
-import { mkdtempSync, rmSync } from "node:fs";
-import os from "node:os";
-import { join, resolve } from "node:path";
-import { copy, type CopyOptions } from "./commands/copy.js";
-import { exec, type ExecOptions } from "./commands/exec.js";
-import { ContentObject, DocxObject, JsonObject, MediaObject, type MediaOptions, PdfObject } from "./ContentObject.js";
-import { AbstractContentSource, type ContentSource, type SourceSpec, TextSource } from "./ContentSource.js";
-import { loadMemoryPack } from "./MemoryPack.js";
-import { type FromOptions, MemoryPackBuilder } from "./MemoryPackBuilder.js";
+import { AsyncObjectWalker } from '@vertesia/json';
+import { mkdtempSync, rmSync } from 'node:fs';
+import os from 'node:os';
+import { join, resolve } from 'node:path';
+import { copy, type CopyOptions } from './commands/copy.js';
+import { exec, type ExecOptions } from './commands/exec.js';
+import { ContentObject, DocxObject, JsonObject, MediaObject, type MediaOptions, PdfObject } from './ContentObject.js';
+import { AbstractContentSource, type ContentSource, type SourceSpec, TextSource } from './ContentSource.js';
+import { loadMemoryPack } from './MemoryPack.js';
+import { type FromOptions, MemoryPackBuilder } from './MemoryPackBuilder.js';
 
 export interface BuildOptions {
     indent?: number;
@@ -37,7 +37,7 @@ export interface BuildOptions {
      * @param file
      * @returns the URI of the published memory
      */
-    publish?: (file: string, name: string) => Promise<string>
+    publish?: (file: string, name: string) => Promise<string>;
 
     /**
      * The directory where to transpile the recipe ts file
@@ -64,7 +64,7 @@ export class Builder implements Commands {
 
     static getInstance() {
         if (!Builder.instance) {
-            throw new Error("No builder instance found");
+            throw new Error('No builder instance found');
         }
         return Builder.instance;
     }
@@ -115,7 +115,7 @@ export class Builder implements Commands {
     content(location: string, encoding?: BufferEncoding) {
         const source = AbstractContentSource.resolve(location);
         if (Array.isArray(source)) {
-            return source.map(s => new ContentObject(this, s, encoding));
+            return source.map((s) => new ContentObject(this, s, encoding));
         } else {
             return new ContentObject(this, source, encoding);
         }
@@ -124,7 +124,7 @@ export class Builder implements Commands {
     json(location: string) {
         const source = AbstractContentSource.resolve(location);
         if (Array.isArray(source)) {
-            return source.map(s => new JsonObject(this, s));
+            return source.map((s) => new JsonObject(this, s));
         } else {
             return new JsonObject(this, source);
         }
@@ -133,7 +133,7 @@ export class Builder implements Commands {
     pdf(location: string) {
         const source = AbstractContentSource.resolve(location);
         if (Array.isArray(source)) {
-            return source.map(s => new PdfObject(this, s));
+            return source.map((s) => new PdfObject(this, s));
         } else {
             return new PdfObject(this, source);
         }
@@ -142,7 +142,7 @@ export class Builder implements Commands {
     docx(location: string) {
         const source = AbstractContentSource.resolve(location);
         if (Array.isArray(source)) {
-            return source.map(s => new DocxObject(this, s));
+            return source.map((s) => new DocxObject(this, s));
         } else {
             return new DocxObject(this, source);
         }
@@ -151,7 +151,7 @@ export class Builder implements Commands {
     media(location: string, options?: MediaOptions) {
         const source = AbstractContentSource.resolve(location);
         if (Array.isArray(source)) {
-            return source.map(s => new MediaObject(this, s, options));
+            return source.map((s) => new MediaObject(this, s, options));
         } else {
             return new MediaObject(this, source, options);
         }
@@ -183,15 +183,15 @@ export class Builder implements Commands {
         }
     }
 
-    private _getOutputNames(): { fileName: string, publishName: string | undefined } {
+    private _getOutputNames(): { fileName: string; publishName: string | undefined } {
         const options = this.options;
         if (!options.out) {
-            options.out = "memory.tar";
+            options.out = 'memory.tar';
         }
         let fileName: string;
         let publishName: string | undefined;
         const out = options.out;
-        if (out.startsWith("memory:")) {
+        if (out.startsWith('memory:')) {
             if (!options.publish) {
                 throw new Error(`The publish option is required for "${out}" output`);
             }
@@ -199,13 +199,12 @@ export class Builder implements Commands {
             options.gzip = true;
             // create a temporary path for the output
             fileName = createTmpBaseName(this.tmpdir());
-            publishName = out.substring("memory:".length);
+            publishName = out.substring('memory:'.length);
         } else {
             fileName = resolve(out);
         }
         return { fileName, publishName };
     }
-
 }
 
 function resolveContextObject(object: Record<string, unknown>): Promise<Record<string, unknown>> {
@@ -222,8 +221,10 @@ function createTmpBaseName(tmpdir: string) {
     return join(tmpdir, `.composable-memory-${Date.now()}.tar`);
 }
 
-
-export function buildMemoryPack(recipeFn: (commands: Commands) => Promise<Record<string, unknown>>, options: BuildOptions): Promise<string> {
+export function buildMemoryPack(
+    recipeFn: (commands: Commands) => Promise<Record<string, unknown>>,
+    options: BuildOptions,
+): Promise<string> {
     const builder = new Builder(options);
     return recipeFn({
         vars: builder.vars.bind(builder),
@@ -237,5 +238,5 @@ export function buildMemoryPack(recipeFn: (commands: Commands) => Promise<Record
         media: builder.media.bind(builder),
         copy: builder.copy.bind(builder),
         copyText: builder.copyText.bind(builder),
-    }).then(metadata => builder.build(metadata));
+    }).then((metadata) => builder.build(metadata));
 }

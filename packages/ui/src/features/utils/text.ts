@@ -1,6 +1,6 @@
 export function shortId(id: string, length: number = 7) {
     if (!id) {
-        return "";
+        return '';
     }
     return `~${id.slice(-length)}`;
 }

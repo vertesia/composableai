@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
 interface PageShellProps {
     title: string;
@@ -14,9 +14,7 @@ export function PageShell({ title, description, action, children }: PageShellPro
                 <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-                        {description && (
-                            <p className="text-sm text-muted mt-1 max-w-3xl">{description}</p>
-                        )}
+                        {description && <p className="text-sm text-muted mt-1 max-w-3xl">{description}</p>}
                     </div>
                     {action}
                 </div>

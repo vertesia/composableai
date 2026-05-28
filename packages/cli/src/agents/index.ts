@@ -12,14 +12,14 @@ import {
     type ProcessRunType,
     type Task,
     type UserInputSignal,
-} from "@vertesia/common";
-import chalk from "chalk";
-import type { Command } from "commander";
-import { setTimeout as delay } from "node:timers/promises";
-import * as readline from "readline";
-import { registerArtifactsCommand } from "../artifacts/index.js";
-import { getClient } from "../client.js";
-import { readFile, readStdin, writeFile } from "../utils/stdio.js";
+} from '@vertesia/common';
+import chalk from 'chalk';
+import type { Command } from 'commander';
+import { setTimeout as delay } from 'node:timers/promises';
+import * as readline from 'readline';
+import { registerArtifactsCommand } from '../artifacts/index.js';
+import { getClient } from '../client.js';
+import { readFile, readStdin, writeFile } from '../utils/stdio.js';
 
 type StartOptions = {
     data?: unknown;
@@ -88,99 +88,104 @@ type InspectOptions = {
 };
 
 export function registerAgentsCommand(program: Command) {
-    const agents = program.command("agents")
-        .description("Start, stream, and inspect durable agent runs");
+    const agents = program.command('agents').description('Start, stream, and inspect durable agent runs');
 
     registerArtifactsCommand(agents);
 
-    agents.command("start [interaction]")
-        .description("Start a conversation agent or process run through the Agent Runs API")
-        .option("-d, --data <json>", "Inline input data as a JSON object")
-        .option("-i, --input [file]", "Input data file. Reads stdin when no file is provided")
-        .option("-o, --output <file>", "Write the created run JSON to a file")
-        .option("--process-id <id>", "Start a stored process definition instead of a conversation agent")
-        .option("--process-definition <file>", "Start an inline process definition from a JSON file")
-        .option("--run-type <type>", "Process run type: programmatic or supervised", "programmatic")
-        .option("-e, --env <environmentId>", "Environment ID for conversation agents")
-        .option("-m, --model <model>", "Model override")
-        .option("--user-message <message>", "Process run intent passed to supervised mode")
-        .option("-T, --tags <tags>", "Comma-separated tags")
-        .option("-C, --categories <categories>", "Comma-separated categories")
-        .option("--visibility <visibility>", "Run visibility: project or private")
-        .option("--tools <tools>", "Comma-separated tool names for conversation agents")
-        .option("--collection <collectionId>", "Collection ID for conversation agents")
-        .option("--no-stream", "Do not stream the feed after starting")
-        .option("--no-inspect", "Do not print a short run summary before streaming")
-        .option("--json", "Print machine-readable JSON for non-streaming output")
-        .option("--interactive", "Send UserInput signals while streaming")
+    agents
+        .command('start [interaction]')
+        .description('Start a conversation agent or process run through the Agent Runs API')
+        .option('-d, --data <json>', 'Inline input data as a JSON object')
+        .option('-i, --input [file]', 'Input data file. Reads stdin when no file is provided')
+        .option('-o, --output <file>', 'Write the created run JSON to a file')
+        .option('--process-id <id>', 'Start a stored process definition instead of a conversation agent')
+        .option('--process-definition <file>', 'Start an inline process definition from a JSON file')
+        .option('--run-type <type>', 'Process run type: programmatic or supervised', 'programmatic')
+        .option('-e, --env <environmentId>', 'Environment ID for conversation agents')
+        .option('-m, --model <model>', 'Model override')
+        .option('--user-message <message>', 'Process run intent passed to supervised mode')
+        .option('-T, --tags <tags>', 'Comma-separated tags')
+        .option('-C, --categories <categories>', 'Comma-separated categories')
+        .option('--visibility <visibility>', 'Run visibility: project or private')
+        .option('--tools <tools>', 'Comma-separated tool names for conversation agents')
+        .option('--collection <collectionId>', 'Collection ID for conversation agents')
+        .option('--no-stream', 'Do not stream the feed after starting')
+        .option('--no-inspect', 'Do not print a short run summary before streaming')
+        .option('--json', 'Print machine-readable JSON for non-streaming output')
+        .option('--interactive', 'Send UserInput signals while streaming')
         .action(async (interaction: string | undefined, options: StartOptions) => {
             await startAgentRun(program, interaction, options);
         });
 
-    agents.command("stream <runId>")
-        .description("Stream the message feed for an existing agent or process run")
-        .option("--since <timestamp>", "Only stream messages after this timestamp")
-        .option("-i, --interactive", "Send UserInput signals while streaming")
+    agents
+        .command('stream <runId>')
+        .description('Stream the message feed for an existing agent or process run')
+        .option('--since <timestamp>', 'Only stream messages after this timestamp')
+        .option('-i, --interactive', 'Send UserInput signals while streaming')
         .action(async (runId: string, options: StreamOptions) => {
             await streamAgentRun(program, runId, options);
         });
 
-    agents.command("message <runId> [message]")
-        .alias("reply")
-        .description("Send a UserInput signal to a running conversation agent or supervised process run")
-        .option("-i, --input [file]", "Reply text file. Reads stdin when no file is provided")
-        .option("--json", "Print machine-readable JSON")
-        .option("-o, --output <file>", "Write JSON output to a file")
+    agents
+        .command('message <runId> [message]')
+        .alias('reply')
+        .description('Send a UserInput signal to a running conversation agent or supervised process run')
+        .option('-i, --input [file]', 'Reply text file. Reads stdin when no file is provided')
+        .option('--json', 'Print machine-readable JSON')
+        .option('-o, --output <file>', 'Write JSON output to a file')
         .action(async (runId: string, message: string | undefined, options: ReplyOptions) => {
             await replyToAgentRun(program, runId, message, options);
         });
 
-    const tasks = agents.command("tasks")
-        .description("List durable tasks for agent and process runs");
+    const tasks = agents.command('tasks').description('List durable tasks for agent and process runs');
 
-    tasks.command("list [runId]")
-        .description("List tasks, optionally scoped to a run id")
-        .option("--run-id <id>", "Filter by run id")
-        .option("--status <status>", "Filter by status")
-        .option("--assignee <principal>", "Filter by assignee principal ref")
-        .option("--source-type <type>", "Filter by source type: agent or process")
-        .option("-l, --limit <limit>", "Maximum tasks to return", "50")
-        .option("--wait <seconds>", "Wait up to this many seconds for at least one matching task")
-        .option("--json", "Print raw JSON")
-        .option("-o, --output <file>", "Write JSON output to a file")
+    tasks
+        .command('list [runId]')
+        .description('List tasks, optionally scoped to a run id')
+        .option('--run-id <id>', 'Filter by run id')
+        .option('--status <status>', 'Filter by status')
+        .option('--assignee <principal>', 'Filter by assignee principal ref')
+        .option('--source-type <type>', 'Filter by source type: agent or process')
+        .option('-l, --limit <limit>', 'Maximum tasks to return', '50')
+        .option('--wait <seconds>', 'Wait up to this many seconds for at least one matching task')
+        .option('--json', 'Print raw JSON')
+        .option('-o, --output <file>', 'Write JSON output to a file')
         .action(async (runId: string | undefined, options: ListTasksOptions) => {
             await listAgentTasks(program, runId, options);
         });
 
-    agents.command("answer-task <taskId> [response]")
-        .description("Complete a task with a JSON result object or a shorthand response string")
-        .option("-d, --data <json>", "Inline task result as a JSON object")
-        .option("-i, --input [file]", "Task result JSON file. Reads stdin when no file is provided")
-        .option("--json", "Print machine-readable JSON")
-        .option("-o, --output <file>", "Write JSON output to a file")
+    agents
+        .command('answer-task <taskId> [response]')
+        .description('Complete a task with a JSON result object or a shorthand response string')
+        .option('-d, --data <json>', 'Inline task result as a JSON object')
+        .option('-i, --input [file]', 'Task result JSON file. Reads stdin when no file is provided')
+        .option('--json', 'Print machine-readable JSON')
+        .option('-o, --output <file>', 'Write JSON output to a file')
         .action(async (taskId: string, response: string | undefined, options: AnswerTaskOptions) => {
             await answerTask(program, taskId, response, options);
         });
 
-    agents.command("cancel <runId>")
-        .alias("terminate")
-        .description("Cancel a running agent or process run")
-        .option("-r, --reason <reason>", "Optional cancellation reason")
-        .option("--json", "Print machine-readable JSON")
-        .option("-o, --output <file>", "Write JSON output to a file")
+    agents
+        .command('cancel <runId>')
+        .alias('terminate')
+        .description('Cancel a running agent or process run')
+        .option('-r, --reason <reason>', 'Optional cancellation reason')
+        .option('--json', 'Print machine-readable JSON')
+        .option('-o, --output <file>', 'Write JSON output to a file')
         .action(async (runId: string, options: CancelOptions) => {
             await cancelAgentRun(program, runId, options);
         });
 
-    agents.command("inspect <runId>")
-        .description("Inspect a durable agent or process run")
-        .option("--details", "Include workflow details")
-        .option("--history", "Include process node history")
-        .option("--messages", "Include stored stream messages")
-        .option("--tasks", "Include tasks for the run")
-        .option("-l, --limit <limit>", "Message/task limit", "50")
-        .option("--json", "Print raw JSON")
-        .option("-o, --output <file>", "Write JSON output to a file")
+    agents
+        .command('inspect <runId>')
+        .description('Inspect a durable agent or process run')
+        .option('--details', 'Include workflow details')
+        .option('--history', 'Include process node history')
+        .option('--messages', 'Include stored stream messages')
+        .option('--tasks', 'Include tasks for the run')
+        .option('-l, --limit <limit>', 'Message/task limit', '50')
+        .option('--json', 'Print raw JSON')
+        .option('-o, --output <file>', 'Write JSON output to a file')
         .action(async (runId: string, options: InspectOptions) => {
             await inspectAgentRun(program, runId, options);
         });
@@ -199,7 +204,7 @@ async function startAgentRun(program: Command, interaction: string | undefined, 
         run = await client.agents.start(payload);
     } else {
         if (!interaction) {
-            throw new Error("Missing interaction. Provide an interaction name, --process-id, or --process-definition.");
+            throw new Error('Missing interaction. Provide an interaction name, --process-id, or --process-definition.');
         }
         const payload = buildAgentStartPayload(interaction, options, data);
         run = await client.agents.start(payload);
@@ -273,34 +278,35 @@ async function streamAgentRun(program: Command, runId: string, options: StreamOp
         isStopping = true;
         abortController.abort();
         rl?.close();
-        process.off("SIGINT", stop);
-        process.off("SIGTERM", stop);
+        process.off('SIGINT', stop);
+        process.off('SIGTERM', stop);
     };
 
-    process.on("SIGINT", stop);
-    process.on("SIGTERM", stop);
+    process.on('SIGINT', stop);
+    process.on('SIGTERM', stop);
 
     console.log(chalk.bold(`Streaming AgentRun ${runId}`));
     if (options.interactive) {
         rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout,
-            prompt: "> ",
+            prompt: '> ',
         });
-        rl.on("line", (line: string) => {
+        rl.on('line', (line: string) => {
             const message = line.trim();
             if (!message) {
                 rl?.prompt();
                 return;
             }
             const payload: UserInputSignal = { message };
-            client.agents.sendSignal(runId, "UserInput", payload)
+            client.agents
+                .sendSignal(runId, 'UserInput', payload)
                 .then(() => {
                     if (!isStopping) {
                         rl?.prompt();
                     }
                 })
-                .catch(error => {
+                .catch((error) => {
                     console.error(chalk.red(formatError(error)));
                     if (!isStopping) {
                         rl?.prompt();
@@ -313,7 +319,7 @@ async function streamAgentRun(program: Command, runId: string, options: StreamOp
     try {
         await client.agents.streamMessages(
             runId,
-            message => printAgentMessage(message),
+            (message) => printAgentMessage(message),
             since,
             abortController.signal,
         );
@@ -322,32 +328,23 @@ async function streamAgentRun(program: Command, runId: string, options: StreamOp
     }
 }
 
-async function replyToAgentRun(
-    program: Command,
-    runId: string,
-    message: string | undefined,
-    options: ReplyOptions,
-) {
+async function replyToAgentRun(program: Command, runId: string, message: string | undefined, options: ReplyOptions) {
     const client = await getClient(program);
     const payload: UserInputSignal = {
         message: await readReplyMessage(message, options),
     };
-    const response = await client.agents.sendSignal(runId, "UserInput", payload);
+    const response = await client.agents.sendSignal(runId, 'UserInput', payload);
     printCommandResult(response, options);
 }
 
-async function answerTask(
-    program: Command,
-    taskId: string,
-    response: string | undefined,
-    options: AnswerTaskOptions,
-) {
+async function answerTask(program: Command, taskId: string, response: string | undefined, options: AnswerTaskOptions) {
     const client = await getClient(program);
     const task = await client.tasks.retrieve(taskId);
     const result = await readTaskResult(response, options);
-    const completed = task.source.type === "process"
-        ? await completeProcessTask(client, task.source.run_id, taskId, result)
-        : await client.tasks.complete(taskId, { result });
+    const completed =
+        task.source.type === 'process'
+            ? await completeProcessTask(client, task.source.run_id, taskId, result)
+            : await client.tasks.complete(taskId, { result });
     printCommandResult(completed, options);
 }
 
@@ -357,11 +354,7 @@ async function cancelAgentRun(program: Command, runId: string, options: CancelOp
     printCommandResult(response, options);
 }
 
-async function listAgentTasks(
-    program: Command,
-    runId: string | undefined,
-    options: ListTasksOptions,
-) {
+async function listAgentTasks(program: Command, runId: string | undefined, options: ListTasksOptions) {
     const client = await getClient(program);
     const query = {
         run_id: readOptionalString(options.runId) ?? runId,
@@ -390,14 +383,14 @@ async function waitForTaskList(
     client: Awaited<ReturnType<typeof getClient>>,
     query: {
         run_id?: string;
-        status?: Task["status"];
+        status?: Task['status'];
         assignee?: string;
-        source_type?: Task["source"]["type"];
+        source_type?: Task['source']['type'];
         limit: number;
     },
     waitSeconds: number,
 ): Promise<Task[]> {
-    const deadline = Date.now() + (waitSeconds * 1000);
+    const deadline = Date.now() + waitSeconds * 1000;
     let tasks = await client.tasks.list(query);
     while (tasks.length === 0 && Date.now() < deadline) {
         await delay(500);
@@ -446,7 +439,7 @@ async function inspectAgentRun(program: Command, runId: string, options: Inspect
     }
     if (isProcessRun(run)) {
         const state = run.process_state;
-        console.log(chalk.bold("Process"));
+        console.log(chalk.bold('Process'));
         console.log(`  current_node: ${state.current_node}`);
         console.log(`  sequence: ${state.sequence ?? 0}`);
         console.log(`  history_entries: ${state.node_history?.length ?? 0}`);
@@ -456,11 +449,11 @@ async function inspectAgentRun(program: Command, runId: string, options: Inspect
 async function readOptionalRecordInput(options: StartOptions): Promise<Record<string, unknown> | undefined> {
     const inline = readOptionalString(options.data);
     if (inline) {
-        return parseJsonRecord(inline, "--data");
+        return parseJsonRecord(inline, '--data');
     }
 
     if (options.input === true) {
-        return parseJsonRecord(await readStdin(), "stdin");
+        return parseJsonRecord(await readStdin(), 'stdin');
     }
 
     const inputFile = readOptionalString(options.input);
@@ -472,7 +465,7 @@ async function readOptionalRecordInput(options: StartOptions): Promise<Record<st
 }
 
 async function readReplyMessage(message: string | undefined, options: ReplyOptions): Promise<string> {
-    if (typeof message === "string" && message.length > 0) {
+    if (typeof message === 'string' && message.length > 0) {
         return message;
     }
 
@@ -485,7 +478,7 @@ async function readReplyMessage(message: string | undefined, options: ReplyOptio
         return readFile(inputFile).trim();
     }
 
-    throw new Error("Missing reply message. Provide a positional message or --input.");
+    throw new Error('Missing reply message. Provide a positional message or --input.');
 }
 
 async function readTaskResult(
@@ -494,11 +487,11 @@ async function readTaskResult(
 ): Promise<Record<string, unknown>> {
     const inline = readOptionalString(options.data);
     if (inline) {
-        return parseJsonRecord(inline, "--data");
+        return parseJsonRecord(inline, '--data');
     }
 
     if (options.input === true) {
-        return parseJsonRecord(await readStdin(), "stdin");
+        return parseJsonRecord(await readStdin(), 'stdin');
     }
 
     const inputFile = readOptionalString(options.input);
@@ -506,11 +499,11 @@ async function readTaskResult(
         return parseJsonRecord(readFile(inputFile), inputFile);
     }
 
-    if (typeof response === "string" && response.length > 0) {
+    if (typeof response === 'string' && response.length > 0) {
         return { response };
     }
 
-    throw new Error("Missing task result. Provide a positional response, --data, or --input.");
+    throw new Error('Missing task result. Provide a positional response, --data, or --input.');
 }
 
 async function completeProcessTask(
@@ -523,19 +516,16 @@ async function completeProcessTask(
     return waitForTaskUpdate(client, taskId);
 }
 
-async function waitForTaskUpdate(
-    client: Awaited<ReturnType<typeof getClient>>,
-    taskId: string,
-): Promise<Task> {
+async function waitForTaskUpdate(client: Awaited<ReturnType<typeof getClient>>, taskId: string): Promise<Task> {
     let latest = await client.tasks.retrieve(taskId);
-    if (latest.status !== "pending" && latest.status !== "in_progress") {
+    if (latest.status !== 'pending' && latest.status !== 'in_progress') {
         return latest;
     }
 
     for (let attempt = 0; attempt < 20; attempt += 1) {
         await delay(250);
         latest = await client.tasks.retrieve(taskId);
-        if (latest.status !== "pending" && latest.status !== "in_progress") {
+        if (latest.status !== 'pending' && latest.status !== 'in_progress') {
             return latest;
         }
     }
@@ -586,7 +576,7 @@ function parseJsonRecord(input: string, label: string): Record<string, unknown> 
 }
 
 function readOptionalString(value: unknown): string | undefined {
-    return typeof value === "string" && value.length > 0 ? value : undefined;
+    return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
 function readStringList(value: unknown): string[] | undefined {
@@ -594,7 +584,10 @@ function readStringList(value: unknown): string[] | undefined {
     if (!raw) {
         return undefined;
     }
-    const items = raw.split(",").map(item => item.trim()).filter(Boolean);
+    const items = raw
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
     return items.length ? items : undefined;
 }
 
@@ -614,77 +607,79 @@ function readOptionalSeconds(value: unknown): number | undefined {
     }
     const parsed = Number.parseFloat(raw);
     if (!Number.isFinite(parsed) || parsed < 0) {
-        throw new Error("wait must be a non-negative number of seconds");
+        throw new Error('wait must be a non-negative number of seconds');
     }
     return parsed;
 }
 
-function readVisibility(value: unknown): "project" | "private" | undefined {
+function readVisibility(value: unknown): 'project' | 'private' | undefined {
     const raw = readOptionalString(value);
     if (!raw) {
         return undefined;
     }
-    if (raw !== "project" && raw !== "private") {
-        throw new Error("visibility must be project or private");
+    if (raw !== 'project' && raw !== 'private') {
+        throw new Error('visibility must be project or private');
     }
     return raw;
 }
 
 function readProcessRunType(value: unknown): ProcessRunType {
-    const raw = readOptionalString(value) ?? "programmatic";
-    if (raw !== "programmatic" && raw !== "supervised") {
-        throw new Error("run-type must be programmatic or supervised");
+    const raw = readOptionalString(value) ?? 'programmatic';
+    if (raw !== 'programmatic' && raw !== 'supervised') {
+        throw new Error('run-type must be programmatic or supervised');
     }
     return raw;
 }
 
-function readOptionalTaskStatus(value: unknown): Task["status"] | undefined {
+function readOptionalTaskStatus(value: unknown): Task['status'] | undefined {
     const raw = readOptionalString(value);
     if (!raw) {
         return undefined;
     }
-    if (raw !== "pending" && raw !== "in_progress" && raw !== "completed" && raw !== "cancelled") {
-        throw new Error("status must be pending, in_progress, completed, or cancelled");
+    if (raw !== 'pending' && raw !== 'in_progress' && raw !== 'completed' && raw !== 'cancelled') {
+        throw new Error('status must be pending, in_progress, completed, or cancelled');
     }
     return raw;
 }
 
-function readOptionalTaskSourceType(value: unknown): Task["source"]["type"] | undefined {
+function readOptionalTaskSourceType(value: unknown): Task['source']['type'] | undefined {
     const raw = readOptionalString(value);
     if (!raw) {
         return undefined;
     }
-    if (raw !== "agent" && raw !== "process") {
-        throw new Error("source-type must be agent or process");
+    if (raw !== 'agent' && raw !== 'process') {
+        throw new Error('source-type must be agent or process');
     }
     return raw;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function isProcessDefinitionBody(value: unknown): value is ProcessDefinitionBody {
-    return isRecord(value)
-        && value.format_version === PROCESS_DEFINITION_FORMAT_VERSION
-        && typeof value.process === "string"
-        && typeof value.initial === "string"
-        && isRecord(value.context)
-        && isRecord(value.nodes);
+    return (
+        isRecord(value) &&
+        value.format_version === PROCESS_DEFINITION_FORMAT_VERSION &&
+        typeof value.process === 'string' &&
+        typeof value.initial === 'string' &&
+        isRecord(value.context) &&
+        isRecord(value.nodes)
+    );
 }
 
 function isProcessRun(run: AgentRunResponse<Record<string, unknown>, Record<string, unknown>>): run is ProcessRun {
-    return run.run_kind === "process";
+    return run.run_kind === 'process';
 }
 
 function printRunSummary(run: AgentRunResponse<Record<string, unknown>, Record<string, unknown>>) {
-    console.log(chalk.bold("AgentRun"));
+    console.log(chalk.bold('AgentRun'));
     console.log(`  id: ${run.id}`);
     console.log(`  kind: ${run.run_kind}`);
     console.log(`  run_type: ${run.run_type}`);
     console.log(`  status: ${run.status}`);
-    console.log(`  title: ${run.title ?? "n/a"}`);
-    if (run.run_kind === "agent") {
+    console.log(`  title: ${run.title ?? 'n/a'}`);
+    if (run.run_kind === 'agent') {
         console.log(`  interaction: ${run.interaction_name ?? run.interaction}`);
     }
     if (isProcessRun(run)) {
@@ -695,11 +690,9 @@ function printRunSummary(run: AgentRunResponse<Record<string, unknown>, Record<s
 
 function printAgentMessage(message: AgentMessage) {
     const timestamp = message.timestamp ? new Date(message.timestamp).toISOString() : new Date().toISOString();
-    const type = message.type != null ? AgentMessageType[message.type] ?? String(message.type) : "MESSAGE";
-    const body = typeof message.message === "string"
-        ? message.message
-        : JSON.stringify(message.message, null, 2);
-    console.log(`${chalk.gray(timestamp)} ${chalk.cyan(type)} ${body ?? ""}`);
+    const type = message.type != null ? (AgentMessageType[message.type] ?? String(message.type)) : 'MESSAGE';
+    const body = typeof message.message === 'string' ? message.message : JSON.stringify(message.message, null, 2);
+    console.log(`${chalk.gray(timestamp)} ${chalk.cyan(type)} ${body ?? ''}`);
     if (message.details) {
         console.log(chalk.gray(JSON.stringify(message.details, null, 2)));
     }
@@ -707,13 +700,13 @@ function printAgentMessage(message: AgentMessage) {
 
 function printTasks(tasks: Task[]) {
     if (!tasks.length) {
-        console.log("No tasks found");
+        console.log('No tasks found');
         return;
     }
-    console.log(chalk.bold("Tasks"));
+    console.log(chalk.bold('Tasks'));
     for (const task of tasks) {
         const source = `${task.source.type}:${task.source.run_id}`;
-        const assignee = task.assignee ? ` assignee=${task.assignee}` : "";
+        const assignee = task.assignee ? ` assignee=${task.assignee}` : '';
         console.log(`  ${task.id} ${task.status} ${task.title} (${source})${assignee}`);
     }
 }
@@ -732,7 +725,7 @@ function printCommandResult(result: unknown, options: { json?: boolean; output?:
         return;
     }
 
-    if (isRecord(result) && typeof result.message === "string") {
+    if (isRecord(result) && typeof result.message === 'string') {
         console.log(result.message);
         return;
     }

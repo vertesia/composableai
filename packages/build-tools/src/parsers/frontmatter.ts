@@ -27,6 +27,6 @@ export function parseFrontmatter(content: string): FrontmatterResult {
     return {
         frontmatter: result.data,
         content: result.content,
-        original: content
+        original: content,
     };
 }

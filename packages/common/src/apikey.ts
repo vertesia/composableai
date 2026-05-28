@@ -1,7 +1,7 @@
-import type { PropertyConditions } from "./access-control.js";
-import type { UserGroupRef } from "./group.js";
-import type { ProjectRef, ProjectRoles } from "./project.js";
-import type { AccountRef } from "./user.js";
+import type { PropertyConditions } from './access-control.js';
+import type { UserGroupRef } from './group.js';
+import type { ProjectRef, ProjectRoles } from './project.js';
+import type { AccountRef } from './user.js';
 
 /**
  * Content security conditions in the JWT, keyed by permission type.
@@ -15,7 +15,7 @@ export interface ContentSecurity {
 }
 
 export enum ApiKeyTypes {
-    secret = "sk",
+    secret = 'sk',
 }
 export interface ApiKey {
     id: string;
@@ -138,11 +138,11 @@ export interface AuthTokenPayload {
 }
 
 export enum PrincipalType {
-    User = "user",
-    OAuthAccess = "oauth_access",
-    Group = "group",
-    ApiKey = "apikey",
-    ServiceAccount = "service_account",
-    Agent = "agent",
-    Schedule = "schedule",
+    User = 'user',
+    OAuthAccess = 'oauth_access',
+    Group = 'group',
+    ApiKey = 'apikey',
+    ServiceAccount = 'service_account',
+    Agent = 'agent',
+    Schedule = 'schedule',
 }

@@ -1,7 +1,7 @@
-export type * from "./types.js";
-export * from "./JSONCode.js";
-export * from "./JSONDisplay.js";
-export * from "./JSONEditor.js";
-export * from "./JSONView.js";
-export * from "./JSONSwitcher.js";
-export * from "./JSONTable.js";
+export type * from './types.js';
+export * from './JSONCode.js';
+export * from './JSONDisplay.js';
+export * from './JSONEditor.js';
+export * from './JSONView.js';
+export * from './JSONSwitcher.js';
+export * from './JSONTable.js';

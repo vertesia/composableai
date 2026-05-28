@@ -1,10 +1,4 @@
-const CUSTOM_SCHEME_PREFIXES = [
-    'artifact:',
-    'image:',
-    'store:',
-    'document://',
-    'collection:',
-];
+const CUSTOM_SCHEME_PREFIXES = ['artifact:', 'image:', 'store:', 'document://', 'collection:'];
 
 const CUSTOM_LINK_REGEX = /(!?\[[^\]\n]*\]\()((?:artifact:|image:|store:|document:\/\/|collection:)[^)]+)(\))/g;
 const INLINE_CODE_REGEX = /`[^`\n]*`/g;
@@ -12,7 +6,7 @@ const FENCED_CODE_BLOCK_REGEX = /(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2(?=\n|$)
 const LINK_TITLE_SUFFIX_REGEX = /\s+("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\([^)]*\))\s*$/;
 
 function hasCustomScheme(destination: string): boolean {
-    return CUSTOM_SCHEME_PREFIXES.some(prefix => destination.startsWith(prefix));
+    return CUSTOM_SCHEME_PREFIXES.some((prefix) => destination.startsWith(prefix));
 }
 
 function wrapCustomDestination(destinationWithOptionalTitle: string): string {
@@ -69,7 +63,7 @@ function normalizeOutsideInlineCode(text: string): string {
  * We apply this only outside fenced/inline code spans.
  */
 export function normalizeCustomSchemeLinks(markdown: string): string {
-    if (!markdown || !CUSTOM_SCHEME_PREFIXES.some(prefix => markdown.includes(prefix))) {
+    if (!markdown || !CUSTOM_SCHEME_PREFIXES.some((prefix) => markdown.includes(prefix))) {
         return markdown;
     }
 

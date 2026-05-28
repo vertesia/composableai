@@ -1,7 +1,7 @@
-import React from "react";
-import { type AgentMessage, AgentMessageType } from "@vertesia/common";
-import MessageItem from "./MessageItem";
-import { ThinkingMessages } from "../WaitingMessages";
+import React from 'react';
+import { type AgentMessage, AgentMessageType } from '@vertesia/common';
+import MessageItem from './MessageItem';
+import { ThinkingMessages } from '../WaitingMessages';
 
 interface SlidingMessagesProps {
     messages: AgentMessage[];
@@ -27,14 +27,14 @@ function isPermanentMessage(message: AgentMessage): boolean {
         message.type === AgentMessageType.QUESTION ||
         message.type === AgentMessageType.COMPLETE ||
         message.type === AgentMessageType.IDLE ||
-        message.type === AgentMessageType.REQUEST_INPUT || 
+        message.type === AgentMessageType.REQUEST_INPUT ||
         message.type === AgentMessageType.TERMINATED
     );
 }
 
 export default function SlidingMessages({ messages, isCompleted }: SlidingMessagesProps) {
     const [thinkingMessageIndex, setThinkingMessageIndex] = React.useState(0);
-    
+
     // Rotate thinking messages for the indicator
     React.useEffect(() => {
         if (!isCompleted) {
@@ -44,26 +44,26 @@ export default function SlidingMessages({ messages, isCompleted }: SlidingMessag
             return () => clearInterval(interval);
         }
     }, [isCompleted]);
-    
+
     // Permanent messages are always displayed
     const permanentMessages = messages.filter(isPermanentMessage);
 
     // Get thinking messages and find the latest one
     const thinkingMessages = messages.filter(isThinkingMessage).sort((a, b) => {
-        const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
-        const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
+        const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
+        const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
         return timeB - timeA; // Sort descending (newest first)
     });
-    
+
     const latestThinkingMessage = thinkingMessages.length > 0 ? thinkingMessages[0] : null;
-    
+
     // Sort permanent messages by timestamp (oldest first)
     const sortedPermanentMessages = [...permanentMessages].sort((a, b) => {
-        const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
-        const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
+        const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
+        const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
         return timeA - timeB;
     });
-    
+
     return (
         <div className="flex flex-col space-y-6 overflow-y-auto py-4">
             {/* Display permanent messages */}
@@ -77,10 +77,7 @@ export default function SlidingMessages({ messages, isCompleted }: SlidingMessag
 
             {/* Only show the latest thinking message when not completed */}
             {!isCompleted && latestThinkingMessage && (
-                <MessageItem
-                    message={latestThinkingMessage}
-                    showPulsatingCircle={true}
-                />
+                <MessageItem message={latestThinkingMessage} showPulsatingCircle={true} />
             )}
 
             {/* If no messages and not completed, show a placeholder thinking message */}

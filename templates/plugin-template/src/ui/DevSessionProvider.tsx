@@ -1,14 +1,22 @@
-import type { AuthTokenPayload } from '@vertesia/common'
-import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from '@vertesia/ui/session'
-import { useMemo } from 'react'
-import type { ReactNode } from 'react'
+import type { AuthTokenPayload } from '@vertesia/common';
+import {
+    LastSelectedAccountId_KEY,
+    LastSelectedProjectId_KEY,
+    UserSession,
+    UserSessionContext,
+} from '@vertesia/ui/session';
+import { useMemo } from 'react';
+import type { ReactNode } from 'react';
 
 function decodeJwtPayload(token: string): AuthTokenPayload {
     const [, payload] = token.split('.');
     if (!payload) {
         throw new Error('Invalid Vertesia auth token');
     }
-    const padded = payload.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(payload.length / 4) * 4, '=');
+    const padded = payload
+        .replace(/-/g, '+')
+        .replace(/_/g, '/')
+        .padEnd(Math.ceil(payload.length / 4) * 4, '=');
     return JSON.parse(atob(padded)) as AuthTokenPayload;
 }
 

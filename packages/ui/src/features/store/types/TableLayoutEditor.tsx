@@ -22,16 +22,16 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate, readonly = false
 
     const value = useMemo(() => {
         return stringifyTableLayout(objectType.table_layout);
-    }, [objectType.table_layout])
+    }, [objectType.table_layout]);
 
     const validationError = (title: string, message: string) => {
         toast({
             status: 'error',
             title: title,
             description: message,
-            duration: 5000
-        })
-    }
+            duration: 5000,
+        });
+    };
 
     const onSave = () => {
         if (!editorRef.current) {
@@ -53,37 +53,51 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate, readonly = false
             return validationError('Invalid JSON', 'The table layout must be an array');
         }
         if (table_layout.some((col) => !col?.name || !col.field)) {
-            return validationError('Invalid JSON', 'A table layout entry must contain the following properties:] {field, name, converter?}');
+            return validationError(
+                'Invalid JSON',
+                'A table layout entry must contain the following properties:] {field, name, converter?}',
+            );
         }
 
         setUpdating(true);
-        store.types.update(objectType.id, {
-            table_layout
-        }).then((response) => {
-            toast({
-                status: 'success',
-                title: t('store.tableLayoutUpdated'),
-                description: t('store.tableLayoutUpdatedDesc'),
-                duration: 2000
-            });
-            onLayoutUpdate(response.table_layout);
-        }).catch((err) => {
-            toast({
-                status: 'error',
-                title: t('store.failedToUpdateTableLayout'),
-                description: err.message,
-                duration: 5000
+        store.types
+            .update(objectType.id, {
+                table_layout,
             })
-        }).finally(() => {
-            setUpdating(false);
-        });
-    }
-
+            .then((response) => {
+                toast({
+                    status: 'success',
+                    title: t('store.tableLayoutUpdated'),
+                    description: t('store.tableLayoutUpdatedDesc'),
+                    duration: 2000,
+                });
+                onLayoutUpdate(response.table_layout);
+            })
+            .catch((err) => {
+                toast({
+                    status: 'error',
+                    title: t('store.failedToUpdateTableLayout'),
+                    description: err.message,
+                    duration: 5000,
+                });
+            })
+            .finally(() => {
+                setUpdating(false);
+            });
+    };
 
     return (
-        <Panel title="Table Layout Editor" className="bg-background! h-full" action={
-            !readonly ? <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>{t('store.saveChanges')}</Button> : undefined
-        }>
+        <Panel
+            title="Table Layout Editor"
+            className="bg-background! h-full"
+            action={
+                !readonly ? (
+                    <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>
+                        {t('store.saveChanges')}
+                    </Button>
+                ) : undefined
+            }
+        >
             <div className="h-full">
                 <MonacoEditor
                     value={value}
@@ -94,9 +108,8 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate, readonly = false
                 />
             </div>
         </Panel>
-    )
+    );
 }
-
 
 export function stringifyTableLayout(obj: unknown) {
     if (!obj) {

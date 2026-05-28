@@ -1,12 +1,12 @@
-import type { ReactNode } from "react";
-import { Avatar, Button } from "@vertesia/ui/core";
-import { Env } from "@vertesia/ui/env";
-import { useUITranslation } from "@vertesia/ui/i18n";
-import { HamburgerButton } from "@vertesia/ui/layout";
-import { useUserSession } from "@vertesia/ui/session";
-import { Bot, LogOut } from "lucide-react";
-import { CommandPalette } from "./CommandPalette";
-import { openAssistant } from "./assistantEvents";
+import type { ReactNode } from 'react';
+import { Avatar, Button } from '@vertesia/ui/core';
+import { Env } from '@vertesia/ui/env';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { HamburgerButton } from '@vertesia/ui/layout';
+import { useUserSession } from '@vertesia/ui/session';
+import { Bot, LogOut } from 'lucide-react';
+import { CommandPalette } from './CommandPalette';
+import { openAssistant } from './assistantEvents';
 
 interface PluginTopNavProps {
     /**
@@ -48,26 +48,16 @@ export function PluginTopNav({
             <div className="flex items-center gap-2">
                 {primaryAction}
                 {!hideAssistantLauncher && (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openAssistant()}
-                        alt={t("nav.openAssistant")}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => openAssistant()} alt={t('nav.openAssistant')}>
                         <Bot className="size-4" />
-                        <span className="hidden md:inline">{t("nav.askAi")}</span>
+                        <span className="hidden md:inline">{t('nav.askAi')}</span>
                     </Button>
                 )}
                 {notifications}
                 {user && (
                     <>
                         <Avatar size="sm" name={user.name} color="bg-primary" />
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => logout()}
-                            alt={t("nav.signOut")}
-                        >
+                        <Button variant="outline" size="sm" onClick={() => logout()} alt={t('nav.signOut')}>
                             <LogOut className="size-3.5" />
                         </Button>
                     </>

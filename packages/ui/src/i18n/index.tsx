@@ -30,11 +30,7 @@ export function I18nProvider({ lng, children }: I18nProviderProps) {
         }
     }, [lng]);
 
-    return (
-        <I18nextProvider i18n={i18nInstance}>
-            {children}
-        </I18nextProvider>
-    );
+    return <I18nextProvider i18n={i18nInstance}>{children}</I18nextProvider>;
 }
 
 /**

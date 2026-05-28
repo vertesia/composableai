@@ -1,6 +1,6 @@
-import type { JSONSchema, JSONSchemaType, JSONSchemaTypeName } from "@vertesia/common";
-import Ajv, { type ErrorObject, type ValidateFunction } from "ajv";
-import addFormats from "ajv-formats";
+import type { JSONSchema, JSONSchemaType, JSONSchemaTypeName } from '@vertesia/common';
+import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
+import addFormats from 'ajv-formats';
 
 function createSchemaFromType(type: JSONSchemaTypeName): JSONSchema {
     if (type === 'object') {
@@ -33,7 +33,7 @@ export class Schema {
     private load() {
         if (this.schema.properties) {
             const properties = this.schema.properties;
-            Object.keys(properties).forEach(name => {
+            Object.keys(properties).forEach((name) => {
                 this.loadProperty(name, properties[name]);
             });
         }
@@ -97,7 +97,7 @@ export class Schema {
         if (this.schema.properties) {
             delete this.schema.properties[name];
             if (Array.isArray(this.schema.required)) {
-                this.schema.required = this.schema.required.filter(x => x !== name);
+                this.schema.required = this.schema.required.filter((x) => x !== name);
             }
         }
         delete this.properties[name];
@@ -113,10 +113,14 @@ export class Schema {
 }
 
 export class PropertySchema extends Schema {
-    constructor(public parent: Schema, public name: string, schema: JSONSchema) {
+    constructor(
+        public parent: Schema,
+        public name: string,
+        schema: JSONSchema,
+    ) {
         super(schema);
         if (schema.type === 'array') {
-            throw new Error("Array property must be instantiated using ArrayPropertySchema");
+            throw new Error('Array property must be instantiated using ArrayPropertySchema');
         }
         if (schema.type === 'object' && !schema.properties) {
             schema.properties = {};
@@ -161,7 +165,7 @@ export class PropertySchema extends Schema {
         if (value) {
             required = required.concat(this.name);
         } else {
-            required = required.filter(x => x !== this.name);
+            required = required.filter((x) => x !== this.name);
         }
         this.parent.schema.required = required;
     }
@@ -173,7 +177,8 @@ export class PropertySchema extends Schema {
     set type(value: JSONSchemaTypeName) {
         if (this.schema.type !== value) {
             this.schema.type = value;
-            if (value !== 'object') { // remove sub properties
+            if (value !== 'object') {
+                // remove sub properties
                 this.properties = {};
                 this.schema.properties = undefined;
             }
@@ -223,5 +228,4 @@ export class ArrayPropertySchema extends PropertySchema {
     get isMulti() {
         return true;
     }
-
 }

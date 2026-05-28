@@ -39,9 +39,7 @@ export function LanguageProvider({
     storageKey = 'vertesia-ui-language',
     ...props
 }: LanguageProviderProps) {
-    const [language, setLanguage] = useState<SupportedLanguage>(() =>
-        readInitialLanguage(storageKey, defaultLanguage),
-    );
+    const [language, setLanguage] = useState<SupportedLanguage>(() => readInitialLanguage(storageKey, defaultLanguage));
 
     const rtl = isRTL(language);
 

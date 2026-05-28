@@ -10,9 +10,9 @@
  * at least one .tsx file is present, so the prebuild stays green for both
  * new plugins and plugins that keep widgets.
  */
-import { execSync } from "node:child_process";
-import { existsSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { execSync } from 'node:child_process';
+import { existsSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 
 const cwd = process.cwd();
 
@@ -31,18 +31,14 @@ function hasFileMatching(dir, predicate) {
     return false;
 }
 
-const projects = [
-    "tsconfig.ui.json",
-    "tsconfig.tool-server.json",
-    "tsconfig.node.json",
-];
+const projects = ['tsconfig.ui.json', 'tsconfig.tool-server.json', 'tsconfig.node.json'];
 
-const widgetsRoot = join(cwd, "src", "tool-server", "skills");
-const hasWidgets = hasFileMatching(widgetsRoot, (name) => name.endsWith(".tsx"));
+const widgetsRoot = join(cwd, 'src', 'tool-server', 'skills');
+const hasWidgets = hasFileMatching(widgetsRoot, (name) => name.endsWith('.tsx'));
 if (hasWidgets) {
-    projects.push("tsconfig.widgets.json");
+    projects.push('tsconfig.widgets.json');
 } else {
-    console.log("[typecheck] no widget .tsx found under src/tool-server/skills/, skipping tsconfig.widgets.json");
+    console.log('[typecheck] no widget .tsx found under src/tool-server/skills/, skipping tsconfig.widgets.json');
 }
 
 for (const project of projects) {
@@ -51,5 +47,5 @@ for (const project of projects) {
         continue;
     }
     console.log(`[typecheck] tsc -p ${project} --noEmit`);
-    execSync(`tsc -p ${project} --noEmit`, { stdio: "inherit" });
+    execSync(`tsc -p ${project} --noEmit`, { stdio: 'inherit' });
 }

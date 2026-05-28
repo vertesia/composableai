@@ -1,12 +1,12 @@
-import type { JSONSchema } from "@llumiverse/common";
+import type { JSONSchema } from '@llumiverse/common';
 
 export default {
-    type: "object",
+    type: 'object',
     properties: {
         object: {
-            type: "string",
-            description: "The object to identify the color of"
+            type: 'string',
+            description: 'The object to identify the color of',
         },
     },
-    required: ["object"]
+    required: ['object'],
 } satisfies JSONSchema;

@@ -1,4 +1,4 @@
-export const OPEN_ASSISTANT_EVENT = "plugin:open-assistant";
+export const OPEN_ASSISTANT_EVENT = 'plugin:open-assistant';
 
 export interface OpenAssistantDetail {
     initialMessage?: string;

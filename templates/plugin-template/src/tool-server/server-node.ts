@@ -50,9 +50,12 @@ server.all('*', async (c: Context, next: Next) => {
     return next();
 });
 
-serve({
-    fetch: server.fetch,
-    port,
-}, (info) => {
-    console.log(`✓ Server is running at http://localhost:${info.port}`);
-});
+serve(
+    {
+        fetch: server.fetch,
+        port,
+    },
+    (info) => {
+        console.log(`✓ Server is running at http://localhost:${info.port}`);
+    },
+);

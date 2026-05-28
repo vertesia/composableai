@@ -34,11 +34,7 @@ import type { PluginConfig } from './types.js';
  */
 export function vertesiaDevServerPlugin(overrides?: Partial<PluginConfig>): Plugin {
     return vertesiaImportPlugin({
-        transformers: [
-            skillTransformer,
-            promptTransformer,
-            rawTransformer,
-        ],
+        transformers: [skillTransformer, promptTransformer, rawTransformer],
         assetsDir: false,
         ...overrides,
     });

@@ -1,14 +1,14 @@
 //@ts-expect-error
-import { vars, exec, media, content, pdf } from "@vertesia/memory-commands";
+import { vars, exec, media, content, pdf } from '@vertesia/memory-commands';
 
 console.log('!!!!!!', vars);
 
-const r = await exec("ls -al");
+const r = await exec('ls -al');
 
 console.log('#######', r);
 
 export default {
-    msg: "hello",
+    msg: 'hello',
     pdf: pdf('./fixtures/test.pdf'),
     images: media('/Users/bogdan/work/js/memory/images/L1009972.jpg'),
     code: content('./examples/example1.ts'),

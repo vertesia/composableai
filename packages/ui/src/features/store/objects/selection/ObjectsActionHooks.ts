@@ -8,7 +8,7 @@ export const ObjectsActionContextReact = createContext<ObjectsActionContext | un
 export function useObjectsActionContext() {
     const ctx = useContext(ObjectsActionContextReact);
     if (!ctx) {
-        throw new Error("You cannot use useActionContext outside an ActionProvider");
+        throw new Error('You cannot use useActionContext outside an ActionProvider');
     }
     return ctx;
 }
@@ -27,7 +27,7 @@ export function useStartWorkflowCallback(cb: ObjectsActionCallback) {
         ctx.startWorkflow = cb;
         return () => {
             ctx.startWorkflow = undefined;
-        }
+        };
     }, [cb, ctx]);
     return ctx;
 }

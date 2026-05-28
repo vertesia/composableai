@@ -1,40 +1,40 @@
 // hook to initialize the environment and auth session
 // the main app must call this hook before rendering the page.
 
-import type { AuthTokenPayload } from "@vertesia/common";
+import type { AuthTokenPayload } from '@vertesia/common';
 
 export interface EnvProps {
     name: string; // the app name
-    version: string,
-    commitTimestamp?: string, // ISO timestamp of the deployed commit
-    sdkVersion?: string, // the @vertesia/ui package version
-    isLocalDev: boolean,
-    isDocker: boolean,
-    type: "production" | "staging" | "preview" | "development" | string,
+    version: string;
+    commitTimestamp?: string; // ISO timestamp of the deployed commit
+    sdkVersion?: string; // the @vertesia/ui package version
+    isLocalDev: boolean;
+    isDocker: boolean;
+    type: 'production' | 'staging' | 'preview' | 'development' | string;
     endpoints: {
-        zeno: string,
-        studio: string,
-        sts: string, // Security Token Service endpoint
-        git?: string, // Smart HTTP app source git endpoint
-        mcp?: string,
-    },
+        zeno: string;
+        studio: string;
+        sts: string; // Security Token Service endpoint
+        git?: string; // Smart HTTP app source git endpoint
+        mcp?: string;
+    };
     firebase?: {
-        apiKey: string,
-        authDomain: string,
-        projectId: string,
-        appId?: string,
-        providerType?: string,
-    },
-    region?: string,
-    datadogRum?: boolean,
-    datadogLogs?: boolean,
+        apiKey: string;
+        authDomain: string;
+        projectId: string;
+        appId?: string;
+        providerType?: string;
+    };
+    region?: string;
+    datadogRum?: boolean;
+    datadogLogs?: boolean;
     /**
      * Development-only Vertesia auth token.
      *
      * This is intended for sandbox/dev previews where the host process already
      * has a short-lived Vertesia token. Production apps must not set this.
      */
-    devAuthToken?: string,
+    devAuthToken?: string;
     /**
      * Optional host-provided Vertesia auth token bootstrap.
      *
@@ -42,21 +42,19 @@ export interface EnvProps {
      * the token backing the gateway session cookie, allowing UserSession to
      * initialize without redirecting through Central Auth.
      */
-    authTokenProvider?: () => Promise<string | undefined>,
+    authTokenProvider?: () => Promise<string | undefined>;
     logger?: {
-        info: (msg: string, ...args: unknown[]) => void,
-        warn: (msg: string, ...args: unknown[]) => void,
-        error: (msg: string, ...args: unknown[]) => void,
-        debug: (msg: string, ...args: unknown[]) => void,
-    }
-    onLogin?: (token: AuthTokenPayload) => void,
-    onLogout?: () => void,
+        info: (msg: string, ...args: unknown[]) => void;
+        warn: (msg: string, ...args: unknown[]) => void;
+        error: (msg: string, ...args: unknown[]) => void;
+        debug: (msg: string, ...args: unknown[]) => void;
+    };
+    onLogin?: (token: AuthTokenPayload) => void;
+    onLogout?: () => void;
 }
 
 export class VertesiaEnvironment implements Readonly<EnvProps> {
-
-    constructor(private _props?: EnvProps | undefined) {
-    }
+    constructor(private _props?: EnvProps | undefined) {}
 
     init(props?: EnvProps) {
         this._props = props;
@@ -65,13 +63,13 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
 
     private prop<K extends keyof EnvProps>(name: K): EnvProps[K] {
         if (!this._props) {
-            throw new Error("VertesiaEnvironment was not initialized");
+            throw new Error('VertesiaEnvironment was not initialized');
         }
         return this._props[name];
     }
 
     get version() {
-        return this.prop("version");
+        return this.prop('version');
     }
 
     get commitTimestamp() {
@@ -83,15 +81,15 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
     }
 
     get name() {
-        return this.prop("name");
+        return this.prop('name');
     }
 
     get type() {
-        return this.prop("type");
+        return this.prop('type');
     }
 
     get isProd() {
-        return this.type === "production" || this.type === "preview";
+        return this.type === 'production' || this.type === 'preview';
     }
 
     get isDev() {
@@ -99,28 +97,28 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
     }
 
     get isLocalDev() {
-        return this.prop("isLocalDev");
+        return this.prop('isLocalDev');
     }
 
     get isDocker() {
-        return this.prop("isDocker");
+        return this.prop('isDocker');
     }
 
     get endpoints() {
-        return this.prop("endpoints");
+        return this.prop('endpoints');
     }
 
     get firebase() {
-        return this.prop("firebase");
+        return this.prop('firebase');
     }
 
     get region() {
         return this._props?.region;
     }
-    
+
     /**
      * @deprecated Use datadogRum and datadogLogs instead for more granular control. This will be removed in a future release. Is an alias for DatadogRUM
-     * 
+     *
      */
     get datadog() {
         return this.datadogRum;
@@ -143,7 +141,7 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
     }
 
     get logger() {
-        return this._props?.logger ?? console
+        return this._props?.logger ?? console;
     }
 
     /**

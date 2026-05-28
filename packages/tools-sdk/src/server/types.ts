@@ -1,15 +1,20 @@
-import type { Context } from "hono";
-import type { ActivityCollection } from "../ActivityCollection.js";
-import type { InteractionCollection } from "../InteractionCollection.js";
-import type { SkillCollection } from "../SkillCollection.js";
-import type { RenderingTemplateCollection } from "../RenderingTemplateCollection.js";
-import type { ToolCollection } from "../ToolCollection.js";
-import type { ToolExecutionPayload } from "../types.js";
-import type { JSONSchema } from "@llumiverse/common";
-import type { AppDashboardDefinition, AppUIConfig, InCodeProcessDefinition, ProjectConfiguration } from "@vertesia/common";
-import type { AuthSession } from "../auth.js";
-import type { ContentTypesCollection } from "../ContentTypesCollection.js";
-import type { MCPConnectionDetails } from "../types.js";
+import type { Context } from 'hono';
+import type { ActivityCollection } from '../ActivityCollection.js';
+import type { InteractionCollection } from '../InteractionCollection.js';
+import type { SkillCollection } from '../SkillCollection.js';
+import type { RenderingTemplateCollection } from '../RenderingTemplateCollection.js';
+import type { ToolCollection } from '../ToolCollection.js';
+import type { ToolExecutionPayload } from '../types.js';
+import type { JSONSchema } from '@llumiverse/common';
+import type {
+    AppDashboardDefinition,
+    AppUIConfig,
+    InCodeProcessDefinition,
+    ProjectConfiguration,
+} from '@vertesia/common';
+import type { AuthSession } from '../auth.js';
+import type { ContentTypesCollection } from '../ContentTypesCollection.js';
+import type { MCPConnectionDetails } from '../types.js';
 
 /**
  * Extended context with parsed payload for tool/skill execution
@@ -101,10 +106,10 @@ export interface ToolServerConfig {
     hideUILinks?: boolean;
 
     /**
-     * If a filter is provided, it will be called with the project configuration when requesting tool definitions, and can be used to filter which tools are returned based on the project configuration. 
+     * If a filter is provided, it will be called with the project configuration when requesting tool definitions, and can be used to filter which tools are returned based on the project configuration.
      * This allows for dynamic enabling/disabling of tools based on project settings.
-     * @param projectConfig 
-     * @returns 
+     * @param projectConfig
+     * @returns
      */
     toolFilter?: (projectConfig: ProjectConfiguration) => boolean;
 }

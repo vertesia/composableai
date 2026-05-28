@@ -84,7 +84,13 @@ export interface UniversalDocumentViewerProps {
 }
 
 function getFileName(source: UniversalDocumentSource): string {
-    return source.fileName || source.title || source.artifact?.path.split('/').pop() || source.sourcePath?.split('/').pop() || 'Document';
+    return (
+        source.fileName ||
+        source.title ||
+        source.artifact?.path.split('/').pop() ||
+        source.sourcePath?.split('/').pop() ||
+        'Document'
+    );
 }
 
 function getExtension(fileName: string): string {
@@ -97,12 +103,17 @@ function isPdf(context: UniversalDocumentViewerContext): boolean {
 }
 
 function isMarkdown(context: UniversalDocumentViewerContext): boolean {
-    return ['md', 'markdown'].includes(context.extension)
-        || ['text/markdown', 'text/x-markdown'].includes(context.contentType || '');
+    return (
+        ['md', 'markdown'].includes(context.extension) ||
+        ['text/markdown', 'text/x-markdown'].includes(context.contentType || '')
+    );
 }
 
 function isImage(context: UniversalDocumentViewerContext): boolean {
-    return context.contentType?.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(context.extension);
+    return (
+        context.contentType?.startsWith('image/') ||
+        ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(context.extension)
+    );
 }
 
 function isHtml(context: UniversalDocumentViewerContext): boolean {
@@ -114,18 +125,22 @@ function isXml(context: UniversalDocumentViewerContext): boolean {
 }
 
 function isCodeOrText(context: UniversalDocumentViewerContext): boolean {
-    return context.contentType?.startsWith('text/')
-        || ['css', 'csv', 'json', 'txt', 'tsx', 'ts', 'jsx', 'js', 'xml', 'yaml', 'yml'].includes(context.extension);
+    return (
+        context.contentType?.startsWith('text/') ||
+        ['css', 'csv', 'json', 'txt', 'tsx', 'ts', 'jsx', 'js', 'xml', 'yaml', 'yml'].includes(context.extension)
+    );
 }
 
 function canUsePdfRendition(context: UniversalDocumentViewerContext): boolean {
-    return ['doc', 'docx', 'ppt', 'pptx'].includes(context.extension)
-        || [
+    return (
+        ['doc', 'docx', 'ppt', 'pptx'].includes(context.extension) ||
+        [
             'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/vnd.ms-powerpoint',
             'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        ].includes(context.contentType || '');
+        ].includes(context.contentType || '')
+    );
 }
 
 function CodeViewer({ content, extension }: { content?: string; extension: string }) {
@@ -145,7 +160,10 @@ function EmptyState({ message }: { message: string }) {
     );
 }
 
-function renderWithCustomRenderer(renderer: UniversalDocumentRenderer, context: UniversalDocumentViewerContext): ReactNode {
+function renderWithCustomRenderer(
+    renderer: UniversalDocumentRenderer,
+    context: UniversalDocumentViewerContext,
+): ReactNode {
     if (renderer.Component) {
         const RendererComponent = renderer.Component;
         return <RendererComponent context={context} />;
@@ -187,35 +205,45 @@ export function UniversalDocumentViewer({
         source.artifact?.path,
     ].join('\0');
 
-    const defaultResolveUrl = useCallback(async (currentSource: UniversalDocumentSource, disposition: 'inline' | 'attachment') => {
-        if (currentSource.url) return currentSource.url;
-        if (currentSource.artifact) {
-            const result = await client.files.getArtifactDownloadUrl(
-                currentSource.artifact.runId,
-                currentSource.artifact.path,
-                disposition,
-            );
-            return result.url;
-        }
-        if (currentSource.sourcePath) {
-            const result = await client.files.getDownloadUrl(currentSource.sourcePath, currentSource.fileName, disposition);
-            return result.url;
-        }
-        return '';
-    }, [client]);
+    const defaultResolveUrl = useCallback(
+        async (currentSource: UniversalDocumentSource, disposition: 'inline' | 'attachment') => {
+            if (currentSource.url) return currentSource.url;
+            if (currentSource.artifact) {
+                const result = await client.files.getArtifactDownloadUrl(
+                    currentSource.artifact.runId,
+                    currentSource.artifact.path,
+                    disposition,
+                );
+                return result.url;
+            }
+            if (currentSource.sourcePath) {
+                const result = await client.files.getDownloadUrl(
+                    currentSource.sourcePath,
+                    currentSource.fileName,
+                    disposition,
+                );
+                return result.url;
+            }
+            return '';
+        },
+        [client],
+    );
 
     const resolveDocumentUrl = resolveUrl || defaultResolveUrl;
 
-    const defaultLoadText = useCallback(async (currentSource: UniversalDocumentSource) => {
-        if (currentSource.content !== undefined) return currentSource.content;
-        const resolvedUrl = await resolveDocumentUrl(currentSource, 'inline');
-        if (!resolvedUrl) return '';
-        const response = await fetch(resolvedUrl);
-        if (!response.ok) {
-            throw new Error(`Failed to load ${getFileName(currentSource)}: ${response.statusText}`);
-        }
-        return response.text();
-    }, [resolveDocumentUrl]);
+    const defaultLoadText = useCallback(
+        async (currentSource: UniversalDocumentSource) => {
+            if (currentSource.content !== undefined) return currentSource.content;
+            const resolvedUrl = await resolveDocumentUrl(currentSource, 'inline');
+            if (!resolvedUrl) return '';
+            const response = await fetch(resolvedUrl);
+            if (!response.ok) {
+                throw new Error(`Failed to load ${getFileName(currentSource)}: ${response.statusText}`);
+            }
+            return response.text();
+        },
+        [resolveDocumentUrl],
+    );
 
     const loadDocumentText = loadText || defaultLoadText;
 
@@ -232,7 +260,9 @@ export function UniversalDocumentViewer({
     };
 
     const selectedCustomRenderer = renderers.find((renderer) => renderer.canRender(baseContext));
-    const needsText = !selectedCustomRenderer && (isMarkdown(baseContext) || isHtml(baseContext) || isXml(baseContext) || isCodeOrText(baseContext));
+    const needsText =
+        !selectedCustomRenderer &&
+        (isMarkdown(baseContext) || isHtml(baseContext) || isXml(baseContext) || isCodeOrText(baseContext));
     const needsUrl = !selectedCustomRenderer && (isPdf(baseContext) || isImage(baseContext));
     const converterContext: UniversalDocumentConverterContext = {
         source,
@@ -241,13 +271,15 @@ export function UniversalDocumentViewer({
         contentType: source.contentType,
         target: 'pdf',
     };
-    const selectedConverter = !selectedCustomRenderer && !baseContext.url
-        ? converters.find((converter) => converter.target === 'pdf' && converter.canConvert(converterContext))
-        : undefined;
-    const needsPdfRendition = !selectedCustomRenderer
-        && !baseContext.url
-        && (canUsePdfRendition(baseContext) || !!selectedConverter)
-        && (!!selectedConverter || !!createRendition);
+    const selectedConverter =
+        !selectedCustomRenderer && !baseContext.url
+            ? converters.find((converter) => converter.target === 'pdf' && converter.canConvert(converterContext))
+            : undefined;
+    const needsPdfRendition =
+        !selectedCustomRenderer &&
+        !baseContext.url &&
+        (canUsePdfRendition(baseContext) || !!selectedConverter) &&
+        (!!selectedConverter || !!createRendition);
 
     useEffect(() => {
         let cancelled = false;
@@ -267,12 +299,12 @@ export function UniversalDocumentViewer({
                 if (needsPdfRendition) {
                     const result = selectedConverter
                         ? await selectedConverter.convert({
-                            source: currentSource,
-                            fileName,
-                            extension,
-                            contentType: currentSource.contentType,
-                            target: 'pdf',
-                        })
+                              source: currentSource,
+                              fileName,
+                              extension,
+                              contentType: currentSource.contentType,
+                              target: 'pdf',
+                          })
                         : await createRendition?.(currentSource, 'pdf');
                     if (!cancelled) setRendition(result ?? null);
                     return;
@@ -336,7 +368,9 @@ export function UniversalDocumentViewer({
             <div className="flex h-full min-h-64 flex-col items-center justify-center gap-2 text-destructive">
                 <AlertCircleIcon className="size-7" />
                 <span className="max-w-xl text-center text-sm">{error}</span>
-                <Button variant="outline" size="sm" onClick={context.reload}>Retry</Button>
+                <Button variant="outline" size="sm" onClick={context.reload}>
+                    Retry
+                </Button>
             </div>
         );
     } else if (selectedCustomRenderer) {
@@ -385,7 +419,9 @@ export function UniversalDocumentViewer({
             {showHeader && (
                 <div className="flex min-h-10 items-center justify-between gap-3 border-b py-2 ps-3 pe-16">
                     <div className="min-w-0">
-                        <div className="truncate text-sm font-medium" title={fileName}>{fileName}</div>
+                        <div className="truncate text-sm font-medium" title={fileName}>
+                            {fileName}
+                        </div>
                         {context.contentType && (
                             <div className="truncate text-xs text-muted">{context.contentType}</div>
                         )}
@@ -397,9 +433,7 @@ export function UniversalDocumentViewer({
                     )}
                 </div>
             )}
-            <div className={cn('min-h-0 flex-1 overflow-auto', bodyClassName)}>
-                {body}
-            </div>
+            <div className={cn('min-h-0 flex-1 overflow-auto', bodyClassName)}>{body}</div>
         </div>
     );
 }

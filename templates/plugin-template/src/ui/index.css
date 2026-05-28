@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "@vertesia/ui/styles.css";
 
-@plugin '@tailwindcss/forms';
+@plugin "@tailwindcss/forms";
 
 @source "./";
 @source "../../index.html";
@@ -18,17 +18,17 @@
  */
 
 :root {
-    --primary: oklch(58% 0.180 265);
-    --primary-background: oklch(97% 0.020 265);
-    --secondary: oklch(40% 0.060 280);
-    --secondary-background: oklch(96% 0.010 280);
-    --ring: oklch(58% 0.180 265 / 0.45);
+    --primary: oklch(58% 0.18 265);
+    --primary-background: oklch(97% 0.02 265);
+    --secondary: oklch(40% 0.06 280);
+    --secondary-background: oklch(96% 0.01 280);
+    --ring: oklch(58% 0.18 265 / 0.45);
 }
 
 .dark {
-    --primary: oklch(72% 0.170 265);
-    --primary-background: oklch(22% 0.040 265);
-    --secondary: oklch(78% 0.040 280);
-    --secondary-background: oklch(20% 0.020 280);
-    --ring: oklch(72% 0.170 265 / 0.55);
+    --primary: oklch(72% 0.17 265);
+    --primary-background: oklch(22% 0.04 265);
+    --secondary: oklch(78% 0.04 280);
+    --secondary-background: oklch(20% 0.02 280);
+    --ring: oklch(72% 0.17 265 / 0.55);
 }

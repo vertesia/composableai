@@ -1,4 +1,3 @@
-
 export type ObjectKey = string | number | undefined;
 export interface ObjectVisitor {
     onStartObject?: (key: ObjectKey, value: Record<string, unknown>) => void;
@@ -42,9 +41,11 @@ export class ObjectWalker {
             this._walkIterable(key, obj, visitor);
         } else if (this.supportIterators && isIterable(obj)) {
             this._walkIterable(key, obj, visitor);
-        } else if (isPlainRecord(obj)) { // a plain object
+        } else if (isPlainRecord(obj)) {
+            // a plain object
             this._walkObject(key, obj, visitor);
-        } else { // a random object - we treat it as a value
+        } else {
+            // a random object - we treat it as a value
             visitor.onValue?.(key, obj);
         }
     }
@@ -73,7 +74,6 @@ export class ObjectWalker {
     }
 }
 
-
 export class AsyncObjectWalker {
     supportIterators = false; // only array are supported by default
     constructor(supportIterators = false) {
@@ -90,9 +90,11 @@ export class AsyncObjectWalker {
             await this._walkIterable(key, obj, visitor);
         } else if (this.supportIterators && isIterable(obj)) {
             await this._walkIterable(key, obj, visitor);
-        } else if (isPlainRecord(obj)) { // a plain object
+        } else if (isPlainRecord(obj)) {
+            // a plain object
             await this._walkObject(key, obj, visitor);
-        } else { // a random object - we treat it as a value
+        } else {
+            // a random object - we treat it as a value
             await visitor.onValue?.(key, obj);
         }
     }
@@ -125,7 +127,7 @@ class MapVisitor implements ObjectVisitor {
     result: unknown;
     current: MutableContainer | undefined;
     stack: MutableContainer[] = [];
-    constructor(private mapFn: (key: ObjectKey, value: unknown) => unknown) { }
+    constructor(private mapFn: (key: ObjectKey, value: unknown) => unknown) {}
 
     private setValue(key: ObjectKey, value: unknown) {
         if (key === undefined) {
@@ -188,7 +190,7 @@ class AsyncMapVisitor implements AsyncObjectVisitor {
     result: unknown;
     current: MutableContainer | undefined;
     stack: MutableContainer[] = [];
-    constructor(private mapFn: (key: ObjectKey, value: unknown) => Promise<unknown>) { }
+    constructor(private mapFn: (key: ObjectKey, value: unknown) => Promise<unknown>) {}
 
     private setValue(key: ObjectKey, value: unknown) {
         if (key === undefined) {

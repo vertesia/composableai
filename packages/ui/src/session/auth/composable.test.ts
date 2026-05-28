@@ -7,10 +7,7 @@ function makeJwt(payload: Record<string, unknown>) {
 
 async function importComposableAuth() {
     vi.resetModules();
-    const [{ Env }, composableAuth] = await Promise.all([
-        import('@vertesia/ui/env'),
-        import('./composable'),
-    ]);
+    const [{ Env }, composableAuth] = await Promise.all([import('@vertesia/ui/env'), import('./composable')]);
     Env.init({
         name: 'test',
         version: '0.0.0',

@@ -1,11 +1,11 @@
-import type { VertesiaClient } from "@vertesia/client";
-import { type AgentMessage, AgentMessageType } from "@vertesia/common";
-import dayjs from "dayjs";
+import type { VertesiaClient } from '@vertesia/client';
+import { type AgentMessage, AgentMessageType } from '@vertesia/common';
+import dayjs from 'dayjs';
 
 export function insertMessageInTimeline(arr: AgentMessage[], m: AgentMessage) {
-    const t = typeof m.timestamp === "number" ? m.timestamp : new Date(m.timestamp).getTime();
+    const t = typeof m.timestamp === 'number' ? m.timestamp : new Date(m.timestamp).getTime();
     const idx = arr.findIndex((a) => {
-        const at = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
+        const at = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
         return at > t;
     });
     if (idx === -1) arr.push(m);
@@ -30,7 +30,7 @@ export function isInProgress(messages: AgentMessage[]) {
 
     // Only the main workstream determines whether the conversation is in progress.
     // Child workstream COMPLETE/IDLE messages must not flip this flag.
-    const mainMessages = messages.filter(m => getWorkstreamId(m) === 'main');
+    const mainMessages = messages.filter((m) => getWorkstreamId(m) === 'main');
 
     // If there are no main workstream messages yet, check if there's exactly one
     // workstream — treat it as main (handles single-workstream conversations).
@@ -44,10 +44,10 @@ export function isInProgress(messages: AgentMessage[]) {
 }
 
 export const formatRelative = (ts: number | string) =>
-    typeof ts === "number" ? dayjs(ts).fromNow() : dayjs(new Date(ts)).fromNow();
+    typeof ts === 'number' ? dayjs(ts).fromNow() : dayjs(new Date(ts)).fromNow();
 
 function getTimestampMs(timestamp: number | string): number {
-    return typeof timestamp === "number" ? timestamp : new Date(timestamp).getTime();
+    return typeof timestamp === 'number' ? timestamp : new Date(timestamp).getTime();
 }
 
 /**
@@ -60,7 +60,7 @@ export function getWorkstreamId(message: AgentMessage): string {
     if (message.workstream_id) {
         // For debugging COMPLETE messages
         if (message.type === AgentMessageType.COMPLETE) {
-            console.log("[getWorkstreamId] COMPLETE message with workstream_id:", message.workstream_id);
+            console.log('[getWorkstreamId] COMPLETE message with workstream_id:', message.workstream_id);
         }
         return message.workstream_id;
     }
@@ -71,7 +71,7 @@ export function getWorkstreamId(message: AgentMessage): string {
     }
 
     // Default to 'main' workstream
-    return "main";
+    return 'main';
 }
 
 /**
@@ -88,47 +88,54 @@ export function getSlidingViewMessageBuckets(
         return Math.max(max, getTimestampMs(msg.timestamp));
     }, -Infinity);
 
-    const importantMessages = messages.filter((msg) =>
-        msg.type === AgentMessageType.ANSWER ||
-        msg.type === AgentMessageType.QUESTION ||
-        msg.type === AgentMessageType.COMPLETE ||
-        msg.type === AgentMessageType.IDLE ||
-        msg.type === AgentMessageType.REQUEST_INPUT ||
-        msg.type === AgentMessageType.TERMINATED ||
-        msg.type === AgentMessageType.ERROR ||
-        (msg.type === AgentMessageType.THOUGHT &&
-            (msg.details?.tool || msg.details?.tools || msg.details?.streamed || msg.details?.display_role === "tool_preamble"))
+    const importantMessages = messages.filter(
+        (msg) =>
+            msg.type === AgentMessageType.ANSWER ||
+            msg.type === AgentMessageType.QUESTION ||
+            msg.type === AgentMessageType.COMPLETE ||
+            msg.type === AgentMessageType.IDLE ||
+            msg.type === AgentMessageType.REQUEST_INPUT ||
+            msg.type === AgentMessageType.TERMINATED ||
+            msg.type === AgentMessageType.ERROR ||
+            (msg.type === AgentMessageType.THOUGHT &&
+                (msg.details?.tool ||
+                    msg.details?.tools ||
+                    msg.details?.streamed ||
+                    msg.details?.display_role === 'tool_preamble')),
     );
 
     const latestImportantTimestamp = importantMessages.reduce((max, msg) => {
         return Math.max(max, getTimestampMs(msg.timestamp));
     }, -Infinity);
 
-    const recentThinking = !isCompleted && !hasStreaming
-        ? messages
-            .filter((msg) =>
-                msg.type === AgentMessageType.UPDATE ||
-                msg.type === AgentMessageType.PLAN ||
-                (msg.type === AgentMessageType.THOUGHT &&
-                    !msg.details?.tool &&
-                    !msg.details?.tools &&
-                    !msg.details?.streamed &&
-                    msg.details?.display_role !== "tool_preamble"))
-            .filter((msg) => {
-                const timestamp = getTimestampMs(msg.timestamp);
+    const recentThinking =
+        !isCompleted && !hasStreaming
+            ? messages
+                  .filter(
+                      (msg) =>
+                          msg.type === AgentMessageType.UPDATE ||
+                          msg.type === AgentMessageType.PLAN ||
+                          (msg.type === AgentMessageType.THOUGHT &&
+                              !msg.details?.tool &&
+                              !msg.details?.tools &&
+                              !msg.details?.streamed &&
+                              msg.details?.display_role !== 'tool_preamble'),
+                  )
+                  .filter((msg) => {
+                      const timestamp = getTimestampMs(msg.timestamp);
 
-                if (Number.isFinite(latestUserQuestionTimestamp) && timestamp < latestUserQuestionTimestamp) {
-                    return false;
-                }
+                      if (Number.isFinite(latestUserQuestionTimestamp) && timestamp < latestUserQuestionTimestamp) {
+                          return false;
+                      }
 
-                if (Number.isFinite(latestImportantTimestamp) && timestamp < latestImportantTimestamp) {
-                    return false;
-                }
+                      if (Number.isFinite(latestImportantTimestamp) && timestamp < latestImportantTimestamp) {
+                          return false;
+                      }
 
-                return true;
-            })
-            .slice(-1)
-        : [];
+                      return true;
+                  })
+                  .slice(-1)
+            : [];
 
     return { importantMessages, recentThinking };
 }
@@ -138,9 +145,9 @@ export function getSlidingViewMessageBuckets(
  * @param messages List of agent messages
  * @returns Map of workstream IDs to completion status ('pending', 'in_progress', or 'completed')
  */
-export function getWorkstreamStatusMap(messages: AgentMessage[]): Map<string, "pending" | "in_progress" | "completed"> {
+export function getWorkstreamStatusMap(messages: AgentMessage[]): Map<string, 'pending' | 'in_progress' | 'completed'> {
     const workstreamMessages = new Map<string, AgentMessage[]>();
-    const statusMap = new Map<string, "pending" | "in_progress" | "completed">();
+    const statusMap = new Map<string, 'pending' | 'in_progress' | 'completed'>();
 
     // Group messages by workstream
     messages.forEach((message) => {
@@ -148,34 +155,34 @@ export function getWorkstreamStatusMap(messages: AgentMessage[]): Map<string, "p
         if (!workstreamMessages.has(workstreamId)) {
             workstreamMessages.set(workstreamId, []);
             // Initialize all workstreams as pending
-            statusMap.set(workstreamId, "pending");
+            statusMap.set(workstreamId, 'pending');
         }
         const wsMessages = workstreamMessages.get(workstreamId);
         wsMessages?.push(message);
     });
 
     // Log all workstreams found
-    console.log("[getWorkstreamStatusMap] Found workstreams:", Array.from(workstreamMessages.keys()));
+    console.log('[getWorkstreamStatusMap] Found workstreams:', Array.from(workstreamMessages.keys()));
 
     // Determine status based on last message type
     for (const [workstreamId, msgs] of workstreamMessages.entries()) {
         if (msgs.length > 0) {
             // Mark as in_progress by default if there are any messages
-            statusMap.set(workstreamId, "in_progress");
+            statusMap.set(workstreamId, 'in_progress');
 
             // Check if completed based on last message or any COMPLETE message
             const lastMessage = msgs[msgs.length - 1];
 
             // Check for any COMPLETE message in this workstream
-            const hasCompleteMessage = msgs.some(msg =>
-                msg.type === AgentMessageType.COMPLETE &&
-                (msg.workstream_id === workstreamId || (!msg.workstream_id && workstreamId === 'main'))
+            const hasCompleteMessage = msgs.some(
+                (msg) =>
+                    msg.type === AgentMessageType.COMPLETE &&
+                    (msg.workstream_id === workstreamId || (!msg.workstream_id && workstreamId === 'main')),
             );
 
-            if (hasCompleteMessage ||
-                DONE_STATES.includes(lastMessage.type)) {
+            if (hasCompleteMessage || DONE_STATES.includes(lastMessage.type)) {
                 console.log(`[getWorkstreamStatusMap] Marking workstream ${workstreamId} as completed`);
-                statusMap.set(workstreamId, "completed");
+                statusMap.set(workstreamId, 'completed');
             } else {
                 console.log(`[getWorkstreamStatusMap] Workstream ${workstreamId} is in_progress`);
             }
@@ -183,20 +190,19 @@ export function getWorkstreamStatusMap(messages: AgentMessage[]): Map<string, "p
     }
 
     // Log final status map for debugging
-    console.log("[getWorkstreamStatusMap] Final status map:",
-        Array.from(statusMap.entries()).map(([id, status]) => `${id}: ${status}`).join(', '));
+    console.log(
+        '[getWorkstreamStatusMap] Final status map:',
+        Array.from(statusMap.entries())
+            .map(([id, status]) => `${id}: ${status}`)
+            .join(', '),
+    );
 
     return statusMap;
 }
 
 // Helper function to get conversation URL - used by other components
-export async function getConversationUrl(
-    vertesia: VertesiaClient,
-    agentRunId: string,
-): Promise<string> {
-    return vertesia.agents
-        .getArtifactUrl(agentRunId, 'conversation.json')
-        .then((r) => r.url);
+export async function getConversationUrl(vertesia: VertesiaClient, agentRunId: string): Promise<string> {
+    return vertesia.agents.getArtifactUrl(agentRunId, 'conversation.json').then((r) => r.url);
 }
 
 /**
@@ -219,8 +225,8 @@ export interface StreamingData {
 }
 
 function normalizeComparableText(text: unknown): string | undefined {
-    if (typeof text !== "string") return undefined;
-    const normalized = text.replace(/\r\n/g, "\n").trim();
+    if (typeof text !== 'string') return undefined;
+    const normalized = text.replace(/\r\n/g, '\n').trim();
     return normalized || undefined;
 }
 
@@ -228,24 +234,18 @@ function getMessageComparableText(message: AgentMessage): string | undefined {
     return normalizeComparableText(message.message);
 }
 
-function isStreamReplacedByMessage(
-    streaming: StreamingData,
-    messages: AgentMessage[],
-): boolean {
+function isStreamReplacedByMessage(streaming: StreamingData, messages: AgentMessage[]): boolean {
     const streamingText = normalizeComparableText(streaming.text);
     if (!streamingText) return false;
 
-    const streamWorkstreamId = streaming.workstreamId || "main";
+    const streamWorkstreamId = streaming.workstreamId || 'main';
 
     return messages.some((message) => {
         const messageTimestamp = getTimestampMs(message.timestamp);
         if (messageTimestamp < streaming.startTimestamp) return false;
         if (getWorkstreamId(message) !== streamWorkstreamId) return false;
 
-        if (
-            streaming.activityId &&
-            message.details?.activity_id === streaming.activityId
-        ) {
+        if (streaming.activityId && message.details?.activity_id === streaming.activityId) {
             return true;
         }
 
@@ -264,10 +264,7 @@ function isStreamReplacedByMessage(
     });
 }
 
-export function shouldCollapseAdjacentRenderedMessage(
-    previous: AgentMessage,
-    current: AgentMessage,
-): boolean {
+export function shouldCollapseAdjacentRenderedMessage(previous: AgentMessage, current: AgentMessage): boolean {
     if (getWorkstreamId(previous) !== getWorkstreamId(current)) return false;
 
     const previousText = getMessageComparableText(previous);
@@ -298,12 +295,10 @@ export function shouldCollapseAdjacentRenderedMessage(
     if (
         previous.type === current.type &&
         (previous.details?.streamed || current.details?.streamed) &&
-        (
-            current.type === AgentMessageType.THOUGHT ||
+        (current.type === AgentMessageType.THOUGHT ||
             current.type === AgentMessageType.ANSWER ||
             current.type === AgentMessageType.COMPLETE ||
-            current.type === AgentMessageType.IDLE
-        )
+            current.type === AgentMessageType.IDLE)
     ) {
         return true;
     }
@@ -314,15 +309,28 @@ export function shouldCollapseAdjacentRenderedMessage(
 /**
  * Tool execution status for display purposes
  */
-export type ToolExecutionStatus = "running" | "completed" | "error" | "warning";
+export type ToolExecutionStatus = 'running' | 'completed' | 'error' | 'warning';
 
 /**
  * Extended group type that includes streaming messages for interleaved rendering
  */
 export type RenderableGroup =
     | { type: 'single'; message: AgentMessage }
-    | { type: 'tool_group'; messages: AgentMessage[]; firstTimestamp: number; toolRunId?: string; toolStatus?: ToolExecutionStatus }
-    | { type: 'streaming'; streamingId: string; text: string; workstreamId?: string; startTimestamp: number; isComplete?: boolean };
+    | {
+          type: 'tool_group';
+          messages: AgentMessage[];
+          firstTimestamp: number;
+          toolRunId?: string;
+          toolStatus?: ToolExecutionStatus;
+      }
+    | {
+          type: 'streaming';
+          streamingId: string;
+          text: string;
+          workstreamId?: string;
+          startTimestamp: number;
+          isComplete?: boolean;
+      };
 
 /**
  * Check if a message is a tool call (THOUGHT with tool details)
@@ -333,7 +341,7 @@ export function isToolCallMessage(message: AgentMessage): boolean {
 
 function isToolPreambleMessage(message: AgentMessage): boolean {
     const details = message.details as { display_role?: string } | undefined;
-    return message.type === AgentMessageType.THOUGHT && details?.display_role === "tool_preamble";
+    return message.type === AgentMessageType.THOUGHT && details?.display_role === 'tool_preamble';
 }
 
 /**
@@ -379,7 +387,7 @@ export function getToolStatus(message: AgentMessage): ToolExecutionStatus | unde
  */
 export function getActivityGroupId(message: AgentMessage): string | undefined {
     const value = message.details?.activity_group_id;
-    if (typeof value !== "string" || value.trim() === "") return undefined;
+    if (typeof value !== 'string' || value.trim() === '') return undefined;
     return value;
 }
 
@@ -404,7 +412,7 @@ export function groupConsecutiveToolCalls(messages: AgentMessage[]): MessageGrou
                 groups.push({
                     type: 'tool_group',
                     messages: currentToolGroup,
-                    firstTimestamp: currentToolGroup[0].timestamp
+                    firstTimestamp: currentToolGroup[0].timestamp,
                 });
             }
             currentToolGroup = [];
@@ -441,25 +449,34 @@ export function groupConsecutiveToolCalls(messages: AgentMessage[]): MessageGrou
 export function groupMessagesWithStreaming(
     messages: AgentMessage[],
     streamingMessages: Map<string, StreamingData>,
-    activeWorkstream?: string
+    activeWorkstream?: string,
 ): RenderableGroup[] {
     // First pass: collect messages by activity_group_id (core grouping signal)
-    const activityGroups = new Map<string, {
-        messages: AgentMessage[];
-        firstTimestamp: number;
-    }>();
+    const activityGroups = new Map<
+        string,
+        {
+            messages: AgentMessage[];
+            firstTimestamp: number;
+        }
+    >();
 
     // First pass: collect messages by tool_iteration (for parallel tool calls in same iteration)
-    const iterationGroups = new Map<number, {
-        messages: AgentMessage[];
-        firstTimestamp: number;
-    }>();
+    const iterationGroups = new Map<
+        number,
+        {
+            messages: AgentMessage[];
+            firstTimestamp: number;
+        }
+    >();
 
     // Also collect messages by tool_run_id (for sub-messages within same tool)
-    const toolRunGroups = new Map<string, {
-        messages: AgentMessage[];
-        firstTimestamp: number;
-    }>();
+    const toolRunGroups = new Map<
+        string,
+        {
+            messages: AgentMessage[];
+            firstTimestamp: number;
+        }
+    >();
 
     // Messages without tool_iteration or tool_run_id will be processed separately
     const standaloneMessages: AgentMessage[] = [];
@@ -470,8 +487,7 @@ export function groupMessagesWithStreaming(
         // Certain message types have dedicated renderers (AskUserWidget for
         // REQUEST_INPUT, BatchProgressPanel for BATCH_PROGRESS) and must stay
         // standalone so MessageItem / AllMessagesMixed can route them correctly.
-        if (message.type === AgentMessageType.REQUEST_INPUT
-            || message.type === AgentMessageType.BATCH_PROGRESS) {
+        if (message.type === AgentMessageType.REQUEST_INPUT || message.type === AgentMessageType.BATCH_PROGRESS) {
             standaloneMessages.push(message);
         } else if (activityGroupId) {
             if (!activityGroups.has(activityGroupId)) {
@@ -490,7 +506,7 @@ export function groupMessagesWithStreaming(
                 if (!iterationGroups.has(toolIteration)) {
                     iterationGroups.set(toolIteration, {
                         messages: [],
-                        firstTimestamp: getTimestampMs(message.timestamp)
+                        firstTimestamp: getTimestampMs(message.timestamp),
                     });
                 }
                 iterationGroups.get(toolIteration)?.messages.push(message);
@@ -499,7 +515,7 @@ export function groupMessagesWithStreaming(
                 if (!toolRunGroups.has(toolRunId)) {
                     toolRunGroups.set(toolRunId, {
                         messages: [],
-                        firstTimestamp: getTimestampMs(message.timestamp)
+                        firstTimestamp: getTimestampMs(message.timestamp),
                     });
                 }
                 toolRunGroups.get(toolRunId)?.messages.push(message);
@@ -528,7 +544,7 @@ export function groupMessagesWithStreaming(
             kind: 'activity_group',
             activityGroupId,
             messages: group.messages,
-            timestamp: group.firstTimestamp
+            timestamp: group.firstTimestamp,
         });
     });
 
@@ -538,7 +554,7 @@ export function groupMessagesWithStreaming(
             kind: 'iteration_group',
             iteration,
             messages: group.messages,
-            timestamp: group.firstTimestamp
+            timestamp: group.firstTimestamp,
         });
     });
 
@@ -548,7 +564,7 @@ export function groupMessagesWithStreaming(
             kind: 'tool_run',
             toolRunId,
             messages: group.messages,
-            timestamp: group.firstTimestamp
+            timestamp: group.firstTimestamp,
         });
     });
 
@@ -557,7 +573,7 @@ export function groupMessagesWithStreaming(
         items.push({
             kind: 'message',
             message,
-            timestamp: getTimestampMs(message.timestamp)
+            timestamp: getTimestampMs(message.timestamp),
         });
     }
 
@@ -568,8 +584,8 @@ export function groupMessagesWithStreaming(
         if (isStreamReplacedByMessage(data, messages)) return;
 
         // Filter by workstream if specified
-        if (activeWorkstream && activeWorkstream !== "all") {
-            const streamWorkstream = data.workstreamId || "main";
+        if (activeWorkstream && activeWorkstream !== 'all') {
+            const streamWorkstream = data.workstreamId || 'main';
             if (activeWorkstream !== streamWorkstream) return;
         }
 
@@ -577,7 +593,7 @@ export function groupMessagesWithStreaming(
             kind: 'streaming',
             streamingId,
             data,
-            timestamp: data.startTimestamp
+            timestamp: data.startTimestamp,
         });
     });
 
@@ -607,7 +623,7 @@ export function groupMessagesWithStreaming(
                 groups.push({
                     type: 'tool_group',
                     messages: currentToolGroup,
-                    firstTimestamp: getTimestampMs(currentToolGroup[0].timestamp)
+                    firstTimestamp: getTimestampMs(currentToolGroup[0].timestamp),
                 });
             }
             currentToolGroup = [];
@@ -624,61 +640,61 @@ export function groupMessagesWithStreaming(
                 text: item.data.text,
                 workstreamId: item.data.workstreamId,
                 startTimestamp: item.data.startTimestamp,
-                isComplete: item.data.isComplete
+                isComplete: item.data.isComplete,
             });
         } else if (item.kind === 'activity_group') {
             // Core activity group - includes tool calls and related progress updates
             flushToolGroup();
             const sortedMessages = [...item.messages].sort(
-                (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp)
+                (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp),
             );
             const latestStatus = sortedMessages.reduce<ToolExecutionStatus | undefined>(
                 (status, msg) => getToolStatus(msg) || status,
-                undefined
+                undefined,
             );
             groups.push({
                 type: 'tool_group',
                 messages: sortedMessages,
                 firstTimestamp: item.timestamp,
                 toolRunId: item.activityGroupId,
-                toolStatus: latestStatus
+                toolStatus: latestStatus,
             });
         } else if (item.kind === 'iteration_group') {
             // Iteration group - parallel tool calls from same iteration
             flushToolGroup();
             // Sort messages within the group by timestamp
             const sortedMessages = [...item.messages].sort(
-                (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp)
+                (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp),
             );
             // Get the latest status from the group
             const latestStatus = sortedMessages.reduce<ToolExecutionStatus | undefined>(
                 (status, msg) => getToolStatus(msg) || status,
-                undefined
+                undefined,
             );
             groups.push({
                 type: 'tool_group',
                 messages: sortedMessages,
                 firstTimestamp: item.timestamp,
-                toolStatus: latestStatus
+                toolStatus: latestStatus,
             });
         } else if (item.kind === 'tool_run') {
             // Tool run group - already grouped by tool_run_id
             flushToolGroup();
             // Sort messages within the group by timestamp
             const sortedMessages = [...item.messages].sort(
-                (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp)
+                (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp),
             );
             // Get the latest status from the group
             const latestStatus = sortedMessages.reduce<ToolExecutionStatus | undefined>(
                 (status, msg) => getToolStatus(msg) || status,
-                undefined
+                undefined,
             );
             groups.push({
                 type: 'tool_group',
                 messages: sortedMessages,
                 firstTimestamp: item.timestamp,
                 toolRunId: item.toolRunId,
-                toolStatus: latestStatus
+                toolStatus: latestStatus,
             });
         } else if (isToolActivityMessage(item.message)) {
             // Standalone tool message - use consecutive grouping
