@@ -1,7 +1,7 @@
 import type { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import type { VertesiaClient } from '@vertesia/client';
-import { ContentEventName, type DSLActivityExecutionPayload } from '@vertesia/common';
+import { ContentEventName, type DSLActivityExecutionPayload, ExecutionRunStatus } from '@vertesia/common';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { executeInteraction, type ExecuteInteractionParams } from './executeInteraction.js';
@@ -38,7 +38,9 @@ const createPayload = (): DSLActivityExecutionPayload<ExecuteInteractionParams> 
     activity: { name: 'executeInteraction', params: {} },
 });
 
-async function mockInteractionError(error: Error & { statusCode?: number; status?: number; code?: number }): Promise<void> {
+async function mockInteractionError(
+    error: Error & { statusCode?: number; status?: number; code?: number },
+): Promise<void> {
     const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
     const mockClient = {
         interactions: {
@@ -54,6 +56,54 @@ async function mockInteractionError(error: Error & { statusCode?: number; status
 }
 
 describe('executeInteraction retryability', () => {
+    it('should forward per-run HTTP timeout configuration to interaction execution', async () => {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const httpTimeout = {
+            headersTimeout: 1_000,
+            bodyTimeout: 2_000,
+            connectTimeout: 300,
+        };
+        const executeByName = vi.fn().mockResolvedValue({
+            id: 'run-id',
+            status: ExecutionRunStatus.completed,
+            result: [],
+        });
+        const mockClient = {
+            interactions: {
+                executeByName,
+            },
+        } as unknown as VertesiaClient;
+        const payload = createPayload();
+        const params: ExecuteInteractionParams = {
+            ...payload.params,
+            environment: 'env-id',
+            model: 'model-id',
+            http_timeout: httpTimeout,
+        };
+
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            inputType: 'objectIds',
+            params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+
+        await expect(testEnv.run(executeInteraction, { ...payload, params })).resolves.toMatchObject({
+            runId: 'run-id',
+            status: ExecutionRunStatus.completed,
+        });
+
+        expect(executeByName).toHaveBeenCalledWith(
+            'testInteraction',
+            expect.objectContaining({
+                config: expect.objectContaining({
+                    environment: 'env-id',
+                    model: 'model-id',
+                    http_timeout: httpTimeout,
+                }),
+            }),
+        );
+    });
+
     it('should leave 412 rendition-in-progress failures retryable', async () => {
         await mockInteractionError(Object.assign(new Error('rendition in progress'), { statusCode: 412 }));
 
