@@ -109,24 +109,26 @@ function ArrayProperty({ name, value }: ArrayPropertyProps) {
     const isInline =
         typeof value[0] === 'string' && (inlineLength < 80 || (inlineLength < 400 && itemMediumLength < 32));
     const useBullet = value.length > 9;
+    const items = value.map((item, index) => ({
+        item,
+        index,
+        key: `${index}-${JSON.stringify(item)}`,
+    }));
+
     return isInline ? (
         <div className="flex gap-2 flex-wrap">
             {name && <PropertyTitle name={`${name}:`} />}
-            {/* biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render */}
-            {value.map((item, index) => (
-                <DotBadge key={index}>{String(item)}</DotBadge>
+            {items.map(({ item, key }) => (
+                <DotBadge key={key}>{String(item)}</DotBadge>
             ))}
         </div>
     ) : (
         <div>
             {name && <PropertyTitle name={name} />}
             <div className="flex flex-col gap-2">
-                {
-                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                    (value as JSONArray).map((value, index) => (
-                        <ItemProperty key={index} index={index} value={value} useBullet={useBullet} />
-                    ))
-                }
+                {items.map(({ item, index, key }) => (
+                    <ItemProperty key={key} index={index} value={item} useBullet={useBullet} />
+                ))}
             </div>
         </div>
     );

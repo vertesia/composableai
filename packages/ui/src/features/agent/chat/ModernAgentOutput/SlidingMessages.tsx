@@ -68,11 +68,7 @@ export default function SlidingMessages({ messages, isCompleted }: SlidingMessag
         <div className="flex flex-col space-y-6 overflow-y-auto py-4">
             {/* Display permanent messages */}
             {sortedPermanentMessages.map((message, index) => (
-                <MessageItem
-                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                    key={`${message.timestamp}-${index}`}
-                    message={message}
-                />
+                <MessageItem key={`${message.timestamp}-${index}`} message={message} />
             ))}
 
             {/* Only show the latest thinking message when not completed */}

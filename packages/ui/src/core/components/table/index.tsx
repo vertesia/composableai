@@ -49,15 +49,10 @@ interface TBodySkeletonProps {
     children: React.ReactNode;
 }
 export function TBody({ isLoading = false, columns, rows = 3, children }: Readonly<TBodySkeletonProps>) {
+    const skeletonRows = Array.from({ length: rows }, (_, index) => `skeleton-row-${index}`);
+
     return (
-        <tbody>
-            {isLoading
-                ? // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                  Array(rows)
-                      .fill(0)
-                      .map((_, index) => <RowSkeleton columns={columns} key={index} />)
-                : children}
-        </tbody>
+        <tbody>{isLoading ? skeletonRows.map((key) => <RowSkeleton columns={columns} key={key} />) : children}</tbody>
     );
 }
 

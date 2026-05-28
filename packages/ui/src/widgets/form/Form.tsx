@@ -150,7 +150,6 @@ function ListField({ object }: ListFieldProps) {
         <div className="flex flex-col gap-4 my-4 py-2 ps-4 border-s-4 border-s-solid border-s-slate-100 darK:border-s-slate-600">
             {!object.isListItem && <div className="text-gray-900 dark:text-gray-200 font-semibold">{object.title}</div>}
             {object.items.map((item, index) => {
-                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                 return (
                     <ListItem
                         key={`${index}-${String(value[index] ?? '')}`}

@@ -648,7 +648,6 @@ function AllMessagesMixedComponent({
 
                                     if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     return (
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                         <MessageErrorBoundary
                                             key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}
                                         >
@@ -667,7 +666,6 @@ function AllMessagesMixedComponent({
                                     // Render streaming message - no error boundary to avoid interrupting streaming
                                     return (
                                         <StreamingMessage
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                             key={`streaming-${group.streamingId}-${groupIndex}`}
                                             text={group.text}
                                             workstreamId={group.workstreamId}
@@ -686,7 +684,6 @@ function AllMessagesMixedComponent({
                                     // Special handling for batch progress messages
                                     if (isBatchProgressMessage(message)) {
                                         return (
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                             <MessageErrorBoundary
                                                 key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}
                                             >
@@ -701,7 +698,6 @@ function AllMessagesMixedComponent({
                                     }
 
                                     return (
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                         <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
                                             <MessageItem
                                                 message={message}
@@ -763,7 +759,6 @@ function AllMessagesMixedComponent({
 
                                     if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     return (
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                         <MessageErrorBoundary
                                             key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}
                                         >
@@ -782,7 +777,6 @@ function AllMessagesMixedComponent({
                                     // Render streaming message - no error boundary to avoid interrupting streaming
                                     return (
                                         <StreamingMessage
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                             key={`streaming-${group.streamingId}-${groupIndex}`}
                                             text={group.text}
                                             workstreamId={group.workstreamId}
@@ -804,7 +798,6 @@ function AllMessagesMixedComponent({
                                     // Special handling for batch progress messages
                                     if (isBatchProgressMessage(message)) {
                                         return (
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                             <MessageErrorBoundary
                                                 key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}
                                             >
@@ -819,7 +812,6 @@ function AllMessagesMixedComponent({
                                     }
 
                                     return (
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                         <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
                                             <MessageItem
                                                 message={message}
@@ -837,7 +829,6 @@ function AllMessagesMixedComponent({
                             {/* Recent thinking messages - displayed with streaming reveal */}
                             {recentThinking.map((thinking, idx) => (
                                 <StreamingMessage
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                     key={`thinking-${thinking.timestamp}-${idx}`}
                                     text={processThinkingPlaceholder(thinking.message || '', thinkingMessageIndex)}
                                     workstreamId={getWorkstreamId(thinking)}
