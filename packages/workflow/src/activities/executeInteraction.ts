@@ -218,20 +218,6 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
         if (executionError.statusCode === 429 && params.exit_on_resource_exhaustion) {
             throw new ResourceExhaustedError(executionError.statusCode, 'Resource exhausted - rate limit exceeded');
-        } else if (
-            is4xxNonRetryable(executionError.status) ||
-            is4xxNonRetryable(executionError.statusCode) ||
-            is4xxNonRetryable(executionError.code) ||
-            executionError.retryable === false
-        ) {
-            // 4xx HTTP errors (except retryable statuses) are permanent client errors
-            // (e.g. model not found, invalid request).
-            // Errors explicitly marked as non-retryable (e.g. LlumiverseError) also fall here.
-            // They will not be resolved by retrying.
-            throw ApplicationFailure.create({
-                message: `Interaction Execution failed ${interactionName}: ${executionError.message}`,
-                nonRetryable: true,
-            });
         } else if (executionError.message.includes('Failed to validate merged prompt schema')) {
             //issue with the input data, don't retry
             throw new ActivityParamInvalidError('prompt_data', payload.activity, executionError.message);
@@ -263,6 +249,20 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
                     nonRetryable: true,
                 });
             }
+        }
+
+        if (
+            is4xxNonRetryable(executionError.status) ||
+            is4xxNonRetryable(executionError.statusCode) ||
+            is4xxNonRetryable(executionError.code)
+        ) {
+            // 4xx HTTP errors (except retryable statuses) are permanent client errors
+            // (e.g. model not found, invalid request). The explicit retryability
+            // flag above wins when a provider marks a 4xx as transient.
+            throw ApplicationFailure.create({
+                message: `Interaction Execution failed ${interactionName}: ${executionError.message}`,
+                nonRetryable: true,
+            });
         }
 
         // Unknown retryability - rethrow as generic error (Temporal will use default retry policy)

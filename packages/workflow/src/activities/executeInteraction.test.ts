@@ -133,6 +133,19 @@ describe('executeInteraction retryability', () => {
         } satisfies Partial<ApplicationFailure>);
     });
 
+    it('should honor explicitly retryable 4xx execution errors', async () => {
+        await mockInteractionError(
+            Object.assign(new Error('Status: URL_REJECTED-REJECTED_CLIENT_THROTTLED'), {
+                statusCode: 400,
+                retryable: true,
+            }),
+        );
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            nonRetryable: false,
+        } satisfies Partial<ApplicationFailure>);
+    });
+
     it('should honor explicitly non-retryable execution errors', async () => {
         await mockInteractionError(Object.assign(new Error('provider rejected request'), { retryable: false }));
 
