@@ -27,6 +27,8 @@ import type {
     ReindexViaBulkRequest,
     ReindexViaBulkResult,
     ElasticsearchBackend,
+    ReindexAgentRunsPayload,
+    ReindexAgentRunsResponse,
 } from "@vertesia/common";
 
 /**
@@ -61,6 +63,13 @@ export class IndexingApi extends ApiTopic {
      */
     async reindex(options?: StartProjectReindexPayload): Promise<GenericCommandResponse> {
         return this.post("/reindex", { payload: options });
+    }
+
+    /**
+     * Rebuild the agent-run Elasticsearch index directly from MongoDB.
+     */
+    async reindexAgentRuns(options?: ReindexAgentRunsPayload): Promise<ReindexAgentRunsResponse> {
+        return this.post("/agent-runs/reindex", { payload: options });
     }
 
     /**
@@ -315,7 +324,7 @@ export class IndexingApi extends ApiTopic {
     ): Promise<ComputeShardsResult> {
         return this.zenoBulkPost('/reindex/compute-shards', {
             tenant_id: tenantId,
-            shard_size: shardSize ?? 50000,
+            shard_size: shardSize ?? 250000,
             updated_since: updatedSince,
             backend,
         } satisfies ComputeShardsRequest);
