@@ -89,8 +89,10 @@ export default function TenantStep({ email, tenant, onBack, onProviderClicked, r
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-2.5 border-t border-border bg-muted-background">
-                    <Mail className="size-4 text-muted shrink-0" />
+                <div className="flex items-center gap-2.5 px-3 py-1.5 border-t border-border bg-muted-background">
+                    <div className="size-[30px] grid place-items-center shrink-0">
+                        <Mail className="size-4 text-muted" />
+                    </div>
                     <span className="text-sm text-foreground/80 flex-1 truncate">{email}</span>
                     <button
                         type="button"

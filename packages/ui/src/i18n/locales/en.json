@@ -194,7 +194,7 @@
   "auth.returning.body": "Your team's project is ready when you are. Continue with the last method you used, or switch things up.",
   "auth.returning.eyebrow": "Returning to Vertesia",
   "auth.returning.notYou": "Not you?",
-  "auth.returning.otherWays": "Other ways",
+  "auth.returning.otherWays": "More",
   "auth.returning.title": "Welcome back, {{name}}.",
   "auth.returning.useDifferent": "Use a different sign-in method",
   "auth.signInError": "Sorry, we have not been able to sign you in.",

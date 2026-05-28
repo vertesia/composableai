@@ -1,8 +1,8 @@
 import type { UIResolvedTenant } from "@vertesia/common";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, Mail } from "lucide-react";
 import AuthPending from "./AuthPending";
 import EmailStep, { type TenantInfo } from "./EmailStep";
-import type { LastSession } from "./loginUtils";
+import { type LastSession, emailInitial, firstNameFromEmail } from "./loginUtils";
 import ProvidersStep from "./ProvidersStep";
 import ReturningStep from "./ReturningStep";
 import SignupForm from "./SignupForm";
@@ -50,6 +50,70 @@ const MOCK_RETURNING_SSO_OIDC: LastSession = {
     lastProvider: "oidc",
     tenantName: "Acme Corp",
 };
+
+// Variant of the SSO returning user+org display: user name + company on top,
+// email + "Not you?" on the bottom (mirrors TenantStep's icon + email + action
+// row). This is the layout used by the live ReturningStep SSO path.
+function UserOrgDisplayEmailBottom({ session }: { session: LastSession }) {
+    return (
+        <div className="rounded-md border border-border bg-background overflow-hidden">
+            <div className="flex items-center gap-3 px-3.5 py-2.5">
+                <div className="size-9 rounded-full bg-info text-info-foreground grid place-items-center text-sm font-semibold ring-4 ring-background ring-offset-1 ring-offset-border shrink-0">
+                    {emailInitial(session.email)}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-foreground truncate">
+                        {session.name || firstNameFromEmail(session.email)}
+                    </div>
+                    {session.tenantName && (
+                        <div className="text-xs text-foreground/80 truncate">{session.tenantName}</div>
+                    )}
+                </div>
+            </div>
+            <div className="flex items-center gap-3 px-3.5 py-1 border-t border-border bg-muted-background">
+                <div className="w-9 h-6 grid place-items-center shrink-0">
+                    <Mail className="size-3.5 text-muted" />
+                </div>
+                <span className="text-xs text-foreground/80 flex-1 truncate">{session.email}</span>
+                <button
+                    type="button"
+                    className="cursor-pointer text-[11px] text-muted hover:text-foreground transition px-2 py-1 rounded underline decoration-transparent hover:decoration-current underline-offset-[3px]"
+                >
+                    Not you?
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// Variant of the SSO returning user+org display: company sits between name
+// and email, all three stacked in a single section (no border-t bottom row).
+function UserOrgDisplaySingle({ session }: { session: LastSession }) {
+    return (
+        <div className="rounded-md border border-border bg-background overflow-hidden">
+            <div className="flex items-center gap-3 px-3.5 py-2.5">
+                <div className="size-9 rounded-full bg-info text-info-foreground grid place-items-center text-sm font-semibold ring-4 ring-background ring-offset-1 ring-offset-border shrink-0">
+                    {emailInitial(session.email)}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-foreground truncate">
+                        {session.name || firstNameFromEmail(session.email)}
+                    </div>
+                    {session.tenantName && (
+                        <div className="text-xs text-foreground/80 truncate">{session.tenantName}</div>
+                    )}
+                    <div className="text-xs text-muted truncate">{session.email}</div>
+                </div>
+                <button
+                    type="button"
+                    className="cursor-pointer text-xs text-muted hover:text-foreground transition px-2 py-1 rounded underline decoration-transparent hover:decoration-current underline-offset-[3px]"
+                >
+                    Not you?
+                </button>
+            </div>
+        </div>
+    );
+}
 
 // What HAS been verified by the UI/server flow path that leads to this screen.
 // Distinct from "what's true about the email in the abstract" — these badges
@@ -298,6 +362,36 @@ export default function SigninPreview() {
                             <ReturningStep session={MOCK_RETURNING_SSO_OIDC} onNotYou={noop} onProviderClicked={noop} />
                         </Frame>
                     </Section>
+
+                    <div className="mt-6">
+                        <Section
+                            title="User + org display — alt A (single section)"
+                            sub="Company between user name and email, all in one section."
+                            cols={2}
+                        >
+                            <Frame title="Alt A — Microsoft SSO">
+                                <UserOrgDisplaySingle session={MOCK_RETURNING_SSO_MS} />
+                            </Frame>
+                            <Frame title="Alt A — generic SSO (OIDC)">
+                                <UserOrgDisplaySingle session={MOCK_RETURNING_SSO_OIDC} />
+                            </Frame>
+                        </Section>
+                    </div>
+
+                    <div className="mt-6">
+                        <Section
+                            title="User + org display — alt B (email on bottom)"
+                            sub="Name + company on top; email moved to a separate bottom row with Mail icon, matching TenantStep."
+                            cols={2}
+                        >
+                            <Frame title="Alt B — Microsoft SSO">
+                                <UserOrgDisplayEmailBottom session={MOCK_RETURNING_SSO_MS} />
+                            </Frame>
+                            <Frame title="Alt B — generic SSO (OIDC)">
+                                <UserOrgDisplayEmailBottom session={MOCK_RETURNING_SSO_OIDC} />
+                            </Frame>
+                        </Section>
+                    </div>
                 </div>
             </div>
         </div>
