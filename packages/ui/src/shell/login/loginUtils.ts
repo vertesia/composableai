@@ -151,6 +151,16 @@ export function emailLocalPart(email: string): string {
     return at > 0 ? email.slice(0, at) : email;
 }
 
+export function emailDomain(email: string): string {
+    if (!email) return "";
+    const at = email.lastIndexOf("@");
+    return at > 0 ? email.slice(at + 1) : "";
+}
+
+export function capitalizeFirst(s: string): string {
+    return s ? s[0]!.toUpperCase() + s.slice(1) : s;
+}
+
 export function emailInitial(email: string): string {
     return (email || "?")[0]!.toUpperCase();
 }

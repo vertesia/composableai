@@ -1,7 +1,11 @@
 import { useUITranslation } from "@vertesia/ui/i18n";
-import { ArrowRight, Mail } from "lucide-react";
-import type { ComponentType } from "react";
-import { GithubIcon, GoogleIcon, MicrosoftIcon } from "./LoginIcons";
+import { Mail } from "lucide-react";
+import {
+    InlineLinkButton,
+    OutlinedProviderButton,
+    StepHeader,
+    StepLayout,
+} from "./LoginPrimitives";
 import { type ProviderId, providerLabel, startSignIn } from "./loginUtils";
 
 interface ProvidersStepProps {
@@ -11,18 +15,9 @@ interface ProvidersStepProps {
     redirectTo?: string;
 }
 
-const PROVIDERS: { id: ProviderId; Icon: ComponentType<{ className?: string }> }[] = [
-    { id: "google", Icon: GoogleIcon },
-    { id: "github", Icon: GithubIcon },
-    { id: "microsoft", Icon: MicrosoftIcon },
-];
+const PROVIDERS: ProviderId[] = ["google", "github", "microsoft"];
 
-export default function ProvidersStep({
-    email,
-    onBack,
-    onProviderClicked,
-    redirectTo,
-}: ProvidersStepProps) {
+export default function ProvidersStep({ email, onBack, onProviderClicked, redirectTo }: ProvidersStepProps) {
     const { t } = useUITranslation();
 
     const pick = async (provider: ProviderId) => {
@@ -31,47 +26,30 @@ export default function ProvidersStep({
     };
 
     return (
-        <div className="w-full max-w-[420px] flex flex-col gap-6">
-            <div>
-                <div className="text-info text-[12.5px] font-medium mb-2">
-                    {t("auth.providers.eyebrow")}
-                </div>
-                <h1 className="text-foreground text-[22px] font-semibold tracking-tight leading-tight mb-1.5">
-                    {t("auth.providers.title")}
-                </h1>
-                <p className="text-muted text-sm leading-relaxed">
-                    {t("auth.providers.bodyConsumer")}
-                </p>
-            </div>
+        <StepLayout>
+            <StepHeader
+                eyebrow={t("auth.providers.eyebrow")}
+                title={t("auth.providers.title")}
+                body={t("auth.providers.bodyConsumer")}
+            />
 
             <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted-background">
                 <Mail className="size-4 text-muted shrink-0" />
                 <span className="text-sm text-foreground/80 flex-1 truncate">{email}</span>
-                <button
-                    type="button"
-                    onClick={onBack}
-                    className="cursor-pointer text-xs text-muted hover:text-foreground transition px-2 py-1 rounded underline decoration-transparent hover:decoration-current underline-offset-[3px]"
-                >
-                    {t("auth.change")}
-                </button>
+                <InlineLinkButton onClick={onBack}>{t("auth.change")}</InlineLinkButton>
             </div>
 
             <div className="flex flex-col gap-2">
-                {PROVIDERS.map(({ id, Icon }) => (
-                    <button
+                {PROVIDERS.map((id) => (
+                    <OutlinedProviderButton
                         key={id}
-                        type="button"
+                        provider={id}
+                        label={t("auth.continueWithProvider", { provider: providerLabel(id) })}
                         onClick={() => pick(id)}
-                        className="cursor-pointer group h-[42px] inline-flex items-center gap-3 pl-3.5 pr-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
-                    >
-                        <Icon className="size-[18px] shrink-0" />
-                        <span className="flex-1 text-left">
-                            {t("auth.continueWithProvider", { provider: providerLabel(id) })}
-                        </span>
-                        <ArrowRight className="size-3.5 text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition" />
-                    </button>
+                        arrowSlide
+                    />
                 ))}
             </div>
-        </div>
+        </StepLayout>
     );
 }

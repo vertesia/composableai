@@ -17,7 +17,7 @@ const noop = () => {};
 
 // Shaped to match what /api/resolve-tenant actually returns: name = slug,
 // label = pretty display string. TenantStep now reads label first.
-const MOCK_TENANT_SSO: UIResolvedTenant & TenantInfo = {
+const MOCK_TENANT_GOOGLE: UIResolvedTenant & TenantInfo = {
     firebaseTenantId: "vertesia-tenant-id",
     name: "vertesia",
     label: "Vertesia",
@@ -37,23 +37,23 @@ const MOCK_RETURNING_GOOGLE: LastSession = {
     lastProvider: "google",
 };
 
-const MOCK_RETURNING_SSO_MS: LastSession = {
+const MOCK_RETURNING_TENANT_MS: LastSession = {
     email: "alice@vertesia.io",
     name: "Alice Example",
     lastProvider: "microsoft",
     tenantName: "Vertesia",
 };
 
-const MOCK_RETURNING_SSO_OIDC: LastSession = {
+const MOCK_RETURNING_TENANT_OIDC: LastSession = {
     email: "user@acme-corp.com",
     name: "Generic User",
     lastProvider: "oidc",
     tenantName: "Acme Corp",
 };
 
-// Variant of the SSO returning user+org display: user name + company on top,
-// email + "Not you?" on the bottom (mirrors TenantStep's icon + email + action
-// row). This is the layout used by the live ReturningStep SSO path.
+// Variant of the tenant-based returning user+org display: user name + company
+// on top, email + "Not you?" on the bottom (mirrors TenantStep's icon + email
+// + action row). This is the layout used by the live ReturningStep tenant path.
 function UserOrgDisplayEmailBottom({ session }: { session: LastSession }) {
     return (
         <div className="rounded-md border border-border bg-background overflow-hidden">
@@ -86,8 +86,8 @@ function UserOrgDisplayEmailBottom({ session }: { session: LastSession }) {
     );
 }
 
-// Variant of the SSO returning user+org display: company sits between name
-// and email, all three stacked in a single section (no border-t bottom row).
+// Variant of the tenant-based returning user+org display: company sits between
+// name and email, all three stacked in a single section (no border-t bottom row).
 function UserOrgDisplaySingle({ session }: { session: LastSession }) {
     return (
         <div className="rounded-md border border-border bg-background overflow-hidden">
@@ -269,11 +269,11 @@ export default function SigninPreview() {
                     </Frame>
 
                     <Frame
-                        title="Tenant — Google Workspace SSO"
+                        title="Tenant — Google"
                         sub="Reached because /api/resolve-tenant returned a tenant with provider=google."
                         meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "yes", providerKnown: "yes" }}
                     >
-                        <TenantStep email="alice@vertesia.io" tenant={MOCK_TENANT_SSO} onBack={noop} onProviderClicked={noop} />
+                        <TenantStep email="alice@vertesia.io" tenant={MOCK_TENANT_GOOGLE} onBack={noop} onProviderClicked={noop} />
                     </Frame>
 
                     <Frame
@@ -297,7 +297,7 @@ export default function SigninPreview() {
                     </Frame>
 
                     <Frame
-                        title="Auth pending — generic SSO (OIDC)"
+                        title="Auth pending — OIDC / Fallback"
                         sub="OIDC redirect in flight; auth-tenant must have matched to get here."
                         meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "yes", providerKnown: "yes" }}
                     >
@@ -309,7 +309,7 @@ export default function SigninPreview() {
 
                 <Section title="4. Post-auth outcome" sub="Three terminal states based on the ensure-user response.">
                     <Frame
-                        title="Blocked — via SSO tenant"
+                        title="Blocked — Customer+Tenant w/o Invite"
                         sub="403 from /auth/ensure-user. Path went through auth-tenant match; tenantName from tenant.label."
                         meta={{ customerDomain: "yes", signupAllowed: "no", authTenant: "yes", providerKnown: "na" }}
                     >
@@ -317,7 +317,7 @@ export default function SigninPreview() {
                     </Frame>
 
                     <Frame
-                        title="Blocked — fallback name"
+                        title="Blocked — Customer w/o Invite"
                         sub="403 with no auth-tenant in path → no tenant name available, i18n fallback used."
                         meta={{ customerDomain: "yes", signupAllowed: "no", authTenant: "no", providerKnown: "na" }}
                     >
@@ -325,7 +325,7 @@ export default function SigninPreview() {
                     </Frame>
 
                     <Frame
-                        title="Signup form"
+                        title="Success — New Self-Serve User Onboard"
                         sub="412 from /auth/ensure-user — no customer block, no existing user, no invite."
                         meta={{ customerDomain: "no", signupAllowed: "yes", authTenant: "na", providerKnown: "na" }}
                     >
@@ -347,19 +347,19 @@ export default function SigninPreview() {
                         </Frame>
 
                         <Frame
-                            title="Returning — Microsoft SSO"
-                            sub="lastProvider=microsoft, tenantName set → branded SSO last time."
+                            title="Returning Tenant — Microsoft"
+                            sub="lastProvider=microsoft, tenantName set → branded tenant last time."
                             meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "yes", providerKnown: "yes" }}
                         >
-                            <ReturningStep session={MOCK_RETURNING_SSO_MS} onNotYou={noop} onProviderClicked={noop} />
+                            <ReturningStep session={MOCK_RETURNING_TENANT_MS} onNotYou={noop} onProviderClicked={noop} />
                         </Frame>
 
                         <Frame
-                            title="Returning — generic SSO (OIDC)"
-                            sub="lastProvider=oidc, tenantName set → generic/unbranded SSO last time."
+                            title="Returning Tenant — OIDC / Fallback"
+                            sub="lastProvider=oidc, tenantName set → generic/unbranded tenant last time."
                             meta={{ customerDomain: "na", signupAllowed: "na", authTenant: "yes", providerKnown: "yes" }}
                         >
-                            <ReturningStep session={MOCK_RETURNING_SSO_OIDC} onNotYou={noop} onProviderClicked={noop} />
+                            <ReturningStep session={MOCK_RETURNING_TENANT_OIDC} onNotYou={noop} onProviderClicked={noop} />
                         </Frame>
                     </Section>
 
@@ -369,11 +369,11 @@ export default function SigninPreview() {
                             sub="Company between user name and email, all in one section."
                             cols={2}
                         >
-                            <Frame title="Alt A — Microsoft SSO">
-                                <UserOrgDisplaySingle session={MOCK_RETURNING_SSO_MS} />
+                            <Frame title="Alt A — Tenant Microsoft">
+                                <UserOrgDisplaySingle session={MOCK_RETURNING_TENANT_MS} />
                             </Frame>
-                            <Frame title="Alt A — generic SSO (OIDC)">
-                                <UserOrgDisplaySingle session={MOCK_RETURNING_SSO_OIDC} />
+                            <Frame title="Alt A — Tenant OIDC / Fallback">
+                                <UserOrgDisplaySingle session={MOCK_RETURNING_TENANT_OIDC} />
                             </Frame>
                         </Section>
                     </div>
@@ -384,11 +384,11 @@ export default function SigninPreview() {
                             sub="Name + company on top; email moved to a separate bottom row with Mail icon, matching TenantStep."
                             cols={2}
                         >
-                            <Frame title="Alt B — Microsoft SSO">
-                                <UserOrgDisplayEmailBottom session={MOCK_RETURNING_SSO_MS} />
+                            <Frame title="Alt B — Tenant Microsoft">
+                                <UserOrgDisplayEmailBottom session={MOCK_RETURNING_TENANT_MS} />
                             </Frame>
-                            <Frame title="Alt B — generic SSO (OIDC)">
-                                <UserOrgDisplayEmailBottom session={MOCK_RETURNING_SSO_OIDC} />
+                            <Frame title="Alt B — Tenant OIDC / Fallback">
+                                <UserOrgDisplayEmailBottom session={MOCK_RETURNING_TENANT_OIDC} />
                             </Frame>
                         </Section>
                     </div>

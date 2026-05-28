@@ -4,6 +4,7 @@ import { useUITranslation } from "@vertesia/ui/i18n";
 import { setFirebaseTenant } from "@vertesia/ui/session";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { PrimaryButton, StepHeader, StepLayout } from "./LoginPrimitives";
 import { isValidEmail } from "./loginUtils";
 
 export type TenantInfo = UIResolvedTenant;
@@ -45,18 +46,12 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
     };
 
     return (
-        <div className="w-full max-w-[420px] flex flex-col gap-6">
-            <div>
-                <div className="text-info text-[12.5px] font-medium mb-2">
-                    {t("auth.email.eyebrow")}
-                </div>
-                <h1 className="text-foreground text-[22px] font-semibold tracking-tight leading-tight mb-1.5">
-                    {t("auth.email.title")}
-                </h1>
-                <p className="text-muted text-sm leading-relaxed">
-                    {t("auth.email.body")}
-                </p>
-            </div>
+        <StepLayout>
+            <StepHeader
+                eyebrow={t("auth.email.eyebrow")}
+                title={t("auth.email.title")}
+                body={t("auth.email.body")}
+            />
 
             <form onSubmit={submit} noValidate className={`flex flex-col ${submitError ? "gap-2" : "gap-6"}`}>
                 <div className="flex flex-col gap-1.5">
@@ -91,11 +86,7 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                     )}
                 </div>
 
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="cursor-pointer h-[42px] inline-flex items-center justify-center gap-2.5 rounded-md bg-foreground text-background text-sm font-medium transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <PrimaryButton type="submit" disabled={loading}>
                     {loading ? (
                         <Spinner />
                     ) : (
@@ -104,8 +95,8 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                             <ArrowRight className="size-3.5" />
                         </>
                     )}
-                </button>
+                </PrimaryButton>
             </form>
-        </div>
+        </StepLayout>
     );
 }

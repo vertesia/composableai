@@ -1,7 +1,7 @@
 import { Spinner } from "@vertesia/ui/core";
 import { useUITranslation } from "@vertesia/ui/i18n";
-import type { ComponentType } from "react";
-import { GithubIcon, GoogleIcon, MicrosoftIcon, SsoIcon } from "./LoginIcons";
+import { providerIcon } from "./LoginIcons";
+import { StepHeader, StepLayout } from "./LoginPrimitives";
 import { type ProviderId, providerLabel } from "./loginUtils";
 
 interface AuthPendingProps {
@@ -9,31 +9,24 @@ interface AuthPendingProps {
     onCancel?: () => void;
 }
 
-const ICONS: Record<ProviderId, ComponentType<{ className?: string }>> = {
-    google: GoogleIcon,
-    github: GithubIcon,
-    microsoft: MicrosoftIcon,
-    oidc: SsoIcon,
-};
-
 export default function AuthPending({ provider, onCancel }: AuthPendingProps) {
     const { t } = useUITranslation();
-    const Icon = ICONS[provider];
+    const Icon = providerIcon(provider);
     // OIDC has no brand name to drop into "Redirecting to X" — the title needs
     // a noun phrase ("Sign-In Provider"), unlike the button CTA context where
     // providerLabel's "Sign In" reads fine ("Continue with Sign In").
     const titleProvider = provider === "oidc" ? "Sign-In Provider" : providerLabel(provider);
 
     return (
-        <div className="w-full max-w-[420px] flex flex-col gap-6 items-center text-center">
+        <StepLayout centered>
             <div>
                 <div className="inline-grid place-items-center size-14 rounded-xl bg-info-background border border-info/15 mb-3.5">
                     <Icon className={provider === "oidc" ? "size-6 text-info" : "size-6"} />
                 </div>
-                <h1 className="text-foreground text-[22px] font-semibold tracking-tight leading-tight mb-1.5">
-                    {t("auth.pending.title", { provider: titleProvider })}
-                </h1>
-                <p className="text-muted text-sm leading-relaxed">{t("auth.pending.body")}</p>
+                <StepHeader
+                    title={t("auth.pending.title", { provider: titleProvider })}
+                    body={t("auth.pending.body")}
+                />
             </div>
 
             <div className="w-full flex flex-col gap-2">
@@ -55,6 +48,6 @@ export default function AuthPending({ provider, onCancel }: AuthPendingProps) {
                     </button>
                 )}
             </div>
-        </div>
+        </StepLayout>
     );
 }

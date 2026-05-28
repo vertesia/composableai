@@ -1,4 +1,5 @@
-import type { SVGProps } from "react";
+import type { ComponentType, SVGProps } from "react";
+import type { ProviderId } from "./loginUtils";
 
 export function GoogleIcon(props: SVGProps<SVGSVGElement>) {
     return (
@@ -52,4 +53,19 @@ export function SsoIcon(props: SVGProps<SVGSVGElement>) {
             <circle cx="12" cy="15.5" r="1.25" fill="currentColor" stroke="none" />
         </svg>
     );
+}
+
+/** Single source for provider → brand icon. OIDC and unknowns fall back to the generic SSO icon. */
+export const PROVIDER_ICONS: Record<ProviderId, ComponentType<{ className?: string }>> = {
+    google: GoogleIcon,
+    github: GithubIcon,
+    microsoft: MicrosoftIcon,
+    oidc: SsoIcon,
+};
+
+export function providerIcon(
+    provider: ProviderId | string | undefined,
+): ComponentType<{ className?: string }> {
+    if (provider && provider in PROVIDER_ICONS) return PROVIDER_ICONS[provider as ProviderId];
+    return SsoIcon;
 }
