@@ -155,9 +155,9 @@ async function readPackageJson() {
 const packageJson = await readPackageJson();
 const packageName = typeof packageJson?.name === 'string' ? packageJson.name : undefined;
 const isPluginTemplatePackage = packageName === 'plugin-template';
-// The package publishing smoke test bootstraps this exact template under a throwaway
-// package name. Keep the examples there so the test still validates the scaffold.
-const isPluginTemplateSmokePackage = /^integration-test-plugin-\d+$/.test(packageName ?? '');
+// The package publishing tests bootstrap this exact template under throwaway
+// package names. Keep the examples there so the tests still validate the scaffold.
+const isPluginTemplateSmokePackage = /^(integration-test-plugin|smoke-test-plugin)(-npm)?-\d+$/.test(packageName ?? '');
 const isTemplateScaffoldPackage = isPluginTemplatePackage || isPluginTemplateSmokePackage;
 
 function hasDependency(name) {
