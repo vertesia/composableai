@@ -696,7 +696,6 @@ function AllMessagesMixedComponent({
                                     }
 
                                     return (
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                         <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
                                             <MessageItem
                                                 message={message}
@@ -809,7 +808,6 @@ function AllMessagesMixedComponent({
                                     }
 
                                     return (
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                         <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
                                             <MessageItem
                                                 message={message}
@@ -827,7 +825,6 @@ function AllMessagesMixedComponent({
                             {/* Recent thinking messages - displayed with streaming reveal */}
                             {recentThinking.map((thinking, idx) => (
                                 <StreamingMessage
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                     key={`thinking-${thinking.timestamp}-${idx}`}
                                     text={processThinkingPlaceholder(thinking.message || '', thinkingMessageIndex)}
                                     workstreamId={getWorkstreamId(thinking)}
