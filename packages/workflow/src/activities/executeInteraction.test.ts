@@ -39,7 +39,7 @@ const createPayload = (): DSLActivityExecutionPayload<ExecuteInteractionParams> 
 });
 
 async function mockInteractionError(
-    error: Error & { statusCode?: number; status?: number; code?: number },
+    error: Error & { statusCode?: number; status?: number; code?: number; retryable?: boolean },
 ): Promise<void> {
     const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
     const mockClient = {
@@ -125,6 +125,14 @@ describe('executeInteraction retryability', () => {
 
     it('should mark other 4xx failures as non-retryable', async () => {
         await mockInteractionError(Object.assign(new Error('bad request'), { statusCode: 400 }));
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            nonRetryable: true,
+        } satisfies Partial<ApplicationFailure>);
+    });
+
+    it('should honor explicitly non-retryable execution errors', async () => {
+        await mockInteractionError(Object.assign(new Error('provider rejected request'), { retryable: false }));
 
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             nonRetryable: true,

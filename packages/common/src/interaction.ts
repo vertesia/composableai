@@ -176,7 +176,7 @@ export interface InCodeInteraction {
      * The id of the interaction. Required.
      * The id is a unique identifier for the interaction.
      * It is recommended to use a URL safe string and not include spaces.
-     * The id composaed  by some namespace or prefix and the interaction name.
+     * The id is composed of some namespace or prefix and the interaction name.
      * Example: sys:generic_question, app:review_contract, tmp:my_temp_interaction
      */
     id: string;
@@ -584,7 +584,7 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
 export type ToolRef = string | { name: string; description: string };
 
 interface AsyncExecutionPayloadBase
-    extends Omit<NamedInteractionExecutionPayload, 'toolDefinitions' | 'stream'>,
+    extends Omit<NamedInteractionExecutionPayload, 'tool_definitions' | 'stream'>,
         Record<string, unknown> {
     type: 'conversation' | 'interaction';
 
@@ -1179,7 +1179,7 @@ export interface ImprovePromptPayload extends ImprovePromptPayloadConfig {
     interaction_name: string; // name of the interaction to improve
     context?: string;
     prompt: { name: string; content: string }[]; // prompt array
-    result_schema?: JSONSchema; // optional interactionr result schema
+    result_schema?: JSONSchema; // optional interaction result schema
 }
 
 export interface GeneratedInteractionPromptTemplate {

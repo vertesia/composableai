@@ -238,7 +238,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         // or from LlumiverseError instance (direct driver errors in some paths)
         const isRetryable =
             executionError.retryable !== undefined
-                ? true
+                ? executionError.retryable
                 : error instanceof LlumiverseError
                   ? error.retryable !== false
                   : undefined;
