@@ -595,8 +595,7 @@ function StartWorkflowView({
                         <div className="flex flex-wrap gap-2 mb-3">
                             {stagedFiles.map((file, index) => (
                                 <div
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                                    key={`${file.name}-${index}`}
+                                    key={`${file.name}-${file.size}-${file.lastModified}`}
                                     className="flex items-center gap-1.5 px-2 py-1 bg-attention/10 text-attention rounded-md text-sm"
                                 >
                                     <FileTextIcon className="size-3.5" />

@@ -21,10 +21,9 @@ export default function StackedMessages({ messages }: StackedMessagesProps) {
 
     return (
         <div className="flex flex-col overflow-y-auto space-y-6 py-4">
-            {sortedMessages.map((message, index) => (
+            {sortedMessages.map((message) => (
                 <MessageItem
-                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                    key={`${message.timestamp}-${index}`}
+                    key={`${message.workflow_run_id}-${message.timestamp}-${message.type}-${message.message}`}
                     message={message}
                     showPulsatingCircle={false}
                 />

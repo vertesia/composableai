@@ -325,7 +325,7 @@ export class IndexingApi extends ApiTopic {
     ): Promise<ComputeShardsResult> {
         return this.zenoBulkPost('/reindex/compute-shards', {
             tenant_id: tenantId,
-            shard_size: shardSize ?? 50000,
+            shard_size: shardSize ?? 250000,
             updated_since: updatedSince,
             backend,
         } satisfies ComputeShardsRequest);

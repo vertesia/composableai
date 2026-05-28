@@ -67,10 +67,9 @@ export default function SlidingMessages({ messages, isCompleted }: SlidingMessag
     return (
         <div className="flex flex-col space-y-6 overflow-y-auto py-4">
             {/* Display permanent messages */}
-            {sortedPermanentMessages.map((message, index) => (
+            {sortedPermanentMessages.map((message) => (
                 <MessageItem
-                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                    key={`${message.timestamp}-${index}`}
+                    key={`${message.workflow_run_id}-${message.timestamp}-${message.type}-${message.message}`}
                     message={message}
                 />
             ))}

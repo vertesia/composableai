@@ -274,6 +274,17 @@ const getMessageBadgeClass = (message: AgentMessage): string => {
     return isToolPreambleMessage(message) ? ASSISTANT_BADGE_CLASS : TOOL_BADGE_CLASS;
 };
 
+const getMessageKey = (message: AgentMessage): string => {
+    const details = message.details;
+    const detailId =
+        details?._messageId ??
+        details?.tool_run_id ??
+        details?.activity_id ??
+        details?.batch_id ??
+        details?.streaming_id;
+    return `${message.workflow_run_id}-${message.workstream_id ?? 'root'}-${message.timestamp}-${message.type}-${detailId ?? message.message}`;
+};
+
 function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames = {} }: ToolCallItemProps) {
     const { t } = useUITranslation();
     const [resolvedFiles, setResolvedFiles] = useState<string[]>([]);
@@ -895,8 +906,7 @@ function ToolCallGroupComponent({
 
                         return (
                             <div
-                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                                key={`${m.timestamp}-${idx}`}
+                                key={getMessageKey(m)}
                                 className={cn(
                                     'border-b border-gray-100 dark:border-gray-800 last:border-b-0',
                                     itemClassName,
@@ -1041,8 +1051,7 @@ function ToolCallGroupComponent({
                 <div className="group">
                     {messages.map((message, index) => (
                         <ToolCallItem
-                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                            key={`${message.timestamp}-${index}`}
+                            key={getMessageKey(message)}
                             message={message}
                             isExpanded={expandedItems.has(index)}
                             onToggle={() => toggleItem(index)}

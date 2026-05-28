@@ -738,10 +738,12 @@ export function DocumentUploadModal({
 
                     {/* File status list */}
                     <div className="max-h-96 overflow-y-auto">
-                        {fileStatuses.map((fileStatus, index) => (
+                        {fileStatuses.map((fileStatus) => (
                             <div
-                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                                key={`${fileStatus.file.name}-${index}`}
+                                key={
+                                    fileStatus.id ??
+                                    `${fileStatus.file.name}-${fileStatus.file.size}-${fileStatus.file.lastModified}`
+                                }
                                 className="flex items-center py-2 border-b border-border last:border-b-0"
                             >
                                 <div className="me-3">

@@ -430,6 +430,10 @@ export interface IndexingStatusResponse {
     indexing_enabled: boolean;
     /** @deprecated Now derived from indexing_enabled - queries automatically route to index when indexing is enabled */
     query_enabled: boolean;
+    /** Resolved Elasticsearch backend serving this project */
+    backend: ElasticsearchBackend;
+    /** Resolved search tier for this project */
+    search_tier: ProjectSearchTier;
     /** Index status */
     index: {
         /** Whether the index exists */
@@ -483,6 +487,10 @@ export interface IndexingStatusResponse {
         embeddings_image_skipped?: number;
         /** Properties embedding vectors skipped because they were invalid or dimension-mismatched */
         embeddings_properties_skipped?: number;
+        /** Oversized property string values dropped during transform (size-based pruning) */
+        properties_values_trimmed?: number;
+        /** Total bytes dropped from oversized property values */
+        properties_bytes_dropped?: number;
         /** Documents processed per second */
         docs_per_second: number;
         /** Elapsed time in seconds */
@@ -686,6 +694,8 @@ export interface IndexShardResult {
     embeddings_text_skipped?: number;
     embeddings_image_skipped?: number;
     embeddings_properties_skipped?: number;
+    properties_values_trimmed?: number;
+    properties_bytes_dropped?: number;
     read_docs_s: string;
     write_docs_s: string;
     read_mb: string;
@@ -740,6 +750,8 @@ export interface ReindexViaBulkResult {
     embeddings_text_skipped?: number;
     embeddings_image_skipped?: number;
     embeddings_properties_skipped?: number;
+    properties_values_trimmed?: number;
+    properties_bytes_dropped?: number;
     read_docs_s: string;
     write_docs_s: string;
     read_mb: string;
