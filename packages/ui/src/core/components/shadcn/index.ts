@@ -2,7 +2,7 @@ export * from './theme/ThemeSwitcher';
 export * from './theme/ThemeProvider';
 export * from './LanguageSwitcher';
 
-export * from "./badge"
+export * from './badge';
 export * from './button';
 export * from './card';
 export * from './modal';
@@ -22,9 +22,9 @@ export * from './heading';
 export * from './text';
 export * from './resizeable';
 export * from './textarea';
-export * from "./MessageBox"
-export * from "./Panel"
-export * from "./switch"
-export * from "./radioGroup"
-export * from "./collaspible"
-export * from "./dropdown"
+export * from './MessageBox';
+export * from './Panel';
+export * from './switch';
+export * from './radioGroup';
+export * from './collaspible';
+export * from './dropdown';

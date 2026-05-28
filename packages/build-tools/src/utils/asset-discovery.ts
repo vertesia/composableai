@@ -50,7 +50,7 @@ function isFile(filePath: string): boolean {
  */
 function getFilesInDirectory(dirPath: string): string[] {
     try {
-        return readdirSync(dirPath).filter(file => {
+        return readdirSync(dirPath).filter((file) => {
             const fullPath = path.join(dirPath, file);
             return isFile(fullPath);
         });
@@ -92,7 +92,7 @@ export function discoverSkillAssets(
     options: {
         scriptsDir?: string;
         widgetsDir?: string;
-    } = {}
+    } = {},
 ): DiscoveredAssets {
     const skillDir = path.dirname(skillFilePath);
     const files = getFilesInDirectory(skillDir);
@@ -113,7 +113,7 @@ export function discoverSkillAssets(
             assetFiles.push({
                 sourcePath: fullPath,
                 destPath: path.join(scriptsDir, file),
-                type: 'script'
+                type: 'script',
             });
         } else if (isWidgetFile(file)) {
             // Widget file (.tsx)
@@ -121,7 +121,7 @@ export function discoverSkillAssets(
             widgets.push(widgetName);
             widgetMetadata.push({
                 name: widgetName,
-                path: fullPath
+                path: fullPath,
             });
 
             // Note: We don't add widget .tsx files to assetFiles
@@ -133,6 +133,6 @@ export function discoverSkillAssets(
         scripts,
         widgets,
         widgetMetadata,
-        assetFiles
+        assetFiles,
     };
 }

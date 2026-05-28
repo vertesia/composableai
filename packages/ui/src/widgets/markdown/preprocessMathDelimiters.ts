@@ -17,30 +17,32 @@
 
 const FENCED_CODE_BLOCK_REGEX = /(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2(?=\n|$)/g; // ```...``` or ~~~...~~~
 const INLINE_CODE_REGEX = /`[^`\n]*`/g; // `...`
-const ESCAPED_DOLLAR_REGEX = /\\\$/g;   // \$ inside LaTeX spans
+const ESCAPED_DOLLAR_REGEX = /\\\$/g; // \$ inside LaTeX spans
 
 // LaTeX positive signals
-const RE_BACKSLASH_CMD = /\\[^\s]/;     // \command or \symbol (\frac, \%, \$, etc.)
-const RE_BRACE_GROUP = /[{}]/;          // brace groups
+const RE_BACKSLASH_CMD = /\\[^\s]/; // \command or \symbol (\frac, \%, \$, etc.)
+const RE_BRACE_GROUP = /[{}]/; // brace groups
 const RE_SUB_SUPERSCRIPT = /[_^][\w{]/; // sub/superscript
-const RE_SINGLE_LETTER = /^[a-zA-Z]$/;  // single letter variable ($r$, $x$, $t$)
+const RE_SINGLE_LETTER = /^[a-zA-Z]$/; // single letter variable ($r$, $x$, $t$)
 const RE_VAR_ASSIGNMENT = /^[a-zA-Z]\s*=/; // variable assignment ($r = 0.235$, $n = 4$)
 
 // LaTeX negative signals
-const RE_LEADING_SPACE = /^\s/;         // space after opening $
-const RE_TRAILING_SPACE = /\s$/;        // space before closing $
+const RE_LEADING_SPACE = /^\s/; // space after opening $
+const RE_TRAILING_SPACE = /\s$/; // space before closing $
 const RE_TRAILING_OPERATOR = /[+*/-]$/; // ends with bare operator
-const RE_ION_NOTATION = /\^[+-]$/;      // except ^+ or ^- (ion notation)
+const RE_ION_NOTATION = /\^[+-]$/; // except ^+ or ^- (ion notation)
 
 /**
  * Returns true if content between `$...$` contains LaTeX structural patterns.
  */
 function hasLatexPattern(content: string): boolean {
-    return RE_BACKSLASH_CMD.test(content)
-        || RE_BRACE_GROUP.test(content)
-        || RE_SUB_SUPERSCRIPT.test(content)
-        || RE_SINGLE_LETTER.test(content)
-        || RE_VAR_ASSIGNMENT.test(content);
+    return (
+        RE_BACKSLASH_CMD.test(content) ||
+        RE_BRACE_GROUP.test(content) ||
+        RE_SUB_SUPERSCRIPT.test(content) ||
+        RE_SINGLE_LETTER.test(content) ||
+        RE_VAR_ASSIGNMENT.test(content)
+    );
 }
 
 /**
@@ -59,10 +61,13 @@ function hasCurrencyPattern(content: string): boolean {
 function findSingleDollarPositions(text: string): number[] {
     const positions: number[] = [];
     for (let i = 0; i < text.length; i++) {
-        if (text[i] !== "$") continue;
-        if (i > 0 && text[i - 1] === "\\") continue;                         // skip \$
-        if (i + 1 < text.length && text[i + 1] === "$") { i++; continue; }   // skip $$ (first)
-        if (i > 0 && text[i - 1] === "$" && (i < 2 || text[i - 2] !== "\\")) continue; // skip $$ (second)
+        if (text[i] !== '$') continue;
+        if (i > 0 && text[i - 1] === '\\') continue; // skip \$
+        if (i + 1 < text.length && text[i + 1] === '$') {
+            i++;
+            continue;
+        } // skip $$ (first)
+        if (i > 0 && text[i - 1] === '$' && (i < 2 || text[i - 2] !== '\\')) continue; // skip $$ (second)
         positions.push(i);
     }
     return positions;
@@ -74,7 +79,7 @@ function findSingleDollarPositions(text: string): number[] {
  */
 function inlineMathContent(text: string, openPos: number, closePos: number): string | null {
     const content = text.slice(openPos + 1, closePos);
-    if (content.length === 0 || content.includes("\n")) return null;
+    if (content.length === 0 || content.includes('\n')) return null;
     return content;
 }
 
@@ -86,8 +91,8 @@ function processTextSegment(text: string): string {
     const positions = findSingleDollarPositions(text);
     if (positions.length < 2) return text;
 
-    const committed = new Set<number>();     // position indices that are paired
-    const toEscape = new Set<number>();      // character offsets in text to escape
+    const committed = new Set<number>(); // position indices that are paired
+    const toEscape = new Set<number>(); // character offsets in text to escape
 
     // Pre-compute content for each adjacent pair (avoids redundant slicing in Pass 1 & 2)
     const adjacentContent: (string | null)[] = new Array(positions.length - 1);
@@ -110,7 +115,10 @@ function processTextSegment(text: string): string {
     // Pass 2: pair remaining positions left-to-right
     let idx = 0;
     while (idx < positions.length) {
-        if (committed.has(idx)) { idx++; continue; }
+        if (committed.has(idx)) {
+            idx++;
+            continue;
+        }
 
         // Find next uncommitted position
         let next = idx + 1;
@@ -165,14 +173,14 @@ function processTextSegment(text: string): string {
 
         if (escPos < spanOpen) {
             if (escPos > segStart) parts.push(text.slice(segStart, escPos));
-            parts.push("\\$");
+            parts.push('\\$');
             segStart = escPos + 1;
             escIdx++;
         } else {
             const [open, close] = latexSpans[spanIdx];
             if (open > segStart) parts.push(text.slice(segStart, open));
             const spanContent = text.slice(open, close + 1);
-            parts.push(spanContent.replace(ESCAPED_DOLLAR_REGEX, "\\text{\\textdollar}"));
+            parts.push(spanContent.replace(ESCAPED_DOLLAR_REGEX, '\\text{\\textdollar}'));
             segStart = close + 1;
             while (escIdx < escapePositions.length && escapePositions[escIdx] <= close) escIdx++;
             spanIdx++;
@@ -180,7 +188,7 @@ function processTextSegment(text: string): string {
     }
 
     if (segStart < text.length) parts.push(text.slice(segStart));
-    return parts.join("");
+    return parts.join('');
 }
 
 /**
@@ -197,7 +205,7 @@ function processSkippingInlineCode(text: string): string {
     }
 
     parts.push(processTextSegment(text.slice(lastIndex)));
-    return parts.join("");
+    return parts.join('');
 }
 
 /**
@@ -207,7 +215,7 @@ function processSkippingInlineCode(text: string): string {
  * Skips fenced code blocks and inline code spans.
  */
 export function preprocessMathDelimiters(markdown: string): string {
-    if (!markdown?.includes("$")) {
+    if (!markdown?.includes('$')) {
         return markdown;
     }
 
@@ -221,5 +229,5 @@ export function preprocessMathDelimiters(markdown: string): string {
     }
 
     parts.push(processSkippingInlineCode(markdown.slice(lastIndex)));
-    return parts.join("");
+    return parts.join('');
 }

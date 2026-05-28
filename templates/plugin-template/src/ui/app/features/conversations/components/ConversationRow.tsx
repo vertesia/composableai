@@ -21,10 +21,7 @@ export function ConversationRow({ hit, t, onAddFilter, onOpen }: ConversationRow
     const status = hit.status;
 
     return (
-        <tr
-            className="cursor-pointer hover:bg-muted/50"
-            onClick={() => onOpen(hit.id)}
-        >
+        <tr className="cursor-pointer hover:bg-muted/50" onClick={() => onOpen(hit.id)}>
             <td className="max-w-0">
                 <div className="font-medium line-clamp-2 pe-4" title={topic}>
                     {topic}
@@ -37,9 +34,7 @@ export function ConversationRow({ hit, t, onAddFilter, onOpen }: ConversationRow
                         <InlineFilterButton
                             tooltip={t('conversations.filterByValue', { value: interactionLabel ?? interaction })}
                             hoverClass="group-hover/agent:opacity-100"
-                            onClick={() =>
-                                onAddFilter('agent', interaction, interactionLabel ?? interaction)
-                            }
+                            onClick={() => onAddFilter('agent', interaction, interactionLabel ?? interaction)}
                         />
                     )}
                 </div>

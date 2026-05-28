@@ -1,12 +1,12 @@
-import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
-import type { BuiltinToolsCatalogResponse } from "@vertesia/common";
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type { BuiltinToolsCatalogResponse } from '@vertesia/common';
 
 /**
  * API for accessing the builtin tools catalog
  */
 export class ToolsApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/tools");
+        super(parent, '/api/v1/tools');
     }
 
     /**

@@ -1,147 +1,147 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
-  "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true
-  },
-  "files": {
-    "ignoreUnknown": true,
-    "includes": [
-      "!!**/llumiverse",
-      "**/*.{js,cjs,mjs,jsx,ts,tsx,css,html}",
-      "!**/dist/**",
-      "!**/lib/**",
-      "!**/node_modules/**",
-      "!**/build/**",
-      "!**/bin/**",
-      "!packages/tools-admin-ui/index.html",
-      "!templates/plugin-template/index.html"
-    ]
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "indentWidth": 4,
-    "lineWidth": 120
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "correctness": {
-        "noEmptyPattern": "error",
-        "noUnreachable": "error",
-        "noUnusedFunctionParameters": "error",
-        "noUnusedImports": "error",
-        "noUnusedVariables": "error",
-        "noVoidTypeReturn": "error",
-        "useJsxKeyInIterable": "error",
-        "useParseIntRadix": "error"
-      },
-      "complexity": {
-        "useLiteralKeys": "error",
-        "useOptionalChain": "error"
-      },
-      "security": {
-        "noDangerouslySetInnerHtml": "error"
-      },
-      "style": {
-        "useImportType": "error",
-        "useNodejsImportProtocol": "error",
-        "useTemplate": "error"
-      },
-      "suspicious": {
-        "noBiomeFirstException": "off",
-        "noControlCharactersInRegex": "error",
-        "noDeprecatedImports": "error",
-        "noDoubleEquals": "error",
-        "noExplicitAny": "error",
-        "noImplicitAnyLet": "error",
-        "noShadowRestrictedNames": "error",
-        "noTemplateCurlyInString": "off",
-        "noUnusedExpressions": "error",
-        "useBiomeIgnoreFolder": "off",
-        "useIterableCallbackReturn": "error",
-        "noImportCycles": "error"
-      },
-      "a11y": {
-        "useAltText": "error",
-        "useAriaPropsForRole": "error",
-        "useValidAriaProps": "error",
-        "useValidAriaValues": "error",
-        "useHeadingContent": "error",
-        "useHtmlLang": "error",
-        "useIframeTitle": "error",
-        "noPositiveTabindex": "error",
-        "useAnchorContent": "error",
-        "useButtonType": "error",
-        "useFocusableInteractive": "error",
-        "useSemanticElements": "error",
-        "useKeyWithClickEvents": "error",
-        "useKeyWithMouseEvents": "error",
-        "noStaticElementInteractions": "error",
-        "useAriaActivedescendantWithTabindex": "error",
-        "noLabelWithoutControl": "error"
-      },
-      "nursery": {
-        "noFloatingPromises": "error"
-      }
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "single"
-    }
-  },
-  "css": {
-    "parser": {
-      "tailwindDirectives": true
-    }
-  },
-  "assist": {
-    "enabled": true,
-    "actions": {
-      "source": {
-        "organizeImports": "on"
-      }
-    }
-  },
-  "overrides": [
-    {
-      "includes": [
-        "packages/fusion-ux/src/**/*.{js,jsx,ts,tsx}",
-        "packages/react/src/**/*.{js,jsx,ts,tsx}",
-        "packages/ui/src/**/*.{js,jsx,ts,tsx}",
-        "templates/plugin-template/src/**/*.{js,jsx,ts,tsx}",
-        "templates/ui-plugin-template/src/**/*.{js,jsx,ts,tsx}"
-      ],
-      "linter": {
-        "rules": {
-          "correctness": {
-            "useExhaustiveDependencies": "error",
-            "useHookAtTopLevel": "error"
-          }
-        }
-      }
+    "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+    "vcs": {
+        "enabled": true,
+        "clientKind": "git",
+        "useIgnoreFile": true
     },
-    {
-      "includes": [
-        "templates/plugin-template/src/**/*.{js,jsx,ts,tsx}",
-        "templates/ui-plugin-template/src/**/*.{js,jsx,ts,tsx}"
-      ],
-      "linter": {
+    "files": {
+        "ignoreUnknown": true,
+        "includes": [
+            "!!**/llumiverse",
+            "**/*.{js,cjs,mjs,jsx,ts,tsx,css,html}",
+            "!**/dist/**",
+            "!**/lib/**",
+            "!**/node_modules/**",
+            "!**/build/**",
+            "!**/bin/**",
+            "!packages/tools-admin-ui/index.html",
+            "!templates/plugin-template/index.html"
+        ]
+    },
+    "formatter": {
+        "enabled": true,
+        "indentStyle": "space",
+        "indentWidth": 4,
+        "lineWidth": 120
+    },
+    "linter": {
+        "enabled": true,
         "rules": {
-          "style": {
-            "useComponentExportOnlyModules": {
-              "level": "error",
-              "options": {
-                "allowConstantExport": true
-              }
+            "recommended": true,
+            "correctness": {
+                "noEmptyPattern": "error",
+                "noUnreachable": "error",
+                "noUnusedFunctionParameters": "error",
+                "noUnusedImports": "error",
+                "noUnusedVariables": "error",
+                "noVoidTypeReturn": "error",
+                "useJsxKeyInIterable": "error",
+                "useParseIntRadix": "error"
+            },
+            "complexity": {
+                "useLiteralKeys": "error",
+                "useOptionalChain": "error"
+            },
+            "security": {
+                "noDangerouslySetInnerHtml": "error"
+            },
+            "style": {
+                "useImportType": "error",
+                "useNodejsImportProtocol": "error",
+                "useTemplate": "error"
+            },
+            "suspicious": {
+                "noBiomeFirstException": "off",
+                "noControlCharactersInRegex": "error",
+                "noDeprecatedImports": "error",
+                "noDoubleEquals": "error",
+                "noExplicitAny": "error",
+                "noImplicitAnyLet": "error",
+                "noShadowRestrictedNames": "error",
+                "noTemplateCurlyInString": "off",
+                "noUnusedExpressions": "error",
+                "useBiomeIgnoreFolder": "off",
+                "useIterableCallbackReturn": "error",
+                "noImportCycles": "error"
+            },
+            "a11y": {
+                "useAltText": "error",
+                "useAriaPropsForRole": "error",
+                "useValidAriaProps": "error",
+                "useValidAriaValues": "error",
+                "useHeadingContent": "error",
+                "useHtmlLang": "error",
+                "useIframeTitle": "error",
+                "noPositiveTabindex": "error",
+                "useAnchorContent": "error",
+                "useButtonType": "error",
+                "useFocusableInteractive": "error",
+                "useSemanticElements": "error",
+                "useKeyWithClickEvents": "error",
+                "useKeyWithMouseEvents": "error",
+                "noStaticElementInteractions": "error",
+                "useAriaActivedescendantWithTabindex": "error",
+                "noLabelWithoutControl": "error"
+            },
+            "nursery": {
+                "noFloatingPromises": "error"
             }
-          }
         }
-      }
-    }
-  ]
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "single"
+        }
+    },
+    "css": {
+        "parser": {
+            "tailwindDirectives": true
+        }
+    },
+    "assist": {
+        "enabled": true,
+        "actions": {
+            "source": {
+                "organizeImports": "on"
+            }
+        }
+    },
+    "overrides": [
+        {
+            "includes": [
+                "packages/fusion-ux/src/**/*.{js,jsx,ts,tsx}",
+                "packages/react/src/**/*.{js,jsx,ts,tsx}",
+                "packages/ui/src/**/*.{js,jsx,ts,tsx}",
+                "templates/plugin-template/src/**/*.{js,jsx,ts,tsx}",
+                "templates/ui-plugin-template/src/**/*.{js,jsx,ts,tsx}"
+            ],
+            "linter": {
+                "rules": {
+                    "correctness": {
+                        "useExhaustiveDependencies": "error",
+                        "useHookAtTopLevel": "error"
+                    }
+                }
+            }
+        },
+        {
+            "includes": [
+                "templates/plugin-template/src/**/*.{js,jsx,ts,tsx}",
+                "templates/ui-plugin-template/src/**/*.{js,jsx,ts,tsx}"
+            ],
+            "linter": {
+                "rules": {
+                    "style": {
+                        "useComponentExportOnlyModules": {
+                            "level": "error",
+                            "options": {
+                                "allowConstantExport": true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
 }

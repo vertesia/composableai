@@ -5,7 +5,7 @@ describe('applyParameterValues', () => {
     it('should return spec unchanged when no parameterValues provided', () => {
         const spec = {
             params: [{ name: 'threshold', value: 50 }],
-            mark: 'bar'
+            mark: 'bar',
         };
 
         const result = applyParameterValues(spec, {});
@@ -16,7 +16,7 @@ describe('applyParameterValues', () => {
     it('should return spec unchanged when parameterValues is empty object', () => {
         const spec = {
             params: [{ name: 'threshold', value: 50 }],
-            mark: 'bar'
+            mark: 'bar',
         };
 
         const result = applyParameterValues(spec, {});
@@ -26,11 +26,9 @@ describe('applyParameterValues', () => {
 
     it('should update root-level param value', () => {
         const spec = {
-            params: [
-                { name: 'threshold', value: 50, bind: { input: 'range' } }
-            ],
+            params: [{ name: 'threshold', value: 50, bind: { input: 'range' } }],
             mark: 'bar',
-            data: { values: [] }
+            data: { values: [] },
         };
 
         const result = applyParameterValues(spec, { threshold: 75 });
@@ -45,14 +43,14 @@ describe('applyParameterValues', () => {
             params: [
                 { name: 'threshold', value: 50 },
                 { name: 'colorScheme', value: 'category10' },
-                { name: 'showLabels', value: true }
+                { name: 'showLabels', value: true },
             ],
-            mark: 'bar'
+            mark: 'bar',
         };
 
         const result = applyParameterValues(spec, {
             threshold: 100,
-            colorScheme: 'tableau10'
+            colorScheme: 'tableau10',
         });
 
         expect(result.params?.[0].value).toBe(100);
@@ -63,7 +61,7 @@ describe('applyParameterValues', () => {
     it('should not modify original spec (immutability)', () => {
         const spec = {
             params: [{ name: 'threshold', value: 50 }],
-            mark: 'bar'
+            mark: 'bar',
         };
 
         applyParameterValues(spec, { threshold: 75 });
@@ -74,7 +72,7 @@ describe('applyParameterValues', () => {
     it('should handle spec without params array', () => {
         const spec = {
             mark: 'bar',
-            data: { values: [] }
+            data: { values: [] },
         };
 
         const result = applyParameterValues(spec, { threshold: 75 });
@@ -88,18 +86,18 @@ describe('applyParameterValues', () => {
             vconcat: [
                 {
                     params: [{ name: 'brushX', value: null }],
-                    mark: 'bar'
+                    mark: 'bar',
                 },
                 {
                     params: [{ name: 'filterY', value: 'all' }],
-                    mark: 'line'
-                }
-            ]
+                    mark: 'line',
+                },
+            ],
         };
 
         const result = applyParameterValues(spec, {
             brushX: [0, 100],
-            filterY: 'category_a'
+            filterY: 'category_a',
         });
 
         expect(result.vconcat?.[0].params?.[0].value).toEqual([0, 100]);
@@ -111,18 +109,18 @@ describe('applyParameterValues', () => {
             hconcat: [
                 {
                     params: [{ name: 'leftParam', value: 1 }],
-                    mark: 'point'
+                    mark: 'point',
                 },
                 {
                     params: [{ name: 'rightParam', value: 2 }],
-                    mark: 'bar'
-                }
-            ]
+                    mark: 'bar',
+                },
+            ],
         };
 
         const result = applyParameterValues(spec, {
             leftParam: 10,
-            rightParam: 20
+            rightParam: 20,
         });
 
         expect(result.hconcat?.[0].params?.[0].value).toBe(10);
@@ -133,9 +131,9 @@ describe('applyParameterValues', () => {
         const spec = {
             concat: [
                 { params: [{ name: 'p1', value: 'a' }], mark: 'bar' },
-                { params: [{ name: 'p2', value: 'b' }], mark: 'line' }
+                { params: [{ name: 'p2', value: 'b' }], mark: 'line' },
             ],
-            columns: 2
+            columns: 2,
         };
 
         const result = applyParameterValues(spec, { p1: 'x', p2: 'y' });
@@ -149,12 +147,12 @@ describe('applyParameterValues', () => {
             layer: [
                 {
                     params: [{ name: 'layerParam', value: 'default' }],
-                    mark: 'point'
+                    mark: 'point',
                 },
                 {
-                    mark: 'line'
-                }
-            ]
+                    mark: 'line',
+                },
+            ],
         };
 
         const result = applyParameterValues(spec, { layerParam: 'updated' });
@@ -169,11 +167,11 @@ describe('applyParameterValues', () => {
                     layer: [
                         {
                             params: [{ name: 'deepParam', value: 0 }],
-                            mark: 'point'
-                        }
-                    ]
-                }
-            ]
+                            mark: 'point',
+                        },
+                    ],
+                },
+            ],
         };
 
         const result = applyParameterValues(spec, { deepParam: 999 });
@@ -187,14 +185,14 @@ describe('applyParameterValues', () => {
             vconcat: [
                 {
                     params: [{ name: 'nestedParam', value: 'nested' }],
-                    mark: 'bar'
-                }
-            ]
+                    mark: 'bar',
+                },
+            ],
         };
 
         const result = applyParameterValues(spec, {
             rootParam: 'updated_root',
-            nestedParam: 'updated_nested'
+            nestedParam: 'updated_nested',
         });
 
         expect(result.params?.[0].value).toBe('updated_root');
@@ -206,12 +204,12 @@ describe('applyParameterValues', () => {
         // The applyParameterValues function just applies values, validation is separate
         const spec = {
             params: [{ name: 'existing', value: 10 }],
-            mark: 'bar'
+            mark: 'bar',
         };
 
         const result = applyParameterValues(spec, {
             nonexistent: 999,
-            existing: 20
+            existing: 20,
         });
 
         expect(result.params?.[0].value).toBe(20);
@@ -224,14 +222,14 @@ describe('applyParameterValues', () => {
                 {
                     name: 'brush',
                     select: { type: 'interval', encodings: ['x'] },
-                    value: null
-                }
+                    value: null,
+                },
             ],
-            mark: 'area'
+            mark: 'area',
         };
 
         const result = applyParameterValues(spec, {
-            brush: { x: [10, 50] }
+            brush: { x: [10, 50] },
         });
 
         expect(result.params?.[0].value).toEqual({ x: [10, 50] });
@@ -244,11 +242,11 @@ describe('applyParameterValues', () => {
                     vconcat: [
                         {
                             params: [{ name: 'deeplyNested', value: 'original' }],
-                            mark: 'bar'
-                        }
-                    ]
-                }
-            ]
+                            mark: 'bar',
+                        },
+                    ],
+                },
+            ],
         };
 
         const result = applyParameterValues(spec, { deeplyNested: 'changed' });

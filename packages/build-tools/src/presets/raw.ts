@@ -18,7 +18,7 @@ export const rawTransformer: TransformerPreset = {
     pattern: /\?raw$/,
     transform: (content: string) => {
         return {
-            data: content
+            data: content,
         };
-    }
+    },
 };

@@ -1,20 +1,19 @@
-import { Button, Input, Spinner, useToast } from "@vertesia/ui/core";
-import { Env } from "@vertesia/ui/env";
-import { useUITranslation } from "@vertesia/ui/i18n";
-import { getFirebaseAuth, setFirebaseTenant, useUXTracking } from "@vertesia/ui/session";
-import { GoogleAuthProvider, OAuthProvider, signInWithRedirect } from "firebase/auth";
-import { useState } from "react";
-
+import { Button, Input, Spinner, useToast } from '@vertesia/ui/core';
+import { Env } from '@vertesia/ui/env';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { getFirebaseAuth, setFirebaseTenant, useUXTracking } from '@vertesia/ui/session';
+import { GoogleAuthProvider, OAuthProvider, signInWithRedirect } from 'firebase/auth';
+import { useState } from 'react';
 
 function getProvider(redirectTo?: string) {
     if (!Env.firebase) {
-        throw new Error("Firebase configuration is not available in the environment");
+        throw new Error('Firebase configuration is not available in the environment');
     }
     const providerType = Env.firebase.providerType;
     switch (providerType) {
-        case "oidc":
-            return new OAuthProvider("oidc.main");
-        case "google": {
+        case 'oidc':
+            return new OAuthProvider('oidc.main');
+        case 'google': {
             let redirectPath = redirectTo || window.location.pathname || '/';
             if (redirectPath[0] !== '/') {
                 redirectPath = `/${redirectPath}`;
@@ -24,16 +23,16 @@ function getProvider(redirectTo?: string) {
             provider.addScope('email');
             provider.setCustomParameters({
                 prompt: 'select_account',
-                redirect_uri: window.location.origin + redirectPath
+                redirect_uri: window.location.origin + redirectPath,
             });
             return provider;
         }
-        case "microsoft":
-            return new OAuthProvider("microsoft.com");
-        case "github":
-            return new OAuthProvider("github.com");
+        case 'microsoft':
+            return new OAuthProvider('microsoft.com');
+        case 'github':
+            return new OAuthProvider('github.com');
         default:
-            return new OAuthProvider("oidc.main");
+            return new OAuthProvider('oidc.main');
     }
 }
 
@@ -45,7 +44,7 @@ export default function EnterpriseSigninButton({ redirectTo }: EnterpriseSigninB
     const [isLoading, setIsLoading] = useState(false);
     const { trackEvent } = useUXTracking();
 
-    const [email, setEmail] = useState<string | undefined>("");
+    const [email, setEmail] = useState<string | undefined>('');
     const toast = useToast();
 
     const signIn = async () => {
@@ -55,7 +54,7 @@ export default function EnterpriseSigninButton({ redirectTo }: EnterpriseSigninB
         if (!emailRegex.test(email)) {
             toast({
                 title: t('auth.invalidEmail'),
-                status: "error",
+                status: 'error',
                 duration: 5000,
             });
             return;
@@ -66,15 +65,15 @@ export default function EnterpriseSigninButton({ redirectTo }: EnterpriseSigninB
             if (!data) {
                 toast({
                     title: t('auth.tenantNotFound'),
-                    status: "error",
+                    status: 'error',
                     duration: 5000,
                 });
                 setIsLoading(false);
                 return;
             }
-            localStorage.setItem("tenantName", data.name ?? "");
+            localStorage.setItem('tenantName', data.name ?? '');
             const provider = getProvider(redirectTo);
-            trackEvent("enterprise_signin", {
+            trackEvent('enterprise_signin', {
                 firebaseTenantName: data.name,
             });
             Env.logger.info('Enterprise single sign-in', {
@@ -93,19 +92,19 @@ export default function EnterpriseSigninButton({ redirectTo }: EnterpriseSigninB
     return (
         <>
             <Input value={email} onChange={setEmail} placeholder={t('auth.enterEnterpriseEmail')} type="email" />
-            {
-                isLoading ? (
-                    <div className="w-full flex justify-center">
-                        <Spinner />
-                    </div>
-                ) : (
-                    <Button variant={"outline"}
-                        onClick={signIn}
-                        className="w-full mt-2 py-4 flex rounded-lg hover:shadow-sm transition duration-150 text-center">
-                        <span className="text-sm font-semibold">{t('auth.continueWithEnterprise')}</span>
-                    </Button>
-                )
-            }
+            {isLoading ? (
+                <div className="w-full flex justify-center">
+                    <Spinner />
+                </div>
+            ) : (
+                <Button
+                    variant={'outline'}
+                    onClick={signIn}
+                    className="w-full mt-2 py-4 flex rounded-lg hover:shadow-sm transition duration-150 text-center"
+                >
+                    <span className="text-sm font-semibold">{t('auth.continueWithEnterprise')}</span>
+                </Button>
+            )}
         </>
     );
 }

@@ -52,10 +52,10 @@ export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
                 description: spec.description,
                 options: Array.isArray(spec.options)
                     ? spec.options.map((opt) => ({
-                        id: opt.id || opt.value || '',
-                        label: opt.label || '',
-                        description: opt.description,
-                    }))
+                          id: opt.id || opt.value || '',
+                          label: opt.label || '',
+                          description: opt.description,
+                      }))
                     : undefined,
                 allowFreeResponse: spec.allowFreeResponse ?? spec.multiple,
                 variant: spec.variant,
@@ -74,21 +74,11 @@ export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
     }, [code, onProposalSelect, onProposalSubmit, incomplete]);
 
     if (incomplete) {
-        return (
-            <CodeBlockPlaceholder
-                type="proposal"
-                message="Loading options..."
-            />
-        );
+        return <CodeBlockPlaceholder type="proposal" message="Loading options..." />;
     }
 
     if (!widgetProps) {
-        return (
-            <CodeBlockPlaceholder
-                type="proposal"
-                error="Invalid proposal specification"
-            />
-        );
+        return <CodeBlockPlaceholder type="proposal" error="Invalid proposal specification" />;
     }
 
     return (

@@ -54,9 +54,7 @@ describe('@vertesia/ui accessibility (axe)', () => {
     });
 
     it('CopyButton has an accessible name via internal aria-label', async () => {
-        const { container } = renderWithProviders(
-            <CopyButton content="example value" />,
-        );
+        const { container } = renderWithProviders(<CopyButton content="example value" />);
         const button = container.querySelector('button');
         expect(button?.getAttribute('aria-label')).toBeTruthy();
         expect(await axe(container)).toHaveNoViolations();
@@ -75,13 +73,7 @@ describe('@vertesia/ui accessibility (axe)', () => {
         const { container } = renderWithProviders(
             <div>
                 <Label htmlFor="a11y-test-invalid-input">Username</Label>
-                <Input
-                    id="a11y-test-invalid-input"
-                    value="x"
-                    onChange={() => undefined}
-                    clearable={false}
-                    invalid
-                />
+                <Input id="a11y-test-invalid-input" value="x" onChange={() => undefined} clearable={false} invalid />
             </div>,
         );
         const input = container.querySelector('input');
@@ -134,11 +126,7 @@ describe('@vertesia/ui accessibility (axe)', () => {
             const [val, setVal] = useState<string | undefined>(undefined);
             return (
                 <FormItem label="Country" helpText="Pick where you live." error="Required.">
-                    <SelectBox
-                        options={['France', 'Germany', 'Spain']}
-                        value={val}
-                        onChange={setVal}
-                    />
+                    <SelectBox options={['France', 'Germany', 'Spain']} value={val} onChange={setVal} />
                 </FormItem>
             );
         }
@@ -203,7 +191,9 @@ describe('@vertesia/ui accessibility (axe)', () => {
         const { container } = renderWithProviders(
             <div className="flex items-center gap-2">
                 <Checkbox id="a11y-test-tos" aria-labelledby="a11y-test-tos-label" />
-                <Label htmlFor="a11y-test-tos" id="a11y-test-tos-label">I accept the terms</Label>
+                <Label htmlFor="a11y-test-tos" id="a11y-test-tos-label">
+                    I accept the terms
+                </Label>
             </div>,
         );
         expect(await axe(container)).toHaveNoViolations();
@@ -382,14 +372,16 @@ describe('@vertesia/ui accessibility (axe)', () => {
                         <tr>
                             <SortableTableHeaderCell
                                 sortDirection={dir}
-                                onSort={() => setDir(d => (d === 'ascending' ? 'descending' : 'ascending'))}
+                                onSort={() => setDir((d) => (d === 'ascending' ? 'descending' : 'ascending'))}
                             >
                                 Name
                             </SortableTableHeaderCell>
                         </tr>
                     </THead>
                     <TBody columns={1}>
-                        <tr><td>Ada</td></tr>
+                        <tr>
+                            <td>Ada</td>
+                        </tr>
                     </TBody>
                 </Table>
             );

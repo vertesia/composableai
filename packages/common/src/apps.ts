@@ -1,9 +1,9 @@
-import type { JSONObject, JSONSchema, ToolDefinition } from "@llumiverse/common";
-import type { CatalogInteractionRef } from "./interaction.js";
-import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from "./store/index.js";
+import type { JSONObject, JSONSchema, ToolDefinition } from '@llumiverse/common';
+import type { CatalogInteractionRef } from './interaction.js';
+import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from './store/index.js';
 
 /** Allowed values for AppUINavItem.preferredSection */
-export const PREFERRED_SECTIONS = ["default", "footer", "settings"] as const;
+export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
 
 /**
  * Additional navigation item for an app's UI configuration.
@@ -44,7 +44,7 @@ export interface AppUIConfig {
      * - shadow - use Shadow DOM to fully isolate the plugin from the host.
      * - css - use CSS processing (like prefixing or other isolation techniques). Ligther but plugins may conflict with the host
      */
-    isolation?: "shadow" | "css";
+    isolation?: 'shadow' | 'css';
     /**
      * Navigation items for the app's sidebar UI.
      * Only applicable for apps with UI capability in shell contexts (ie. CompositeApp shell).
@@ -72,12 +72,12 @@ export interface AppInstallationsQuery {
 /**
  * Authentication type for tool collections
  */
-export type ToolCollectionAuthType = "oauth" | "other";
+export type ToolCollectionAuthType = 'oauth' | 'other';
 
 /**
  * Tool collection type
  */
-export type ToolCollectionType = "mcp" | "vertesia_sdk";
+export type ToolCollectionType = 'mcp' | 'vertesia_sdk';
 
 /**
  * Base tool collection configuration
@@ -131,7 +131,7 @@ export interface MCPOAuthConfig {
  * MCP tool collection configuration (requires name, description, and namespace)
  */
 export interface MCPToolCollectionObject extends BaseToolCollectionObject {
-    type: "mcp";
+    type: 'mcp';
 
     /**
      * Stable identifier for this collection.
@@ -196,7 +196,7 @@ export interface MCPToolCollectionObject extends BaseToolCollectionObject {
  * Vertesia SDK tool collection configuration
  */
 export interface VertesiaSDKToolCollectionObject extends BaseToolCollectionObject {
-    type: "vertesia_sdk";
+    type: 'vertesia_sdk';
 
     /**
      * Optional namespace to use for tool names from this collection.
@@ -286,7 +286,6 @@ export function normalizeToolCollection(collection: ToolCollectionObject, vars?:
     return collection;
 }
 
-
 /**
  * Metadata hints from MCP tool annotations (per MCP spec).
  */
@@ -308,7 +307,7 @@ export interface MCPToolAnnotations {
  */
 export interface AgentToolDefinition extends ToolDefinition {
     /**
-     * The tool execution URL. It can be an absolute URL or a path in which case the URL is obtained 
+     * The tool execution URL. It can be an absolute URL or a path in which case the URL is obtained
      * using the base URL of the tool server API. Ex: http://tool-server.com/api/
      * Example of relative URLs: "tools/my-tool-collection" or "/api/tools/my-tool-collection"
      */
@@ -387,7 +386,7 @@ export interface AppManifestData {
      * - "private": visible only to the owning account
      * - "vertesia": visible only to Vertesia team members (any project)
      */
-    visibility: "public" | "private" | "vertesia";
+    visibility: 'public' | 'private' | 'vertesia';
 
     title: string;
     description: string;
@@ -404,19 +403,19 @@ export interface AppManifestData {
      */
     color?: string;
 
-    status: "beta" | "stable" | "deprecated"
+    status: 'beta' | 'stable' | 'deprecated';
 
     /**
-     * The UI configuration of the app. If not specified and the app "ui" is in the app capabilities 
+     * The UI configuration of the app. If not specified and the app "ui" is in the app capabilities
      * then the ui configuration will be fetched from the endpoint property.
      */
-    ui?: AppUIConfig
+    ui?: AppUIConfig;
 
     /**
      * A list of tool collections endpoints to be used by this app.
      * Prefer using endpoint over tool_collections.
      */
-    tool_collections?: ToolCollectionObject[]
+    tool_collections?: ToolCollectionObject[];
 
     /**
      * Named OAuth providers shared across multiple MCP tool collections.
@@ -432,7 +431,7 @@ export interface AppManifestData {
      * The URL must provide 2 endpoints:
      * 1. GET URL - must return a JSON array with the list of interactions (as AppInteractionRef[])
      * 2. GET URL/{interaction_name} - must return the full interaction definition for the specified interaction.
-     * This feature is for advanced composition of interactions. Prefer using endpoint. 
+     * This feature is for advanced composition of interactions. Prefer using endpoint.
      */
     interactions?: string;
 
@@ -458,13 +457,13 @@ export interface AppManifestData {
      * - ui
      * - tools
      * - interactions
- * - types
- * - processes
+     * - types
+     * - processes
      * - settings
      * - all (the default if no scope is provided)
      *  You can also use comma-separated values to combine scopes (e.g. "ui,tools").
-     * 
-     * Example: 
+     *
+     * Example:
      * - ?scope=ui,tools - returns only the UI configuration
      */
     endpoint?: string;
@@ -561,16 +560,16 @@ export function resolveAppEndpoint(
     manifest: Pick<AppManifestData, 'endpoint' | 'endpoint_overrides'>,
     envName?: string,
     vars?: Endpoints,
-    requestedOverride?: string
+    requestedOverride?: string,
 ): string | undefined {
     let raw: string | undefined;
-    if (requestedOverride
-        && manifest.endpoint_overrides?.[requestedOverride]
-        && isValidEndpointOverrideEnv(requestedOverride)) {
+    if (
+        requestedOverride &&
+        manifest.endpoint_overrides?.[requestedOverride] &&
+        isValidEndpointOverrideEnv(requestedOverride)
+    ) {
         raw = manifest.endpoint_overrides[requestedOverride];
-    } else if (envName
-        && manifest.endpoint_overrides?.[envName]
-        && isValidEndpointOverrideEnv(envName)) {
+    } else if (envName && manifest.endpoint_overrides?.[envName] && isValidEndpointOverrideEnv(envName)) {
         raw = manifest.endpoint_overrides[envName];
     } else {
         raw = manifest.endpoint;
@@ -591,7 +590,7 @@ export function resolveManifestUrls(
     manifest: Partial<AppManifestData> | null | undefined,
     envName?: string,
     vars?: Endpoints,
-    requestedOverride?: string
+    requestedOverride?: string,
 ): void {
     if (!manifest) return;
 
@@ -614,17 +613,27 @@ export function resolveManifestUrls(
     }
 }
 
-export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates' | 'settings' | 'widgets' | 'activities' | 'all';
+export type AppPackageScope =
+    | 'ui'
+    | 'tools'
+    | 'interactions'
+    | 'types'
+    | 'processes'
+    | 'templates'
+    | 'settings'
+    | 'widgets'
+    | 'activities'
+    | 'all';
 export interface AppPackage {
     /**
      * The UI configuration of the app
      */
-    ui?: AppUIConfig
+    ui?: AppUIConfig;
 
     /**
      * A list of tools exposed by the app.
      */
-    tools?: AgentToolDefinition[]
+    tools?: AgentToolDefinition[];
 
     /**
      * A list of skills (`learn_*` tools) exposed by the app. Kept separate from
@@ -632,7 +641,7 @@ export interface AppPackage {
      * (e.g. the worker building a combined tool registry) should concatenate
      * the two lists.
      */
-    skills?: AgentToolDefinition[]
+    skills?: AgentToolDefinition[];
 
     /**
      * A list of interactions exposed by the app
@@ -842,7 +851,7 @@ export interface AppToolCollection {
     /**
      * the tools provided by this collection
      */
-    tools: AgentToolDefinition[]
+    tools: AgentToolDefinition[];
 }
 
 /**
@@ -960,10 +969,9 @@ export interface CompositeAppLogoOverrides {
     hideFooterLogo?: boolean;
 }
 
-
 /**
  * Message banner overrides for the shell header.
-*/
+ */
 export type CompositeAppMessageStyle = 'foreground' | 'info' | 'success' | 'attention' | 'destructive';
 export interface CompositeAppMessageOverrides {
     /** Message text to display */
@@ -1126,9 +1134,9 @@ export interface CompositeAppHomePlugin {
  */
 export interface CompositeAppConfig {
     /**
-     * The unique identifier for this CompositeApp configuration 
+     * The unique identifier for this CompositeApp configuration
      * Undefined if the configuration doesn't exists yet.
-    */
+     */
     id?: string;
     /** The project this CompositeApp belongs to */
     project: string;

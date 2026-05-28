@@ -1,4 +1,4 @@
-import type { ProjectRef } from "../project.js";
+import type { ProjectRef } from '../project.js';
 
 export function getTenantId(accountId: string, projectId: string): string {
     //use the last 6 characters of the accountId as the db name

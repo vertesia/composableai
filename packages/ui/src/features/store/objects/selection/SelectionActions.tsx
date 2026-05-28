@@ -3,15 +3,15 @@ import { Button, Popover, PopoverContent, PopoverTrigger, SelectList } from '@ve
 import clsx from 'clsx';
 import { EllipsisVertical, X } from 'lucide-react';
 
-import { useState } from "react";
+import { useState } from 'react';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { type DocumentSelection, useDocumentSelection } from "../DocumentSelectionProvider.js";
-import { DocumentUploadModal } from "../upload/DocumentUploadModal.js";
-import { ExportPropertiesAction } from "./actions/ExportPropertiesAction";
-import { StartWorkflowAction } from "./actions/StartWorkflowComponent";
-import { ObjectsActionContextProvider } from "./ObjectsActionContext";
-import { useObjectsActionContext } from "./ObjectsActionHooks";
-import type { ObjectsActionSpec } from "./ObjectsActionSpec";
+import { type DocumentSelection, useDocumentSelection } from '../DocumentSelectionProvider.js';
+import { DocumentUploadModal } from '../upload/DocumentUploadModal.js';
+import { ExportPropertiesAction } from './actions/ExportPropertiesAction';
+import { StartWorkflowAction } from './actions/StartWorkflowComponent';
+import { ObjectsActionContextProvider } from './ObjectsActionContext';
+import { useObjectsActionContext } from './ObjectsActionHooks';
+import type { ObjectsActionSpec } from './ObjectsActionSpec';
 
 interface SelectionActionsProps {
     type?: ContentObjectTypeItem;
@@ -19,7 +19,7 @@ interface SelectionActionsProps {
 export function SelectionActions({ type }: SelectionActionsProps) {
     const selection = useDocumentSelection();
     const size = selection.size();
-    const plural = size > 1 ? "s" : "";
+    const plural = size > 1 ? 's' : '';
 
     const hasSelection = selection?.hasSelection();
     const hasSingleSelection = selection?.isSingleSelection();
@@ -31,15 +31,16 @@ export function SelectionActions({ type }: SelectionActionsProps) {
     return (
         <ObjectsActionContextProvider type={type}>
             <div className="flex items-center gap-x-2">
-                {hasSelection && !hasSingleSelection &&
+                {hasSelection && !hasSingleSelection && (
                     <div className="flex items-center gap-x-1 shrink-0">
-                        <div className='text-sm nowrap'>{size} document{plural} selected</div>
-                        <Button title="Clear selection" variant={"ghost"}
-                            onClick={onClearSelection}>
+                        <div className="text-sm nowrap">
+                            {size} document{plural} selected
+                        </div>
+                        <Button title="Clear selection" variant={'ghost'} onClick={onClearSelection}>
                             <X className="size-4" />
                         </Button>
                     </div>
-                }
+                )}
                 <SelectionActionsPopover selection={selection}>
                     <Button variant="ghost" alt="More action" size="sm">
                         <EllipsisVertical size={16} />
@@ -49,7 +50,7 @@ export function SelectionActions({ type }: SelectionActionsProps) {
                 {hasSelection && <ActionsWrapper selection={selection} />}
             </div>
         </ObjectsActionContextProvider>
-    )
+    );
 }
 
 // Wrapper component that accesses the context
@@ -60,7 +61,13 @@ function ActionsWrapper(_props: ActionsWrapperProps) {
     return <StartWorkflowButton />;
 }
 
-export function UploadObjectsButton({ collectionId, allowFolders = true }: { collectionId?: string, allowFolders?: boolean }) {
+export function UploadObjectsButton({
+    collectionId,
+    allowFolders = true,
+}: {
+    collectionId?: string;
+    allowFolders?: boolean;
+}) {
     const { t } = useUITranslation();
     const [files, setFiles] = useState<File[]>([]);
     const [isOpen, setIsOpen] = useState(false);
@@ -68,7 +75,7 @@ export function UploadObjectsButton({ collectionId, allowFolders = true }: { col
     const onClose = () => {
         setIsOpen(false);
         setFiles([]);
-    }
+    };
 
     return (
         <>
@@ -85,8 +92,7 @@ export function UploadObjectsButton({ collectionId, allowFolders = true }: { col
                     }
                 }}
                 allowFolders={allowFolders}
-            >
-            </DocumentUploadModal>
+            ></DocumentUploadModal>
         </>
     );
 }
@@ -99,9 +105,10 @@ function StartWorkflowButton() {
     const hasSelection = selection.hasSelection();
 
     return (
-        hasSelection &&
-        <Button onClick={() => ctx.run(StartWorkflowAction.id)}>{t('store.actions.startWorkflow')}</Button>
-    )
+        hasSelection && (
+            <Button onClick={() => ctx.run(StartWorkflowAction.id)}>{t('store.actions.startWorkflow')}</Button>
+        )
+    );
 }
 function optionLayout(option: ObjectsActionSpec) {
     return {
@@ -122,14 +129,12 @@ function SelectionActionsPopover({ selection, children }: SelectionActionsPopove
 
     return (
         <Popover hover>
-            <PopoverTrigger>
-                {children}
-            </PopoverTrigger >
-            <PopoverContent className='p-0 w-50' align='end' sideOffset={6}>
+            <PopoverTrigger>{children}</PopoverTrigger>
+            <PopoverContent className="p-0 w-50" align="end" sideOffset={6}>
                 <PopoverBody executeAction={executeAction} selection={selection} />
             </PopoverContent>
-        </Popover >
-    )
+        </Popover>
+    );
 }
 
 interface PopoverBodyProps {
@@ -141,9 +146,11 @@ function PopoverBody({ executeAction, selection }: PopoverBodyProps) {
 
     const _executeAction = (action: ObjectsActionSpec) => {
         executeAction(action);
-    }
+    };
 
-    const _selection = selection?.hasSelection() ? context.actions.filter((action: ObjectsActionSpec) => !action.hideInList) : [ExportPropertiesAction];
+    const _selection = selection?.hasSelection()
+        ? context.actions.filter((action: ObjectsActionSpec) => !action.hideInList)
+        : [ExportPropertiesAction];
 
     return (
         <div className="rounded-md shadow-md py-2">

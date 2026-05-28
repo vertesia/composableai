@@ -14,17 +14,10 @@ export function EndpointPanel({ label, path }: { label: string; path: string }) 
 
     return (
         <div className="mb-3">
-            <div className="mb-1 text-[0.7rem] font-medium uppercase tracking-widest text-primary">
-                {label}
-            </div>
+            <div className="mb-1 text-[0.7rem] font-medium uppercase tracking-widest text-primary">{label}</div>
             <div className="flex items-center gap-2 rounded-lg border border-border bg-muted-background px-3 py-2">
                 <code className="flex-1 font-mono text-sm text-foreground">{path}</code>
-                <Button
-                    variant="ghost"
-                    size="xs"
-                    onClick={handleCopy}
-                    aria-label="Copy full URL"
-                >
+                <Button variant="ghost" size="xs" onClick={handleCopy} aria-label="Copy full URL">
                     {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
                 </Button>
             </div>

@@ -1,2 +1,2 @@
-export * from "./DocumentTableColumn";
-export * from "./documentLayout";
+export * from './DocumentTableColumn';
+export * from './documentLayout';

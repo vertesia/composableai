@@ -1,30 +1,26 @@
-import { log } from "@temporalio/activity";
-import type { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
-import { execFile as execFileCallback } from "node:child_process";
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-import { promisify } from "node:util";
-import { setupActivity } from "../../dsl/setup/ActivityContext.js";
-import { DocumentNotFoundError, WorkflowParamNotFoundError } from "../../errors.js";
-import { saveBlobToTempFile } from "../../utils/blobs.js";
-import {
-    type ImageRenditionParams,
-    uploadRenditionPages,
-} from "../../utils/renditions.js";
+import { log } from '@temporalio/activity';
+import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
+import { execFile as execFileCallback } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { promisify } from 'node:util';
+import { setupActivity } from '../../dsl/setup/ActivityContext.js';
+import { DocumentNotFoundError, WorkflowParamNotFoundError } from '../../errors.js';
+import { saveBlobToTempFile } from '../../utils/blobs.js';
+import { type ImageRenditionParams, uploadRenditionPages } from '../../utils/renditions.js';
 
 const execFileAsync = promisify(execFileCallback);
 
-interface GenerateVideoRenditionParams extends ImageRenditionParams { }
+interface GenerateVideoRenditionParams extends ImageRenditionParams {}
 
 interface LegacyVideoRenditionParams {
     maxHeightWidth?: number;
-    format_output?: ImageRenditionParams["format"];
+    format_output?: ImageRenditionParams['format'];
 }
 
-export interface GenerateVideoRendition
-    extends DSLActivitySpec<GenerateVideoRenditionParams> {
-    name: "generateImageRendition";
+export interface GenerateVideoRendition extends DSLActivitySpec<GenerateVideoRenditionParams> {
+    name: 'generateImageRendition';
 }
 
 interface VideoMetadata {
@@ -35,28 +31,22 @@ interface VideoMetadata {
 
 async function getVideoMetadata(videoPath: string): Promise<VideoMetadata> {
     try {
-        const args = ["-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", videoPath];
-        const { stdout } = await execFileAsync("ffprobe", args);
+        const args = ['-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', videoPath];
+        const { stdout } = await execFileAsync('ffprobe', args);
         const metadata = JSON.parse(stdout.toString()) as {
             streams?: Array<{ codec_type?: string; width?: number; height?: number }>;
             format?: { duration?: string };
         };
 
-        const videoStream = metadata.streams?.find(
-            (stream) => stream.codec_type === "video",
-        );
-        const duration = parseFloat(metadata.format?.duration ?? "") || 0;
+        const videoStream = metadata.streams?.find((stream) => stream.codec_type === 'video');
+        const duration = parseFloat(metadata.format?.duration ?? '') || 0;
         const width = videoStream?.width || 0;
         const height = videoStream?.height || 0;
 
         return { duration, width, height };
     } catch (error) {
-        log.error(
-            `Failed to get video metadata: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
-        throw new Error(
-            `Failed to probe video metadata: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
+        log.error(`Failed to get video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(`Failed to probe video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 }
 
@@ -67,39 +57,34 @@ async function generateThumbnail(
     maxSize: number,
 ): Promise<string | undefined> {
     //pad timestamp to 5 digits as filename
-    const outputFile = path.join(
-        outputDir,
-        `thumb-${timestamp.toString().padStart(5, "0")}.jpg`,
-    );
+    const outputFile = path.join(outputDir, `thumb-${timestamp.toString().padStart(5, '0')}.jpg`);
 
     // FFmpeg command to extract thumbnail at specific timestamp
     // Use proper scale filter syntax: scale=w:h:force_original_aspect_ratio=decrease
     const scaleFilter = `scale=${maxSize}:${maxSize}:force_original_aspect_ratio=decrease`;
 
     const command = [
-        "-y", // Overwrite output files
-        "-ss",
+        '-y', // Overwrite output files
+        '-ss',
         timestamp.toString(), // Seek to timestamp
-        "-i",
+        '-i',
         videoPath, // Input file
-        "-vframes",
-        "1", // Extract only 1 frame
-        "-vf",
+        '-vframes',
+        '1', // Extract only 1 frame
+        '-vf',
         scaleFilter, // Scale maintaining aspect ratio
-        "-q:v",
-        "2", // High quality
+        '-q:v',
+        '2', // High quality
         outputFile,
     ];
-    log.info(`Generating thumbnail at ${timestamp}s`, { command: "ffmpeg", args: command });
+    log.info(`Generating thumbnail at ${timestamp}s`, { command: 'ffmpeg', args: command });
     try {
-        const { stderr } = await execFileAsync("ffmpeg", command);
+        const { stderr } = await execFileAsync('ffmpeg', command);
         const stderrText = stderr.toString();
 
         // Log any warnings from ffmpeg
-        if (stderrText && !stderrText.includes("frame=")) {
-            log.debug(
-                `FFmpeg stderr for thumbnail at ${timestamp}s: ${stderrText}`,
-            );
+        if (stderrText && !stderrText.includes('frame=')) {
+            log.debug(`FFmpeg stderr for thumbnail at ${timestamp}s: ${stderrText}`);
         }
 
         // Verify the file was created
@@ -112,29 +97,21 @@ async function generateThumbnail(
         }
     } catch (error) {
         log.error(
-            `Failed to generate thumbnail at ${timestamp}s: ${error instanceof Error ? error.message : "Unknown error"}`,
+            `Failed to generate thumbnail at ${timestamp}s: ${error instanceof Error ? error.message : 'Unknown error'}`,
         );
         return undefined;
     }
 }
 
-export async function generateVideoRendition(
-    payload: DSLActivityExecutionPayload<GenerateVideoRenditionParams>,
-) {
-    const {
-        client,
-        objectId,
-        params: originParams,
-    } = await setupActivity<GenerateVideoRenditionParams>(payload);
+export async function generateVideoRendition(payload: DSLActivityExecutionPayload<GenerateVideoRenditionParams>) {
+    const { client, objectId, params: originParams } = await setupActivity<GenerateVideoRenditionParams>(payload);
 
     // Fix: Use maxHeightWidth if max_hw is not provided
     const legacyParams = originParams as LegacyVideoRenditionParams;
     const params = {
         ...originParams,
-        max_hw:
-            originParams.max_hw || legacyParams.maxHeightWidth || 1024, // Default to 1024 if both are missing
-        format:
-            originParams.format || legacyParams.format_output || "png", // Default to png if format is missing
+        max_hw: originParams.max_hw || legacyParams.maxHeightWidth || 1024, // Default to 1024 if both are missing
+        format: originParams.format || legacyParams.format_output || 'png', // Default to png if format is missing
     };
 
     log.info(`Generating video rendition for ${objectId}`, {
@@ -145,10 +122,8 @@ export async function generateVideoRendition(
     const inputObject = await client.objects.retrieve(objectId).catch((err: unknown) => {
         const message = err instanceof Error ? err.message : String(err);
         log.error(`Failed to retrieve document ${objectId}`, { err });
-        if (message.includes("not found")) {
-            throw new DocumentNotFoundError(`Document ${objectId} not found`, [
-                objectId,
-            ]);
+        if (message.includes('not found')) {
+            throw new DocumentNotFoundError(`Document ${objectId} not found`, [objectId]);
         }
         throw err;
     });
@@ -160,33 +135,19 @@ export async function generateVideoRendition(
 
     if (!inputObject.content?.source) {
         log.error(`Document ${objectId} has no source`);
-        throw new DocumentNotFoundError(`Document ${objectId} has no source`, [
-            objectId,
-        ]);
+        throw new DocumentNotFoundError(`Document ${objectId} has no source`, [objectId]);
     }
 
-    if (
-        !inputObject.content.type?.startsWith("video/")
-    ) {
-        log.error(
-            `Document ${objectId} is not a video: ${inputObject.content.type}`,
-        );
-        throw new DocumentNotFoundError(
-            `Document ${objectId} is not a video: ${inputObject.content.type}`,
-            [objectId],
-        );
+    if (!inputObject.content.type?.startsWith('video/')) {
+        log.error(`Document ${objectId} is not a video: ${inputObject.content.type}`);
+        throw new DocumentNotFoundError(`Document ${objectId} is not a video: ${inputObject.content.type}`, [objectId]);
     }
 
     //array of rendition files to upload
     const renditionPages: string[] = [];
 
-    const videoFile = await saveBlobToTempFile(
-        client,
-        inputObject.content.source,
-    );
-    const tempOutputDir = fs.mkdtempSync(
-        path.join(os.tmpdir(), "video-rendition-"),
-    );
+    const videoFile = await saveBlobToTempFile(client, inputObject.content.source);
+    const tempOutputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'video-rendition-'));
 
     try {
         // Get video metadata using command line ffprobe
@@ -217,26 +178,18 @@ export async function generateVideoRendition(
             timestamps.push(Math.max(timestamp, 1));
         }
 
-        log.info(
-            `Generating ${thumbnailCount} thumbnails for ${duration}s video`,
-            {
-                objectId,
-                duration,
-                thumbnailCount,
-                timestamps: timestamps.map((t) => Math.round(t)),
-                tempOutputDir,
-            },
-        );
+        log.info(`Generating ${thumbnailCount} thumbnails for ${duration}s video`, {
+            objectId,
+            duration,
+            thumbnailCount,
+            timestamps: timestamps.map((t) => Math.round(t)),
+            tempOutputDir,
+        });
 
         // Generate thumbnails using command line ffmpeg
         const generatedThumbnails = await Promise.all(
             timestamps.map(async (timestamp) => {
-                return await generateThumbnail(
-                    videoFile,
-                    tempOutputDir,
-                    timestamp,
-                    params.max_hw,
-                );
+                return await generateThumbnail(videoFile, tempOutputDir, timestamp, params.max_hw);
             }),
         );
 
@@ -246,28 +199,17 @@ export async function generateVideoRendition(
                 thumbnailCount,
                 tempOutputDir,
             });
-            throw new Error(
-                `No thumbnails were generated for video ${objectId}`,
-            );
+            throw new Error(`No thumbnails were generated for video ${objectId}`);
         }
 
-        renditionPages.push(
-            ...generatedThumbnails.filter(
-                (thumbnail) => thumbnail !== undefined,
-            ),
-        );
-        log.info(
-            `Successfully generated ${generatedThumbnails.length} thumbnails for ${objectId}`,
-            {
-                objectId,
-                generatedCount: generatedThumbnails.length,
-                requestedCount: thumbnailCount,
-            },
-        );
+        renditionPages.push(...generatedThumbnails.filter((thumbnail) => thumbnail !== undefined));
+        log.info(`Successfully generated ${generatedThumbnails.length} thumbnails for ${objectId}`, {
+            objectId,
+            generatedCount: generatedThumbnails.length,
+            requestedCount: thumbnailCount,
+        });
     } catch (error) {
-        log.error(
-            `Error generating thumbnails for video: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
+        log.error(`Error generating thumbnails for video: ${error instanceof Error ? error.message : 'Unknown error'}`);
         throw new Error(`Failed to generate thumbnails for video: ${objectId}`);
     } finally {
         // Clean up temporary video file
@@ -286,17 +228,12 @@ export async function generateVideoRendition(
     const etag = inputObject.content.etag ?? inputObject.id;
 
     // Update the final upload call to handle multiple thumbnails
-    const uploaded = await uploadRenditionPages(
-        client,
-        etag,
-        renditionPages,
-        params,
-    );
+    const uploaded = await uploadRenditionPages(client, etag, renditionPages, params);
 
     return {
         uploads: uploaded.map((u) => u),
         format: params.format,
         thumbnailCount: renditionPages.length,
-        status: "success",
+        status: 'success',
     };
 }

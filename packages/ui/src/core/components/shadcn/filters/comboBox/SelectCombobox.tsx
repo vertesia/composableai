@@ -1,10 +1,18 @@
-import { useRef, useState } from "react";
-import { Checkbox } from "../../checkbox";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "../../command";
-import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
-import { AnimateChangeInHeight } from "../animateChangeInHeight";
-import type { FilterGroupOption, FilterOption } from "../types";
-import { DynamicLabel } from "../DynamicLabel";
+import { useRef, useState } from 'react';
+import { Checkbox } from '../../checkbox';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandSeparator,
+} from '../../command';
+import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
+import { AnimateChangeInHeight } from '../animateChangeInHeight';
+import type { FilterGroupOption, FilterOption } from '../types';
+import { DynamicLabel } from '../DynamicLabel';
 import { useUITranslation } from '@vertesia/ui/i18n';
 
 export const SelectionCombobox = ({
@@ -23,11 +31,11 @@ export const SelectionCombobox = ({
     multiple?: boolean;
 }) => {
     const [open, setOpen] = useState(false);
-    const [commandInput, setCommandInput] = useState("");
+    const [commandInput, setCommandInput] = useState('');
     const commandInputRef = useRef<HTMLInputElement>(null);
     const { t } = useUITranslation();
     const nonSelectedFilterValues = options?.filter(
-        (option) => !filterValues.some(filter => filter.value === option.value)
+        (option) => !filterValues.some((filter) => filter.value === option.value),
     );
 
     return (
@@ -37,29 +45,25 @@ export const SelectionCombobox = ({
                 setOpen(open);
                 if (!open) {
                     setTimeout(() => {
-                        setCommandInput("");
+                        setCommandInput('');
                     }, 200);
                 }
             }}
         >
-            <PopoverTrigger
-                className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 transition text-muted hover:text-primary shrink-0"
-            >
+            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 transition text-muted hover:text-primary shrink-0">
                 <div className="flex gap-1.5 items-center">
-                    {filterValues?.length === 1 ? (
-                        (() => {
-                            const option = filterValues[0];
-                            return (
-                                <DynamicLabel
-                                    value={option.value || ''}
-                                    labelRenderer={labelRenderer}
-                                    fallbackLabel={option.label}
-                                />
-                            )
-                        })()
-                    ) : (
-                        `${filterValues?.length} selected`
-                    )}
+                    {filterValues?.length === 1
+                        ? (() => {
+                              const option = filterValues[0];
+                              return (
+                                  <DynamicLabel
+                                      value={option.value || ''}
+                                      labelRenderer={labelRenderer}
+                                      fallbackLabel={option.label}
+                                  />
+                              );
+                          })()
+                        : `${filterValues?.length} selected`}
                 </div>
             </PopoverTrigger>
             <PopoverContent className="w-[300px] p-0">
@@ -85,14 +89,12 @@ export const SelectionCombobox = ({
                                             onSelect={() => {
                                                 setFilterValues(filterValues.filter((v) => v.value !== value.value));
                                                 setTimeout(() => {
-                                                    setCommandInput("");
+                                                    setCommandInput('');
                                                 }, 200);
                                                 setOpen(false);
                                             }}
                                         >
-                                            {multiple && (
-                                                <input type="checkbox" checked={true} onChange={() => {}} />
-                                            )}
+                                            {multiple && <input type="checkbox" checked={true} onChange={() => {}} />}
                                             <DynamicLabel
                                                 value={value.value || ''}
                                                 labelRenderer={labelRenderer}
@@ -107,8 +109,10 @@ export const SelectionCombobox = ({
                                     <CommandSeparator />
                                     <CommandGroup>
                                         {nonSelectedFilterValues
-                                            .filter(option =>
-                                                String(option.label || option.value).toLowerCase().includes(commandInput.toLowerCase())
+                                            .filter((option) =>
+                                                String(option.label || option.value)
+                                                    .toLowerCase()
+                                                    .includes(commandInput.toLowerCase()),
                                             )
                                             .map((filter: FilterGroupOption) => (
                                                 <CommandItem
@@ -118,11 +122,11 @@ export const SelectionCombobox = ({
                                                     onSelect={() => {
                                                         const next = {
                                                             value: filter.value,
-                                                            label: filter.label
+                                                            label: filter.label,
                                                         };
                                                         setFilterValues(multiple ? [...filterValues, next] : [next]);
                                                         setTimeout(() => {
-                                                            setCommandInput("");
+                                                            setCommandInput('');
                                                         }, 200);
                                                         setOpen(false);
                                                     }}

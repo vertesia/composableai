@@ -1,7 +1,7 @@
-import ansiColors from "ansi-colors";
-import ansiEscapes from "ansi-escapes";
-import type { WriteStream } from "node:tty";
-import { onExit } from "signal-exit";
+import ansiColors from 'ansi-colors';
+import ansiEscapes from 'ansi-escapes';
+import type { WriteStream } from 'node:tty';
+import { onExit } from 'signal-exit';
 /**
  * See https://github.com/sindresorhus/cli-spinners/blob/HEAD/spinners.json for more spinners
  */
@@ -12,34 +12,17 @@ interface SpinnerData {
 }
 
 const spinners: Record<string, SpinnerData> = {
-    "dots": {
-        "interval": 200,
-        "frames": [
-            ".  ",
-            ".. ",
-            "...",
-            " ..",
-            "  .",
-            "   "
-        ]
+    dots: {
+        interval: 200,
+        frames: ['.  ', '.. ', '...', ' ..', '  .', '   '],
     },
-    "bar": {
-        "interval": 80,
-        "frames": [
-            "[    ]",
-            "[=   ]",
-            "[==  ]",
-            "[=== ]",
-            "[====]",
-            "[ ===]",
-            "[  ==]",
-            "[   =]",
-        ]
+    bar: {
+        interval: 80,
+        frames: ['[    ]', '[=   ]', '[==  ]', '[=== ]', '[====]', '[ ===]', '[  ==]', '[   =]'],
     },
-}
+};
 
 export class Spinner {
-
     data: SpinnerData;
     log: LogUpdate;
     timer?: NodeJS.Timeout;
@@ -185,7 +168,6 @@ export class Spinner {
 }
 
 export class LogUpdate {
-
     stream: WriteStream;
 
     last?: string;
@@ -208,7 +190,6 @@ export class LogUpdate {
         this.stream.write(text);
         return this;
     }
-
 }
 
 const streamsToRestore: WriteStream[] = [];
@@ -242,7 +223,9 @@ export function restoreCursorOnExit() {
     if (!restoreCursorIsRegistered) {
         restoreCursorIsRegistered = true;
         onExit(() => {
-            streamsToRestore.forEach(stream => { showCursor(stream); });
+            streamsToRestore.forEach((stream) => {
+                showCursor(stream);
+            });
         });
     }
 }

@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import dayjs from "dayjs";
-import ReactCalendar from "react-calendar";
-import { Button } from "../../button";
-import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
-import { calendarStyles } from "../filter-styles";
+import { useState, useEffect } from 'react';
+import dayjs from 'dayjs';
+import ReactCalendar from 'react-calendar';
+import { Button } from '../../button';
+import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
+import { calendarStyles } from '../filter-styles';
 import { useUITranslation } from '@vertesia/ui/i18n';
 
 export const DateCombobox = ({
@@ -23,17 +23,19 @@ export const DateCombobox = ({
     const selectedDate = filterValues[0] ? dayjs(filterValues[0]).toDate() : undefined;
 
     // For date range - use local state for immediate feedback, fall back to filter values
-    const dateRange: [Date | null, Date | null] = isRange ? [
-        localDateRange[0] || (filterValues[0] ? dayjs(filterValues[0]).toDate() : null),
-        localDateRange[1] || (filterValues[1] ? dayjs(filterValues[1]).toDate() : null)
-    ] : [null, null];
+    const dateRange: [Date | null, Date | null] = isRange
+        ? [
+              localDateRange[0] || (filterValues[0] ? dayjs(filterValues[0]).toDate() : null),
+              localDateRange[1] || (filterValues[1] ? dayjs(filterValues[1]).toDate() : null),
+          ]
+        : [null, null];
 
     // Update local state when filter values change
     useEffect(() => {
         if (isRange) {
             setLocalDateRange([
                 filterValues[0] ? dayjs(filterValues[0]).toDate() : null,
-                filterValues[1] ? dayjs(filterValues[1]).toDate() : null
+                filterValues[1] ? dayjs(filterValues[1]).toDate() : null,
             ]);
         }
     }, [filterValues, isRange]);
@@ -43,15 +45,15 @@ export const DateCombobox = ({
             if (dateRange[0] && dateRange[1]) {
                 return (
                     <span className="flex items-center gap-1.5">
-                        <span className="font-medium">{dayjs(dateRange[0]).format("MMMM DD, YYYY")}</span>
+                        <span className="font-medium">{dayjs(dateRange[0]).format('MMMM DD, YYYY')}</span>
                         <span className="text-xs text-muted-foreground">-</span>
-                        <span className="font-medium">{dayjs(dateRange[1]).format("MMMM DD, YYYY")}</span>
+                        <span className="font-medium">{dayjs(dateRange[1]).format('MMMM DD, YYYY')}</span>
                     </span>
                 );
             } else if (dateRange[0]) {
                 return (
                     <span className="flex items-center gap-1.5">
-                        <span className="font-medium">{dayjs(dateRange[0]).format("MMMM DD, YYYY")}</span>
+                        <span className="font-medium">{dayjs(dateRange[0]).format('MMMM DD, YYYY')}</span>
                         <span className="text-xs text-muted-foreground">- Select end</span>
                     </span>
                 );
@@ -59,7 +61,7 @@ export const DateCombobox = ({
                 return <span className="text-muted-foreground">{t('filter.selectRange')}</span>;
             }
         } else {
-            return selectedDate ? dayjs(selectedDate).format("MMMM DD, YYYY") : "Pick a date";
+            return selectedDate ? dayjs(selectedDate).format('MMMM DD, YYYY') : 'Pick a date';
         }
     };
 
@@ -71,19 +73,16 @@ export const DateCombobox = ({
 
                 // Update filter values
                 if (date[0] && date[1]) {
-                    setFilterValues([
-                        dayjs(date[0]).format("YYYY-MM-DD"),
-                        dayjs(date[1]).format("YYYY-MM-DD")
-                    ]);
+                    setFilterValues([dayjs(date[0]).format('YYYY-MM-DD'), dayjs(date[1]).format('YYYY-MM-DD')]);
                 } else if (date[0]) {
-                    setFilterValues([dayjs(date[0]).format("YYYY-MM-DD")]);
+                    setFilterValues([dayjs(date[0]).format('YYYY-MM-DD')]);
                 }
             }
         } else {
             if (date) {
                 const actualDate = Array.isArray(date) ? date[0] : date;
                 if (actualDate) {
-                    setFilterValues([dayjs(actualDate).format("YYYY-MM-DD")]);
+                    setFilterValues([dayjs(actualDate).format('YYYY-MM-DD')]);
                     setOpen(false);
                 }
             }
@@ -92,12 +91,8 @@ export const DateCombobox = ({
 
     return (
         <Popover _open={open} onOpenChange={setOpen}>
-            <PopoverTrigger
-                className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition"
-            >
-                <div className="flex gap-1.5 items-center min-h-[20px]">
-                    {getDisplayText()}
-                </div>
+            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition">
+                <div className="flex gap-1.5 items-center min-h-[20px]">{getDisplayText()}</div>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start" side="bottom" alignOffset={-4} sideOffset={6}>
                 <div className="p-2">
@@ -162,10 +157,7 @@ export const DateCombobox = ({
                                         <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
                                             Cancel
                                         </Button>
-                                        <Button 
-                                            size="sm" 
-                                            onClick={() => setOpen(false)}
-                                        >
+                                        <Button size="sm" onClick={() => setOpen(false)}>
                                             Apply
                                         </Button>
                                     </div>

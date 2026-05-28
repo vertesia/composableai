@@ -1,6 +1,5 @@
-import type { JSONSchema, JSONSchemaTypeName } from "@vertesia/common";
-import type { TypeNames, TypeSignature } from "./type-signature.js";
-
+import type { JSONSchema, JSONSchemaTypeName } from '@vertesia/common';
+import type { TypeNames, TypeSignature } from './type-signature.js';
 
 export function setPropertyName(schema: JSONSchema, name: string, newName: string) {
     if (schema.properties) {
@@ -17,7 +16,7 @@ export function setPropertyName(schema: JSONSchema, name: string, newName: strin
         schema.properties = newProperties;
     }
     if (schema.required) {
-        schema.required = (schema.required as string[]).map(x => x === name ? newName : x);
+        schema.required = (schema.required as string[]).map((x) => (x === name ? newName : x));
     }
 }
 
@@ -39,20 +38,20 @@ export function setRequireProperty(schema: JSONSchema, name: string, isRequired:
 }
 
 export function setPropertyType(schema: JSONSchema, type: TypeSignature) {
-    const isAny = type.name === "any";
-    const typeObj: JSONSchemaTypeName | JSONSchemaTypeName[] | undefined = isAny ?
-        undefined
-        : (type.isNullable ?
-            [type.name, "null"] as JSONSchemaTypeName[]
-            : type.name as JSONSchemaTypeName);
+    const isAny = type.name === 'any';
+    const typeObj: JSONSchemaTypeName | JSONSchemaTypeName[] | undefined = isAny
+        ? undefined
+        : type.isNullable
+          ? ([type.name, 'null'] as JSONSchemaTypeName[])
+          : (type.name as JSONSchemaTypeName);
     if (type.isArray) {
-        schema.type = "array";
+        schema.type = 'array';
         schema.properties = undefined;
         if (!schema.items || Array.isArray(schema.items)) {
             schema.items = {
                 type: typeObj,
-                properties: type.isObject ? {} : undefined
-            }
+                properties: type.isObject ? {} : undefined,
+            };
         } else {
             const items = schema.items as JSONSchema;
             items.type = typeObj;
@@ -77,7 +76,7 @@ export function removeProperty(schema: JSONSchema, name: string) {
     if (schema.properties) {
         delete schema.properties[name];
         if (Array.isArray(schema.required)) {
-            schema.required = schema.required.filter(x => x !== name);
+            schema.required = schema.required.filter((x) => x !== name);
         }
     }
 }
@@ -90,8 +89,8 @@ export function removeProperty(schema: JSONSchema, name: string) {
  * @param isRequired
  */
 export function addProperty(schema: JSONSchema, name: string, type: TypeSignature, isRequired = false) {
-    if (schema.type !== "object") {
-        throw new Error("Cannot add property to a non-object schema");
+    if (schema.type !== 'object') {
+        throw new Error('Cannot add property to a non-object schema');
     }
     if (!schema.properties) {
         schema.properties = {};
@@ -110,12 +109,13 @@ export function addProperty(schema: JSONSchema, name: string, type: TypeSignatur
 }
 
 export function getTypeSignature(schema: JSONSchema): TypeSignature {
-    let isNullable = false, isArray = false;
+    let isNullable = false,
+        isArray = false;
     let typeName: JSONSchemaTypeName | undefined;
     const type = schema.type;
     if (Array.isArray(type)) {
         for (const t of type) {
-            if (t === "null") {
+            if (t === 'null') {
                 isNullable = true;
             } else if (!typeName) {
                 typeName = t;
@@ -125,7 +125,7 @@ export function getTypeSignature(schema: JSONSchema): TypeSignature {
         typeName = type;
     }
     if (!typeName) {
-        typeName = "any";
+        typeName = 'any';
     }
     if (typeName === 'array') {
         isArray = true;
@@ -134,51 +134,53 @@ export function getTypeSignature(schema: JSONSchema): TypeSignature {
     let displayTypeName: string = typeName;
     switch (schema.editor) {
         case 'textarea': {
-            displayTypeName = 'text'; break;
+            displayTypeName = 'text';
+            break;
         }
         case 'media': {
-            displayTypeName = 'media'; break;
+            displayTypeName = 'media';
+            break;
         }
         case 'document': {
-            displayTypeName = 'document'; break;
+            displayTypeName = 'document';
+            break;
         }
     }
     return {
         isNullable,
         isArray,
-        isObject: typeName === "object",
-        name: displayTypeName as TypeNames
-    }
+        isObject: typeName === 'object',
+        name: displayTypeName as TypeNames,
+    };
 }
 
 // TODO we don't support array of arrays
 // for array of multiple type we get the first type
 function getItemTypeName(schema: JSONSchema | JSONSchema[] | undefined) {
     if (!schema) {
-        return "any"
+        return 'any';
     }
     let name: JSONSchemaTypeName;
     if (Array.isArray(schema)) {
-        name = getFirstNotNullType(schema[0].type)
+        name = getFirstNotNullType(schema[0].type);
     } else {
-        name = getFirstNotNullType(schema.type)
+        name = getFirstNotNullType(schema.type);
     }
-    if (name === "array" || name === "null") {
-        name = "any";
+    if (name === 'array' || name === 'null') {
+        name = 'any';
     }
     return name;
 }
 
 function getFirstNotNullType(type: JSONSchemaTypeName | JSONSchemaTypeName[] | undefined) {
     if (!type) {
-        return "any";
+        return 'any';
     }
     if (Array.isArray(type)) {
-        return type.find(x => x !== "null") || "any";
+        return type.find((x) => x !== 'null') || 'any';
     }
     return type;
 }
-
 
 function addRequired(required: string[], name: string) {
     if (!required.includes(name)) {

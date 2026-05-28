@@ -51,10 +51,7 @@ export interface UseAgentStreamResult {
  * File-processing SYSTEM messages are passed through to the messages array
  * (Option A from the plan) so downstream hooks can react to them.
  */
-export function useAgentStream(
-    client: VertesiaClient,
-    agentRunId: string,
-): UseAgentStreamResult {
+export function useAgentStream(client: VertesiaClient, agentRunId: string): UseAgentStreamResult {
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
     const [agentRunStatus, setAgentRunStatus] = useState<string | null>(null);
@@ -113,7 +110,8 @@ export function useAgentStream(
         const abortController = new AbortController();
 
         // Check agent run status
-        client.agents.getInternals(agentRunId)
+        client.agents
+            .getInternals(agentRunId)
             .then((agentRun) => {
                 if (!abortController.signal.aborted) {
                     setAgentRunStatus(agentRun.status?.toUpperCase() ?? null);
@@ -126,120 +124,126 @@ export function useAgentStream(
                 }
             });
 
-        client.agents.streamMessages(agentRunId, (message) => {
-            if (abortController.signal.aborted) return;
+        client.agents
+            .streamMessages(
+                agentRunId,
+                (message) => {
+                    if (abortController.signal.aborted) return;
 
-            // Handle streaming chunks separately for real-time aggregation
-            // PERFORMANCE: Batch updates using RAF instead of immediate state updates
-            if (message.type === AgentMessageType.STREAMING_CHUNK) {
-                const details = message.details as Common.StreamingChunkDetails;
-                const streamKey = details?.activity_id || details?.streaming_id;
-                if (!streamKey) return;
+                    // Handle streaming chunks separately for real-time aggregation
+                    // PERFORMANCE: Batch updates using RAF instead of immediate state updates
+                    if (message.type === AgentMessageType.STREAMING_CHUNK) {
+                        const details = message.details as Common.StreamingChunkDetails;
+                        const streamKey = details?.activity_id || details?.streaming_id;
+                        if (!streamKey) return;
 
-                // Accumulate chunks in the ref (no state update yet)
-                const current = pendingStreamingChunks.current.get(streamKey) || {
-                    text: '',
-                    workstreamId: message.workstream_id,
-                    startTimestamp: Date.now(),
-                    activityId: details?.activity_id,
-                };
-                const newText = current.text + (message.message || '');
-
-                pendingStreamingChunks.current.set(streamKey, {
-                    text: newText,
-                    workstreamId: message.workstream_id,
-                    isComplete: details.is_final,
-                    startTimestamp: current.startTimestamp,
-                    activityId: details?.activity_id,
-                });
-
-                // Schedule a flush if not already scheduled (~60 updates/sec max)
-                if (streamingFlushScheduled.current === null) {
-                    if (document.hidden) {
-                        streamingFlushScheduled.current = {
-                            mode: 'timeout',
-                            id: window.setTimeout(flushStreamingChunks, 16),
+                        // Accumulate chunks in the ref (no state update yet)
+                        const current = pendingStreamingChunks.current.get(streamKey) || {
+                            text: '',
+                            workstreamId: message.workstream_id,
+                            startTimestamp: Date.now(),
+                            activityId: details?.activity_id,
                         };
-                    } else {
-                        streamingFlushScheduled.current = {
-                            mode: 'raf',
-                            id: requestAnimationFrame(flushStreamingChunks),
-                        };
-                    }
-                }
-                return;
-            }
+                        const newText = current.text + (message.message || '');
 
-            // Handle file processing SYSTEM messages — update serverFileUpdates
-            // for downstream useFileProcessing hook, don't add to messages array
-            if (message.type === AgentMessageType.SYSTEM) {
-                const details = message.details as FileProcessingDetails | undefined;
-                if (details?.system_type === 'file_processing' && details.files) {
-                    setServerFileUpdates(prev => {
-                        const newMap = new Map(prev);
-                        for (const file of details.files) {
-                            newMap.set(file.id, file);
+                        pendingStreamingChunks.current.set(streamKey, {
+                            text: newText,
+                            workstreamId: message.workstream_id,
+                            isComplete: details.is_final,
+                            startTimestamp: current.startTimestamp,
+                            activityId: details?.activity_id,
+                        });
+
+                        // Schedule a flush if not already scheduled (~60 updates/sec max)
+                        if (streamingFlushScheduled.current === null) {
+                            if (document.hidden) {
+                                streamingFlushScheduled.current = {
+                                    mode: 'timeout',
+                                    id: window.setTimeout(flushStreamingChunks, 16),
+                                };
+                            } else {
+                                streamingFlushScheduled.current = {
+                                    mode: 'raf',
+                                    id: requestAnimationFrame(flushStreamingChunks),
+                                };
+                            }
                         }
-                        return newMap;
-                    });
-                    return;
-                }
-                // Other SYSTEM messages fall through to normal handling
-            }
-
-            // When THOUGHT or ANSWER arrives with activity_id, remove matching streaming message
-            if (
-                (message.type === AgentMessageType.THOUGHT || message.type === AgentMessageType.ANSWER) &&
-                message.details?.activity_id
-            ) {
-                const activityId = message.details.activity_id as string;
-                pendingStreamingChunks.current.delete(activityId);
-                setStreamingMessages(prev => {
-                    if (prev.has(activityId)) {
-                        const next = new Map(prev);
-                        next.delete(activityId);
-                        return next;
-                    }
-                    return prev;
-                });
-            }
-
-            // On COMPLETE or IDLE, flush any pending chunks
-            if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
-                if (pendingStreamingChunks.current.size > 0) {
-                    flushStreamingChunks();
-                }
-            }
-
-            const hasContent = !!message.message;
-            const isStateMessage = [
-                AgentMessageType.COMPLETE,
-                AgentMessageType.IDLE,
-                AgentMessageType.TERMINATED,
-                AgentMessageType.REQUEST_INPUT,
-            ].includes(message.type);
-
-            if (hasContent || isStateMessage) {
-                setMessages((prev) => {
-                    // Check for duplicate by timestamp
-                    if (prev.find((m) => m.timestamp === message.timestamp)) {
-                        return prev;
+                        return;
                     }
 
-                    // For QUESTION messages from server, replace any optimistic version
-                    if (message.type === AgentMessageType.QUESTION && !message.details?._optimistic) {
-                        const withoutOptimistic = prev.filter(
-                            (m) => !(m.type === AgentMessageType.QUESTION && m.details?._optimistic),
-                        );
-                        insertMessageInTimeline(withoutOptimistic, message);
-                        return [...withoutOptimistic];
+                    // Handle file processing SYSTEM messages — update serverFileUpdates
+                    // for downstream useFileProcessing hook, don't add to messages array
+                    if (message.type === AgentMessageType.SYSTEM) {
+                        const details = message.details as FileProcessingDetails | undefined;
+                        if (details?.system_type === 'file_processing' && details.files) {
+                            setServerFileUpdates((prev) => {
+                                const newMap = new Map(prev);
+                                for (const file of details.files) {
+                                    newMap.set(file.id, file);
+                                }
+                                return newMap;
+                            });
+                            return;
+                        }
+                        // Other SYSTEM messages fall through to normal handling
                     }
 
-                    insertMessageInTimeline(prev, message);
-                    return [...prev];
-                });
-            }
-        }, undefined, abortController.signal)
+                    // When THOUGHT or ANSWER arrives with activity_id, remove matching streaming message
+                    if (
+                        (message.type === AgentMessageType.THOUGHT || message.type === AgentMessageType.ANSWER) &&
+                        message.details?.activity_id
+                    ) {
+                        const activityId = message.details.activity_id as string;
+                        pendingStreamingChunks.current.delete(activityId);
+                        setStreamingMessages((prev) => {
+                            if (prev.has(activityId)) {
+                                const next = new Map(prev);
+                                next.delete(activityId);
+                                return next;
+                            }
+                            return prev;
+                        });
+                    }
+
+                    // On COMPLETE or IDLE, flush any pending chunks
+                    if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
+                        if (pendingStreamingChunks.current.size > 0) {
+                            flushStreamingChunks();
+                        }
+                    }
+
+                    const hasContent = !!message.message;
+                    const isStateMessage = [
+                        AgentMessageType.COMPLETE,
+                        AgentMessageType.IDLE,
+                        AgentMessageType.TERMINATED,
+                        AgentMessageType.REQUEST_INPUT,
+                    ].includes(message.type);
+
+                    if (hasContent || isStateMessage) {
+                        setMessages((prev) => {
+                            // Check for duplicate by timestamp
+                            if (prev.find((m) => m.timestamp === message.timestamp)) {
+                                return prev;
+                            }
+
+                            // For QUESTION messages from server, replace any optimistic version
+                            if (message.type === AgentMessageType.QUESTION && !message.details?._optimistic) {
+                                const withoutOptimistic = prev.filter(
+                                    (m) => !(m.type === AgentMessageType.QUESTION && m.details?._optimistic),
+                                );
+                                insertMessageInTimeline(withoutOptimistic, message);
+                                return [...withoutOptimistic];
+                            }
+
+                            insertMessageInTimeline(prev, message);
+                            return [...prev];
+                        });
+                    }
+                },
+                undefined,
+                abortController.signal,
+            )
             .catch((error) => {
                 if (!abortController.signal.aborted) {
                     console.error('Failed to stream agent messages:', error);

@@ -42,10 +42,7 @@ export interface TransformResult {
 /**
  * Transform function that converts file content into exportable data
  */
-export type TransformFunction = (
-    content: string,
-    filePath: string
-) => TransformResult | Promise<TransformResult>;
+export type TransformFunction = (content: string, filePath: string) => TransformResult | Promise<TransformResult>;
 
 /**
  * Configuration for a single import transformer rule

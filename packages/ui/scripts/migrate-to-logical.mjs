@@ -44,10 +44,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, '..');
 const REPO_ROOT = resolve(PKG_ROOT, '..', '..');
 
-const SCAN_TARGETS = [
-    resolve(PKG_ROOT, 'src'),
-    resolve(REPO_ROOT, 'templates', 'plugin-template', 'src', 'ui'),
-];
+const SCAN_TARGETS = [resolve(PKG_ROOT, 'src'), resolve(REPO_ROOT, 'templates', 'plugin-template', 'src', 'ui')];
 
 const SOURCE_EXT = /\.(tsx?|css)$/;
 const SKIP_DIRS = new Set(['node_modules', 'lib', 'dist', '.turbo']);
@@ -70,7 +67,7 @@ const BOUNDARY_BEFORE = String.raw`(?<=^|[\s"'\`{(\[,>])`;
 // in a CSS file or `right-panel-width` in a custom-property string. These
 // mirror the inventory regexes in check-rtl-classes.mjs.
 const MOD_SPACING = String.raw`(?:\d+|\[.+?\]|px|auto|full|\d+\.\d+|[\d./]+)`;
-const MOD_BORDER  = String.raw`(?:\d+|\[.+?\]|none|px)`;
+const MOD_BORDER = String.raw`(?:\d+|\[.+?\]|none|px)`;
 const MOD_ROUNDED = String.raw`(?:none|sm|md|lg|xl|\d?xl|full|\[.+?\])`;
 
 // Each rule: name, regex (capturing variant prefix as group 1 and optional
@@ -79,42 +76,82 @@ const MOD_ROUNDED = String.raw`(?:none|sm|md|lg|xl|\d?xl|full|\[.+?\])`;
 // for `text-left` etc).
 const RULES = [
     // Spacing: ml/mr/pl/pr  (margin/padding inline)
-    { name: 'ml',         re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})(-?)ml-(${MOD_SPACING})`, 'g'), to: '$1$2ms-$3' },
-    { name: 'mr',         re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})(-?)mr-(${MOD_SPACING})`, 'g'), to: '$1$2me-$3' },
-    { name: 'pl',         re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})pl-(${MOD_SPACING})`, 'g'),     to: '$1ps-$2' },
-    { name: 'pr',         re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})pr-(${MOD_SPACING})`, 'g'),     to: '$1pe-$2' },
+    { name: 'ml', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})(-?)ml-(${MOD_SPACING})`, 'g'), to: '$1$2ms-$3' },
+    { name: 'mr', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})(-?)mr-(${MOD_SPACING})`, 'g'), to: '$1$2me-$3' },
+    { name: 'pl', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})pl-(${MOD_SPACING})`, 'g'), to: '$1ps-$2' },
+    { name: 'pr', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})pr-(${MOD_SPACING})`, 'g'), to: '$1pe-$2' },
 
     // Positioning: left/right
-    { name: 'left',       re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})(-?)left-(${MOD_SPACING})`, 'g'),  to: '$1$2start-$3' },
-    { name: 'right',      re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})(-?)right-(${MOD_SPACING})`, 'g'), to: '$1$2end-$3' },
+    {
+        name: 'left',
+        re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})(-?)left-(${MOD_SPACING})`, 'g'),
+        to: '$1$2start-$3',
+    },
+    {
+        name: 'right',
+        re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})(-?)right-(${MOD_SPACING})`, 'g'),
+        to: '$1$2end-$3',
+    },
 
     // Text alignment
-    { name: 'text-left',  re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})text-left\\b`, 'g'),  to: '$1text-start' },
+    { name: 'text-left', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})text-left\\b`, 'g'), to: '$1text-start' },
     { name: 'text-right', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})text-right\\b`, 'g'), to: '$1text-end' },
 
     // Corner radii (do four-corner rules BEFORE the two-side ones so the
     // longer prefixes win):
-    { name: 'rounded-tl', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-tl-(${MOD_ROUNDED})`, 'g'), to: '$1rounded-ss-$2' },
-    { name: 'rounded-tr', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-tr-(${MOD_ROUNDED})`, 'g'), to: '$1rounded-se-$2' },
-    { name: 'rounded-bl', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-bl-(${MOD_ROUNDED})`, 'g'), to: '$1rounded-es-$2' },
-    { name: 'rounded-br', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-br-(${MOD_ROUNDED})`, 'g'), to: '$1rounded-ee-$2' },
+    {
+        name: 'rounded-tl',
+        re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-tl-(${MOD_ROUNDED})`, 'g'),
+        to: '$1rounded-ss-$2',
+    },
+    {
+        name: 'rounded-tr',
+        re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-tr-(${MOD_ROUNDED})`, 'g'),
+        to: '$1rounded-se-$2',
+    },
+    {
+        name: 'rounded-bl',
+        re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-bl-(${MOD_ROUNDED})`, 'g'),
+        to: '$1rounded-es-$2',
+    },
+    {
+        name: 'rounded-br',
+        re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-br-(${MOD_ROUNDED})`, 'g'),
+        to: '$1rounded-ee-$2',
+    },
 
     // Two-side radii (with optional modifier)
-    { name: 'rounded-l-N', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-l-(${MOD_ROUNDED})`, 'g'), to: '$1rounded-s-$2' },
-    { name: 'rounded-r-N', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-r-(${MOD_ROUNDED})`, 'g'), to: '$1rounded-e-$2' },
-    { name: 'rounded-l',  re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-l\\b`, 'g'), to: '$1rounded-s' },
-    { name: 'rounded-r',  re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-r\\b`, 'g'), to: '$1rounded-e' },
+    {
+        name: 'rounded-l-N',
+        re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-l-(${MOD_ROUNDED})`, 'g'),
+        to: '$1rounded-s-$2',
+    },
+    {
+        name: 'rounded-r-N',
+        re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-r-(${MOD_ROUNDED})`, 'g'),
+        to: '$1rounded-e-$2',
+    },
+    { name: 'rounded-l', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-l\\b`, 'g'), to: '$1rounded-s' },
+    { name: 'rounded-r', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})rounded-r\\b`, 'g'), to: '$1rounded-e' },
 
     // Border sides (with optional modifier — width or arbitrary)
-    { name: 'border-l-N', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})border-l-(${MOD_BORDER})`, 'g'), to: '$1border-s-$2' },
-    { name: 'border-r-N', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})border-r-(${MOD_BORDER})`, 'g'), to: '$1border-e-$2' },
-    { name: 'border-l',   re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})border-l\\b`, 'g'), to: '$1border-s' },
-    { name: 'border-r',   re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})border-r\\b`, 'g'), to: '$1border-e' },
+    {
+        name: 'border-l-N',
+        re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})border-l-(${MOD_BORDER})`, 'g'),
+        to: '$1border-s-$2',
+    },
+    {
+        name: 'border-r-N',
+        re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})border-r-(${MOD_BORDER})`, 'g'),
+        to: '$1border-e-$2',
+    },
+    { name: 'border-l', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})border-l\\b`, 'g'), to: '$1border-s' },
+    { name: 'border-r', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})border-r\\b`, 'g'), to: '$1border-e' },
 
     // Float / clear
-    { name: 'float-left',  re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})float-left\\b`, 'g'),  to: '$1float-start' },
+    { name: 'float-left', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})float-left\\b`, 'g'), to: '$1float-start' },
     { name: 'float-right', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})float-right\\b`, 'g'), to: '$1float-end' },
-    { name: 'clear-left',  re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})clear-left\\b`, 'g'),  to: '$1clear-start' },
+    { name: 'clear-left', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})clear-left\\b`, 'g'), to: '$1clear-start' },
     { name: 'clear-right', re: new RegExp(`${BOUNDARY_BEFORE}(${VARIANT})clear-right\\b`, 'g'), to: '$1clear-end' },
 ];
 
@@ -181,7 +218,9 @@ function main() {
     }
 
     const grandTotal = Object.values(totals).reduce((a, b) => a + b, 0);
-    console.log(`\n${dryRun ? '[dry-run] would rewrite' : 'rewrote'} ${grandTotal} occurrences across ${filesChanged} files:`);
+    console.log(
+        `\n${dryRun ? '[dry-run] would rewrite' : 'rewrote'} ${grandTotal} occurrences across ${filesChanged} files:`,
+    );
     for (const [k, n] of Object.entries(totals).sort((a, b) => b[1] - a[1])) {
         console.log(`  ${k.padEnd(14)} ${n}`);
     }
