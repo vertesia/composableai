@@ -1,6 +1,6 @@
-import fs from 'node:fs';
-import { describe, expect, test } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { exec } from './exec';
+import fs from 'node:fs';
 
 describe('exec', () => {
     test('test pipe', async () => {

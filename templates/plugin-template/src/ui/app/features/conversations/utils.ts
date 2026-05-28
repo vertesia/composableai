@@ -1,5 +1,5 @@
-import type { AgentRunStatus } from '@vertesia/common';
 import type { Filter } from '@vertesia/ui/core';
+import type { AgentRunStatus } from '@vertesia/common';
 import type { BadgeVariant } from './types';
 
 export function statusVariant(status?: AgentRunStatus): BadgeVariant {

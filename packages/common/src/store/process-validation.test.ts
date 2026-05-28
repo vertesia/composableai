@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { PROCESS_DEFINITION_FORMAT_VERSION, type ProcessDefinitionBody } from './process.js';
 import {
-    getProcessDefinitionValidationResult,
-    getProcessInteractionValidationSelectors,
     MAX_PROCESS_GUARD_DEPTH,
     MAX_PROCESS_GUARD_NODES,
+    getProcessDefinitionValidationResult,
+    getProcessInteractionValidationSelectors,
     validateProcessDefinitionBody,
 } from './process-validation.js';
 

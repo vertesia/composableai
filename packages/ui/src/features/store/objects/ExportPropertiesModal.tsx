@@ -1,6 +1,6 @@
 import { Button, Modal, ModalBody, ModalTitle, SelectBox, Spinner } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { useState } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export enum ExportTypes {
     CSV = 'CSV',

@@ -1,9 +1,9 @@
 import type React from 'react';
 import { FixLinks } from './FixLinks';
 import type { NavigateOptions } from './HistoryNavigator';
-import { joinPath } from './path';
 import { RouteComponent } from './RouteComponent';
 import { ReactRouterContext, useRouterContext } from './Router';
+import { joinPath } from './path';
 
 interface NestedNavigationContextProps {
     basePath: string;

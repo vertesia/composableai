@@ -1,5 +1,5 @@
-import { extname } from 'node:path';
 import micromatch from 'micromatch';
+import { extname } from 'node:path';
 import { AbstractContentSource } from './ContentSource.js';
 import { loadTarIndex, type TarEntryIndex, type TarIndex } from './utils/tar.js';
 

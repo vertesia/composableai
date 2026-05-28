@@ -1,6 +1,6 @@
+import { MockActivityEnvironment } from '@temporalio/testing';
 import fs from 'node:fs';
 import path from 'node:path';
-import { MockActivityEnvironment } from '@temporalio/testing';
 import { beforeAll, expect, test } from 'vitest';
 import { markdownWithPandoc } from '../conversion/pandoc.js';
 

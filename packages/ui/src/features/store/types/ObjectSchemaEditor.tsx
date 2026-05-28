@@ -1,10 +1,11 @@
-import type { ContentObjectType } from '@vertesia/common';
-import { Button, errorMessage, Panel, useTheme, useToast } from '@vertesia/ui/core';
+import { useMemo, useRef, useState } from 'react';
+
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { type EditorApi, MonacoEditor, SchemaEditor, useSchema } from '@vertesia/ui/widgets';
+import { MonacoEditor, type EditorApi, SchemaEditor, useSchema } from '@vertesia/ui/widgets';
+import { Button, errorMessage, useToast, useTheme, Panel } from '@vertesia/ui/core';
+import type { ContentObjectType } from '@vertesia/common';
 import { Ajv } from 'ajv';
-import { useMemo, useRef, useState } from 'react';
 
 interface ObjectSchemaEditorProps {
     objectType: ContentObjectType;

@@ -1,16 +1,18 @@
-import { useUITranslation } from '@vertesia/ui/i18n';
-import { ListFilter } from 'lucide-react';
 import React, { type Dispatch, type SetStateAction, useEffect } from 'react';
 import { cn } from '../../libs/utils';
 import { Button } from '../button';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../command';
-import { Popover, PopoverContent, PopoverTrigger } from '../popover';
+import { Popover, PopoverTrigger, PopoverContent } from '../popover';
+import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from '../command';
+import { ListFilter } from 'lucide-react';
+
+import type { Filter, FilterGroup, FilterOption } from './types';
+import Filters from './filters';
+
+import TextFilter from './filter/TextFilter';
 import DateFilter from './filter/dateFilter';
 import SelectFilter from './filter/SelectFilter';
 import StringListFilter from './filter/StringListFilter';
-import TextFilter from './filter/TextFilter';
-import Filters from './filters';
-import type { Filter, FilterGroup, FilterOption } from './types';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 const FilterContext = React.createContext<{
     filters: Filter[];
@@ -385,4 +387,4 @@ function readFilterValue(item: string | FilterOption): string {
     return typeof item === 'string' ? item : item.value || '';
 }
 
-export { FilterBar, FilterBtn, FilterClear, FilterProvider };
+export { FilterProvider, FilterBtn, FilterBar, FilterClear };

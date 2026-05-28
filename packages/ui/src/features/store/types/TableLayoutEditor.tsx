@@ -1,9 +1,9 @@
-import type { ColumnLayout, ContentObjectType } from '@vertesia/common';
-import { Button, errorMessage, Panel, useTheme, useToast } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
-import { useUserSession } from '@vertesia/ui/session';
-import { type EditorApi, MonacoEditor } from '@vertesia/ui/widgets';
 import { useMemo, useRef, useState } from 'react';
+import type { ColumnLayout, ContentObjectType } from '@vertesia/common';
+import { Button, errorMessage, useToast, useTheme, Panel } from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
+import { MonacoEditor, type EditorApi } from '@vertesia/ui/widgets';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface TableLayoutEditorProps {
     objectType: ContentObjectType;

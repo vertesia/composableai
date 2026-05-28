@@ -1,5 +1,5 @@
-import type { VertesiaClient } from '@vertesia/client';
 import type { FindPayload } from '@vertesia/common';
+import type { VertesiaClient } from '@vertesia/client';
 import { DataProvider } from './DataProvider.js';
 
 function useMongoId(query: Record<string, unknown>) {

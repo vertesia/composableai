@@ -1,6 +1,6 @@
+import { log } from '@temporalio/activity';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
-import { log } from '@temporalio/activity';
 import tmp from 'tmp';
 
 /**

@@ -1,5 +1,5 @@
+import { useResolvedUrl, parseUrlScheme } from './useResolvedUrl';
 import { CodeBlockPlaceholder } from './CodeBlockPlaceholder';
-import { parseUrlScheme, useResolvedUrl } from './useResolvedUrl';
 
 export interface MarkdownFigureProps {
     src?: string;

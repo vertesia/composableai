@@ -2,9 +2,8 @@ import { decodeEndpoints, VertesiaClient } from '@vertesia/client';
 import type { AuthTokenPayload } from '@vertesia/common';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { createLocalJWKSet, decodeJwt, type JSONWebKeySet, type JWTVerifyGetKey, jwtVerify } from 'jose';
+import { createLocalJWKSet, decodeJwt, type JSONWebKeySet, jwtVerify, type JWTVerifyGetKey } from 'jose';
 import type { ToolExecutionContext } from './types.js';
-
 const cache: Record<string, JWTVerifyGetKey> = {};
 
 export async function getJwks(url: string) {

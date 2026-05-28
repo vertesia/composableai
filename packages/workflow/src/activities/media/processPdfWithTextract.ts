@@ -11,8 +11,6 @@
  */
 
 import { fromWebToken } from '@aws-sdk/credential-providers';
-import type { AwsCredentialIdentityProvider } from '@smithy/types';
-import { log } from '@temporalio/activity';
 import {
     type AwsConfiguration,
     type CreateContentObjectPayload,
@@ -20,6 +18,8 @@ import {
     type DSLActivitySpec,
     SupportedIntegrations,
 } from '@vertesia/common';
+import type { AwsCredentialIdentityProvider } from '@smithy/types';
+import { log } from '@temporalio/activity';
 import { TextractProcessor } from '../../conversion/TextractProcessor.js';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError } from '../../errors.js';

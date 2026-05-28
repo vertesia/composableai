@@ -1,15 +1,15 @@
+import { jwtDecode } from 'jwt-decode';
+import { createContext, useContext } from 'react';
+
 import { VertesiaClient } from '@vertesia/client';
 import type { AuthTokenPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
-import { jwtDecode } from 'jwt-decode';
-import { createContext, useContext } from 'react';
 
 import { getComposableToken } from './auth/composable';
 import { shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
-
 export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
 
 const CENTRAL_AUTH_REDIRECT = 'https://internal-auth.vertesia.app/';

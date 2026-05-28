@@ -1,8 +1,8 @@
+import type { VertesiaClient } from '@vertesia/client';
 import crypto from 'node:crypto';
 import { createWriteStream } from 'node:fs';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import type { VertesiaClient } from '@vertesia/client';
 import tmp from 'tmp';
 import { DocumentNotFoundError } from '../errors.js';
 

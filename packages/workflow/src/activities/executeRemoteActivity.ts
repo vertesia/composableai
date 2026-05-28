@@ -5,7 +5,7 @@ import type {
     RemoteActivityExecutionResponse,
 } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
-import { safeFetch, URLValidationError } from '../security/ssrf.js';
+import { URLValidationError, safeFetch } from '../security/ssrf.js';
 
 /**
  * Parameters for the executeRemoteActivity bridge activity.

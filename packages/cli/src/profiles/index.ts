@@ -1,10 +1,12 @@
 import { existsSync, mkdirSync, statSync } from 'node:fs';
+import jwt from 'jsonwebtoken';
 import os from 'node:os';
 import { join } from 'node:path';
-import jwt from 'jsonwebtoken';
-import { hasErrorCode } from '../utils/options.js';
 import { readJsonFile, writeJsonFile } from '../utils/stdio.js';
+import { hasErrorCode } from '../utils/options.js';
+import { type ConfigPayload, type ConfigResult, startConfigSession } from './server/index.js';
 import type { OnResultCallback } from './commands.js';
+import { canUseOAuthProfile, OAuthUnavailableError, startOAuthSession } from './oauth.js';
 import {
     deleteAuthBundle,
     getAccessTokenExpiry,
@@ -14,8 +16,6 @@ import {
     readProfileAccessToken,
     writeAuthBundle,
 } from './keyring.js';
-import { canUseOAuthProfile, OAuthUnavailableError, startOAuthSession } from './oauth.js';
-import { type ConfigPayload, type ConfigResult, startConfigSession } from './server/index.js';
 
 export function getConfigFile(path?: string) {
     const dir = join(os.homedir(), '.vertesia');

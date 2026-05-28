@@ -1,13 +1,13 @@
-import type { AgentRunResponse, WorkflowRun } from '@vertesia/common';
+import { useEffect, useState } from 'react';
 import { ModeToggle } from '@vertesia/ui/core';
 import { useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
 import { SidebarSection, useSidebarToggle } from '@vertesia/ui/layout';
 import { useLocation, useRouterBasePath } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { Database, HomeIcon, MessageSquare, MessagesSquare, PlusCircle, Settings } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { ASSISTANT_INTERACTION } from '../constants';
+import type { AgentRunResponse, WorkflowRun } from '@vertesia/common';
 import { AppSidebarItem } from './AppSidebarItem';
+import { ASSISTANT_INTERACTION } from '../constants';
 
 const SIDEBAR_RECENT_LIMIT = 3;
 

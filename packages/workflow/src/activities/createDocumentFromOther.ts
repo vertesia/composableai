@@ -1,7 +1,7 @@
-import fs from 'node:fs';
 import { log } from '@temporalio/activity';
 import { NodeStreamSource } from '@vertesia/client/node';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
+import fs from 'node:fs';
 import { pdfExtractPages } from '../conversion/mutool.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError } from '../errors.js';

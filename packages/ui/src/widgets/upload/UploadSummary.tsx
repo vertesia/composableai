@@ -1,5 +1,5 @@
+import { CheckCircleIcon, AlertCircleIcon, XCircleIcon } from 'lucide-react';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { AlertCircleIcon, CheckCircleIcon, XCircleIcon } from 'lucide-react';
 import { UploadResultCategory } from './UploadResultCategory';
 
 /**

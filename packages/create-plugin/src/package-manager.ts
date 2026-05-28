@@ -1,9 +1,8 @@
 /**
  * Package manager detection and selection
  */
-
-import { execSync } from 'node:child_process';
 import chalk from 'chalk';
+import { execSync } from 'node:child_process';
 import prompts from 'prompts';
 
 export function buildPackageManagerEnv(packageManager: string): NodeJS.ProcessEnv {

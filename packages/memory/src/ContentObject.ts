@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-import { PassThrough, Readable } from 'node:stream';
 import {
     manyToMarkdown,
     pdfToText,
@@ -7,6 +5,8 @@ import {
     transformImage,
     transformImageToBuffer,
 } from '@vertesia/converters';
+import fs from 'node:fs';
+import { PassThrough, Readable } from 'node:stream';
 import type { Builder } from './Builder.js';
 import type { ContentSource } from './ContentSource.js';
 

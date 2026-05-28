@@ -1,9 +1,9 @@
 import type { OAuthProviderAuthStatus } from '@vertesia/common';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { CheckCircle2, ExternalLink } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Spinner } from '../../core/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useOAuthPopup } from './useOAuthPopup.js';
 
 interface OAuthProviderConnectButtonProps {

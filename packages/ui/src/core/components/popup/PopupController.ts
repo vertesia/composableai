@@ -1,4 +1,4 @@
-import { type Constraints, computePosition, type Position } from './position';
+import { computePosition, type Constraints, type Position } from './position';
 import { computeVisibleClientRect, getScrollableParents } from './utils';
 
 export interface PopupControllerOptions {

@@ -1,8 +1,8 @@
 import {
-    AttachRolePolicyCommand,
+    IAMClient,
     CreateOpenIDConnectProviderCommand,
     CreateRoleCommand,
-    IAMClient,
+    AttachRolePolicyCommand,
 } from '@aws-sdk/client-iam';
 import type { VertesiaClient } from '@vertesia/client';
 import { SupportedProviders } from '@vertesia/common';

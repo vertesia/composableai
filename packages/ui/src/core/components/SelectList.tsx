@@ -1,7 +1,7 @@
-import { useUITranslation } from '@vertesia/ui/i18n';
-import clsx from 'clsx';
 import { Check } from 'lucide-react';
+import clsx from 'clsx';
 import { type ReactNode, useMemo, useState } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { Button, Input } from './shadcn';
 
 const Default_Option_Style = 'flex-1 px-2 py-2 hover:bg-accent nowrap';

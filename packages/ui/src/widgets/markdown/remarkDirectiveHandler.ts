@@ -8,7 +8,7 @@
  *   :::note / :::warning / :::tip / :::caution / :::important → callout <div>s
  *   :::name             → <div class="md-name"> (generic fallback)
  */
-import { type VisitorResult, visit } from 'unist-util-visit';
+import { visit, type VisitorResult } from 'unist-util-visit';
 
 type RemarkTree = Parameters<typeof visit>[0];
 

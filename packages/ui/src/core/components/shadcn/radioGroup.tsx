@@ -93,5 +93,5 @@ function RadioGroup<T = RadioGroupOption>({ onSelect, selected, options, adapter
     );
 }
 
-export type { RadioGroupOption, RadioGroupProps };
 export { RadioGroup, RadioGroupItem };
+export type { RadioGroupOption, RadioGroupProps };

@@ -1,14 +1,14 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { Button } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
-import { useUserSession } from '@vertesia/ui/session';
 import { Check, Copy, Download, Loader2, Maximize2, Minimize2, X } from 'lucide-react';
 import Papa from 'papaparse';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VegaEmbed } from 'react-vega';
 import type { View } from 'vega';
 import type { TopLevelSpec as VisualizationSpec } from 'vega-lite';
+import { Button } from '@vertesia/ui/core';
 import { cn } from '../../../core/components/libs/utils';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { useUserSession } from '@vertesia/ui/session';
 import type { VegaLiteChartSpec } from './AgentChart';
 import { getArtifactCacheKey, getFileCacheKey, useArtifactUrlCache } from './useArtifactUrlCache';
 

@@ -1,7 +1,8 @@
-import { Button } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { LayoutGrid, TableProperties } from 'lucide-react';
 import { useState } from 'react';
+
+import { Button } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 const LAST_DISPLAYED_VIEW = 'vertesia.content_store.lastDisplayedView';
 

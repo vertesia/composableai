@@ -1,4 +1,4 @@
-export { DateCombobox } from './DateCombobox';
 export { SelectionCombobox } from './SelectCombobox';
-export { StringListCombobox } from './StringListCombobox';
+export { DateCombobox } from './DateCombobox';
 export { TextCombobox } from './TextCombobox';
+export { StringListCombobox } from './StringListCombobox';

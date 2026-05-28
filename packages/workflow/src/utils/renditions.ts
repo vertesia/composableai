@@ -1,8 +1,8 @@
-import fs from 'node:fs';
 import { log } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
 import { NodeStreamSource } from '@vertesia/client/node';
 import type { ImageRenditionFormat } from '@vertesia/common';
+import fs from 'node:fs';
 import pLimit from 'p-limit';
 import { imageResizer } from '../conversion/image.js';
 

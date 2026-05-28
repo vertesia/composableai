@@ -1,7 +1,7 @@
+import { useState, useRef } from 'react';
+import { UploadIcon } from 'lucide-react';
 import { Button } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { UploadIcon } from 'lucide-react';
-import { useRef, useState } from 'react';
 
 interface FileSystemEntry {
     fullPath: string;

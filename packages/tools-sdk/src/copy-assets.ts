@@ -10,7 +10,7 @@
  *   import { copyRuntimeAssets } from '@vertesia/tools-sdk';
  *   copyRuntimeAssets('./src', './dist');
  */
-import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync, mkdirSync, copyFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 /**

@@ -2,10 +2,10 @@
  * Tests for asset discovery utilities
  */
 
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { discoverSkillAssets } from '../src/utils/asset-discovery.js';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

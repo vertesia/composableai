@@ -1,6 +1,6 @@
-import { Loader2 } from 'lucide-react';
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
+import { Loader2 } from 'lucide-react';
 
 // Configure PDF.js worker - use CDN for the worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;

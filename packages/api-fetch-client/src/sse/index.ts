@@ -1,5 +1,5 @@
-import { EventSourceParserStream, type ParsedEvent } from './EventSourceParserStream.js';
 import { TextDecoderStream } from './TextDecoderStream.js';
+import { EventSourceParserStream, type ParsedEvent } from './EventSourceParserStream.js';
 
 export type { ParsedEvent };
 

@@ -3,15 +3,14 @@ import {
     Button,
     Center,
     ErrorBox,
-    errorMessage,
     Input,
     SelectBox,
     Spinner,
+    errorMessage,
     useFetch,
     useToast,
 } from '@vertesia/ui/core';
 import { Env } from '@vertesia/ui/env';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { useLocation } from '@vertesia/ui/router';
 import {
     fetchComposableTokenFromFirebaseToken,
@@ -20,6 +19,7 @@ import {
     useUserSession,
 } from '@vertesia/ui/session';
 import { useState } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface ProfileData {
     profile?: string;

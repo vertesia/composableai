@@ -1,8 +1,8 @@
 import type { Plan } from '@vertesia/common';
 import { Badge, Button, cn } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { AlertCircle, CheckCircle, Circle, Clock } from 'lucide-react';
 import React from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface InlinePlanPanelProps {
     plan: Plan;

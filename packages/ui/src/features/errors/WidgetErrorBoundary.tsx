@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
 import { type ErrorFallbackComponentProps, VertesiaErrorBoundary } from './VertesiaErrorBoundary';
+import type { ReactNode } from 'react';
 
 export function WidgetErrorBoundary({ children }: { children: ReactNode }) {
     return <VertesiaErrorBoundary fallback={WidgetErrorFallback}>{children}</VertesiaErrorBoundary>;

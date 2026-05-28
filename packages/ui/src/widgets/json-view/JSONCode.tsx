@@ -1,6 +1,6 @@
 import { useTheme } from '@vertesia/ui/core';
-import { useMemo } from 'react';
 import { MonacoEditor } from '../monacoEditor/MonacoEditor';
+import { useMemo } from 'react';
 
 export function JSONCode({ data, className }: { data: unknown; className?: string }) {
     const { theme } = useTheme();

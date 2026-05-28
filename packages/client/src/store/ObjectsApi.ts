@@ -3,20 +3,21 @@ import {
     type BulkObjectCreateResult,
     type BulkObjectDeleteResult,
     type BulkObjectUpdateResult,
+    canGenerateRendition,
     type Collection,
     type ComplexSearchPayload,
-    type ComputedFacetResponse,
     type ComputeObjectFacetPayload,
     type ContentObject,
     ContentObjectApiHeaders,
     type ContentObjectItem,
     type ContentObjectProcessingPriority,
-    type ContentObjectTextResponse,
     type ContentSource,
+    type ContentObjectTextResponse,
     type CreateContentObjectPayload,
-    canGenerateRendition,
     type DeleteContentObjectResult,
     type Embedding,
+    type ObjectSearchResponse,
+    type ComputedFacetResponse,
     type ExportPropertiesPayload,
     type ExportPropertiesResponse,
     type FindPayload,
@@ -28,14 +29,13 @@ import {
     type ListWorkflowRunsResponse,
     type ObjectSearchPayload,
     type ObjectSearchQuery,
-    type ObjectSearchResponse,
     type SetObjectEmbeddingsResponse,
     type SupportedEmbeddingTypes,
 } from '@vertesia/common';
 
-export { getSupportedRenditionFormats, supportsVisualRendition } from '@vertesia/common';
 // Re-export rendition utilities for consumers
 export { canGenerateRendition };
+export { getSupportedRenditionFormats, supportsVisualRendition } from '@vertesia/common';
 
 import { StreamSource } from '../StreamSource.js';
 import { AnalyzeDocApi } from './AnalyzeDocApi.js';

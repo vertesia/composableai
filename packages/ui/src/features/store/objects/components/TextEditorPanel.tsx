@@ -1,10 +1,10 @@
+import { useState, useRef, useCallback } from 'react';
 import type { ContentObject } from '@vertesia/common';
-import { Button, errorMessage, useTheme, useToast } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
-import { useNavigate } from '@vertesia/ui/router';
+import { Button, errorMessage, useToast, useTheme } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
-import { type IEditorApi, MonacoEditor } from '@vertesia/ui/widgets';
-import { useCallback, useRef, useState } from 'react';
+import { useNavigate } from '@vertesia/ui/router';
+import { MonacoEditor, type IEditorApi } from '@vertesia/ui/widgets';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { SaveVersionConfirmModal } from './SaveVersionConfirmModal.js';
 
 interface TextEditorPanelProps {

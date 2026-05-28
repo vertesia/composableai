@@ -1,6 +1,6 @@
-import { Button } from '@vertesia/ui/core';
-import { BarChart3, Code, Download, FileText, GitBranch, Image, Link, MessageSquare, Table } from 'lucide-react';
 import React from 'react';
+import { BarChart3, GitBranch, MessageSquare, Code, Image, Link, Download, Table, FileText } from 'lucide-react';
+import { Button } from '@vertesia/ui/core';
 
 export type CodeBlockType =
     | 'chart'

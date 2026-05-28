@@ -1,14 +1,14 @@
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import { Button, cn, onActivateKey, useToast } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
 import dayjs from 'dayjs';
-import { AlertCircle, AlertTriangle, Bot, CheckCircle, ChevronDown, ChevronRight, CopyIcon } from 'lucide-react';
-import { memo, useEffect, useRef, useState } from 'react';
+import { Bot, ChevronDown, ChevronRight, CopyIcon, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
+import { useState, memo, useEffect, useRef } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { PulsatingCircle } from '../AnimatedThinkingDots';
 import { useImageLightbox } from '../ImageLightbox';
-import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
+import { useArtifactUrlCache, getArtifactCacheKey } from '../useArtifactUrlCache.js';
 import type { ToolExecutionStatus } from './utils';
 
 /** Keys that are internal metadata and not interesting to display */

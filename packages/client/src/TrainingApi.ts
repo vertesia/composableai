@@ -1,5 +1,4 @@
 import type { TrainingJob } from '@llumiverse/common';
-import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     ExecutionRunRef,
     ListTrainingSessionsQuery,
@@ -7,6 +6,7 @@ import type {
     TrainingSessionCreatePayload,
     TrainingSessionRef,
 } from '@vertesia/common';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 
 export default class TrainingApi extends ApiTopic {
     constructor(parent: ClientBase) {

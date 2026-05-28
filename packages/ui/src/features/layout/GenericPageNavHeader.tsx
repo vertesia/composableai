@@ -1,9 +1,10 @@
-import { Breadcrumbs, VTooltip } from '@vertesia/ui/core';
-import { useNavigate } from '@vertesia/ui/router';
 import clsx from 'clsx';
-import { capitalize } from 'lodash-es';
-import { ChevronRight, Info } from 'lucide-react';
 import type { JSX, ReactElement, ReactNode } from 'react';
+
+import { ChevronRight, Info } from 'lucide-react';
+import { VTooltip, Breadcrumbs } from '@vertesia/ui/core';
+import { capitalize } from 'lodash-es';
+import { useNavigate } from '@vertesia/ui/router';
 
 interface GenericPageNavHeaderProps {
     title?: string | JSX.Element;

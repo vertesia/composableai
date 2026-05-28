@@ -1,8 +1,8 @@
 import { spawn } from 'node:child_process';
+import enquirer from 'enquirer';
 import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import enquirer from 'enquirer';
 import { getBooleanOption, getStringOption, isRecord } from './utils/options.js';
 
 const { prompt } = enquirer;

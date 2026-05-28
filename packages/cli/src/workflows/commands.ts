@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-import { basename, join, resolve } from 'node:path';
 import {
     type CreateWorkflowRulePayload,
     type DSLWorkflowSpec,
@@ -8,12 +6,14 @@ import {
     WorkflowRuleInputType,
 } from '@vertesia/common';
 import type { Command } from 'commander';
+import fs from 'node:fs';
+import { resolve, join, basename } from 'node:path';
 import { getClient } from '../client.js';
-import { type CliOptions, getStringOption, isRecord } from '../utils/options.js';
+import { getStringOption, isRecord, type CliOptions } from '../utils/options.js';
 import { loadJSONWorkflowDefinition } from './json-loader.js';
-import { streamRun } from './streams.js';
 import { loadTsWorkflowDefinition } from './ts-loader.js';
 import { ValidationError } from './validation.js';
+import { streamRun } from './streams.js';
 
 type CreateWorkflowRuleOptions = CliOptions<{
     name?: string;

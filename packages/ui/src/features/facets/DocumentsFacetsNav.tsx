@@ -1,23 +1,23 @@
-import type { ComputedFacetResponse } from '@vertesia/common';
 import {
     type Filter as BaseFilter,
-    FilterBar,
+    FilterProvider,
     FilterBtn,
+    FilterBar,
     FilterClear,
     type FilterGroup,
-    FilterProvider,
     useIsInModal,
 } from '@vertesia/ui/core';
 import { useState } from 'react';
+import type { ComputedFacetResponse } from '@vertesia/common';
 import { useTypeRegistry } from '../store/types/TypeRegistryProvider.js';
+import { VStringFacet } from './utils/VStringFacet';
+import { VTypeFacet } from './utils/VTypeFacet';
 import {
     filterValueToQueryValue,
     type SearchInterface,
     setSearchQueryValue,
     unwrapFilterOptionValue,
 } from './utils/SearchInterface';
-import { VStringFacet } from './utils/VStringFacet';
-import { VTypeFacet } from './utils/VTypeFacet';
 
 interface DocumentsFacetsNavProps {
     facets: ComputedFacetResponse;

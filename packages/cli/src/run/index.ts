@@ -1,9 +1,9 @@
 import type { Command } from 'commander';
 import { getClient } from '../client.js';
 import { Spinner } from '../utils/console.js';
-import { type CliOptions, errorMessage } from '../utils/options.js';
 import { readFile, readStdin, writeFile } from '../utils/stdio.js';
 import { type CliExecutionResult, ExecutionQueue, ExecutionRequest } from './executor.js';
+import { errorMessage, type CliOptions } from '../utils/options.js';
 
 type RunInteractionOptions = CliOptions<{
     input?: string | boolean;

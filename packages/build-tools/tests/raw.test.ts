@@ -2,7 +2,7 @@
  * Tests for raw transformer
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { rawTransformer } from '../src/presets/raw.js';
 
 describe('Raw Transformer', () => {

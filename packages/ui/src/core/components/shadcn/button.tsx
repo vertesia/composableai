@@ -1,16 +1,17 @@
+import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { VTooltip } from './tooltip';
+
+import { cn } from '../libs/utils';
+import { Check, CopyIcon, Loader2 } from 'lucide-react';
+import clsx from 'clsx';
+import { useEffect, useState } from 'react';
 // IMPORTANT: must import via the @vertesia/ui/i18n subpath (not relative)
 // so Rollup externalizes it. A relative path bundles the i18n module — and
 // its i18nInstance — into vertesia-ui-core.js, creating a copy that stays
 // pinned to the fallback language regardless of LanguageProvider changes.
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { cva, type VariantProps } from 'class-variance-authority';
-import clsx from 'clsx';
-import { Check, CopyIcon, Loader2 } from 'lucide-react';
-import * as React from 'react';
-import { useEffect, useState } from 'react';
-import { cn } from '../libs/utils';
-import { VTooltip } from './tooltip';
 
 // Deduped per-session deprecation warnings. Keyed by prop path so each is logged once.
 const warnedDeprecatedProps = new Set<string>();
@@ -200,4 +201,4 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
 );
 CopyButton.displayName = 'CopyButton';
 
-export { Button, buttonVariants, CopyButton };
+export { Button, CopyButton, buttonVariants };

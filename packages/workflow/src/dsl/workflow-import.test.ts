@@ -1,5 +1,5 @@
 import { TestWorkflowEnvironment } from '@temporalio/testing';
-import { bundleWorkflowCode, Worker, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
+import { Worker, bundleWorkflowCode, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
 import {
     ContentEventName,
     type DSLActivityExecutionPayload,

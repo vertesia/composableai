@@ -1,11 +1,11 @@
-import type { CatalogInteractionRef } from '../interaction.js';
 import {
+    PROCESS_DEFINITION_FORMAT_VERSION,
     type BranchDefinition,
     type BranchNodeBranchDefinition,
     type NodeDefinition,
-    PROCESS_DEFINITION_FORMAT_VERSION,
     type ProcessDefinitionBody,
 } from './process.js';
+import type { CatalogInteractionRef } from '../interaction.js';
 
 export interface ProcessDefinitionValidationResult {
     valid: boolean;

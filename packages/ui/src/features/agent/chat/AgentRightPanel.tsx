@@ -1,24 +1,24 @@
-import type { AgentMessage, ConversationFile, Plan } from '@vertesia/common';
-import { FileProcessingStatus } from '@vertesia/common';
-import { Badge, Button, cn, type Tab as TabDefinition, Tabs, TabsBar, TabsPanel, useToast } from '@vertesia/ui/core';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Badge, Button, cn, useToast, Tabs, TabsBar, TabsPanel, type Tab as TabDefinition } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { useUserSession } from '@vertesia/ui/session';
 import {
     CheckCircleIcon,
     ClipboardCopyIcon,
     DownloadCloudIcon,
     FileTextIcon,
-    LayoutListIcon,
     Loader2Icon,
+    LayoutListIcon,
     XCircleIcon,
     XIcon,
 } from 'lucide-react';
-import React, { useCallback, useMemo, useState } from 'react';
-import { ArtifactsTab } from './ArtifactsTab.js';
-import { BrowserUseWidget, getLatestBrowserUseByWorkstream } from './BrowserUseWidget.js';
-import { DocumentPanel } from './DocumentPanel.js';
+import { FileProcessingStatus } from '@vertesia/common';
+import type { Plan, ConversationFile, AgentMessage } from '@vertesia/common';
+import { useUserSession } from '@vertesia/ui/session';
 import InlineSlidingPlanPanel from './ModernAgentOutput/InlineSlidingPlanPanel';
 import { getConversationUrl } from './ModernAgentOutput/utils.js';
+import { DocumentPanel } from './DocumentPanel.js';
+import { ArtifactsTab } from './ArtifactsTab.js';
+import { BrowserUseWidget, getLatestBrowserUseByWorkstream } from './BrowserUseWidget.js';
 import type { OpenDocument } from './types/document.js';
 
 // ---------------------------------------------------------------------------

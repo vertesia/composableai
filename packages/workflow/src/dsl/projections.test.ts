@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { makeProjection } from './projections.js';
 
 describe('Result Projections', () => {

@@ -1,6 +1,6 @@
 import type { Element } from 'hast';
 import React from 'react';
-import Markdown, { type Components, defaultUrlTransform } from 'react-markdown';
+import Markdown, { defaultUrlTransform, type Components } from 'react-markdown';
 import rehypeKatex from 'rehype-katex';
 import { defListHastHandlers, remarkDefinitionList } from 'remark-definition-list';
 import remarkDirective from 'remark-directive';
@@ -10,14 +10,14 @@ import remarkMath from 'remark-math';
 import remarkSupersub from 'remark-supersub';
 import { SKIP, visit } from 'unist-util-visit';
 import { CodeBlockHandlerProvider } from './CodeBlockContext';
-import { useCodeBlockRendererRegistry } from './CodeBlockRendering';
 import { createDefaultCodeBlockHandlers, ExpandCodeBlockHandler, isExpandLanguage } from './codeBlockHandlers';
+import { useCodeBlockRendererRegistry } from './CodeBlockRendering';
+import { preprocessMathDelimiters } from './preprocessMathDelimiters';
 import { MarkdownFigure } from './MarkdownFigure';
 import { MarkdownImage, type MarkdownImageProps } from './MarkdownImage';
 import { MarkdownLink, type MarkdownLinkProps } from './MarkdownLink';
 import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
 import { normalizeDirectives } from './normalizeDirectives';
-import { preprocessMathDelimiters } from './preprocessMathDelimiters';
 import { remarkDirectiveHandler } from './remarkDirectiveHandler';
 
 type MarkdownTree = Parameters<typeof visit>[0];

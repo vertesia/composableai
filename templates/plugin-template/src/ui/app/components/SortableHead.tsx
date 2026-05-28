@@ -1,5 +1,5 @@
-import { SortableTableHeaderCell, type SortDirection } from '@vertesia/ui/core';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { SortableTableHeaderCell, type SortDirection } from '@vertesia/ui/core';
 
 export type SortDir = 'asc' | 'desc';
 

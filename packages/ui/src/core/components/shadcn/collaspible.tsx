@@ -12,4 +12,4 @@ function CollapsibleContent({ ...props }: React.ComponentProps<typeof Collapsibl
     return <CollapsiblePrimitive.Content data-slot="collapsible-content" {...props} />;
 }
 
-export { Collapsible, CollapsibleContent, CollapsibleTrigger };
+export { Collapsible, CollapsibleTrigger, CollapsibleContent };

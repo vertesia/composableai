@@ -5,10 +5,10 @@ import { DropZone } from '@vertesia/ui/widgets';
 import clsx from 'clsx';
 import { type ChangeEvent, useMemo, useState } from 'react';
 import { type DocumentSelection, useOptionalDocumentSelection } from './DocumentSelectionProvider';
-import { DocumentTableColumn, type ExtendedColumnLayout } from './layout/DocumentTableColumn';
+import { type ExtendedColumnLayout, DocumentTableColumn } from './layout/DocumentTableColumn';
 import { DocumentGridView, DocumentTableView } from './layout/documentLayout';
 import { useDocumentSearch } from './search/DocumentSearchContext';
-import { DocumentUploadModal, type FileWithMetadata, useSmartFileUploadProcessing } from './upload';
+import { type FileWithMetadata, DocumentUploadModal, useSmartFileUploadProcessing } from './upload';
 
 const defaultLayout: ExtendedColumnLayout[] = [
     { name: 'ID', field: 'id', type: 'objectId?slice=-7' },

@@ -1,6 +1,6 @@
-import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUserSession } from '../UserSession';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 
 interface TenantConfig {
     tenantKey: string;

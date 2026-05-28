@@ -3,7 +3,7 @@
  * Renders a table with columns and row data
  */
 
-import { type ReactElement, useMemo } from 'react';
+import { useMemo, type ReactElement } from 'react';
 import type { ColumnTemplate } from '../types.js';
 
 const styles = {

@@ -1,11 +1,10 @@
 /**
  * Template downloading from GitHub or local copy
  */
-
+import degit from 'degit';
+import chalk from 'chalk';
 import fs from 'node:fs';
 import path from 'node:path';
-import chalk from 'chalk';
-import degit from 'degit';
 import { config } from './configuration.js';
 
 /**

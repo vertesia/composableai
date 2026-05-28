@@ -36,51 +36,54 @@
  * @packageDocumentation
  */
 
-// Components
-export {
-    createFusionFragmentCodeBlockRenderer,
-    FieldRenderer,
-    FusionFragmentHandler,
-    type FusionFragmentHandlerProps,
-    FusionFragmentProvider,
-    type FusionFragmentProviderProps,
-    FusionFragmentRenderer,
-    SectionRenderer,
-    useFusionFragmentContext,
-    useFusionFragmentContextSafe,
-} from './fusion-fragment/index.js';
-// Render utilities (text preview only - image rendering is in apps/tools)
-export {
-    generateCompactPreview,
-    generateSampleData,
-    generateTextPreview,
-} from './render/index.js';
 // Types
 export type {
-    ChartTemplate,
-    ColumnTemplate,
-    FieldRendererProps,
-    FieldTemplate,
     FragmentTemplate,
-    FusionFragmentContextValue,
+    SectionTemplate,
+    FieldTemplate,
+    ColumnTemplate,
+    ChartTemplate,
+    VegaLiteSpec,
+    ValidationResult,
+    ValidationError,
     FusionFragmentRendererProps,
     SectionRendererProps,
-    SectionTemplate,
+    FieldRendererProps,
+    FusionFragmentContextValue,
     ValidateFusionFragmentInput,
-    ValidationError,
-    ValidationResult,
-    VegaLiteSpec,
 } from './types.js';
+
+// Components
+export {
+    FusionFragmentRenderer,
+    SectionRenderer,
+    FieldRenderer,
+    FusionFragmentProvider,
+    FusionFragmentHandler,
+    useFusionFragmentContext,
+    useFusionFragmentContextSafe,
+    createFusionFragmentCodeBlockRenderer,
+    type FusionFragmentProviderProps,
+    type FusionFragmentHandlerProps,
+} from './fusion-fragment/index.js';
+
 // Validation utilities
 export {
-    FieldTemplateSchema,
+    validateTemplate,
+    parseAndValidateTemplate,
     FragmentTemplateSchema,
+    SectionTemplateSchema,
+    FieldTemplateSchema,
     findClosestKey,
     findSimilarKeys,
-    formatAvailableKeys,
     formatValidationErrors,
     formatValidationSuccess,
-    parseAndValidateTemplate,
-    SectionTemplateSchema,
-    validateTemplate,
+    formatAvailableKeys,
 } from './validation/index.js';
+
+// Render utilities (text preview only - image rendering is in apps/tools)
+export {
+    generateTextPreview,
+    generateSampleData,
+    generateCompactPreview,
+} from './render/index.js';

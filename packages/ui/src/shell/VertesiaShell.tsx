@@ -1,10 +1,10 @@
 import { ThemeProvider, ToastProvider } from '@vertesia/ui/core';
-import { TypeRegistryProvider, UserPermissionProvider } from '@vertesia/ui/features';
+import { UserPermissionProvider, TypeRegistryProvider } from '@vertesia/ui/features';
 import { LanguageBoundI18nProvider, LanguageProvider, type SupportedLanguage } from '@vertesia/ui/i18n';
 import { UserSessionProvider } from '@vertesia/ui/session';
-import type { ReactNode } from 'react';
-import { SigninScreen } from './login/SigninScreen';
 import { SplashScreen } from './SplashScreen';
+import { SigninScreen } from './login/SigninScreen';
+import type { ReactNode } from 'react';
 
 interface VertesiaShellProps {
     children: React.ReactNode;

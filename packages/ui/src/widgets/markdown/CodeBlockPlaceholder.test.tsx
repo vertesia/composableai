@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // Test the TYPE_CONFIG structure and CodeBlockPlaceholder behavior through type checks
 describe('CodeBlockPlaceholder types', () => {

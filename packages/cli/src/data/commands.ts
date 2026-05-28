@@ -1,13 +1,13 @@
-import { randomUUID } from 'node:crypto';
-import { createReadStream } from 'node:fs';
-import { basename, resolve } from 'node:path';
 import { NodeStreamSource } from '@vertesia/client/node';
 import type { DataStoreItem, ImportDataFormat, ImportDataPayload, ImportTableData } from '@vertesia/common';
 import type { Command } from 'commander';
 import mime from 'mime';
+import { randomUUID } from 'node:crypto';
+import { basename, resolve } from 'node:path';
+import { createReadStream } from 'node:fs';
 import { getArtifactStorageId } from '../agent-context.js';
 import { getClient } from '../client.js';
-import { type CliOptions, getStringOption } from '../utils/options.js';
+import { getStringOption, type CliOptions } from '../utils/options.js';
 
 const IMPORT_MODES = new Set(['append', 'replace']);
 const IMPORT_FORMATS = new Set<ImportDataFormat>(['csv', 'json', 'parquet']);

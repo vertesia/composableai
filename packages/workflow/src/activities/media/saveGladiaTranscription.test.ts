@@ -1,10 +1,10 @@
 import { MockActivityEnvironment } from '@temporalio/testing';
-import type { VertesiaClient } from '@vertesia/client';
 import { ContentEventName, type DSLActivityExecutionPayload } from '@vertesia/common';
-import type { ActivityContext, TextExtractionResult } from '@vertesia/workflow';
+import type { VertesiaClient } from '@vertesia/client';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ActivityContext, TextExtractionResult } from '@vertesia/workflow';
 import { TextExtractionStatus } from '../../result-types.js';
-import { type SaveGladiaTranscriptionParams, saveGladiaTranscription } from './saveGladiaTranscription.js';
+import { saveGladiaTranscription, type SaveGladiaTranscriptionParams } from './saveGladiaTranscription.js';
 
 // Mock setupActivity from the relative path used by the activity
 vi.mock('../../dsl/setup/ActivityContext.js', async (importOriginal) => {

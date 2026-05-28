@@ -1,8 +1,8 @@
+import { Bot } from 'lucide-react';
 import { Button } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import { Bot } from 'lucide-react';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export function HomePage() {
     const { user } = useUserSession();

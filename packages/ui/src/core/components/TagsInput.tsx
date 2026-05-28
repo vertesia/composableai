@@ -1,9 +1,9 @@
 import clsx from 'clsx';
 import { X } from 'lucide-react';
 import { useContext, useEffect, useRef, useState } from 'react';
-import { onActivateKey } from '../utils/a11y.js';
 import { Button } from './shadcn/button';
 import { Popover, PopoverContent, PopoverContext, PopoverTrigger } from './shadcn/popover';
+import { onActivateKey } from '../utils/a11y.js';
 
 interface TagsInputProps {
     options: string[];

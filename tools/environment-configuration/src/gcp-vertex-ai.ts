@@ -1,7 +1,7 @@
-import type { VertesiaClient } from '@vertesia/client';
-import { SupportedProviders } from '@vertesia/common';
 import { type AnyAuthClient, GoogleAuth } from 'google-auth-library';
+import type { VertesiaClient } from '@vertesia/client';
 import { delay, getProviderUrl } from './common.js';
+import { SupportedProviders } from '@vertesia/common';
 
 export const configureVertexAiEnvironment = async (
     vertesia: VertesiaClient,

@@ -1,10 +1,10 @@
 import type React from 'react';
 import { useMemo, useRef } from 'react';
 import { FixLinks } from './FixLinks';
-import type { NavigateOptions } from './HistoryNavigator';
 import { createRoute404 } from './Route404';
 import { RouteComponent } from './RouteComponent';
 import { NestedRouter, ReactRouterContext, type Route, useRouterContext } from './Router';
+import type { NavigateOptions } from './HistoryNavigator';
 
 interface RouterProviderProps {
     routes: Route[];

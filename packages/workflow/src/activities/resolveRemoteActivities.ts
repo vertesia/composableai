@@ -1,13 +1,13 @@
 import { log } from '@temporalio/activity';
-import type { VertesiaClient } from '@vertesia/client';
 import type {
     AppInstallationWithManifest,
     AppPackage,
     DSLActivityExecutionPayload,
     RemoteActivityDefinition,
 } from '@vertesia/common';
+import type { VertesiaClient } from '@vertesia/client';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
-import { safeFetch, URLValidationError } from '../security/ssrf.js';
+import { URLValidationError, safeFetch } from '../security/ssrf.js';
 
 /** Prefix identifying a remote activity name in DSL workflow steps */
 const REMOTE_ACTIVITY_PREFIX = 'app:';

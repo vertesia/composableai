@@ -1,4 +1,4 @@
-import { getPathSegments, type PathMatchParams, toSegments } from './path';
+import { type PathMatchParams, getPathSegments, toSegments } from './path';
 
 export interface PathMatch<T = unknown> {
     params: PathMatchParams;

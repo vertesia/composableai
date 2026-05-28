@@ -10,7 +10,7 @@
  */
 
 export {
-    generateCompactPreview,
-    generateSampleData,
     generateTextPreview,
+    generateSampleData,
+    generateCompactPreview,
 } from './textPreview.js';

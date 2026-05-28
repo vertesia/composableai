@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { applyParameterValues } from './VegaLiteChart';
 
 describe('applyParameterValues', () => {

@@ -1,8 +1,8 @@
 import type { Collection } from '@vertesia/common';
 import { Panel, Switch, useToast } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { useState } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface SyncMemberHeadsToggleProps {
     collection: Collection;

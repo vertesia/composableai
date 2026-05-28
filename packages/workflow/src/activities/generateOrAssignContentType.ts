@@ -8,7 +8,7 @@ import {
 } from '@vertesia/common';
 import { type ActivityContext, setupActivity } from '../dsl/setup/ActivityContext.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
-import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
+import { type InteractionExecutionParams, executeInteractionFromActivity } from './executeInteraction.js';
 
 const INT_SELECT_DOCUMENT_TYPE = 'sys:SelectDocumentType';
 const INT_GENERATE_METADATA_MODEL = 'sys:GenerateMetadataModel';

@@ -1,6 +1,6 @@
 import assert from 'node:assert';
-import { KoaServer } from '@koa-stack/server';
 import { FetchClient } from '../src/index.js';
+import { KoaServer } from '@koa-stack/server';
 import Endpoints from './endpoints.js';
 
 const HOST = '127.0.0.1';

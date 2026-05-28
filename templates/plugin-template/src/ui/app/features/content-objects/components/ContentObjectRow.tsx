@@ -1,7 +1,8 @@
-import { Badge } from '@vertesia/ui/core';
 import { memo } from 'react';
+import { Badge } from '@vertesia/ui/core';
 import { InlineFilterButton } from '../../../components/InlineFilterButton';
-import type { ContentObjectRowModel, FilterableField } from '../types';
+import type { FilterableField } from '../types';
+import type { ContentObjectRowModel } from '../types';
 
 interface ContentObjectRowProps {
     row: ContentObjectRowModel;

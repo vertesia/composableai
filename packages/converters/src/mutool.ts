@@ -2,7 +2,6 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import tmp from 'tmp';
-
 tmp.setGracefulCleanup();
 
 export function pdfFileToText(input: string, output: string) {

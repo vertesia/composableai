@@ -2,8 +2,8 @@
  * get a zeno client for a given token
  */
 
-import type { FETCH_FN } from '@vertesia/api-fetch-client';
 import { decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
+import type { FETCH_FN } from '@vertesia/api-fetch-client';
 import type { WorkflowExecutionBaseParams } from '@vertesia/common';
 import { Agent } from 'undici';
 import { WorkflowParamNotFoundError } from '../errors.js';

@@ -1,5 +1,5 @@
-import type { DSLWorkflowSpec } from '@vertesia/common';
 import { validateWorkflow as validate } from '@vertesia/workflow/vars';
+import type { DSLWorkflowSpec } from '@vertesia/common';
 export class ValidationError extends Error {
     constructor(message: string) {
         super(`Invalid workflow definition: ${message}`);

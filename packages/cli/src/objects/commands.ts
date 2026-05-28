@@ -1,27 +1,26 @@
-import { createReadStream, createWriteStream, type Dirent, type Stats } from 'node:fs';
-import { readdir, stat } from 'node:fs/promises';
-import { basename, join, resolve } from 'node:path';
-import { Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
-import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import type { QueryResult, VertesiaClient } from '@vertesia/client';
 import { NodeStreamSource } from '@vertesia/client/node';
 import type {
     ComplexSearchPayload,
     ContentObject,
-    ContentObjectItem,
     ContentObjectItemApiResponse,
+    ContentObjectItem,
     ContentObjectTypeItem,
     CreateContentObjectPayload,
     ObjectSearchPayload,
 } from '@vertesia/common';
 import type { Command } from 'commander';
 import enquirer from 'enquirer';
+import { type Stats, createReadStream, createWriteStream, type Dirent } from 'node:fs';
+import { readdir, stat } from 'node:fs/promises';
 import { glob } from 'glob';
 import mime from 'mime';
+import { basename, join, resolve } from 'node:path';
+import { pipeline } from 'node:stream/promises';
+import { Readable } from 'node:stream';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { getClient } from '../client.js';
-import { type CliOptions, getStringOption, hasErrorCode } from '../utils/options.js';
-
+import { getStringOption, hasErrorCode, type CliOptions } from '../utils/options.js';
 const { prompt } = enquirer;
 
 const AUTOMATIC_TYPE_SELECTION = 'auto';

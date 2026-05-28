@@ -1,7 +1,9 @@
-import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
-import { CheckIcon, ChevronRightIcon } from 'lucide-react';
 import * as React from 'react';
+import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
+
 import { cn } from '../libs/utils';
+
+import { CheckIcon, ChevronRightIcon } from 'lucide-react';
 
 const HoverMenuContext = React.createContext(false);
 
@@ -220,20 +222,20 @@ function DropdownMenuSubContent({
 
 export {
     DropdownMenu,
-    DropdownMenuCheckboxItem,
+    DropdownMenuPortal,
+    DropdownMenuTrigger,
     DropdownMenuContent,
     DropdownMenuGroup,
-    DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuPortal,
+    DropdownMenuItem,
+    DropdownMenuCheckboxItem,
     DropdownMenuRadioGroup,
     DropdownMenuRadioItem,
     DropdownMenuSeparator,
     DropdownMenuShortcut,
     DropdownMenuSub,
-    DropdownMenuSubContent,
     DropdownMenuSubTrigger,
-    DropdownMenuTrigger,
+    DropdownMenuSubContent,
 };
 
 // High-level convenience components

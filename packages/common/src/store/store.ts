@@ -1,8 +1,8 @@
 import type { ComputedFacetResponse } from '../facets.js';
-import type { JSONObject } from '../json.js';
 import type { SearchPayload } from '../payload.js';
 import type { SupportedEmbeddingTypes } from '../project.js';
 import type { ComplexSearchQuery } from '../query.js';
+import type { JSONObject } from '../json.js';
 import type { BaseObject } from './common.js';
 
 export enum ContentObjectApiHeaders {

@@ -1,4 +1,3 @@
-import type { TextFallbackOptions } from '@llumiverse/common';
 import type { VertesiaClient } from '@vertesia/client';
 import {
     ConfigModes,
@@ -6,7 +5,8 @@ import {
     type InteractionExecutionResult,
     RunDataStorageLevel,
 } from '@vertesia/common';
-import { type CliOptions, getStringOption } from '../utils/options.js';
+import type { TextFallbackOptions } from '@llumiverse/common';
+import { getStringOption, type CliOptions } from '../utils/options.js';
 
 export type CliExecutionResult = InteractionExecutionResult & {
     runNumber?: number;

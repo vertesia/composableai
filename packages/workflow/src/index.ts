@@ -6,6 +6,9 @@
  * 3. Here we export the API to be used to validate workflows and the types required to create workflow TS definitions.
  */
 
+//TODO remove this - it is only for backward compat - iot is used from old workflows
+export { dslWorkflow } from './dsl/dsl-workflow.js';
+
 export * from './activities/advanced/createDocumentTypeFromInteractionRun.js';
 export * from './activities/advanced/createOrUpdateDocumentFromInteractionRun.js';
 export * from './activities/advanced/updateDocumentFromInteractionRun.js';
@@ -22,9 +25,7 @@ export * from './activities/rateLimiter.js';
 export * from './activities/renditions/generateImageRendition.js';
 export * from './activities/renditions/generateVideoRendition.js';
 export * from './activities/setDocumentStatus.js';
-export * from './conversion/image.js';
-//TODO remove this - it is only for backward compat - iot is used from old workflows
-export { dslWorkflow } from './dsl/dsl-workflow.js';
+
 export * from './dsl/setup/ActivityContext.js';
 export * from './errors.js';
 export * from './result-types.js';
@@ -34,3 +35,5 @@ export * from './utils/renditions.js';
 export * from './utils/storage.js';
 export * from './utils/text-preview-utils.js';
 export * from './utils/tokens.js';
+
+export * from './conversion/image.js';

@@ -4,8 +4,8 @@ import type {
     McpOAuthDisconnectResponse,
     McpOAuthTokenRequest,
     McpOAuthTokenResponse,
-    OAuthAuthorizeResponse,
     OAuthAuthStatus,
+    OAuthAuthorizeResponse,
     OAuthMetadataResponse,
 } from '@vertesia/common';
 

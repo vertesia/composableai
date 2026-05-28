@@ -1,9 +1,8 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
 import type { ToolDefinition } from '@llumiverse/common';
-import type { AgentToolDefinition } from '@vertesia/common';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { join } from 'node:path';
 import type { ToolContext } from './server/types.js';
 import type {
     CollectionProperties,
@@ -17,6 +16,7 @@ import type {
     ToolUseContext,
 } from './types.js';
 import { kebabCaseToTitle } from './utils.js';
+import type { AgentToolDefinition } from '@vertesia/common';
 
 export interface SkillCollectionProperties extends CollectionProperties {
     /**

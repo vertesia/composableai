@@ -1,6 +1,6 @@
-import type { ContentObjectItem } from '@vertesia/common';
+import { createContext, useContext, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import type { Filter } from '@vertesia/ui/core';
-import { createContext, type Dispatch, type RefObject, type SetStateAction, useContext } from 'react';
+import type { ContentObjectItem } from '@vertesia/common';
 import type { SortDir } from '../../components/SortableHead';
 import type { SortField } from './types';
 

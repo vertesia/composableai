@@ -1,15 +1,15 @@
 import { type AgentMessage, AgentMessageType, type BatchProgressDetails, type Plan } from '@vertesia/common';
+import React, { useEffect, useMemo, useState, useRef, useCallback, Component, type ReactNode } from 'react';
 import { cn } from '@vertesia/ui/core';
-import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
-import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { PulsatingCircle } from '../AnimatedThinkingDots';
 export type AgentConversationViewMode = 'stacked' | 'sliding';
-
-import { ThinkingMessages } from '../WaitingMessages';
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from './BatchProgressPanel';
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
 import StreamingMessage, { type StreamingMessageClassNames } from './StreamingMessage';
 import ToolCallGroup, { type ToolCallGroupClassNames } from './ToolCallGroup';
+import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from './WorkstreamTabs';
 import {
     DONE_STATES,
     getSlidingViewMessageBuckets,
@@ -17,10 +17,10 @@ import {
     groupMessagesWithStreaming,
     mergeConsecutiveToolGroups,
     type RenderableGroup,
-    type StreamingData,
     shouldCollapseAdjacentRenderedMessage,
+    type StreamingData,
 } from './utils';
-import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from './WorkstreamTabs';
+import { ThinkingMessages } from '../WaitingMessages';
 
 /** Extended group that may carry preamble info (text from a preceding single/streaming message) */
 type RenderableGroupWithPreamble = RenderableGroup & {

@@ -1,7 +1,7 @@
-import { useUITranslation } from '@vertesia/ui/i18n';
 import type { ReactNode } from 'react';
-import { useToast } from '../../toast/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { ConfirmModal } from './ConfirmModal.js';
+import { useToast } from '../../toast/index.js';
 
 interface DeleteModalProps {
     idToDelete?: string;

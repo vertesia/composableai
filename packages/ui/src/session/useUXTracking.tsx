@@ -1,5 +1,5 @@
-import type { AuthTokenPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
+import type { AuthTokenPayload } from '@vertesia/common';
 import { logEvent } from 'firebase/analytics';
 import { getFirebaseAnalytics } from './auth/firebase';
 

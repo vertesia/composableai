@@ -6,7 +6,7 @@
 
 import { FusionFragmentHandler, FusionFragmentProvider } from '@vertesia/fusion-ux';
 import DOMPurify from 'dompurify';
-import { type ReactElement, useMemo } from 'react';
+import { useMemo, type ReactElement } from 'react';
 import type { VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
 import { useCodeBlockContext } from './CodeBlockContext';

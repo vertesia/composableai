@@ -1,7 +1,7 @@
-import { SidePanel } from '@vertesia/ui/core';
-import { useLanguage } from '@vertesia/ui/i18n';
 import clsx from 'clsx';
 import { useEffect, useState } from 'react';
+import { SidePanel } from '@vertesia/ui/core';
+import { useLanguage } from '@vertesia/ui/i18n';
 // import { FullHeightLayout } from './FullHeightLayout.js'
 import { Navbar } from './Navbar.js';
 import { Sidebar } from './Sidebar.js';

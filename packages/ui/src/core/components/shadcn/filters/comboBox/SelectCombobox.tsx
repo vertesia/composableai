@@ -1,4 +1,3 @@
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { useRef, useState } from 'react';
 import { Checkbox } from '../../checkbox';
 import {
@@ -12,8 +11,9 @@ import {
 } from '../../command';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { AnimateChangeInHeight } from '../animateChangeInHeight';
-import { DynamicLabel } from '../DynamicLabel';
 import type { FilterGroupOption, FilterOption } from '../types';
+import { DynamicLabel } from '../DynamicLabel';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export const SelectionCombobox = ({
     filterType,

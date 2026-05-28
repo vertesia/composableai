@@ -1,9 +1,8 @@
 /**
  * Install hooks for running commands before/after project creation
  */
-
-import { spawn, spawnSync } from 'node:child_process';
 import chalk from 'chalk';
+import { spawn, spawnSync } from 'node:child_process';
 import prompts from 'prompts';
 import { buildPackageManagerEnv } from './package-manager.js';
 import type { PostInstallConfig, PreInstallConfig } from './template-config.js';

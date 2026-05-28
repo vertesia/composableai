@@ -22,7 +22,7 @@
 
 import type { Plugin } from 'rollup';
 import { vertesiaImportPlugin } from './plugin.js';
-import { promptTransformer, rawTransformer, skillTransformer } from './presets/index.js';
+import { skillTransformer, rawTransformer, promptTransformer } from './presets/index.js';
 import type { PluginConfig } from './types.js';
 
 /**

@@ -1,15 +1,15 @@
-import type { FacetBucket } from '@vertesia/common';
 import {
     type Filter as BaseFilter,
-    FilterBar,
+    FilterProvider,
     FilterBtn,
+    FilterBar,
     FilterClear,
     type FilterGroup,
-    FilterProvider,
 } from '@vertesia/ui/core';
 import { useState } from 'react';
 import { useTypeRegistry } from '../store/types/TypeRegistryProvider.js';
 import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
+import type { FacetBucket } from '@vertesia/common';
 
 interface CollectionsFacetsNavProps {
     facets: {

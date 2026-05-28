@@ -1,11 +1,10 @@
 /**
  * Template file processing - variable replacement and adjustments
  */
-
+import chalk from 'chalk';
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import chalk from 'chalk';
 import type { TemplateConfig } from './template-config.js';
 import { getTemplateVersions } from './version.js';
 

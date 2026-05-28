@@ -1,10 +1,9 @@
-import { Button } from '@vertesia/ui/core';
 import dayjs from 'dayjs';
 import LocalizedFormat from 'dayjs/plugin/localizedFormat';
 import RelativeTime from 'dayjs/plugin/relativeTime';
-import { ExternalLink, Eye } from 'lucide-react';
 import { shortId } from '../../../utils';
-
+import { ExternalLink, Eye } from 'lucide-react';
+import { Button } from '@vertesia/ui/core';
 dayjs.extend(RelativeTime);
 dayjs.extend(LocalizedFormat);
 

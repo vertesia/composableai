@@ -1,8 +1,8 @@
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
+import { Button, Spinner } from '../../core/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { CheckCircle2, ExternalLink, ShieldAlertIcon } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Spinner } from '../../core/index.js';
 import { useOAuthPopup } from './useOAuthPopup.js';
 
 interface RemoteMcpConnectionButtonProps {

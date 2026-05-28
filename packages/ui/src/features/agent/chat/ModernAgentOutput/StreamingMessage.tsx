@@ -1,9 +1,9 @@
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Button, cn, useToast } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
-import dayjs from 'dayjs';
 import { Bot, CopyIcon } from 'lucide-react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dayjs from 'dayjs';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 // PERFORMANCE: Unicode cursor character - rendered inline with text
 // This avoids expensive DOM manipulation with TreeWalker on every update

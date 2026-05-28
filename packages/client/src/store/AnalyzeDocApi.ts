@@ -2,8 +2,8 @@ import { ApiTopic, type ClientBase, type IRequestParams } from '@vertesia/api-fe
 import type {
     AdaptedTable,
     AdaptTablesRequest,
-    DocAnalyzeRunStatusResponse,
     DocAnalyzerResultResponse,
+    DocAnalyzeRunStatusResponse,
     DocImage,
     DocTableCsv,
     DocTableJson,

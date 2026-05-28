@@ -1,7 +1,7 @@
 import { MessageBox } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
-import type { ReactNode } from 'react';
 import { type ErrorFallbackComponentProps, VertesiaErrorBoundary } from './VertesiaErrorBoundary';
+import type { ReactNode } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export function PanelErrorBoundary({ children }: { children: ReactNode }) {
     return <VertesiaErrorBoundary fallback={PanelErrorFallback}>{children}</VertesiaErrorBoundary>;

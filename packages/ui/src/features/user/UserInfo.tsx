@@ -1,9 +1,9 @@
 import { type ApiKey, PrincipalType, type User, type UserGroup } from '@vertesia/common';
-import { Avatar, errorMessage, Popover, PopoverContent, PopoverTrigger, Table, useFetch } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { Avatar, Popover, PopoverContent, PopoverTrigger, Table, errorMessage, useFetch } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { Users, Users2 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 const USER_CACHE: Record<string, Promise<User>> = {};
 const GROUP_CACHE: Record<string, Promise<UserGroup>> = {};

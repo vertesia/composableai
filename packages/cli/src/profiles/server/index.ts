@@ -1,6 +1,6 @@
 import { randomInt } from 'node:crypto';
-import type { Server } from 'node:http';
 import enquirer from 'enquirer';
+import type { Server } from 'node:http';
 import open from 'open';
 import { handleCors } from './cors.js';
 import { readRequestBody, startServer } from './server.js';

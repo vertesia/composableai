@@ -4,8 +4,8 @@ import type { InCodeTypeDefinition } from '@vertesia/common';
 import { type Context, Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ContentTypesCollection } from '../ContentTypesCollection.js';
-import { toPathName } from '../utils.js';
 import type { ToolServerConfig } from './types.js';
+import { toPathName } from '../utils.js';
 
 export function createContentTypesRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { types = [] } = config;

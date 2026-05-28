@@ -1,5 +1,5 @@
-import { createRequire } from 'node:module';
 import jwt from 'jsonwebtoken';
+import { createRequire } from 'node:module';
 import type { Profile } from './index.js';
 
 const require = createRequire(import.meta.url);

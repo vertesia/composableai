@@ -1,6 +1,6 @@
-import { log } from '@temporalio/activity';
 import { ContentObjectStatus, type DSLActivityExecutionPayload } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
+import { log } from '@temporalio/activity';
 
 export interface HandleDslErrorParams {
     errorMessage: string;

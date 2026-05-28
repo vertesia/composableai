@@ -2,8 +2,8 @@
  * Handle client caching and refresh of auth token
  */
 import type { AuthTokenPayload } from '@vertesia/common';
-import { Env } from '@vertesia/ui/env';
 import { jwtDecode } from 'jwt-decode';
+import { Env } from '@vertesia/ui/env';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from '../constants';
 import { getFirebaseAuth, getFirebaseAuthToken } from './firebase';
 

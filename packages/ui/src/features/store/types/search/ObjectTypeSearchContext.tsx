@@ -1,5 +1,5 @@
-import type { VertesiaClient, ZenoClient } from '@vertesia/client';
 import type { ContentObjectTypeItem, ObjectTypeSearchQuery } from '@vertesia/common';
+import type { VertesiaClient, ZenoClient } from '@vertesia/client';
 import { SharedState, useWatchSharedState } from '@vertesia/ui/core';
 import { createContext, useContext } from 'react';
 

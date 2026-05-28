@@ -1,7 +1,7 @@
-import { Button } from '@vertesia/ui/core';
-import { XIcon } from 'lucide-react';
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { XIcon } from 'lucide-react';
+import { Button } from '@vertesia/ui/core';
 
 interface InlineSlideInPanelProps {
     isOpen: boolean;

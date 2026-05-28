@@ -1,5 +1,5 @@
-import clsx from 'clsx';
 import { ChevronDownIcon, ChevronUpIcon, XIcon } from 'lucide-react';
+import clsx from 'clsx';
 import React, { type ReactNode, useEffect, useRef, useState } from 'react';
 import { type AlignType, Popup, type PopupController } from './popup/index';
 

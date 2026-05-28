@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { computeActivityOptions } from './dsl-workflow.js';
 
 describe('Workflow DSL', () => {

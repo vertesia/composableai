@@ -1,9 +1,9 @@
-import { Button, type HeroIcon } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
-import { Menu, Search } from 'lucide-react';
 import type React from 'react';
+import { Menu, Search } from 'lucide-react';
+import { Button, type HeroIcon } from '@vertesia/ui/core';
 import { useSidebarToggle } from './SidebarContext.js';
 import { TitleBar } from './TitleBar.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface NavbarProps {
     title?: string;

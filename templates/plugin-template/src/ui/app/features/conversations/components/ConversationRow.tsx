@@ -1,5 +1,5 @@
-import type { AgentRunSearchHit } from '@vertesia/common';
 import { Badge } from '@vertesia/ui/core';
+import type { AgentRunSearchHit } from '@vertesia/common';
 import { useLocaleFormat } from '@vertesia/ui/i18n';
 import { InlineFilterButton } from '../../../components/InlineFilterButton';
 import type { FilterableField } from '../types';

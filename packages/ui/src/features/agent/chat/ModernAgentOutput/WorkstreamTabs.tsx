@@ -1,7 +1,8 @@
 import type { AgentMessage } from '@vertesia/common';
 import { Button, cn } from '@vertesia/ui/core';
-import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
 import { CheckCircle, Clock } from 'lucide-react';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { getWorkstreamId } from './utils';
 
 interface WorkstreamTabsProps {

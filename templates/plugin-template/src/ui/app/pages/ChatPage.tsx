@@ -1,9 +1,9 @@
-import type { CreateAgentRunPayload } from '@vertesia/common';
+import { useCallback } from 'react';
 import { GenericPageNavHeader, ModernAgentConversation } from '@vertesia/ui/features';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink, useNavigate, useParams } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import { useCallback } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import type { CreateAgentRunPayload } from '@vertesia/common';
 import { ASSISTANT_INTERACTION } from '../constants';
 
 export function ChatPage() {

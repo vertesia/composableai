@@ -5,7 +5,7 @@ import './i18n'; // register plugin-specific translations
 import './index.css';
 // initialize dev environment
 import { AdminApp } from '@vertesia/tools-admin-ui';
-import { type Route, RouterProvider } from '@vertesia/ui/router';
+import { RouterProvider, type Route } from '@vertesia/ui/router';
 import { App } from './app/App';
 import { setUsePluginAssets } from './assets';
 import './env';

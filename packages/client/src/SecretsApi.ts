@@ -1,12 +1,12 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    WebsiteCredentialFillRequest,
+    WebsiteCredentialFillResponse,
     CreateSecretRequest,
     ListSecretsQuery,
     SecretKind,
     SecretRecord,
     UpdateSecretRequest,
-    WebsiteCredentialFillRequest,
-    WebsiteCredentialFillResponse,
 } from '@vertesia/common';
 
 export default class SecretsApi extends ApiTopic {

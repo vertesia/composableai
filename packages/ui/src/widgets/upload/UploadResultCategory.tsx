@@ -1,6 +1,6 @@
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { CheckCircleIcon } from 'lucide-react';
 import { useId, useState } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 /**
  * Props for the UploadResultCategory component

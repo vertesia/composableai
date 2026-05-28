@@ -1,24 +1,25 @@
+import { Check, ChevronsUpDown, X } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+
 import type { CollectionItem } from '@vertesia/common';
 import {
     Button,
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
     cn,
     ErrorBox,
     errorMessage,
+    useDebounce,
+    useFetch,
     Popover,
     PopoverContent,
     PopoverTrigger,
-    useDebounce,
-    useFetch,
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandItem,
+    CommandInput,
 } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { Check, ChevronsUpDown, X } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 /**
  * A component to select a collection from a list of collections.

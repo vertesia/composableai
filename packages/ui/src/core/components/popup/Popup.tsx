@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, type RefObject, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, type RefObject, type ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { PopupController, type PopupControllerOptions } from './PopupController';
 import type { Constraints } from './position';

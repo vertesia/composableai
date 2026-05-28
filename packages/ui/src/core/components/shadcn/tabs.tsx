@@ -1,6 +1,6 @@
-import * as TabsPrimitive from '@radix-ui/react-tabs';
-import type { ReactNode } from 'react';
 import * as React from 'react';
+import type { ReactNode } from 'react';
+import * as TabsPrimitive from '@radix-ui/react-tabs';
 
 import { cn } from '../libs/utils';
 import { SelectBox } from './selectBox';
@@ -355,4 +355,4 @@ const TabsContent: React.ForwardRefExoticComponent<
 );
 TabsContent.displayName = TabsPrimitive.Content.displayName;
 
-export { Tabs, TabsBar, TabsContent, TabsList, TabsPanel, TabsTrigger };
+export { Tabs, TabsBar, TabsPanel, TabsList, TabsTrigger, TabsContent };

@@ -1,14 +1,15 @@
-import type { JSONSchema } from '@llumiverse/common';
-import type { AppUIConfig, InCodeProcessDefinition, ProjectConfiguration } from '@vertesia/common';
 import type { Context } from 'hono';
 import type { ActivityCollection } from '../ActivityCollection.js';
+import type { InteractionCollection } from '../InteractionCollection.js';
+import type { SkillCollection } from '../SkillCollection.js';
+import type { RenderingTemplateCollection } from '../RenderingTemplateCollection.js';
+import type { ToolCollection } from '../ToolCollection.js';
+import type { ToolExecutionPayload } from '../types.js';
+import type { JSONSchema } from '@llumiverse/common';
+import type { AppUIConfig, InCodeProcessDefinition, ProjectConfiguration } from '@vertesia/common';
 import type { AuthSession } from '../auth.js';
 import type { ContentTypesCollection } from '../ContentTypesCollection.js';
-import type { InteractionCollection } from '../InteractionCollection.js';
-import type { RenderingTemplateCollection } from '../RenderingTemplateCollection.js';
-import type { SkillCollection } from '../SkillCollection.js';
-import type { ToolCollection } from '../ToolCollection.js';
-import type { MCPConnectionDetails, ToolExecutionPayload } from '../types.js';
+import type { MCPConnectionDetails } from '../types.js';
 
 /**
  * Extended context with parsed payload for tool/skill execution

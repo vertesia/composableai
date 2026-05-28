@@ -1,7 +1,7 @@
 import { log } from '@temporalio/activity';
 import {
-    type ContentObject,
     ContentObjectStatus,
+    type ContentObject,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
     type JSONObject,

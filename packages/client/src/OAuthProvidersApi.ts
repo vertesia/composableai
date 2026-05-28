@@ -1,10 +1,10 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     CreateOAuthProviderPayload,
-    OAuthProvider,
     OAuthProviderAccessTokenResponse,
-    OAuthProviderAuthorizeResponse,
+    OAuthProvider,
     OAuthProviderAuthStatus,
+    OAuthProviderAuthorizeResponse,
     SuccessResponse,
     UpdateOAuthProviderPayload,
 } from '@vertesia/common';

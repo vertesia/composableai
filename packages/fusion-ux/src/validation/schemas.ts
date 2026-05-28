@@ -3,7 +3,7 @@
  */
 
 import type { JSONSchemaType } from 'ajv';
-import type { ColumnTemplate, FieldTemplate, FragmentTemplate, SectionTemplate } from '../types.js';
+import type { FieldTemplate, SectionTemplate, FragmentTemplate, ColumnTemplate } from '../types.js';
 
 /**
  * Schema for field options (select dropdowns)

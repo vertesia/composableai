@@ -1,10 +1,10 @@
-import type { AgentMessage, BatchItemStatus, BatchProgressDetails } from '@vertesia/common';
+import type { AgentMessage, BatchProgressDetails, BatchItemStatus } from '@vertesia/common';
 import { Button, cn, onActivateKey, useToast } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import dayjs from 'dayjs';
-import { AlertCircle, CheckCircle, ChevronDown, ChevronRight, CopyIcon, Layers, Loader2 } from 'lucide-react';
-import { memo, useState } from 'react';
+import { CheckCircle, AlertCircle, ChevronDown, ChevronRight, CopyIcon, Layers, Loader2 } from 'lucide-react';
+import { useState, memo } from 'react';
 import { PulsatingCircle } from '../AnimatedThinkingDots';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export interface BatchProgressPanelProps {
     message: AgentMessage;

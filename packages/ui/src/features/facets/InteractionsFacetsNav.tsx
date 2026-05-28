@@ -1,12 +1,12 @@
-import type { ComputedFacetResponse } from '@vertesia/common';
 import {
     type Filter as BaseFilter,
-    FilterBar,
+    FilterProvider,
     FilterBtn,
+    FilterBar,
     FilterClear,
     type FilterGroup,
-    FilterProvider,
 } from '@vertesia/ui/core';
+import type { ComputedFacetResponse } from '@vertesia/common';
 import { useState } from 'react';
 import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
 

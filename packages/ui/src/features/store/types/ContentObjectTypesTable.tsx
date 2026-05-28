@@ -1,9 +1,10 @@
-import type { ContentObjectTypeItem } from '@vertesia/common';
-import { Table, TBody, THead } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
-import { useNavigate } from '@vertesia/ui/router';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+
+import type { ContentObjectTypeItem } from '@vertesia/common';
+import { Table, TBody, THead } from '@vertesia/ui/core';
+import { useNavigate } from '@vertesia/ui/router';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 dayjs.extend(relativeTime);
 

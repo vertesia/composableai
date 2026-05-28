@@ -1,4 +1,4 @@
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { ServerResponse, IncomingMessage } from 'node:http';
 
 const corsHeaders: Record<string, string> = {
     'Access-Control-Allow-Origin': '*',

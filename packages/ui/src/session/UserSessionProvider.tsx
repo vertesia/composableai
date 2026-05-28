@@ -1,7 +1,7 @@
 import { Env } from '@vertesia/ui/env';
 import { onAuthStateChanged } from 'firebase/auth';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { getComposableToken, STSError, UserNotFoundError } from './auth/composable';
+import { STSError, UserNotFoundError, getComposableToken } from './auth/composable';
 import { shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
