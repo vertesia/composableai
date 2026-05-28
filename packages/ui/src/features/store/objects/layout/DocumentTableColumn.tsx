@@ -1,6 +1,5 @@
-import type React from 'react';
-
 import type { ColumnLayout, ContentObjectItem } from '@vertesia/common';
+import type React from 'react';
 
 import renderers from './renderers';
 
@@ -48,7 +47,10 @@ export class DocumentTableColumn {
     path: string[];
     fallbackPath?: string[];
     previewObject?: (objectId: string) => void;
-    constructor(public layout: ExtendedColumnLayout, previewObject?: (objectId: string) => void) {
+    constructor(
+        public layout: ExtendedColumnLayout,
+        previewObject?: (objectId: string) => void,
+    ) {
         this.path = splitPath(layout.field || '');
         this.fallbackPath = layout.fallback ? splitPath(layout.fallback) : undefined;
         this.previewObject = previewObject;
@@ -88,12 +90,16 @@ export class DocumentTableColumn {
     render(object: ContentObjectItem, index: number) {
         // If there's a custom render function, wrap its result in a td
         if (this.layout.render) {
-            return <td key={index} className="whitespace-nowrap px-3 py-4 text-sm">{this.layout.render(object)}</td>;
+            return (
+                <td key={index} className="whitespace-nowrap px-3 py-4 text-sm">
+                    {this.layout.render(object)}
+                </td>
+            );
         }
-        
+
         const type = this.layout.type || 'string';
         const baseType = type.indexOf('?') > 0 ? type.substring(0, type.indexOf('?')) : type;
-        
+
         if ((baseType === 'objectId' || baseType === 'objectLink') && this.previewObject) {
             const i = type.indexOf('?');
             const params = i > 0 ? new URLSearchParams(type.substring(i + 1)) : undefined;
@@ -102,7 +108,7 @@ export class DocumentTableColumn {
             });
             return renderer(object, index);
         }
-        
+
         // Otherwise use the type-based renderer with the resolved value
         return this.renderer(this.resolveValue(object), index);
     }

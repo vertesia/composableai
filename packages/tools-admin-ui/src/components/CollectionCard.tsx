@@ -12,7 +12,9 @@ export function CollectionCard({ collection }: { collection: CollectionInfo }) {
         <NavLink href={href} className="block no-underline">
             <Card className="cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-md">
                 <CardContent className="p-5">
-                    <span className={`mb-2 inline-block rounded-full px-2 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wide ${TYPE_VARIANTS[collection.type] ?? ''}`}>
+                    <span
+                        className={`mb-2 inline-block rounded-full px-2 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wide ${TYPE_VARIANTS[collection.type] ?? ''}`}
+                    >
                         {collection.type}
                     </span>
                     <div className="font-semibold text-card-foreground">{collection.title}</div>

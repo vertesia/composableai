@@ -3,17 +3,17 @@
  * Supports .jst, .hbs, and plain text files
  */
 
-import { z } from 'zod';
-import type { TransformerPreset } from '../types.js';
-import { parseFrontmatter } from '../parsers/frontmatter.js';
 import path from 'node:path';
-import { type JSONSchema, TemplateType } from '@vertesia/common';
 import { PromptRole } from '@llumiverse/common';
+import { type JSONSchema, TemplateType } from '@vertesia/common';
+import { z } from 'zod';
+import { parseFrontmatter } from '../parsers/frontmatter.js';
+import type { TransformerPreset } from '../types.js';
 
 /**
  * Re-export types for backwards compatibility
  */
-export { TemplateType, PromptRole };
+export { PromptRole, TemplateType };
 
 /**
  * Template type alias
@@ -23,18 +23,20 @@ export type PromptContentType = TemplateType;
 /**
  * Zod schema for prompt frontmatter validation
  */
-const PromptFrontmatterSchema = z.object({
-    // Required fields
-    role: z.nativeEnum(PromptRole, {
-        error: 'Role must be one of: safety, system, user, assistant, negative',
-    }),
+const PromptFrontmatterSchema = z
+    .object({
+        // Required fields
+        role: z.nativeEnum(PromptRole, {
+            error: 'Role must be one of: safety, system, user, assistant, negative',
+        }),
 
-    // Optional fields
-    content_type: z.nativeEnum(TemplateType).optional(),
-    schema: z.string().optional(),
-    name: z.string().optional(),
-    externalId: z.string().optional(),
-}).strict();
+        // Optional fields
+        content_type: z.nativeEnum(TemplateType).optional(),
+        schema: z.string().optional(),
+        name: z.string().optional(),
+        externalId: z.string().optional(),
+    })
+    .strict();
 
 /**
  * MUST be kept in sync with @vertesia/common InCodePrompt
@@ -118,11 +120,10 @@ function inferContentType(filePath: string): TemplateType {
 function buildPromptDefinition(
     frontmatter: PromptFrontmatter,
     content: string,
-    filePath: string
+    filePath: string,
 ): { prompt: PromptDefinition; imports?: string[]; schemaImportName?: string } {
     // Determine content type from frontmatter or file extension
-    const content_type: TemplateType =
-        frontmatter.content_type || inferContentType(filePath);
+    const content_type: TemplateType = frontmatter.content_type || inferContentType(filePath);
 
     const prompt: PromptDefinition = {
         role: frontmatter.role,
@@ -181,9 +182,7 @@ export const promptTransformer: TransformerPreset = {
                     return `  - ${path}: ${err.message}`;
                 })
                 .join('\n');
-            throw new Error(
-                `Invalid frontmatter in ${filePath}:\n${errors}`
-            );
+            throw new Error(`Invalid frontmatter in ${filePath}:\n${errors}`);
         }
 
         const validatedFrontmatter = frontmatterValidation.data;
@@ -192,7 +191,7 @@ export const promptTransformer: TransformerPreset = {
         const { prompt, imports, schemaImportName } = buildPromptDefinition(
             validatedFrontmatter,
             promptContent,
-            filePath
+            filePath,
         );
 
         // If schema is specified, generate custom code with schema reference
@@ -227,5 +226,5 @@ export const promptTransformer: TransformerPreset = {
         return {
             data: prompt,
         };
-    }
+    },
 };

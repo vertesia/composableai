@@ -1,17 +1,9 @@
-import { useState, type ReactNode } from "react";
-import {
-    Button,
-    Modal,
-    ModalBody,
-    ModalFooter,
-    ModalTitle,
-    SelectBox,
-    VTooltip,
-} from "@vertesia/ui/core";
-import type { ContentObjectTypeItem } from "@vertesia/common";
-import { useTypeRegistry } from "./TypeRegistryProvider.js";
+import type { ContentObjectTypeItem } from '@vertesia/common';
+import { Button, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { CheckCircleIcon, Info } from "lucide-react";
+import { CheckCircleIcon, Info } from 'lucide-react';
+import { type ReactNode, useState } from 'react';
+import { useTypeRegistry } from './TypeRegistryProvider.js';
 
 /**
  * Props for the SelectTypeModal component
@@ -70,11 +62,7 @@ export function SelectContentTypeModal({
     };
 
     return (
-        <Modal
-            isOpen={isOpen}
-            onClose={handleClose}
-            className="w-full max-w-xl mx-auto"
-        >
+        <Modal isOpen={isOpen} onClose={handleClose} className="w-full max-w-xl mx-auto">
             <ModalTitle>{resolvedTitle}</ModalTitle>
             <ModalBody>
                 {children}
@@ -82,15 +70,18 @@ export function SelectContentTypeModal({
                 {/* Type selection */}
                 <div className="mb-4 mt-4">
                     <div className="block text-sm font-medium mb-2">
-                        {t('store.contentType')} {allowNone && <span className="text-gray-500 font-normal">{t('store.optional')}</span>}
+                        {t('store.contentType')}{' '}
+                        {allowNone && <span className="text-gray-500 font-normal">{t('store.optional')}</span>}
                     </div>
                     {allowNone ? (
                         <SelectBox
                             options={types}
                             value={selectedType}
-                            optionLabel={(type) => type ? type.name : t('store.selectContentTypeLabel')}
+                            optionLabel={(type) => (type ? type.name : t('store.selectContentTypeLabel'))}
                             placeholder={t('store.selectContentTypeAuto')}
-                            onChange={(selected: ContentObjectTypeItem | null | undefined) => setSelectedType(selected || null)}
+                            onChange={(selected: ContentObjectTypeItem | null | undefined) =>
+                                setSelectedType(selected || null)
+                            }
                             filterBy="name"
                             isClearable={true}
                         />
@@ -98,9 +89,11 @@ export function SelectContentTypeModal({
                         <SelectBox
                             options={types}
                             value={selectedType}
-                            optionLabel={(type) => type ? type.name : t('store.selectContentTypeLabel')}
+                            optionLabel={(type) => (type ? type.name : t('store.selectContentTypeLabel'))}
                             placeholder={t('store.selectContentTypeLabel')}
-                            onChange={(selected: ContentObjectTypeItem | null | undefined) => setSelectedType(selected || null)}
+                            onChange={(selected: ContentObjectTypeItem | null | undefined) =>
+                                setSelectedType(selected || null)
+                            }
                             filterBy="name"
                         />
                     )}
@@ -110,10 +103,7 @@ export function SelectContentTypeModal({
                     <div className="flex items-center text-attention">
                         <CheckCircleIcon className="size-4 me-1" />
                         {t('store.automaticTypeDetection')}
-                        <VTooltip
-                            description={t('store.automaticTypeDetectionDescription')}
-                            placement="top" size="xs"
-                        >
+                        <VTooltip description={t('store.automaticTypeDetectionDescription')} placement="top" size="xs">
                             <Info className="size-3 ms-2" />
                         </VTooltip>
                     </div>

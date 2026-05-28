@@ -1,10 +1,23 @@
-import { type Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, type FilterGroup, useIsInModal } from '@vertesia/ui/core';
-import { useState } from 'react';
 import type { ComputedFacetResponse } from '@vertesia/common';
+import {
+    type Filter as BaseFilter,
+    FilterBar,
+    FilterBtn,
+    FilterClear,
+    type FilterGroup,
+    FilterProvider,
+    useIsInModal,
+} from '@vertesia/ui/core';
+import { useState } from 'react';
 import { useTypeRegistry } from '../store/types/TypeRegistryProvider.js';
+import {
+    filterValueToQueryValue,
+    type SearchInterface,
+    setSearchQueryValue,
+    unwrapFilterOptionValue,
+} from './utils/SearchInterface';
 import { VStringFacet } from './utils/VStringFacet';
 import { VTypeFacet } from './utils/VTypeFacet';
-import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue, unwrapFilterOptionValue } from './utils/SearchInterface';
 
 interface DocumentsFacetsNavProps {
     facets: ComputedFacetResponse;
@@ -39,7 +52,7 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
             buckets: getBuckets(facets.type),
             typeRegistry: typeRegistry,
             type: 'select',
-            multiple: true
+            multiple: true,
         });
         customFilterGroups.push(typeFilterGroup);
     }
@@ -50,7 +63,7 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
             name: 'status',
             placeholder: 'Status',
             type: 'select',
-            multiple: true
+            multiple: true,
         });
         customFilterGroups.push(statusFilterGroup);
     }
@@ -62,8 +75,8 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
             type: 'stringList',
             options: getBuckets(facets.tags).map((tag) => ({
                 label: tag._id,
-                value: tag._id
-            }))
+                value: tag._id,
+            })),
         });
     }
 
@@ -72,7 +85,7 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
         placeholder: 'Created Date',
         type: 'date',
         multiple: true,
-        options: []
+        options: [],
     });
 
     customFilterGroups.push({
@@ -80,7 +93,7 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
         placeholder: 'Updated Date',
         type: 'date',
         multiple: true,
-        options: []
+        options: [],
     });
 
     return customFilterGroups;
@@ -96,7 +109,7 @@ export function useDocumentFilterHandler(search: SearchInterface) {
 
         search.clearFilters(false);
 
-        newFilters.forEach(filter => {
+        newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name;
 
@@ -109,7 +122,7 @@ export function useDocumentFilterHandler(search: SearchInterface) {
                             const dateValue = unwrapFilterOptionValue(filter.value[0]);
                             filterValue = {
                                 gte: dateValue,
-                                lte: dateValue
+                                lte: dateValue,
                             };
                         } else if (filter.value.length === 2) {
                             // Date range - start and end dates
@@ -117,7 +130,7 @@ export function useDocumentFilterHandler(search: SearchInterface) {
                             const endDate = unwrapFilterOptionValue(filter.value[1]);
                             filterValue = {
                                 gte: startDate,
-                                lte: endDate
+                                lte: endDate,
                             };
                         }
                     }
@@ -140,10 +153,7 @@ export function useDocumentFilterHandler(search: SearchInterface) {
 }
 
 // Legacy component for backward compatibility
-export function DocumentsFacetsNav({
-    facets,
-    search,
-}: DocumentsFacetsNavProps) {
+export function DocumentsFacetsNav({ facets, search }: DocumentsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
     const filterGroups = useDocumentFilterGroups(facets);
     const handleFilterLogic = useDocumentFilterHandler(search);
@@ -156,12 +166,7 @@ export function DocumentsFacetsNav({
     };
 
     return (
-        <FilterProvider
-            filterGroups={filterGroups}
-            filters={filters}
-            setFilters={handleFilterChange}
-            inModal={inModal}
-        >
+        <FilterProvider filterGroups={filterGroups} filters={filters} setFilters={handleFilterChange} inModal={inModal}>
             <div className="flex gap-2 items-center">
                 <FilterBtn />
                 <FilterBar />

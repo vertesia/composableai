@@ -1,10 +1,9 @@
-import type React from "react";
-import { FixLinks } from "./FixLinks";
-import type { NavigateOptions } from "./HistoryNavigator";
-import { RouteComponent } from "./RouteComponent";
-import { ReactRouterContext, useRouterContext } from "./Router";
-import { joinPath } from "./path";
-
+import type React from 'react';
+import { FixLinks } from './FixLinks';
+import type { NavigateOptions } from './HistoryNavigator';
+import { joinPath } from './path';
+import { RouteComponent } from './RouteComponent';
+import { ReactRouterContext, useRouterContext } from './Router';
 
 interface NestedNavigationContextProps {
     basePath: string;
@@ -14,23 +13,25 @@ interface NestedNavigationContextProps {
 export function NestedNavigationContext({ basePath, fixLinks = false, children }: NestedNavigationContextProps) {
     const ctx = useRouterContext();
 
-    const wrapWithFixLinks = fixLinks ?
-        (elem: React.ReactNode) => <FixLinks basePath={ctx.matchedRoutePath}>{elem}</FixLinks>
+    const wrapWithFixLinks = fixLinks
+        ? (elem: React.ReactNode) => <FixLinks basePath={ctx.matchedRoutePath}>{elem}</FixLinks>
         : (elem: React.ReactNode) => elem;
 
     return (
-        <ReactRouterContext.Provider value={{
-            ...ctx,
-            navigate: (to: string, options?: NavigateOptions) => {
-                if (options?.isBasePathNested === false) {
-                    // Navigate to an absolute path without adding this context's basePath
-                    return ctx.navigate(to, options);
-                }
-                const actualBasePath = options?.basePath ? joinPath(basePath, options.basePath) : basePath;
-                return ctx.navigate(to, { ...options, basePath: actualBasePath });
-            }
-        }}>
+        <ReactRouterContext.Provider
+            value={{
+                ...ctx,
+                navigate: (to: string, options?: NavigateOptions) => {
+                    if (options?.isBasePathNested === false) {
+                        // Navigate to an absolute path without adding this context's basePath
+                        return ctx.navigate(to, options);
+                    }
+                    const actualBasePath = options?.basePath ? joinPath(basePath, options.basePath) : basePath;
+                    return ctx.navigate(to, { ...options, basePath: actualBasePath });
+                },
+            }}
+        >
             {wrapWithFixLinks(children ? children : <RouteComponent />)}
         </ReactRouterContext.Provider>
-    )
+    );
 }

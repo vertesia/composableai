@@ -1,18 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUserSession } from '@vertesia/ui/session';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    useArtifactUrlCache,
     getArtifactCacheKey,
     getFileCacheKey,
+    useArtifactUrlCache,
 } from '../../features/agent/chat/useArtifactUrlCache';
 
-export type UrlScheme =
-    | 'artifact'
-    | 'image'
-    | 'store'
-    | 'document'
-    | 'collection'
-    | 'standard';
+export type UrlScheme = 'artifact' | 'image' | 'store' | 'document' | 'collection' | 'standard';
 
 export interface ResolvedUrlState {
     /** The resolved URL, or undefined if not yet resolved */
@@ -140,7 +134,7 @@ export function useResolvedUrl({
             return;
         }
 
-        setState(prev => ({ ...prev, isLoading: true, error: undefined }));
+        setState((prev) => ({ ...prev, isLoading: true, error: undefined }));
 
         const currentClient = clientRef.current;
         const currentUrlCache = urlCacheRef.current;
@@ -156,7 +150,7 @@ export function useResolvedUrl({
                             const result = await currentClient.files.getArtifactDownloadUrl(
                                 artifactRunId,
                                 path,
-                                disposition
+                                disposition,
                             );
                             return result.url;
                         });
@@ -164,7 +158,7 @@ export function useResolvedUrl({
                         const result = await currentClient.files.getArtifactDownloadUrl(
                             artifactRunId,
                             path,
-                            disposition
+                            disposition,
                         );
                         url = result.url;
                     }

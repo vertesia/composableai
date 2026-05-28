@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 
 export function useFlag(isOn = false) {
     const [state, setState] = useState(isOn);
@@ -8,6 +8,6 @@ export function useFlag(isOn = false) {
         set: (value: boolean) => setState(value),
         on: () => setState(true),
         off: () => setState(false),
-        toggle: () => setState(!state)
-    }
+        toggle: () => setState(!state),
+    };
 }

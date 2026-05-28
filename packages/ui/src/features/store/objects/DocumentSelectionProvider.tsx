@@ -1,5 +1,5 @@
-import type { ContentObjectItem } from "@vertesia/common";
-import { createContext, useContext, useEffect, useState } from "react";
+import type { ContentObjectItem } from '@vertesia/common';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 export class DocumentSelection {
     /**
@@ -9,7 +9,12 @@ export class DocumentSelection {
 
     singleSelection = false;
 
-    constructor(public object: ContentObjectItem | undefined, collectionId: string | undefined, public objects: Record<string, ContentObjectItem>, private setState: (selection: DocumentSelection) => void) {
+    constructor(
+        public object: ContentObjectItem | undefined,
+        collectionId: string | undefined,
+        public objects: Record<string, ContentObjectItem>,
+        private setState: (selection: DocumentSelection) => void,
+    ) {
         this.singleSelection = Object.keys(this.objects).length === 0;
         this.collectionId = collectionId;
     }
@@ -73,7 +78,7 @@ const DocumentSelectionContext = createContext<DocumentSelection | undefined>(un
 export function useDocumentSelection() {
     const selection = useContext(DocumentSelectionContext);
     if (!selection) {
-        throw new Error("useObjectSelection must be used within a ObjectSelectionProvider");
+        throw new Error('useObjectSelection must be used within a ObjectSelectionProvider');
     }
     return selection;
 }
@@ -93,7 +98,7 @@ export function DocumentSelectionProvider({ value, collectionId, children }: Doc
         const selection = new DocumentSelection(value, collectionId, {}, setSelection);
         setSelection(selection);
     }, [collectionId, value]);
-    return selection && (
-        <DocumentSelectionContext.Provider value={selection}>{children}</DocumentSelectionContext.Provider>
-    )
+    return (
+        selection && <DocumentSelectionContext.Provider value={selection}>{children}</DocumentSelectionContext.Provider>
+    );
 }

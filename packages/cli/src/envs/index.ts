@@ -1,8 +1,7 @@
-import type { Command } from "commander";
-import { getClient } from "../client.js";
-import type { ExecutionEnvironment } from "@vertesia/common";
-import colors from "ansi-colors";
-
+import type { ExecutionEnvironment } from '@vertesia/common';
+import colors from 'ansi-colors';
+import type { Command } from 'commander';
+import { getClient } from '../client.js';
 
 export async function listEnvironments(program: Command, envId: string | undefined, options: Record<string, unknown>) {
     const client = await getClient(program);
@@ -17,11 +16,15 @@ export async function listEnvironments(program: Command, envId: string | undefin
     }
 }
 
-
 function printEnv(env: ExecutionEnvironment, _options: Record<string, unknown>) {
-    console.log(`${colors.bold(env.name)} [${env.id}]`)
-    console.log(colors.bold("Provider:"), env.provider);
-    console.log(colors.bold("Description:"), env.description || 'n/a');
-    console.log(colors.bold("Default Model:"), env.default_model);
-    console.log(colors.bold("Enabled Models:"), env.enabled_models && env.enabled_models.length > 0 ? env.enabled_models.map(model => model.name).join(", ") : "n/a");
+    console.log(`${colors.bold(env.name)} [${env.id}]`);
+    console.log(colors.bold('Provider:'), env.provider);
+    console.log(colors.bold('Description:'), env.description || 'n/a');
+    console.log(colors.bold('Default Model:'), env.default_model);
+    console.log(
+        colors.bold('Enabled Models:'),
+        env.enabled_models && env.enabled_models.length > 0
+            ? env.enabled_models.map((model) => model.name).join(', ')
+            : 'n/a',
+    );
 }

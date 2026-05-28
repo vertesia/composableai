@@ -1,11 +1,12 @@
+import { Readable } from 'node:stream';
 import {
     type CompletionResult,
     type HttpTimeoutOptions,
     type JSONSchema,
-    type ModelOptions,
     LlumiverseError,
+    type ModelOptions,
 } from '@llumiverse/common';
-import { activityInfo, ApplicationFailure, log } from '@temporalio/activity';
+import { ApplicationFailure, activityInfo, log } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
 import { NodeStreamSource } from '@vertesia/client/node';
 import {
@@ -21,7 +22,6 @@ import { projectResult } from '../dsl/projections.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { ActivityParamInvalidError, ActivityParamNotFoundError, ResourceExhaustedError } from '../errors.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
-import { Readable } from 'node:stream';
 
 //Example:
 //@ts-expect-error

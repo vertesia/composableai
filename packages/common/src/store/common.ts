@@ -26,5 +26,4 @@ export interface BaseObject {
 
     /** ISO timestamp of when the object was last updated */
     updated_at: string;
-
 }

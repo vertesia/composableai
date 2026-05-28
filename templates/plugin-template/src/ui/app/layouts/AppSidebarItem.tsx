@@ -8,11 +8,5 @@ interface AppSidebarItemProps extends Omit<SidebarItemProps, 'href' | 'to'> {
 export function AppSidebarItem({ to, ...props }: AppSidebarItemProps) {
     const basePath = useRouterBasePath();
 
-    return (
-        <SidebarItem
-            {...props}
-            href={Path.joinPath(basePath, to)}
-            to={to}
-        />
-    );
+    return <SidebarItem {...props} href={Path.joinPath(basePath, to)} to={to} />;
 }

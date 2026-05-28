@@ -1,9 +1,8 @@
-import { VertesiaClient } from "@vertesia/client";
-import type { Command } from "commander";
-import { config, type Profile } from "./profiles/index.js";
-import { ensureProfileAccessToken } from "./profiles/auth.js";
-import { isKeyringAvailable } from "./profiles/keyring.js";
-
+import { VertesiaClient } from '@vertesia/client';
+import type { Command } from 'commander';
+import { ensureProfileAccessToken } from './profiles/auth.js';
+import { config, type Profile } from './profiles/index.js';
+import { isKeyringAvailable } from './profiles/keyring.js';
 
 let _client: VertesiaClient | undefined;
 
@@ -28,18 +27,20 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
     // Explicit environment overrides should win over profile settings so the same
     // credential can be reused against a local deployment without changing profiles.
     const env = {
-        apikey: process.env.VERTESIA_APIKEY
-            || process.env.COMPOSABLE_PROMPTS_APIKEY,
-        serverUrl: process.env.VERTESIA_SERVER_URL
+        apikey: process.env.VERTESIA_APIKEY || process.env.COMPOSABLE_PROMPTS_APIKEY,
+        serverUrl:
+            process.env.VERTESIA_SERVER_URL ||
             // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-            || process.env.COMPOSABLE_PROMPTS_SERVER_URL!,
-        storeUrl: process.env.VERTESIA_STORE_URL
+            process.env.COMPOSABLE_PROMPTS_SERVER_URL!,
+        storeUrl:
+            process.env.VERTESIA_STORE_URL ||
             // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-            || process.env.ZENO_SERVER_URL!,
-        projectId: process.env.VERTESIA_PROJECT_ID
-            || process.env.COMPOSABLE_PROMPTS_PROJECT_ID
-            || profile?.project
-            || undefined,
+            process.env.ZENO_SERVER_URL!,
+        projectId:
+            process.env.VERTESIA_PROJECT_ID ||
+            process.env.COMPOSABLE_PROMPTS_PROJECT_ID ||
+            profile?.project ||
+            undefined,
         sessionTags: profile?.session_tags ? profile.session_tags.split(/\s*,\s*/) : 'cli',
     };
 
@@ -53,13 +54,14 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
     // VERTESIA_TOKEN contains endpoint URLs, but explicit endpoint env vars
     // should win so the same token can be used against a local server.
     if (token) {
-        const endpoints = env.serverUrl && env.storeUrl
-            ? {
-                studio: env.serverUrl,
-                store: env.storeUrl,
-                token: process.env.VERTESIA_TOKEN_SERVER_URL,
-            }
-            : undefined;
+        const endpoints =
+            env.serverUrl && env.storeUrl
+                ? {
+                      studio: env.serverUrl,
+                      store: env.storeUrl,
+                      token: process.env.VERTESIA_TOKEN_SERVER_URL,
+                  }
+                : undefined;
         return VertesiaClient.fromAuthToken(token, undefined, endpoints);
     }
 
@@ -67,9 +69,13 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
         env.apikey = await ensureProfileAccessToken(profile);
         if (!env.apikey && !profile.apikey) {
             if (!isKeyringAvailable()) {
-                throw new Error('No keyring-backed auth token is available for the selected profile on this system. Use VERTESIA_APIKEY or VERTESIA_TOKEN instead.');
+                throw new Error(
+                    'No keyring-backed auth token is available for the selected profile on this system. Use VERTESIA_APIKEY or VERTESIA_TOKEN instead.',
+                );
             }
-            throw new Error('No auth token is stored for the selected profile. Run `vertesia auth refresh` to authenticate again.');
+            throw new Error(
+                'No auth token is stored for the selected profile. Run `vertesia auth refresh` to authenticate again.',
+            );
         }
     }
 

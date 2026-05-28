@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect } from "react";
-import { HistoryNavigator, type LocationChangeEvent, type NavigateOptions } from "./HistoryNavigator";
-import { type PathMatch, PathMatcher } from "./PathMatcher";
-import { isRootPath, joinPath, type PathMatchParams } from "./path";
+import { createContext, useContext, useEffect } from 'react';
+import { HistoryNavigator, type LocationChangeEvent, type NavigateOptions } from './HistoryNavigator';
+import { type PathMatch, PathMatcher } from './PathMatcher';
+import { isRootPath, joinPath, type PathMatchParams } from './path';
 
 export type RouteComponentProps = PathMatchParams;
 export type LazyRouteModule = { default: React.ComponentType<Record<string, never>> };
@@ -61,7 +61,7 @@ export class Router extends BaseRouter {
                 this.observer(event);
             }
             // only process afterChange events
-            if (event.name === "afterChange") {
+            if (event.name === 'afterChange') {
                 const match = this.match(event.location.pathname);
                 if (match?.value) {
                     updateState({
@@ -126,7 +126,7 @@ export class NestedRouter extends BaseRouter {
     }
 
     navigate(path: string, options?: NavigateOptions | undefined): void {
-         // base path is nested by default in a NestedRouter unless explicitly set to false by caller
+        // base path is nested by default in a NestedRouter unless explicitly set to false by caller
         const isBasePathNested = options?.isBasePathNested ?? true;
         let basePath: string;
 
@@ -165,12 +165,13 @@ export interface RouterContext {
 }
 
 const ReactRouterContext = createContext<RouterContext | undefined>(undefined);
+
 export { ReactRouterContext };
 
 export function useRouterContext() {
     const ctx = useContext(ReactRouterContext);
     if (!ctx) {
-        throw new Error("useRouter must be used within a RouterProvider");
+        throw new Error('useRouter must be used within a RouterProvider');
     }
     return ctx;
 }
@@ -204,7 +205,9 @@ export function usePageTitle(title: string) {
     useEffect(() => {
         const prev = document.title;
         document.title = title;
-        return () => { document.title = prev; };
+        return () => {
+            document.title = prev;
+        };
     }, [title]);
 }
 
@@ -224,12 +227,12 @@ export function useNavigationPrompt(prompt: NavigationPrompt) {
             const listener = (ev: Event) => {
                 if (doBlock) {
                     ev.preventDefault();
-                    (ev as BeforeUnloadEvent).returnValue = "";
+                    (ev as BeforeUnloadEvent).returnValue = '';
                 }
             };
-            window.addEventListener("beforeunload", listener);
+            window.addEventListener('beforeunload', listener);
             return () => {
-                window.removeEventListener("beforeunload", listener);
+                window.removeEventListener('beforeunload', listener);
             };
         }
     }, [prompt.when]);

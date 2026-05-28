@@ -1,16 +1,16 @@
-import { NodeStreamSource } from "@vertesia/client/node";
-import type { DataStoreItem, ImportDataFormat, ImportDataPayload, ImportTableData } from "@vertesia/common";
-import type { Command } from "commander";
-import mime from "mime";
-import { randomUUID } from "node:crypto";
-import { basename, resolve } from "node:path";
-import { createReadStream } from "node:fs";
-import { getArtifactStorageId } from "../agent-context.js";
-import { getClient } from "../client.js";
-import { getStringOption, type CliOptions } from "../utils/options.js";
+import { randomUUID } from 'node:crypto';
+import { createReadStream } from 'node:fs';
+import { basename, resolve } from 'node:path';
+import { NodeStreamSource } from '@vertesia/client/node';
+import type { DataStoreItem, ImportDataFormat, ImportDataPayload, ImportTableData } from '@vertesia/common';
+import type { Command } from 'commander';
+import mime from 'mime';
+import { getArtifactStorageId } from '../agent-context.js';
+import { getClient } from '../client.js';
+import { type CliOptions, getStringOption } from '../utils/options.js';
 
-const IMPORT_MODES = new Set(["append", "replace"]);
-const IMPORT_FORMATS = new Set<ImportDataFormat>(["csv", "json", "parquet"]);
+const IMPORT_MODES = new Set(['append', 'replace']);
+const IMPORT_FORMATS = new Set<ImportDataFormat>(['csv', 'json', 'parquet']);
 
 type ImportDataOptions = CliOptions<{
     json?: boolean;
@@ -31,22 +31,21 @@ export async function listDataStores(program: Command, options: CliOptions<{ jso
         return;
     }
 
-    console.log("id\tname\tstatus\ttables\trows\tbytes");
+    console.log('id\tname\tstatus\ttables\trows\tbytes');
     stores.forEach((store: DataStoreItem) => {
         console.log(
-            [
-                store.id,
-                store.name,
-                store.status,
-                store.table_count,
-                store.total_rows,
-                store.storage_bytes,
-            ].join("\t"),
+            [store.id, store.name, store.status, store.table_count, store.total_rows, store.storage_bytes].join('\t'),
         );
     });
 }
 
-export async function importData(program: Command, storeId: string, tableName: string, input: string | undefined, options: ImportDataOptions) {
+export async function importData(
+    program: Command,
+    storeId: string,
+    tableName: string,
+    input: string | undefined,
+    options: ImportDataOptions,
+) {
     const client = await getClient(program);
     const mode = normalizeMode(options.mode);
     const source = await resolveImportSource(client, input, options);
@@ -74,9 +73,9 @@ export async function importData(program: Command, storeId: string, tableName: s
     }
 }
 
-function normalizeMode(rawMode: unknown): "append" | "replace" {
-    if (typeof rawMode !== "string" || rawMode.trim() === "") {
-        return "append";
+function normalizeMode(rawMode: unknown): 'append' | 'replace' {
+    if (typeof rawMode !== 'string' || rawMode.trim() === '') {
+        return 'append';
     }
 
     const mode = rawMode.trim().toLowerCase();
@@ -85,11 +84,11 @@ function normalizeMode(rawMode: unknown): "append" | "replace" {
         process.exit(1);
     }
 
-    return mode as "append" | "replace";
+    return mode as 'append' | 'replace';
 }
 
 function normalizeFormat(rawFormat: unknown, fallbackName?: string): ImportDataFormat {
-    if (typeof rawFormat === "string" && rawFormat.trim() !== "") {
+    if (typeof rawFormat === 'string' && rawFormat.trim() !== '') {
         const format = rawFormat.trim().toLowerCase();
         if (IMPORT_FORMATS.has(format as ImportDataFormat)) {
             return format as ImportDataFormat;
@@ -103,16 +102,16 @@ function normalizeFormat(rawFormat: unknown, fallbackName?: string): ImportDataF
         return inferred;
     }
 
-    console.error("Error: Could not infer import format. Pass --format csv|json|parquet.");
+    console.error('Error: Could not infer import format. Pass --format csv|json|parquet.');
     process.exit(1);
 }
 
 function inferFormatFromName(name?: string): ImportDataFormat | undefined {
     if (!name) return undefined;
     const lower = name.toLowerCase();
-    if (lower.endsWith(".csv")) return "csv";
-    if (lower.endsWith(".json") || lower.endsWith(".jsonl") || lower.endsWith(".ndjson")) return "json";
-    if (lower.endsWith(".parquet")) return "parquet";
+    if (lower.endsWith('.csv')) return 'csv';
+    if (lower.endsWith('.json') || lower.endsWith('.jsonl') || lower.endsWith('.ndjson')) return 'json';
+    if (lower.endsWith('.parquet')) return 'parquet';
     return undefined;
 }
 
@@ -121,24 +120,24 @@ async function resolveImportSource(
     input: string | undefined,
     options: ImportDataOptions,
 ): Promise<{ tableData: ImportTableData; original: string; uploadedUri?: string }> {
-    const normalizedInput = typeof input === "string" && input.trim() !== "" ? input.trim() : "-";
+    const normalizedInput = typeof input === 'string' && input.trim() !== '' ? input.trim() : '-';
 
-    if (normalizedInput.startsWith("gs://") || normalizedInput.startsWith("s3://")) {
+    if (normalizedInput.startsWith('gs://') || normalizedInput.startsWith('s3://')) {
         return {
             original: normalizedInput,
             tableData: {
-                source: "gcs",
+                source: 'gcs',
                 uri: normalizedInput,
                 format: normalizeFormat(options.format, normalizedInput),
             },
         };
     }
 
-    if (normalizedInput.startsWith("http://") || normalizedInput.startsWith("https://")) {
+    if (normalizedInput.startsWith('http://') || normalizedInput.startsWith('https://')) {
         return {
             original: normalizedInput,
             tableData: {
-                source: "url",
+                source: 'url',
                 uri: normalizedInput,
                 format: normalizeFormat(options.format, normalizedInput),
             },
@@ -148,17 +147,18 @@ async function resolveImportSource(
     const uploadName = resolveUploadName(normalizedInput, options.name);
     const format = normalizeFormat(options.format, uploadName);
     const uploadPath = buildImportUploadPath(uploadName, options);
-    const mimeType = getStringOption(options.mime) || mime.getType(uploadName) || "application/octet-stream";
-    const source = normalizedInput === "-"
-        ? new NodeStreamSource(process.stdin, uploadName, mimeType, uploadPath)
-        : new NodeStreamSource(createReadStream(resolve(normalizedInput)), uploadName, mimeType, uploadPath);
+    const mimeType = getStringOption(options.mime) || mime.getType(uploadName) || 'application/octet-stream';
+    const source =
+        normalizedInput === '-'
+            ? new NodeStreamSource(process.stdin, uploadName, mimeType, uploadPath)
+            : new NodeStreamSource(createReadStream(resolve(normalizedInput)), uploadName, mimeType, uploadPath);
     const uploadedUri = await client.files.uploadFile(source);
 
     return {
         original: normalizedInput,
         uploadedUri,
         tableData: {
-            source: "gcs",
+            source: 'gcs',
             uri: uploadedUri,
             format,
         },
@@ -166,12 +166,12 @@ async function resolveImportSource(
 }
 
 function resolveUploadName(input: string, explicitName: unknown): string {
-    if (typeof explicitName === "string" && explicitName.trim() !== "") {
+    if (typeof explicitName === 'string' && explicitName.trim() !== '') {
         return basename(explicitName.trim());
     }
 
-    if (input === "-") {
-        console.error("Error: --name is required when importing from stdin.");
+    if (input === '-') {
+        console.error('Error: --name is required when importing from stdin.');
         process.exit(1);
     }
 
@@ -180,14 +180,12 @@ function resolveUploadName(input: string, explicitName: unknown): string {
 
 function buildImportUploadPath(name: string, options: ImportDataOptions): string {
     const optionPrefix = getStringOption(options.prefix);
-    const prefix = optionPrefix
-        ? optionPrefix.replace(/^\/+|\/+$/g, "")
-        : `imports/${getArtifactStorageId(options)}`;
+    const prefix = optionPrefix ? optionPrefix.replace(/^\/+|\/+$/g, '') : `imports/${getArtifactStorageId(options)}`;
     return `${prefix}/${Date.now()}-${randomUUID()}-${name}`;
 }
 
 function buildImportMessage(tableName: string, original: string, explicitMessage: unknown): string {
-    if (typeof explicitMessage === "string" && explicitMessage.trim() !== "") {
+    if (typeof explicitMessage === 'string' && explicitMessage.trim() !== '') {
         return explicitMessage.trim();
     }
     return `Import ${original} into ${tableName} via vertesia CLI`;

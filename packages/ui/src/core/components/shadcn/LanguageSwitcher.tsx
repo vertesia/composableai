@@ -4,7 +4,7 @@
 // module (including LanguageProviderContext) into vertesia-ui-core.js,
 // creating a private context separate from the one the shell mounts.
 // setLanguage would then no-op.
-import { SUPPORTED_LANGUAGES, useLanguage, useUITranslation, type SupportedLanguage } from '@vertesia/ui/i18n';
+import { SUPPORTED_LANGUAGES, type SupportedLanguage, useLanguage, useUITranslation } from '@vertesia/ui/i18n';
 import { SelectBox } from './selectBox';
 
 /**
@@ -40,7 +40,11 @@ export function LanguageSwitcher({ label, className }: LanguageSwitcherProps = {
     const resolvedLabel = label === false ? false : (label ?? t('language.label'));
 
     return (
-        <div className={className ?? (resolvedLabel ? 'flex justify-between px-2 items-center gap-3' : 'flex items-center')}>
+        <div
+            className={
+                className ?? (resolvedLabel ? 'flex justify-between px-2 items-center gap-3' : 'flex items-center')
+            }
+        >
             {resolvedLabel && <p className="text-sm font-semibold">{resolvedLabel}</p>}
             <SelectBox<SupportedLanguage>
                 options={SUPPORTED_LANGUAGES as readonly SupportedLanguage[] as SupportedLanguage[]}

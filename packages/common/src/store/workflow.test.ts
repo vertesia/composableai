@@ -1,15 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-    AgentMessageType,
     type AgentMessage,
+    AgentMessageType,
     type CompactMessage,
-    normalizeMessageType,
-    toCompactMessage,
-    toAgentMessage,
-    parseMessage,
+    createCompactMessage,
     isCompactMessage,
     isLegacyMessage,
-    createCompactMessage,
+    normalizeMessageType,
+    parseMessage,
+    toAgentMessage,
+    toCompactMessage,
 } from './workflow.js';
 
 describe('CompactMessage converters', () => {
@@ -78,12 +78,14 @@ describe('CompactMessage converters', () => {
     describe('isLegacyMessage', () => {
         it('returns true for legacy messages', () => {
             expect(isLegacyMessage({ type: AgentMessageType.UPDATE })).toBe(true);
-            expect(isLegacyMessage({
-                type: AgentMessageType.ANSWER,
-                timestamp: 12345,
-                workflow_run_id: 'run-1',
-                message: 'test'
-            })).toBe(true);
+            expect(
+                isLegacyMessage({
+                    type: AgentMessageType.ANSWER,
+                    timestamp: 12345,
+                    workflow_run_id: 'run-1',
+                    message: 'test',
+                }),
+            ).toBe(true);
         });
 
         it('returns false for compact messages', () => {

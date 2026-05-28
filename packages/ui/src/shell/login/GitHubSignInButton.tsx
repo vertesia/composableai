@@ -1,7 +1,7 @@
-import { GithubAuthProvider, signInWithRedirect } from "firebase/auth";
-import { getFirebaseAuth } from "@vertesia/ui/session";
-import { Button } from "@vertesia/ui/core";
-import { useUITranslation } from "@vertesia/ui/i18n";
+import { Button } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { getFirebaseAuth } from '@vertesia/ui/session';
+import { GithubAuthProvider, signInWithRedirect } from 'firebase/auth';
 
 interface GitHubSignInButtonProps {
     redirectTo?: string;
@@ -9,10 +9,10 @@ interface GitHubSignInButtonProps {
 export default function GitHubSignInButton(_props: GitHubSignInButtonProps) {
     const { t } = useUITranslation();
     const signIn = () => {
-        localStorage.removeItem("tenantName");
+        localStorage.removeItem('tenantName');
         const provider = new GithubAuthProvider();
-        provider.addScope("profile");
-        provider.addScope("email");
+        provider.addScope('profile');
+        provider.addScope('email');
         /*provider.setCustomParameters({
             redirect_uri: redirectPath,
         });*/
@@ -20,9 +20,11 @@ export default function GitHubSignInButton(_props: GitHubSignInButtonProps) {
     };
 
     return (
-        <Button variant={"outline"}
+        <Button
+            variant={'outline'}
             onClick={signIn}
-            className="w-full py-5 flex rounded-lg hover:shadow-sm transition duration-150 text-center mb-2">
+            className="w-full py-5 flex rounded-lg hover:shadow-sm transition duration-150 text-center mb-2"
+        >
             {/* <Github className="size-6" /> */}
             <img
                 className="size-6 bg-white rounded-full"

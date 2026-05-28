@@ -1,5 +1,6 @@
 import type {
     CompletionResult,
+    ExecutionTokenUsage,
     HttpTimeoutOptions,
     JSONObject,
     JSONSchema,
@@ -10,9 +11,8 @@ import type {
     ToolDefinition,
     ToolUse,
 } from '@llumiverse/common';
-
-import type { ExecutionTokenUsage } from '@llumiverse/common';
-
+import type { PrincipalType } from './apikey.js';
+import type { MCPToolAnnotations } from './apps.js';
 import type { ExecutionEnvironmentRef } from './environment.js';
 import type { ProjectRef } from './project.js';
 import type {
@@ -28,8 +28,6 @@ import type { ExecutionRunDocRef } from './runs.js';
 import type { ConversationState } from './store/conversation-state.js';
 import type { AccountRef } from './user.js';
 import type { LlmCallType } from './workflow-analytics.js';
-import type { MCPToolAnnotations } from './apps.js';
-import type { PrincipalType } from './apikey.js';
 
 export interface InteractionExecutionError {
     code: string;
@@ -687,16 +685,17 @@ export interface AgentRunnerOptions {
 // ================= User Communication Channels ====================
 // Import for local use
 import type { UserChannel } from './email.js';
-// Re-exported from email.ts for backwards compatibility
-export {
-    isEmailChannel,
-    isInteractiveChannel,
-} from './email.js';
+
 export type {
     EmailChannel,
     EmailRouteData,
     InteractiveChannel,
     UserChannel,
+} from './email.js';
+// Re-exported from email.ts for backwards compatibility
+export {
+    isEmailChannel,
+    isInteractiveChannel,
 } from './email.js';
 // ================= end user communication channels ====================
 

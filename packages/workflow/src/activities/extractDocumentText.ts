@@ -1,35 +1,32 @@
-import { log } from "@temporalio/activity";
-import type { VertesiaClient } from "@vertesia/client";
+import { log } from '@temporalio/activity';
+import type { VertesiaClient } from '@vertesia/client';
 import type {
     ContentObject,
     CreateContentObjectPayload,
     DSLActivityExecutionPayload,
     DSLActivitySpec,
     WorkflowInputFile,
-} from "@vertesia/common";
-import { markdownWithMarkitdown } from "../conversion/markitdown.js";
-import { mutoolPdfToText } from "../conversion/mutool.js";
-import { markdownWithPandoc } from "../conversion/pandoc.js";
-import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { DocumentNotFoundError } from "../errors.js";
-import { type TextExtractionResult, TextExtractionStatus } from "../result-types.js";
-import { fetchBlobAsBuffer, md5 } from "../utils/blobs.js";
-import {
-    createFileSourceResult,
-    uploadTextPreviewToStorage
-} from "../utils/text-preview-utils.js";
-import { countTokens } from "../utils/tokens.js";
+} from '@vertesia/common';
+import { markdownWithMarkitdown } from '../conversion/markitdown.js';
+import { mutoolPdfToText } from '../conversion/mutool.js';
+import { markdownWithPandoc } from '../conversion/pandoc.js';
+import { setupActivity } from '../dsl/setup/ActivityContext.js';
+import { DocumentNotFoundError } from '../errors.js';
+import { type TextExtractionResult, TextExtractionStatus } from '../result-types.js';
+import { fetchBlobAsBuffer, md5 } from '../utils/blobs.js';
+import { createFileSourceResult, uploadTextPreviewToStorage } from '../utils/text-preview-utils.js';
+import { countTokens } from '../utils/tokens.js';
 
 //@ts-expect-error
 const _JSON: DSLActivitySpec = {
-    name: "extractDocumentText",
+    name: 'extractDocumentText',
 };
 
 export interface ExtractDocumentTextParams {
     output_storage_path?: string;
 }
 export interface ExtractDocumentText extends DSLActivitySpec<ExtractDocumentTextParams> {
-    name: "extractDocumentText";
+    name: 'extractDocumentText';
     projection?: never;
 }
 
@@ -60,7 +57,7 @@ async function extractFromObject(
     const r = await client.objects.find({
         query: { _id: objectId },
         limit: 1,
-        select: "+text",
+        select: '+text',
     });
     const doc = r[0] as ContentObject;
     if (!doc) {
@@ -72,15 +69,15 @@ async function extractFromObject(
 
     if (!doc.content?.type || !doc.content?.source) {
         if (doc.text) {
-            return createResponse(doc, doc.text, TextExtractionStatus.skipped, "Text present and no source or type");
+            return createResponse(doc, doc.text, TextExtractionStatus.skipped, 'Text present and no source or type');
         } else {
-            return createResponse(doc, "", TextExtractionStatus.error, "No source or type found");
+            return createResponse(doc, '', TextExtractionStatus.error, 'No source or type found');
         }
     }
 
     //skip if text already extracted and proper etag
     if (doc.text && doc.text.length > 0 && doc.text_etag === doc.content.etag) {
-        return createResponse(doc, doc.text, TextExtractionStatus.skipped, "Text already extracted");
+        return createResponse(doc, doc.text, TextExtractionStatus.skipped, 'Text already extracted');
     }
 
     let fileBuffer: Buffer;
@@ -89,14 +86,14 @@ async function extractFromObject(
     } catch (e: unknown) {
         const message = e instanceof Error ? e.message : String(e);
         log.error(`Error reading file: ${e}`);
-        return createResponse(doc, "", TextExtractionStatus.error, message);
+        return createResponse(doc, '', TextExtractionStatus.error, message);
     }
 
     const txt = await extractTextFromBuffer(fileBuffer, doc.content.type);
     if (!txt) {
         return createResponse(
             doc,
-            doc.text ?? "",
+            doc.text ?? '',
             TextExtractionStatus.skipped,
             `Unsupported mime type: ${doc.content.type}`,
         );
@@ -122,7 +119,7 @@ async function extractFromObject(
 async function extractFromFileSource(
     client: VertesiaClient,
     input_file: WorkflowInputFile,
-    output_storage_path: string
+    output_storage_path: string,
 ): Promise<TextExtractionResult> {
     log.info(`Extracting text from ${input_file}`);
 
@@ -138,7 +135,7 @@ async function extractFromFileSource(
 
     // Upload extracted text to storage
     if (txt && output_storage_path) {
-        await uploadTextPreviewToStorage(client, txt, output_storage_path, "Document");
+        await uploadTextPreviewToStorage(client, txt, output_storage_path, 'Document');
     }
 
     return createFileSourceResult(input_file.url, output_storage_path, txt);
@@ -148,67 +145,67 @@ async function extractTextFromBuffer(fileBuffer: Buffer, mimeType: string): Prom
     let txt: string;
 
     switch (mimeType) {
-        case "application/pdf":
+        case 'application/pdf':
             txt = await mutoolPdfToText(fileBuffer);
             break;
 
-        case "text/plain":
-            txt = fileBuffer.toString("utf8");
+        case 'text/plain':
+            txt = fileBuffer.toString('utf8');
             break;
 
         //docx
-        case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-            txt = await markdownWithMarkitdown(fileBuffer, "docx");
+        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+            txt = await markdownWithMarkitdown(fileBuffer, 'docx');
             break;
 
         //pptx
-        case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
-            txt = await markdownWithMarkitdown(fileBuffer, "pptx");
+        case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+            txt = await markdownWithMarkitdown(fileBuffer, 'pptx');
             break;
 
         //html
-        case "text/html":
-            txt = await markdownWithPandoc(fileBuffer, "html");
+        case 'text/html':
+            txt = await markdownWithPandoc(fileBuffer, 'html');
             break;
 
         //opendocument
-        case "application/vnd.oasis.opendocument.text":
-            txt = await markdownWithPandoc(fileBuffer, "odt");
+        case 'application/vnd.oasis.opendocument.text':
+            txt = await markdownWithPandoc(fileBuffer, 'odt');
             break;
 
         //rtf
-        case "application/rtf":
-            txt = await markdownWithPandoc(fileBuffer, "rtf");
+        case 'application/rtf':
+            txt = await markdownWithPandoc(fileBuffer, 'rtf');
             break;
 
         //markdown
-        case "text/markdown":
-            txt = fileBuffer.toString("utf8");
+        case 'text/markdown':
+            txt = fileBuffer.toString('utf8');
             break;
 
         //csv
-        case "text/csv":
-            txt = fileBuffer.toString("utf8");
+        case 'text/csv':
+            txt = fileBuffer.toString('utf8');
             break;
 
         //typescript
-        case "application/typescript":
-            txt = fileBuffer.toString("utf8");
+        case 'application/typescript':
+            txt = fileBuffer.toString('utf8');
             break;
 
         //javascript
-        case "application/javascript":
-            txt = fileBuffer.toString("utf8");
+        case 'application/javascript':
+            txt = fileBuffer.toString('utf8');
             break;
 
         //json
-        case "application/json":
-            txt = fileBuffer.toString("utf8");
+        case 'application/json':
+            txt = fileBuffer.toString('utf8');
             break;
 
         default:
             if (sniffIfText(fileBuffer)) {
-                txt = fileBuffer.toString("utf8"); //TODO: add charset detection
+                txt = fileBuffer.toString('utf8'); //TODO: add charset detection
                 break;
             }
             return null;
@@ -258,8 +255,8 @@ function sniffIfText(buf: Buffer) {
 
     // Additional check for valid UTF-8 encoding
     try {
-        const s = buf.toString("utf8");
-        return s.length > 0 && !s.includes("\uFFFD"); // Replacement character
+        const s = buf.toString('utf8');
+        return s.length > 0 && !s.includes('\uFFFD'); // Replacement character
     } catch {
         return false;
     }

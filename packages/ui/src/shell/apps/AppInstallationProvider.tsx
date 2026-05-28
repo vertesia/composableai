@@ -1,15 +1,16 @@
-import type { AppInstallationWithManifest } from "@vertesia/common";
-import { createContext, type ReactNode, useContext } from "react";
-
+import type { AppInstallationWithManifest } from '@vertesia/common';
+import { createContext, type ReactNode, useContext } from 'react';
 
 export const AppInstallationContext = createContext<AppInstallationWithManifest | null>(null);
 
-export function AppInstallationProvider({ installation, children }: { installation: AppInstallationWithManifest, children: ReactNode }) {
-    return (
-        <AppInstallationContext.Provider value={installation}>
-            {children}
-        </AppInstallationContext.Provider>
-    )
+export function AppInstallationProvider({
+    installation,
+    children,
+}: {
+    installation: AppInstallationWithManifest;
+    children: ReactNode;
+}) {
+    return <AppInstallationContext.Provider value={installation}>{children}</AppInstallationContext.Provider>;
 }
 
 /**
@@ -18,5 +19,3 @@ export function AppInstallationProvider({ installation, children }: { installati
 export function useAppInstallation() {
     return useContext(AppInstallationContext);
 }
-
-

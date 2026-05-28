@@ -1,5 +1,5 @@
-import jwt from 'jsonwebtoken';
 import { createRequire } from 'node:module';
+import jwt from 'jsonwebtoken';
 import type { Profile } from './index.js';
 
 const require = createRequire(import.meta.url);
@@ -9,7 +9,10 @@ const AUTH_BUNDLE_VERSION = 1;
 const KEYRING_UNAVAILABLE_MESSAGE = 'Native keyring is required for Vertesia CLI profile authentication.';
 
 interface KeyringModule {
-    Entry: new (service: string, account: string) => {
+    Entry: new (
+        service: string,
+        account: string,
+    ) => {
         getPassword(): string | null;
         setPassword(password: string): void;
         deletePassword(): void;

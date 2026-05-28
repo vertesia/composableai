@@ -1,10 +1,7 @@
-import { useCallback } from 'react';
-
 import { errorMessage, useToast } from '@vertesia/ui/core';
+import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-
-import { useUITranslation } from '@vertesia/ui/i18n';
-import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
+import { useCallback } from 'react';
 import { useDocumentSearch } from '../../search';
 import { useObjectsActionContext } from '../ObjectsActionHooks';
 import type { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
@@ -24,7 +21,7 @@ export function RemoveFromCollectionActionComponent({ action, objectIds, collect
                 status: 'error',
                 title: t('store.actions.noObjectsSelected'),
                 description: t('store.actions.pleaseSelectObjectsToRemove'),
-                duration: 3000
+                duration: 3000,
             });
             return Promise.resolve(false);
         }
@@ -34,39 +31,51 @@ export function RemoveFromCollectionActionComponent({ action, objectIds, collect
                 status: 'error',
                 title: t('store.actions.noCollectionContext'),
                 description: t('store.actions.cannotRemoveNoCollection'),
-                duration: 3000
+                duration: 3000,
             });
             return Promise.resolve(false);
         }
 
-        return client.store.collections.deleteMembers(collectionId, objectIds).then(() => {
-            const plural = objectIds.length > 1 ? 's' : '';
-            toast({
-                status: 'success',
-                title: `${objectIds.length} object${plural} removed from collection`,
-                description: `Objects have been removed from the collection`,
-                duration: 2000
-            });
+        return client.store.collections
+            .deleteMembers(collectionId, objectIds)
+            .then(() => {
+                const plural = objectIds.length > 1 ? 's' : '';
+                toast({
+                    status: 'success',
+                    title: `${objectIds.length} object${plural} removed from collection`,
+                    description: `Objects have been removed from the collection`,
+                    duration: 2000,
+                });
 
-            if (search) {
-                ctx.params?.selection?.removeAll();
-                search.search();
-            }
-        }).catch((err: unknown) => {
-            toast({
-                status: 'error',
-                title: t('store.actions.errorRemovingObjects'),
-                description: errorMessage(err),
-                duration: 5000
+                if (search) {
+                    ctx.params?.selection?.removeAll();
+                    search.search();
+                }
+            })
+            .catch((err: unknown) => {
+                toast({
+                    status: 'error',
+                    title: t('store.actions.errorRemovingObjects'),
+                    description: errorMessage(err),
+                    duration: 5000,
+                });
             });
-        });
-    }, [client.store.collections.deleteMembers, collectionId, ctx.params?.selection?.removeAll, objectIds, search, search?.search, t, toast]);
+    }, [
+        client.store.collections.deleteMembers,
+        collectionId,
+        ctx.params?.selection?.removeAll,
+        objectIds,
+        search,
+        search?.search,
+        t,
+        toast,
+    ]);
 
     return (
         <ConfirmAction action={action} callback={callback}>
             {/* Action component content if needed */}
         </ConfirmAction>
-    )
+    );
 }
 
 const t_static = i18nInstance.getFixedT(null, NAMESPACE);
@@ -77,5 +86,5 @@ export const RemoveFromCollectionAction: ObjectsActionSpec = {
     confirm: true,
     confirmationText: t_static('store.actions.confirmRemoveFromCollection'),
     component: RemoveFromCollectionActionComponent,
-    destructive: true
-}
+    destructive: true,
+};

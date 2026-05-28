@@ -1,25 +1,24 @@
-import { jwtDecode } from 'jwt-decode';
-import { createContext, useContext } from 'react';
-
 import { VertesiaClient } from '@vertesia/client';
 import type { AuthTokenPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
+import { jwtDecode } from 'jwt-decode';
+import { createContext, useContext } from 'react';
 
 import { getComposableToken } from './auth/composable';
 import { shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
+
 export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
 
-const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
+const CENTRAL_AUTH_REDIRECT = 'https://internal-auth.vertesia.app/';
 
 export interface UserSessionLoginOptions {
     loadOnboardingStatus?: boolean;
 }
 
 class UserSession {
-
     isLoading = true;
     client: VertesiaClient;
     authError?: Error;
@@ -30,14 +29,13 @@ class UserSession {
     onboardingComplete?: boolean;
 
     constructor(client?: VertesiaClient, setSession?: (session: UserSession) => void) {
-
         if (client) {
             this.client = client;
         } else {
             this.client = new VertesiaClient({
                 serverUrl: Env.endpoints.studio,
                 storeUrl: Env.endpoints.zeno,
-                tokenServerUrl: Env.endpoints.sts
+                tokenServerUrl: Env.endpoints.sts,
             });
         }
 
@@ -52,11 +50,13 @@ class UserSession {
         return this.client.store;
     }
 
-    get user() { //compatibility
+    get user() {
+        //compatibility
         return this.authToken;
     }
 
-    get account() { //compatibility
+    get account() {
+        //compatibility
         return this.authToken?.account;
     }
 
@@ -64,17 +64,18 @@ class UserSession {
         return this.authToken?.project;
     }
 
-    get accounts() { //compatibility
+    get accounts() {
+        //compatibility
         return this.authToken?.accounts;
     }
 
     get authCallback() {
-        return this.rawAuthToken.then(token => `Bearer ${token}`);
+        return this.rawAuthToken.then((token) => `Bearer ${token}`);
     }
 
     get rawAuthToken() {
-        return getComposableToken().then(res => {
-            const token = res?.rawToken
+        return getComposableToken().then((res) => {
+            const token = res?.rawToken;
             if (!token) {
                 throw new Error('No token available');
             }
@@ -83,7 +84,8 @@ class UserSession {
         });
     }
 
-    signOut() { //compatibility
+    signOut() {
+        //compatibility
         this.logout();
     }
 
@@ -94,13 +96,18 @@ class UserSession {
     async login(token: string, options: UserSessionLoginOptions = {}) {
         this.authError = undefined;
         this.isLoading = false;
-        this.client.withAuthCallback(() => this.authCallback)
+        this.client.withAuthCallback(() => this.authCallback);
         this.authToken = jwtDecode(token) as unknown as AuthTokenPayload;
-        console.log(`Logging in as ${this.authToken?.name} with account ${this.authToken?.account.name} (${this.authToken?.account.id}, and project ${this.authToken?.project?.name} (${this.authToken?.project?.id})`);
+        console.log(
+            `Logging in as ${this.authToken?.name} with account ${this.authToken?.account.name} (${this.authToken?.account.id}, and project ${this.authToken?.project?.name} (${this.authToken?.project?.id})`,
+        );
 
         //store selected account in local storage
         localStorage.setItem(LastSelectedAccountId_KEY, this.authToken.account.id);
-        localStorage.setItem(`${LastSelectedProjectId_KEY}-${this.authToken.account.id}`, this.authToken.project?.id ?? '');
+        localStorage.setItem(
+            `${LastSelectedProjectId_KEY}-${this.authToken.account.id}`,
+            this.authToken.project?.id ?? '',
+        );
         // notify the host app of the login
         Env.onLogin?.(this.authToken);
 
@@ -109,13 +116,11 @@ class UserSession {
         }
 
         return Promise.resolve();
-
     }
 
     isLoggedIn() {
         return !!this.authToken;
     }
-
 
     logout() {
         console.log('Logging out');
@@ -132,9 +137,9 @@ class UserSession {
 
             const logoutUrl = new URL(CENTRAL_AUTH_REDIRECT);
             const currentUrl = new URL(window.location.href);
-            currentUrl.hash = "";
-            logoutUrl.pathname = "/logout";
-            logoutUrl.searchParams.set("redirect_uri", currentUrl.toString());
+            currentUrl.hash = '';
+            logoutUrl.pathname = '/logout';
+            logoutUrl.searchParams.set('redirect_uri', currentUrl.toString());
             location.replace(logoutUrl.toString());
         } else {
             // Use Firebase logout directly
@@ -153,7 +158,7 @@ class UserSession {
             // Only navigate if user was actually logged in to avoid
             // infinite reload loop on fresh/incognito sessions.
             if (wasLoggedIn) {
-                location.replace("/");
+                location.replace('/');
             }
         }
     }
@@ -180,40 +185,46 @@ class UserSession {
     }
 
     async fetchAccounts() {
-        return this.client.accounts.list().then(accounts => {
-            if (!this.authToken) {
-                throw new Error('No token available');
-            }
-            this.authToken.accounts = accounts;
-            this.setSession?.(this.clone());
-        }).catch(err => {
-            console.error('Failed to fetch accounts', err);
-            throw err;
-        });
+        return this.client.accounts
+            .list()
+            .then((accounts) => {
+                if (!this.authToken) {
+                    throw new Error('No token available');
+                }
+                this.authToken.accounts = accounts;
+                this.setSession?.(this.clone());
+            })
+            .catch((err) => {
+                console.error('Failed to fetch accounts', err);
+                throw err;
+            });
     }
 
     async fetchProjects(accountId: string) {
-        return this.client.projects.list([accountId]).then(projects => {
-            if (!this.authToken) {
-                throw new Error('No token available');
-            }
-            this.authToken = {
-                ...this.authToken,
-                accounts: this.authToken.accounts?.map(account => {
-                    if (account.id === accountId) {
-                        return {
-                            ...account,
-                            projects: projects.filter(project => project.account === accountId)
+        return this.client.projects
+            .list([accountId])
+            .then((projects) => {
+                if (!this.authToken) {
+                    throw new Error('No token available');
+                }
+                this.authToken = {
+                    ...this.authToken,
+                    accounts: this.authToken.accounts?.map((account) => {
+                        if (account.id === accountId) {
+                            return {
+                                ...account,
+                                projects: projects.filter((project) => project.account === accountId),
+                            };
                         }
-                    }
-                    return account;
-                })
-            };
-            this.setSession?.(this.clone());
-        }).catch(err => {
-            console.error('Failed to fetch projects', err);
-            throw err;
-        });
+                        return account;
+                    }),
+                };
+                this.setSession?.(this.clone());
+            })
+            .catch((err) => {
+                console.error('Failed to fetch projects', err);
+                throw err;
+            });
     }
 
     async fetchOnboardingStatus(): Promise<boolean> {
@@ -224,7 +235,7 @@ class UserSession {
         const previousStatus = this.onboardingComplete;
         try {
             const onboarding = await this.client.account.onboardingProgress();
-            this.onboardingComplete = Object.values(onboarding).every(value => value === true);
+            this.onboardingComplete = Object.values(onboarding).every((value) => value === true);
             if (previousStatus !== this.onboardingComplete) {
                 return true;
             }

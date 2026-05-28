@@ -1,8 +1,8 @@
-import { useUserSession } from "@vertesia/ui/session";
-import type { FacetSpec } from "@vertesia/common";
-import type React from "react";
-import { useMemo } from "react";
-import { DocumentSearch, SearchContext } from "./DocumentSearchContext";
+import type { FacetSpec } from '@vertesia/common';
+import { useUserSession } from '@vertesia/ui/session';
+import type React from 'react';
+import { useMemo } from 'react';
+import { DocumentSearch, SearchContext } from './DocumentSearchContext';
 
 interface DocumentSearchProviderProps {
     children: React.ReactNode;
@@ -13,7 +13,15 @@ interface DocumentSearchProviderProps {
     collectionId?: string;
     name?: string;
 }
-export function DocumentSearchProvider({ children, limit, parent, typeId, facets, name, collectionId }: DocumentSearchProviderProps) {
+export function DocumentSearchProvider({
+    children,
+    limit,
+    parent,
+    typeId,
+    facets,
+    name,
+    collectionId,
+}: DocumentSearchProviderProps) {
     const { store } = useUserSession();
     const search = useMemo(() => {
         let facetSpecs: FacetSpec[];
@@ -23,18 +31,18 @@ export function DocumentSearchProvider({ children, limit, parent, typeId, facets
             facetSpecs = [
                 {
                     name: 'status',
-                    field: 'status'
+                    field: 'status',
                 },
                 {
                     name: 'location',
-                    field: 'location'
-                }
-            ]
+                    field: 'location',
+                },
+            ];
             if (!typeId) {
                 facetSpecs.unshift({
                     name: 'type',
-                    field: 'type'
-                })
+                    field: 'type',
+                });
             }
         }
         const search = new DocumentSearch(store, limit).withFacets(facetSpecs);
@@ -48,7 +56,5 @@ export function DocumentSearchProvider({ children, limit, parent, typeId, facets
         return search;
     }, [collectionId, facets, limit, name, parent, store, typeId]);
 
-    return (
-        <SearchContext.Provider value={search}>{children}</SearchContext.Provider>
-    )
+    return <SearchContext.Provider value={search}>{children}</SearchContext.Provider>;
 }

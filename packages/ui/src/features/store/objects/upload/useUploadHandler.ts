@@ -1,9 +1,8 @@
-import { errorMessage, useToast } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
+import { errorMessage, useToast } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
-import { useDocumentSearch } from "../search/DocumentSearchContext";
-import { FileUploadAction, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
-
+import { useUserSession } from '@vertesia/ui/session';
+import { useDocumentSearch } from '../search/DocumentSearchContext';
+import { FileUploadAction, useSmartFileUploadProcessing } from './useSmartFileUploadProcessing';
 
 /**
  * Hook configuration for useUploadHandler
@@ -42,7 +41,7 @@ interface UploadedFileInfo {
     /** The name of the file */
     location?: string;
     /** The status of the upload */
-    status: "created" | "updated" | "skipped" | "failed";
+    status: 'created' | 'updated' | 'skipped' | 'failed';
     /** The type of the object */
     type: string | null;
     /** Has there been any Error */
@@ -57,7 +56,7 @@ interface UploadedFileInfo {
  */
 export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objectIds: string[]) => Promise<void>)) {
     // Handle both object and legacy function format for backward compatibility
-    const onUploadDone = typeof options === "function" ? options : options.onUploadDone;
+    const onUploadDone = typeof options === 'function' ? options : options.onUploadDone;
     const { client, project: projectRef, store } = useUserSession();
     const search = useDocumentSearch();
     const toast = useToast();
@@ -76,7 +75,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
 
         if (!projectRef) {
             toast({
-                status: "error",
+                status: 'error',
                 title: t('store.noProjectSelected'),
                 duration: 3000,
             });
@@ -85,7 +84,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
 
         if (!files || files.length === 0) {
             toast({
-                status: "warning",
+                status: 'warning',
                 title: t('store.noFilesSelected'),
                 duration: 3000,
             });
@@ -96,7 +95,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
 
         if (filesToUpload.length === 0) {
             toast({
-                status: "error",
+                status: 'error',
                 title: t('store.noValidFilesSelected'),
                 description: t('store.pleaseSelectValidFiles'),
                 duration: 5000,
@@ -122,7 +121,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
         toast({
             title: t('store.filesAnalyzedTitle'),
             description: `${filesToUpload.length} file(s): ${toCreate} new, ${toUpdate} to update, ${toSkip} to skip`,
-            status: "info",
+            status: 'info',
             duration: 4000,
         });
 
@@ -132,7 +131,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                 id: fileInfo.existingId,
                 name: fileInfo.name,
                 type,
-                status: "skipped",
+                status: 'skipped',
                 location: fileInfo.location,
             });
         }
@@ -144,7 +143,8 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
 
         if (filesToProcess.length > 0) {
             console.log(
-                `Processing ${filesToProcess.length} files (${filesToProcess.filter((f) => f.action === FileUploadAction.CREATE).length
+                `Processing ${filesToProcess.length} files (${
+                    filesToProcess.filter((f) => f.action === FileUploadAction.CREATE).length
                 } create, ${filesToProcess.filter((f) => f.action === FileUploadAction.UPDATE).length} update)...`,
             );
 
@@ -168,7 +168,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                     toast({
                         title: t('store.processingFiles'),
                         description: `Processed ${processedCount}/${filesToProcess.length} files...`,
-                        status: "info",
+                        status: 'info',
                         duration: 2000,
                     });
                 }
@@ -198,7 +198,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                                     id: fileInfo.existingId,
                                     name: fileInfo.name,
                                     type,
-                                    status: "updated",
+                                    status: 'updated',
                                     location: fileInfo.location,
                                 });
 
@@ -209,7 +209,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                                     success: true,
                                     id: updateResult.id,
                                     name: fileInfo.name,
-                                    action: "update",
+                                    action: 'update',
                                 };
                             } else {
                                 // CREATE - Create a new object
@@ -230,7 +230,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                                     id: createResult.id,
                                     name: fileInfo.name,
                                     type,
-                                    status: "created",
+                                    status: 'created',
                                     location: fileInfo.location,
                                 });
                             }
@@ -240,14 +240,14 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                             // Track failed upload
                             failedFilesInfo.push({
                                 name: fileInfo.name,
-                                error: errorMessage(error, "Unknown error"),
-                                status: "failed",
+                                error: errorMessage(error, 'Unknown error'),
+                                status: 'failed',
                                 location: fileInfo.location,
                                 type,
                             });
 
                             toast({
-                                status: "error",
+                                status: 'error',
                                 title: t('store.processingFailedFor', { name: fileInfo.name }),
                                 description: errorMessage(error),
                                 duration: 4000,
@@ -257,9 +257,9 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                 );
 
                 // Log batch results
-                const creates = uploadedFilesInfo.filter((f) => f.status === "created");
-                const updates = uploadedFilesInfo.filter((f) => f.status === "updated");
-                const failures = uploadedFilesInfo.filter((f) => f.status === "failed");
+                const creates = uploadedFilesInfo.filter((f) => f.status === 'created');
+                const updates = uploadedFilesInfo.filter((f) => f.status === 'updated');
+                const failures = uploadedFilesInfo.filter((f) => f.status === 'failed');
 
                 console.log(`Batch ${batchIndex + 1} results:`, {
                     creates,
@@ -270,15 +270,15 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
             }
         }
 
-        const uploadedCount = uploadedFilesInfo.filter((f) => f.status === "created").length;
-        const updatedCount = uploadedFilesInfo.filter((f) => f.status === "updated").length;
-        const failedCount = uploadedFilesInfo.filter((f) => f.status === "failed").length;
-        const skippedCount = uploadedFilesInfo.filter((f) => f.status === "skipped").length;
+        const uploadedCount = uploadedFilesInfo.filter((f) => f.status === 'created').length;
+        const updatedCount = uploadedFilesInfo.filter((f) => f.status === 'updated').length;
+        const failedCount = uploadedFilesInfo.filter((f) => f.status === 'failed').length;
+        const skippedCount = uploadedFilesInfo.filter((f) => f.status === 'skipped').length;
 
         // Call the original callback with all object IDs and additional metadata
         if (onUploadDone) {
             // Log the actual upload count for debugging
-            console.log("Upload complete:", {
+            console.log('Upload complete:', {
                 totalObjectIds: result.objectIds.length,
                 uploadedFiles: uploadedCount,
                 updatedFiles: updatedCount,
@@ -291,30 +291,30 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
         }
 
         // Create a success message that includes information about all file operations
-        let statusMessage = "";
+        let statusMessage = '';
 
         if (uploadedCount > 0) {
-            statusMessage += `${uploadedCount} file${uploadedCount !== 1 ? "s" : ""} uploaded`;
+            statusMessage += `${uploadedCount} file${uploadedCount !== 1 ? 's' : ''} uploaded`;
         }
 
         if (updatedCount > 0) {
-            statusMessage += statusMessage ? ", " : "";
-            statusMessage += `${updatedCount} file${updatedCount !== 1 ? "s" : ""} updated`;
+            statusMessage += statusMessage ? ', ' : '';
+            statusMessage += `${updatedCount} file${updatedCount !== 1 ? 's' : ''} updated`;
         }
 
         if (skippedCount > 0) {
-            statusMessage += statusMessage ? ", " : "";
-            statusMessage += `${skippedCount} file${skippedCount !== 1 ? "s" : ""} skipped (already existed)`;
+            statusMessage += statusMessage ? ', ' : '';
+            statusMessage += `${skippedCount} file${skippedCount !== 1 ? 's' : ''} skipped (already existed)`;
         }
 
         if (failedCount > 0) {
-            statusMessage += statusMessage ? ", " : "";
-            statusMessage += `${failedCount} file${failedCount !== 1 ? "s" : ""} failed`;
+            statusMessage += statusMessage ? ', ' : '';
+            statusMessage += `${failedCount} file${failedCount !== 1 ? 's' : ''} failed`;
         }
 
         if (statusMessage) {
             toast({
-                status: failedCount > 0 ? "warning" : "success",
+                status: failedCount > 0 ? 'warning' : 'success',
                 title: statusMessage,
                 duration: 4000,
             });

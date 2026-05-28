@@ -1,11 +1,9 @@
-import type { DeleteByIdResult, UpdateUserPayload, User } from '@vertesia/common';
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
-
+import type { DeleteByIdResult, UpdateUserPayload, User } from '@vertesia/common';
 
 export default class UsersApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
-        super(parent, '/api/v1/users')
+        super(parent, '/api/v1/users');
     }
 
     retrieve(userId: string): Promise<User> {

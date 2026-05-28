@@ -1,13 +1,13 @@
-import type { Permission, ProjectRoles } from "@vertesia/common"
-import { ErrorBox, errorMessage, useFetch } from "@vertesia/ui/core"
-import { type UserSession, useUserSession } from "@vertesia/ui/session"
-import { createContext, useContext, useMemo } from "react"
+import type { Permission, ProjectRoles } from '@vertesia/common';
+import { ErrorBox, errorMessage, useFetch } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { isAnyOf } from "./helpers"
+import { type UserSession, useUserSession } from '@vertesia/ui/session';
+import { createContext, useContext, useMemo } from 'react';
+import { isAnyOf } from './helpers';
 
 type ListRolesResponse = {
-    name: ProjectRoles,
-    permissions: Permission[]
+    name: ProjectRoles;
+    permissions: Permission[];
 }[];
 
 export class UserPermissions {
@@ -17,7 +17,7 @@ export class UserPermissions {
 
     constructor(session: UserSession, roles: ListRolesResponse) {
         if (!session.authToken) {
-            throw new Error('No auth token found in user session')
+            throw new Error('No auth token found in user session');
         }
         this.system_roles = roles;
         const userRoles = new Set<string>(session.authToken.account_roles || []);
@@ -44,13 +44,13 @@ export class UserPermissions {
         this.permissions = permissions;
     }
 
-
     hasPermission(permission: string | string[]) {
         if (typeof permission === 'string') {
             return this.permissions.has(permission);
         } else if (isAnyOf(permission as Permission[])) {
-            return permission.some(p => this.permissions.has(p));
-        } else { // all of
+            return permission.some((p) => this.permissions.has(p));
+        } else {
+            // all of
             for (const p of permission) {
                 if (!this.permissions.has(p)) {
                     return false;
@@ -59,22 +59,22 @@ export class UserPermissions {
             return true;
         }
     }
-
 }
 
-const UserPermissionsContext = createContext<UserPermissions | undefined>(undefined)
-export { UserPermissionsContext }
+const UserPermissionsContext = createContext<UserPermissions | undefined>(undefined);
+
+export { UserPermissionsContext };
 
 export function useUserPermissions() {
     const perms = useContext(UserPermissionsContext);
     if (!perms) {
-        throw new Error('UserPermissionContext cannot be used outside UserPermissionProvider')
+        throw new Error('UserPermissionContext cannot be used outside UserPermissionProvider');
     }
     return perms;
 }
 
 interface UserPermissionProviderProps {
-    children: React.ReactNode
+    children: React.ReactNode;
 }
 export function UserPermissionProvider({ children }: UserPermissionProviderProps) {
     const { t } = useUITranslation();
@@ -96,10 +96,8 @@ export function UserPermissionProvider({ children }: UserPermissionProviderProps
     }, [session, data, isLoading]);
 
     if (error) {
-        return <ErrorBox title={t('store.failedToFetchRoleMappings')}>{errorMessage(error)}</ErrorBox>
+        return <ErrorBox title={t('store.failedToFetchRoleMappings')}>{errorMessage(error)}</ErrorBox>;
     }
 
-    return perms && (
-        <UserPermissionsContext.Provider value={perms}>{children}</UserPermissionsContext.Provider>
-    )
+    return perms && <UserPermissionsContext.Provider value={perms}>{children}</UserPermissionsContext.Provider>;
 }

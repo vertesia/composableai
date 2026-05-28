@@ -1,9 +1,7 @@
-import { type Dispatch, type SetStateAction, useState } from "react";
-
+import { type Dispatch, type SetStateAction, useState } from 'react';
 
 export class SharedValue<T> {
-    constructor(private state: [T, Dispatch<SetStateAction<T>>]) {
-    }
+    constructor(private state: [T, Dispatch<SetStateAction<T>>]) {}
 
     get() {
         return this.state[0];

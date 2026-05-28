@@ -1,7 +1,6 @@
-import type { ToolExecutionContext, ToolExecutionPayload } from "@vertesia/tools-sdk";
-import type { CalculatorParams } from "./schema.js";
-import type { ToolResultContent } from "@vertesia/common";
-
+import type { ToolResultContent } from '@vertesia/common';
+import type { ToolExecutionContext, ToolExecutionPayload } from '@vertesia/tools-sdk';
+import type { CalculatorParams } from './schema.js';
 
 /**
  * Safely evaluates a mathematical expression
@@ -27,13 +26,15 @@ function evaluateExpression(expr: string): number {
         }
         return result;
     } catch (error) {
-        throw new Error(`Failed to evaluate expression: ${error instanceof Error ? error.message : 'Unknown error'}`, { cause: error });
+        throw new Error(`Failed to evaluate expression: ${error instanceof Error ? error.message : 'Unknown error'}`, {
+            cause: error,
+        });
     }
 }
 
 export async function calculate(
     payload: ToolExecutionPayload<CalculatorParams>,
-    _context: ToolExecutionContext
+    _context: ToolExecutionContext,
 ): Promise<ToolResultContent> {
     try {
         const input = payload.tool_use.tool_input;
@@ -45,12 +46,12 @@ export async function calculate(
 
         return {
             is_error: false,
-            content: `Result: ${expression} = ${result}`
+            content: `Result: ${expression} = ${result}`,
         } satisfies ToolResultContent;
     } catch (error) {
         return {
             is_error: true,
-            content: `Calculation error: ${error instanceof Error ? error.message : 'Unknown error'}`
+            content: `Calculation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
         } satisfies ToolResultContent;
     }
 }

@@ -1,13 +1,19 @@
-import type { ContentObjectType, ContentObjectTypeItem, CreateContentObjectTypePayload, FindPayload, ObjectTypeSearchQuery, ObjectTypeSearchPayload } from "@vertesia/common";
-import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
-import { TypeCatalogApi } from "./TypeCatalogApi.js";
-
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type {
+    ContentObjectType,
+    ContentObjectTypeItem,
+    CreateContentObjectTypePayload,
+    FindPayload,
+    ObjectTypeSearchPayload,
+    ObjectTypeSearchQuery,
+} from '@vertesia/common';
+import { TypeCatalogApi } from './TypeCatalogApi.js';
 
 export class TypesApi extends ApiTopic {
     catalog: TypeCatalogApi;
 
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/types");
+        super(parent, '/api/v1/types');
         this.catalog = new TypeCatalogApi(parent);
     }
 
@@ -19,25 +25,28 @@ export class TypesApi extends ApiTopic {
      * @param options
      * @returns
      */
-    list(payload: ObjectTypeSearchPayload = {}, options?: { layout?: boolean, schema?: boolean }): Promise<ContentObjectTypeItem[]> {
+    list(
+        payload: ObjectTypeSearchPayload = {},
+        options?: { layout?: boolean; schema?: boolean },
+    ): Promise<ContentObjectTypeItem[]> {
         const limit = payload.limit || 2000;
         const offset = payload.offset || 0;
-        const query = payload.query || {} as ObjectTypeSearchQuery;
+        const query = payload.query || ({} as ObjectTypeSearchQuery);
 
-        return this.get("/", {
+        return this.get('/', {
             query: {
                 limit,
                 offset,
                 layout: !!options?.layout,
                 schema: !!options?.schema,
-                ...query
-            }
+                ...query,
+            },
         });
     }
 
     find(payload: FindPayload): Promise<ContentObjectType[]> {
-        return this.post("/find", {
-            payload
+        return this.post('/find', {
+            payload,
         });
     }
 
@@ -51,18 +60,17 @@ export class TypesApi extends ApiTopic {
 
     update(typeId: string, payload: Partial<CreateContentObjectTypePayload>): Promise<ContentObjectType> {
         return this.put(`/${typeId}`, {
-            payload
+            payload,
         });
     }
 
     create(payload: CreateContentObjectTypePayload): Promise<ContentObjectType> {
         return this.post(`/`, {
-            payload
+            payload,
         });
     }
 
     delete(id: string) {
         return this.del(`/${id}`);
     }
-
 }

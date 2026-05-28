@@ -1,26 +1,27 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-
-import { clsx } from "clsx";
-import { RefreshCw } from "lucide-react";
-
-import { DocumentsFacetsNav } from "../../../facets";
-import { DocumentTable } from "../DocumentTable";
-import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from "../search/DocumentSearchContext";
-import { DocumentSearchProvider } from "../search/DocumentSearchProvider";
-import { ContentDispositionButton } from "./ContentDispositionButton";
-
-import type { ColumnLayout, ContentObjectItem } from "@vertesia/common";
-import { Button, ErrorBox, Spinner, useIntersectionObserver } from "@vertesia/ui/core";
+import type { ColumnLayout, ContentObjectItem } from '@vertesia/common';
+import { Button, ErrorBox, Spinner, useIntersectionObserver } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { clsx } from 'clsx';
+import { RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { DocumentsFacetsNav } from '../../../facets';
+import { DocumentTable } from '../DocumentTable';
+import {
+    useDocumentSearch,
+    useWatchDocumentSearchFacets,
+    useWatchDocumentSearchResult,
+} from '../search/DocumentSearchContext';
+import { DocumentSearchProvider } from '../search/DocumentSearchProvider';
+import { ContentDispositionButton } from './ContentDispositionButton';
 
 const layout: ColumnLayout[] = [
-    { "name": "Name", "field": "properties.title", "type": "string", "fallback": "name" },
-    { "name": "Type", "field": "type.name", "type": "string" },
-    { "name": "Status", "field": "status", "type": "string" },
-    { "name": "Created At", "field": "created_at", "type": "date" }
+    { name: 'Name', field: 'properties.title', type: 'string', fallback: 'name' },
+    { name: 'Type', field: 'type.name', type: 'string' },
+    { name: 'Status', field: 'status', type: 'string' },
+    { name: 'Created At', field: 'created_at', type: 'date' },
 ];
 
-const LAST_DISPLAYED_VIEW = "vertesia.content_store.lastDisplayedView"
+const LAST_DISPLAYED_VIEW = 'vertesia.content_store.lastDisplayedView';
 
 interface SelectDocumentProps {
     onChange: (value: ContentObjectItem) => void;
@@ -32,13 +33,13 @@ interface SelectDocumentProps {
 export function SelectDocument({ onChange, selectedIds }: Readonly<SelectDocumentProps>) {
     const onRowClick = (selected: ContentObjectItem) => {
         onChange(selected || undefined);
-    }
+    };
 
     return (
         <DocumentSearchProvider>
             <SelectDocumentImpl onRowClick={onRowClick} selectedIds={selectedIds} />
         </DocumentSearchProvider>
-    )
+    );
 }
 
 interface SelectDocumentImplProps {
@@ -47,30 +48,29 @@ interface SelectDocumentImplProps {
 }
 function SelectDocumentImpl({ onRowClick, selectedIds }: Readonly<SelectDocumentImplProps>) {
     const { t } = useUITranslation();
-    const highlightRow = useCallback(
-        (item: ContentObjectItem) => !!selectedIds?.has(item.id),
-        [selectedIds],
-    );
+    const highlightRow = useCallback((item: ContentObjectItem) => !!selectedIds?.has(item.id), [selectedIds]);
     const [isReady, setIsReady] = useState(false);
-    const [isGridView, setIsGridView] = useState(localStorage.getItem(LAST_DISPLAYED_VIEW) === "grid");
+    const [isGridView, setIsGridView] = useState(localStorage.getItem(LAST_DISPLAYED_VIEW) === 'grid');
     const { search, isLoading, error, objects, hasMore } = useWatchDocumentSearchResult();
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
-    useIntersectionObserver(loadMoreRef, () => {
-        if (isReady && hasMore && !isLoading) {
-            setIsReady(false);
-            search.loadMore(true)
-                .finally(() => {
+    useIntersectionObserver(
+        loadMoreRef,
+        () => {
+            if (isReady && hasMore && !isLoading) {
+                setIsReady(false);
+                search.loadMore(true).finally(() => {
                     setIsReady(true);
                 });
-        }
-    }, { threshold: 0.1, deps: [isReady, hasMore, isLoading] });
+            }
+        },
+        { threshold: 0.1, deps: [isReady, hasMore, isLoading] },
+    );
 
     useEffect(() => {
-        search.search()
-            .finally(() => {
-                setIsReady(true);
-            });
+        search.search().finally(() => {
+            setIsReady(true);
+        });
     }, [search]);
 
     const facets = useWatchDocumentSearchFacets();
@@ -79,10 +79,10 @@ function SelectDocumentImpl({ onRowClick, selectedIds }: Readonly<SelectDocument
     const handleRefetch = () => {
         setIsReady(false);
         search.search().then(() => setIsReady(true));
-    }
+    };
 
     if (error) {
-        return <ErrorBox title={t('store.searchFailed')}>{error.message}</ErrorBox>
+        return <ErrorBox title={t('store.searchFailed')}>{error.message}</ErrorBox>;
     }
 
     return (
@@ -98,7 +98,14 @@ function SelectDocumentImpl({ onRowClick, selectedIds }: Readonly<SelectDocument
             </div>
             <div className="@container flex-1 overflow-y-auto">
                 {/* Documents Display Grid or Table */}
-                <DocumentTable objects={objects || []} isLoading={false} layout={layout} onRowClick={onRowClick} highlightRow={selectedIds?.size ? highlightRow : undefined} isGridView={isGridView} />
+                <DocumentTable
+                    objects={objects || []}
+                    isLoading={false}
+                    layout={layout}
+                    onRowClick={onRowClick}
+                    highlightRow={selectedIds?.size ? highlightRow : undefined}
+                    isGridView={isGridView}
+                />
 
                 {/* Intersection observer target */}
                 <div ref={loadMoreRef} className="h-4 w-full" />
@@ -106,13 +113,13 @@ function SelectDocumentImpl({ onRowClick, selectedIds }: Readonly<SelectDocument
                 {/* Loading spinner */}
                 <div
                     className={clsx(
-                        "bg-white dark:bg-gray-800 opacity-80 absolute inset-0 z-50 flex justify-center items-center rounded",
-                        isLoading ? "block" : "hidden"
+                        'bg-white dark:bg-gray-800 opacity-80 absolute inset-0 z-50 flex justify-center items-center rounded',
+                        isLoading ? 'block' : 'hidden',
                     )}
                 >
                     <Spinner size="xl" />
                 </div>
             </div>
         </div>
-    )
+    );
 }

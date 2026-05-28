@@ -2,9 +2,9 @@ import type { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import type { VertesiaClient } from '@vertesia/client';
 import { ContentEventName, type DSLActivityExecutionPayload, ExecutionRunStatus } from '@vertesia/common';
-import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { executeInteraction, type ExecuteInteractionParams } from './executeInteraction.js';
+import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
+import { type ExecuteInteractionParams, executeInteraction } from './executeInteraction.js';
 
 vi.mock('../dsl/setup/ActivityContext.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../dsl/setup/ActivityContext.js')>();

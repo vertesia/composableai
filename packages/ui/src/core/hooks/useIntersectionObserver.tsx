@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useRef } from "react";
+import { type RefObject, useEffect, useRef } from 'react';
 
 /**
  * if leave option is true then callback will be called when the target leaves the viewport
@@ -7,7 +7,11 @@ import { type RefObject, useEffect, useRef } from "react";
  * @param cb
  * @param opts
  */
-export function useIntersectionObserver(target: RefObject<HTMLElement | null | undefined>, cb: (entry: IntersectionObserverEntry) => void, opts: { leave?: boolean, threshold?: number, deps?: unknown[] } = {}) {
+export function useIntersectionObserver(
+    target: RefObject<HTMLElement | null | undefined>,
+    cb: (entry: IntersectionObserverEntry) => void,
+    opts: { leave?: boolean; threshold?: number; deps?: unknown[] } = {},
+) {
     const cbRef = useRef(cb);
     cbRef.current = cb;
     const optsRef = useRef(opts);
@@ -17,7 +21,7 @@ export function useIntersectionObserver(target: RefObject<HTMLElement | null | u
     useEffect(() => {
         const element = target.current;
         const observer = new IntersectionObserver(
-            entries => {
+            (entries) => {
                 const isEntering = entries[0].isIntersecting;
                 if (optsRef.current.leave) {
                     if (!isEntering) {
@@ -29,7 +33,7 @@ export function useIntersectionObserver(target: RefObject<HTMLElement | null | u
                     }
                 }
             },
-            { threshold }
+            { threshold },
         );
 
         if (element) {
@@ -42,5 +46,4 @@ export function useIntersectionObserver(target: RefObject<HTMLElement | null | u
             }
         };
     }, [target, threshold]);
-
 }

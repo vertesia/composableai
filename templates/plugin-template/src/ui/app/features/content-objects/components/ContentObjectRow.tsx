@@ -1,8 +1,7 @@
-import { memo } from 'react';
 import { Badge } from '@vertesia/ui/core';
+import { memo } from 'react';
 import { InlineFilterButton } from '../../../components/InlineFilterButton';
-import type { FilterableField } from '../types';
-import type { ContentObjectRowModel } from '../types';
+import type { ContentObjectRowModel, FilterableField } from '../types';
 
 interface ContentObjectRowProps {
     row: ContentObjectRowModel;
@@ -15,17 +14,12 @@ function ContentObjectRowImpl({ row, onAddFilter, onOpen }: ContentObjectRowProp
     const statusValue = row.statusValue;
 
     return (
-        <tr
-            className="cursor-pointer hover:bg-muted/50"
-            onClick={() => onOpen(row.id)}
-        >
+        <tr className="cursor-pointer hover:bg-muted/50" onClick={() => onOpen(row.id)}>
             <td>
                 <div className="flex flex-col">
                     <span className="font-medium">{row.title}</span>
                     {row.description && (
-                        <span className="text-xs text-muted-foreground line-clamp-1">
-                            {row.description}
-                        </span>
+                        <span className="text-xs text-muted-foreground line-clamp-1">{row.description}</span>
                     )}
                 </div>
             </td>

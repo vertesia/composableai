@@ -1,11 +1,22 @@
-import type { AgentRun } from "@vertesia/common";
-import { Button, Dropdown, MenuGroup, MenuItem, cn, useToast } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, GitFork, InfoIcon, MoreVertical, RefreshCcw, XIcon } from "lucide-react";
+import type { AgentRun } from '@vertesia/common';
+import { Button, cn, Dropdown, MenuGroup, MenuItem, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
-import type { AgentConversationViewMode } from "./AllMessagesMixed";
-import { getConversationUrl } from "./utils";
+import { useUserSession } from '@vertesia/ui/session';
+import {
+    Bot,
+    ClipboardList,
+    CopyIcon,
+    DownloadCloudIcon,
+    ExternalLink,
+    GitFork,
+    InfoIcon,
+    MoreVertical,
+    RefreshCcw,
+    XIcon,
+} from 'lucide-react';
+import { PayloadBuilderProvider, usePayloadBuilder } from '../../PayloadBuilder';
+import type { AgentConversationViewMode } from './AllMessagesMixed';
+import { getConversationUrl } from './utils';
 
 export interface HeaderProps {
     title: string;
@@ -65,7 +76,12 @@ export default function Header({
     const continueWorkflow = useContinueWorkflow(agentRunId, onRestart);
     return (
         <PayloadBuilderProvider>
-            <div className={cn("flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0", className)}>
+            <div
+                className={cn(
+                    'flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0',
+                    className,
+                )}
+            >
                 <div className="flex flex-wrap items-center space-x-2">
                     <div className="flex items-center space-x-1">
                         <Bot className="size-5 text-muted" />
@@ -74,21 +90,31 @@ export default function Header({
                     <span className="text-xs text-muted ms-1 flex items-center gap-1.5">
                         (Agent Run ID: {agentRunId})
                         {/* Streaming chunk indicator - gray when idle, purple when receiving */}
-                        <span className={cn(
-                            "w-2 h-2 rounded-full transition-colors duration-200",
-                            isReceivingChunks
-                                ? "bg-purple-500 shadow-[0_0_6px_2px_rgba(168,85,247,0.6)]"
-                                : "bg-gray-400",
-                        )} />
+                        <span
+                            className={cn(
+                                'w-2 h-2 rounded-full transition-colors duration-200',
+                                isReceivingChunks
+                                    ? 'bg-purple-500 shadow-[0_0_6px_2px_rgba(168,85,247,0.6)]'
+                                    : 'bg-gray-400',
+                            )}
+                        />
                     </span>
                 </div>
                 <div className="flex justify-end items-center space-x-2 ms-auto">
                     {/* View Mode Toggle */}
                     <div className="flex items-center space-x-1 bg-muted rounded p-0.5 mt-2 lg:mt-0">
-                        <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" onClick={() => onViewModeChange("stacked")}>
+                        <Button
+                            variant={viewMode === 'stacked' ? 'outline' : 'ghost'}
+                            size="xs"
+                            onClick={() => onViewModeChange('stacked')}
+                        >
                             {t('agent.details')}
                         </Button>
-                        <Button variant={viewMode === "sliding" ? "outline" : "ghost"} size="xs" onClick={() => onViewModeChange("sliding")}>
+                        <Button
+                            variant={viewMode === 'sliding' ? 'outline' : 'ghost'}
+                            size="xs"
+                            onClick={() => onViewModeChange('sliding')}
+                        >
                             {t('agent.summary')}
                         </Button>
                     </div>
@@ -101,13 +127,15 @@ export default function Header({
                             )}
                             <Button
                                 size="sm"
-                                variant={showPlanPanel ? "primary" : "secondary"}
+                                variant={showPlanPanel ? 'primary' : 'secondary'}
                                 onClick={onTogglePlanPanel}
                                 className="transition-all duration-200 rounded-md"
                                 title={t('agent.toggleRightSidebar')}
                             >
                                 <ClipboardList className="size-4 me-1.5" />
-                                <span className="font-medium text-xs">{showPlanPanel ? t('agent.hideSidebar') : t('agent.showSidebar')}</span>
+                                <span className="font-medium text-xs">
+                                    {showPlanPanel ? t('agent.hideSidebar') : t('agent.showSidebar')}
+                                </span>
                             </Button>
                         </div>
                     )}
@@ -159,14 +187,14 @@ function useContinueWorkflow(agentRunId: string, onRestart?: (newRun: AgentRun) 
         try {
             const newRun = await client.agents.restart(agentRunId);
             toast({
-                status: "success",
+                status: 'success',
                 title: t('agent.conversationContinued'),
                 duration: 2000,
             });
             onRestart?.(newRun);
         } catch (_error) {
             toast({
-                status: "error",
+                status: 'error',
                 title: t('agent.failedToContinueConversation'),
                 duration: 2000,
             });
@@ -208,10 +236,10 @@ function MoreDropdown({
 
     const cancelWorkflow = async () => {
         try {
-            await client.agents.terminate(agentRunId, "cancel");
+            await client.agents.terminate(agentRunId, 'cancel');
 
             toast({
-                status: "success",
+                status: 'success',
                 title: t('agent.workflowCancelled'),
                 duration: 2000,
             });
@@ -222,7 +250,7 @@ function MoreDropdown({
             return true;
         } catch (_error) {
             toast({
-                status: "error",
+                status: 'error',
                 title: t('agent.failedToCancelWorkflow'),
                 duration: 2000,
             });
@@ -234,14 +262,14 @@ function MoreDropdown({
         try {
             const newRun = await client.agents.fork(agentRunId);
             toast({
-                status: "success",
+                status: 'success',
                 title: t('agent.conversationCloned'),
                 duration: 2000,
             });
             onClone?.(newRun);
         } catch (_error) {
             toast({
-                status: "error",
+                status: 'error',
                 title: t('agent.failedToCloneConversation'),
                 duration: 2000,
             });
@@ -249,14 +277,14 @@ function MoreDropdown({
     };
 
     const openUrl = (url: string) => {
-        window.open(url, "_blank");
+        window.open(url, '_blank');
         return url;
-    }
+    };
 
     const copyAgentRunId = () => {
         navigator.clipboard.writeText(agentRunId);
         toast({
-            status: "success",
+            status: 'success',
             title: t('agent.agentRunIdCopied'),
             duration: 2000,
         });
@@ -265,7 +293,7 @@ function MoreDropdown({
     const copyWorkflowRunId = () => {
         navigator.clipboard.writeText(workflowRunId);
         toast({
-            status: "success",
+            status: 'success',
             title: t('agent.workflowRunIdCopied'),
             duration: 2000,
         });
@@ -297,13 +325,15 @@ function MoreDropdown({
                         <InfoIcon className="size-3.5 text-muted" /> {t('agent.details')}
                     </MenuItem>
                 )}
-                <MenuItem onClick={() => {
-                    if (onDownload) {
-                        onDownload();
-                    } else {
-                        void getConversationUrl(client, agentRunId).then((r) => window.open(r, "_blank"));
-                    }
-                }}>
+                <MenuItem
+                    onClick={() => {
+                        if (onDownload) {
+                            onDownload();
+                        } else {
+                            void getConversationUrl(client, agentRunId).then((r) => window.open(r, '_blank'));
+                        }
+                    }}
+                >
                     <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.downloadConversation')}
                 </MenuItem>
                 {onExportPdf && (

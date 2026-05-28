@@ -2,13 +2,13 @@
  * Core Rollup plugin implementation for transforming imports
  */
 
-import type { Plugin } from 'rollup';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import type { PluginConfig, TransformerRule, AssetFile } from './types.js';
+import type { Plugin } from 'rollup';
+import type { AssetFile, PluginConfig, TransformerRule } from './types.js';
 import { copyAssets } from './utils/asset-copy.js';
-import { compileWidgets } from './utils/widget-compiler.js';
 import type { WidgetMetadata } from './utils/asset-discovery.js';
+import { compileWidgets } from './utils/widget-compiler.js';
 
 /**
  * Creates a Rollup plugin that transforms imports based on configured rules
@@ -40,9 +40,8 @@ export function vertesiaImportPlugin(config: PluginConfig): Plugin {
                     if (source.startsWith('.') && importer) {
                         const cleanSource = source.replace(transformer.pattern, '');
                         // Strip query parameters from importer to get the file path
-                        const cleanImporter = importer.indexOf('?') >= 0
-                            ? importer.substring(0, importer.indexOf('?'))
-                            : importer;
+                        const cleanImporter =
+                            importer.indexOf('?') >= 0 ? importer.substring(0, importer.indexOf('?')) : importer;
                         // Always use dirname to get the directory containing the importer
                         const baseDir = path.dirname(cleanImporter);
                         const resolved = path.resolve(baseDir, cleanSource);
@@ -82,9 +81,7 @@ export function vertesiaImportPlugin(config: PluginConfig): Plugin {
 
             try {
                 // Read file content (skip for virtual transforms)
-                const content = matchedTransformer.virtual
-                    ? ''
-                    : readFileSync(cleanId, 'utf-8');
+                const content = matchedTransformer.virtual ? '' : readFileSync(cleanId, 'utf-8');
 
                 // Transform the content
                 const result = await matchedTransformer.transform(content, cleanId);
@@ -106,9 +103,7 @@ export function vertesiaImportPlugin(config: PluginConfig): Plugin {
                         const errors = validation.error.issues
                             .map((err) => `  - ${err.path.join('.')}: ${err.message}`)
                             .join('\n');
-                        throw new Error(
-                            `Validation failed for ${id}:\n${errors}`
-                        );
+                        throw new Error(`Validation failed for ${id}:\n${errors}`);
                     }
                 }
 
@@ -150,17 +145,13 @@ export function vertesiaImportPlugin(config: PluginConfig): Plugin {
                     const outputDir = path.join(assetsDir as string, widgetsDir);
 
                     console.log(`Compiling ${widgetsToCompile.length} widget(s)...`);
-                    const compiled = await compileWidgets(
-                        widgetsToCompile,
-                        outputDir,
-                        widgetConfig
-                    );
+                    const compiled = await compileWidgets(widgetsToCompile, outputDir, widgetConfig);
                     console.log(`Compiled ${compiled} widget(s) to ${outputDir}`);
                 } catch (error) {
                     const message = error instanceof Error ? error.message : String(error);
                     this.error(`Failed to compile widgets: ${message}`);
                 }
             }
-        }
+        },
     };
 }

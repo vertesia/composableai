@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 interface SvgIconProps extends React.SVGProps<SVGSVGElement> {
     content: string; // the SVG content as a string

@@ -19,11 +19,7 @@ export type AuditAction =
     | 'image_generation';
 
 /** Billable audit actions for cost analytics queries */
-export const BILLABLE_AUDIT_ACTIONS: AuditAction[] = [
-    'inference',
-    'embedding',
-    'image_generation',
-];
+export const BILLABLE_AUDIT_ACTIONS: AuditAction[] = ['inference', 'embedding', 'image_generation'];
 
 /**
  * Generic metering entry attached to audit events.

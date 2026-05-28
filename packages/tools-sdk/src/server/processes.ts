@@ -1,9 +1,9 @@
 // ================== Process Definition Endpoints ==================
 
-import type { InCodeProcessDefinition } from "@vertesia/common";
-import type { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
-import type { ToolServerConfig } from "./types.js";
+import type { InCodeProcessDefinition } from '@vertesia/common';
+import type { Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import type { ToolServerConfig } from './types.js';
 
 export function createProcessesRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { processes = [] } = config;
@@ -29,9 +29,7 @@ export function createProcessesRoute(app: Hono, basePath: string, config: ToolSe
 }
 
 function findProcess(processes: InCodeProcessDefinition[], name: string): InCodeProcessDefinition | undefined {
-    return processes.find(process =>
-        process.id === name
-        || process.name === name
-        || process.definition.process === name
+    return processes.find(
+        (process) => process.id === name || process.name === name || process.definition.process === name,
     );
 }

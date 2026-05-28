@@ -1,10 +1,9 @@
-import type { SignupData } from "@vertesia/common";
-import { Button, Input, RadioGroup, SelectBox } from "@vertesia/ui/core";
-import type { User } from "firebase/auth";
-import { useEffect, useState } from "react";
-import { getFirebaseAuth } from "@vertesia/ui/session";
+import type { SignupData } from '@vertesia/common';
+import { Button, Input, RadioGroup, SelectBox } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-
+import { getFirebaseAuth } from '@vertesia/ui/session';
+import type { User } from 'firebase/auth';
+import { useEffect, useState } from 'react';
 
 interface CompanySizeOption {
     id: number;
@@ -26,7 +25,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
     const [fbUser, setFbUser] = useState<User | undefined>(undefined);
 
     const [error, setError] = useState<string | undefined>(undefined);
-    const isCompany = accountType === "company";
+    const isCompany = accountType === 'company';
 
     const companySizeOptions: CompanySizeOption[] = [
         { id: 1, label: t('signup.size1to10') },
@@ -38,23 +37,23 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
 
     const accountTypeOptions = [
         {
-            id: "personal",
+            id: 'personal',
             label: t('signup.personal'),
             description: t('signup.personalDescription'),
         },
         {
-            id: "company",
+            id: 'company',
             label: t('signup.company'),
             description: t('signup.companyDescription'),
         },
     ];
 
     const projectMaturityOptions = [
-        { id: "testing", label: t('signup.justTesting') },
-        { id: "exploring", label: t('signup.activelyExploring') },
-        { id: "using", label: t('signup.alreadyUsing') },
-        { id: "migrating", label: t('signup.migratingLLMs') },
-        { id: "other", label: t('signup.other') },
+        { id: 'testing', label: t('signup.justTesting') },
+        { id: 'exploring', label: t('signup.activelyExploring') },
+        { id: 'using', label: t('signup.alreadyUsing') },
+        { id: 'migrating', label: t('signup.migratingLLMs') },
+        { id: 'other', label: t('signup.other') },
     ];
 
     useEffect(() => {
@@ -81,9 +80,8 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
             return false;
         }
 
-        return true
-    }
-
+        return true;
+    };
 
     const onSubmit = async () => {
         if (!isValid()) return;
@@ -97,7 +95,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
             maturity: projectMaturity,
         };
 
-        window.localStorage.setItem("composableSignupData", JSON.stringify(signupData));
+        window.localStorage.setItem('composableSignupData', JSON.stringify(signupData));
 
         const fbToken = await getFirebaseAuth().currentUser?.getIdToken();
         console.log('Got firebase token', getFirebaseAuth(), fbToken);
@@ -107,8 +105,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
         }
 
         onSignup(signupData, fbToken);
-
-    }
+    };
 
     return (
         <div className="flex flex-col space-y-2">
@@ -116,9 +113,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
                 <p className="prose text-sm text-muted pt-4">
                     {t('signup.welcomeMessage', { name: fbUser?.displayName, email: fbUser?.email })}
                 </p>
-                {error &&
-                    <div className="text-destructive">{error}</div>
-                }
+                {error && <div className="text-destructive">{error}</div>}
             </div>
             <FormItem label={t('signup.accountType')}>
                 <RadioGroup
@@ -127,10 +122,11 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
                     onSelect={(option) => setAccountType(option.id)}
                 />
             </FormItem>
-            {isCompany &&
+            {isCompany && (
                 <>
                     <FormItem label={t('signup.companySize')}>
-                        <SelectBox className="w-full border border-accent bg-muted"
+                        <SelectBox
+                            className="w-full border border-accent bg-muted"
                             value={companySize}
                             options={companySizeOptions}
                             onChange={setCompanySize}
@@ -145,9 +141,10 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
                         <Input value={companyWebsite} onChange={setCompanyWebsite} type="text" />
                     </FormItem>
                 </>
-            }
+            )}
             <FormItem label={t('signup.projectMaturity')}>
-                <SelectBox className="w-full border border-accent bg-muted"
+                <SelectBox
+                    className="w-full border border-accent bg-muted"
                     options={projectMaturityOptions}
                     value={projectMaturityOptions.find((option) => option.id === projectMaturity)}
                     optionLabel={(option) => option?.label}
@@ -167,13 +164,11 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
     );
 }
 
-function FormItem({ label, children }: { label: string, children: React.ReactNode }) {
-
+function FormItem({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <div className="flex flex-col space-y-2 pt-4">
             <div className="text-sm text-muted">{label}</div>
             {children}
         </div>
-    )
-
+    );
 }

@@ -1,24 +1,24 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { Badge, Button, cn, useToast, Tabs, TabsBar, TabsPanel, type Tab as TabDefinition } from '@vertesia/ui/core';
+import type { AgentMessage, ConversationFile, Plan } from '@vertesia/common';
+import { FileProcessingStatus } from '@vertesia/common';
+import { Badge, Button, cn, type Tab as TabDefinition, Tabs, TabsBar, TabsPanel, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { useUserSession } from '@vertesia/ui/session';
 import {
     CheckCircleIcon,
     ClipboardCopyIcon,
     DownloadCloudIcon,
     FileTextIcon,
-    Loader2Icon,
     LayoutListIcon,
+    Loader2Icon,
     XCircleIcon,
     XIcon,
 } from 'lucide-react';
-import { FileProcessingStatus } from '@vertesia/common';
-import type { Plan, ConversationFile, AgentMessage } from '@vertesia/common';
-import { useUserSession } from '@vertesia/ui/session';
-import InlineSlidingPlanPanel from './ModernAgentOutput/InlineSlidingPlanPanel';
-import { getConversationUrl } from './ModernAgentOutput/utils.js';
-import { DocumentPanel } from './DocumentPanel.js';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ArtifactsTab } from './ArtifactsTab.js';
 import { BrowserUseWidget, getLatestBrowserUseByWorkstream } from './BrowserUseWidget.js';
+import { DocumentPanel } from './DocumentPanel.js';
+import InlineSlidingPlanPanel from './ModernAgentOutput/InlineSlidingPlanPanel';
+import { getConversationUrl } from './ModernAgentOutput/utils.js';
 import type { OpenDocument } from './types/document.js';
 
 // ---------------------------------------------------------------------------
@@ -90,23 +90,14 @@ function UploadedDocumentsTab({ files }: UploadedDocumentsProps) {
             ) : (
                 <div className="space-y-2 p-2">
                     {filesArray.map((file) => (
-                        <div
-                            key={file.id}
-                            className="flex items-start gap-2 p-2 border border-muted rounded-md"
-                        >
+                        <div key={file.id} className="flex items-start gap-2 p-2 border border-muted rounded-md">
                             <div className="mt-0.5">{getStatusIcon(file.status)}</div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between gap-2">
-                                    <span className="text-sm font-medium truncate">
-                                        {file.name}
-                                    </span>
+                                    <span className="text-sm font-medium truncate">{file.name}</span>
                                     {getStatusBadge(file.status)}
                                 </div>
-                                {file.error && (
-                                    <div className="text-xs text-destructive mt-1">
-                                        {file.error}
-                                    </div>
-                                )}
+                                {file.error && <div className="text-xs text-destructive mt-1">{file.error}</div>}
                             </div>
                         </div>
                     ))}
@@ -156,15 +147,13 @@ class RightPanelErrorBoundary extends React.Component<RightPanelErrorBoundaryPro
             <div
                 className={cn(
                     'rounded-md border border-destructive bg-mixer-destructive/10 text-destructive',
-                    this.props.compact ? 'p-2 text-xs' : 'm-3 p-3 text-sm'
+                    this.props.compact ? 'p-2 text-xs' : 'm-3 p-3 text-sm',
                 )}
             >
                 <div className="font-medium">{this.props.title}</div>
                 <div className="mt-1 text-xs text-muted">{this.props.description}</div>
                 {this.state.message && (
-                    <div className="mt-1 break-all text-[11px] text-muted">
-                        {this.state.message}
-                    </div>
+                    <div className="mt-1 break-all text-[11px] text-muted">{this.state.message}</div>
                 )}
             </div>
         );
@@ -188,19 +177,25 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
     const browserUseByWorkstream = useMemo(() => getLatestBrowserUseByWorkstream(messages), [messages]);
     const renderErrorDescription = t('agent.panelRenderErrorDescription');
 
-    const copyRunId = useCallback((runId: string) => {
-        navigator.clipboard.writeText(runId);
-        toast({ status: 'success', title: t('agent.runIdCopied'), duration: 2000 });
-    }, [t, toast]);
+    const copyRunId = useCallback(
+        (runId: string) => {
+            navigator.clipboard.writeText(runId);
+            toast({ status: 'success', title: t('agent.runIdCopied'), duration: 2000 });
+        },
+        [t, toast],
+    );
 
-    const downloadConversation = useCallback(async (runId: string) => {
-        try {
-            const url = await getConversationUrl(client, runId);
-            if (url) window.open(url, '_blank');
-        } catch {
-            toast({ status: 'error', title: t('agent.failedToDownload') });
-        }
-    }, [client, t, toast]);
+    const downloadConversation = useCallback(
+        async (runId: string) => {
+            try {
+                const url = await getConversationUrl(client, runId);
+                if (url) window.open(url, '_blank');
+            } catch {
+                toast({ status: 'error', title: t('agent.failedToDownload') });
+            }
+        },
+        [client, t, toast],
+    );
 
     if (workstreams.length === 0) {
         return (
@@ -217,18 +212,20 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                 const isActive = ws.status === 'running' || ws.status === 'canceling';
                 const elapsed = Math.round(ws.elapsed_ms / 1000);
                 const remaining = Math.round(ws.remaining_ms / 1000);
-                const progress = ws.deadline_ms > 0
-                    ? Math.min(100, Math.round((ws.elapsed_ms / ws.deadline_ms) * 100))
-                    : 0;
+                const progress =
+                    ws.deadline_ms > 0 ? Math.min(100, Math.round((ws.elapsed_ms / ws.deadline_ms) * 100)) : 0;
                 const browserUse = browserUseByWorkstream.get(ws.workstream_id);
 
-                const statusBadge = ws.status === 'running'
-                    ? <Badge variant="info">{ws.phase || 'running'}</Badge>
-                    : ws.status === 'canceling'
-                        ? <Badge variant="attention">canceling</Badge>
-                        : ws.status === 'completed'
-                            ? <Badge variant="done">{t('agent.completed')}</Badge>
-                            : <Badge variant="destructive">{t('agent.canceled')}</Badge>;
+                const statusBadge =
+                    ws.status === 'running' ? (
+                        <Badge variant="info">{ws.phase || 'running'}</Badge>
+                    ) : ws.status === 'canceling' ? (
+                        <Badge variant="attention">canceling</Badge>
+                    ) : ws.status === 'completed' ? (
+                        <Badge variant="done">{t('agent.completed')}</Badge>
+                    ) : (
+                        <Badge variant="destructive">{t('agent.canceled')}</Badge>
+                    );
 
                 return (
                     <RightPanelErrorBoundary
@@ -239,9 +236,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                     >
                         <div className="p-3 border rounded-md space-y-2">
                             <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium truncate">
-                                    {ws.workstream_id}
-                                </span>
+                                <span className="text-sm font-medium truncate">{ws.workstream_id}</span>
                                 {statusBadge}
                             </div>
                             {/* Progress bar — only for active workstreams */}
@@ -265,10 +260,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                                     description={renderErrorDescription}
                                     compact
                                 >
-                                    <BrowserUseWidget
-                                        state={browserUse}
-                                        runId={runId}
-                                    />
+                                    <BrowserUseWidget state={browserUse} runId={runId} />
                                 </RightPanelErrorBoundary>
                             )}
                             {/* Actions */}
@@ -410,14 +402,17 @@ function AgentRightPanelComponent({
     const hasDocuments = openDocuments.length > 0;
     const hasUploads = processingFiles ? processingFiles.size > 0 : false;
     const hasPlan = showPlan && plan;
-    const withTabBoundary = useCallback((name: string, content: React.ReactNode) => (
-        <RightPanelErrorBoundary
-            title={t('agent.panelRenderError', { name })}
-            description={t('agent.panelRenderErrorDescription')}
-        >
-            {content}
-        </RightPanelErrorBoundary>
-    ), [t]);
+    const withTabBoundary = useCallback(
+        (name: string, content: React.ReactNode) => (
+            <RightPanelErrorBoundary
+                title={t('agent.panelRenderError', { name })}
+                description={t('agent.panelRenderErrorDescription')}
+            >
+                {content}
+            </RightPanelErrorBoundary>
+        ),
+        [t],
+    );
 
     const conversationTab: TabDefinition = {
         name: 'conversation',
@@ -432,73 +427,104 @@ function AgentRightPanelComponent({
         ...(conversationContent ? [conversationTab] : []),
         {
             name: 'plan',
-            label: hasPlan
-                ? <span className="flex items-center gap-1">{t('agent.plan')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" /></span>
-                : t('agent.plan'),
-            content: withTabBoundary(t('agent.plan'), plan ? (
-                <InlineSlidingPlanPanel
-                    plan={plan}
-                    workstreamStatus={workstreamStatus || new Map()}
-                    isOpen={true}
-                    onClose={onClose}
-                    plans={plans}
-                    activePlanIndex={activePlanIndex}
-                    onChangePlan={onChangePlan}
-                />
+            label: hasPlan ? (
+                <span className="flex items-center gap-1">
+                    {t('agent.plan')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" />
+                </span>
             ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-muted">
-                    <span className="text-sm">{t('agent.noPlanAvailable')}</span>
-                </div>
-            )),
+                t('agent.plan')
+            ),
+            content: withTabBoundary(
+                t('agent.plan'),
+                plan ? (
+                    <InlineSlidingPlanPanel
+                        plan={plan}
+                        workstreamStatus={workstreamStatus || new Map()}
+                        isOpen={true}
+                        onClose={onClose}
+                        plans={plans}
+                        activePlanIndex={activePlanIndex}
+                        onChangePlan={onChangePlan}
+                    />
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-muted">
+                        <span className="text-sm">{t('agent.noPlanAvailable')}</span>
+                    </div>
+                ),
+            ),
             is_allowed: true,
         },
         {
             name: 'workstreams',
-            label: hasWorkstreams
-                ? <span className="flex items-center gap-1">{t('agent.workstreams')} <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">{activeWorkstreams.length}</span></span>
-                : t('agent.workstreams'),
+            label: hasWorkstreams ? (
+                <span className="flex items-center gap-1">
+                    {t('agent.workstreams')}{' '}
+                    <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">
+                        {activeWorkstreams.length}
+                    </span>
+                </span>
+            ) : (
+                t('agent.workstreams')
+            ),
             content: withTabBoundary(
                 t('agent.workstreams'),
-                <WorkstreamsTab workstreams={activeWorkstreams} messages={messages} runId={runId} />
+                <WorkstreamsTab workstreams={activeWorkstreams} messages={messages} runId={runId} />,
             ),
             is_allowed: !hideWorkstreams,
         },
         {
             name: 'documents',
-            label: hasDocuments
-                ? <span className="flex items-center gap-1">{t('agent.documents')} <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">{openDocuments.length}</span></span>
-                : t('agent.documents'),
-            content: withTabBoundary(t('agent.documents'), openDocuments.length > 0 && onSelectDocument && onCloseDocument ? (
-                <DocumentPanel
-                    isOpen={true}
-                    documents={openDocuments}
-                    activeDocumentId={activeDocumentId ?? null}
-                    onSelectDocument={onSelectDocument}
-                    onCloseDocument={onCloseDocument}
-                    onUpdateDocumentTitle={onUpdateDocumentTitle}
-                    refreshKey={docRefreshKey}
-                    runId={runId}
-                />
+            label: hasDocuments ? (
+                <span className="flex items-center gap-1">
+                    {t('agent.documents')}{' '}
+                    <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">
+                        {openDocuments.length}
+                    </span>
+                </span>
             ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-muted">
-                    <FileTextIcon className="size-8 mb-2" />
-                    <span className="text-sm">{t('agent.noDocumentsOpen')}</span>
-                </div>
-            )),
+                t('agent.documents')
+            ),
+            content: withTabBoundary(
+                t('agent.documents'),
+                openDocuments.length > 0 && onSelectDocument && onCloseDocument ? (
+                    <DocumentPanel
+                        isOpen={true}
+                        documents={openDocuments}
+                        activeDocumentId={activeDocumentId ?? null}
+                        onSelectDocument={onSelectDocument}
+                        onCloseDocument={onCloseDocument}
+                        onUpdateDocumentTitle={onUpdateDocumentTitle}
+                        refreshKey={docRefreshKey}
+                        runId={runId}
+                    />
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-muted">
+                        <FileTextIcon className="size-8 mb-2" />
+                        <span className="text-sm">{t('agent.noDocumentsOpen')}</span>
+                    </div>
+                ),
+            ),
             is_allowed: true,
         },
         {
             name: 'uploads',
-            label: hasUploads
-                ? <span className="flex items-center gap-1">{t('agent.uploads')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" /></span>
-                : t('agent.uploads'),
+            label: hasUploads ? (
+                <span className="flex items-center gap-1">
+                    {t('agent.uploads')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" />
+                </span>
+            ) : (
+                t('agent.uploads')
+            ),
             content: withTabBoundary(t('agent.uploads'), <UploadedDocumentsTab files={processingFiles} />),
             is_allowed: true,
         },
         {
             name: 'artifacts',
             label: t('agent.artifacts'),
-            content: withTabBoundary(t('agent.artifacts'), <ArtifactsTab runId={runId} refreshKey={artifactRefreshKey} />),
+            content: withTabBoundary(
+                t('agent.artifacts'),
+                <ArtifactsTab runId={runId} refreshKey={artifactRefreshKey} />,
+            ),
             is_allowed: showArtifacts,
         },
         {
@@ -512,13 +538,7 @@ function AgentRightPanelComponent({
     ];
 
     return (
-        <Tabs
-            tabs={tabs}
-            current={activeTab}
-            onTabChange={handleTabChange}
-            fullHeight
-            className="px-0"
-        >
+        <Tabs tabs={tabs} current={activeTab} onTabChange={handleTabChange} fullHeight className="px-0">
             <div className="flex items-center border-b shrink-0 px-1">
                 <div className="flex-1 overflow-x-auto">
                     <TabsBar className="border-b-0 mb-0 min-w-max" />

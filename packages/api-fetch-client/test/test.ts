@@ -1,12 +1,12 @@
-import assert from "node:assert";
-import { FetchClient } from '../src/index.js';
+import assert from 'node:assert';
 import { KoaServer } from '@koa-stack/server';
+import { FetchClient } from '../src/index.js';
 import Endpoints from './endpoints.js';
 
-const HOST = "127.0.0.1";
+const HOST = '127.0.0.1';
 const server = new KoaServer();
 
-server.mount('/api/v1', Endpoints)
+server.mount('/api/v1', Endpoints);
 
 let client: FetchClient;
 
@@ -17,54 +17,69 @@ before(async () => {
         throw new Error('Unable to resolve test server address');
     }
     client = new FetchClient(`http://${HOST}:${address.port}/api/v1`).withHeaders({
-        "authorization": "Bearer 1234"
+        authorization: 'Bearer 1234',
     });
 });
 
 after(() => server.stop());
 
 describe('Test requests', () => {
-    it('get method works', done => {
-        client.get('/').then((payload) => {
-            assert((payload as { message: string }).message === "Hello World!");
-            done();
-        }).catch(done);
+    it('get method works', (done) => {
+        client
+            .get('/')
+            .then((payload) => {
+                assert((payload as { message: string }).message === 'Hello World!');
+                done();
+            })
+            .catch(done);
     });
-    it('withHeaders works', done => {
-        client.get('/token').then((payload) => {
-            assert((payload as { token: string }).token === "1234");
-            done();
-        }).catch(done);
+    it('withHeaders works', (done) => {
+        client
+            .get('/token')
+            .then((payload) => {
+                assert((payload as { token: string }).token === '1234');
+                done();
+            })
+            .catch(done);
     });
-    it('handles incorrect content type', done => {
-        client.get('/html').then((payload) => {
-            assert((payload as { text: string }).text === "<html><body>Hello!</body></html>");
-            done();
-        }).catch(done);
+    it('handles incorrect content type', (done) => {
+        client
+            .get('/html')
+            .then((payload) => {
+                assert((payload as { text: string }).text === '<html><body>Hello!</body></html>');
+                done();
+            })
+            .catch(done);
     });
-    it('handles errors in incorrect content type', done => {
+    it('handles errors in incorrect content type', (done) => {
         type FetchErr = {
             payload: { text: string };
             status: number;
             original_message: string;
             message: string;
         };
-        client.get('/html-error').catch((err: unknown) => {
-            const e = err as FetchErr;
-            assert(e.payload.text === "<html><body>Error!</body></html>");
-            assert(e.status === 401);
-            assert(e.original_message.startsWith("Server Error: 401"));
-            assert(e.original_message.includes("non-JSON response"));
-            assert(!e.message.includes("Unexpected token"));
-            done();
-        }).catch(done);
+        client
+            .get('/html-error')
+            .catch((err: unknown) => {
+                const e = err as FetchErr;
+                assert(e.payload.text === '<html><body>Error!</body></html>');
+                assert(e.status === 401);
+                assert(e.original_message.startsWith('Server Error: 401'));
+                assert(e.original_message.includes('non-JSON response'));
+                assert(!e.message.includes('Unexpected token'));
+                done();
+            })
+            .catch(done);
     });
-    it('handles no content', done => {
-        client.get('/no-content').then((payload) => {
-            assert(payload === undefined);
-            assert(client.response?.status === 204);
-            done();
-        }).catch(done);
+    it('handles no content', (done) => {
+        client
+            .get('/no-content')
+            .then((payload) => {
+                assert(payload === undefined);
+                assert(client.response?.status === 204);
+                done();
+            })
+            .catch(done);
     });
     it('does not retry by default', async () => {
         let attempts = 0;
@@ -100,7 +115,7 @@ describe('Test requests', () => {
             jitter: false,
         });
 
-        const payload = await retryClient.get('/unstable') as { attempts: number };
+        const payload = (await retryClient.get('/unstable')) as { attempts: number };
 
         assert.equal(attempts, 2);
         assert.equal(payload.attempts, 2);
@@ -143,10 +158,10 @@ describe('Test requests', () => {
             jitter: false,
         });
 
-        const payload = await retryClient.post('/unstable', {
+        const payload = (await retryClient.post('/unstable', {
             payload: { value: true },
             retryPolicy: { methods: ['POST'] },
-        }) as { attempts: number };
+        })) as { attempts: number };
 
         assert.equal(attempts, 2);
         assert.equal(payload.attempts, 2);
@@ -168,7 +183,7 @@ describe('Test requests', () => {
             jitter: false,
         });
 
-        const payload = await retryClient.get('/unstable') as { attempts: number };
+        const payload = (await retryClient.get('/unstable')) as { attempts: number };
 
         assert.equal(attempts, 2);
         assert.equal(payload.attempts, 2);

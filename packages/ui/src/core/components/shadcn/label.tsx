@@ -1,31 +1,26 @@
-import * as React from "react"
-import * as LabelPrimitive from "@radix-ui/react-label"
-import { cva, type VariantProps } from "class-variance-authority"
+import * as LabelPrimitive from '@radix-ui/react-label';
+import { cva, type VariantProps } from 'class-variance-authority';
+import * as React from 'react';
 
-import { cn } from "../libs/utils"
+import { cn } from '../libs/utils';
 
-const labelVariants = cva(
-  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-)
+const labelVariants = cva('text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70');
 
 type LabelProps = React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> &
-  VariantProps<typeof labelVariants> & {
-    required?: boolean
-  }
+    VariantProps<typeof labelVariants> & {
+        required?: boolean;
+    };
 
-const Label: React.ForwardRefExoticComponent<LabelProps & React.RefAttributes<React.ElementRef<typeof LabelPrimitive.Root>>> = React.forwardRef<
-  React.ElementRef<typeof LabelPrimitive.Root>,
-  LabelProps
->(({ className, required, ...props }, ref) => (
-  <LabelPrimitive.Root
-    ref={ref}
-    className={cn(labelVariants(), className)}
-    {...props}
-  >
-    {props.children}
-    {required && <span className="text-destructive-foreground ms-1">*</span>}
-  </LabelPrimitive.Root>
-))
-Label.displayName = LabelPrimitive.Root.displayName
+const Label: React.ForwardRefExoticComponent<
+    LabelProps & React.RefAttributes<React.ElementRef<typeof LabelPrimitive.Root>>
+> = React.forwardRef<React.ElementRef<typeof LabelPrimitive.Root>, LabelProps>(
+    ({ className, required, ...props }, ref) => (
+        <LabelPrimitive.Root ref={ref} className={cn(labelVariants(), className)} {...props}>
+            {props.children}
+            {required && <span className="text-destructive-foreground ms-1">*</span>}
+        </LabelPrimitive.Root>
+    ),
+);
+Label.displayName = LabelPrimitive.Root.displayName;
 
-export { Label }
+export { Label };

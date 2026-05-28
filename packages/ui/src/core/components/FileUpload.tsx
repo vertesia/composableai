@@ -1,4 +1,4 @@
-import { type DragEventHandler, type RefObject, type ReactNode, useRef } from "react";
+import { type DragEventHandler, type ReactNode, type RefObject, useRef } from 'react';
 
 type DragCounterElement = HTMLElement & {
     __dragOver_cnt__?: number;
@@ -57,9 +57,9 @@ export function FileUploadInput({ children, onUpload }: FileUploadInputProps) {
         }
     };
     return (
-        <label style={{ cursor: "pointer" }}>
+        <label style={{ cursor: 'pointer' }}>
             {children}
-            <input ref={inputRef} type="file" style={{ display: "none" }} onChange={_onUpload} />
+            <input ref={inputRef} type="file" style={{ display: 'none' }} onChange={_onUpload} />
         </label>
     );
 }
@@ -131,7 +131,7 @@ function _onDrop(el: DragCounterElement | null) {
 export interface IDropZoneOpts {
     onUpload: (files: File[]) => unknown;
     dragOverClass?: string;
-    dropEffect?: "none" | "copy" | "link" | "move";
+    dropEffect?: 'none' | 'copy' | 'link' | 'move';
 }
 export interface IDropZoneProps<T> {
     onDrop: DragEventHandler<T>;
@@ -143,8 +143,8 @@ export interface IDropZoneProps<T> {
 
 export function useDropZone<T extends HTMLElement = HTMLDivElement>({
     onUpload,
-    dragOverClass = "is-drag-over-on",
-    dropEffect = "copy",
+    dragOverClass = 'is-drag-over-on',
+    dropEffect = 'copy',
 }: IDropZoneOpts): IDropZoneProps<T> {
     const ref = useRef<T>(null);
 
@@ -157,11 +157,11 @@ export function useDropZone<T extends HTMLElement = HTMLDivElement>({
         if (items) {
             const promises: Promise<File[]>[] = [];
 
-            const traverseFileTree = (item: FileSystemEntry, path: string = ""): Promise<File[]> => {
+            const traverseFileTree = (item: FileSystemEntry, path: string = ''): Promise<File[]> => {
                 return new Promise((resolve) => {
                     if (isFileEntry(item)) {
                         item.file((file: File) => {
-                            Object.defineProperty(file, "webkitRelativePath", { value: path + file.name });
+                            Object.defineProperty(file, 'webkitRelativePath', { value: path + file.name });
                             resolve([file]);
                         });
                     } else if (isDirectoryEntry(item)) {

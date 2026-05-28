@@ -1,7 +1,6 @@
-import type { Permission } from "@vertesia/common";
-import { SidebarItem, type SidebarItemProps } from "@vertesia/ui/layout";
-import { useUserPermissions } from "./UserPermissionsProvider";
-
+import type { Permission } from '@vertesia/common';
+import { SidebarItem, type SidebarItemProps } from '@vertesia/ui/layout';
+import { useUserPermissions } from './UserPermissionsProvider';
 
 interface SecureSidebarItemProps extends SidebarItemProps {
     permission: Permission | Permission[];
@@ -12,8 +11,6 @@ export function SecureSidebarItem({ permission, ...others }: SecureSidebarItemPr
     if (!hasPermission) {
         return null;
     } else {
-        return (
-            <SidebarItem {...others} />
-        )
+        return <SidebarItem {...others} />;
     }
 }

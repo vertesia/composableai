@@ -1,12 +1,13 @@
-import { ChevronDownIcon, ChevronUpIcon, XIcon } from 'lucide-react';
 import clsx from 'clsx';
+import { ChevronDownIcon, ChevronUpIcon, XIcon } from 'lucide-react';
 import React, { type ReactNode, useEffect, useRef, useState } from 'react';
-import { type AlignType, Popup, type PopupController } from "./popup/index";
+import { type AlignType, Popup, type PopupController } from './popup/index';
 
-const INPUT_UNSTYLED = "block m-0 p-0 border-0 focus:outline-none focus:ring-0";
-const INPUT_NO_PADDING = "block sm:text-sm sm:leading-6 bg-muted rounded-md border-0 shadow-sm ring-1 ring-inset ring-muted placeholder:text-muted focus:ring-2 focus:ring-inset focus:ring-primary"
+const INPUT_UNSTYLED = 'block m-0 p-0 border-0 focus:outline-none focus:ring-0';
+const INPUT_NO_PADDING =
+    'block sm:text-sm sm:leading-6 bg-muted rounded-md border-0 shadow-sm ring-1 ring-inset ring-muted placeholder:text-muted focus:ring-2 focus:ring-inset focus:ring-primary';
 const INPUT = `${INPUT_NO_PADDING} py-1.5`;
-const COMBOBOX_POPUP = "combobox-popup";
+const COMBOBOX_POPUP = 'combobox-popup';
 
 function genComboboxPopupId() {
     return `combobox-popup-${Math.floor(Math.random() * 1000000)}`;
@@ -23,7 +24,7 @@ export abstract class OptionAdapter<T> {
         return this.valueOf(item);
     }
     findById(items: T[], id: string) {
-        return items.find(item => this.idOf(item) === id);
+        return items.find((item) => this.idOf(item) === id);
     }
     // override to support creating new items
     createItem(_value: string): T | null {
@@ -59,20 +60,21 @@ export interface ComboBoxLayoutProps<T> {
     Toggle?: React.ComponentType<ComboToggleProps<T>> | null;
 }
 
-export type ComboBoxLayout<T> = Required<ComboBoxLayoutProps<T>>
+export type ComboBoxLayout<T> = Required<ComboBoxLayoutProps<T>>;
 
 export function getDefaultComboBoxLayout<T>(fullWidth?: boolean, unstyledInput?: boolean): ComboBoxLayout<T> {
     return {
         buttonRight: 4,
         buttonWidth: 24,
         maxMenuHeight: 240,
-        menuClass: "w-72 mt-1 border-popover bg-popover text-popover-foreground shadow-md overflow-auto p-0 z-10",
-        inputClass: clsx(unstyledInput ? INPUT_UNSTYLED : INPUT, fullWidth ? "w-full" : "!w-auto"),
-        optionClass: "py-2 px-3 shadow-sm flex flex-col [&.option-selected]:font-semibold [&.option-highlighted]:bg-blue-300",
+        menuClass: 'w-72 mt-1 border-popover bg-popover text-popover-foreground shadow-md overflow-auto p-0 z-10',
+        inputClass: clsx(unstyledInput ? INPUT_UNSTYLED : INPUT, fullWidth ? 'w-full' : '!w-auto'),
+        optionClass:
+            'py-2 px-3 shadow-sm flex flex-col [&.option-selected]:font-semibold [&.option-highlighted]:bg-blue-300',
         Input: ComboInput<T>,
         Menu: ComboMenu<T>,
         Toggle: ComboToggle<T>,
-    }
+    };
 }
 
 export interface ComboBoxApi<T> {
@@ -100,7 +102,7 @@ export interface ComboBoxProps<T> {
     onSelect?: (value: T | null) => void;
     // menu zIndex
     zIndex?: number;
-    focusOnMount?: boolean
+    focusOnMount?: boolean;
     menuGap?: number;
     menuAlign?: AlignType;
     // show X button to clear the current selection
@@ -110,17 +112,36 @@ export interface ComboBoxProps<T> {
     // open the menu when the input is focused
     openOnFocus?: boolean;
 }
-export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelect, value, zIndex, unstyledInput, fullWidth, api, layout: layoutOpts, adapter, items, placeholder, clearable, noMatchMessage, openOnFocus }: ComboBoxProps<T>) {
+export function ComboBox<T>({
+    menuAlign = 'fill',
+    menuGap,
+    focusOnMount,
+    onSelect,
+    value,
+    zIndex,
+    unstyledInput,
+    fullWidth,
+    api,
+    layout: layoutOpts,
+    adapter,
+    items,
+    placeholder,
+    clearable,
+    noMatchMessage,
+    openOnFocus,
+}: ComboBoxProps<T>) {
     const [popupId] = useState(genComboboxPopupId());
     const popupCtrl = useRef<PopupController | undefined>(undefined);
     const inputRef = useRef<HTMLInputElement>(null);
-    const layout: ComboBoxLayout<T> = layoutOpts ? Object.assign(getDefaultComboBoxLayout<T>(fullWidth, unstyledInput), layoutOpts) : getDefaultComboBoxLayout<T>(fullWidth, unstyledInput);
+    const layout: ComboBoxLayout<T> = layoutOpts
+        ? Object.assign(getDefaultComboBoxLayout<T>(fullWidth, unstyledInput), layoutOpts)
+        : getDefaultComboBoxLayout<T>(fullWidth, unstyledInput);
     const inputBoxRef = React.useRef<HTMLDivElement>(null);
     const ctrl = useComboboxCtrl<T>({
         adapter,
         items,
         value,
-        popupId
+        popupId,
     });
     useEffect(() => {
         if (inputRef.current) {
@@ -129,7 +150,7 @@ export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelec
     }, [focusOnMount]);
     // the onSelect callback may change so we need to refresh it.
     useEffect(() => {
-        ctrl.onSelect = onSelect
+        ctrl.onSelect = onSelect;
         ctrl.popupCtrl = popupCtrl.current;
     }, [ctrl, onSelect]);
     useEffect(() => {
@@ -138,14 +159,14 @@ export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelec
                 open: () => ctrl.openMenu(),
                 close: () => ctrl.closeMenu(),
                 toggle: () => ctrl.toggleMenu(),
-                setInputValue: (value: string) => ctrl.inputText = value,
+                setInputValue: (value: string) => (ctrl.inputText = value),
                 inputValue: ctrl.inputText || '',
                 selectedItem: ctrl.selectedItem,
-                focus: () => inputRef.current?.focus()
-            }
+                focus: () => inputRef.current?.focus(),
+            };
             return () => {
                 api.current = null;
-            }
+            };
         }
     }, [api, ctrl]);
 
@@ -153,19 +174,39 @@ export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelec
 
     return (
         <>
-            <layout.Input boxRef={inputBoxRef} inputRef={inputRef} ctrl={ctrl} layout={layout} placeholder={placeholder} clearable={clearable} openOnFocus={openOnFocus} />
+            <layout.Input
+                boxRef={inputBoxRef}
+                inputRef={inputRef}
+                ctrl={ctrl}
+                layout={layout}
+                placeholder={placeholder}
+                clearable={clearable}
+                openOnFocus={openOnFocus}
+            />
             <Popup
                 id={popupId}
                 ctrlRef={popupCtrl}
                 className={COMBOBOX_POPUP}
-                closeOnClick closeOnEsc
+                closeOnClick
+                closeOnEsc
                 onClose={() => ctrl.closeMenu()}
-                isOpen={showMenu} anchor={inputBoxRef} zIndex={zIndex} constraints={{
-                    position: "bottom",
+                isOpen={showMenu}
+                anchor={inputBoxRef}
+                zIndex={zIndex}
+                constraints={{
+                    position: 'bottom',
                     align: menuAlign,
-                    gap: menuGap != null ? menuGap : 4
-                }}>
-                <layout.Menu fillWidth={menuAlign === "fill"} items={ctrl.filteredItems} ctrl={ctrl} layout={layout} adapter={adapter} noMatchMessage={noMatchMessage} />
+                    gap: menuGap != null ? menuGap : 4,
+                }}
+            >
+                <layout.Menu
+                    fillWidth={menuAlign === 'fill'}
+                    items={ctrl.filteredItems}
+                    ctrl={ctrl}
+                    layout={layout}
+                    adapter={adapter}
+                    noMatchMessage={noMatchMessage}
+                />
             </Popup>
         </>
     );
@@ -173,8 +214,8 @@ export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelec
 
 export interface ComboInputProps<T> {
     layout: ComboBoxLayout<T>;
-    ctrl: ComboboxController<T>,
-    placeholder?: string
+    ctrl: ComboboxController<T>;
+    placeholder?: string;
     boxRef?: React.RefObject<HTMLDivElement | null>;
     inputRef?: React.RefObject<HTMLInputElement | null>;
     clearable?: boolean;
@@ -184,7 +225,8 @@ function ComboInput<T>({ inputRef, placeholder, boxRef, ctrl, layout, clearable,
     const Toggle = layout.Toggle;
     const showClear = clearable && ctrl.selectedItem != null;
     const buttonCount = (Toggle ? 1 : 0) + (showClear ? 1 : 0);
-    const style = buttonCount > 0 ? { paddingRight: `${layout.buttonWidth * buttonCount + layout.buttonRight}px` } : undefined;
+    const style =
+        buttonCount > 0 ? { paddingRight: `${layout.buttonWidth * buttonCount + layout.buttonRight}px` } : undefined;
     return (
         <div className="relative" ref={boxRef}>
             <input
@@ -195,12 +237,33 @@ function ComboInput<T>({ inputRef, placeholder, boxRef, ctrl, layout, clearable,
                 style={style}
                 className={layout.inputClass}
             />
-            <div style={{ position: 'absolute', right: `${layout.buttonRight}px`, top: 0, bottom: 0, display: 'flex', alignItems: 'center', gap: '2px' }}>
+            <div
+                style={{
+                    position: 'absolute',
+                    right: `${layout.buttonRight}px`,
+                    top: 0,
+                    bottom: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                }}
+            >
                 {showClear && (
                     <button
                         type="button"
-                        style={{ border: 'none', padding: 0, margin: 0, backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', width: `${layout.buttonWidth}px` }}
-                        onClick={() => { ctrl.selectedItem = null; }}
+                        style={{
+                            border: 'none',
+                            padding: 0,
+                            margin: 0,
+                            backgroundColor: 'transparent',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            width: `${layout.buttonWidth}px`,
+                        }}
+                        onClick={() => {
+                            ctrl.selectedItem = null;
+                        }}
                     >
                         <XIcon className="w-4 h-4" />
                     </button>
@@ -209,7 +272,16 @@ function ComboInput<T>({ inputRef, placeholder, boxRef, ctrl, layout, clearable,
                     // Raw <button> — spreads ctrl.getToggleButtonProps() from downshift; props must attach to the DOM element directly.
                     <button
                         type="button"
-                        style={{ width: `${layout.buttonWidth}px`, border: 'none', padding: 0, margin: 0, backgroundColor: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        style={{
+                            width: `${layout.buttonWidth}px`,
+                            border: 'none',
+                            padding: 0,
+                            margin: 0,
+                            backgroundColor: 'transparent',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
                         {...ctrl.getToggleButtonProps()}
                     >
                         <Toggle ctrl={ctrl} layout={layout} />
@@ -217,7 +289,7 @@ function ComboInput<T>({ inputRef, placeholder, boxRef, ctrl, layout, clearable,
                 )}
             </div>
         </div>
-    )
+    );
 }
 
 export interface ComboToggleProps<T> {
@@ -239,36 +311,43 @@ export interface ComboMenuProps<T> {
 function ComboMenu<T>({ fillWidth, items, layout, ctrl, adapter, noMatchMessage }: ComboMenuProps<T>) {
     const { highlightedIndex, selectedItem } = ctrl;
     if (items.length === 0) {
-        return noMatchMessage
-            ? <div style={{ width: fillWidth ? '100%' : undefined }} className={layout.menuClass}>{noMatchMessage}</div>
-            : null;
+        return noMatchMessage ? (
+            <div style={{ width: fillWidth ? '100%' : undefined }} className={layout.menuClass}>
+                {noMatchMessage}
+            </div>
+        ) : null;
     }
     return (
-        <ul style={{ width: fillWidth ? "100%" : undefined, maxHeight: layout.maxMenuHeight ? `${layout.maxMenuHeight}px` : '240px' }}
-            className={layout.menuClass} {...ctrl.getMenuProps()}>
+        <ul
+            style={{
+                width: fillWidth ? '100%' : undefined,
+                maxHeight: layout.maxMenuHeight ? `${layout.maxMenuHeight}px` : '240px',
+            }}
+            className={layout.menuClass}
+            {...ctrl.getMenuProps()}
+        >
             {items.map((item, index) => (
                 <li
                     data-index={index}
                     key={adapter.idOf(item)}
-                    className={clsx(layout.optionClass,
-                        highlightedIndex === index && "option-highlighted",
-                        selectedItem === item && "option-selected")}
+                    className={clsx(
+                        layout.optionClass,
+                        highlightedIndex === index && 'option-highlighted',
+                        selectedItem === item && 'option-selected',
+                    )}
                     {...ctrl.getItemProps(item, index)}
                 >
                     {adapter.renderOption(item)}
                 </li>
-            ))
-            }
-        </ul >
-    )
+            ))}
+        </ul>
+    );
 }
 
-
-
 export interface ComboboxControllerProps<ItemT> {
-    adapter: OptionAdapter<ItemT>,
-    items: ItemT[],
-    value?: ItemT | string | null,
+    adapter: OptionAdapter<ItemT>;
+    items: ItemT[];
+    value?: ItemT | string | null;
     popupId: string;
 }
 export function useComboboxCtrl<ItemT>(props: ComboboxControllerProps<ItemT>): ComboboxController<ItemT> {
@@ -279,7 +358,6 @@ export function useComboboxCtrl<ItemT>(props: ComboboxControllerProps<ItemT>): C
     return ctrl;
 }
 
-
 class ComboboxController<ItemT> {
     private popupId: string;
     public items: ItemT[];
@@ -288,7 +366,7 @@ class ComboboxController<ItemT> {
     private setState?: (ctrl: ComboboxController<ItemT>) => void;
     private _selectedItem: ItemT | null = null;
     private _filteredItems: ItemT[];
-    private _inputText: string = "";
+    private _inputText: string = '';
     private _highlightedIndex: number | null = null;
     private _isMenuOpen: boolean = false;
     popupCtrl?: PopupController;
@@ -297,7 +375,7 @@ class ComboboxController<ItemT> {
         this.adapter = adapter;
         this.items = items;
         this.popupId = popupId;
-        if (typeof value === "string") {
+        if (typeof value === 'string') {
             this._inputText = value;
         } else if (value) {
             this._selectedItem = adapter.findById(items, adapter.idOf(value)) || null;
@@ -331,7 +409,7 @@ class ComboboxController<ItemT> {
     }
 
     private updateState() {
-        this.setState?.(this.clone())
+        this.setState?.(this.clone());
     }
 
     get filteredItems() {
@@ -347,10 +425,8 @@ class ComboboxController<ItemT> {
 
     set selectedItem(item: ItemT | null) {
         this._selectedItem = item;
-        this._inputText = item ? this.adapter.valueOf(item) : "";
-        this._filteredItems = this._inputText ?
-            this.adapter.filter(this.items, this._inputText)
-            : this.items;
+        this._inputText = item ? this.adapter.valueOf(item) : '';
+        this._filteredItems = this._inputText ? this.adapter.filter(this.items, this._inputText) : this.items;
         this.updateState();
         this.onSelect?.(item);
     }
@@ -374,7 +450,7 @@ class ComboboxController<ItemT> {
         if (this.isMenuOpen && this.popupCtrl) {
             const popupCtrl = this.popupCtrl;
             const popupPosition = popupCtrl.context?.position?.position;
-            if (popupPosition && popupPosition === "top") {
+            if (popupPosition && popupPosition === 'top') {
                 window.setTimeout(() => {
                     popupCtrl.update();
                 }, 100);
@@ -431,7 +507,7 @@ class ComboboxController<ItemT> {
     }
 
     getMenuProps() {
-        return {}
+        return {};
     }
 
     getToggleButtonProps() {
@@ -439,13 +515,13 @@ class ComboboxController<ItemT> {
             onClick: () => {
                 this._isMenuOpen = !this._isMenuOpen;
                 this.updateState();
-            }
-        }
+            },
+        };
     }
 
     getItemProps(item: ItemT, index: number): React.HTMLProps<HTMLLIElement> {
         return {
-            "aria-selected": this._highlightedIndex === index,
+            'aria-selected': this._highlightedIndex === index,
             onClick: () => {
                 this.selectedItem = item;
                 this.closeMenu();
@@ -459,8 +535,8 @@ class ComboboxController<ItemT> {
                 if (this.highlightedIndex === index) {
                     this.highlightedIndex = null;
                 }
-            }
-        }
+            },
+        };
     }
 
     getInputProps() {
@@ -477,7 +553,7 @@ class ComboboxController<ItemT> {
             value: this.inputText,
             onKeyDown: (ev: React.KeyboardEvent<HTMLInputElement>) => {
                 const key = ev.key;
-                if (key === "Enter") {
+                if (key === 'Enter') {
                     if (this.highlightedIndex != null) {
                         this.selectedItem = items[this.highlightedIndex || 0];
                     } else {
@@ -491,22 +567,27 @@ class ComboboxController<ItemT> {
                         }
                     }
                     this.closeMenu();
-                } else if (key === "ArrowDown") {
+                } else if (key === 'ArrowDown') {
                     if (this.isMenuOpen) {
-                        this.highlightIndex(this.highlightedIndex === null ? 0 : incrModulo(this.highlightedIndex, items.length), false);
+                        this.highlightIndex(
+                            this.highlightedIndex === null ? 0 : incrModulo(this.highlightedIndex, items.length),
+                            false,
+                        );
                     } else {
                         this.openMenu();
                     }
-                } else if (key === "ArrowUp") {
+                } else if (key === 'ArrowUp') {
                     if (this.isMenuOpen) {
-                        this.highlightIndex(this.highlightedIndex === null ? 0 : decrModulo(this.highlightedIndex, items.length), true);
+                        this.highlightIndex(
+                            this.highlightedIndex === null ? 0 : decrModulo(this.highlightedIndex, items.length),
+                            true,
+                        );
                     }
                 }
-            }
-        }
+            },
+        };
     }
 }
-
 
 function incrModulo(value: number, max: number) {
     return (value + 1) % max;

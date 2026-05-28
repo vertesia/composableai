@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { validatePropertyName } from './SchemaEditor';
 
 describe('validatePropertyName', () => {
@@ -15,7 +15,7 @@ describe('validatePropertyName', () => {
             'anotherValidName',
             'anotherValidName?',
         ];
-        validNames.forEach(name => {
+        validNames.forEach((name) => {
             const err = validatePropertyName(name);
             expect(err).toBeUndefined();
         });
@@ -35,14 +35,14 @@ describe('validatePropertyName', () => {
             'invalid#name',
             'another%InvalidName',
         ];
-        invalidNames.forEach(name => {
+        invalidNames.forEach((name) => {
             const err = validatePropertyName(name);
             expect(err).toBe('Only letters, numbers, underscores or question mark are allowed (a-zA-Z0-9_?)');
         });
     });
 
     it('should return false for empty property name', () => {
-        const err = validatePropertyName('')
+        const err = validatePropertyName('');
         expect(err).toBe('Name is required');
     });
 });

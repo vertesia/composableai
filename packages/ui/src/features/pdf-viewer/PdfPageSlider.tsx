@@ -1,9 +1,9 @@
-import { Button, Center } from "@vertesia/ui/core";
-import clsx from "clsx";
-import { ChevronsDown, ChevronsUp, Maximize, Minus, Plus } from "lucide-react";
-import { type ReactNode, useRef, useEffect, useState, useCallback, type KeyboardEvent } from "react";
+import { Button, Center } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { PdfThumbnailList } from "./PdfPageRenderer";
+import clsx from 'clsx';
+import { ChevronsDown, ChevronsUp, Maximize, Minus, Plus } from 'lucide-react';
+import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { PdfThumbnailList } from './PdfPageRenderer';
 
 // A4 portrait aspect ratio - used as fallback
 const A4_ASPECT_RATIO = 210 / 297;
@@ -47,7 +47,7 @@ export function PdfPageSlider({
     onPageCountChange,
     className,
     compact = false,
-    headerExtra
+    headerExtra,
 }: PdfPageSliderProps) {
     const { t } = useUITranslation();
     const ref = useRef<HTMLDivElement>(null);
@@ -62,10 +62,10 @@ export function PdfPageSlider({
     const prevItemHeightRef = useRef<number | null>(null);
 
     // Calculate thumbnail width based on zoom level
-    const thumbnailWidth = baseWidth ? Math.round(baseWidth * zoom / 100) : undefined;
+    const thumbnailWidth = baseWidth ? Math.round((baseWidth * zoom) / 100) : undefined;
 
     const zoomIn = useCallback(() => {
-        let currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoom);
+        let currentIndex = ZOOM_LEVELS.findIndex((level) => level >= zoom);
         if (currentIndex === -1) {
             currentIndex = ZOOM_LEVELS.length - 1;
         }
@@ -74,7 +74,7 @@ export function PdfPageSlider({
     }, [zoom]);
 
     const zoomOut = useCallback(() => {
-        let currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoom);
+        let currentIndex = ZOOM_LEVELS.findIndex((level) => level >= zoom);
         if (currentIndex === -1) {
             currentIndex = ZOOM_LEVELS.length - 1;
         }
@@ -88,16 +88,22 @@ export function PdfPageSlider({
 
     // Calculate item height based on placeholder height - this must match the renderThumbnail layout
     // padding (p-1=8 or p-2=16) + text height (~16-20 for compact, ~24 for normal) + gap (gap-1=4 or gap-2=8)
-    const calculateItemHeight = useCallback((placeholderHeight: number) => {
-        const extraHeight = compact ? 8 + 16 + 4 : 16 + 24 + 8;
-        return placeholderHeight + extraHeight;
-    }, [compact]);
+    const calculateItemHeight = useCallback(
+        (placeholderHeight: number) => {
+            const extraHeight = compact ? 8 + 16 + 4 : 16 + 24 + 8;
+            return placeholderHeight + extraHeight;
+        },
+        [compact],
+    );
 
     // Legacy function for resize preservation - kept for backwards compatibility
-    const getItemHeight = useCallback((width: number | undefined, ratio: number) => {
-        const placeholderHeight = width ? Math.round(width / ratio) : 200;
-        return calculateItemHeight(placeholderHeight);
-    }, [calculateItemHeight]);
+    const getItemHeight = useCallback(
+        (width: number | undefined, ratio: number) => {
+            const placeholderHeight = width ? Math.round(width / ratio) : 200;
+            return calculateItemHeight(placeholderHeight);
+        },
+        [calculateItemHeight],
+    );
 
     // Single ResizeObserver at parent level to measure thumbnail width
     // Debounced to avoid excessive re-renders during resize
@@ -292,18 +298,18 @@ export function PdfPageSlider({
         if (currentPage > 1) {
             onChange(currentPage - 1);
         }
-    }
+    };
     const goNext = () => {
         if (currentPage < pageCount) {
             onChange(currentPage + 1);
         }
-    }
+    };
 
     return (
         <div ref={ref} className={clsx('flex flex-col items-stretch', compact ? 'gap-y-1' : 'gap-y-2', className)}>
-            <div className={clsx("relative flex items-center justify-center px-2", compact ? "h-6" : "h-9")}>
+            <div className={clsx('relative flex items-center justify-center px-2', compact ? 'h-6' : 'h-9')}>
                 <Button variant="ghost" size="xs" onClick={goPrev} alt={t('pdf.previousPage')}>
-                    <ChevronsUp className='size-4' />
+                    <ChevronsUp className="size-4" />
                 </Button>
                 <div className="absolute start-2 flex items-center gap-x-1">
                     <ZoomControls
@@ -325,7 +331,10 @@ export function PdfPageSlider({
                     <PageNavigator currentPage={currentPage} totalPages={pageCount} onChange={onChange} />
                 </div>
             </div>
-            <div ref={scrollContainerRef} className={clsx('flex flex-col items-center flex-1 overflow-y-auto px-2', compact ? 'gap-1' : 'gap-2')}>
+            <div
+                ref={scrollContainerRef}
+                className={clsx('flex flex-col items-center flex-1 overflow-y-auto px-2', compact ? 'gap-1' : 'gap-2')}
+            >
                 <PdfThumbnailList
                     pdfUrl={pdfUrl}
                     urlLoading={pdfUrlLoading}
@@ -339,29 +348,42 @@ export function PdfPageSlider({
                     onItemHeightChange={setItemHeight}
                     calculateItemHeight={calculateItemHeight}
                     renderThumbnail={({ pageNumber, isSelected, pageElement, onSelect }) => (
-                        <div key={pageNumber} className={clsx("hover:bg-muted rounded-md w-full", compact ? "p-1" : "p-2")}>
+                        <div
+                            key={pageNumber}
+                            className={clsx('hover:bg-muted rounded-md w-full', compact ? 'p-1' : 'p-2')}
+                        >
                             <Button
                                 variant="unstyled"
                                 size="none"
                                 aria-pressed={isSelected}
                                 aria-label={`Page ${pageNumber}`}
-                                className={clsx('relative border-[2px] cursor-pointer overflow-hidden', isSelected ? "border-primary" : "border-border")}
+                                className={clsx(
+                                    'relative border-[2px] cursor-pointer overflow-hidden',
+                                    isSelected ? 'border-primary' : 'border-border',
+                                )}
                                 onClick={onSelect}
                             >
                                 {pageElement}
                             </Button>
-                            <Center className={clsx("text-muted-foreground font-semibold", compact ? "text-xs pt-0.5" : "text-sm pt-1")}>{pageNumber}</Center>
+                            <Center
+                                className={clsx(
+                                    'text-muted-foreground font-semibold',
+                                    compact ? 'text-xs pt-0.5' : 'text-sm pt-1',
+                                )}
+                            >
+                                {pageNumber}
+                            </Center>
                         </div>
                     )}
                 />
             </div>
-            <div className={clsx("flex items-center justify-center", compact ? "h-6" : "h-9")}>
+            <div className={clsx('flex items-center justify-center', compact ? 'h-6' : 'h-9')}>
                 <Button variant="ghost" size="xs" onClick={goNext} alt={t('pdf.nextPage')}>
-                    <ChevronsDown className='size-4' />
+                    <ChevronsDown className="size-4" />
                 </Button>
             </div>
         </div>
-    )
+    );
 }
 
 interface PageNavigatorProps {
@@ -432,25 +454,11 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
     const { t } = useUITranslation();
     return (
         <div className="flex items-center gap-x-0.5">
-            <Button
-                variant="ghost"
-                size="xs"
-                onClick={onZoomOut}
-                isDisabled={!canZoomOut}
-                alt={t('pdf.zoomOut')}
-            >
+            <Button variant="ghost" size="xs" onClick={onZoomOut} isDisabled={!canZoomOut} alt={t('pdf.zoomOut')}>
                 <Minus />
             </Button>
-            <span className="text-xs text-muted-foreground min-w-[32px] text-center">
-                {zoom}%
-            </span>
-            <Button
-                variant="ghost"
-                size="xs"
-                onClick={onZoomIn}
-                isDisabled={!canZoomIn}
-                alt={t('pdf.zoomIn')}
-            >
+            <span className="text-xs text-muted-foreground min-w-[32px] text-center">{zoom}%</span>
+            <Button variant="ghost" size="xs" onClick={onZoomIn} isDisabled={!canZoomIn} alt={t('pdf.zoomIn')}>
                 <Plus />
             </Button>
             <Button

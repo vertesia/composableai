@@ -1,47 +1,42 @@
-import { LayoutGrid, TableProperties } from 'lucide-react'
-import { useState } from 'react'
+import { Button } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { LayoutGrid, TableProperties } from 'lucide-react';
+import { useState } from 'react';
 
-import { Button } from '@vertesia/ui/core'
-import { useUITranslation } from '@vertesia/ui/i18n'
-
-const LAST_DISPLAYED_VIEW = 'vertesia.content_store.lastDisplayedView'
+const LAST_DISPLAYED_VIEW = 'vertesia.content_store.lastDisplayedView';
 
 interface ContentDispositionButtonProps {
-    onUpdate: (value: boolean) => void
+    onUpdate: (value: boolean) => void;
 }
 export function ContentDispositionButton({ onUpdate }: Readonly<ContentDispositionButtonProps>) {
-    const { t } = useUITranslation()
-    const [isGridView, setIsGridView] = useState(localStorage.getItem(LAST_DISPLAYED_VIEW) === "grid")
+    const { t } = useUITranslation();
+    const [isGridView, setIsGridView] = useState(localStorage.getItem(LAST_DISPLAYED_VIEW) === 'grid');
 
     const updateView = () => {
         if (isGridView) {
-            toggleTableView()
+            toggleTableView();
         } else {
-            toggleGridView()
+            toggleGridView();
         }
-    }
+    };
 
     const toggleGridView = () => {
-        localStorage.setItem(LAST_DISPLAYED_VIEW, "grid")
-        setIsGridView(true)
-        onUpdate(true)
-    }
+        localStorage.setItem(LAST_DISPLAYED_VIEW, 'grid');
+        setIsGridView(true);
+        onUpdate(true);
+    };
 
     const toggleTableView = () => {
-        localStorage.setItem(LAST_DISPLAYED_VIEW, "table")
-        setIsGridView(false)
-        onUpdate(false)
-    }
+        localStorage.setItem(LAST_DISPLAYED_VIEW, 'table');
+        setIsGridView(false);
+        onUpdate(false);
+    };
 
     return (
         <Button variant="outline" onClick={updateView} alt={isGridView ? t('misc.tableView') : t('misc.thumbnailView')}>
-            {
-                isGridView
-                    ? <TableProperties />
-                    : <LayoutGrid />
-            }
+            {isGridView ? <TableProperties /> : <LayoutGrid />}
         </Button>
-    )
+    );
 }
 
-ContentDispositionButton.LAST_DISPLAYED_VIEW = LAST_DISPLAYED_VIEW
+ContentDispositionButton.LAST_DISPLAYED_VIEW = LAST_DISPLAYED_VIEW;

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useId } from 'react';
 import mermaid from 'mermaid';
+import { useEffect, useId, useRef, useState } from 'react';
 
 const MERMAID_FONT_FAMILY =
     'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -56,15 +56,13 @@ function normalizeMermaidCodeForBrowser(code: string): string {
  */
 function makeSvgResponsive(svg: string): string {
     return svg.replace(/<svg([^>]*)>/i, (_full, attrs: string) => {
-        let nextAttrs = attrs
-            .replace(/\swidth="[^"]*"/i, '')
-            .replace(/\sheight="[^"]*"/i, '');
+        let nextAttrs = attrs.replace(/\swidth="[^"]*"/i, '').replace(/\sheight="[^"]*"/i, '');
 
         if (/style="/i.test(nextAttrs)) {
             nextAttrs = nextAttrs.replace(
                 /style="([^"]*)"/i,
                 (_styleFull, styleValue: string) =>
-                    `style="${styleValue};width:100%;height:auto;display:block;max-width:100%;"`
+                    `style="${styleValue};width:100%;height:auto;display:block;max-width:100%;"`,
             );
         } else {
             nextAttrs += ' style="width:100%;height:auto;display:block;max-width:100%;"';

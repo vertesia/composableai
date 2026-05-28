@@ -1,8 +1,8 @@
-import { describe, expect, it, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse, formatRgb, type Color } from 'culori';
+import { type Color, formatRgb, parse } from 'culori';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { rgb as wcagRgb } from 'wcag-contrast';
 
 /**
@@ -75,7 +75,12 @@ function parseBlock(css: string, selector: string): Record<string, string> {
     return tokens;
 }
 
-interface Srgba { r: number; g: number; b: number; a: number }
+interface Srgba {
+    r: number;
+    g: number;
+    b: number;
+    a: number;
+}
 
 function toSrgba(cssColor: string): Srgba {
     const parsed = parse(cssColor) as Color | undefined;
@@ -149,7 +154,10 @@ describe('color token contrast (regression gate, not a full audit)', () => {
                     const fg = resolve(block, pair.fg, pair.surface);
                     const bg = resolve(block, pair.bg, pair.surface);
                     const ratio = contrast(fg, bg);
-                    expect(ratio, `${pair.fg} on ${pair.bg} measured ${ratio.toFixed(2)}:1 in ${block}`).toBeGreaterThanOrEqual(threshold);
+                    expect(
+                        ratio,
+                        `${pair.fg} on ${pair.bg} measured ${ratio.toFixed(2)}:1 in ${block}`,
+                    ).toBeGreaterThanOrEqual(threshold);
                 });
             }
         });

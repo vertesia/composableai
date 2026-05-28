@@ -1,8 +1,7 @@
 /// <reference lib="dom" />
 // @vitest-environment jsdom
-import { StrictMode } from 'react';
+import { act, StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LanguageProvider, useLanguage } from './LanguageProvider.js';
 import type { SupportedLanguage } from './rtl.js';
@@ -171,4 +170,3 @@ describe('LanguageProvider', () => {
         expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     });
 });
-

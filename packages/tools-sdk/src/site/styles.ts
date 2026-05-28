@@ -1,7 +1,7 @@
 /**
  * Shared CSS styles for the tools server HTML pages
  */
-export const baseStyles = /*css*/`
+export const baseStyles = /*css*/ `
 :root {
     color-scheme: light dark;
 }

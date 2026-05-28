@@ -1,7 +1,10 @@
-
 class ProgressSpan {
     unitsDone: number;
-    constructor(public parent: Progress, public parentUnits: number, public spanUnits: number) {
+    constructor(
+        public parent: Progress,
+        public parentUnits: number,
+        public spanUnits: number,
+    ) {
         this.unitsDone = 0;
     }
 
@@ -12,11 +15,11 @@ class ProgressSpan {
             units = remaining;
         }
         this.unitsDone += units;
-        this.parent.done(units * this.parentUnits / this.spanUnits);
+        this.parent.done((units * this.parentUnits) / this.spanUnits);
     }
 
     get parentUnitsDone() {
-        return Math.round(this.unitsDone * this.parentUnits / this.spanUnits);
+        return Math.round((this.unitsDone * this.parentUnits) / this.spanUnits);
     }
 
     get isDone() {
@@ -27,8 +30,7 @@ class ProgressSpan {
 export class Progress {
     unitsDone: number = 0;
 
-    constructor(public total: number) {
-    }
+    constructor(public total: number) {}
 
     get fraction() {
         return this.unitsDone / this.total;

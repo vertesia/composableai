@@ -2,7 +2,7 @@ import type { Theme } from '../components/types';
 import { ATTRIBUTE_TEXT } from '../constants';
 
 export interface ElementText {
-  [ATTRIBUTE_TEXT]: string;
+    [ATTRIBUTE_TEXT]: string;
 }
 
 export type AttributeValue = string | number | boolean;
@@ -14,8 +14,8 @@ export type ElementObject = Record<string, AttributesObject | Element[]>;
 export type Element = ElementObject | ElementText;
 
 export interface IXmlViewerContext {
-  collapsible: boolean;
-  indentSize: number;
-  theme: Theme;
-  initialCollapsedDepth?: number;
+    collapsible: boolean;
+    indentSize: number;
+    theme: Theme;
+    initialCollapsedDepth?: number;
 }

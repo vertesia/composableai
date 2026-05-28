@@ -1,6 +1,5 @@
-
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { hasErrorCode } from "./options.js";
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { hasErrorCode } from './options.js';
 
 export async function readStdin() {
     const chunks = [];
