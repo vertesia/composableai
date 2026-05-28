@@ -1,16 +1,16 @@
-import type { SignupData, SignupPayload } from "@vertesia/common";
-import { Button, useSafeLayoutEffect } from "@vertesia/ui/core";
-import { Env } from "@vertesia/ui/env";
-import { useUITranslation } from "@vertesia/ui/i18n";
-import { UserNotFoundError, useUserSession, useUXTracking } from "@vertesia/ui/session";
-import { RegionTag } from "@vertesia/ui/layout";
-import clsx from "clsx";
-import { useCallback, useEffect, useState } from "react";
-import EnterpriseSigninButton from "./EnterpriseSigninButton";
-import GitHubSignInButton from "./GitHubSignInButton";
-import GoogleSignInButton from "./GoogleSignInButton";
-import MicrosoftSignInButton from "./MicrosoftSigninButton";
-import SignupForm from "./SignupForm";
+import type { SignupData, SignupPayload } from '@vertesia/common';
+import { Button, useSafeLayoutEffect } from '@vertesia/ui/core';
+import { Env } from '@vertesia/ui/env';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { UserNotFoundError, useUserSession, useUXTracking } from '@vertesia/ui/session';
+import { RegionTag } from '@vertesia/ui/layout';
+import clsx from 'clsx';
+import { useCallback, useEffect, useState } from 'react';
+import EnterpriseSigninButton from './EnterpriseSigninButton';
+import GitHubSignInButton from './GitHubSignInButton';
+import GoogleSignInButton from './GoogleSignInButton';
+import MicrosoftSignInButton from './MicrosoftSigninButton';
+import SignupForm from './SignupForm';
 
 interface SigninScreenProps {
     isNested?: boolean;
@@ -19,12 +19,20 @@ interface SigninScreenProps {
     darkLogo?: string;
     preservePath?: boolean;
 }
-export function SigninScreen({ allowedPrefix, isNested = false, lightLogo, darkLogo, preservePath }: SigninScreenProps) {
+export function SigninScreen({
+    allowedPrefix,
+    isNested = false,
+    lightLogo,
+    darkLogo,
+    preservePath,
+}: SigninScreenProps) {
     const [allow, setAllow] = useState(false);
     useSafeLayoutEffect(() => {
         if (allowedPrefix) setAllow(window.location.pathname.startsWith(allowedPrefix));
     }, [allowedPrefix]);
-    return allow ? null : <SigninScreenImpl isNested={isNested} lightLogo={lightLogo} darkLogo={darkLogo} preservePath={preservePath} />;
+    return allow ? null : (
+        <SigninScreenImpl isNested={isNested} lightLogo={lightLogo} darkLogo={darkLogo} preservePath={preservePath} />
+    );
 }
 
 function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath }: SigninScreenProps) {
@@ -32,17 +40,14 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
     const { isLoading, user, authError } = useUserSession();
 
     return !isLoading && !user ? (
-        <div
-            style={{ zIndex: 999998 }}
-            className={`${isNested ? "absolute" : "fixed"}overflow-y-auto `}
-        >
-            <div
-                className={clsx(
-                    "flex flex-col items-center justify-center py-14 px-4",
-                )}
-            >
-
-                <StandardSigninPanel authError={authError} lightLogo={lightLogo} darkLogo={darkLogo} preservePath={preservePath} />
+        <div style={{ zIndex: 999998 }} className={`${isNested ? 'absolute' : 'fixed'}overflow-y-auto `}>
+            <div className={clsx('flex flex-col items-center justify-center py-14 px-4')}>
+                <StandardSigninPanel
+                    authError={authError}
+                    lightLogo={lightLogo}
+                    darkLogo={darkLogo}
+                    preservePath={preservePath}
+                />
                 <div className="flex gap-x-6 mt-10 justify-center items-center text-muted">
                     <a href="https://vertesiahq.com/privacy" className="text-sm">
                         {t('auth.privacyPolicy')}
@@ -57,11 +62,16 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
     ) : null;
 }
 
-function StandardSigninPanel({ authError, darkLogo, lightLogo, preservePath }: {
-    authError?: Error,
-    darkLogo?: string,
-    lightLogo?: string
-    preservePath?: boolean,
+function StandardSigninPanel({
+    authError,
+    darkLogo,
+    lightLogo,
+    preservePath,
+}: {
+    authError?: Error;
+    darkLogo?: string;
+    lightLogo?: string;
+    preservePath?: boolean;
 }) {
     const { t } = useUITranslation();
     const [signupData, setSignupData] = useState<SignupData | undefined>(undefined);
@@ -76,7 +86,7 @@ function StandardSigninPanel({ authError, darkLogo, lightLogo, preservePath }: {
     }, [preservePath]);
 
     const goBack = () => {
-        console.log("Going back, signing out");
+        console.log('Going back, signing out');
         setSignupData(undefined);
         setCollectSignupData(false);
         signOut();
@@ -89,46 +99,44 @@ function StandardSigninPanel({ authError, darkLogo, lightLogo, preservePath }: {
 
     useEffect(() => {
         if (authError instanceof UserNotFoundError) {
-            console.log("User not found, redirecting to signup");
+            console.log('User not found, redirecting to signup');
             goToSignup();
         }
     }, [authError, goToSignup]);
 
     const onSignup = (data: SignupData, fbToken: string) => {
-        console.log("Got Signup data", data);
+        console.log('Got Signup data', data);
         setSignupData(data);
         const payload: SignupPayload = {
             signupData: data,
             firebaseToken: fbToken,
         };
         void fetch(`${Env.endpoints.studio}/auth/signup`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         }).then((res) => {
-            console.log("Signup successful", payload, res);
+            console.log('Signup successful', payload, res);
 
-            trackEvent("sign_up");
-            window.location.href = "/";
+            trackEvent('sign_up');
+            window.location.href = '/';
         });
     };
 
     return (
         <>
-            {lightLogo && <img src={lightLogo} alt='logo' className='h-15 block dark:hidden' />}
-            {darkLogo && <img src={darkLogo} alt='logo' className='h-15 hidden dark:block' />}
+            {lightLogo && <img src={lightLogo} alt="logo" className="h-15 block dark:hidden" />}
+            {darkLogo && <img src={darkLogo} alt="logo" className="h-15 hidden dark:block" />}
 
             {signupData && (
                 <div className="my-6">
-                    {t('auth.needToMakeChange')}{" "}
-                    <Button onClick={goToSignup}> {t('auth.goBack')}</Button>
+                    {t('auth.needToMakeChange')} <Button onClick={goToSignup}> {t('auth.goBack')}</Button>
                 </div>
             )}
             <div className="flex flex-col space-y-2">
                 {collectSignupData && !localStorage.getItem('tenantName') ? (
                     <SignupForm onSignup={onSignup} goBack={goBack} />
                 ) : (
-
                     <div className="flex flex-col">
                         <div className="my-4">
                             <h2 className="text-2xl font-bold text-center">{t('auth.logInOrSignUp')}</h2>
@@ -159,7 +167,9 @@ function StandardSigninPanel({ authError, darkLogo, lightLogo, preservePath }: {
                                     {t('auth.signInError')}
                                     <br />
                                     {t('auth.signInErrorContact')}
-                                    <a className='text-info mx-1' href="mailto:support@vertesiahq.com">support@vertesiahq.com</a>
+                                    <a className="text-info mx-1" href="mailto:support@vertesiahq.com">
+                                        support@vertesiahq.com
+                                    </a>
                                     {t('auth.signInErrorPersists')}
                                     <pre className="mt-2">{t('auth.error', { message: authError.message })}</pre>
                                 </div>

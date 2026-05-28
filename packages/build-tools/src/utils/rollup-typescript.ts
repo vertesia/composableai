@@ -12,7 +12,7 @@ export function isRollupWatchMode(): boolean {
 
 export function createRollupTypescript(
     typescript: TypescriptModule,
-    options: RollupTypescriptOptions = {}
+    options: RollupTypescriptOptions = {},
 ): TypescriptModule {
     if (options.watchMode ?? isRollupWatchMode()) {
         return typescript;

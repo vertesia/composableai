@@ -30,7 +30,7 @@ function TagsInputContent({
     layout = 'horizontal',
     creatable = false,
     createText = 'Create "%value%"',
-    maxDropdownHeight = 200
+    maxDropdownHeight = 200,
 }: TagsInputProps) {
     const popoverContext = useContext(PopoverContext);
     const [searchTerm, setSearchTerm] = useState('');
@@ -43,7 +43,7 @@ function TagsInputContent({
     const highlightedItemRef = useRef<HTMLElement | null>(null);
 
     const isOpen = popoverContext?.open ?? false;
-    const setIsOpen = popoverContext?.setOpen ?? (() => { });
+    const setIsOpen = popoverContext?.setOpen ?? (() => {});
 
     // Measure trigger width for popover
     useEffect(() => {
@@ -69,9 +69,7 @@ function TagsInputContent({
 
     // Filter options based on search term and exclude already selected
     const filteredOptions = options.filter(
-        option =>
-            !value.includes(option) &&
-            option.toLowerCase().includes(searchTerm.toLowerCase())
+        (option) => !value.includes(option) && option.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
     // Check if create option should be shown
@@ -92,7 +90,7 @@ function TagsInputContent({
         if (isOpen && highlightedIndex >= 0 && highlightedItemRef.current && dropdownRef.current) {
             highlightedItemRef.current.scrollIntoView({
                 block: 'nearest',
-                behavior: 'smooth'
+                behavior: 'smooth',
             });
         }
     }, [highlightedIndex, isOpen]);
@@ -130,7 +128,7 @@ function TagsInputContent({
 
     const handleRemove = (option: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        onChange(value.filter(v => v !== option));
+        onChange(value.filter((v) => v !== option));
         setPendingDeleteIndex(null);
     };
 
@@ -154,9 +152,7 @@ function TagsInputContent({
             if (!isOpen) {
                 setIsOpen(true);
             } else {
-                setHighlightedIndex(prev =>
-                    prev < totalItems - 1 ? prev + 1 : prev
-                );
+                setHighlightedIndex((prev) => (prev < totalItems - 1 ? prev + 1 : prev));
             }
             return;
         }
@@ -167,7 +163,7 @@ function TagsInputContent({
             if (!isOpen) {
                 setIsOpen(true);
             } else {
-                setHighlightedIndex(prev => (prev > 0 ? prev - 1 : 0));
+                setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0));
             }
             return;
         }
@@ -234,7 +230,7 @@ function TagsInputContent({
                         'cursor-text',
                         'ring-offset-background',
                         disabled && 'opacity-50 cursor-not-allowed',
-                        isOpen ? 'ring-1 ring-inset ring-ring' : ''
+                        isOpen ? 'ring-1 ring-inset ring-ring' : '',
                     )}
                     onClick={handleContainerClick}
                 >
@@ -245,8 +241,9 @@ function TagsInputContent({
                                 <span
                                     key={item}
                                     className={clsx(
-                                        "inline-flex items-center justify-between gap-2 px-2 py-1 text-sm bg-primary/10 text-primary rounded-md w-full transition-all",
-                                        pendingDeleteIndex === index && "ring-2 ring-red-300 shadow-[0_0_8px_rgba(252,165,165,0.5)]"
+                                        'inline-flex items-center justify-between gap-2 px-2 py-1 text-sm bg-primary/10 text-primary rounded-md w-full transition-all',
+                                        pendingDeleteIndex === index &&
+                                            'ring-2 ring-red-300 shadow-[0_0_8px_rgba(252,165,165,0.5)]',
                                     )}
                                 >
                                     <span className="truncate">{item}</span>
@@ -264,25 +261,27 @@ function TagsInputContent({
                     )}
 
                     {/* Selected Items Badges - Horizontal Layout */}
-                    {layout === 'horizontal' && value.map((item, index) => (
-                        <span
-                            key={item}
-                            className={clsx(
-                                "inline-flex items-center gap-1 px-2 py-1 text-sm bg-primary/10 text-primary rounded-md transition-all",
-                                pendingDeleteIndex === index && "ring-2 ring-red-300 shadow-[0_0_8px_rgba(252,165,165,0.5)]"
-                            )}
-                        >
-                            {item}
-                            <button
-                                type="button"
-                                onClick={(e) => handleRemove(item, e)}
-                                disabled={disabled}
-                                className="hover:bg-primary/20 rounded-sm transition-colors"
+                    {layout === 'horizontal' &&
+                        value.map((item, index) => (
+                            <span
+                                key={item}
+                                className={clsx(
+                                    'inline-flex items-center gap-1 px-2 py-1 text-sm bg-primary/10 text-primary rounded-md transition-all',
+                                    pendingDeleteIndex === index &&
+                                        'ring-2 ring-red-300 shadow-[0_0_8px_rgba(252,165,165,0.5)]',
+                                )}
                             >
-                                <X className="h-3 w-3" />
-                            </button>
-                        </span>
-                    ))}
+                                {item}
+                                <button
+                                    type="button"
+                                    onClick={(e) => handleRemove(item, e)}
+                                    disabled={disabled}
+                                    className="hover:bg-primary/20 rounded-sm transition-colors"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </span>
+                        ))}
 
                     {/* Search Input */}
                     <input
@@ -302,7 +301,7 @@ function TagsInputContent({
                             'flex-1 min-w-[120px] bg-transparent text-sm',
                             'placeholder:text-muted-foreground',
                             'border-none outline-none focus:outline-none focus:ring-0 p-0 m-0',
-                            layout === 'vertical' && 'w-full'
+                            layout === 'vertical' && 'w-full',
                         )}
                     />
                 </div>
@@ -346,7 +345,7 @@ function TagsInputContent({
                                                 'px-3 py-2 text-sm cursor-pointer transition-colors',
                                                 index === highlightedIndex
                                                     ? 'bg-blue-500/20 text-foreground'
-                                                    : 'hover:bg-accent/50'
+                                                    : 'hover:bg-accent/50',
                                             )}
                                         >
                                             {option}
@@ -356,9 +355,7 @@ function TagsInputContent({
                             )}
                             {showCreateOption && (
                                 <>
-                                    {filteredOptions.length > 0 && (
-                                        <div className="border-t border-border" />
-                                    )}
+                                    {filteredOptions.length > 0 && <div className="border-t border-border" />}
                                     <Button
                                         ref={(el) => {
                                             if (highlightedIndex === filteredOptions.length) {
@@ -373,7 +370,7 @@ function TagsInputContent({
                                             '!flex w-full justify-start px-3 py-2 text-sm cursor-pointer transition-colors text-primary',
                                             highlightedIndex === filteredOptions.length
                                                 ? 'bg-blue-500/20'
-                                                : 'hover:bg-accent/50'
+                                                : 'hover:bg-accent/50',
                                         )}
                                     >
                                         {createText.replace('%value%', searchTerm)}

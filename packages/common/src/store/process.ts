@@ -1,5 +1,5 @@
-import type { JSONSchema } from "../json-schema.js";
-import type { TaskField } from "./task.js";
+import type { JSONSchema } from '../json-schema.js';
+import type { TaskField } from './task.js';
 
 export type JsonLogicRule = Record<string, unknown>;
 

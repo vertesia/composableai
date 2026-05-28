@@ -10,10 +10,10 @@ interface GenericPageNavHeaderProps {
     title?: string | JSX.Element;
     description?: string | JSX.Element;
     actions?: ReactNode | ReactNode[];
-    breadcrumbs?: ReactElement<BreadcrumbElementProps>[]
-    isCompact?: boolean
-    children?: ReactNode
-    className?: string
+    breadcrumbs?: ReactElement<BreadcrumbElementProps>[];
+    isCompact?: boolean;
+    children?: ReactNode;
+    className?: string;
     useDynamicBreadcrumbs?: boolean;
 }
 
@@ -29,20 +29,29 @@ interface BreadcrumbHistoryEntry {
 }
 
 // Matches MongoDB ObjectId (24 hex), UUID (36 chars with dashes), or any segment containing digits mixed with letters
-const ID_SEGMENT_PATTERN = /^[a-f0-9]{24}$|^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$|^(?=.*\d)(?=.*[a-zA-Z])[a-zA-Z0-9_-]{8,}$/i;
+const ID_SEGMENT_PATTERN =
+    /^[a-f0-9]{24}$|^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$|^(?=.*\d)(?=.*[a-zA-Z])[a-zA-Z0-9_-]{8,}$/i;
 
 function isIdSegment(segment: string): boolean {
     return ID_SEGMENT_PATTERN.test(segment);
 }
 
-export function GenericPageNavHeader({ className, children, title, description, actions, breadcrumbs, useDynamicBreadcrumbs = true }: GenericPageNavHeaderProps) {
+export function GenericPageNavHeader({
+    className,
+    children,
+    title,
+    description,
+    actions,
+    breadcrumbs,
+    useDynamicBreadcrumbs = true,
+}: GenericPageNavHeaderProps) {
     const navigate = useNavigate();
 
     function formatTitle(title: string): string {
         return title
             .replace(/[-_]/g, ' ')
             .split(' ')
-            .map(word => capitalize(word))
+            .map((word) => capitalize(word))
             .join(' ');
     }
 
@@ -62,11 +71,12 @@ export function GenericPageNavHeader({ className, children, title, description, 
         }
 
         return 'Page';
-    }
+    };
 
     // Build breadcrumb items from history chain and current breadcrumbs
-    const buildBreadcrumbItems = (): Array<{ label: string | ReactNode, href?: string, onClick?: () => void }> => {
-        const items: Array<{ label: string | ReactNode, href?: string, onClick?: () => void, clearHistory?: boolean }> = [];
+    const buildBreadcrumbItems = (): Array<{ label: string | ReactNode; href?: string; onClick?: () => void }> => {
+        const items: Array<{ label: string | ReactNode; href?: string; onClick?: () => void; clearHistory?: boolean }> =
+            [];
 
         if (useDynamicBreadcrumbs && typeof window !== 'undefined') {
             const historyState = window.history.state as { historyChain?: BreadcrumbHistoryEntry[] } | null;
@@ -79,19 +89,19 @@ export function GenericPageNavHeader({ className, children, title, description, 
                     items.push({
                         label: buildBreadcrumbLabel(entry),
                         href: entry.href,
-                        onClick: () => navigate(entry.href, { stepsBack: stepsBack })
+                        onClick: () => navigate(entry.href, { stepsBack: stepsBack }),
                     });
                 });
             } else {
                 // Infer parents from URL when navigating directly to a detail page
-                const segments = window.location.pathname.split('/').filter(s => s.length > 0);
+                const segments = window.location.pathname.split('/').filter((s) => s.length > 0);
                 for (let i = 0; i < segments.length; i++) {
                     if (isIdSegment(segments[i])) {
                         const parentPath = `/${segments.slice(0, i).join('/')}`;
                         items.push({
                             label: formatTitle(segments[i - 1] || parentPath),
                             href: parentPath,
-                            onClick: () => navigate(parentPath, { isBasePathNested: false}),
+                            onClick: () => navigate(parentPath, { isBasePathNested: false }),
                         });
                     }
                 }
@@ -105,13 +115,17 @@ export function GenericPageNavHeader({ className, children, title, description, 
                 const label = breadcrumb.props?.children || breadcrumb;
                 const href = breadcrumb.props?.href;
 
-                items.push(href ? {
-                    href,
-                    label: label,
-                    onClick: () => navigate(href, { replace: breadcrumb.props.clearBreadcrumbs }),
-                } : {
-                    label: label
-                });
+                items.push(
+                    href
+                        ? {
+                              href,
+                              label: label,
+                              onClick: () => navigate(href, { replace: breadcrumb.props.clearBreadcrumbs }),
+                          }
+                        : {
+                              label: label,
+                          },
+                );
             });
         }
 
@@ -122,7 +136,7 @@ export function GenericPageNavHeader({ className, children, title, description, 
 
     return (
         <div className={clsx('pb-0 ps-4 pe-2 py-2 flex flex-col', className)}>
-            <div className='flex items-start gap-4'>
+            <div className="flex items-start gap-4">
                 <div className="w-full flex place-content-between h-auto min-h-8 flex-col items-start justify-center">
                     <nav className="flex-1 flex justify-start text-sm">
                         {breadcrumbItems.length > 0 && (
@@ -132,27 +146,21 @@ export function GenericPageNavHeader({ className, children, title, description, 
                                 maxItems={4}
                             />
                         )}
-                        {
-                            description &&
-                            <VTooltip
-                                description={description}>
+                        {description && (
+                            <VTooltip description={description}>
                                 <Info className="size-4 text-muted ms-4" />
                             </VTooltip>
-                        }
+                        )}
                     </nav>
-                    {
-                        title && (
-                            <div className='flex gap-2 items-center'>
-                                <h1 className="text-xl font-semibold break-all">{title}</h1>
-
-                            </div>
-
-                        )
-                    }
+                    {title && (
+                        <div className="flex gap-2 items-center">
+                            <h1 className="text-xl font-semibold break-all">{title}</h1>
+                        </div>
+                    )}
                 </div>
                 <div className="flex gap-x-2 shrink-0 items-center">{actions}</div>
             </div>
             {children && <div className="w-full flex items-center">{children}</div>}
         </div>
-    )
+    );
 }

@@ -5,7 +5,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { MonacoEditor, type EditorApi, SchemaEditor, useSchema } from '@vertesia/ui/widgets';
 import { Button, errorMessage, useToast, useTheme, Panel } from '@vertesia/ui/core';
 import type { ContentObjectType } from '@vertesia/common';
-import { Ajv } from "ajv";
+import { Ajv } from 'ajv';
 
 interface ObjectSchemaEditorProps {
     objectType: ContentObjectType;
@@ -30,39 +30,43 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = fals
     const onSave = () => {
         if (displayJson) {
             if (!updateSchemaFromJson()) {
-                return
+                return;
             }
         }
 
         setUpdating(true);
-        store.types.update(objectType.id, { object_schema: schema.schema }).then(() => {
-            onSchemaUpdate(schema);
-            toast({
-                status: 'success',
-                title: t('store.schemaUpdated'),
-                description: t('store.schemaUpdatedSuccess'),
-                duration: 2000
-            });
-        }).catch((err) => {
-            toast({
-                status: 'error',
-                title: t('store.failedToUpdateSchema'),
-                description: err.message,
-                duration: 5000
+        store.types
+            .update(objectType.id, { object_schema: schema.schema })
+            .then(() => {
+                onSchemaUpdate(schema);
+                toast({
+                    status: 'success',
+                    title: t('store.schemaUpdated'),
+                    description: t('store.schemaUpdatedSuccess'),
+                    duration: 2000,
+                });
             })
-        }).finally(() => {
-            setUpdating(false);
-        });
+            .catch((err) => {
+                toast({
+                    status: 'error',
+                    title: t('store.failedToUpdateSchema'),
+                    description: err.message,
+                    duration: 5000,
+                });
+            })
+            .finally(() => {
+                setUpdating(false);
+            });
     };
 
     const handleOnSave = () => {
         if (displayJson) {
             if (!updateSchemaFromJson()) {
-                return
+                return;
             }
         }
 
-        setDisplayJson(prev => !prev)
+        setDisplayJson((prev) => !prev);
     };
 
     const updateSchemaFromJson = () => {
@@ -77,8 +81,8 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = fals
                     status: 'error',
                     title: t('store.invalidJsonSchema'),
                     description: errorMessage(err),
-                    duration: 5000
-                })
+                    duration: 5000,
+                });
                 return false;
             }
         }
@@ -86,41 +90,48 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = fals
     };
 
     const title = (
-        <div className='flex gap-2 items-center'><div className="text-base font-semibold">{t('store.schemaEditor')}</div>
-            {!readonly && <div>
-                <Button variant="outline" size="sm" onClick={handleOnSave}>
-                    {
-                        displayJson ? t('store.editSchema') : t('store.editJson')
-                    }
-                </Button>
-            </div>}
+        <div className="flex gap-2 items-center">
+            <div className="text-base font-semibold">{t('store.schemaEditor')}</div>
+            {!readonly && (
+                <div>
+                    <Button variant="outline" size="sm" onClick={handleOnSave}>
+                        {displayJson ? t('store.editSchema') : t('store.editJson')}
+                    </Button>
+                </div>
+            )}
         </div>
     );
 
     return (
-        <Panel title={title} className="bg-background! h-full"
-        action = {!readonly ? <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>{t('modal.saveChanges')}</Button> : undefined}
-        >
-            {
-                displayJson
-                    ? <MonacoEditor
-                        value={value}
-                        language="json"
-                        editorRef={editorRef}
-                        theme={theme === 'dark' ? 'vs-dark' : 'vs'}
-                        options={{ readOnly: readonly }}
-                    />
-                    : <SchemaEditor schema={schema} readonly={readonly} />
+        <Panel
+            title={title}
+            className="bg-background! h-full"
+            action={
+                !readonly ? (
+                    <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>
+                        {t('modal.saveChanges')}
+                    </Button>
+                ) : undefined
             }
-
-
-        </ Panel>
+        >
+            {displayJson ? (
+                <MonacoEditor
+                    value={value}
+                    language="json"
+                    editorRef={editorRef}
+                    theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+                    options={{ readOnly: readonly }}
+                />
+            ) : (
+                <SchemaEditor schema={schema} readonly={readonly} />
+            )}
+        </Panel>
     );
 }
 
 function jsonToContent(json: unknown | undefined | null) {
     if (!json) {
-        return ''
+        return '';
     }
 
     return JSON.stringify(json, null, 2);

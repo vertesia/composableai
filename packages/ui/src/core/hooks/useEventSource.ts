@@ -1,25 +1,23 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
-function startSse<T>(url: string, onMessage: (content: string) => void,
-    onCompleted: (payload: T) => void) {
+function startSse<T>(url: string, onMessage: (content: string) => void, onCompleted: (payload: T) => void) {
     const chunks: string[] = [];
     const sse = new EventSource(url);
-    sse.addEventListener("message", ev => {
+    sse.addEventListener('message', (ev) => {
         const data = JSON.parse(ev.data);
         if (data) {
             chunks.push(data);
-            onMessage(chunks.join(''))
+            onMessage(chunks.join(''));
         }
     });
-    sse.addEventListener("close", (ev) => {
+    sse.addEventListener('close', (ev) => {
         sse.close();
-        const msg = JSON.parse(ev.data)
+        const msg = JSON.parse(ev.data);
         onCompleted(msg);
     });
     return () => {
         sse.close();
-    }
-
+    };
 }
 
 /**
@@ -31,9 +29,11 @@ function startSse<T>(url: string, onMessage: (content: string) => void,
  * new callback identity → effect re-fire → close-and-reopen the EventSource
  * after every chunk, which the server side sees as a torn-down response.
  */
-export function useEventSource<T>(url: string | (() => Promise<string>),
+export function useEventSource<T>(
+    url: string | (() => Promise<string>),
     onMessage: (content: string) => void,
-    onCompleted: (payload: T) => void) {
+    onCompleted: (payload: T) => void,
+) {
     const onMessageRef = useRef(onMessage);
     const onCompletedRef = useRef(onCompleted);
     onMessageRef.current = onMessage;
@@ -45,7 +45,7 @@ export function useEventSource<T>(url: string | (() => Promise<string>),
         const dispatchMessage = (content: string) => onMessageRef.current(content);
         const dispatchCompleted = (payload: T) => onCompletedRef.current(payload);
         if (typeof url === 'function') {
-            void url().then(resolvedUrl => {
+            void url().then((resolvedUrl) => {
                 if (!cancelled) {
                     stop = startSse(resolvedUrl, dispatchMessage, dispatchCompleted);
                 }
@@ -56,6 +56,6 @@ export function useEventSource<T>(url: string | (() => Promise<string>),
         return () => {
             cancelled = true;
             stop?.();
-        }
-    }, [url])
+        };
+    }, [url]);
 }

@@ -12,15 +12,21 @@ export function TypeDetail() {
     const { baseUrl } = useAdminContext();
 
     const { data: typeDef, error } = useFetch<InCodeTypeDefinition>(
-        () => fetch(`${baseUrl}/types/${collection}/${name}`).then(r => {
-            if (!r.ok) throw new Error(`Failed to load type: ${r.statusText}`);
-            return r.json();
-        }),
-        [baseUrl, collection, name]
+        () =>
+            fetch(`${baseUrl}/types/${collection}/${name}`).then((r) => {
+                if (!r.ok) throw new Error(`Failed to load type: ${r.statusText}`);
+                return r.json();
+            }),
+        [baseUrl, collection, name],
     );
 
     if (error) return <div className="p-6 text-destructive">Failed to load type &ldquo;{name}&rdquo;.</div>;
-    if (!typeDef) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
+    if (!typeDef)
+        return (
+            <div className="flex h-64 items-center justify-center text-muted-foreground">
+                <Spinner />
+            </div>
+        );
 
     return (
         <DetailPage

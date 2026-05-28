@@ -1,14 +1,13 @@
-import { createContext, type RefObject, type ReactNode, useContext, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { PopupController, type PopupControllerOptions } from "./PopupController";
-import type { Constraints } from "./position";
-
+import { createContext, type RefObject, type ReactNode, useContext, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { PopupController, type PopupControllerOptions } from './PopupController';
+import type { Constraints } from './position';
 
 const PopupContext = createContext<PopupController | undefined>(undefined);
 
 export function usePopupController() {
     const ctrl = useContext(PopupContext);
-    if (!ctrl) throw new Error("usePopupController must be used inside a Popup component");
+    if (!ctrl) throw new Error('usePopupController must be used inside a Popup component');
     return ctrl;
 }
 
@@ -18,7 +17,7 @@ interface DOMPopupProps extends Omit<PopupControllerOptions, 'anchor' | 'popup' 
     anchor: HTMLElement;
     root?: HTMLElement;
     zIndex?: number;
-    position?: "absolute" | "fixed";
+    position?: 'absolute' | 'fixed';
     onClose?: () => void;
     onOpen?: () => void;
     className?: string;
@@ -26,7 +25,23 @@ interface DOMPopupProps extends Omit<PopupControllerOptions, 'anchor' | 'popup' 
     children: ReactNode | ReactNode[];
     ctrlRef?: RefObject<PopupController | undefined>;
 }
-export function DOMPopup({ ctrlRef, id, constraints, isOpen, children, className, onClose, onOpen, zIndex, position, anchor, root, closeOnClick, closeOnEsc, blockPageScroll }: DOMPopupProps) {
+export function DOMPopup({
+    ctrlRef,
+    id,
+    constraints,
+    isOpen,
+    children,
+    className,
+    onClose,
+    onOpen,
+    zIndex,
+    position,
+    anchor,
+    root,
+    closeOnClick,
+    closeOnEsc,
+    blockPageScroll,
+}: DOMPopupProps) {
     const popupRef = useRef<HTMLDivElement>(null);
     const [ctrl, setCtrl] = useState<PopupController | undefined>();
     const onCloseRef = useRef(onClose);
@@ -34,7 +49,7 @@ export function DOMPopup({ ctrlRef, id, constraints, isOpen, children, className
     onCloseRef.current = onClose;
     onOpenRef.current = onOpen;
     useEffect(() => {
-        if (!anchor) throw new Error("Anchor element is required");
+        if (!anchor) throw new Error('Anchor element is required');
         const _ctrl = new PopupController({
             anchor,
             root,
@@ -42,12 +57,12 @@ export function DOMPopup({ ctrlRef, id, constraints, isOpen, children, className
             closeOnEsc,
             blockPageScroll,
             onClose: () => onCloseRef.current?.(),
-            onOpen: () => onOpenRef.current?.()
+            onOpen: () => onOpenRef.current?.(),
         });
         setCtrl(_ctrl);
         return () => {
             _ctrl.tryClose();
-        }
+        };
     }, [anchor, blockPageScroll, closeOnClick, closeOnEsc, root]);
 
     useEffect(() => {
@@ -75,19 +90,25 @@ export function DOMPopup({ ctrlRef, id, constraints, isOpen, children, className
 
     return (
         <PopupContext.Provider value={ctrl}>
-            {isOpen && createPortal(
-                <div id={id} style={{
-                    //display: isOpen ? 'block' : 'none',
-                    visibility: 'hidden',
-                    position: position || 'absolute',
-                    zIndex: zIndex || 100,
-                }} ref={popupRef} className={className}>
-                    {children}
-                </div>,
-                document.body
-            )}
+            {isOpen &&
+                createPortal(
+                    <div
+                        id={id}
+                        style={{
+                            //display: isOpen ? 'block' : 'none',
+                            visibility: 'hidden',
+                            position: position || 'absolute',
+                            zIndex: zIndex || 100,
+                        }}
+                        ref={popupRef}
+                        className={className}
+                    >
+                        {children}
+                    </div>,
+                    document.body,
+                )}
         </PopupContext.Provider>
-    )
+    );
 }
 
 export interface PopupProps extends Omit<DOMPopupProps, 'anchor' | 'root'> {

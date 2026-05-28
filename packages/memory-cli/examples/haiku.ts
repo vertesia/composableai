@@ -1,10 +1,9 @@
-import { copyText } from "@vertesia/memory-commands"
+import { copyText } from '@vertesia/memory-commands';
 
-
-copyText("space", "topic.txt")
+copyText('space', 'topic.txt');
 
 export default {
-    topic: "life",
-    mood: "happy",
-    language: "french",
-}
+    topic: 'life',
+    mood: 'happy',
+    language: 'french',
+};

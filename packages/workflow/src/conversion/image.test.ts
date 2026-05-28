@@ -1,11 +1,11 @@
-import fs from "node:fs";
-import path from "node:path";
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
-import { expect, test, vi, describe } from "vitest";
+import fs from 'node:fs';
+import path from 'node:path';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
+import { expect, test, vi, describe } from 'vitest';
 
 // Mock Temporal activity context
-vi.mock("@temporalio/activity", () => ({
+vi.mock('@temporalio/activity', () => ({
     log: {
         debug: vi.fn(),
         info: vi.fn(),
@@ -15,15 +15,15 @@ vi.mock("@temporalio/activity", () => ({
 }));
 
 // Import after mocking
-import { imageResizer } from "../conversion/image.js";
+import { imageResizer } from '../conversion/image.js';
 
 const execAsync = promisify(exec);
 
-describe("ImageMagick image resizing", () => {
-    test("should resize an image to a maximum height or width using ImageMagick", async () => {
+describe('ImageMagick image resizing', () => {
+    test('should resize an image to a maximum height or width using ImageMagick', async () => {
         const max_hw = 1596;
-        const format = "jpeg";
-        const inputImagePath = path.join(__dirname, "../../fixtures", "cat-picture.jpg");
+        const format = 'jpeg';
+        const inputImagePath = path.join(__dirname, '../../fixtures', 'cat-picture.jpg');
 
         // Make sure the input file exists
         expect(fs.existsSync(inputImagePath)).toBe(true);
@@ -36,7 +36,7 @@ describe("ImageMagick image resizing", () => {
 
         // Use ImageMagick identify to get metadata about the resized image
         const { stdout } = await execAsync(`identify -format "%w %h %m" "${resizedImagePath}"`);
-        const [width, height, imageFormat] = stdout.trim().split(" ");
+        const [width, height, imageFormat] = stdout.trim().split(' ');
 
         console.log({ width, height, imageFormat });
 
@@ -45,34 +45,34 @@ describe("ImageMagick image resizing", () => {
         expect(parseInt(height, 10)).to.be.lessThanOrEqual(max_hw);
 
         // Check format (JPEG)
-        expect(imageFormat.toLowerCase()).to.equal("jpeg");
+        expect(imageFormat.toLowerCase()).to.equal('jpeg');
     });
 
-    test("should throw an error for non-existent input file", async () => {
+    test('should throw an error for non-existent input file', async () => {
         const max_hw = 1596;
-        const format = "jpeg";
-        const nonExistentPath = path.join(__dirname, "non-existent-image.jpg");
+        const format = 'jpeg';
+        const nonExistentPath = path.join(__dirname, 'non-existent-image.jpg');
 
         // Verify file doesn't exist
         expect(fs.existsSync(nonExistentPath)).toBe(false);
 
         // Expect the function to throw an error
-        await expect(imageResizer(nonExistentPath, max_hw, format)).rejects.toThrow("Input file does not exist");
+        await expect(imageResizer(nonExistentPath, max_hw, format)).rejects.toThrow('Input file does not exist');
     });
 
-    test("should throw error with empty format", async () => {
+    test('should throw error with empty format', async () => {
         const max_hw = 1596;
-        const format = "";
-        const inputImagePath = path.join(__dirname, "../../fixtures", "cat-picture.jpg");
+        const format = '';
+        const inputImagePath = path.join(__dirname, '../../fixtures', 'cat-picture.jpg');
 
         // Test for empty format validation
-        await expect(imageResizer(inputImagePath, max_hw, format)).rejects.toThrow("Invalid format");
+        await expect(imageResizer(inputImagePath, max_hw, format)).rejects.toThrow('Invalid format');
     });
 
-    test("should create progressive/interlaced image when enabled", async () => {
+    test('should create progressive/interlaced image when enabled', async () => {
         const max_hw = 800;
-        const format = "jpeg";
-        const inputImagePath = path.join(__dirname, "../../fixtures", "cat-picture.jpg");
+        const format = 'jpeg';
+        const inputImagePath = path.join(__dirname, '../../fixtures', 'cat-picture.jpg');
 
         // Make sure the input file exists
         expect(fs.existsSync(inputImagePath)).toBe(true);
@@ -90,13 +90,13 @@ describe("ImageMagick image resizing", () => {
         console.log({ interlaceMode });
 
         // Check that interlace is enabled (should be 'JPEG' or 'Line' for progressive JPEG)
-        expect(["JPEG", "Line", "Plane"]).to.include(interlaceMode);
+        expect(['JPEG', 'Line', 'Plane']).to.include(interlaceMode);
     });
 
-    test("should create non-interlaced image when progressive is disabled", async () => {
+    test('should create non-interlaced image when progressive is disabled', async () => {
         const max_hw = 800;
-        const format = "jpeg";
-        const inputImagePath = path.join(__dirname, "../../fixtures", "cat-picture.jpg");
+        const format = 'jpeg';
+        const inputImagePath = path.join(__dirname, '../../fixtures', 'cat-picture.jpg');
 
         // Make sure the input file exists
         expect(fs.existsSync(inputImagePath)).toBe(true);
@@ -114,6 +114,6 @@ describe("ImageMagick image resizing", () => {
         console.log({ interlaceMode });
 
         // Check that interlace is disabled (should be 'none' or empty string)
-        expect(["none", ""]).to.include(interlaceMode);
+        expect(['none', '']).to.include(interlaceMode);
     });
 });

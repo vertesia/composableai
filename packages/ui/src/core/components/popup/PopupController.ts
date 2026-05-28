@@ -1,6 +1,5 @@
-import { computePosition, type Constraints, type Position } from "./position";
-import { computeVisibleClientRect, getScrollableParents } from "./utils";
-
+import { computePosition, type Constraints, type Position } from './position';
+import { computeVisibleClientRect, getScrollableParents } from './utils';
 
 export interface PopupControllerOptions {
     /**
@@ -45,7 +44,7 @@ export class PopupController {
         const parents = this.scrollableParents;
         const updateHandler = () => {
             this.update();
-        }
+        };
         // add a window resize listener
         window.addEventListener('resize', updateHandler);
 
@@ -62,7 +61,7 @@ export class PopupController {
                 if (!element.contains(ev.target as HTMLElement)) {
                     this.tryClose();
                 }
-            }
+            };
             // register in the next event loop cycle since the current one
             // is may be triggered by a click event
             window.setTimeout(() => {
@@ -75,15 +74,15 @@ export class PopupController {
                 if (ev.key === 'Escape') {
                     this.tryClose();
                 }
-            }
+            };
             window.setTimeout(() => {
                 if (closeOnEsc) document.addEventListener('keydown', closeOnEsc);
             }, 0);
         }
         const blockPageScroll = this.options.blockPageScroll;
         if (blockPageScroll) {
-            document.body.style.overflow = "hidden";
-            document.body.style.height = "100%";
+            document.body.style.overflow = 'hidden';
+            document.body.style.height = '100%';
         }
         return () => {
             window.removeEventListener('resize', updateHandler);
@@ -93,15 +92,15 @@ export class PopupController {
             if (closeOnClick) document.removeEventListener('click', closeOnClick);
             if (closeOnEsc) document.removeEventListener('keydown', closeOnEsc);
             if (blockPageScroll) {
-                document.body.style.overflow = "";
-                document.body.style.height = "";
+                document.body.style.overflow = '';
+                document.body.style.height = '';
             }
-        }
+        };
     }
 
     open(element: HTMLElement, constraints: Constraints) {
         if (this.context) {
-            throw new Error("The popup controller is already bound to an element");
+            throw new Error('The popup controller is already bound to an element');
         }
         this.tryOpen(element, constraints);
     }
@@ -112,11 +111,11 @@ export class PopupController {
         this.context = {
             element,
             constraints,
-            cleanup: this.registerListeners(element)
-        }
+            cleanup: this.registerListeners(element),
+        };
 
-        element.style.display = "";
-        element.style.visibility = "hidden";
+        element.style.display = '';
+        element.style.visibility = 'hidden';
         // update the popup position
         this.update();
         this.options.onOpen?.(this);
@@ -124,7 +123,7 @@ export class PopupController {
 
     close() {
         if (!this.context) {
-            throw new Error("The popup controller is not bound to an element");
+            throw new Error('The popup controller is not bound to an element');
         }
         this.tryClose();
     }
@@ -135,7 +134,7 @@ export class PopupController {
         this.options.onClose?.(this);
         this.context.cleanup();
         //TODO
-        this.context.element.style.display = "none";
+        this.context.element.style.display = 'none';
         this.context = undefined;
     }
 
@@ -166,17 +165,17 @@ export class PopupController {
             }
             element.style.left = `${position.rect.left}px`;
             element.style.top = `${position.rect.top}px`;
-            element.style.visibility = "visible";
+            element.style.visibility = 'visible';
         }
     }
 
     createPopupElement() {
         const popup = document.createElement('div');
-        popup.style.margin = "0";
-        popup.style.padding = "0";
-        popup.style.border = "none";
-        popup.style.background = "transparent";
-        popup.className = "composable-Popup";
+        popup.style.margin = '0';
+        popup.style.padding = '0';
+        popup.style.border = 'none';
+        popup.style.background = 'transparent';
+        popup.className = 'composable-Popup';
         return popup;
     }
 }

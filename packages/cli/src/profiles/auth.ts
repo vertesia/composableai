@@ -5,7 +5,10 @@ import { canUseOAuthProfile, refreshOAuthSession } from './oauth.js';
 import { readAuthBundle, readProfileAccessToken } from './keyring.js';
 import type { ConfigResult } from './server/index.js';
 
-export async function ensureProfileAccessToken(profile: Profile, onResult?: OnResultCallback): Promise<string | undefined> {
+export async function ensureProfileAccessToken(
+    profile: Profile,
+    onResult?: OnResultCallback,
+): Promise<string | undefined> {
     const token = readProfileAccessToken(profile);
     if (token && !shouldRefreshProfileToken(profile, 30)) {
         return token;
@@ -61,7 +64,9 @@ export async function refreshProfileAuthentication(
     }
 
     if (options.projectId) {
-        throw new Error('Project switching requires a stored OAuth refresh token. Run `vertesia auth refresh` without --project to authenticate again.');
+        throw new Error(
+            'Project switching requires a stored OAuth refresh token. Run `vertesia auth refresh` without --project to authenticate again.',
+        );
     }
 
     const updater = config.updateProfile(profileName);
@@ -77,7 +82,7 @@ export async function refreshCurrentProfileAuthentication(
     } = {},
 ): Promise<ConfigResult | undefined> {
     if (!config.current) {
-        console.log("No profile is selected. Run `vertesia profiles use <name>` to select a profile");
+        console.log('No profile is selected. Run `vertesia profiles use <name>` to select a profile');
         process.exit(1);
     }
     return refreshProfileAuthentication(config.current.name, onResult, signal, options);

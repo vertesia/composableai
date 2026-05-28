@@ -22,27 +22,38 @@ export function ToolCollection() {
     const { baseUrl } = useAdminContext();
 
     const { data, error } = useFetch<ToolCollectionResponse>(
-        () => fetch(`${baseUrl}/tools/${collection}`).then(r => {
-            if (!r.ok) throw new Error(`Failed to load collection: ${r.statusText}`);
-            return r.json();
-        }),
-        [baseUrl, collection]
+        () =>
+            fetch(`${baseUrl}/tools/${collection}`).then((r) => {
+                if (!r.ok) throw new Error(`Failed to load collection: ${r.statusText}`);
+                return r.json();
+            }),
+        [baseUrl, collection],
     );
 
-    if (error) return <div className="p-6 text-destructive">Failed to load tool collection &ldquo;{collection}&rdquo;.</div>;
-    if (!data) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
+    if (error)
+        return <div className="p-6 text-destructive">Failed to load tool collection &ldquo;{collection}&rdquo;.</div>;
+    if (!data)
+        return (
+            <div className="flex h-64 items-center justify-center text-muted-foreground">
+                <Spinner />
+            </div>
+        );
 
     return (
         <DetailPage
             type="tool"
             title={data.title || collection}
-            description={data.description || `${data.tools.length} tool${data.tools.length !== 1 ? 's' : ''} in this collection.`}
+            description={
+                data.description || `${data.tools.length} tool${data.tools.length !== 1 ? 's' : ''} in this collection.`
+            }
         >
-            {data.tools.map(tool => (
+            {data.tools.map((tool) => (
                 <Card key={tool.name} className="mb-4">
                     <CardContent className="p-5">
                         <div className="mb-2 flex items-center gap-2">
-                            <span className={`inline-block rounded-full px-2 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wide ${TYPE_VARIANTS.tool}`}>
+                            <span
+                                className={`inline-block rounded-full px-2 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wide ${TYPE_VARIANTS.tool}`}
+                            >
                                 tool
                             </span>
                             <span className="font-semibold text-card-foreground">{tool.name}</span>

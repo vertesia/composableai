@@ -1,5 +1,5 @@
-import { cn } from "../../libs/utils";
-import { useEffect, useRef, useState } from "react";
+import { cn } from '../../libs/utils';
+import { useEffect, useRef, useState } from 'react';
 
 interface AnimateChangeInHeightProps {
     children: React.ReactNode;
@@ -11,7 +11,7 @@ export const AnimateChangeInHeight: React.FC<AnimateChangeInHeightProps> = ({
     className,
 }: AnimateChangeInHeightProps) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const [height, setHeight] = useState<number | "auto">("auto");
+    const [height, setHeight] = useState<number | 'auto'>('auto');
 
     useEffect(() => {
         if (containerRef.current) {
@@ -31,10 +31,7 @@ export const AnimateChangeInHeight: React.FC<AnimateChangeInHeightProps> = ({
     }, []);
 
     return (
-        <div
-            className={cn(className, "overflow-hidden transition-all duration-100 ease-in")}
-            style={{ height }}
-        >
+        <div className={cn(className, 'overflow-hidden transition-all duration-100 ease-in')} style={{ height }}>
             <div ref={containerRef}>{children}</div>
         </div>
     );

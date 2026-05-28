@@ -1,3 +1,3 @@
-export * from "./AppInstallationProvider";
-export * from "./AppProjectSelector";
-export * from "./StandaloneApp";
+export * from './AppInstallationProvider';
+export * from './AppProjectSelector';
+export * from './StandaloneApp';

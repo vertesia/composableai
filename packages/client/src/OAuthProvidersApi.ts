@@ -10,7 +10,6 @@ import type {
 } from '@vertesia/common';
 
 export default class OAuthProvidersApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/oauth-providers');
     }

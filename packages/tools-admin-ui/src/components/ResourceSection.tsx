@@ -24,7 +24,7 @@ export function ResourceSection({ title, subtitle, resources, showDivider }: Res
                 <p className="mb-4 text-sm text-muted-foreground">{subtitle}</p>
             </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {resources.map(r => (
+                {resources.map((r) => (
                     <ResourceCard key={`${r.type}:${r.name}`} resource={r} />
                 ))}
             </div>

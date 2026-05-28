@@ -1,1 +1,1 @@
-export * from "./MagicPdfView";
+export * from './MagicPdfView';

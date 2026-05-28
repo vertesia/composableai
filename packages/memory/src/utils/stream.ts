@@ -1,7 +1,7 @@
-import { Writable } from "node:stream";
+import { Writable } from 'node:stream';
 
 export class BufferWritableStream extends Writable {
-    chunks: Buffer[] = []
+    chunks: Buffer[] = [];
     buffer: Buffer | undefined;
 
     // _write method is required to handle the incoming data
@@ -21,7 +21,7 @@ export class BufferWritableStream extends Writable {
         return this.buffer;
     }
 
-    getText(encoding: BufferEncoding = "utf-8") {
+    getText(encoding: BufferEncoding = 'utf-8') {
         return this.buffer?.toString(encoding);
     }
 }
