@@ -1,5 +1,5 @@
-import type { ModelOptions } from "@llumiverse/common";
-import type { ConversationVisibility, InteractionRef, UserChannel } from "../interaction.js";
+import type { HttpTimeoutOptions, ModelOptions } from "@llumiverse/common";
+import type { ConversationVisibility, InteractionExecutionConfiguration, InteractionRef, UserChannel } from "../interaction.js";
 import type { JSONSchema } from "../json-schema.js";
 import type { JSONObject, JSONValue } from "../json.js";
 import type { WorkflowInput } from "./dsl-workflow.js";
@@ -1318,7 +1318,17 @@ export interface AgentIntakeWorkflowParams {
     /**
      * Additional model options.
      */
-    model_options?: Record<string, unknown>;
+    model_options?: ModelOptions;
+
+    /**
+     * Per-run HTTP timeouts for upstream LLM-provider calls.
+     */
+    http_timeout?: HttpTimeoutOptions;
+
+    /**
+     * LLM execution config. Prefer this for workflow-rule-driven execution settings.
+     */
+    config?: InteractionExecutionConfiguration;
 
     /**
      * Whether to use semantic layer (MagicPDF) for PDF processing.

@@ -56,7 +56,7 @@ async function mockInteractionError(
 }
 
 describe('executeInteraction retryability', () => {
-    it('should forward per-run HTTP timeout configuration to interaction execution', async () => {
+    it('should forward the execution config object to interaction execution', async () => {
         const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
         const httpTimeout = {
             headersTimeout: 1_000,
@@ -76,9 +76,11 @@ describe('executeInteraction retryability', () => {
         const payload = createPayload();
         const params: ExecuteInteractionParams = {
             ...payload.params,
-            environment: 'env-id',
-            model: 'model-id',
-            http_timeout: httpTimeout,
+            config: {
+                environment: 'env-id',
+                model: 'model-id',
+                http_timeout: httpTimeout,
+            },
         };
 
         vi.mocked(setupActivity).mockResolvedValue({

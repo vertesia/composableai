@@ -71,6 +71,12 @@ const _JSON: DSLActivitySpec = {
 };
 export interface InteractionExecutionParams {
     /**
+     * Execution configuration shared across workflow-driven interaction calls.
+     * Activity-level fields below override this object for backward compatibility.
+     */
+    config?: InteractionExecutionConfiguration;
+
+    /**
      * The environment to use. If not specified the project default environment will be used.
      * If the latter is not specified an exception will be thrown.
      */
@@ -308,12 +314,14 @@ export async function executeInteractionFromActivity(
         log.info(`Found  previous run error`, { error: previousStudioExecutionRun?.error });
     }
 
+    const configDefaults = params.config ?? {};
     const config: InteractionExecutionConfiguration = {
-        environment: params.environment,
-        model: params.model,
-        model_options: params.model_options,
-        http_timeout: params.http_timeout,
-        do_validate: params.validate_result,
+        ...configDefaults,
+        environment: params.environment ?? configDefaults.environment,
+        model: params.model ?? configDefaults.model,
+        model_options: params.model_options ?? configDefaults.model_options,
+        http_timeout: params.http_timeout ?? configDefaults.http_timeout,
+        do_validate: params.validate_result ?? configDefaults.do_validate,
     };
     const data = {
         ...prompt_data,
