@@ -4,6 +4,7 @@ packages:
   - templates/*
   - "!templates/worker-template"
 allowBuilds:
+  '@firebase/util': true
   '@swc/core': true
   esbuild: true
   protobufjs: true
@@ -15,13 +16,6 @@ minimumReleaseAgeStrict: true
 minimumReleaseAgeExclude:
   - "@vertesia/*"
   - "@llumiverse/*"
-  - "turbo@2.9.14"
-  - "@turbo/darwin-64@2.9.14"
-  - "@turbo/darwin-arm64@2.9.14"
-  - "@turbo/linux-64@2.9.14"
-  - "@turbo/linux-arm64@2.9.14"
-  - "@turbo/windows-64@2.9.14"
-  - "@turbo/windows-arm64@2.9.14"
 patchedDependencies:
   "ts-dual-module@0.6.3": patches/ts-dual-module@0.6.3.patch
 overrides:

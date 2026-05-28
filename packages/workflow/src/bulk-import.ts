@@ -96,11 +96,14 @@ export interface BulkImportParams {
     partitionSize?: number;
     dryRun?: boolean;
     updateByContentSource?: boolean;
+    skipWorkflows?: boolean;
 }
 
 export interface PartitionError {
     partitionIndex: number;
     errorCount: number;
+    /** Workflow-level error message if the partition itself failed (vs. per-batch failures). */
+    message?: string;
 }
 
 export interface BulkImportResult {
