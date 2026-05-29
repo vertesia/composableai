@@ -183,7 +183,7 @@
   "auth.error": "Error: {{message}}",
   "auth.invalidEmail": "Invalid email address",
   "auth.pending.authenticating": "Authenticating",
-  "auth.pending.body": "Hold tight — we're handing you off securely. If a new window doesn't open, click the button below.",
+  "auth.pending.body": "Hold tight — we're handing you off securely. This only takes a moment.",
   "auth.pending.cancel": "Cancel",
   "auth.pending.title": "Redirecting to {{provider}}…",
   "auth.privacyPolicy": "Privacy Policy",

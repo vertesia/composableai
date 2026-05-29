@@ -183,7 +183,7 @@
   "auth.error": "오류: {{message}}",
   "auth.invalidEmail": "유효하지 않은 이메일 주소",
   "auth.pending.authenticating": "인증 중",
-  "auth.pending.body": "잠시만 기다려 주세요 — 안전하게 이동하고 있습니다. 새 창이 열리지 않으면 아래 버튼을 클릭하세요.",
+  "auth.pending.body": "잠시만 기다려 주세요 — 안전하게 이동하고 있습니다. 잠시면 완료됩니다.",
   "auth.pending.cancel": "취소",
   "auth.pending.title": "{{provider}} 으로 이동 중…",
   "auth.privacyPolicy": "개인정보 처리방침",

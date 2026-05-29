@@ -183,7 +183,7 @@
   "auth.error": "錯誤：{{message}}",
   "auth.invalidEmail": "無效的信箱地址",
   "auth.pending.authenticating": "驗證中",
-  "auth.pending.body": "請稍候 — 我們正在為您安全跳轉。如果未自動開啟新視窗,請點選下方按鈕。",
+  "auth.pending.body": "請稍候 — 我們正在為您安全跳轉。只需稍待片刻。",
   "auth.pending.cancel": "取消",
   "auth.pending.title": "正在跳轉到 {{provider}}…",
   "auth.privacyPolicy": "隱私政策",

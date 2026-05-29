@@ -183,7 +183,7 @@
   "auth.error": "エラー：{{message}}",
   "auth.invalidEmail": "無効なメールアドレス",
   "auth.pending.authenticating": "認証中",
-  "auth.pending.body": "少々お待ちください — 安全にお繋ぎしています。新しいウィンドウが開かない場合は、下のボタンをクリックしてください。",
+  "auth.pending.body": "少々お待ちください — 安全にお繋ぎしています。すぐに完了します。",
   "auth.pending.cancel": "キャンセル",
   "auth.pending.title": "{{provider}} にリダイレクト中…",
   "auth.privacyPolicy": "プライバシーポリシー",

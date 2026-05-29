@@ -183,7 +183,7 @@
   "auth.error": "Fehler: {{message}}",
   "auth.invalidEmail": "Ungültige E-Mail-Adresse",
   "auth.pending.authenticating": "Authentifizierung",
-  "auth.pending.body": "Einen Moment — wir leiten dich sicher weiter. Falls sich kein neues Fenster öffnet, klicke unten auf die Schaltfläche.",
+  "auth.pending.body": "Einen Moment — wir leiten dich sicher weiter. Es dauert nur einen Augenblick.",
   "auth.pending.cancel": "Abbrechen",
   "auth.pending.title": "Weiterleitung zu {{provider}}…",
   "auth.privacyPolicy": "Datenschutzrichtlinie",

@@ -195,7 +195,7 @@
   "auth.error": "خطأ: {{message}}",
   "auth.invalidEmail": "عنوان بريد إلكتروني غير صالح",
   "auth.pending.authenticating": "جاري المصادقة",
-  "auth.pending.body": "انتظر لحظة — نقوم بنقلك بأمان. إذا لم تُفتح نافذة جديدة، فانقر على الزر أدناه.",
+  "auth.pending.body": "انتظر لحظة — نقوم بنقلك بأمان. لن يستغرق الأمر سوى لحظة.",
   "auth.pending.cancel": "إلغاء",
   "auth.pending.title": "جاري إعادة التوجيه إلى {{provider}}…",
   "auth.privacyPolicy": "سياسة الخصوصية",

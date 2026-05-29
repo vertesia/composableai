@@ -186,7 +186,7 @@
   "auth.error": "Erreur : {{message}}",
   "auth.invalidEmail": "Adresse email invalide",
   "auth.pending.authenticating": "Authentification",
-  "auth.pending.body": "Patientez — nous vous redirigeons en toute sécurité. Si aucune nouvelle fenêtre ne s'ouvre, cliquez sur le bouton ci-dessous.",
+  "auth.pending.body": "Patientez — nous vous redirigeons en toute sécurité. Cela ne prendra qu'un instant.",
   "auth.pending.cancel": "Annuler",
   "auth.pending.title": "Redirection vers {{provider}}…",
   "auth.privacyPolicy": "Politique de confidentialité",

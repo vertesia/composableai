@@ -183,7 +183,7 @@
   "auth.error": "Hata: {{message}}",
   "auth.invalidEmail": "Geçersiz e-posta adresi",
   "auth.pending.authenticating": "Kimlik doğrulanıyor",
-  "auth.pending.body": "Bir saniye — sizi güvenli bir şekilde aktarıyoruz. Yeni bir pencere açılmazsa aşağıdaki düğmeyi tıklayın.",
+  "auth.pending.body": "Bir saniye — sizi güvenli bir şekilde aktarıyoruz. Yalnızca birkaç saniye sürer.",
   "auth.pending.cancel": "İptal",
   "auth.pending.title": "{{provider}} adresine yönlendiriliyor…",
   "auth.privacyPolicy": "Gizlilik Politikası",

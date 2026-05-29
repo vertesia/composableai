@@ -186,7 +186,7 @@
   "auth.error": "Error: {{message}}",
   "auth.invalidEmail": "Dirección de correo inválida",
   "auth.pending.authenticating": "Autenticando",
-  "auth.pending.body": "Un momento — te estamos redirigiendo de forma segura. Si no se abre una nueva ventana, haz clic en el botón de abajo.",
+  "auth.pending.body": "Un momento — te estamos redirigiendo de forma segura. Solo tardará un instante.",
   "auth.pending.cancel": "Cancelar",
   "auth.pending.title": "Redirigiendo a {{provider}}…",
   "auth.privacyPolicy": "Política de privacidad",

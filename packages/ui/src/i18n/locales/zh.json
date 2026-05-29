@@ -183,7 +183,7 @@
   "auth.error": "错误：{{message}}",
   "auth.invalidEmail": "无效的邮箱地址",
   "auth.pending.authenticating": "正在认证",
-  "auth.pending.body": "请稍候 — 我们正在为您安全跳转。如果未自动打开新窗口,请点击下方按钮。",
+  "auth.pending.body": "请稍候 — 我们正在为您安全跳转。只需稍候片刻。",
   "auth.pending.cancel": "取消",
   "auth.pending.title": "正在跳转到 {{provider}}…",
   "auth.privacyPolicy": "隐私政策",
