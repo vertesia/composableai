@@ -49,10 +49,10 @@ export function MicrosoftIcon(props: SVGProps<SVGSVGElement>) {
     );
 }
 
-// OIDC has no brand glyph — use a generic lock to signal "identity provider".
+// Generic lock for OIDC/unknown (no brand glyph).
 export const OidcIcon = LockKeyhole;
 
-/** Single source for provider → brand icon. OIDC and unknowns get a generic lock since they have no brand. */
+/** Provider → brand icon. */
 export const PROVIDER_ICONS: Record<ProviderId, ComponentType<{ className?: string }>> = {
     google: GoogleIcon,
     github: GithubIcon,

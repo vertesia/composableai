@@ -12,9 +12,7 @@ interface LoginTenantBlockedStepProps {
 
 export default function LoginTenantBlockedStep({ email, tenantName, onBack }: LoginTenantBlockedStepProps) {
     const { t } = useUITranslation();
-    // Subheading keeps the i18n fallback ("your organization"). The callout
-    // box uses a "<Domain> Team" form so the user sees something concrete when
-    // we don't have a real tenant name.
+    // Without a tenant name: subheading uses the i18n fallback, callout uses "<Domain> Team".
     const subheadingName = tenantName || t('auth.blocked.tenantFallback');
     const domain = emailDomain(email);
     const boxName = tenantName || (domain ? `${capitalizeFirst(domain)} Team` : t('auth.blocked.tenantFallback'));

@@ -3,12 +3,12 @@ import { LoginProviderButton } from './LoginPrimitives';
 import { startPersonalSignIn, startSignIn } from './loginUtils';
 
 interface GitHubSignInButtonProps {
-    /** When set, sign-in goes through the tenant-aware flow and the IdP pre-selects this account. */
+    /** Email for the tenant-aware flow (pre-selects the account). */
     email?: string;
     redirectTo?: string;
-    /** Visual style of the underlying LoginProviderButton. Defaults to "outline". */
+    /** Button variant. */
     variant?: 'outline' | 'filled';
-    /** Fired on click, before the redirect — for analytics / pending-screen state. */
+    /** Fired on click, before the redirect. */
     onClick?: () => void;
 }
 

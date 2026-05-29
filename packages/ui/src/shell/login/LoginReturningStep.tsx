@@ -37,8 +37,7 @@ export default function LoginReturningStep({
     const isSso = !!session.tenantName;
     const primaryLabel = t('auth.continueWithProvider', { provider: providerLabel(session.lastProvider) });
 
-    // "Other ways" alternatives only show personal-OAuth IdPs. OIDC has no
-    // personal-OAuth path (it's tenant-driven only) so it's excluded.
+    // OIDC has no personal path, so it's excluded from "other ways".
     const others: ProviderId[] = (['google', 'github', 'microsoft'] as ProviderId[]).filter(
         (p) => p !== session.lastProvider,
     );

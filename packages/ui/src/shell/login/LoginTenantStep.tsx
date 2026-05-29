@@ -45,10 +45,7 @@ export default function LoginTenantStep({
     const tenantName = tenant.label || tenant.name || t('auth.blocked.tenantFallback');
     const idpName = providerDisplay(tenant.provider ?? '');
 
-    // Each tenant provider has its own self-contained button. They own the
-    // sign-in (startSignIn → tenant-scoped redirect with login hint) and their
-    // own canonical label; the onClick fires first for analytics + the pending
-    // screen.
+    // Each provider has a self-contained button that owns its sign-in and label.
     const buttonProps = {
         email,
         redirectTo,

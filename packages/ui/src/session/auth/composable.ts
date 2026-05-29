@@ -2,8 +2,8 @@
  * Handle client caching and refresh of auth token
  */
 import type { AuthTokenPayload } from '@vertesia/common';
-import { jwtDecode } from 'jwt-decode';
 import { Env } from '@vertesia/ui/env';
+import { jwtDecode } from 'jwt-decode';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from '../constants';
 import { getFirebaseAuth, getFirebaseAuthToken } from './firebase';
 
@@ -116,8 +116,7 @@ export async function fetchComposableToken(
             }
 
             if (ensureResponse.status === 403) {
-                // Customer-domain user with no pending invite — signup blocked.
-                // SigninScreen detects this message to render the invite-required view.
+                // SigninScreen keys the invite-required view off this message.
                 Env.logger.warn('403: Customer-domain user requires an invite to join', {
                     vertesia: {
                         account_id: accountId,

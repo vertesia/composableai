@@ -9,14 +9,11 @@ import LoginTenantStep from './LoginTenantStep';
 import type { LastSession } from './loginUtils';
 import SignupForm from './SignupForm';
 
-// Dev-only overview. Renders every SigninScreen step with mock props so the
-// visual review (cursor states, semantic colors, spacing, copy) can happen on
-// one scroll. Activated by ?preview=signin in the URL — see SigninScreen.tsx.
+// Dev-only catalog of every sign-in step (?preview=signin). See SigninScreen.
 
 const noop = () => {};
 
-// Shaped to match what /api/resolve-tenant returns: name = slug, label =
-// pretty display string (LoginTenantStep prefers label).
+// Mirrors /api/resolve-tenant: name = slug, label = display string.
 const MOCK_TENANT_GOOGLE: UIResolvedTenant & TenantInfo = {
     firebaseTenantId: 'vertesia-tenant-id',
     name: 'vertesia',
@@ -51,9 +48,7 @@ const MOCK_RETURNING_TENANT_OIDC: LastSession = {
     tenantName: 'Acme Corp',
 };
 
-// What HAS been verified by the UI/server flow path that leads to this screen.
-// Distinct from "what's true about the email in the abstract" — these badges
-// describe what's actually been checked.
+// Badges describe what the flow has verified by the time this screen renders.
 type GateState = 'yes' | 'no' | 'na';
 
 interface GateMeta {

@@ -1,7 +1,4 @@
-// Shared visual primitives for the sign-in flow. Each step (LoginEmailStep,
-// LoginTenantStep, LoginReturningStep, LoginProvidersStep, LoginTenantBlockedStep, LoginAuthPending)
-// is composed from the building blocks below. Keep these dumb — no state,
-// no business logic — so the steps stay easy to read and consistent.
+// Stateless visual primitives shared by the sign-in steps.
 import { Button } from '@vertesia/ui/core';
 import { ArrowRight } from 'lucide-react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
@@ -12,7 +9,7 @@ import type { ProviderId } from './loginUtils';
 
 interface LoginStepLayoutProps {
     children: ReactNode;
-    /** Centers content (icon-above-title screens like LoginAuthPending). */
+    /** Center-align content. */
     centered?: boolean;
 }
 
@@ -36,7 +33,7 @@ interface LoginStepHeaderProps {
     eyebrow?: ReactNode;
     title: ReactNode;
     body?: ReactNode;
-    /** "info" (default) gives a blue eyebrow; "destructive" gives the red one. */
+    /** Eyebrow color: blue (info) or red (destructive). */
     variant?: 'info' | 'destructive';
 }
 
@@ -56,34 +53,21 @@ export function LoginStepHeader({ eyebrow, title, body, variant = 'info' }: Logi
 const LOGIN_STEP_BUTTON_BASE = 'cursor-pointer inline-flex items-center justify-center text-sm font-medium transition';
 
 const LOGIN_STEP_BUTTON_VARIANTS = {
-    // Filled dark primary CTA. Honors native `disabled` (greys to 50%) for
-    // transient in-flight submits, e.g. LoginEmailStep while resolving the tenant.
+    // Filled CTA; greys out when disabled.
     primary:
         'h-[42px] gap-2.5 rounded-md bg-foreground text-background hover:opacity-90 ' +
         'disabled:opacity-50 disabled:cursor-not-allowed',
-    // Primary look but permanently non-interactive, held near full opacity so a
-    // spinner reads as active rather than greyed-out. For always-in-flight
-    // screens (LoginAuthPending) — forces `disabled` internally, so there's no toggle.
+    // Non-interactive primary kept at full opacity (spinner reads as active).
     loading: 'h-[42px] gap-2.5 rounded-md bg-foreground text-background opacity-90',
-    // Flat low-emphasis text link (no bg, border, or underline) for backing out
-    // or revealing alternate flows.
+    // Flat text link.
     ghost: 'h-9 text-muted hover:text-foreground',
 } as const;
 
 interface LoginStepButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    /**
-     * "primary" (default) — filled CTA; "loading" — the permanently in-flight
-     * primary (non-interactive, spinner-friendly opacity); "ghost" — flat text
-     * link.
-     */
     variant?: keyof typeof LOGIN_STEP_BUTTON_VARIANTS;
 }
 
-/**
- * The button used across every SignInScreen step. `variant` picks the role: the
- * filled `primary` action, its permanently-in-flight `loading` form, or the
- * low-emphasis `ghost` text link.
- */
+/** Button used across the sign-in steps. */
 export function LoginStepButton({
     variant = 'primary',
     className = '',
@@ -96,7 +80,7 @@ export function LoginStepButton({
             variant="unstyled"
             size="none"
             type={type}
-            // "loading" is inherently non-interactive; other variants honor the prop.
+            // loading is always non-interactive.
             disabled={variant === 'loading' ? true : disabled}
             className={`${LOGIN_STEP_BUTTON_BASE} ${LOGIN_STEP_BUTTON_VARIANTS[variant]} ${className}`.trim()}
             {...rest}
@@ -105,27 +89,18 @@ export function LoginStepButton({
 }
 
 interface LoginInlineLinkButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    /**
-     * "xs" → text-xs (default); "smaller" → text-[11px] for the SSO-returning
-     * bottom row where the email is also text-xs and the action needs to read
-     * lighter still.
-     */
+    /** Text size: xs (default) or smaller. */
     size?: 'xs' | 'smaller';
 }
 
-/**
- * Compact underline-on-hover action embedded in info rows.
- * (LoginTenantStep / LoginProvidersStep "Change", LoginReturningStep "Not you?".)
- */
+/** Compact inline text link for info rows ("Change", "Not you?"). */
 export function LoginInlineLinkButton({
     size = 'xs',
     className = '',
     type = 'button',
     ...rest
 }: LoginInlineLinkButtonProps) {
-    // `!`-prefixed text/rounded overrides defeat the Button base's
-    // `text-sm font-medium rounded-md` so the smaller `text-xs`/`text-[11px]`
-    // and `rounded` (not `rounded-md`) actually win.
+    // `!` overrides beat the Button base's text-sm/rounded-md defaults.
     const sizeClass = size === 'smaller' ? '!text-[11px]' : '!text-xs';
     const base =
         `cursor-pointer ${sizeClass} text-muted hover:text-foreground !transition px-2 py-1 ` +
@@ -147,24 +122,13 @@ interface LoginProviderButtonProps {
     provider: ProviderId;
     label: ReactNode;
     onClick?: () => void;
-    /**
-     * "outline" (default) renders the tall centered outlined CTA; "filled"
-     * inverts it to a dark, theme-tracking CTA using `bg-foreground` /
-     * `text-background` so the colors flip naturally in dark mode; "arrow" is
-     * the left-aligned bordered list row with a hover-revealed trailing arrow
-     * (providers list, "other ways").
-     */
+    /** Centered `outline`/`filled` CTA, or `arrow` list row. */
     variant?: 'outline' | 'filled' | 'arrow';
-    /** Slide the trailing arrow on hover. Only meaningful when variant="arrow". */
+    /** Slide the arrow on hover (arrow variant only). */
     arrowSlide?: boolean;
 }
 
-/**
- * Canonical "Continue with <provider>" button with the local provider SVG at
- * 18px and a `font-medium` label. `variant` picks the shell: the centered
- * `outline`/`filled` CTAs (tall, rounded-lg) or the left-aligned `arrow` list
- * row used for stacked provider options.
- */
+/** "Continue with <provider>" button. */
 export function LoginProviderButton({
     provider,
     label,
@@ -175,7 +139,7 @@ export function LoginProviderButton({
     const Icon = providerIcon(provider);
 
     if (variant === 'arrow') {
-        // !size-X defeats Button base's `[&_svg]:size-4` descendant rule.
+        // !size beats Button's [&_svg]:size-4 rule.
         const arrowClass = arrowSlide
             ? '!size-3.5 text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition'
             : '!size-3.5 text-muted opacity-0 group-hover:opacity-100 transition';
@@ -201,7 +165,7 @@ export function LoginProviderButton({
             onClick={onClick}
             className={`w-full py-5 flex rounded-lg transition duration-150 text-center ${variantClass}`}
         >
-            {/* !size-[18px] defeats Button's `[&_svg]:size-4` descendant rule. */}
+            {/* !size beats Button's [&_svg]:size-4 rule. */}
             <Icon className="!size-[18px]" />
             <span className="text-sm font-medium">{label}</span>
         </Button>

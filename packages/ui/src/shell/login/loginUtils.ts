@@ -7,10 +7,8 @@ import {
     signInWithRedirect,
 } from 'firebase/auth';
 
-// IdP types match auth-tenants.json `provider` values exactly. SSO vs personal
-// OAuth is not a separate ProviderId — it's derived from whether
-// setFirebaseTenant resolves a tenant for the email at sign-in time, and from
-// `tenantName` presence on the stored LastSession for the returning view.
+// Matches auth-tenants.json `provider` values. SSO vs personal is derived from
+// tenant resolution at sign-in time, not encoded here.
 export type ProviderId = 'google' | 'github' | 'microsoft' | 'oidc';
 
 export interface LastSession {
@@ -88,14 +86,9 @@ function buildRedirectPath(redirectTo?: string): string {
     return path;
 }
 
-// Per-provider Firebase provider construction. One named builder per IdP keeps
-// each provider's quirks (scopes, custom params) isolated and reachable by id —
-// `startSignIn`/`startPersonalSignIn` look them up, so this is the single source
-// of truth for provider config across every sign-in surface (tenant + personal).
-//
-// `email`, when present, becomes a login hint so the entered account is
-// pre-selected (Google/Microsoft/OIDC use `login_hint`; GitHub uses `login`).
-// Without an email, Google falls back to forcing the account chooser.
+// One Firebase provider builder per IdP, keyed by id. `email` becomes a login
+// hint (Google/Microsoft/OIDC: login_hint; GitHub: login); without it, Google
+// forces the account chooser.
 type ProviderBuilder = (email?: string, redirectTo?: string) => AuthProvider;
 
 const buildGoogleProvider: ProviderBuilder = (email, redirectTo) => {
@@ -149,23 +142,19 @@ export async function startSignIn(
 ): Promise<{ ok: true } | { ok: false; reason: 'no-email' }> {
     if (!email) return { ok: false, reason: 'no-email' };
 
-    // Resolve the email's tenant. If present → SSO with that tenant's IdP
-    // (overriding the user's button pick — the IdP is dictated by the tenant
-    // config, not the click). If absent → personal OAuth with the picked IdP.
+    // If the email maps to a tenant, use its IdP (overrides the button pick); else personal OAuth.
     const tenant = await setFirebaseTenant(email);
     const auth = getFirebaseAuth();
     let effectiveIdp = provider;
     let tenantName: string | undefined;
 
     if (tenant) {
-        // setFirebaseTenant already set auth.tenantId. Trust tenant.provider
-        // for IdP selection — that's the canonical source.
+        // Tenant config dictates the IdP.
         if (tenant.provider) effectiveIdp = tenant.provider as ProviderId;
         tenantName = tenant.label || tenant.name || undefined;
         localStorage.setItem('tenantName', tenantName ?? '');
     } else {
-        // Personal OAuth: clear any stale tenant routing left over from a prior
-        // SSO attempt on a different email.
+        // Clear stale tenant routing from a prior SSO attempt.
         localStorage.removeItem('tenantName');
         if (auth.tenantId) auth.tenantId = null;
     }
@@ -175,12 +164,7 @@ export async function startSignIn(
     return { ok: true };
 }
 
-/**
- * Personal (non-tenant) OAuth for the standalone buttons (e.g. SignInModal) that
- * have no email to resolve a tenant from. Clears any stale tenant routing, then
- * redirects with the provider's personal config — same builder as the tenant
- * path, so there's one source of truth for how each provider is constructed.
- */
+/** Personal (non-tenant) OAuth for standalone buttons with no email (e.g. SignInModal). */
 export function startPersonalSignIn(provider: ProviderId, redirectTo?: string): void {
     const auth = getFirebaseAuth();
     localStorage.removeItem('tenantName');
@@ -226,12 +210,7 @@ export function isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || '').trim());
 }
 
-/**
- * Detects the 403 from /auth/ensure-user that signals a customer-domain user
- * needs an invite. There is no typed error class for it, so we match the
- * literal server-side message (composable.ts wraps non-2xx responses in
- * STSError-like errors).
- */
+/** Detects the customer-domain "needs invite" 403 from /auth/ensure-user by its message. */
 export function isInviteRequiredError(err: unknown): boolean {
     if (!err) return false;
     const msg = err instanceof Error ? err.message : String(err);

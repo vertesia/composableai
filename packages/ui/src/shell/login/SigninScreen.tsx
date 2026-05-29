@@ -122,15 +122,12 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
 
     const onProviderClicked = useCallback(
         (provider: ProviderId) => {
-            // SSO-vs-personal is derived from current state, not the ProviderId.
-            // If we have a resolved tenant on the email-step path or a tenantName
-            // in the returning session, this click is heading through SSO.
+            // SSO is derived from a resolved tenant or stored tenantName, not the provider.
             const isSso = !!tenant || !!storedSession?.tenantName;
             trackEvent(isSso ? 'enterprise_signin' : 'oauth_signin', { provider });
             setPendingProvider(provider);
             setMode('pending');
-            // The actual OAuth redirect is dispatched by startSignIn() inside the
-            // step component that called this; we just surface the pending screen.
+            // The redirect itself happens in the calling step's startSignIn(); this just shows the pending screen.
         },
         [trackEvent, storedSession?.tenantName, tenant],
     );

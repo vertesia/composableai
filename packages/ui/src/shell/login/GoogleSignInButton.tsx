@@ -3,12 +3,12 @@ import { LoginProviderButton } from './LoginPrimitives';
 import { startPersonalSignIn, startSignIn } from './loginUtils';
 
 interface GoogleSignInButtonProps {
-    /** When set, sign-in goes through the tenant-aware flow and the IdP pre-selects this account. */
+    /** Email for the tenant-aware flow (pre-selects the account). */
     email?: string;
     redirectTo?: string;
-    /** Visual style of the underlying LoginProviderButton. Defaults to "outline". */
+    /** Button variant. */
     variant?: 'outline' | 'filled';
-    /** Fired on click, before the redirect — for analytics / pending-screen state. */
+    /** Fired on click, before the redirect. */
     onClick?: () => void;
 }
 
@@ -22,8 +22,7 @@ export default function GoogleSignInButton({
 
     const signIn = () => {
         onClick?.();
-        // With an email: tenant-aware flow (resolves tenant, writes pendingSignin /
-        // tenantName, login hint). Without: personal OAuth (e.g. SignInModal).
+        // With email: tenant-aware flow. Without: personal OAuth.
         if (email) {
             void startSignIn('google', email, redirectTo);
         } else {

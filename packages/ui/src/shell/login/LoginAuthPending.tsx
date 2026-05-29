@@ -12,9 +12,7 @@ interface LoginAuthPendingProps {
 export default function LoginAuthPending({ provider, onCancel }: LoginAuthPendingProps) {
     const { t } = useUITranslation();
     const Icon = providerIcon(provider);
-    // OIDC has no brand name to drop into "Redirecting to X" — the title needs
-    // a noun phrase ("Sign-In Provider"), unlike the button CTA context where
-    // providerLabel's "Sign In" reads fine ("Continue with Sign In").
+    // OIDC has no brand name for the title; use a generic noun phrase.
     const titleProvider = provider === 'oidc' ? 'Sign-In Provider' : providerLabel(provider);
 
     return (
