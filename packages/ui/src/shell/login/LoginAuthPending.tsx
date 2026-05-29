@@ -13,7 +13,7 @@ export default function LoginAuthPending({ provider, onCancel }: LoginAuthPendin
     const { t } = useUITranslation();
     const Icon = providerIcon(provider);
     // OIDC has no brand name for the title; use a generic noun phrase.
-    const titleProvider = provider === 'oidc' ? 'Sign-In Provider' : providerLabel(provider);
+    const titleProvider = provider === 'oidc' ? t('auth.pending.genericProvider') : providerLabel(provider);
 
     return (
         <LoginStepLayout centered>

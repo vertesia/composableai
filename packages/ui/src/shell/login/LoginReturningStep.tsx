@@ -35,7 +35,10 @@ export default function LoginReturningStep({
     const firstName = session.name ? session.name.split(' ')[0]! : firstNameFromEmail(session.email);
     // A stored tenantName means the previous sign-in used SSO.
     const isSso = !!session.tenantName;
-    const primaryLabel = t('auth.continueWithProvider', { provider: providerLabel(session.lastProvider) });
+    const primaryLabel =
+        session.lastProvider === 'oidc'
+            ? t('auth.continueWithSignIn')
+            : t('auth.continueWithProvider', { provider: providerLabel(session.lastProvider) });
 
     // OIDC has no personal path, so it's excluded from "other ways".
     const others: ProviderId[] = (['google', 'github', 'microsoft'] as ProviderId[]).filter(

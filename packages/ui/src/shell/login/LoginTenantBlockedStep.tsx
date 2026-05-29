@@ -15,7 +15,11 @@ export default function LoginTenantBlockedStep({ email, tenantName, onBack }: Lo
     // Without a tenant name: subheading uses the i18n fallback, callout uses "<Domain> Team".
     const subheadingName = tenantName || t('auth.blocked.tenantFallback');
     const domain = emailDomain(email);
-    const boxName = tenantName || (domain ? `${capitalizeFirst(domain)} Team` : t('auth.blocked.tenantFallback'));
+    const boxName =
+        tenantName ||
+        (domain
+            ? t('auth.blocked.teamFromDomain', { domain: capitalizeFirst(domain) })
+            : t('auth.blocked.tenantFallback'));
 
     return (
         <LoginStepLayout>

@@ -1,6 +1,6 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { LoginProviderButton } from './LoginPrimitives';
-import { providerLabel, startPersonalSignIn, startSignIn } from './loginUtils';
+import { startPersonalSignIn, startSignIn } from './loginUtils';
 
 interface OidcSignInButtonProps {
     /** Matched tenant's email. Required in practice — OIDC only renders post-match. */
@@ -27,11 +27,6 @@ export default function OidcSignInButton({ email, redirectTo, variant = 'outline
     };
 
     return (
-        <LoginProviderButton
-            provider="oidc"
-            label={t('auth.continueWithProvider', { provider: providerLabel('oidc') })}
-            onClick={signIn}
-            variant={variant}
-        />
+        <LoginProviderButton provider="oidc" label={t('auth.continueWithSignIn')} onClick={signIn} variant={variant} />
     );
 }
