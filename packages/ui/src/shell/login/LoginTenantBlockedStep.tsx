@@ -1,16 +1,16 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { ShieldOff } from 'lucide-react';
-import { SignInStepButton, StepHeader, StepLayout } from './LoginPrimitives';
+import { LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
 import { capitalizeFirst, emailDomain } from './loginUtils';
 
-interface TenantBlockedStepProps {
+interface LoginTenantBlockedStepProps {
     email: string;
     /** Tenant display name if known. Falls back to a generic phrase if not. */
     tenantName?: string;
     onBack: () => void;
 }
 
-export default function TenantBlockedStep({ email, tenantName, onBack }: TenantBlockedStepProps) {
+export default function LoginTenantBlockedStep({ email, tenantName, onBack }: LoginTenantBlockedStepProps) {
     const { t } = useUITranslation();
     // Subheading keeps the i18n fallback ("your organization"). The callout
     // box uses a "<Domain> Team" form so the user sees something concrete when
@@ -20,8 +20,8 @@ export default function TenantBlockedStep({ email, tenantName, onBack }: TenantB
     const boxName = tenantName || (domain ? `${capitalizeFirst(domain)} Team` : t('auth.blocked.tenantFallback'));
 
     return (
-        <StepLayout>
-            <StepHeader
+        <LoginStepLayout>
+            <LoginStepHeader
                 tone="destructive"
                 eyebrow={t('auth.blocked.eyebrow')}
                 title={t('auth.blocked.title')}
@@ -36,10 +36,10 @@ export default function TenantBlockedStep({ email, tenantName, onBack }: TenantB
                         <div className="text-xs text-destructive/80">{t('auth.blocked.tenantMeta', { email })}</div>
                     </div>
                 </div>
-                <SignInStepButton variant="ghost" onClick={onBack}>
+                <LoginStepButton variant="ghost" onClick={onBack}>
                     {t('auth.blocked.useDifferent')}
-                </SignInStepButton>
+                </LoginStepButton>
             </div>
-        </StepLayout>
+        </LoginStepLayout>
     );
 }

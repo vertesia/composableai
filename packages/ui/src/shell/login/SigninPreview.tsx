@@ -1,13 +1,13 @@
 import type { UIResolvedTenant } from '@vertesia/common';
 import { ArrowDown } from 'lucide-react';
-import AuthPending from './AuthPending';
-import EmailStep, { type TenantInfo } from './EmailStep';
+import LoginAuthPending from './LoginAuthPending';
+import LoginEmailStep, { type TenantInfo } from './LoginEmailStep';
+import LoginProvidersStep from './LoginProvidersStep';
+import LoginReturningStep from './LoginReturningStep';
+import LoginTenantBlockedStep from './LoginTenantBlockedStep';
+import LoginTenantStep from './LoginTenantStep';
 import type { LastSession } from './loginUtils';
-import ProvidersStep from './ProvidersStep';
-import ReturningStep from './ReturningStep';
 import SignupForm from './SignupForm';
-import TenantBlockedStep from './TenantBlockedStep';
-import TenantStep from './TenantStep';
 
 // Dev-only overview. Renders every SigninScreen step with mock props so the
 // visual review (cursor states, semantic colors, spacing, copy) can happen on
@@ -16,7 +16,7 @@ import TenantStep from './TenantStep';
 const noop = () => {};
 
 // Shaped to match what /api/resolve-tenant actually returns: name = slug,
-// label = pretty display string. TenantStep now reads label first.
+// label = pretty display string. LoginTenantStep now reads label first.
 const MOCK_TENANT_GOOGLE: UIResolvedTenant & TenantInfo = {
     firebaseTenantId: 'vertesia-tenant-id',
     name: 'vertesia',
@@ -182,7 +182,7 @@ export default function SigninPreview() {
                         sub="Initial entry. No server check has run yet."
                         meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'na', providerKnown: 'na' }}
                     >
-                        <EmailStep onProceed={noop} />
+                        <LoginEmailStep onProceed={noop} />
                     </Frame>
 
                     <Frame
@@ -190,7 +190,7 @@ export default function SigninPreview() {
                         sub="Same screen with text in the field — nothing checked, just a UI state."
                         meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'na', providerKnown: 'na' }}
                     >
-                        <EmailStep initialEmail="charles@vertesiahq.com" onProceed={noop} />
+                        <LoginEmailStep initialEmail="charles@vertesiahq.com" onProceed={noop} />
                     </Frame>
                 </Section>
 
@@ -205,7 +205,7 @@ export default function SigninPreview() {
                         sub="Reached because /api/resolve-tenant returned no match. Renders the generic providers list."
                         meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'no', providerKnown: 'na' }}
                     >
-                        <ProvidersStep email="charles@gmail.com" onBack={noop} onProviderClicked={noop} />
+                        <LoginProvidersStep email="charles@gmail.com" onBack={noop} onProviderClicked={noop} />
                     </Frame>
 
                     <Frame
@@ -213,7 +213,7 @@ export default function SigninPreview() {
                         sub="Reached because /api/resolve-tenant returned a tenant with provider=google."
                         meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'yes', providerKnown: 'yes' }}
                     >
-                        <TenantStep
+                        <LoginTenantStep
                             email="alice@vertesia.io"
                             tenant={MOCK_TENANT_GOOGLE}
                             onBack={noop}
@@ -226,7 +226,7 @@ export default function SigninPreview() {
                         sub="Reached with tenant.provider=oidc → no branded IdP, fallback wording."
                         meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'yes', providerKnown: 'no' }}
                     >
-                        <TenantStep
+                        <LoginTenantStep
                             email="user@acme.com"
                             tenant={MOCK_TENANT_OIDC}
                             onBack={noop}
@@ -243,7 +243,7 @@ export default function SigninPreview() {
                         sub="Provider picked; OAuth redirect in flight. Server checks not started."
                         meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'na', providerKnown: 'yes' }}
                     >
-                        <AuthPending provider="google" />
+                        <LoginAuthPending provider="google" />
                     </Frame>
 
                     <Frame
@@ -251,7 +251,7 @@ export default function SigninPreview() {
                         sub="OIDC redirect in flight; auth-tenant must have matched to get here."
                         meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'yes', providerKnown: 'yes' }}
                     >
-                        <AuthPending provider="oidc" />
+                        <LoginAuthPending provider="oidc" />
                     </Frame>
                 </Section>
 
@@ -263,7 +263,7 @@ export default function SigninPreview() {
                         sub="403 from /auth/ensure-user. Path went through auth-tenant match; tenantName from tenant.label."
                         meta={{ customerDomain: 'yes', signupAllowed: 'no', authTenant: 'yes', providerKnown: 'na' }}
                     >
-                        <TenantBlockedStep email="alice@acme-corp.com" tenantName="Acme Corp" onBack={noop} />
+                        <LoginTenantBlockedStep email="alice@acme-corp.com" tenantName="Acme Corp" onBack={noop} />
                     </Frame>
 
                     <Frame
@@ -271,7 +271,7 @@ export default function SigninPreview() {
                         sub="403 with no auth-tenant in path → no tenant name available, i18n fallback used."
                         meta={{ customerDomain: 'yes', signupAllowed: 'no', authTenant: 'no', providerKnown: 'na' }}
                     >
-                        <TenantBlockedStep email="user@acme.com" onBack={noop} />
+                        <LoginTenantBlockedStep email="user@acme.com" onBack={noop} />
                     </Frame>
 
                     <Frame
@@ -293,7 +293,11 @@ export default function SigninPreview() {
                             sub="lastProvider=google, no tenantName → last sign-in was personal OAuth."
                             meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'no', providerKnown: 'yes' }}
                         >
-                            <ReturningStep session={MOCK_RETURNING_GOOGLE} onNotYou={noop} onProviderClicked={noop} />
+                            <LoginReturningStep
+                                session={MOCK_RETURNING_GOOGLE}
+                                onNotYou={noop}
+                                onProviderClicked={noop}
+                            />
                         </Frame>
 
                         <Frame
@@ -306,7 +310,7 @@ export default function SigninPreview() {
                                 providerKnown: 'yes',
                             }}
                         >
-                            <ReturningStep
+                            <LoginReturningStep
                                 session={MOCK_RETURNING_TENANT_MS}
                                 onNotYou={noop}
                                 onProviderClicked={noop}
@@ -323,7 +327,7 @@ export default function SigninPreview() {
                                 providerKnown: 'yes',
                             }}
                         >
-                            <ReturningStep
+                            <LoginReturningStep
                                 session={MOCK_RETURNING_TENANT_OIDC}
                                 onNotYou={noop}
                                 onProviderClicked={noop}

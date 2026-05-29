@@ -5,8 +5,12 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { RegionTag } from '@vertesia/ui/layout';
 import { UserNotFoundError, useUserSession, useUXTracking } from '@vertesia/ui/session';
 import { useCallback, useEffect, useState } from 'react';
-import AuthPending from './AuthPending';
-import EmailStep, { type TenantInfo } from './EmailStep';
+import LoginAuthPending from './LoginAuthPending';
+import LoginEmailStep, { type TenantInfo } from './LoginEmailStep';
+import LoginProvidersStep from './LoginProvidersStep';
+import LoginReturningStep from './LoginReturningStep';
+import LoginTenantBlockedStep from './LoginTenantBlockedStep';
+import LoginTenantStep from './LoginTenantStep';
 import {
     clearLastSession,
     clearPendingSignin,
@@ -17,12 +21,8 @@ import {
     readPendingSignin,
     writeLastSession,
 } from './loginUtils';
-import ProvidersStep from './ProvidersStep';
-import ReturningStep from './ReturningStep';
 import SigninPreview from './SigninPreview';
 import SignupForm from './SignupForm';
-import TenantBlockedStep from './TenantBlockedStep';
-import TenantStep from './TenantStep';
 
 interface SigninScreenProps {
     isNested?: boolean;
@@ -158,10 +158,10 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
 
     let content: React.ReactNode = null;
     if (mode === 'pending' && pendingProvider) {
-        content = <AuthPending provider={pendingProvider} />;
+        content = <LoginAuthPending provider={pendingProvider} />;
     } else if (mode === 'blocked') {
         content = (
-            <TenantBlockedStep
+            <LoginTenantBlockedStep
                 email={email || storedSession?.email || ''}
                 tenantName={tenant?.label || tenant?.name || storedSession?.tenantName || undefined}
                 onBack={goBackToFresh}
@@ -171,7 +171,7 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
         content = <SignupForm onSignup={onSignup} goBack={goBackToFresh} />;
     } else if (mode === 'tenant' && tenant) {
         content = (
-            <TenantStep
+            <LoginTenantStep
                 email={email}
                 tenant={tenant}
                 onBack={onBack}
@@ -179,11 +179,13 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
             />
         );
     } else if (mode === 'providers') {
-        content = <ProvidersStep email={email} onBack={onBack} onProviderClicked={onProviderClicked} />;
+        content = <LoginProvidersStep email={email} onBack={onBack} onProviderClicked={onProviderClicked} />;
     } else if (mode === 'returning' && storedSession) {
-        content = <ReturningStep session={storedSession} onNotYou={onNotYou} onProviderClicked={onProviderClicked} />;
+        content = (
+            <LoginReturningStep session={storedSession} onNotYou={onNotYou} onProviderClicked={onProviderClicked} />
+        );
     } else {
-        content = <EmailStep initialEmail={email} onProceed={onProceedFromEmail} />;
+        content = <LoginEmailStep initialEmail={email} onProceed={onProceedFromEmail} />;
     }
 
     return (

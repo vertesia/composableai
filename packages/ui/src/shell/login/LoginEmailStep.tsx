@@ -4,17 +4,17 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { setFirebaseTenant } from '@vertesia/ui/session';
 import { ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { SignInStepButton, StepHeader, StepLayout } from './LoginPrimitives';
+import { LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
 import { isValidEmail } from './loginUtils';
 
 export type TenantInfo = UIResolvedTenant;
 
-interface EmailStepProps {
+interface LoginEmailStepProps {
     initialEmail?: string;
     onProceed: (email: string, tenant?: TenantInfo) => void;
 }
 
-export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
+export default function LoginEmailStep({ initialEmail, onProceed }: LoginEmailStepProps) {
     const { t } = useUITranslation();
     const [email, setEmail] = useState(initialEmail ?? '');
     const [submitError, setSubmitError] = useState(false);
@@ -46,8 +46,12 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
     };
 
     return (
-        <StepLayout>
-            <StepHeader eyebrow={t('auth.email.eyebrow')} title={t('auth.email.title')} body={t('auth.email.body')} />
+        <LoginStepLayout>
+            <LoginStepHeader
+                eyebrow={t('auth.email.eyebrow')}
+                title={t('auth.email.title')}
+                body={t('auth.email.body')}
+            />
 
             <form onSubmit={submit} noValidate className={`flex flex-col ${submitError ? 'gap-2' : 'gap-6'}`}>
                 <div className="flex flex-col gap-1.5">
@@ -82,7 +86,7 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                     )}
                 </div>
 
-                <SignInStepButton type="submit" disabled={loading}>
+                <LoginStepButton type="submit" disabled={loading}>
                     {loading ? (
                         <Spinner />
                     ) : (
@@ -91,8 +95,8 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                             <ArrowRight className="!size-3.5" />
                         </>
                     )}
-                </SignInStepButton>
+                </LoginStepButton>
             </form>
-        </StepLayout>
+        </LoginStepLayout>
     );
 }

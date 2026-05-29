@@ -1,5 +1,5 @@
-// Shared visual primitives for the sign-in flow. Each step (EmailStep,
-// TenantStep, ReturningStep, ProvidersStep, TenantBlockedStep, AuthPending)
+// Shared visual primitives for the sign-in flow. Each step (LoginEmailStep,
+// LoginTenantStep, LoginReturningStep, LoginProvidersStep, LoginTenantBlockedStep, LoginAuthPending)
 // is composed from the building blocks below. Keep these dumb — no state,
 // no business logic — so the steps stay easy to read and consistent.
 import { Button } from '@vertesia/ui/core';
@@ -10,13 +10,13 @@ import type { ProviderId } from './loginUtils';
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
 
-interface StepLayoutProps {
+interface LoginStepLayoutProps {
     children: ReactNode;
-    /** Centers content (icon-above-title screens like AuthPending). */
+    /** Centers content (icon-above-title screens like LoginAuthPending). */
     centered?: boolean;
 }
 
-export function StepLayout({ children, centered = false }: StepLayoutProps) {
+export function LoginStepLayout({ children, centered = false }: LoginStepLayoutProps) {
     return (
         <div
             className={
@@ -32,7 +32,7 @@ export function StepLayout({ children, centered = false }: StepLayoutProps) {
 
 // ─── Step header (eyebrow + title + body) ──────────────────────────────────
 
-interface StepHeaderProps {
+interface LoginStepHeaderProps {
     eyebrow?: ReactNode;
     title: ReactNode;
     body?: ReactNode;
@@ -40,7 +40,7 @@ interface StepHeaderProps {
     tone?: 'info' | 'destructive';
 }
 
-export function StepHeader({ eyebrow, title, body, tone = 'info' }: StepHeaderProps) {
+export function LoginStepHeader({ eyebrow, title, body, tone = 'info' }: LoginStepHeaderProps) {
     const eyebrowColor = tone === 'destructive' ? 'text-destructive' : 'text-info';
     return (
         <div>
@@ -53,31 +53,30 @@ export function StepHeader({ eyebrow, title, body, tone = 'info' }: StepHeaderPr
 
 // ─── Buttons ────────────────────────────────────────────────────────────────
 
-const SIGN_IN_STEP_BUTTON_BASE =
-    'cursor-pointer inline-flex items-center justify-center text-sm font-medium transition';
+const LOGIN_STEP_BUTTON_BASE = 'cursor-pointer inline-flex items-center justify-center text-sm font-medium transition';
 
-const SIGN_IN_STEP_BUTTON_VARIANTS = {
+const LOGIN_STEP_BUTTON_VARIANTS = {
     // Filled dark primary CTA. Honors native `disabled` (greys to 50%) for
-    // transient in-flight submits, e.g. EmailStep while resolving the tenant.
+    // transient in-flight submits, e.g. LoginEmailStep while resolving the tenant.
     primary:
         'h-[42px] gap-2.5 rounded-md bg-foreground text-background hover:opacity-90 ' +
         'disabled:opacity-50 disabled:cursor-not-allowed',
     // Primary look but permanently non-interactive, held near full opacity so a
     // spinner reads as active rather than greyed-out. For always-in-flight
-    // screens (AuthPending) — forces `disabled` internally, so there's no toggle.
+    // screens (LoginAuthPending) — forces `disabled` internally, so there's no toggle.
     loading: 'h-[42px] gap-2.5 rounded-md bg-foreground text-background opacity-90',
     // Flat low-emphasis text link (no bg, border, or underline) for backing out
     // or revealing alternate flows.
     ghost: 'h-9 text-muted hover:text-foreground',
 } as const;
 
-interface SignInStepButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface LoginStepButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     /**
      * "primary" (default) — filled CTA; "loading" — the permanently in-flight
      * primary (non-interactive, spinner-friendly opacity); "ghost" — flat text
      * link.
      */
-    variant?: keyof typeof SIGN_IN_STEP_BUTTON_VARIANTS;
+    variant?: keyof typeof LOGIN_STEP_BUTTON_VARIANTS;
 }
 
 /**
@@ -85,13 +84,13 @@ interface SignInStepButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> 
  * filled `primary` action, its permanently-in-flight `loading` form, or the
  * low-emphasis `ghost` text link.
  */
-export function SignInStepButton({
+export function LoginStepButton({
     variant = 'primary',
     className = '',
     type = 'button',
     disabled,
     ...rest
-}: SignInStepButtonProps) {
+}: LoginStepButtonProps) {
     return (
         <Button
             variant="unstyled"
@@ -99,13 +98,13 @@ export function SignInStepButton({
             type={type}
             // "loading" is inherently non-interactive; other variants honor the prop.
             disabled={variant === 'loading' ? true : disabled}
-            className={`${SIGN_IN_STEP_BUTTON_BASE} ${SIGN_IN_STEP_BUTTON_VARIANTS[variant]} ${className}`.trim()}
+            className={`${LOGIN_STEP_BUTTON_BASE} ${LOGIN_STEP_BUTTON_VARIANTS[variant]} ${className}`.trim()}
             {...rest}
         />
     );
 }
 
-interface InlineLinkButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface LoginInlineLinkButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     /**
      * "xs" → text-xs (default); "smaller" → text-[11px] for the SSO-returning
      * bottom row where the email is also text-xs and the action needs to read
@@ -116,9 +115,14 @@ interface InlineLinkButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> 
 
 /**
  * Compact underline-on-hover action embedded in info rows.
- * (TenantStep / ProvidersStep "Change", ReturningStep "Not you?".)
+ * (LoginTenantStep / LoginProvidersStep "Change", LoginReturningStep "Not you?".)
  */
-export function InlineLinkButton({ size = 'xs', className = '', type = 'button', ...rest }: InlineLinkButtonProps) {
+export function LoginInlineLinkButton({
+    size = 'xs',
+    className = '',
+    type = 'button',
+    ...rest
+}: LoginInlineLinkButtonProps) {
     // `!`-prefixed text/rounded overrides defeat the Button base's
     // `text-sm font-medium rounded-md` so the smaller `text-xs`/`text-[11px]`
     // and `rounded` (not `rounded-md`) actually win.
@@ -139,7 +143,7 @@ export function InlineLinkButton({ size = 'xs', className = '', type = 'button',
 
 // ─── Provider CTA ──────────────────────────────────────────────────────────
 
-interface SignInProviderButtonProps {
+interface LoginProviderButtonProps {
     provider: ProviderId;
     label: ReactNode;
     onClick?: () => void;
@@ -161,13 +165,13 @@ interface SignInProviderButtonProps {
  * `outline`/`filled` CTAs (tall, rounded-lg) or the left-aligned `arrow` list
  * row used for stacked provider options.
  */
-export function SignInProviderButton({
+export function LoginProviderButton({
     provider,
     label,
     onClick,
     variant = 'outline',
     arrowSlide = false,
-}: SignInProviderButtonProps) {
+}: LoginProviderButtonProps) {
     const Icon = providerIcon(provider);
 
     if (variant === 'arrow') {

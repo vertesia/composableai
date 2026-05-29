@@ -1,12 +1,12 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { SignInProviderButton } from './LoginPrimitives';
+import { LoginProviderButton } from './LoginPrimitives';
 import { startPersonalSignIn, startSignIn } from './loginUtils';
 
 interface GitHubSignInButtonProps {
     /** When set, sign-in goes through the tenant-aware flow and the IdP pre-selects this account. */
     email?: string;
     redirectTo?: string;
-    /** Visual style of the underlying SignInProviderButton. Defaults to "outline". */
+    /** Visual style of the underlying LoginProviderButton. Defaults to "outline". */
     variant?: 'outline' | 'filled';
     /** Fired on click, before the redirect — for analytics / pending-screen state. */
     onClick?: () => void;
@@ -30,7 +30,7 @@ export default function GitHubSignInButton({
     };
 
     return (
-        <SignInProviderButton
+        <LoginProviderButton
             provider="github"
             label={t('auth.continueWithGithub')}
             onClick={signIn}

@@ -1,13 +1,13 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { Mail } from 'lucide-react';
-import type { TenantInfo } from './EmailStep';
 import GitHubSignInButton from './GitHubSignInButton';
 import GoogleSignInButton from './GoogleSignInButton';
-import { InlineLinkButton, SignInStepButton, StepHeader, StepLayout } from './LoginPrimitives';
+import type { TenantInfo } from './LoginEmailStep';
+import { LoginInlineLinkButton, LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
 import MicrosoftSignInButton from './MicrosoftSigninButton';
 import OidcSignInButton from './OidcSignInButton';
 
-interface TenantStepProps {
+interface LoginTenantStepProps {
     email: string;
     tenant: TenantInfo;
     onBack: () => void;
@@ -34,7 +34,13 @@ function providerDisplay(provider: string): string {
     return map[provider] ?? 'your identity provider';
 }
 
-export default function TenantStep({ email, tenant, onBack, onProviderClicked, redirectTo }: TenantStepProps) {
+export default function LoginTenantStep({
+    email,
+    tenant,
+    onBack,
+    onProviderClicked,
+    redirectTo,
+}: LoginTenantStepProps) {
     const { t } = useUITranslation();
     const tenantName = tenant.label || tenant.name || t('auth.blocked.tenantFallback');
     const idpName = providerDisplay(tenant.provider ?? '');
@@ -61,8 +67,8 @@ export default function TenantStep({ email, tenant, onBack, onProviderClicked, r
         );
 
     return (
-        <StepLayout>
-            <StepHeader
+        <LoginStepLayout>
+            <LoginStepHeader
                 eyebrow={t('auth.tenant.eyebrowSso')}
                 title={t('auth.tenant.title', { name: tenantName })}
                 body={t('auth.tenant.bodySso')}
@@ -85,16 +91,16 @@ export default function TenantStep({ email, tenant, onBack, onProviderClicked, r
                         <Mail className="size-4 text-muted" />
                     </div>
                     <span className="text-sm text-foreground/80 flex-1 truncate">{email}</span>
-                    <InlineLinkButton onClick={onBack}>{t('auth.change')}</InlineLinkButton>
+                    <LoginInlineLinkButton onClick={onBack}>{t('auth.change')}</LoginInlineLinkButton>
                 </div>
             </div>
 
             <div className="flex flex-col gap-2">
                 {providerButton}
-                <SignInStepButton variant="ghost" onClick={onBack}>
+                <LoginStepButton variant="ghost" onClick={onBack}>
                     {t('auth.tenant.notPartOf', { name: tenantName })}
-                </SignInStepButton>
+                </LoginStepButton>
             </div>
-        </StepLayout>
+        </LoginStepLayout>
     );
 }

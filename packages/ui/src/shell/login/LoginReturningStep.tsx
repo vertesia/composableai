@@ -1,7 +1,13 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { Mail } from 'lucide-react';
 import { useState } from 'react';
-import { InlineLinkButton, SignInProviderButton, SignInStepButton, StepHeader, StepLayout } from './LoginPrimitives';
+import {
+    LoginInlineLinkButton,
+    LoginProviderButton,
+    LoginStepButton,
+    LoginStepHeader,
+    LoginStepLayout,
+} from './LoginPrimitives';
 import {
     emailInitial,
     firstNameFromEmail,
@@ -11,14 +17,19 @@ import {
     startSignIn,
 } from './loginUtils';
 
-interface ReturningStepProps {
+interface LoginReturningStepProps {
     session: LastSession;
     onNotYou: () => void;
     onProviderClicked: (provider: ProviderId) => void;
     redirectTo?: string;
 }
 
-export default function ReturningStep({ session, onNotYou, onProviderClicked, redirectTo }: ReturningStepProps) {
+export default function LoginReturningStep({
+    session,
+    onNotYou,
+    onProviderClicked,
+    redirectTo,
+}: LoginReturningStepProps) {
     const { t } = useUITranslation();
     const [showOthers, setShowOthers] = useState(false);
     const firstName = session.name ? session.name.split(' ')[0]! : firstNameFromEmail(session.email);
@@ -40,8 +51,8 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
     };
 
     return (
-        <StepLayout>
-            <StepHeader
+        <LoginStepLayout>
+            <LoginStepHeader
                 eyebrow={t('auth.returning.eyebrow')}
                 title={t('auth.returning.title', { name: firstName })}
                 body={t('auth.returning.body')}
@@ -49,7 +60,7 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
 
             {isSso && session.tenantName ? (
                 // Two-part user+org card. Top: avatar + name + company. Bottom:
-                // Mail icon + email + "Not you?". Shape mirrors TenantStep so
+                // Mail icon + email + "Not you?". Shape mirrors LoginTenantStep so
                 // both screens read with the same rhythm.
                 <div className="rounded-md border border-border bg-background overflow-hidden">
                     <div className="flex items-center gap-3 px-3.5 py-2.5">
@@ -68,9 +79,9 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
                             <Mail className="size-3.5 text-muted" />
                         </div>
                         <span className="text-xs text-foreground/80 flex-1 truncate">{session.email}</span>
-                        <InlineLinkButton size="smaller" onClick={onNotYou}>
+                        <LoginInlineLinkButton size="smaller" onClick={onNotYou}>
                             {t('auth.returning.notYou')}
-                        </InlineLinkButton>
+                        </LoginInlineLinkButton>
                     </div>
                 </div>
             ) : (
@@ -84,12 +95,12 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
                         </div>
                         <div className="text-xs text-muted truncate">{session.email}</div>
                     </div>
-                    <InlineLinkButton onClick={onNotYou}>{t('auth.returning.notYou')}</InlineLinkButton>
+                    <LoginInlineLinkButton onClick={onNotYou}>{t('auth.returning.notYou')}</LoginInlineLinkButton>
                 </div>
             )}
 
             <div className="flex flex-col gap-2">
-                <SignInProviderButton
+                <LoginProviderButton
                     provider={session.lastProvider}
                     label={primaryLabel}
                     onClick={() => continueWith(session.lastProvider)}
@@ -97,9 +108,9 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
                 />
 
                 {!showOthers && (
-                    <SignInStepButton variant="ghost" onClick={() => setShowOthers(true)}>
+                    <LoginStepButton variant="ghost" onClick={() => setShowOthers(true)}>
                         {t('auth.returning.useDifferent')}
-                    </SignInStepButton>
+                    </LoginStepButton>
                 )}
 
                 {showOthers && (
@@ -110,7 +121,7 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
                             <div className="flex-1 h-px bg-border" />
                         </div>
                         {others.map((p) => (
-                            <SignInProviderButton
+                            <LoginProviderButton
                                 key={p}
                                 provider={p}
                                 label={t('auth.continueWithProvider', { provider: providerLabel(p) })}
@@ -121,6 +132,6 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
                     </div>
                 )}
             </div>
-        </StepLayout>
+        </LoginStepLayout>
     );
 }
