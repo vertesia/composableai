@@ -202,7 +202,6 @@
   "auth.signInErrorPersists": "sorun devam ederse.",
   "auth.tenant.bodySso": "Kuruluşunuzu Vertesia'da bulduk. Ekibinizin projesine erişmek için şirketinizin tek oturum açma sistemi ile devam edin.",
   "auth.tenant.continueGeneric": "Oturum açmaya devam et",
-  "auth.tenant.continueWithIdp": "{{idp}} ile devam et",
   "auth.tenant.eyebrowSso": "Tek Oturum Açma",
   "auth.tenant.notPartOf": "{{name}} kuruluşuna ait değil misiniz?",
   "auth.tenant.title": "{{name}} oturumuna katıl",

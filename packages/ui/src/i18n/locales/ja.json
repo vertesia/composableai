@@ -202,7 +202,6 @@
   "auth.signInErrorPersists": "問題が続く場合。",
   "auth.tenant.bodySso": "Vertesia 上で組織が見つかりました。チームのプロジェクトにアクセスするには、会社のシングルサインオンで続行してください。",
   "auth.tenant.continueGeneric": "サインインに進む",
-  "auth.tenant.continueWithIdp": "{{idp}} で続ける",
   "auth.tenant.eyebrowSso": "シングルサインオン",
   "auth.tenant.notPartOf": "{{name}} に所属していませんか?",
   "auth.tenant.title": "{{name}} にサインイン",

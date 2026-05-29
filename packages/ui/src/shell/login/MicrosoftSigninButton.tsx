@@ -1,15 +1,33 @@
-import { OAuthProvider, signInWithRedirect } from 'firebase/auth';
-import { getFirebaseAuth } from '@vertesia/ui/session';
-import { Button } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { getFirebaseAuth } from '@vertesia/ui/session';
+import { OAuthProvider, signInWithRedirect } from 'firebase/auth';
+import { ProviderButton } from './LoginPrimitives';
+import { startSignIn } from './loginUtils';
 
-interface GoogleSignInButtonProps {
+interface MicrosoftSignInButtonProps {
+    /** When set, sign-in goes through the tenant-aware flow and the IdP pre-selects this account. */
+    email?: string;
     redirectTo?: string;
+    /** Visual style of the underlying ProviderButton. Defaults to "outline". */
+    variant?: 'outline' | 'filled';
+    /** Fired on click, before the redirect — for analytics / pending-screen state. */
+    onClick?: () => void;
 }
-export default function MicrosoftSignInButton({ redirectTo: _redirectTo }: GoogleSignInButtonProps) {
+
+export default function MicrosoftSignInButton({
+    email,
+    redirectTo,
+    variant = 'outline',
+    onClick,
+}: MicrosoftSignInButtonProps) {
     const { t } = useUITranslation();
 
     const signIn = () => {
+        onClick?.();
+        if (email) {
+            void startSignIn('microsoft', email, redirectTo);
+            return;
+        }
         localStorage.removeItem('tenantName');
         const provider = new OAuthProvider('microsoft.com');
         provider.addScope('profile');
@@ -18,18 +36,11 @@ export default function MicrosoftSignInButton({ redirectTo: _redirectTo }: Googl
     };
 
     return (
-        <Button
-            variant={'outline'}
+        <ProviderButton
+            provider="microsoft"
+            label={t('auth.continueWithMicrosoft')}
             onClick={signIn}
-            className="w-full py-5 flex rounded-lg hover:shadow-sm transition duration-150 text-center"
-        >
-            <img
-                className="size-6"
-                src="https://learn.microsoft.com/en-us/entra/identity-platform/media/howto-add-branding-in-apps/ms-symbollockup_mssymbol_19.svg"
-                loading="lazy"
-                alt="microsoft logo"
-            />
-            <span className="text-sm font-semibold">{t('auth.continueWithMicrosoft')}</span>
-        </Button>
+            variant={variant}
+        />
     );
 }

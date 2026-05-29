@@ -214,7 +214,6 @@
   "auth.signInErrorPersists": "إذا استمرت المشكلة.",
   "auth.tenant.bodySso": "وجدنا مؤسستك على Vertesia. تابع باستخدام تسجيل الدخول الموحد لشركتك للوصول إلى مشروع فريقك.",
   "auth.tenant.continueGeneric": "متابعة تسجيل الدخول",
-  "auth.tenant.continueWithIdp": "متابعة مع {{idp}}",
   "auth.tenant.eyebrowSso": "تسجيل الدخول الموحد",
   "auth.tenant.notPartOf": "ألست جزءًا من {{name}}؟",
   "auth.tenant.title": "تسجيل الدخول إلى {{name}}",

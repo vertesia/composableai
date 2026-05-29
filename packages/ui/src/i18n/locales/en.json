@@ -201,7 +201,6 @@
   "auth.signInErrorContact": "Please try again or contact",
   "auth.signInErrorPersists": "if it persists.",
   "auth.tenant.bodySso": "We found your organization on Vertesia. Continue with your company's single sign-on to access your team's project.",
-  "auth.tenant.continueWithIdp": "Continue with {{idp}}",
   "auth.tenant.continueGeneric": "Continue with Sign In",
   "auth.tenant.eyebrowSso": "Single Sign-On",
   "auth.tenant.notPartOf": "Not part of {{name}}?",

@@ -1,38 +1,39 @@
-import { GithubAuthProvider, signInWithRedirect } from 'firebase/auth';
-import { getFirebaseAuth } from '@vertesia/ui/session';
-import { Button } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { getFirebaseAuth } from '@vertesia/ui/session';
+import { GithubAuthProvider, signInWithRedirect } from 'firebase/auth';
+import { ProviderButton } from './LoginPrimitives';
+import { startSignIn } from './loginUtils';
 
 interface GitHubSignInButtonProps {
+    /** When set, sign-in goes through the tenant-aware flow and the IdP pre-selects this account. */
+    email?: string;
     redirectTo?: string;
+    /** Visual style of the underlying ProviderButton. Defaults to "outline". */
+    variant?: 'outline' | 'filled';
+    /** Fired on click, before the redirect — for analytics / pending-screen state. */
+    onClick?: () => void;
 }
-export default function GitHubSignInButton(_props: GitHubSignInButtonProps) {
+
+export default function GitHubSignInButton({
+    email,
+    redirectTo,
+    variant = 'outline',
+    onClick,
+}: GitHubSignInButtonProps) {
     const { t } = useUITranslation();
+
     const signIn = () => {
+        onClick?.();
+        if (email) {
+            void startSignIn('github', email, redirectTo);
+            return;
+        }
         localStorage.removeItem('tenantName');
         const provider = new GithubAuthProvider();
         provider.addScope('profile');
         provider.addScope('email');
-        /*provider.setCustomParameters({
-            redirect_uri: redirectPath,
-        });*/
         void signInWithRedirect(getFirebaseAuth(), provider);
     };
 
-    return (
-        <Button
-            variant={'outline'}
-            onClick={signIn}
-            className="w-full py-5 flex rounded-lg hover:shadow-sm transition duration-150 text-center mb-2"
-        >
-            {/* <Github className="size-6" /> */}
-            <img
-                className="size-6 bg-white rounded-full"
-                src="https://www.svgrepo.com/show/503359/github.svg"
-                loading="lazy"
-                alt="github logo"
-            />
-            <span className="text-sm font-semibold">{t('auth.continueWithGithub')}</span>
-        </Button>
-    );
+    return <ProviderButton provider="github" label={t('auth.continueWithGithub')} onClick={signIn} variant={variant} />;
 }

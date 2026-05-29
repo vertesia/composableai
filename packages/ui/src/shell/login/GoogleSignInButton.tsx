@@ -1,15 +1,36 @@
-import { GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
-import { getFirebaseAuth } from '@vertesia/ui/session';
-import { Button } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { getFirebaseAuth } from '@vertesia/ui/session';
+import { GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
+import { ProviderButton } from './LoginPrimitives';
+import { startSignIn } from './loginUtils';
 
 interface GoogleSignInButtonProps {
+    /** When set, sign-in goes through the tenant-aware flow and the IdP pre-selects this account. */
+    email?: string;
     redirectTo?: string;
+    /** Visual style of the underlying ProviderButton. Defaults to "outline". */
+    variant?: 'outline' | 'filled';
+    /** Fired on click, before the redirect — for analytics / pending-screen state. */
+    onClick?: () => void;
 }
-export default function GoogleSignInButton({ redirectTo }: GoogleSignInButtonProps) {
+
+export default function GoogleSignInButton({
+    email,
+    redirectTo,
+    variant = 'outline',
+    onClick,
+}: GoogleSignInButtonProps) {
     const { t } = useUITranslation();
 
     const signIn = () => {
+        onClick?.();
+        // Tenant-aware path: startSignIn resolves the tenant, writes pendingSignin /
+        // tenantName, and passes the email as a login hint before redirecting.
+        if (email) {
+            void startSignIn('google', email, redirectTo);
+            return;
+        }
+        // Standalone path (e.g. SignInModal, no email): direct personal OAuth.
         localStorage.removeItem('tenantName');
         let redirectPath = redirectTo || window.location.pathname || '/';
         if (redirectPath[0] !== '/') {
@@ -18,8 +39,6 @@ export default function GoogleSignInButton({ redirectTo }: GoogleSignInButtonPro
         const provider = new GoogleAuthProvider();
         provider.addScope('profile');
         provider.addScope('email');
-        // always ask to select the google account
-        //console.log('redirectPath', window.location.origin + redirectPath)
         provider.setCustomParameters({
             prompt: 'select_account',
             redirect_uri: window.location.origin + redirectPath,
@@ -27,19 +46,5 @@ export default function GoogleSignInButton({ redirectTo }: GoogleSignInButtonPro
         void signInWithRedirect(getFirebaseAuth(), provider);
     };
 
-    return (
-        <Button
-            variant={'outline'}
-            onClick={signIn}
-            className="w-full py-5 flex rounded-lg hover:shadow-sm transition duration-150 text-center mb-2"
-        >
-            <img
-                className="size-6"
-                src="https://www.svgrepo.com/show/475656/google-color.svg"
-                loading="lazy"
-                alt="google logo"
-            />
-            <span className="text-sm font-semibold">{t('auth.continueWithGoogle')}</span>
-        </Button>
-    );
+    return <ProviderButton provider="google" label={t('auth.continueWithGoogle')} onClick={signIn} variant={variant} />;
 }

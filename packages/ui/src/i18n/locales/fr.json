@@ -205,7 +205,6 @@
   "auth.signInErrorPersists": "si le problème persiste.",
   "auth.tenant.bodySso": "Nous avons trouvé votre organisation sur Vertesia. Continuez avec l'authentification unique de votre entreprise pour accéder au projet de votre équipe.",
   "auth.tenant.continueGeneric": "Continuer pour se connecter",
-  "auth.tenant.continueWithIdp": "Continuer avec {{idp}}",
   "auth.tenant.eyebrowSso": "Authentification unique",
   "auth.tenant.notPartOf": "Vous ne faites pas partie de {{name}} ?",
   "auth.tenant.title": "Se connecter à {{name}}",

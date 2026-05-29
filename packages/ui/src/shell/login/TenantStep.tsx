@@ -1,8 +1,11 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { Mail } from 'lucide-react';
 import type { TenantInfo } from './EmailStep';
-import { GhostButton, InlineLinkButton, ProviderButton, StepHeader, StepLayout } from './LoginPrimitives';
-import { type ProviderId, startSignIn } from './loginUtils';
+import GitHubSignInButton from './GitHubSignInButton';
+import GoogleSignInButton from './GoogleSignInButton';
+import { GhostButton, InlineLinkButton, StepHeader, StepLayout } from './LoginPrimitives';
+import MicrosoftSignInButton from './MicrosoftSigninButton';
+import OidcSignInButton from './OidcSignInButton';
 
 interface TenantStepProps {
     email: string;
@@ -24,7 +27,7 @@ function tenantInitials(name: string): string {
 function providerDisplay(provider: string): string {
     const map: Record<string, string> = {
         google: 'Google',
-        microsoft: 'Microsoft Entra ID',
+        microsoft: 'Microsoft',
         oidc: 'your identity provider',
         github: 'GitHub',
     };
@@ -35,21 +38,27 @@ export default function TenantStep({ email, tenant, onBack, onProviderClicked, r
     const { t } = useUITranslation();
     const tenantName = tenant.label || tenant.name || t('auth.blocked.tenantFallback');
     const idpName = providerDisplay(tenant.provider ?? '');
-    // OIDC / unknown providers don't have a recognizable brand to put in
-    // "Continue with X" — use a generic CTA instead.
-    const isGenericIdp = !tenant.provider || tenant.provider === 'oidc';
-    const buttonLabel = isGenericIdp
-        ? t('auth.tenant.continueGeneric')
-        : t('auth.tenant.continueWithIdp', { idp: idpName });
 
-    const onContinue = async () => {
-        onProviderClicked();
-        // SSO mode is implicit: startSignIn re-runs setFirebaseTenant on the
-        // email, sees a tenant resolves, and dispatches with the tenant's IdP.
-        // We pass tenant.provider here mainly for type-correctness; startSignIn
-        // will override with the canonical tenant.provider anyway.
-        await startSignIn((tenant.provider ?? 'oidc') as ProviderId, email, redirectTo);
+    // Each tenant provider has its own self-contained button. They own the
+    // sign-in (startSignIn → tenant-scoped redirect with login hint) and their
+    // own canonical label; the onClick fires first for analytics + the pending
+    // screen.
+    const buttonProps = {
+        email,
+        redirectTo,
+        variant: 'filled' as const,
+        onClick: onProviderClicked,
     };
+    const providerButton =
+        tenant.provider === 'google' ? (
+            <GoogleSignInButton {...buttonProps} />
+        ) : tenant.provider === 'microsoft' ? (
+            <MicrosoftSignInButton {...buttonProps} />
+        ) : tenant.provider === 'github' ? (
+            <GitHubSignInButton {...buttonProps} />
+        ) : (
+            <OidcSignInButton {...buttonProps} />
+        );
 
     return (
         <StepLayout>
@@ -81,12 +90,7 @@ export default function TenantStep({ email, tenant, onBack, onProviderClicked, r
             </div>
 
             <div className="flex flex-col gap-2">
-                <ProviderButton
-                    provider={(tenant.provider ?? 'oidc') as ProviderId}
-                    label={buttonLabel}
-                    onClick={onContinue}
-                    variant="filled"
-                />
+                {providerButton}
                 <GhostButton onClick={onBack}>{t('auth.tenant.notPartOf', { name: tenantName })}</GhostButton>
             </div>
         </StepLayout>

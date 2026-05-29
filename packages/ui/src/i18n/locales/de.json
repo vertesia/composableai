@@ -202,7 +202,6 @@
   "auth.signInErrorPersists": "wenn das Problem weiterhin besteht.",
   "auth.tenant.bodySso": "Wir haben deine Organisation auf Vertesia gefunden. Fahre mit dem Single Sign-On deines Unternehmens fort, um auf das Projekt deines Teams zuzugreifen.",
   "auth.tenant.continueGeneric": "Weiter zur Anmeldung",
-  "auth.tenant.continueWithIdp": "Mit {{idp}} fortfahren",
   "auth.tenant.eyebrowSso": "Single Sign-On",
   "auth.tenant.notPartOf": "Du gehörst nicht zu {{name}}?",
   "auth.tenant.title": "Bei {{name}} anmelden",

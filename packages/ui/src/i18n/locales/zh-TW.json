@@ -202,7 +202,6 @@
   "auth.signInErrorPersists": "如果問題持續存在。",
   "auth.tenant.bodySso": "我們在 Vertesia 上找到了您的組織。請透過公司的單一登入繼續,以存取團隊專案。",
   "auth.tenant.continueGeneric": "繼續登入",
-  "auth.tenant.continueWithIdp": "使用 {{idp}} 繼續",
   "auth.tenant.eyebrowSso": "單一登入",
   "auth.tenant.notPartOf": "您不屬於 {{name}}?",
   "auth.tenant.title": "登入到 {{name}}",

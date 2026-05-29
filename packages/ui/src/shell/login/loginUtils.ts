@@ -82,20 +82,35 @@ function buildRedirectPath(redirectTo?: string): string {
     return path;
 }
 
-function buildFirebaseProvider(idp: ProviderId, redirectTo?: string) {
+// `email`, when present, is passed to the IdP as a login hint so the entered
+// account is pre-selected (Google/Microsoft/OIDC use `login_hint`; GitHub uses
+// `login`). Omitted when there's no email (e.g. the standalone SignInModal).
+function buildFirebaseProvider(idp: ProviderId, email?: string, redirectTo?: string) {
     if (idp === 'google') {
         const p = new GoogleAuthProvider();
         p.addScope('profile');
         p.addScope('email');
         p.setCustomParameters({
-            prompt: 'select_account',
             redirect_uri: window.location.origin + buildRedirectPath(redirectTo),
+            // With a known email, hint the account so it's auto-selected. Only
+            // force the account chooser when we have no email to pre-select.
+            ...(email ? { login_hint: email } : { prompt: 'select_account' }),
         });
         return p;
     }
-    if (idp === 'github') return new GithubAuthProvider();
-    if (idp === 'microsoft') return new OAuthProvider('microsoft.com');
-    return new OAuthProvider('oidc.main');
+    if (idp === 'github') {
+        const p = new GithubAuthProvider();
+        if (email) p.setCustomParameters({ login: email });
+        return p;
+    }
+    if (idp === 'microsoft') {
+        const p = new OAuthProvider('microsoft.com');
+        if (email) p.setCustomParameters({ login_hint: email });
+        return p;
+    }
+    const p = new OAuthProvider('oidc.main');
+    if (email) p.setCustomParameters({ login_hint: email });
+    return p;
 }
 
 export async function startSignIn(
@@ -127,7 +142,7 @@ export async function startSignIn(
     }
 
     writePendingSignin({ email, provider: effectiveIdp, tenantName });
-    void signInWithRedirect(auth, buildFirebaseProvider(effectiveIdp, redirectTo));
+    void signInWithRedirect(auth, buildFirebaseProvider(effectiveIdp, email, redirectTo));
     return { ok: true };
 }
 

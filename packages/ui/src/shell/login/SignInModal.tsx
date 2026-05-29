@@ -11,7 +11,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
             <ModalTitle>Sign In</ModalTitle>
-            <ModalBody className="flex justify-center">
+            <ModalBody className="flex flex-col gap-2">
                 <GoogleSignInButton />
                 <GitHubSignInButton />
                 <MicrosoftSignInButton />
