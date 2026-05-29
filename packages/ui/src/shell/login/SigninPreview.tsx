@@ -1,12 +1,8 @@
 import type { UIResolvedTenant } from '@vertesia/common';
-import { Button, Spinner } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { ArrowDown } from 'lucide-react';
 import AuthPending from './AuthPending';
 import EmailStep, { type TenantInfo } from './EmailStep';
-import { providerIcon } from './LoginIcons';
-import { OutlinedProviderButton, PlainLinkButton, PrimaryButton, ProviderButton } from './LoginPrimitives';
-import type { LastSession, ProviderId } from './loginUtils';
+import type { LastSession } from './loginUtils';
 import ProvidersStep from './ProvidersStep';
 import ReturningStep from './ReturningStep';
 import SignupForm from './SignupForm';
@@ -145,76 +141,7 @@ function Frame({ title, sub, meta, children }: FrameProps) {
     );
 }
 
-// One frame's worth of "Continue with X" variants. Repeats the same five new
-// candidates (primary, secondary, ProviderButton outline/filled/start) plus a
-// pre-PR legacy replica, so the three providers (Google, Microsoft, GitHub)
-// can be compared side-by-side.
-interface ProviderComparisonFrameProps {
-    provider: ProviderId;
-    label: string;
-    /** Optional pre-PR replica. Omit for providers that have no legacy button (e.g. OIDC). */
-    legacyImgSrc?: string;
-    legacyImgAlt?: string;
-}
-
-function ProviderComparisonFrame({ provider, label, legacyImgSrc, legacyImgAlt }: ProviderComparisonFrameProps) {
-    const Icon = providerIcon(provider);
-    return (
-        <Frame title={label}>
-            <div className="w-full max-w-[420px] flex flex-col gap-4">
-                <div className="flex flex-col">
-                    <div className="text-[11px] font-medium text-muted mb-1.5">
-                        New — primary (returning user / tenant continue)
-                    </div>
-                    <PrimaryButton onClick={noop}>
-                        <Icon className="size-[18px]" />
-                        {label}
-                    </PrimaryButton>
-                </div>
-                <div className="flex flex-col">
-                    <div className="text-[11px] font-medium text-muted mb-1.5">
-                        New — secondary (providers list / other ways)
-                    </div>
-                    <OutlinedProviderButton provider={provider} label={label} onClick={noop} />
-                </div>
-                <div className="flex flex-col">
-                    <div className="text-[11px] font-medium text-muted mb-1.5">
-                        New — ProviderButton, outline (default)
-                    </div>
-                    <ProviderButton provider={provider} label={label} onClick={noop} />
-                </div>
-                <div className="flex flex-col">
-                    <div className="text-[11px] font-medium text-muted mb-1.5">New — ProviderButton, filled (dark)</div>
-                    <ProviderButton provider={provider} label={label} onClick={noop} variant="filled" />
-                </div>
-                <div className="flex flex-col">
-                    <div className="text-[11px] font-medium text-muted mb-1.5">
-                        New — ProviderButton, align=&quot;start&quot;
-                    </div>
-                    <ProviderButton provider={provider} label={label} onClick={noop} align="start" />
-                </div>
-                {legacyImgSrc && (
-                    <div className="flex flex-col">
-                        <div className="text-[11px] font-medium text-muted mb-1.5">
-                            Legacy — pre-PR shell with remote &lt;img&gt;
-                        </div>
-                        {/* Visual replica only — onClick omitted so the preview doesn't fire a real Firebase redirect. */}
-                        <Button
-                            variant="outline"
-                            className="w-full py-5 flex rounded-lg hover:shadow-sm transition duration-150 text-center"
-                        >
-                            <img className="size-6" src={legacyImgSrc} loading="lazy" alt={legacyImgAlt ?? ''} />
-                            <span className="text-sm font-semibold">{label}</span>
-                        </Button>
-                    </div>
-                )}
-            </div>
-        </Frame>
-    );
-}
-
 export default function SigninPreview() {
-    const { t } = useUITranslation();
     return (
         <div className="min-h-screen bg-muted-background p-6 overflow-y-auto">
             <div className="max-w-[1400px] mx-auto">
@@ -403,97 +330,6 @@ export default function SigninPreview() {
                             />
                         </Frame>
                     </Section>
-
-                    <div className="mt-6">
-                        <Section
-                            title="Provider buttons — new wrapper vs legacy"
-                            sub="Each column: PrimaryButton + OutlinedProviderButton + the new ProviderButton primitive in three variants, with the pre-PR shell at the bottom (OIDC has no pre-PR equivalent)."
-                            cols={3}
-                        >
-                            <ProviderComparisonFrame
-                                provider="google"
-                                label={t('auth.continueWithGoogle')}
-                                legacyImgSrc="https://www.svgrepo.com/show/475656/google-color.svg"
-                                legacyImgAlt="google logo"
-                            />
-                            <ProviderComparisonFrame
-                                provider="microsoft"
-                                label={t('auth.continueWithMicrosoft')}
-                                legacyImgSrc="https://learn.microsoft.com/en-us/entra/identity-platform/media/howto-add-branding-in-apps/ms-symbollockup_mssymbol_19.svg"
-                                legacyImgAlt="microsoft logo"
-                            />
-                            <ProviderComparisonFrame
-                                provider="github"
-                                label={t('auth.continueWithGithub')}
-                                legacyImgSrc="https://www.svgrepo.com/show/503359/github.svg"
-                                legacyImgAlt="github logo"
-                            />
-                            <ProviderComparisonFrame provider="oidc" label={t('auth.tenant.continueGeneric')} />
-                        </Section>
-                    </div>
-
-                    <div className="mt-6">
-                        <Section
-                            title="Auxiliary buttons — composableai Button variants"
-                            sub="All composableai-Button-based. The labelled primitive in each frame is what the new step components actually render."
-                            cols={2}
-                        >
-                            <Frame title="Plain link (Use a different sign-in method / Cancel)">
-                                <div className="w-full max-w-[420px] flex flex-col gap-4">
-                                    <div className="flex flex-col">
-                                        <div className="text-[11px] font-medium text-muted mb-1.5">
-                                            Button variant=&quot;link&quot;
-                                        </div>
-                                        <Button variant="link">Use a different sign-in method</Button>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <div className="text-[11px] font-medium text-muted mb-1.5">
-                                            Button variant=&quot;ghost&quot;
-                                        </div>
-                                        <Button variant="ghost">Use a different sign-in method</Button>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <div className="text-[11px] font-medium text-muted mb-1.5">
-                                            PlainLinkButton (what the step components render)
-                                        </div>
-                                        <PlainLinkButton>Use a different sign-in method</PlainLinkButton>
-                                    </div>
-                                </div>
-                            </Frame>
-
-                            <Frame title="Loading state (Authenticating…)">
-                                <div className="w-full max-w-[420px] flex flex-col gap-4">
-                                    <div className="flex flex-col">
-                                        <div className="text-[11px] font-medium text-muted mb-1.5">
-                                            Button variant=&quot;primary&quot; disabled (different blue + 50% opacity)
-                                        </div>
-                                        <Button variant="primary" disabled>
-                                            <Spinner />
-                                            <span>Authenticating</span>
-                                        </Button>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <div className="text-[11px] font-medium text-muted mb-1.5">
-                                            PrimaryButton disabled (50% opacity — looks muted)
-                                        </div>
-                                        <PrimaryButton disabled>
-                                            <Spinner />
-                                            <span>Authenticating</span>
-                                        </PrimaryButton>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <div className="text-[11px] font-medium text-muted mb-1.5">
-                                            PrimaryButton loading (90% opacity — what AuthPending renders)
-                                        </div>
-                                        <PrimaryButton loading>
-                                            <Spinner />
-                                            <span>Authenticating</span>
-                                        </PrimaryButton>
-                                    </div>
-                                </div>
-                            </Frame>
-                        </Section>
-                    </div>
                 </div>
             </div>
         </div>

@@ -4,7 +4,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { setFirebaseTenant } from '@vertesia/ui/session';
 import { ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { PrimaryButton, StepHeader, StepLayout } from './LoginPrimitives';
+import { SignInStepButton, StepHeader, StepLayout } from './LoginPrimitives';
 import { isValidEmail } from './loginUtils';
 
 export type TenantInfo = UIResolvedTenant;
@@ -82,7 +82,7 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                     )}
                 </div>
 
-                <PrimaryButton type="submit" disabled={loading}>
+                <SignInStepButton type="submit" disabled={loading}>
                     {loading ? (
                         <Spinner />
                     ) : (
@@ -91,7 +91,7 @@ export default function EmailStep({ initialEmail, onProceed }: EmailStepProps) {
                             <ArrowRight className="!size-3.5" />
                         </>
                     )}
-                </PrimaryButton>
+                </SignInStepButton>
             </form>
         </StepLayout>
     );

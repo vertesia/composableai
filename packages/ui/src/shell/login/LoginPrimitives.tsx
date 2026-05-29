@@ -53,126 +53,55 @@ export function StepHeader({ eyebrow, title, body, tone = 'info' }: StepHeaderPr
 
 // ─── Buttons ────────────────────────────────────────────────────────────────
 
-const PRIMARY_BUTTON_BASE =
-    'cursor-pointer h-[42px] inline-flex items-center justify-center gap-2.5 rounded-md ' +
-    'bg-foreground text-background text-sm font-medium transition hover:opacity-90';
+const SIGN_IN_STEP_BUTTON_BASE =
+    'cursor-pointer inline-flex items-center justify-center text-sm font-medium transition';
 
-interface PrimaryButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+const SIGN_IN_STEP_BUTTON_VARIANTS = {
+    // Filled dark primary CTA. Honors native `disabled` (greys to 50%) for
+    // transient in-flight submits, e.g. EmailStep while resolving the tenant.
+    primary:
+        'h-[42px] gap-2.5 rounded-md bg-foreground text-background hover:opacity-90 ' +
+        'disabled:opacity-50 disabled:cursor-not-allowed',
+    // Primary look but permanently non-interactive, held near full opacity so a
+    // spinner reads as active rather than greyed-out. For always-in-flight
+    // screens (AuthPending) — forces `disabled` internally, so there's no toggle.
+    loading: 'h-[42px] gap-2.5 rounded-md bg-foreground text-background opacity-90',
+    // Flat low-emphasis text link (no bg, border, or underline) for backing out
+    // or revealing alternate flows.
+    ghost: 'h-9 text-muted hover:text-foreground',
+} as const;
+
+interface SignInStepButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     /**
-     * When true, the button is disabled but stays at full visual opacity —
-     * used for permanent "in-flight" states (e.g., AuthPending's
-     * "Authenticating…" spinner). Without `loading`, the standard disabled
-     * style applies (50% opacity).
+     * "primary" (default) — filled CTA; "loading" — the permanently in-flight
+     * primary (non-interactive, spinner-friendly opacity); "ghost" — flat text
+     * link.
      */
-    loading?: boolean;
+    variant?: keyof typeof SIGN_IN_STEP_BUTTON_VARIANTS;
 }
 
 /**
- * Filled dark CTA used as the screen's primary action.
- * (EmailStep submit; previously TenantStep/ReturningStep, now via ProviderButton.)
+ * The button used across every SignInScreen step. `variant` picks the role: the
+ * filled `primary` action, its permanently-in-flight `loading` form, or the
+ * low-emphasis `ghost` text link.
  */
-export function PrimaryButton({
+export function SignInStepButton({
+    variant = 'primary',
     className = '',
     type = 'button',
-    loading = false,
     disabled,
     ...rest
-}: PrimaryButtonProps) {
-    const stateClass = loading ? 'opacity-90' : 'disabled:opacity-50 disabled:cursor-not-allowed';
+}: SignInStepButtonProps) {
     return (
         <Button
             variant="unstyled"
             size="none"
             type={type}
-            disabled={loading || disabled}
-            className={`${PRIMARY_BUTTON_BASE} ${stateClass} ${className}`.trim()}
+            // "loading" is inherently non-interactive; other variants honor the prop.
+            disabled={variant === 'loading' ? true : disabled}
+            className={`${SIGN_IN_STEP_BUTTON_BASE} ${SIGN_IN_STEP_BUTTON_VARIANTS[variant]} ${className}`.trim()}
             {...rest}
         />
-    );
-}
-
-const GHOST_BUTTON_CLASS =
-    'cursor-pointer h-[36px] inline-flex items-center justify-center gap-2 rounded-md ' +
-    'bg-transparent text-sm font-medium text-muted transition hover:bg-muted-background ' +
-    'hover:text-foreground';
-
-/**
- * Transparent secondary action with subtle hover background.
- * (TenantStep "Not part of …?", TenantBlockedStep "Use a different email".)
- */
-export function GhostButton({ className = '', type = 'button', ...rest }: ButtonHTMLAttributes<HTMLButtonElement>) {
-    return (
-        <Button
-            variant="unstyled"
-            size="none"
-            type={type}
-            className={className ? `${GHOST_BUTTON_CLASS} ${className}` : GHOST_BUTTON_CLASS}
-            {...rest}
-        />
-    );
-}
-
-const PLAIN_LINK_BUTTON_CLASS =
-    'cursor-pointer h-9 inline-flex items-center justify-center text-sm font-medium ' +
-    'text-muted hover:text-foreground transition';
-
-/**
- * Small unadorned text-link (no bg, no underline, no border) used to reveal
- * alternate flows. (ReturningStep "Use a different sign-in method",
- * AuthPending "Cancel".)
- */
-export function PlainLinkButton({ className = '', type = 'button', ...rest }: ButtonHTMLAttributes<HTMLButtonElement>) {
-    return (
-        <Button
-            variant="unstyled"
-            size="none"
-            type={type}
-            className={className ? `${PLAIN_LINK_BUTTON_CLASS} ${className}` : PLAIN_LINK_BUTTON_CLASS}
-            {...rest}
-        />
-    );
-}
-
-interface OutlinedProviderButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
-    provider: ProviderId;
-    label: ReactNode;
-    /** Slide the trailing arrow on hover. ProvidersStep uses this; ReturningStep opts out. */
-    arrowSlide?: boolean;
-}
-
-/**
- * Bordered provider option with brand icon on the left and a hover-revealed
- * arrow on the right. (ProvidersStep options, ReturningStep "other ways".)
- */
-export function OutlinedProviderButton({
-    provider,
-    label,
-    arrowSlide = false,
-    className = '',
-    type = 'button',
-    ...rest
-}: OutlinedProviderButtonProps) {
-    const Icon = providerIcon(provider);
-    const base =
-        'cursor-pointer group h-[42px] inline-flex items-center gap-3 pl-3.5 pr-3 rounded-md ' +
-        'border border-border bg-background text-sm font-medium text-foreground transition ' +
-        'hover:bg-muted-background';
-    // !size-X defeats Button base's `[&_svg]:size-4` descendant rule.
-    const arrowClass = arrowSlide
-        ? '!size-3.5 text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition'
-        : '!size-3.5 text-muted opacity-0 group-hover:opacity-100 transition';
-    return (
-        <Button
-            variant="unstyled"
-            size="none"
-            type={type}
-            className={className ? `${base} ${className}` : base}
-            {...rest}
-        >
-            <Icon className="!size-[18px] shrink-0" />
-            <span className="flex-1 text-left">{label}</span>
-            <ArrowRight className={arrowClass} />
-        </Button>
     );
 }
 
@@ -210,52 +139,67 @@ export function InlineLinkButton({ size = 'xs', className = '', type = 'button',
 
 // ─── Provider CTA ──────────────────────────────────────────────────────────
 
-interface ProviderButtonProps {
+interface SignInProviderButtonProps {
     provider: ProviderId;
     label: ReactNode;
     onClick?: () => void;
     /**
-     * "outline" (default) renders the tall outlined card; "filled" inverts to
-     * a dark, theme-tracking CTA using `bg-foreground` / `text-background` so
-     * the colors flip naturally in dark mode.
+     * "outline" (default) renders the tall centered outlined CTA; "filled"
+     * inverts it to a dark, theme-tracking CTA using `bg-foreground` /
+     * `text-background` so the colors flip naturally in dark mode; "arrow" is
+     * the left-aligned bordered list row with a hover-revealed trailing arrow
+     * (providers list, "other ways").
      */
-    variant?: 'outline' | 'filled';
-    /**
-     * "center" (default) centers the icon + label; "start" left-aligns them
-     * like a list option (matches the OutlinedProviderButton rhythm).
-     */
-    align?: 'center' | 'start';
+    variant?: 'outline' | 'filled' | 'arrow';
+    /** Slide the trailing arrow on hover. Only meaningful when variant="arrow". */
+    arrowSlide?: boolean;
 }
 
 /**
- * Canonical "Continue with <provider>" button — tall (py-5) rounded-lg shell
- * with the local provider SVG at 18px and a `font-medium` label.
- *
- * Use this for any "Continue with X" CTA outside the providers-list step. The
- * providers list itself uses `OutlinedProviderButton` (a shorter h-42 row
- * tuned for vertical stacks of options).
+ * Canonical "Continue with <provider>" button with the local provider SVG at
+ * 18px and a `font-medium` label. `variant` picks the shell: the centered
+ * `outline`/`filled` CTAs (tall, rounded-lg) or the left-aligned `arrow` list
+ * row used for stacked provider options.
  */
-export function ProviderButton({
+export function SignInProviderButton({
     provider,
     label,
     onClick,
     variant = 'outline',
-    align = 'center',
-}: ProviderButtonProps) {
+    arrowSlide = false,
+}: SignInProviderButtonProps) {
     const Icon = providerIcon(provider);
+
+    if (variant === 'arrow') {
+        // !size-X defeats Button base's `[&_svg]:size-4` descendant rule.
+        const arrowClass = arrowSlide
+            ? '!size-3.5 text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition'
+            : '!size-3.5 text-muted opacity-0 group-hover:opacity-100 transition';
+        return (
+            <Button
+                variant="unstyled"
+                size="none"
+                onClick={onClick}
+                className="cursor-pointer group h-[42px] w-full inline-flex items-center gap-3 pl-3.5 pr-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
+            >
+                <Icon className="!size-[18px] shrink-0" />
+                <span className="flex-1 text-left">{label}</span>
+                <ArrowRight className={arrowClass} />
+            </Button>
+        );
+    }
+
     const variantClass =
         variant === 'filled' ? '!bg-foreground text-background hover:!bg-foreground/90' : 'hover:shadow-sm';
-    const alignClass = align === 'start' ? 'justify-start gap-3 pl-3.5 pr-3' : 'text-center';
-    const labelClass = align === 'start' ? 'text-sm font-medium flex-1 text-left' : 'text-sm font-medium';
     return (
         <Button
             variant="outline"
             onClick={onClick}
-            className={`w-full py-5 flex rounded-lg transition duration-150 ${variantClass} ${alignClass}`}
+            className={`w-full py-5 flex rounded-lg transition duration-150 text-center ${variantClass}`}
         >
             {/* !size-[18px] defeats Button's `[&_svg]:size-4` descendant rule. */}
             <Icon className="!size-[18px]" />
-            <span className={labelClass}>{label}</span>
+            <span className="text-sm font-medium">{label}</span>
         </Button>
     );
 }

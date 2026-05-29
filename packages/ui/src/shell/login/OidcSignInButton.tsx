@@ -1,5 +1,5 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { ProviderButton } from './LoginPrimitives';
+import { SignInProviderButton } from './LoginPrimitives';
 import { providerLabel, startPersonalSignIn, startSignIn } from './loginUtils';
 
 interface OidcSignInButtonProps {
@@ -10,7 +10,7 @@ interface OidcSignInButtonProps {
      */
     email?: string;
     redirectTo?: string;
-    /** Visual style of the underlying ProviderButton. Defaults to "outline". */
+    /** Visual style of the underlying SignInProviderButton. Defaults to "outline". */
     variant?: 'outline' | 'filled';
     /** Fired on click, before the redirect — for analytics / pending-screen state. */
     onClick?: () => void;
@@ -35,7 +35,7 @@ export default function OidcSignInButton({ email, redirectTo, variant = 'outline
     };
 
     return (
-        <ProviderButton
+        <SignInProviderButton
             provider="oidc"
             label={t('auth.continueWithProvider', { provider: providerLabel('oidc') })}
             onClick={signIn}

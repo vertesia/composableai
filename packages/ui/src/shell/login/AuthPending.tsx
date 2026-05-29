@@ -1,7 +1,7 @@
 import { Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { providerIcon } from './LoginIcons';
-import { PlainLinkButton, PrimaryButton, StepHeader, StepLayout } from './LoginPrimitives';
+import { SignInStepButton, StepHeader, StepLayout } from './LoginPrimitives';
 import { type ProviderId, providerLabel } from './loginUtils';
 
 interface AuthPendingProps {
@@ -30,11 +30,15 @@ export default function AuthPending({ provider, onCancel }: AuthPendingProps) {
             </div>
 
             <div className="w-full flex flex-col gap-2">
-                <PrimaryButton loading>
+                <SignInStepButton variant="loading">
                     <Spinner />
                     <span>{t('auth.pending.authenticating')}</span>
-                </PrimaryButton>
-                {onCancel && <PlainLinkButton onClick={onCancel}>{t('auth.pending.cancel')}</PlainLinkButton>}
+                </SignInStepButton>
+                {onCancel && (
+                    <SignInStepButton variant="ghost" onClick={onCancel}>
+                        {t('auth.pending.cancel')}
+                    </SignInStepButton>
+                )}
             </div>
         </StepLayout>
     );

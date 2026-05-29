@@ -1,14 +1,7 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { Mail } from 'lucide-react';
 import { useState } from 'react';
-import {
-    InlineLinkButton,
-    OutlinedProviderButton,
-    PlainLinkButton,
-    ProviderButton,
-    StepHeader,
-    StepLayout,
-} from './LoginPrimitives';
+import { InlineLinkButton, SignInProviderButton, SignInStepButton, StepHeader, StepLayout } from './LoginPrimitives';
 import {
     emailInitial,
     firstNameFromEmail,
@@ -96,7 +89,7 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
             )}
 
             <div className="flex flex-col gap-2">
-                <ProviderButton
+                <SignInProviderButton
                     provider={session.lastProvider}
                     label={primaryLabel}
                     onClick={() => continueWith(session.lastProvider)}
@@ -104,9 +97,9 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
                 />
 
                 {!showOthers && (
-                    <PlainLinkButton onClick={() => setShowOthers(true)}>
+                    <SignInStepButton variant="ghost" onClick={() => setShowOthers(true)}>
                         {t('auth.returning.useDifferent')}
-                    </PlainLinkButton>
+                    </SignInStepButton>
                 )}
 
                 {showOthers && (
@@ -117,11 +110,12 @@ export default function ReturningStep({ session, onNotYou, onProviderClicked, re
                             <div className="flex-1 h-px bg-border" />
                         </div>
                         {others.map((p) => (
-                            <OutlinedProviderButton
+                            <SignInProviderButton
                                 key={p}
                                 provider={p}
                                 label={t('auth.continueWithProvider', { provider: providerLabel(p) })}
                                 onClick={() => continueWith(p)}
+                                variant="arrow"
                             />
                         ))}
                     </div>

@@ -1,6 +1,6 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { Mail } from 'lucide-react';
-import { InlineLinkButton, OutlinedProviderButton, StepHeader, StepLayout } from './LoginPrimitives';
+import { InlineLinkButton, SignInProviderButton, StepHeader, StepLayout } from './LoginPrimitives';
 import { type ProviderId, providerLabel, startSignIn } from './loginUtils';
 
 interface ProvidersStepProps {
@@ -36,11 +36,12 @@ export default function ProvidersStep({ email, onBack, onProviderClicked, redire
 
             <div className="flex flex-col gap-2">
                 {PROVIDERS.map((id) => (
-                    <OutlinedProviderButton
+                    <SignInProviderButton
                         key={id}
                         provider={id}
                         label={t('auth.continueWithProvider', { provider: providerLabel(id) })}
                         onClick={() => pick(id)}
+                        variant="arrow"
                         arrowSlide
                     />
                 ))}

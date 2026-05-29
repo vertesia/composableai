@@ -3,7 +3,7 @@ import { Mail } from 'lucide-react';
 import type { TenantInfo } from './EmailStep';
 import GitHubSignInButton from './GitHubSignInButton';
 import GoogleSignInButton from './GoogleSignInButton';
-import { GhostButton, InlineLinkButton, StepHeader, StepLayout } from './LoginPrimitives';
+import { InlineLinkButton, SignInStepButton, StepHeader, StepLayout } from './LoginPrimitives';
 import MicrosoftSignInButton from './MicrosoftSigninButton';
 import OidcSignInButton from './OidcSignInButton';
 
@@ -91,7 +91,9 @@ export default function TenantStep({ email, tenant, onBack, onProviderClicked, r
 
             <div className="flex flex-col gap-2">
                 {providerButton}
-                <GhostButton onClick={onBack}>{t('auth.tenant.notPartOf', { name: tenantName })}</GhostButton>
+                <SignInStepButton variant="ghost" onClick={onBack}>
+                    {t('auth.tenant.notPartOf', { name: tenantName })}
+                </SignInStepButton>
             </div>
         </StepLayout>
     );

@@ -1,6 +1,6 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { ShieldOff } from 'lucide-react';
-import { GhostButton, StepHeader, StepLayout } from './LoginPrimitives';
+import { SignInStepButton, StepHeader, StepLayout } from './LoginPrimitives';
 import { capitalizeFirst, emailDomain } from './loginUtils';
 
 interface TenantBlockedStepProps {
@@ -36,7 +36,9 @@ export default function TenantBlockedStep({ email, tenantName, onBack }: TenantB
                         <div className="text-xs text-destructive/80">{t('auth.blocked.tenantMeta', { email })}</div>
                     </div>
                 </div>
-                <GhostButton onClick={onBack}>{t('auth.blocked.useDifferent')}</GhostButton>
+                <SignInStepButton variant="ghost" onClick={onBack}>
+                    {t('auth.blocked.useDifferent')}
+                </SignInStepButton>
             </div>
         </StepLayout>
     );
