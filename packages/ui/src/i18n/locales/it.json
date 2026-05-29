@@ -208,6 +208,7 @@
   "auth.tenant.notPartOf": "Non fai parte di {{name}}?",
   "auth.tenant.title": "Accedi a {{name}}",
   "auth.tenant.viaIdp": "tramite {{idp}}",
+  "auth.tenant.viaIdpFallback": "il tuo provider di identità",
   "auth.tenantNotFound": "Organizzazione non trovata",
   "auth.termsOfService": "Termini di servizio",
   "errors.somethingWentWrong": "Spiacenti, qualcosa è andato storto...",

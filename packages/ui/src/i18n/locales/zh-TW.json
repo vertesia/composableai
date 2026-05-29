@@ -205,6 +205,7 @@
   "auth.tenant.notPartOf": "您不屬於 {{name}}?",
   "auth.tenant.title": "登入到 {{name}}",
   "auth.tenant.viaIdp": "透過 {{idp}}",
+  "auth.tenant.viaIdpFallback": "您的身分提供者",
   "auth.tenantNotFound": "未找到租戶",
   "auth.termsOfService": "服務條款",
   "errors.somethingWentWrong": "抱歉，出了點問題...",

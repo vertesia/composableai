@@ -208,6 +208,7 @@
   "auth.tenant.notPartOf": "Vous ne faites pas partie de {{name}} ?",
   "auth.tenant.title": "Se connecter à {{name}}",
   "auth.tenant.viaIdp": "via {{idp}}",
+  "auth.tenant.viaIdpFallback": "votre fournisseur d'identité",
   "auth.tenantNotFound": "Organisation introuvable",
   "auth.termsOfService": "Conditions d'utilisation",
   "errors.somethingWentWrong": "Désolé, une erreur est survenue...",

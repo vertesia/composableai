@@ -205,6 +205,7 @@
   "auth.tenant.notPartOf": "您不属于 {{name}}?",
   "auth.tenant.title": "登录到 {{name}}",
   "auth.tenant.viaIdp": "通过 {{idp}}",
+  "auth.tenant.viaIdpFallback": "您的身份提供商",
   "auth.tenantNotFound": "未找到租户",
   "auth.termsOfService": "服务条款",
   "errors.somethingWentWrong": "抱歉，出了点问题...",

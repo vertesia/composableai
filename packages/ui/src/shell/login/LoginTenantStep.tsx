@@ -1,9 +1,9 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { Mail } from 'lucide-react';
 import GitHubSignInButton from './GitHubSignInButton';
 import GoogleSignInButton from './GoogleSignInButton';
 import type { TenantInfo } from './LoginEmailStep';
-import { LoginInlineLinkButton, LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
+import { LoginAccountCard, LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
+import { providerLabel } from './loginUtils';
 import MicrosoftSignInButton from './MicrosoftSigninButton';
 import OidcSignInButton from './OidcSignInButton';
 
@@ -24,16 +24,6 @@ function tenantInitials(name: string): string {
         .join('');
 }
 
-function providerDisplay(provider: string): string {
-    const map: Record<string, string> = {
-        google: 'Google',
-        microsoft: 'Microsoft',
-        oidc: 'your identity provider',
-        github: 'GitHub',
-    };
-    return map[provider] ?? 'your identity provider';
-}
-
 export default function LoginTenantStep({
     email,
     tenant,
@@ -43,7 +33,11 @@ export default function LoginTenantStep({
 }: LoginTenantStepProps) {
     const { t } = useUITranslation();
     const tenantName = tenant.label || tenant.name || t('auth.blocked.tenantFallback');
-    const idpName = providerDisplay(tenant.provider ?? '');
+    // Brands get their name; OIDC/unknown fall back to a generic localized phrase.
+    const idpName =
+        tenant.provider === 'google' || tenant.provider === 'github' || tenant.provider === 'microsoft'
+            ? providerLabel(tenant.provider)
+            : t('auth.tenant.viaIdpFallback');
 
     // Each provider has a self-contained button that owns its sign-in and label.
     const buttonProps = {
@@ -71,26 +65,19 @@ export default function LoginTenantStep({
                 body={t('auth.tenant.bodySso')}
             />
 
-            <div className="rounded-md border border-border bg-background overflow-hidden">
-                <div className="flex items-center gap-2.5 px-3 py-2.5">
+            <LoginAccountCard
+                variant="tenant"
+                badge={
                     <span className="size-[30px] rounded-md bg-info text-info-foreground grid place-items-center text-[11px] font-semibold shrink-0">
                         {tenantInitials(tenantName)}
                     </span>
-                    <div className="flex-1 min-w-0">
-                        <div className="text-[13.5px] font-semibold text-foreground leading-tight">{tenantName}</div>
-                        <div className="text-[11.5px] text-muted leading-tight mt-0.5">
-                            {t('auth.tenant.viaIdp', { idp: idpName })}
-                        </div>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2.5 px-3 py-1.5 border-t border-border bg-muted-background">
-                    <div className="size-[30px] grid place-items-center shrink-0">
-                        <Mail className="size-4 text-muted" />
-                    </div>
-                    <span className="text-sm text-foreground/80 flex-1 truncate">{email}</span>
-                    <LoginInlineLinkButton onClick={onBack}>{t('auth.change')}</LoginInlineLinkButton>
-                </div>
-            </div>
+                }
+                title={tenantName}
+                subtitle={t('auth.tenant.viaIdp', { idp: idpName })}
+                email={email}
+                actionLabel={t('auth.change')}
+                onAction={onBack}
+            />
 
             <div className="flex flex-col gap-2">
                 {providerButton}

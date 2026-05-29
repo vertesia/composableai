@@ -1,8 +1,8 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { Mail } from 'lucide-react';
 import { useState } from 'react';
 import {
-    LoginInlineLinkButton,
+    LoginAccountCard,
+    LoginAccountRow,
     LoginProviderButton,
     LoginStepButton,
     LoginStepHeader,
@@ -33,6 +33,12 @@ export default function LoginReturningStep({
     const { t } = useUITranslation();
     const [showOthers, setShowOthers] = useState(false);
     const firstName = session.name ? session.name.split(' ')[0]! : firstNameFromEmail(session.email);
+    const displayName = session.name || firstNameFromEmail(session.email);
+    const avatar = (
+        <div className="size-9 rounded-full bg-info text-info-foreground grid place-items-center text-sm font-semibold ring-4 ring-background ring-offset-1 ring-offset-border shrink-0">
+            {emailInitial(session.email)}
+        </div>
+    );
     // A stored tenantName means the previous sign-in used SSO.
     const isSso = !!session.tenantName;
     const primaryLabel =
@@ -59,41 +65,23 @@ export default function LoginReturningStep({
             />
 
             {isSso && session.tenantName ? (
-                <div className="rounded-md border border-border bg-background overflow-hidden">
-                    <div className="flex items-center gap-3 px-3.5 py-2.5">
-                        <div className="size-9 rounded-full bg-info text-info-foreground grid place-items-center text-sm font-semibold ring-4 ring-background ring-offset-1 ring-offset-border shrink-0">
-                            {emailInitial(session.email)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold text-foreground truncate">
-                                {session.name || firstNameFromEmail(session.email)}
-                            </div>
-                            <div className="text-xs text-foreground/80 truncate">{session.tenantName}</div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3 px-3.5 py-1 border-t border-border bg-muted-background">
-                        <div className="w-9 h-6 grid place-items-center shrink-0">
-                            <Mail className="size-3.5 text-muted" />
-                        </div>
-                        <span className="text-xs text-foreground/80 flex-1 truncate">{session.email}</span>
-                        <LoginInlineLinkButton size="smaller" onClick={onNotYou}>
-                            {t('auth.returning.notYou')}
-                        </LoginInlineLinkButton>
-                    </div>
-                </div>
+                <LoginAccountCard
+                    variant="returning"
+                    badge={avatar}
+                    title={displayName}
+                    subtitle={session.tenantName}
+                    email={session.email}
+                    actionLabel={t('auth.returning.notYou')}
+                    onAction={onNotYou}
+                />
             ) : (
-                <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-md border border-border bg-muted-background">
-                    <div className="size-9 rounded-full bg-info text-info-foreground grid place-items-center text-sm font-semibold ring-4 ring-background ring-offset-1 ring-offset-border shrink-0">
-                        {emailInitial(session.email)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-foreground truncate">
-                            {session.name || firstNameFromEmail(session.email)}
-                        </div>
-                        <div className="text-xs text-muted truncate">{session.email}</div>
-                    </div>
-                    <LoginInlineLinkButton onClick={onNotYou}>{t('auth.returning.notYou')}</LoginInlineLinkButton>
-                </div>
+                <LoginAccountRow
+                    badge={avatar}
+                    title={displayName}
+                    subtitle={session.email}
+                    actionLabel={t('auth.returning.notYou')}
+                    onAction={onNotYou}
+                />
             )}
 
             <div className="flex flex-col gap-2">

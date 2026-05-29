@@ -205,6 +205,7 @@
   "auth.tenant.notPartOf": "Not part of {{name}}?",
   "auth.tenant.title": "Sign in to {{name}}",
   "auth.tenant.viaIdp": "via {{idp}}",
+  "auth.tenant.viaIdpFallback": "your identity provider",
   "auth.tenantNotFound": "Tenant not found",
   "auth.termsOfService": "Terms of Service",
   "errors.somethingWentWrong": "Sorry, something went wrong...",

@@ -211,6 +211,7 @@
   "auth.tenant.notPartOf": "Вы не из {{name}}?",
   "auth.tenant.title": "Войти в {{name}}",
   "auth.tenant.viaIdp": "через {{idp}}",
+  "auth.tenant.viaIdpFallback": "ваш поставщик идентификации",
   "auth.tenantNotFound": "Организация не найдена",
   "auth.termsOfService": "Условия использования",
   "errors.somethingWentWrong": "Извините, что-то пошло не так...",

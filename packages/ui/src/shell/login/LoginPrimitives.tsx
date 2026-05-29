@@ -1,6 +1,6 @@
 // Stateless visual primitives shared by the sign-in steps.
 import { Button } from '@vertesia/ui/core';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Mail } from 'lucide-react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { providerIcon } from './LoginIcons';
 import type { ProviderId } from './loginUtils';
@@ -113,6 +113,116 @@ export function LoginInlineLinkButton({
             className={className ? `${base} ${className}` : base}
             {...rest}
         />
+    );
+}
+
+// ─── Account card ────────────────────────────────────────────────────────────
+
+interface LoginIdentityLinesProps {
+    title: ReactNode;
+    subtitle: ReactNode;
+    titleClass: string;
+    subtitleClass: string;
+}
+
+/** Title over a secondary line; fills the row beside a badge or avatar. */
+export function LoginIdentityLines({ title, subtitle, titleClass, subtitleClass }: LoginIdentityLinesProps) {
+    return (
+        <div className="flex-1 min-w-0">
+            <div className={titleClass}>{title}</div>
+            <div className={subtitleClass}>{subtitle}</div>
+        </div>
+    );
+}
+
+// Two-row panel layout, tuned per usage. `tenant`: org card with a square badge;
+// `returning`: smaller returning-user card with a round avatar.
+const ACCOUNT_CARD_VARIANTS = {
+    tenant: {
+        topRow: 'flex items-center gap-2.5 px-3 py-2.5',
+        title: 'text-[13.5px] font-semibold text-foreground leading-tight',
+        subtitle: 'text-[11.5px] text-muted leading-tight mt-0.5',
+        bottomRow: 'flex items-center gap-2.5 px-3 py-1.5 border-t border-border bg-muted-background',
+        mailBox: 'size-[30px] grid place-items-center shrink-0',
+        mailIcon: 'size-4 text-muted',
+        email: 'text-sm text-foreground/80 flex-1 truncate',
+        actionSize: 'xs',
+    },
+    returning: {
+        topRow: 'flex items-center gap-3 px-3.5 py-2.5',
+        title: 'text-sm font-semibold text-foreground truncate',
+        subtitle: 'text-xs text-foreground/80 truncate',
+        bottomRow: 'flex items-center gap-3 px-3.5 py-1 border-t border-border bg-muted-background',
+        mailBox: 'w-9 h-6 grid place-items-center shrink-0',
+        mailIcon: 'size-3.5 text-muted',
+        email: 'text-xs text-foreground/80 flex-1 truncate',
+        actionSize: 'smaller',
+    },
+} as const;
+
+interface LoginAccountCardProps {
+    variant?: keyof typeof ACCOUNT_CARD_VARIANTS;
+    /** Leading badge — a square initials chip or a round avatar. */
+    badge: ReactNode;
+    title: ReactNode;
+    subtitle: ReactNode;
+    email: string;
+    actionLabel: ReactNode;
+    onAction: () => void;
+}
+
+/** Identity (badge + title + subtitle) over an email row with a trailing action link. */
+export function LoginAccountCard({
+    variant = 'returning',
+    badge,
+    title,
+    subtitle,
+    email,
+    actionLabel,
+    onAction,
+}: LoginAccountCardProps) {
+    const v = ACCOUNT_CARD_VARIANTS[variant];
+    return (
+        <div className="rounded-md border border-border bg-background overflow-hidden">
+            <div className={v.topRow}>
+                {badge}
+                <LoginIdentityLines title={title} subtitle={subtitle} titleClass={v.title} subtitleClass={v.subtitle} />
+            </div>
+            <div className={v.bottomRow}>
+                <div className={v.mailBox}>
+                    <Mail className={v.mailIcon} />
+                </div>
+                <span className={v.email}>{email}</span>
+                <LoginInlineLinkButton size={v.actionSize} onClick={onAction}>
+                    {actionLabel}
+                </LoginInlineLinkButton>
+            </div>
+        </div>
+    );
+}
+
+interface LoginAccountRowProps {
+    /** Leading badge — typically a round avatar. */
+    badge: ReactNode;
+    title: ReactNode;
+    subtitle: ReactNode;
+    actionLabel: ReactNode;
+    onAction: () => void;
+}
+
+/** Single-row identity card: badge + title/subtitle + a trailing action link. */
+export function LoginAccountRow({ badge, title, subtitle, actionLabel, onAction }: LoginAccountRowProps) {
+    return (
+        <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-md border border-border bg-muted-background">
+            {badge}
+            <LoginIdentityLines
+                title={title}
+                subtitle={subtitle}
+                titleClass="text-sm font-semibold text-foreground truncate"
+                subtitleClass="text-xs text-muted truncate"
+            />
+            <LoginInlineLinkButton onClick={onAction}>{actionLabel}</LoginInlineLinkButton>
+        </div>
     );
 }
 

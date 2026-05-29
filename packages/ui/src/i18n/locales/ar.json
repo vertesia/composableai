@@ -217,6 +217,7 @@
   "auth.tenant.notPartOf": "ألست جزءًا من {{name}}؟",
   "auth.tenant.title": "تسجيل الدخول إلى {{name}}",
   "auth.tenant.viaIdp": "عبر {{idp}}",
+  "auth.tenant.viaIdpFallback": "موفر الهوية الخاص بك",
   "auth.tenantNotFound": "لم يتم العثور على المؤسسة",
   "auth.termsOfService": "شروط الخدمة",
   "errors.somethingWentWrong": "عذراً، حدث خطأ ما...",

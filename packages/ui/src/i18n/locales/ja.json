@@ -205,6 +205,7 @@
   "auth.tenant.notPartOf": "{{name}} に所属していませんか?",
   "auth.tenant.title": "{{name}} にサインイン",
   "auth.tenant.viaIdp": "{{idp}} 経由",
+  "auth.tenant.viaIdpFallback": "ご利用のIDプロバイダー",
   "auth.tenantNotFound": "テナントが見つかりません",
   "auth.termsOfService": "利用規約",
   "errors.somethingWentWrong": "申し訳ありません、問題が発生しました...",
