@@ -3,6 +3,8 @@ import { useState } from 'react';
 import {
     LoginAccountCard,
     LoginAccountRow,
+    LoginInitialsBadge,
+    LoginOrDivider,
     LoginProviderButton,
     LoginStepButton,
     LoginStepHeader,
@@ -34,11 +36,7 @@ export default function LoginReturningStep({
     const [showOthers, setShowOthers] = useState(false);
     const firstName = session.name ? session.name.split(' ')[0]! : firstNameFromEmail(session.email);
     const displayName = session.name || firstNameFromEmail(session.email);
-    const avatar = (
-        <div className="size-9 rounded-full bg-info text-info-foreground grid place-items-center text-sm font-semibold ring-4 ring-background ring-offset-1 ring-offset-border shrink-0">
-            {emailInitial(session.email)}
-        </div>
-    );
+    const avatar = <LoginInitialsBadge initials={emailInitial(session.email)} />;
     // A stored tenantName means the previous sign-in used SSO.
     const isSso = !!session.tenantName;
     const primaryLabel =
@@ -100,11 +98,7 @@ export default function LoginReturningStep({
 
                 {showOthers && (
                     <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-3 my-2 text-muted-foreground text-[10.5px] uppercase tracking-widest">
-                            <div className="flex-1 h-px bg-border" />
-                            <span>{t('auth.returning.otherWays')}</span>
-                            <div className="flex-1 h-px bg-border" />
-                        </div>
+                        <LoginOrDivider>{t('auth.returning.otherWays')}</LoginOrDivider>
                         {others.map((p) => (
                             <LoginProviderButton
                                 key={p}

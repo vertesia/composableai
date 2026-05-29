@@ -4,7 +4,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { setFirebaseTenant } from '@vertesia/ui/session';
 import { ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
+import { LoginEmailField, LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
 import { isValidEmail } from './loginUtils';
 
 export type TenantInfo = UIResolvedTenant;
@@ -54,37 +54,18 @@ export default function LoginEmailStep({ initialEmail, onProceed }: LoginEmailSt
             />
 
             <form onSubmit={submit} noValidate className={`flex flex-col ${submitError ? 'gap-2' : 'gap-6'}`}>
-                <div className="flex flex-col gap-1.5">
-                    <label htmlFor="vt-login-email" className="text-xs font-medium text-foreground/80">
-                        {t('auth.email.label')}
-                    </label>
-                    <input
-                        ref={inputRef}
-                        id="vt-login-email"
-                        name="vt-login-email"
-                        type="email"
-                        className="h-[42px] px-3.5 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-info focus:ring-4 focus:ring-info/15 aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/15"
-                        placeholder={t('auth.email.placeholder')}
-                        value={email}
-                        onChange={(e) => {
-                            setEmail(e.target.value);
-                            if (submitError) setSubmitError(false);
-                        }}
-                        aria-invalid={submitError}
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellCheck={false}
-                        data-1p-ignore
-                        data-lpignore="true"
-                        data-form-type="other"
-                    />
-                    {submitError && (
-                        <div role="alert" className="text-xs text-destructive">
-                            {t('auth.email.invalidError')}
-                        </div>
-                    )}
-                </div>
+                <LoginEmailField
+                    inputRef={inputRef}
+                    label={t('auth.email.label')}
+                    placeholder={t('auth.email.placeholder')}
+                    value={email}
+                    onChange={(value) => {
+                        setEmail(value);
+                        if (submitError) setSubmitError(false);
+                    }}
+                    invalid={submitError}
+                    error={submitError ? t('auth.email.invalidError') : undefined}
+                />
 
                 <LoginStepButton type="submit" disabled={loading}>
                     {loading ? (

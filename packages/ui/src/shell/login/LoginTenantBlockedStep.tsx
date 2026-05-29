@@ -1,6 +1,6 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { ShieldOff } from 'lucide-react';
-import { LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
+import { LoginCallout, LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
 import { capitalizeFirst, emailDomain } from './loginUtils';
 
 interface LoginTenantBlockedStepProps {
@@ -31,13 +31,7 @@ export default function LoginTenantBlockedStep({ email, tenantName, onBack }: Lo
             />
 
             <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-destructive-background border border-destructive/20">
-                    <ShieldOff className="size-5 text-destructive shrink-0" />
-                    <div className="flex-1 min-w-0 text-sm">
-                        <div className="font-semibold text-destructive">{boxName}</div>
-                        <div className="text-xs text-destructive/80">{t('auth.blocked.tenantMeta', { email })}</div>
-                    </div>
-                </div>
+                <LoginCallout icon={ShieldOff} title={boxName} meta={t('auth.blocked.tenantMeta', { email })} />
                 <LoginStepButton variant="ghost" onClick={onBack}>
                     {t('auth.blocked.useDifferent')}
                 </LoginStepButton>

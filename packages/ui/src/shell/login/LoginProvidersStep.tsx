@@ -1,6 +1,5 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { Mail } from 'lucide-react';
-import { LoginInlineLinkButton, LoginProviderButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
+import { LoginEmailRow, LoginProviderButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
 import { type ProviderId, providerLabel, startSignIn } from './loginUtils';
 
 interface LoginProvidersStepProps {
@@ -28,11 +27,7 @@ export default function LoginProvidersStep({ email, onBack, onProviderClicked, r
                 body={t('auth.providers.bodyConsumer')}
             />
 
-            <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted-background">
-                <Mail className="size-4 text-muted shrink-0" />
-                <span className="text-sm text-foreground/80 flex-1 truncate">{email}</span>
-                <LoginInlineLinkButton onClick={onBack}>{t('auth.change')}</LoginInlineLinkButton>
-            </div>
+            <LoginEmailRow email={email} actionLabel={t('auth.change')} onAction={onBack} />
 
             <div className="flex flex-col gap-2">
                 {PROVIDERS.map((id) => (
@@ -42,7 +37,6 @@ export default function LoginProvidersStep({ email, onBack, onProviderClicked, r
                         label={t('auth.continueWithProvider', { provider: providerLabel(id) })}
                         onClick={() => pick(id)}
                         variant="arrow"
-                        arrowSlide
                     />
                 ))}
             </div>

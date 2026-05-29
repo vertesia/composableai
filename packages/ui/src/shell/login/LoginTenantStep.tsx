@@ -1,11 +1,14 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import GitHubSignInButton from './GitHubSignInButton';
-import GoogleSignInButton from './GoogleSignInButton';
 import type { TenantInfo } from './LoginEmailStep';
-import { LoginAccountCard, LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
-import { providerLabel } from './loginUtils';
-import MicrosoftSignInButton from './MicrosoftSigninButton';
-import OidcSignInButton from './OidcSignInButton';
+import {
+    LoginAccountCard,
+    LoginInitialsBadge,
+    LoginStepButton,
+    LoginStepHeader,
+    LoginStepLayout,
+} from './LoginPrimitives';
+import LoginProviderSignInButton from './LoginProviderSignInButton';
+import { type ProviderId, providerLabel } from './loginUtils';
 
 interface LoginTenantStepProps {
     email: string;
@@ -33,29 +36,12 @@ export default function LoginTenantStep({
 }: LoginTenantStepProps) {
     const { t } = useUITranslation();
     const tenantName = tenant.label || tenant.name || t('auth.blocked.tenantFallback');
-    // Brands get their name; OIDC/unknown fall back to a generic localized phrase.
-    const idpName =
+    // Brands keep their identity; anything else routes through OIDC.
+    const provider: ProviderId =
         tenant.provider === 'google' || tenant.provider === 'github' || tenant.provider === 'microsoft'
-            ? providerLabel(tenant.provider)
-            : t('auth.tenant.viaIdpFallback');
-
-    // Each provider has a self-contained button that owns its sign-in and label.
-    const buttonProps = {
-        email,
-        redirectTo,
-        variant: 'filled' as const,
-        onClick: onProviderClicked,
-    };
-    const providerButton =
-        tenant.provider === 'google' ? (
-            <GoogleSignInButton {...buttonProps} />
-        ) : tenant.provider === 'microsoft' ? (
-            <MicrosoftSignInButton {...buttonProps} />
-        ) : tenant.provider === 'github' ? (
-            <GitHubSignInButton {...buttonProps} />
-        ) : (
-            <OidcSignInButton {...buttonProps} />
-        );
+            ? tenant.provider
+            : 'oidc';
+    const idpName = provider === 'oidc' ? t('auth.tenant.viaIdpFallback') : providerLabel(provider);
 
     return (
         <LoginStepLayout>
@@ -67,11 +53,7 @@ export default function LoginTenantStep({
 
             <LoginAccountCard
                 variant="tenant"
-                badge={
-                    <span className="size-[30px] rounded-md bg-info text-info-foreground grid place-items-center text-[11px] font-semibold shrink-0">
-                        {tenantInitials(tenantName)}
-                    </span>
-                }
+                badge={<LoginInitialsBadge initials={tenantInitials(tenantName)} shape="square" />}
                 title={tenantName}
                 subtitle={t('auth.tenant.viaIdp', { idp: idpName })}
                 email={email}
@@ -80,7 +62,13 @@ export default function LoginTenantStep({
             />
 
             <div className="flex flex-col gap-2">
-                {providerButton}
+                <LoginProviderSignInButton
+                    provider={provider}
+                    email={email}
+                    redirectTo={redirectTo}
+                    variant="filled"
+                    onClick={onProviderClicked}
+                />
                 <LoginStepButton variant="ghost" onClick={onBack}>
                     {t('auth.tenant.notPartOf', { name: tenantName })}
                 </LoginStepButton>

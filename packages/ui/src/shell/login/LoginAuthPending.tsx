@@ -1,7 +1,7 @@
 import { Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { providerIcon } from './LoginIcons';
-import { LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
+import { LoginIconBadge, LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
 import { type ProviderId, providerLabel } from './loginUtils';
 
 interface LoginAuthPendingProps {
@@ -18,9 +18,9 @@ export default function LoginAuthPending({ provider, onCancel }: LoginAuthPendin
     return (
         <LoginStepLayout centered>
             <div>
-                <div className="inline-grid place-items-center size-14 rounded-xl bg-info-background border border-info/15 mb-3.5">
+                <LoginIconBadge>
                     <Icon className={provider === 'oidc' ? 'size-6 text-info' : 'size-6'} />
-                </div>
+                </LoginIconBadge>
                 <LoginStepHeader
                     title={t('auth.pending.title', { provider: titleProvider })}
                     body={t('auth.pending.body')}

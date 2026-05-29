@@ -1,7 +1,7 @@
 // Stateless visual primitives shared by the sign-in steps.
 import { Button } from '@vertesia/ui/core';
 import { ArrowRight, Mail } from 'lucide-react';
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ComponentType, ReactNode, Ref } from 'react';
 import { providerIcon } from './LoginIcons';
 import type { ProviderId } from './loginUtils';
 
@@ -116,6 +116,40 @@ export function LoginInlineLinkButton({
     );
 }
 
+// ─── Badges & avatars ────────────────────────────────────────────────────────
+
+const INITIALS_BADGE_SHAPES = {
+    // Round user avatar, with a ring.
+    circle: 'size-9 rounded-full text-sm ring-4 ring-background ring-offset-1 ring-offset-border',
+    // Square org chip.
+    square: 'size-[30px] rounded-md text-[11px]',
+} as const;
+
+interface LoginInitialsBadgeProps {
+    initials: string;
+    shape?: keyof typeof INITIALS_BADGE_SHAPES;
+}
+
+/** Initials in a colored chip — a round user avatar or a square org chip. */
+export function LoginInitialsBadge({ initials, shape = 'circle' }: LoginInitialsBadgeProps) {
+    return (
+        <span
+            className={`bg-info text-info-foreground grid place-items-center font-semibold shrink-0 ${INITIALS_BADGE_SHAPES[shape]}`}
+        >
+            {initials}
+        </span>
+    );
+}
+
+/** Rounded tile framing a provider/status icon. */
+export function LoginIconBadge({ children }: { children: ReactNode }) {
+    return (
+        <div className="inline-grid place-items-center size-14 rounded-xl bg-info-background border border-info/15 mb-3.5">
+            {children}
+        </div>
+    );
+}
+
 // ─── Account card ────────────────────────────────────────────────────────────
 
 interface LoginIdentityLinesProps {
@@ -226,6 +260,23 @@ export function LoginAccountRow({ badge, title, subtitle, actionLabel, onAction 
     );
 }
 
+interface LoginEmailRowProps {
+    email: string;
+    actionLabel: ReactNode;
+    onAction: () => void;
+}
+
+/** Standalone bordered pill: mail icon + email + a trailing action link. */
+export function LoginEmailRow({ email, actionLabel, onAction }: LoginEmailRowProps) {
+    return (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted-background">
+            <Mail className="size-4 text-muted shrink-0" />
+            <span className="text-sm text-foreground/80 flex-1 truncate">{email}</span>
+            <LoginInlineLinkButton onClick={onAction}>{actionLabel}</LoginInlineLinkButton>
+        </div>
+    );
+}
+
 // ─── Provider CTA ──────────────────────────────────────────────────────────
 
 interface LoginProviderButtonProps {
@@ -234,25 +285,16 @@ interface LoginProviderButtonProps {
     onClick?: () => void;
     /** Centered `outline`/`filled` CTA, or `arrow` list row. */
     variant?: 'outline' | 'filled' | 'arrow';
-    /** Slide the arrow on hover (arrow variant only). */
-    arrowSlide?: boolean;
 }
 
 /** "Continue with <provider>" button. */
-export function LoginProviderButton({
-    provider,
-    label,
-    onClick,
-    variant = 'outline',
-    arrowSlide = false,
-}: LoginProviderButtonProps) {
+export function LoginProviderButton({ provider, label, onClick, variant = 'outline' }: LoginProviderButtonProps) {
     const Icon = providerIcon(provider);
 
     if (variant === 'arrow') {
-        // !size beats Button's [&_svg]:size-4 rule.
-        const arrowClass = arrowSlide
-            ? '!size-3.5 text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition'
-            : '!size-3.5 text-muted opacity-0 group-hover:opacity-100 transition';
+        // !size beats Button's [&_svg]:size-4 rule. Arrow fades in and nudges right on hover.
+        const arrowClass =
+            '!size-3.5 text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition';
         return (
             <Button
                 variant="unstyled"
@@ -279,5 +321,89 @@ export function LoginProviderButton({
             <Icon className="!size-[18px]" />
             <span className="text-sm font-medium">{label}</span>
         </Button>
+    );
+}
+
+// ─── Callout / divider / field ───────────────────────────────────────────────
+
+interface LoginCalloutProps {
+    icon: ComponentType<{ className?: string }>;
+    title: ReactNode;
+    meta: ReactNode;
+}
+
+/** Destructive notice: icon + bold title over a muted meta line. */
+export function LoginCallout({ icon: Icon, title, meta }: LoginCalloutProps) {
+    return (
+        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-destructive-background border border-destructive/20">
+            <Icon className="size-5 text-destructive shrink-0" />
+            <div className="flex-1 min-w-0 text-sm">
+                <div className="font-semibold text-destructive">{title}</div>
+                <div className="text-xs text-destructive/80">{meta}</div>
+            </div>
+        </div>
+    );
+}
+
+/** Horizontal rule with a centered label. */
+export function LoginOrDivider({ children }: { children: ReactNode }) {
+    return (
+        <div className="flex items-center gap-3 my-2 text-muted-foreground text-[10.5px] uppercase tracking-widest">
+            <div className="flex-1 h-px bg-border" />
+            <span>{children}</span>
+            <div className="flex-1 h-px bg-border" />
+        </div>
+    );
+}
+
+interface LoginEmailFieldProps {
+    inputRef?: Ref<HTMLInputElement>;
+    label: ReactNode;
+    placeholder?: string;
+    value: string;
+    onChange: (value: string) => void;
+    invalid?: boolean;
+    error?: ReactNode;
+}
+
+/** Labeled email input with an inline validation message. */
+export function LoginEmailField({
+    inputRef,
+    label,
+    placeholder,
+    value,
+    onChange,
+    invalid = false,
+    error,
+}: LoginEmailFieldProps) {
+    return (
+        <div className="flex flex-col gap-1.5">
+            <label htmlFor="vt-login-email" className="text-xs font-medium text-foreground/80">
+                {label}
+            </label>
+            <input
+                ref={inputRef}
+                id="vt-login-email"
+                name="vt-login-email"
+                type="email"
+                className="h-[42px] px-3.5 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-info focus:ring-4 focus:ring-info/15 aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/15"
+                placeholder={placeholder}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                aria-invalid={invalid}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                data-1p-ignore
+                data-lpignore="true"
+                data-form-type="other"
+            />
+            {error && (
+                <div role="alert" className="text-xs text-destructive">
+                    {error}
+                </div>
+            )}
+        </div>
     );
 }
