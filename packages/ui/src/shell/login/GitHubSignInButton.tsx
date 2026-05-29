@@ -1,8 +1,6 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { getFirebaseAuth } from '@vertesia/ui/session';
-import { GithubAuthProvider, signInWithRedirect } from 'firebase/auth';
 import { ProviderButton } from './LoginPrimitives';
-import { startSignIn } from './loginUtils';
+import { startPersonalSignIn, startSignIn } from './loginUtils';
 
 interface GitHubSignInButtonProps {
     /** When set, sign-in goes through the tenant-aware flow and the IdP pre-selects this account. */
@@ -26,13 +24,9 @@ export default function GitHubSignInButton({
         onClick?.();
         if (email) {
             void startSignIn('github', email, redirectTo);
-            return;
+        } else {
+            startPersonalSignIn('github', redirectTo);
         }
-        localStorage.removeItem('tenantName');
-        const provider = new GithubAuthProvider();
-        provider.addScope('profile');
-        provider.addScope('email');
-        void signInWithRedirect(getFirebaseAuth(), provider);
     };
 
     return <ProviderButton provider="github" label={t('auth.continueWithGithub')} onClick={signIn} variant={variant} />;

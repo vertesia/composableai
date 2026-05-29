@@ -1,8 +1,6 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { getFirebaseAuth } from '@vertesia/ui/session';
-import { OAuthProvider, signInWithRedirect } from 'firebase/auth';
 import { ProviderButton } from './LoginPrimitives';
-import { startSignIn } from './loginUtils';
+import { startPersonalSignIn, startSignIn } from './loginUtils';
 
 interface MicrosoftSignInButtonProps {
     /** When set, sign-in goes through the tenant-aware flow and the IdP pre-selects this account. */
@@ -26,13 +24,9 @@ export default function MicrosoftSignInButton({
         onClick?.();
         if (email) {
             void startSignIn('microsoft', email, redirectTo);
-            return;
+        } else {
+            startPersonalSignIn('microsoft', redirectTo);
         }
-        localStorage.removeItem('tenantName');
-        const provider = new OAuthProvider('microsoft.com');
-        provider.addScope('profile');
-        provider.addScope('email');
-        void signInWithRedirect(getFirebaseAuth(), provider);
     };
 
     return (

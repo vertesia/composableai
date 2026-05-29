@@ -1,8 +1,6 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { getFirebaseAuth } from '@vertesia/ui/session';
-import { OAuthProvider, signInWithRedirect } from 'firebase/auth';
 import { ProviderButton } from './LoginPrimitives';
-import { providerLabel, startSignIn } from './loginUtils';
+import { providerLabel, startPersonalSignIn, startSignIn } from './loginUtils';
 
 interface OidcSignInButtonProps {
     /**
@@ -19,9 +17,9 @@ interface OidcSignInButtonProps {
 }
 
 // Generic OIDC ("Continue with Sign In") provider button. Unlike Google/Microsoft/GitHub,
-// OIDC has no personal form — it only exists tenant-scoped. startSignIn resolves
-// the tenant (setting auth.tenantId), writes pendingSignin/tenantName, and passes
-// the login hint before redirecting to the tenant's `oidc.main` IdP.
+// OIDC has no personal form — it only exists tenant-scoped. With an email, startSignIn
+// resolves the tenant (setting auth.tenantId), writes pendingSignin/tenantName, and
+// passes the login hint before redirecting to the tenant's `oidc.main` IdP.
 export default function OidcSignInButton({ email, redirectTo, variant = 'outline', onClick }: OidcSignInButtonProps) {
     const { t } = useUITranslation();
 
@@ -29,12 +27,11 @@ export default function OidcSignInButton({ email, redirectTo, variant = 'outline
         onClick?.();
         if (email) {
             void startSignIn('oidc', email, redirectTo);
-            return;
+        } else {
+            // Degenerate: OIDC needs a tenant, so this path shouldn't be reached
+            // (the button only renders post-match). Kept for prop-shape parity.
+            startPersonalSignIn('oidc', redirectTo);
         }
-        // No email → no tenant to resolve. Fall back to firing the IdP against
-        // whatever tenant context is already on the auth instance (set upstream).
-        const provider = new OAuthProvider('oidc.main');
-        void signInWithRedirect(getFirebaseAuth(), provider);
     };
 
     return (

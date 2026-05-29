@@ -1,5 +1,11 @@
 import { getFirebaseAuth, setFirebaseTenant } from '@vertesia/ui/session';
-import { GithubAuthProvider, GoogleAuthProvider, OAuthProvider, signInWithRedirect } from 'firebase/auth';
+import {
+    type AuthProvider,
+    GithubAuthProvider,
+    GoogleAuthProvider,
+    OAuthProvider,
+    signInWithRedirect,
+} from 'firebase/auth';
 
 // IdP types match auth-tenants.json `provider` values exactly. SSO vs personal
 // OAuth is no longer a separate ProviderId — it's derived from whether
@@ -82,35 +88,58 @@ function buildRedirectPath(redirectTo?: string): string {
     return path;
 }
 
-// `email`, when present, is passed to the IdP as a login hint so the entered
-// account is pre-selected (Google/Microsoft/OIDC use `login_hint`; GitHub uses
-// `login`). Omitted when there's no email (e.g. the standalone SignInModal).
-function buildFirebaseProvider(idp: ProviderId, email?: string, redirectTo?: string) {
-    if (idp === 'google') {
-        const p = new GoogleAuthProvider();
-        p.addScope('profile');
-        p.addScope('email');
-        p.setCustomParameters({
-            redirect_uri: window.location.origin + buildRedirectPath(redirectTo),
-            // With a known email, hint the account so it's auto-selected. Only
-            // force the account chooser when we have no email to pre-select.
-            ...(email ? { login_hint: email } : { prompt: 'select_account' }),
-        });
-        return p;
-    }
-    if (idp === 'github') {
-        const p = new GithubAuthProvider();
-        if (email) p.setCustomParameters({ login: email });
-        return p;
-    }
-    if (idp === 'microsoft') {
-        const p = new OAuthProvider('microsoft.com');
-        if (email) p.setCustomParameters({ login_hint: email });
-        return p;
-    }
+// Per-provider Firebase provider construction. One named builder per IdP keeps
+// each provider's quirks (scopes, custom params) isolated and reachable by id —
+// `startSignIn`/`startPersonalSignIn` look them up, so this is the single source
+// of truth for provider config across every sign-in surface (tenant + personal).
+//
+// `email`, when present, becomes a login hint so the entered account is
+// pre-selected (Google/Microsoft/OIDC use `login_hint`; GitHub uses `login`).
+// Without an email, Google falls back to forcing the account chooser.
+type ProviderBuilder = (email?: string, redirectTo?: string) => AuthProvider;
+
+const buildGoogleProvider: ProviderBuilder = (email, redirectTo) => {
+    const p = new GoogleAuthProvider();
+    p.addScope('profile');
+    p.addScope('email');
+    p.setCustomParameters({
+        redirect_uri: window.location.origin + buildRedirectPath(redirectTo),
+        ...(email ? { login_hint: email } : { prompt: 'select_account' }),
+    });
+    return p;
+};
+
+const buildGithubProvider: ProviderBuilder = (email) => {
+    const p = new GithubAuthProvider();
+    p.addScope('profile');
+    p.addScope('email');
+    if (email) p.setCustomParameters({ login: email });
+    return p;
+};
+
+const buildMicrosoftProvider: ProviderBuilder = (email) => {
+    const p = new OAuthProvider('microsoft.com');
+    p.addScope('profile');
+    p.addScope('email');
+    if (email) p.setCustomParameters({ login_hint: email });
+    return p;
+};
+
+const buildOidcProvider: ProviderBuilder = (email) => {
     const p = new OAuthProvider('oidc.main');
     if (email) p.setCustomParameters({ login_hint: email });
     return p;
+};
+
+const PROVIDER_BUILDERS: Record<ProviderId, ProviderBuilder> = {
+    google: buildGoogleProvider,
+    github: buildGithubProvider,
+    microsoft: buildMicrosoftProvider,
+    oidc: buildOidcProvider,
+};
+
+function buildFirebaseProvider(idp: ProviderId, email?: string, redirectTo?: string): AuthProvider {
+    return PROVIDER_BUILDERS[idp](email, redirectTo);
 }
 
 export async function startSignIn(
@@ -144,6 +173,19 @@ export async function startSignIn(
     writePendingSignin({ email, provider: effectiveIdp, tenantName });
     void signInWithRedirect(auth, buildFirebaseProvider(effectiveIdp, email, redirectTo));
     return { ok: true };
+}
+
+/**
+ * Personal (non-tenant) OAuth for the standalone buttons (e.g. SignInModal) that
+ * have no email to resolve a tenant from. Clears any stale tenant routing, then
+ * redirects with the provider's personal config — same builder as the tenant
+ * path, so there's one source of truth for how each provider is constructed.
+ */
+export function startPersonalSignIn(provider: ProviderId, redirectTo?: string): void {
+    const auth = getFirebaseAuth();
+    localStorage.removeItem('tenantName');
+    if (auth.tenantId) auth.tenantId = null;
+    void signInWithRedirect(auth, buildFirebaseProvider(provider, undefined, redirectTo));
 }
 
 export function providerLabel(id: ProviderId): string {
