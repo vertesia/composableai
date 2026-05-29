@@ -141,7 +141,7 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
         setMode('email');
     }, []);
 
-    // SignupForm submission, lifted from the previous StandardSigninPanel.
+    // Submits the signup form to /auth/signup, then redirects into the app.
     const onSignup = (data: SignupData, fbToken: string) => {
         const payload: SignupPayload = { signupData: data, firebaseToken: fbToken };
         void fetch(`${Env.endpoints.studio}/auth/signup`, {

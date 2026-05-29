@@ -28,8 +28,8 @@ export default function OidcSignInButton({ email, redirectTo, variant = 'outline
         if (email) {
             void startSignIn('oidc', email, redirectTo);
         } else {
-            // Degenerate: OIDC needs a tenant, so this path shouldn't be reached
-            // (the button only renders post-match). Kept for prop-shape parity.
+            // OIDC requires a resolved tenant, so this no-email path is not
+            // reachable in normal use; the button only renders after a match.
             startPersonalSignIn('oidc', redirectTo);
         }
     };

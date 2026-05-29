@@ -8,7 +8,7 @@ import {
 } from 'firebase/auth';
 
 // IdP types match auth-tenants.json `provider` values exactly. SSO vs personal
-// OAuth is no longer a separate ProviderId — it's derived from whether
+// OAuth is not a separate ProviderId — it's derived from whether
 // setFirebaseTenant resolves a tenant for the email at sign-in time, and from
 // `tenantName` presence on the stored LastSession for the returning view.
 export type ProviderId = 'google' | 'github' | 'microsoft' | 'oidc';
@@ -227,10 +227,10 @@ export function isValidEmail(email: string): boolean {
 }
 
 /**
- * The 403 from /auth/ensure-user. We don't have a typed error class for this
- * (deliberately — see plan), so detect by the server's status code or message.
- * composable.ts wraps non-2xx in STSError-like errors; we look for the literal
- * server-side message.
+ * Detects the 403 from /auth/ensure-user that signals a customer-domain user
+ * needs an invite. There is no typed error class for it, so we match the
+ * literal server-side message (composable.ts wraps non-2xx responses in
+ * STSError-like errors).
  */
 export function isInviteRequiredError(err: unknown): boolean {
     if (!err) return false;

@@ -22,7 +22,7 @@ export default function LoginTenantBlockedStep({ email, tenantName, onBack }: Lo
     return (
         <LoginStepLayout>
             <LoginStepHeader
-                tone="destructive"
+                variant="destructive"
                 eyebrow={t('auth.blocked.eyebrow')}
                 title={t('auth.blocked.title')}
                 body={t('auth.blocked.body', { name: subheadingName, email })}

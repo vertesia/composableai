@@ -33,9 +33,7 @@ export default function LoginReturningStep({
     const { t } = useUITranslation();
     const [showOthers, setShowOthers] = useState(false);
     const firstName = session.name ? session.name.split(' ')[0]! : firstNameFromEmail(session.email);
-    // tenantName presence indicates the previous sign-in went through SSO. The
-    // button itself looks the same as the personal case — SSO context is
-    // conveyed by the tenant card above the button, not by button styling.
+    // A stored tenantName means the previous sign-in used SSO.
     const isSso = !!session.tenantName;
     const primaryLabel = t('auth.continueWithProvider', { provider: providerLabel(session.lastProvider) });
 
@@ -59,9 +57,6 @@ export default function LoginReturningStep({
             />
 
             {isSso && session.tenantName ? (
-                // Two-part user+org card. Top: avatar + name + company. Bottom:
-                // Mail icon + email + "Not you?". Shape mirrors LoginTenantStep so
-                // both screens read with the same rhythm.
                 <div className="rounded-md border border-border bg-background overflow-hidden">
                     <div className="flex items-center gap-3 px-3.5 py-2.5">
                         <div className="size-9 rounded-full bg-info text-info-foreground grid place-items-center text-sm font-semibold ring-4 ring-background ring-offset-1 ring-offset-border shrink-0">

@@ -37,11 +37,11 @@ interface LoginStepHeaderProps {
     title: ReactNode;
     body?: ReactNode;
     /** "info" (default) gives a blue eyebrow; "destructive" gives the red one. */
-    tone?: 'info' | 'destructive';
+    variant?: 'info' | 'destructive';
 }
 
-export function LoginStepHeader({ eyebrow, title, body, tone = 'info' }: LoginStepHeaderProps) {
-    const eyebrowColor = tone === 'destructive' ? 'text-destructive' : 'text-info';
+export function LoginStepHeader({ eyebrow, title, body, variant = 'info' }: LoginStepHeaderProps) {
+    const eyebrowColor = variant === 'destructive' ? 'text-destructive' : 'text-info';
     return (
         <div>
             {eyebrow && <div className={`${eyebrowColor} text-[12.5px] font-medium mb-2`}>{eyebrow}</div>}

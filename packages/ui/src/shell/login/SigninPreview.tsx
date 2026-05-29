@@ -15,8 +15,8 @@ import SignupForm from './SignupForm';
 
 const noop = () => {};
 
-// Shaped to match what /api/resolve-tenant actually returns: name = slug,
-// label = pretty display string. LoginTenantStep now reads label first.
+// Shaped to match what /api/resolve-tenant returns: name = slug, label =
+// pretty display string (LoginTenantStep prefers label).
 const MOCK_TENANT_GOOGLE: UIResolvedTenant & TenantInfo = {
     firebaseTenantId: 'vertesia-tenant-id',
     name: 'vertesia',
