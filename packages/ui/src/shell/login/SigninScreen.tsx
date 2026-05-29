@@ -228,7 +228,7 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
                             {t('auth.termsOfService')}
                         </a>
                         <span className="text-border">·</span>
-                        <RegionTag />
+                        <RegionTag className="cursor-default" />
                     </div>
                 </div>
             </div>
