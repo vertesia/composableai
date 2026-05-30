@@ -1,5 +1,5 @@
 import { Button, Modal, ModalBody, ModalFooter, ModalTitle } from '@vertesia/ui/core';
-import LoginProviderSignInButton from './LoginProviderSignInButton';
+import SignInWithProviderButton from './SignInWithProviderButton';
 
 interface SignInModalProps {
     isOpen: boolean;
@@ -10,9 +10,9 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
         <Modal isOpen={isOpen} onClose={onClose}>
             <ModalTitle>Sign In</ModalTitle>
             <ModalBody className="flex flex-col gap-2">
-                <LoginProviderSignInButton provider="google" />
-                <LoginProviderSignInButton provider="github" />
-                <LoginProviderSignInButton provider="microsoft" />
+                <SignInWithProviderButton provider="google" />
+                <SignInWithProviderButton provider="github" />
+                <SignInWithProviderButton provider="microsoft" />
             </ModalBody>
             <ModalFooter align="right">
                 <Button variant="ghost" onClick={onClose}>

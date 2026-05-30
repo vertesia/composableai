@@ -1,8 +1,8 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { LoginEmailRow, LoginProviderButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
-import { type ProviderId, providerLabel, startSignIn } from './loginUtils';
+import { SignInEmailRow, SignInProviderButton, SignInStepHeader, SignInStepLayout } from './SignInPrimitives';
+import { type ProviderId, providerLabel, startSignIn } from './signInUtils';
 
-interface LoginProvidersStepProps {
+interface SignInProvidersStepProps {
     email: string;
     onBack: () => void;
     onProviderClicked: (provider: ProviderId) => void;
@@ -11,7 +11,12 @@ interface LoginProvidersStepProps {
 
 const PROVIDERS: ProviderId[] = ['google', 'github', 'microsoft'];
 
-export default function LoginProvidersStep({ email, onBack, onProviderClicked, redirectTo }: LoginProvidersStepProps) {
+export default function SignInProvidersStep({
+    email,
+    onBack,
+    onProviderClicked,
+    redirectTo,
+}: SignInProvidersStepProps) {
     const { t } = useUITranslation();
 
     const pick = async (provider: ProviderId) => {
@@ -20,18 +25,18 @@ export default function LoginProvidersStep({ email, onBack, onProviderClicked, r
     };
 
     return (
-        <LoginStepLayout>
-            <LoginStepHeader
+        <SignInStepLayout>
+            <SignInStepHeader
                 eyebrow={t('auth.providers.eyebrow')}
                 title={t('auth.providers.title')}
                 body={t('auth.providers.bodyConsumer')}
             />
 
-            <LoginEmailRow email={email} actionLabel={t('auth.change')} onAction={onBack} />
+            <SignInEmailRow email={email} actionLabel={t('auth.change')} onAction={onBack} />
 
             <div className="flex flex-col gap-2">
                 {PROVIDERS.map((id) => (
-                    <LoginProviderButton
+                    <SignInProviderButton
                         key={id}
                         provider={id}
                         label={t('auth.continueWithProvider', { provider: providerLabel(id) })}
@@ -40,6 +45,6 @@ export default function LoginProvidersStep({ email, onBack, onProviderClicked, r
                     />
                 ))}
             </div>
-        </LoginStepLayout>
+        </SignInStepLayout>
     );
 }

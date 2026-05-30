@@ -1,6 +1,6 @@
 import { LockKeyhole } from 'lucide-react';
 import type { ComponentType, SVGProps } from 'react';
-import type { ProviderId } from './loginUtils';
+import type { ProviderId } from './signInUtils';
 
 export function GoogleIcon(props: SVGProps<SVGSVGElement>) {
     return (

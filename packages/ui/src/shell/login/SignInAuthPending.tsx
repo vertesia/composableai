@@ -1,43 +1,43 @@
 import { Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { providerIcon } from './LoginIcons';
-import { LoginIconBadge, LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
-import { type ProviderId, providerLabel } from './loginUtils';
+import { providerIcon } from './SignInIcons';
+import { SignInIconBadge, SignInStepButton, SignInStepHeader, SignInStepLayout } from './SignInPrimitives';
+import { type ProviderId, providerLabel } from './signInUtils';
 
-interface LoginAuthPendingProps {
+interface SignInAuthPendingProps {
     provider: ProviderId;
     onCancel?: () => void;
 }
 
-export default function LoginAuthPending({ provider, onCancel }: LoginAuthPendingProps) {
+export default function SignInAuthPending({ provider, onCancel }: SignInAuthPendingProps) {
     const { t } = useUITranslation();
     const Icon = providerIcon(provider);
     // OIDC has no brand name for the title; use a generic noun phrase.
     const titleProvider = provider === 'oidc' ? t('auth.pending.genericProvider') : providerLabel(provider);
 
     return (
-        <LoginStepLayout centered>
+        <SignInStepLayout centered>
             <div>
-                <LoginIconBadge>
+                <SignInIconBadge>
                     <Icon className={provider === 'oidc' ? 'size-6 text-info' : 'size-6'} />
-                </LoginIconBadge>
-                <LoginStepHeader
+                </SignInIconBadge>
+                <SignInStepHeader
                     title={t('auth.pending.title', { provider: titleProvider })}
                     body={t('auth.pending.body')}
                 />
             </div>
 
             <div className="w-full flex flex-col gap-2">
-                <LoginStepButton variant="loading">
+                <SignInStepButton variant="loading">
                     <Spinner />
                     <span>{t('auth.pending.authenticating')}</span>
-                </LoginStepButton>
+                </SignInStepButton>
                 {onCancel && (
-                    <LoginStepButton variant="ghost" onClick={onCancel}>
+                    <SignInStepButton variant="ghost" onClick={onCancel}>
                         {t('auth.pending.cancel')}
-                    </LoginStepButton>
+                    </SignInStepButton>
                 )}
             </div>
-        </LoginStepLayout>
+        </SignInStepLayout>
     );
 }

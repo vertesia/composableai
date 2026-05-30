@@ -1,16 +1,16 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import type { TenantInfo } from './LoginEmailStep';
+import type { TenantInfo } from './SignInEmailStep';
 import {
-    LoginAccountCard,
-    LoginInitialsBadge,
-    LoginStepButton,
-    LoginStepHeader,
-    LoginStepLayout,
-} from './LoginPrimitives';
-import LoginProviderSignInButton from './LoginProviderSignInButton';
-import { type ProviderId, providerLabel } from './loginUtils';
+    SignInAccountCard,
+    SignInInitialsBadge,
+    SignInStepButton,
+    SignInStepHeader,
+    SignInStepLayout,
+} from './SignInPrimitives';
+import SignInWithProviderButton from './SignInWithProviderButton';
+import { type ProviderId, providerLabel } from './signInUtils';
 
-interface LoginTenantStepProps {
+interface SignInTenantStepProps {
     email: string;
     tenant: TenantInfo;
     onBack: () => void;
@@ -27,13 +27,13 @@ function tenantInitials(name: string): string {
         .join('');
 }
 
-export default function LoginTenantStep({
+export default function SignInTenantStep({
     email,
     tenant,
     onBack,
     onProviderClicked,
     redirectTo,
-}: LoginTenantStepProps) {
+}: SignInTenantStepProps) {
     const { t } = useUITranslation();
     const tenantName = tenant.label || tenant.name || t('auth.blocked.tenantFallback');
     // Brands keep their identity; anything else routes through OIDC.
@@ -44,16 +44,16 @@ export default function LoginTenantStep({
     const idpName = provider === 'oidc' ? t('auth.tenant.viaIdpFallback') : providerLabel(provider);
 
     return (
-        <LoginStepLayout>
-            <LoginStepHeader
+        <SignInStepLayout>
+            <SignInStepHeader
                 eyebrow={t('auth.tenant.eyebrow')}
                 title={t('auth.tenant.title', { name: tenantName })}
                 body={t('auth.tenant.body')}
             />
 
-            <LoginAccountCard
+            <SignInAccountCard
                 variant="tenant"
-                badge={<LoginInitialsBadge initials={tenantInitials(tenantName)} shape="square" />}
+                badge={<SignInInitialsBadge initials={tenantInitials(tenantName)} shape="square" />}
                 title={tenantName}
                 subtitle={t('auth.tenant.viaIdp', { idp: idpName })}
                 email={email}
@@ -62,17 +62,17 @@ export default function LoginTenantStep({
             />
 
             <div className="flex flex-col gap-2">
-                <LoginProviderSignInButton
+                <SignInWithProviderButton
                     provider={provider}
                     email={email}
                     redirectTo={redirectTo}
                     variant="filled"
                     onClick={onProviderClicked}
                 />
-                <LoginStepButton variant="ghost" onClick={onBack}>
+                <SignInStepButton variant="ghost" onClick={onBack}>
                     {t('auth.tenant.notPartOf', { name: tenantName })}
-                </LoginStepButton>
+                </SignInStepButton>
             </div>
-        </LoginStepLayout>
+        </SignInStepLayout>
     );
 }

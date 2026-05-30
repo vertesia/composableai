@@ -2,18 +2,18 @@
 import { Button } from '@vertesia/ui/core';
 import { ArrowRight, Mail } from 'lucide-react';
 import type { ButtonHTMLAttributes, ComponentType, ReactNode, Ref } from 'react';
-import { providerIcon } from './LoginIcons';
-import type { ProviderId } from './loginUtils';
+import { providerIcon } from './SignInIcons';
+import type { ProviderId } from './signInUtils';
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
 
-interface LoginStepLayoutProps {
+interface SignInStepLayoutProps {
     children: ReactNode;
     /** Center-align content. */
     centered?: boolean;
 }
 
-export function LoginStepLayout({ children, centered = false }: LoginStepLayoutProps) {
+export function SignInStepLayout({ children, centered = false }: SignInStepLayoutProps) {
     return (
         <div
             className={
@@ -29,7 +29,7 @@ export function LoginStepLayout({ children, centered = false }: LoginStepLayoutP
 
 // ─── Step header (eyebrow + title + body) ──────────────────────────────────
 
-interface LoginStepHeaderProps {
+interface SignInStepHeaderProps {
     eyebrow?: ReactNode;
     title: ReactNode;
     body?: ReactNode;
@@ -37,7 +37,7 @@ interface LoginStepHeaderProps {
     variant?: 'info' | 'destructive';
 }
 
-export function LoginStepHeader({ eyebrow, title, body, variant = 'info' }: LoginStepHeaderProps) {
+export function SignInStepHeader({ eyebrow, title, body, variant = 'info' }: SignInStepHeaderProps) {
     const eyebrowColor = variant === 'destructive' ? 'text-destructive' : 'text-info';
     return (
         <div>
@@ -50,9 +50,9 @@ export function LoginStepHeader({ eyebrow, title, body, variant = 'info' }: Logi
 
 // ─── Buttons ────────────────────────────────────────────────────────────────
 
-const LOGIN_STEP_BUTTON_BASE = 'cursor-pointer inline-flex items-center justify-center text-sm font-medium transition';
+const SIGNIN_STEP_BUTTON_BASE = 'cursor-pointer inline-flex items-center justify-center text-sm font-medium transition';
 
-const LOGIN_STEP_BUTTON_VARIANTS = {
+const SIGNIN_STEP_BUTTON_VARIANTS = {
     // Filled CTA; greys out when disabled.
     primary:
         'h-[42px] gap-2.5 rounded-md bg-foreground text-background hover:opacity-90 ' +
@@ -63,18 +63,18 @@ const LOGIN_STEP_BUTTON_VARIANTS = {
     ghost: 'h-9 text-muted hover:text-foreground',
 } as const;
 
-interface LoginStepButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: keyof typeof LOGIN_STEP_BUTTON_VARIANTS;
+interface SignInStepButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+    variant?: keyof typeof SIGNIN_STEP_BUTTON_VARIANTS;
 }
 
 /** Button used across the sign-in steps. */
-export function LoginStepButton({
+export function SignInStepButton({
     variant = 'primary',
     className = '',
     type = 'button',
     disabled,
     ...rest
-}: LoginStepButtonProps) {
+}: SignInStepButtonProps) {
     return (
         <Button
             variant="unstyled"
@@ -82,24 +82,24 @@ export function LoginStepButton({
             type={type}
             // loading is always non-interactive.
             disabled={variant === 'loading' ? true : disabled}
-            className={`${LOGIN_STEP_BUTTON_BASE} ${LOGIN_STEP_BUTTON_VARIANTS[variant]} ${className}`.trim()}
+            className={`${SIGNIN_STEP_BUTTON_BASE} ${SIGNIN_STEP_BUTTON_VARIANTS[variant]} ${className}`.trim()}
             {...rest}
         />
     );
 }
 
-interface LoginInlineLinkButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface SignInInlineLinkButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     /** Text size: xs (default) or smaller. */
     size?: 'xs' | 'smaller';
 }
 
 /** Compact inline text link for info rows ("Change", "Not you?"). */
-export function LoginInlineLinkButton({
+export function SignInInlineLinkButton({
     size = 'xs',
     className = '',
     type = 'button',
     ...rest
-}: LoginInlineLinkButtonProps) {
+}: SignInInlineLinkButtonProps) {
     // `!` overrides beat the Button base's text-sm/rounded-md defaults.
     const sizeClass = size === 'smaller' ? '!text-[11px]' : '!text-xs';
     const base =
@@ -125,13 +125,13 @@ const INITIALS_BADGE_SHAPES = {
     square: 'size-[30px] rounded-md text-[11px]',
 } as const;
 
-interface LoginInitialsBadgeProps {
+interface SignInInitialsBadgeProps {
     initials: string;
     shape?: keyof typeof INITIALS_BADGE_SHAPES;
 }
 
 /** Initials in a colored chip — a round user avatar or a square org chip. */
-export function LoginInitialsBadge({ initials, shape = 'circle' }: LoginInitialsBadgeProps) {
+export function SignInInitialsBadge({ initials, shape = 'circle' }: SignInInitialsBadgeProps) {
     return (
         <span
             className={`bg-info text-info-foreground grid place-items-center font-semibold shrink-0 ${INITIALS_BADGE_SHAPES[shape]}`}
@@ -142,7 +142,7 @@ export function LoginInitialsBadge({ initials, shape = 'circle' }: LoginInitials
 }
 
 /** Rounded tile framing a provider/status icon. */
-export function LoginIconBadge({ children }: { children: ReactNode }) {
+export function SignInIconBadge({ children }: { children: ReactNode }) {
     return (
         <div className="inline-grid place-items-center size-14 rounded-xl bg-info-background border border-info/15 mb-3.5">
             {children}
@@ -152,7 +152,7 @@ export function LoginIconBadge({ children }: { children: ReactNode }) {
 
 // ─── Account card ────────────────────────────────────────────────────────────
 
-interface LoginIdentityLinesProps {
+interface SignInIdentityLinesProps {
     title: ReactNode;
     subtitle: ReactNode;
     titleClass: string;
@@ -160,7 +160,7 @@ interface LoginIdentityLinesProps {
 }
 
 /** Title over a secondary line; fills the row beside a badge or avatar. */
-export function LoginIdentityLines({ title, subtitle, titleClass, subtitleClass }: LoginIdentityLinesProps) {
+export function SignInIdentityLines({ title, subtitle, titleClass, subtitleClass }: SignInIdentityLinesProps) {
     return (
         <div className="flex-1 min-w-0">
             <div className={titleClass}>{title}</div>
@@ -194,7 +194,7 @@ const ACCOUNT_CARD_VARIANTS = {
     },
 } as const;
 
-interface LoginAccountCardProps {
+interface SignInAccountCardProps {
     variant?: keyof typeof ACCOUNT_CARD_VARIANTS;
     /** Leading badge — a square initials chip or a round avatar. */
     badge: ReactNode;
@@ -206,7 +206,7 @@ interface LoginAccountCardProps {
 }
 
 /** Identity (badge + title + subtitle) over an email row with a trailing action link. */
-export function LoginAccountCard({
+export function SignInAccountCard({
     variant = 'returning',
     badge,
     title,
@@ -214,28 +214,33 @@ export function LoginAccountCard({
     email,
     actionLabel,
     onAction,
-}: LoginAccountCardProps) {
+}: SignInAccountCardProps) {
     const v = ACCOUNT_CARD_VARIANTS[variant];
     return (
         <div className="rounded-md border border-border bg-background overflow-hidden">
             <div className={v.topRow}>
                 {badge}
-                <LoginIdentityLines title={title} subtitle={subtitle} titleClass={v.title} subtitleClass={v.subtitle} />
+                <SignInIdentityLines
+                    title={title}
+                    subtitle={subtitle}
+                    titleClass={v.title}
+                    subtitleClass={v.subtitle}
+                />
             </div>
             <div className={v.bottomRow}>
                 <div className={v.mailBox}>
                     <Mail className={v.mailIcon} />
                 </div>
                 <span className={v.email}>{email}</span>
-                <LoginInlineLinkButton size={v.actionSize} onClick={onAction}>
+                <SignInInlineLinkButton size={v.actionSize} onClick={onAction}>
                     {actionLabel}
-                </LoginInlineLinkButton>
+                </SignInInlineLinkButton>
             </div>
         </div>
     );
 }
 
-interface LoginAccountRowProps {
+interface SignInAccountRowProps {
     /** Leading badge — typically a round avatar. */
     badge: ReactNode;
     title: ReactNode;
@@ -245,41 +250,41 @@ interface LoginAccountRowProps {
 }
 
 /** Single-row identity card: badge + title/subtitle + a trailing action link. */
-export function LoginAccountRow({ badge, title, subtitle, actionLabel, onAction }: LoginAccountRowProps) {
+export function SignInAccountRow({ badge, title, subtitle, actionLabel, onAction }: SignInAccountRowProps) {
     return (
         <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-md border border-border bg-muted-background">
             {badge}
-            <LoginIdentityLines
+            <SignInIdentityLines
                 title={title}
                 subtitle={subtitle}
                 titleClass="text-sm font-semibold text-foreground truncate"
                 subtitleClass="text-xs text-muted truncate"
             />
-            <LoginInlineLinkButton onClick={onAction}>{actionLabel}</LoginInlineLinkButton>
+            <SignInInlineLinkButton onClick={onAction}>{actionLabel}</SignInInlineLinkButton>
         </div>
     );
 }
 
-interface LoginEmailRowProps {
+interface SignInEmailRowProps {
     email: string;
     actionLabel: ReactNode;
     onAction: () => void;
 }
 
 /** Standalone bordered pill: mail icon + email + a trailing action link. */
-export function LoginEmailRow({ email, actionLabel, onAction }: LoginEmailRowProps) {
+export function SignInEmailRow({ email, actionLabel, onAction }: SignInEmailRowProps) {
     return (
         <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted-background">
             <Mail className="size-4 text-muted shrink-0" />
             <span className="text-sm text-foreground/80 flex-1 truncate">{email}</span>
-            <LoginInlineLinkButton onClick={onAction}>{actionLabel}</LoginInlineLinkButton>
+            <SignInInlineLinkButton onClick={onAction}>{actionLabel}</SignInInlineLinkButton>
         </div>
     );
 }
 
 // ─── Provider CTA ──────────────────────────────────────────────────────────
 
-interface LoginProviderButtonProps {
+interface SignInProviderButtonProps {
     provider: ProviderId;
     label: ReactNode;
     onClick?: () => void;
@@ -288,7 +293,7 @@ interface LoginProviderButtonProps {
 }
 
 /** "Continue with <provider>" button. */
-export function LoginProviderButton({ provider, label, onClick, variant = 'outline' }: LoginProviderButtonProps) {
+export function SignInProviderButton({ provider, label, onClick, variant = 'outline' }: SignInProviderButtonProps) {
     const Icon = providerIcon(provider);
 
     if (variant === 'arrow') {
@@ -326,14 +331,14 @@ export function LoginProviderButton({ provider, label, onClick, variant = 'outli
 
 // ─── Callout / divider / field ───────────────────────────────────────────────
 
-interface LoginCalloutProps {
+interface SignInCalloutProps {
     icon: ComponentType<{ className?: string }>;
     title: ReactNode;
     meta: ReactNode;
 }
 
 /** Destructive notice: icon + bold title over a muted meta line. */
-export function LoginCallout({ icon: Icon, title, meta }: LoginCalloutProps) {
+export function SignInCallout({ icon: Icon, title, meta }: SignInCalloutProps) {
     return (
         <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-md bg-destructive-background border border-destructive/20">
             <Icon className="size-5 text-destructive shrink-0" />
@@ -346,7 +351,7 @@ export function LoginCallout({ icon: Icon, title, meta }: LoginCalloutProps) {
 }
 
 /** Horizontal rule with a centered label. */
-export function LoginOrDivider({ children }: { children: ReactNode }) {
+export function SignInOrDivider({ children }: { children: ReactNode }) {
     return (
         <div className="flex items-center gap-3 my-2 text-muted-foreground text-[10.5px] uppercase tracking-widest">
             <div className="flex-1 h-px bg-border" />
@@ -356,7 +361,7 @@ export function LoginOrDivider({ children }: { children: ReactNode }) {
     );
 }
 
-interface LoginEmailFieldProps {
+interface SignInEmailFieldProps {
     inputRef?: Ref<HTMLInputElement>;
     label: ReactNode;
     placeholder?: string;
@@ -367,7 +372,7 @@ interface LoginEmailFieldProps {
 }
 
 /** Labeled email input with an inline validation message. */
-export function LoginEmailField({
+export function SignInEmailField({
     inputRef,
     label,
     placeholder,
@@ -375,7 +380,7 @@ export function LoginEmailField({
     onChange,
     invalid = false,
     error,
-}: LoginEmailFieldProps) {
+}: SignInEmailFieldProps) {
     return (
         <div className="flex flex-col gap-1.5">
             <label htmlFor="vt-login-email" className="text-xs font-medium text-foreground/80">

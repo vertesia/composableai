@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isInviteRequiredError } from './loginUtils';
+import { isInviteRequiredError } from './signInUtils';
 
 // The server's 403 message. The token fetch (composable.ts) re-wraps it as
 // `new Error('Failed to get composable token', { cause })`, so the matcher must

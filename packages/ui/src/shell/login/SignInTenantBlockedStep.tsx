@@ -1,16 +1,16 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { ShieldOff } from 'lucide-react';
-import { LoginCallout, LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
-import { capitalizeFirst, emailDomain } from './loginUtils';
+import { SignInCallout, SignInStepButton, SignInStepHeader, SignInStepLayout } from './SignInPrimitives';
+import { capitalizeFirst, emailDomain } from './signInUtils';
 
-interface LoginTenantBlockedStepProps {
+interface SignInTenantBlockedStepProps {
     email: string;
     /** Tenant display name if known. Falls back to a generic phrase if not. */
     tenantName?: string;
     onBack: () => void;
 }
 
-export default function LoginTenantBlockedStep({ email, tenantName, onBack }: LoginTenantBlockedStepProps) {
+export default function SignInTenantBlockedStep({ email, tenantName, onBack }: SignInTenantBlockedStepProps) {
     const { t } = useUITranslation();
     // Without a tenant name: subheading uses the i18n fallback, callout uses "<Domain> Team".
     const subheadingName = tenantName || t('auth.blocked.tenantFallback');
@@ -22,8 +22,8 @@ export default function LoginTenantBlockedStep({ email, tenantName, onBack }: Lo
             : t('auth.blocked.tenantFallback'));
 
     return (
-        <LoginStepLayout>
-            <LoginStepHeader
+        <SignInStepLayout>
+            <SignInStepHeader
                 variant="destructive"
                 eyebrow={t('auth.blocked.eyebrow')}
                 title={t('auth.blocked.title')}
@@ -31,11 +31,11 @@ export default function LoginTenantBlockedStep({ email, tenantName, onBack }: Lo
             />
 
             <div className="flex flex-col gap-2">
-                <LoginCallout icon={ShieldOff} title={boxName} meta={t('auth.blocked.tenantMeta', { email })} />
-                <LoginStepButton variant="ghost" onClick={onBack}>
+                <SignInCallout icon={ShieldOff} title={boxName} meta={t('auth.blocked.tenantMeta', { email })} />
+                <SignInStepButton variant="ghost" onClick={onBack}>
                     {t('auth.blocked.useDifferent')}
-                </LoginStepButton>
+                </SignInStepButton>
             </div>
-        </LoginStepLayout>
+        </SignInStepLayout>
     );
 }

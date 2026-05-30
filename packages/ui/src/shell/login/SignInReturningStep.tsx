@@ -1,13 +1,13 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import {
-    LoginAccountCard,
-    LoginAccountRow,
-    LoginInitialsBadge,
-    LoginProviderButton,
-    LoginStepButton,
-    LoginStepHeader,
-    LoginStepLayout,
-} from './LoginPrimitives';
+    SignInAccountCard,
+    SignInAccountRow,
+    SignInInitialsBadge,
+    SignInProviderButton,
+    SignInStepButton,
+    SignInStepHeader,
+    SignInStepLayout,
+} from './SignInPrimitives';
 import {
     emailInitial,
     firstNameFromEmail,
@@ -15,25 +15,25 @@ import {
     type ProviderId,
     providerLabel,
     startSignIn,
-} from './loginUtils';
+} from './signInUtils';
 
-interface LoginReturningStepProps {
+interface SignInReturningStepProps {
     session: LastSession;
     onNotYou: () => void;
     onProviderClicked: (provider: ProviderId) => void;
     redirectTo?: string;
 }
 
-export default function LoginReturningStep({
+export default function SignInReturningStep({
     session,
     onNotYou,
     onProviderClicked,
     redirectTo,
-}: LoginReturningStepProps) {
+}: SignInReturningStepProps) {
     const { t } = useUITranslation();
     const firstName = session.name ? session.name.split(' ')[0]! : firstNameFromEmail(session.email);
     const displayName = session.name || firstNameFromEmail(session.email);
-    const avatar = <LoginInitialsBadge initials={emailInitial(session.email)} />;
+    const avatar = <SignInInitialsBadge initials={emailInitial(session.email)} />;
     // A stored tenantName means we resolved the user's organization.
     const hasTenant = !!session.tenantName;
     const primaryLabel =
@@ -47,15 +47,15 @@ export default function LoginReturningStep({
     };
 
     return (
-        <LoginStepLayout>
-            <LoginStepHeader
+        <SignInStepLayout>
+            <SignInStepHeader
                 eyebrow={t('auth.returning.eyebrow')}
                 title={t('auth.returning.title', { name: firstName })}
                 body={t('auth.returning.body')}
             />
 
             {hasTenant && session.tenantName ? (
-                <LoginAccountCard
+                <SignInAccountCard
                     variant="returning"
                     badge={avatar}
                     title={displayName}
@@ -65,7 +65,7 @@ export default function LoginReturningStep({
                     onAction={onNotYou}
                 />
             ) : (
-                <LoginAccountRow
+                <SignInAccountRow
                     badge={avatar}
                     title={displayName}
                     subtitle={session.email}
@@ -75,16 +75,16 @@ export default function LoginReturningStep({
             )}
 
             <div className="flex flex-col gap-2">
-                <LoginProviderButton
+                <SignInProviderButton
                     provider={session.lastProvider}
                     label={primaryLabel}
                     onClick={() => continueWith(session.lastProvider)}
                     variant="filled"
                 />
-                <LoginStepButton variant="ghost" onClick={onNotYou}>
+                <SignInStepButton variant="ghost" onClick={onNotYou}>
                     {t('auth.returning.useDifferent')}
-                </LoginStepButton>
+                </SignInStepButton>
             </div>
-        </LoginStepLayout>
+        </SignInStepLayout>
     );
 }

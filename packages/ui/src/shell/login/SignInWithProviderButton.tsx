@@ -1,8 +1,8 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { LoginProviderButton } from './LoginPrimitives';
-import { type ProviderId, providerLabel, startSignIn, startSignInWithoutTenant } from './loginUtils';
+import { SignInProviderButton } from './SignInPrimitives';
+import { type ProviderId, providerLabel, startSignIn, startSignInWithoutTenant } from './signInUtils';
 
-interface LoginProviderSignInButtonProps {
+interface SignInWithProviderButtonProps {
     provider: ProviderId;
     /** Email for the tenant-aware flow. Omit for a no-tenant sign-in (e.g. SignInModal). */
     email?: string;
@@ -13,13 +13,13 @@ interface LoginProviderSignInButtonProps {
 }
 
 // "Continue with <provider>" button that owns its sign-in redirect.
-export default function LoginProviderSignInButton({
+export default function SignInWithProviderButton({
     provider,
     email,
     redirectTo,
     variant = 'outline',
     onClick,
-}: LoginProviderSignInButtonProps) {
+}: SignInWithProviderButtonProps) {
     const { t } = useUITranslation();
     const label =
         provider === 'oidc'
@@ -36,5 +36,5 @@ export default function LoginProviderSignInButton({
         }
     };
 
-    return <LoginProviderButton provider={provider} label={label} onClick={signIn} variant={variant} />;
+    return <SignInProviderButton provider={provider} label={label} onClick={signIn} variant={variant} />;
 }

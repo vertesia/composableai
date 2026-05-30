@@ -4,17 +4,17 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { setFirebaseTenant } from '@vertesia/ui/session';
 import { ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { LoginEmailField, LoginStepButton, LoginStepHeader, LoginStepLayout } from './LoginPrimitives';
-import { isValidEmail } from './loginUtils';
+import { SignInEmailField, SignInStepButton, SignInStepHeader, SignInStepLayout } from './SignInPrimitives';
+import { isValidEmail } from './signInUtils';
 
 export type TenantInfo = UIResolvedTenant;
 
-interface LoginEmailStepProps {
+interface SignInEmailStepProps {
     initialEmail?: string;
     onProceed: (email: string, tenant?: TenantInfo) => void;
 }
 
-export default function LoginEmailStep({ initialEmail, onProceed }: LoginEmailStepProps) {
+export default function SignInEmailStep({ initialEmail, onProceed }: SignInEmailStepProps) {
     const { t } = useUITranslation();
     const [email, setEmail] = useState(initialEmail ?? '');
     const [submitError, setSubmitError] = useState(false);
@@ -46,15 +46,15 @@ export default function LoginEmailStep({ initialEmail, onProceed }: LoginEmailSt
     };
 
     return (
-        <LoginStepLayout>
-            <LoginStepHeader
+        <SignInStepLayout>
+            <SignInStepHeader
                 eyebrow={t('auth.email.eyebrow')}
                 title={t('auth.email.title')}
                 body={t('auth.email.body')}
             />
 
             <form onSubmit={submit} noValidate className={`flex flex-col ${submitError ? 'gap-2' : 'gap-6'}`}>
-                <LoginEmailField
+                <SignInEmailField
                     inputRef={inputRef}
                     label={t('auth.email.label')}
                     placeholder={t('auth.email.placeholder')}
@@ -67,7 +67,7 @@ export default function LoginEmailStep({ initialEmail, onProceed }: LoginEmailSt
                     error={submitError ? t('auth.email.invalidError') : undefined}
                 />
 
-                <LoginStepButton type="submit" disabled={loading}>
+                <SignInStepButton type="submit" disabled={loading}>
                     {loading ? (
                         <Spinner />
                     ) : (
@@ -76,8 +76,8 @@ export default function LoginEmailStep({ initialEmail, onProceed }: LoginEmailSt
                             <ArrowRight className="!size-3.5" />
                         </>
                     )}
-                </LoginStepButton>
+                </SignInStepButton>
             </form>
-        </LoginStepLayout>
+        </SignInStepLayout>
     );
 }
