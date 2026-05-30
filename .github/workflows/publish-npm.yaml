@@ -39,6 +39,7 @@ jobs:
   publish:
     name: Publish all packages
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Scopes DEPLOY_KEY (used to push version bumps past branch protection)
     # to a dedicated environment.
     environment: build
@@ -69,9 +70,11 @@ jobs:
         run: npm --version
 
       - name: Install workspace dependencies
+        timeout-minutes: 5
         run: pnpm install
 
       - name: Publish all packages
+        timeout-minutes: 15
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
           BUMP_TYPE: ${{ inputs.bump_type }}
@@ -86,11 +89,13 @@ jobs:
       # Template integration tests using local verdaccio registry (dry-run only)
       - name: Template integration test - Plugin
         if: inputs.dry_run == true
+        timeout-minutes: 10
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
         run: ./.github/bin/test-template-integration.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Plugin"
       - name: Template integration test - Tool Server (deprecated)
         if: inputs.dry_run == true
+        timeout-minutes: 10
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
         run: ./.github/bin/test-template-integration.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Tool Server (deprecated)"
@@ -103,6 +108,7 @@ jobs:
   integration-test:
     name: Integration test (published packages)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: publish
     if: inputs.dry_run == false
     steps:
@@ -118,10 +124,12 @@ jobs:
           node-version: 24
 
       - name: Smoke test - Plugin
+        timeout-minutes: 10
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
         run: ./.github/bin/test-template-smoke.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Plugin" --branch "${GITHUB_REF_NAME}" --wait
       - name: Smoke test - Tool Server (deprecated)
+        timeout-minutes: 10
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
         run: ./.github/bin/test-template-smoke.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Tool Server (deprecated)" --branch "${GITHUB_REF_NAME}" --wait

@@ -2,19 +2,26 @@ import { createContext, useContext } from 'react';
 
 import { SharedState, useWatchSharedState } from '@vertesia/ui/core';
 import type { ZenoClient } from '@vertesia/client';
-import type { ComplexSearchPayload, ComplexSearchQuery, ComputeObjectFacetPayload, ComputedFacetResponse, ContentObjectItem, FacetBucket, FacetSpec, ObjectSearchQuery } from '@vertesia/common';
-import type { SearchInterface } from '@vertesia/ui/features'
+import type {
+    ComplexSearchPayload,
+    ComplexSearchQuery,
+    ComputeObjectFacetPayload,
+    ComputedFacetResponse,
+    ContentObjectItem,
+    FacetBucket,
+    FacetSpec,
+    ObjectSearchQuery,
+} from '@vertesia/common';
+import type { SearchInterface } from '@vertesia/ui/features';
 
 interface DocumentSearchResult {
-    objects: ContentObjectItem[],
+    objects: ContentObjectItem[];
     error?: Error;
     isLoading: boolean;
     hasMore?: boolean;
 }
 
-
 export class DocumentSearch implements SearchInterface {
-
     collectionId?: string;
     facets = new SharedState<ComputedFacetResponse>({});
     result = new SharedState<DocumentSearchResult>({ objects: [], isLoading: false });
@@ -23,7 +30,10 @@ export class DocumentSearch implements SearchInterface {
     facetSpecs: FacetSpec[] = [];
     query: ComplexSearchQuery = {};
 
-    constructor(public client: ZenoClient, public limit = 100) { }
+    constructor(
+        public client: ZenoClient,
+        public limit = 100,
+    ) {}
 
     withFacets(facets: FacetSpec[]) {
         this.facetSpecs = facets;
@@ -62,7 +72,8 @@ export class DocumentSearch implements SearchInterface {
 
     clearFilters(autoSearch: boolean = true) {
         // Preserve search-related fields when clearing filters
-        const { parent, full_text, vector, weights, score_aggregation, dynamic_scaling, limit, all_revisions } = this.query;
+        const { parent, full_text, vector, weights, score_aggregation, dynamic_scaling, limit, all_revisions } =
+            this.query;
         this.query = {
             parent,
             ...(full_text !== undefined && { full_text }),
@@ -71,7 +82,7 @@ export class DocumentSearch implements SearchInterface {
             ...(score_aggregation !== undefined && { score_aggregation }),
             ...(dynamic_scaling !== undefined && { dynamic_scaling }),
             ...(limit !== undefined && { limit }),
-            ...(all_revisions !== undefined && { all_revisions })
+            ...(all_revisions !== undefined && { all_revisions }),
         };
 
         if (autoSearch) {
@@ -93,7 +104,7 @@ export class DocumentSearch implements SearchInterface {
         this.result.value = {
             objects: [],
             isLoading,
-            hasMore: true
+            hasMore: true,
         };
     }
 
@@ -103,8 +114,8 @@ export class DocumentSearch implements SearchInterface {
             objects: prev.objects,
             isLoading: value,
             error: prev.error,
-            hasMore: prev.hasMore
-        }
+            hasMore: prev.hasMore,
+        };
     }
 
     _searchRequest(query: ComplexSearchQuery, limit: number, offset: number, includeFacets: boolean = true) {
@@ -112,20 +123,20 @@ export class DocumentSearch implements SearchInterface {
             limit,
             offset,
             query,
-            facets: includeFacets ? this.facetSpecs : undefined
+            facets: includeFacets ? this.facetSpecs : undefined,
         };
 
-        const request = this.collectionId ?
-            this.client.collections.searchMembers(this.collectionId, payload)
+        const request = this.collectionId
+            ? this.client.collections.searchMembers(this.collectionId, payload)
             : this.client.objects.search(payload);
-            
+
         return request;
     }
 
     _facetsRequest() {
-        const payload: ComputeObjectFacetPayload = { facets: this.facetSpecs, query: this.query }
-        return this.collectionId ?
-            this.client.collections.computeFacets(this.collectionId, payload)
+        const payload: ComputeObjectFacetPayload = { facets: this.facetSpecs, query: this.query };
+        return this.collectionId
+            ? this.client.collections.computeFacets(this.collectionId, payload)
             : this.client.objects.computeFacets(payload);
     }
 
@@ -146,8 +157,8 @@ export class DocumentSearch implements SearchInterface {
         this.result.value = {
             isLoading: true,
             objects: loadMore ? this.objects : [],
-            hasMore: loadMore ? this.result.value.hasMore : true
-        }
+            hasMore: loadMore ? this.result.value.hasMore : true,
+        };
         const limit = this.limit;
         const offset = loadMore ? this.objects.length : 0;
         try {
@@ -159,8 +170,8 @@ export class DocumentSearch implements SearchInterface {
             this.result.value = {
                 isLoading: false,
                 objects: loadMore ? this.objects.concat(results) : results,
-                hasMore: results.length === limit
-            }
+                hasMore: results.length === limit,
+            };
 
             // Update facets if they were requested and returned
             if (!noFacets && facets && Object.keys(facets).length > 0) {
@@ -179,8 +190,8 @@ export class DocumentSearch implements SearchInterface {
                 error,
                 isLoading: false,
                 objects: previous.objects,
-                hasMore: false
-            }
+                hasMore: false,
+            };
             return false;
         }
     }
@@ -224,6 +235,5 @@ export function useDocumentSearchCount() {
     const result = useWatchSharedState(search.facets);
     return result.total;
 }
-
 
 export { DocumentSearchContext as SearchContext };

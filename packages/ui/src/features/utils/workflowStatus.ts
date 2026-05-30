@@ -1,4 +1,4 @@
-import { WorkflowExecutionStatus } from "@vertesia/common";
+import { WorkflowExecutionStatus } from '@vertesia/common';
 
 /**
  * Get the semantic color class for a workflow execution status.
@@ -6,16 +6,16 @@ import { WorkflowExecutionStatus } from "@vertesia/common";
 export function getWorkflowStatusColor(status?: WorkflowExecutionStatus): string {
     switch (status) {
         case WorkflowExecutionStatus.RUNNING:
-            return "text-info";
+            return 'text-info';
         case WorkflowExecutionStatus.COMPLETED:
-            return "text-success";
+            return 'text-success';
         case WorkflowExecutionStatus.FAILED:
-            return "text-destructive";
+            return 'text-destructive';
         case WorkflowExecutionStatus.TERMINATED:
         case WorkflowExecutionStatus.CANCELED:
-            return "text-attention";
+            return 'text-attention';
         default:
-            return "text-muted";
+            return 'text-muted';
     }
 }
 
@@ -25,20 +25,20 @@ export function getWorkflowStatusColor(status?: WorkflowExecutionStatus): string
 export function getWorkflowStatusName(status?: WorkflowExecutionStatus): string {
     switch (status) {
         case WorkflowExecutionStatus.RUNNING:
-            return "Running";
+            return 'Running';
         case WorkflowExecutionStatus.COMPLETED:
-            return "Completed";
+            return 'Completed';
         case WorkflowExecutionStatus.FAILED:
-            return "Failed";
+            return 'Failed';
         case WorkflowExecutionStatus.CONTINUED_AS_NEW:
-            return "Continued As New";
+            return 'Continued As New';
         case WorkflowExecutionStatus.TERMINATED:
-            return "Terminated";
+            return 'Terminated';
         case WorkflowExecutionStatus.TIMED_OUT:
-            return "Timed Out";
+            return 'Timed Out';
         case WorkflowExecutionStatus.CANCELED:
-            return "Canceled";
+            return 'Canceled';
         default:
-            return "Unknown";
+            return 'Unknown';
     }
 }

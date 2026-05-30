@@ -1,10 +1,10 @@
-import { Check } from "lucide-react";
-import clsx from "clsx";
-import { type ReactNode, useMemo, useState } from "react";
-import { useUITranslation } from "@vertesia/ui/i18n";
-import { Button, Input } from "./shadcn";
+import { Check } from 'lucide-react';
+import clsx from 'clsx';
+import { type ReactNode, useMemo, useState } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { Button, Input } from './shadcn';
 
-const Default_Option_Style = "flex-1 px-2 py-2 hover:bg-accent nowrap";
+const Default_Option_Style = 'flex-1 px-2 py-2 hover:bg-accent nowrap';
 
 export interface OptionLayout {
     label?: ReactNode;
@@ -16,10 +16,10 @@ export interface OptionLayout {
 function defaultOptionLayout<T>(option: T, isSelected: boolean): OptionLayout {
     return {
         label: String(option),
-        check: isSelected ? <Check className='size-4' /> : <div className="size-4" />,
+        check: isSelected ? <Check className="size-4" /> : <div className="size-4" />,
         reverse: false,
         className: Default_Option_Style,
-    }
+    };
 }
 
 export interface SelectListProps<T> {
@@ -32,15 +32,24 @@ export interface SelectListProps<T> {
     noCheck?: boolean;
     filterBy?: (filterValue: string) => (opt: T) => boolean;
 }
-export function SelectList<T>({ value, options, onChange, className, optionLayout, by, noCheck, filterBy }: SelectListProps<T>) {
+export function SelectList<T>({
+    value,
+    options,
+    onChange,
+    className,
+    optionLayout,
+    by,
+    noCheck,
+    filterBy,
+}: SelectListProps<T>) {
     const { t } = useUITranslation();
     const [selected, setSelected] = useState(value);
-    const [filterValue, setFilterValue] = useState("");
+    const [filterValue, setFilterValue] = useState('');
 
     const onSelect = (option: T) => {
         setSelected(option);
         onChange(option);
-    }
+    };
     const optionEquals = useMemo(() => {
         if (typeof by === 'string') {
             return (o1: T, o2: T) => o1[by] === o2[by];
@@ -51,9 +60,14 @@ export function SelectList<T>({ value, options, onChange, className, optionLayou
         }
     }, [by]);
     return (
-        <div className={clsx("", className)}>
+        <div className={clsx('', className)}>
             {filterBy && (
-                <Input type="text" placeholder={t('form.filter')} value={filterValue} onChange={(value) => setFilterValue(value)} />
+                <Input
+                    type="text"
+                    placeholder={t('form.filter')}
+                    value={filterValue}
+                    onChange={(value) => setFilterValue(value)}
+                />
             )}
             {options.map((option, i) => {
                 if (filterBy && !filterBy(filterValue)(option)) {
@@ -69,16 +83,11 @@ export function SelectList<T>({ value, options, onChange, className, optionLayou
                 }
                 return (
                     // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                    <SelectListOption key={i}
-                        option={option}
-                        onSelect={onSelect}
-                        layout={layout}
-                        noCheck={noCheck}
-                    />
-                )
+                    <SelectListOption key={i} option={option} onSelect={onSelect} layout={layout} noCheck={noCheck} />
+                );
             })}
         </div>
-    )
+    );
 }
 interface SelectListOptionProps<T> {
     option: T;
@@ -92,12 +101,15 @@ function SelectListOption<T>({ option, onSelect, layout, noCheck }: SelectListOp
         <Button
             variant="unstyled"
             size="none"
-            className={clsx('group !flex w-full items-center cursor-pointer gap-x-2 hover:bg-muted',
-                layout.reverse && 'flex-row-reverse', layout.className)}
+            className={clsx(
+                'group !flex w-full items-center cursor-pointer gap-x-2 hover:bg-muted',
+                layout.reverse && 'flex-row-reverse',
+                layout.className,
+            )}
             onClick={() => onSelect(option)}
         >
             {noCheck ? null : <div className="">{layout.check}</div>}
-            <div className='flex-1'>{layout.label}</div>
+            <div className="flex-1">{layout.label}</div>
         </Button>
-    )
+    );
 }

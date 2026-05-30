@@ -1,18 +1,9 @@
 import { useUserSession } from '@vertesia/ui/session';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import {
-    Button,
-    Modal,
-    ModalBody,
-    ModalFooter,
-    ModalTitle,
-    errorMessage,
-    useToast,
-    useTheme
-} from '@vertesia/ui/core';
+import { Button, Modal, ModalBody, ModalFooter, ModalTitle, errorMessage, useToast, useTheme } from '@vertesia/ui/core';
 import type { ContentObject, JSONSchema } from '@vertesia/common';
-import { useNavigate } from "@vertesia/ui/router";
+import { useNavigate } from '@vertesia/ui/router';
 
 // Import Monaco Editor wrapper
 import { MonacoEditor, type IEditorApi } from '@vertesia/ui/widgets';
@@ -43,16 +34,19 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
     const [_newVersionId, setNewVersionId] = useState<string | null>(null);
 
     // Fetch JSON schema for the object type
-    const fetchJsonSchema = useCallback(async (typeId: string) => {
-        try {
-            const typeDetails = await store.types.retrieve(typeId);
-            if (typeDetails.object_schema) {
-                setJsonSchema(typeDetails.object_schema);
+    const fetchJsonSchema = useCallback(
+        async (typeId: string) => {
+            try {
+                const typeDetails = await store.types.retrieve(typeId);
+                if (typeDetails.object_schema) {
+                    setJsonSchema(typeDetails.object_schema);
+                }
+            } catch (error) {
+                console.error('Failed to fetch JSON schema:', error);
             }
-        } catch (error) {
-            console.error('Failed to fetch JSON schema:', error);
-        }
-    }, [store.types]);
+        },
+        [store.types],
+    );
 
     // Initialize editor content when modal opens
     useEffect(() => {
@@ -69,15 +63,15 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
     // Configure Monaco editor with JSON schema validation
     const beforeMount = (monaco: typeof import('monaco-editor')) => {
         if (jsonSchema) {
-            monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+            monaco.json.jsonDefaults.setDiagnosticsOptions({
                 validate: true,
                 schemas: [
                     {
                         uri: 'http://myserver/object-schema.json',
                         fileMatch: ['*'],
-                        schema: jsonSchema
-                    }
-                ]
+                        schema: jsonSchema,
+                    },
+                ],
             });
         }
     };
@@ -97,7 +91,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                 status: 'error',
                 title: t('store.invalidJson'),
                 description: t('store.pleaseFixJsonSyntax'),
-                duration: 5000
+                duration: 5000,
             });
         }
     }
@@ -116,12 +110,16 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
 
             if (createVersion) {
                 // Create a new version with the updated properties
-                const response = await client.objects.update(object.id, {
-                    properties: properties
-                }, {
-                    createRevision: true,
-                    revisionLabel: versionLabel
-                });
+                const response = await client.objects.update(
+                    object.id,
+                    {
+                        properties: properties,
+                    },
+                    {
+                        createRevision: true,
+                        revisionLabel: versionLabel,
+                    },
+                );
 
                 // Store the new version ID for navigation
                 if (response.id !== object.id) {
@@ -132,7 +130,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                     status: 'success',
                     title: t('store.newVersionCreated'),
                     description: t('store.newVersionCreatedDesc'),
-                    duration: 2000
+                    duration: 2000,
                 });
 
                 // Close modals
@@ -147,22 +145,24 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                         toast({
                             status: 'info',
                             title: t('store.viewingNewVersion'),
-                            description: versionLabel ? t('store.viewingVersionLabel', { label: versionLabel }) : t('store.viewingNewVersionDefault'),
-                            duration: 3000
+                            description: versionLabel
+                                ? t('store.viewingVersionLabel', { label: versionLabel })
+                                : t('store.viewingNewVersionDefault'),
+                            duration: 3000,
                         });
                     }, 100);
                 }
             } else {
                 // Update the object properties in place
                 await store.objects.update(object.id, {
-                    properties: properties
+                    properties: properties,
                 });
 
                 toast({
                     status: 'success',
                     title: t('store.propertiesUpdated'),
                     description: t('store.propertiesUpdatedDesc'),
-                    duration: 2000
+                    duration: 2000,
                 });
 
                 if (refetch) {
@@ -177,7 +177,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                 status: 'error',
                 title: t('store.errorUpdatingProperties'),
                 description: errorMessage(error, t('store.errorUpdatingPropertiesDefault')),
-                duration: 5000
+                duration: 5000,
             });
             setIsLoading(false);
         }
@@ -187,7 +187,6 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
     function handleCancelConfirmation() {
         setShowConfirmation(false);
     }
-
 
     return (
         <>
@@ -200,7 +199,9 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                 <ModalBody>
                     <div className="mb-2 text-sm text-gray-500">
                         {object.type?.name ? (
-                            <span>Editing properties for object type: <strong>{object.type.name}</strong></span>
+                            <span>
+                                Editing properties for object type: <strong>{object.type.name}</strong>
+                            </span>
                         ) : (
                             <span>{t('store.editingGenericDocument')}</span>
                         )}
@@ -223,10 +224,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                     <Button variant="secondary" onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button
-                        variant="primary"
-                        onClick={handleSave}
-                    >
+                    <Button variant="primary" onClick={handleSave}>
                         Save Changes
                     </Button>
                 </ModalFooter>

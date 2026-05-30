@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 const PORTAL_ID = '--tailwind-portal';
 
@@ -12,7 +12,8 @@ export function Portal({ children }: PortalProps) {
 
     // hack to have the Portal not generating hydration errors (content mismatch) on SSR / CSR
     useEffect(() => {
-        if (tempNode.current) { // we are on the browser -> we an use the portal
+        if (tempNode.current) {
+            // we are on the browser -> we an use the portal
             const doc = tempNode.current.ownerDocument;
             let portalEl = doc.getElementById(PORTAL_ID) as HTMLDivElement;
             if (!portalEl) {
@@ -27,7 +28,6 @@ export function Portal({ children }: PortalProps) {
     if (portalEl) {
         return createPortal(children, portalEl);
     } else {
-        return <span ref={tempNode} />
+        return <span ref={tempNode} />;
     }
-
 }

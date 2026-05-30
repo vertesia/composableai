@@ -21,16 +21,12 @@ export interface ConversationsListStateValue {
     scrollTopRef: React.MutableRefObject<number>;
 }
 
-export const ConversationsListStateContext = createContext<
-    ConversationsListStateValue | undefined
->(undefined);
+export const ConversationsListStateContext = createContext<ConversationsListStateValue | undefined>(undefined);
 
 export function useConversationsListState() {
     const ctx = useContext(ConversationsListStateContext);
     if (!ctx) {
-        throw new Error(
-            'useConversationsListState must be used inside ConversationsListStateProvider',
-        );
+        throw new Error('useConversationsListState must be used inside ConversationsListStateProvider');
     }
     return ctx;
 }

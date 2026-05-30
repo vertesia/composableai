@@ -1,11 +1,11 @@
 // ================== Skill Endpoints ==================
 
-import { type Context, Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
-import type { SkillCollection } from "../SkillCollection.js";
-import type { SkillDefinition, ToolCollectionDefinition, ToolDefinition } from "../types.js";
-import { makeScriptUrl } from "../utils.js";
-import type { ToolContext, ToolServerConfig } from "./types.js";
+import { type Context, Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import type { SkillCollection } from '../SkillCollection.js';
+import type { SkillDefinition, ToolCollectionDefinition, ToolDefinition } from '../types.js';
+import { makeScriptUrl } from '../utils.js';
+import type { ToolContext, ToolServerConfig } from './types.js';
 
 export function createSkillsRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { skills = [] } = config;
@@ -34,7 +34,7 @@ export function createSkillsRoute(app: Hono, basePath: string, config: ToolServe
             title: 'All Skills',
             description: 'All available skills across all collections',
             tools: allSkills,
-            collections: skills.map(s => ({
+            collections: skills.map((s) => ({
                 name: s.name,
                 title: s.title,
                 description: s.description,
@@ -49,7 +49,8 @@ export function createSkillsRoute(app: Hono, basePath: string, config: ToolServe
         // Payload is already parsed and validated by middleware
         if (!ctx.payload) {
             throw new HTTPException(400, {
-                message: 'Invalid or missing skill execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }'
+                message:
+                    'Invalid or missing skill execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }',
             });
         }
 
@@ -61,7 +62,9 @@ export function createSkillsRoute(app: Hono, basePath: string, config: ToolServe
             // Extract skill name for better error message
             const skillName = toolName.startsWith('learn_') ? toolName.slice(6) : toolName;
             throw new HTTPException(404, {
-                message: `Skill not found: ${skillName}. Available skills: ${Array.from(skillToCollection.keys()).filter(k => !k.startsWith('learn_')).join(', ')}`
+                message: `Skill not found: ${skillName}. Available skills: ${Array.from(skillToCollection.keys())
+                    .filter((k) => !k.startsWith('learn_'))
+                    .join(', ')}`,
             });
         }
 
@@ -73,7 +76,6 @@ export function createSkillsRoute(app: Hono, basePath: string, config: ToolServe
     for (const coll of skills) {
         app.route(`${basePath}/${coll.name}`, createSkillEndpoints(coll));
     }
-
 }
 
 function createSkillEndpoints(coll: SkillCollection): Hono {
@@ -87,7 +89,7 @@ function createSkillEndpoints(coll: SkillCollection): Hono {
             src: `${url.origin}${url.pathname}`,
             title: coll.title || coll.name,
             description: coll.description || '',
-            tools: coll.getToolDefinitions()
+            tools: coll.getToolDefinitions(),
         } satisfies ToolCollectionDefinition);
     });
 
@@ -97,30 +99,29 @@ function createSkillEndpoints(coll: SkillCollection): Hono {
         const name = c.req.param('name');
         if (!name) {
             throw new HTTPException(400, {
-                message: 'Skill name is required'
+                message: 'Skill name is required',
             });
         }
         const skillName = name.startsWith('learn_') ? name.slice(6) : name;
         const skill = coll.getSkill(skillName);
         if (!skill) {
             throw new HTTPException(404, {
-                message: `Skill not found: ${skillName}`
+                message: `Skill not found: ${skillName}`,
             });
         }
         const url = new URL(c.req.url);
         return c.json({
             skill_name: skill.name,
-            scripts: skill.scripts ? skill.scripts.map(s => makeScriptUrl(url.origin, s)) : []
+            scripts: skill.scripts ? skill.scripts.map((s) => makeScriptUrl(url.origin, s)) : [],
         });
     });
-
 
     // Get a specific skill by name
     endpoint.get('/:name', (c: Context) => {
         const name = c.req.param('name');
         if (!name) {
             throw new HTTPException(400, {
-                message: 'Skill name is required'
+                message: 'Skill name is required',
             });
         }
         // Handle both "learn_name" and "name" formats
@@ -128,7 +129,7 @@ function createSkillEndpoints(coll: SkillCollection): Hono {
         const skill = coll.getSkill(skillName);
         if (!skill) {
             throw new HTTPException(404, {
-                message: `Skill not found: ${skillName}`
+                message: `Skill not found: ${skillName}`,
             });
         }
         return c.json(skill satisfies SkillDefinition);

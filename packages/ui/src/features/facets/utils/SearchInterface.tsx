@@ -29,7 +29,7 @@ export function unwrapFilterOptionValue(value: unknown): unknown {
 
 export function filterValueToQueryValue(filter: BaseFilter): unknown {
     if (filter.type === 'stringList') {
-        return filter.value.map(value => typeof value === 'string' ? value : unwrapFilterOptionValue(value));
+        return filter.value.map((value) => (typeof value === 'string' ? value : unwrapFilterOptionValue(value)));
     }
     if (filter.multiple) {
         return filter.value.map(unwrapFilterOptionValue);

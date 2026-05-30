@@ -119,8 +119,6 @@ describe('probeMediaStreams', () => {
             params: {} satisfies ProbeMediaStreamsParams,
         } as unknown as ActivityContext<ProbeMediaStreamsParams>);
 
-        await expect(testEnv.run(probeMediaStreams, createPayload())).rejects.toThrow(
-            'has no source',
-        );
+        await expect(testEnv.run(probeMediaStreams, createPayload())).rejects.toThrow('has no source');
     });
 });

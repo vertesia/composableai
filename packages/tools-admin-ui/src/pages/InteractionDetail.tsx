@@ -17,15 +17,21 @@ export function InteractionDetail() {
     const { baseUrl } = useAdminContext();
 
     const { data: interaction, error } = useFetch<InteractionResponse>(
-        () => client.getRawJWT().then(token => fetch(`${baseUrl}/interactions/${collection}/${name}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })).then(r => {
-            if (!r.ok) throw new Error(`Failed to load interaction: ${r.statusText}`);
-            return r.json();
-        }),
-        [baseUrl, collection, name]
+        () =>
+            client
+                .getRawJWT()
+                .then((token) =>
+                    fetch(`${baseUrl}/interactions/${collection}/${name}`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }),
+                )
+                .then((r) => {
+                    if (!r.ok) throw new Error(`Failed to load interaction: ${r.statusText}`);
+                    return r.json();
+                }),
+        [baseUrl, collection, name],
     );
 
     if (error) {
@@ -33,11 +39,16 @@ export function InteractionDetail() {
     }
 
     if (!interaction) {
-        return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
+        return (
+            <div className="flex h-64 items-center justify-center text-muted-foreground">
+                <Spinner />
+            </div>
+        );
     }
 
     const { agent_runner_options } = interaction;
-    const hasAgentFlags = agent_runner_options &&
+    const hasAgentFlags =
+        agent_runner_options &&
         (agent_runner_options.is_agent || agent_runner_options.is_tool || agent_runner_options.is_skill);
 
     return (
@@ -55,14 +66,18 @@ export function InteractionDetail() {
                         <Card key={`${prompt.role}-${prompt.name ?? ''}`} className="mb-3">
                             <CardContent className="p-4">
                                 <div className="mb-2 flex items-center gap-2">
-                                    <span className={`rounded-full px-2 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wide ${ROLE_VARIANTS[prompt.role] ?? ''}`}>
+                                    <span
+                                        className={`rounded-full px-2 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wide ${ROLE_VARIANTS[prompt.role] ?? ''}`}
+                                    >
                                         {prompt.role}
                                     </span>
                                     {prompt.name && (
                                         <span className="text-sm italic text-muted-foreground">{prompt.name}</span>
                                     )}
                                 </div>
-                                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">{prompt.content}</pre>
+                                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                                    {prompt.content}
+                                </pre>
                             </CardContent>
                         </Card>
                     ))}

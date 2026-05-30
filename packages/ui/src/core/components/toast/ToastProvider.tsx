@@ -1,9 +1,8 @@
-import { useCallback, useState } from "react";
-import { Portal } from "../Portal.js";
-import { NotificationPanel } from "./NotificationPanel.js";
-import { ToastContext } from "./ToastContext.js";
-import type { ToastProps } from "./ToastProps.js";
-
+import { useCallback, useState } from 'react';
+import { Portal } from '../Portal.js';
+import { NotificationPanel } from './NotificationPanel.js';
+import { ToastContext } from './ToastContext.js';
+import type { ToastProps } from './ToastProps.js';
 
 interface ToastProviderProps {
     children: React.ReactNode | React.ReactNode[];
@@ -24,9 +23,11 @@ export function ToastProvider({ children }: ToastProviderProps) {
     return (
         <>
             <ToastContext.Provider value={toast}>{children}</ToastContext.Provider>
-            {data && <Portal>
-                <NotificationPanel data={data} onClose={() => toast(null)} />
-            </Portal>}
+            {data && (
+                <Portal>
+                    <NotificationPanel data={data} onClose={() => toast(null)} />
+                </Portal>
+            )}
         </>
-    )
+    );
 }

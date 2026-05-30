@@ -17,76 +17,88 @@ export type SkillContentType = 'md' | 'jst';
 /**
  * Context triggers for auto-injection of skills (for frontmatter validation)
  */
-const SkillContextTriggersFrontmatterSchema = z.object({
-    keywords: z.array(z.string()).optional(),
-    tool_names: z.array(z.string()).optional(),
-    data_patterns: z.array(z.string()).optional()
-}).strict();
+const SkillContextTriggersFrontmatterSchema = z
+    .object({
+        keywords: z.array(z.string()).optional(),
+        tool_names: z.array(z.string()).optional(),
+        data_patterns: z.array(z.string()).optional(),
+    })
+    .strict();
 
 /**
  * Context triggers for auto-injection of skills (for output validation)
  */
-const SkillContextTriggersSchema = z.object({
-    keywords: z.array(z.string()).optional(),
-    tool_names: z.array(z.string()).optional(),
-    data_patterns: z.array(z.string()).optional()
-}).optional();
+const SkillContextTriggersSchema = z
+    .object({
+        keywords: z.array(z.string()).optional(),
+        tool_names: z.array(z.string()).optional(),
+        data_patterns: z.array(z.string()).optional(),
+    })
+    .optional();
 
 /**
  * Execution configuration for skills that need code execution (for frontmatter validation)
  */
-const SkillExecutionFrontmatterSchema = z.object({
-    language: z.string(),
-    packages: z.array(z.string()).optional(),
-    system_packages: z.array(z.string()).optional(),
-    template: z.string().optional()
-}).strict();
+const SkillExecutionFrontmatterSchema = z
+    .object({
+        language: z.string(),
+        packages: z.array(z.string()).optional(),
+        system_packages: z.array(z.string()).optional(),
+        template: z.string().optional(),
+    })
+    .strict();
 
 /**
  * Execution configuration for skills that need code execution (for output validation)
  */
-const SkillExecutionSchema = z.object({
-    language: z.string(),
-    packages: z.array(z.string()).optional(),
-    system_packages: z.array(z.string()).optional(),
-    template: z.string().optional()
-}).optional();
+const SkillExecutionSchema = z
+    .object({
+        language: z.string(),
+        packages: z.array(z.string()).optional(),
+        system_packages: z.array(z.string()).optional(),
+        template: z.string().optional(),
+    })
+    .optional();
 
 /**
  * Zod schema for skill frontmatter validation
  * This validates the YAML frontmatter before transformation
  * Supports both flat and nested structures
  */
-const SkillFrontmatterSchema = z.object({
-    // Required fields
-    name: z.string().min(1, 'Skill name is required'),
-    description: z.string().min(1, 'Skill description is required'),
+const SkillFrontmatterSchema = z
+    .object({
+        // Required fields
+        name: z.string().min(1, 'Skill name is required'),
+        description: z.string().min(1, 'Skill description is required'),
 
-    // Optional fields
-    title: z.string().optional(),
-    content_type: z.enum(['md', 'jst']).optional(),
+        // Optional fields
+        title: z.string().optional(),
+        content_type: z.enum(['md', 'jst']).optional(),
 
-    // Flat structure fields (legacy)
-    keywords: z.array(z.string()).optional(),
-    tools: z.array(z.string()).optional(),
-    data_patterns: z.array(z.string()).optional(),
-    language: z.string().optional(),
-    packages: z.array(z.string()).optional(),
-    system_packages: z.array(z.string()).optional(),
+        // Flat structure fields (legacy)
+        keywords: z.array(z.string()).optional(),
+        tools: z.array(z.string()).optional(),
+        data_patterns: z.array(z.string()).optional(),
+        language: z.string().optional(),
+        packages: z.array(z.string()).optional(),
+        system_packages: z.array(z.string()).optional(),
 
-    // Nested structure fields
-    context_triggers: SkillContextTriggersFrontmatterSchema.optional(),
-    execution: SkillExecutionFrontmatterSchema.optional(),
-    input_schema: z.object({
-        type: z.literal('object'),
-        properties: z.record(z.unknown()).optional(),
-        required: z.array(z.string()).optional()
-    }).optional(),
+        // Nested structure fields
+        context_triggers: SkillContextTriggersFrontmatterSchema.optional(),
+        execution: SkillExecutionFrontmatterSchema.optional(),
+        input_schema: z
+            .object({
+                type: z.literal('object'),
+                properties: z.record(z.string(), z.unknown()).optional(),
+                required: z.array(z.string()).optional(),
+            })
+            .optional(),
 
-    // Asset fields (auto-discovered but can be overridden)
-    scripts: z.array(z.string()).optional(),
-    widgets: z.array(z.string()).optional()
-}).strict();
+        // Asset fields (auto-discovered but can be overridden)
+        scripts: z.array(z.string()).optional(),
+        widgets: z.array(z.string()).optional(),
+    })
+    .strict();
 
 /**
  * MUST be kept in sync with @vertesia/tools-sdk SkillDefinition
@@ -97,23 +109,27 @@ const SkillFrontmatterSchema = z.object({
  * Note: The isEnabled property is not included in this schema because Zod cannot
  * properly validate function signatures. It will be type-checked by TypeScript instead.
  */
-export const SkillDefinitionSchema = z.object({
-    name: z.string().min(1, 'Skill name is required'),
-    title: z.string().optional(),
-    description: z.string().min(1, 'Skill description is required'),
-    instructions: z.string(),
-    content_type: z.enum(['md', 'jst']),
-    input_schema: z.object({
-        type: z.literal('object'),
-        properties: z.record(z.unknown()).optional(),
-        required: z.array(z.string()).optional()
-    }).optional(),
-    context_triggers: SkillContextTriggersSchema,
-    execution: SkillExecutionSchema,
-    tools: z.array(z.string()).optional(),
-    scripts: z.array(z.string()).optional(),
-    widgets: z.array(z.string()).optional()
-}).passthrough();
+export const SkillDefinitionSchema = z
+    .object({
+        name: z.string().min(1, 'Skill name is required'),
+        title: z.string().optional(),
+        description: z.string().min(1, 'Skill description is required'),
+        instructions: z.string(),
+        content_type: z.enum(['md', 'jst']),
+        input_schema: z
+            .object({
+                type: z.literal('object'),
+                properties: z.record(z.string(), z.unknown()).optional(),
+                required: z.array(z.string()).optional(),
+            })
+            .optional(),
+        context_triggers: SkillContextTriggersSchema,
+        execution: SkillExecutionSchema,
+        tools: z.array(z.string()).optional(),
+        scripts: z.array(z.string()).optional(),
+        widgets: z.array(z.string()).optional(),
+    })
+    .passthrough();
 
 /**
  * Schema for validating properties exported from properties.ts
@@ -166,7 +182,7 @@ function buildSkillDefinition(
     instructions: string,
     contentType: SkillContentType,
     widgets: string[],
-    scripts: string[]
+    scripts: string[],
 ): SkillDefinition {
     const skill: SkillDefinition = {
         name: frontmatter.name,
@@ -260,15 +276,13 @@ export const skillTransformer: TransformerPreset = {
         // Validate frontmatter first to catch unknown properties
         const frontmatterValidation = SkillFrontmatterSchema.safeParse(frontmatter);
         if (!frontmatterValidation.success) {
-            const errors = frontmatterValidation.error.errors
+            const errors = frontmatterValidation.error.issues
                 .map((err) => {
                     const pathStr = err.path.length > 0 ? err.path.join('.') : 'frontmatter';
                     return `  - ${pathStr}: ${err.message}`;
                 })
                 .join('\n');
-            throw new Error(
-                `Invalid frontmatter in ${filePath}:\n${errors}`
-            );
+            throw new Error(`Invalid frontmatter in ${filePath}:\n${errors}`);
         }
 
         const validatedFrontmatter = frontmatterValidation.data;
@@ -285,7 +299,7 @@ export const skillTransformer: TransformerPreset = {
             markdown,
             content_type,
             assets.widgets,
-            assets.scripts
+            assets.scripts,
         );
 
         // Check if properties.ts exists in the skill directory
@@ -312,14 +326,14 @@ export default { ...skill, ...properties };
                 data: skillData,
                 assets: assets.assetFiles,
                 widgets: assets.widgetMetadata,
-                code
+                code,
             };
         }
 
         return {
             data: skillData,
             assets: assets.assetFiles,
-            widgets: assets.widgetMetadata
+            widgets: assets.widgetMetadata,
         };
-    }
+    },
 };

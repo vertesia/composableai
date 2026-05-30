@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext, useMemo } from 'react';
 
 export interface CodeBlockRendererProps {
     code: string;
@@ -14,7 +14,6 @@ export class CodeBlockRendererRegistry {
     getComponent(language: string): React.FunctionComponent<CodeBlockRendererProps> | undefined {
         return this.components[language];
     }
-
 }
 
 const Context = createContext<CodeBlockRendererRegistry | null>(null);
@@ -37,9 +36,7 @@ export function CodeBlockRendererProvider({ components, children }: CodeBlockRen
         return registry;
     }, [components]);
 
-    return (
-        <Context.Provider value={registry}>{children}</Context.Provider>
-    )
+    return <Context.Provider value={registry}>{children}</Context.Provider>;
 }
 
 export function useCodeBlockRendererRegistry() {

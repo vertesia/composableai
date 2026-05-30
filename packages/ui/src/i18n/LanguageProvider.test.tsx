@@ -171,4 +171,3 @@ describe('LanguageProvider', () => {
         expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     });
 });
-

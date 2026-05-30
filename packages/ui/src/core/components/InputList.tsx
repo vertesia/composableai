@@ -15,16 +15,23 @@ interface InputListProps {
     placeholder?: string;
     autoFocus?: boolean;
 }
-export function InputList({ value = [], onChange, className, delimiters = ", ", placeholder, autoFocus }: InputListProps) {
+export function InputList({
+    value = [],
+    onChange,
+    className,
+    delimiters = ', ',
+    placeholder,
+    autoFocus,
+}: InputListProps) {
     const [text, setText] = useState<string>('');
 
     const onBlur = (ev: React.FocusEvent<HTMLInputElement>) => {
         const v = ev.currentTarget.value;
         if (v?.trim()) {
-            onChange([...value, v.trim()])
-            setText('')
+            onChange([...value, v.trim()]);
+            setText('');
         }
-    }
+    };
     const onKeyDown = (ev: React.KeyboardEvent<HTMLInputElement>) => {
         const v = ev.currentTarget.value;
         const isEmpty = !v.trim();
@@ -32,16 +39,16 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
         if (key === 'Enter' || delimiters.indexOf(key) > -1) {
             ev.preventDefault();
             if (value && !isEmpty) {
-                onChange([...value, v.trim()])
-                setText('')
+                onChange([...value, v.trim()]);
+                setText('');
             }
         } else if (key === 'Backspace' && isEmpty) {
             if (value && value.length > 0) {
                 value.pop();
-                onChange([...value])
+                onChange([...value]);
             }
         }
-    }
+    };
 
     const onPaste = (ev: React.ClipboardEvent<HTMLInputElement>) => {
         const pastedText = ev.clipboardData.getData('text');
@@ -49,9 +56,10 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
             ev.preventDefault();
 
             // Create a regex pattern from delimiters
-            const delimiterPattern = delimiters.split('').map((char: string) =>
-                char === ' ' ? '\\s' : char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-            ).join('|');
+            const delimiterPattern = delimiters
+                .split('')
+                .map((char: string) => (char === ' ' ? '\\s' : char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+                .join('|');
             const regex = new RegExp(`[${delimiterPattern}]+`);
 
             // Split the pasted text by delimiters and filter out empty values
@@ -66,7 +74,7 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
 
             setText('');
         }
-    }
+    };
 
     const _onClick = (index: number): void => {
         if (value && value.length > 0) {
@@ -76,32 +84,35 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
     };
 
     return (
-        <div className={clsx(className,
-            'w-full flex flex-wrap items-center gap-1 p-2 py-1.5',
-            'rounded-md text-sm rounded-md border border-input bg-background ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted focus-visible:outline-none focus-visible:ring-1 ring-inset focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50')}>
-            {
-                value && value.length > 0 &&
-                (value.map((v, index) =>
+        <div
+            className={clsx(
+                className,
+                'w-full flex flex-wrap items-center gap-1 p-2 py-1.5',
+                'rounded-md text-sm rounded-md border border-input bg-background ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted focus-visible:outline-none focus-visible:ring-1 ring-inset focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+            )}
+        >
+            {value &&
+                value.length > 0 &&
+                value.map((v, index) => (
                     // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     <VTooltip description={'click to remove'} key={index}>
                         <Badge
-                            variant={"secondary"}
+                            variant={'secondary'}
                             // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                             key={index}
                             onClick={() => _onClick(index)}
-                            className='cursor-pointer flex-shrink-0 hover:bg-destructive hover:text-destructive transition-colors'
+                            className="cursor-pointer flex-shrink-0 hover:bg-destructive hover:text-destructive transition-colors"
                             title={v}
                         >
-                            <span className='break-all'>{v}</span>
+                            <span className="break-all">{v}</span>
                         </Badge>
                     </VTooltip>
-                ))
-            }
+                ))}
             <Input
                 clearable={false}
-                className='placeholder:text-muted px-1 flex-1 min-w-[120px]'
-                variant='unstyled'
-                type='text'
+                className="placeholder:text-muted px-1 flex-1 min-w-[120px]"
+                variant="unstyled"
+                type="text"
                 value={text}
                 onBlur={onBlur}
                 onKeyDown={onKeyDown}
@@ -111,5 +122,5 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
                 autoFocus={autoFocus}
             />
         </div>
-    )
+    );
 }

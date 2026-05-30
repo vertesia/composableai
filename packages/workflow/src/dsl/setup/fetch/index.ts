@@ -1,12 +1,10 @@
-import type { ActivityFetchSpec } from "@vertesia/common";
-import type { VertesiaClient } from "@vertesia/client";
-import type { DataProvider } from "./DataProvider.js";
+import type { ActivityFetchSpec } from '@vertesia/common';
+import type { VertesiaClient } from '@vertesia/client';
+import type { DataProvider } from './DataProvider.js';
 
+const factories: Record<string, (client: VertesiaClient, source?: string) => DataProvider> = {};
 
-const factories: Record<string, ((client: VertesiaClient, source?: string) => DataProvider)> = {};
-
-
-export function registerFetchProviderFactory(name: string, factory: ((client: VertesiaClient) => DataProvider)) {
+export function registerFetchProviderFactory(name: string, factory: (client: VertesiaClient) => DataProvider) {
     factories[name] = factory;
 }
 

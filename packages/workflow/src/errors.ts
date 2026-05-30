@@ -1,13 +1,16 @@
-import { ApplicationFailure } from "@temporalio/workflow";
-import type { DSLActivitySpec, DSLWorkflowSpec } from "@vertesia/common";
+import { ApplicationFailure } from '@temporalio/workflow';
+import type { DSLActivitySpec, DSLWorkflowSpec } from '@vertesia/common';
 
 export class DocumentNotFoundError extends ApplicationFailure {
-    constructor(message: string, public ids?: string[]) {
+    constructor(
+        message: string,
+        public ids?: string[],
+    ) {
         super(
             message,
-            "DocumentNotFoundError",
+            'DocumentNotFoundError',
             true, // non-retryable
-        )
+        );
     }
 }
 
@@ -18,7 +21,7 @@ export class ActivityParamNotFoundError extends ApplicationFailure {
     ) {
         super(
             `Required parameter ${paramName} not found in activity ${activity.name}`,
-            "ActivityParamNotFoundError",
+            'ActivityParamNotFoundError',
             true, // non-retryable
         );
     }
@@ -31,8 +34,8 @@ export class ActivityParamInvalidError extends ApplicationFailure {
         reason?: string,
     ) {
         super(
-            `${paramName} in activity ${activity.name} is invalid${reason ? ` ${reason}` : ""}`,
-            "ActivityParamInvalidError",
+            `${paramName} in activity ${activity.name} is invalid${reason ? ` ${reason}` : ''}`,
+            'ActivityParamInvalidError',
             true, // non-retryable
         );
     }
@@ -45,7 +48,7 @@ export class WorkflowParamNotFoundError extends ApplicationFailure {
     ) {
         super(
             `Required parameter ${paramName} not found in workflow ${workflow?.name}`,
-            "WorkflowParamNotFoundError",
+            'WorkflowParamNotFoundError',
             true, // non-retryable
         );
     }
@@ -57,8 +60,8 @@ export class ResourceExhaustedError extends ApplicationFailure {
         message?: string,
     ) {
         super(
-            message || "Resource exhausted - rate limit exceeded",
-            "ResourceExhaustedError",
+            message || 'Resource exhausted - rate limit exceeded',
+            'ResourceExhaustedError',
             true, // non-retryable
         );
     }
@@ -72,7 +75,7 @@ export class InvalidContentTypeError extends ApplicationFailure {
     ) {
         super(
             `Document ${objectId} has invalid content type. Expected ${expectedType}, got ${actualType}`,
-            "InvalidContentTypeError",
+            'InvalidContentTypeError',
             true, // non-retryable
         );
     }
@@ -84,8 +87,8 @@ export class TokenExpiredError extends ApplicationFailure {
         message?: string,
     ) {
         super(
-            message || "Token expired: Authentication required",
-            "TokenExpiredError",
+            message || 'Token expired: Authentication required',
+            'TokenExpiredError',
             true, // non-retryable
         );
     }
@@ -98,19 +101,19 @@ export class WorkflowExecutionError extends ApplicationFailure {
     ) {
         super(
             message,
-            "WorkflowExecutionError",
+            'WorkflowExecutionError',
             true, // non-retryable
         );
     }
 }
 
 export const WF_NON_RETRYABLE_ERRORS = [
-    "DocumentNotFoundError",
-    "ActivityParamInvalidError",
-    "ActivityParamNotFoundError",
-    "WorkflowParamNotFoundError",
-    "InvalidContentTypeError",
-    "TokenExpiredError",
-    "ZenoClientNotFoundError",
-    "WorkflowExecutionError",
+    'DocumentNotFoundError',
+    'ActivityParamInvalidError',
+    'ActivityParamNotFoundError',
+    'WorkflowParamNotFoundError',
+    'InvalidContentTypeError',
+    'TokenExpiredError',
+    'ZenoClientNotFoundError',
+    'WorkflowExecutionError',
 ];

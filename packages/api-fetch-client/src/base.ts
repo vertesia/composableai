@@ -1,6 +1,6 @@
-import { ConnectionError, type RequestError, ServerError } from "./errors.js";
-import { sse, type ServerSentEvent } from "./sse/index.js";
-import { buildQueryString, join, removeTrailingSlash } from "./utils.js";
+import { ConnectionError, type RequestError, ServerError } from './errors.js';
+import { sse, type ServerSentEvent } from './sse/index.js';
+import { buildQueryString, join, removeTrailingSlash } from './utils.js';
 
 export type FETCH_FN = (input: RequestInfo, init?: RequestInit) => Promise<Response>;
 type IPrimitives = string | number | boolean | null | undefined | string[] | number[] | boolean[];
@@ -73,7 +73,7 @@ export interface IRequestParams {
      * Set to false to disable automatic JSON payload serialization
      * If you need to post other data than a json payload, set this to false and use the `payload` property to set the desired payload
      */
-    jsonPayload?: boolean
+    jsonPayload?: boolean;
     /**
      * Opt-in retry policy for this request. Retries are disabled by default.
      * Set to false to disable a client-level retry policy for this request.
@@ -93,13 +93,13 @@ export function fetchPromise(fetchImpl?: FETCH_FN | Promise<FETCH_FN>) {
     } else {
         // install an error impl
         return Promise.resolve(() => {
-            throw new Error('No Fetch implementation found')
+            throw new Error('No Fetch implementation found');
         });
     }
 }
 
 function isInvalidJsonPayload(payload: unknown) {
-    return isRecord(payload) && payload.error === "Not a valid JSON payload" && typeof payload.text === "string";
+    return isRecord(payload) && payload.error === 'Not a valid JSON payload' && typeof payload.text === 'string';
 }
 
 function isReplayableBody(body: BodyInit | undefined) {
@@ -112,7 +112,7 @@ function normalizeRetryPolicy(policy: IRequestRetryPolicy): NormalizedRetryPolic
     const maxDelayMs = Math.max(baseDelayMs, policy.maxDelayMs ?? DEFAULT_RETRY_MAX_DELAY_MS);
     return {
         attempts,
-        methods: new Set((policy.methods ?? DEFAULT_RETRY_METHODS).map(method => method.toUpperCase())),
+        methods: new Set((policy.methods ?? DEFAULT_RETRY_METHODS).map((method) => method.toUpperCase())),
         statuses: new Set(policy.statuses ?? DEFAULT_RETRY_STATUSES),
         retryOnConnectionError: policy.retryOnConnectionError ?? true,
         baseDelayMs,
@@ -156,7 +156,6 @@ async function discardBody(res: Response) {
 }
 
 export abstract class ClientBase {
-
     _fetch: Promise<FETCH_FN>;
     baseUrl: string;
     errorFactory: (err: RequestError) => Error = (err) => err;
@@ -228,18 +227,17 @@ export abstract class ClientBase {
     }
 
     /**
-    * Can be overridden to create the request
-    * @param fetch
-    * @param url
-    * @param init
-    * @returns
-    */
+     * Can be overridden to create the request
+     * @param fetch
+     * @param url
+     * @param init
+     * @returns
+     */
     createRequest(url: string, init: RequestInit): Promise<Request> {
         return Promise.resolve(new Request(url, init));
     }
 
-    handleFetchResponse(_req: Request, _res: Response): void {
-    }
+    handleFetchResponse(_req: Request, _res: Response): void {}
 
     createServerError(req: Request, res: Response, payload: unknown): RequestError {
         const status = res.status;
@@ -261,37 +259,43 @@ export abstract class ClientBase {
         return new ServerError(message, req, res.status, payload, this.verboseErrors);
     }
 
-
     async readJSONPayload(res: Response) {
-        return res.text().then(text => {
-            if (!text) {
-                return undefined;
-            } else {
-                try {
-                    return this.jsonParse(text);
-                } catch (err: unknown) {
-                    return {
-                        status: res.status,
-                        error: "Not a valid JSON payload",
-                        message: err instanceof Error ? err.message : String(err),
-                        text: text,
-                    };
+        return res
+            .text()
+            .then((text) => {
+                if (!text) {
+                    return undefined;
+                } else {
+                    try {
+                        return this.jsonParse(text);
+                    } catch (err: unknown) {
+                        return {
+                            status: res.status,
+                            error: 'Not a valid JSON payload',
+                            message: err instanceof Error ? err.message : String(err),
+                            text: text,
+                        };
+                    }
                 }
-            }
-        }).catch((err: unknown) => {
-            return {
-                status: res.status,
-                error: "Unable to load response content",
-                message: err instanceof Error ? err.message : String(err),
-            };
-        });
+            })
+            .catch((err: unknown) => {
+                return {
+                    status: res.status,
+                    error: 'Unable to load response content',
+                    message: err instanceof Error ? err.message : String(err),
+                };
+            });
     }
 
     /**
      * Subclasses You can override this to do something with the response
      * @param res
      */
-    handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): T | Promise<T> {
+    handleResponse<T = unknown>(
+        req: Request,
+        res: Response,
+        params: IRequestParamsWithPayload | undefined,
+    ): T | Promise<T> {
         if (params?.reader) {
             if (params.reader === 'sse') {
                 return sse(res) as T;
@@ -327,14 +331,14 @@ export abstract class ClientBase {
             if (params && params.jsonPayload === false) {
                 body = payload as BodyInit;
             } else {
-                body = (typeof payload !== 'string') ? JSON.stringify(payload) : payload;
+                body = typeof payload !== 'string' ? JSON.stringify(payload) : payload;
                 if (!('content-type' in headers)) {
                     headers['content-type'] = 'application/json';
                 }
             }
         }
         // When using SSE reader, ensure the Accept header requests event-stream
-        if (params?.reader === 'sse' && !('accept' in headers)) {
+        if (params?.reader === 'sse') {
             headers.accept = 'text/event-stream';
         }
 
@@ -345,7 +349,7 @@ export abstract class ClientBase {
                 headers: Object.assign({}, headers),
                 body: body,
             };
-        }
+        };
         const retryPolicy = this.resolveRetryPolicy(params);
         const fetch = await this._fetch;
 
@@ -388,7 +392,9 @@ export abstract class ClientBase {
         }
 
         if (lastReq) {
-            this.throwError(new ConnectionError(lastReq, new Error(`Retry attempts exhausted for ${normalizedMethod} ${url}`)));
+            this.throwError(
+                new ConnectionError(lastReq, new Error(`Retry attempts exhausted for ${normalizedMethod} ${url}`)),
+            );
         }
         throw new Error(`Retry attempts exhausted for ${normalizedMethod} ${url}`);
     }
@@ -416,10 +422,12 @@ export abstract class ClientBase {
         replayableBody: boolean,
         res: Response,
     ) {
-        return attempt < policy.attempts - 1
-            && replayableBody
-            && policy.methods.has(method)
-            && policy.statuses.has(res.status);
+        return (
+            attempt < policy.attempts - 1 &&
+            replayableBody &&
+            policy.methods.has(method) &&
+            policy.statuses.has(res.status)
+        );
     }
 
     private shouldRetryConnectionError(
@@ -428,15 +436,17 @@ export abstract class ClientBase {
         attempt: number,
         replayableBody: boolean,
     ) {
-        return attempt < policy.attempts - 1
-            && replayableBody
-            && policy.retryOnConnectionError
-            && policy.methods.has(method);
+        return (
+            attempt < policy.attempts - 1 &&
+            replayableBody &&
+            policy.retryOnConnectionError &&
+            policy.methods.has(method)
+        );
     }
 
     private waitBeforeRetry(policy: NormalizedRetryPolicy, attempt: number, res?: Response) {
         const delay = retryDelayMs(policy, attempt, res);
-        return new Promise<void>(resolve => setTimeout(resolve, delay));
+        return new Promise<void>((resolve) => setTimeout(resolve, delay));
     }
 
     /**
@@ -455,10 +465,10 @@ export abstract class ClientBase {
         params: IRequestParamsWithPayload | undefined,
         onEvent: (event: ServerSentEvent) => void,
     ): Promise<ServerSentEvent | undefined> {
-        const stream = await this.request(method, path, {
+        const stream = (await this.request(method, path, {
             ...params,
             reader: 'sse',
-        }) as ReadableStream<ServerSentEvent>;
+        })) as ReadableStream<ServerSentEvent>;
 
         const reader = stream.getReader();
         let lastEvent: ServerSentEvent | undefined;
@@ -484,7 +494,6 @@ export abstract class ClientBase {
      * @returns
      */
     fetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
-        return this._fetch.then(fetch => fetch(input, init));
+        return this._fetch.then((fetch) => fetch(input, init));
     }
-
 }
