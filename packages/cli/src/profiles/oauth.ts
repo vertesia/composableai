@@ -14,7 +14,7 @@ const OAUTH_CLIENT_METADATA_PATH = '/.well-known/oauth-client/vertesia-cli';
 const DEFAULT_OAUTH_SCOPE = 'openid profile';
 
 type OAuthProfile = Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> &
-    Partial<Pick<Profile, 'account' | 'config_url' | 'project'>>;
+    Partial<Pick<Profile, 'account' | 'config_url' | 'project' | 'oauth_server_url'>>;
 
 interface TokenRefs {
     account?: string;
@@ -82,7 +82,7 @@ export async function startOAuthSession(profile: OAuthProfile, signal?: AbortSig
     });
 
     const response = await pollDeviceToken(metadata, clientId, deviceAuthorization, signal);
-    return buildConfigResult(profile, response, clientId, resource);
+    return buildConfigResult(profile, response, clientId, resource, serverUrl);
 }
 
 export async function refreshOAuthSession(
@@ -99,7 +99,7 @@ export async function refreshOAuthSession(
     const clientId = getOAuthClientId(serverUrl);
     const resource = bundle?.oauthResource || readTokenRefs(bundle?.accessToken).audience || getOAuthResource(metadata);
     const response = await exchangeRefreshToken(metadata, clientId, refreshToken, resource, options.projectId);
-    return buildConfigResult(profile, response, clientId, resource);
+    return buildConfigResult(profile, response, clientId, resource, serverUrl);
 }
 
 function assertOAuthProfile(
@@ -121,7 +121,7 @@ function withTrailingSlash(url: string): string {
 }
 
 async function discoverAuthorizationServer(
-    profile: Pick<Profile, 'studio_server_url'> & Partial<Pick<Profile, 'config_url'>>,
+    profile: Pick<Profile, 'studio_server_url'> & Partial<Pick<Profile, 'config_url' | 'oauth_server_url'>>,
 ): Promise<OAuthDiscovery> {
     const candidates = getOAuthServerUrlCandidates(profile);
     let unavailableError: OAuthUnavailableError | undefined;
@@ -160,28 +160,39 @@ function applyProfileAuthorizationEndpoint(
     };
 }
 
-function getOAuthServerUrlCandidates(profile: Pick<Profile, 'studio_server_url'>): string[] {
+function getOAuthServerUrlCandidates(
+    profile: Pick<Profile, 'studio_server_url'> & Partial<Pick<Profile, 'oauth_server_url'>>,
+): string[] {
     if (process.env.VERTESIA_TOKEN_SERVER_URL) {
         return [process.env.VERTESIA_TOKEN_SERVER_URL];
     }
+    if (profile.oauth_server_url) {
+        return [profile.oauth_server_url.replace(/\/+$/, '')];
+    }
 
+    // Back-compat for profiles that predate explicit oauth_server_url: derive the STS host
+    // from the studio URL. studio-server itself is intentionally NOT in this list — it used
+    // to serve OAuth metadata in-process (apps/studio-server/src/public/oauth.ts, deleted in
+    // commit 254532963) but the canonical owner is now token-server (STS).
     const studioUrl = new URL(profile.studio_server_url);
     const isLoopbackHost = studioUrl.hostname === 'localhost' || studioUrl.hostname === '127.0.0.1';
     if (isLoopbackHost) {
         return ['https://sts.dev1.vertesia.io'];
     }
 
-    const candidates = [new URL('/', studioUrl).toString()];
+    const candidates: string[] = [];
+    // api{,-preview}.{region}.vertesia.io → sts{,-preview}.{region}.vertesia.io
     if (studioUrl.hostname.startsWith('api')) {
-        const stsHost = studioUrl.hostname.replace('api-preview.', 'api.').replace(/^api/, 'sts');
+        const stsHost = studioUrl.hostname.replace(/^api/, 'sts');
         candidates.push(`${studioUrl.protocol}//${stsHost}`);
     }
-
-    if (studioUrl.hostname.endsWith('.api.dev1.vertesia.io') || studioUrl.hostname.endsWith('.ui.dev1.vertesia.io')) {
+    // dev branch services (studio-server-dev-*.api.dev1.vertesia.io) → shared dev1 STS
+    if (
+        studioUrl.hostname.endsWith('.api.dev1.vertesia.io') ||
+        studioUrl.hostname.endsWith('.ui.dev1.vertesia.io')
+    ) {
         candidates.push('https://sts.dev1.vertesia.io');
     }
-
-    candidates.push('https://sts.dev1.vertesia.io');
     return Array.from(new Set(candidates.map((candidate) => candidate.replace(/\/+$/, ''))));
 }
 
@@ -427,6 +438,7 @@ function buildConfigResult(
     response: OAuthTokenResponse,
     oauthClientId: string,
     oauthResource: string,
+    oauthServerUrl: string,
 ): ConfigResult {
     const refs = readTokenRefs(response.access_token);
     const account = refs.account || profile.account;
@@ -445,6 +457,7 @@ function buildConfigResult(
         project,
         studio_server_url: profile.studio_server_url,
         zeno_server_url: profile.zeno_server_url,
+        oauth_server_url: oauthServerUrl,
         token: response.access_token,
         id_token: response.id_token,
         refresh_token: response.refresh_token,
