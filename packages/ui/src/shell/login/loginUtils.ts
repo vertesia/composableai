@@ -210,9 +210,16 @@ export function isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || '').trim());
 }
 
-/** Detects the customer-domain "needs invite" 403 from /auth/ensure-user by its message. */
+/**
+ * Detects the customer-domain "needs invite" 403 from /auth/ensure-user by its message.
+ * Walks the `cause` chain because the token fetch re-wraps the original error.
+ */
 export function isInviteRequiredError(err: unknown): boolean {
-    if (!err) return false;
-    const msg = err instanceof Error ? err.message : String(err);
-    return msg.includes('Customer-domain user requires an invite to join');
+    let current: unknown = err;
+    for (let depth = 0; current != null && depth < 8; depth++) {
+        const msg = current instanceof Error ? current.message : String(current);
+        if (msg.includes('Customer-domain user requires an invite to join')) return true;
+        current = current instanceof Error ? current.cause : undefined;
+    }
+    return false;
 }
