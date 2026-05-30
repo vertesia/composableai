@@ -83,6 +83,22 @@ class UserSession {
         });
     }
 
+    /**
+     * Force a fresh Vertesia JWT from STS, bypassing the in-memory cache.
+     * Use this when the current token's claims (e.g. `apps`) are suspected
+     * stale — STS recomputes the `apps` claim from ACEs on every issuance.
+     */
+    async refreshAuthToken(): Promise<AuthTokenPayload> {
+        const res = await getComposableToken(undefined, undefined, undefined, true);
+        const token = res?.rawToken;
+        if (!token) {
+            throw new Error('No token available');
+        }
+        this.authToken = jwtDecode(token) as unknown as AuthTokenPayload;
+        this.setSession?.(this.clone());
+        return this.authToken;
+    }
+
     signOut() { //compatibility
         this.logout();
     }
