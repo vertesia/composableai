@@ -1,10 +1,10 @@
-import type { JSONObject, JSONSchema, ToolDefinition } from "@llumiverse/common";
-import type { AppDashboardDefinition } from "./data-platform.js";
-import type { CatalogInteractionRef } from "./interaction.js";
-import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from "./store/index.js";
+import type { JSONObject, JSONSchema, ToolDefinition } from '@llumiverse/common';
+import type { AppDashboardDefinition } from './data-platform.js';
+import type { CatalogInteractionRef } from './interaction.js';
+import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from './store/index.js';
 
 /** Allowed values for AppUINavItem.preferredSection */
-export const PREFERRED_SECTIONS = ["default", "footer", "settings"] as const;
+export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
 
 /**
  * Additional navigation item for an app's UI configuration.
@@ -45,7 +45,7 @@ export interface AppUIConfig {
      * - shadow - use Shadow DOM to fully isolate the plugin from the host.
      * - css - use CSS processing (like prefixing or other isolation techniques). Ligther but plugins may conflict with the host
      */
-    isolation?: "shadow" | "css";
+    isolation?: 'shadow' | 'css';
     /**
      * Navigation items for the app's sidebar UI.
      * Only applicable for apps with UI capability in shell contexts (ie. CompositeApp shell).
@@ -73,12 +73,12 @@ export interface AppInstallationsQuery {
 /**
  * Authentication type for tool collections
  */
-export type ToolCollectionAuthType = "oauth" | "other";
+export type ToolCollectionAuthType = 'oauth' | 'other';
 
 /**
  * Tool collection type
  */
-export type ToolCollectionType = "mcp" | "vertesia_sdk";
+export type ToolCollectionType = 'mcp' | 'vertesia_sdk';
 
 /**
  * Base tool collection configuration
@@ -132,7 +132,7 @@ export interface MCPOAuthConfig {
  * MCP tool collection configuration (requires name, description, and namespace)
  */
 export interface MCPToolCollectionObject extends BaseToolCollectionObject {
-    type: "mcp";
+    type: 'mcp';
 
     /**
      * Stable identifier for this collection.
@@ -197,7 +197,7 @@ export interface MCPToolCollectionObject extends BaseToolCollectionObject {
  * Vertesia SDK tool collection configuration
  */
 export interface VertesiaSDKToolCollectionObject extends BaseToolCollectionObject {
-    type: "vertesia_sdk";
+    type: 'vertesia_sdk';
 
     /**
      * Optional namespace to use for tool names from this collection.
@@ -287,7 +287,6 @@ export function normalizeToolCollection(collection: ToolCollectionObject, vars?:
     return collection;
 }
 
-
 /**
  * Metadata hints from MCP tool annotations (per MCP spec).
  */
@@ -309,7 +308,7 @@ export interface MCPToolAnnotations {
  */
 export interface AgentToolDefinition extends ToolDefinition {
     /**
-     * The tool execution URL. It can be an absolute URL or a path in which case the URL is obtained 
+     * The tool execution URL. It can be an absolute URL or a path in which case the URL is obtained
      * using the base URL of the tool server API. Ex: http://tool-server.com/api/
      * Example of relative URLs: "tools/my-tool-collection" or "/api/tools/my-tool-collection"
      */
@@ -551,6 +550,36 @@ export interface AppBuildProgress {
     updated_at: string;
 }
 
+/**
+ * Access control policy for an app installation.
+ * Declares which access surfaces are gated by per-user ACEs.
+ *
+ * - 'all' (default): every surface (UI portal, tool/endpoint use, contributions) requires
+ *   an explicit app_member ACE — the historical behavior.
+ * - 'ui': UI portal visibility requires an ACE, but tool/endpoint use and contributions
+ *   are open to anyone in the project.
+ * - 'none': fully open within the project — no ACE required for any surface.
+ *
+ * Declared on the manifest as the app's default. May be overridden per-installation.
+ */
+export type AppAccessControl = 'all' | 'ui' | 'none';
+
+/**
+ * Resolve the effective access_control policy for an installed app:
+ * installation override wins, then manifest default, then `'all'`.
+ *
+ * Shared by the STS (JWT generation), the studio-server (validation), and the UI (badge display)
+ * so the resolution rule lives in exactly one place. Named `effectiveAppAccessControl` (not just
+ * `effectiveAccessControl`) because exports from `@vertesia/common` are flattened — the broader
+ * name would risk colliding with other access-control families added later.
+ */
+export function effectiveAppAccessControl(
+    installation: { access_control?: AppAccessControl } | null | undefined,
+    manifest: { access_control?: AppAccessControl } | null | undefined,
+): AppAccessControl {
+    return installation?.access_control ?? manifest?.access_control ?? 'all';
+}
+
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.
@@ -564,7 +593,7 @@ export interface AppManifestData {
      * - "private": visible only to the owning account
      * - "vertesia": visible only to Vertesia team members (any project)
      */
-    visibility: "public" | "private" | "vertesia";
+    visibility: 'public' | 'private' | 'vertesia';
 
     title: string;
     description: string;
@@ -581,19 +610,19 @@ export interface AppManifestData {
      */
     color?: string;
 
-    status: "beta" | "stable" | "deprecated"
+    status: 'beta' | 'stable' | 'deprecated';
 
     /**
-     * The UI configuration of the app. If not specified and the app "ui" is in the app capabilities 
+     * The UI configuration of the app. If not specified and the app "ui" is in the app capabilities
      * then the ui configuration will be fetched from the endpoint property.
      */
-    ui?: AppUIConfig
+    ui?: AppUIConfig;
 
     /**
      * A list of tool collections endpoints to be used by this app.
      * Prefer using endpoint over tool_collections.
      */
-    tool_collections?: ToolCollectionObject[]
+    tool_collections?: ToolCollectionObject[];
 
     /**
      * Named OAuth providers shared across multiple MCP tool collections.
@@ -609,7 +638,7 @@ export interface AppManifestData {
      * The URL must provide 2 endpoints:
      * 1. GET URL - must return a JSON array with the list of interactions (as AppInteractionRef[])
      * 2. GET URL/{interaction_name} - must return the full interaction definition for the specified interaction.
-     * This feature is for advanced composition of interactions. Prefer using endpoint. 
+     * This feature is for advanced composition of interactions. Prefer using endpoint.
      */
     interactions?: string;
 
@@ -642,8 +671,8 @@ export interface AppManifestData {
      * - settings
      * - all (the default if no scope is provided)
      *  You can also use comma-separated values to combine scopes (e.g. "ui,tools").
-     * 
-     * Example: 
+     *
+     * Example:
      * - ?scope=ui,tools - returns only the UI configuration
      */
     endpoint?: string;
@@ -674,6 +703,13 @@ export interface AppManifestData {
      * controls that don't apply to synthetic installations.
      */
     tags?: string[];
+
+    /**
+     * Access control policy for the app. Defaults to 'all' (ACE-gated everywhere)
+     * when undefined. See {@link AppAccessControl} for semantics. May be overridden
+     * on the AppInstallation.
+     */
+    access_control?: AppAccessControl;
 }
 
 export interface AppGitSourceConfig {
@@ -761,16 +797,16 @@ export function resolveAppEndpoint(
     manifest: Pick<AppManifestData, 'endpoint' | 'endpoint_overrides'>,
     envName?: string,
     vars?: Endpoints,
-    requestedOverride?: string
+    requestedOverride?: string,
 ): string | undefined {
     let raw: string | undefined;
-    if (requestedOverride
-        && manifest.endpoint_overrides?.[requestedOverride]
-        && isValidEndpointOverrideEnv(requestedOverride)) {
+    if (
+        requestedOverride &&
+        manifest.endpoint_overrides?.[requestedOverride] &&
+        isValidEndpointOverrideEnv(requestedOverride)
+    ) {
         raw = manifest.endpoint_overrides[requestedOverride];
-    } else if (envName
-        && manifest.endpoint_overrides?.[envName]
-        && isValidEndpointOverrideEnv(envName)) {
+    } else if (envName && manifest.endpoint_overrides?.[envName] && isValidEndpointOverrideEnv(envName)) {
         raw = manifest.endpoint_overrides[envName];
     } else {
         raw = manifest.endpoint;
@@ -791,7 +827,7 @@ export function resolveManifestUrls(
     manifest: Partial<AppManifestData> | null | undefined,
     envName?: string,
     vars?: Endpoints,
-    requestedOverride?: string
+    requestedOverride?: string,
 ): void {
     if (!manifest) return;
 
@@ -830,12 +866,12 @@ export interface AppPackage {
     /**
      * The UI configuration of the app
      */
-    ui?: AppUIConfig
+    ui?: AppUIConfig;
 
     /**
      * A list of tools exposed by the app.
      */
-    tools?: AgentToolDefinition[]
+    tools?: AgentToolDefinition[];
 
     /**
      * A list of skills (`learn_*` tools) exposed by the app. Kept separate from
@@ -843,7 +879,7 @@ export interface AppPackage {
      * (e.g. the worker building a combined tool registry) should concatenate
      * the two lists.
      */
-    skills?: AgentToolDefinition[]
+    skills?: AgentToolDefinition[];
 
     /**
      * A list of interactions exposed by the app
@@ -986,6 +1022,12 @@ export interface AppInstallation {
      * Multiple collections sharing the same provider all resolve to the same OAuth provider.
      */
     provider_bindings?: AppInstallationProviderBinding[];
+    /**
+     * Per-installation override of the manifest's access_control policy.
+     * When set, takes precedence over the manifest value. When undefined, the
+     * manifest value (or 'all' default) applies.
+     */
+    access_control?: AppAccessControl;
     created_at: string;
     updated_at: string;
 }
@@ -1021,6 +1063,19 @@ export type AppOAuthProviderParams = Record<string, OAuthClientCredentials>;
 export interface AppInstallationPayload {
     app_id: string;
     settings?: Record<string, unknown>;
+    /**
+     * Per-installation override of the manifest's `access_control` policy. When provided, takes precedence
+     * over the manifest default for every access check. Sibling of `settings` — admin-controlled, not
+     * part of the app's own settings JSON.
+     *
+     * Three send-time semantics on update:
+     *  - Field omitted entirely from the payload → leave the existing override unchanged.
+     *  - Explicit `null` → clear the override, fall back to the manifest default.
+     *  - String enum → set the override to that value.
+     *
+     * (On install, the same shape applies; omit or pass `null` to use the manifest default.)
+     */
+    access_control?: AppAccessControl | null;
     /**
      * OAuth credentials for each collection, keyed by collection.id.
      * Legacy callers may still use collection.name for older manifests.
@@ -1058,7 +1113,7 @@ export interface AppToolCollection {
     /**
      * the tools provided by this collection
      */
-    tools: AgentToolDefinition[]
+    tools: AgentToolDefinition[];
 }
 
 /**
@@ -1176,10 +1231,9 @@ export interface CompositeAppLogoOverrides {
     hideFooterLogo?: boolean;
 }
 
-
 /**
  * Message banner overrides for the shell header.
-*/
+ */
 export type CompositeAppMessageStyle = 'foreground' | 'info' | 'success' | 'attention' | 'destructive';
 export interface CompositeAppMessageOverrides {
     /** Message text to display */
@@ -1342,9 +1396,9 @@ export interface CompositeAppHomePlugin {
  */
 export interface CompositeAppConfig {
     /**
-     * The unique identifier for this CompositeApp configuration 
+     * The unique identifier for this CompositeApp configuration
      * Undefined if the configuration doesn't exists yet.
-    */
+     */
     id?: string;
     /** The project this CompositeApp belongs to */
     project: string;

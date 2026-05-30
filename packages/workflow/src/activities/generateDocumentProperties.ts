@@ -1,10 +1,10 @@
-import { ApplicationFailure, log } from "@temporalio/activity";
-import type { DSLActivityExecutionPayload, DSLActivitySpec, JSONObject } from "@vertesia/common";
-import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { type TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
-import { type InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
+import { ApplicationFailure, log } from '@temporalio/activity';
+import type { DSLActivityExecutionPayload, DSLActivitySpec, JSONObject } from '@vertesia/common';
+import { setupActivity } from '../dsl/setup/ActivityContext.js';
+import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
+import { type InteractionExecutionParams, executeInteractionFromActivity } from './executeInteraction.js';
 
-const INT_EXTRACT_INFORMATION = "sys:ExtractInformation";
+const INT_EXTRACT_INFORMATION = 'sys:ExtractInformation';
 
 interface RetryableError extends Error {
     retryable?: boolean;
@@ -34,7 +34,7 @@ export interface GenerateDocumentPropertiesParams extends InteractionExecutionPa
     use_vision?: boolean;
 }
 export interface GenerateDocumentProperties extends DSLActivitySpec<GenerateDocumentPropertiesParams> {
-    name: "generateDocumentProperties";
+    name: 'generateDocumentProperties';
 }
 
 export async function generateDocumentProperties(
@@ -46,27 +46,25 @@ export async function generateDocumentProperties(
 
     const project = await context.fetchProject();
 
-    const doc = await client.objects.retrieve(objectId, "+text");
-    const type = doc.type
-        ? await client.types.catalog.resolve(doc.type)
-        : undefined;
+    const doc = await client.objects.retrieve(objectId, '+text');
+    const type = doc.type ? await client.types.catalog.resolve(doc.type) : undefined;
 
-    if (!doc?.text && !params.use_vision && !doc?.content?.type?.startsWith("image/")) {
+    if (!doc?.text && !params.use_vision && !doc?.content?.type?.startsWith('image/')) {
         log.warn(`Object ${objectId} not found or text is empty`);
-        return { status: "failed", error: "no-text" };
+        return { status: 'failed', error: 'no-text' };
     }
 
     if (!type?.object_schema) {
         log.info(`Object ${objectId} has no schema`);
-        return { document: objectId, status: "skipped", message: "no schema defined on type" };
+        return { document: objectId, status: 'skipped', message: 'no schema defined on type' };
     }
 
     const getImageRef = () => {
-        if (doc.content?.type?.startsWith("image/")) {
+        if (doc.content?.type?.startsWith('image/')) {
             return `store:${doc.id}`;
         }
 
-        if (params.use_vision && doc.content?.type?.startsWith("application/pdf")) {
+        if (params.use_vision && doc.content?.type?.startsWith('application/pdf')) {
             return `store:${doc.id}`;
         }
 
@@ -74,9 +72,7 @@ export async function generateDocumentProperties(
         return undefined;
     };
 
-    const content = doc.text
-        ? truncByMaxTokens(doc.text, params.truncate || 30000)
-        : undefined;
+    const content = doc.text ? truncByMaxTokens(doc.text, params.truncate || 30000) : undefined;
 
     const promptData = {
         content: content,
@@ -105,11 +101,12 @@ export async function generateDocumentProperties(
         );
     } catch (error: unknown) {
         const extractionError = toRetryableError(error);
-        log.error(`Failed to extract document properties for ${objectId}`, { error: extractionError, retryable: extractionError.retryable });
+        log.error(`Failed to extract document properties for ${objectId}`, {
+            error: extractionError,
+            retryable: extractionError.retryable,
+        });
 
-        const isRetryable = extractionError.retryable !== undefined
-            ? extractionError.retryable !== false
-            : undefined;
+        const isRetryable = extractionError.retryable !== undefined ? extractionError.retryable !== false : undefined;
 
         if (isRetryable !== undefined) {
             if (isRetryable) {
@@ -124,7 +121,7 @@ export async function generateDocumentProperties(
                 });
             }
         }
-        
+
         throw error;
     }
 
@@ -132,12 +129,12 @@ export async function generateDocumentProperties(
         if (doc.text) {
             return undefined;
         }
-        let text = "";
+        let text = '';
         const jsonResult = infoRes.result.object<GeneratedPropertiesSummary>();
-        if (typeof jsonResult.title === "string") {
+        if (typeof jsonResult.title === 'string') {
             text += `${jsonResult.title}\n`;
         }
-        if (typeof jsonResult.description === "string") {
+        if (typeof jsonResult.description === 'string') {
             text += jsonResult.description;
         }
         if (text) {
@@ -148,18 +145,22 @@ export async function generateDocumentProperties(
     };
 
     log.info(`Extracted information from object ${objectId} with type ${type.name}`, { runId: infoRes.id });
-    await client.objects.update(doc.id, {
+    await client.objects.update(
+        doc.id,
+        {
             properties: {
-            ...infoRes.result.object<JSONObject>(),
-            ...(doc.text_etag !== undefined ? { etag: doc.text_etag } : {}),
+                ...infoRes.result.object<JSONObject>(),
+                ...(doc.text_etag !== undefined ? { etag: doc.text_etag } : {}),
+            },
+            text: getText(),
+            generation_run_info: {
+                id: infoRes.id,
+                date: new Date().toISOString(),
+                model: infoRes.modelId ?? '',
+            },
         },
-        text: getText(),
-        generation_run_info: {
-            id: infoRes.id,
-            date: new Date().toISOString(),
-            model: infoRes.modelId ?? "",
-        },
-    }, { suppressWorkflows: true });
+        { suppressWorkflows: true },
+    );
 
-    return { status: "completed" };
+    return { status: 'completed' };
 }

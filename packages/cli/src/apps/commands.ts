@@ -1,9 +1,15 @@
-import { AccessControlPrincipalType, AccessControlResourceType, type AppInstallationKind, type AppManifestData, ProjectRoles } from "@vertesia/common";
-import colors from "ansi-colors";
-import type { Command } from "commander";
-import { readFile } from "node:fs/promises";
-import { getClient } from "../client.js";
-import { hasErrorCode, isRecord, type CliOptions } from "../utils/options.js";
+import {
+    AccessControlPrincipalType,
+    AccessControlResourceType,
+    type AppInstallationKind,
+    type AppManifestData,
+    ProjectRoles,
+} from '@vertesia/common';
+import colors from 'ansi-colors';
+import type { Command } from 'commander';
+import { readFile } from 'node:fs/promises';
+import { getClient } from '../client.js';
+import { hasErrorCode, isRecord, type CliOptions } from '../utils/options.js';
 
 type ManifestOptions = CliOptions<{
     manifest?: string;
@@ -25,12 +31,12 @@ export async function listApps(program: Command, _options: Record<string, unknow
     const apps = await client.apps.list();
 
     if (apps.length === 0) {
-        console.log("No apps found.");
+        console.log('No apps found.');
         return;
     }
 
     console.log(`Found ${apps.length} app(s):\n`);
-    apps.forEach(app => {
+    apps.forEach((app) => {
         console.log(`${colors.bold(app.name)} [${app.id}]`);
         if (app.description) {
             console.log(`  ${colors.dim(app.description)}`);
@@ -43,7 +49,7 @@ export async function getApp(program: Command, appId: string, _options: Record<s
     const client = await getClient(program);
     const apps = await client.apps.list();
 
-    const app = apps.find(a => a.id === appId || a.name === appId);
+    const app = apps.find((a) => a.id === appId || a.name === appId);
 
     if (!app) {
         console.log(`No app found with ID or name: ${appId}`);
@@ -97,7 +103,7 @@ export async function createApp(program: Command, options: ManifestOptions) {
 
         // Get current user ID from JWT
         const jwt = await client.getDecodedJWT();
-        
+
         if (jwt?.sub) {
             // Grant app_member role to the current user
             await client.iam.aces.create({
@@ -178,7 +184,11 @@ export async function installApp(program: Command, appId: string, options: Setti
     console.log(`  App Manifest ID: ${result.manifest}`);
 }
 
-export async function deleteAppInstallation(program: Command, installationId: string, _options: Record<string, unknown>) {
+export async function deleteAppInstallation(
+    program: Command,
+    installationId: string,
+    _options: Record<string, unknown>,
+) {
     const client = await getClient(program);
 
     await client.apps.uninstall(installationId);
@@ -192,12 +202,12 @@ export async function listInstalledApps(program: Command, options: InstalledApps
     const apps = await client.apps.getInstalledApps(kind);
 
     if (apps.length === 0) {
-        console.log("No installed apps found that you have access to.");
+        console.log('No installed apps found that you have access to.');
         return;
     }
 
     console.log(`Found ${apps.length} installed app(s):\n`);
-    apps.forEach(app => {
+    apps.forEach((app) => {
         console.log(`${colors.bold(app.manifest.name)} [${app.manifest.id}]`);
         console.log(`  Installation ID: ${app.id}`);
         if (app.manifest.description) {
@@ -239,15 +249,21 @@ export async function getAppInstallation(program: Command, appName: string, _opt
 
             return {
                 ...perm,
-                principal_details: principalDetails
+                principal_details: principalDetails,
             };
-        })
+        }),
     );
 
-    console.log(JSON.stringify({
-        ...installation,
-        permissions: enrichedPermissions
-    }, null, 2));
+    console.log(
+        JSON.stringify(
+            {
+                ...installation,
+                permissions: enrichedPermissions,
+            },
+            null,
+            2,
+        ),
+    );
 }
 
 export async function updateAppInstallationSettings(program: Command, appId: string, options: SettingsOptions) {
@@ -280,7 +296,7 @@ export async function updateAppInstallationSettings(program: Command, appId: str
 
     const result = await client.apps.updateInstallationSettings({
         app_id: appId,
-        settings
+        settings,
     });
 
     console.log(`${colors.green('✓')} App settings updated successfully`);

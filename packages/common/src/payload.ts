@@ -1,4 +1,4 @@
-import type { FacetSpec } from "./facets.js";
+import type { FacetSpec } from './facets.js';
 import type {
     ComplexCollectionSearchQuery,
     ComplexSearchQuery,
@@ -7,9 +7,9 @@ import type {
     ObjectTypeSearchQuery,
     PromptSearchQuery,
     RunSearchQuery,
-    SimpleSearchQuery
-} from "./query.js";
-import type { ColumnLayout } from "./store/store.js";
+    SimpleSearchQuery,
+} from './query.js';
+import type { ColumnLayout } from './store/store.js';
 
 export type SortOrder = 'asc' | 'desc';
 

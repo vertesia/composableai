@@ -1,13 +1,21 @@
-import { type Interaction, type InteractionRef, InteractionStatus } from "@vertesia/common";
-import colors from "ansi-colors";
-import type { Command } from "commander";
-import { getClient } from "../client.js";
+import { type Interaction, type InteractionRef, InteractionStatus } from '@vertesia/common';
+import colors from 'ansi-colors';
+import type { Command } from 'commander';
+import { getClient } from '../client.js';
 
 function textToPascalCase(text: string) {
-    return text.trim().split(/\W/).map(w => w ? w[0].toUpperCase() + w.substring(1) : '').join('')
+    return text
+        .trim()
+        .split(/\W/)
+        .map((w) => (w ? w[0].toUpperCase() + w.substring(1) : ''))
+        .join('');
 }
 
-export async function listInteractions(program: Command, interactionId: string | undefined, options: Record<string, unknown>) {
+export async function listInteractions(
+    program: Command,
+    interactionId: string | undefined,
+    options: Record<string, unknown>,
+) {
     const client = await getClient(program);
     if (!interactionId) {
         const interactions = await client.interactions.list();
@@ -25,16 +33,21 @@ export async function listInteractions(program: Command, interactionId: string |
     }
 }
 
-
 function printInteraction(interaction: Interaction, versions: InteractionRef[], _options: Record<string, unknown>) {
     console.log(`${colors.bold(interaction.name)} [${interaction.id}]`);
-    console.log(colors.bold("Description:"), interaction.description || 'n/a');
-    console.log(colors.bold("Class name:"), textToPascalCase(interaction.name));
-    console.log(colors.bold("Status:"), interaction.status);
-    console.log(colors.bold("Version:"), interaction.version);
-    console.log(colors.bold("Tags:"), interaction.tags && interaction.tags.length > 0 ? interaction.tags.join(", ") : "n/a");
+    console.log(colors.bold('Description:'), interaction.description || 'n/a');
+    console.log(colors.bold('Class name:'), textToPascalCase(interaction.name));
+    console.log(colors.bold('Status:'), interaction.status);
+    console.log(colors.bold('Version:'), interaction.version);
+    console.log(
+        colors.bold('Tags:'),
+        interaction.tags && interaction.tags.length > 0 ? interaction.tags.join(', ') : 'n/a',
+    );
     if (interaction.status === InteractionStatus.draft) {
         versions.sort((a, b) => a.version - b.version);
-        console.log(colors.bold("Published Versions:"), versions.length > 0 ? versions.map(v => v.version).join(", ") : "n/a");
+        console.log(
+            colors.bold('Published Versions:'),
+            versions.length > 0 ? versions.map((v) => v.version).join(', ') : 'n/a',
+        );
     }
 }

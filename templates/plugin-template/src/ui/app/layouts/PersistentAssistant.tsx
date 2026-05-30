@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bot, X } from "lucide-react";
-import { Button, SidePanel } from "@vertesia/ui/core";
-import { ModernAgentConversation } from "@vertesia/ui/features";
-import { useUITranslation } from "@vertesia/ui/i18n";
-import { useLocation } from "@vertesia/ui/router";
-import { useUserSession } from "@vertesia/ui/session";
-import type { CreateAgentRunPayload } from "@vertesia/common";
-import { ASSISTANT_INTERACTION } from "../constants";
-import { OPEN_ASSISTANT_EVENT } from "./assistantEvents";
-import type { OpenAssistantDetail } from "./assistantEvents";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Bot, X } from 'lucide-react';
+import { Button, SidePanel } from '@vertesia/ui/core';
+import { ModernAgentConversation } from '@vertesia/ui/features';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { useLocation } from '@vertesia/ui/router';
+import { useUserSession } from '@vertesia/ui/session';
+import type { CreateAgentRunPayload } from '@vertesia/common';
+import { ASSISTANT_INTERACTION } from '../constants';
+import { OPEN_ASSISTANT_EVENT } from './assistantEvents';
+import type { OpenAssistantDetail } from './assistantEvents';
 
 /**
  * Route-aware assistant context. Replace this builder for your plugin to
@@ -22,8 +22,8 @@ export interface AssistantContext {
 }
 
 function defaultContext(pathname: string): AssistantContext {
-    const segments = pathname.split("/").filter(Boolean);
-    return { scope: segments[0] || "home", route: pathname };
+    const segments = pathname.split('/').filter(Boolean);
+    return { scope: segments[0] || 'home', route: pathname };
 }
 
 interface PersistentAssistantProps {
@@ -45,7 +45,7 @@ interface PersistentAssistantProps {
 
 export function PersistentAssistant({
     getContext = defaultContext,
-    appTag = "plugin-app",
+    appTag = 'plugin-app',
     panelWidth = 560,
     interaction = ASSISTANT_INTERACTION,
 }: PersistentAssistantProps) {
@@ -71,27 +71,30 @@ export function PersistentAssistant({
         return () => window.removeEventListener(OPEN_ASSISTANT_EVENT, open);
     }, []);
 
-    const startWorkflow = useCallback(async (initialMessage?: string) => {
-        const payload: CreateAgentRunPayload = {
-            interaction,
-            interactive: true,
-            data: {
-                user_prompt: initialMessage || "",
-                app: appTag,
-                context,
-                project_name: project?.name,
-                account_name: account?.name,
-            },
-            started_by: user?.sub,
-            tags: [appTag, "user-assistant", context.scope],
-        };
-        const result = await client.agents.start(payload);
-        if (result?.id) {
-            setAgentRunId(result.id);
-            return { agent_run_id: result.id };
-        }
-        return undefined;
-    }, [interaction, appTag, context, project?.name, account?.name, user?.sub, client.agents]);
+    const startWorkflow = useCallback(
+        async (initialMessage?: string) => {
+            const payload: CreateAgentRunPayload = {
+                interaction,
+                interactive: true,
+                data: {
+                    user_prompt: initialMessage || '',
+                    app: appTag,
+                    context,
+                    project_name: project?.name,
+                    account_name: account?.name,
+                },
+                started_by: user?.sub,
+                tags: [appTag, 'user-assistant', context.scope],
+            };
+            const result = await client.agents.start(payload);
+            if (result?.id) {
+                setAgentRunId(result.id);
+                return { agent_run_id: result.id };
+            }
+            return undefined;
+        },
+        [interaction, appTag, context, project?.name, account?.name, user?.sub, client.agents],
+    );
 
     const handleReset = useCallback(() => setAgentRunId(undefined), []);
 
@@ -103,30 +106,32 @@ export function PersistentAssistant({
                     size="sm"
                     onClick={() => setIsOpen(true)}
                     className="fixed end-4 bottom-5 z-40 gap-2 shadow-md"
-                    alt={t("nav.openAssistant")}
+                    alt={t('nav.openAssistant')}
                 >
                     <Bot className="size-4" />
-                    <span>{t("nav.askAi")}</span>
+                    <span>{t('nav.askAi')}</span>
                 </Button>
             )}
             <SidePanel
                 isOpen={isOpen}
                 onClose={() => setIsOpen(false)}
-                title={(
+                title={
                     <div className="flex items-center gap-2">
                         <Bot className="size-5 text-primary" />
-                        <span>{t("nav.pluginAssistant")}</span>
+                        <span>{t('nav.pluginAssistant')}</span>
                     </div>
-                )}
+                }
                 panelWidth={panelWidth}
                 contentClassName="flex-1 flex flex-col overflow-hidden min-h-0"
             >
                 <div className="px-4 py-2 border-b flex items-center justify-between gap-3 text-xs text-muted shrink-0">
-                    <span className="truncate">{t("nav.assistantContext", { scope: context.scope, route: context.route })}</span>
+                    <span className="truncate">
+                        {t('nav.assistantContext', { scope: context.scope, route: context.route })}
+                    </span>
                     {agentRunId && (
-                        <Button variant="ghost" size="xs" onClick={handleReset} alt={t("nav.newAssistantSession")}>
+                        <Button variant="ghost" size="xs" onClick={handleReset} alt={t('nav.newAssistantSession')}>
                             <X className="size-3" />
-                            <span>{t("nav.newSession")}</span>
+                            <span>{t('nav.newSession')}</span>
                         </Button>
                     )}
                 </div>
@@ -134,9 +139,9 @@ export function PersistentAssistant({
                     <ModernAgentConversation
                         agentRunId={agentRunId}
                         startWorkflow={startWorkflow}
-                        title={t("nav.pluginAssistant")}
-                        initialMessage={suggestedMessage || t("nav.assistantInitialPrompt")}
-                        placeholder={t("nav.assistantPlaceholder")}
+                        title={t('nav.pluginAssistant')}
+                        initialMessage={suggestedMessage || t('nav.assistantInitialPrompt')}
+                        placeholder={t('nav.assistantPlaceholder')}
                         resetWorkflow={handleReset}
                         hideObjectLinking
                         fullWidth

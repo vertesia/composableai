@@ -51,8 +51,10 @@ function getConversationLabel(
     formatTime: (date: Date | string | number | null | undefined) => string,
 ): string {
     if (conv.topic) return conv.topic;
-    const input = typeof conv.input === 'object' && conv.input !== null ? conv.input as { data?: unknown } : undefined;
-    const inputData = typeof input?.data === 'object' && input.data !== null ? input.data as Record<string, unknown> : undefined;
+    const input =
+        typeof conv.input === 'object' && conv.input !== null ? (conv.input as { data?: unknown }) : undefined;
+    const inputData =
+        typeof input?.data === 'object' && input.data !== null ? (input.data as Record<string, unknown>) : undefined;
     const prompt = inputData?.user_prompt;
     if (typeof prompt === 'string' && prompt.trim()) return prompt.trim();
     if (conv.started_at) return formatTime(conv.started_at);
@@ -69,12 +71,14 @@ export function PluginSidebar() {
     const [conversations, setConversations] = useState<WorkflowRun[]>([]);
 
     useEffect(() => {
-        client.agents.list({
-            interaction: ASSISTANT_INTERACTION,
-            limit: SIDEBAR_RECENT_LIMIT,
-            sort: 'started_at',
-            order: 'desc',
-        }).then(response => setConversations(response.items.map(toWorkflowRun)));
+        client.agents
+            .list({
+                interaction: ASSISTANT_INTERACTION,
+                limit: SIDEBAR_RECENT_LIMIT,
+                sort: 'started_at',
+                order: 'desc',
+            })
+            .then((response) => setConversations(response.items.map(toWorkflowRun)));
     }, [client]);
 
     return (
@@ -125,7 +129,7 @@ export function PluginSidebar() {
                     </SidebarSection>
                     {conversations.length > 0 && (
                         <SidebarSection title={t('nav.recent')}>
-                            {conversations.map(conv => {
+                            {conversations.map((conv) => {
                                 const convPath = `${basePath}/chat/${conv.run_id}`;
                                 const label = getConversationLabel(conv, t, formatTime);
                                 return (
@@ -136,11 +140,7 @@ export function PluginSidebar() {
                                         icon={MessageSquare}
                                         className="overflow-hidden"
                                     >
-                                        <span
-                                            className="min-w-0 flex-1 truncate text-start"
-                                            dir="auto"
-                                            title={label}
-                                        >
+                                        <span className="min-w-0 flex-1 truncate text-start" dir="auto" title={label}>
                                             {label}
                                         </span>
                                     </AppSidebarItem>

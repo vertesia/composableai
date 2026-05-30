@@ -46,7 +46,7 @@ export function RemoteMcpConnectionButton({
     variant = 'default',
     showLabel = false,
     showDisconnect = false,
-    readOnly = false
+    readOnly = false,
 }: RemoteMcpConnectionButtonProps) {
     const { client } = useUserSession();
     const { t } = useUITranslation();
@@ -88,7 +88,7 @@ export function RemoteMcpConnectionButton({
         onError: (error) => {
             console.error('OAuth failed:', error);
             setAuthenticating(false);
-        }
+        },
     });
 
     const handleConnect = async () => {
@@ -108,9 +108,10 @@ export function RemoteMcpConnectionButton({
             }
         } catch (error) {
             console.error('Failed to authorize:', error);
-            const raw = error instanceof Error
-                ? ((error as { original_message?: string }).original_message ?? error.message)
-                : 'Failed to connect';
+            const raw =
+                error instanceof Error
+                    ? ((error as { original_message?: string }).original_message ?? error.message)
+                    : 'Failed to connect';
             const detail = raw.replace(/^[A-Za-z\s]+:\s/, '');
             onError?.(`${displayName}: ${detail}`);
             setAuthenticating(false);
@@ -168,12 +169,7 @@ export function RemoteMcpConnectionButton({
                     <span>{t('mcpOAuth.connected')}</span>
                 </div>
                 {showDisconnect && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleDisconnect}
-                        disabled={disconnecting}
-                    >
+                    <Button variant="ghost" size="sm" onClick={handleDisconnect} disabled={disconnecting}>
                         {disconnecting ? <Spinner className="size-4" /> : t('mcpOAuth.disconnect')}
                     </Button>
                 )}
@@ -252,12 +248,7 @@ export function RemoteMcpConnectionButton({
     }
 
     return (
-        <Button
-            variant="outline"
-            size="sm"
-            onClick={handleConnect}
-            disabled={authenticating}
-        >
+        <Button variant="outline" size="sm" onClick={handleConnect} disabled={authenticating}>
             {authenticating ? (
                 <>
                     <Spinner className="size-4" />

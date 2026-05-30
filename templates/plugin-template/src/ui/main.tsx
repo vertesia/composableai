@@ -1,16 +1,16 @@
-import { StandaloneApp, VertesiaShell } from '@vertesia/ui/shell'
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import { StandaloneApp, VertesiaShell } from '@vertesia/ui/shell';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 import './i18n'; // register plugin-specific translations
-import './index.css'
+import './index.css';
 // initialize dev environment
-import { RouterProvider, type Route } from '@vertesia/ui/router'
-import { App } from './app/App'
-import { setUsePluginAssets } from './assets'
-import "./env"
-import { OrgGate } from './app/layouts/OrgGate'
-import { PluginAccessDenied } from './app/layouts/PluginAccessDenied'
-import { PluginLayout } from './app/layouts/PluginLayout'
+import { RouterProvider, type Route } from '@vertesia/ui/router';
+import { App } from './app/App';
+import { setUsePluginAssets } from './assets';
+import './env';
+import { OrgGate } from './app/layouts/OrgGate';
+import { PluginAccessDenied } from './app/layouts/PluginAccessDenied';
+import { PluginLayout } from './app/layouts/PluginLayout';
 
 setUsePluginAssets(false);
 
@@ -27,9 +27,9 @@ function renderPluginApp() {
 }
 
 const routes: Route[] = [
-    { path: "app/*", Component: renderPluginApp },
-    { path: "*", Component: renderPluginApp },
-]
+    { path: 'app/*', Component: renderPluginApp },
+    { path: '*', Component: renderPluginApp },
+];
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -44,4 +44,4 @@ createRoot(rootElement).render(
             </OrgGate>
         </VertesiaShell>
     </StrictMode>,
-)
+);

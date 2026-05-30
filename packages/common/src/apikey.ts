@@ -1,7 +1,7 @@
-import type { PropertyConditions } from "./access-control.js";
-import type { UserGroupRef } from "./group.js";
-import type { ProjectRef, ProjectRoles } from "./project.js";
-import type { AccountRef } from "./user.js";
+import type { PropertyConditions } from './access-control.js';
+import type { UserGroupRef } from './group.js';
+import type { ProjectRef, ProjectRoles } from './project.js';
+import type { AccountRef } from './user.js';
 
 /**
  * Content security conditions in the JWT, keyed by permission type.
@@ -15,7 +15,7 @@ export interface ContentSecurity {
 }
 
 export enum ApiKeyTypes {
-    secret = "sk",
+    secret = 'sk',
 }
 export interface ApiKey {
     id: string;
@@ -83,6 +83,20 @@ export interface AuthTokenPayload {
     apps: string[];
 
     /**
+     * Apps in `apps[]` whose UI surface is restricted for this principal — present only on
+     * user tokens, and only when at least one app applies. Such apps grant functional access
+     * (tools, endpoints, contributions) but the portal must hide them from navigation unless
+     * the user holds an explicit app_member ACE.
+     *
+     * UI consumers should treat an app as visible when:
+     *   `apps.includes(name) && !ui_restrictions?.includes(name)`
+     *
+     * Omitted entirely when empty to keep the JWT compact. Not emitted on agent or service
+     * tokens — those carry only the functional `apps[]` set.
+     */
+    ui_restrictions?: string[];
+
+    /**
      * The user ID (if any) attached to the token.
      * This is set when the token is a user token or an agent token running as a user.
      * Not set for impersonating tokens like project tokens.
@@ -138,11 +152,11 @@ export interface AuthTokenPayload {
 }
 
 export enum PrincipalType {
-    User = "user",
-    OAuthAccess = "oauth_access",
-    Group = "group",
-    ApiKey = "apikey",
-    ServiceAccount = "service_account",
-    Agent = "agent",
-    Schedule = "schedule",
+    User = 'user',
+    OAuthAccess = 'oauth_access',
+    Group = 'group',
+    ApiKey = 'apikey',
+    ServiceAccount = 'service_account',
+    Agent = 'agent',
+    Schedule = 'schedule',
 }

@@ -1,10 +1,10 @@
-import type { ContentObjectTypeItem } from "@vertesia/common";
+import type { ContentObjectTypeItem } from '@vertesia/common';
 
 export class TypeRegistry {
     map: Record<string, ContentObjectTypeItem> = {};
     constructor(public types: ContentObjectTypeItem[]) {
         //sort types
-        types.sort((a, b) => a.name.localeCompare(b.name))
+        types.sort((a, b) => a.name.localeCompare(b.name));
         for (const type of types) {
             this.map[type.id] = type;
         }
@@ -23,5 +23,4 @@ export class TypeRegistry {
         const type = this.map[id];
         return type ? type.name : undefined;
     }
-
 }

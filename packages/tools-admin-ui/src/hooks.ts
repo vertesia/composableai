@@ -21,10 +21,7 @@ async function fetchJson<T>(url: string): Promise<T> {
  * Fetches the tool server info (message, version, endpoints).
  */
 export function useServerInfo(baseUrl: string) {
-    return useFetch<ServerInfo>(() =>
-        fetchJson<ServerInfo>(baseUrl),
-        [baseUrl]
-    );
+    return useFetch<ServerInfo>(() => fetchJson<ServerInfo>(baseUrl), [baseUrl]);
 }
 
 /**
@@ -42,7 +39,7 @@ export function useResourceData(baseUrl: string, mcpEndpoints?: string[]) {
             fetchResource<ResourceDataArgs[4]>('types'),
             fetchResource<ResourceDataArgs[5]>('templates'),
         ]).then(([interactions, tools, skills, activities, types, templates]) =>
-            buildResourceData(interactions, tools, skills, activities, types, templates, mcpEndpoints)
+            buildResourceData(interactions, tools, skills, activities, types, templates, mcpEndpoints),
         );
     }, [baseUrl, mcpEndpoints]);
 }

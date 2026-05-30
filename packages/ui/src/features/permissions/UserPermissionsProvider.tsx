@@ -1,13 +1,19 @@
-import { getPermissionsForRoles, listRoles, type AuthTokenPayload, type Permission, type ProjectRoles } from "@vertesia/common"
-import { ErrorBox, errorMessage, useFetch } from "@vertesia/ui/core"
-import { useUITranslation } from "@vertesia/ui/i18n"
-import { useUserSession } from "@vertesia/ui/session"
-import { createContext, useContext, useMemo } from "react"
-import { isAnyOf } from "./helpers"
+import {
+    getPermissionsForRoles,
+    listRoles,
+    type AuthTokenPayload,
+    type Permission,
+    type ProjectRoles,
+} from '@vertesia/common';
+import { ErrorBox, errorMessage, useFetch } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { useUserSession } from '@vertesia/ui/session';
+import { createContext, useContext, useMemo } from 'react';
+import { isAnyOf } from './helpers';
 
 type ListRolesResponse = {
-    name: ProjectRoles,
-    permissions: Permission[]
+    name: ProjectRoles;
+    permissions: Permission[];
 }[];
 
 export class UserPermissions {
@@ -23,13 +29,13 @@ export class UserPermissions {
         this.permissions = new Set(authToken.permissions ?? getPermissionsForRolesFromMappings(roleNames, roles));
     }
 
-
     hasPermission(permission: string | string[]) {
         if (typeof permission === 'string') {
             return this.permissions.has(permission);
         } else if (isAnyOf(permission as Permission[])) {
-            return permission.some(p => this.permissions.has(p));
-        } else { // all of
+            return permission.some((p) => this.permissions.has(p));
+        } else {
+            // all of
             for (const p of permission) {
                 if (!this.permissions.has(p)) {
                     return false;
@@ -38,11 +44,10 @@ export class UserPermissions {
             return true;
         }
     }
-
 }
 
 function listSystemRoles(): ListRolesResponse {
-    return listRoles().map(role => ({
+    return listRoles().map((role) => ({
         name: role.name,
         permissions: Array.from(role.permissions),
     }));
@@ -53,7 +58,7 @@ function getPermissionsForRolesFromMappings(roleNames: Iterable<ProjectRoles>, r
         return getPermissionsForRoles(roleNames);
     }
 
-    const permissionsByRole = new Map(roles.map(role => [role.name, role.permissions]));
+    const permissionsByRole = new Map(roles.map((role) => [role.name, role.permissions]));
     const permissions = new Set<Permission>();
     for (const role of roleNames) {
         for (const permission of permissionsByRole.get(role) ?? []) {
@@ -63,19 +68,19 @@ function getPermissionsForRolesFromMappings(roleNames: Iterable<ProjectRoles>, r
     return Array.from(permissions);
 }
 
-const UserPermissionsContext = createContext<UserPermissions | undefined>(undefined)
-export { UserPermissionsContext }
+const UserPermissionsContext = createContext<UserPermissions | undefined>(undefined);
+export { UserPermissionsContext };
 
 export function useUserPermissions() {
     const perms = useContext(UserPermissionsContext);
     if (!perms) {
-        throw new Error('UserPermissionContext cannot be used outside UserPermissionProvider')
+        throw new Error('UserPermissionContext cannot be used outside UserPermissionProvider');
     }
     return perms;
 }
 
 interface UserPermissionProviderProps {
-    children: React.ReactNode
+    children: React.ReactNode;
 }
 export function UserPermissionProvider({ children }: UserPermissionProviderProps) {
     const { t } = useUITranslation();
@@ -104,10 +109,8 @@ export function UserPermissionProvider({ children }: UserPermissionProviderProps
     }, [authToken, data, isLoading, shouldFetchRoleMappings]);
 
     if (error) {
-        return <ErrorBox title={t('store.failedToFetchRoleMappings')}>{errorMessage(error)}</ErrorBox>
+        return <ErrorBox title={t('store.failedToFetchRoleMappings')}>{errorMessage(error)}</ErrorBox>;
     }
 
-    return perms && (
-        <UserPermissionsContext.Provider value={perms}>{children}</UserPermissionsContext.Provider>
-    )
+    return perms && <UserPermissionsContext.Provider value={perms}>{children}</UserPermissionsContext.Provider>;
 }

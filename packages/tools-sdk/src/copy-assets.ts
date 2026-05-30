@@ -10,8 +10,8 @@
  *   import { copyRuntimeAssets } from '@vertesia/tools-sdk';
  *   copyRuntimeAssets('./src', './dist');
  */
-import { existsSync, readdirSync, statSync, mkdirSync, copyFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { existsSync, readdirSync, statSync, mkdirSync, copyFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 /**
  * Recursively copy files matching a filter
@@ -50,11 +50,7 @@ export interface CopyAssetsOptions {
  * Copy runtime assets (skills, interactions) from src to dist
  */
 export function copyRuntimeAssets(options: CopyAssetsOptions = {}): void {
-    const {
-        srcDir = './src',
-        distDir = './dist',
-        verbose = true
-    } = options;
+    const { srcDir = './src', distDir = './dist', verbose = true } = options;
 
     if (verbose) {
         console.log('Copying runtime assets to dist...');
@@ -66,9 +62,7 @@ export function copyRuntimeAssets(options: CopyAssetsOptions = {}): void {
 
     if (existsSync(skillsSrc)) {
         copyFilesRecursive(skillsSrc, skillsDest, (filename) => {
-            return filename === 'SKILL.md' ||
-                   filename === 'SKILL.jst' ||
-                   filename.endsWith('.py');
+            return filename === 'SKILL.md' || filename === 'SKILL.jst' || filename.endsWith('.py');
         });
         if (verbose) {
             console.log('  ✓ Skills assets (SKILL.md, SKILL.jst, *.py)');
@@ -81,8 +75,7 @@ export function copyRuntimeAssets(options: CopyAssetsOptions = {}): void {
 
     if (existsSync(interactionsSrc)) {
         copyFilesRecursive(interactionsSrc, interactionsDest, (filename) => {
-            return filename === 'prompt.jst' ||
-                   filename === 'prompt.md';
+            return filename === 'prompt.jst' || filename === 'prompt.md';
         });
         if (verbose) {
             console.log('  ✓ Interaction assets (prompt.jst, prompt.md)');

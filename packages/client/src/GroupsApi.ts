@@ -1,5 +1,11 @@
-import type { CreateUserGroupPayload, DeleteByIdResult, UpdateUserGroupPayload, UserGroup, UserRef } from "@vertesia/common";
-import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import type {
+    CreateUserGroupPayload,
+    DeleteByIdResult,
+    UpdateUserGroupPayload,
+    UserGroup,
+    UserRef,
+} from '@vertesia/common';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 
 export interface GroupsQueryOptions {
     search?: string;
@@ -10,9 +16,8 @@ export interface GroupsQueryOptions {
 }
 
 export class GroupsApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
-        super(parent, "/groups");
+        super(parent, '/groups');
     }
 
     /**

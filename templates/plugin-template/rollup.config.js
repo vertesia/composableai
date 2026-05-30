@@ -9,23 +9,17 @@
  *
  * Browser bundles are in rollup.config.browser.js
  */
-
-import { builtinModules } from 'node:module';
-import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
-import { nodeResolve } from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import {
-    promptTransformer,
+    vertesiaImportPlugin,
+    skillTransformer,
     rawTransformer,
     skillCollectionTransformer,
-    skillTransformer,
-    templateCollectionTransformer,
     templateTransformer,
-    vertesiaImportPlugin,
+    templateCollectionTransformer,
+    promptTransformer,
 } from '@vertesia/build-tools';
-
-const nodeBuiltins = new Set([...builtinModules, ...builtinModules.map((name) => `node:${name}`)]);
 
 // ============================================================================
 // Exit Plugin - Forces process exit after build completes
@@ -97,52 +91,11 @@ const serverBuild = {
             sourceMap: true,
         }),
         json(),
-    ],
-};
-
-const runtimeBundle = {
-    input: './src/tool-server/server.ts',
-    output: {
-        file: 'lib/server.js',
-        format: 'es',
-        sourcemap: true,
-        inlineDynamicImports: true,
-    },
-    external: (id) => nodeBuiltins.has(id),
-    plugins: [
-        vertesiaImportPlugin({
-            transformers: [
-                skillTransformer,
-                skillCollectionTransformer,
-                templateTransformer,
-                templateCollectionTransformer,
-                promptTransformer,
-                rawTransformer,
-            ],
-            assetsDir: './dist',
-            widgetConfig: {
-                minify: false,
-                tsconfig: './tsconfig.widgets.json',
-            },
-        }),
-        nodeResolve({
-            browser: false,
-            preferBuiltins: true,
-            exportConditions: ['node', 'import', 'default'],
-        }),
-        commonjs(),
-        json(),
-        typescript({
-            tsconfig: './tsconfig.tool-server.json',
-            declaration: false,
-            declarationMap: false,
-            sourceMap: true,
-        }),
         exitPlugin(),
     ],
 };
 
 // ============================================================================
-// Export declaration/preserve-modules build plus bundled runtime entry
+// Export server build configuration only
 // ============================================================================
-export default [serverBuild, runtimeBundle];
+export default serverBuild;

@@ -1,5 +1,3 @@
-import { ExampleSkills } from "./examples";
+import { ExampleSkills } from './examples';
 
-export const skills = [
-    ExampleSkills
-];
+export const skills = [ExampleSkills];

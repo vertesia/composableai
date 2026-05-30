@@ -1,6 +1,5 @@
-import type { MCPConnectionDetails } from "@vertesia/tools-sdk";
-import type { AuthSession } from "@vertesia/tools-sdk";
-
+import type { MCPConnectionDetails } from '@vertesia/tools-sdk';
+import type { AuthSession } from '@vertesia/tools-sdk';
 
 export abstract class MCPProvider {
     name: string;
@@ -13,11 +12,8 @@ export abstract class MCPProvider {
     /**
      * Generate an authorization token to access the returned mcp server URL. the mcp server URL is returned in the generation payload since
      * it may change depending on the session and config vars.
-     * @param session 
-     * @param config 
+     * @param session
+     * @param config
      */
     abstract createMCPConnection(session: AuthSession, config: Record<string, unknown>): Promise<MCPConnectionDetails>;
-
 }
-
-

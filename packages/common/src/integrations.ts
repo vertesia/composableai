@@ -1,5 +1,3 @@
-
-
 export interface IntegrationConfigurationBase<TIntegration extends SupportedIntegrations = SupportedIntegrations> {
     integration: TIntegration;
     enabled: boolean;
@@ -120,7 +118,8 @@ export interface ResendConfigurationWithSecrets extends ResendConfiguration {
  * Configuration for ask_user webhook notifications.
  * Sends webhooks when agents call ask_user and when users respond.
  */
-export interface AskUserWebhookConfigurationInput extends IntegrationConfigurationBase<SupportedIntegrations.ask_user_webhook> {
+export interface AskUserWebhookConfigurationInput
+    extends IntegrationConfigurationBase<SupportedIntegrations.ask_user_webhook> {
     /** Webhook URL to receive ask_user events */
     webhook_url: string;
     /** Secret for signing webhook payloads (HMAC-SHA256) */
@@ -135,7 +134,8 @@ export interface AskUserWebhookConfigurationInput extends IntegrationConfigurati
  * Configuration for ask_user webhook notifications.
  * Sends webhooks when agents call ask_user and when users respond.
  */
-export interface AskUserWebhookConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.ask_user_webhook> {
+export interface AskUserWebhookConfiguration
+    extends IntegrationConfigurationBase<SupportedIntegrations.ask_user_webhook> {
     /** Webhook URL to receive ask_user events */
     webhook_url: string;
     has_webhook_secret?: boolean;
@@ -152,15 +152,15 @@ export interface AskUserWebhookConfigurationWithSecrets extends AskUserWebhookCo
 }
 
 export enum SupportedIntegrations {
-    gladia = "gladia",
-    github = "github",
-    aws = "aws",
-    magic_pdf = "magic_pdf",
-    serper = "serper",
-    exa = "exa",
-    linkup = "linkup",
-    resend = "resend",
-    ask_user_webhook = "ask_user_webhook",
+    gladia = 'gladia',
+    github = 'github',
+    aws = 'aws',
+    magic_pdf = 'magic_pdf',
+    serper = 'serper',
+    exa = 'exa',
+    linkup = 'linkup',
+    resend = 'resend',
+    ask_user_webhook = 'ask_user_webhook',
 }
 
 /**

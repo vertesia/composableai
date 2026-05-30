@@ -1,5 +1,3 @@
-import { ExampleTypes } from "./examples/index.js";
+import { ExampleTypes } from './examples/index.js';
 
-export const types = [
-    ExampleTypes
-]
+export const types = [ExampleTypes];

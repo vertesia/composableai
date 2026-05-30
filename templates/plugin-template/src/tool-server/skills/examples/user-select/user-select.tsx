@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from "@vertesia/ui/core";
+import { Button } from '@vertesia/ui/core';
 
 const { useState } = React;
 
@@ -61,22 +61,18 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
         return (
             <div className="border border-destructive bg-destructive/10 rounded-lg p-4">
                 <p className="text-destructive font-medium">Error: Invalid selection structure</p>
-                <p className="text-sm text-muted mt-2">
-                    Selection must have at least one option
-                </p>
+                <p className="text-sm text-muted mt-2">Selection must have at least one option</p>
             </div>
         );
     }
 
     // Validate each option has text and value
-    const invalidOption = data.options.find(opt => !opt.text || !opt.value);
+    const invalidOption = data.options.find((opt) => !opt.text || !opt.value);
     if (invalidOption) {
         return (
             <div className="border border-destructive bg-destructive/10 rounded-lg p-4">
                 <p className="text-destructive font-medium">Error: Invalid option format</p>
-                <p className="text-sm text-muted mt-2">
-                    Each option must have 'text' and 'value' fields
-                </p>
+                <p className="text-sm text-muted mt-2">Each option must have 'text' and 'value' fields</p>
             </div>
         );
     }
@@ -109,7 +105,7 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
         setSubmitted(true);
 
         // Format the selected values for display
-        const selectedOptions = data.options.filter(opt => selected.has(opt.value));
+        const selectedOptions = data.options.filter((opt) => selected.has(opt.value));
         console.log('User selected:', isMultiple ? Array.from(selected) : Array.from(selected)[0]);
         console.log('Selected options:', selectedOptions);
     };
@@ -123,14 +119,8 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
         <div className="border border-mixer-5 bg-mixer-1 rounded-lg p-6 max-w-2xl">
             {/* Header */}
             <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">
-                    {isMultiple ? 'Select Options' : 'Select an Option'}
-                </h3>
-                {isMultiple && !submitted && (
-                    <p className="text-sm text-info">
-                        ℹ️ You can select multiple options
-                    </p>
-                )}
+                <h3 className="text-lg font-semibold mb-2">{isMultiple ? 'Select Options' : 'Select an Option'}</h3>
+                {isMultiple && !submitted && <p className="text-sm text-info">ℹ️ You can select multiple options</p>}
             </div>
 
             {/* Options */}
@@ -147,34 +137,26 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
                             aria-pressed={isSelected}
                             className={`
                                 relative border rounded-lg p-3 transition-all w-full text-left bg-transparent
-                                ${submitted
-                                    ? 'cursor-default'
-                                    : 'cursor-pointer hover:border-mixer-10 hover:bg-mixer-2'
+                                ${
+                                    submitted
+                                        ? 'cursor-default'
+                                        : 'cursor-pointer hover:border-mixer-10 hover:bg-mixer-2'
                                 }
-                                ${isSelected && !submitted
-                                    ? 'border-info bg-info/10'
-                                    : 'border-mixer-5'
-                                }
-                                ${submitted && isSelected
-                                    ? 'border-success bg-success/10'
-                                    : ''
-                                }
+                                ${isSelected && !submitted ? 'border-info bg-info/10' : 'border-mixer-5'}
+                                ${submitted && isSelected ? 'border-success bg-success/10' : ''}
                             `}
                         >
                             <div className="flex items-center gap-3">
                                 {/* Selection indicator */}
                                 {!submitted && (
-                                    <div className={`
+                                    <div
+                                        className={`
                                         w-5 h-5 border-2 flex items-center justify-center
                                         ${isMultiple ? 'rounded' : 'rounded-full'}
-                                        ${isSelected
-                                            ? 'border-info bg-info'
-                                            : 'border-mixer-10'
-                                        }
-                                    `}>
-                                        {isSelected && (
-                                            <span className="text-white text-xs">✓</span>
-                                        )}
+                                        ${isSelected ? 'border-info bg-info' : 'border-mixer-10'}
+                                    `}
+                                    >
+                                        {isSelected && <span className="text-white text-xs">✓</span>}
                                     </div>
                                 )}
                                 {submitted && isSelected && (
@@ -195,21 +177,24 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
             <div className="flex gap-2">
                 {!submitted ? (
                     <>
-                        <Button variant="unstyled"
+                        <Button
+                            variant="unstyled"
                             onClick={handleSubmit}
                             disabled={selected.size === 0}
                             className={`
                                 px-4 py-2 rounded-lg font-medium transition-all
-                                ${selected.size > 0
-                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                    : 'bg-mixer-3 text-muted cursor-not-allowed'
+                                ${
+                                    selected.size > 0
+                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                        : 'bg-mixer-3 text-muted cursor-not-allowed'
                                 }
                             `}
                         >
                             Confirm Selection
                         </Button>
                         {selected.size > 0 && (
-                            <Button variant="unstyled"
+                            <Button
+                                variant="unstyled"
                                 onClick={() => setSelected(new Set())}
                                 className="px-4 py-2 rounded-lg font-medium border border-mixer-5 hover:bg-mixer-2 transition-all"
                             >
@@ -222,7 +207,8 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
                         <div className="flex-1 flex items-center text-success">
                             <span className="font-medium">✓ Selection confirmed</span>
                         </div>
-                        <Button variant="unstyled"
+                        <Button
+                            variant="unstyled"
                             onClick={handleReset}
                             className="px-4 py-2 rounded-lg font-medium border border-mixer-5 hover:bg-mixer-2 transition-all"
                         >
@@ -235,12 +221,11 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
             {/* Selected values display */}
             {submitted && (
                 <div className="mt-4 p-3 bg-mixer-2 rounded-lg">
-                    <p className="text-sm font-medium text-muted mb-1">Selected value{isMultiple && selected.size > 1 ? 's' : ''}:</p>
+                    <p className="text-sm font-medium text-muted mb-1">
+                        Selected value{isMultiple && selected.size > 1 ? 's' : ''}:
+                    </p>
                     <code className="text-sm">
-                        {isMultiple
-                            ? JSON.stringify(Array.from(selected))
-                            : Array.from(selected)[0]
-                        }
+                        {isMultiple ? JSON.stringify(Array.from(selected)) : Array.from(selected)[0]}
                     </code>
                 </div>
             )}

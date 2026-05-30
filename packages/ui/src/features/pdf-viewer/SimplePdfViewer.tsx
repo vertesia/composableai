@@ -1,10 +1,10 @@
-import type { ContentObject } from "@vertesia/common";
-import { Button, Spinner, VTooltip } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import { Maximize2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import type { ContentObject } from '@vertesia/common';
+import { Button, Spinner, VTooltip } from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
+import { Maximize2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { PdfPageSlider } from "./PdfPageSlider";
+import { PdfPageSlider } from './PdfPageSlider';
 
 interface SimplePdfViewerProps {
     /** The content object containing the PDF (optional if url or source is provided) */
@@ -26,7 +26,7 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const [currentPage, setCurrentPage] = useState(1);
-    const [pdfUrl, setPdfUrl] = useState<string>(url || "");
+    const [pdfUrl, setPdfUrl] = useState<string>(url || '');
     const [pdfUrlLoading, setPdfUrlLoading] = useState(!url);
     const [pageCount, setPageCount] = useState(0);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -48,12 +48,13 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
         }
 
         setPdfUrlLoading(true);
-        client.files.getDownloadUrl(sourceToResolve)
+        client.files
+            .getDownloadUrl(sourceToResolve)
             .then((result) => {
                 setPdfUrl(result.url);
             })
             .catch((err) => {
-                console.error("Failed to get PDF URL:", err);
+                console.error('Failed to get PDF URL:', err);
             })
             .finally(() => {
                 setPdfUrlLoading(false);
@@ -86,11 +87,7 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
     }
 
     if (!pdfUrl) {
-        return (
-            <div className="flex items-center justify-center h-full text-muted">
-                {t('pdf.noPdfAvailable')}
-            </div>
-        );
+        return <div className="flex items-center justify-center h-full text-muted">{t('pdf.noPdfAvailable')}</div>;
     }
 
     // Fullscreen overlay
@@ -99,7 +96,12 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
             <div className="fixed inset-0 bg-background z-50 flex flex-col overflow-hidden">
                 {/* Header with close button */}
                 <div className="flex h-9 items-center justify-end shrink-0 bg-sidebar px-2 border-b border-sidebar-border">
-                    <Button variant="ghost" size="xs" onClick={() => setIsFullscreen(false)} alt={t('pdf.closeFullscreen')}>
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        onClick={() => setIsFullscreen(false)}
+                        alt={t('pdf.closeFullscreen')}
+                    >
                         <X className="size-4" />
                     </Button>
                 </div>

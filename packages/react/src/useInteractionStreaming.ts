@@ -1,29 +1,35 @@
-import type { InteractionBase } from "@vertesia/client";
-import type { InteractionExecutionPayload, InteractionExecutionResult } from "@vertesia/common";
-import { useMemo, useState } from "react";
+import type { InteractionBase } from '@vertesia/client';
+import type { InteractionExecutionPayload, InteractionExecutionResult } from '@vertesia/common';
+import { useMemo, useState } from 'react';
 
 export function useInteractionStreaming<TProps>(interaction: InteractionBase<TProps>) {
-
     const [isRunning, setRunning] = useState(false);
     const [text, setText] = useState('');
 
-    const execute = useMemo(() => (payload?: InteractionExecutionPayload): Promise<InteractionExecutionResult<TProps>> => {
-        if (isRunning) {
-            return Promise.reject(new Error('Trying to run the interaction while it is already running.'));
-        }
-        setRunning(true);
-        let chunks: string[] = [];
-        return interaction.execute(payload, (chunk: string) => {
-            chunks.push(chunk);
-            setText(chunks.join(''));
-        }).then(run => {
-            setText('');
-            setRunning(false);
-            return run;
-        }).finally(() => {
-            chunks = []
-        });
-    }, [interaction.execute, isRunning]);
+    const execute = useMemo(
+        () =>
+            (payload?: InteractionExecutionPayload): Promise<InteractionExecutionResult<TProps>> => {
+                if (isRunning) {
+                    return Promise.reject(new Error('Trying to run the interaction while it is already running.'));
+                }
+                setRunning(true);
+                let chunks: string[] = [];
+                return interaction
+                    .execute(payload, (chunk: string) => {
+                        chunks.push(chunk);
+                        setText(chunks.join(''));
+                    })
+                    .then((run) => {
+                        setText('');
+                        setRunning(false);
+                        return run;
+                    })
+                    .finally(() => {
+                        chunks = [];
+                    });
+            },
+        [interaction.execute, isRunning],
+    );
 
-    return { text, isRunning, execute }
+    return { text, isRunning, execute };
 }

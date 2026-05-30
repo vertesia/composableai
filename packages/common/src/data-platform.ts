@@ -838,17 +838,17 @@ export interface DashboardElasticsearchDsl {
  */
 export type DashboardElasticsearchResultMapping =
     | {
-        type: 'hits';
-    }
+          type: 'hits';
+      }
     | {
-        type: 'aggregation_buckets';
-        /** Dot path under `aggregations` that contains a `buckets` array. */
-        path: string;
-        /** Output field name for bucket key. Defaults to `key`. */
-        keyField?: string;
-        /** Output field name for doc count. Defaults to `doc_count`. */
-        countField?: string;
-    };
+          type: 'aggregation_buckets';
+          /** Dot path under `aggregations` that contains a `buckets` array. */
+          path: string;
+          /** Output field name for bucket key. Defaults to `key`. */
+          keyField?: string;
+          /** Output field name for doc count. Defaults to `doc_count`. */
+          countField?: string;
+      };
 
 /**
  * Dashboard data source backed by a Data Platform SQL query.

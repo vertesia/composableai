@@ -1,21 +1,47 @@
-import { memo, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 
-import { ContentNature, type ContentObject, ContentObjectStatus, type DocAnalyzerProgress, type DocProcessorOutputFormat, type DocumentMetadata, MarkdownRenditionFormat, PDF_RENDITION_NAME, Permission, WorkflowExecutionStatus } from "@vertesia/common";
-import { Button, Dropdown, MenuItem, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useFetch, useToast } from "@vertesia/ui/core";
-import { NavLink } from "@vertesia/ui/router";
-import { useUserSession } from "@vertesia/ui/session";
-import { JSONDisplay, Progress } from "@vertesia/ui/widgets";
-import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from "lucide-react";
-import { UniversalDocumentViewer, type UniversalDocumentConverter, type UniversalDocumentSource } from "../../../document-viewer/UniversalDocumentViewer.js";
+import {
+    ContentNature,
+    type ContentObject,
+    ContentObjectStatus,
+    type DocAnalyzerProgress,
+    type DocProcessorOutputFormat,
+    type DocumentMetadata,
+    MarkdownRenditionFormat,
+    PDF_RENDITION_NAME,
+    Permission,
+    WorkflowExecutionStatus,
+} from '@vertesia/common';
+import {
+    Button,
+    Dropdown,
+    MenuItem,
+    Portal,
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
+    Spinner,
+    useFetch,
+    useToast,
+} from '@vertesia/ui/core';
+import { NavLink } from '@vertesia/ui/router';
+import { useUserSession } from '@vertesia/ui/session';
+import { JSONDisplay, Progress } from '@vertesia/ui/widgets';
+import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from 'lucide-react';
+import {
+    UniversalDocumentViewer,
+    type UniversalDocumentConverter,
+    type UniversalDocumentSource,
+} from '../../../document-viewer/UniversalDocumentViewer.js';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { MagicPdfView } from "../../../magic-pdf";
-import { AudioPanel, ImagePanel, VideoPanel } from "../../../media-viewer";
-import { SecureButton } from "../../../permissions/SecureButton.js";
-import { getWorkflowStatusColor, getWorkflowStatusName, isPreviewableAsPdf } from "../../../utils/index.js";
-import { PropertiesEditorModal } from "./PropertiesEditorModal";
-import { TextEditorPanel } from "./TextEditorPanel.js";
-import { useObjectText, useOfficePdfConversion, usePdfProcessingStatus } from "./useContentPanelHooks.js";
-import { useDownloadFile } from "./useDownloadFile.js";
+import { MagicPdfView } from '../../../magic-pdf';
+import { AudioPanel, ImagePanel, VideoPanel } from '../../../media-viewer';
+import { SecureButton } from '../../../permissions/SecureButton.js';
+import { getWorkflowStatusColor, getWorkflowStatusName, isPreviewableAsPdf } from '../../../utils/index.js';
+import { PropertiesEditorModal } from './PropertiesEditorModal';
+import { TextEditorPanel } from './TextEditorPanel.js';
+import { useObjectText, useOfficePdfConversion, usePdfProcessingStatus } from './useContentPanelHooks.js';
+import { useDownloadFile } from './useDownloadFile.js';
 
 // ----- Type Definitions -----
 
@@ -23,7 +49,7 @@ interface TextActionsProps {
     object: ContentObject;
     text: string | undefined;
     fullText: string | undefined;
-    handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>;
+    handleCopyContent: (content: string, type: 'text' | 'properties') => Promise<void>;
     textContainerRef: RefObject<HTMLDivElement | null>;
     isEditing?: boolean;
     onToggleEdit?: () => void;
@@ -66,8 +92,8 @@ interface MarkdownComponentProps {
  */
 const createMarkdownComponents = () => ({
     a: ({ node, ...props }: MarkdownComponentProps & { href?: string }) => {
-        const href = props.href || "";
-        if (href.includes("/store/objects/")) {
+        const href = props.href || '';
+        if (href.includes('/store/objects/')) {
             return (
                 <NavLink topLevelNav href={href} className="text-info">
                     {props.children}
@@ -76,33 +102,20 @@ const createMarkdownComponents = () => ({
         }
         return <a {...props} target="_blank" rel="noopener noreferrer" />;
     },
-    p: ({ node, ...props }: MarkdownComponentProps) => (
-        <p {...props} className="my-0" />
-    ),
-    pre: ({ node, ...props }: MarkdownComponentProps) => (
-        <pre {...props} className="my-2 p-2 rounded" />
-    ),
+    p: ({ node, ...props }: MarkdownComponentProps) => <p {...props} className="my-0" />,
+    pre: ({ node, ...props }: MarkdownComponentProps) => <pre {...props} className="my-2 p-2 rounded" />,
     code: ({ node, className, children, ...props }: MarkdownComponentProps & { className?: string }) => {
-        const match = /language-(\w+)/.exec(className || "");
+        const match = /language-(\w+)/.exec(className || '');
         const isInline = !match;
         return (
-            <code
-                {...props}
-                className={isInline ? "px-1.5 py-0.5 rounded" : "text-muted"}
-            >
+            <code {...props} className={isInline ? 'px-1.5 py-0.5 rounded' : 'text-muted'}>
                 {children}
             </code>
         );
     },
-    h1: ({ node, ...props }: MarkdownComponentProps) => (
-        <h1 {...props} className="font-bold text-2xl my-2" />
-    ),
-    h2: ({ node, ...props }: MarkdownComponentProps) => (
-        <h2 {...props} className="font-bold text-xl my-2" />
-    ),
-    h3: ({ node, ...props }: MarkdownComponentProps) => (
-        <h3 {...props} className="font-bold text-lg my-2" />
-    ),
+    h1: ({ node, ...props }: MarkdownComponentProps) => <h1 {...props} className="font-bold text-2xl my-2" />,
+    h2: ({ node, ...props }: MarkdownComponentProps) => <h2 {...props} className="font-bold text-xl my-2" />,
+    h3: ({ node, ...props }: MarkdownComponentProps) => <h3 {...props} className="font-bold text-lg my-2" />,
     li: ({ node, ...props }: MarkdownComponentProps) => <li {...props} />,
 });
 
@@ -126,14 +139,14 @@ function getContentProcessorType(object: ContentObject): string | undefined {
 function looksLikeMarkdown(text: string | undefined): boolean {
     if (!text) return false;
     return (
-        text.includes("\n# ") ||
-        text.includes("\n## ") ||
-        text.includes("\n### ") ||
-        text.includes("\n* ") ||
-        text.includes("\n- ") ||
-        text.includes("\n+ ") ||
-        text.includes("![") ||
-        text.includes("](")
+        text.includes('\n# ') ||
+        text.includes('\n## ') ||
+        text.includes('\n### ') ||
+        text.includes('\n* ') ||
+        text.includes('\n- ') ||
+        text.includes('\n+ ') ||
+        text.includes('![') ||
+        text.includes('](')
     );
 }
 
@@ -146,12 +159,12 @@ function getPanelVisibility(isVisible: boolean): string {
 }
 
 enum PanelView {
-    Text = "text",
-    Image = "image",
-    Video = "video",
-    Audio = "audio",
-    Pdf = "pdf",
-    Transcript = "transcript"
+    Text = 'text',
+    Image = 'image',
+    Video = 'video',
+    Audio = 'audio',
+    Pdf = 'pdf',
+    Transcript = 'transcript',
 }
 
 interface ContentOverviewProps {
@@ -159,30 +172,25 @@ interface ContentOverviewProps {
     loadText?: boolean;
     refetch?: () => Promise<unknown>;
 }
-export function ContentOverview({
-    object,
-    loadText,
-    refetch,
-}: ContentOverviewProps) {
+export function ContentOverview({ object, loadText, refetch }: ContentOverviewProps) {
     const toast = useToast();
     const { t } = useUITranslation();
 
-    const handleCopyContent = async (
-        content: string,
-        type: "text" | "properties",
-    ) => {
+    const handleCopyContent = async (content: string, type: 'text' | 'properties') => {
         try {
             await navigator.clipboard.writeText(content);
             toast({
-                status: "success",
-                title: t('store.contentCopied', { type: type === "text" ? t('store.contentType') : t('store.properties') }),
+                status: 'success',
+                title: t('store.contentCopied', {
+                    type: type === 'text' ? t('store.contentType') : t('store.properties'),
+                }),
                 description: t('store.successfullyCopied', { type }),
                 duration: 2000,
             });
         } catch (err) {
             console.error(`Failed to copy ${type}:`, err);
             toast({
-                status: "error",
+                status: 'error',
                 title: t('store.copyFailed'),
                 description: t('store.failedToCopy', { type }),
                 duration: 5000,
@@ -191,20 +199,37 @@ export function ContentOverview({
     };
 
     return (
-        <ResizablePanelGroup direction="horizontal" className='h-full'>
-                <ResizablePanel className="min-w-[100px]">
-                    <PropertiesPanel object={object} refetch={refetch ?? (() => Promise.resolve())} handleCopyContent={handleCopyContent} />
-                </ResizablePanel>
-                <ResizableHandle withHandle />
+        <ResizablePanelGroup direction="horizontal" className="h-full">
+            <ResizablePanel className="min-w-[100px]">
+                <PropertiesPanel
+                    object={object}
+                    refetch={refetch ?? (() => Promise.resolve())}
+                    handleCopyContent={handleCopyContent}
+                />
+            </ResizablePanel>
+            <ResizableHandle withHandle />
 
-                <ResizablePanel className="min-w-[100px]">
-                    <DataPanel object={object} loadText={loadText ?? false} handleCopyContent={handleCopyContent} refetch={refetch} />
-                </ResizablePanel>
-            </ResizablePanelGroup>
+            <ResizablePanel className="min-w-[100px]">
+                <DataPanel
+                    object={object}
+                    loadText={loadText ?? false}
+                    handleCopyContent={handleCopyContent}
+                    refetch={refetch}
+                />
+            </ResizablePanel>
+        </ResizablePanelGroup>
     );
 }
 
-function PropertiesPanel({ object, refetch, handleCopyContent }: { object: ContentObject, refetch: () => Promise<unknown>, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
+function PropertiesPanel({
+    object,
+    refetch,
+    handleCopyContent,
+}: {
+    object: ContentObject;
+    refetch: () => Promise<unknown>;
+    handleCopyContent: (content: string, type: 'text' | 'properties') => Promise<void>;
+}) {
     const { t } = useUITranslation();
     const [viewCode, setViewCode] = useState(false);
     const [isPropertiesModalOpen, setPropertiesModalOpen] = useState(false);
@@ -223,7 +248,7 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
                 <div className="flex justify-between items-center px-2">
                     <div className="flex items-center gap-1 bg-muted mb-2 p-1 rounded">
                         <Button
-                            variant={`${viewCode ? "ghost" : "primary"}`}
+                            variant={`${viewCode ? 'ghost' : 'primary'}`}
                             size="sm"
                             alt={t('store.previewProperties')}
                             onClick={() => setViewCode(!viewCode)}
@@ -231,7 +256,7 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
                             Properties
                         </Button>
                         <Button
-                            variant={`${viewCode ? "primary" : "ghost"}`}
+                            variant={`${viewCode ? 'primary' : 'ghost'}`}
                             size="sm"
                             alt={t('store.viewInJsonFormat')}
                             onClick={() => setViewCode(!viewCode)}
@@ -246,14 +271,7 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
                                 size="sm"
                                 title="Copy properties"
                                 onClick={() =>
-                                    handleCopyContent(
-                                        JSON.stringify(
-                                            object.properties,
-                                            null,
-                                            2,
-                                        ),
-                                        "properties",
-                                    )
+                                    handleCopyContent(JSON.stringify(object.properties, null, 2), 'properties')
                                 }
                             >
                                 <Copy className="size-4" />
@@ -273,10 +291,7 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
 
                 {object.properties ? (
                     <div className="flex-1 min-h-0 px-2">
-                        <JSONDisplay
-                            value={object.properties}
-                            viewCode={viewCode}
-                        />
+                        <JSONDisplay value={object.properties} viewCode={viewCode} />
                     </div>
                 ) : (
                     <div className="flex-1 min-h-0 px-2">
@@ -294,7 +309,17 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
     );
 }
 
-function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: ContentObject, loadText: boolean, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, refetch?: () => Promise<unknown> }) {
+function DataPanel({
+    object,
+    loadText,
+    handleCopyContent,
+    refetch,
+}: {
+    object: ContentObject;
+    loadText: boolean;
+    handleCopyContent: (content: string, type: 'text' | 'properties') => Promise<void>;
+    refetch?: () => Promise<unknown>;
+}) {
     const { client } = useUserSession();
     const { t } = useUITranslation();
     const isImage = object?.metadata?.type === ContentNature.Image;
@@ -307,7 +332,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
 
     // Check if PDF rendition exists for Office documents
     const metadata = object.metadata as DocumentMetadata;
-    const pdfRendition = metadata?.renditions?.find(r => r.name === PDF_RENDITION_NAME);
+    const pdfRendition = metadata?.renditions?.find((r) => r.name === PDF_RENDITION_NAME);
 
     // Determine initial panel view
     const getInitialView = (): PanelView => {
@@ -334,7 +359,9 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         !isCreatedOrProcessing &&
         !object.is_locked &&
         object.user_permissions?.can_write !== false &&
-        (object.content.type.startsWith('text/') || object.content.type === 'application/json' || object.content.type === 'application/xml')
+        (object.content.type.startsWith('text/') ||
+            object.content.type === 'application/json' ||
+            object.content.type === 'application/xml')
     );
 
     // Use custom hooks for text loading, PDF processing, and Office conversion
@@ -347,9 +374,10 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     } = useObjectText(object.id, object.text, loadText);
 
     // Only poll while the active panel can actually surface processing progress.
-    const shouldPollProgress = (isPdf || isPreviewableAsPdfDoc)
-        && isCreatedOrProcessing
-        && (currentPanel === PanelView.Text || currentPanel === PanelView.Pdf);
+    const shouldPollProgress =
+        (isPdf || isPreviewableAsPdfDoc) &&
+        isCreatedOrProcessing &&
+        (currentPanel === PanelView.Text || currentPanel === PanelView.Pdf);
     const {
         progress: pdfProgress,
         status: pdfStatus,
@@ -364,31 +392,37 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         error: officePdfError,
     } = useOfficePdfConversion(object.id, isPreviewableAsPdfDoc);
 
-    const officePdfConverters = useMemo<UniversalDocumentConverter[]>(() => [{
-        id: 'office-pdf-rendition',
-        target: 'pdf',
-        canConvert: ({ contentType, extension }) => isPreviewableAsPdfDoc
-            || (contentType ? isPreviewableAsPdf(contentType) : false)
-            || ['doc', 'docx', 'ppt', 'pptx'].includes(extension),
-        convert: async () => {
-            const response = await client.objects.getRendition(object.id, {
-                format: MarkdownRenditionFormat.pdf,
-                generate_if_missing: true,
-                sign_url: true,
-                block_on_generation: true,
-            });
+    const officePdfConverters = useMemo<UniversalDocumentConverter[]>(
+        () => [
+            {
+                id: 'office-pdf-rendition',
+                target: 'pdf',
+                canConvert: ({ contentType, extension }) =>
+                    isPreviewableAsPdfDoc ||
+                    (contentType ? isPreviewableAsPdf(contentType) : false) ||
+                    ['doc', 'docx', 'ppt', 'pptx'].includes(extension),
+                convert: async () => {
+                    const response = await client.objects.getRendition(object.id, {
+                        format: MarkdownRenditionFormat.pdf,
+                        generate_if_missing: true,
+                        sign_url: true,
+                        block_on_generation: true,
+                    });
 
-            if (response.status === "found" && response.renditions?.length) {
-                return {
-                    url: response.renditions[0],
-                    contentType: 'application/pdf',
-                    fileName: `${object.name || 'document'}.pdf`,
-                };
-            }
+                    if (response.status === 'found' && response.renditions?.length) {
+                        return {
+                            url: response.renditions[0],
+                            contentType: 'application/pdf',
+                            fileName: `${object.name || 'document'}.pdf`,
+                        };
+                    }
 
-            return null;
-        },
-    }], [client, isPreviewableAsPdfDoc, object.id, object.name]);
+                    return null;
+                },
+            },
+        ],
+        [client, isPreviewableAsPdfDoc, object.id, object.name],
+    );
 
     // Load text once processing completes without triggering a full object refetch
     // (which would flash the page-level loading spinner).
@@ -399,9 +433,14 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     }, [processingComplete, pdfStatus, reloadText]);
 
     // Show processing panel when workflow is running (for both PDFs and Office documents)
-    const showProcessingPanel = (isPdf || isPreviewableAsPdfDoc) && isCreatedOrProcessing && !processingComplete && pdfStatus === WorkflowExecutionStatus.RUNNING;
+    const showProcessingPanel =
+        (isPdf || isPreviewableAsPdfDoc) &&
+        isCreatedOrProcessing &&
+        !processingComplete &&
+        pdfStatus === WorkflowExecutionStatus.RUNNING;
     const showPdfPreviewPanel = currentPanel === PanelView.Pdf && !showProcessingPanel;
-    const showPdfProcessingPanel = showProcessingPanel && (currentPanel === PanelView.Text || currentPanel === PanelView.Pdf);
+    const showPdfProcessingPanel =
+        showProcessingPanel && (currentPanel === PanelView.Text || currentPanel === PanelView.Pdf);
     const keepPdfPreviewMounted = hasVisitedPdfPanel && !showProcessingPanel;
 
     const textContainerRef = useRef<HTMLDivElement | null>(null);
@@ -411,67 +450,67 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
             <div className="flex justify-between items-center px-2 shrink-0">
                 <div className="flex items-center gap-2 mb-2">
                     <div className="flex items-center gap-1 bg-muted p-1 rounded">
-                        {isImage &&
+                        {isImage && (
                             <Button
-                                variant={currentPanel === PanelView.Image ? "primary" : "ghost"}
+                                variant={currentPanel === PanelView.Image ? 'primary' : 'ghost'}
                                 size="sm"
                                 alt={t('store.viewImage')}
                                 onClick={() => setCurrentPanel(PanelView.Image)}
                             >
                                 Image
                             </Button>
-                        }
-                        {isVideo &&
+                        )}
+                        {isVideo && (
                             <Button
-                                variant={currentPanel === PanelView.Video ? "primary" : "ghost"}
+                                variant={currentPanel === PanelView.Video ? 'primary' : 'ghost'}
                                 size="sm"
                                 alt={t('store.viewVideo')}
                                 onClick={() => setCurrentPanel(PanelView.Video)}
                             >
                                 Video
                             </Button>
-                        }
-                        {isAudio &&
+                        )}
+                        {isAudio && (
                             <Button
-                                variant={currentPanel === PanelView.Audio ? "primary" : "ghost"}
+                                variant={currentPanel === PanelView.Audio ? 'primary' : 'ghost'}
                                 size="sm"
                                 alt={t('store.viewAudio')}
                                 onClick={() => setCurrentPanel(PanelView.Audio)}
                             >
                                 Audio
                             </Button>
-                        }
-                        {hasTranscript &&
+                        )}
+                        {hasTranscript && (
                             <Button
-                                variant={currentPanel === PanelView.Transcript ? "primary" : "ghost"}
+                                variant={currentPanel === PanelView.Transcript ? 'primary' : 'ghost'}
                                 size="sm"
                                 alt={t('store.viewTranscript')}
                                 onClick={() => setCurrentPanel(PanelView.Transcript)}
                             >
                                 Transcript
                             </Button>
-                        }
+                        )}
                         <Button
-                            variant={currentPanel === PanelView.Text ? "primary" : "ghost"}
+                            variant={currentPanel === PanelView.Text ? 'primary' : 'ghost'}
                             size="sm"
                             alt={t('store.viewText')}
                             onClick={() => setCurrentPanel(PanelView.Text)}
                         >
                             Text
                         </Button>
-                        {isPdf &&
+                        {isPdf && (
                             <Button
-                                variant={currentPanel === PanelView.Pdf ? "primary" : "ghost"}
+                                variant={currentPanel === PanelView.Pdf ? 'primary' : 'ghost'}
                                 size="sm"
                                 alt={t('store.viewPdf')}
                                 onClick={() => setCurrentPanel(PanelView.Pdf)}
                             >
                                 PDF
                             </Button>
-                        }
+                        )}
                         {isPreviewableAsPdfDoc && (
                             <Button
-                                variant={currentPanel === PanelView.Pdf ? "primary" : "ghost"}
+                                variant={currentPanel === PanelView.Pdf ? 'primary' : 'ghost'}
                                 size="sm"
                                 alt={t('store.viewAsPdf')}
                                 onClick={() => {
@@ -479,7 +518,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                                 }}
                                 disabled={officePdfConverting}
                             >
-                                {officePdfConverting ? <Spinner size="sm" /> : "PDF"}
+                                {officePdfConverting ? <Spinner size="sm" /> : 'PDF'}
                             </Button>
                         )}
                     </div>
@@ -498,11 +537,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     />
                 )}
                 {currentPanel === PanelView.Pdf && isPreviewableAsPdfDoc && (pdfRendition || officePdfUrl) && (
-                    <OfficePdfActions
-                        object={object}
-                        pdfRendition={pdfRendition}
-                        officePdfUrl={officePdfUrl}
-                    />
+                    <OfficePdfActions object={object} pdfRendition={pdfRendition} officePdfUrl={officePdfUrl} />
                 )}
             </div>
             {currentPanel === PanelView.Image && (
@@ -580,28 +615,19 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     );
 }
 
-function TextActions({
-    object,
-    text,
-    fullText,
-    handleCopyContent,
-    onToggleEdit,
-    canEdit,
-}: TextActionsProps) {
+function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, canEdit }: TextActionsProps) {
     const { client, project } = useUserSession();
     const toast = useToast();
     const { t } = useUITranslation();
     const content = object.content;
     const { renderDocument, isDownloading } = useDownloadFile({ client, toast });
     const { data: fullProject } = useFetch(
-        () => project ? client.projects.retrieve(project.id) : Promise.resolve(undefined),
-        [project?.id]
+        () => (project ? client.projects.retrieve(project.id) : Promise.resolve(undefined)),
+        [project?.id],
     );
     const pdfTemplateObjectId = fullProject?.configuration?.pdf_template_object_id;
 
-    const isMarkdown =
-        content?.type &&
-        content.type === "text/markdown";
+    const isMarkdown = content?.type && content.type === 'text/markdown';
 
     // Get content processor type for file extension detection
     const contentProcessorType = getContentProcessorType(object);
@@ -612,7 +638,7 @@ function TextActions({
 
         // Show immediate feedback
         toast({
-            status: "info",
+            status: 'info',
             title: `Preparing ${format.toUpperCase()}`,
             description: t('store.renderingDocument'),
             duration: 2000,
@@ -623,7 +649,7 @@ function TextActions({
 
         await renderDocument(object.id, {
             format,
-            title: object.name || "document",
+            title: object.name || 'document',
             useDefaultTemplate,
             templateObjectId,
         });
@@ -638,24 +664,24 @@ function TextActions({
         e.stopPropagation();
         if (!fullText) return;
         // Determine file extension based on content processor type
-        let ext = "txt";
-        let mimeType = "text/plain";
-        if (contentProcessorType === "xml") {
-            ext = "xml";
-            mimeType = "text/xml";
-        } else if (contentProcessorType === "markdown" || isMarkdown) {
-            ext = "md";
-            mimeType = "text/markdown";
+        let ext = 'txt';
+        let mimeType = 'text/plain';
+        if (contentProcessorType === 'xml') {
+            ext = 'xml';
+            mimeType = 'text/xml';
+        } else if (contentProcessorType === 'markdown' || isMarkdown) {
+            ext = 'md';
+            mimeType = 'text/markdown';
         }
         const blob = new Blob([fullText], { type: mimeType });
         const url = URL.createObjectURL(blob);
-        const filename = `${object.name || "document"}.${ext}`;
+        const filename = `${object.name || 'document'}.${ext}`;
 
         // Use the download attribute with an anchor, but avoid triggering navigation
-        const link = document.createElement("a");
+        const link = document.createElement('a');
         link.href = url;
         link.download = filename;
-        link.style.display = "none";
+        link.style.display = 'none';
         // Temporarily remove from DOM event flow
         setTimeout(() => {
             link.click();
@@ -665,134 +691,147 @@ function TextActions({
 
     return (
         <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
-                <div className="flex items-center gap-2">
-                    {fullText && (
-                        <>
-                            <Button variant="ghost" size="sm" title="Copy text" onClick={() => handleCopyContent(fullText, "text")}>
-                                <Copy className="size-4" />
-                            </Button>
-                            {canEdit && onToggleEdit && (
-                                <SecureButton
-                                    permission={Permission.content_write}
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={onToggleEdit}
-                                    title={t('store.editText')}
-                                    className="flex items-center gap-2"
-                                >
-                                    <SquarePen className="size-4" />
-                                </SecureButton>
-                            )}
-                        </>
-                    )}
-                    {isDownloading ? (
-                        <Button variant="ghost" size="sm" disabled className="flex items-center gap-2" alt="download">
-                            <Spinner size="sm" />
+            <div className="flex items-center gap-2">
+                {fullText && (
+                    <>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Copy text"
+                            onClick={() => handleCopyContent(fullText, 'text')}
+                        >
+                            <Copy className="size-4" />
                         </Button>
-                    ) : (
-                        <Dropdown trigger={
-                            <Button variant="ghost" size="sm" disabled={!text} className="flex items-center gap-2" alt="download">
+                        {canEdit && onToggleEdit && (
+                            <SecureButton
+                                permission={Permission.content_write}
+                                variant="ghost"
+                                size="sm"
+                                onClick={onToggleEdit}
+                                title={t('store.editText')}
+                                className="flex items-center gap-2"
+                            >
+                                <SquarePen className="size-4" />
+                            </SecureButton>
+                        )}
+                    </>
+                )}
+                {isDownloading ? (
+                    <Button variant="ghost" size="sm" disabled className="flex items-center gap-2" alt="download">
+                        <Spinner size="sm" />
+                    </Button>
+                ) : (
+                    <Dropdown
+                        trigger={
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={!text}
+                                className="flex items-center gap-2"
+                                alt="download"
+                            >
                                 <Download className="size-4" />
-                            </Button>}>
-                            {fullText && (
-                                <MenuItem onClick={handleDownloadText}>
+                            </Button>
+                        }
+                    >
+                        {fullText && (
+                            <MenuItem onClick={handleDownloadText}>
+                                <div className="flex items-center gap-2">
+                                    <Download className="size-4" />
+                                    Download Text
+                                </div>
+                            </MenuItem>
+                        )}
+                        {isMarkdown && text && (
+                            <>
+                                <MenuItem onClick={handleExportDocx}>
                                     <div className="flex items-center gap-2">
                                         <Download className="size-4" />
-                                        Download Text
+                                        Export as DOCX
                                     </div>
                                 </MenuItem>
-                            )}
-                            {isMarkdown && text && (
-                                <>
-                                    <MenuItem onClick={handleExportDocx}>
-                                        <div className="flex items-center gap-2">
-                                            <Download className="size-4" />
-                                            Export as DOCX
-                                        </div>
-                                    </MenuItem>
-                                    <MenuItem onClick={handleExportPdf}>
-                                        <div className="flex items-center gap-2">
-                                            <Download className="size-4" />
-                                            Export as PDF
-                                        </div>
-                                    </MenuItem>
-                                    <MenuItem onClick={handleExportBrandedPdf}>
-                                        <div className="flex items-center gap-2">
-                                            <Download className="size-4" />
-                                            Export as Branded PDF
-                                        </div>
-                                    </MenuItem>
-                                </>
-                            )}
-                        </Dropdown>
-                    )}
-
-                </div>
+                                <MenuItem onClick={handleExportPdf}>
+                                    <div className="flex items-center gap-2">
+                                        <Download className="size-4" />
+                                        Export as PDF
+                                    </div>
+                                </MenuItem>
+                                <MenuItem onClick={handleExportBrandedPdf}>
+                                    <div className="flex items-center gap-2">
+                                        <Download className="size-4" />
+                                        Export as Branded PDF
+                                    </div>
+                                </MenuItem>
+                            </>
+                        )}
+                    </Dropdown>
+                )}
             </div>
+        </div>
     );
 }
 
-const TextPanel = memo(({
-    object,
-    text,
-    isTextCropped,
-    textContainerRef,
-}: TextPanelProps) => {
+const TextPanel = memo(({ object, text, isTextCropped, textContainerRef }: TextPanelProps) => {
     const { t } = useUITranslation();
     const isCreatedOrProcessing = isCreatedOrProcessingStatus(object?.status);
     const contentProcessorType = getContentProcessorType(object);
-    const isXml = contentProcessorType === "xml";
+    const isXml = contentProcessorType === 'xml';
+
+    // Check if content type is markdown or plain text
     const isMarkdownOrText =
-        object.content?.type &&
-        (object.content.type === "text/markdown" || object.content.type === "text/plain");
+        object.content?.type && (object.content.type === 'text/markdown' || object.content.type === 'text/plain');
+
+    // Render as markdown if it's markdown/text type OR if text looks like markdown (but not if XML)
     const shouldRenderAsMarkdown = !isXml && (isMarkdownOrText || looksLikeMarkdown(text));
     const source: UniversalDocumentSource = {
         id: object.id,
         title: object.name,
         fileName: object.content?.name || object.name,
-        contentType: isXml ? "text/xml" : shouldRenderAsMarkdown ? "text/markdown" : object.content?.type,
+        contentType: isXml ? 'text/xml' : shouldRenderAsMarkdown ? 'text/markdown' : object.content?.type,
         content: text,
         sourcePath: object.content?.source,
     };
 
-    return (
-        text ? (
-            <>
-                {isTextCropped && (
-                    <div className="px-2 py-2 bg-attention/10 border-s-4 border-attention mx-2 mb-2 rounded">
-                        <div className="flex items-center gap-2 text-attention">
-                            <AlertTriangle className="size-4" />
-                            <span className="text-sm font-semibold">{t('store.showingFirst128K')}</span>
-                        </div>
+    return text ? (
+        <>
+            {isTextCropped && (
+                <div className="px-2 py-2 bg-attention/10 border-s-4 border-attention mx-2 mb-2 rounded">
+                    <div className="flex items-center gap-2 text-attention">
+                        <AlertTriangle className="size-4" />
+                        <span className="text-sm font-semibold">{t('store.showingFirst128K')}</span>
                     </div>
-                )}
-                <div
-                    className={`max-w-7xl px-2 h-full overflow-auto`}
-                    ref={textContainerRef}
-                >
-                    <UniversalDocumentViewer
-                        source={source}
-                        className="h-full"
-                        bodyClassName="overflow-auto"
-                        markdownComponents={createMarkdownComponents()}
-                    />
                 </div>
-            </>
-        ) :
-            <div className="px-2">
-                <div>{isCreatedOrProcessing ? "Extracting content..." : "No content"}</div>
+            )}
+            <div className={`max-w-7xl px-2 h-full overflow-auto`} ref={textContainerRef}>
+                <UniversalDocumentViewer
+                    source={source}
+                    className="h-full"
+                    bodyClassName="overflow-auto"
+                    markdownComponents={createMarkdownComponents()}
+                />
             </div>
+        </>
+    ) : (
+        <div className="px-2">
+            <div>{isCreatedOrProcessing ? 'Extracting content...' : 'No content'}</div>
+        </div>
     );
 });
 
-function TranscriptPanel({ object, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
+function TranscriptPanel({
+    object,
+    handleCopyContent,
+}: {
+    object: ContentObject;
+    handleCopyContent: (content: string, type: 'text' | 'properties') => Promise<void>;
+}) {
     const { t } = useUITranslation();
     const transcript = object.transcript;
     const transcriptText = transcript?.text;
     const segments = transcript?.segments;
 
     // Build full text from segments if text is not available
-    const fullText = transcriptText || (segments ? segments.map(s => s.text).join(' ') : '');
+    const fullText = transcriptText || (segments ? segments.map((s) => s.text).join(' ') : '');
 
     const formatTimestamp = (seconds: number): string => {
         const hours = Math.floor(seconds / 3600);
@@ -813,7 +852,7 @@ function TranscriptPanel({ object, handleCopyContent }: { object: ContentObject,
                         variant="ghost"
                         size="sm"
                         title="Copy transcript"
-                        onClick={() => handleCopyContent(fullText, "text")}
+                        onClick={() => handleCopyContent(fullText, 'text')}
                     >
                         <Copy className="size-4" />
                     </Button>
@@ -834,9 +873,7 @@ function TranscriptPanel({ object, handleCopyContent }: { object: ContentObject,
                         ))}
                     </div>
                 ) : transcriptText ? (
-                    <pre className="text-wrap bg-muted text-muted p-2 whitespace-pre-wrap">
-                        {transcriptText}
-                    </pre>
+                    <pre className="text-wrap bg-muted text-muted p-2 whitespace-pre-wrap">{transcriptText}</pre>
                 ) : (
                     <div className="text-muted">{t('store.noTranscriptAvailable')}</div>
                 )}
@@ -850,18 +887,13 @@ function PdfActions({ object }: { object: ContentObject }) {
 
     // Check if PDF has been processed (content_processor.type is xml or markdown)
     const contentProcessorType = getContentProcessorType(object);
-    const hasPdfAnalysis = contentProcessorType === "xml" || contentProcessorType === "markdown";
+    const hasPdfAnalysis = contentProcessorType === 'xml' || contentProcessorType === 'markdown';
 
     if (!hasPdfAnalysis) return null;
 
     return (
         <>
-            <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setPdfPreviewOpen(true)}
-                title="Side by side view"
-            >
+            <Button variant="ghost" size="sm" onClick={() => setPdfPreviewOpen(true)} title="Side by side view">
                 <FileSearch className="size-4" />
             </Button>
             {isPdfPreviewOpen && (
@@ -873,11 +905,7 @@ function PdfActions({ object }: { object: ContentObject }) {
     );
 }
 
-function OfficePdfActions({
-    object,
-    pdfRendition,
-    officePdfUrl,
-}: OfficePdfActionsProps) {
+function OfficePdfActions({ object, pdfRendition, officePdfUrl }: OfficePdfActionsProps) {
     const { client } = useUserSession();
     const toast = useToast();
     const { t } = useUITranslation();
@@ -893,7 +921,7 @@ function OfficePdfActions({
                 const response = await client.files.getDownloadUrl(
                     pdfRendition.content.source,
                     `${object.name || 'document'}.pdf`,
-                    'attachment'
+                    'attachment',
                 );
                 downloadUrl = response.url;
             }
@@ -917,13 +945,7 @@ function OfficePdfActions({
 
     return (
         <div className="flex items-center gap-2">
-            <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDownloadPdf}
-                disabled={isDownloading}
-                title="Download PDF"
-            >
+            <Button variant="ghost" size="sm" onClick={handleDownloadPdf} disabled={isDownloading} title="Download PDF">
                 {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
             </Button>
         </div>
@@ -940,11 +962,8 @@ function PdfPreviewPanel({ object }: { object: ContentObject }) {
     };
 
     return (
-        <div className='h-full'>
-            <UniversalDocumentViewer
-                source={source}
-                className="h-full"
-            />
+        <div className="h-full">
+            <UniversalDocumentViewer source={source} className="h-full" />
         </div>
     );
 }
@@ -990,7 +1009,7 @@ function OfficePdfPreviewPanel({
         };
 
         return (
-            <div className='h-full'>
+            <div className="h-full">
                 <UniversalDocumentViewer source={source} className="h-full" />
             </div>
         );
@@ -1006,7 +1025,7 @@ function OfficePdfPreviewPanel({
         };
 
         return (
-            <div className='h-full'>
+            <div className="h-full">
                 <UniversalDocumentViewer source={source} className="h-full" />
             </div>
         );
@@ -1027,13 +1046,21 @@ function OfficePdfPreviewPanel({
     );
 }
 
-function PdfProcessingPanel({ progress, status, outputFormat }: { progress?: DocAnalyzerProgress, status?: WorkflowExecutionStatus, outputFormat?: DocProcessorOutputFormat }) {
+function PdfProcessingPanel({
+    progress,
+    status,
+    outputFormat,
+}: {
+    progress?: DocAnalyzerProgress;
+    status?: WorkflowExecutionStatus;
+    outputFormat?: DocProcessorOutputFormat;
+}) {
     const { t } = useUITranslation();
     const statusColor = getWorkflowStatusColor(status);
     const statusName = getWorkflowStatusName(status);
 
     // Show detailed progress (tables, images, visuals) for XML processing
-    const isXmlProcessing = outputFormat === "xml";
+    const isXmlProcessing = outputFormat === 'xml';
 
     // Ensure percent is a valid number (handle undefined and NaN from division by zero)
     const percent = progress?.percent != null && !Number.isNaN(progress.percent) ? progress.percent : 0;
@@ -1043,7 +1070,10 @@ function PdfProcessingPanel({ progress, status, outputFormat }: { progress?: Doc
             {progress && (
                 <div className="space-y-2">
                     <div className="flex flex-col gap-1">
-                        <ProgressLine name={isXmlProcessing ? "Analyze Layouts" : "Analyze Page"} progress={progress.pages} />
+                        <ProgressLine
+                            name={isXmlProcessing ? 'Analyze Layouts' : 'Analyze Page'}
+                            progress={progress.pages}
+                        />
                         {isXmlProcessing && (
                             <>
                                 <ProgressLine name="Extract Tables" progress={progress.tables} />
@@ -1053,8 +1083,7 @@ function PdfProcessingPanel({ progress, status, outputFormat }: { progress?: Doc
                         )}
                     </div>
                     <div className="pt-2 text-sm text-muted">
-                        Progress: {percent}%
-                        <span className="px-2">&bull;</span>
+                        Progress: {percent}%<span className="px-2">&bull;</span>
                         <span className={statusColor}>{statusName}</span>
                         {progress.started_at && (
                             <>
@@ -1076,11 +1105,13 @@ function PdfProcessingPanel({ progress, status, outputFormat }: { progress?: Doc
     );
 }
 
-function ProgressLine({ name, progress }: { name: string, progress: { total: number; processed: number } }) {
+function ProgressLine({ name, progress }: { name: string; progress: { total: number; processed: number } }) {
     return (
         <div className="flex gap-2 text-sm">
             <span className="text-muted min-w-36">{name}:</span>
-            <span>{progress.processed} of {progress.total}</span>
+            <span>
+                {progress.processed} of {progress.total}
+            </span>
         </div>
     );
 }

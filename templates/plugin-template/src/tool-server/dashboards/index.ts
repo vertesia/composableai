@@ -1,4 +1,4 @@
-import type { AppDashboardDefinition } from "@vertesia/common";
+import type { AppDashboardDefinition } from '@vertesia/common';
 
 /**
  * Dashboards exposed by this plugin.

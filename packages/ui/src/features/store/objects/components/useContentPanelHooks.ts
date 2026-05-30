@@ -1,6 +1,11 @@
-import { type DocAnalyzerProgress, type DocProcessorOutputFormat, MarkdownRenditionFormat, WorkflowExecutionStatus } from "@vertesia/common";
-import { useUserSession } from "@vertesia/ui/session";
-import { useCallback, useEffect, useState } from "react";
+import {
+    type DocAnalyzerProgress,
+    type DocProcessorOutputFormat,
+    MarkdownRenditionFormat,
+    WorkflowExecutionStatus,
+} from '@vertesia/common';
+import { useUserSession } from '@vertesia/ui/session';
+import { useCallback, useEffect, useState } from 'react';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 
 // Maximum text size before cropping (128K characters)
@@ -20,9 +25,7 @@ export function useObjectText(objectId: string, initialText?: string, loadOnMoun
         return initialText;
     });
     const [isLoading, setIsLoading] = useState(false);
-    const [isCropped, setIsCropped] = useState(
-        () => !!initialText && initialText.length > MAX_TEXT_DISPLAY_SIZE
-    );
+    const [isCropped, setIsCropped] = useState(() => !!initialText && initialText.length > MAX_TEXT_DISPLAY_SIZE);
 
     const loadText = useCallback(() => {
         setIsLoading(true);
@@ -39,7 +42,7 @@ export function useObjectText(objectId: string, initialText?: string, loadOnMoun
                 }
             })
             .catch((err) => {
-                console.error("Failed to load text", err);
+                console.error('Failed to load text', err);
                 setFullText(undefined);
                 setDisplayText(undefined);
                 setIsCropped(false);
@@ -107,10 +110,10 @@ export function usePdfProcessingStatus(objectId: string, shouldPoll: boolean) {
                 const nextProgressSignature = JSON.stringify(nextProgress ?? null);
 
                 if (
-                    prev.status === nextStatus
-                    && prev.outputFormat === nextOutputFormat
-                    && prev.isComplete === nextIsComplete
-                    && prevProgress === nextProgressSignature
+                    prev.status === nextStatus &&
+                    prev.outputFormat === nextOutputFormat &&
+                    prev.isComplete === nextIsComplete &&
+                    prevProgress === nextProgressSignature
                 ) {
                     return prev;
                 }
@@ -127,7 +130,9 @@ export function usePdfProcessingStatus(objectId: string, shouldPoll: boolean) {
         function poll() {
             if (interrupted) return;
 
-            client.objects.analyze(objectId).getStatus()
+            client.objects
+                .analyze(objectId)
+                .getStatus()
                 .then((r) => {
                     const nextOutputFormat = r.output_format ?? r.progress?.output_format;
 
@@ -193,18 +198,18 @@ export function useOfficePdfConversion(objectId: string, enabled: boolean) {
                     block_on_generation: false,
                 });
 
-                if (response.status === "generating") {
+                if (response.status === 'generating') {
                     // Poll every 5 seconds
                     setTimeout(() => pollForPdf(false), 5000);
-                } else if (response.status === "found" && response.renditions?.length) {
+                } else if (response.status === 'found' && response.renditions?.length) {
                     setPdfUrl(response.renditions[0]);
                     setIsConverting(false);
-                } else if (response.status === "failed") {
+                } else if (response.status === 'failed') {
                     setError(t('store.pdfConversionFailed'));
                     setIsConverting(false);
                 }
             } catch (err) {
-                console.error("Failed to convert Office document to PDF:", err);
+                console.error('Failed to convert Office document to PDF:', err);
                 setError(t('store.failedToConvertToPdf'));
                 setIsConverting(false);
             }

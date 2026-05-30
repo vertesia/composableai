@@ -4,7 +4,10 @@ import { ProjectRoles } from './project.js';
 export class Role {
     readonly permissions: Set<Permission>;
 
-    constructor(public name: ProjectRoles, permissions: Permission[]) {
+    constructor(
+        public name: ProjectRoles,
+        permissions: Permission[],
+    ) {
         this.permissions = new Set(permissions);
     }
 
@@ -17,7 +20,7 @@ export class RoleList {
     private constructor(public readonly roles: Role[]) {}
 
     static fromRoleNames(roleNames: ProjectRoles[]): RoleList {
-        return new RoleList(roleNames.map(roleName => getRoleByName(roleName)));
+        return new RoleList(roleNames.map((roleName) => getRoleByName(roleName)));
     }
 
     static fromRoleName(roleName: ProjectRoles): RoleList {
@@ -25,7 +28,7 @@ export class RoleList {
     }
 
     hasPermission(permission: Permission): boolean {
-        return this.roles.some(role => role.hasPermission(permission));
+        return this.roles.some((role) => role.hasPermission(permission));
     }
 }
 
@@ -106,21 +109,13 @@ class ConsumerRole extends OrgMemberRole {
 
 class ExecutorRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.executor, [
-            Permission.int_execute,
-            Permission.run_read,
-            Permission.workflow_run,
-        ]);
+        super(ProjectRoles.executor, [Permission.int_execute, Permission.run_read, Permission.workflow_run]);
     }
 }
 
 class ReaderRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.reader, [
-            Permission.int_read,
-            Permission.run_read,
-            Permission.content_read,
-        ]);
+        super(ProjectRoles.reader, [Permission.int_read, Permission.run_read, Permission.content_read]);
     }
 }
 

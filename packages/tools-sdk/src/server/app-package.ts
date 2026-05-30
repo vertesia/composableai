@@ -7,13 +7,13 @@ import type {
     InCodeProcessDefinition,
     InCodeTypeDefinition,
     RemoteActivityDefinition,
-} from "@vertesia/common";
-import type { Context, Hono } from "hono";
-import type { ToolUseContext } from "../types.js";
-import type { ToolServerConfig } from "./types.js";
+} from '@vertesia/common';
+import type { Context, Hono } from 'hono';
+import type { ToolUseContext } from '../types.js';
+import type { ToolServerConfig } from './types.js';
 
 function getRequestPayload<T>(c: Context): Promise<T | undefined> {
-    return c.req.method === "POST" ? c.req.json<T>() : Promise.resolve(undefined);
+    return c.req.method === 'POST' ? c.req.json<T>() : Promise.resolve(undefined);
 }
 
 export interface BuildAppPackageOptions {
@@ -31,19 +31,15 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
         const filterContext = options.toolUseContext;
 
         // Aggregate all tools from all collections
-        const allTools = toolCollections.flatMap(collection =>
-            collection.getToolDefinitions(filterContext)
-        );
+        const allTools = toolCollections.flatMap((collection) => collection.getToolDefinitions(filterContext));
 
         // same for skills
-        const allSkills = skillCollections.flatMap(collection =>
-            collection.getToolDefinitions(filterContext)
-        );
+        const allSkills = skillCollections.flatMap((collection) => collection.getToolDefinitions(filterContext));
 
         // Deduplicate by tool name (skills listed first take priority)
         const seen = new Set<string>();
         const combined = allSkills.concat(allTools);
-        pkg.tools = combined.filter(tool => {
+        pkg.tools = combined.filter((tool) => {
             if (seen.has(tool.name)) {
                 console.warn(`[app-package] Duplicate tool name "${tool.name}", skipping`);
                 return false;
@@ -54,10 +50,10 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
     },
     async interactions(pkg: AppPackage, config: ToolServerConfig) {
         const allInteractions: CatalogInteractionRef[] = [];
-        for (const coll of (config.interactions || [])) {
+        for (const coll of config.interactions || []) {
             for (const inter of coll.interactions) {
                 allInteractions.push({
-                    type: "app",
+                    type: 'app',
                     id: `${coll.name}:${inter.name}`,
                     name: inter.name,
                     title: inter.title || inter.name,
@@ -74,7 +70,7 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
             for (const type of coll.types) {
                 allTypes.push({
                     ...type,
-                    id: `${coll.name}:${type.name}`
+                    id: `${coll.name}:${type.name}`,
                 });
             }
         }
@@ -89,11 +85,11 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
     },
     async templates(pkg: AppPackage, config: ToolServerConfig) {
         const basePath = `${config.prefix || '/api'}/templates`;
-        pkg.templates = (config.templates || []).flatMap(coll =>
+        pkg.templates = (config.templates || []).flatMap((coll) =>
             coll.templates.map(({ instructions: _, ...ref }) => ({
                 ...ref,
                 path: `${basePath}/${coll.name}/${ref.name}`,
-            }))
+            })),
         );
     },
     async dashboards(pkg: AppPackage, config: ToolServerConfig) {
@@ -118,7 +114,7 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
                     widgets[skill.name] = {
                         skill: skill.name,
                         collection: coll.name,
-                        url: `/widgets/${skill.widgets[0]}.js`
+                        url: `/widgets/${skill.widgets[0]}.js`,
                     } satisfies AppWidgetInfo;
                 }
             }
@@ -128,10 +124,10 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
     async ui(pkg: AppPackage, config: ToolServerConfig, options: BuildAppPackageOptions) {
         if (config.uiConfig) {
             pkg.ui = { ...config.uiConfig };
-            const origin = options.origin || "http://localhost";
+            const origin = options.origin || 'http://localhost';
             pkg.ui.src = new URL(pkg.ui.src, origin).toString();
             if (!pkg.ui.isolation) {
-                pkg.ui.isolation = "shadow";
+                pkg.ui.isolation = 'shadow';
             }
         }
     },
@@ -149,19 +145,17 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
         }
         pkg.activities = allActivities;
     },
-}
-
+};
 
 function normalizeScopes(scope: BuildAppPackageOptions['scope']): Set<AppPackageScope> {
-    const values = Array.isArray(scope)
-        ? scope
-        : typeof scope === 'string'
-            ? scope.split(',')
-            : [scope || 'all'];
+    const values = Array.isArray(scope) ? scope : typeof scope === 'string' ? scope.split(',') : [scope || 'all'];
     return new Set(values.filter(Boolean) as AppPackageScope[]);
 }
 
-export async function buildAppPackage(config: ToolServerConfig, options: BuildAppPackageOptions = {}): Promise<AppPackage> {
+export async function buildAppPackage(
+    config: ToolServerConfig,
+    options: BuildAppPackageOptions = {},
+): Promise<AppPackage> {
     const pkg: AppPackage = {};
 
     const scopes = normalizeScopes(options.scope);
@@ -222,7 +216,6 @@ async function handlePackageRequest(c: Context, config: ToolServerConfig) {
 }
 
 export function createPackageRoute(app: Hono, basePath: string, config: ToolServerConfig) {
-
     app.get(basePath, (c: Context) => {
         return handlePackageRequest(c, config);
     });
@@ -230,5 +223,4 @@ export function createPackageRoute(app: Hono, basePath: string, config: ToolServ
     app.post(basePath, (c: Context) => {
         return handlePackageRequest(c, config);
     });
-
 }

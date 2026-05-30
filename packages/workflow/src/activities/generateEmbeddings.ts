@@ -252,13 +252,7 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
     }
 }
 
-async function generateImageEmbeddings({
-    document,
-    client,
-    type,
-    config,
-    force,
-}: ExecuteGenerateEmbeddingsParams) {
+async function generateImageEmbeddings({ document, client, type, config, force }: ExecuteGenerateEmbeddingsParams) {
     log.debug(`Generating image embeddings for document ${document.id}`, {
         content: document.content,
     });

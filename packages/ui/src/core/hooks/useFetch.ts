@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface FetchOpts<T> {
-    start?: () => void,
-    end?: () => void,
-    defaultValue?: T | (() => T),
-    deps?: unknown[] | undefined,
-    condition?: () => boolean,
-    onSuccess?: (data: T) => void,
-    onError?: (err: unknown) => void,
+    start?: () => void;
+    end?: () => void;
+    defaultValue?: T | (() => T);
+    deps?: unknown[] | undefined;
+    condition?: () => boolean;
+    onSuccess?: (data: T) => void;
+    onError?: (err: unknown) => void;
 }
 
 function toError(error: unknown) {
@@ -30,24 +30,27 @@ export function useFetch<T = unknown>(fetcher: () => Promise<T>, opts?: FetchOpt
         const currentOptions = optionsRef.current;
         currentOptions.start?.();
         setIsLoading(true);
-        return fetcherRef.current().then((result: T) => {
-            setData(result);
-            currentOptions.onSuccess?.(result);
-        }).catch(error => {
-            const err = toError(error);
-            setError(err);
-            currentOptions.onError?.(err);
-        }).finally(() => {
-            setIsLoading(false);
-            currentOptions.end?.();
-        });
-    }, [])
+        return fetcherRef
+            .current()
+            .then((result: T) => {
+                setData(result);
+                currentOptions.onSuccess?.(result);
+            })
+            .catch((error) => {
+                const err = toError(error);
+                setError(err);
+                currentOptions.onError?.(err);
+            })
+            .finally(() => {
+                setIsLoading(false);
+                currentOptions.end?.();
+            });
+    }, []);
     useEffect(() => {
         const currentOptions = optionsRef.current;
         if (!currentOptions.condition || currentOptions.condition()) {
             fetch();
         }
-
     }, [fetch, ...(options.deps ?? [])]);
     return { data, isLoading, error, setData, refetch: fetch };
 }

@@ -1,8 +1,8 @@
-import { type Context, Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
-import type { ToolCollection } from "../ToolCollection.js";
-import type { ToolCollectionDefinition, ToolDefinition } from "../types.js";
-import type { ToolContext, ToolServerConfig } from "./types.js";
+import { type Context, Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import type { ToolCollection } from '../ToolCollection.js';
+import type { ToolCollectionDefinition, ToolDefinition } from '../types.js';
+import type { ToolContext, ToolServerConfig } from './types.js';
 
 export function createToolsRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { tools = [] } = config;
@@ -34,7 +34,7 @@ export function createToolsRoute(app: Hono, basePath: string, config: ToolServer
             title: 'All Tools',
             description: 'All available tools across all collections',
             tools: allTools,
-            collections: tools.map(t => ({
+            collections: tools.map((t) => ({
                 name: t.name,
                 title: t.title,
                 description: t.description,
@@ -49,7 +49,8 @@ export function createToolsRoute(app: Hono, basePath: string, config: ToolServer
         // Payload is already parsed and validated by middleware
         if (!ctx.payload) {
             throw new HTTPException(400, {
-                message: 'Invalid or missing tool execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }'
+                message:
+                    'Invalid or missing tool execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }',
             });
         }
 
@@ -59,7 +60,7 @@ export function createToolsRoute(app: Hono, basePath: string, config: ToolServer
         const collection = toolToCollection.get(toolName);
         if (!collection) {
             throw new HTTPException(404, {
-                message: `Tool not found: ${toolName}. Available tools: ${Array.from(toolToCollection.keys()).join(', ')}`
+                message: `Tool not found: ${toolName}. Available tools: ${Array.from(toolToCollection.keys()).join(', ')}`,
             });
         }
 
@@ -91,12 +92,10 @@ function createToolEndpoints(coll: ToolCollection): Hono {
         const url = new URL(c.req.url);
 
         const response: ToolCollectionDefinition = {
-            src: importSourceUrl
-                ? `${url.origin}/libs/vertesia-tools-${coll.name}.js`
-                : `${url.origin}${url.pathname}`,
+            src: importSourceUrl ? `${url.origin}/libs/vertesia-tools-${coll.name}.js` : `${url.origin}${url.pathname}`,
             title: coll.title || coll.name,
             description: coll.description || '',
-            tools: coll.getToolDefinitions()
+            tools: coll.getToolDefinitions(),
         };
 
         return c.json(response);
@@ -104,6 +103,3 @@ function createToolEndpoints(coll: ToolCollection): Hono {
 
     return endpoint;
 }
-
-
-

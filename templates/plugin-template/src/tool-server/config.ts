@@ -1,16 +1,15 @@
-import type { ToolServerConfig } from "@vertesia/tools-sdk";
-import { activities } from "./activities/index.js";
-import { dashboards } from "./dashboards/index.js";
-import { interactions } from "./interactions/index.js";
-import { mcpProviders } from "./mcp/index.js";
-import { skills } from "./skills/index.js";
-import { templates } from "./templates/index.js";
-import { tools } from "./tools/index.js";
-import { types } from "./types/index.js";
-import settingsSchema from "./settings.js";
-import uiNavItems from "./ui-nav-items.js";
+import type { ToolServerConfig } from '@vertesia/tools-sdk';
+import { activities } from './activities/index.js';
+import { interactions } from './interactions/index.js';
+import { mcpProviders } from './mcp/index.js';
+import { skills } from './skills/index.js';
+import { templates } from './templates/index.js';
+import { tools } from './tools/index.js';
+import { types } from './types/index.js';
+import settingsSchema from './settings.js';
+import uiNavItems from './ui-nav-items.js';
 
-const CONFIG__SERVER_TITLE = "Tool Server Template";
+const CONFIG__SERVER_TITLE = 'Tool Server Template';
 export const ServerConfig = {
     disableHtml: true,
     title: CONFIG__SERVER_TITLE,
@@ -22,11 +21,10 @@ export const ServerConfig = {
     skills,
     templates,
     mcpProviders,
-    dashboards,
     uiConfig: {
-        isolation: "shadow",
-        src: "/lib/plugin.js",
-        available_in: ["app_portal", "composite_app"],
+        isolation: 'shadow',
+        src: '/lib/plugin.js',
+        available_in: ['app_portal', 'composite_app'],
         navigation: uiNavItems, // optional navigation configuration for the Composite App sidebar
     },
     settings: settingsSchema, // change this to point to your settings JSON schema

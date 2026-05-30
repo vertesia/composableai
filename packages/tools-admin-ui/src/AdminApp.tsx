@@ -47,10 +47,11 @@ export interface AdminAppProps {
  */
 export function AdminApp({ baseUrl = '/api' }: AdminAppProps) {
     const { data: serverInfo, isLoading: loadingInfo, error: infoError } = useServerInfo(baseUrl);
-    const { data: resourceData, isLoading: loadingData, error: dataError } = useResourceData(
-        baseUrl,
-        serverInfo?.endpoints?.mcp,
-    );
+    const {
+        data: resourceData,
+        isLoading: loadingData,
+        error: dataError,
+    } = useResourceData(baseUrl, serverInfo?.endpoints?.mcp);
 
     const isLoading = loadingInfo || loadingData;
     const error = infoError || dataError;
@@ -64,11 +65,7 @@ export function AdminApp({ baseUrl = '/api' }: AdminAppProps) {
     }
 
     if (error) {
-        return (
-            <div className="p-6 text-destructive">
-                Failed to load server info. Is the API running?
-            </div>
-        );
+        return <div className="p-6 text-destructive">Failed to load server info. Is the API running?</div>;
     }
 
     if (!serverInfo || !resourceData) return null;
@@ -78,12 +75,14 @@ export function AdminApp({ baseUrl = '/api' }: AdminAppProps) {
     return (
         <div className="min-h-screen bg-background text-foreground">
             <AdminTopBar title={title} />
-            <AdminContext.Provider value={{
-                serverInfo,
-                collections: resourceData.collections,
-                resources: resourceData.resources,
-                baseUrl,
-            }}>
+            <AdminContext.Provider
+                value={{
+                    serverInfo,
+                    collections: resourceData.collections,
+                    resources: resourceData.resources,
+                    baseUrl,
+                }}
+            >
                 <NestedRouterProvider routes={routes}>
                     <RouteComponent />
                 </NestedRouterProvider>

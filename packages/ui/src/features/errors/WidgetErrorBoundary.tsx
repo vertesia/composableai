@@ -2,12 +2,7 @@ import { type ErrorFallbackComponentProps, VertesiaErrorBoundary } from './Verte
 import type { ReactNode } from 'react';
 
 export function WidgetErrorBoundary({ children }: { children: ReactNode }) {
-
-    return (
-        <VertesiaErrorBoundary fallback={WidgetErrorFallback}>
-            {children}
-        </VertesiaErrorBoundary>
-    )
+    return <VertesiaErrorBoundary fallback={WidgetErrorFallback}>{children}</VertesiaErrorBoundary>;
 }
 
 function WidgetErrorFallback({ error }: ErrorFallbackComponentProps) {
@@ -18,11 +13,7 @@ function WidgetErrorFallback({ error }: ErrorFallbackComponentProps) {
     return (
         <div className="text-sm">
             Sorry, this area cannot be loaded or rendered.
-            {message &&
-                <pre>
-                    {message}
-                </pre>
-            }
+            {message && <pre>{message}</pre>}
         </div>
-    )
+    );
 }

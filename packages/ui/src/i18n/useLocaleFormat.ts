@@ -38,11 +38,11 @@ export interface LocaleFormat {
 const PLACEHOLDER = '—';
 
 const RELATIVE_UNITS: { unit: Intl.RelativeTimeFormatUnit; seconds: number }[] = [
-    { unit: 'year',   seconds: 31536000 },
-    { unit: 'month',  seconds: 2628000 },
-    { unit: 'week',   seconds: 604800 },
-    { unit: 'day',    seconds: 86400 },
-    { unit: 'hour',   seconds: 3600 },
+    { unit: 'year', seconds: 31536000 },
+    { unit: 'month', seconds: 2628000 },
+    { unit: 'week', seconds: 604800 },
+    { unit: 'day', seconds: 86400 },
+    { unit: 'hour', seconds: 3600 },
     { unit: 'minute', seconds: 60 },
     { unit: 'second', seconds: 1 },
 ];
@@ -90,7 +90,8 @@ export function useLocaleFormat(): LocaleFormat {
                 if (!d) return PLACEHOLDER;
                 const diffSeconds = (d.getTime() - Date.now()) / 1000;
                 const abs = Math.abs(diffSeconds);
-                const { unit, seconds } = RELATIVE_UNITS.find((u) => abs >= u.seconds) ?? RELATIVE_UNITS[RELATIVE_UNITS.length - 1];
+                const { unit, seconds } =
+                    RELATIVE_UNITS.find((u) => abs >= u.seconds) ?? RELATIVE_UNITS[RELATIVE_UNITS.length - 1];
                 const value = Math.round(diffSeconds / seconds);
                 const formatter = options ? new Intl.RelativeTimeFormat(language, options) : relativeDefault;
                 return formatter.format(value, unit);

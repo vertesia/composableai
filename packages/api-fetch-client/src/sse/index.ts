@@ -1,5 +1,5 @@
-import { TextDecoderStream } from "./TextDecoderStream.js";
-import { EventSourceParserStream, type ParsedEvent } from "./EventSourceParserStream.js";
+import { TextDecoderStream } from './TextDecoderStream.js';
+import { EventSourceParserStream, type ParsedEvent } from './EventSourceParserStream.js';
 
 export type { ParsedEvent };
 
@@ -13,8 +13,8 @@ export type ServerSentEvent = ParsedEvent | ReconnectInterval;
  * A SSE response reader.
  * Usage client.get('/path', {reader: sse}) or client.post('/path', {reader: sse})
  * where sse is this function
- * @param response 
- * @returns 
+ * @param response
+ * @returns
  */
 export async function sse(response: Response): Promise<ReadableStream<ServerSentEvent>> {
     if (!response.ok) {
@@ -30,4 +30,4 @@ export async function sse(response: Response): Promise<ReadableStream<ServerSent
 }
 
 // re-export TextDecoderStream (in case it was polyfilled)
-export { TextDecoderStream }
+export { TextDecoderStream };

@@ -1,11 +1,12 @@
-import sharp from "sharp";
+import sharp from 'sharp';
 
 export interface TransformOptions {
-    max_hw?: number,
-    format?: keyof sharp.FormatEnum
+    max_hw?: number;
+    format?: keyof sharp.FormatEnum;
 }
 
-type SharpInputType = Buffer
+type SharpInputType =
+    | Buffer
     | ArrayBuffer
     | Uint8Array
     | Uint8ClampedArray
@@ -17,7 +18,7 @@ type SharpInputType = Buffer
     | Float32Array
     | Float64Array
     | string
-    | NodeJS.ReadableStream
+    | NodeJS.ReadableStream;
 
 type DestroyableReadableStream = NodeJS.ReadableStream & { destroy?: () => void };
 type DestroyableWritableStream = NodeJS.WritableStream & { destroy?: () => void };
@@ -52,7 +53,11 @@ export function createImageTransformer(input: SharpInputType, opts: TransformOpt
  * @param format
  * @returns
  */
-export async function transformImage(input: SharpInputType, output: NodeJS.WritableStream, opts: TransformOptions): Promise<sharp.Sharp> {
+export async function transformImage(
+    input: SharpInputType,
+    output: NodeJS.WritableStream,
+    opts: TransformOptions,
+): Promise<sharp.Sharp> {
     const sh = createImageTransformer(input, opts);
     sh.pipe(output);
 
@@ -71,12 +76,12 @@ export async function transformImage(input: SharpInputType, output: NodeJS.Writa
             } finally {
                 reject(err);
             }
-        }
+        };
         output.on('error', handleError);
         if (isReadableStream(input)) {
             input.on('error', handleError);
         }
-        output.on("finish", () => {
+        output.on('finish', () => {
             resolve(sh);
         });
     });
@@ -87,7 +92,11 @@ export function transformImageToBuffer(input: SharpInputType, opts: TransformOpt
     return sh.toBuffer();
 }
 
-export async function transformImageToFile(input: SharpInputType, output: string, opts: TransformOptions): Promise<void> {
+export async function transformImageToFile(
+    input: SharpInputType,
+    output: string,
+    opts: TransformOptions,
+): Promise<void> {
     const sh = createImageTransformer(input, opts);
     await sh.toFile(output);
 }

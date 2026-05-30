@@ -1,4 +1,3 @@
-
 export type ObjectKey = string | number | undefined;
 export interface ObjectVisitor {
     onStartObject?: (key: ObjectKey, value: unknown) => void;
@@ -11,7 +10,9 @@ export interface ObjectVisitor {
 type MutableContainer = Record<string, unknown> | unknown[];
 
 function isIterable(value: unknown): value is Iterable<unknown> {
-    return !!value && typeof value === 'object' && Symbol.iterator in value && typeof value[Symbol.iterator] === 'function';
+    return (
+        !!value && typeof value === 'object' && Symbol.iterator in value && typeof value[Symbol.iterator] === 'function'
+    );
 }
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
@@ -45,9 +46,11 @@ export class ObjectWalker {
             this._walkIterable(key, obj, visitor);
         } else if (this.supportIterators && isIterable(obj)) {
             this._walkIterable(key, obj, visitor);
-        } else if (isPlainRecord(obj)) { // a plain object
+        } else if (isPlainRecord(obj)) {
+            // a plain object
             this._walkObject(key, obj, visitor);
-        } else { // a random object - we treat it as a value
+        } else {
+            // a random object - we treat it as a value
             visitor.onValue?.(key, obj);
         }
     }
@@ -80,7 +83,7 @@ class MapVisitor implements ObjectVisitor {
     result: unknown;
     current: MutableContainer | undefined;
     stack: (MutableContainer | undefined)[] = [];
-    constructor(private mapFn: (key: ObjectKey, value: unknown) => unknown) { }
+    constructor(private mapFn: (key: ObjectKey, value: unknown) => unknown) {}
 
     onStartObject(key: ObjectKey) {
         if (key === undefined) {

@@ -1,7 +1,7 @@
-import { useUserSession } from "@vertesia/ui/session";
-import type React from "react";
-import { useMemo } from "react";
-import { ObjectTypeSearch, ObjectTypeSearchContext } from "./ObjectTypeSearchContext";
+import { useUserSession } from '@vertesia/ui/session';
+import type React from 'react';
+import { useMemo } from 'react';
+import { ObjectTypeSearch, ObjectTypeSearchContext } from './ObjectTypeSearchContext';
 
 interface SearchProviderProps {
     children: React.ReactNode;
@@ -19,7 +19,5 @@ export function ObjectTypeSearchProvider({ children, limit, name, chunkable }: S
         return search;
     }, [chunkable, limit, name, store]);
 
-    return (
-        <ObjectTypeSearchContext.Provider value={search}>{children}</ObjectTypeSearchContext.Provider>
-    )
+    return <ObjectTypeSearchContext.Provider value={search}>{children}</ObjectTypeSearchContext.Provider>;
 }

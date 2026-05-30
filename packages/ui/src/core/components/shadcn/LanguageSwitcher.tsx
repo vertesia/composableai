@@ -40,7 +40,11 @@ export function LanguageSwitcher({ label, className }: LanguageSwitcherProps = {
     const resolvedLabel = label === false ? false : (label ?? t('language.label'));
 
     return (
-        <div className={className ?? (resolvedLabel ? 'flex justify-between px-2 items-center gap-3' : 'flex items-center')}>
+        <div
+            className={
+                className ?? (resolvedLabel ? 'flex justify-between px-2 items-center gap-3' : 'flex items-center')
+            }
+        >
             {resolvedLabel && <p className="text-sm font-semibold">{resolvedLabel}</p>}
             <SelectBox<SupportedLanguage>
                 options={SUPPORTED_LANGUAGES as readonly SupportedLanguage[] as SupportedLanguage[]}

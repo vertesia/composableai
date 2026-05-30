@@ -16,7 +16,14 @@ interface CreateOrUpdateTypeModalProps {
     initialPayload?: CreateOrUpdateTypePayload;
     isLoading?: boolean;
 }
-export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initialPayload, isLoading }: CreateOrUpdateTypeModalProps) {
+export function CreateOrUpdateTypeModal({
+    title,
+    isOpen,
+    onClose,
+    okLabel,
+    initialPayload,
+    isLoading,
+}: CreateOrUpdateTypeModalProps) {
     const { t } = useUITranslation();
     const toast = useToast();
     const [name, setName] = useState<string | undefined>(initialPayload?.name);
@@ -28,8 +35,8 @@ export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initi
             toast({
                 status: 'error',
                 title: t('type.nameRequired'),
-                duration: 5000
-            })
+                duration: 5000,
+            });
             return;
         }
         const payload = { name, description, strict_mode: strictMode };
@@ -40,23 +47,27 @@ export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initi
         <Modal isOpen={isOpen} onClose={() => onClose()}>
             <ModalTitle>{title}</ModalTitle>
             <ModalBody className="pt-0">
-                <div className='h-full flex flex-col gap-4 content-between'>
+                <div className="h-full flex flex-col gap-4 content-between">
                     <div>
                         <div className="block text-sm font-medium text-muted">{t('type.name')}</div>
                         <Input value={name} onChange={setName} />
                     </div>
                     <div>
                         <div className="block text-sm font-medium text-muted">{t('type.description')}</div>
-                        <Textarea value={description} onChange={e => setDescription(e.target.value)} minLines={5}/>
+                        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} minLines={5} />
                     </div>
                 </div>
             </ModalBody>
             <ModalFooter>
-                <div className='flex justify-end gap-4'>
-                    <Button variant="secondary" onClick={() => onClose()}>{t('modal.cancel')}</Button>
-                    <Button variant="primary" onClick={() => onSave()} isLoading={isLoading}>{okLabel}</Button>
+                <div className="flex justify-end gap-4">
+                    <Button variant="secondary" onClick={() => onClose()}>
+                        {t('modal.cancel')}
+                    </Button>
+                    <Button variant="primary" onClick={() => onSave()} isLoading={isLoading}>
+                        {okLabel}
+                    </Button>
                 </div>
             </ModalFooter>
         </Modal>
-    )
+    );
 }

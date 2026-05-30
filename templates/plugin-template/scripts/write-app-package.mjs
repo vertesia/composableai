@@ -1,10 +1,7 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import {
-    getProcessDefinitionValidationResult,
-    getProcessInteractionValidationSelectors,
-} from '@vertesia/common';
+import { getProcessDefinitionValidationResult, getProcessInteractionValidationSelectors } from '@vertesia/common';
 import { ServerConfig } from '../lib/config.js';
 import server from '../lib/server.js';
 
@@ -113,7 +110,9 @@ function validateLocalCapabilityIds(pkg, appName) {
             const id = itemId(item);
             if (!id) return;
             if (id.startsWith('app:')) {
-                errors.push(`${label} ${id} must use a package-local id; runtime refs become app:<app-name>:${id.slice(4)}`);
+                errors.push(
+                    `${label} ${id} must use a package-local id; runtime refs become app:<app-name>:${id.slice(4)}`,
+                );
             }
             if (id === 'examples' || id.startsWith('examples:') || id.startsWith('examples/')) {
                 errors.push(`${label} #${index + 1} is still using template example id "${id}"`);
@@ -132,9 +131,7 @@ function packageInteractionSelectors(pkg, appName) {
     }
 
     for (const interaction of interactions) {
-        const localIds = [interaction?.id, interaction?.name].filter(
-            (value) => typeof value === 'string' && value,
-        );
+        const localIds = [interaction?.id, interaction?.name].filter((value) => typeof value === 'string' && value);
         for (const localId of localIds) {
             selectors.add(localId);
             if (appName && !localId.startsWith('app:') && !localId.startsWith('sys:')) {
@@ -220,7 +217,7 @@ async function validatePackageProcesses(pkg, appName) {
         }
     });
 
-    errors.push(...await validateSourceAppRefs(pkg, appName));
+    errors.push(...(await validateSourceAppRefs(pkg, appName)));
 
     if (errors.length > 0) {
         throw new Error(`App package validation failed:\n- ${errors.join('\n- ')}`);

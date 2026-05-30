@@ -108,9 +108,7 @@ function isCodeFile(file) {
 
 function hasDetachedVertesiaClientMethod(text) {
     const apiTopics = '(objects|agents|interactions|files|types|apps|store|data|prompts|skills|collections|runs)';
-    const detachedAssignment = new RegExp(
-        `\\bconst\\s+\\w+\\s*=\\s*client\\.${apiTopics}\\??\\.\\w+\\s*;`,
-    );
+    const detachedAssignment = new RegExp(`\\bconst\\s+\\w+\\s*=\\s*client\\.${apiTopics}\\??\\.\\w+\\s*;`);
     const destructuredTopic = new RegExp(`\\bconst\\s*\\{[^}]+\\}\\s*=\\s*client\\.${apiTopics}\\b`);
     return detachedAssignment.test(text) || destructuredTopic.test(text);
 }
