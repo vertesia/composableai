@@ -1,10 +1,10 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { LoginProviderButton } from './LoginPrimitives';
-import { type ProviderId, providerLabel, startPersonalSignIn, startSignIn } from './loginUtils';
+import { type ProviderId, providerLabel, startSignIn, startSignInWithoutTenant } from './loginUtils';
 
 interface LoginProviderSignInButtonProps {
     provider: ProviderId;
-    /** Email for the tenant-aware flow. Omit for personal OAuth (e.g. SignInModal). */
+    /** Email for the tenant-aware flow. Omit for a no-tenant sign-in (e.g. SignInModal). */
     email?: string;
     redirectTo?: string;
     variant?: 'outline' | 'filled';
@@ -31,8 +31,8 @@ export default function LoginProviderSignInButton({
         if (email) {
             void startSignIn(provider, email, redirectTo);
         } else {
-            // OIDC needs a resolved tenant; the no-email path is only hit by personal-OAuth buttons.
-            startPersonalSignIn(provider, redirectTo);
+            // OIDC needs a resolved tenant; the no-email path is only hit by no-tenant buttons.
+            startSignInWithoutTenant(provider, redirectTo);
         }
     };
 

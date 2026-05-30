@@ -284,8 +284,8 @@ export default function SigninPreview() {
                         sub="Shown on revisit when vt.lastSession is present in localStorage — bypasses the email step."
                     >
                         <Frame
-                            title="Returning — personal Google"
-                            sub="lastProvider=google, no tenantName → last sign-in was personal OAuth."
+                            title="Returning — Google, no tenant"
+                            sub="lastProvider=google, no tenantName → last sign-in had no tenant."
                             meta={{ customerDomain: 'na', signupAllowed: 'na', authTenant: 'no', providerKnown: 'yes' }}
                         >
                             <LoginReturningStep

@@ -7,8 +7,8 @@ import {
     signInWithRedirect,
 } from 'firebase/auth';
 
-// Matches auth-tenants.json `provider` values. SSO vs personal is derived from
-// tenant resolution at sign-in time, not encoded here.
+// Matches auth-tenants.json `provider` values. Tenant context is derived from
+// email resolution at sign-in time, not encoded here.
 export type ProviderId = 'google' | 'github' | 'microsoft' | 'oidc';
 
 export interface LastSession {
@@ -142,7 +142,7 @@ export async function startSignIn(
 ): Promise<{ ok: true } | { ok: false; reason: 'no-email' }> {
     if (!email) return { ok: false, reason: 'no-email' };
 
-    // If the email maps to a tenant, use its IdP (overrides the button pick); else personal OAuth.
+    // If the email maps to a tenant, use the tenant's provider (overrides the button pick); else use the picked provider.
     const tenant = await setFirebaseTenant(email);
     const auth = getFirebaseAuth();
     let effectiveIdp = provider;
@@ -154,7 +154,7 @@ export async function startSignIn(
         tenantName = tenant.label || tenant.name || undefined;
         localStorage.setItem('tenantName', tenantName ?? '');
     } else {
-        // Clear stale tenant routing from a prior SSO attempt.
+        // No tenant — clear any stale tenant routing from a prior attempt.
         localStorage.removeItem('tenantName');
         if (auth.tenantId) auth.tenantId = null;
     }
@@ -164,8 +164,8 @@ export async function startSignIn(
     return { ok: true };
 }
 
-/** Personal (non-tenant) OAuth for standalone buttons with no email (e.g. SignInModal). */
-export function startPersonalSignIn(provider: ProviderId, redirectTo?: string): void {
+/** Sign in with a provider directly, with no email/tenant resolution (e.g. SignInModal). */
+export function startSignInWithoutTenant(provider: ProviderId, redirectTo?: string): void {
     const auth = getFirebaseAuth();
     localStorage.removeItem('tenantName');
     if (auth.tenantId) auth.tenantId = null;

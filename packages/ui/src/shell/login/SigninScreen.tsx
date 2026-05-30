@@ -122,9 +122,10 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
 
     const onProviderClicked = useCallback(
         (provider: ProviderId) => {
-            // SSO is derived from a resolved tenant or stored tenantName, not the provider.
-            const isSso = !!tenant || !!storedSession?.tenantName;
-            trackEvent(isSso ? 'enterprise_signin' : 'oauth_signin', { provider });
+            // Tenant context comes from a resolved tenant or stored tenantName, not the provider.
+            const hasTenant = !!tenant || !!storedSession?.tenantName;
+            // Only the pre-existing enterprise_signin event; non-tenant sign-ins emit nothing.
+            if (hasTenant) trackEvent('enterprise_signin', { provider });
             setPendingProvider(provider);
             setMode('pending');
             // The redirect itself happens in the calling step's startSignIn(); this just shows the pending screen.

@@ -46,9 +46,9 @@ export default function LoginTenantStep({
     return (
         <LoginStepLayout>
             <LoginStepHeader
-                eyebrow={t('auth.tenant.eyebrowSso')}
+                eyebrow={t('auth.tenant.eyebrow')}
                 title={t('auth.tenant.title', { name: tenantName })}
-                body={t('auth.tenant.bodySso')}
+                body={t('auth.tenant.body')}
             />
 
             <LoginAccountCard

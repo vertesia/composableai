@@ -37,14 +37,14 @@ export default function LoginReturningStep({
     const firstName = session.name ? session.name.split(' ')[0]! : firstNameFromEmail(session.email);
     const displayName = session.name || firstNameFromEmail(session.email);
     const avatar = <LoginInitialsBadge initials={emailInitial(session.email)} />;
-    // A stored tenantName means the previous sign-in used SSO.
-    const isSso = !!session.tenantName;
+    // A stored tenantName means we resolved the user's organization.
+    const hasTenant = !!session.tenantName;
     const primaryLabel =
         session.lastProvider === 'oidc'
             ? t('auth.continueWithSignIn')
             : t('auth.continueWithProvider', { provider: providerLabel(session.lastProvider) });
 
-    // OIDC has no personal path, so it's excluded from "other ways".
+    // OIDC only exists with a tenant, so it's not offered as an alternative provider.
     const others: ProviderId[] = (['google', 'github', 'microsoft'] as ProviderId[]).filter(
         (p) => p !== session.lastProvider,
     );
@@ -62,7 +62,7 @@ export default function LoginReturningStep({
                 body={t('auth.returning.body')}
             />
 
-            {isSso && session.tenantName ? (
+            {hasTenant && session.tenantName ? (
                 <LoginAccountCard
                     variant="returning"
                     badge={avatar}
