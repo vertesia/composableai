@@ -143,6 +143,6 @@ export interface IssueTokenResponse {
 
 export interface ValidateTokenResponse {
     valid: boolean;
-    payload?: any;
+    payload?: unknown;
     error?: string;
 }

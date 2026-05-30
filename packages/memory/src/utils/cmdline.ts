@@ -1,4 +1,3 @@
-
 function readWord(text: string, index: number): [string, number] {
     let i = index;
     const len = text.length;
@@ -19,7 +18,6 @@ function readQuotedArg(text: string, index: number, quote: string): [string, num
         const c = text[i];
         if (c === '\\') {
             i += 2;
-            continue;
         } else if (c === quote) {
             return [text.substring(index, i), i + 1];
         } else {
@@ -63,14 +61,15 @@ export function splitPipeCommands(text: string): CommandPipe {
     const commands: Command[] = [];
     let args: string[] = [];
     for (const token of tokens) {
-        if (token === "|") {
+        if (token === '|') {
             if (args.length < 1) {
-                throw new Error("Invalid pipe character. Expecting a command first.");
+                throw new Error('Invalid pipe character. Expecting a command first.');
             }
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             const name = args.shift()!;
             commands.push({
                 name,
-                args
+                args,
             });
             args = [];
         } else {
@@ -79,17 +78,19 @@ export function splitPipeCommands(text: string): CommandPipe {
     }
     let out: string | undefined;
     if (args.length > 0) {
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         const name = args.shift()!;
-        if (args.length > 1 && args[args.length - 2] === ">") {
+        if (args.length > 1 && args[args.length - 2] === '>') {
             out = args.pop();
             args.pop(); // remove the ">"
         }
         commands.push({
             name,
-            args
+            args,
         });
     }
     return {
-        commands, out
+        commands,
+        out,
     };
 }

@@ -1,6 +1,5 @@
-import { Plus } from "lucide-react";
-import { Button } from "@vertesia/ui/core";
-
+import { Plus } from 'lucide-react';
+import { Button } from './shadcn/button';
 
 interface EmptyInteractionsProps {
     buttonLabel: string;
@@ -31,11 +30,11 @@ export function EmptyCollection({ buttonLabel, title, children, onClick }: Empty
                 <p className="mt-1 text-sm text-muted">{children}</p>
                 <div className="mt-6">
                     <Button onClick={onClick}>
-                        <Plus className="-ml-0.5 mr-1.5 size-5" aria-hidden="true" />
+                        <Plus className="-ms-0.5 me-1.5 size-5" aria-hidden="true" />
                         {buttonLabel}
                     </Button>
                 </div>
             </div>
         </div>
-    )
+    );
 }

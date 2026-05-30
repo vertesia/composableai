@@ -1,8 +1,8 @@
-import fs from "fs";
-import { FileHandle, open } from "fs/promises";
-import { pipeline } from "stream/promises";
-import tar from "tar-stream";
-import zlib from "zlib";
+import fs from 'node:fs';
+import { type FileHandle, open } from 'node:fs/promises';
+import { pipeline } from 'node:stream/promises';
+import tar from 'tar-stream';
+import zlib from 'node:zlib';
 
 export interface TarEntry {
     name: string;
@@ -27,7 +27,6 @@ export class TarBuilder {
         }
     }
 
-
     async add(name: string, content?: Buffer) {
         name = normalizePath(name);
         // Calculate header size, 512 bytes for tar headers
@@ -37,7 +36,8 @@ export class TarBuilder {
 
         // Store the index entry
         // entry data offset is always at header offset + 512 bytes
-        if (contentSize > 0) { // do not index directories
+        if (contentSize > 0) {
+            // do not index directories
             this.indexData.push(`${name}:${entryHeaderOffset},${contentSize}`);
         }
 
@@ -55,7 +55,7 @@ export class TarBuilder {
     async build() {
         const pack = this.pack;
         // Convert index data to string and calculate its size
-        const indexContent = this.indexData.join('\n') + '\n';
+        const indexContent = `${this.indexData.join('\n')}\n`;
         const indexContentSize = Buffer.byteLength(indexContent);
 
         // Add the .index entry to the tar
@@ -69,7 +69,6 @@ export class TarBuilder {
     destroy() {
         this.pack.destroy();
     }
-
 }
 
 export async function loadTarIndex(tarFile: string) {
@@ -104,7 +103,7 @@ async function readTarIndex(fd: FileHandle) {
             const indexDataOffset = offset + 512;
             const indexDataEnd = indexDataOffset + indexSize;
             if (indexDataEnd > size - 1024) {
-                throw new Error('Invalid index data offsets: [' + indexDataOffset + ':' + indexDataEnd + ']');
+                throw new Error(`Invalid index data offsets: [${indexDataOffset}:${indexDataEnd}]`);
             }
             const dataBuffer = Buffer.alloc(indexSize);
             await fd.read(dataBuffer, 0, indexSize, indexDataOffset);
@@ -117,8 +116,8 @@ async function readTarIndex(fd: FileHandle) {
 }
 
 export interface TarEntryIndex {
-    offset: number,
-    size: number
+    offset: number;
+    size: number;
 }
 export class TarIndex {
     entries: Record<string, TarEntryIndex> = {};
@@ -127,14 +126,17 @@ export class TarIndex {
      * @param fd the tar file descriptor
      * @param content the index content
      */
-    constructor(public fd: FileHandle, content: string) {
+    constructor(
+        public fd: FileHandle,
+        content: string,
+    ) {
         const lines = content.split('\n');
         for (const line of lines) {
             if (line) {
                 const [name, value] = line.split(':');
                 const [offsetStr, sizeStr] = value.split(',');
-                const offset = parseInt(offsetStr);
-                const size = parseInt(sizeStr);
+                const offset = parseInt(offsetStr, 10);
+                const size = parseInt(sizeStr, 10);
                 this.entries[name] = { offset, size };
             }
         }
@@ -173,8 +175,8 @@ export class TarIndex {
             return this.fd.createReadStream({
                 encoding,
                 start: entry.offset,
-                end: offset + entry.size
-            })
+                end: offset + entry.size,
+            });
         } else {
             return null;
         }
@@ -183,9 +185,7 @@ export class TarIndex {
     async close() {
         await this.fd.close();
     }
-
 }
-
 
 function getHeaderFileSize(buffer: Buffer) {
     const octalSize = buffer.toString('ascii', 124, 136).trim();

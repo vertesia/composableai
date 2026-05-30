@@ -1,10 +1,10 @@
-import { Plan } from "@vertesia/common";
-import { AlertCircle, CheckCircle, Circle, Clock } from "lucide-react";
-import { useUITranslation } from '../../../../i18n/index.js';
+import type { Plan } from '@vertesia/common';
+import { AlertCircle, CheckCircle, Circle, Clock } from 'lucide-react';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface PlanPanelProps {
     plan: Plan;
-    workstreamStatus: Map<string, "pending" | "in_progress" | "completed">;
+    workstreamStatus: Map<string, 'pending' | 'in_progress' | 'completed'>;
     isVisible: boolean;
 }
 
@@ -26,31 +26,33 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
                         const taskGoal = task.goal;
 
                         // Determine task status - use task.status if available or lookup from workstream
-                        let status: "pending" | "in_progress" | "completed" | "skipped" = task.status || "pending";
+                        let status: 'pending' | 'in_progress' | 'completed' | 'skipped' = task.status || 'pending';
                         if (workstreamStatus.has(taskId)) {
+                            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                             status = workstreamStatus.get(taskId)!;
                         }
 
                         // Determine status icon and style
                         let StatusIcon = Circle;
-                        let statusColor = "text-gray-400";
+                        let statusColor = 'text-gray-400';
 
-                        if (status === "in_progress") {
+                        if (status === 'in_progress') {
                             StatusIcon = Clock;
-                            statusColor = "text-blue-500";
-                        } else if (status === "completed") {
+                            statusColor = 'text-blue-500';
+                        } else if (status === 'completed') {
                             StatusIcon = CheckCircle;
-                            statusColor = "text-green-500";
+                            statusColor = 'text-green-500';
                         }
 
                         return (
+                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                             <div key={index} className="flex items-start">
-                                <div className={`mr-1.5 mt-0.5 ${statusColor}`}>
+                                <div className={`me-1.5 mt-0.5 ${statusColor}`}>
                                     <StatusIcon className="h-3.5 w-3.5" />
                                 </div>
                                 <div className="text-xs">
                                     <span className="text-gray-700 dark:text-gray-300">{taskGoal}</span>
-                                    <span className="ml-1 bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-[10px] font-mono">
+                                    <span className="ms-1 bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-[10px] font-mono">
                                         {taskId}
                                     </span>
                                 </div>
@@ -60,7 +62,7 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
                 </div>
             ) : (
                 <div className="text-xs text-gray-500 dark:text-gray-400 italic flex items-center">
-                    <AlertCircle className="h-3.5 w-3.5 mr-1.5 text-amber-500" />
+                    <AlertCircle className="h-3.5 w-3.5 me-1.5 text-amber-500" />
                     {t('agent.noPlanDetected')}
                 </div>
             )}
@@ -68,13 +70,15 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
             {/* Workstream Status Summary */}
             {workstreamStatus.size > 1 && (
                 <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <div className="text-xs font-medium mb-1.5 text-gray-800 dark:text-gray-200">{t('agent.workstreams')}</div>
+                    <div className="text-xs font-medium mb-1.5 text-gray-800 dark:text-gray-200">
+                        {t('agent.workstreams')}
+                    </div>
                     <div className="grid grid-cols-2 gap-1.5">
                         {Array.from(workstreamStatus.entries())
                             // Filter to only show real workstreams (main or those with valid names - not numeric IDs)
                             .filter(([id, _]) => {
                                 // Always show 'main' workstream
-                                if (id === "main") return true;
+                                if (id === 'main') return true;
 
                                 // Don't show if it's a pure numeric ID (likely a task)
                                 if (/^\d+$/.test(id)) return false;
@@ -88,31 +92,31 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
                             })
                             .map(([id, status]) => {
                                 let StatusIcon = Circle;
-                                let statusColor = "text-gray-400";
+                                let statusColor = 'text-gray-400';
                                 let statusText = t('agent.pending');
 
-                                if (status === "in_progress") {
+                                if (status === 'in_progress') {
                                     StatusIcon = Clock;
-                                    statusColor = "text-blue-500";
+                                    statusColor = 'text-blue-500';
                                     statusText = t('agent.inProgress');
-                                } else if (status === "completed") {
+                                } else if (status === 'completed') {
                                     StatusIcon = CheckCircle;
-                                    statusColor = "text-green-500";
+                                    statusColor = 'text-green-500';
                                     statusText = t('agent.completed');
                                 }
 
                                 // Format workstream IDs for better display
-                                const displayId = id === "main" ? t('agent.main') : id;
+                                const displayId = id === 'main' ? t('agent.main') : id;
 
                                 return (
                                     <div key={id} className="flex items-center">
-                                        <div className={`mr-1.5 ${statusColor}`}>
+                                        <div className={`me-1.5 ${statusColor}`}>
                                             <StatusIcon className="h-3 w-3" />
                                         </div>
                                         <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">
                                             {displayId}
                                         </span>
-                                        <span className="text-[10px] text-gray-500 dark:text-gray-500 ml-1">
+                                        <span className="text-[10px] text-gray-500 dark:text-gray-500 ms-1">
                                             {statusText}
                                         </span>
                                     </div>

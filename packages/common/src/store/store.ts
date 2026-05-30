@@ -1,8 +1,9 @@
-import { ComputedFacetResponse } from "../facets.js";
-import { SearchPayload } from "../payload.js";
-import { SupportedEmbeddingTypes } from "../project.js";
-import { ComplexSearchQuery } from "../query.js";
-import { BaseObject } from "./common.js";
+import type { ComputedFacetResponse } from '../facets.js';
+import type { SearchPayload } from '../payload.js';
+import type { SupportedEmbeddingTypes } from '../project.js';
+import type { ComplexSearchQuery } from '../query.js';
+import type { JSONObject } from '../json.js';
+import type { BaseObject } from './common.js';
 
 export enum ContentObjectApiHeaders {
     COLLECTION_ID = 'x-collection-id',
@@ -54,12 +55,12 @@ export enum DataStoreApiHeaders {
 }
 
 export enum ContentObjectStatus {
-    created = "created",
-    processing = "processing", // the was created and still processing
-    ready = "ready", // the object is rendered and ready to be used
-    completed = "completed",
-    failed = "failed",
-    archived = "archived",
+    created = 'created',
+    processing = 'processing', // the was created and still processing
+    ready = 'ready', // the object is rendered and ready to be used
+    completed = 'completed',
+    failed = 'failed',
+    archived = 'archived',
 }
 
 export interface Embedding {
@@ -140,7 +141,7 @@ export interface ContentObjectApiResponse extends ContentObjectItemApiResponse {
     inherited_properties?: InheritedPropertyMetadata[];
 }
 
-export interface ContentObject<T = any> extends ContentObjectItem<T> {
+export interface ContentObject<T = JSONObject> extends ContentObjectItem<T> {
     text?: string; // the text representation of the object
     text_etag?: string;
     embeddings: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
@@ -161,12 +162,12 @@ export interface ContentObject<T = any> extends ContentObjectItem<T> {
 }
 
 export enum ContentNature {
-    Video = "video",
-    Image = "image",
-    Audio = "audio",
-    Document = "document",
-    Code = "code",
-    Other = "other"
+    Video = 'video',
+    Image = 'image',
+    Audio = 'audio',
+    Document = 'document',
+    Code = 'code',
+    Other = 'other',
 }
 
 export interface Dimensions {
@@ -197,15 +198,10 @@ export interface RenditionWithDimensions extends Rendition {
     dimensions: Dimensions;
 }
 
-/**
- * @deprecated Use RenditionWithDimensions instead
- */
-export type VideoRendition = RenditionWithDimensions;
-
-export const POSTER_RENDITION_NAME = "Poster";
-export const AUDIO_RENDITION_NAME = "Audio";
-export const WEB_VIDEO_RENDITION_NAME = "Web";
-export const PDF_RENDITION_NAME = "PDF";
+export const POSTER_RENDITION_NAME = 'Poster';
+export const AUDIO_RENDITION_NAME = 'Audio';
+export const WEB_VIDEO_RENDITION_NAME = 'Web';
+export const PDF_RENDITION_NAME = 'PDF';
 
 export interface ContentMetadata {
     // Common fields for all media types
@@ -269,7 +265,7 @@ export interface Transcript {
 }
 
 export const TextExtractionStatus = {
-    success: "success",
+    success: 'success',
 } as const;
 
 export interface TranscriptMediaResult {
@@ -325,7 +321,7 @@ export interface RevisionInfo {
 /**
  * The content object item is a simplified version of the ContentObject that is returned by the store API when listing objects.
  */
-export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
+export interface ContentObjectItem<T = JSONObject> extends BaseObject {
     parent?: string; // the id of the direct parent object. The root object doesn't have the parent field set.
 
     /** An optional path based location for the object */
@@ -360,12 +356,7 @@ export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
     properties: T; // a JSON object that describes the object
 
     /** Technical metadata of the object */
-    metadata?:
-    | VideoMetadata
-    | AudioMetadata
-    | ImageMetadata
-    | DocumentMetadata
-    | ContentMetadata;
+    metadata?: VideoMetadata | AudioMetadata | ImageMetadata | DocumentMetadata | ContentMetadata;
 
     /** Token information  */
     tokens?: {
@@ -405,13 +396,8 @@ export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
 /**
  * When creating from an uploaded file the content should be an URL to the uploaded file
  */
-export interface CreateContentObjectPayload<T = any>
-    extends Partial<
-        Omit<
-            ContentObject<T>,
-            "id" | "root" | "created_at" | "updated_at" | "type" | "owner"
-        >
-    > {
+export interface CreateContentObjectPayload<T = JSONObject>
+    extends Partial<Omit<ContentObject<T>, 'id' | 'root' | 'created_at' | 'updated_at' | 'type' | 'owner'>> {
     id?: string; // An optional existing object ID to be replaced by the new one
     type?: string; // the object type ID
     generation_run_info?: GenerationRunMetadata;
@@ -456,7 +442,7 @@ interface InCodeTypeRef {
     name: string;
 }
 
-export interface ComplexSearchPayload extends Omit<SearchPayload, "query"> {
+export interface ComplexSearchPayload extends Omit<SearchPayload, 'query'> {
     query?: ComplexSearchQuery;
 }
 
@@ -481,9 +467,9 @@ export interface ColumnLayout {
     /**
      * A default value to be used if the field is not present in the object
      */
-    default?: any;
+    default?: unknown;
 }
-export interface ContentObjectType extends ContentObjectTypeItem { }
+export interface ContentObjectType extends ContentObjectTypeItem {}
 export interface ContentObjectTypeItem extends BaseObject {
     is_chunkable?: boolean;
     /**
@@ -495,14 +481,17 @@ export interface ContentObjectTypeItem extends BaseObject {
      * this is only included in ContentObjectTypeItem if explicitly requested
      * It is always included in ContentObjectType
      */
-    object_schema?: Record<string, any>; // an optional JSON schema for the object properties.
+    object_schema?: Record<string, unknown>; // an optional JSON schema for the object properties.
 
     /**
      * Determines if the content will be validated against the object schema a generation time and save/update time.
      */
     strict_mode?: boolean;
 }
-export type InCodeTypeDefinition = Pick<ContentObjectTypeItem, 'id' | 'name' | 'description' | 'tags' | 'object_schema' | 'table_layout' | 'is_chunkable' | 'strict_mode'>;
+export type InCodeTypeDefinition = Pick<
+    ContentObjectTypeItem,
+    'id' | 'name' | 'description' | 'tags' | 'object_schema' | 'table_layout' | 'is_chunkable' | 'strict_mode'
+>;
 export interface ContentObjectTypeCatalogEntry extends InCodeTypeDefinition {
     updated_by?: string;
     created_by?: string;
@@ -524,15 +513,12 @@ export function isInCodeType(typeId: string): boolean {
 }
 
 export interface CreateContentObjectTypePayload
-    extends Omit<
-        ContentObjectType,
-        "id" | "created_at" | "updated_at" | "created_by" | "updated_by"
-    > { }
+    extends Omit<ContentObjectType, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'> {}
 
 export enum WorkflowRuleInputType {
-    single = "single",
-    multiple = "multiple",
-    none = "none",
+    single = 'single',
+    multiple = 'multiple',
+    none = 'none',
 }
 export interface WorkflowRuleItem extends BaseObject {
     // the name of the workflow function
@@ -543,11 +529,11 @@ export interface WorkflowRule extends WorkflowRuleItem {
     /*
      * mongo matching rules for a content event
      */
-    match?: Record<string, any>;
+    match?: Record<string, unknown>;
     /**
      * Activities configuration if any.
      */
-    config?: Record<string, any>;
+    config?: Record<string, unknown>;
 
     /**
      * Debug mode for the rule
@@ -572,19 +558,17 @@ export interface CreateWorkflowRulePayload extends UploadWorkflowRulePayload {
     endpoint: string; // required
 }
 export interface UploadWorkflowRulePayload
-    extends Partial<
-        Omit<WorkflowRule, "id" | "created_at" | "updated_at" | "owner">
-    > { }
+    extends Partial<Omit<WorkflowRule, 'id' | 'created_at' | 'updated_at' | 'owner'>> {}
 
 export enum ImageRenditionFormat {
-    jpeg = "jpeg",
-    png = "png",
-    webp = "webp",
+    jpeg = 'jpeg',
+    png = 'png',
+    webp = 'webp',
 }
 
 export enum MarkdownRenditionFormat {
-    docx = "docx",
-    pdf = "pdf",
+    docx = 'docx',
+    pdf = 'pdf',
 }
 
 export interface GetRenditionParams {
@@ -596,13 +580,13 @@ export interface GetRenditionParams {
 }
 
 export interface GetRenditionResponse {
-    status: "found" | "generating" | "failed";
+    status: 'found' | 'generating' | 'failed';
     renditions?: string[]; //file paths for the renditions
     workflow_run_id?: string;
 }
 
 export interface ObjectSearchResponse {
-    results: ContentObjectItem<Record<string, unknown>>[];
+    results: ContentObjectItem[];
     facets: ComputedFacetResponse;
     aggregations?: Record<string, unknown>;
 }
@@ -658,7 +642,7 @@ export function canGenerateRendition(contentType: string | undefined, format: Re
 
     // Check exact match first
     const exactMatch = RENDITION_COMPATIBILITY[contentType];
-    if (exactMatch && exactMatch.some(f => f === formatStr)) {
+    if (exactMatch?.some((f) => f === formatStr)) {
         return true;
     }
 
@@ -666,7 +650,7 @@ export function canGenerateRendition(contentType: string | undefined, format: Re
     const [category] = contentType.split('/');
     const wildcardKey = `${category}/*`;
     const wildcardMatch = RENDITION_COMPATIBILITY[wildcardKey];
-    if (wildcardMatch && wildcardMatch.some(f => f === formatStr)) {
+    if (wildcardMatch?.some((f) => f === formatStr)) {
         return true;
     }
 
@@ -731,7 +715,7 @@ export interface GetFileUrlPayload {
     // Optional filename to use in Content-Disposition for downloads
     name?: string;
     // Optional disposition for downloads (default: attachment)
-    disposition?: "inline" | "attachment";
+    disposition?: 'inline' | 'attachment';
 }
 
 export interface GetFileUrlResponse {
@@ -826,6 +810,6 @@ export interface DeleteFileResult {
 }
 
 export enum ContentObjectProcessingPriority {
-    normal = "normal",
-    low = "low",
+    normal = 'normal',
+    low = 'low',
 }

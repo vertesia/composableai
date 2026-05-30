@@ -8,16 +8,16 @@ interface PluginLayoutProps {
 }
 
 export function PluginLayout({ children }: PluginLayoutProps) {
-    const sidebarBg = 'bg-sidebar text-sidebar-foreground border-r border-sidebar-border w-full';
+    const sidebarBg = 'bg-sidebar text-sidebar-foreground border-e border-sidebar-border w-full';
     const basePath = useRouterBasePath();
 
     return (
         <AppLayout
-            sidebar={(
+            sidebar={
                 <NestedNavigationContext basePath={basePath}>
                     <PluginSidebar />
                 </NestedNavigationContext>
-            )}
+            }
             sidebarClassName={sidebarBg}
             mainNav={<PluginTopNav />}
         >

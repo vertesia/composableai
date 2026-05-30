@@ -1,7 +1,7 @@
-import { GoogleAuthProvider, signInWithRedirect } from "firebase/auth";
-import { getFirebaseAuth } from "@vertesia/ui/session";
-import { Button } from "@vertesia/ui/core";
-import { useUITranslation } from "@vertesia/ui/i18n";
+import { GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
+import { getFirebaseAuth } from '@vertesia/ui/session';
+import { Button } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface GoogleSignInButtonProps {
     redirectTo?: string;
@@ -10,10 +10,10 @@ export default function GoogleSignInButton({ redirectTo }: GoogleSignInButtonPro
     const { t } = useUITranslation();
 
     const signIn = () => {
-        localStorage.removeItem("tenantName");
+        localStorage.removeItem('tenantName');
         let redirectPath = redirectTo || window.location.pathname || '/';
         if (redirectPath[0] !== '/') {
-            redirectPath = '/' + redirectPath;
+            redirectPath = `/${redirectPath}`;
         }
         const provider = new GoogleAuthProvider();
         provider.addScope('profile');
@@ -22,16 +22,23 @@ export default function GoogleSignInButton({ redirectTo }: GoogleSignInButtonPro
         //console.log('redirectPath', window.location.origin + redirectPath)
         provider.setCustomParameters({
             prompt: 'select_account',
-            redirect_uri: window.location.origin + redirectPath
+            redirect_uri: window.location.origin + redirectPath,
         });
-        signInWithRedirect(getFirebaseAuth(), provider);
+        void signInWithRedirect(getFirebaseAuth(), provider);
     };
 
     return (
-        <Button variant={"outline"}
+        <Button
+            variant={'outline'}
             onClick={signIn}
-            className="w-full py-5 flex rounded-lg hover:shadow-sm transition duration-150 text-center mb-2">
-            <img className="size-6" src="https://www.svgrepo.com/show/475656/google-color.svg" loading="lazy" alt="google logo" />
+            className="w-full py-5 flex rounded-lg hover:shadow-sm transition duration-150 text-center mb-2"
+        >
+            <img
+                className="size-6"
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
+                loading="lazy"
+                alt="google logo"
+            />
             <span className="text-sm font-semibold">{t('auth.continueWithGoogle')}</span>
         </Button>
     );

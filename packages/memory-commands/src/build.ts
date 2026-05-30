@@ -1,14 +1,14 @@
-import { Builder, BuildOptions } from "@vertesia/memory";
-import { AsyncLocalStorage } from "node:async_hooks";
-import { resolve } from "path";
-import { importTsFile } from "./ts-loader.js";
+import { Builder, type BuildOptions } from '@vertesia/memory';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { resolve } from 'node:path';
+import { importTsFile } from './ts-loader.js';
 
 const als = new AsyncLocalStorage<Builder>();
 
 export function getBuilder() {
     const builder = als.getStore();
     if (!builder) {
-        throw new Error("No builder found in the current context.");
+        throw new Error('No builder found in the current context.');
     }
     return builder;
 }
@@ -22,11 +22,11 @@ export function build(script: string, options: BuildOptions = {}): Promise<void>
 
 async function _build(builder: Builder, script: string, transpileDir?: string): Promise<void> {
     const resolvedScript = resolve(script);
-    let module: any;
+    let module: unknown;
     if (resolvedScript.endsWith('.ts')) {
         try {
             module = await importTsFile(resolvedScript, transpileDir);
-        } catch (er: any) {
+        } catch (er: unknown) {
             console.error(er);
             process.exit(1);
         }
@@ -35,7 +35,7 @@ async function _build(builder: Builder, script: string, transpileDir?: string): 
     }
     const output = module?.default;
     if (!output) {
-        throw new Error("No default export found in the script.");
+        throw new Error('No default export found in the script.');
     }
     await builder.build(output);
 }

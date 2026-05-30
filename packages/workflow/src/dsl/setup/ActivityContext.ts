@@ -1,42 +1,25 @@
-import { log, activityInfo } from "@temporalio/activity";
-import { VertesiaClient } from "@vertesia/client";
-import {
+import { log, activityInfo } from '@temporalio/activity';
+import type { VertesiaClient } from '@vertesia/client';
+import type {
     DSLActivityExecutionPayload,
     DSLWorkflowExecutionPayload,
     Project,
     WorkflowExecutionPayload,
     WorkflowInputType,
     WorkflowInputFile,
-} from "@vertesia/common";
-import {
-    DocumentNotFoundError,
-    WorkflowParamNotFoundError,
-    WorkflowExecutionError,
-} from "../../errors.js";
-import { getProjectFromToken } from "../../utils/auth.js";
-import { getVertesiaClient } from "../../utils/client.js";
-import { Vars } from "../vars.js";
-import {
-    getFetchProvider,
-    registerFetchProviderFactory,
-} from "./fetch/index.js";
-import {
-    DocumentProvider,
-    DocumentTypeProvider,
-    InteractionRunProvider,
-} from "./fetch/providers.js";
+} from '@vertesia/common';
+import { DocumentNotFoundError, WorkflowParamNotFoundError, WorkflowExecutionError } from '../../errors.js';
+import { getProjectFromToken } from '../../utils/auth.js';
+import { getVertesiaClient } from '../../utils/client.js';
+import { Vars } from '../vars.js';
+import { getFetchProvider, registerFetchProviderFactory } from './fetch/index.js';
+import { DocumentProvider, DocumentTypeProvider, InteractionRunProvider } from './fetch/providers.js';
 
 registerFetchProviderFactory(DocumentProvider.ID, DocumentProvider.factory);
-registerFetchProviderFactory(
-    DocumentTypeProvider.ID,
-    DocumentTypeProvider.factory,
-);
-registerFetchProviderFactory(
-    InteractionRunProvider.ID,
-    InteractionRunProvider.factory,
-);
+registerFetchProviderFactory(DocumentTypeProvider.ID, DocumentTypeProvider.factory);
+registerFetchProviderFactory(InteractionRunProvider.ID, InteractionRunProvider.factory);
 
-export class ActivityContext<ParamsT extends Record<string, any>> {
+export class ActivityContext<ParamsT extends object> {
     client: VertesiaClient;
     _project?: Promise<Project | undefined>;
 
@@ -54,15 +37,12 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
     }
 
     get objectId() {
-        const objectId = this.payload.objectIds && this.payload.objectIds[0];
+        const objectId = this.payload.objectIds?.[0];
         if (!objectId) {
-            log.error("No objectId found in payload");
+            log.error('No objectId found in payload');
             throw new WorkflowParamNotFoundError(
-                "objectIds[0]",
-                (
-                    this
-                        .payload as WorkflowExecutionPayload as DSLWorkflowExecutionPayload
-                ).workflow,
+                'objectIds[0]',
+                (this.payload as WorkflowExecutionPayload as DSLWorkflowExecutionPayload).workflow,
             );
         }
         return objectId;
@@ -75,13 +55,10 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
     get runId() {
         const runId = activityInfo().workflowExecution.runId;
         if (!runId) {
-            log.error("No runId found in activityInfo");
+            log.error('No runId found in activityInfo');
             throw new WorkflowParamNotFoundError(
-                "runId",
-                (
-                    this
-                        .payload as WorkflowExecutionPayload as DSLWorkflowExecutionPayload
-                ).workflow,
+                'runId',
+                (this.payload as WorkflowExecutionPayload as DSLWorkflowExecutionPayload).workflow,
             );
         }
         return runId;
@@ -90,13 +67,10 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
     get workflowId() {
         const workflowId = activityInfo().workflowExecution.workflowId;
         if (!workflowId) {
-            log.error("No workflowId found in activityInfo");
+            log.error('No workflowId found in activityInfo');
             throw new WorkflowParamNotFoundError(
-                "workflowId",
-                (
-                    this
-                        .payload as WorkflowExecutionPayload as DSLWorkflowExecutionPayload
-                ).workflow,
+                'workflowId',
+                (this.payload as WorkflowExecutionPayload as DSLWorkflowExecutionPayload).workflow,
             );
         }
         return workflowId;
@@ -119,20 +93,15 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
     get file(): WorkflowInputFile {
         const input = this.payload.input;
         if (!input || input.inputType !== 'files') {
-            throw new WorkflowExecutionError(
-                'Activity expects files but received objectIds'
-            );
+            throw new WorkflowExecutionError('Activity expects files but received objectIds');
         }
         // TypeScript now knows input is { inputType: 'files', files: WorkflowInputFile[] }
         const files = input.files;
         if (!files || files.length === 0) {
-            log.error("No files found in payload");
+            log.error('No files found in payload');
             throw new WorkflowParamNotFoundError(
-                "files[0]",
-                (
-                    this
-                        .payload as WorkflowExecutionPayload as DSLWorkflowExecutionPayload
-                ).workflow,
+                'files[0]',
+                (this.payload as WorkflowExecutionPayload as DSLWorkflowExecutionPayload).workflow,
             );
         }
         return files[0];
@@ -146,9 +115,7 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
     get files(): WorkflowInputFile[] {
         const input = this.payload.input;
         if (!input || input.inputType !== 'files') {
-            throw new WorkflowExecutionError(
-                'Activity expects files but received objectIds'
-            );
+            throw new WorkflowExecutionError('Activity expects files but received objectIds');
         }
         // TypeScript now knows input is { inputType: 'files', files: WorkflowInputFile[] }
         return input.files;
@@ -169,7 +136,7 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
      * For files, returns an array of URLs.
      */
     get inputs(): string[] {
-        return this.inputType === 'objectIds' ? (this.objectIds || []) : this.files.map(f => f.url);
+        return this.inputType === 'objectIds' ? this.objectIds || [] : this.files.map((f) => f.url);
     }
 
     fetchProject() {
@@ -180,9 +147,7 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
     }
 }
 
-export async function setupActivity<ParamsT extends Record<string, any>>(
-    payload: DSLActivityExecutionPayload<ParamsT>,
-) {
+export async function setupActivity<ParamsT extends object>(payload: DSLActivityExecutionPayload<ParamsT>) {
     const client = await getVertesiaClient(payload);
 
     // Activities dispatched from TypeScript code (via dslProxyActivities) set
@@ -191,8 +156,7 @@ export async function setupActivity<ParamsT extends Record<string, any>>(
     // `${...}` in user-supplied strings as a variable reference and silently
     // drop the key when it fails to resolve. Only DSL-defined activities
     // (which carry `activity.params` and/or `activity.fetch`) need Vars.
-    const isDslDispatched =
-        payload.activity.params !== undefined || payload.activity.fetch !== undefined;
+    const isDslDispatched = payload.activity.params !== undefined || payload.activity.fetch !== undefined;
 
     if (!isDslDispatched) {
         const params = (payload.params ?? {}) as ParamsT;
@@ -230,10 +194,7 @@ export async function setupActivity<ParamsT extends Record<string, any>>(
 
                 const provider = getFetchProvider(client, fetchSpec);
 
-                log.info(
-                    `Fetching data for ${key} with provider ${provider.name}`,
-                    { fetchSpec },
-                );
+                log.info(`Fetching data for ${key} with provider ${provider.name}`, { fetchSpec });
                 const result = await provider.fetch(fetchSpec);
                 if (result && result.length > 0) {
                     if (fetchSpec.limit === 1) {
@@ -241,10 +202,8 @@ export async function setupActivity<ParamsT extends Record<string, any>>(
                     } else {
                         vars.setValue(key, result);
                     }
-                } else if (fetchSpec.on_not_found === "throw") {
-                    throw new DocumentNotFoundError(
-                        "No documents found for: " + JSON.stringify(fetchSpec),
-                    );
+                } else if (fetchSpec.on_not_found === 'throw') {
+                    throw new DocumentNotFoundError(`No documents found for: ${JSON.stringify(fetchSpec)}`);
                 } else {
                     vars.setValue(key, null);
                 }
@@ -256,10 +215,7 @@ export async function setupActivity<ParamsT extends Record<string, any>>(
     return new ActivityContext<ParamsT>(payload, client, params);
 }
 
-async function _fetchProject(
-    client: VertesiaClient,
-    payload: WorkflowExecutionPayload,
-) {
+async function _fetchProject(client: VertesiaClient, payload: WorkflowExecutionPayload) {
     const project = await getProjectFromToken(payload.auth_token);
     return project ? await client.projects.retrieve(project.id) : undefined;
 }

@@ -44,7 +44,7 @@ export interface AgentSchedule {
     timezone?: string;
 
     /** Variables to pass to the agent workflow */
-    vars?: Record<string, any>;
+    vars?: Record<string, unknown>;
 
     /** Optional task queue override for the workflow */
     task_queue?: string;
@@ -97,7 +97,7 @@ export interface CreateSchedulePayload {
     timezone?: string;
 
     /** Variables to pass to the agent workflow */
-    vars?: Record<string, any>;
+    vars?: Record<string, unknown>;
 
     /** Optional task queue override */
     task_queue?: string;
@@ -126,7 +126,7 @@ export interface UpdateSchedulePayload {
     timezone?: string;
 
     /** Updated variables */
-    vars?: Record<string, any>;
+    vars?: Record<string, unknown>;
 
     /** Updated task queue */
     task_queue?: string;

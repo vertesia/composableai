@@ -12,12 +12,10 @@ export default {
         'rollup',
         'gray-matter',
         'zod',
-        /^node:/,  // All node: imports
-        /^@rollup\//,  // All @rollup/* packages
-        'rollup-plugin-terser'
+        'typescript',
+        /^node:/, // All node: imports
+        /^@rollup\//, // All @rollup/* packages
+        'rollup-plugin-terser',
     ],
-    plugins: [
-        nodeResolve(),
-        commonjs(),
-    ],
+    plugins: [nodeResolve(), commonjs()],
 };

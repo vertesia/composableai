@@ -1,11 +1,11 @@
-import { DSLActivitySpec, DSLWorkflowSpec, DSLWorkflowStep } from "@vertesia/common";
-import { Vars, splitPath } from "./vars.js";
+import type { DSLActivitySpec, DSLWorkflowSpec, DSLWorkflowStep } from '@vertesia/common';
+import { Vars, splitPath } from './vars.js';
 
 export function validateWorkflow(workflow: DSLWorkflowSpec, vars: string[] = []) {
     const errors: string[] = [];
     const workflowVars = new Set(vars);
-    workflowVars.add("objectId");
-    workflowVars.add("objectIds");
+    workflowVars.add('objectId');
+    workflowVars.add('objectIds');
     if (workflow.vars) {
         for (const v of Object.keys(workflow.vars)) {
             workflowVars.add(v);
@@ -22,7 +22,7 @@ export function validateWorkflow(workflow: DSLWorkflowSpec, vars: string[] = [])
         errors.push("The workflow requires one of 'steps' or 'activities' properties. Neither is present.");
         return errors;
     }
-    const stepsPropName = workflow.steps ? "steps" : "activities";
+    const stepsPropName = workflow.steps ? 'steps' : 'activities';
     const steps = workflow.steps || workflow.activities;
     if (!steps || !Array.isArray(steps)) {
         errors.push(`Workflow '${stepsPropName}' property is required`);
@@ -33,10 +33,11 @@ export function validateWorkflow(workflow: DSLWorkflowSpec, vars: string[] = [])
         return errors;
     }
     if (!steps.length) {
-        errors.push("Workflow should have at least one step or activity");
+        errors.push('Workflow should have at least one step or activity');
     }
 
-    const activities: DSLActivitySpec[] = stepsPropName === "steps" ? (steps as DSLWorkflowStep[]).filter(s => s.type === "activity") : steps;
+    const activities: DSLActivitySpec[] =
+        stepsPropName === 'steps' ? (steps as DSLWorkflowStep[]).filter((s) => s.type === 'activity') : steps;
     for (const activity of activities) {
         const activityErrors = validateActivity(activity, workflowVars);
         if (activityErrors.length > 0) {
@@ -55,7 +56,7 @@ export function validateWorkflow(workflow: DSLWorkflowSpec, vars: string[] = [])
 export function validateActivity(activity: DSLActivitySpec, workflowVars: Set<string>): string[] {
     const errors: string[] = [];
     if (!activity.name) {
-        errors.push("Activity name is required");
+        errors.push('Activity name is required');
     }
     const importedVars = activity.import;
     const localVars: Record<string, boolean> = {};
@@ -99,18 +100,22 @@ export function validateActivity(activity: DSLActivitySpec, workflowVars: Set<st
     return errors;
 }
 
-
-function validateExpressions(target: Record<string, any>, localVars: Record<string, boolean>, errors: string[], checkSelfReference = false) {
+function validateExpressions(
+    target: Record<string, unknown>,
+    localVars: Record<string, boolean>,
+    errors: string[],
+    checkSelfReference = false,
+) {
     const vars = new Vars(localVars);
     const refs = vars.getUnknownReferences(target);
     for (const ref of refs) {
-        errors.push(`Unknown variable "${ref.name}" in expression "${ref.expression}"`)
+        errors.push(`Unknown variable "${ref.name}" in expression "${ref.expression}"`);
     }
     if (checkSelfReference) {
         // check for self references like `"object_type": "${object_type}"`.
         for (const key of Object.keys(target)) {
             const value = target[key];
-            if (typeof value === 'string' && value.includes("${" + key + "}")) {
+            if (typeof value === 'string' && value.includes(`\${${key}}`)) {
                 errors.push(`Self referencing parameter "${key}" in expression "${value}"`);
             }
         }

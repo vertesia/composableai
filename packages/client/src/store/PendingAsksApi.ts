@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import type { ListPendingAsksResponse, PendingAskData, TaskField, UserChannel } from "@vertesia/common";
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type { ListPendingAsksResponse, PendingAskData, TaskField, UserChannel } from '@vertesia/common';
 
 /**
  * Request to register a pending ask.
@@ -63,7 +63,7 @@ export interface ResolvePendingAskResponse {
  */
 export class PendingAsksApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/pending-asks");
+        super(parent, '/api/v1/pending-asks');
     }
 
     /**
@@ -72,7 +72,7 @@ export class PendingAsksApi extends ApiTopic {
      * Stores in Redis and sends webhook if configured.
      */
     register(request: RegisterPendingAskRequest): Promise<RegisterPendingAskResponse> {
-        return this.post("/", { payload: request });
+        return this.post('/', { payload: request });
     }
 
     /**
@@ -88,7 +88,7 @@ export class PendingAsksApi extends ApiTopic {
      * List all pending asks for the current project.
      */
     list(): Promise<ListPendingAsksResponse> {
-        return this.get("/");
+        return this.get('/');
     }
 
     /**

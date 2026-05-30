@@ -1,15 +1,12 @@
-
-
-
 /**
  * The result of a text extraction operation.
  */
 export interface TextExtractionResult {
     objectId?: string;
-    file?: {   
+    file?: {
         source_url: string;
         result_url?: string;
-    }
+    };
     status: TextExtractionStatus;
     hasText: boolean;
     message?: string;
@@ -23,7 +20,7 @@ export interface TextExtractionResult {
 }
 
 export enum TextExtractionStatus {
-    skipped = "skipped",
-    success = "success",
-    error = "error",
+    skipped = 'skipped',
+    success = 'success',
+    error = 'error',
 }

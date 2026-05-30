@@ -2,14 +2,13 @@ import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { defineConfig } from 'rollup';
 import { EXTERNALS } from './externals.js';
 
 const outputDir = path.resolve('lib');
 const esmOutputDir = path.join(outputDir, 'esm');
-
 
 // Get all directories with index.ts or index.tsx
 const entries = fs.readdirSync(esmOutputDir).filter((name) => {
@@ -18,12 +17,11 @@ const entries = fs.readdirSync(esmOutputDir).filter((name) => {
         if (fs.statSync(dir).isDirectory()) {
             return fs.existsSync(path.join(dir, 'index.js'));
         }
-    } catch (e) {
+    } catch {
         // ignore
     }
     return false;
 });
-
 
 const jsEntries = entries.map((name) => ({
     input: path.join(outputDir, 'esm', name, 'index.js'),

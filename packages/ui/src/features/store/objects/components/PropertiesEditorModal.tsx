@@ -1,20 +1,12 @@
 import { useUserSession } from '@vertesia/ui/session';
-import { useState, useRef, useEffect } from 'react';
-import { useUITranslation } from '../../../../i18n/index.js';
-import {
-    Button,
-    Modal,
-    ModalBody,
-    ModalFooter,
-    ModalTitle,
-    useToast,
-    useTheme
-} from '@vertesia/ui/core';
-import { ContentObject } from '@vertesia/common';
-import { useNavigate } from "@vertesia/ui/router";
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { Button, Modal, ModalBody, ModalFooter, ModalTitle, errorMessage, useToast, useTheme } from '@vertesia/ui/core';
+import type { ContentObject, JSONSchema } from '@vertesia/common';
+import { useNavigate } from '@vertesia/ui/router';
 
 // Import Monaco Editor wrapper
-import { MonacoEditor, IEditorApi } from '@vertesia/ui/widgets';
+import { MonacoEditor, type IEditorApi } from '@vertesia/ui/widgets';
 
 // Import SaveVersionConfirmModal
 import { SaveVersionConfirmModal } from './SaveVersionConfirmModal';
@@ -35,11 +27,26 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
     const [isLoading, setIsLoading] = useState(false);
     const [propertiesJson, setPropertiesJson] = useState('');
     const [showConfirmation, setShowConfirmation] = useState(false);
-    const [parsedProperties, setParsedProperties] = useState<any>(null);
+    const [parsedProperties, setParsedProperties] = useState<unknown>(null);
     const editorRef = useRef<IEditorApi | undefined>(undefined);
-    const [jsonSchema, setJsonSchema] = useState<any>(null);
+    const [jsonSchema, setJsonSchema] = useState<JSONSchema | null>(null);
     //TODO  state not used
     const [_newVersionId, setNewVersionId] = useState<string | null>(null);
+
+    // Fetch JSON schema for the object type
+    const fetchJsonSchema = useCallback(
+        async (typeId: string) => {
+            try {
+                const typeDetails = await store.types.retrieve(typeId);
+                if (typeDetails.object_schema) {
+                    setJsonSchema(typeDetails.object_schema);
+                }
+            } catch (error) {
+                console.error('Failed to fetch JSON schema:', error);
+            }
+        },
+        [store.types],
+    );
 
     // Initialize editor content when modal opens
     useEffect(() => {
@@ -48,35 +55,23 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
 
             // Try to fetch JSON schema if object has a type
             if (object.type?.id) {
-                fetchJsonSchema(object.type.id);
+                void fetchJsonSchema(object.type.id);
             }
         }
-    }, [isOpen, object]);
-
-    // Fetch JSON schema for the object type
-    async function fetchJsonSchema(typeId: string) {
-        try {
-            const typeDetails = await store.types.retrieve(typeId);
-            if (typeDetails.object_schema) {
-                setJsonSchema(typeDetails.object_schema);
-            }
-        } catch (error) {
-            console.error('Failed to fetch JSON schema:', error);
-        }
-    }
+    }, [isOpen, object, fetchJsonSchema]);
 
     // Configure Monaco editor with JSON schema validation
     const beforeMount = (monaco: typeof import('monaco-editor')) => {
         if (jsonSchema) {
-            monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+            monaco.json.jsonDefaults.setDiagnosticsOptions({
                 validate: true,
                 schemas: [
                     {
                         uri: 'http://myserver/object-schema.json',
                         fileMatch: ['*'],
-                        schema: jsonSchema
-                    }
-                ]
+                        schema: jsonSchema,
+                    },
+                ],
             });
         }
     };
@@ -91,12 +86,12 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
             const properties = JSON.parse(editorValue);
             setParsedProperties(properties);
             setShowConfirmation(true);
-        } catch (err) {
+        } catch {
             toast({
                 status: 'error',
                 title: t('store.invalidJson'),
                 description: t('store.pleaseFixJsonSyntax'),
-                duration: 5000
+                duration: 5000,
             });
         }
     }
@@ -115,12 +110,16 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
 
             if (createVersion) {
                 // Create a new version with the updated properties
-                const response = await client.objects.update(object.id, {
-                    properties: properties
-                }, {
-                    createRevision: true,
-                    revisionLabel: versionLabel
-                });
+                const response = await client.objects.update(
+                    object.id,
+                    {
+                        properties: properties,
+                    },
+                    {
+                        createRevision: true,
+                        revisionLabel: versionLabel,
+                    },
+                );
 
                 // Store the new version ID for navigation
                 if (response.id !== object.id) {
@@ -131,7 +130,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                     status: 'success',
                     title: t('store.newVersionCreated'),
                     description: t('store.newVersionCreatedDesc'),
-                    duration: 2000
+                    duration: 2000,
                 });
 
                 // Close modals
@@ -146,22 +145,24 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                         toast({
                             status: 'info',
                             title: t('store.viewingNewVersion'),
-                            description: versionLabel ? t('store.viewingVersionLabel', { label: versionLabel }) : t('store.viewingNewVersionDefault'),
-                            duration: 3000
+                            description: versionLabel
+                                ? t('store.viewingVersionLabel', { label: versionLabel })
+                                : t('store.viewingNewVersionDefault'),
+                            duration: 3000,
                         });
                     }, 100);
                 }
             } else {
                 // Update the object properties in place
                 await store.objects.update(object.id, {
-                    properties: properties
+                    properties: properties,
                 });
 
                 toast({
                     status: 'success',
                     title: t('store.propertiesUpdated'),
                     description: t('store.propertiesUpdatedDesc'),
-                    duration: 2000
+                    duration: 2000,
                 });
 
                 if (refetch) {
@@ -171,12 +172,12 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                 setShowConfirmation(false);
                 onClose();
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 status: 'error',
                 title: t('store.errorUpdatingProperties'),
-                description: error.message || t('store.errorUpdatingPropertiesDefault'),
-                duration: 5000
+                description: errorMessage(error, t('store.errorUpdatingPropertiesDefault')),
+                duration: 5000,
             });
             setIsLoading(false);
         }
@@ -186,7 +187,6 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
     function handleCancelConfirmation() {
         setShowConfirmation(false);
     }
-
 
     return (
         <>
@@ -199,12 +199,14 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                 <ModalBody>
                     <div className="mb-2 text-sm text-gray-500">
                         {object.type?.name ? (
-                            <span>Editing properties for object type: <strong>{object.type.name}</strong></span>
+                            <span>
+                                Editing properties for object type: <strong>{object.type.name}</strong>
+                            </span>
                         ) : (
                             <span>{t('store.editingGenericDocument')}</span>
                         )}
-                        {jsonSchema && (
-                            <span className="ml-2 text-green-600">(JSON schema validation enabled)</span>
+                        {jsonSchema !== null && (
+                            <span className="ms-2 text-green-600">(JSON schema validation enabled)</span>
                         )}
                     </div>
                     <div className="h-[75vh] border rounded-md overflow-hidden">
@@ -222,10 +224,7 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                     <Button variant="secondary" onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button
-                        variant="primary"
-                        onClick={handleSave}
-                    >
+                    <Button variant="primary" onClick={handleSave}>
                         Save Changes
                     </Button>
                 </ModalFooter>

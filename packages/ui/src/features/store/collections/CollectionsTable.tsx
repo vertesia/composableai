@@ -1,18 +1,28 @@
-import { NavLink } from "@vertesia/ui/router";
-import { useUserSession } from "@vertesia/ui/session";
-import { FolderClosed, Search, Trash2 } from "lucide-react";
-import { Button, ConfirmModal, ErrorBox, Table, TBody, TR, useToast, VTooltip, useFetch, EmptyCollection } from "@vertesia/ui/core";
+import { NavLink } from '@vertesia/ui/router';
+import { useUserSession } from '@vertesia/ui/session';
+import { FolderClosed, Search, Trash2 } from 'lucide-react';
+import {
+    Button,
+    ConfirmModal,
+    ErrorBox,
+    Table,
+    TBody,
+    TR,
+    useToast,
+    VTooltip,
+    useFetch,
+    EmptyCollection,
+    errorMessage,
+} from '@vertesia/ui/core';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { useState, useEffect } from "react";
-import { CreateCollectionModal } from "./CreateCollection";
-import { useUITranslation } from '../../../i18n/index.js';
+import { useState, useEffect } from 'react';
+import { CreateCollectionModal } from './CreateCollection';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 dayjs.extend(relativeTime);
 
-interface CollectionsTableProps {
-}
-export function CollectionsTable({ }: CollectionsTableProps) {
+export function CollectionsTable() {
     const { client } = useUserSession();
     const toast = useToast();
     const { t } = useUITranslation();
@@ -30,7 +40,7 @@ export function CollectionsTable({ }: CollectionsTableProps) {
     }, [collections, error]);
 
     if (error) {
-        return <ErrorBox title={t('store.collectionFetchFailed')}>{error.message}</ErrorBox>
+        return <ErrorBox title={t('store.collectionFetchFailed')}>{errorMessage(error)}</ErrorBox>;
     }
 
     const deleteCollection = async () => {
@@ -41,16 +51,16 @@ export function CollectionsTable({ }: CollectionsTableProps) {
             toast({
                 title: t('store.collectionDeleted'),
                 status: 'success',
-                duration: 3000
+                duration: 3000,
             });
             refetch();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Failed to delete collection:', err);
             toast({
                 title: t('store.failedToDeleteCollection'),
-                description: err.message || 'An error occurred',
+                description: errorMessage(err),
                 status: 'error',
-                duration: 5000
+                duration: 5000,
             });
         } finally {
             setCollectionToDelete(undefined);
@@ -59,31 +69,30 @@ export function CollectionsTable({ }: CollectionsTableProps) {
 
     return (
         <>
-            {
-                collections &&
-                (collections.length > 0 ?
-                    (<Table className="w-full">
+            {collections &&
+                (collections.length > 0 ? (
+                    <Table className="w-full">
                         <thead>
                             <tr>
-                                <th>{t('type.name')}</th >
+                                <th>{t('type.name')}</th>
                                 <th>{t('type.type')}</th>
                                 <th>{t('store.created')}</th>
                                 <th></th>
-                            </tr >
-                        </thead >
+                            </tr>
+                        </thead>
                         <TBody columns={4} isLoading={isLoading}>
-                            {
-                                collections.map((c) => {
-                                    return <TR key={c.id}>
+                            {collections.map((c) => {
+                                return (
+                                    <TR key={c.id}>
                                         <td>
                                             <div className="flex items-center gap-2">
-                                                {collectionIcon(c.dynamic)}
+                                                <CollectionIcon isDynamic={c.dynamic} />
                                                 <NavLink href={`/collections/${c.id}`}>{c.name}</NavLink>
                                             </div>
                                         </td>
-                                        <td>{c.type?.name || "-"}</td>
+                                        <td>{c.type?.name || '-'}</td>
                                         <td>{dayjs(c.created_at).fromNow()}</td>
-                                        <td className="text-right">
+                                        <td className="text-end">
                                             <Button
                                                 variant="destructive"
                                                 size="sm"
@@ -93,14 +102,19 @@ export function CollectionsTable({ }: CollectionsTableProps) {
                                             </Button>
                                         </td>
                                     </TR>
-                                })
-                            }
+                                );
+                            })}
                         </TBody>
-                    </Table >) :
-                    <EmptyCollection title={t('store.noCollections')} buttonLabel={t('store.newCollections')} onClick={() => setOpen(true)}>
+                    </Table>
+                ) : (
+                    <EmptyCollection
+                        title={t('store.noCollections')}
+                        buttonLabel={t('store.newCollections')}
+                        onClick={() => setOpen(true)}
+                    >
                         {t('store.getStartedCollections')}
-                    </EmptyCollection>)
-            }
+                    </EmptyCollection>
+                ))}
 
             <CreateCollectionModal isOpen={isOpen} onClose={() => setOpen(false)} />
 
@@ -112,7 +126,7 @@ export function CollectionsTable({ }: CollectionsTableProps) {
                 onCancel={() => setCollectionToDelete(undefined)}
             />
         </>
-    )
+    );
 }
 
 export function CollectionIcon({ isDynamic }: { isDynamic: boolean }) {
@@ -121,13 +135,8 @@ export function CollectionIcon({ isDynamic }: { isDynamic: boolean }) {
     const icon = isDynamic ? <Search className="size-5" /> : <FolderClosed className="size-5" />;
 
     return (
-        <VTooltip description={tooltipText} className="mr-2">
+        <VTooltip description={tooltipText} className="me-2">
             {icon}
         </VTooltip>
     );
-}
-
-/** @deprecated Use CollectionIcon component instead */
-export function collectionIcon(isDynamic: boolean) {
-    return <CollectionIcon isDynamic={isDynamic} />;
 }

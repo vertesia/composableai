@@ -1,7 +1,7 @@
-import { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from "@llumiverse/common";
-import { ConversationStripOptions, ResolvedInteractionExecutionInfo, UserChannel } from "../interaction.js";
-import { ExecutionRunDocRef } from "../runs.js";
-import { Plan, WorkflowAncestor } from "./workflow.js";
+import type { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from '@llumiverse/common';
+import type { ConversationStripOptions, ResolvedInteractionExecutionInfo, UserChannel } from '../interaction.js';
+import type { ExecutionRunDocRef } from '../runs.js';
+import type { Plan, WorkflowAncestor } from './workflow.js';
 
 /**
  * Lightweight tool reference for activity payloads.

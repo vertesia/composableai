@@ -1,12 +1,12 @@
-import * as React from "react";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { cn } from "../../libs/utils";
+import * as React from 'react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { cn } from '../../libs/utils';
 
-import { X } from "lucide-react";
-import { Button } from "../button";
-import { VisuallyHidden } from "../../libs/visuallyHidden";
-import { createContext, useContext } from "react";
-import { usePortalContainer } from "../../../hooks/PortalContainerProvider";
+import { X } from 'lucide-react';
+import { Button } from '../button';
+import { VisuallyHidden } from '../../libs/visuallyHidden';
+import { createContext, useContext } from 'react';
+import { usePortalContainer } from '../../../hooks/PortalContainerProvider';
 
 interface ModalProps {
     children: React.ReactNode | React.ReactNode[];
@@ -17,15 +17,15 @@ interface ModalProps {
     className?: string;
     allowOverflow?: boolean;
     disableCloseOnClickOutside?: boolean;
-    size?: "sm" | "md" | "lg" | "xl";
+    size?: 'sm' | 'md' | 'lg' | 'xl';
     action?: React.ReactNode;
 }
-const ModalContext = createContext<boolean>(false)
+const ModalContext = createContext<boolean>(false);
 export function useIsInModal() {
     return !!useContext(ModalContext);
 }
 export function ModalContextProvider({ children }: { children: React.ReactNode }) {
-    return <ModalContext.Provider value={true}>{children}</ModalContext.Provider>
+    return <ModalContext.Provider value={true}>{children}</ModalContext.Provider>;
 }
 
 export function Modal({
@@ -33,12 +33,12 @@ export function Modal({
     children,
     isOpen,
     onClose,
-    description = "Modal Description",
+    description = 'Modal Description',
     noCloseButton = false,
     allowOverflow = false,
     disableCloseOnClickOutside = false,
-    size = "md",
-    action
+    size = 'md',
+    action,
 }: ModalProps) {
     const handleOpenChange = (open: boolean) => {
         if (!open) {
@@ -47,16 +47,16 @@ export function Modal({
     };
     function getSizeClasses() {
         switch (size) {
-            case "sm":
-                return "max-w-[20vw]";
-            case "md":
-                return "max-w-[60vw] lg:max-w-[40vw]";
-            case "lg":
-                return "max-w-[80vw] md:max-w-[60vw]";
-            case "xl":
-                return "max-w-[95vw] lg:max-w-[80vw]";
+            case 'sm':
+                return 'max-w-[20vw]';
+            case 'md':
+                return 'max-w-[60vw] lg:max-w-[40vw]';
+            case 'lg':
+                return 'max-w-[80vw] md:max-w-[60vw]';
+            case 'xl':
+                return 'max-w-[95vw] lg:max-w-[80vw]';
             default:
-                return "max-w-[60vw] lg:max-w-[40vw]";
+                return 'max-w-[60vw] lg:max-w-[40vw]';
         }
     }
 
@@ -68,7 +68,6 @@ export function Modal({
                     handleOpenChange(open);
                 }
             }}
-
         >
             {allowOverflow && <DialogOverlay className="z-50 fixed inset-0 bg-black/80" />}
             <VisuallyHidden>
@@ -76,19 +75,16 @@ export function Modal({
             </VisuallyHidden>
             <DialogContent
                 className={cn(
-                    "min-h-20 p-4",
-                    "fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 sm:rounded-lg",
+                    'min-h-20 p-4',
+                    // rtl-ok: symmetric centering — left-[50%] + translate-x-[-50%] works in both LTR and RTL
+                    'fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 sm:rounded-lg',
                     getSizeClasses(),
-                    className
+                    className,
                 )}
             >
-                <div className="top-4 right-4 absolute">
+                <div className="top-4 end-4 absolute">
                     <div className="flex gap-2">
-                        {action && (
-                            <>
-                                {action}
-                            </>
-                        )}
+                        {action && action}
                         {!noCloseButton && (
                             <DialogClose onClick={() => handleOpenChange(false)} asChild autoFocus={false}>
                                 <Button
@@ -102,9 +98,7 @@ export function Modal({
                         )}
                     </div>
                 </div>
-                <ModalContextProvider>
-                    {children}
-                </ModalContextProvider>
+                <ModalContextProvider>{children}</ModalContextProvider>
             </DialogContent>
         </Dialog>
     );
@@ -117,71 +111,61 @@ export const ModalTitle = ({
     description,
     showDivider = false,
     ...props
-}: React.HTMLAttributes<HTMLHeadingElement> & { show?: boolean; description?: string, showDivider?: boolean }) => {
+}: React.HTMLAttributes<HTMLHeadingElement> & { show?: boolean; description?: string; showDivider?: boolean }) => {
     if (!show) {
         return (
             <VisuallyHidden>
                 <DialogTitle>{children}</DialogTitle>
                 {description && <DialogDescription>{description}</DialogDescription>}
             </VisuallyHidden>
-        )
+        );
     }
     return (
-        <>
-            <DialogTitle
-                className={cn(
-                    showDivider ? "border-b-solid border-b border-b-1 pb-2 mb-4" : "",
-                    "text-lg font-semibold leading-6 tracking-tight", 
-                    { 'py-2': !description }, 
-                    className)}
-                {...props}
-            >
-                {children}
-                {description && (
-                    <DialogDescription className="text-sm !font-normal text-muted-foreground pb-2">
-                        {description}
-                    </DialogDescription>
-                )}
-            </DialogTitle>
-        </>
+        <DialogTitle
+            className={cn(
+                showDivider ? 'border-b-solid border-b border-b-1 pb-2 mb-4' : '',
+                'text-lg font-semibold leading-6 tracking-tight',
+                { 'py-2': !description },
+                className,
+            )}
+            {...props}
+        >
+            {children}
+            {description && (
+                <DialogDescription className="text-sm !font-normal text-muted-foreground pb-2">
+                    {description}
+                </DialogDescription>
+            )}
+        </DialogTitle>
     );
 };
 
-export const ModalBody = ({
-    children,
-    className,
-    ...props
-}: React.HTMLAttributes<HTMLDivElement>) => {
+export const ModalBody = ({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
     return (
-        <div className={cn("text-sm max-h-[80vh] overflow-y-auto", className)} {...props}>
+        <div className={cn('text-sm max-h-[80vh] overflow-y-auto', className)} {...props}>
             {children}
         </div>
     );
 };
 
 interface ModalFooterProps extends React.HTMLAttributes<HTMLDivElement> {
-    align?: "left" | "right" | "center";
+    align?: 'left' | 'right' | 'center';
     children: React.ReactNode | React.ReactNode[];
     className?: string;
 }
 
-export const ModalFooter = ({
-    align = "right",
-    children,
-    className,
-    ...props
-}: ModalFooterProps) => {
+export const ModalFooter = ({ align = 'right', children, className, ...props }: ModalFooterProps) => {
     const alignClass = {
-        left: "justify-start",
-        center: "justify-center",
-        right: "justify-end",
+        left: 'justify-start',
+        center: 'justify-center',
+        right: 'justify-end',
     };
     return (
         <div
             className={cn(
-                "w-full flex py-3 sm:py-2 sm:flex sm:flex-row-reverse sm:flex-row sm:justify-end sm:space-x-2",
+                'w-full flex py-3 sm:py-2 sm:flex sm:flex-row-reverse sm:flex-row sm:justify-end sm:space-x-2',
                 alignClass[align],
-                className
+                className,
             )}
             {...props}
         >
@@ -202,8 +186,8 @@ const DialogOverlay = React.forwardRef<
     <DialogPrimitive.Overlay
         ref={ref}
         className={cn(
-            "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-            className
+            'fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+            className,
         )}
         {...props}
     />
@@ -225,8 +209,9 @@ const DialogContent = React.forwardRef<
                     event.preventDefault();
                 }}
                 className={cn(
-                    "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
-                    className
+                    // rtl-ok: symmetric centering + slide animations from Radix — left-[50%]/translate-x-[-50%] are mirror-safe
+                    'fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
+                    className,
                 )}
                 {...props}
             >
@@ -241,13 +226,9 @@ const DialogDescription = React.forwardRef<
     React.ElementRef<typeof DialogPrimitive.Description>,
     React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
 >(({ className, ...props }, ref) => (
-    <DialogPrimitive.Description
-        ref={ref}
-        className={cn("text-sm text-muted", className)}
-        {...props}
-    />
-))
-DialogDescription.displayName = DialogPrimitive.Description.displayName
+    <DialogPrimitive.Description ref={ref} className={cn('text-sm text-muted', className)} {...props} />
+));
+DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 const DialogTitle = React.forwardRef<
     React.ElementRef<typeof DialogPrimitive.Title>,
@@ -255,15 +236,11 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <DialogPrimitive.Title
         ref={ref}
-        className={cn(
-            "text-lg font-semibold leading-none tracking-tight",
-            className
-        )}
+        className={cn('text-lg font-semibold leading-none tracking-tight', className)}
         {...props}
     />
-))
-DialogTitle.displayName = DialogPrimitive.Title.displayName
-
+));
+DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
 export {
     Dialog,

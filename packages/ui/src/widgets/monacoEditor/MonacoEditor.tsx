@@ -2,7 +2,7 @@ import { Editor } from '@monaco-editor/react';
 import { useTheme } from '@vertesia/ui/core';
 import debounce from 'debounce';
 import clsx from 'clsx';
-import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type * as monaco from 'monaco-editor';
 import { registerCustomFoldingProviders } from './foldingProviders.js';
 
@@ -25,7 +25,10 @@ export interface ViewUpdate {
 }
 
 export class VEditorApi implements IEditorApi {
-    constructor(private VgetValue: () => string, private VsetValue: (value: string) => void) { }
+    constructor(
+        private VgetValue: () => string,
+        private VsetValue: (value: string) => void,
+    ) {}
 
     getValue() {
         return this.VgetValue();
@@ -70,9 +73,9 @@ export function MonacoEditor({
     const editorInstanceRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
     const monacoInstanceRef = useRef<typeof import('monaco-editor') | null>(null);
     const { theme } = useTheme();
-    const resolvedTheme = theme === 'system'
-        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-        : theme;
+    const resolvedTheme =
+        theme === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme;
+    const effectiveValue = value || defaultValue || '';
 
     const getValueRef = useRef(() => editorValue);
     const setValueRef = useRef((newValue: string) => {
@@ -90,7 +93,7 @@ export function MonacoEditor({
         if (editorRef) {
             editorRef.current = new VEditorApi(
                 () => getValueRef.current(),
-                (value: string) => setValueRef.current(value)
+                (value: string) => setValueRef.current(value),
             );
         }
         return () => {
@@ -110,95 +113,102 @@ export function MonacoEditor({
         }
     }, [onChange, debounceTimeout]);
 
-    const foldAllCodeBlocks = useCallback(async (
-        editor: monaco.editor.IStandaloneCodeEditor,
-        monacoInstance: typeof import('monaco-editor'),
-    ) => {
-        const model = editor.getModel();
-        if (!model) return;
-        const codeBlockRegExp = /```[\s\S]*?```/g;
-        let match;
-        while ((match = codeBlockRegExp.exec(model.getValue())) !== null) {
-            const startLine = model.getPositionAt(match.index).lineNumber;
-            const endLine = model.getPositionAt(match.index + match[0].length).lineNumber;
-            editor.setSelection(new monacoInstance.Selection(startLine, 1, endLine, 1));
-            await editor.getAction('editor.createFoldingRangeFromSelection')?.run();
-        }
-    }, []);
+    const foldAllCodeBlocks = useCallback(
+        async (editor: monaco.editor.IStandaloneCodeEditor, monacoInstance: typeof import('monaco-editor')) => {
+            const model = editor.getModel();
+            if (!model) return;
+            const codeBlockRegExp = /```[\s\S]*?```/g;
+            for (const match of model.getValue().matchAll(codeBlockRegExp)) {
+                const startLine = model.getPositionAt(match.index).lineNumber;
+                const endLine = model.getPositionAt(match.index + match[0].length).lineNumber;
+                editor.setSelection(new monacoInstance.Selection(startLine, 1, endLine, 1));
+                await editor.getAction('editor.createFoldingRangeFromSelection')?.run();
+            }
+        },
+        [],
+    );
 
-    const handleEditorChange = useCallback((newValue: string | undefined) => {
-        const actualValue = newValue || '';
-        setEditorValue(actualValue);
+    const handleEditorChange = useCallback(
+        (newValue: string | undefined) => {
+            const actualValue = newValue || '';
+            setEditorValue(actualValue);
 
-        if (debouncedOnChange) {
-            const update: ViewUpdate = {
-                docChanged: true,
-                state: {
-                    doc: {
-                        toString: () => actualValue,
-                        length: actualValue.length
-                    }
-                }
+            if (debouncedOnChange) {
+                const update: ViewUpdate = {
+                    docChanged: true,
+                    state: {
+                        doc: {
+                            toString: () => actualValue,
+                            length: actualValue.length,
+                        },
+                    },
+                };
+
+                debouncedOnChange(update);
+            }
+        },
+        [debouncedOnChange],
+    );
+
+    const handleEditorDidMount = useCallback(
+        (editor: monaco.editor.IStandaloneCodeEditor, monacoInstance: typeof import('monaco-editor')) => {
+            editorInstanceRef.current = editor;
+            monacoInstanceRef.current = monacoInstance;
+
+            if (useCustomFolding) {
+                registerCustomFoldingProviders(monacoInstance);
+            }
+
+            // Update the setValue ref to use the actual editor instance
+            setValueRef.current = (newValue: string) => {
+                setEditorValue(newValue);
+                editor.setValue(newValue);
             };
 
-            debouncedOnChange(update);
-        }
-    }, [debouncedOnChange]);
+            // Set up custom theme for better error line highlighting
+            monacoInstance.editor.defineTheme('errorLineTheme', {
+                base: resolvedTheme === 'dark' ? 'vs-dark' : 'vs',
+                inherit: true,
+                rules: [],
+                colors: {
+                    'editorError.background': '#ffebee',
+                    'editorError.border': '#f44336',
+                },
+            });
 
-    const handleEditorDidMount = useCallback((editor: monaco.editor.IStandaloneCodeEditor, monacoInstance: typeof import('monaco-editor')) => {
-        editorInstanceRef.current = editor;
-        monacoInstanceRef.current = monacoInstance;
+            monacoInstance.editor.setTheme('errorLineTheme');
 
-        if (useCustomFolding) {
-            registerCustomFoldingProviders(monacoInstance);
-        }
+            if (useCustomFolding) {
+                setTimeout(() => foldAllCodeBlocks(editor, monacoInstance), 300);
+            }
 
-        // Update the setValue ref to use the actual editor instance
-        setValueRef.current = (newValue: string) => {
-            setEditorValue(newValue);
-            editor.setValue(newValue);
-        };
-
-        // Set up custom theme for better error line highlighting
-        monacoInstance.editor.defineTheme('errorLineTheme', {
-            base: resolvedTheme === 'dark' ? 'vs-dark' : 'vs',
-            inherit: true,
-            rules: [],
-            colors: {
-                'editorError.background': '#ffebee',
-                'editorError.border': '#f44336',
-            },
-        });
-
-        monacoInstance.editor.setTheme('errorLineTheme');
-
-        if (useCustomFolding) {
-            setTimeout(() => foldAllCodeBlocks(editor, monacoInstance), 300);
-        }
-
-        // Call custom onMount if provided
-        onMount?.(editor, monacoInstance);
-    }, [onMount, resolvedTheme, useCustomFolding, foldAllCodeBlocks]);
+            // Call custom onMount if provided
+            onMount?.(editor, monacoInstance);
+        },
+        [onMount, resolvedTheme, useCustomFolding, foldAllCodeBlocks],
+    );
 
     // Update editor value when prop changes from outside
     useEffect(() => {
-        const effectiveValue = value || defaultValue || '';
-        if (effectiveValue !== editorValue) {
-            setEditorValue(effectiveValue);
+        setEditorValue((currentValue) => {
+            if (effectiveValue === currentValue) {
+                return currentValue;
+            }
             if (editorInstanceRef.current) {
                 editorInstanceRef.current.setValue(effectiveValue);
             }
-        }
-    }, [value]); // Only depend on value prop, not editorValue
+            return effectiveValue;
+        });
+    }, [effectiveValue]);
 
     // Re-fold code blocks when value prop changes externally
     useEffect(() => {
-        if (!useCustomFolding || !editorInstanceRef.current || !monacoInstanceRef.current) return;
+        if (!effectiveValue || !useCustomFolding || !editorInstanceRef.current || !monacoInstanceRef.current) return;
         const editor = editorInstanceRef.current;
         const monacoInstance = monacoInstanceRef.current;
         const timer = setTimeout(() => foldAllCodeBlocks(editor, monacoInstance), 300);
         return () => clearTimeout(timer);
-    }, [value, useCustomFolding, foldAllCodeBlocks]);
+    }, [effectiveValue, useCustomFolding, foldAllCodeBlocks]);
 
     const defaultOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
         fontSize: 14,
@@ -221,14 +231,14 @@ export function MonacoEditor({
         renderLineHighlight: 'line', // Highlight entire line for errors
         hover: {
             enabled: true,
-            delay: 100
+            delay: 100,
         }, // Enable hover for error messages
         quickSuggestions: {
             other: true,
             comments: true,
-            strings: true
+            strings: true,
         }, // Show problems panel information
-        ...options
+        ...options,
     };
 
     return (

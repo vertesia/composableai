@@ -6,10 +6,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUserSession } from '@vertesia/ui/session';
-import {
-    useArtifactUrlCache,
-    getArtifactCacheKey,
-} from '../../features/agent/chat/useArtifactUrlCache';
+import { useArtifactUrlCache, getArtifactCacheKey } from '../../features/agent/chat/useArtifactUrlCache';
 
 export interface ArtifactContentState<T = unknown> {
     /** The fetched content, parsed if JSON */
@@ -101,8 +98,6 @@ export function useArtifactContent<T = unknown>({
         contentType: undefined,
     });
 
-    const [retryCount, setRetryCount] = useState(0);
-
     const fetchContent = useCallback(async () => {
         if (!runId) {
             setState({
@@ -126,7 +121,7 @@ export function useArtifactContent<T = unknown>({
             return;
         }
 
-        setState(prev => ({ ...prev, isLoading: true, error: undefined }));
+        setState((prev) => ({ ...prev, isLoading: true, error: undefined }));
 
         const currentClient = clientRef.current;
         const currentUrlCache = urlCacheRef.current;
@@ -139,19 +134,11 @@ export function useArtifactContent<T = unknown>({
 
             if (currentUrlCache) {
                 signedUrl = await currentUrlCache.getOrFetch(cacheKey, async () => {
-                    const result = await currentClient.files.getArtifactDownloadUrl(
-                        runId,
-                        path,
-                        'inline'
-                    );
+                    const result = await currentClient.files.getArtifactDownloadUrl(runId, path, 'inline');
                     return result.url;
                 });
             } else {
-                const result = await currentClient.files.getArtifactDownloadUrl(
-                    runId,
-                    path,
-                    'inline'
-                );
+                const result = await currentClient.files.getArtifactDownloadUrl(runId, path, 'inline');
                 signedUrl = result.url;
             }
 
@@ -209,8 +196,8 @@ export function useArtifactContent<T = unknown>({
     }, [runId, path, parseJson]);
 
     useEffect(() => {
-        fetchContent();
-    }, [fetchContent, retryCount]);
+        void fetchContent();
+    }, [fetchContent]);
 
     const retry = useCallback(() => {
         setState({
@@ -220,8 +207,8 @@ export function useArtifactContent<T = unknown>({
             error: undefined,
             contentType: undefined,
         });
-        setRetryCount(c => c + 1);
-    }, []);
+        void fetchContent();
+    }, [fetchContent]);
 
     return {
         data: state.data,

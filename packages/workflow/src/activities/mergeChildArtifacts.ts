@@ -1,8 +1,9 @@
-import { log } from "@temporalio/activity";
-import { NodeStreamSource } from "@vertesia/client/node";
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
-import { Readable } from "stream";
-import { setupActivity } from "../dsl/setup/ActivityContext.js";
+import { log } from '@temporalio/activity';
+import type { VertesiaClient } from '@vertesia/client';
+import { NodeStreamSource } from '@vertesia/client/node';
+import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
+import { Readable } from 'node:stream';
+import { setupActivity } from '../dsl/setup/ActivityContext.js';
 
 /**
  * Directories to merge from child to parent.
@@ -18,7 +19,7 @@ const EXCLUDED_FILES = ['conversation.json', 'tools.json'];
 export interface MergeChildArtifactsParams {
     child_run_id: string;
     parent_run_id: string;
-    directories?: string[];  // defaults to MERGE_DIRECTORIES
+    directories?: string[]; // defaults to MERGE_DIRECTORIES
 }
 
 export interface MergeChildArtifacts extends DSLActivitySpec<MergeChildArtifactsParams> {
@@ -36,7 +37,7 @@ export interface MergeChildArtifacts extends DSLActivitySpec<MergeChildArtifacts
  * Returns the list of merged paths in the parent's space for the model to access.
  */
 export async function mergeChildArtifacts(
-    payload: DSLActivityExecutionPayload<MergeChildArtifactsParams>
+    payload: DSLActivityExecutionPayload<MergeChildArtifactsParams>,
 ): Promise<{ merged: number; files: string[] }> {
     const { client, params } = await setupActivity<MergeChildArtifactsParams>(payload);
     const childRunId = params.child_run_id;
@@ -49,7 +50,7 @@ export async function mergeChildArtifacts(
     const childFiles = await client.files.listArtifacts(childRunId);
 
     if (childFiles.length === 0) {
-        log.info("No artifacts in child agent space");
+        log.info('No artifacts in child agent space');
         return { merged: 0, files: [] };
     }
 
@@ -72,8 +73,9 @@ export async function mergeChildArtifacts(
             const namespacedPath = createNamespacedPath(relativePath, childRunId);
             await copyArtifact(client, childRunId, parentRunId, relativePath, namespacedPath);
             mergedFiles.push(namespacedPath);
-        } catch (err: any) {
-            log.warn(`Failed to merge ${relativePath}: ${err.message}`);
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            log.warn(`Failed to merge ${relativePath}: ${message}`);
         }
     }
 
@@ -132,28 +134,24 @@ function extractRelativePath(fullPath: string, runId: string): string | null {
  * Copy a single artifact from child to parent agent space with a new path
  */
 async function copyArtifact(
-    client: any,
+    client: VertesiaClient,
     childRunId: string,
     parentRunId: string,
     sourcePath: string,
-    destPath: string
+    destPath: string,
 ): Promise<void> {
     // Download from child's agent space
     const stream = await client.files.downloadArtifact(childRunId, sourcePath);
 
     // Convert web stream to node stream for upload
-    const nodeStream = Readable.fromWeb(stream as any);
+    const nodeStream = Readable.fromWeb(stream as ReadableStream<Uint8Array>);
 
     // Determine mime type from extension
     const mimeType = getMimeType(sourcePath);
     const fileName = sourcePath.split('/').pop() || sourcePath;
 
     // Upload to parent's agent space at the namespaced path
-    const source = new NodeStreamSource(
-        nodeStream,
-        fileName,
-        mimeType
-    );
+    const source = new NodeStreamSource(nodeStream, fileName, mimeType);
 
     await client.files.uploadArtifact(parentRunId, destPath, source);
 }
@@ -164,26 +162,26 @@ async function copyArtifact(
 function getMimeType(filePath: string): string {
     const ext = filePath.split('.').pop()?.toLowerCase();
     const mimeTypes: Record<string, string> = {
-        'json': 'application/json',
-        'txt': 'text/plain',
-        'md': 'text/markdown',
-        'html': 'text/html',
-        'csv': 'text/csv',
-        'png': 'image/png',
-        'jpg': 'image/jpeg',
-        'jpeg': 'image/jpeg',
-        'gif': 'image/gif',
-        'svg': 'image/svg+xml',
-        'pdf': 'application/pdf',
-        'xml': 'application/xml',
-        'zip': 'application/zip',
-        'js': 'application/javascript',
-        'ts': 'application/typescript',
-        'py': 'text/x-python',
-        'sh': 'text/x-shellscript',
-        'bash': 'text/x-shellscript',
-        'yaml': 'text/yaml',
-        'yml': 'text/yaml',
+        json: 'application/json',
+        txt: 'text/plain',
+        md: 'text/markdown',
+        html: 'text/html',
+        csv: 'text/csv',
+        png: 'image/png',
+        jpg: 'image/jpeg',
+        jpeg: 'image/jpeg',
+        gif: 'image/gif',
+        svg: 'image/svg+xml',
+        pdf: 'application/pdf',
+        xml: 'application/xml',
+        zip: 'application/zip',
+        js: 'application/javascript',
+        ts: 'application/typescript',
+        py: 'text/x-python',
+        sh: 'text/x-shellscript',
+        bash: 'text/x-shellscript',
+        yaml: 'text/yaml',
+        yml: 'text/yaml',
     };
     return mimeTypes[ext || ''] || 'application/octet-stream';
 }

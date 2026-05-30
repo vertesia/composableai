@@ -1,10 +1,10 @@
-import { Button, Modal, ModalBody, ModalFooter, ModalTitle, SelectList, useToast } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import { useCallback, useState } from "react";
-import { useUITranslation } from '../../../../../i18n/index.js';
-import { i18nInstance, NAMESPACE } from '../../../../../i18n/instance.js';
+import { Button, Modal, ModalBody, ModalFooter, ModalTitle, SelectList, useToast } from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
+import { useCallback, useState } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useObjectsActionContext, useObjectsActionCallback } from '../ObjectsActionHooks';
-import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
+import type { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
 
 export function StartWorkflowComponent({ action, objectIds, collectionId }: ActionComponentTypeProps) {
     const { t } = useUITranslation();
@@ -29,14 +29,14 @@ export function StartWorkflowComponent({ action, objectIds, collectionId }: Acti
             .then(() => {
                 toast({
                     title: t('store.actions.workflowStarted'),
-                    status: "success",
+                    status: 'success',
                     duration: 3000,
                 });
             })
             .catch((err) => {
                 toast({
                     title: t('store.actions.errorStartingWorkflow'),
-                    status: "error",
+                    status: 'error',
                     description: err.message,
                     duration: 9000,
                 });
@@ -50,7 +50,7 @@ export function StartWorkflowComponent({ action, objectIds, collectionId }: Acti
 
 const t = i18nInstance.getFixedT(null, NAMESPACE);
 export const StartWorkflowAction: ObjectsActionSpec = {
-    id: "startWorkflow",
+    id: 'startWorkflow',
     name: t('store.actions.startWorkflow'),
     description: t('store.actions.startWorkflowDesc'),
     confirm: false,

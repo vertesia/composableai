@@ -1,11 +1,11 @@
-import { Plan } from "@vertesia/common";
-import { AlertCircle, CheckCircle, Circle, Clock } from "lucide-react";
-import { useUITranslation } from '../../../../i18n/index.js';
-import SlideInPanel from "./SlideInPanel";
+import type { Plan } from '@vertesia/common';
+import { AlertCircle, CheckCircle, Circle, Clock } from 'lucide-react';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import SlideInPanel from './SlideInPanel';
 
 interface PlanPanelProps {
     plan?: Plan;
-    workstreamStatus: Map<string, "pending" | "in_progress" | "completed">;
+    workstreamStatus: Map<string, 'pending' | 'in_progress' | 'completed'>;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -23,23 +23,24 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                             <div
                                 className="bg-info h-2.5 rounded-full"
                                 style={{
-                                    width: `${plan.plan && plan.plan.length
-                                        ? Math.round(
-                                            (Array.from(workstreamStatus.values()).filter(
-                                                (status) => status === "completed",
-                                            ).length /
-                                                Math.max(1, workstreamStatus.size)) *
-                                            100,
-                                        )
-                                        : 0
-                                        }%`,
+                                    width: `${
+                                        plan.plan?.length
+                                            ? Math.round(
+                                                  (Array.from(workstreamStatus.values()).filter(
+                                                      (status) => status === 'completed',
+                                                  ).length /
+                                                      Math.max(1, workstreamStatus.size)) *
+                                                      100,
+                                              )
+                                            : 0
+                                    }%`,
                                 }}
                             />
                         </div>
                         <span className="text-xs text-muted">
-                            {plan.plan && plan.plan.length
-                                ? `${Array.from(workstreamStatus.values()).filter((status) => status === "completed").length}/${workstreamStatus.size}`
-                                : "0/0"}
+                            {plan.plan?.length
+                                ? `${Array.from(workstreamStatus.values()).filter((status) => status === 'completed').length}/${workstreamStatus.size}`
+                                : '0/0'}
                         </span>
                     </div>
                 </div>
@@ -58,29 +59,31 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                 const taskGoal = task.goal || `Task ${index + 1}`;
 
                                 // Determine task status - use task.status if available or lookup from workstream
-                                let status: "pending" | "in_progress" | "completed" | "skipped" =
-                                    task.status || "pending";
+                                let status: 'pending' | 'in_progress' | 'completed' | 'skipped' =
+                                    task.status || 'pending';
                                 if (workstreamStatus.has(taskId)) {
+                                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                                     status = workstreamStatus.get(taskId)!;
                                 }
 
                                 // Determine status icon and style
                                 let StatusIcon = Circle;
-                                let statusColor = "text-gray-400";
-                                let bgColor = "";
+                                let statusColor = 'text-gray-400';
+                                let bgColor = '';
 
-                                if (status === "in_progress") {
+                                if (status === 'in_progress') {
                                     StatusIcon = Clock;
-                                    statusColor = "text-blue-500";
-                                    bgColor = "bg-blue-50/50 dark:bg-blue-900/10";
-                                } else if (status === "completed") {
+                                    statusColor = 'text-blue-500';
+                                    bgColor = 'bg-blue-50/50 dark:bg-blue-900/10';
+                                } else if (status === 'completed') {
                                     StatusIcon = CheckCircle;
-                                    statusColor = "text-green-500";
+                                    statusColor = 'text-green-500';
                                 }
 
                                 return (
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                     <div key={index} className={`flex p-3 ${bgColor}`}>
-                                        <div className={`mr-3 mt-0.5 flex-shrink-0 ${statusColor}`}>
+                                        <div className={`me-3 mt-0.5 flex-shrink-0 ${statusColor}`}>
                                             <StatusIcon className="h-4 w-4" />
                                         </div>
                                         <div>
@@ -90,18 +93,19 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                                     {taskId}
                                                 </span>
                                                 <span
-                                                    className={`ml-2 text-xs ${status === "completed"
-                                                        ? "text-green-600 dark:text-green-400"
-                                                        : status === "in_progress"
-                                                            ? "text-blue-600 dark:text-blue-400"
-                                                            : "text-gray-500 dark:text-gray-400"
-                                                        }`}
+                                                    className={`ms-2 text-xs ${
+                                                        status === 'completed'
+                                                            ? 'text-green-600 dark:text-green-400'
+                                                            : status === 'in_progress'
+                                                              ? 'text-blue-600 dark:text-blue-400'
+                                                              : 'text-gray-500 dark:text-gray-400'
+                                                    }`}
                                                 >
-                                                    {status === "completed"
+                                                    {status === 'completed'
                                                         ? t('agent.completed')
-                                                        : status === "in_progress"
-                                                            ? t('agent.inProgress')
-                                                            : t('agent.pending')}
+                                                        : status === 'in_progress'
+                                                          ? t('agent.inProgress')
+                                                          : t('agent.pending')}
                                                 </span>
                                             </div>
                                         </div>
@@ -130,7 +134,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                     // Filter to only show real workstreams (main or those with valid names - not numeric IDs)
                                     .filter(([id, _]) => {
                                         // Always show 'main' workstream
-                                        if (id === "main") return true;
+                                        if (id === 'main') return true;
 
                                         // Don't show if it's a pure numeric ID (likely a task)
                                         if (/^\d+$/.test(id)) return false;
@@ -144,28 +148,28 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                     })
                                     .map(([id, status]) => {
                                         let StatusIcon = Circle;
-                                        let statusColor = "text-gray-400";
-                                        let statusBg = "bg-gray-100 dark:bg-gray-800";
+                                        let statusColor = 'text-gray-400';
+                                        let statusBg = 'bg-gray-100 dark:bg-gray-800';
                                         let statusText = t('agent.pending');
 
-                                        if (status === "in_progress") {
+                                        if (status === 'in_progress') {
                                             StatusIcon = Clock;
-                                            statusColor = "text-blue-500";
-                                            statusBg = "bg-blue-100 dark:bg-blue-800/30";
+                                            statusColor = 'text-blue-500';
+                                            statusBg = 'bg-blue-100 dark:bg-blue-800/30';
                                             statusText = t('agent.inProgress');
-                                        } else if (status === "completed") {
+                                        } else if (status === 'completed') {
                                             StatusIcon = CheckCircle;
-                                            statusColor = "text-green-500";
-                                            statusBg = "bg-green-100 dark:bg-green-800/30";
+                                            statusColor = 'text-green-500';
+                                            statusBg = 'bg-green-100 dark:bg-green-800/30';
                                             statusText = t('agent.completed');
                                         }
 
                                         // Format workstream IDs for better display
-                                        const displayId = id === "main" ? t('agent.mainWorkstream') : id;
+                                        const displayId = id === 'main' ? t('agent.mainWorkstream') : id;
 
                                         return (
                                             <div key={id} className={`flex items-center p-2 rounded ${statusBg}`}>
-                                                <div className={`mr-2 ${statusColor}`}>
+                                                <div className={`me-2 ${statusColor}`}>
                                                     <StatusIcon className="h-4 w-4" />
                                                 </div>
                                                 <div className="flex-1">

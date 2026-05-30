@@ -1,8 +1,8 @@
-import { ContentNature, ContentObject, ImageRenditionFormat } from "@vertesia/common";
-import { Spinner } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import { useEffect, useState } from "react";
-import { WEB_SUPPORTED_IMAGE_FORMATS } from "./formats.js";
+import { ContentNature, type ContentObject, ImageRenditionFormat } from '@vertesia/common';
+import { Spinner } from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
+import { useEffect, useState } from 'react';
+import { WEB_SUPPORTED_IMAGE_FORMATS } from './formats.js';
 
 interface ImagePanelProps {
     /** Direct signed URL — used as-is, no resolution. */
@@ -46,8 +46,8 @@ export function ImagePanel({ url, source, object, className }: ImagePanelProps) 
                 const isImage = object.metadata?.type === ContentNature.Image;
                 if (!isImage) return;
 
-                const isOriginalWebSupported = object.content?.type
-                    && WEB_SUPPORTED_IMAGE_FORMATS.includes(object.content.type);
+                const isOriginalWebSupported =
+                    object.content?.type && WEB_SUPPORTED_IMAGE_FORMATS.includes(object.content.type);
 
                 try {
                     const rendition = await client.objects.getRendition(object.id, {
@@ -55,7 +55,7 @@ export function ImagePanel({ url, source, object, className }: ImagePanelProps) 
                         generate_if_missing: false,
                         sign_url: true,
                     });
-                    if (rendition.status === "found" && rendition.renditions?.length) {
+                    if (rendition.status === 'found' && rendition.renditions?.length) {
                         setImageUrl(rendition.renditions[0]);
                         return;
                     }
@@ -74,11 +74,11 @@ export function ImagePanel({ url, source, object, className }: ImagePanelProps) 
 
         if (source || object) {
             setIsLoading(true);
-            load();
+            void load();
         } else {
             setIsLoading(false);
         }
-    }, [url, source, object?.id, object?.content?.type, object?.content?.source, object?.metadata, client]);
+    }, [url, source, object, client]);
 
     if (isLoading) {
         return (
@@ -92,11 +92,5 @@ export function ImagePanel({ url, source, object, className }: ImagePanelProps) 
         return null;
     }
 
-    return (
-        <img
-            src={imageUrl}
-            alt={object?.name}
-            className={`w-full object-contain ${className ?? ''}`.trim()}
-        />
-    );
+    return <img src={imageUrl} alt={object?.name} className={`w-full object-contain ${className ?? ''}`.trim()} />;
 }

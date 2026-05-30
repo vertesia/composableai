@@ -1,13 +1,15 @@
-import { AgentMessage, AgentMessageType, UserInputSignal } from "@vertesia/common";
-import chalk from "chalk";
-import { getClient } from "../client.js";
-import boxen from "boxen";
-import ora from "ora";
-import gradient from "gradient-string";
-import figures from "figures";
-import logUpdate from "log-update";
-import logSymbols from "log-symbols";
-import * as readline from "readline";
+import { type AgentMessage, AgentMessageType, type UserInputSignal } from '@vertesia/common';
+import chalk from 'chalk';
+import { getClient } from '../client.js';
+import boxen from 'boxen';
+import ora from 'ora';
+import gradient from 'gradient-string';
+import figures from 'figures';
+import logUpdate from 'log-update';
+import logSymbols from 'log-symbols';
+import * as readline from 'readline';
+import type { Command } from 'commander';
+import { getStringOption, isRecord, type CliOptions } from '../utils/options.js';
 
 // Define emoji icons for different message types (using integer enum keys)
 const typeIcons: Partial<Record<AgentMessageType, string>> = {
@@ -21,7 +23,9 @@ const typeIcons: Partial<Record<AgentMessageType, string>> = {
 };
 
 // Enhanced color palette with gradients (using integer enum keys)
-const typeColors: Partial<Record<AgentMessageType, any>> = {
+type GradientAlias = typeof gradient.atlas;
+
+const typeColors: Partial<Record<AgentMessageType, GradientAlias>> = {
     [AgentMessageType.SYSTEM]: gradient.atlas,
     [AgentMessageType.THOUGHT]: gradient.mind,
     [AgentMessageType.PLAN]: gradient.passion,
@@ -37,33 +41,44 @@ const getTypeName = (type: AgentMessageType): string => {
 };
 
 // Define styles for boxen with proper types (using integer enum keys)
-const boxStyles: Partial<Record<AgentMessageType, { padding: number; margin: number; borderStyle: 'round'; borderColor: string; backgroundColor: string }>> = {
+const boxStyles: Partial<
+    Record<
+        AgentMessageType,
+        { padding: number; margin: number; borderStyle: 'round'; borderColor: string; backgroundColor: string }
+    >
+> = {
     [AgentMessageType.ERROR]: {
         padding: 1,
         margin: 1,
-        borderStyle: "round" as const,
-        borderColor: "red",
-        backgroundColor: "#400",
+        borderStyle: 'round' as const,
+        borderColor: 'red',
+        backgroundColor: '#400',
     },
     [AgentMessageType.WARNING]: {
         padding: 1,
         margin: 1,
-        borderStyle: "round" as const,
-        borderColor: "yellow",
-        backgroundColor: "#440",
+        borderStyle: 'round' as const,
+        borderColor: 'yellow',
+        backgroundColor: '#440',
     },
     [AgentMessageType.COMPLETE]: {
         padding: 1,
         margin: 1,
-        borderStyle: "round" as const,
-        borderColor: "green",
-        backgroundColor: "#040",
+        borderStyle: 'round' as const,
+        borderColor: 'green',
+        backgroundColor: '#040',
     },
 };
 
-export async function streamRun(workflowId: string, runId: string, program: any, options: Record<string, any> = {}) {
+type StreamRunOptions = CliOptions<{
+    since?: string;
+    interactive?: boolean;
+}>;
+
+export async function streamRun(workflowId: string, runId: string, program: Command, options: StreamRunOptions = {}) {
     const client = await getClient(program);
-    const since = options.since ? parseInt(options.since, 10) : undefined;
+    const sinceOption = getStringOption(options.since);
+    const since = sinceOption ? parseInt(sinceOption, 10) : undefined;
     const interactive = options.interactive === true;
 
     // Setup cleanup resources
@@ -103,7 +118,7 @@ export async function streamRun(workflowId: string, runId: string, program: any,
         }
 
         // Console message about termination
-        console.log(chalk.yellow("\nStream terminated by user (Ctrl+C)"));
+        console.log(chalk.yellow('\nStream terminated by user (Ctrl+C)'));
 
         // Ensure the process exits cleanly
         process.exit(0);
@@ -111,14 +126,14 @@ export async function streamRun(workflowId: string, runId: string, program: any,
 
     // Set up signal handlers
     const sigintHandler = () => cleanupFn();
-    process.on("SIGINT", sigintHandler);
-    process.on("SIGTERM", sigintHandler);
+    process.on('SIGINT', sigintHandler);
+    process.on('SIGTERM', sigintHandler);
 
     // Display run header
-    console.log("\n");
+    console.log('\n');
     console.log(
         gradient.pastel.multiline(
-            "╔═════════════════════════════════════╗\n║                                     ║\n║       AGENT MESSAGE STREAMING       ║\n║                                     ║\n╚═════════════════════════════════════╝",
+            '╔═════════════════════════════════════╗\n║                                     ║\n║       AGENT MESSAGE STREAMING       ║\n║                                     ║\n╚═════════════════════════════════════╝',
         ),
     );
     console.log(gradient.atlas(`Run ID: ${runId}\n`));
@@ -126,7 +141,7 @@ export async function streamRun(workflowId: string, runId: string, program: any,
 
     let lastHeartbeat = Date.now();
     let heartbeatCount = 0;
-    spinner = ora("Waiting for messages...").start();
+    spinner = ora('Waiting for messages...').start();
 
     const onMessage = (message: AgentMessage) => {
         // Skip processing if we're terminating
@@ -154,7 +169,7 @@ export async function streamRun(workflowId: string, runId: string, program: any,
                     const timeout = setTimeout(() => {
                         if (isTerminating) return;
                         logUpdate.clear();
-                        spinner = ora("Waiting for messages...").start();
+                        spinner = ora('Waiting for messages...').start();
                     }, 1000);
                     cleanupTimeouts.push(timeout);
                 }
@@ -168,10 +183,10 @@ export async function streamRun(workflowId: string, runId: string, program: any,
             heartbeatCount = 0;
 
             // Safely format the timestamp
-            let timeString;
+            let timeString: string;
             try {
                 timeString = message.timestamp ? new Date(message.timestamp).toISOString() : new Date().toISOString();
-            } catch (err) {
+            } catch {
                 console.warn(`Invalid timestamp in message: ${message.timestamp}`);
                 timeString = new Date().toISOString();
             }
@@ -181,7 +196,7 @@ export async function streamRun(workflowId: string, runId: string, program: any,
             // Handle undefined message type (shouldn't happen with proper conversion)
             if (message.type === undefined || message.type === null) {
                 console.log(`${time} [HEARTBEAT]: ping`);
-                spinner = ora("Waiting for messages...").start();
+                spinner = ora('Waiting for messages...').start();
                 return;
             }
 
@@ -194,14 +209,18 @@ export async function streamRun(workflowId: string, runId: string, program: any,
             // Handle undefined message content
             if (!message.message) {
                 console.log(`${time} [${typeDisplay}]: <no content>`);
-                spinner = ora("Waiting for messages...").start();
+                spinner = ora('Waiting for messages...').start();
                 return;
             }
 
             const content = formatMessageContent(message.message);
 
             // Special message formatting based on type
-            if (messageType === AgentMessageType.ERROR || messageType === AgentMessageType.WARNING || messageType === AgentMessageType.COMPLETE) {
+            if (
+                messageType === AgentMessageType.ERROR ||
+                messageType === AgentMessageType.WARNING ||
+                messageType === AgentMessageType.COMPLETE
+            ) {
                 const boxStyle = boxStyles[messageType];
                 const formattedContent = `${time}\n[${typeDisplay}]:\n\n${content}`;
                 console.log(boxen(formattedContent, boxStyle));
@@ -213,23 +232,23 @@ export async function streamRun(workflowId: string, runId: string, program: any,
             // Check if message details are long plan or complex data
             if (message.details) {
                 // Special handling for plans - they can be very long
-                if (messageType === AgentMessageType.PLAN && typeof message.details === "object" && message.details.plan) {
-                    console.log(gradient.passion("\n▸ Plan Summary"));
+                if (messageType === AgentMessageType.PLAN && hasPlanDetails(message.details)) {
+                    console.log(gradient.passion('\n▸ Plan Summary'));
 
                     try {
                         const plan = Array.isArray(message.details.plan)
                             ? message.details.plan
                             : JSON.parse(message.details.plan);
-                        plan.forEach((task: any, index: number) => {
+                        readPlanTasks(plan).forEach((task, index) => {
                             console.log(chalk.bold.cyan(`\n${index + 1}. ${task.goal}`));
-                            if (task.instructions && Array.isArray(task.instructions)) {
+                            if (task.instructions) {
                                 task.instructions.forEach((instruction: string) => {
-                                    console.log(`   ${chalk.gray("•")} ${instruction}`);
+                                    console.log(`   ${chalk.gray('•')} ${instruction}`);
                                 });
                             }
                         });
-                        console.log(""); // add spacing
-                    } catch (e) {
+                        console.log(''); // add spacing
+                    } catch {
                         // If parsing fails, fall back to standard formatting
                         formatDetails(message.details);
                     }
@@ -240,13 +259,13 @@ export async function streamRun(workflowId: string, runId: string, program: any,
 
             // Restart spinner
             if (!isTerminating) {
-                spinner = ora("Waiting for messages...").start();
+                spinner = ora('Waiting for messages...').start();
             }
         } catch (err) {
-            console.error("Error formatting message:", err);
-            console.log("Raw message:", JSON.stringify(message));
+            console.error('Error formatting message:', err);
+            console.log('Raw message:', JSON.stringify(message));
             if (!isTerminating) {
-                spinner = ora("Waiting for messages...").start();
+                spinner = ora('Waiting for messages...').start();
             }
         }
     };
@@ -259,15 +278,15 @@ export async function streamRun(workflowId: string, runId: string, program: any,
         const rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout,
-            prompt: gradient.passion("> "),
+            prompt: gradient.passion('> '),
         });
 
         // Set up handler for user input
-        rl.on("line", async (input: string) => {
+        rl.on('line', async (input: string) => {
             // Stop the spinner while processing input
             if (spinner) spinner.stop();
 
-            if (input.trim() === "") {
+            if (input.trim() === '') {
                 // Prompt again for empty input
                 rl.prompt();
                 return;
@@ -277,7 +296,7 @@ export async function streamRun(workflowId: string, runId: string, program: any,
                 console.log(gradient.atlas(`\nSending message to workflow...`));
 
                 // Send the user input to the workflow run
-                const signal = "userInput";
+                const signal = 'userInput';
                 const payload: UserInputSignal = {
                     message: input,
                 };
@@ -290,7 +309,7 @@ export async function streamRun(workflowId: string, runId: string, program: any,
 
             // Restart spinner and prompt
             if (!isTerminating) {
-                spinner = ora("Waiting for messages...").start();
+                spinner = ora('Waiting for messages...').start();
                 rl.prompt();
             }
         });
@@ -306,9 +325,9 @@ export async function streamRun(workflowId: string, runId: string, program: any,
 
         // Show initial instructions
         console.log(
-            gradient.passion("\nInteractive mode enabled. Type messages and press Enter to send to the workflow."),
+            gradient.passion('\nInteractive mode enabled. Type messages and press Enter to send to the workflow.'),
         );
-        console.log(gradient.cristal("Press Ctrl+C to exit.\n"));
+        console.log(gradient.cristal('Press Ctrl+C to exit.\n'));
 
         // Start the prompt
         rl.prompt();
@@ -323,7 +342,7 @@ export async function streamRun(workflowId: string, runId: string, program: any,
             if (spinner) spinner.stop();
             console.log(
                 gradient.summer.multiline(
-                    "\n╔═════════════════════════════════════╗\n║                                     ║\n║       STREAMING COMPLETE            ║\n║                                     ║\n╚═════════════════════════════════════╝\n",
+                    '\n╔═════════════════════════════════════╗\n║                                     ║\n║       STREAMING COMPLETE            ║\n║                                     ║\n╚═════════════════════════════════════╝\n',
                 ),
             );
 
@@ -340,27 +359,27 @@ export async function streamRun(workflowId: string, runId: string, program: any,
         if (!isTerminating) {
             if (spinner) spinner.stop();
             console.error(
-                boxen(gradient.fruit("ERROR STREAMING MESSAGES") + "\n\n" + err, {
+                boxen(`${gradient.fruit('ERROR STREAMING MESSAGES')}\n\n${err}`, {
                     padding: 1,
                     margin: 1,
-                    borderStyle: "round" as const,
-                    borderColor: "red" as const,
-                    backgroundColor: "#400",
+                    borderStyle: 'round' as const,
+                    borderColor: 'red' as const,
+                    backgroundColor: '#400',
                 }),
             );
         }
     } finally {
         // Always clean up signal handlers when done
-        process.off("SIGINT", sigintHandler);
-        process.off("SIGTERM", sigintHandler);
+        process.off('SIGINT', sigintHandler);
+        process.off('SIGTERM', sigintHandler);
     }
 }
 
 // Helper function to format message content
-function formatMessageContent(content: any): string {
-    if (typeof content === "string") {
+function formatMessageContent(content: unknown): string {
+    if (typeof content === 'string') {
         // Replace escaped newlines with actual newlines
-        return content.replace(/\\n/g, "\n");
+        return content.replace(/\\n/g, '\n');
     } else {
         // For objects, use pretty-printing with actual newlines
         return JSON.stringify(content, null, 2);
@@ -368,19 +387,19 @@ function formatMessageContent(content: any): string {
 }
 
 // Helper function to format details in a cleaner way
-function formatDetails(details: any): void {
+function formatDetails(details: unknown): void {
     // Check if details are empty or minimal
-    const detailsStr = typeof details === "string" ? details : JSON.stringify(details);
+    const detailsStr = typeof details === 'string' ? details : JSON.stringify(details);
 
-    if (!detailsStr || detailsStr === "{}" || detailsStr === '""') {
+    if (!detailsStr || detailsStr === '{}' || detailsStr === '""') {
         return;
     }
 
-    console.log("");
-    console.log(gradient.atlas("▸ Details"));
+    console.log('');
+    console.log(gradient.atlas('▸ Details'));
 
     // Create a cleaner display for object details
-    if (typeof details === "object" && details !== null) {
+    if (typeof details === 'object' && details !== null) {
         try {
             // For simple objects with small values, display as simple key-value pairs
             if (!Array.isArray(details) && Object.keys(details).length < 10) {
@@ -392,51 +411,51 @@ function formatDetails(details: any): void {
                     const paddedKey = key.padEnd(padding);
 
                     // Format the value based on its type
-                    if (typeof value === "object" && value !== null) {
+                    if (typeof value === 'object' && value !== null) {
                         if (JSON.stringify(value).length < 80) {
                             displayValue = JSON.stringify(value);
                         } else {
                             // For longer objects, format with indentation
                             displayValue =
-                                "\n" +
+                                '\n' +
                                 formatColorizedJSON(value)
-                                    .split("\n")
-                                    .map((line) => "  " + line)
-                                    .join("\n");
+                                    .split('\n')
+                                    .map((line) => `  ${line}`)
+                                    .join('\n');
                         }
                     } else {
                         displayValue = String(value);
                     }
 
                     // Colorize values based on type
-                    if (typeof value === "string") {
+                    if (typeof value === 'string') {
                         displayValue = chalk.green(displayValue);
-                    } else if (typeof value === "number") {
+                    } else if (typeof value === 'number') {
                         displayValue = chalk.yellow(displayValue);
-                    } else if (typeof value === "boolean") {
+                    } else if (typeof value === 'boolean') {
                         displayValue = chalk.magenta(displayValue);
                     } else if (value === null) {
-                        displayValue = chalk.red("null");
+                        displayValue = chalk.red('null');
                     }
 
                     console.log(`${chalk.cyan(paddedKey)}: ${displayValue}`);
                 });
             } else if (Array.isArray(details)) {
                 // For arrays with simple values, show in a compact form
-                if (details.length > 0 && typeof details[0] !== "object") {
-                    console.log(chalk.cyan("["));
+                if (details.length > 0 && typeof details[0] !== 'object') {
+                    console.log(chalk.cyan('['));
                     details.forEach((item, i) => {
                         const displayValue =
-                            typeof item === "string"
+                            typeof item === 'string'
                                 ? chalk.green(`"${item}"`)
-                                : typeof item === "number"
-                                    ? chalk.yellow(item)
-                                    : typeof item === "boolean"
-                                        ? chalk.magenta(item)
-                                        : item;
-                        console.log(`  ${displayValue}${i < details.length - 1 ? "," : ""}`);
+                                : typeof item === 'number'
+                                  ? chalk.yellow(item)
+                                  : typeof item === 'boolean'
+                                    ? chalk.magenta(item)
+                                    : item;
+                        console.log(`  ${displayValue}${i < details.length - 1 ? ',' : ''}`);
                     });
-                    console.log(chalk.cyan("]"));
+                    console.log(chalk.cyan(']'));
                 } else {
                     // For more complex arrays, use the colorized JSON
                     console.log(formatColorizedJSON(details));
@@ -445,7 +464,7 @@ function formatDetails(details: any): void {
                 // For complex objects, fall back to pretty-printed JSON
                 console.log(formatColorizedJSON(details));
             }
-        } catch (err) {
+        } catch {
             // Fall back to colorized JSON if formatting fails
             console.log(formatColorizedJSON(details));
         }
@@ -454,11 +473,11 @@ function formatDetails(details: any): void {
         console.log(detailsStr);
     }
 
-    console.log("");
+    console.log('');
 }
 
 // Helper function to format JSON with colors
-function formatColorizedJSON(obj: any): string {
+function formatColorizedJSON(obj: unknown): string {
     const jsonString = JSON.stringify(obj, null, 2);
 
     // Colorize different parts of the JSON
@@ -467,5 +486,37 @@ function formatColorizedJSON(obj: any): string {
         .replace(/: "([^"]+)"/g, (_, value) => `: ${chalk.green(`"${value}"`)}`)
         .replace(/: (\d+)/g, (_, value) => `: ${chalk.yellow(value)}`)
         .replace(/: (true|false)/g, (_, value) => `: ${chalk.magenta(value)}`)
-        .replace(/: null/g, `: ${chalk.red("null")}`);
+        .replace(/: null/g, `: ${chalk.red('null')}`);
+}
+
+interface PlanDetails {
+    plan: unknown[] | string;
+}
+
+interface PlanTask {
+    goal: string;
+    instructions?: string[];
+}
+
+function hasPlanDetails(details: unknown): details is PlanDetails {
+    return isRecord(details) && (Array.isArray(details.plan) || typeof details.plan === 'string');
+}
+
+function readPlanTasks(value: unknown): PlanTask[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+    return value.flatMap((task) => {
+        if (!isRecord(task)) {
+            return [];
+        }
+        const goal = getStringOption(task.goal);
+        if (!goal) {
+            return [];
+        }
+        const instructions = Array.isArray(task.instructions)
+            ? task.instructions.filter((instruction): instruction is string => typeof instruction === 'string')
+            : undefined;
+        return [{ goal, instructions }];
+    });
 }

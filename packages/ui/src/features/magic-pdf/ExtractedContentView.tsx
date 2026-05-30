@@ -1,8 +1,8 @@
 import { JSONCode, XMLViewer, MarkdownRenderer } from '@vertesia/ui/widgets';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from "react";
-import { useMagicPdfContext } from "./MagicPdfProvider";
-import { ViewType } from "./types";
+import { useEffect, useState } from 'react';
+import { useMagicPdfContext } from './MagicPdfProvider';
+import type { ViewType } from './types';
 
 function LoadingSpinner({ className }: { className?: string }) {
     return (
@@ -12,16 +12,15 @@ function LoadingSpinner({ className }: { className?: string }) {
     );
 }
 
-
 interface ExtractedContentViewProps {
     pageNumber: number;
     viewType: ViewType;
 }
 export function ExtractedContentView({ viewType, pageNumber }: ExtractedContentViewProps) {
     switch (viewType) {
-        case "json":
+        case 'json':
             return <JsonPageLayoutView pageNumber={pageNumber} />;
-        case "markdown":
+        case 'markdown':
             return <MarkdownPageView pageNumber={pageNumber} />;
         default:
             return <XmlPageView pageNumber={pageNumber} />;
@@ -37,7 +36,7 @@ function XmlPageView({ pageNumber }: XmlPageViewProps) {
         <div className="px-4 py-2">
             <XMLViewer xml={pages[pageNumber - 1]} collapsible />
         </div>
-    )
+    );
 }
 
 interface JsonPageLayoutViewProps {
@@ -52,7 +51,8 @@ function JsonPageLayoutView({ pageNumber }: JsonPageLayoutViewProps) {
     useEffect(() => {
         setLoading(true);
         setError(null);
-        layoutProvider.getPageLayout(pageNumber)
+        layoutProvider
+            .getPageLayout(pageNumber)
             .then((layoutContent) => {
                 setContent(layoutContent ? JSON.parse(layoutContent) : null);
                 setLoading(false);
@@ -73,11 +73,7 @@ function JsonPageLayoutView({ pageNumber }: JsonPageLayoutViewProps) {
     }
 
     if (error) {
-        return (
-            <div className="px-4 py-2 text-red-500 text-sm">
-                {error}
-            </div>
-        );
+        return <div className="px-4 py-2 text-red-500 text-sm">{error}</div>;
     }
 
     return content ? <JSONCode className="w-full" data={content} /> : null;
@@ -95,7 +91,8 @@ function MarkdownPageView({ pageNumber }: MarkdownPageViewProps) {
     useEffect(() => {
         setLoading(true);
         setError(null);
-        markdownProvider.getPageMarkdown(pageNumber)
+        markdownProvider
+            .getPageMarkdown(pageNumber)
             .then((md) => {
                 setContent(md);
                 setLoading(false);
@@ -117,16 +114,12 @@ function MarkdownPageView({ pageNumber }: MarkdownPageViewProps) {
     }
 
     if (error) {
-        return (
-            <div className="px-4 py-2 text-red-500 text-sm">
-                {error}
-            </div>
-        );
+        return <div className="px-4 py-2 text-red-500 text-sm">{error}</div>;
     }
 
     return (
         <div className="px-4 py-2 prose prose-sm max-w-none dark:prose-invert">
             {content ? <MarkdownRenderer>{content}</MarkdownRenderer> : <div>No markdown content available</div>}
         </div>
-    )
+    );
 }

@@ -1,0 +1,19 @@
+{
+  // IDE convenience: when VSCode opens a file under src/__tests__/, it walks up
+  // looking for a tsconfig.json. The package-level tsconfig.json excludes this
+  // directory (tests are not built), so without this file VSCode falls back to
+  // an inferred project, loses the test-only `types` (e.g. vitest globals,
+  // vitest-axe matcher augmentation), and flags valid test code as broken.
+  //
+  // CLI tooling continues to use ../../tsconfig.test.json directly — this file
+  // is purely for editor tooling and is otherwise equivalent.
+  "extends": "../../tsconfig.test.json",
+  "include": [
+    "../**/*",
+    "../i18n/locales/*.json"
+  ],
+  "exclude": [
+    "../../node_modules",
+    "../../lib"
+  ]
+}

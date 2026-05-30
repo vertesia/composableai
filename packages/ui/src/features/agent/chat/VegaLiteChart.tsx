@@ -5,8 +5,9 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VegaEmbed } from 'react-vega';
 import type { View } from 'vega';
 import type { TopLevelSpec as VisualizationSpec } from 'vega-lite';
+import { Button } from '@vertesia/ui/core';
 import { cn } from '../../../core/components/libs/utils';
-import { useUITranslation } from '../../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import type { VegaLiteChartSpec } from './AgentChart';
 import { getArtifactCacheKey, getFileCacheKey, useArtifactUrlCache } from './useArtifactUrlCache';
@@ -31,9 +32,7 @@ function VegaErrorDisplay({ error, chartTitle }: { error: string; chartTitle?: s
                 <p className="text-sm font-medium text-red-600 dark:text-red-400">
                     Cannot render {chartTitle || 'Vega-Lite'} chart
                 </p>
-                <p className="text-xs text-red-500 dark:text-red-500 mt-1 max-w-xs truncate">
-                    {error}
-                </p>
+                <p className="text-xs text-red-500 dark:text-red-500 mt-1 max-w-xs truncate">{error}</p>
             </div>
         </div>
     );
@@ -57,22 +56,21 @@ function FullscreenDialog({
     return (
         <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogPrimitive.Portal>
-                <DialogPrimitive.Overlay
-                    className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm transition-all duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
-                />
+                <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm transition-all duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
                 <DialogPrimitive.Content
                     className="fixed inset-2 sm:inset-4 z-50 flex flex-col bg-white dark:bg-gray-900 rounded-xl shadow-2xl transition-all duration-300 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2"
                     onEscapeKeyDown={onClose}
                 >
                     {/* Close button - top right corner */}
                     <DialogPrimitive.Close asChild>
-                        <button
+                        <Button
+                            variant="unstyled"
                             onClick={onClose}
-                            className="absolute top-3 right-3 z-10 p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 shadow-sm"
+                            className="absolute top-3 end-3 z-10 p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 shadow-sm"
                             aria-label={t('agent.closeFullscreen')}
                         >
                             <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                        </button>
+                        </Button>
                     </DialogPrimitive.Close>
                     {/* Chart content first - takes most space */}
                     <div className="flex-1 overflow-auto p-4 sm:p-6 animate-in fade-in-0 duration-500 delay-150">
@@ -98,7 +96,7 @@ function FullscreenDialog({
 }
 
 // Calculate height based on spec complexity
-function calculateAutoHeight(spec: Record<string, any>, mode: 'chart' | 'dashboard'): number {
+function calculateAutoHeight(spec: VegaSpecObject, mode: 'chart' | 'dashboard'): number {
     if (mode === 'chart') {
         return DEFAULT_CHART_HEIGHT;
     }
@@ -146,9 +144,56 @@ const CHART_COLORS = {
 
 // Helper types for artifact resolution
 type ArtifactReference = {
-    path: string[];  // Path to the data object in the spec
-    artifactPath: string;  // The artifact path (without "artifact:" prefix)
+    path: string[]; // Path to the data object in the spec
+    artifactPath: string; // The artifact path (without "artifact:" prefix)
 };
+
+type VegaData = Record<string, unknown> & {
+    url?: string;
+    values?: unknown[];
+};
+
+type VegaChannel = Record<string, unknown> & {
+    field?: string;
+};
+
+type VegaSelect = Record<string, unknown> & {
+    fields?: string[];
+    bind?: string;
+};
+
+type VegaParam = Record<string, unknown> & {
+    name?: string;
+    select?: VegaSelect;
+    value?: unknown;
+};
+
+type VegaSpecObject = Record<string, unknown> & {
+    title?: unknown;
+    data?: VegaData;
+    encoding?: Record<string, VegaChannel>;
+    params?: VegaParam[];
+    layer?: VegaSpecObject[];
+    vconcat?: VegaSpecObject[];
+    hconcat?: VegaSpecObject[];
+    concat?: VegaSpecObject[];
+    spec?: VegaSpecObject;
+    repeat?: VegaSpecObject;
+    facet?: VegaSpecObject | unknown;
+    columns?: number;
+    spacing?: number;
+    width?: number | string;
+    height?: number | string;
+    config?: Record<string, unknown>;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isVegaSpecObject(value: unknown): value is VegaSpecObject {
+    return isRecord(value);
+}
 
 /**
  * Preprocess a Vega-Lite spec to fix duplicate signal names that occur
@@ -163,13 +208,13 @@ type ArtifactReference = {
  * (where selections typically originate). Cross-view references are preserved
  * so that clicking in one view filters other views.
  */
-function fixVegaLiteSelectionParams(spec: Record<string, any>): Record<string, any> {
+function fixVegaLiteSelectionParams(spec: VegaSpecObject): VegaSpecObject {
     // Deep clone the spec to avoid mutations
-    const result = JSON.parse(JSON.stringify(spec)) as Record<string, any>;
+    const result = JSON.parse(JSON.stringify(spec)) as VegaSpecObject;
 
     // Check if this is a concatenated spec with root-level selection params
     const concatKeys = ['vconcat', 'hconcat', 'concat'];
-    const hasConcatViews = concatKeys.some(key => Array.isArray(result[key]));
+    const hasConcatViews = concatKeys.some((key) => Array.isArray(result[key]));
 
     if (!hasConcatViews) {
         // Not a concatenated spec, no special handling needed
@@ -177,7 +222,7 @@ function fixVegaLiteSelectionParams(spec: Record<string, any>): Record<string, a
     }
 
     // Check for selection params at the root level
-    const rootSelectionParams: Array<{ name: string; param: Record<string, any> }> = [];
+    const rootSelectionParams: Array<{ name: string; param: VegaParam }> = [];
     if (Array.isArray(result.params)) {
         for (const param of result.params) {
             if (param && typeof param === 'object' && param.name && param.select) {
@@ -200,7 +245,7 @@ function fixVegaLiteSelectionParams(spec: Record<string, any>): Record<string, a
         const hasLegendBinding = param.select?.bind === 'legend';
 
         // Find the concat array
-        let concatArray: any[] | null = null;
+        let concatArray: VegaSpecObject[] | null = null;
         for (const key of concatKeys) {
             if (Array.isArray(result[key])) {
                 concatArray = result[key];
@@ -229,7 +274,8 @@ function fixVegaLiteSelectionParams(spec: Record<string, any>): Record<string, a
         targetView.params.push(param);
 
         // Remove the param from root level
-        result.params = result.params.filter((p: any) => p.name !== paramName);
+        const params = result.params ?? [];
+        result.params = params.filter((p) => p.name !== paramName);
 
         // Cross-view references are kept intact - Vega-Lite handles signal
         // propagation from the view where the selection is defined to other views
@@ -249,20 +295,17 @@ function fixVegaLiteSelectionParams(spec: Record<string, any>): Record<string, a
  * initial values for interactive controls (sliders, dropdowns, etc.).
  * @exported for testing
  */
-export function applyParameterValues(
-    spec: Record<string, any>,
-    parameterValues: Record<string, any>
-): Record<string, any> {
+export function applyParameterValues(spec: VegaSpecObject, parameterValues: Record<string, unknown>): VegaSpecObject {
     if (!parameterValues || Object.keys(parameterValues).length === 0) {
         return spec;
     }
 
-    const result = JSON.parse(JSON.stringify(spec)) as Record<string, any>;
+    const result = JSON.parse(JSON.stringify(spec)) as VegaSpecObject;
 
     // Helper to update params in a view
-    const updateParams = (params: any[]) => {
+    const updateParams = (params: VegaParam[]) => {
         for (const param of params) {
-            if (param && typeof param === 'object' && param.name && param.name in parameterValues) {
+            if (param.name && param.name in parameterValues) {
                 param.value = parameterValues[param.name];
             }
         }
@@ -274,10 +317,10 @@ export function applyParameterValues(
     }
 
     // Update params in nested views (vconcat, hconcat, concat)
-    const updateNestedViews = (views: any[]) => {
+    const updateNestedViews = (views: VegaSpecObject[]) => {
         if (!Array.isArray(views)) return;
         for (const view of views) {
-            if (view && Array.isArray(view.params)) {
+            if (Array.isArray(view.params)) {
                 updateParams(view.params);
             }
             // Recursively handle nested concatenations
@@ -287,7 +330,7 @@ export function applyParameterValues(
             // Handle layers
             if (Array.isArray(view.layer)) {
                 for (const layer of view.layer) {
-                    if (layer && Array.isArray(layer.params)) {
+                    if (Array.isArray(layer.params)) {
                         updateParams(layer.params);
                     }
                 }
@@ -312,12 +355,12 @@ export function applyParameterValues(
 /**
  * Check if a view has encoding using any of the specified fields.
  */
-function viewHasField(view: Record<string, any>, fields: string[]): boolean {
-    if (!view || !view.encoding) return false;
+function viewHasField(view: VegaSpecObject, fields: string[]): boolean {
+    if (!view?.encoding) return false;
 
     for (const field of fields) {
         for (const channel of Object.values(view.encoding)) {
-            if (channel && typeof channel === 'object' && (channel as any).field === field) {
+            if (channel.field === field) {
                 return true;
             }
         }
@@ -336,13 +379,13 @@ function viewHasField(view: Record<string, any>, fields: string[]): boolean {
 /**
  * Check if a view has color encoding using any of the specified fields.
  */
-function viewHasColorEncoding(view: Record<string, any>, fields: string[]): boolean {
+function viewHasColorEncoding(view: VegaSpecObject, fields: string[]): boolean {
     if (!view) return false;
 
-    const checkEncoding = (encoding: any): boolean => {
+    const checkEncoding = (encoding: Record<string, VegaChannel> | undefined): boolean => {
         if (!encoding) return false;
         const colorField = encoding.color?.field;
-        return colorField && fields.includes(colorField);
+        return !!colorField && fields.includes(colorField);
     };
 
     if (checkEncoding(view.encoding)) return true;
@@ -361,7 +404,7 @@ function viewHasColorEncoding(view: Record<string, any>, fields: string[]): bool
  * Walk the Vega-Lite spec and find all artifact: URL references in data.url fields.
  * Returns an array of references with their paths in the spec tree.
  */
-function findArtifactReferences(spec: Record<string, any>, currentPath: string[] = []): ArtifactReference[] {
+function findArtifactReferences(spec: VegaSpecObject, currentPath: string[] = []): ArtifactReference[] {
     const references: ArtifactReference[] = [];
 
     if (!spec || typeof spec !== 'object') {
@@ -386,9 +429,11 @@ function findArtifactReferences(spec: Record<string, any>, currentPath: string[]
             const value = spec[key];
             if (Array.isArray(value)) {
                 value.forEach((item, index) => {
-                    references.push(...findArtifactReferences(item, [...currentPath, key, String(index)]));
+                    if (isVegaSpecObject(item)) {
+                        references.push(...findArtifactReferences(item, [...currentPath, key, String(index)]));
+                    }
                 });
-            } else if (typeof value === 'object' && value !== null) {
+            } else if (isVegaSpecObject(value)) {
                 references.push(...findArtifactReferences(value, [...currentPath, key]));
             }
         }
@@ -400,29 +445,28 @@ function findArtifactReferences(spec: Record<string, any>, currentPath: string[]
 /**
  * Deep clone and update the spec by replacing artifact URLs with resolved data values.
  */
-function replaceArtifactData(
-    spec: Record<string, any>,
-    resolvedData: Map<string, any[]>
-): Record<string, any> {
-    const result = JSON.parse(JSON.stringify(spec)) as Record<string, any>;
+function replaceArtifactData(spec: VegaSpecObject, resolvedData: Map<string, unknown[]>): VegaSpecObject {
+    const result = JSON.parse(JSON.stringify(spec)) as VegaSpecObject;
 
     for (const [pathKey, data] of resolvedData) {
         const path = pathKey.split('.');
-        let current: any = result;
+        let current: Record<string, unknown> = result;
 
         // Navigate to the parent of the data object
         for (let i = 0; i < path.length - 1; i++) {
-            if (current[path[i]] === undefined) {
+            const next = current[path[i]];
+            if (!isRecord(next)) {
                 break;
             }
-            current = current[path[i]];
+            current = next;
         }
 
         // Replace data.url with data.values
         const lastKey = path[path.length - 1];
-        if (current[lastKey] && typeof current[lastKey] === 'object') {
-            delete current[lastKey].url;
-            current[lastKey].values = data;
+        const target = current[lastKey];
+        if (isRecord(target)) {
+            delete target.url;
+            target.values = data;
         }
     }
 
@@ -430,7 +474,7 @@ function replaceArtifactData(
 }
 
 // Get dark mode config for Vega with enhanced styling
-function getDarkModeConfig(isDark: boolean): Record<string, any> {
+function getDarkModeConfig(isDark: boolean): Record<string, unknown> {
     const baseConfig = {
         background: 'transparent',
         view: { stroke: 'transparent' },
@@ -541,553 +585,583 @@ function getDarkModeConfig(isDark: boolean): Record<string, any> {
     };
 }
 
-export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }: VegaLiteChartProps) {
-    const { t } = useUITranslation();
-    const { title, description, spec: vegaSpec, options } = spec;
-    const [isExporting, setIsExporting] = useState(false);
-    const [isCopied, setIsCopied] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [isFullscreen, setIsFullscreen] = useState(false);
-    const viewRef = useRef<View | null>(null);
-    const fullscreenViewRef = useRef<View | null>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
+export const VegaLiteChart = memo(
+    function VegaLiteChart({ spec, artifactRunId }: VegaLiteChartProps) {
+        const { t } = useUITranslation();
+        const { title, description, options } = spec;
+        const vegaSpec = spec.spec as VegaSpecObject;
+        const [isExporting, setIsExporting] = useState(false);
+        const [isCopied, setIsCopied] = useState(false);
+        const [error, setError] = useState<string | null>(null);
+        const [isFullscreen, setIsFullscreen] = useState(false);
+        const viewRef = useRef<View | null>(null);
+        const fullscreenViewRef = useRef<View | null>(null);
+        const containerRef = useRef<HTMLDivElement>(null);
 
-    // Artifact resolution state
-    const { client } = useUserSession();
-    const urlCache = useArtifactUrlCache();
-    // Use refs to avoid triggering effect re-runs when these stable values are accessed
-    const clientRef = useRef(client);
-    clientRef.current = client;
-    const urlCacheRef = useRef(urlCache);
-    urlCacheRef.current = urlCache;
-    const [resolvedSpec, setResolvedSpec] = useState<Record<string, any> | null>(null);
-    const [isLoadingArtifacts, setIsLoadingArtifacts] = useState(false);
-    const [artifactError, setArtifactError] = useState<string | null>(null);
+        // Artifact resolution state
+        const { client } = useUserSession();
+        const urlCache = useArtifactUrlCache();
+        // Use refs to avoid triggering effect re-runs when these stable values are accessed
+        const clientRef = useRef(client);
+        clientRef.current = client;
+        const urlCacheRef = useRef(urlCache);
+        urlCacheRef.current = urlCache;
+        const [resolvedSpec, setResolvedSpec] = useState<VegaSpecObject | null>(null);
+        const [isLoadingArtifacts, setIsLoadingArtifacts] = useState(false);
+        const [artifactError, setArtifactError] = useState<string | null>(null);
 
-    // Determine mode and settings
-    const mode = options?.mode || 'chart';
-    const isDashboard = mode === 'dashboard';
-    const showFullscreenButton = options?.enableFullscreen ?? isDashboard;
+        // Determine mode and settings
+        const mode = options?.mode || 'chart';
+        const isDashboard = mode === 'dashboard';
+        const showFullscreenButton = options?.enableFullscreen ?? isDashboard;
 
-    // Calculate height
-    const baseHeight = options?.height || calculateAutoHeight(vegaSpec, mode);
+        // Calculate height
+        const baseHeight = options?.height || calculateAutoHeight(vegaSpec, mode);
 
-    // Resolve artifact URLs in the spec
-    useEffect(() => {
-        const references = findArtifactReferences(vegaSpec);
+        // Resolve artifact URLs in the spec
+        useEffect(() => {
+            const references = findArtifactReferences(vegaSpec);
 
-        // If no artifact references, use original spec
-        if (references.length === 0) {
-            setResolvedSpec(vegaSpec);
-            setIsLoadingArtifacts(false);
-            setArtifactError(null);
-            return;
-        }
-
-        if (!artifactRunId) {
-            console.warn('[VegaLiteChart] artifact references found but artifactRunId is missing!', {
-                references: references.map(r => r.artifactPath),
-                artifactRunId,
-            });
-        } else {
-            console.info('[VegaLiteChart] resolving artifacts with runId:', artifactRunId, references.map(r => r.artifactPath));
-        }
-
-        let cancelled = false;
-        setIsLoadingArtifacts(true);
-        setArtifactError(null);
-
-        const resolveArtifacts = async () => {
-            const resolvedData = new Map<string, any[]>();
-            const currentClient = clientRef.current;
-            const currentUrlCache = urlCacheRef.current;
-
-            for (const ref of references) {
-                try {
-                    const pathKey = ref.path.join('.');
-                    let url: string;
-
-                    // Determine if this is a shorthand path or full path
-                    if (artifactRunId && !ref.artifactPath.startsWith('agents/')) {
-                        // Shorthand path - use artifact API
-                        const cacheKey = getArtifactCacheKey(artifactRunId, ref.artifactPath, 'inline');
-                        if (currentUrlCache) {
-                            url = await currentUrlCache.getOrFetch(cacheKey, async () => {
-                                const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, ref.artifactPath, 'inline');
-                                return result.url;
-                            });
-                        } else {
-                            const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, ref.artifactPath, 'inline');
-                            url = result.url;
-                        }
-                    } else {
-                        // Full path - use files API
-                        const cacheKey = getFileCacheKey(ref.artifactPath);
-                        if (currentUrlCache) {
-                            url = await currentUrlCache.getOrFetch(cacheKey, async () => {
-                                const result = await currentClient.files.getDownloadUrl(ref.artifactPath);
-                                return result.url;
-                            });
-                        } else {
-                            const result = await currentClient.files.getDownloadUrl(ref.artifactPath);
-                            url = result.url;
-                        }
-                    }
-
-                    // Fetch the data from the resolved URL
-                    const response = await fetch(url);
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch artifact data: ${response.statusText}`);
-                    }
-
-                    // Detect CSV files by artifact path extension
-                    const isCsv = ref.artifactPath.toLowerCase().endsWith('.csv');
-                    let data: any[];
-
-                    if (isCsv) {
-                        // Parse CSV to JSON array
-                        const csvText = await response.text();
-                        const parseResult = Papa.parse(csvText, {
-                            header: true,
-                            skipEmptyLines: true,
-                            dynamicTyping: true, // Auto-convert numbers and booleans
-                        });
-                        data = parseResult.data as any[];
-                    } else {
-                        // Parse as JSON
-                        const jsonData = await response.json();
-                        data = Array.isArray(jsonData) ? jsonData : [jsonData];
-                    }
-
-                    resolvedData.set(pathKey, data);
-                } catch (err) {
-                    console.error(`Failed to resolve artifact: ${ref.artifactPath}`, err);
-                    if (!cancelled) {
-                        setArtifactError(`Failed to load data from artifact: ${ref.artifactPath}`);
-                    }
-                    return;
-                }
-            }
-
-            if (!cancelled) {
-                const newSpec = replaceArtifactData(vegaSpec, resolvedData);
-                setResolvedSpec(newSpec);
+            // If no artifact references, use original spec
+            if (references.length === 0) {
+                setResolvedSpec(vegaSpec);
                 setIsLoadingArtifacts(false);
+                setArtifactError(null);
+                return;
             }
-        };
 
-        resolveArtifacts();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [vegaSpec, artifactRunId]);
-
-    // Detect dark mode
-    const [isDarkMode, setIsDarkMode] = useState(false);
-    const isDarkModeRef = useRef(false);
-    useEffect(() => {
-        const checkDarkMode = () => {
-            const newDarkMode = document.documentElement.classList.contains('dark');
-            // Only update state if dark mode actually changed
-            if (newDarkMode !== isDarkModeRef.current) {
-                isDarkModeRef.current = newDarkMode;
-                setIsDarkMode(newDarkMode);
+            if (!artifactRunId) {
+                console.warn('[VegaLiteChart] artifact references found but artifactRunId is missing!', {
+                    references: references.map((r) => r.artifactPath),
+                    artifactRunId,
+                });
+            } else {
+                console.info(
+                    '[VegaLiteChart] resolving artifacts with runId:',
+                    artifactRunId,
+                    references.map((r) => r.artifactPath),
+                );
             }
-        };
-        checkDarkMode();
-        const observer = new MutationObserver(checkDarkMode);
-        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-        return () => observer.disconnect();
-    }, []);
 
-    // Track container width for responsive sizing
-    const [containerWidth, setContainerWidth] = useState(0);
-    const containerWidthRef = useRef(0);
-    useEffect(() => {
-        if (!containerRef.current) return;
-        let resizeTimeout: ReturnType<typeof setTimeout>;
-        const resizeObserver = new ResizeObserver((entries) => {
-            // Debounce resize callbacks to ~100ms to avoid excessive state updates
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                const width = entries[0]?.contentRect.width;
-                if (width && width !== containerWidthRef.current) {
-                    containerWidthRef.current = width;
-                    setContainerWidth(width);
+            let cancelled = false;
+            setIsLoadingArtifacts(true);
+            setArtifactError(null);
+
+            const resolveArtifacts = async () => {
+                const resolvedData = new Map<string, unknown[]>();
+                const currentClient = clientRef.current;
+                const currentUrlCache = urlCacheRef.current;
+
+                for (const ref of references) {
+                    try {
+                        const pathKey = ref.path.join('.');
+                        let url: string;
+
+                        // Determine if this is a shorthand path or full path
+                        if (artifactRunId && !ref.artifactPath.startsWith('agents/')) {
+                            // Shorthand path - use artifact API
+                            const cacheKey = getArtifactCacheKey(artifactRunId, ref.artifactPath, 'inline');
+                            if (currentUrlCache) {
+                                url = await currentUrlCache.getOrFetch(cacheKey, async () => {
+                                    const result = await currentClient.files.getArtifactDownloadUrl(
+                                        artifactRunId,
+                                        ref.artifactPath,
+                                        'inline',
+                                    );
+                                    return result.url;
+                                });
+                            } else {
+                                const result = await currentClient.files.getArtifactDownloadUrl(
+                                    artifactRunId,
+                                    ref.artifactPath,
+                                    'inline',
+                                );
+                                url = result.url;
+                            }
+                        } else {
+                            // Full path - use files API
+                            const cacheKey = getFileCacheKey(ref.artifactPath);
+                            if (currentUrlCache) {
+                                url = await currentUrlCache.getOrFetch(cacheKey, async () => {
+                                    const result = await currentClient.files.getDownloadUrl(ref.artifactPath);
+                                    return result.url;
+                                });
+                            } else {
+                                const result = await currentClient.files.getDownloadUrl(ref.artifactPath);
+                                url = result.url;
+                            }
+                        }
+
+                        // Fetch the data from the resolved URL
+                        const response = await fetch(url);
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch artifact data: ${response.statusText}`);
+                        }
+
+                        // Detect CSV files by artifact path extension
+                        const isCsv = ref.artifactPath.toLowerCase().endsWith('.csv');
+                        let data: unknown[];
+
+                        if (isCsv) {
+                            // Parse CSV to JSON array
+                            const csvText = await response.text();
+                            const parseResult = Papa.parse(csvText, {
+                                header: true,
+                                skipEmptyLines: true,
+                                dynamicTyping: true, // Auto-convert numbers and booleans
+                            });
+                            data = parseResult.data as unknown[];
+                        } else {
+                            // Parse as JSON
+                            const jsonData = await response.json();
+                            data = Array.isArray(jsonData) ? jsonData : [jsonData];
+                        }
+
+                        resolvedData.set(pathKey, data);
+                    } catch (err) {
+                        console.error(`Failed to resolve artifact: ${ref.artifactPath}`, err);
+                        if (!cancelled) {
+                            setArtifactError(`Failed to load data from artifact: ${ref.artifactPath}`);
+                        }
+                        return;
+                    }
                 }
-            }, 100);
-        });
-        resizeObserver.observe(containerRef.current);
-        // Initial width
-        const initialWidth = containerRef.current.clientWidth;
-        containerWidthRef.current = initialWidth;
-        setContainerWidth(initialWidth);
-        return () => {
-            clearTimeout(resizeTimeout);
-            resizeObserver.disconnect();
-        };
-    }, []);
 
-    // Check if there are artifact references that need resolution
-    const hasArtifactReferences = useMemo(() => {
-        return findArtifactReferences(vegaSpec).length > 0;
-    }, [vegaSpec]);
+                if (!cancelled) {
+                    const newSpec = replaceArtifactData(vegaSpec, resolvedData);
+                    setResolvedSpec(newSpec);
+                    setIsLoadingArtifacts(false);
+                }
+            };
 
-    // Memoize the processed spec to fix Vega-Lite selection param issues
-    // This handles the duplicate signal problem in concatenated views
-    const processedSpec = useMemo(() => {
-        // If there are artifact references, we must wait for resolvedSpec
-        // Don't fall back to vegaSpec which contains artifact: URLs
-        if (hasArtifactReferences && !resolvedSpec) {
+            void resolveArtifacts();
+
+            return () => {
+                cancelled = true;
+            };
+        }, [vegaSpec, artifactRunId]);
+
+        // Detect dark mode
+        const [isDarkMode, setIsDarkMode] = useState(false);
+        const isDarkModeRef = useRef(false);
+        useEffect(() => {
+            const checkDarkMode = () => {
+                const newDarkMode = document.documentElement.classList.contains('dark');
+                // Only update state if dark mode actually changed
+                if (newDarkMode !== isDarkModeRef.current) {
+                    isDarkModeRef.current = newDarkMode;
+                    setIsDarkMode(newDarkMode);
+                }
+            };
+            checkDarkMode();
+            const observer = new MutationObserver(checkDarkMode);
+            observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+            return () => observer.disconnect();
+        }, []);
+
+        // Track container width for responsive sizing
+        const [containerWidth, setContainerWidth] = useState(0);
+        const containerWidthRef = useRef(0);
+        useEffect(() => {
+            if (!containerRef.current) return;
+            let resizeTimeout: ReturnType<typeof setTimeout>;
+            const resizeObserver = new ResizeObserver((entries) => {
+                // Debounce resize callbacks to ~100ms to avoid excessive state updates
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    const width = entries[0]?.contentRect.width;
+                    if (width && width !== containerWidthRef.current) {
+                        containerWidthRef.current = width;
+                        setContainerWidth(width);
+                    }
+                }, 100);
+            });
+            resizeObserver.observe(containerRef.current);
+            // Initial width
+            const initialWidth = containerRef.current.clientWidth;
+            containerWidthRef.current = initialWidth;
+            setContainerWidth(initialWidth);
+            return () => {
+                clearTimeout(resizeTimeout);
+                resizeObserver.disconnect();
+            };
+        }, []);
+
+        // Check if there are artifact references that need resolution
+        const hasArtifactReferences = useMemo(() => {
+            return findArtifactReferences(vegaSpec).length > 0;
+        }, [vegaSpec]);
+
+        // Memoize the processed spec to fix Vega-Lite selection param issues
+        // This handles the duplicate signal problem in concatenated views
+        const processedSpec = useMemo(() => {
+            // If there are artifact references, we must wait for resolvedSpec
+            // Don't fall back to vegaSpec which contains artifact: URLs
+            if (hasArtifactReferences && !resolvedSpec) {
+                return null;
+            }
+            let specToUse = resolvedSpec || vegaSpec;
+            if (!specToUse) return null;
+
+            // Apply parameter values if provided (allows model to set initial slider/dropdown values)
+            if (options?.parameterValues) {
+                specToUse = applyParameterValues(specToUse, options.parameterValues);
+            }
+
+            return fixVegaLiteSelectionParams(specToUse);
+        }, [resolvedSpec, vegaSpec, hasArtifactReferences, options?.parameterValues]);
+
+        // Scale widths in concatenated views to fit container
+        const scaleSpecWidths = useCallback((spec: VegaSpecObject, availableWidth: number): VegaSpecObject => {
+            if (!spec || typeof spec !== 'object') return spec;
+
+            // Handle hconcat - distribute width among children
+            if (spec.hconcat && Array.isArray(spec.hconcat)) {
+                const childCount = spec.hconcat.length;
+                const spacing = spec.spacing ?? 10;
+                const totalSpacing = spacing * (childCount - 1);
+                const widthPerChild = Math.floor((availableWidth - totalSpacing) / childCount);
+
+                return {
+                    ...spec,
+                    hconcat: spec.hconcat.map((child) => scaleSpecWidths(child, widthPerChild)),
+                };
+            }
+
+            // Handle vconcat - each child gets full width
+            if (spec.vconcat && Array.isArray(spec.vconcat)) {
+                return {
+                    ...spec,
+                    vconcat: spec.vconcat.map((child) => scaleSpecWidths(child, availableWidth)),
+                };
+            }
+
+            // Handle generic concat with columns
+            if (spec.concat && Array.isArray(spec.concat)) {
+                const columns = spec.columns ?? spec.concat.length;
+                const spacing = spec.spacing ?? 10;
+                const totalSpacing = spacing * (columns - 1);
+                const widthPerChild = Math.floor((availableWidth - totalSpacing) / columns);
+
+                return {
+                    ...spec,
+                    concat: spec.concat.map((child) => scaleSpecWidths(child, widthPerChild)),
+                };
+            }
+
+            // For leaf views, set width if it's "container" or larger than available
+            const currentWidth = spec.width;
+            if (currentWidth === 'container' || (typeof currentWidth === 'number' && currentWidth > availableWidth)) {
+                return { ...spec, width: availableWidth };
+            }
+
+            return spec;
+        }, []);
+
+        // Build the full Vega-Lite spec with defaults
+        const buildFullSpec = useCallback(
+            (height: number, forFullscreen = false): VisualizationSpec | null => {
+                if (!processedSpec) return null;
+
+                const config = getDarkModeConfig(isDarkMode);
+                // Use measured container width, window width for fullscreen (capped), or fallback
+                const calculatedWidth = forFullscreen
+                    ? typeof window !== 'undefined'
+                        ? Math.min(window.innerWidth - 80, 1400)
+                        : 1200
+                    : containerWidth > 0
+                      ? containerWidth - 24
+                      : 500;
+
+                // Check if this is a concatenated view - autosize 'fit' only works for single/layered views
+                const isConcatenatedView =
+                    'vconcat' in processedSpec || 'hconcat' in processedSpec || 'concat' in processedSpec;
+
+                // For concatenated views, use 'pad' which works correctly; for single views use 'fit'
+                const autosize = isConcatenatedView
+                    ? { type: 'pad' as const, contains: 'padding' as const }
+                    : { type: 'fit' as const, contains: 'padding' as const };
+
+                // Scale widths for concatenated views to fit container
+                let scaledSpec = processedSpec;
+                if (isConcatenatedView && calculatedWidth) {
+                    scaledSpec = scaleSpecWidths(processedSpec, calculatedWidth);
+                }
+
+                // Replace "container" width with our measured width - "container" relies on CSS which may not be ready
+                const specWidth = scaledSpec.width;
+                const width = isConcatenatedView
+                    ? undefined
+                    : specWidth === 'container'
+                      ? calculatedWidth
+                      : (specWidth ?? calculatedWidth);
+
+                // Destructure to remove width from spec so we can control it (only for non-concat views)
+                const { width: _specWidth, ...specWithoutWidth } = scaledSpec;
+
+                return {
+                    $schema: 'https://vega.github.io/schema/vega-lite/v6.json',
+                    ...(!isConcatenatedView && width ? { width } : {}),
+                    height: forFullscreen ? undefined : height,
+                    autosize,
+                    ...(isConcatenatedView ? scaledSpec : specWithoutWidth),
+                    // Override title if provided at top level
+                    ...(title && !processedSpec.title ? { title } : {}),
+                    // Apply theme config
+                    config: {
+                        ...config,
+                        ...processedSpec.config,
+                    },
+                } as VisualizationSpec;
+            },
+            [processedSpec, title, isDarkMode, containerWidth, scaleSpecWidths],
+        );
+
+        const handleCopy = useCallback(async () => {
+            const view = isFullscreen ? fullscreenViewRef.current : viewRef.current;
+            if (!view || isCopied) return;
+
+            try {
+                const canvas = await view.toCanvas(2);
+                canvas.toBlob(async (blob: Blob | null) => {
+                    if (blob) {
+                        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                        setIsCopied(true);
+                        setTimeout(() => setIsCopied(false), 2000);
+                    }
+                }, 'image/png');
+            } catch (err) {
+                console.error('Failed to copy chart:', err);
+            }
+        }, [isCopied, isFullscreen]);
+
+        const handleExport = useCallback(async () => {
+            const view = isFullscreen ? fullscreenViewRef.current : viewRef.current;
+            if (!view || isExporting) return;
+
+            setIsExporting(true);
+            try {
+                const url = await view.toImageURL('png', 2);
+                const link = document.createElement('a');
+                link.download = `${title || 'chart'}.png`;
+                link.href = url;
+                link.click();
+            } catch (err) {
+                console.error('Failed to export chart:', err);
+            } finally {
+                setIsExporting(false);
+            }
+        }, [title, isExporting, isFullscreen]);
+
+        const handleNewView = useCallback((view: View) => {
+            viewRef.current = view;
+            setError(null);
+        }, []);
+
+        const handleFullscreenNewView = useCallback((view: View) => {
+            fullscreenViewRef.current = view;
+        }, []);
+
+        const handleError = useCallback((err: unknown) => {
+            console.error('Vega-Lite rendering error:', err);
+            setError(err instanceof Error ? err.message : 'Unknown error');
+        }, []);
+
+        const toggleFullscreen = useCallback(() => {
+            setIsFullscreen((prev) => !prev);
+        }, []);
+
+        // Clear error when spec changes
+        useEffect(() => {
+            void vegaSpec;
+            setError(null);
+        }, [vegaSpec]);
+
+        // Toolbar component (reused in both views)
+        const Toolbar = ({ className }: { className?: string }) => (
+            <div className={cn('flex items-center gap-2', className)}>
+                <Button
+                    variant="unstyled"
+                    onClick={handleCopy}
+                    disabled={isCopied}
+                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 flex items-center gap-1"
+                    title={t('agent.copyToClipboard')}
+                >
+                    {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    {isCopied ? t('agent.copied') : t('agent.copy')}
+                </Button>
+                <Button
+                    variant="unstyled"
+                    onClick={handleExport}
+                    disabled={isExporting}
+                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                    title={t('agent.exportAsPng')}
+                >
+                    <Download className="w-3 h-3" />
+                    {isExporting ? t('agent.exporting') : t('agent.export')}
+                </Button>
+                {showFullscreenButton && (
+                    <Button
+                        variant="unstyled"
+                        onClick={toggleFullscreen}
+                        className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors flex items-center gap-1"
+                        title={isFullscreen ? t('agent.exitFullscreen') : t('agent.fullscreen')}
+                    >
+                        {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
+                        {isFullscreen ? t('agent.exit') : t('agent.fullscreen')}
+                    </Button>
+                )}
+            </div>
+        );
+
+        // Show loading state when resolving artifacts
+        // Also show loading if we have artifact refs but haven't resolved them yet
+        // (covers the gap before the effect runs)
+        if (isLoadingArtifacts || (hasArtifactReferences && !resolvedSpec)) {
+            return (
+                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+                    <div className="flex flex-col gap-2 p-3">
+                        <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                                {title || 'Chart'}
+                            </span>
+                        </div>
+                        <div
+                            className="flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded"
+                            style={{ width: '100%', height: baseHeight }}
+                        >
+                            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <span className="text-sm">Loading data from artifacts...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Show artifact error state
+        if (artifactError) {
+            return (
+                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+                    <div className="flex flex-col gap-2 p-3">
+                        <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                                {title || 'Chart'}
+                            </span>
+                        </div>
+                        <div style={{ width: '100%', height: baseHeight }}>
+                            <VegaErrorDisplay error={artifactError} chartTitle={title} />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        if (error) {
+            return (
+                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+                    <div className="flex flex-col gap-2 p-3">
+                        <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                                {title || 'Chart'}
+                            </span>
+                        </div>
+                        <div style={{ width: '100%', height: baseHeight }}>
+                            <VegaErrorDisplay error={error} chartTitle={title} />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Build spec for rendering
+        const chartSpec = buildFullSpec(baseHeight);
+        const fullscreenSpec = buildFullSpec(0, true);
+
+        // Handle case when spec isn't ready yet
+        if (!chartSpec) {
             return null;
         }
-        let specToUse = resolvedSpec || vegaSpec;
-        if (!specToUse) return null;
 
-        // Apply parameter values if provided (allows model to set initial slider/dropdown values)
-        if (options?.parameterValues) {
-            specToUse = applyParameterValues(specToUse, options.parameterValues);
+        // Debug: Log renders to track unnecessary re-renders (enable with localStorage)
+        if (typeof window !== 'undefined' && localStorage.getItem('DEBUG_VEGA_RENDERS')) {
+            console.log('VegaLite rendering with spec:', {
+                title,
+                hasData: !!(chartSpec as VegaSpecObject).data?.values,
+                dataLength: (chartSpec as VegaSpecObject).data?.values?.length,
+            });
         }
 
-        return fixVegaLiteSelectionParams(specToUse);
-    }, [resolvedSpec, vegaSpec, hasArtifactReferences, options?.parameterValues]);
-
-    // Scale widths in concatenated views to fit container
-    const scaleSpecWidths = useCallback((spec: any, availableWidth: number): any => {
-        if (!spec || typeof spec !== 'object') return spec;
-
-        // Handle hconcat - distribute width among children
-        if (spec.hconcat && Array.isArray(spec.hconcat)) {
-            const childCount = spec.hconcat.length;
-            const spacing = spec.spacing ?? 10;
-            const totalSpacing = spacing * (childCount - 1);
-            const widthPerChild = Math.floor((availableWidth - totalSpacing) / childCount);
-
-            return {
-                ...spec,
-                hconcat: spec.hconcat.map((child: any) => scaleSpecWidths(child, widthPerChild)),
-            };
-        }
-
-        // Handle vconcat - each child gets full width
-        if (spec.vconcat && Array.isArray(spec.vconcat)) {
-            return {
-                ...spec,
-                vconcat: spec.vconcat.map((child: any) => scaleSpecWidths(child, availableWidth)),
-            };
-        }
-
-        // Handle generic concat with columns
-        if (spec.concat && Array.isArray(spec.concat)) {
-            const columns = spec.columns ?? spec.concat.length;
-            const spacing = spec.spacing ?? 10;
-            const totalSpacing = spacing * (columns - 1);
-            const widthPerChild = Math.floor((availableWidth - totalSpacing) / columns);
-
-            return {
-                ...spec,
-                concat: spec.concat.map((child: any) => scaleSpecWidths(child, widthPerChild)),
-            };
-        }
-
-        // For leaf views, set width if it's "container" or larger than available
-        const currentWidth = spec.width;
-        if (currentWidth === 'container' || (typeof currentWidth === 'number' && currentWidth > availableWidth)) {
-            return { ...spec, width: availableWidth };
-        }
-
-        return spec;
-    }, []);
-
-    // Build the full Vega-Lite spec with defaults
-    const buildFullSpec = useCallback((height: number, forFullscreen = false): VisualizationSpec | null => {
-        if (!processedSpec) return null;
-
-        const config = getDarkModeConfig(isDarkMode);
-        // Use measured container width, window width for fullscreen (capped), or fallback
-        const calculatedWidth = forFullscreen
-            ? (typeof window !== 'undefined' ? Math.min(window.innerWidth - 80, 1400) : 1200)
-            : (containerWidth > 0 ? containerWidth - 24 : 500);
-
-        // Check if this is a concatenated view - autosize 'fit' only works for single/layered views
-        const isConcatenatedView = 'vconcat' in processedSpec || 'hconcat' in processedSpec || 'concat' in processedSpec;
-
-        // For concatenated views, use 'pad' which works correctly; for single views use 'fit'
-        const autosize = isConcatenatedView
-            ? { type: 'pad' as const, contains: 'padding' as const }
-            : { type: 'fit' as const, contains: 'padding' as const };
-
-        // Scale widths for concatenated views to fit container
-        let scaledSpec = processedSpec;
-        if (isConcatenatedView && calculatedWidth) {
-            scaledSpec = scaleSpecWidths(processedSpec, calculatedWidth);
-        }
-
-        // Replace "container" width with our measured width - "container" relies on CSS which may not be ready
-        const specWidth = (scaledSpec as any).width;
-        const width = isConcatenatedView ? undefined : (specWidth === 'container' ? calculatedWidth : (specWidth ?? calculatedWidth));
-
-        // Destructure to remove width from spec so we can control it (only for non-concat views)
-        const { width: _specWidth, ...specWithoutWidth } = scaledSpec as any;
-
-        return {
-            $schema: 'https://vega.github.io/schema/vega-lite/v6.json',
-            ...(!isConcatenatedView && width ? { width } : {}),
-            height: forFullscreen ? undefined : height,
-            autosize,
-            ...(isConcatenatedView ? scaledSpec : specWithoutWidth),
-            // Override title if provided at top level
-            ...(title && !processedSpec.title ? { title } : {}),
-            // Apply theme config
-            config: {
-                ...config,
-                ...processedSpec.config,
-            },
-        };
-    }, [processedSpec, title, isDarkMode, containerWidth, scaleSpecWidths]);
-
-    const handleCopy = useCallback(async () => {
-        const view = isFullscreen ? fullscreenViewRef.current : viewRef.current;
-        if (!view || isCopied) return;
-
-        try {
-            const canvas = await view.toCanvas(2);
-            canvas.toBlob(async (blob: Blob | null) => {
-                if (blob) {
-                    await navigator.clipboard.write([
-                        new ClipboardItem({ 'image/png': blob })
-                    ]);
-                    setIsCopied(true);
-                    setTimeout(() => setIsCopied(false), 2000);
-                }
-            }, 'image/png');
-        } catch (err) {
-            console.error('Failed to copy chart:', err);
-        }
-    }, [isCopied, isFullscreen]);
-
-    const handleExport = useCallback(async () => {
-        const view = isFullscreen ? fullscreenViewRef.current : viewRef.current;
-        if (!view || isExporting) return;
-
-        setIsExporting(true);
-        try {
-            const url = await view.toImageURL('png', 2);
-            const link = document.createElement('a');
-            link.download = `${title || 'chart'}.png`;
-            link.href = url;
-            link.click();
-        } catch (err) {
-            console.error('Failed to export chart:', err);
-        } finally {
-            setIsExporting(false);
-        }
-    }, [title, isExporting, isFullscreen]);
-
-    const handleNewView = useCallback((view: View) => {
-        viewRef.current = view;
-        setError(null);
-    }, []);
-
-    const handleFullscreenNewView = useCallback((view: View) => {
-        fullscreenViewRef.current = view;
-    }, []);
-
-    const handleError = useCallback((err: unknown) => {
-        console.error('Vega-Lite rendering error:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
-    }, []);
-
-    const toggleFullscreen = useCallback(() => {
-        setIsFullscreen(prev => !prev);
-    }, []);
-
-    // Clear error when spec changes
-    useEffect(() => {
-        setError(null);
-    }, [vegaSpec]);
-
-    // Toolbar component (reused in both views)
-    const Toolbar = ({ className }: { className?: string }) => (
-        <div className={cn("flex items-center gap-2", className)}>
-            <button
-                onClick={handleCopy}
-                disabled={isCopied}
-                className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 flex items-center gap-1"
-                title={t('agent.copyToClipboard')}
-            >
-                {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                {isCopied ? t('agent.copied') : t('agent.copy')}
-            </button>
-            <button
-                onClick={handleExport}
-                disabled={isExporting}
-                className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                title={t('agent.exportAsPng')}
-            >
-                <Download className="w-3 h-3" />
-                {isExporting ? t('agent.exporting') : t('agent.export')}
-            </button>
-            {showFullscreenButton && (
-                <button
-                    onClick={toggleFullscreen}
-                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors flex items-center gap-1"
-                    title={isFullscreen ? t('agent.exitFullscreen') : t('agent.fullscreen')}
+        return (
+            <>
+                {/* Main chart container */}
+                <div
+                    className={cn(
+                        'bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm',
+                        isDashboard && 'border-2',
+                    )}
                 >
-                    {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
-                    {isFullscreen ? t('agent.exit') : t('agent.fullscreen')}
-                </button>
-            )}
-        </div>
-    );
-
-    // Show loading state when resolving artifacts
-    // Also show loading if we have artifact refs but haven't resolved them yet
-    // (covers the gap before the effect runs)
-    if (isLoadingArtifacts || (hasArtifactReferences && !resolvedSpec)) {
-        return (
-            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
-                <div className="flex flex-col gap-2 p-3">
-                    <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                            {title || 'Chart'}
-                        </span>
-                    </div>
-                    <div
-                        className="flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded"
-                        style={{ width: '100%', height: baseHeight }}
-                    >
-                        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            <span className="text-sm">Loading data from artifacts...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    // Show artifact error state
-    if (artifactError) {
-        return (
-            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
-                <div className="flex flex-col gap-2 p-3">
-                    <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                            {title || 'Chart'}
-                        </span>
-                    </div>
-                    <div style={{ width: '100%', height: baseHeight }}>
-                        <VegaErrorDisplay error={artifactError} chartTitle={title} />
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
-                <div className="flex flex-col gap-2 p-3">
-                    <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                            {title || 'Chart'}
-                        </span>
-                    </div>
-                    <div style={{ width: '100%', height: baseHeight }}>
-                        <VegaErrorDisplay error={error} chartTitle={title} />
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    // Build spec for rendering
-    const chartSpec = buildFullSpec(baseHeight);
-    const fullscreenSpec = buildFullSpec(0, true);
-
-    // Handle case when spec isn't ready yet
-    if (!chartSpec) {
-        return null;
-    }
-
-    // Debug: Log renders to track unnecessary re-renders (enable with localStorage)
-    if (typeof window !== 'undefined' && localStorage.getItem('DEBUG_VEGA_RENDERS')) {
-        console.log('VegaLite rendering with spec:', {
-            title,
-            hasData: !!(chartSpec as any).data?.values,
-            dataLength: (chartSpec as any).data?.values?.length,
-        });
-    }
-
-    return (
-        <>
-            {/* Main chart container */}
-            <div className={cn(
-                "bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm",
-                isDashboard && "border-2"
-            )}>
-                <div className="flex flex-col gap-2 p-3">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                                {title || (isDashboard ? 'Dashboard' : 'Chart')}
-                            </span>
-                            {isDashboard && (
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
-                                    Interactive
+                    <div className="flex flex-col gap-2 p-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                                    {title || (isDashboard ? 'Dashboard' : 'Chart')}
                                 </span>
-                            )}
+                                {isDashboard && (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
+                                        Interactive
+                                    </span>
+                                )}
+                            </div>
+                            <Toolbar />
                         </div>
-                        <Toolbar />
-                    </div>
-                    {description && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {description}
-                        </span>
-                    )}
-                    <div
-                        ref={containerRef}
-                        className="bg-white dark:bg-gray-900 rounded overflow-hidden"
-                        style={{ width: '100%', height: baseHeight, minWidth: 0 }}
-                    >
-                        <VegaEmbed
-                            spec={chartSpec}
-                            onEmbed={(result) => handleNewView(result.view)}
-                            onError={handleError}
-                            options={{ renderer: options?.renderer || 'canvas', actions: false }}
-                        />
+                        {description && <span className="text-xs text-gray-500 dark:text-gray-400">{description}</span>}
+                        <div
+                            ref={containerRef}
+                            className="bg-white dark:bg-gray-900 rounded overflow-hidden"
+                            style={{ width: '100%', height: baseHeight, minWidth: 0 }}
+                        >
+                            <VegaEmbed
+                                spec={chartSpec}
+                                onEmbed={(result) => handleNewView(result.view)}
+                                onError={handleError}
+                                options={{ renderer: options?.renderer || 'canvas', actions: false }}
+                            />
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Fullscreen dialog */}
-            <FullscreenDialog
-                isOpen={isFullscreen}
-                onClose={() => setIsFullscreen(false)}
-                title={title || (isDashboard ? 'Dashboard' : 'Chart')}
-                description={description}
-            >
-                <div className="w-full h-full min-h-[calc(100vh-200px)]">
-                    {fullscreenSpec && (
-                        <VegaEmbed
-                            spec={fullscreenSpec}
-                            onEmbed={(result) => handleFullscreenNewView(result.view)}
-                            onError={handleError}
-                            options={{ renderer: options?.renderer || 'canvas', actions: false }}
-                        />
-                    )}
-                </div>
-                {/* Floating toolbar in fullscreen */}
-                <div className="absolute bottom-6 right-6">
-                    <Toolbar className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 border border-gray-200 dark:border-gray-700" />
-                </div>
-            </FullscreenDialog>
-        </>
-    );
-}, (prevProps, nextProps) => {
-    // Deep compare the spec to prevent re-renders when data hasn't changed
-    return JSON.stringify(prevProps.spec) === JSON.stringify(nextProps.spec) &&
-        prevProps.artifactRunId === nextProps.artifactRunId;
-});
+                {/* Fullscreen dialog */}
+                <FullscreenDialog
+                    isOpen={isFullscreen}
+                    onClose={() => setIsFullscreen(false)}
+                    title={title || (isDashboard ? 'Dashboard' : 'Chart')}
+                    description={description}
+                >
+                    <div className="w-full h-full min-h-[calc(100vh-200px)]">
+                        {fullscreenSpec && (
+                            <VegaEmbed
+                                spec={fullscreenSpec}
+                                onEmbed={(result) => handleFullscreenNewView(result.view)}
+                                onError={handleError}
+                                options={{ renderer: options?.renderer || 'canvas', actions: false }}
+                            />
+                        )}
+                    </div>
+                    {/* Floating toolbar in fullscreen */}
+                    <div className="absolute bottom-6 end-6">
+                        <Toolbar className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 border border-gray-200 dark:border-gray-700" />
+                    </div>
+                </FullscreenDialog>
+            </>
+        );
+    },
+    (prevProps, nextProps) => {
+        // Deep compare the spec to prevent re-renders when data hasn't changed
+        return (
+            JSON.stringify(prevProps.spec) === JSON.stringify(nextProps.spec) &&
+            prevProps.artifactRunId === nextProps.artifactRunId
+        );
+    },
+);

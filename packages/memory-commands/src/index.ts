@@ -1,6 +1,5 @@
-import type { Commands } from "@vertesia/memory";
-import { build, getBuilder } from "./build.js";
-
+import type { Commands } from '@vertesia/memory';
+import { build, getBuilder } from './build.js';
 
 function vars(): ReturnType<Commands['vars']> {
     return getBuilder().vars();
@@ -46,6 +45,4 @@ function media(...args: Parameters<Commands['media']>): ReturnType<Commands['med
     return getBuilder().media(...args);
 }
 
-export {
-    build, content, copy, copyText, docx, exec, from, getBuilder, json, media, pdf, tmpdir, vars
-};
+export { build, content, copy, copyText, docx, exec, from, getBuilder, json, media, pdf, tmpdir, vars };

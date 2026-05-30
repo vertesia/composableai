@@ -1,4 +1,4 @@
-import { EmailChannel, isEmailChannel, UserChannel } from "./interaction.js";
+import { type EmailChannel, isEmailChannel, type UserChannel } from './interaction.js';
 
 /**
  * Find the email channel from a list of channels.
@@ -22,7 +22,7 @@ export function hasEmailChannel(channels?: UserChannel[]): boolean {
  */
 export function updateEmailChannel(
     channels: UserChannel[] | undefined,
-    updates: Partial<Omit<EmailChannel, "type">>
+    updates: Partial<Omit<EmailChannel, 'type'>>,
 ): UserChannel[] {
     const existing = channels || [];
     const emailIndex = existing.findIndex(isEmailChannel);
@@ -30,7 +30,7 @@ export function updateEmailChannel(
     if (emailIndex === -1) {
         // No email channel exists, create one if we have required fields
         if (updates.to_email) {
-            return [...existing, { type: "email", ...updates } as EmailChannel];
+            return [...existing, { type: 'email', ...updates } as EmailChannel];
         }
         return existing;
     }
@@ -40,7 +40,7 @@ export function updateEmailChannel(
     updated[emailIndex] = {
         ...updated[emailIndex],
         ...updates,
-        type: "email",
+        type: 'email',
     } as EmailChannel;
     return updated;
 }
@@ -52,7 +52,7 @@ export function updateEmailChannel(
 export function updateEmailThreading(
     channels: UserChannel[] | undefined,
     messageId: string,
-    subject?: string
+    subject?: string,
 ): UserChannel[] {
     const emailChannel = findEmailChannel(channels);
     if (!emailChannel) return channels || [];

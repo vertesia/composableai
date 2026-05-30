@@ -32,19 +32,16 @@
 const SINGLE_LINE_DIRECTIVE = /^([ \t]*):::\s*(\w+)\s*(.*?)\s*:::[ \t]*$/gm;
 
 export function normalizeDirectives(markdown: string): string {
-    if (!markdown || !markdown.includes(':::')) {
+    if (!markdown?.includes(':::')) {
         return markdown;
     }
 
-    return markdown.replace(
-        SINGLE_LINE_DIRECTIVE,
-        (_match, indent: string, name: string, content: string) => {
-            if (content) {
-                // Has content → multi-line container directive
-                return `${indent}:::${name}\n${indent}${content}\n${indent}:::`;
-            }
-            // No content → leaf directive (::name)
-            return `${indent}::${name}`;
+    return markdown.replace(SINGLE_LINE_DIRECTIVE, (_match, indent: string, name: string, content: string) => {
+        if (content) {
+            // Has content → multi-line container directive
+            return `${indent}:::${name}\n${indent}${content}\n${indent}:::`;
         }
-    );
+        // No content → leaf directive (::name)
+        return `${indent}::${name}`;
+    });
 }

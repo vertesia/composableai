@@ -1,21 +1,21 @@
-import { ContentObjectItem } from "@vertesia/common";
-import { Spinner, useToast } from "@vertesia/ui/core";
-import { useUITranslation } from '../../../i18n/index.js';
+import type { ContentObjectItem } from '@vertesia/common';
+import { Spinner, useToast } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { DropZone } from '@vertesia/ui/widgets';
-import clsx from "clsx";
-import { ChangeEvent, useMemo, useState } from "react";
-import { DocumentSelection, useOptionalDocumentSelection } from "./DocumentSelectionProvider";
-import { ExtendedColumnLayout, DocumentTableColumn } from "./layout/DocumentTableColumn";
-import { DocumentGridView, DocumentTableView } from "./layout/documentLayout";
-import { useDocumentSearch } from "./search/DocumentSearchContext";
-import { FileWithMetadata, DocumentUploadModal, useSmartFileUploadProcessing } from "./upload";
+import clsx from 'clsx';
+import { type ChangeEvent, useMemo, useState } from 'react';
+import { type DocumentSelection, useOptionalDocumentSelection } from './DocumentSelectionProvider';
+import { type ExtendedColumnLayout, DocumentTableColumn } from './layout/DocumentTableColumn';
+import { DocumentGridView, DocumentTableView } from './layout/documentLayout';
+import { useDocumentSearch } from './search/DocumentSearchContext';
+import { type FileWithMetadata, DocumentUploadModal, useSmartFileUploadProcessing } from './upload';
 
 const defaultLayout: ExtendedColumnLayout[] = [
-    { name: "ID", field: "id", type: "objectId?slice=-7" },
-    { name: "Name", field: ".", type: "objectName" },
-    { name: "Type", field: "type.name", type: "string" },
-    { name: "Status", field: "status", type: "string" },
-    { name: "Updated At", field: "updated_at", type: "date" },
+    { name: 'ID', field: 'id', type: 'objectId?slice=-7' },
+    { name: 'Name', field: '.', type: 'objectName' },
+    { name: 'Type', field: 'type.name', type: 'string' },
+    { name: 'Status', field: 'status', type: 'string' },
+    { name: 'Updated At', field: 'updated_at', type: 'date' },
 ];
 
 interface DocumentTableProps extends DocumentTableImplProps {
@@ -47,6 +47,11 @@ interface ObjectTableWithDropZoneProps extends DocumentTableProps {
     collectionId?: string;
     skipTypeModal?: boolean;
 }
+
+type UploadPromiseWithProcessedFiles = Promise<unknown> & {
+    processedFiles?: FileWithMetadata[] | null;
+};
+
 function ObjectTableWithDropZone({
     isGridView,
     onUpload,
@@ -66,7 +71,7 @@ function ObjectTableWithDropZone({
 
     // Handle file uploads when a file is dropped
     const handleFileDrop = async (droppedFiles: File[], feedback?: { count: number; message: string }) => {
-        console.log("Files dropped on ObjectTable:", droppedFiles.length, feedback);
+        console.log('Files dropped on ObjectTable:', droppedFiles.length, feedback);
         setLoading(true);
 
         try {
@@ -77,14 +82,14 @@ function ObjectTableWithDropZone({
                 setProcessedFiles(processed);
 
                 // Create a user-friendly summary message
-                const toCreate = processed.filter((f) => f.action === "create").length;
-                const toUpdate = processed.filter((f) => f.action === "update").length;
-                const toSkip = processed.filter((f) => f.action === "skip").length;
+                const toCreate = processed.filter((f) => f.action === 'create').length;
+                const toUpdate = processed.filter((f) => f.action === 'update').length;
+                const toSkip = processed.filter((f) => f.action === 'skip').length;
 
                 toast({
                     title: t('store.filesReadyToProcess'),
                     description: `${droppedFiles.length} file(s): ${toCreate} new, ${toUpdate} to update, ${toSkip} to skip`,
-                    status: "info",
+                    status: 'info',
                     duration: 4000,
                 });
             } else {
@@ -92,11 +97,11 @@ function ObjectTableWithDropZone({
                 setProcessedFiles(null);
             }
         } catch (error) {
-            console.error("Error processing files:", error);
+            console.error('Error processing files:', error);
             toast({
                 title: t('store.errorProcessingFiles'),
                 description: t('store.errorCheckingDuplicates'),
-                status: "error",
+                status: 'error',
                 duration: 4000,
             });
             // Continue with plain upload in case of error
@@ -108,7 +113,7 @@ function ObjectTableWithDropZone({
 
             if (skipTypeModal) {
                 // If skipTypeModal is true, we skip our internal modal and call onUpload directly
-                console.log("Skipping type modal and calling onUpload directly", {
+                console.log('Skipping type modal and calling onUpload directly', {
                     filesLength: droppedFiles.length,
                     processedFilesLength: processedFiles?.length,
                 });
@@ -117,12 +122,12 @@ function ObjectTableWithDropZone({
                 const uploadPromise = onUpload(droppedFiles, null, collectionId);
 
                 // Attach the processed files to the promise for parent components to use
-                if (uploadPromise && typeof uploadPromise === "object") {
-                    (uploadPromise as any).processedFiles = processedFiles;
+                if (uploadPromise && typeof uploadPromise === 'object') {
+                    (uploadPromise as UploadPromiseWithProcessedFiles).processedFiles = processedFiles;
                 }
             } else {
                 // Otherwise, open our type selection modal
-                console.log("Setting typeSelectionOpen to true", { filesLength: droppedFiles.length });
+                console.log('Setting typeSelectionOpen to true', { filesLength: droppedFiles.length });
                 setTypeSelectionOpen(true);
             }
         }
@@ -141,14 +146,14 @@ function ObjectTableWithDropZone({
         if (filesToUpload.length > 0 && typeId !== undefined) {
             setLoading(true);
 
-            console.log("Starting upload with", {
+            console.log('Starting upload with', {
                 typeId,
                 filesCount: filesToUpload.length,
                 hasProcessingResults: !!processedFiles,
                 collectionId,
             });
 
-            onUpload(filesToUpload, typeId, collectionId).finally(() => {
+            void onUpload(filesToUpload, typeId, collectionId).finally(() => {
                 setLoading(false);
                 search.search(); // Refresh the search results after upload
             });
@@ -173,6 +178,7 @@ function ObjectTableWithDropZone({
     };
 
     return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target for file upload; selection is exposed via the upload UI.
         <div
             className="min-h-[400px] relative"
             onDragOver={handleDragOver}
@@ -188,7 +194,7 @@ function ObjectTableWithDropZone({
                     const files: File[] = [];
                     for (let i = 0; i < e.dataTransfer.items.length; i++) {
                         const item = e.dataTransfer.items[i];
-                        if (item.kind === "file") {
+                        if (item.kind === 'file') {
                             const file = item.getAsFile();
                             if (file) files.push(file);
                         }
@@ -197,9 +203,9 @@ function ObjectTableWithDropZone({
                     if (files.length > 0) {
                         const feedback = {
                             count: files.length,
-                            message: `Preparing to upload ${files.length} file${files.length === 1 ? "" : "s"}...`,
+                            message: `Preparing to upload ${files.length} file${files.length === 1 ? '' : 's'}...`,
                         };
-                        handleFileDrop(files, feedback);
+                        void handleFileDrop(files, feedback);
                     }
                 }
             }}
@@ -207,8 +213,8 @@ function ObjectTableWithDropZone({
             {/* Loading overlay */}
             <div
                 className={clsx(
-                    "bg-white dark:bg-gray-800 opacity-40 absolute inset-0 z-50 flex justify-center items-center",
-                    isLoading ? "block" : "hidden",
+                    'bg-white dark:bg-gray-800 opacity-40 absolute inset-0 z-50 flex justify-center items-center',
+                    isLoading ? 'block' : 'hidden',
                 )}
             >
                 <Spinner size="xl" />
@@ -218,14 +224,14 @@ function ObjectTableWithDropZone({
             <DocumentTableImpl {...others} isGridView={isGridView} />
 
             {/* Overlay the table with a drop zone */}
-            <div className={clsx("absolute inset-0 pointer-events-none", isDragging ? "z-40" : "-z-10")}>
+            <div className={clsx('absolute inset-0 pointer-events-none', isDragging ? 'z-40' : '-z-10')}>
                 <div className="w-full h-full relative">
                     <DropZone
                         onDrop={handleFileDrop}
                         message="Drop files or folders here to upload"
                         className={clsx(
-                            "absolute inset-0 bg-white/90 dark:bg-gray-800/90 pointer-events-auto",
-                            isDragging ? "flex" : "hidden",
+                            'absolute inset-0 bg-white/90 dark:bg-gray-800/90 pointer-events-auto',
+                            isDragging ? 'flex' : 'hidden',
                         )}
                         buttonLabel="Select Files or Folders"
                         allowFolders={true}
@@ -255,22 +261,22 @@ function ObjectTableWithDropZone({
                             toast({
                                 title: t('store.uploadIssues'),
                                 description: `${result.failedFiles.length} file(s) failed to upload`,
-                                status: "warning",
+                                status: 'warning',
                                 duration: 5000,
                             });
                         }
 
                         // On success, summarize the results
                         if (result.success) {
-                            const created = result.uploadedFiles.filter((f) => f.status === "created").length;
-                            const updated = result.uploadedFiles.filter((f) => f.status === "updated").length;
+                            const created = result.uploadedFiles.filter((f) => f.status === 'created').length;
+                            const updated = result.uploadedFiles.filter((f) => f.status === 'updated').length;
                             const skipped = result.skippedFiles.length;
 
                             if (created > 0 || updated > 0) {
                                 toast({
                                     title: t('store.uploadComplete'),
-                                    description: `${created > 0 ? `${created} created` : ""}${created > 0 && updated > 0 ? ", " : ""}${updated > 0 ? `${updated} updated` : ""}${skipped > 0 ? `, ${skipped} skipped` : ""}`,
-                                    status: "success",
+                                    description: `${created > 0 ? `${created} created` : ''}${created > 0 && updated > 0 ? ', ' : ''}${updated > 0 ? `${updated} updated` : ''}${skipped > 0 ? `, ${skipped} skipped` : ''}`,
+                                    status: 'success',
                                     duration: 5000,
                                 });
                             }
@@ -286,7 +292,7 @@ function ObjectTableWithDropZone({
                     setTypeSelectionOpen(false);
 
                     // Complete the upload process with type ID if successful
-                    if (result && result.success && result.objectIds.length > 0) {
+                    if (result?.success && result.objectIds.length > 0) {
                         // We don't have type information here, so pass null (process completed)
                         onDoUpload(null);
                     } else {
@@ -326,7 +332,7 @@ function DocumentTableImpl({
 
     const _onSelectionChange = (object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => {
         if (selection) {
-            const isShift = (ev.nativeEvent as any).shiftKey;
+            const isShift = ev.nativeEvent instanceof MouseEvent && ev.nativeEvent.shiftKey;
             const checked = ev.target.checked;
             if (!checked) {
                 selection.remove(object.id);
@@ -353,7 +359,7 @@ function DocumentTableImpl({
                     }
                 }
             }
-            onSelectionChange && onSelectionChange(selection);
+            onSelectionChange?.(selection);
         }
     };
 
@@ -372,7 +378,7 @@ function DocumentTableImpl({
     const columns = useMemo(() => {
         // avoid rendering empty layouts
         const actualLayout = layout.length > 0 ? layout : defaultLayout;
-        console.log("Using layout with columns:", actualLayout.map((col) => col.name).join(", "));
+        console.log('Using layout with columns:', actualLayout.map((col) => col.name).join(', '));
         return actualLayout.map((col) => new DocumentTableColumn(col, previewObject));
     }, [layout, previewObject]);
 

@@ -1,23 +1,23 @@
 import clsx from 'clsx';
-import { ChangeEvent, ComponentType, KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { type ChangeEvent, type ComponentType, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 
 import { SquarePen, Trash2 } from 'lucide-react';
 import { Button, Styles, useClickOutside, useFlag } from '@vertesia/ui/core';
 
-const VIEW_BOX = "block text-sm sm:leading-6 rounded-md border-0 py-1.5 px-4"
-const VIEW_BOX_HOVER = `${VIEW_BOX} hover:shadow-xs hover:ring-1 hover:ring-inset hover:ring-ring`
-const EDIT_BOX = `${VIEW_BOX} shadow-xs ring-1 ring-inset ring-ring`
+const VIEW_BOX = 'block text-sm sm:leading-6 rounded-md border-0 py-1.5 px-4';
+const VIEW_BOX_HOVER = `${VIEW_BOX} hover:shadow-xs hover:ring-1 hover:ring-inset hover:ring-ring`;
+const EDIT_BOX = `${VIEW_BOX} shadow-xs ring-1 ring-inset ring-ring`;
 
 export interface DataViewerProps<T> {
     value: T | undefined;
-    placeholder?: string
+    placeholder?: string;
 }
 
 export interface DataEditorProps<T> {
     value: T | undefined;
-    onChange: (value: any, autoSave?: boolean) => void
-    onSave?: () => void
-    onCancel?: () => void
+    onChange: (value: T, autoSave?: boolean) => void;
+    onSave?: () => void;
+    onCancel?: () => void;
 }
 
 interface EditableProps<T> {
@@ -39,7 +39,10 @@ interface EditableProps<T> {
      */
     onValidate?: (value: T) => string | undefined;
 }
-export function Editable<T>({ value, onChange, onDelete,
+export function Editable<T>({
+    value,
+    onChange,
+    onDelete,
     outlineOnHover = false,
     editOnClick = true,
     placeholder,
@@ -53,7 +56,7 @@ export function Editable<T>({ value, onChange, onDelete,
     const { on, off, isOn } = useFlag(isEditing);
     const [validationError, setValidationError] = useState<string | undefined>();
 
-    const _onChange = (value?: any) => {
+    const _onChange = (value: T) => {
         if (onValidate) {
             const err = onValidate(value);
             if (err) {
@@ -78,48 +81,57 @@ export function Editable<T>({ value, onChange, onDelete,
 
     return (
         <div className="">
-            {
-                isOn && !readonly ?
-                    <DataEdit
-                        value={value}
-                        onSave={_onChange}
-                        onCancel={off}
-                        editor={editor}
-                        skipClickOutside={_skipClickOutside}
-                    />
-                    : <DataView value={value} onEdit={on} viewer={viewer}
-                        placeholder={placeholder}
-                        outlineOnHover={outlineOnHover}
-                        editOnClick={editOnClick}
-                        onDelete={onDelete}
-                        readonly={readonly}
-                    />
-            }
-            {
-                validationError &&
-                <div className="text-red-500 text-sm">{validationError}</div>
-            }
+            {isOn && !readonly ? (
+                <DataEdit
+                    value={value}
+                    onSave={_onChange}
+                    onCancel={off}
+                    editor={editor}
+                    skipClickOutside={_skipClickOutside}
+                />
+            ) : (
+                <EditableDataView
+                    value={value}
+                    onEdit={on}
+                    viewer={viewer}
+                    placeholder={placeholder}
+                    outlineOnHover={outlineOnHover}
+                    editOnClick={editOnClick}
+                    onDelete={onDelete}
+                    readonly={readonly}
+                />
+            )}
+            {validationError && <div className="text-red-500 text-sm">{validationError}</div>}
         </div>
-    )
+    );
 }
 
-interface DataViewProps<T> {
+interface EditableDataViewProps<T> {
     value: T;
     viewer: ComponentType<DataViewerProps<T>>;
     onEdit: () => void;
-    outlineOnHover?: boolean
-    editOnClick?: boolean
-    placeholder?: string
-    onDelete?: () => void
-    readonly?: boolean,
+    outlineOnHover?: boolean;
+    editOnClick?: boolean;
+    placeholder?: string;
+    onDelete?: () => void;
+    readonly?: boolean;
 }
-function DataView<T>({ viewer: Viewer, value, onEdit, editOnClick, outlineOnHover, placeholder, onDelete, readonly }: DataViewProps<T>) {
+function EditableDataView<T>({
+    viewer: Viewer,
+    value,
+    onEdit,
+    editOnClick,
+    outlineOnHover,
+    placeholder,
+    onDelete,
+    readonly: isReadonly,
+}: EditableDataViewProps<T>) {
     const onClick = () => {
-        editOnClick && onEdit();
+        if (editOnClick) onEdit();
     };
 
     const onKeyUp = (e: KeyboardEvent<HTMLDivElement>) => {
-        if (e.key === "Enter") {
+        if (e.key === 'Enter') {
             onEdit();
         }
     };
@@ -127,22 +139,28 @@ function DataView<T>({ viewer: Viewer, value, onEdit, editOnClick, outlineOnHove
     const btnStyle = 'invisible group-hover:visible';
 
     return (
-        <div tabIndex={0} onKeyUp={onKeyUp} onClick={onClick} className={clsx("flex justify-start items-center group", outlineOnHover ? VIEW_BOX_HOVER : VIEW_BOX, { 'cursor-pointer': editOnClick })}>
+        // biome-ignore lint/a11y/noStaticElementInteractions: container is interactive only when editOnClick is true; role/keyboard provided conditionally and onClick is a no-op otherwise.
+        <div
+            role={editOnClick ? 'button' : undefined}
+            tabIndex={0}
+            onKeyUp={onKeyUp}
+            onClick={onClick}
+            className={clsx('flex justify-start items-center group', outlineOnHover ? VIEW_BOX_HOVER : VIEW_BOX, {
+                'cursor-pointer': editOnClick,
+            })}
+        >
             <Viewer value={value} placeholder={placeholder} />
-            <div className='ml-auto flex space-x-2'>
-                {
-                    !readonly && onDelete &&
+            <div className="ms-auto flex space-x-2">
+                {!isReadonly && onDelete && (
                     <Button variant="ghost" size="sm" className={btnStyle} onClick={onDelete}>
                         <Trash2 className="size-4" />
                     </Button>
-                }
-                {
-                    !readonly ?
-                        <Button variant="ghost" size="sm" className={btnStyle} onClick={onEdit}>
-                            <SquarePen className="size-4" />
-                        </Button>
-                        : null
-                }
+                )}
+                {!isReadonly ? (
+                    <Button variant="ghost" size="sm" className={btnStyle} onClick={onEdit}>
+                        <SquarePen className="size-4" />
+                    </Button>
+                ) : null}
             </div>
         </div>
     );
@@ -166,27 +184,28 @@ function DataEdit<T>({ editor: Editor, value, onSave, onCancel, skipClickOutside
 
     const ref = useClickOutside<HTMLDivElement>(handleSave, skipClickOutside);
 
-    const _onChange = (value: any, autoSave = false) => {
+    const _onChange = (value: T, autoSave = false) => {
         setActualValue(value);
         latestValue.current = value;
         if (autoSave) {
             if (debounceTimer) {
                 clearTimeout(debounceTimer);
             }
-            setDebounceTimer(setTimeout(() => { onSave(value); }, 500))
+            setDebounceTimer(
+                setTimeout(() => {
+                    onSave(value);
+                }, 500),
+            );
         }
     };
 
     return (
         <div ref={ref}>
             <div className={EDIT_BOX}>
+                {/* biome-ignore lint/a11y/noStaticElementInteractions: stop-propagation wrapper to keep clicks inside the editor from triggering outer handlers; not a user-facing interaction. */}
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — wrapper exists only to stop event propagation, not as an interactive element. */}
                 <div className="w-full" onClick={(e) => e.stopPropagation()}>
-                    <Editor
-                        value={actualValue}
-                        onChange={_onChange}
-                        onSave={handleSave}
-                        onCancel={onCancel}
-                    />
+                    <Editor value={actualValue} onChange={_onChange} onSave={handleSave} onCancel={onCancel} />
                 </div>
             </div>
         </div>
@@ -195,13 +214,9 @@ function DataEdit<T>({ editor: Editor, value, onSave, onCancel, skipClickOutside
 
 export function TextDataViewer({ value, placeholder }: DataViewerProps<string>) {
     if (!value) {
-        return (
-            <span className='text-gray-400'>{placeholder || 'Missing value'}</span>
-        );
+        return <span className="text-gray-400">{placeholder || 'Missing value'}</span>;
     } else {
-        return (
-            <span>{value == null ? '' : value.toString()}</span>
-        );
+        return <span>{value == null ? '' : value.toString()}</span>;
     }
 }
 
@@ -214,10 +229,10 @@ export function TextDataEditor({ value, onChange, onCancel, onSave }: DataEditor
 
     const onKeyUp = (e: KeyboardEvent<HTMLInputElement>) => {
         switch (e.key) {
-            case "Enter":
+            case 'Enter':
                 onSave?.();
                 break;
-            case "Escape":
+            case 'Escape':
                 onCancel?.();
                 break;
         }
@@ -228,7 +243,14 @@ export function TextDataEditor({ value, onChange, onCancel, onSave }: DataEditor
     };
 
     return (
-        <input onKeyUp={onKeyUp} ref={ref} value={value} onChange={_onChange} className={Styles.INPUT_UNSTYLED} style={{ fontSize: "inherit" }} />
+        <input
+            onKeyUp={onKeyUp}
+            ref={ref}
+            value={value}
+            onChange={_onChange}
+            className={Styles.INPUT_UNSTYLED}
+            style={{ fontSize: 'inherit' }}
+        />
     );
 }
 
@@ -245,7 +267,5 @@ export function EditableText(props: EditableTextProps) {
         props.editor = TextDataEditor;
     }
 
-    return (
-        <Editable {...props as EditableProps<string>} />
-    );
+    return <Editable {...(props as EditableProps<string>)} />;
 }

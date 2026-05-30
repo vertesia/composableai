@@ -1,10 +1,4 @@
-import {
-    createContext,
-    useContext,
-    type Dispatch,
-    type MutableRefObject,
-    type SetStateAction,
-} from 'react';
+import { createContext, useContext, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import type { Filter } from '@vertesia/ui/core';
 import type { ContentObjectItem } from '@vertesia/common';
 import type { SortDir } from '../../components/SortableHead';
@@ -30,19 +24,15 @@ export interface ContentObjectsListStateValue {
     refetch: () => Promise<unknown>;
 
     // Scroll position (preserved across list/detail navigation)
-    scrollTopRef: MutableRefObject<number>;
+    scrollTopRef: RefObject<number>;
 }
 
-export const ContentObjectsListStateContext = createContext<
-    ContentObjectsListStateValue | undefined
->(undefined);
+export const ContentObjectsListStateContext = createContext<ContentObjectsListStateValue | undefined>(undefined);
 
 export function useContentObjectsListState() {
     const ctx = useContext(ContentObjectsListStateContext);
     if (!ctx) {
-        throw new Error(
-            'useContentObjectsListState must be used inside ContentObjectsListStateProvider',
-        );
+        throw new Error('useContentObjectsListState must be used inside ContentObjectsListStateProvider');
     }
     return ctx;
 }

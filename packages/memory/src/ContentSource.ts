@@ -1,8 +1,8 @@
-import { createReadStream } from "fs";
-import { readFile } from "fs/promises";
+import { createReadStream } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { globSync } from 'glob';
-import { basename, extname, resolve } from "path";
-import { Readable } from "stream";
+import { basename, extname, resolve } from 'node:path';
+import { Readable } from 'node:stream';
 
 export interface ContentSource {
     getContent(): Promise<Buffer>;
@@ -11,7 +11,7 @@ export interface ContentSource {
 
 export type SourceSpec = string | ContentSource;
 export abstract class AbstractContentSource implements ContentSource {
-    abstract getContent(): Promise<Buffer>
+    abstract getContent(): Promise<Buffer>;
 
     async getStream(): Promise<NodeJS.ReadableStream> {
         return Readable.from(await this.getContent());
@@ -23,13 +23,13 @@ export abstract class AbstractContentSource implements ContentSource {
         } else if (source instanceof AbstractContentSource) {
             return source;
         }
-        throw new Error("Unsupported content source: " + source);
+        throw new Error(`Unsupported content source: ${source}`);
     }
 }
 
 export class BufferSource extends AbstractContentSource {
     constructor(public buffer: Buffer) {
-        super()
+        super();
     }
     getContent(): Promise<Buffer> {
         return Promise.resolve(this.buffer);
@@ -37,7 +37,10 @@ export class BufferSource extends AbstractContentSource {
 }
 
 export class TextSource extends AbstractContentSource {
-    constructor(public value: string, public encoding: BufferEncoding = "utf-8") {
+    constructor(
+        public value: string,
+        public encoding: BufferEncoding = 'utf-8',
+    ) {
         super();
     }
 
@@ -79,10 +82,9 @@ export class FileSource extends AbstractContentSource {
 
     static resolve(location: string): FileSource | FileSource[] {
         if (location.includes('*')) {
-            return globSync(location, { absolute: true, withFileTypes: false }).map(f => new FileSource(f));
+            return globSync(location, { absolute: true, withFileTypes: false }).map((f) => new FileSource(f));
         } else {
             return new FileSource(location);
         }
     }
-
 }

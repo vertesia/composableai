@@ -21,14 +21,10 @@ export interface DiscoveredTemplateAssets {
  * Files to exclude from template asset discovery
  * (source files and the template definition itself)
  */
-const EXCLUDED_PATTERNS = [
-    /^TEMPLATE\.md$/,
-    /\.ts$/,
-    /\.js$/,
-];
+const EXCLUDED_PATTERNS = [/^TEMPLATE\.md$/, /\.ts$/, /\.js$/];
 
 function isExcluded(fileName: string): boolean {
-    return EXCLUDED_PATTERNS.some(p => p.test(fileName));
+    return EXCLUDED_PATTERNS.some((p) => p.test(fileName));
 }
 
 /**
@@ -39,17 +35,14 @@ function isExcluded(fileName: string): boolean {
  * @param templatePath - The template path segment (e.g., "examples/report")
  * @returns Discovered assets and metadata
  */
-export function discoverTemplateAssets(
-    templateFilePath: string,
-    templatePath: string,
-): DiscoveredTemplateAssets {
+export function discoverTemplateAssets(templateFilePath: string, templatePath: string): DiscoveredTemplateAssets {
     const templateDir = path.dirname(templateFilePath);
     const fileNames: string[] = [];
     const assetFiles: AssetFile[] = [];
 
     let files: string[];
     try {
-        files = readdirSync(templateDir).filter(file => {
+        files = readdirSync(templateDir).filter((file) => {
             try {
                 return statSync(path.join(templateDir, file)).isFile();
             } catch {

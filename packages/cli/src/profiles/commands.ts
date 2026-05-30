@@ -1,25 +1,25 @@
 import { VertesiaClient } from '@vertesia/client';
 import colors from 'ansi-colors';
-import enquirer from "enquirer";
+import enquirer from 'enquirer';
 import jwt from 'jsonwebtoken';
 import {
     AVAILABLE_REGIONS,
     DEFAULT_REGION,
-    Region,
+    type Region,
     config,
     getConfigUrl,
     getServerUrls,
     shouldRefreshProfileToken,
-} from "./index.js";
+} from './index.js';
 import {
     deleteAuthBundle,
     getAccessTokenExpiry,
     isKeyringAvailable,
     readAuthBundle,
     writeAuthBundle,
-} from "./keyring.js";
+} from './keyring.js';
 import { ensureProfileAccessToken, refreshCurrentProfileAuthentication, refreshProfileAuthentication } from './auth.js';
-import { ConfigResult } from './server/index.js';
+import type { ConfigResult } from './server/index.js';
 const { prompt } = enquirer;
 
 export type OnResultCallback = (result: ConfigResult | undefined) => void | Promise<void>;
@@ -80,20 +80,19 @@ interface AuthDetailsPayload {
     active_token: TokenDetails;
 }
 
-
 export async function listProfiles() {
     const selected = config.current?.name;
     for (const profile of config.profiles) {
-        console.log(profile.name + (selected === profile.name ? " " + colors.symbols.check : ""));
+        console.log(profile.name + (selected === profile.name ? ` ${colors.symbols.check}` : ''));
     }
     if (!config.profiles.length) {
-        console.log("No profiles are defined. Run `vertesia profiles add` to add a new profile.");
+        console.log('No profiles are defined. Run `vertesia profiles add` to add a new profile.');
         console.log();
         const r = await prompt<{ create?: boolean }>({
-            type: "confirm",
+            type: 'confirm',
             name: 'create',
-            message: "Do you want to create a profile now?",
-        })
+            message: 'Do you want to create a profile now?',
+        });
         if (r.create) {
             return createProfile();
         }
@@ -102,7 +101,7 @@ export async function listProfiles() {
 
 export async function useProfile(name?: string) {
     if (!name) {
-        name = await selectProfile("Select the profile to use");
+        name = await selectProfile('Select the profile to use');
     }
     config.use(name).save();
 }
@@ -113,10 +112,16 @@ export function showProfile(name?: string) {
             console.log('No profiles are defined. Run `vertesia profiles create` to add a new profile.');
             return;
         } else {
-            console.log(JSON.stringify({
-                default: config.current?.name,
-                profiles: config.profiles,
-            }, undefined, 4));
+            console.log(
+                JSON.stringify(
+                    {
+                        default: config.current?.name,
+                        profiles: config.profiles,
+                    },
+                    undefined,
+                    4,
+                ),
+            );
         }
     } else {
         const profile = config.getProfile(name);
@@ -137,8 +142,8 @@ export function showAuthDetails(options: AuthDetailsOptions = {}) {
     const activeCredentialSource = envAuth
         ? `environment:${envAuth.name}`
         : profileAccessToken
-            ? `profile:${profile?.name}`
-            : 'none';
+          ? `profile:${profile?.name}`
+          : 'none';
 
     const payload: AuthDetailsPayload = {
         selected_profile: profile?.name,
@@ -160,13 +165,15 @@ export function showAuthDetails(options: AuthDetailsOptions = {}) {
             token_server_url: process.env.VERTESIA_TOKEN_SERVER_URL,
             project: process.env.VERTESIA_PROJECT_ID || process.env.COMPOSABLE_PROMPTS_PROJECT_ID,
         },
-        stored_credentials: profile ? {
-            access_token: readTokenDetails(profileAccessToken, bundle?.accessTokenExpiresAt),
-            refresh_token: readTokenDetails(bundle?.refreshToken, bundle?.refreshTokenExpiresAt),
-            id_token: readTokenDetails(bundle?.idToken),
-            oauth_client_id: bundle?.oauthClientId,
-            oauth_resource: bundle?.oauthResource,
-        } : undefined,
+        stored_credentials: profile
+            ? {
+                  access_token: readTokenDetails(profileAccessToken, bundle?.accessTokenExpiresAt),
+                  refresh_token: readTokenDetails(bundle?.refreshToken, bundle?.refreshTokenExpiresAt),
+                  id_token: readTokenDetails(bundle?.idToken),
+                  oauth_client_id: bundle?.oauthClientId,
+                  oauth_resource: bundle?.oauthResource,
+              }
+            : undefined,
         active_token: readTokenDetails(activeToken, envAuth ? undefined : bundle?.accessTokenExpiresAt),
     };
 
@@ -179,9 +186,7 @@ export function showAuthDetails(options: AuthDetailsOptions = {}) {
 }
 
 export async function showActiveAuthToken() {
-    const envToken = process.env.VERTESIA_TOKEN
-        || process.env.VERTESIA_APIKEY
-        || process.env.COMPOSABLE_PROMPTS_APIKEY;
+    const envToken = process.env.VERTESIA_TOKEN || process.env.VERTESIA_APIKEY || process.env.COMPOSABLE_PROMPTS_APIKEY;
     if (envToken) {
         console.log(envToken);
         return;
@@ -199,7 +204,9 @@ export async function showActiveAuthToken() {
             process.exit(1);
         }
         if (!token) {
-            console.log('No auth token is stored for the current profile. Run `vertesia auth refresh` to authenticate again.');
+            console.log(
+                'No auth token is stored for the current profile. Run `vertesia auth refresh` to authenticate again.',
+            );
             return;
         }
         console.log(token);
@@ -220,12 +227,13 @@ export async function showActiveIdToken() {
 
     const bundle = readAuthBundle(config.current.name);
     if (!bundle?.idToken) {
-        console.log('No ID token is stored for the current profile. Run `vertesia auth refresh` to authenticate again.');
+        console.log(
+            'No ID token is stored for the current profile. Run `vertesia auth refresh` to authenticate again.',
+        );
         return;
     }
     console.log(bundle.idToken);
 }
-
 
 export function deleteProfile(name: string) {
     deleteAuthBundle(name);
@@ -235,7 +243,7 @@ export function deleteProfile(name: string) {
 export function logoutProfile(name?: string) {
     const profileName = name || config.current?.name;
     if (!profileName) {
-        console.log("No profile is selected. Run `vertesia profiles use <name>` to select a profile");
+        console.log('No profile is selected. Run `vertesia profiles use <name>` to select a profile');
         return;
     }
     if (!config.getProfile(profileName)) {
@@ -252,12 +260,12 @@ export function logoutProfile(name?: string) {
 }
 
 export interface CreateProfileOptions {
-    target?: string,
-    region?: string,
-    apikey?: string,
+    target?: string;
+    region?: string;
+    apikey?: string;
     project?: string;
     account?: string;
-    onResult?: OnResultCallback
+    onResult?: OnResultCallback;
 }
 export async function createProfile(name?: string, options: CreateProfileOptions = {}) {
     const format = (value: string) => value.trim();
@@ -266,33 +274,35 @@ export async function createProfile(name?: string, options: CreateProfileOptions
         questions.push({
             type: 'input',
             name: 'name',
-            message: "Profile name",
+            message: 'Profile name',
             format,
             validate: (value: string) => {
                 const v = value.trim();
                 if (!v) {
-                    return "Profile name cannot be empty";
+                    return 'Profile name cannot be empty';
                 }
                 if (config.hasProfile(v)) {
                     return `A profile named "${v}" already exists`;
                 }
                 return true;
-            }
+            },
         });
     }
     if (!options.target) {
         // only show dev environments in dev mode
-        const choices = config.isDevMode ? ['local', 'dev-main', 'dev-preview', 'preview', 'prod', 'custom'] : ['preview', 'prod'];
+        const choices = config.isDevMode
+            ? ['local', 'dev-main', 'dev-preview', 'preview', 'prod', 'custom']
+            : ['preview', 'prod'];
         questions.push({
             type: 'select',
             name: 'target',
-            message: "Target environment",
+            message: 'Target environment',
             choices,
             initial: choices[0],
         });
     }
 
-    let target = options.target === "production" ? "prod" : options.target;
+    let target = options.target === 'production' ? 'prod' : options.target;
     if (questions.length > 0) {
         const response = await prompt<{ name?: string; target?: string }>(questions);
         if (!name) {
@@ -304,7 +314,7 @@ export async function createProfile(name?: string, options: CreateProfileOptions
     }
 
     if (!target || !name) {
-        console.error("Invalid profile name or target");
+        console.error('Invalid profile name or target');
         process.exit(1);
     }
 
@@ -320,11 +330,11 @@ export async function createProfile(name?: string, options: CreateProfileOptions
                     return 'URL must start with http:// or https://';
                 }
                 return true;
-            }
+            },
         });
         const customUrl = customResponse.url?.trim();
         if (!customUrl) {
-            console.error("Invalid target URL");
+            console.error('Invalid target URL');
             process.exit(1);
         }
         target = customUrl;
@@ -351,12 +361,15 @@ export async function createProfile(name?: string, options: CreateProfileOptions
     }
 
     if (options.apikey) {
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         const serverUrls = getServerUrls(target!, region);
         const tokenRefs = await resolveCredentialRefs(options.apikey, serverUrls);
         const account = options.account || tokenRefs.account;
         const project = options.project || tokenRefs.project;
         if (!account || !project) {
-            console.error("Unable to resolve project and account from the supplied credential. Check the target endpoint or provide --project and --account.");
+            console.error(
+                'Unable to resolve project and account from the supplied credential. Check the target endpoint or provide --project and --account.',
+            );
             process.exit(1);
         }
         writeAuthBundle(name, {
@@ -367,22 +380,24 @@ export async function createProfile(name?: string, options: CreateProfileOptions
             account,
             project,
             name,
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             config_url: getConfigUrl(target!, region),
             region,
             ...serverUrls,
         });
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         config.use(name!).save();
     } else {
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         await config.createProfile(name!, target!, region).start(options.onResult);
     }
 
+    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
     return name!;
 }
 
 export async function loginProfile(name?: string, options: CreateProfileOptions & RefreshProfileOptions = {}) {
-    const profile = name
-        ? config.getProfile(name)
-        : config.current;
+    const profile = name ? config.getProfile(name) : config.current;
     if (profile) {
         await refreshProfileAuthentication(profile.name, options.onResult, undefined, {
             projectId: options.project,
@@ -395,8 +410,9 @@ export async function loginProfile(name?: string, options: CreateProfileOptions 
 
 export async function updateProfile(name?: string, onResult?: OnResultCallback, signal?: AbortSignal) {
     if (!name) {
-        name = await selectProfile("Select the profile to update");
+        name = await selectProfile('Select the profile to update');
     }
+    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
     const profile = config.getProfile(name!);
     if (!profile) {
         console.error(`Profile ${name} not found`);
@@ -416,7 +432,7 @@ export async function refreshProfile(
     options: RefreshProfileOptions = {},
 ): Promise<ConfigResult | undefined> {
     if (!name) {
-        name = await selectProfile("Select the profile to refresh");
+        name = await selectProfile('Select the profile to refresh');
     }
     return refreshProfileAuthentication(name, onResult, signal, {
         projectId: options.project,
@@ -433,24 +449,23 @@ export function updateCurrentProfile(
     }).then(() => undefined);
 }
 
-
-async function selectProfile(message = "Select the profile") {
+async function selectProfile(message = 'Select the profile') {
     const question: CliPromptQuestion = {
         type: 'select',
         name: 'name',
         message,
-        choices: config.profiles.map(p => p.name)
+        choices: config.profiles.map((p) => p.name),
     };
     const response = await prompt<{ name?: string }>(question);
     if (!response.name) {
-        console.error("No profile selected");
+        console.error('No profile selected');
         process.exit(1);
     }
     return response.name;
 }
 
 function readRegion(value: string | undefined): Region | undefined {
-    return AVAILABLE_REGIONS.find(region => region === value);
+    return AVAILABLE_REGIONS.find((region) => region === value);
 }
 
 interface CredentialRefs {
@@ -458,7 +473,10 @@ interface CredentialRefs {
     project?: string;
 }
 
-async function resolveCredentialRefs(credential: string, serverUrls: { studio_server_url: string; zeno_server_url: string }): Promise<CredentialRefs> {
+async function resolveCredentialRefs(
+    credential: string,
+    serverUrls: { studio_server_url: string; zeno_server_url: string },
+): Promise<CredentialRefs> {
     const tokenRefs = readTokenRefs(credential);
     if (tokenRefs.account && tokenRefs.project) {
         return tokenRefs;
@@ -469,10 +487,7 @@ async function resolveCredentialRefs(credential: string, serverUrls: { studio_se
         storeUrl: serverUrls.zeno_server_url,
         apikey: credential,
     });
-    const [account, project] = await Promise.all([
-        client.getAccount(),
-        client.getProject(),
-    ]);
+    const [account, project] = await Promise.all([client.getAccount(), client.getProject()]);
 
     return {
         account: tokenRefs.account || account?.id,
@@ -647,12 +662,12 @@ function formatTokenSummary(details: TokenDetails | undefined): string {
 
 export async function tryRefreshToken() {
     if (!config.current) {
-        console.log("No profile is selected. Run `vertesia profiles use <name>` to select a profile");
+        console.log('No profile is selected. Run `vertesia profiles use <name>` to select a profile');
         process.exit(1);
     }
     if (shouldRefreshProfileToken(config.current)) {
         console.log();
-        console.log(colors.bold("Operation Failed:"), colors.red("Authentication token expired!"));
+        console.log(colors.bold('Operation Failed:'), colors.red('Authentication token expired!'));
         console.log();
         await _doRefreshToken(config.current.name);
     }
@@ -662,7 +677,7 @@ async function _doRefreshToken(profileName: string, onResult?: OnResultCallback)
     const abortController = new AbortController();
     const handleSignal = () => {
         abortController.abort();
-        console.log("\nToken refresh interrupted");
+        console.log('\nToken refresh interrupted');
         process.exit(130);
     };
     process.once('SIGINT', handleSignal);
@@ -670,8 +685,8 @@ async function _doRefreshToken(profileName: string, onResult?: OnResultCallback)
     try {
         const r = await prompt<{ refresh?: boolean }>({
             name: 'refresh',
-            type: "confirm",
-            message: "Do you want to refresh the token for the current profile?",
+            type: 'confirm',
+            message: 'Do you want to refresh the token for the current profile?',
             initial: true,
         });
         if (r.refresh) {

@@ -1,4 +1,4 @@
-import { BaseObject } from "./common.js";
+import type { BaseObject } from './common.js';
 
 /**
  * Tool recommendation within a hive memory unit
@@ -18,8 +18,8 @@ export type HiveMemoryScope = 'project' | 'account';
  */
 export interface HiveMemoryItem extends BaseObject {
     // Classification
-    task_category: string;  // "document-analysis", "data-extraction", etc.
-    domain?: string;        // "financial", "legal", etc.
+    task_category: string; // "document-analysis", "data-extraction", etc.
+    domain?: string; // "financial", "legal", etc.
 
     // Summary
     summary: string;
@@ -28,10 +28,10 @@ export interface HiveMemoryItem extends BaseObject {
     tools_involved: string[];
 
     // Quality metrics
-    confidence_score: number;     // 0-1
+    confidence_score: number; // 0-1
     usage_count: number;
-    success_correlation: number;  // correlation with successful runs
-    contribution_count: number;   // number of runs that contributed
+    success_correlation: number; // correlation with successful runs
+    contribution_count: number; // number of runs that contributed
 
     // Scoping
     scope: HiveMemoryScope;
@@ -129,18 +129,18 @@ export interface UpdateHiveMemoryPayload {
  */
 export interface HiveMemorySearchParams {
     // Semantic search
-    query?: string;              // Natural language query
-    embedding?: number[];        // Pre-computed embedding for vector search
+    query?: string; // Natural language query
+    embedding?: number[]; // Pre-computed embedding for vector search
 
     // Filters
     task_category?: string;
     domain?: string;
     tools_involved?: string[];
     scope?: HiveMemoryScope;
-    min_confidence?: number;     // Minimum confidence score (0-1)
+    min_confidence?: number; // Minimum confidence score (0-1)
 
     // Pagination
-    limit?: number;              // Default: 5
+    limit?: number; // Default: 5
     offset?: number;
 }
 

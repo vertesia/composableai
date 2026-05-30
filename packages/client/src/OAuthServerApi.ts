@@ -9,7 +9,10 @@ import type {
 } from '@vertesia/common';
 
 export default class OAuthServerApi extends ClientBase {
-    constructor(private readonly parent: ClientBase, baseUrl?: string) {
+    constructor(
+        private readonly parent: ClientBase,
+        baseUrl?: string,
+    ) {
         super(new URL('/oauth', `${baseUrl || parent.baseUrl}/`).toString(), parent._fetch);
         this.createServerError = parent.createServerError;
         this.errorFactory = parent.errorFactory;
@@ -24,8 +27,20 @@ export default class OAuthServerApi extends ClientBase {
         return this.parent.createRequest(url, init);
     }
 
-    handleResponse(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): Promise<any> {
-        return this.parent.handleResponse(req, res, params);
+    handleResponse<T = unknown>(
+        req: Request,
+        res: Response,
+        params: IRequestParamsWithPayload | undefined,
+    ): T | Promise<T> {
+        return this.parent.handleResponse<T>(req, res, params);
+    }
+
+    handleFetchResponse(req: Request, res: Response): void {
+        this.parent.handleFetchResponse(req, res);
+    }
+
+    getRetryPolicy() {
+        return this.parent.getRetryPolicy();
     }
 
     createAuthorizationRequest(payload: CreateOAuthAuthorizationRequestPayload): Promise<OAuthAuthorizationRequest> {
@@ -44,7 +59,10 @@ export default class OAuthServerApi extends ClientBase {
         return this.get(`/requests/${requestId}`);
     }
 
-    approveRequest(requestId: string, payload: ApproveOAuthAuthorizationRequestPayload): Promise<OAuthAuthorizationDecisionResponse> {
+    approveRequest(
+        requestId: string,
+        payload: ApproveOAuthAuthorizationRequestPayload,
+    ): Promise<OAuthAuthorizationDecisionResponse> {
         return this.post(`/requests/${requestId}/approve`, { payload });
     }
 

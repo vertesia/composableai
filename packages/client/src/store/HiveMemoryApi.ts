@@ -1,12 +1,12 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type {
     CreateHiveMemoryPayload,
     FormattedMemoryForAgent,
     HiveMemory,
     HiveMemorySearchParams,
     HiveMemorySearchResult,
     UpdateHiveMemoryPayload,
-} from "@vertesia/common";
+} from '@vertesia/common';
 
 /**
  * Statistics about hive memories in the project
@@ -42,7 +42,7 @@ export interface RecallResult {
  */
 export class HiveMemoryApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/hive-memory");
+        super(parent, '/api/v1/hive-memory');
     }
 
     /**
@@ -50,12 +50,7 @@ export class HiveMemoryApi extends ApiTopic {
      *
      * @param options - Optional filters and pagination
      */
-    list(options?: {
-        category?: string;
-        scope?: string;
-        limit?: number;
-        offset?: number;
-    }): Promise<HiveMemory[]> {
+    list(options?: { category?: string; scope?: string; limit?: number; offset?: number }): Promise<HiveMemory[]> {
         const params = new URLSearchParams();
         if (options?.category) params.set('category', options.category);
         if (options?.scope) params.set('scope', options.scope);
@@ -79,7 +74,7 @@ export class HiveMemoryApi extends ApiTopic {
      * @param payload - Memory content including category, summary, and learnings
      */
     create(payload: CreateHiveMemoryPayload): Promise<HiveMemory> {
-        return this.post("/", { payload });
+        return this.post('/', { payload });
     }
 
     /**
@@ -109,7 +104,7 @@ export class HiveMemoryApi extends ApiTopic {
      * @param params - Search parameters including query, filters, and pagination
      */
     search(params: HiveMemorySearchParams): Promise<HiveMemorySearchResult> {
-        return this.post("/search", { payload: params });
+        return this.post('/search', { payload: params });
     }
 
     /**
@@ -139,15 +134,15 @@ export class HiveMemoryApi extends ApiTopic {
             tools?: string[];
             category?: string;
             maxResults?: number;
-        }
+        },
     ): Promise<RecallResult> {
-        return this.post("/recall", {
+        return this.post('/recall', {
             payload: {
                 task_description: taskDescription,
                 tools: options?.tools,
                 category: options?.category,
                 max_results: options?.maxResults,
-            }
+            },
         });
     }
 
@@ -177,10 +172,7 @@ export class HiveMemoryApi extends ApiTopic {
      * @param category - Task category (e.g., "document-analysis", "data-extraction")
      * @param options - Pagination options
      */
-    getByCategory(
-        category: string,
-        options?: { limit?: number; offset?: number }
-    ): Promise<HiveMemory[]> {
+    getByCategory(category: string, options?: { limit?: number; offset?: number }): Promise<HiveMemory[]> {
         const params = new URLSearchParams();
         if (options?.limit) params.set('limit', String(options.limit));
         if (options?.offset) params.set('offset', String(options.offset));
@@ -193,7 +185,7 @@ export class HiveMemoryApi extends ApiTopic {
      * Get memory statistics for the project.
      */
     getStats(): Promise<HiveMemoryStats> {
-        return this.get("/stats");
+        return this.get('/stats');
     }
 
     /**
@@ -204,15 +196,12 @@ export class HiveMemoryApi extends ApiTopic {
      *
      * @param options - Decay parameters
      */
-    applyDecay(options?: {
-        daysThreshold?: number;
-        decayRate?: number;
-    }): Promise<{ modified_count: number }> {
-        return this.post("/admin/decay", {
+    applyDecay(options?: { daysThreshold?: number; decayRate?: number }): Promise<{ modified_count: number }> {
+        return this.post('/admin/decay', {
             payload: {
                 days_threshold: options?.daysThreshold,
                 decay_rate: options?.decayRate,
-            }
+            },
         });
     }
 
@@ -224,8 +213,8 @@ export class HiveMemoryApi extends ApiTopic {
      * @param threshold - Confidence threshold (0-1), default 0.2
      */
     archiveLowConfidence(threshold?: number): Promise<{ archived_count: number }> {
-        return this.post("/admin/archive", {
-            payload: { threshold }
+        return this.post('/admin/archive', {
+            payload: { threshold },
         });
     }
 }

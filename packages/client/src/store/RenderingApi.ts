@@ -1,13 +1,13 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import {
     isWorkflowTerminalStatus,
-    RenderMarkdownPollOptions,
-    RenderMarkdownPayload,
-    RenderMarkdownStartResponse,
-    RenderMarkdownStatusResponse,
-    RenderMarkdownResponse,
+    type RenderMarkdownPollOptions,
+    type RenderMarkdownPayload,
+    type RenderMarkdownStartResponse,
+    type RenderMarkdownStatusResponse,
+    type RenderMarkdownResponse,
     WorkflowExecutionStatus,
-} from "@vertesia/common";
+} from '@vertesia/common';
 
 /**
  * API for rendering markdown documents to PDF or DOCX.
@@ -15,7 +15,7 @@ import {
  */
 export class RenderingApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/rendering");
+        super(parent, '/api/v1/rendering');
     }
 
     /**
@@ -41,14 +41,11 @@ export class RenderingApi extends ApiTopic {
      * });
      */
     start(payload: RenderMarkdownPayload): Promise<RenderMarkdownStartResponse> {
-        return this.post("/jobs", { payload });
+        return this.post('/jobs', { payload });
     }
 
-    getStatus(
-        workflowId: string,
-        workflowRunId: string,
-    ): Promise<RenderMarkdownStatusResponse> {
-        return this.get("/jobs/status", {
+    getStatus(workflowId: string, workflowRunId: string): Promise<RenderMarkdownStatusResponse> {
+        return this.get('/jobs/status', {
             query: {
                 workflow_id: workflowId,
                 workflow_run_id: workflowRunId,
@@ -65,7 +62,7 @@ export class RenderingApi extends ApiTopic {
 
         const started = await this.start(payload);
         if (!started.workflow_id || !started.workflow_run_id) {
-            throw new Error("Failed to start rendering workflow");
+            throw new Error('Failed to start rendering workflow');
         }
 
         const startTime = Date.now();
@@ -76,10 +73,10 @@ export class RenderingApi extends ApiTopic {
 
             if (status.status === WorkflowExecutionStatus.COMPLETED) {
                 if (!status.download_url && !status.file_uri) {
-                    throw new Error(status.error || "Rendering completed but no output file was produced");
+                    throw new Error(status.error || 'Rendering completed but no output file was produced');
                 }
                 return {
-                    status: "success",
+                    status: 'success',
                     format: payload.format,
                     download_url: status.download_url,
                     file_uri: status.file_uri,

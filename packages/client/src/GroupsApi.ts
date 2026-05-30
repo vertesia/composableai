@@ -1,5 +1,11 @@
-import { CreateUserGroupPayload, DeleteByIdResult, UpdateUserGroupPayload, UserGroup, UserRef } from "@vertesia/common";
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import type {
+    CreateUserGroupPayload,
+    DeleteByIdResult,
+    UpdateUserGroupPayload,
+    UserGroup,
+    UserRef,
+} from '@vertesia/common';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 
 export interface GroupsQueryOptions {
     search?: string;
@@ -10,9 +16,8 @@ export interface GroupsQueryOptions {
 }
 
 export class GroupsApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
-        super(parent, "/groups");
+        super(parent, '/groups');
     }
 
     /**
@@ -39,7 +44,7 @@ export class GroupsApi extends ApiTopic {
      * @returns The UserGroup object
      */
     retrieve(groupId: string): Promise<UserGroup> {
-        return this.get('/' + groupId);
+        return this.get(`/${groupId}`);
     }
 
     /**
@@ -49,7 +54,7 @@ export class GroupsApi extends ApiTopic {
      * @returns The updated UserGroup object
      */
     update(groupId: string, payload: UpdateUserGroupPayload): Promise<UserGroup> {
-        return this.put('/' + groupId, { payload });
+        return this.put(`/${groupId}`, { payload });
     }
 
     /**
@@ -58,7 +63,7 @@ export class GroupsApi extends ApiTopic {
      * @returns Object with the deleted group ID
      */
     delete(groupId: string): Promise<DeleteByIdResult> {
-        return this.del('/' + groupId);
+        return this.del(`/${groupId}`);
     }
 
     /**
@@ -67,7 +72,7 @@ export class GroupsApi extends ApiTopic {
      * @returns Array of UserRef objects representing group members
      */
     listMembers(groupId: string): Promise<UserRef[]> {
-        return this.get('/' + groupId + '/members');
+        return this.get(`/${groupId}/members`);
     }
 
     /**
@@ -77,7 +82,7 @@ export class GroupsApi extends ApiTopic {
      * @returns The updated UserGroup object
      */
     addMember(groupId: string, userId: string): Promise<UserGroup> {
-        return this.post('/' + groupId + '/members/' + userId);
+        return this.post(`/${groupId}/members/${userId}`);
     }
 
     /**
@@ -87,7 +92,7 @@ export class GroupsApi extends ApiTopic {
      * @returns The updated UserGroup object
      */
     removeMember(groupId: string, userId: string): Promise<UserGroup> {
-        return this.del('/' + groupId + '/members/' + userId);
+        return this.del(`/${groupId}/members/${userId}`);
     }
 
     /**

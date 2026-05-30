@@ -1,7 +1,8 @@
-import { SupportedIntegrations } from "./integrations.js";
-import { ContentObjectTypeRef } from "./store/store.js";
-import { WorkflowRunStatus } from "./store/workflow.js";
-import { AccountRef } from "./user.js";
+import type { JSONSchemaType } from 'ajv';
+import type { SupportedIntegrations } from './integrations.js';
+import type { ContentObjectTypeRef } from './store/store.js';
+import type { WorkflowRunStatus } from './store/workflow.js';
+import type { AccountRef } from './user.js';
 
 export interface ICreateProjectPayload {
     name: string;
@@ -10,18 +11,18 @@ export interface ICreateProjectPayload {
     auto_config?: boolean;
 }
 export enum ProjectRoles {
-    owner = "owner", // all permissions
-    admin = "admin", // all permissions
-    manager = "manager", // all permissions but manage_account, manage_billing
-    developer = "developer", // all permissions but manage_account, manage_billing, manage_roles, delete
-    application = "application", // executor + request_pk
-    consumer = "consumer", // required permissions for users of micro apps
-    executor = "executor", // can only read and execute interactions
-    reader = "reader", // can only read (browse)
-    billing = "billing", // can only manage billings
-    member = "member", // can only access, but no specific permissions
-    app_member = "app_member", // used to mark an user have access to an application. does not provide any permission on its own
-    content_superadmin = "content_superadmin", // can see all content objects and collections
+    owner = 'owner', // all permissions
+    admin = 'admin', // all permissions
+    manager = 'manager', // all permissions but manage_account, manage_billing
+    developer = 'developer', // all permissions but manage_account, manage_billing, manage_roles, delete
+    application = 'application', // executor + request_pk
+    consumer = 'consumer', // required permissions for users of micro apps
+    executor = 'executor', // can only read and execute interactions
+    reader = 'reader', // can only read (browse)
+    billing = 'billing', // can only manage billings
+    member = 'member', // can only access, but no specific permissions
+    app_member = 'app_member', // used to mark an user have access to an application. does not provide any permission on its own
+    content_superadmin = 'content_superadmin', // can see all content objects and collections
 }
 
 export function isRoleIncludedIn(role: string, includingRole: string) {
@@ -39,11 +40,10 @@ export function isRoleIncludedIn(role: string, includingRole: string) {
     }
 }
 
-
 export interface PopulatedProjectRef {
     id: string;
     name: string;
-    account: AccountRef
+    account: AccountRef;
 }
 export interface ProjectRef {
     id: string;
@@ -66,11 +66,10 @@ export interface ListProjectsQuery {
 }
 
 export enum ResourceVisibility {
-    public = "public",
-    account = "account",
-    project = "project"
+    public = 'public',
+    account = 'account',
+    project = 'project',
 }
-
 
 // ==========================================
 // Project Model Defaults Types
@@ -100,28 +99,30 @@ export interface ModalityDefaults {
  * Categories group one or more system interactions for default model assignment.
  */
 export enum SystemInteractionCategory {
-    content_type = "content_type",
-    intake = "intake",
-    analysis = "analysis",
-    non_applicable = "non_applicable"
+    content_type = 'content_type',
+    intake = 'intake',
+    analysis = 'analysis',
+    agent = 'agent',
+    non_applicable = 'non_applicable',
 }
 
 /**
  * Map system interaction endpoints to categories.
  */
 export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCategory> = {
-    "ExtractInformation": SystemInteractionCategory.intake,
-    "SelectDocumentType": SystemInteractionCategory.intake,
-    "GenerateMetadataModel": SystemInteractionCategory.content_type,
-    "ChunkDocument": SystemInteractionCategory.intake,
-    "IdentifyTextSections": SystemInteractionCategory.intake,
-    "AnalyzeDocument": SystemInteractionCategory.analysis,
-    "ReduceTextSections": SystemInteractionCategory.analysis,
-    "GenericAgent": SystemInteractionCategory.non_applicable,
-    "AdhocTaskAgent": SystemInteractionCategory.non_applicable,
-    "Mediator": SystemInteractionCategory.non_applicable,
-    "AnalyzeConversation": SystemInteractionCategory.analysis,
-    "GetAgentConversationTopic": SystemInteractionCategory.analysis,
+    ExtractInformation: SystemInteractionCategory.intake,
+    SelectDocumentType: SystemInteractionCategory.intake,
+    GenerateMetadataModel: SystemInteractionCategory.content_type,
+    ChunkDocument: SystemInteractionCategory.intake,
+    IdentifyTextSections: SystemInteractionCategory.intake,
+    AnalyzeDocument: SystemInteractionCategory.analysis,
+    ReduceTextSections: SystemInteractionCategory.analysis,
+    GenericAgent: SystemInteractionCategory.non_applicable,
+    AdhocTaskAgent: SystemInteractionCategory.non_applicable,
+    Mediator: SystemInteractionCategory.non_applicable,
+    AnalyzeConversation: SystemInteractionCategory.analysis,
+    GetAgentConversationTopic: SystemInteractionCategory.analysis,
+    StudioAssistant: SystemInteractionCategory.agent,
 };
 
 /**
@@ -131,7 +132,7 @@ export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCate
  * @param endpoint - The interaction endpoint name
  */
 export function getSystemInteractionCategory(endpoint: string): SystemInteractionCategory | undefined {
-    if (endpoint.startsWith("sys:")) {
+    if (endpoint.startsWith('sys:')) {
         // Strip sys: prefix
         endpoint = endpoint.substring(4);
     }
@@ -158,12 +159,114 @@ export interface ProjectModelDefaults {
     system?: SystemDefaults;
 }
 
+export type BrowserUseRiskPolicy = 'read_only' | 'low_write' | 'requires_approval' | 'unrestricted';
+
+export type BrowserUseScreenshotCapture = 'off' | 'on_action' | 'each_turn';
+
+export interface BrowserUseProjectConfiguration {
+    /**
+     * Enable the browser_use workflow-level tool for this project.
+     * Defaults to true when omitted.
+     */
+    enabled?: boolean;
+    /**
+     * Risk policy used when the tool call does not specify one.
+     * Defaults to low_write.
+     */
+    default_policy?: BrowserUseRiskPolicy;
+    /**
+     * Maximum policy a tool call may request. Requested policies above this
+     * are clamped down to the project maximum. Defaults to unrestricted.
+     */
+    max_policy?: BrowserUseRiskPolicy;
+    /**
+     * Optional project-wide host allowlist. When present, browser_use calls
+     * can only request hosts contained by this list.
+     */
+    allowed_hosts?: string[];
+    /**
+     * Allow saved Playwright scripts to hydrate artifacts/documents as files
+     * inside the browser sandbox for upload flows. Defaults to true.
+     */
+    allow_file_uploads?: boolean;
+    /**
+     * Allow the browser_playwright_script tool in browser workstreams.
+     * Defaults to true.
+     */
+    allow_playwright_scripts?: boolean;
+    /**
+     * Persist browser screenshots for UI progress. Defaults to on_action.
+     */
+    capture_screenshots?: BrowserUseScreenshotCapture;
+    /**
+     * Prefer unannotated screenshots in the browser-use UI widget when both
+     * raw and annotated captures are available. Defaults to true.
+     */
+    prefer_raw_screenshots?: boolean;
+}
+
+export const BrowserUseProjectConfigurationSchema: JSONSchemaType<BrowserUseProjectConfiguration> = {
+    type: 'object',
+    properties: {
+        enabled: {
+            type: 'boolean',
+            nullable: true,
+            description: 'Enable the browser_use workflow-level tool for this project. Defaults to true.',
+        },
+        default_policy: {
+            type: 'string',
+            nullable: true,
+            enum: ['read_only', 'low_write', 'requires_approval', 'unrestricted'],
+            description: 'Risk policy used when a browser_use call does not specify one. Defaults to low_write.',
+        },
+        max_policy: {
+            type: 'string',
+            nullable: true,
+            enum: ['read_only', 'low_write', 'requires_approval', 'unrestricted'],
+            description: 'Maximum risk policy a browser_use call may request. Defaults to unrestricted.',
+        },
+        allowed_hosts: {
+            type: 'array',
+            nullable: true,
+            items: { type: 'string' },
+            description:
+                'Optional project-wide host allowlist. When present, browser_use calls can only request hosts contained by this list.',
+        },
+        allow_file_uploads: {
+            type: 'boolean',
+            nullable: true,
+            description:
+                'Allow replay scripts to hydrate artifacts/documents as files in the browser sandbox. Defaults to true.',
+        },
+        allow_playwright_scripts: {
+            type: 'boolean',
+            nullable: true,
+            description: 'Allow browser_playwright_script in browser workstreams. Defaults to true.',
+        },
+        capture_screenshots: {
+            type: 'string',
+            nullable: true,
+            enum: ['off', 'on_action', 'each_turn'],
+            description: 'Persist browser screenshots for UI progress. Defaults to on_action.',
+        },
+        prefer_raw_screenshots: {
+            type: 'boolean',
+            nullable: true,
+            description: 'Prefer unannotated screenshots in the browser-use UI widget. Defaults to true.',
+        },
+    },
+    required: [],
+    additionalProperties: false,
+};
+
 // ==========================================
 // Project Configuration
 // ==========================================
 
-export interface ProjectConfiguration {
+export type ProjectSearchTier = 'standard' | 'performance';
+export type ElasticsearchBackend = 'serverless' | 'hosted';
 
+export interface ProjectConfiguration {
     human_context?: string;
 
     defaults?: ProjectModelDefaults;
@@ -175,8 +278,8 @@ export interface ProjectConfiguration {
     embeddings: {
         text?: ProjectConfigurationEmbedding;
         image?: ProjectConfigurationEmbedding;
-        properties?: ProjectConfigurationEmbedding
-    }
+        properties?: ProjectConfigurationEmbedding;
+    };
 
     datacenter?: string;
     storage_bucket?: string;
@@ -199,6 +302,20 @@ export interface ProjectConfiguration {
          * Defaults to true - indexing is always on when ES infrastructure is available.
          */
         enabled?: boolean;
+
+        /**
+         * Search tier for this project.
+         * standard uses the regional hosted Elasticsearch deployment.
+         * performance uses the regional serverless Elasticsearch project.
+         * Defaults to standard when omitted.
+         */
+        search_tier?: ProjectSearchTier;
+
+        /**
+         * Elasticsearch backend override for this project.
+         * Prefer search_tier for project configuration unless an explicit backend override is needed.
+         */
+        backend?: ElasticsearchBackend;
     };
 
     /**
@@ -211,6 +328,17 @@ export interface ProjectConfiguration {
      */
     main_language?: string;
 
+    /**
+     * Project defaults and caps for browser_use agent workstreams.
+     */
+    browser_use?: BrowserUseProjectConfiguration;
+
+    /**
+     * Object ID of a content object containing a custom LaTeX template (.latex file)
+     * to use as the branded PDF template. When set, "Export as Branded PDF" uses this
+     * template instead of the built-in Vertesia default template.
+     */
+    pdf_template_object_id?: string;
 }
 
 // export interface ProjectConfigurationEmbeddings {
@@ -221,20 +349,20 @@ export interface ProjectConfiguration {
 // }
 
 export enum SupportedEmbeddingTypes {
-    text = "text",
-    image = "image",
-    properties = "properties"
+    text = 'text',
+    image = 'image',
+    properties = 'properties',
 }
 
 export enum FullTextType {
-    full_text = "full_text"
+    full_text = 'full_text',
 }
 
 export type SearchTypes = SupportedEmbeddingTypes | FullTextType;
 
 export const SearchTypes = {
     ...SupportedEmbeddingTypes,
-    ...FullTextType
+    ...FullTextType,
 } as const;
 
 export interface ProjectConfigurationEmbedding {
@@ -251,9 +379,6 @@ export interface ProjectConfigurationEmbeddingEnablePayload {
     model?: string;
 }
 
-/** @deprecated Use ProjectConfigurationEmbedding for a single embedding configuration. */
-export type ProjectConfigurationEmbeddings = ProjectConfigurationEmbedding;
-
 export interface Project {
     id: string;
     name: string;
@@ -261,10 +386,10 @@ export interface Project {
     description?: string;
     account: string;
     configuration: ProjectConfiguration;
-    integrations?: Map<string, any>;
+    integrations?: Map<string, unknown>;
     plugins: string[];
-    created_by: string,
-    updated_by: string,
+    created_by: string;
+    updated_by: string;
     created_at: Date;
     updated_at: Date;
 }
@@ -274,15 +399,13 @@ export interface ProjectCreatePayload {
     description?: string;
 }
 
-export interface ProjectUpdatePayload extends Partial<Project> { }
+export interface ProjectUpdatePayload extends Partial<Project> {}
 
 export interface ProjectPluginsUpdatePayload {
     plugins: string[];
 }
 
-
-export const ProjectRefPopulate = "id name account";
-
+export const ProjectRefPopulate = 'id name account';
 
 export interface EmbeddingsStatusResponse {
     status: string;
@@ -291,10 +414,10 @@ export interface EmbeddingsStatusResponse {
     embeddingsModels?: string[];
     objectsWithEmbeddings?: number;
     vectorIndex: {
-        status: "READY" | "PENDING" | "DELETING" | "ABSENT",
-        name?: string,
-        type?: string
-    }
+        status: 'READY' | 'PENDING' | 'DELETING' | 'ABSENT';
+        name?: string;
+        type?: string;
+    };
 }
 
 /**
@@ -307,6 +430,10 @@ export interface IndexingStatusResponse {
     indexing_enabled: boolean;
     /** @deprecated Now derived from indexing_enabled - queries automatically route to index when indexing is enabled */
     query_enabled: boolean;
+    /** Resolved Elasticsearch backend serving this project */
+    backend: ElasticsearchBackend;
+    /** Resolved search tier for this project */
+    search_tier: ProjectSearchTier;
     /** Index status */
     index: {
         /** Whether the index exists */
@@ -344,6 +471,26 @@ export interface IndexingStatusResponse {
         written: number;
         /** Documents that failed to index */
         errors: number;
+        /** Embedding vectors written to target index */
+        embeddings_written?: number;
+        /** Embedding vectors skipped because they were invalid or dimension-mismatched */
+        skipped_embeddings?: number;
+        /** Text embedding vectors written to target index */
+        embeddings_text_written?: number;
+        /** Image embedding vectors written to target index */
+        embeddings_image_written?: number;
+        /** Properties embedding vectors written to target index */
+        embeddings_properties_written?: number;
+        /** Text embedding vectors skipped because they were invalid or dimension-mismatched */
+        embeddings_text_skipped?: number;
+        /** Image embedding vectors skipped because they were invalid or dimension-mismatched */
+        embeddings_image_skipped?: number;
+        /** Properties embedding vectors skipped because they were invalid or dimension-mismatched */
+        embeddings_properties_skipped?: number;
+        /** Oversized property string values dropped during transform (size-based pruning) */
+        properties_values_trimmed?: number;
+        /** Total bytes dropped from oversized property values */
+        properties_bytes_dropped?: number;
         /** Documents processed per second */
         docs_per_second: number;
         /** Elapsed time in seconds */
@@ -365,6 +512,33 @@ export interface StartProjectReindexPayload {
     concurrency?: number;
     bulk_size_bytes?: number;
     bulk_concurrency?: number;
+}
+
+export interface ReindexAgentRunsPayload {
+    /**
+     * Drop any existing agent-runs index/alias family and recreate the stable concrete index before indexing.
+     * Defaults to true.
+     */
+    recreate_index?: boolean;
+    /** Number of MongoDB records to scan per batch. Defaults to 500. */
+    batch_size?: number;
+    /** Optional cap for partial/manual repair runs. Omit for all agent runs in the project. */
+    limit?: number;
+}
+
+export interface ReindexAgentRunsResponse {
+    status: string;
+    backend: ElasticsearchBackend;
+    index_name: string;
+    recreated: boolean;
+    total: number;
+    scanned: number;
+    indexed: number;
+    failed: number;
+    errors?: Array<{
+        id: string;
+        message: string;
+    }>;
 }
 
 // ============================================================================
@@ -412,6 +586,7 @@ export interface CreateReindexTargetResult {
     index_name: string;
     alias_name: string;
     version: number;
+    backend?: ElasticsearchBackend;
     dimensions?: {
         text?: number;
         image?: number;
@@ -470,6 +645,8 @@ export interface TriggerReindexResult {
 export interface ComputeShardsRequest {
     tenant_id: string;
     shard_size?: number;
+    updated_since?: string;
+    backend?: ElasticsearchBackend;
 }
 
 export interface ComputeShardsResult {
@@ -482,6 +659,7 @@ export interface IndexShardParams {
     target_index: string;
     shard_min: string;
     shard_max?: string;
+    backend?: ElasticsearchBackend;
     embedding_dimensions?: {
         text?: number;
         image?: number;
@@ -508,12 +686,28 @@ export interface IndexShardResult {
     written: number;
     skipped: number;
     errors: number;
+    embeddings_written?: number;
+    skipped_embeddings?: number;
+    embeddings_text_written?: number;
+    embeddings_image_written?: number;
+    embeddings_properties_written?: number;
+    embeddings_text_skipped?: number;
+    embeddings_image_skipped?: number;
+    embeddings_properties_skipped?: number;
+    properties_values_trimmed?: number;
+    properties_bytes_dropped?: number;
     read_docs_s: string;
     write_docs_s: string;
     read_mb: string;
     write_mb: string;
+    mongo_read_mb?: string;
+    gcs_read_mb?: string;
+    es_bulk_mb?: string;
     read_mb_s: string;
     write_mb_s: string;
+    mongo_read_mb_s?: string;
+    gcs_read_mb_s?: string;
+    es_bulk_mb_s?: string;
     duration_sec: number;
     failed_projects?: Array<{ tenant: string; error: string }>;
 }
@@ -521,6 +715,7 @@ export interface IndexShardResult {
 export interface SwapAliasRequest {
     tenant_id: string;
     target_index: string;
+    backend?: ElasticsearchBackend;
     /** ES alias name. If not provided, the Go service derives it from the tenant ID. */
     alias?: string;
 }
@@ -534,6 +729,8 @@ export interface SwapAliasResult {
 
 export interface ReindexViaBulkRequest {
     tenant_id: string;
+    project_id?: string;
+    backend?: ElasticsearchBackend;
     dry_run?: boolean;
 }
 
@@ -545,10 +742,28 @@ export interface ReindexViaBulkResult {
     scanned: number;
     written: number;
     errors: number;
+    embeddings_written?: number;
+    skipped_embeddings?: number;
+    embeddings_text_written?: number;
+    embeddings_image_written?: number;
+    embeddings_properties_written?: number;
+    embeddings_text_skipped?: number;
+    embeddings_image_skipped?: number;
+    embeddings_properties_skipped?: number;
+    properties_values_trimmed?: number;
+    properties_bytes_dropped?: number;
     read_docs_s: string;
     write_docs_s: string;
     read_mb: string;
     write_mb: string;
+    mongo_read_mb?: string;
+    gcs_read_mb?: string;
+    es_bulk_mb?: string;
+    read_mb_s?: string;
+    write_mb_s?: string;
+    mongo_read_mb_s?: string;
+    gcs_read_mb_s?: string;
+    es_bulk_mb_s?: string;
     duration_sec: number;
 }
 
@@ -557,6 +772,7 @@ export interface ReindexViaBulkResult {
  */
 export interface ElasticsearchIndexStats {
     enabled: boolean;
+    backend?: ElasticsearchBackend;
     exists?: boolean;
     document_count?: number;
     size_in_bytes?: number;

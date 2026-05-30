@@ -1,6 +1,6 @@
 import type { Element } from 'hast';
 import React from 'react';
-import Markdown, { defaultUrlTransform } from 'react-markdown';
+import Markdown, { defaultUrlTransform, type Components } from 'react-markdown';
 import rehypeKatex from 'rehype-katex';
 import { defListHastHandlers, remarkDefinitionList } from 'remark-definition-list';
 import remarkDirective from 'remark-directive';
@@ -10,36 +10,30 @@ import remarkMath from 'remark-math';
 import remarkSupersub from 'remark-supersub';
 import { SKIP, visit } from 'unist-util-visit';
 import { CodeBlockHandlerProvider } from './CodeBlockContext';
-import {
-    createDefaultCodeBlockHandlers,
-    ExpandCodeBlockHandler,
-    isExpandLanguage,
-} from './codeBlockHandlers';
+import { createDefaultCodeBlockHandlers, ExpandCodeBlockHandler, isExpandLanguage } from './codeBlockHandlers';
 import { useCodeBlockRendererRegistry } from './CodeBlockRendering';
 import { preprocessMathDelimiters } from './preprocessMathDelimiters';
 import { MarkdownFigure } from './MarkdownFigure';
-import { MarkdownImage } from './MarkdownImage';
-import { MarkdownLink } from './MarkdownLink';
+import { MarkdownImage, type MarkdownImageProps } from './MarkdownImage';
+import { MarkdownLink, type MarkdownLinkProps } from './MarkdownLink';
 import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
 import { normalizeDirectives } from './normalizeDirectives';
 import { remarkDirectiveHandler } from './remarkDirectiveHandler';
 
+type MarkdownTree = Parameters<typeof visit>[0];
+type MarkdownNode = { value?: unknown };
+type MarkdownParent = { children?: unknown[] };
+type RemarkPluginList = NonNullable<React.ComponentProps<typeof Markdown>['remarkPlugins']>;
+
 // Custom URL schemes that we handle in our components
-const ALLOWED_CUSTOM_SCHEMES = [
-    'artifact:',
-    'image:',
-    'store:',
-    'document:',
-    'document://',
-    'collection:',
-];
+const ALLOWED_CUSTOM_SCHEMES = ['artifact:', 'image:', 'store:', 'document:', 'document://', 'collection:'];
 
 /**
  * Custom URL transform that allows our custom schemes while using
  * the default transform for standard URLs (which sanitizes unsafe schemes).
  */
 function customUrlTransform(url: string): string {
-    if (ALLOWED_CUSTOM_SCHEMES.some(scheme => url.startsWith(scheme))) {
+    if (ALLOWED_CUSTOM_SCHEMES.some((scheme) => url.startsWith(scheme))) {
         return url;
     }
     return defaultUrlTransform(url);
@@ -49,11 +43,13 @@ function customUrlTransform(url: string): string {
  * Remark plugin to remove HTML comments from markdown
  */
 function remarkRemoveComments() {
-    return (tree: any) => {
-        visit(tree, 'html', (node: any, index: number | undefined, parent: any) => {
-            if (node.value && /<!--[\s\S]*?-->/.test(node.value)) {
-                if (parent && typeof index === 'number' && parent.children) {
-                    parent.children.splice(index, 1);
+    return (tree: MarkdownTree) => {
+        visit(tree, 'html', (node, index: number | undefined, parent) => {
+            const literal = node as MarkdownNode;
+            const parentNode = parent as MarkdownParent | undefined;
+            if (typeof literal.value === 'string' && /<!--[\s\S]*?-->/.test(literal.value)) {
+                if (parentNode?.children && typeof index === 'number') {
+                    parentNode.children.splice(index, 1);
                     return [SKIP, index];
                 }
             }
@@ -63,8 +59,8 @@ function remarkRemoveComments() {
 
 export interface MarkdownRendererProps {
     children: string;
-    components?: any;
-    remarkPlugins?: any[];
+    components?: Components;
+    remarkPlugins?: RemarkPluginList;
     removeComments?: boolean;
     /**
      * Optional workflow run id used to resolve shorthand artifact paths (e.g. artifact:out/result.csv)
@@ -106,14 +102,14 @@ export function MarkdownRenderer({
     const codeBlockRegistry = useCodeBlockRendererRegistry();
     const normalizedMarkdown = React.useMemo(
         () => normalizeDirectives(normalizeCustomSchemeLinks(preprocessMathDelimiters(children))),
-        [children]
+        [children],
     );
 
     // Remark plugins (markdown parsing)
     // Order matters: GFM first, then directive (must precede handler),
     // then definition-list/supersub, then math, then user plugins.
     const remarkPluginsArray = React.useMemo(() => {
-        const result: any[] = [
+        const result: RemarkPluginList = [
             remarkGfm,
             remarkDirective,
             remarkDirectiveHandler,
@@ -133,11 +129,14 @@ export function MarkdownRenderer({
     const rehypePluginsArray = React.useMemo(() => [rehypeKatex], []);
 
     // Remark-rehype bridge options (custom AST handlers for definition lists)
-    const remarkRehypeOptions = React.useMemo(() => ({
-        handlers: {
-            ...defListHastHandlers,
-        },
-    }), []);
+    const remarkRehypeOptions = React.useMemo(
+        () => ({
+            handlers: {
+                ...defListHastHandlers,
+            },
+        }),
+        [],
+    );
 
     const componentsWithOverrides = React.useMemo(() => {
         const baseComponents = components || {};
@@ -211,19 +210,19 @@ export function MarkdownRenderer({
             );
         };
 
-        const LinkComponent = (props: {
-            node?: Element;
-            href?: string;
-            children?: React.ReactNode;
-        }) => {
-            const { node, href, children: linkChildren, ...rest } = props as any;
+        const LinkComponent = (props: { node?: Element; href?: string; children?: React.ReactNode }) => {
+            const { node, href, children: linkChildren, ...rest } = props;
             return (
                 <MarkdownLink
                     node={node}
                     href={href}
                     className={linkClassName}
                     artifactRunId={artifactRunId}
-                    ExistingLink={ExistingLink}
+                    ExistingLink={
+                        typeof ExistingLink === 'function'
+                            ? (ExistingLink as React.ComponentType<MarkdownLinkProps>)
+                            : undefined
+                    }
                     {...rest}
                 >
                     {linkChildren}
@@ -231,8 +230,8 @@ export function MarkdownRenderer({
             );
         };
 
-        const ImageComponent = (props: { node?: any; src?: string; alt?: string; title?: string }) => {
-            const { node, src, alt, title, ...rest } = props as any;
+        const ImageComponent = (props: { node?: unknown; src?: string; alt?: string; title?: string }) => {
+            const { node, src, alt, title, ...rest } = props;
 
             // If image has a title, render as figure with caption
             if (title) {
@@ -254,7 +253,11 @@ export function MarkdownRenderer({
                     alt={alt}
                     className={imageClassName}
                     artifactRunId={artifactRunId}
-                    ExistingImg={ExistingImg}
+                    ExistingImg={
+                        typeof ExistingImg === 'function'
+                            ? (ExistingImg as React.ComponentType<MarkdownImageProps>)
+                            : undefined
+                    }
                     {...rest}
                 />
             );

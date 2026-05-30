@@ -3,21 +3,17 @@ import { vertesiaPluginBuilder } from '@vertesia/plugin-builder';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type ConfigEnv, type UserConfig } from 'vite';
-import serveStatic from "vite-plugin-serve-static";
+import serveStatic from 'vite-plugin-serve-static';
 import { apiServerPlugin } from './vite-api-server.js';
-
 
 /**
  * List of dependencies that must be bundled in the plugin bundle
  */
-const INTERNALS: (string | RegExp)[] = [
-];
+const INTERNALS: (string | RegExp)[] = [];
 
 function isExternal(id: string) {
     // If it matches INTERNALS → bundle it
-    if (INTERNALS.some(pattern =>
-        pattern instanceof RegExp ? pattern.test(id) : id === pattern
-    )) {
+    if (INTERNALS.some((pattern) => (pattern instanceof RegExp ? pattern.test(id) : id === pattern))) {
         return false;
     }
 
@@ -25,11 +21,10 @@ function isExternal(id: string) {
     return !id.startsWith('.') && !id.startsWith('/') && !id.startsWith('@/') && !id.startsWith('virtual:');
 }
 
-
 /**
  * if you want to debug vertesia ui sources define a relative path to the vertesia ui package root
  */
-const VERTESIA_UI_PATH = ""
+const VERTESIA_UI_PATH = '';
 
 /**
  * Set to true to extract the css utility layer and inject it in the plugin js file.
@@ -49,7 +44,7 @@ export default defineConfig((env) => {
     } else {
         return defineAppConfig(env);
     }
-})
+});
 
 /**
  * Vite configuration to build a library (plugin).
@@ -72,15 +67,15 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
             lib: {
                 entry: './src/ui/plugin.tsx', // Main entry point of your library
                 formats: ['es'], // Build ESM versions
-                fileName: "plugin",
+                fileName: 'plugin',
             },
             minify: true,
             sourcemap: true,
             rollupOptions: {
                 external: isExternal,
-            }
-        }
-    }
+            },
+        },
+    };
 }
 
 /**
@@ -103,8 +98,8 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
             // serve lib/plugin.js content in dev mode
             serveStatic([
                 {
-                    pattern: new RegExp("/plugin.(js|css)"),
-                    resolve: (groups: string[]) => `./dist/lib/plugin.${groups[1]}`
+                    pattern: /\/plugin.(js|css)/,
+                    resolve: (groups: string[]) => `./dist/lib/plugin.${groups[1]}`,
                 },
             ]),
             // Mount the Hono tool server API as middleware (includes import transformers)
@@ -119,20 +114,22 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
                 '/__/auth': {
                     target: 'https://dengenlabs.firebaseapp.com',
                     changeOrigin: true,
-                }
-            }
+                },
+            },
         },
         resolve: {
             // For debug support in vertesia ui sources - link to the vertesia/ui location
-            alias: VERTESIA_UI_PATH ? {
-                "@vertesia/ui": resolve(`${VERTESIA_UI_PATH}/src`)
-            } : undefined,
+            alias: VERTESIA_UI_PATH
+                ? {
+                      '@vertesia/ui': resolve(`${VERTESIA_UI_PATH}/src`),
+                  }
+                : undefined,
             // Deduplicate React to prevent multiple instances
-            dedupe: ['react', 'react-dom']
-        }
-    }
+            dedupe: ['react', 'react-dom'],
+        },
+    };
 }
 
 function resolve(path: string) {
-    return new URL(path, import.meta.url).pathname
+    return new URL(path, import.meta.url).pathname;
 }

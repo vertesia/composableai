@@ -1,21 +1,32 @@
-import { Check, ChevronsUpDown, X } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { Check, ChevronsUpDown, X } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 
-import { CollectionItem } from "@vertesia/common";
+import type { CollectionItem } from '@vertesia/common';
 import {
-    Button, cn, ErrorBox, useDebounce, useFetch,
-    Popover, PopoverContent, PopoverTrigger,
-    Command, CommandEmpty, CommandGroup, CommandItem, CommandInput
-} from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import { useUITranslation } from '../../../i18n/index.js';
+    Button,
+    cn,
+    ErrorBox,
+    errorMessage,
+    useDebounce,
+    useFetch,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandItem,
+    CommandInput,
+} from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 /**
  * A component to select a collection from a list of collections.
  * It fetches the collections from the store and displays them in a dropdown.
  * @param props - The properties for the component.
  * @returns A dropdown to select a collection.
-**/
+ **/
 interface SelectCollectionProps {
     value?: string | string[];
     onChange: (collectionId: string | string[] | undefined, collection?: CollectionItem | CollectionItem[]) => void;
@@ -27,7 +38,16 @@ interface SelectCollectionProps {
     multiple?: boolean;
 }
 
-export function SelectCollection({ onChange, value, disabled = false, placeholder, searchPlaceholder, filterOut, allowDynamic = true, multiple = false }: SelectCollectionProps) {
+export function SelectCollection({
+    onChange,
+    value,
+    disabled = false,
+    placeholder,
+    searchPlaceholder,
+    filterOut,
+    allowDynamic = true,
+    multiple = false,
+}: SelectCollectionProps) {
     const { client } = useUserSession();
     const { t } = useUITranslation();
     const resolvedPlaceholder = placeholder ?? t('store.selectACollection');
@@ -41,33 +61,36 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
     // Memoize the search function to prevent unnecessary re-renders
-    const searchCollections = useCallback(async (query: string) => {
-        setIsSearching(true);
-        const trimmedQuery = query.trim();
+    const searchCollections = useCallback(
+        async (query: string) => {
+            setIsSearching(true);
+            const trimmedQuery = query.trim();
 
-        const collections = await client.store.collections.search({
-            dynamic: allowDynamic ? undefined : false,
-            name: useServerSearch ? (trimmedQuery || undefined) : undefined
-        });
+            const collections = await client.store.collections.search({
+                dynamic: allowDynamic ? undefined : false,
+                name: useServerSearch ? trimmedQuery || undefined : undefined,
+            });
 
-        setIsSearching(false);
+            setIsSearching(false);
 
-        // Check if we hit the maximum limit (1000 collections) - if so, enable server-side search
-        if (!useServerSearch && collections.length >= 1000) {
-            setUseServerSearch(true);
-        }
+            // Check if we hit the maximum limit (1000 collections) - if so, enable server-side search
+            if (!useServerSearch && collections.length >= 1000) {
+                setUseServerSearch(true);
+            }
 
-        // Filter out collections if filterOut is provided
-        if (filterOut && filterOut.length > 0) {
-            return collections.filter(col => !filterOut.includes(col.id));
-        }
-        return collections;
-    }, [client, allowDynamic, filterOut, useServerSearch]);
+            // Filter out collections if filterOut is provided
+            if (filterOut && filterOut.length > 0) {
+                return collections.filter((col) => !filterOut.includes(col.id));
+            }
+            return collections;
+        },
+        [client, allowDynamic, filterOut, useServerSearch],
+    );
 
     // Fetch collections based on search mode
     const { data: collections, error } = useFetch(
         () => searchCollections(useServerSearch ? debouncedSearchQuery : ''),
-        [useServerSearch ? debouncedSearchQuery : '', searchCollections]
+        [useServerSearch ? debouncedSearchQuery : '', searchCollections],
     );
 
     // Memoize the selected collection(s)
@@ -83,26 +106,29 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
     }, [collections, value, multiple]);
 
     // Handle collection selection
-    const handleSelect = useCallback((collection: CollectionItem) => {
-        if (multiple) {
-            const currentValues = Array.isArray(value) ? value : [];
-            const isSelected = currentValues.includes(collection.id);
+    const handleSelect = useCallback(
+        (collection: CollectionItem) => {
+            if (multiple) {
+                const currentValues = Array.isArray(value) ? value : [];
+                const isSelected = currentValues.includes(collection.id);
 
-            if (isSelected) {
-                // Remove from selection
-                const newValues = currentValues.filter(id => id !== collection.id);
-                const newCollections = collections?.filter(c => newValues.includes(c.id)) || [];
-                onChange(newValues, newCollections);
+                if (isSelected) {
+                    // Remove from selection
+                    const newValues = currentValues.filter((id) => id !== collection.id);
+                    const newCollections = collections?.filter((c) => newValues.includes(c.id)) || [];
+                    onChange(newValues, newCollections);
+                } else {
+                    // Add to selection
+                    const newValues = [...currentValues, collection.id];
+                    const newCollections = collections?.filter((c) => newValues.includes(c.id)) || [];
+                    onChange(newValues, newCollections);
+                }
             } else {
-                // Add to selection
-                const newValues = [...currentValues, collection.id];
-                const newCollections = collections?.filter(c => newValues.includes(c.id)) || [];
-                onChange(newValues, newCollections);
+                onChange(collection.id, collection);
             }
-        } else {
-            onChange(collection.id, collection);
-        }
-    }, [onChange, value, collections, multiple]);
+        },
+        [onChange, value, collections, multiple],
+    );
 
     // Handle clear selection
     const handleClear = useCallback(() => {
@@ -127,7 +153,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
         if (!hasSearchQuery) return collections;
 
         const queryLower = searchQuery.toLowerCase();
-        return collections.filter(col => col.name.toLowerCase().includes(queryLower));
+        return collections.filter((col) => col.name.toLowerCase().includes(queryLower));
     }, [collections, useServerSearch, hasSearchQuery, searchQuery]);
 
     const showClearOption = multiple
@@ -137,29 +163,25 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
     const renderTrailingIcon = () => {
         if (showClearOption) {
             return (
-                <span
-                    role="button"
+                <Button
+                    variant="unstyled"
                     aria-label="Clear selection"
-                    className="ml-2 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive cursor-pointer"
+                    className="ms-2 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive cursor-pointer"
                     onClick={(e) => {
                         e.stopPropagation();
                         handleClear();
                     }}
                 >
                     <X className="h-4 w-4" />
-                </span>
+                </Button>
             );
         }
-        return <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />;
+        return <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />;
     };
 
     // Show error state
     if (error) {
-        return (
-            <ErrorBox title={t('store.collectionFetchFailed')}>
-                {error.message}
-            </ErrorBox>
-        );
+        return <ErrorBox title={t('store.collectionFetchFailed')}>{errorMessage(error)}</ErrorBox>;
     }
 
     // Get display text for the button
@@ -182,12 +204,10 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                     variant="outline"
                     role="combobox"
                     aria-haspopup="listbox"
-                    className={cn("w-full justify-between min-w-0")}
+                    className={cn('w-full justify-between min-w-0')}
                     disabled={disabled}
                 >
-                    <span className="truncate flex-1 text-left min-w-0">
-                        {getDisplayText()}
-                    </span>
+                    <span className="truncate flex-1 text-start min-w-0">{getDisplayText()}</span>
                     {renderTrailingIcon()}
                 </Button>
             </PopoverTrigger>
@@ -200,65 +220,50 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                             onValueChange={handleSearchChange}
                             className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                         />
-                        {
-                            isSearching && (
-                                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            )
-                        }
+                        {isSearching && (
+                            <div className="me-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        )}
                     </div>
                     <CommandEmpty>
-                        {
-                            isSearching
-                                ? t('store.searching')
-                                : hasSearchQuery
-                                    ? t('store.noCollectionsFound')
-                                    : t('store.noCollectionsAvailable')
-                        }
+                        {isSearching
+                            ? t('store.searching')
+                            : hasSearchQuery
+                              ? t('store.noCollectionsFound')
+                              : t('store.noCollectionsAvailable')}
                     </CommandEmpty>
                     <CommandGroup className="max-h-[300px] overflow-auto">
-                        {
-                            showClearOption && !hasSearchQuery && (
-                                <CommandItem
-                                    value="__clear__"
-                                    onSelect={handleClear}
-                                    className="text-destructive"
-                                >
-                                    Remove collection selection(s)
-                                </CommandItem>
-                            )
-                        }
-                        {
-                            hasSearchQuery && (
-                                <CommandItem
-                                    value="__clear_search__"
-                                    onSelect={() => setSearchQuery("")}
-                                    className="text-muted"
-                                >
-                                    {t('store.clearSelection')}
-                                </CommandItem>
-                            )
-                        }
-                        {
-                            filteredCollections.map((collection: CollectionItem) => {
-                                const isSelected = multiple && Array.isArray(value)
+                        {showClearOption && !hasSearchQuery && (
+                            <CommandItem value="__clear__" onSelect={handleClear} className="text-destructive">
+                                Remove collection selection(s)
+                            </CommandItem>
+                        )}
+                        {hasSearchQuery && (
+                            <CommandItem
+                                value="__clear_search__"
+                                onSelect={() => setSearchQuery('')}
+                                className="text-muted"
+                            >
+                                {t('store.clearSelection')}
+                            </CommandItem>
+                        )}
+                        {filteredCollections.map((collection: CollectionItem) => {
+                            const isSelected =
+                                multiple && Array.isArray(value)
                                     ? value.includes(collection.id)
                                     : value === collection.id;
 
-                                return (
-                                    <CommandItem
-                                        key={collection.id}
-                                        value={collection.id}
-                                        onSelect={() => handleSelect(collection)}
-                                        className="flex items-center justify-between"
-                                    >
-                                        <span className="truncate">{collection.name}</span>
-                                        {isSelected && (
-                                            <Check className="ml-2 h-4 w-4 shrink-0" />
-                                        )}
-                                    </CommandItem>
-                                );
-                            })
-                        }
+                            return (
+                                <CommandItem
+                                    key={collection.id}
+                                    value={collection.id}
+                                    onSelect={() => handleSelect(collection)}
+                                    className="flex items-center justify-between"
+                                >
+                                    <span className="truncate">{collection.name}</span>
+                                    {isSelected && <Check className="ms-2 h-4 w-4 shrink-0" />}
+                                </CommandItem>
+                            );
+                        })}
                     </CommandGroup>
                 </Command>
             </PopoverContent>

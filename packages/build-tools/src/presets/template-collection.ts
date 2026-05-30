@@ -58,10 +58,7 @@ export const templateCollectionTransformer: TransformerPreset = {
                         names.push(identifier);
                     }
                 }
-            } catch (_err) {
-                // Skip entries that can't be read
-                continue;
-            }
+            } catch (_err) {}
         }
 
         if (names.length === 0) {
@@ -69,15 +66,11 @@ export const templateCollectionTransformer: TransformerPreset = {
         }
 
         // Generate code that imports all templates and exports as array
-        const code = [
-            ...imports,
-            '',
-            `export default [${names.join(', ')}];`
-        ].join('\n');
+        const code = [...imports, '', `export default [${names.join(', ')}];`].join('\n');
 
         return {
             data: null,
-            code
+            code,
         };
-    }
+    },
 };

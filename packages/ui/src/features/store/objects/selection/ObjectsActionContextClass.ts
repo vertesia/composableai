@@ -1,4 +1,4 @@
-import { ObjectsActionParams, ObjectsActionSpec } from './ObjectsActionSpec';
+import type { ObjectsActionParams, ObjectsActionSpec } from './ObjectsActionSpec';
 
 export type ObjectsActionCallback = (params: ObjectsActionParams) => Promise<unknown>;
 
@@ -8,18 +8,16 @@ export class ObjectsActionContext {
     callbacks: Record<string, ObjectsActionCallback> = {};
     startWorkflow?: ObjectsActionCallback;
 
-    constructor(public params: Omit<ObjectsActionParams, 'action'>) { }
+    constructor(public params: Omit<ObjectsActionParams, 'action'>) {}
 
     get actions(): ObjectsActionSpec[] {
         const isInCollection = !!this.params.selection?.collectionId;
 
         if (isInCollection) {
-            return this.allActions.filter(action =>
-                action.id !== 'addToCollection' && action.id !== 'delete'
-            );
+            return this.allActions.filter((action) => action.id !== 'addToCollection' && action.id !== 'delete');
         } else {
-            return this.allActions.filter(action =>
-                action.id !== 'removeFromCollection' && action.id !== 'deleteFromCollections'
+            return this.allActions.filter(
+                (action) => action.id !== 'removeFromCollection' && action.id !== 'deleteFromCollections',
             );
         }
     }
@@ -28,7 +26,7 @@ export class ObjectsActionContext {
         this.callbacks[name] = cb;
         return () => {
             delete this.callbacks[name];
-        }
+        };
     }
 
     unregisterCallback(name: string) {
@@ -36,9 +34,9 @@ export class ObjectsActionContext {
     }
 
     findAction(actionId: string) {
-        let action = this.allActions.find(a => a.id === actionId);
+        let action = this.allActions.find((a) => a.id === actionId);
         if (!action) {
-            action = this.wfRules.find(a => a.id === actionId);
+            action = this.wfRules.find((a) => a.id === actionId);
         }
         return action;
     }
@@ -53,7 +51,7 @@ export class ObjectsActionContext {
         if (cb) {
             return cb(params);
         } else {
-            throw new Error("No action callback set");
+            throw new Error('No action callback set');
         }
     }
 }

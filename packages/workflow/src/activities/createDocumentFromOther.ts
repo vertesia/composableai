@@ -1,33 +1,31 @@
-import { log } from "@temporalio/activity";
-import { NodeStreamSource } from "@vertesia/client/node";
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
-import fs from 'fs';
-import { pdfExtractPages } from "../conversion/mutool.js";
-import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { DocumentNotFoundError } from "../errors.js";
-import { saveBlobToTempFile } from "../utils/blobs.js";
+import { log } from '@temporalio/activity';
+import { NodeStreamSource } from '@vertesia/client/node';
+import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
+import fs from 'node:fs';
+import { pdfExtractPages } from '../conversion/mutool.js';
+import { setupActivity } from '../dsl/setup/ActivityContext.js';
+import { DocumentNotFoundError } from '../errors.js';
+import { saveBlobToTempFile } from '../utils/blobs.js';
 
 interface CreatePdfDocumentFromSourceParams {
-
     target_object_type: string; //type of the object to create
     title: string; //title of the object to create
     filename?: string; //filename of the object to create
     pages: number[]; //pages to extract into the new document
     parent?: string; //set the new document as child of the source document
-
 }
-
 
 export interface CreatePdfDocumentFromSource extends DSLActivitySpec<CreatePdfDocumentFromSourceParams> {
     name: 'createPdfDocumentFromSource';
 }
 
-
 /**
  * Create a new PDF by extracting pages from a source PDF
  * @returns
  */
-export async function createPdfDocumentFromSource(payload: DSLActivityExecutionPayload<CreatePdfDocumentFromSourceParams>) {
+export async function createPdfDocumentFromSource(
+    payload: DSLActivityExecutionPayload<CreatePdfDocumentFromSourceParams>,
+) {
     const { client, objectId, params } = await setupActivity<CreatePdfDocumentFromSourceParams>(payload);
     const inputObject = await client.objects.retrieve(objectId);
 
@@ -49,9 +47,11 @@ export async function createPdfDocumentFromSource(payload: DSLActivityExecutionP
         throw new DocumentNotFoundError(`Document ${objectId} has no source`, [objectId]);
     }
 
-    if (!inputObject.content.type || (!inputObject.content.type?.startsWith('application/pdf'))) {
+    if (!inputObject.content.type?.startsWith('application/pdf')) {
         log.error(`Document ${objectId} is not an image`);
-        throw new DocumentNotFoundError(`Document ${objectId} is not an image or pdf: ${inputObject.content.type}`, [objectId]);
+        throw new DocumentNotFoundError(`Document ${objectId} is not an image or pdf: ${inputObject.content.type}`, [
+            objectId,
+        ]);
     }
 
     const targetType = await client.types.getTypeByName(params.target_object_type);
@@ -60,16 +60,12 @@ export async function createPdfDocumentFromSource(payload: DSLActivityExecutionP
         throw new DocumentNotFoundError(`Type ${params.target_object_type} not found`);
     }
 
-    const tmpFile = await saveBlobToTempFile(client, inputObject.content.source, ".pdf");
+    const tmpFile = await saveBlobToTempFile(client, inputObject.content.source, '.pdf');
     const newPdf = await pdfExtractPages(tmpFile, pages);
     log.info(`PDF created from pages ${pages.join(', ')} `, { newPdf });
     const name = `pages-${pages.join('-')}.pdf`;
 
-    const sourceToUpload = new NodeStreamSource(
-        fs.createReadStream(newPdf),
-        name,
-        "application/pdf"
-    )
+    const sourceToUpload = new NodeStreamSource(fs.createReadStream(newPdf), name, 'application/pdf');
 
     log.info(`Uploading file ${newPdf} `);
     const upload = await client.objects.upload(sourceToUpload);
@@ -82,11 +78,9 @@ export async function createPdfDocumentFromSource(payload: DSLActivityExecutionP
         content: {
             source: upload.source,
             name: upload.name,
-            type: 'application/pdf'
-        }
+            type: 'application/pdf',
+        },
     });
 
     return { newObjectId: newObject.id, uploadedFile: upload.name };
-
-
 }

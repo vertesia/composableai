@@ -1,30 +1,39 @@
-import { AgentMessage, AgentMessageType } from "@vertesia/common";
-import { Button, cn, useToast } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import { MarkdownRenderer } from "@vertesia/ui/widgets";
-import dayjs from "dayjs";
-import { Bot, ChevronDown, ChevronRight, CopyIcon, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
-import { useState, memo, useEffect, useRef } from "react";
-import { useUITranslation } from '../../../../i18n/index.js';
-import { PulsatingCircle } from "../AnimatedThinkingDots";
-import { useImageLightbox } from "../ImageLightbox";
-import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
-import { ToolExecutionStatus } from "./utils";
+import { type AgentMessage, AgentMessageType } from '@vertesia/common';
+import { Button, cn, onActivateKey, useToast } from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
+import { MarkdownRenderer } from '@vertesia/ui/widgets';
+import dayjs from 'dayjs';
+import { Bot, ChevronDown, ChevronRight, CopyIcon, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
+import { useState, memo, useEffect, useRef } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { PulsatingCircle } from '../AnimatedThinkingDots';
+import { useImageLightbox } from '../ImageLightbox';
+import { useArtifactUrlCache, getArtifactCacheKey } from '../useArtifactUrlCache.js';
+import type { ToolExecutionStatus } from './utils';
 
 /** Keys that are internal metadata and not interesting to display */
 const META_KEYS = new Set([
-    'tool', 'tool_run_id', 'activity_group_id', 'event_class',
-    'tool_iteration', 'tool_status', 'tools', 'streamed',
-    'files', 'outputFiles', 'display_role', 'observation',
+    'tool',
+    'tool_run_id',
+    'activity_group_id',
+    'event_class',
+    'tool_iteration',
+    'tool_status',
+    'tools',
+    'streamed',
+    'files',
+    'outputFiles',
+    'display_role',
+    'observation',
+    'browseruse',
+    'browser_use',
 ]);
 
 /** Filter out internal metadata keys, return user-facing detail entries */
-function extractInterestingDetails(
-    details: Record<string, unknown> | undefined
-): Array<[string, unknown]> {
+function extractInterestingDetails(details: Record<string, unknown> | undefined): Array<[string, unknown]> {
     if (!details) return [];
     return Object.entries(details).filter(
-        ([key, value]) => !META_KEYS.has(key) && value !== undefined && value !== null && value !== ''
+        ([key, value]) => !META_KEYS.has(key) && value !== undefined && value !== null && value !== '',
     );
 }
 
@@ -33,7 +42,7 @@ function formatDetailKey(key: string): string {
     return key
         .replace(/_/g, ' ')
         .replace(/([a-z])([A-Z])/g, '$1 $2')
-        .replace(/^./, c => c.toUpperCase());
+        .replace(/^./, (c) => c.toUpperCase());
 }
 
 /** Badge color per status */
@@ -80,9 +89,19 @@ export interface ToolCallGroupProps {
 }
 
 /** className overrides for ToolCallGroup — subset of ToolCallGroupProps containing only className props. */
-export type ToolCallGroupClassNames = Partial<Pick<ToolCallGroupProps,
-    'rootClassName' | 'headerClassName' | 'senderClassName' | 'toolSummaryClassName' |
-    'toolBadgeClassName' | 'itemClassName' | 'itemHeaderClassName' | 'itemContentClassName'>>;
+export type ToolCallGroupClassNames = Partial<
+    Pick<
+        ToolCallGroupProps,
+        | 'rootClassName'
+        | 'headerClassName'
+        | 'senderClassName'
+        | 'toolSummaryClassName'
+        | 'toolBadgeClassName'
+        | 'itemClassName'
+        | 'itemHeaderClassName'
+        | 'itemContentClassName'
+    >
+>;
 
 /**
  * Merge messages within a tool group by tool_run_id.
@@ -124,7 +143,7 @@ function mergeByToolRunId(messages: AgentMessage[]): AgentMessage[] {
         // message text from the running message (message_to_human) if the
         // completed message has no text or empty text.
         const base = msgs[msgs.length - 1];
-        const runningMsg = msgs.find(m => (m.details as any)?.tool_status === 'running');
+        const runningMsg = msgs.find((m) => m.details?.tool_status === 'running');
 
         if (runningMsg && (!base.message || base.message.trim() === '') && runningMsg.message) {
             // Merge: use running message text with completed message details
@@ -174,27 +193,31 @@ function FileDisplay({ files, className: fileClassName }: { files: string[]; cla
     if (!files || files.length === 0) return null;
 
     return (
-        <div className={cn("mt-2 flex flex-wrap gap-2", fileClassName)}>
+        <div className={cn('mt-2 flex flex-wrap gap-2', fileClassName)}>
             {files.map((file, idx) => {
                 const fileName = file.split('/').pop()?.split('?')[0] || 'file';
                 if (isImageUrl(file)) {
                     return (
-                        <div
+                        <Button
+                            variant="unstyled"
+                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                             key={idx}
-                            className="cursor-pointer"
+                            className="cursor-pointer p-0"
                             onClick={() => openImage(file, fileName)}
                             title={t('agent.clickToEnlarge')}
+                            aria-label={fileName}
                         >
                             <img
                                 src={file}
                                 alt={fileName}
                                 className="max-w-[300px] max-h-[200px] rounded border hover:opacity-80 transition-opacity hover:shadow-lg"
                             />
-                        </div>
+                        </Button>
                     );
                 }
                 return (
                     <a
+                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                         key={idx}
                         href={file}
                         target="_blank"
@@ -210,36 +233,40 @@ function FileDisplay({ files, className: fileClassName }: { files: string[]; cla
 }
 
 // Helper to get files from tool details (checks both files and outputFiles)
-const getFilesFromDetails = (details: { files?: string[]; outputFiles?: string[]; [key: string]: unknown } | undefined): string[] | undefined => {
+const getFilesFromDetails = (
+    details: { files?: string[]; outputFiles?: string[]; [key: string]: unknown } | undefined,
+): string[] | undefined => {
     if (!details) return undefined;
     const files = details.files ?? details.outputFiles;
     return Array.isArray(files) ? files : undefined;
 };
 
-const TOOL_BADGE_CLASS = "text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium";
-const ASSISTANT_BADGE_CLASS = "text-[10px] px-1.5 py-0.5 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 font-medium";
+const TOOL_BADGE_CLASS =
+    'text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium';
+const ASSISTANT_BADGE_CLASS =
+    'text-[10px] px-1.5 py-0.5 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 font-medium';
 
 const isToolPreambleMessage = (message: AgentMessage): boolean => {
     const details = message.details as { display_role?: string } | undefined;
-    return message.type === AgentMessageType.THOUGHT && details?.display_role === "tool_preamble";
+    return message.type === AgentMessageType.THOUGHT && details?.display_role === 'tool_preamble';
 };
 
 const getMessageActivityLabel = (message: AgentMessage): string => {
     const details = message.details as { tool?: string } | undefined;
-    if (isToolPreambleMessage(message)) return "assistant";
+    if (isToolPreambleMessage(message)) return 'assistant';
     if (details?.tool) return details.tool;
 
     switch (message.type) {
         case AgentMessageType.UPDATE:
-            return "update";
+            return 'update';
         case AgentMessageType.WARNING:
-            return "warning";
+            return 'warning';
         case AgentMessageType.ERROR:
-            return "error";
+            return 'error';
         case AgentMessageType.SYSTEM:
-            return "system";
+            return 'system';
         default:
-            return "activity";
+            return 'activity';
     }
 };
 
@@ -259,11 +286,13 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
     const urlCacheRef = useRef(urlCache);
     urlCacheRef.current = urlCache;
 
-    const details = message.details as { tool?: string; files?: string[]; outputFiles?: string[]; [key: string]: unknown } | undefined;
+    const details = message.details as
+        | { tool?: string; files?: string[]; outputFiles?: string[]; [key: string]: unknown }
+        | undefined;
     const toolName = getMessageActivityLabel(message);
     const badgeClass = getMessageBadgeClass(message);
     const files = getFilesFromDetails(details);
-    const messageContent = typeof message.message === "string" ? message.message : "";
+    const messageContent = typeof message.message === 'string' ? message.message : '';
 
     // Resolve artifact paths to signed URLs
     useEffect(() => {
@@ -278,56 +307,65 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
             const currentUrlCache = urlCacheRef.current;
             const resolved = await Promise.all(
                 files.map(async (file) => {
-                    if (!file || typeof file !== "string") return null;
+                    if (!file || typeof file !== 'string') return null;
                     // If it's already a full URL, return as-is
-                    if (file.startsWith("http://") || file.startsWith("https://")) {
+                    if (file.startsWith('http://') || file.startsWith('https://')) {
                         return file;
                     }
                     // Strip artifact: protocol prefix to get the artifact-relative path
-                    const artifactPath = file.startsWith("artifact:") ? file.slice(9) : file;
-                    const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
-                    const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
+                    const artifactPath = file.startsWith('artifact:') ? file.slice(9) : file;
+                    const ext = artifactPath.split('.').pop()?.toLowerCase() || '';
+                    const imageExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg']);
                     const isImage = imageExtensions.has(ext);
-                    const disposition = isImage ? "inline" : "attachment";
+                    const disposition = isImage ? 'inline' : 'attachment';
 
                     try {
                         const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, disposition);
                         if (currentUrlCache) {
                             return await currentUrlCache.getOrFetch(cacheKey, async () => {
-                                const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, artifactPath, disposition);
+                                const result = await currentClient.files.getArtifactDownloadUrl(
+                                    artifactRunId,
+                                    artifactPath,
+                                    disposition,
+                                );
                                 return result.url;
                             });
                         } else {
-                            const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, artifactPath, disposition);
+                            const result = await currentClient.files.getArtifactDownloadUrl(
+                                artifactRunId,
+                                artifactPath,
+                                disposition,
+                            );
                             return result.url;
                         }
                     } catch (err) {
                         console.error(`Failed to resolve artifact URL for ${artifactPath}`, err);
                         return null;
                     }
-                })
+                }),
             );
             if (!cancelled) {
                 setResolvedFiles(resolved.filter((f): f is string => !!f));
             }
         };
-        resolveFiles();
-        return () => { cancelled = true; };
+        void resolveFiles();
+        return () => {
+            cancelled = true;
+        };
     }, [files, artifactRunId]);
 
     // Separate image files from other files for inline preview
-    const imageFiles = resolvedFiles.filter(f => isImageUrl(f));
-    const nonImageFiles = resolvedFiles.filter(f => !isImageUrl(f));
+    const imageFiles = resolvedFiles.filter((f) => isImageUrl(f));
+    const nonImageFiles = resolvedFiles.filter((f) => !isImageUrl(f));
 
     const copyToClipboard = () => {
-        const textToCopy = [
-            messageContent,
-            details ? "\n\nDetails:\n" + JSON.stringify(details, null, 2) : ""
-        ].join("").trim();
+        const textToCopy = [messageContent, details ? `\n\nDetails:\n${JSON.stringify(details, null, 2)}` : '']
+            .join('')
+            .trim();
 
         navigator.clipboard.writeText(textToCopy).then(() => {
             toast({
-                status: "success",
+                status: 'success',
                 title: t('agent.copiedToClipboard'),
                 duration: 2000,
             });
@@ -335,26 +373,31 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
     };
 
     return (
-        <div className={cn("border-b border-gray-100 dark:border-gray-800 last:border-b-0", classNames.itemClassName)}>
+        <div className={cn('border-b border-gray-100 dark:border-gray-800 last:border-b-0', classNames.itemClassName)}>
             {/* Collapsed header - always visible */}
+            {/* biome-ignore lint/a11y/useSemanticElements: header contains nested Buttons (copy); button-in-button is invalid HTML so role="button" on a div is the pragmatic choice. */}
             <div
-                className={cn("flex items-start justify-between px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", classNames.itemHeaderClassName)}
+                role="button"
+                tabIndex={0}
+                className={cn(
+                    'flex items-start justify-between px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors',
+                    classNames.itemHeaderClassName,
+                )}
                 onClick={onToggle}
+                onKeyDown={onActivateKey(onToggle)}
             >
                 <div className="flex items-start gap-2 flex-1 min-w-0">
                     <div className="flex-shrink-0 pt-0.5">
                         {isExpanded ? (
                             <ChevronDown className="size-3 text-muted" />
                         ) : (
-                            <ChevronRight className="size-3 text-muted" />
+                            <ChevronRight className="size-3 text-muted cn-rtl-flip" />
                         )}
                     </div>
                     <div className="flex-1 min-w-0">
                         {/* Primary: Message text */}
                         {messageContent ? (
-                            <span className="text-xs text-foreground line-clamp-2">
-                                {messageContent}
-                            </span>
+                            <span className="text-xs text-foreground line-clamp-2">{messageContent}</span>
                         ) : (
                             <span className="text-xs text-muted italic">Activity: {toolName}</span>
                         )}
@@ -362,11 +405,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                     {/* Tool name badge on the right */}
-                    {!isExpanded && (
-                        <span className={cn(badgeClass, classNames.toolBadgeClassName)}>
-                            {toolName}
-                        </span>
-                    )}
+                    {!isExpanded && <span className={cn(badgeClass, classNames.toolBadgeClassName)}>{toolName}</span>}
                     <Button
                         variant="ghost"
                         size="xs"
@@ -390,56 +429,76 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
             )}
 
             {/* Expanded content — shows tool metadata, key params, then raw details */}
-            {isExpanded && (() => {
-                const toolStatusValue = (details as Record<string, unknown> | undefined)?.tool_status as ToolExecutionStatus | undefined;
-                const interestingDetails = extractInterestingDetails(details as Record<string, unknown> | undefined);
-                return (
-                    <div className={cn("px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30", classNames.itemContentClassName)}>
-                        {/* Badges row: tool name + status + timestamp */}
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span className={cn(badgeClass, classNames.toolBadgeClassName)}>
-                                {toolName}
-                            </span>
-                            {toolStatusValue && (
-                                <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md border font-medium", statusBadgeClass(toolStatusValue))}>
-                                    {toolStatusValue}
-                                </span>
+            {isExpanded &&
+                (() => {
+                    const toolStatusValue = (details as Record<string, unknown> | undefined)?.tool_status as
+                        | ToolExecutionStatus
+                        | undefined;
+                    const interestingDetails = extractInterestingDetails(
+                        details as Record<string, unknown> | undefined,
+                    );
+                    return (
+                        <div
+                            className={cn(
+                                'px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30',
+                                classNames.itemContentClassName,
                             )}
-                            <span className="text-[10px] text-muted/70">{dayjs(message.timestamp).format("HH:mm:ss")}</span>
-                        </div>
-
-                        {/* Key parameters */}
-                        {interestingDetails.length > 0 && (
-                            <div className="mb-2 space-y-0.5">
-                                {interestingDetails.map(([key, value]) => (
-                                    <div key={key} className="flex gap-1.5 text-xs">
-                                        <span className="text-muted font-medium flex-shrink-0">{formatDetailKey(key)}:</span>
-                                        <span className="text-foreground break-all">
-                                            {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                                        </span>
-                                    </div>
-                                ))}
+                        >
+                            {/* Badges row: tool name + status + timestamp */}
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                <span className={cn(badgeClass, classNames.toolBadgeClassName)}>{toolName}</span>
+                                {toolStatusValue && (
+                                    <span
+                                        className={cn(
+                                            'text-[10px] px-1.5 py-0.5 rounded-md border font-medium',
+                                            statusBadgeClass(toolStatusValue),
+                                        )}
+                                    >
+                                        {toolStatusValue}
+                                    </span>
+                                )}
+                                <span className="text-[10px] text-muted/70">
+                                    {dayjs(message.timestamp).format('HH:mm:ss')}
+                                </span>
                             </div>
-                        )}
 
-                        {/* Show observation from details if available and different from header text */}
-                        {(() => {
-                            const observation = (details as any)?.observation as string | undefined;
-                            if (observation && observation !== messageContent) {
-                                return (
-                                    <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
-                                        <MarkdownRenderer artifactRunId={artifactRunId}>{observation}</MarkdownRenderer>
-                                    </div>
-                                );
-                            }
-                            return null;
-                        })()}
+                            {/* Key parameters */}
+                            {interestingDetails.length > 0 && (
+                                <div className="mb-2 space-y-0.5">
+                                    {interestingDetails.map(([key, value]) => (
+                                        <div key={key} className="flex gap-1.5 text-xs">
+                                            <span className="text-muted font-medium flex-shrink-0">
+                                                {formatDetailKey(key)}:
+                                            </span>
+                                            <span className="text-foreground break-all">
+                                                {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
 
-                        {/* Non-image files display */}
-                        {nonImageFiles.length > 0 && <FileDisplay files={nonImageFiles} />}
-                    </div>
-                );
-            })()}
+                            {/* Show observation from details if available and different from header text */}
+                            {(() => {
+                                const observation =
+                                    typeof details?.observation === 'string' ? details.observation : undefined;
+                                if (observation && observation !== messageContent) {
+                                    return (
+                                        <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
+                                            <MarkdownRenderer artifactRunId={artifactRunId}>
+                                                {observation}
+                                            </MarkdownRenderer>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            })()}
+
+                            {/* Non-image files display */}
+                            {nonImageFiles.length > 0 && <FileDisplay files={nonImageFiles} />}
+                        </div>
+                    );
+                })()}
         </div>
     );
 }
@@ -467,50 +526,60 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
             const currentUrlCache = urlCacheRef.current;
             const resolved = await Promise.all(
                 files.map(async (file) => {
-                    if (!file || typeof file !== "string") return null;
+                    if (!file || typeof file !== 'string') return null;
 
                     // Strip artifact: protocol prefix to get the artifact-relative path
-                    const artifactPath = file.startsWith("artifact:") ? file.slice(9) : file;
+                    const artifactPath = file.startsWith('artifact:') ? file.slice(9) : file;
 
                     // Skip image files - they're shown at the group level
-                    const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
-                    const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
+                    const ext = artifactPath.split('.').pop()?.toLowerCase() || '';
+                    const imageExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg']);
                     if (imageExtensions.has(ext)) return null;
 
-                    if (artifactPath.startsWith("http://") || artifactPath.startsWith("https://")) {
+                    if (artifactPath.startsWith('http://') || artifactPath.startsWith('https://')) {
                         return artifactPath;
                     }
 
                     try {
-                        const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "attachment");
+                        const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, 'attachment');
                         if (currentUrlCache) {
                             return await currentUrlCache.getOrFetch(cacheKey, async () => {
-                                const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "attachment");
+                                const result = await currentClient.files.getArtifactDownloadUrl(
+                                    artifactRunId,
+                                    artifactPath,
+                                    'attachment',
+                                );
                                 return result.url;
                             });
                         } else {
-                            const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "attachment");
+                            const result = await currentClient.files.getArtifactDownloadUrl(
+                                artifactRunId,
+                                artifactPath,
+                                'attachment',
+                            );
                             return result.url;
                         }
                     } catch (err) {
                         console.error(`Failed to resolve artifact URL for ${artifactPath}`, err);
                         return null;
                     }
-                })
+                }),
             );
             if (!cancelled) {
                 setResolvedFiles(resolved.filter((f): f is string => !!f));
             }
         };
-        resolveFiles();
-        return () => { cancelled = true; };
+        void resolveFiles();
+        return () => {
+            cancelled = true;
+        };
     }, [files, artifactRunId]);
 
     // Only show non-image files (images are shown at group level)
     if (resolvedFiles.length === 0) return null;
 
     return (
-        <div className="pl-4 pr-2 pb-1.5">
+        <div className="ps-4 pe-2 pb-1.5">
             <FileDisplay files={resolvedFiles} />
         </div>
     );
@@ -549,44 +618,54 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
             const currentUrlCache = urlCacheRef.current;
             const resolved = await Promise.all(
                 files.map(async (file) => {
-                    if (!file || typeof file !== "string") return null;
+                    if (!file || typeof file !== 'string') return null;
 
                     // Strip artifact: protocol prefix to get the artifact-relative path
-                    const artifactPath = file.startsWith("artifact:") ? file.slice(9) : file;
+                    const artifactPath = file.startsWith('artifact:') ? file.slice(9) : file;
 
                     // Check if it's an image file
-                    const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
-                    const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
+                    const ext = artifactPath.split('.').pop()?.toLowerCase() || '';
+                    const imageExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg']);
                     if (!imageExtensions.has(ext)) return null;
 
                     // If it's already a full URL, return as-is
-                    if (artifactPath.startsWith("http://") || artifactPath.startsWith("https://")) {
+                    if (artifactPath.startsWith('http://') || artifactPath.startsWith('https://')) {
                         return artifactPath;
                     }
 
                     try {
-                        const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "inline");
+                        const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, 'inline');
                         if (currentUrlCache) {
                             return await currentUrlCache.getOrFetch(cacheKey, async () => {
-                                const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "inline");
+                                const result = await currentClient.files.getArtifactDownloadUrl(
+                                    artifactRunId,
+                                    artifactPath,
+                                    'inline',
+                                );
                                 return result.url;
                             });
                         } else {
-                            const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "inline");
+                            const result = await currentClient.files.getArtifactDownloadUrl(
+                                artifactRunId,
+                                artifactPath,
+                                'inline',
+                            );
                             return result.url;
                         }
                     } catch (err) {
                         console.error(`Failed to resolve artifact URL for ${artifactPath}`, err);
                         return null;
                     }
-                })
+                }),
             );
             if (!cancelled) {
                 setResolvedImages(resolved.filter((f): f is string => !!f));
             }
         };
-        resolveFiles();
-        return () => { cancelled = true; };
+        void resolveFiles();
+        return () => {
+            cancelled = true;
+        };
     }, [messages, artifactRunId]);
 
     if (resolvedImages.length === 0) return null;
@@ -625,8 +704,7 @@ function ToolCallGroupComponent({
     const toast = useToast();
 
     // Extract workflow_run_id from messages (any message in the group should have it)
-    const artifactRunId = messages.find(m => (m as any).workflow_run_id)?.workflow_run_id as string | undefined
-        ?? (messages[0] as any)?.workflow_run_id;
+    const artifactRunId = messages.find((m) => m.workflow_run_id)?.workflow_run_id ?? messages[0]?.workflow_run_id;
 
     // Render status indicator based on tool execution status
     const renderStatusIndicator = () => {
@@ -634,16 +712,16 @@ function ToolCallGroupComponent({
         if (showPulsatingCircle) {
             return <PulsatingCircle size="sm" color="blue" />;
         }
-        if (toolStatus === "running") {
+        if (toolStatus === 'running') {
             return <span className="size-2 rounded-full bg-blue-500 inline-block" />;
         }
-        if (toolStatus === "completed") {
+        if (toolStatus === 'completed') {
             return <CheckCircle className="size-4 text-success" />;
         }
-        if (toolStatus === "error") {
+        if (toolStatus === 'error') {
             return <AlertCircle className="size-4 text-destructive" />;
         }
-        if (toolStatus === "warning") {
+        if (toolStatus === 'warning') {
             return <AlertTriangle className="size-4 text-attention" />;
         }
         return <Bot className="size-4 text-purple-600 dark:text-purple-400" />;
@@ -651,10 +729,10 @@ function ToolCallGroupComponent({
 
     // Get border color based on status
     const getBorderColor = () => {
-        if (toolStatus === "completed") return "border-l-success";
-        if (toolStatus === "error") return "border-l-destructive";
-        if (toolStatus === "warning") return "border-l-attention";
-        return "border-l-purple-500";
+        if (toolStatus === 'completed') return 'border-s-success';
+        if (toolStatus === 'error') return 'border-s-destructive';
+        if (toolStatus === 'warning') return 'border-s-attention';
+        return 'border-s-purple-500';
     };
 
     // Animate new messages when they're added
@@ -691,12 +769,11 @@ function ToolCallGroupComponent({
     const toolNames = messages.map((m) => getMessageActivityLabel(m));
 
     const uniqueToolCount = new Set(toolNames).size;
-    const toolSummary = uniqueToolCount === 1
-        ? `${messages.length}× ${toolNames[0]}`
-        : `${messages.length} activity updates`;
+    const toolSummary =
+        uniqueToolCount === 1 ? `${messages.length}× ${toolNames[0]}` : `${messages.length} activity updates`;
 
     const toggleItem = (index: number) => {
-        setExpandedItems(prev => {
+        setExpandedItems((prev) => {
             const next = new Set(prev);
             if (next.has(index)) {
                 next.delete(index);
@@ -708,14 +785,16 @@ function ToolCallGroupComponent({
     };
 
     const copyAllToClipboard = () => {
-        const allContent = messages.map(m => {
-            const details = m.details as { tool?: string; [key: string]: unknown } | undefined;
-            return `[${getMessageActivityLabel(m)}] ${m.message || ""}\n${details ? JSON.stringify(details, null, 2) : ""}`;
-        }).join("\n\n---\n\n");
+        const allContent = messages
+            .map((m) => {
+                const details = m.details as { tool?: string; [key: string]: unknown } | undefined;
+                return `[${getMessageActivityLabel(m)}] ${m.message || ''}\n${details ? JSON.stringify(details, null, 2) : ''}`;
+            })
+            .join('\n\n---\n\n');
 
         navigator.clipboard.writeText(allContent).then(() => {
             toast({
-                status: "success",
+                status: 'success',
                 title: t('agent.copiedAllToolCalls'),
                 duration: 2000,
             });
@@ -724,29 +803,44 @@ function ToolCallGroupComponent({
 
     return (
         <div
-            className={cn("border-l-4 overflow-hidden bg-white dark:bg-gray-900 mb-4", getBorderColor(), rootClassName)}
+            className={cn('border-s-4 overflow-hidden bg-white dark:bg-gray-900 mb-4', getBorderColor(), rootClassName)}
         >
             {/* Compact header */}
+            {/* biome-ignore lint/a11y/useSemanticElements: header contains nested Buttons; button-in-button is invalid HTML so role="button" on a div is the pragmatic choice. */}
             <div
-                className={cn("flex items-center justify-between px-4 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", headerClassName)}
+                role="button"
+                tabIndex={0}
+                aria-expanded={!isCollapsed}
+                className={cn(
+                    'flex items-center justify-between px-4 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors',
+                    headerClassName,
+                )}
                 onClick={() => setIsCollapsed(!isCollapsed)}
+                onKeyDown={onActivateKey(() => setIsCollapsed(!isCollapsed))}
             >
                 <div className="flex items-center gap-1 flex-1 min-w-0">
                     {renderStatusIndicator()}
                     {preambleText ? (
-                        <span className={cn("text-xs text-foreground line-clamp-2 flex-1 min-w-0", toolSummaryClassName)}>
+                        <span
+                            className={cn('text-xs text-foreground line-clamp-2 flex-1 min-w-0', toolSummaryClassName)}
+                        >
                             {preambleText}
                         </span>
                     ) : (
                         <>
-                            <span className={cn("text-xs font-medium text-muted", senderClassName)}>Agent</span>
-                            <span className={cn("text-xs text-purple-600 dark:text-purple-400 font-medium", toolSummaryClassName)}>
+                            <span className={cn('text-xs font-medium text-muted', senderClassName)}>Agent</span>
+                            <span
+                                className={cn(
+                                    'text-xs text-purple-600 dark:text-purple-400 font-medium',
+                                    toolSummaryClassName,
+                                )}
+                            >
                                 {toolSummary}
                             </span>
                         </>
                     )}
                     {isCollapsed ? (
-                        <ChevronRight className="size-3 text-muted flex-shrink-0" />
+                        <ChevronRight className="size-3 text-muted flex-shrink-0 cn-rtl-flip" />
                     ) : (
                         <ChevronDown className="size-3 text-muted flex-shrink-0" />
                     )}
@@ -754,13 +848,18 @@ function ToolCallGroupComponent({
 
                 <div className="flex items-center gap-1 flex-shrink-0">
                     {preambleText && (
-                        <span className={cn("text-[10px] text-purple-600 dark:text-purple-400 font-medium", toolSummaryClassName)}>
+                        <span
+                            className={cn(
+                                'text-[10px] text-purple-600 dark:text-purple-400 font-medium',
+                                toolSummaryClassName,
+                            )}
+                        >
                             {toolSummary}
                         </span>
                     )}
                     <span className="text-[11px] text-muted/70">
-                        {dayjs(firstTimestamp).format("HH:mm:ss")}
-                        {messages.length > 1 && ` - ${dayjs(lastTimestamp).format("HH:mm:ss")}`}
+                        {dayjs(firstTimestamp).format('HH:mm:ss')}
+                        {messages.length > 1 && ` - ${dayjs(lastTimestamp).format('HH:mm:ss')}`}
                     </span>
                     <Button
                         variant="ghost"
@@ -784,10 +883,12 @@ function ToolCallGroupComponent({
             {isCollapsed && (
                 <div className="px-3 py-0.5 space-y-0">
                     {messages.map((m, idx) => {
-                        const details = m.details as { tool?: string; files?: string[]; outputFiles?: string[] } | undefined;
+                        const details = m.details as
+                            | { tool?: string; files?: string[]; outputFiles?: string[]; observation?: string }
+                            | undefined;
                         const toolName = getMessageActivityLabel(m);
                         const badgeClass = getMessageBadgeClass(m);
-                        const fullMessage = typeof m.message === "string" ? m.message : "";
+                        const fullMessage = typeof m.message === 'string' ? m.message : '';
                         const isAnimating = animatingIndices.has(idx);
                         const isItemExpanded = expandedItems.has(idx);
                         const files = getFilesFromDetails(details);
@@ -795,7 +896,10 @@ function ToolCallGroupComponent({
                         return (
                             <div
                                 key={`${m.timestamp}-${idx}`}
-                                className={cn("border-b border-gray-100 dark:border-gray-800 last:border-b-0", itemClassName)}
+                                className={cn(
+                                    'border-b border-gray-100 dark:border-gray-800 last:border-b-0',
+                                    itemClassName,
+                                )}
                                 style={{
                                     opacity: isAnimating ? 0 : 1,
                                     transform: isAnimating ? 'translateX(-10px)' : 'translateX(0)',
@@ -806,31 +910,37 @@ function ToolCallGroupComponent({
                                 }}
                             >
                                 {/* Row header - clickable to expand */}
+                                {/* biome-ignore lint/a11y/useSemanticElements: header contains nested Buttons; button-in-button is invalid HTML so role="button" on a div is the pragmatic choice. */}
                                 <div
-                                    className={cn("flex items-start gap-2 py-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50", itemHeaderClassName)}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-expanded={isItemExpanded}
+                                    className={cn(
+                                        'flex items-start gap-2 py-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50',
+                                        itemHeaderClassName,
+                                    )}
                                     onClick={() => toggleItem(idx)}
+                                    onKeyDown={onActivateKey(() => toggleItem(idx))}
                                     title={fullMessage}
                                 >
                                     <div className="flex-shrink-0 pt-0.5">
                                         {isItemExpanded ? (
                                             <ChevronDown className="size-3 text-muted" />
                                         ) : (
-                                            <ChevronRight className="size-3 text-muted" />
+                                            <ChevronRight className="size-3 text-muted cn-rtl-flip" />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         {/* Primary: Message text */}
                                         {fullMessage ? (
-                                            <span className="text-foreground line-clamp-2">
-                                                {fullMessage}
-                                            </span>
+                                            <span className="text-foreground line-clamp-2">{fullMessage}</span>
                                         ) : (
                                             <span className="text-muted italic">Activity: {toolName}</span>
                                         )}
                                     </div>
                                     {/* Tool name badge on the right */}
                                     {!isItemExpanded && (
-                                        <span className={cn(badgeClass, "flex-shrink-0", toolBadgeClassName)}>
+                                        <span className={cn(badgeClass, 'flex-shrink-0', toolBadgeClassName)}>
                                             {toolName}
                                         </span>
                                     )}
@@ -838,53 +948,73 @@ function ToolCallGroupComponent({
                                 {/* Always show images inline with resolved URLs */}
                                 <CollapsedItemFiles files={files} artifactRunId={artifactRunId} />
                                 {/* Expanded content — tool metadata + key params + raw details */}
-                                {isItemExpanded && (() => {
-                                    const toolStatusValue = (details as Record<string, unknown> | undefined)?.tool_status as ToolExecutionStatus | undefined;
-                                    const interestingDetails = extractInterestingDetails(details as Record<string, unknown> | undefined);
-                                    return (
-                                        <div className={cn("pl-5 pr-3 pb-2 text-sm", itemContentClassName)}>
-                                            {/* Badges row: tool name + status + timestamp */}
-                                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                                <span className={cn(badgeClass, toolBadgeClassName)}>
-                                                    {toolName}
-                                                </span>
-                                                {toolStatusValue && (
-                                                    <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md border font-medium", statusBadgeClass(toolStatusValue))}>
-                                                        {toolStatusValue}
+                                {isItemExpanded &&
+                                    (() => {
+                                        const toolStatusValue = (details as Record<string, unknown> | undefined)
+                                            ?.tool_status as ToolExecutionStatus | undefined;
+                                        const interestingDetails = extractInterestingDetails(
+                                            details as Record<string, unknown> | undefined,
+                                        );
+                                        return (
+                                            <div className={cn('ps-5 pe-3 pb-2 text-sm', itemContentClassName)}>
+                                                {/* Badges row: tool name + status + timestamp */}
+                                                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                                    <span className={cn(badgeClass, toolBadgeClassName)}>
+                                                        {toolName}
                                                     </span>
-                                                )}
-                                                <span className="text-[10px] text-muted/70">{dayjs(m.timestamp).format("HH:mm:ss")}</span>
-                                            </div>
-
-                                            {/* Key parameters */}
-                                            {interestingDetails.length > 0 && (
-                                                <div className="mb-1.5 space-y-0.5">
-                                                    {interestingDetails.map(([key, value]) => (
-                                                        <div key={key} className="flex gap-1.5 text-xs">
-                                                            <span className="text-muted font-medium flex-shrink-0">{formatDetailKey(key)}:</span>
-                                                            <span className="text-foreground break-all">
-                                                                {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                                                            </span>
-                                                        </div>
-                                                    ))}
+                                                    {toolStatusValue && (
+                                                        <span
+                                                            className={cn(
+                                                                'text-[10px] px-1.5 py-0.5 rounded-md border font-medium',
+                                                                statusBadgeClass(toolStatusValue),
+                                                            )}
+                                                        >
+                                                            {toolStatusValue}
+                                                        </span>
+                                                    )}
+                                                    <span className="text-[10px] text-muted/70">
+                                                        {dayjs(m.timestamp).format('HH:mm:ss')}
+                                                    </span>
                                                 </div>
-                                            )}
 
-                                            {/* Show observation from details if different from header text */}
-                                            {(() => {
-                                                const observation = (details as any)?.observation as string | undefined;
-                                                if (observation && observation !== fullMessage) {
-                                                    return (
-                                                        <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
-                                                            <MarkdownRenderer artifactRunId={artifactRunId}>{observation}</MarkdownRenderer>
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            })()}
-                                        </div>
-                                    );
-                                })()}
+                                                {/* Key parameters */}
+                                                {interestingDetails.length > 0 && (
+                                                    <div className="mb-1.5 space-y-0.5">
+                                                        {interestingDetails.map(([key, value]) => (
+                                                            <div key={key} className="flex gap-1.5 text-xs">
+                                                                <span className="text-muted font-medium flex-shrink-0">
+                                                                    {formatDetailKey(key)}:
+                                                                </span>
+                                                                <span className="text-foreground break-all">
+                                                                    {typeof value === 'object'
+                                                                        ? JSON.stringify(value)
+                                                                        : String(value)}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Show observation from details if different from header text */}
+                                                {(() => {
+                                                    const observation =
+                                                        typeof details?.observation === 'string'
+                                                            ? details.observation
+                                                            : undefined;
+                                                    if (observation && observation !== fullMessage) {
+                                                        return (
+                                                            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
+                                                                <MarkdownRenderer artifactRunId={artifactRunId}>
+                                                                    {observation}
+                                                                </MarkdownRenderer>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
+                                            </div>
+                                        );
+                                    })()}
                             </div>
                         );
                     })}
@@ -915,7 +1045,12 @@ function ToolCallGroupComponent({
                             isExpanded={expandedItems.has(index)}
                             onToggle={() => toggleItem(index)}
                             artifactRunId={artifactRunId}
-                            classNames={{ toolBadgeClassName, itemClassName, itemHeaderClassName, itemContentClassName }}
+                            classNames={{
+                                toolBadgeClassName,
+                                itemClassName,
+                                itemHeaderClassName,
+                                itemContentClassName,
+                            }}
                         />
                     ))}
                 </div>

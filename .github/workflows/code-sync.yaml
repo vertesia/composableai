@@ -1,4 +1,4 @@
-name: code-sync
+name: (sync) preview -> main
 
 on:
   push:
@@ -15,16 +15,26 @@ on:
         required: false
         default: ""
 
+# Serialize concurrent runs so two simultaneous pushes don't race on the
+# shared temporary branch or step on each other's PR creation.
+concurrency:
+  group: code-sync-${{ inputs.from_branch || github.ref_name }}
+  cancel-in-progress: false
+
 env:
   FROM_BRANCH: ${{ inputs.from_branch || github.ref_name }}
 
 permissions:
-  contents: write # required for pushing changes to the repository
-  pull-requests: write # required for creating pull requests
+  contents: read
 
 jobs:
   sync:
+    name: Sync code from preview to main
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # required for pushing the temporary sync branch
+      pull-requests: write # required for creating the conflict-resolution PR
     outputs:
       is_merged: ${{ steps.sync.outputs.IS_MERGED }}
       pr_number: ${{ steps.sync.outputs.PR_NUMBER }}
@@ -33,19 +43,20 @@ jobs:
       sync_ref: ${{ steps.sync.outputs.SYNC_REF }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0 # Fetch all because we need to access info from different branches
           fetch-tags: false
           submodules: recursive
+          persist-credentials: false
 
       - name: Code Sync
         id: sync
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          export SOURCE_COMPOSABLEAI_REF="${{ env.FROM_BRANCH }}"
-          export SOURCE_COMPOSABLEAI_SHA="$(git rev-parse 'origin/${{ env.FROM_BRANCH }}')"
+          export SOURCE_COMPOSABLEAI_REF="${FROM_BRANCH}"
+          export SOURCE_COMPOSABLEAI_SHA="$(git rev-parse "origin/${FROM_BRANCH}")"
           export SOURCE_COMPOSABLEAI_MSG="$(git log --format="%cd: %s by %an" --date=short -1 $SOURCE_COMPOSABLEAI_SHA)"
 
           export SOURCE_LLUMIVERSE_REF="main"
@@ -93,7 +104,7 @@ jobs:
             echo "IS_MERGED=true" >> $GITHUB_OUTPUT
           elif [ $is_sync_result -eq 2 ]; then
             echo "Code sync failed because merge conflicts cannot be resolved automatically."
-            echo "Preparing a PR and asking the author [${{ github.actor }}] to handle the synchronization..."
+            echo "Preparing a PR and asking the author [${GITHUB_ACTOR}] to handle the synchronization..."
 
             git push origin $TEMP_BRANCH
 
@@ -152,21 +163,30 @@ jobs:
   # TODO: Add tests for the synced code
 
   push:
+    name: Fast-forward main with the synced branch
     needs:
       - sync
     if: ${{ needs.sync.outputs.is_merged == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Scopes the DEPLOY_KEY secret to a dedicated environment (zizmor: secrets-outside-env).
+    environment: build
+    permissions:
+      contents: write # required for fast-forwarding main with the synced branch
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0 # Fetch all because we need to access info from different branches
           fetch-tags: false
           ref: ${{ needs.sync.outputs.sync_ref }}
           ssh-key: ${{ secrets.DEPLOY_KEY }} # Use deploy key to bypass branch protection rules
           submodules: recursive
+          persist-credentials: false
 
       - name: Push changes to main branch
+        env:
+          NEEDS_SYNC_OUTPUTS_SYNC_REF: ${{ needs.sync.outputs.sync_ref }}
         run: |
           set -x
 
@@ -178,74 +198,89 @@ jobs:
           # note: --ff-only ensures that the merge will only succeed if it can be fast-forwarded. This avoids creating
           # a merge commit and keeps the history clean. If failed, user should trigger the workflow again, or resolving
           # conflicts and then sync manually.
-          git merge --ff-only --no-edit ${{ needs.sync.outputs.sync_ref }}
+          git merge --ff-only --no-edit "${NEEDS_SYNC_OUTPUTS_SYNC_REF}"
 
           git push origin main
 
   notify:
+    name: Notify developer of successful sync
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs:
       - push
     if: ${{ needs.push.result == 'success' && github.actor != 'github-actions[bot]' }}
+    # Scopes the cross-repo dispatch token to a dedicated environment.
+    environment: build
     steps:
       - name: Notify studio
+        env:
+          REPO_STUDIO_ACCESS_TOKEN: ${{ secrets.REPO_STUDIO_ACCESS_TOKEN }}
+          ACTION_RUN_URL: https://github.com/vertesia/composableai/actions/runs/${{ github.run_id }}
         run: |
           curl -L \
             -X POST \
             -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.REPO_STUDIO_ACCESS_TOKEN }}" \
+            -H "Authorization: Bearer ${REPO_STUDIO_ACCESS_TOKEN}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             --fail-with-body \
             https://api.github.com/repos/vertesia/studio/dispatches \
-            -d '{
-              "event_type": "developer-notification",
-              "client_payload": {
-                "github_login": "${{ github.actor }}",
-                "message": "Your changes from `preview` have been synced to `main` in vertesia/composableai. See the <https://github.com/vertesia/composableai/actions/runs/${{ github.run_id }}|Action run>."
-              }
-            }'
+            -d "$(jq -nc \
+              --arg actor "${GITHUB_ACTOR}" \
+              --arg url "${ACTION_RUN_URL}" \
+              '{event_type: "developer-notification", client_payload: {github_login: $actor, message: ("Your changes from `preview` have been synced to `main` in vertesia/composableai. See the <" + $url + "|Action run>.")}}')"
 
   notify_conflict:
+    name: Notify developer of conflict PR
     needs: sync
     if: ${{ needs.sync.outputs.pr_number != '0' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Scopes the cross-repo dispatch token to a dedicated environment.
+    environment: build
     steps:
       - name: Notify studio for Slack notification
+        env:
+          REPO_STUDIO_ACCESS_TOKEN: ${{ secrets.REPO_STUDIO_ACCESS_TOKEN }}
+          NEEDS_SYNC_OUTPUTS_PR_URL: ${{ needs.sync.outputs.pr_url }}
         run: |
           curl -L \
             -X POST \
             -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.REPO_STUDIO_ACCESS_TOKEN }}" \
+            -H "Authorization: Bearer ${REPO_STUDIO_ACCESS_TOKEN}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             --fail-with-body \
             https://api.github.com/repos/vertesia/studio/dispatches \
-            -d '{
-              "event_type": "developer-notification",
-              "client_payload": {
-                "github_login": "${{ github.actor }}",
-                "message": "Your changes from `preview` failed to sync to `main` in vertesia/composableai due to merge conflicts. Please resolve this PR: ${{ needs.sync.outputs.pr_url }}"
-              }
-            }'
+            -d "$(jq -nc \
+              --arg actor "${GITHUB_ACTOR}" \
+              --arg url "${NEEDS_SYNC_OUTPUTS_PR_URL}" \
+              '{event_type: "developer-notification", client_payload: {github_login: $actor, message: ("Your changes from `preview` failed to sync to `main` in vertesia/composableai due to merge conflicts. Please resolve this PR: " + $url)}}')"
 
   cleanup:
+    name: Cleanup temporary sync branch
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs:
       - sync
       - push
     # Always run cleanup except when there is a conflict PR that needs the branch to stay alive.
     if: ${{ always() && needs.sync.outputs.should_cleanup != 'false' }}
+    permissions:
+      contents: write # required for deleting the temporary sync branch
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0 # Fetch all because we need to access info from different branches
           fetch-tags: false
           submodules: recursive
+          persist-credentials: false
 
       - name: Cleanup temporary branch
+        env:
+          NEEDS_SYNC_OUTPUTS_SYNC_REF: ${{ needs.sync.outputs.sync_ref }}
         run: |
           set -x
 
-          TEMP_BRANCH="${{ needs.sync.outputs.sync_ref }}"
+          TEMP_BRANCH="${NEEDS_SYNC_OUTPUTS_SYNC_REF}"
           git branch -D $TEMP_BRANCH || true # Ignore if branch does not exist
           git push origin --delete $TEMP_BRANCH || true # Ignore if branch does not exist

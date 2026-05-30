@@ -1,14 +1,10 @@
-import { useUserSession } from "@vertesia/ui/session";
-import { VertesiaClient } from "@vertesia/client";
-import {
-    ContentObject,
-    DocumentMetadata,
-    PDF_RENDITION_NAME,
-} from "@vertesia/common";
-import React, { createContext, useEffect, useState } from "react";
+import { useUserSession } from '@vertesia/ui/session';
+import type { VertesiaClient } from '@vertesia/client';
+import { type ContentObject, type DocumentMetadata, PDF_RENDITION_NAME } from '@vertesia/common';
+import React, { createContext, useEffect, useState } from 'react';
 
 const DEFAULT_PAGE_COUNT = 10;
-const ADVANCED_PROCESSING_PREFIX = "magic-pdf";
+const ADVANCED_PROCESSING_PREFIX = 'magic-pdf';
 
 export enum ImageType {
     original = 'original',
@@ -34,7 +30,7 @@ export class PageImageProvider {
     constructor(
         private client: VertesiaClient,
         private objectId: string,
-        public totalPages: number
+        public totalPages: number,
     ) {}
 
     private getCacheKey(page: number, type: ImageType): string {
@@ -90,7 +86,7 @@ class PageLayoutProvider {
     constructor(
         private client: VertesiaClient,
         private objectId: string,
-        public totalPages: number
+        public totalPages: number,
     ) {}
 
     async getPageLayout(page: number): Promise<string> {
@@ -118,9 +114,9 @@ class PageLayoutProvider {
     private async fetchPageLayout(page: number): Promise<string> {
         const path = `${ADVANCED_PROCESSING_PREFIX}/${this.objectId}/pages/page-${page}.layout.json`;
         const response = await this.client.files.getDownloadUrl(path);
-        const result = await fetch(response.url, { method: "GET" });
+        const result = await fetch(response.url, { method: 'GET' });
         if (!result.ok) {
-            throw new Error("Failed to fetch json layout: " + result.statusText);
+            throw new Error(`Failed to fetch json layout: ${result.statusText}`);
         }
         return result.text();
     }
@@ -160,8 +156,7 @@ function extractMarkdownPages(content: string, totalPages: number): string[] {
 
     // Find all page markers and their positions
     const markers: { page: number; index: number }[] = [];
-    let match;
-    while ((match = pageDelimiterRegex.exec(content)) !== null) {
+    for (const match of content.matchAll(pageDelimiterRegex)) {
         markers.push({
             page: parseInt(match[1], 10),
             index: match.index + match[0].length,
@@ -182,7 +177,8 @@ function extractMarkdownPages(content: string, totalPages: number): string[] {
         // Find the actual end by looking for the next delimiter or end of content
         const nextDelimiterMatch = content.slice(startIndex).match(/<!--\s*\{\s*"page"\s*:\s*\d+\s*\}\s*-->/);
         const actualEndIndex = nextDelimiterMatch
-            ? startIndex + nextDelimiterMatch.index!
+            ? // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
+              startIndex + nextDelimiterMatch.index!
             : content.length;
 
         let pageContent = content.slice(startIndex, actualEndIndex).trim();
@@ -213,7 +209,7 @@ export function MagicPdfProvider({ children, object }: MagicPdfProviderProps) {
         if (isMarkdownProcessor && object.text) {
             markdownProvider.initFromContent(object.text);
         }
-        const xml = object.text ? cleanXml(object.text) : "";
+        const xml = object.text ? cleanXml(object.text) : '';
         return {
             count: page_count,
             layoutProvider: new PageLayoutProvider(client, object.id, page_count),
@@ -231,66 +227,56 @@ export function MagicPdfProvider({ children, object }: MagicPdfProviderProps) {
             // For markdown processor, fetch the PDF URL lazily
             // Priority: PDF rendition > source (only if source is PDF)
             const metadata = object.metadata as DocumentMetadata;
-            const pdfRendition = metadata?.renditions?.find(r => r.name === PDF_RENDITION_NAME);
+            const pdfRendition = metadata?.renditions?.find((r) => r.name === PDF_RENDITION_NAME);
             const isPdfSource = object.content?.type === 'application/pdf';
             const sourceToResolve = pdfRendition?.content?.source || (isPdfSource ? object.content?.source : undefined);
 
             if (sourceToResolve) {
-                client.store.objects.getDownloadUrl(sourceToResolve, undefined, 'inline')
+                client.store.objects
+                    .getDownloadUrl(sourceToResolve, undefined, 'inline')
                     .then((response) => {
-                        setInfo(prev => ({ ...prev, pdfUrl: response.url, pdfUrlLoading: false }));
+                        setInfo((prev) => ({ ...prev, pdfUrl: response.url, pdfUrlLoading: false }));
                     })
                     .catch((e) => {
                         console.warn('Failed to get PDF URL:', e);
-                        setInfo(prev => ({ ...prev, pdfUrlLoading: false }));
+                        setInfo((prev) => ({ ...prev, pdfUrlLoading: false }));
                     });
             } else {
-                setInfo(prev => ({ ...prev, pdfUrlLoading: false }));
+                setInfo((prev) => ({ ...prev, pdfUrlLoading: false }));
             }
         } else {
             // For XML processor, no pre-loading needed - images load on demand
-            setInfo(prev => ({ ...prev, pdfUrlLoading: false }));
+            setInfo((prev) => ({ ...prev, pdfUrlLoading: false }));
         }
-    }, [object.id, client, isMarkdownProcessor, page_count]);
+    }, [client, isMarkdownProcessor, object.metadata, object.content?.type, object.content?.source]);
 
-    return (
-        <MagicPdfContext.Provider value={info}>
-            {children}
-        </MagicPdfContext.Provider>
-    );
+    return <MagicPdfContext.Provider value={info}>{children}</MagicPdfContext.Provider>;
 }
 
-export function getResourceUrl(
-    vertesia: VertesiaClient,
-    objectId: string,
-    name: string,
-): Promise<string> {
-    return vertesia.files
-        .getDownloadUrl(`${ADVANCED_PROCESSING_PREFIX}/${objectId}/${name}`)
-        .then((r) => r.url);
+export function getResourceUrl(vertesia: VertesiaClient, objectId: string, name: string): Promise<string> {
+    return vertesia.files.getDownloadUrl(`${ADVANCED_PROCESSING_PREFIX}/${objectId}/${name}`).then((r) => r.url);
 }
 
 export function useMagicPdfContext() {
     const context = React.useContext(MagicPdfContext);
     if (!context) {
-        throw new Error(
-            "useMagicPdfContext must be used within a MagicPdfProvider",
-        );
+        throw new Error('useMagicPdfContext must be used within a MagicPdfProvider');
     }
     return context;
 }
 
 function extractXmlPages(xml: string): string[] {
     // Parse the XML string
-    const doc = new DOMParser().parseFromString(cleanXml(xml), "text/xml");
-    const pages = doc.getElementsByTagName("page");
+    const doc = new DOMParser().parseFromString(cleanXml(xml), 'text/xml');
+    const pages = doc.getElementsByTagName('page');
     const serializer = new XMLSerializer();
     return Array.from(pages).map((p) => serializer.serializeToString(p));
 }
 
 function cleanXml(xml: string) {
     const cleanedXML = xml
-        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
-        .replace(/<\?xml.*?\?>/g, "");
+        // biome-ignore lint/suspicious/noControlCharactersInRegex: deliberately stripping XML-illegal control characters
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+        .replace(/<\?xml.*?\?>/g, '');
     return cleanedXML;
 }

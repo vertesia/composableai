@@ -38,8 +38,9 @@ export function copyAssetFile(asset: AssetFile, assetsRoot: string): void {
         copyFileSync(asset.sourcePath, destPath);
     } catch (error) {
         throw new Error(
-            `Failed to copy asset from ${asset.sourcePath} to ${destPath}: ${error instanceof Error ? error.message : String(error)
-            }`
+            `Failed to copy asset from ${asset.sourcePath} to ${destPath}: ${
+                error instanceof Error ? error.message : String(error)
+            }`,
         );
     }
 }

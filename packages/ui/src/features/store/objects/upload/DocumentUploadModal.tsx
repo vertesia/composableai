@@ -1,26 +1,37 @@
-import { Collection, ContentObjectTypeItem, DynamicCollection } from "@vertesia/common";
-import { Button, MessageBox, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, Spinner, useToast, VTooltip } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import { useTypeRegistry } from "../../types/TypeRegistryProvider.js";
+import type { Collection, ContentObjectTypeItem, DynamicCollection } from '@vertesia/common';
+import {
+    Button,
+    MessageBox,
+    Modal,
+    ModalBody,
+    ModalFooter,
+    ModalTitle,
+    SelectBox,
+    Spinner,
+    errorMessage,
+    useToast,
+    VTooltip,
+} from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
+import { useTypeRegistry } from '../../types/TypeRegistryProvider.js';
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
-import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from "lucide-react";
-import { ReactNode, useEffect, useMemo, useState } from "react";
-import { useUITranslation } from '../../../../i18n/index.js';
-import { FileUploadAction, FileWithMetadata, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
-import { DocumentUploadResult } from "./useUploadHandler";
-
+import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from 'lucide-react';
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { FileUploadAction, type FileWithMetadata, useSmartFileUploadProcessing } from './useSmartFileUploadProcessing';
+import type { DocumentUploadResult } from './useUploadHandler';
 
 /**
  * File upload status for tracking individual files during upload
  */
 interface FileUploadStatus {
     file: File;
-    status: "pending" | "uploading" | "success" | "error";
+    status: 'pending' | 'uploading' | 'success' | 'error';
     progress: number;
     message?: string;
     id?: string;
     // Track whether this was an update, skip, or new creation
-    action?: "create" | "update" | "skip";
+    action?: 'create' | 'update' | 'skip';
 }
 
 /**
@@ -88,13 +99,13 @@ export function DocumentUploadModal({
     const [collectionData, setCollectionData] = useState<Collection | DynamicCollection | undefined>(undefined);
     const [result, setResult] = useState<DocumentUploadResult | null>(null);
     const [_title, setTitle] = useState(resolvedTitle);
-    const [_description, setDescription] = useState("");
+    const [_description, setDescription] = useState('');
 
     // Fetch collection details if a collectionId is provided
     useEffect(() => {
         if (!collectionId) return;
         client.store.collections.retrieve(collectionId).then(setCollectionData);
-    }, [collectionId]);
+    }, [client.store.collections.retrieve, collectionId]);
 
     // Update title and description based on current state
     useEffect(() => {
@@ -103,16 +114,16 @@ export function DocumentUploadModal({
             setDescription(`${Math.round(overallProgress)}% complete`);
         } else if (uploadComplete) {
             setTitle(t('upload.uploadComplete'));
-            setDescription("");
+            setDescription('');
         } else if (processingDone) {
             setTitle(t('upload.fileAnalysisResults'));
-            setDescription(`${files.length} file${files.length !== 1 ? "s" : ""}`);
+            setDescription(`${files.length} file${files.length !== 1 ? 's' : ''}`);
         } else if (files.length > 0) {
             setTitle(resolvedTitle);
             setDescription(t('upload.checkingForDuplicates'));
         } else {
             setTitle(resolvedTitle);
-            setDescription("");
+            setDescription('');
         }
     }, [isUploading, uploadComplete, processingDone, resolvedTitle, overallProgress, files.length, t]);
 
@@ -128,13 +139,13 @@ export function DocumentUploadModal({
                 <div className="text-sm mt-1">
                     {collectionData && (
                         <div className="flex items-center">
-                            <span className="mr-1">{t('upload.collectionLabel')}</span>
+                            <span className="me-1">{t('upload.collectionLabel')}</span>
                             <span className="font-medium">{collectionData.name}</span>
                         </div>
                     )}
                     {selectedFolder && (
                         <div className="flex items-center mt-1">
-                            <span className="mr-1">{t('upload.folderLabel')}</span>
+                            <span className="me-1">{t('upload.folderLabel')}</span>
                             <span className="font-medium">{selectedFolder}</span>
                         </div>
                     )}
@@ -158,6 +169,53 @@ export function DocumentUploadModal({
         return typeRegistry?.types || [];
     }, [typeRegistry?.types]);
 
+    // Process files to determine create/update/skip status
+    const processFiles = useCallback(
+        async (filesToProcess: File[]) => {
+            if (!filesToProcess.length) return;
+
+            try {
+                console.log(`Processing ${filesToProcess.length} files to determine required actions...`);
+
+                // Get the document processing results
+                const processed = await checkDocumentProcessing(filesToProcess, selectedFolder, collectionId);
+                setProcessedFiles(processed);
+
+                // Count files by action
+                const toCreate = processed.filter((f) => f.action === FileUploadAction.CREATE).length;
+                const toUpdate = processed.filter((f) => f.action === FileUploadAction.UPDATE).length;
+                const toSkip = processed.filter((f) => f.action === FileUploadAction.SKIP).length;
+
+                // Update stats for UI feedback
+                setProcessingStats({
+                    toCreate,
+                    toUpdate,
+                    toSkip,
+                });
+
+                // Show processing results to user
+                toast({
+                    title: t('upload.filesAnalyzed'),
+                    description: `${filesToProcess.length} file(s): ${toCreate} new, ${toUpdate} to update, ${toSkip} to skip`,
+                    status: 'info',
+                    duration: 4000,
+                });
+
+                // Set processing as complete
+                setProcessingDone(true);
+            } catch (error) {
+                console.error('Error processing files:', error);
+                toast({
+                    title: t('agent.error'),
+                    description: t('upload.errorAnalyzingFiles'),
+                    status: 'error',
+                    duration: 5000,
+                });
+            }
+        },
+        [checkDocumentProcessing, collectionId, selectedFolder, t, toast],
+    );
+
     // Reset state when modal opens/closes
     useEffect(() => {
         if (isOpen) {
@@ -172,12 +230,12 @@ export function DocumentUploadModal({
             setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
             setResult(null);
             setTitle(resolvedTitle);
-            setDescription("");
+            setDescription('');
 
             // Set initial files if provided
             if (initialFiles && initialFiles.length > 0) {
                 setFiles(initialFiles);
-                processFiles(initialFiles);
+                void processFiles(initialFiles);
             } else {
                 setFiles([]);
             }
@@ -185,7 +243,7 @@ export function DocumentUploadModal({
             // Create a new key to ensure the modal is fresh
             setModalKey(Date.now());
         }
-    }, [isOpen, initialFiles]);
+    }, [isOpen, initialFiles, processFiles, resolvedTitle]);
 
     // Complete cleanup when modal closes
     const handleClose = () => {
@@ -201,7 +259,7 @@ export function DocumentUploadModal({
         setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
         setResult(null);
         setTitle(resolvedTitle);
-        setDescription("");
+        setDescription('');
         setModalKey(Date.now());
 
         // Call the provided onClose function
@@ -212,51 +270,7 @@ export function DocumentUploadModal({
     const handleFileSelect = (newFiles: File[]) => {
         if (newFiles && newFiles.length > 0) {
             setFiles(newFiles);
-            processFiles(newFiles);
-        }
-    };
-
-    // Process files to determine create/update/skip status
-    const processFiles = async (filesToProcess: File[]) => {
-        if (!filesToProcess.length) return;
-
-        try {
-            console.log(`Processing ${filesToProcess.length} files to determine required actions...`);
-
-            // Get the document processing results
-            const processed = await checkDocumentProcessing(filesToProcess, selectedFolder, collectionId);
-            setProcessedFiles(processed);
-
-            // Count files by action
-            const toCreate = processed.filter((f) => f.action === FileUploadAction.CREATE).length;
-            const toUpdate = processed.filter((f) => f.action === FileUploadAction.UPDATE).length;
-            const toSkip = processed.filter((f) => f.action === FileUploadAction.SKIP).length;
-
-            // Update stats for UI feedback
-            setProcessingStats({
-                toCreate,
-                toUpdate,
-                toSkip,
-            });
-
-            // Show processing results to user
-            toast({
-                title: t('upload.filesAnalyzed'),
-                description: `${filesToProcess.length} file(s): ${toCreate} new, ${toUpdate} to update, ${toSkip} to skip`,
-                status: "info",
-                duration: 4000,
-            });
-
-            // Set processing as complete
-            setProcessingDone(true);
-        } catch (error) {
-            console.error("Error processing files:", error);
-            toast({
-                title: t('agent.error'),
-                description: t('upload.errorAnalyzingFiles'),
-                status: "error",
-                duration: 5000,
-            });
+            void processFiles(newFiles);
         }
     };
 
@@ -269,14 +283,14 @@ export function DocumentUploadModal({
         // Initialize file statuses
         const initialStatuses = processedFiles.map((fileInfo) => ({
             file: fileInfo.file,
-            status: "pending" as const,
+            status: 'pending' as const,
             progress: 0,
             action:
                 fileInfo.action === FileUploadAction.CREATE
-                    ? ("create" as const)
+                    ? ('create' as const)
                     : fileInfo.action === FileUploadAction.UPDATE
-                        ? ("update" as const)
-                        : ("skip" as const),
+                      ? ('update' as const)
+                      : ('skip' as const),
         }));
 
         setFileStatuses(initialStatuses);
@@ -304,7 +318,7 @@ export function DocumentUploadModal({
                     id: fileInfo.existingId,
                     name: fileInfo.name,
                     type: typeId,
-                    status: "skipped",
+                    status: 'skipped',
                     location: fileInfo.location,
                 });
 
@@ -312,7 +326,7 @@ export function DocumentUploadModal({
                 setFileStatuses((current) =>
                     current.map((status) =>
                         status.file === fileInfo.file
-                            ? { ...status, status: "success", progress: 100, id: fileInfo.existingId }
+                            ? { ...status, status: 'success', progress: 100, id: fileInfo.existingId }
                             : status,
                     ),
                 );
@@ -324,7 +338,7 @@ export function DocumentUploadModal({
         const PROGRESS_UPDATE_INTERVAL = 5; // Update progress every 5 files
 
         // Helper function to process a batch of files
-        const processBatch = async (files: FileWithMetadata[], action: "create" | "update") => {
+        const processBatch = async (files: FileWithMetadata[], action: 'create' | 'update') => {
             const batches = [];
             for (let i = 0; i < files.length; i += BATCH_SIZE) {
                 batches.push(files.slice(i, i + BATCH_SIZE));
@@ -340,7 +354,7 @@ export function DocumentUploadModal({
                     toast({
                         title: t('upload.processingFilesAction', { action }),
                         description: t('upload.processedCount', { processed: processedCount, total: files.length }),
-                        status: "info",
+                        status: 'info',
                         duration: 2000,
                     });
                 }
@@ -354,12 +368,12 @@ export function DocumentUploadModal({
                             setFileStatuses((current) =>
                                 current.map((status) =>
                                     status.file === fileInfo.file
-                                        ? { ...status, status: "uploading", progress: 20 }
+                                        ? { ...status, status: 'uploading', progress: 20 }
                                         : status,
                                 ),
                             );
 
-                            if (action === "update" && fileInfo.existingId) {
+                            if (action === 'update' && fileInfo.existingId) {
                                 // Update existing file
                                 await client.store.objects.update(
                                     fileInfo.existingId,
@@ -371,7 +385,7 @@ export function DocumentUploadModal({
                                     },
                                     {
                                         createRevision: true,
-                                        revisionLabel: "upload on " + new Date().toISOString(),
+                                        revisionLabel: `upload on ${new Date().toISOString()}`,
                                     },
                                 );
 
@@ -379,7 +393,7 @@ export function DocumentUploadModal({
                                 setFileStatuses((current) =>
                                     current.map((status) =>
                                         status.file === fileInfo.file
-                                            ? { ...status, status: "success", progress: 100, id: fileInfo.existingId }
+                                            ? { ...status, status: 'success', progress: 100, id: fileInfo.existingId }
                                             : status,
                                     ),
                                 );
@@ -390,7 +404,7 @@ export function DocumentUploadModal({
                                     id: fileInfo.existingId,
                                     name: fileInfo.name,
                                     type: typeId,
-                                    status: "updated",
+                                    status: 'updated',
                                     location: fileInfo.location,
                                 });
                             } else {
@@ -411,7 +425,7 @@ export function DocumentUploadModal({
                                 setFileStatuses((current) =>
                                     current.map((status) =>
                                         status.file === fileInfo.file
-                                            ? { ...status, status: "success", progress: 100, id: createResult.id }
+                                            ? { ...status, status: 'success', progress: 100, id: createResult.id }
                                             : status,
                                     ),
                                 );
@@ -422,11 +436,11 @@ export function DocumentUploadModal({
                                     id: createResult.id,
                                     name: fileInfo.name,
                                     type: typeId,
-                                    status: "created",
+                                    status: 'created',
                                     location: fileInfo.location,
                                 });
                             }
-                        } catch (error: any) {
+                        } catch (error: unknown) {
                             console.error(`Failed to process file ${fileInfo.name}:`, error);
 
                             // Update status to error
@@ -434,11 +448,11 @@ export function DocumentUploadModal({
                                 current.map((status) =>
                                     status.file === fileInfo.file
                                         ? {
-                                            ...status,
-                                            status: "error",
-                                            progress: 100,
-                                            message: error.message || "Unknown error",
-                                        }
+                                              ...status,
+                                              status: 'error',
+                                              progress: 100,
+                                              message: errorMessage(error, 'Unknown error'),
+                                          }
                                         : status,
                                 ),
                             );
@@ -446,8 +460,8 @@ export function DocumentUploadModal({
                             // Add to failed result
                             result.failedFiles.push({
                                 name: fileInfo.name,
-                                error: error.message || "Unknown error",
-                                status: "failed",
+                                error: errorMessage(error, 'Unknown error'),
+                                status: 'failed',
                                 location: fileInfo.location,
                                 type: typeId,
                             });
@@ -455,13 +469,16 @@ export function DocumentUploadModal({
                             // Mark the overall success as false if any file fails
                             result.success = false;
                         }
-                        
+
                         // Update progress every PROGRESS_UPDATE_INTERVAL files
                         filesProcessedInBatch++;
-                        if (filesProcessedInBatch % PROGRESS_UPDATE_INTERVAL === 0 || filesProcessedInBatch === batch.length) {
+                        if (
+                            filesProcessedInBatch % PROGRESS_UPDATE_INTERVAL === 0 ||
+                            filesProcessedInBatch === batch.length
+                        ) {
                             setFileStatuses((currentStatuses) => {
                                 const completedFiles = currentStatuses.filter(
-                                    (f) => f.status === "success" || f.status === "error",
+                                    (f) => f.status === 'success' || f.status === 'error',
                                 ).length;
                                 const totalFiles = currentStatuses.length;
                                 const progress = totalFiles > 0 ? Math.round((completedFiles / totalFiles) * 100) : 0;
@@ -471,17 +488,16 @@ export function DocumentUploadModal({
                         }
                     }),
                 );
-
             }
         };
 
         // Process UPDATE files first, then CREATE files
         if (filesToUpdate.length > 0) {
-            await processBatch(filesToUpdate, "update");
+            await processBatch(filesToUpdate, 'update');
         }
 
         if (filesToCreate.length > 0) {
-            await processBatch(filesToCreate, "create");
+            await processBatch(filesToCreate, 'create');
         }
 
         // Finalize the upload
@@ -489,10 +505,10 @@ export function DocumentUploadModal({
         setFileStatuses((current) => {
             // Check for any pending files that might have been missed
             const missingStatuses = current
-                .filter((status) => status.status === "pending")
+                .filter((status) => status.status === 'pending')
                 .map((status) => ({
                     ...status,
-                    status: "error" as const,
+                    status: 'error' as const,
                     progress: 100,
                     message: t('upload.uploadProcessInterrupted'),
                 }));
@@ -503,7 +519,7 @@ export function DocumentUploadModal({
                     result.failedFiles.push({
                         name: status.file.name,
                         error: t('upload.uploadProcessInterrupted'),
-                        status: "failed",
+                        status: 'failed',
                         type: selectedType?.id || null,
                     });
                 });
@@ -513,13 +529,13 @@ export function DocumentUploadModal({
 
                 // Return updated statuses
                 return current.map((status) =>
-                    status.status === "pending"
+                    status.status === 'pending'
                         ? {
-                            ...status,
-                            status: "error" as const,
-                            progress: 100,
-                            message: t('upload.uploadProcessInterrupted'),
-                        }
+                              ...status,
+                              status: 'error' as const,
+                              progress: 100,
+                              message: t('upload.uploadProcessInterrupted'),
+                          }
                         : status,
                 );
             }
@@ -531,30 +547,30 @@ export function DocumentUploadModal({
         setUploadComplete(true);
 
         // Show summary toast
-        const createdCount = result.uploadedFiles.filter((f) => f.status === "created").length;
-        const updatedCount = result.uploadedFiles.filter((f) => f.status === "updated").length;
+        const createdCount = result.uploadedFiles.filter((f) => f.status === 'created').length;
+        const updatedCount = result.uploadedFiles.filter((f) => f.status === 'updated').length;
         const skippedCount = result.skippedFiles.length;
         const failedCount = result.failedFiles.length;
 
-        let statusMessage = "";
-        if (createdCount > 0) statusMessage += `${createdCount} file${createdCount !== 1 ? "s" : ""} uploaded`;
+        let statusMessage = '';
+        if (createdCount > 0) statusMessage += `${createdCount} file${createdCount !== 1 ? 's' : ''} uploaded`;
         if (updatedCount > 0) {
-            statusMessage += statusMessage ? ", " : "";
-            statusMessage += `${updatedCount} file${updatedCount !== 1 ? "s" : ""} updated`;
+            statusMessage += statusMessage ? ', ' : '';
+            statusMessage += `${updatedCount} file${updatedCount !== 1 ? 's' : ''} updated`;
         }
         if (skippedCount > 0) {
-            statusMessage += statusMessage ? ", " : "";
-            statusMessage += `${skippedCount} file${skippedCount !== 1 ? "s" : ""} skipped`;
+            statusMessage += statusMessage ? ', ' : '';
+            statusMessage += `${skippedCount} file${skippedCount !== 1 ? 's' : ''} skipped`;
         }
         if (failedCount > 0) {
-            statusMessage += statusMessage ? ", " : "";
-            statusMessage += `${failedCount} file${failedCount !== 1 ? "s" : ""} failed`;
+            statusMessage += statusMessage ? ', ' : '';
+            statusMessage += `${failedCount} file${failedCount !== 1 ? 's' : ''} failed`;
         }
 
         toast({
             title: t('upload.uploadComplete'),
             description: statusMessage,
-            status: failedCount > 0 ? "warning" : "success",
+            status: failedCount > 0 ? 'warning' : 'success',
             duration: 5000,
         });
         setResult(result);
@@ -563,15 +579,12 @@ export function DocumentUploadModal({
     const typeSelection = () => {
         return (
             <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">
+                <div className="block text-sm font-medium mb-2">
                     {t('store.contentType')} <span className="text-muted font-normal">{t('store.optional')}</span>
-                    <VTooltip
-                        description={t('upload.contentTypeTooltip')}
-                        placement="top" size="xs"
-                    >
-                        <Info className="size-3 ml-2" />
+                    <VTooltip description={t('upload.contentTypeTooltip')} placement="top" size="xs">
+                        <Info className="size-3 ms-2" />
                     </VTooltip>
-                </label>
+                </div>
                 <SelectBox
                     options={types}
                     value={selectedType}
@@ -581,24 +594,23 @@ export function DocumentUploadModal({
                     filterBy="name"
                     isClearable
                 />
-                {selectedType ? (
-                    <></>
-                ) : (
+                {!selectedType && (
                     <div className="p-2 rounded-md">
                         <div className="flex items-center text-attention">
-                            <CheckCircleIcon className="size-4 mr-1" />
+                            <CheckCircleIcon className="size-4 me-1" />
                             {t('store.automaticTypeDetection')}
                             <VTooltip
                                 description={t('store.automaticTypeDetectionDescription')}
-                                placement="top" size="xs"
+                                placement="top"
+                                size="xs"
                             >
-                                <Info className="size-3 ml-2" />
+                                <Info className="size-3 ms-2" />
                             </VTooltip>
                         </div>
                     </div>
                 )}
             </div>
-        )
+        );
     };
 
     // Determine what content to show based on the current state
@@ -685,14 +697,13 @@ export function DocumentUploadModal({
                             {/* Type selection */}
                             {typeSelection()}
 
-                            <MessageBox
-                                className="mb-4"
-                                status="info"
-                            >
+                            <MessageBox className="mb-4" status="info">
                                 {processingStats.toCreate + processingStats.toUpdate > 0 ? (
                                     <div className="space-y-1">
                                         <p>
-                                            {t('upload.filesReadyToProcess', { count: processingStats.toCreate + processingStats.toUpdate })}
+                                            {t('upload.filesReadyToProcess', {
+                                                count: processingStats.toCreate + processingStats.toUpdate,
+                                            })}
                                         </p>
                                         <p>
                                             {processingStats.toSkip > 0 &&
@@ -700,14 +711,11 @@ export function DocumentUploadModal({
                                         </p>
                                     </div>
                                 ) : processingStats.toSkip > 0 ? (
-                                    <span>
-                                        {t('upload.allFilesExist', { count: processingStats.toSkip })}
-                                    </span>
+                                    <span>{t('upload.allFilesExist', { count: processingStats.toSkip })}</span>
                                 ) : (
                                     <span>{t('upload.noFilesToProcess')}</span>
                                 )}
                             </MessageBox>
-
                         </>
                     )}
                 </ModalBody>
@@ -724,10 +732,7 @@ export function DocumentUploadModal({
                     <div className="mb-4">
                         {/* Progress bar */}
                         <div className="h-2 bg-muted/20 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-primary rounded-full"
-                                style={{ width: `${overallProgress}%` }}
-                            />
+                            <div className="h-full bg-primary rounded-full" style={{ width: `${overallProgress}%` }} />
                         </div>
                     </div>
 
@@ -738,28 +743,28 @@ export function DocumentUploadModal({
                                 key={`${fileStatus.file.name}-${index}`}
                                 className="flex items-center py-2 border-b border-border last:border-b-0"
                             >
-                                <div className="mr-3">
-                                    {fileStatus.status === "pending" && (
-                                        <FileIcon className="size-5 text-muted" />
-                                    )}
-                                    {fileStatus.status === "uploading" && <Spinner size="sm" />}
-                                    {fileStatus.status === "success" && (
+                                <div className="me-3">
+                                    {fileStatus.status === 'pending' && <FileIcon className="size-5 text-muted" />}
+                                    {fileStatus.status === 'uploading' && <Spinner size="sm" />}
+                                    {fileStatus.status === 'success' && (
                                         <CheckCircleIcon className="size-5 text-success" />
                                     )}
-                                    {fileStatus.status === "error" && <XCircleIcon className="size-5 text-destructive" />}
+                                    {fileStatus.status === 'error' && (
+                                        <XCircleIcon className="size-5 text-destructive" />
+                                    )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="truncate font-medium">{fileStatus.file.name}</div>
                                     <div className="text-xs text-muted">
-                                        {fileStatus.status === "pending" && t('agent.waiting')}
-                                        {fileStatus.status === "uploading" && t('agent.uploading')}
-                                        {fileStatus.status === "success" &&
-                                            (fileStatus.action === "create"
+                                        {fileStatus.status === 'pending' && t('agent.waiting')}
+                                        {fileStatus.status === 'uploading' && t('agent.uploading')}
+                                        {fileStatus.status === 'success' &&
+                                            (fileStatus.action === 'create'
                                                 ? t('store.created')
-                                                : fileStatus.action === "update"
-                                                    ? t('store.updated')
-                                                    : t('upload.skip'))}
-                                        {fileStatus.status === "error" && fileStatus.message}
+                                                : fileStatus.action === 'update'
+                                                  ? t('store.updated')
+                                                  : t('upload.skip'))}
+                                        {fileStatus.status === 'error' && fileStatus.message}
                                     </div>
                                 </div>
                             </div>
@@ -779,24 +784,24 @@ export function DocumentUploadModal({
                     <UploadSummary
                         files={fileStatuses.map((f) => {
                             // Map fileStatus to the expected ProcessedFile format
-                            let status: "success" | "updated" | "skipped" | "failed";
+                            let status: 'success' | 'updated' | 'skipped' | 'failed';
 
-                            if (f.status === "success") {
-                                if (f.action === "create") {
-                                    status = "success";
-                                } else if (f.action === "update") {
-                                    status = "updated";
+                            if (f.status === 'success') {
+                                if (f.action === 'create') {
+                                    status = 'success';
+                                } else if (f.action === 'update') {
+                                    status = 'updated';
                                 } else {
-                                    status = "skipped";
+                                    status = 'skipped';
                                 }
                             } else {
-                                status = "failed";
+                                status = 'failed';
                             }
 
                             return {
                                 name: f.file.name,
                                 status,
-                                error: f.status === "error" ? f.message : undefined,
+                                error: f.status === 'error' ? f.message : undefined,
                             };
                         })}
                         location={selectedFolder || undefined}
@@ -823,9 +828,9 @@ export function DocumentUploadModal({
                                 objectIds: [],
                                 uploadedFiles: [
                                     {
-                                        name: "type-selection",
+                                        name: 'type-selection',
                                         type: selectedType?.id || null,
-                                        status: "created",
+                                        status: 'created',
                                     },
                                 ],
                                 skippedFiles: [],
@@ -838,7 +843,9 @@ export function DocumentUploadModal({
                             handleClose();
                         }}
                     >
-                        {selectedType ? t('upload.useTypeName', { typeName: selectedType.name }) : t('upload.useAutoDetection')}
+                        {selectedType
+                            ? t('upload.useTypeName', { typeName: selectedType.name })
+                            : t('upload.useAutoDetection')}
                     </Button>
                 </ModalFooter>
             );
@@ -865,10 +872,7 @@ export function DocumentUploadModal({
                     <Button variant="ghost" onClick={handleClose}>
                         {t('modal.cancel')}
                     </Button>
-                    <Button
-                        disabled={!canUpload}
-                        onClick={handleUpload}
-                    >
+                    <Button disabled={!canUpload} onClick={handleUpload}>
                         {processingStats.toCreate + processingStats.toUpdate > 0
                             ? t('agent.upload')
                             : t('upload.continue')}
@@ -908,12 +912,14 @@ export function DocumentUploadModal({
                 >
                     {t('upload.uploadMore')}
                 </Button>
-                <Button onClick={() => {
-                    if (onUploadComplete && result) {
-                        onUploadComplete(result);
-                    }
-                    handleClose();
-                }}>
+                <Button
+                    onClick={() => {
+                        if (onUploadComplete && result) {
+                            onUploadComplete(result);
+                        }
+                        handleClose();
+                    }}
+                >
                     {t('agent.close')}
                 </Button>
             </ModalFooter>

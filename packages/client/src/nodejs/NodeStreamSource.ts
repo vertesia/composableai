@@ -1,7 +1,6 @@
-import type { Readable } from "node:stream";
-import { ReadableStream as NodeReadableStream } from "node:stream/web";
-import { StreamSource } from "../StreamSource.js";
-
+import type { Readable } from 'node:stream';
+import { ReadableStream as NodeReadableStream } from 'node:stream/web';
+import { StreamSource } from '../StreamSource.js';
 
 /**
  * A stream source that wraps a Node.js Readable stream.
@@ -38,6 +37,6 @@ function readableToWebStream_BUN<T = string | Buffer>(stream: Readable): Readabl
         },
         cancel() {
             it.return?.();
-        }
+        },
     });
 }

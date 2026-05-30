@@ -1,65 +1,65 @@
-import { CompletionResult, ModelOptions, LlumiverseError } from "@llumiverse/common";
-import { activityInfo, ApplicationFailure, log } from "@temporalio/activity";
-import { VertesiaClient } from "@vertesia/client";
-import { NodeStreamSource } from "@vertesia/client/node";
+import { type CompletionResult, type JSONSchema, type ModelOptions, LlumiverseError } from '@llumiverse/common';
+import { activityInfo, ApplicationFailure, log } from '@temporalio/activity';
+import type { VertesiaClient } from '@vertesia/client';
+import { NodeStreamSource } from '@vertesia/client/node';
 import {
-    DSLActivityExecutionPayload,
-    DSLActivitySpec,
-    ExecutionRun,
+    type DSLActivityExecutionPayload,
+    type DSLActivitySpec,
+    type ExecutionRun,
     ExecutionRunStatus,
-    ExecutionRunWorkflow,
-    InteractionExecutionConfiguration,
-    RunSearchPayload,
-} from "@vertesia/common";
-import { projectResult } from "../dsl/projections.js";
-import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { ActivityParamInvalidError, ActivityParamNotFoundError, ResourceExhaustedError } from "../errors.js";
-import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
-import { Readable } from "stream";
+    type ExecutionRunWorkflow,
+    type InteractionExecutionConfiguration,
+    type RunSearchPayload,
+} from '@vertesia/common';
+import { projectResult } from '../dsl/projections.js';
+import { setupActivity } from '../dsl/setup/ActivityContext.js';
+import { ActivityParamInvalidError, ActivityParamNotFoundError, ResourceExhaustedError } from '../errors.js';
+import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
+import { Readable } from 'node:stream';
 
 //Example:
-//@ts-ignore
-const JSON: DSLActivitySpec = {
-    name: "executeInteraction",
-    import: ["defaultModel", "guidlineId", "docTypeId"],
+//@ts-expect-error
+const _JSON: DSLActivitySpec = {
+    name: 'executeInteraction',
+    import: ['defaultModel', 'guidlineId', 'docTypeId'],
     params: {
-        defaultModel: "${model}",
-        interactionName: "GenerateSummary",
+        defaultModel: '${model}',
+        interactionName: 'GenerateSummary',
         model: "${defaultModel ?? 'gpt4'}",
-        environment: "13456",
+        environment: '13456',
         max_tokens: 100,
         temperature: 0.5,
-        tags: ["test"],
-        result_schema: "${docType.object_schema}",
+        tags: ['test'],
+        result_schema: '${docType.object_schema}',
         prompt_data: {
-            documents: "${documents}",
-            guidline: "${guidline.text}",
+            documents: '${documents}',
+            guidline: '${guidline.text}',
         },
     },
     fetch: {
         documents: {
-            type: "document",
+            type: 'document',
             query: {
-                id: { $in: "${objectIds}" },
+                id: { $in: '${objectIds}' },
             },
-            select: "+text",
+            select: '+text',
         },
         guidline: {
-            type: "document",
+            type: 'document',
             limit: 1,
             query: {
-                id: "${guidlineId}",
+                id: '${guidlineId}',
             },
-            select: "+text",
-            on_not_found: "throw",
+            select: '+text',
+            on_not_found: 'throw',
         },
         docType: {
-            type: "document_type",
+            type: 'document_type',
             limit: 1,
             query: {
-                id: "${docTypeId}",
+                id: '${docTypeId}',
             },
-            select: "+object_schema",
+            select: '+object_schema',
         },
     },
 };
@@ -79,7 +79,7 @@ export interface InteractionExecutionParams {
     /**
      * Request a JSON schema for the result
      */
-    result_schema?: any;
+    result_schema?: JSONSchema | null;
 
     /** Wether to validate the result against the schema */
     validate_result?: boolean;
@@ -113,18 +113,18 @@ export interface InteractionExecutionParams {
 export interface ExecuteInteractionParams extends InteractionExecutionParams {
     //TODO rename to interaction as in InteractionAsyncExecutionPayload
     interactionName: string;
-    prompt_data: Record<string, any>;
+    prompt_data: Record<string, unknown>;
     /**
      * Additional prompt data passed by the workflow configuration. This will be merged with prompt_data if any.
      * You should use `import: ["static_prompt_data"]` to import the workflow prompt data as static_prompt_data param.
      * Otherwise the workflow prompt data will be ignored.
      */
-    static_prompt_data?: Record<string, any>;
+    static_prompt_data?: Record<string, unknown>;
     truncate?: Record<string, TruncateSpec>;
 }
 
 export interface ExecuteInteraction extends DSLActivitySpec<ExecuteInteractionParams> {
-    name: "executeInteraction";
+    name: 'executeInteraction';
 }
 
 export async function executeInteraction(payload: DSLActivityExecutionPayload<ExecuteInteractionParams>) {
@@ -136,14 +136,17 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
     }
 
     if (!interactionName) {
-        log.error("Missing interactionName", { params });
-        throw new ActivityParamNotFoundError("interactionName", payload.activity);
+        log.error('Missing interactionName', { params });
+        throw new ActivityParamNotFoundError('interactionName', payload.activity);
     }
 
     if (params.truncate) {
         const truncate = params.truncate;
         for (const [key, value] of Object.entries(truncate)) {
-            prompt_data[key] = truncByMaxTokens(prompt_data[key], value);
+            const promptValue = prompt_data[key];
+            if (typeof promptValue === 'string') {
+                prompt_data[key] = truncByMaxTokens(promptValue, value);
+            }
         }
     }
 
@@ -159,14 +162,14 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         let completionResult: CompletionResult[] = res.result;
 
         // Handle image uploads if the result contains base64 images
-        const imageResults = completionResult.filter(r => r.type === "image");
+        const imageResults = completionResult.filter((r) => r.type === 'image');
         if (imageResults.length > 0) {
             const uploadedImages = await Promise.all(
                 completionResult.map(async (item, index) => {
-                    if (item.type === "image") {
+                    if (item.type === 'image') {
                         const image = item.value;
                         // Extract base64 data and create buffer
-                        const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, "");
+                        const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, '');
                         const buffer = Buffer.from(base64Data, 'base64');
 
                         // Generate filename
@@ -177,17 +180,13 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
                         // Create a readable stream from the buffer
                         const stream = Readable.from(buffer);
 
-                        const source = new NodeStreamSource(
-                            stream,
-                            filename,
-                            "image/png",
-                        );
+                        const source = new NodeStreamSource(stream, filename, 'image/png');
 
                         const file = await client.files.uploadFile(source);
-                        return { type: "image", value: file } as CompletionResult;
+                        return { type: 'image', value: file } as CompletionResult;
                     }
                     return item;
-                })
+                }),
             );
             completionResult = uploadedImages;
         }
@@ -197,52 +196,60 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             status: res.status,
             result: completionResult,
         });
-
-    } catch (error: any) {
-        log.error(`Failed to execute interaction ${interactionName}`, { error });
-        if (error.statusCode === 429 && params.exit_on_resource_exhaustion) {
-            throw new ResourceExhaustedError(error.statusCode, "Resource exhausted - rate limit exceeded");
-        } else if (is4xxNonRetryable(error.status) || is4xxNonRetryable(error.statusCode) || is4xxNonRetryable(error.code) || error.retryable === false) {
+    } catch (error: unknown) {
+        const executionError = toExecutionError(error);
+        log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
+        if (executionError.statusCode === 429 && params.exit_on_resource_exhaustion) {
+            throw new ResourceExhaustedError(executionError.statusCode, 'Resource exhausted - rate limit exceeded');
+        } else if (
+            is4xxNonRetryable(executionError.status) ||
+            is4xxNonRetryable(executionError.statusCode) ||
+            is4xxNonRetryable(executionError.code) ||
+            executionError.retryable === false
+        ) {
             // 4xx HTTP errors (except retryable statuses) are permanent client errors
             // (e.g. model not found, invalid request).
             // Errors explicitly marked as non-retryable (e.g. LlumiverseError) also fall here.
             // They will not be resolved by retrying.
             throw ApplicationFailure.create({
-                message: `Interaction Execution failed ${interactionName}: ${error.message}`,
+                message: `Interaction Execution failed ${interactionName}: ${executionError.message}`,
                 nonRetryable: true,
             });
-        } else if (error.message.includes("Failed to validate merged prompt schema")) {
+        } else if (executionError.message.includes('Failed to validate merged prompt schema')) {
             //issue with the input data, don't retry
-            throw new ActivityParamInvalidError("prompt_data", payload.activity, error.message);
-        } else if (error.message.includes("modelId: Path `modelId` is required")) {
+            throw new ActivityParamInvalidError('prompt_data', payload.activity, executionError.message);
+        } else if (executionError.message.includes('modelId: Path `modelId` is required')) {
             //issue with the input data, don't retry
-            throw new ActivityParamInvalidError("model", payload.activity, error.message);
+            throw new ActivityParamInvalidError('model', payload.activity, executionError.message);
         }
-        
+
         // Check retryability from error object (set by executeInteractionFromActivity)
         // or from LlumiverseError instance (direct driver errors in some paths)
-        const isRetryable = error.retryable !== undefined 
-            ? error.retryable !== false  // Treat undefined as retryable
-            : (error instanceof LlumiverseError ? error.retryable !== false : undefined);
-        
+        const isRetryable =
+            executionError.retryable !== undefined
+                ? true
+                : error instanceof LlumiverseError
+                  ? error.retryable !== false
+                  : undefined;
+
         if (isRetryable !== undefined) {
             if (isRetryable) {
-                log.debug('Marking error as retryable', { interactionName, errorCode: error.errorCode });
+                log.debug('Marking error as retryable', { interactionName, errorCode: executionError.errorCode });
                 throw ApplicationFailure.create({
-                    message: `Interaction Execution failed ${interactionName}: ${error.message}`,
+                    message: `Interaction Execution failed ${interactionName}: ${executionError.message}`,
                     nonRetryable: false,
                 });
             } else {
-                log.debug('Marking error as non-retryable', { interactionName, errorCode: error.errorCode });
+                log.debug('Marking error as non-retryable', { interactionName, errorCode: executionError.errorCode });
                 throw ApplicationFailure.create({
-                    message: `Non-retryable Interaction Execution failed ${interactionName}: ${error.message}`,
+                    message: `Non-retryable Interaction Execution failed ${interactionName}: ${executionError.message}`,
                     nonRetryable: true,
                 });
             }
         }
-        
+
         // Unknown retryability - rethrow as generic error (Temporal will use default retry policy)
-        throw new Error(`Interaction Execution failed ${interactionName}: ${error.message}`);
+        throw new Error(`Interaction Execution failed ${interactionName}: ${executionError.message}`);
     }
 }
 
@@ -250,13 +257,13 @@ export async function executeInteractionFromActivity(
     client: VertesiaClient,
     interactionName: string,
     params: InteractionExecutionParams,
-    prompt_data: any,
+    prompt_data: Record<string, unknown>,
     debug?: boolean,
 ) {
     const userTags = params.tags;
     const info = activityInfo();
     const runId = info.workflowExecution.runId;
-    let tags = ["workflow"];
+    let tags = ['workflow'];
     if (userTags) {
         tags = tags.concat(userTags);
     }
@@ -266,22 +273,22 @@ export async function executeInteractionFromActivity(
         activity_type: info.activityType,
     };
 
-    let previousStudioExecutionRun: ExecutionRun | undefined = undefined;
+    let previousStudioExecutionRun: ExecutionRun | undefined;
     if (params.include_previous_error) {
         //retrieve last failed run if any
         if (info.attempt > 1) {
-            log.info("Retrying, searching for previous run", { prev_run_id: runId });
+            log.info('Retrying, searching for previous run', { prev_run_id: runId });
             const payload: RunSearchPayload = {
                 query: { workflow_run_ids: [runId] },
                 limit: 1,
             };
             const previousRun = await client.runs.search(payload).then((res) => {
-                log.info("Search results", { results: res });
+                log.info('Search results', { results: res });
                 return res ? (res[0] ?? undefined) : undefined;
             });
 
             if (previousRun) {
-                log.info("Found previous run", { previousRun });
+                log.info('Found previous run', { previousRun });
                 previousStudioExecutionRun = await client.runs.retrieve(previousRun.id);
             }
         }
@@ -325,15 +332,16 @@ export async function executeInteractionFromActivity(
 
     if (res.error || res.status === ExecutionRunStatus.failed) {
         log.error(`Error executing interaction ${interactionName}`, { error: res.error });
-        
+
         // Create error with retryability information
         const errorMessage = `Interaction Execution failed ${interactionName}: ${res.error?.message || 'Unknown error'}`;
         const error = new Error(errorMessage);
-        
+
         // Attach retryable property so the catch block can access it
-        (error as any).retryable = res.error?.retryable;
-        (error as any).errorCode = res.error?.code;
-        
+        const executionError = error as Error & { retryable?: boolean; errorCode?: string };
+        executionError.retryable = res.error?.retryable;
+        executionError.errorCode = res.error?.code;
+
         throw error;
     }
 
@@ -348,4 +356,19 @@ export async function executeInteractionFromActivity(
 function is4xxNonRetryable(code: number | undefined): boolean {
     if (code === undefined || typeof code !== 'number') return false;
     return code >= 400 && code < 500 && code !== 412 && code !== 429;
+}
+
+interface ExecutionError extends Error {
+    status?: number;
+    statusCode?: number;
+    code?: number;
+    retryable?: boolean;
+    errorCode?: unknown;
+}
+
+function toExecutionError(error: unknown): ExecutionError {
+    if (error instanceof Error) {
+        return error as ExecutionError;
+    }
+    return new Error(String(error)) as ExecutionError;
 }

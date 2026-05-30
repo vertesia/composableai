@@ -1,20 +1,42 @@
-import { AccessControlPrincipalType, AccessControlResourceType, AppInstallationKind, AppManifestData, ProjectRoles } from "@vertesia/common";
-import colors from "ansi-colors";
-import { Command } from "commander";
-import { readFile } from "fs/promises";
-import { getClient } from "../client.js";
+import {
+    AccessControlPrincipalType,
+    AccessControlResourceType,
+    type AppInstallationKind,
+    type AppManifestData,
+    ProjectRoles,
+} from '@vertesia/common';
+import colors from 'ansi-colors';
+import type { Command } from 'commander';
+import { readFile } from 'node:fs/promises';
+import { getClient } from '../client.js';
+import { hasErrorCode, isRecord, type CliOptions } from '../utils/options.js';
 
-export async function listApps(program: Command, _options: Record<string, any>) {
+type ManifestOptions = CliOptions<{
+    manifest?: string;
+    manifestFile?: string;
+    install?: boolean;
+}>;
+
+type SettingsOptions = CliOptions<{
+    settings?: string;
+    settingsFile?: string;
+}>;
+
+type InstalledAppsOptions = CliOptions<{
+    kind?: AppInstallationKind;
+}>;
+
+export async function listApps(program: Command, _options: Record<string, unknown>) {
     const client = await getClient(program);
     const apps = await client.apps.list();
 
     if (apps.length === 0) {
-        console.log("No apps found.");
+        console.log('No apps found.');
         return;
     }
 
     console.log(`Found ${apps.length} app(s):\n`);
-    apps.forEach(app => {
+    apps.forEach((app) => {
         console.log(`${colors.bold(app.name)} [${app.id}]`);
         if (app.description) {
             console.log(`  ${colors.dim(app.description)}`);
@@ -23,11 +45,11 @@ export async function listApps(program: Command, _options: Record<string, any>) 
     });
 }
 
-export async function getApp(program: Command, appId: string, _options: Record<string, any>) {
+export async function getApp(program: Command, appId: string, _options: Record<string, unknown>) {
     const client = await getClient(program);
     const apps = await client.apps.list();
 
-    const app = apps.find(a => a.id === appId || a.name === appId);
+    const app = apps.find((a) => a.id === appId || a.name === appId);
 
     if (!app) {
         console.log(`No app found with ID or name: ${appId}`);
@@ -37,7 +59,7 @@ export async function getApp(program: Command, appId: string, _options: Record<s
     console.log(JSON.stringify(app, null, 2));
 }
 
-export async function createApp(program: Command, options: Record<string, any>) {
+export async function createApp(program: Command, options: ManifestOptions) {
     const client = await getClient(program);
 
     let manifest: AppManifestData;
@@ -45,9 +67,9 @@ export async function createApp(program: Command, options: Record<string, any>) 
     if (options.manifestFile) {
         try {
             const content = await readFile(options.manifestFile, 'utf-8');
-            manifest = JSON.parse(content);
-        } catch (err: any) {
-            if (err.code === 'ENOENT') {
+            manifest = JSON.parse(content) as AppManifestData;
+        } catch (err: unknown) {
+            if (hasErrorCode(err, 'ENOENT')) {
                 console.error(`${colors.red('✗')} File not found: ${options.manifestFile}`);
                 process.exit(1);
             }
@@ -55,8 +77,8 @@ export async function createApp(program: Command, options: Record<string, any>) 
         }
     } else if (options.manifest) {
         try {
-            manifest = JSON.parse(options.manifest);
-        } catch (err) {
+            manifest = JSON.parse(options.manifest) as AppManifestData;
+        } catch {
             console.error(`${colors.red('✗')} Invalid JSON in manifest option`);
             process.exit(1);
         }
@@ -81,8 +103,8 @@ export async function createApp(program: Command, options: Record<string, any>) 
 
         // Get current user ID from JWT
         const jwt = await client.getDecodedJWT();
-        
-        if (jwt && jwt.sub) {
+
+        if (jwt?.sub) {
             // Grant app_member role to the current user
             await client.iam.aces.create({
                 principal: jwt.sub,
@@ -97,7 +119,7 @@ export async function createApp(program: Command, options: Record<string, any>) 
     }
 }
 
-export async function updateApp(program: Command, appId: string, options: Record<string, any>) {
+export async function updateApp(program: Command, appId: string, options: ManifestOptions) {
     const client = await getClient(program);
 
     let manifest: AppManifestData;
@@ -105,9 +127,9 @@ export async function updateApp(program: Command, appId: string, options: Record
     if (options.manifestFile) {
         try {
             const content = await readFile(options.manifestFile, 'utf-8');
-            manifest = JSON.parse(content);
-        } catch (err: any) {
-            if (err.code === 'ENOENT') {
+            manifest = JSON.parse(content) as AppManifestData;
+        } catch (err: unknown) {
+            if (hasErrorCode(err, 'ENOENT')) {
                 console.error(`${colors.red('✗')} File not found: ${options.manifestFile}`);
                 process.exit(1);
             }
@@ -115,8 +137,8 @@ export async function updateApp(program: Command, appId: string, options: Record
         }
     } else if (options.manifest) {
         try {
-            manifest = JSON.parse(options.manifest);
-        } catch (err) {
+            manifest = JSON.parse(options.manifest) as AppManifestData;
+        } catch {
             console.error(`${colors.red('✗')} Invalid JSON in manifest option`);
             process.exit(1);
         }
@@ -131,17 +153,17 @@ export async function updateApp(program: Command, appId: string, options: Record
     console.log(`  Name: ${result.name}`);
 }
 
-export async function installApp(program: Command, appId: string, options: Record<string, any>) {
+export async function installApp(program: Command, appId: string, options: SettingsOptions) {
     const client = await getClient(program);
 
-    let settings: Record<string, any> | undefined;
+    let settings: Record<string, unknown> | undefined;
 
     if (options.settingsFile) {
         try {
             const content = await readFile(options.settingsFile, 'utf-8');
-            settings = JSON.parse(content);
-        } catch (err: any) {
-            if (err.code === 'ENOENT') {
+            settings = readSettings(JSON.parse(content));
+        } catch (err: unknown) {
+            if (hasErrorCode(err, 'ENOENT')) {
                 console.error(`${colors.red('✗')} File not found: ${options.settingsFile}`);
                 process.exit(1);
             }
@@ -149,8 +171,8 @@ export async function installApp(program: Command, appId: string, options: Recor
         }
     } else if (options.settings) {
         try {
-            settings = JSON.parse(options.settings);
-        } catch (err) {
+            settings = readSettings(JSON.parse(options.settings));
+        } catch {
             console.error(`${colors.red('✗')} Invalid JSON in settings option`);
             process.exit(1);
         }
@@ -162,26 +184,30 @@ export async function installApp(program: Command, appId: string, options: Recor
     console.log(`  App Manifest ID: ${result.manifest}`);
 }
 
-export async function deleteAppInstallation(program: Command, installationId: string, _options: Record<string, any>) {
+export async function deleteAppInstallation(
+    program: Command,
+    installationId: string,
+    _options: Record<string, unknown>,
+) {
     const client = await getClient(program);
 
     await client.apps.uninstall(installationId);
     console.log(`${colors.green('✓')} App uninstalled successfully`);
 }
 
-export async function listInstalledApps(program: Command, options: Record<string, any>) {
+export async function listInstalledApps(program: Command, options: InstalledAppsOptions) {
     const client = await getClient(program);
-    const kind = options.kind as AppInstallationKind | undefined;
+    const kind = options.kind;
 
     const apps = await client.apps.getInstalledApps(kind);
 
     if (apps.length === 0) {
-        console.log("No installed apps found that you have access to.");
+        console.log('No installed apps found that you have access to.');
         return;
     }
 
     console.log(`Found ${apps.length} installed app(s):\n`);
-    apps.forEach(app => {
+    apps.forEach((app) => {
         console.log(`${colors.bold(app.manifest.name)} [${app.manifest.id}]`);
         console.log(`  Installation ID: ${app.id}`);
         if (app.manifest.description) {
@@ -191,7 +217,7 @@ export async function listInstalledApps(program: Command, options: Record<string
     });
 }
 
-export async function getAppInstallation(program: Command, appName: string, _options: Record<string, any>) {
+export async function getAppInstallation(program: Command, appName: string, _options: Record<string, unknown>) {
     const client = await getClient(program);
 
     const installation = await client.apps.getAppInstallationByName(appName);
@@ -209,42 +235,48 @@ export async function getAppInstallation(program: Command, appName: string, _opt
     // Fetch user or group details for each permission
     const enrichedPermissions = await Promise.all(
         permissions.map(async (perm) => {
-            let principalDetails;
+            let principalDetails: unknown;
             try {
                 if (perm.principal_type === 'user') {
                     principalDetails = await client.users.get(perm.principal);
                 } else if (perm.principal_type === 'group') {
                     principalDetails = await client.iam.groups.get(perm.principal);
                 }
-            } catch (err) {
+            } catch {
                 // If we can't fetch details, just use the ID
                 principalDetails = null;
             }
 
             return {
                 ...perm,
-                principal_details: principalDetails
+                principal_details: principalDetails,
             };
-        })
+        }),
     );
 
-    console.log(JSON.stringify({
-        ...installation,
-        permissions: enrichedPermissions
-    }, null, 2));
+    console.log(
+        JSON.stringify(
+            {
+                ...installation,
+                permissions: enrichedPermissions,
+            },
+            null,
+            2,
+        ),
+    );
 }
 
-export async function updateAppInstallationSettings(program: Command, appId: string, options: Record<string, any>) {
+export async function updateAppInstallationSettings(program: Command, appId: string, options: SettingsOptions) {
     const client = await getClient(program);
 
-    let settings: Record<string, any>;
+    let settings: Record<string, unknown>;
 
     if (options.settingsFile) {
         try {
             const content = await readFile(options.settingsFile, 'utf-8');
-            settings = JSON.parse(content);
-        } catch (err: any) {
-            if (err.code === 'ENOENT') {
+            settings = readSettings(JSON.parse(content));
+        } catch (err: unknown) {
+            if (hasErrorCode(err, 'ENOENT')) {
                 console.error(`${colors.red('✗')} File not found: ${options.settingsFile}`);
                 process.exit(1);
             }
@@ -252,8 +284,8 @@ export async function updateAppInstallationSettings(program: Command, appId: str
         }
     } else if (options.settings) {
         try {
-            settings = JSON.parse(options.settings);
-        } catch (err) {
+            settings = readSettings(JSON.parse(options.settings));
+        } catch {
             console.error(`${colors.red('✗')} Invalid JSON in settings option`);
             process.exit(1);
         }
@@ -264,10 +296,18 @@ export async function updateAppInstallationSettings(program: Command, appId: str
 
     const result = await client.apps.updateInstallationSettings({
         app_id: appId,
-        settings
+        settings,
     });
 
     console.log(`${colors.green('✓')} App settings updated successfully`);
     console.log(`  Installation ID: ${result.id}`);
     console.log(`  App Name: ${result.manifest.name}`);
+}
+
+function readSettings(value: unknown): Record<string, unknown> {
+    if (!isRecord(value)) {
+        console.error(`${colors.red('✗')} Settings must be a JSON object`);
+        process.exit(1);
+    }
+    return value;
 }

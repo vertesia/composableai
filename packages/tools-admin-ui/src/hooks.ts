@@ -11,10 +11,7 @@ import { buildResourceData } from './types.js';
  * Fetches the tool server info (message, version, endpoints).
  */
 export function useServerInfo(baseUrl: string) {
-    return useFetch<ServerInfo>(() =>
-        fetch(baseUrl).then(r => r.json()),
-        [baseUrl]
-    );
+    return useFetch<ServerInfo>(() => fetch(baseUrl).then((r) => r.json()), [baseUrl]);
 }
 
 /**
@@ -23,7 +20,7 @@ export function useServerInfo(baseUrl: string) {
  */
 export function useResourceData(baseUrl: string, mcpEndpoints?: string[]) {
     return useFetch<ResourceData>(() => {
-        const fetchJson = (path: string) => fetch(`${baseUrl}/${path}`).then(r => r.json());
+        const fetchJson = (path: string) => fetch(`${baseUrl}/${path}`).then((r) => r.json());
         return Promise.all([
             fetchJson('interactions'),
             fetchJson('tools'),
@@ -32,7 +29,7 @@ export function useResourceData(baseUrl: string, mcpEndpoints?: string[]) {
             fetchJson('types'),
             fetchJson('templates'),
         ]).then(([interactions, tools, skills, activities, types, templates]) =>
-            buildResourceData(interactions, tools, skills, activities, types, templates, mcpEndpoints)
+            buildResourceData(interactions, tools, skills, activities, types, templates, mcpEndpoints),
         );
     }, [baseUrl, mcpEndpoints]);
 }

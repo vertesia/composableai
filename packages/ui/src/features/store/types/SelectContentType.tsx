@@ -1,8 +1,8 @@
-import { ContentObjectTypeItem } from "@vertesia/common";
-import { SelectBox } from "@vertesia/ui/core";
-import { useEffect, useState } from "react";
-import { useTypeRegistry } from "./TypeRegistryProvider.js";
-import { useUITranslation } from '../../../i18n/index.js';
+import type { ContentObjectTypeItem } from '@vertesia/common';
+import { SelectBox } from '@vertesia/ui/core';
+import { useEffect, useState } from 'react';
+import { useTypeRegistry } from './TypeRegistryProvider.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface SelectContentTypeProps {
     defaultValue?: string | string[] | null; // the typeId
@@ -11,7 +11,13 @@ interface SelectContentTypeProps {
     isClearable?: boolean;
     multiple?: boolean;
 }
-export function SelectContentType({ className, defaultValue, onChange, isClearable, multiple}: SelectContentTypeProps) {
+export function SelectContentType({
+    className,
+    defaultValue,
+    onChange,
+    isClearable,
+    multiple,
+}: SelectContentTypeProps) {
     const { t } = useUITranslation();
     const { registry: typeRegistry } = useTypeRegistry();
     const [isMounted, setIsMounted] = useState(false);
@@ -27,23 +33,23 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
         );
     };
     const [selectedType, setSelectedType] = useState<ContentObjectTypeItem | undefined>();
-    const [selectedTypes, setSelectedTypes] = useState<ContentObjectTypeItem[]>([])
+    const [selectedTypes, setSelectedTypes] = useState<ContentObjectTypeItem[]>([]);
 
     useEffect(() => {
         if (!isMounted) {
             setIsMounted(true);
             if (typeRegistry && defaultValue) {
                 if (multiple && Array.isArray(defaultValue)) {
-                    const types = typeRegistry.types.filter(t => defaultValue.includes(t.id));
+                    const types = typeRegistry.types.filter((t) => defaultValue.includes(t.id));
                     setSelectedTypes(types);
                 }
-                const type = typeRegistry.types.find(t => t.id === defaultValue);
+                const type = typeRegistry.types.find((t) => t.id === defaultValue);
                 if (type) {
                     setSelectedType(type);
                 }
             }
         }
-    }, [typeRegistry, defaultValue, multiple])
+    }, [isMounted, typeRegistry, defaultValue, multiple]);
 
     const _onChange = (option: ContentObjectTypeItem | null) => {
         setSelectedType(option || undefined);
@@ -57,16 +63,16 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
 
     if (multiple) {
         return (
-            <div className='flex flex-col gap-4 content-between'>
+            <div className="flex flex-col gap-4 content-between">
                 <SelectBox<ContentObjectTypeItem>
                     options={typeRegistry?.types || []}
                     value={selectedTypes}
                     onChange={_onChangeMultiple}
                     placeholder={t('store.chooseContentTypes')}
                     optionLabel={optionLabel}
-                    className={className || "text-sm bg-background"}
+                    className={className || 'text-sm bg-background'}
                     filterBy="name"
-                    isClearable={isClearable || false as any}
+                    isClearable={isClearable || false}
                     multiple
                 />
             </div>
@@ -74,16 +80,16 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
     }
 
     return (
-        <div className='flex flex-col gap-4 content-between'>
+        <div className="flex flex-col gap-4 content-between">
             <SelectBox<ContentObjectTypeItem>
                 options={typeRegistry?.types || []}
                 value={selectedType}
                 onChange={_onChange}
                 placeholder={t('store.chooseContentType')}
                 optionLabel={optionLabel}
-                className={className || "text-sm bg-background"}
+                className={className || 'text-sm bg-background'}
                 filterBy="name"
-                isClearable={isClearable || false as any}
+                isClearable={isClearable || false}
             />
         </div>
     );

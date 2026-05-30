@@ -1,14 +1,14 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTheme } from '@vertesia/ui/core';
-import { MonacoEditor, IEditorApi } from '../monacoEditor/MonacoEditor';
+import { MonacoEditor, type IEditorApi } from '../monacoEditor/MonacoEditor';
 
 export interface JSONEditorProps {
     /** The JSON value to edit */
-    value: Record<string, any> | undefined | null;
+    value: Record<string, unknown> | undefined | null;
     /** Called when the user saves (value is the parsed JSON) */
-    onChange?: (value: Record<string, any>) => void;
+    onChange?: (value: Record<string, unknown>) => void;
     /** Called on every valid edit (for controlled mode) */
-    onValidChange?: (value: Record<string, any>) => void;
+    onValidChange?: (value: Record<string, unknown>) => void;
     /** If true, the editor is read-only */
     readonly?: boolean;
     /** Editor height (default: '200px') */
@@ -79,7 +79,7 @@ export function JSONEditor({
  * Get the current parsed value from a JSONEditor ref.
  * Returns the parsed object or null if invalid.
  */
-export function getJSONEditorValue(editorRef: React.RefObject<IEditorApi | undefined>): Record<string, any> | null {
+export function getJSONEditorValue(editorRef: React.RefObject<IEditorApi | undefined>): Record<string, unknown> | null {
     if (!editorRef.current) return null;
     try {
         return JSON.parse(editorRef.current.getValue());

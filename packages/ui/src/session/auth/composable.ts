@@ -1,8 +1,8 @@
 /**
  * Handle client caching and refresh of auth token
  */
-import { AuthTokenPayload } from "@vertesia/common";
-import { jwtDecode } from "jwt-decode";
+import type { AuthTokenPayload } from '@vertesia/common';
+import { jwtDecode } from 'jwt-decode';
 import { Env } from '@vertesia/ui/env';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from '../constants';
 import { getFirebaseAuth, getFirebaseAuthToken } from './firebase';
@@ -17,7 +17,13 @@ interface ComposableTokenResponse {
     message?: string;
 }
 
-export async function fetchComposableToken(getIdToken: () => Promise<string | null | undefined>, accountId?: string, projectId?: string, ttl?: number, retryCount = 0): Promise<string> {
+export async function fetchComposableToken(
+    getIdToken: () => Promise<string | null | undefined>,
+    accountId?: string,
+    projectId?: string,
+    ttl?: number,
+    retryCount = 0,
+): Promise<string> {
     console.log(`Getting/refreshing composable token for account ${accountId} and project ${projectId} `);
     Env.logger.info('Getting/refreshing composable token', {
         vertesia: {
@@ -46,7 +52,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
 
     try {
         // Call STS to generate a user token
-        const stsUrl = new URL(stsEndpoint + '/token/issue');
+        const stsUrl = new URL(`${stsEndpoint}/token/issue`);
         const requestBody = {
             type: 'user',
             account_id: accountId,
@@ -58,9 +64,9 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${idToken}` // Firebase token for authentication
+                Authorization: `Bearer ${idToken}`, // Firebase token for authentication
             },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify(requestBody),
         }).catch((error) => {
             console.error('Failed to call STS endpoint', error);
             Env.logger.error('Failed to call STS endpoint', {
@@ -80,16 +86,16 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
-                    status: stsRes?.status
+                    status: stsRes?.status,
                 },
             });
 
-            const ensureResponse = await fetch(Env.endpoints.studio + '/auth/ensure-user', {
+            const ensureResponse = await fetch(`${Env.endpoints.studio}/auth/ensure-user`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${idToken}`,
-                    'Content-Type': 'application/json'
-                }
+                    Authorization: `Bearer ${idToken}`,
+                    'Content-Type': 'application/json',
+                },
             });
 
             if (ensureResponse.status === 412) {
@@ -99,9 +105,9 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                     vertesia: {
                         account_id: accountId,
                         project_id: projectId,
-                    }
+                    },
                 });
-                const idTokenDecoded = jwtDecode(idToken) as any;
+                const idTokenDecoded = jwtDecode<{ email?: string }>(idToken);
                 if (!idTokenDecoded?.email) {
                     Env.logger.error('No email found in id token');
                     throw new Error('No email found in id token');
@@ -127,7 +133,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
-                }
+                },
             });
             return fetchComposableToken(getIdToken, accountId, projectId, ttl, retryCount);
         }
@@ -138,10 +144,10 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
-                    status: stsRes?.status
+                    status: stsRes?.status,
                 },
             });
-            const idTokenDecoded = jwtDecode(idToken) as any;
+            const idTokenDecoded = jwtDecode<{ email?: string }>(idToken);
             if (!idTokenDecoded?.email) {
                 Env.logger.error('No email found in id token');
                 throw new Error('No email found in id token');
@@ -150,8 +156,8 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                 vertesia: {
                     account_id: accountId,
                     project_id: projectId,
-                    email: idTokenDecoded.email
-                }
+                    email: idTokenDecoded.email,
+                },
             });
             throw new UserNotFoundError('User not found', idTokenDecoded.email);
         }
@@ -171,7 +177,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                         account_id: accountId,
                         project_id: projectId,
                         status: stsRes.status,
-                        retry_count: retryCount
+                        retry_count: retryCount,
                     },
                 });
                 throw new Error('Access denied - user may not have access to any accounts');
@@ -183,14 +189,14 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                     account_id: accountId,
                     project_id: projectId,
                     status: stsRes.status,
-                    retry_count: retryCount
+                    retry_count: retryCount,
                 },
             });
 
             // Clear any stale account/project from localStorage
             localStorage.removeItem(LastSelectedAccountId_KEY);
             if (accountId) {
-                localStorage.removeItem(LastSelectedProjectId_KEY + '-' + accountId);
+                localStorage.removeItem(`${LastSelectedProjectId_KEY}-${accountId}`);
             }
 
             // Retry without account/project scope - let user log in to their default account
@@ -215,7 +221,6 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
         console.log('Successfully got token from STS');
         Env.logger.info('Successfully got token from STS');
         return token;
-
     } catch (error) {
         if (error instanceof UserNotFoundError || error instanceof STSError) {
             throw error; // Re-throw UserNotFoundError and STSError to be handled separately in the caller
@@ -224,7 +229,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
         // Clear any stale account/project from localStorage on error
         localStorage.removeItem(LastSelectedAccountId_KEY);
         if (accountId) {
-            localStorage.removeItem(LastSelectedProjectId_KEY + '-' + accountId);
+            localStorage.removeItem(`${LastSelectedProjectId_KEY}-${accountId}`);
         }
         console.error('Failed to get composable token from STS', error);
         Env.logger.error('Failed to get composable token from STS', {
@@ -254,7 +259,12 @@ export async function fetchComposableTokenFromFirebaseToken(accountId?: string, 
  * tokens on /token/issue, so this works for sessions established via Central Auth where
  * the browser has no Firebase user.
  */
-export async function fetchComposableTokenFromVertesiaToken(vertesiaToken: string, accountId?: string, projectId?: string, ttl?: number) {
+export async function fetchComposableTokenFromVertesiaToken(
+    vertesiaToken: string,
+    accountId?: string,
+    projectId?: string,
+    ttl?: number,
+) {
     return fetchComposableToken(() => Promise.resolve(vertesiaToken), accountId, projectId, ttl);
 }
 
@@ -263,13 +273,19 @@ export function getCurrentVertesiaToken(): string | undefined {
     return AUTH_TOKEN_RAW;
 }
 
-export async function getComposableToken(accountId?: string, projectId?: string, initToken?: string, forceRefresh = false, useInternalAuth = false): Promise<ComposableTokenResponse> {
-
-    const selectedAccount = accountId ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined
-    const selectedProject = projectId ?? localStorage.getItem(LastSelectedProjectId_KEY + '-' + selectedAccount) ?? undefined
+export async function getComposableToken(
+    accountId?: string,
+    projectId?: string,
+    initToken?: string,
+    forceRefresh = false,
+    useInternalAuth = false,
+): Promise<ComposableTokenResponse> {
+    const selectedAccount = accountId ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined;
+    const selectedProject =
+        projectId ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${selectedAccount}`) ?? undefined;
 
     //token is still valid for more than 5 minutes
-    if (!forceRefresh && AUTH_TOKEN_RAW && AUTH_TOKEN && AUTH_TOKEN.exp > (Date.now() / 1000 + 300)) {
+    if (!forceRefresh && AUTH_TOKEN_RAW && AUTH_TOKEN && AUTH_TOKEN.exp > Date.now() / 1000 + 300) {
         return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
@@ -279,7 +295,11 @@ export async function getComposableToken(accountId?: string, projectId?: string,
         AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
     } else if (initToken || AUTH_TOKEN_RAW) {
         // we have a token already and no firebase user, refresh it
-        AUTH_TOKEN_RAW = await fetchComposableToken(() => Promise.resolve(initToken ?? AUTH_TOKEN_RAW), selectedAccount, selectedProject);
+        AUTH_TOKEN_RAW = await fetchComposableToken(
+            () => Promise.resolve(initToken ?? AUTH_TOKEN_RAW),
+            selectedAccount,
+            selectedProject,
+        );
     }
 
     if (!AUTH_TOKEN_RAW) {
@@ -294,7 +314,7 @@ export async function getComposableToken(accountId?: string, projectId?: string,
 
     AUTH_TOKEN = jwtDecode(AUTH_TOKEN_RAW) as AuthTokenPayload;
 
-    if (!AUTH_TOKEN || !AUTH_TOKEN.exp || !AUTH_TOKEN_RAW) {
+    if (!AUTH_TOKEN?.exp || !AUTH_TOKEN_RAW) {
         console.error('Invalid composable token', AUTH_TOKEN);
         Env.logger.error('Invalid composable token', {
             vertesia: {
@@ -306,7 +326,6 @@ export async function getComposableToken(accountId?: string, projectId?: string,
     }
 
     return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
-
 }
 
 export class UserNotFoundError extends Error {

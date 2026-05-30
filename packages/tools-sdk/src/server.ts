@@ -1,20 +1,20 @@
-import { Context, Hono } from "hono";
-import { cors } from "hono/cors";
-import { HTTPException } from "hono/http-exception";
-import { z } from "zod";
-import { createActivitiesRoute } from "./server/activities.js";
-import { createInteractionsRoute } from "./server/interactions.js";
-import { createMcpRoute } from "./server/mcp.js";
-import { createSiteRoute } from "./server/site.js";
-import { createSkillsRoute } from "./server/skills.js";
-import { createToolsRoute } from "./server/tools.js";
-import { ToolContext, ToolServerConfig } from "./server/types.js";
-import { ToolExecutionPayload } from "./types.js";
-import { createTemplatesRoute } from "./server/templates.js";
-import { createWidgetsRoute } from "./server/widgets.js";
-import { createPackageRoute } from "./server/app-package.js";
-import { createContentTypesRoute } from "./server/content-types.js";
-import { createProcessesRoute } from "./server/processes.js";
+import { type Context, Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { HTTPException } from 'hono/http-exception';
+import { z } from 'zod';
+import { createActivitiesRoute } from './server/activities.js';
+import { createInteractionsRoute } from './server/interactions.js';
+import { createMcpRoute } from './server/mcp.js';
+import { createSiteRoute } from './server/site.js';
+import { createSkillsRoute } from './server/skills.js';
+import { createToolsRoute } from './server/tools.js';
+import type { ToolContext, ToolServerConfig } from './server/types.js';
+import type { ToolExecutionPayload } from './types.js';
+import { createTemplatesRoute } from './server/templates.js';
+import { createWidgetsRoute } from './server/widgets.js';
+import { createPackageRoute } from './server/app-package.js';
+import { createContentTypesRoute } from './server/content-types.js';
+import { createProcessesRoute } from './server/processes.js';
 
 // Schema for tool execution payload
 const ToolExecutionPayloadSchema = z.object({
@@ -25,8 +25,6 @@ const ToolExecutionPayloadSchema = z.object({
     }),
     metadata: z.record(z.string(), z.any()).optional(),
 });
-
-
 
 /**
  * Create a Hono server for tools, interactions, and skills.
@@ -69,7 +67,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
                 const body = JSON.parse(text);
                 const result = ToolExecutionPayloadSchema.safeParse(body);
                 if (result.success) {
-                    ctx.payload = result.data as ToolExecutionPayload<any>;
+                    ctx.payload = result.data as ToolExecutionPayload;
                     ctx.toolUseId = result.data.tool_use.id;
                     ctx.toolName = result.data.tool_use.tool_name;
                 }
@@ -91,23 +89,22 @@ export function createToolServer(config: ToolServerConfig): Hono {
     app.get(prefix, (c) => {
         // Skills are exposed as tools, so include them in the tools list
         const allToolEndpoints = [
-            ...tools.map(col => `${prefix}/tools/${col.name}`),
-            ...skills.map(col => `${prefix}/skills/${col.name}`),
+            ...tools.map((col) => `${prefix}/tools/${col.name}`),
+            ...skills.map((col) => `${prefix}/skills/${col.name}`),
         ];
         return c.json({
             message: 'Vertesia Tools API',
             version: '1.0.0',
-        endpoints: {
-            tools: allToolEndpoints,
-            interactions: interactions.map(col => `${prefix}/interactions/${col.name}`),
-            templates: templates.map(col => `${prefix}/templates/${col.name}`),
-            processes: `${prefix}/processes`,
-            activities: activities.map(col => `${prefix}/activities/${col.name}`),
-            mcp: mcpProviders.map(p => `${prefix}/mcp/${p.name}`),
-        }
+            endpoints: {
+                tools: allToolEndpoints,
+                interactions: interactions.map((col) => `${prefix}/interactions/${col.name}`),
+                templates: templates.map((col) => `${prefix}/templates/${col.name}`),
+                processes: `${prefix}/processes`,
+                activities: activities.map((col) => `${prefix}/activities/${col.name}`),
+                mcp: mcpProviders.map((p) => `${prefix}/mcp/${p.name}`),
+            },
         });
     });
-
 
     createPackageRoute(app, `${prefix}/package`, config);
     createToolsRoute(app, `${prefix}/tools`, config);
@@ -120,7 +117,6 @@ export function createToolServer(config: ToolServerConfig): Hono {
     createProcessesRoute(app, `${prefix}/processes`, config);
     createMcpRoute(app, `${prefix}/mcp`, config);
 
-
     // Global error handler - returns ToolExecutionResponseError format
     app.onError((err, c) => {
         const ctx = c as unknown as ToolContext;
@@ -131,40 +127,46 @@ export function createToolServer(config: ToolServerConfig): Hono {
             console.error('Uncaught Error:', err);
         }
 
-        return c.json({
-            tool_use_id: ctx.toolUseId || 'unknown',
+        return c.json(
+            {
+                tool_use_id: ctx.toolUseId || 'unknown',
+                status,
+                error: errorMessage,
+                data: ctx.toolName ? { tool_name: ctx.toolName } : undefined,
+            },
             status,
-            error: errorMessage,
-            data: ctx.toolName ? { tool_name: ctx.toolName } : undefined,
-        }, status);
+        );
     });
 
     // Not found handler - returns ToolExecutionResponseError format
     app.notFound((c) => {
         const ctx = c as unknown as ToolContext;
-        return c.json({
-            tool_use_id: ctx.toolUseId || 'unknown',
-            status: 404,
-            error: `Not found: ${c.req.method} ${c.req.path}`,
-            data: ctx.toolName ? { tool_name: ctx.toolName } : undefined,
-        }, 404);
+        return c.json(
+            {
+                tool_use_id: ctx.toolUseId || 'unknown',
+                status: 404,
+                error: `Not found: ${c.req.method} ${c.req.path}`,
+                data: ctx.toolName ? { tool_name: ctx.toolName } : undefined,
+            },
+            404,
+        );
     });
 
     return app;
 }
 
-
-
 // ================== Server Utilities ==================
 
 /**
  * Simple development server with static fimesale handling
- * 
- * @deprecated Use tools server template 
+ *
+ * @deprecated Use tools server template
  */
-export function createDevServer(config: ToolServerConfig & {
-    staticHandler?: (c: Context, next: () => Promise<void>) => Promise<Response | void>;
-}): Hono {
+export function createDevServer(
+    config: ToolServerConfig & {
+        staticHandler?: (c: Context, next: () => Promise<void>) => Promise<Response | undefined>;
+    },
+): Hono {
     const app = createToolServer(config);
 
     if (config.staticHandler) {

@@ -7,11 +7,7 @@ import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
 
 function renderMarkdownToHtml(markdown: string): string {
     return renderToStaticMarkup(
-        React.createElement(
-            Markdown,
-            { remarkPlugins: [remarkGfm], urlTransform: (url: string) => url },
-            markdown
-        )
+        React.createElement(Markdown, { remarkPlugins: [remarkGfm], urlTransform: (url: string) => url }, markdown),
     );
 }
 

@@ -1,11 +1,11 @@
-import { ServerResponse, IncomingMessage } from 'http';
+import type { ServerResponse, IncomingMessage } from 'node:http';
 
 const corsHeaders: Record<string, string> = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'OPTIONS, POST, GET',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Private-Network': 'true', // Required for Chrome Private Network Access
-    'Access-Control-Max-Age': '86400' // 1 day
+    'Access-Control-Max-Age': '86400', // 1 day
 };
 
 export function handleCors(req: IncomingMessage, res: ServerResponse) {

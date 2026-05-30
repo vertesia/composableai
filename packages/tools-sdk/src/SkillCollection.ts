@@ -1,9 +1,9 @@
-import { ToolDefinition } from "@llumiverse/common";
-import { existsSync, readdirSync, readFileSync, statSync } from "fs";
-import { Context } from "hono";
-import { HTTPException } from "hono/http-exception";
-import { join } from "path";
-import { ToolContext } from "./server/types.js";
+import type { ToolDefinition } from '@llumiverse/common';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import type { Context } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import { join } from 'node:path';
+import type { ToolContext } from './server/types.js';
 import type {
     CollectionProperties,
     ICollection,
@@ -14,9 +14,9 @@ import type {
     ToolExecutionPayload,
     ToolExecutionResult,
     ToolUseContext,
-} from "./types.js";
-import { kebabCaseToTitle } from "./utils.js";
-import { AgentToolDefinition } from "@vertesia/common";
+} from './types.js';
+import { kebabCaseToTitle } from './utils.js';
+import type { AgentToolDefinition } from '@vertesia/common';
 
 export interface SkillCollectionProperties extends CollectionProperties {
     /**
@@ -57,7 +57,7 @@ export class SkillCollection implements ICollection<SkillDefinition> {
         this.title = title || kebabCaseToTitle(name);
         this.icon = icon;
         this.description = description;
-        this.skills = new Map(skills.map(s => [s.name, s]));
+        this.skills = new Map(skills.map((s) => [s.name, s]));
     }
 
     [Symbol.iterator](): Iterator<SkillDefinition> {
@@ -93,20 +93,20 @@ export class SkillCollection implements ICollection<SkillDefinition> {
             type: 'object',
             properties: {
                 context: {
-                    type: "string",
-                    description: "Additional context or specific requirements for this task"
-                }
-            }
+                    type: 'string',
+                    description: 'Additional context or specific requirements for this task',
+                },
+            },
         };
 
         let skills = Array.from(this.skills.values());
         if (filterContext) {
-            skills = skills.filter(skill => {
+            skills = skills.filter((skill) => {
                 return skill.isEnabled ? skill.isEnabled(filterContext) : true;
             });
         }
 
-        return skills.map(skill => {
+        return skills.map((skill) => {
             // Build description with related tools info if available
             let description = `[Skill] ${skill.description}. Returns contextual instructions for this task.`;
             if (skill.tools && skill.tools.length > 0) {
@@ -132,7 +132,7 @@ export class SkillCollection implements ICollection<SkillDefinition> {
             title: this.title || this.name,
             description: this.description || `Skills: ${this.name}`,
             src: `${baseUrl}/api/skills/${this.name}`,
-            tools: this.getToolDefinitions()
+            tools: this.getToolDefinitions(),
         };
     }
 
@@ -164,43 +164,41 @@ export class SkillCollection implements ICollection<SkillDefinition> {
      * @param ctx - Hono context
      * @param preParsedPayload - Optional pre-parsed payload (used when routing from root endpoint)
      */
-    async execute(ctx: Context, preParsedPayload?: ToolExecutionPayload<Record<string, any>>): Promise<Response> {
+    async execute(ctx: Context, preParsedPayload?: ToolExecutionPayload): Promise<Response> {
         const toolCtx = ctx as ToolContext;
-        let payload: ToolExecutionPayload<Record<string, any>> | undefined = preParsedPayload;
+        const payload = preParsedPayload ?? toolCtx.payload;
         try {
             if (!payload) {
-                // Check if body was already parsed and validated by middleware
-                if (toolCtx.payload) {
-                    payload = toolCtx.payload;
-                } else {
-                    throw new HTTPException(400, {
-                        message: 'Invalid or missing skill execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }'
-                    });
-                }
+                throw new HTTPException(400, {
+                    message:
+                        'Invalid or missing skill execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }',
+                });
             }
 
             const toolName = payload.tool_use.tool_name;
 
             // Extract skill name from tool name (remove "learn_" prefix if present)
-            const skillName = toolName.startsWith('learn_')
-                ? toolName.replace('learn_', '')
-                : toolName;
+            const skillName = toolName.startsWith('learn_') ? toolName.replace('learn_', '') : toolName;
 
             const skill = this.skills.get(skillName);
 
             if (!skill) {
-                console.warn("[SkillCollection] Skill not found", {
+                console.warn('[SkillCollection] Skill not found', {
                     collection: this.name,
                     requestedSkill: skillName,
                     toolName,
                     availableSkills: Array.from(this.skills.keys()),
                 });
                 throw new HTTPException(404, {
-                    message: `Skill not found: ${skillName}`
+                    message: `Skill not found: ${skillName}`,
                 });
             }
 
-            const data = payload.tool_use.tool_input || {};
+            const input = payload.tool_use.tool_input;
+            const data =
+                typeof input === 'object' && input !== null && !Array.isArray(input)
+                    ? (input as Record<string, unknown>)
+                    : {};
             const result = await this.renderSkill(skill, data);
 
             // TODO: If skill.execution is set, run via Daytona
@@ -214,46 +212,48 @@ export class SkillCollection implements ICollection<SkillDefinition> {
                     skill_name: skill.name,
                     content_type: skill.content_type,
                     execution: skill.execution,
-                }
+                },
             } satisfies ToolExecutionResult & { tool_use_id: string });
-        } catch (err: any) {
-            const status = err.status || 500;
+        } catch (err: unknown) {
+            const status = err instanceof HTTPException ? err.status : 500;
+            const message = err instanceof Error ? err.message : 'Error executing skill';
+            const stack = err instanceof Error ? err.stack : undefined;
             const toolName = payload?.tool_use?.tool_name;
             const toolUseId = payload?.tool_use?.id;
 
             if (status >= 500) {
-                console.error("[SkillCollection] Skill execution failed", {
+                console.error('[SkillCollection] Skill execution failed', {
                     collection: this.name,
                     skill: toolName,
                     toolUseId,
-                    error: err.message,
+                    error: message,
                     status,
                     toolInput: payload?.tool_use?.tool_input,
-                    stack: err.stack,
+                    stack,
                 });
             }
 
-            return ctx.json({
-                tool_use_id: toolUseId || "unknown",
-                is_error: true,
-                content: err.message || "Error executing skill",
-            }, status);
+            return ctx.json(
+                {
+                    tool_use_id: toolUseId || 'unknown',
+                    is_error: true,
+                    content: message,
+                },
+                status,
+            );
         }
     }
 
     /**
      * Render skill instructions (static or dynamic)
      */
-    private async renderSkill(
-        skill: SkillDefinition,
-        _data: Record<string, unknown>
-    ): Promise<SkillExecutionResult> {
+    private async renderSkill(skill: SkillDefinition, _data: Record<string, unknown>): Promise<SkillExecutionResult> {
         const instructions = skill.instructions;
 
         if (skill.content_type === 'jst') {
             // JST templates are not currently supported
             throw new HTTPException(501, {
-                message: `JST templates are not currently supported. Use 'md' content type instead.`
+                message: `JST templates are not currently supported. Use 'md' content type instead.`,
             });
         }
 
@@ -267,9 +267,9 @@ export class SkillCollection implements ICollection<SkillDefinition> {
 // ================== Skill Parser ==================
 
 interface SkillFrontmatter {
-    name: string;
+    name?: string;
     title?: string;
-    description: string;
+    description?: string;
     keywords?: string[];
     tools?: string[];
     data_patterns?: string[];
@@ -299,15 +299,12 @@ interface SkillFrontmatter {
  * Your markdown/jst content here...
  * ```
  */
-export function parseSkillFile(
-    content: string,
-    contentType: SkillContentType
-): SkillDefinition {
+export function parseSkillFile(content: string, contentType: SkillContentType): SkillDefinition {
     // Parse YAML frontmatter
     const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
 
     if (!frontmatterMatch) {
-        throw new Error("Invalid skill file: missing YAML frontmatter");
+        throw new Error('Invalid skill file: missing YAML frontmatter');
     }
 
     const [, yamlContent, body] = frontmatterMatch;
@@ -367,7 +364,7 @@ export function parseSkillFile(
  * Simple YAML frontmatter parser (handles basic key: value and arrays)
  */
 function parseYamlFrontmatter(yaml: string): SkillFrontmatter {
-    const result: Record<string, any> = {};
+    const result: Record<string, unknown> = {};
     const lines = yaml.split('\n');
 
     for (const line of lines) {
@@ -382,19 +379,41 @@ function parseYamlFrontmatter(yaml: string): SkillFrontmatter {
 
         // Handle array syntax: [item1, item2]
         if (value.startsWith('[') && value.endsWith(']')) {
-            const items = value.slice(1, -1).split(',').map(s => s.trim());
-            result[key] = items.filter(s => s.length > 0);
+            const items = value
+                .slice(1, -1)
+                .split(',')
+                .map((s) => s.trim());
+            result[key] = items.filter((s) => s.length > 0);
         } else {
             // Remove quotes if present
-            if ((value.startsWith('"') && value.endsWith('"')) ||
-                (value.startsWith("'") && value.endsWith("'"))) {
+            if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
                 value = value.slice(1, -1);
             }
             result[key] = value;
         }
     }
 
-    return result as SkillFrontmatter;
+    return {
+        name: asString(result.name),
+        title: asString(result.title),
+        description: asString(result.description),
+        keywords: asStringArray(result.keywords),
+        tools: asStringArray(result.tools),
+        data_patterns: asStringArray(result.data_patterns),
+        language: asString(result.language),
+        packages: asStringArray(result.packages),
+        system_packages: asStringArray(result.system_packages),
+        widgets: asStringArray(result.widgets),
+        scripts: asStringArray(result.scripts),
+    };
+}
+
+function asString(value: unknown): string | undefined {
+    return typeof value === 'string' ? value : undefined;
+}
+
+function asStringArray(value: unknown): string[] | undefined {
+    return Array.isArray(value) && value.every((item) => typeof item === 'string') ? value : undefined;
 }
 
 /**
@@ -402,7 +421,7 @@ function parseYamlFrontmatter(yaml: string): SkillFrontmatter {
  */
 export async function loadSkillFromFile(
     filePath: string,
-    fs: { readFile: (path: string, encoding: string) => Promise<string> }
+    fs: { readFile: (path: string, encoding: string) => Promise<string> },
 ): Promise<SkillDefinition> {
     const content = await fs.readFile(filePath, 'utf-8');
     const contentType: SkillContentType = filePath.endsWith('.jst') ? 'jst' : 'md';
@@ -445,17 +464,17 @@ export function loadSkillsFromDirectory(dirPath: string): SkillDefinition[] {
             if (!stat.isDirectory()) continue;
 
             // Look for SKILL.md or SKILL.jst
-            const mdPath = join(entryPath, "SKILL.md");
-            const jstPath = join(entryPath, "SKILL.jst");
+            const mdPath = join(entryPath, 'SKILL.md');
+            const jstPath = join(entryPath, 'SKILL.jst');
 
             let content: string | undefined;
             let contentType: SkillContentType = 'md';
 
             if (existsSync(mdPath)) {
-                content = readFileSync(mdPath, "utf-8");
+                content = readFileSync(mdPath, 'utf-8');
                 contentType = 'md';
             } else if (existsSync(jstPath)) {
-                content = readFileSync(jstPath, "utf-8");
+                content = readFileSync(jstPath, 'utf-8');
                 contentType = 'jst';
             }
 

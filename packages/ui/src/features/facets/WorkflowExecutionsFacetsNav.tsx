@@ -1,13 +1,21 @@
-import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
+import {
+    type Filter as BaseFilter,
+    FilterProvider,
+    FilterBtn,
+    FilterBar,
+    FilterClear,
+    type FilterGroup,
+} from '@vertesia/ui/core';
 import { useState } from 'react';
 import { VStringFacet } from './utils/VStringFacet';
 import { VUserFacet } from './utils/VUserFacet';
-import { SearchInterface } from './utils/SearchInterface';
+import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
+import type { FacetBucket } from '@vertesia/common';
 
 interface WorkflowExecutionsFacetsNavProps {
     facets: {
-        status?: any[];
-        initiated_by?: any[];
+        status?: FacetBucket[];
+        initiated_by?: FacetBucket[];
     };
     search: SearchInterface;
 }
@@ -25,10 +33,9 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
 
     if (facets.status) {
         const statusFilterGroup = VStringFacet({
-            search: null as any, // This will be provided by the search context
             buckets: facets.status || [],
             name: 'status',
-            placeholder: 'Status'
+            placeholder: 'Status',
         });
         customFilterGroups.push(statusFilterGroup);
     }
@@ -37,7 +44,7 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
         const initiatedByFilterGroup = VUserFacet({
             buckets: facets.initiated_by || [],
             name: 'initiated_by',
-            placeholder: 'Initiated By'
+            placeholder: 'Initiated By',
         });
         customFilterGroups.push(initiatedByFilterGroup);
     }
@@ -46,7 +53,7 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
         name: 'start',
         placeholder: 'Date After',
         type: 'date' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(dateAfterFilterGroup);
 
@@ -54,7 +61,7 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
         name: 'end',
         placeholder: 'Date Before',
         type: 'date' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(dateBeforeFilterGroup);
 
@@ -65,8 +72,8 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
         multiple: false,
         options: [
             { label: 'Yes', value: 'true' },
-            { label: 'No', value: 'false' }
-        ]
+            { label: 'No', value: 'false' },
+        ],
     };
     customFilterGroups.push(hasReportedErrorsFilterGroup);
 
@@ -83,50 +90,33 @@ export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
 
         search.clearFilters(false);
 
-        newFilters.forEach(filter => {
+        newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name;
-                let filterValue;
-                if (filter.type === 'stringList') {
-                    filterValue = filter.value.map(v => typeof v === 'string' ? v : v.value);
-                } else if (filter.multiple) {
-                    filterValue = Array.isArray(filter.value)
-                        ? filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v)
-                        : [typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value];
-                } else {
-                    // Single value - don't wrap in array
-                    filterValue = Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
-                        ? (filter.value[0] as any).value
-                        : Array.isArray(filter.value) && filter.value[0]
-                            ? filter.value[0]
-                            : filter.value;
-                }
+                const filterValue = filterValueToQueryValue(filter);
 
                 if (filterName === 'name') {
-                    search.query.search_term = filterValue;
-                    search.query.name = filterValue;
+                    setSearchQueryValue(search, 'search_term', filterValue);
+                    setSearchQueryValue(search, 'name', filterValue);
                 } else if (filterName === 'has_reported_errors') {
                     // Convert string "true"/"false" to boolean
                     const stringValue = Array.isArray(filterValue) ? filterValue[0] : filterValue;
                     // Only set the filter if we have a valid value
                     if (stringValue === 'true' || stringValue === 'false') {
-                        search.query[filterName] = stringValue === 'true';
+                        setSearchQueryValue(search, filterName, stringValue === 'true');
                     }
                 } else {
-                    search.query[filterName] = filterValue;
+                    setSearchQueryValue(search, filterName, filterValue);
                 }
             }
         });
 
-        search.search();
+        void search.search();
     };
 }
 
 // Legacy component for backward compatibility
-export function WorkflowExecutionsFacetsNav({
-    facets,
-    search,
-}: WorkflowExecutionsFacetsNavProps) {
+export function WorkflowExecutionsFacetsNav({ facets, search }: WorkflowExecutionsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
     const filterGroups = useWorkflowExecutionsFilterGroups(facets);
     const handleFilterLogic = useWorkflowExecutionsFilterHandler(search);
@@ -138,11 +128,7 @@ export function WorkflowExecutionsFacetsNav({
     };
 
     return (
-        <FilterProvider
-            filterGroups={filterGroups}
-            filters={filters}
-            setFilters={handleFilterChange}
-        >
+        <FilterProvider filterGroups={filterGroups} filters={filters} setFilters={handleFilterChange}>
             <div className="flex gap-2 items-center">
                 <FilterBtn />
                 <FilterBar />

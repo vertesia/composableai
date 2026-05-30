@@ -1,23 +1,32 @@
-import { Command } from "commander";
-import { createReadStream, createWriteStream } from "fs";
-import { basename } from "path";
-import { pipeline } from "stream/promises";
-import { Readable } from "stream";
-import { NodeStreamSource } from "@vertesia/client/node";
-import { getArtifactStorageId } from "../agent-context.js";
-import { getClient } from "../client.js";
+import type { Command } from 'commander';
+import { createReadStream, createWriteStream } from 'node:fs';
+import { basename } from 'node:path';
+import { pipeline } from 'node:stream/promises';
+import { Readable } from 'node:stream';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
+import { NodeStreamSource } from '@vertesia/client/node';
+import { getArtifactStorageId } from '../agent-context.js';
+import { getClient } from '../client.js';
+import type { CliOptions } from '../utils/options.js';
 
 // Artifact storage prefix - matches the client's ARTIFACTS_PREFIX
-const ARTIFACTS_PREFIX = "agents";
+const ARTIFACTS_PREFIX = 'agents';
+
+type ArtifactOptions = CliOptions<{
+    runId?: string;
+    name?: string;
+    mime?: string;
+    output?: string;
+}>;
 
 /**
  * Get run ID from options or environment variable
  */
-function getRunId(options: Record<string, any>): string {
+function getRunId(options: ArtifactOptions): string {
     return getArtifactStorageId(options);
 }
 
-export async function uploadArtifact(program: Command, file: string | undefined, options: Record<string, any>) {
+export async function uploadArtifact(program: Command, file: string | undefined, options: ArtifactOptions) {
     const client = await getClient(program);
     const runId = getRunId(options);
 
@@ -27,7 +36,7 @@ export async function uploadArtifact(program: Command, file: string | undefined,
     if (!file || file === '-') {
         // Read from stdin
         if (!options.name) {
-            console.error("Error: --name is required when uploading from stdin");
+            console.error('Error: --name is required when uploading from stdin');
             process.exit(1);
         }
         stream = process.stdin;
@@ -42,38 +51,38 @@ export async function uploadArtifact(program: Command, file: string | undefined,
     console.log(`Uploaded artifact: ${result}`);
 }
 
-export async function downloadArtifact(program: Command, name: string, options: Record<string, any>) {
+export async function downloadArtifact(program: Command, name: string, options: ArtifactOptions) {
     const client = await getClient(program);
     const runId = getRunId(options);
 
     const stream = await client.files.downloadArtifact(runId, name);
 
     if (options.output) {
-        const nodeStream = Readable.fromWeb(stream as any);
+        const nodeStream = Readable.fromWeb(stream as NodeReadableStream<Uint8Array>);
         const writeStream = createWriteStream(options.output);
         await pipeline(nodeStream, writeStream);
         console.log(`Downloaded to: ${options.output}`);
     } else {
         // Stream to stdout
-        const nodeStream = Readable.fromWeb(stream as any);
+        const nodeStream = Readable.fromWeb(stream as NodeReadableStream<Uint8Array>);
         await pipeline(nodeStream, process.stdout);
     }
 }
 
-export async function listArtifacts(program: Command, options: Record<string, any>) {
+export async function listArtifacts(program: Command, options: ArtifactOptions) {
     const client = await getClient(program);
     const runId = getRunId(options);
 
     const artifacts = await client.files.listArtifacts(runId);
     // Show filenames only, strip the agents/{runId}/ prefix
     const prefix = `${ARTIFACTS_PREFIX}/${runId}/`;
-    artifacts.forEach(a => {
+    artifacts.forEach((a) => {
         const filename = a.startsWith(prefix) ? a.slice(prefix.length) : a;
         console.log(filename);
     });
 }
 
-export async function getArtifactUrl(program: Command, name: string, options: Record<string, any>) {
+export async function getArtifactUrl(program: Command, name: string, options: ArtifactOptions) {
     const client = await getClient(program);
     const runId = getRunId(options);
 

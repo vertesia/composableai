@@ -1,4 +1,4 @@
-import { PrincipalType, type AuthTokenPayload } from './apikey.js';
+import type { PrincipalType, AuthTokenPayload } from './apikey.js';
 import type { ProjectRef } from './project.js';
 
 export type OAuthClientType = 'public' | 'confidential';
@@ -11,7 +11,14 @@ export type OAuthResponseType = 'code';
 export type OAuthAuthorizationRequestStatus = 'pending' | 'denied' | 'consumed';
 export type OAuthClientRegistrationMode = 'registered' | 'client_id_metadata_document';
 export type OAuthGrantStatus = 'active' | 'revoked' | 'expired';
-export type OAuthGrantSortField = 'granted_at' | 'client_name' | 'user_name' | 'resource' | 'last_used_at' | 'expires_at' | 'status';
+export type OAuthGrantSortField =
+    | 'granted_at'
+    | 'client_name'
+    | 'user_name'
+    | 'resource'
+    | 'last_used_at'
+    | 'expires_at'
+    | 'status';
 export type OAuthGrantSortOrder = 'asc' | 'desc';
 
 export interface OAuthClientData {
@@ -240,7 +247,10 @@ export interface OAuthTokenRequestDeviceCode {
     client_secret?: string;
 }
 
-export type OAuthTokenRequest = OAuthTokenRequestAuthorizationCode | OAuthTokenRequestRefreshToken | OAuthTokenRequestDeviceCode;
+export type OAuthTokenRequest =
+    | OAuthTokenRequestAuthorizationCode
+    | OAuthTokenRequestRefreshToken
+    | OAuthTokenRequestDeviceCode;
 
 export interface OAuthTokenResponse {
     access_token: string;

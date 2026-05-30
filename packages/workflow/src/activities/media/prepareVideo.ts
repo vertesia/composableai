@@ -1,17 +1,26 @@
 import { ApplicationFailure, log } from '@temporalio/activity';
-import { DSLActivityExecutionPayload, DSLActivitySpec, VideoMetadata, VideoRendition, POSTER_RENDITION_NAME, AUDIO_RENDITION_NAME, WEB_VIDEO_RENDITION_NAME, ContentNature } from '@vertesia/common';
-import { exec } from 'child_process';
-import fs from 'fs';
-import os from 'os';
-import path from 'path';
-import { promisify } from 'util';
+import {
+    type DSLActivityExecutionPayload,
+    type DSLActivitySpec,
+    type VideoMetadata,
+    type RenditionWithDimensions,
+    POSTER_RENDITION_NAME,
+    AUDIO_RENDITION_NAME,
+    WEB_VIDEO_RENDITION_NAME,
+    ContentNature,
+} from '@vertesia/common';
+import { execFile as execFileCallback } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { promisify } from 'node:util';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
 import { saveBlobToTempFile } from '../../utils/blobs.js';
-import { VertesiaClient } from '@vertesia/client';
+import type { VertesiaClient } from '@vertesia/client';
 import { RequestError } from '@vertesia/api-fetch-client';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFileCallback);
 
 // Default configuration constants
 const DEFAULT_MAX_RESOLUTION = 1920; // Max resolution for video rendition (produces 1080p)
@@ -75,13 +84,11 @@ interface FFProbeOutput {
  */
 async function getVideoMetadata(videoPath: string): Promise<VideoMetadataExtended> {
     try {
-        const command = `ffprobe -v quiet -print_format json -show_format -show_streams "${videoPath}"`;
-        const { stdout } = await execAsync(command);
-        const metadata = JSON.parse(stdout) as FFProbeOutput;
+        const args = ['-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', videoPath];
+        const { stdout } = await execFileAsync('ffprobe', args);
+        const metadata = JSON.parse(stdout.toString()) as FFProbeOutput;
 
-        const videoStream = metadata.streams.find(
-            (stream) => stream.codec_type === 'video',
-        );
+        const videoStream = metadata.streams.find((stream) => stream.codec_type === 'video');
 
         if (!videoStream) {
             throw ApplicationFailure.nonRetryable('No video stream found in file');
@@ -101,22 +108,16 @@ async function getVideoMetadata(videoPath: string): Promise<VideoMetadataExtende
         }
 
         // Check if video has an audio stream
-        const audioStream = metadata.streams.find(
-            (stream) => stream.codec_type === 'audio',
-        );
+        const audioStream = metadata.streams.find((stream) => stream.codec_type === 'audio');
         const hasAudio = !!audioStream;
 
         return { duration, width, height, codec, bitrate, fps, hasAudio };
     } catch (error) {
-        log.error(
-            `Failed to get video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
+        log.error(`Failed to get video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
         if (error instanceof ApplicationFailure) {
             throw error;
         }
-        throw new Error(
-            `Failed to probe video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
+        throw new Error(`Failed to probe video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 }
 
@@ -170,7 +171,7 @@ export interface PrepareVideoMetadata {
 export interface PrepareVideoResult {
     objectId: string;
     metadata: PrepareVideoMetadata;
-    renditions: VideoRendition[];
+    renditions: RenditionWithDimensions[];
     status: 'success';
 }
 
@@ -178,7 +179,7 @@ export interface PrepareVideoResult {
  * Generate a video rendition with resolution limited to maxResolution (e.g., 1080p)
  * Uses H.264 codec for broad compatibility
  */
-async function generateVideoRendition(
+async function generateRenditionWithDimensions(
     videoPath: string,
     outputDir: string,
     metadata: VideoMetadataExtended,
@@ -189,35 +190,47 @@ async function generateVideoRendition(
     // Calculate scaled dimensions
     const dimensions = calculateScaledDimensions(metadata.width, metadata.height, maxResolution);
 
-    log.info(`Video rendition dimensions: ${metadata.width}x${metadata.height} -> ${dimensions.width}x${dimensions.height}`);
+    log.info(
+        `Video rendition dimensions: ${metadata.width}x${metadata.height} -> ${dimensions.width}x${dimensions.height}`,
+    );
 
     // Combine scale with color space conversion for maximum web compatibility
     // format=yuv420p converts to 4:2:0 chroma subsampling (from ProRes 4:2:2 or higher)
     const videoFilters = `scale=${dimensions.width}:${dimensions.height},format=yuv420p`;
 
     const command = [
-        'ffmpeg',
         '-y', // Overwrite output
-        '-i', `"${videoPath}"`,
-        '-vf', `"${videoFilters}"`,
-        '-c:v', 'libx264', // H.264 codec
-        '-preset', 'medium', // Balance between speed and compression
-        '-crf', VIDEO_CRF, // Constant Rate Factor (18-28, lower = better quality)
-        '-pix_fmt', 'yuv420p', // Explicitly set pixel format for compatibility
-        '-c:a', 'aac', // Audio codec
-        '-b:a', AUDIO_BITRATE, // Audio bitrate
-        '-movflags', '+faststart', // Enable streaming
-        '-max_muxing_queue_size', '1024', // Prevent muxing issues
-        `"${outputFile}"`,
-    ].join(' ');
+        '-i',
+        videoPath,
+        '-vf',
+        videoFilters,
+        '-c:v',
+        'libx264', // H.264 codec
+        '-preset',
+        'medium', // Balance between speed and compression
+        '-crf',
+        VIDEO_CRF, // Constant Rate Factor (18-28, lower = better quality)
+        '-pix_fmt',
+        'yuv420p', // Explicitly set pixel format for compatibility
+        '-c:a',
+        'aac', // Audio codec
+        '-b:a',
+        AUDIO_BITRATE, // Audio bitrate
+        '-movflags',
+        '+faststart', // Enable streaming
+        '-max_muxing_queue_size',
+        '1024', // Prevent muxing issues
+        outputFile,
+    ];
 
-    log.info(`Generating ${maxResolution}p video rendition`, { command });
+    log.info(`Generating ${maxResolution}p video rendition`, { command: 'ffmpeg', args: command });
 
     try {
-        const { stderr } = await execAsync(command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const { stderr } = await execFileAsync('ffmpeg', command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const stderrText = stderr.toString();
 
-        if (stderr && !stderr.includes('frame=')) {
-            log.debug(`FFmpeg stderr for video rendition: ${stderr}`);
+        if (stderrText && !stderrText.includes('frame=')) {
+            log.debug(`FFmpeg stderr for video rendition: ${stderrText}`);
         }
 
         // Verify output file was created
@@ -234,9 +247,7 @@ async function generateVideoRendition(
             return null;
         }
     } catch (error) {
-        log.error(
-            `Failed to generate video rendition: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
+        log.error(`Failed to generate video rendition: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return null;
     }
 }
@@ -244,29 +255,29 @@ async function generateVideoRendition(
 /**
  * Extract audio track from video as AAC audio file
  */
-async function generateAudioRendition(
-    videoPath: string,
-    outputDir: string,
-): Promise<string | null> {
+async function generateAudioRendition(videoPath: string, outputDir: string): Promise<string | null> {
     const outputFile = path.join(outputDir, 'audio.m4a');
 
     const command = [
-        'ffmpeg',
         '-y', // Overwrite output
-        '-i', `"${videoPath}"`,
+        '-i',
+        videoPath,
         '-vn', // No video
-        '-c:a', 'aac', // Audio codec
-        '-b:a', AUDIO_BITRATE, // Audio bitrate
-        `"${outputFile}"`,
-    ].join(' ');
+        '-c:a',
+        'aac', // Audio codec
+        '-b:a',
+        AUDIO_BITRATE, // Audio bitrate
+        outputFile,
+    ];
 
-    log.info('Generating audio-only rendition', { command });
+    log.info('Generating audio-only rendition', { command: 'ffmpeg', args: command });
 
     try {
-        const { stderr } = await execAsync(command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const { stderr } = await execFileAsync('ffmpeg', command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const stderrText = stderr.toString();
 
-        if (stderr && !stderr.includes('frame=')) {
-            log.debug(`FFmpeg stderr for audio rendition: ${stderr}`);
+        if (stderrText && !stderrText.includes('frame=')) {
+            log.debug(`FFmpeg stderr for audio rendition: ${stderrText}`);
         }
 
         // Verify output file was created
@@ -279,9 +290,7 @@ async function generateAudioRendition(
             return null;
         }
     } catch (error) {
-        log.error(
-            `Failed to generate audio rendition: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
+        log.error(`Failed to generate audio rendition: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return null;
     }
 }
@@ -305,23 +314,28 @@ async function generateScreenshot(
     const scaleFilter = `scale=${dimensions.width}:${dimensions.height}`;
 
     const command = [
-        'ffmpeg',
         '-y',
-        '-ss', timestamp.toString(),
-        '-i', `"${videoPath}"`,
-        '-vframes', '1',
-        '-vf', `"${scaleFilter}"`,
-        '-q:v', JPEG_QUALITY, // High quality JPEG
-        `"${outputFile}"`,
-    ].join(' ');
+        '-ss',
+        timestamp.toString(),
+        '-i',
+        videoPath,
+        '-vframes',
+        '1',
+        '-vf',
+        scaleFilter,
+        '-q:v',
+        JPEG_QUALITY, // High quality JPEG
+        outputFile,
+    ];
 
-    log.info(`Generating ${name} at ${timestamp}s`, { command });
+    log.info(`Generating ${name} at ${timestamp}s`, { command: 'ffmpeg', args: command });
 
     try {
-        const { stderr } = await execAsync(command);
+        const { stderr } = await execFileAsync('ffmpeg', command);
+        const stderrText = stderr.toString();
 
-        if (stderr && !stderr.includes('frame=')) {
-            log.debug(`FFmpeg stderr for ${name}: ${stderr}`);
+        if (stderrText && !stderrText.includes('frame=')) {
+            log.debug(`FFmpeg stderr for ${name}: ${stderrText}`);
         }
 
         // Verify output file was created
@@ -338,9 +352,7 @@ async function generateScreenshot(
             return null;
         }
     } catch (error) {
-        log.error(
-            `Failed to generate ${name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
+        log.error(`Failed to generate ${name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return null;
     }
 }
@@ -376,7 +388,7 @@ async function uploadMediaAsRendition(
     mimeType: string,
     etag: string,
     pathSegment: string,
-): Promise<VideoRendition> {
+): Promise<RenditionWithDimensions> {
     const storagePath = `renditions/${etag}/${pathSegment}/${fileName}`;
     const uri = await uploadFile(client, result.file, mimeType, fileName, storagePath);
 
@@ -400,11 +412,7 @@ async function uploadMediaAsRendition(
 export async function prepareVideo(
     payload: DSLActivityExecutionPayload<PrepareVideoParams>,
 ): Promise<PrepareVideoResult> {
-    const {
-        client,
-        objectId,
-        params,
-    } = await setupActivity<PrepareVideoParams>(payload);
+    const { client, objectId, params } = await setupActivity<PrepareVideoParams>(payload);
 
     const maxResolution = params.maxResolution ?? DEFAULT_MAX_RESOLUTION;
     const thumbnailSize = params.thumbnailSize ?? DEFAULT_THUMBNAIL_SIZE;
@@ -431,13 +439,9 @@ export async function prepareVideo(
         throw new DocumentNotFoundError(`Document ${objectId} has no source`, [objectId]);
     }
 
-    if (!inputObject.content.type || !inputObject.content.type.startsWith('video/')) {
+    if (!inputObject.content.type?.startsWith('video/')) {
         log.error(`Document ${objectId} is not a video: ${inputObject.content.type}`);
-        throw new InvalidContentTypeError(
-            objectId,
-            'video/*',
-            inputObject.content.type || 'unknown',
-        );
+        throw new InvalidContentTypeError(objectId, 'video/*', inputObject.content.type || 'unknown');
     }
 
     // Download video to temp file
@@ -451,7 +455,7 @@ export async function prepareVideo(
 
         // Step 2: Generate video rendition
         log.info('Generating video rendition');
-        const renditionResult = await generateVideoRendition(
+        const renditionResult = await generateRenditionWithDimensions(
             videoFile,
             tempOutputDir,
             metadata,
@@ -461,25 +465,14 @@ export async function prepareVideo(
         // Step 3 & 4: Generate thumbnail and poster in parallel
         log.info('Generating thumbnail and poster');
         const thumbnailTimestamp = Math.max(metadata.duration * THUMBNAIL_TIMESTAMP_RATIO, MIN_SCREENSHOT_TIMESTAMP);
-        const posterTimestamp = Math.max(Math.min(metadata.duration * POSTER_TIMESTAMP_RATIO, POSTER_TIMESTAMP_MAX), MIN_SCREENSHOT_TIMESTAMP);
+        const posterTimestamp = Math.max(
+            Math.min(metadata.duration * POSTER_TIMESTAMP_RATIO, POSTER_TIMESTAMP_MAX),
+            MIN_SCREENSHOT_TIMESTAMP,
+        );
 
         const [thumbnailResult, posterResult] = await Promise.all([
-            generateScreenshot(
-                videoFile,
-                tempOutputDir,
-                thumbnailTimestamp,
-                thumbnailSize,
-                'thumbnail',
-                metadata,
-            ),
-            generateScreenshot(
-                videoFile,
-                tempOutputDir,
-                posterTimestamp,
-                posterSize,
-                'poster',
-                metadata,
-            ),
+            generateScreenshot(videoFile, tempOutputDir, thumbnailTimestamp, thumbnailSize, 'thumbnail', metadata),
+            generateScreenshot(videoFile, tempOutputDir, posterTimestamp, posterSize, 'poster', metadata),
         ]);
 
         // Step 5: Generate audio rendition (if video has audio and requested)
@@ -492,7 +485,7 @@ export async function prepareVideo(
         }
 
         // Step 6: Upload generated files
-        const renditions: VideoRendition[] = [];
+        const renditions: RenditionWithDimensions[] = [];
         const etag = inputObject.content.etag ?? inputObject.id;
 
         if (renditionResult) {
@@ -511,13 +504,7 @@ export async function prepareVideo(
         if (thumbnailResult) {
             const fileName = 'thumbnail.jpg';
             const storagePath = `renditions/${etag}/${thumbnailSize}/${fileName}`;
-            await uploadFile(
-                client,
-                thumbnailResult.file,
-                'image/jpeg',
-                fileName,
-                storagePath,
-            );
+            await uploadFile(client, thumbnailResult.file, 'image/jpeg', fileName, storagePath);
         }
 
         if (posterResult) {
@@ -597,9 +584,7 @@ export async function prepareVideo(
         }
 
         // Wrap unknown errors in Error
-        throw new Error(
-            `Failed to prepare video ${objectId}: ${errorMessage}`,
-        );
+        throw new Error(`Failed to prepare video ${objectId}: ${errorMessage}`);
     } finally {
         // Clean up temporary files
         const cleanupPromises: Promise<void>[] = [];

@@ -1,4 +1,4 @@
-import { ApplicationFailure } from '@temporalio/activity';
+import type { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import type { VertesiaClient } from '@vertesia/client';
 import { ContentEventName, type DSLActivityExecutionPayload } from '@vertesia/common';
@@ -38,7 +38,9 @@ const createPayload = (): DSLActivityExecutionPayload<ExecuteInteractionParams> 
     activity: { name: 'executeInteraction', params: {} },
 });
 
-async function mockInteractionError(error: Error & { statusCode?: number; status?: number; code?: number }): Promise<void> {
+async function mockInteractionError(
+    error: Error & { statusCode?: number; status?: number; code?: number },
+): Promise<void> {
     const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
     const mockClient = {
         interactions: {
@@ -54,7 +56,7 @@ async function mockInteractionError(error: Error & { statusCode?: number; status
 }
 
 describe('executeInteraction retryability', () => {
-    it('leaves 412 rendition-in-progress failures retryable', async () => {
+    it('should leave 412 rendition-in-progress failures retryable', async () => {
         await mockInteractionError(Object.assign(new Error('rendition in progress'), { statusCode: 412 }));
 
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
@@ -65,7 +67,7 @@ describe('executeInteraction retryability', () => {
     it.each([
         ['status', { status: 412 }],
         ['code', { code: 412 }],
-    ])('leaves 412 failures retryable when reported as %s', async (_field, statusProps) => {
+    ])('should leave 412 failures retryable when reported as %s', async (_field, statusProps) => {
         await mockInteractionError(Object.assign(new Error('precondition failed'), statusProps));
 
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
@@ -73,7 +75,7 @@ describe('executeInteraction retryability', () => {
         });
     });
 
-    it('marks other 4xx failures as non-retryable', async () => {
+    it('should mark other 4xx failures as non-retryable', async () => {
         await mockInteractionError(Object.assign(new Error('bad request'), { statusCode: 400 }));
 
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({

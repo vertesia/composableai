@@ -1,4 +1,3 @@
-
 const VARS_RX = /\${\s*([^}]+)\s*}/g;
 
 /**
@@ -7,7 +6,7 @@ const VARS_RX = /\${\s*([^}]+)\s*}/g;
  * @param expr
  * @param vars
  */
-export function expandVars(expr: string, vars: Record<string, any>) {
+export function expandVars(expr: string, vars: Record<string, unknown>) {
     return expr.replace(VARS_RX, (_: string, name: string) => {
         const path = name.split('.');
         const value = resolveProp(vars, path);
@@ -19,10 +18,14 @@ export function expandVars(expr: string, vars: Record<string, any>) {
     });
 }
 
-function resolveProp(object: object, path: string[]) {
-    let value: any = object;
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return !!value && typeof value === 'object';
+}
+
+function resolveProp(object: Record<string, unknown>, path: string[]) {
+    let value: unknown = object;
     for (const part of path) {
-        if (value === undefined) {
+        if (!isRecord(value)) {
             return undefined;
         }
         value = value[part];

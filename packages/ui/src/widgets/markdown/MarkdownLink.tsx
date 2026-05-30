@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import type { Element } from 'hast';
 import { useResolvedUrl, parseUrlScheme, mapSchemeToRoute } from './useResolvedUrl';
 import { CodeBlockPlaceholder } from './CodeBlockPlaceholder';
@@ -10,7 +10,7 @@ export interface MarkdownLinkProps {
     className?: string;
     artifactRunId?: string;
     /** Existing link component to delegate to for standard URLs */
-    ExistingLink?: React.ComponentType<any>;
+    ExistingLink?: React.ComponentType<MarkdownLinkProps>;
 }
 
 /**
@@ -40,13 +40,7 @@ export function MarkdownLink({
             );
         }
         return (
-            <a
-                href={mappedRoute}
-                {...rest}
-                className={className}
-                target="_blank"
-                rel="noopener noreferrer"
-            >
+            <a href={mappedRoute} {...rest} className={className} target="_blank" rel="noopener noreferrer">
                 {children}
             </a>
         );
@@ -62,13 +56,7 @@ export function MarkdownLink({
             );
         }
         return (
-            <a
-                href={href}
-                {...rest}
-                className={className}
-                target="_blank"
-                rel="noopener noreferrer"
-            >
+            <a href={href} {...rest} className={className} target="_blank" rel="noopener noreferrer">
                 {children}
             </a>
         );
@@ -76,12 +64,7 @@ export function MarkdownLink({
 
     // For artifact: and image: URLs, use the resolver
     return (
-        <ResolvedLink
-            rawHref={rawHref}
-            artifactRunId={artifactRunId}
-            className={className}
-            rest={rest}
-        >
+        <ResolvedLink rawHref={rawHref} artifactRunId={artifactRunId} className={className} rest={rest}>
             {children}
         </ResolvedLink>
     );
@@ -126,13 +109,7 @@ function ResolvedLink({
     }
 
     return (
-        <a
-            href={url || '#'}
-            {...rest}
-            className={className}
-            target="_blank"
-            rel="noopener noreferrer"
-        >
+        <a href={url || '#'} {...rest} className={className} target="_blank" rel="noopener noreferrer">
             {children}
         </a>
     );

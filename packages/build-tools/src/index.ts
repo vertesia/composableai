@@ -29,7 +29,7 @@ export type {
     TransformFunction,
     TransformResult,
     AssetFile,
-    WidgetConfig
+    WidgetConfig,
 } from './types.js';
 
 // Presets
@@ -50,8 +50,13 @@ export {
     type PromptDefinition,
     type PromptContentType,
     PromptRole,
-    TemplateType
+    TemplateType,
 } from './presets/index.js';
 
 // Utilities
 export { parseFrontmatter, type FrontmatterResult } from './parsers/frontmatter.js';
+export {
+    createRollupTypescript,
+    isRollupWatchMode,
+    type RollupTypescriptOptions,
+} from './utils/rollup-typescript.js';

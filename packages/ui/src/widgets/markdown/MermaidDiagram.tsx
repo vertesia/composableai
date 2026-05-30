@@ -56,15 +56,13 @@ function normalizeMermaidCodeForBrowser(code: string): string {
  */
 function makeSvgResponsive(svg: string): string {
     return svg.replace(/<svg([^>]*)>/i, (_full, attrs: string) => {
-        let nextAttrs = attrs
-            .replace(/\swidth="[^"]*"/i, '')
-            .replace(/\sheight="[^"]*"/i, '');
+        let nextAttrs = attrs.replace(/\swidth="[^"]*"/i, '').replace(/\sheight="[^"]*"/i, '');
 
         if (/style="/i.test(nextAttrs)) {
             nextAttrs = nextAttrs.replace(
                 /style="([^"]*)"/i,
                 (_styleFull, styleValue: string) =>
-                    `style="${styleValue};width:100%;height:auto;display:block;max-width:100%;"`
+                    `style="${styleValue};width:100%;height:auto;display:block;max-width:100%;"`,
             );
         } else {
             nextAttrs += ' style="width:100%;height:auto;display:block;max-width:100%;"';
@@ -162,7 +160,7 @@ export function MermaidDiagram({ code, className }: MermaidDiagramProps) {
             }
         };
 
-        renderDiagram();
+        void renderDiagram();
 
         return () => {
             cancelled = true;
@@ -186,6 +184,7 @@ export function MermaidDiagram({ code, className }: MermaidDiagramProps) {
         <div
             ref={containerRef}
             className={`my-4 w-full overflow-x-auto [&_svg]:mx-auto [&_svg]:w-full [&_svg]:h-auto [&_svg]:max-w-full ${className || ''}`}
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG is produced by Mermaid renderer from a known mermaid-source string
             dangerouslySetInnerHTML={{ __html: svg }}
         />
     );

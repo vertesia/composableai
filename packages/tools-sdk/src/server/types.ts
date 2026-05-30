@@ -1,20 +1,22 @@
-import { Context } from "hono";
-import { ActivityCollection } from "../ActivityCollection.js";
-import { InteractionCollection } from "../InteractionCollection.js";
-import { SkillCollection } from "../SkillCollection.js";
-import { RenderingTemplateCollection } from "../RenderingTemplateCollection.js";
-import { ToolCollection } from "../ToolCollection.js";
-import { ToolExecutionPayload } from "../types.js";
-import { JSONSchema } from "@llumiverse/common";
-import { AppUIConfig, InCodeProcessDefinition, ProjectConfiguration } from "@vertesia/common";
-import { ContentTypesCollection } from "../ContentTypesCollection.js";
+import type { Context } from 'hono';
+import type { ActivityCollection } from '../ActivityCollection.js';
+import type { InteractionCollection } from '../InteractionCollection.js';
+import type { SkillCollection } from '../SkillCollection.js';
+import type { RenderingTemplateCollection } from '../RenderingTemplateCollection.js';
+import type { ToolCollection } from '../ToolCollection.js';
+import type { ToolExecutionPayload } from '../types.js';
+import type { JSONSchema } from '@llumiverse/common';
+import type { AppUIConfig, InCodeProcessDefinition, ProjectConfiguration } from '@vertesia/common';
+import type { AuthSession } from '../auth.js';
+import type { ContentTypesCollection } from '../ContentTypesCollection.js';
+import type { MCPConnectionDetails } from '../types.js';
 
 /**
  * Extended context with parsed payload for tool/skill execution
  */
 export interface ToolContext extends Context {
     /** The parsed request payload */
-    payload?: ToolExecutionPayload<any>;
+    payload?: ToolExecutionPayload;
     /** The tool_use.id from the payload */
     toolUseId?: string;
     /** The tool_use.tool_name from the payload */
@@ -27,11 +29,7 @@ export interface ToolContext extends Context {
 export interface MCPProviderConfig {
     name: string;
     description?: string;
-    createMCPConnection: (session: any, config: Record<string, any>) => Promise<{
-        name: string;
-        url: string;
-        token: string;
-    }>;
+    createMCPConnection: (session: AuthSession, config: Record<string, unknown>) => Promise<MCPConnectionDetails>;
 }
 
 /**
@@ -99,10 +97,10 @@ export interface ToolServerConfig {
     hideUILinks?: boolean;
 
     /**
-     * If a filter is provided, it will be called with the project configuration when requesting tool definitions, and can be used to filter which tools are returned based on the project configuration. 
+     * If a filter is provided, it will be called with the project configuration when requesting tool definitions, and can be used to filter which tools are returned based on the project configuration.
      * This allows for dynamic enabling/disabling of tools based on project settings.
-     * @param projectConfig 
-     * @returns 
+     * @param projectConfig
+     * @returns
      */
     toolFilter?: (projectConfig: ProjectConfiguration) => boolean;
 }

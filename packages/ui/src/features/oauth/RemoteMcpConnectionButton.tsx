@@ -1,6 +1,6 @@
 import { useUserSession } from '@vertesia/ui/session';
 import { Button, Spinner } from '../../core/index.js';
-import { useUITranslation } from '../../i18n/index.js';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { CheckCircle2, ExternalLink, ShieldAlertIcon } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useOAuthPopup } from './useOAuthPopup.js';
@@ -46,7 +46,7 @@ export function RemoteMcpConnectionButton({
     variant = 'default',
     showLabel = false,
     showDisconnect = false,
-    readOnly = false
+    readOnly = false,
 }: RemoteMcpConnectionButtonProps) {
     const { client } = useUserSession();
     const { t } = useUITranslation();
@@ -76,19 +76,19 @@ export function RemoteMcpConnectionButton({
     }, [client, appId, collectionId, providedAuthenticated]);
 
     useEffect(() => {
-        loadStatus();
+        void loadStatus();
     }, [loadStatus]);
 
     const { openOAuthPopup } = useOAuthPopup({
         onComplete: () => {
             setAuthenticating(false);
-            loadStatus();
+            void loadStatus();
             onAuthChange?.();
         },
         onError: (error) => {
             console.error('OAuth failed:', error);
             setAuthenticating(false);
-        }
+        },
     });
 
     const handleConnect = async () => {
@@ -108,9 +108,10 @@ export function RemoteMcpConnectionButton({
             }
         } catch (error) {
             console.error('Failed to authorize:', error);
-            const raw = error instanceof Error
-                ? ((error as { original_message?: string }).original_message ?? error.message)
-                : 'Failed to connect';
+            const raw =
+                error instanceof Error
+                    ? ((error as { original_message?: string }).original_message ?? error.message)
+                    : 'Failed to connect';
             const detail = raw.replace(/^[A-Za-z\s]+:\s/, '');
             onError?.(`${displayName}: ${detail}`);
             setAuthenticating(false);
@@ -168,12 +169,7 @@ export function RemoteMcpConnectionButton({
                     <span>{t('mcpOAuth.connected')}</span>
                 </div>
                 {showDisconnect && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleDisconnect}
-                        disabled={disconnecting}
-                    >
+                    <Button variant="ghost" size="sm" onClick={handleDisconnect} disabled={disconnecting}>
                         {disconnecting ? <Spinner className="size-4" /> : t('mcpOAuth.disconnect')}
                     </Button>
                 )}
@@ -242,7 +238,7 @@ export function RemoteMcpConnectionButton({
                         </>
                     ) : (
                         <>
-                            <ExternalLink className="size-3 mr-1" />
+                            <ExternalLink className="size-3 me-1" />
                             <span>{t('mcpOAuth.connect')}</span>
                         </>
                     )}
@@ -252,12 +248,7 @@ export function RemoteMcpConnectionButton({
     }
 
     return (
-        <Button
-            variant="outline"
-            size="sm"
-            onClick={handleConnect}
-            disabled={authenticating}
-        >
+        <Button variant="outline" size="sm" onClick={handleConnect} disabled={authenticating}>
             {authenticating ? (
                 <>
                     <Spinner className="size-4" />
@@ -265,7 +256,7 @@ export function RemoteMcpConnectionButton({
                 </>
             ) : (
                 <>
-                    <ExternalLink className="size-4 mr-1" />
+                    <ExternalLink className="size-4 me-1" />
                     <span>{t('mcpOAuth.connect')}</span>
                 </>
             )}

@@ -9,7 +9,7 @@ import {
     WEB_SUPPORTED_IMAGE_FORMATS,
     WEB_SUPPORTED_VIDEO_FORMATS,
 } from '@vertesia/ui/features';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink, useParams } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import type { ContentObject } from '@vertesia/common';
@@ -25,18 +25,10 @@ interface MetadataRowProps {
 function MetadataRow({ label, children }: MetadataRowProps) {
     return (
         <div className="flex flex-col gap-0.5">
-            <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                {label}
-            </span>
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
             <span className="text-sm wrap-break-word">{children}</span>
         </div>
     );
-}
-
-function formatDate(value?: string | Date): string {
-    if (!value) return '—';
-    const d = value instanceof Date ? value : new Date(value);
-    return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString();
 }
 
 interface PreviewProps {
@@ -67,10 +59,15 @@ function Preview({ object, t }: PreviewProps) {
 
 export function ContentObjectDetailView() {
     const { t } = useUITranslation();
+    const { formatDateTime } = useLocaleFormat();
     const { client } = useUserSession();
     const { id } = useParams() as { id?: string };
 
-    const { data: object, isLoading, error } = useFetch<ContentObject | undefined>(
+    const {
+        data: object,
+        isLoading,
+        error,
+    } = useFetch<ContentObject | undefined>(
         () => (id ? client.store.objects.retrieve(id) : Promise.resolve(undefined)),
         [id],
     );
@@ -111,9 +108,7 @@ export function ContentObjectDetailView() {
                         {t('nav.objects')}
                     </NavLink>,
                     <span key="current" title={fullName}>
-                        <span className="inline-block align-middle max-w-[60ch] truncate">
-                            {fullName}
-                        </span>
+                        <span className="inline-block align-middle max-w-[60ch] truncate">{fullName}</span>
                     </span>,
                 ]}
             />
@@ -121,25 +116,17 @@ export function ContentObjectDetailView() {
                 <aside className="w-full md:w-80 shrink-0 overflow-y-auto rounded-md border border-border bg-card p-4 flex flex-col gap-3">
                     <MetadataRow label={t('objects.col.status')}>
                         {object.status ? (
-                            <Badge variant={statusVariant(object.status)}>
-                                {t(`objects.status.${object.status}`)}
-                            </Badge>
+                            <Badge variant={statusVariant(object.status)}>{t(`objects.status.${object.status}`)}</Badge>
                         ) : (
                             '—'
                         )}
                     </MetadataRow>
-                    <MetadataRow label={t('objects.col.type')}>
-                        {object.type?.name ?? '—'}
-                    </MetadataRow>
+                    <MetadataRow label={t('objects.col.type')}>{object.type?.name ?? '—'}</MetadataRow>
                     <MetadataRow label={t('objects.detail.mimeType')}>
                         <code className="text-xs">{object.content?.type ?? '—'}</code>
                     </MetadataRow>
-                    <MetadataRow label={t('objects.col.updated')}>
-                        {formatDate(object.updated_at)}
-                    </MetadataRow>
-                    <MetadataRow label={t('objects.detail.created')}>
-                        {formatDate(object.created_at)}
-                    </MetadataRow>
+                    <MetadataRow label={t('objects.col.updated')}>{formatDateTime(object.updated_at)}</MetadataRow>
+                    <MetadataRow label={t('objects.detail.created')}>{formatDateTime(object.created_at)}</MetadataRow>
                     {properties && Object.keys(properties).length > 0 && (
                         <MetadataRow label={t('objects.detail.properties')}>
                             <pre className="text-xs whitespace-pre-wrap wrap-break-word bg-muted/40 rounded p-2 max-h-64 overflow-auto">

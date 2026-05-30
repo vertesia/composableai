@@ -1,8 +1,8 @@
-import React from "react";
+import React from 'react';
 
 export const PortalContainerContext = React.createContext<HTMLElement | undefined>(undefined);
 
-function findOrCreatePortalContainer(root: ShadowRoot | Document, id = "plugin-portal-container") {
+function findOrCreatePortalContainer(root: ShadowRoot | Document, id = 'plugin-portal-container') {
     // Determine the actual parent element to search and append to
     const parentElement = root instanceof Document ? root.body : root;
 
@@ -13,7 +13,7 @@ function findOrCreatePortalContainer(root: ShadowRoot | Document, id = "plugin-p
         }
     }
     // not found → create
-    const container = document.createElement("div");
+    const container = document.createElement('div');
     container.id = id;
     parentElement.appendChild(container);
     return container;
@@ -21,16 +21,14 @@ function findOrCreatePortalContainer(root: ShadowRoot | Document, id = "plugin-p
 
 export function PortalContainerProvider({
     children,
-    id = "plugin-portal-container",
+    id = 'plugin-portal-container',
 }: {
     children: React.ReactNode;
     id?: string;
 }) {
     const inherited = React.useContext(PortalContainerContext);
     const ref = React.useRef<HTMLDivElement>(null);
-    const [container, setContainer] = React.useState<HTMLElement | null | undefined>(
-        inherited || undefined
-    );
+    const [container, setContainer] = React.useState<HTMLElement | null | undefined>(inherited || undefined);
 
     React.useEffect(() => {
         // If a parent already provides a portal container, inherit it
@@ -51,15 +49,11 @@ export function PortalContainerProvider({
 
     // If container not discovered yet → render hidden marker only
     if (container === undefined) {
-        return <div ref={ref} style={{ display: "none" }} />;
+        return <div ref={ref} style={{ display: 'none' }} />;
     }
 
     // Once container is resolved (null or HTMLElement) → provide it
-    return (
-        <PortalContainerContext.Provider value={container || undefined}>
-            {children}
-        </PortalContainerContext.Provider>
-    );
+    return <PortalContainerContext.Provider value={container || undefined}>{children}</PortalContainerContext.Provider>;
 }
 
 export function usePortalContainer() {

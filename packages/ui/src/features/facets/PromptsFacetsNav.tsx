@@ -1,12 +1,20 @@
-import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
+import {
+    type Filter as BaseFilter,
+    FilterProvider,
+    FilterBtn,
+    FilterBar,
+    FilterClear,
+    type FilterGroup,
+} from '@vertesia/ui/core';
 import { useState } from 'react';
-import { SearchInterface } from './utils/SearchInterface';
+import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
+import type { FacetBucket } from '@vertesia/common';
 
 interface PromptsFacetsNavProps {
     facets: {
-        role?: any[];
-        status?: any[];
-        tags?: any[];
+        role?: FacetBucket[];
+        status?: FacetBucket[];
+        tags?: FacetBucket[];
     };
     search: SearchInterface;
 }
@@ -21,7 +29,7 @@ export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']):
         name: 'name',
         placeholder: 'Name',
         type: 'text' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(nameFilterGroup);
 
@@ -31,10 +39,10 @@ export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']):
             name: 'role',
             placeholder: 'Role',
             type: 'select' as const,
-            options: facets.role.map((facet: { _id: string; count: number }) => ({
+            options: facets.role.map((facet) => ({
                 label: facet._id,
                 value: facet._id,
-                count: facet.count
+                count: facet.count,
             })),
         };
         customFilterGroups.push(rolesFilterGroup);
@@ -55,30 +63,15 @@ export function usePromptsFilterHandler(search: SearchInterface) {
         // Clear all filters first without defaults, then apply new ones
         search.clearFilters(false, false);
 
-        newFilters.forEach(filter => {
+        newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name;
-                let filterValue;
-                if (filter.type === 'stringList') {
-                    filterValue = filter.value.map(v => typeof v === 'string' ? v : v.value);
-                } else if (filter.multiple) {
-                    filterValue = Array.isArray(filter.value)
-                        ? filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v)
-                        : [typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value];
-                } else {
-                    // Single value - don't wrap in array
-                    filterValue = Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
-                        ? (filter.value[0] as any).value
-                        : Array.isArray(filter.value) && filter.value[0]
-                            ? filter.value[0]
-                            : filter.value;
-                }
-
-                search.query[filterName] = filterValue;
+                const filterValue = filterValueToQueryValue(filter);
+                setSearchQueryValue(search, filterName, filterValue);
             }
         });
 
-        search.search();
+        void search.search();
     };
 }
 
@@ -95,11 +88,7 @@ export function PromptsFacetsNav({ facets, search }: PromptsFacetsNavProps) {
     };
 
     return (
-        <FilterProvider
-            filterGroups={filterGroups}
-            filters={filters}
-            setFilters={handleFilterChange}
-        >
+        <FilterProvider filterGroups={filterGroups} filters={filters} setFilters={handleFilterChange}>
             <div className="flex gap-2 items-center">
                 <FilterBtn />
                 <FilterBar />
