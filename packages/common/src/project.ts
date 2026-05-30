@@ -20,6 +20,7 @@ export enum ProjectRoles {
     executor = 'executor', // can only read and execute interactions
     reader = 'reader', // can only read (browse)
     auditor = 'auditor', // can read all non-admin resources without mutation permissions
+    support = 'support', // Vertesia support read-only role
     billing = 'billing', // can only manage billings
     member = 'member', // can only access, but no specific permissions
     app_member = 'app_member', // used to mark an user have access to an application. does not provide any permission on its own
