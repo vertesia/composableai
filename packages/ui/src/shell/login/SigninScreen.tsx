@@ -137,7 +137,9 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
         setEmail('');
         setTenant(undefined);
         setMode('email');
-    }, []);
+        // Backing out of signup/blocked leaves a Firebase session that has no Vertesia user; clear it.
+        void signOut();
+    }, [signOut]);
 
     // Submits the signup form to /auth/signup, then redirects into the app.
     const onSignup = (data: SignupData, fbToken: string) => {
