@@ -1,5 +1,5 @@
-import type { DSLActivityExecutionPayload, RateLimitRequestPayload } from '@vertesia/common';
 import { activityInfo, log } from '@temporalio/activity';
+import type { DSLActivityExecutionPayload, RateLimitRequestPayload } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 
 export interface RateLimitParams {

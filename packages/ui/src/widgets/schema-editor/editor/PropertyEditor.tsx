@@ -1,10 +1,9 @@
-import type React from 'react';
-import { type ChangeEvent, useEffect, useRef, useState } from 'react';
+import { Button, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, Styles } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 import { AlignLeft } from 'lucide-react';
-import { Button, Modal, ModalBody, ModalFooter, ModalTitle, Styles, SelectBox } from '@vertesia/ui/core';
-
-import { useUITranslation } from '@vertesia/ui/i18n';
+import type React from 'react';
+import { type ChangeEvent, useEffect, useRef, useState } from 'react';
 import { TypeNames } from '../type-signature.js';
 import type { DataEditorProps } from './Editable.js';
 import type { EditableSchemaProperty } from './EditableSchemaProperty.js';

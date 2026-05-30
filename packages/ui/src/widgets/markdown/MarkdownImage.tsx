@@ -1,6 +1,6 @@
 import type React from 'react';
-import { useResolvedUrl, parseUrlScheme } from './useResolvedUrl';
 import { CodeBlockPlaceholder } from './CodeBlockPlaceholder';
+import { parseUrlScheme, useResolvedUrl } from './useResolvedUrl';
 
 export interface MarkdownImageProps {
     node?: unknown;

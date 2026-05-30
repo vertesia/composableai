@@ -1,7 +1,7 @@
 import { VertesiaClient } from '@vertesia/client';
 import type { Command } from 'commander';
-import { config, type Profile } from './profiles/index.js';
 import { ensureProfileAccessToken } from './profiles/auth.js';
+import { config, type Profile } from './profiles/index.js';
 import { isKeyringAvailable } from './profiles/keyring.js';
 
 let _client: VertesiaClient | undefined;

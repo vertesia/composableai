@@ -2,11 +2,11 @@ import type { ToolServerConfig } from '@vertesia/tools-sdk';
 import { activities } from './activities/index.js';
 import { interactions } from './interactions/index.js';
 import { mcpProviders } from './mcp/index.js';
+import settingsSchema from './settings.js';
 import { skills } from './skills/index.js';
 import { templates } from './templates/index.js';
 import { tools } from './tools/index.js';
 import { types } from './types/index.js';
-import settingsSchema from './settings.js';
 import uiNavItems from './ui-nav-items.js';
 
 const CONFIG__SERVER_TITLE = 'Tool Server Template';

@@ -1,3 +1,4 @@
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     CreateUserGroupPayload,
     DeleteByIdResult,
@@ -5,7 +6,6 @@ import type {
     UserGroup,
     UserRef,
 } from '@vertesia/common';
-import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 
 export interface GroupsQueryOptions {
     search?: string;

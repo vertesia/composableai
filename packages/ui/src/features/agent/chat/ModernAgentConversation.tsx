@@ -1,7 +1,3 @@
-import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Bot, Cpu, FileTextIcon, SendIcon, UploadIcon, XIcon } from 'lucide-react';
-import { useUserSession } from '@vertesia/ui/session';
 import {
     type ActiveWorkstreamEntry,
     type AgentMessage,
@@ -17,35 +13,38 @@ import {
     Button,
     cn,
     MessageBox,
-    Spinner,
-    useToast,
     Modal,
     ModalBody,
     ModalFooter,
     ModalTitle,
+    Spinner,
+    useToast,
 } from '@vertesia/ui/core';
-
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { useUserSession } from '@vertesia/ui/session';
+import { Bot, Cpu, FileTextIcon, SendIcon, UploadIcon, XIcon } from 'lucide-react';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
+import { useAgentPlans } from './hooks/useAgentPlans.js';
+import { useAgentStream } from './hooks/useAgentStream.js';
+import { useDocumentPanel } from './hooks/useDocumentPanel.js';
+import { useFileProcessing } from './hooks/useFileProcessing.js';
+import { ImageLightboxProvider } from './ImageLightbox';
 import type { AgentConversationViewMode } from './ModernAgentOutput/AllMessagesMixed';
+import AllMessagesMixed from './ModernAgentOutput/AllMessagesMixed';
 import type { BatchProgressPanelClassNames } from './ModernAgentOutput/BatchProgressPanel';
+import Header from './ModernAgentOutput/Header';
+import MessageInput, { type SelectedDocument, type UploadedFile } from './ModernAgentOutput/MessageInput';
 import type { MessageItemClassNames } from './ModernAgentOutput/MessageItem';
 import type { StreamingMessageClassNames } from './ModernAgentOutput/StreamingMessage';
 import type { ToolCallGroupClassNames } from './ModernAgentOutput/ToolCallGroup';
-import { ImageLightboxProvider } from './ImageLightbox';
-import AllMessagesMixed from './ModernAgentOutput/AllMessagesMixed';
-import Header from './ModernAgentOutput/Header';
-import MessageInput, { type UploadedFile, type SelectedDocument } from './ModernAgentOutput/MessageInput';
 import { getConversationUrl, getWorkstreamId } from './ModernAgentOutput/utils';
-import { ThinkingMessages } from './WaitingMessages';
 import { SkillWidgetProvider } from './SkillWidgetProvider';
 import { ArtifactUrlCacheProvider } from './useArtifactUrlCache.js';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { VegaLiteChart } from './VegaLiteChart';
-import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
-import { useAgentStream } from './hooks/useAgentStream.js';
-import { useAgentPlans } from './hooks/useAgentPlans.js';
-import { useDocumentPanel } from './hooks/useDocumentPanel.js';
-import { useFileProcessing } from './hooks/useFileProcessing.js';
+import { ThinkingMessages } from './WaitingMessages';
 
 export type StartWorkflowFn = (initialMessage?: string) => Promise<{ agent_run_id: string } | undefined>;
 

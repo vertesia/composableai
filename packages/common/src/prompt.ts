@@ -1,5 +1,4 @@
-import type { JSONObject, JSONSchema } from '@llumiverse/common';
-import type { PromptRole } from '@llumiverse/common';
+import type { JSONObject, JSONSchema, PromptRole } from '@llumiverse/common';
 import type { ProjectRef } from './project.js';
 
 export interface ChatPromptSchema {

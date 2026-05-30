@@ -1,12 +1,11 @@
 import clsx from 'clsx';
 import { isEqual } from 'lodash-es';
 import { AlertTriangle, Check, ChevronsUpDown, LoaderCircle, SearchIcon, SquarePlus, X } from 'lucide-react';
-import { useState, useEffect, useRef, useMemo, useId, type ReactNode } from 'react';
-
-import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from './popover';
+import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Button } from './button';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from './command';
 import { Input } from './input';
-import { Button } from './button';
+import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from './popover';
 import { VTooltip } from './tooltip';
 
 export interface SelectBoxBaseProps<T> {

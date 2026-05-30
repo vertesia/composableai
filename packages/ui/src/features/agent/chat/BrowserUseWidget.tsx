@@ -1,9 +1,9 @@
 import type { AgentMessage } from '@vertesia/common';
 import { Badge, cn } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { ExternalLinkIcon, ImageIcon, MonitorIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { useImageLightbox } from './ImageLightbox.js';
 import { getArtifactCacheKey, useArtifactUrlCache } from './useArtifactUrlCache.js';
 

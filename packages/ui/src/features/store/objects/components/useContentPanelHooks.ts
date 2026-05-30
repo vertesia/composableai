@@ -4,9 +4,9 @@ import {
     MarkdownRenditionFormat,
     WorkflowExecutionStatus,
 } from '@vertesia/common';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { useCallback, useEffect, useState } from 'react';
-import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 
 // Maximum text size before cropping (128K characters)
 const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;

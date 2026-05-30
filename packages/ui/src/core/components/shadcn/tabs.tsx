@@ -1,6 +1,6 @@
-import * as React from 'react';
-import type { ReactNode } from 'react';
 import * as TabsPrimitive from '@radix-ui/react-tabs';
+import type { ReactNode } from 'react';
+import * as React from 'react';
 
 import { cn } from '../libs/utils';
 import { SelectBox } from './selectBox';

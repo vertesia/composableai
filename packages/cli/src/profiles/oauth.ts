@@ -1,10 +1,10 @@
-import jwt from 'jsonwebtoken';
-import open from 'open';
 import type {
     OAuthAuthorizationServerMetadata,
     OAuthDeviceAuthorizationResponse,
     OAuthTokenResponse,
 } from '@vertesia/common';
+import jwt from 'jsonwebtoken';
+import open from 'open';
 import type { Profile } from './index.js';
 import type { StoredAuthBundle } from './keyring.js';
 import type { ConfigResult } from './server/index.js';

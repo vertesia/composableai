@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import type { VertesiaClient } from '@vertesia/client';
+import type * as Common from '@vertesia/common';
 import {
     type AgentMessage,
     AgentMessageType,
     type ConversationFile,
     type FileProcessingDetails,
 } from '@vertesia/common';
-import type * as Common from '@vertesia/common';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { insertMessageInTimeline, isInProgress } from '../ModernAgentOutput/utils';
 
 /** Streaming data for a single active stream, keyed by streaming/activity ID */

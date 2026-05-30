@@ -1,21 +1,21 @@
 import type { CreateCollectionPayload } from '@vertesia/common';
 import {
-    useToast,
-    ModalBody,
-    FormItem,
-    ModalFooter,
-    Input,
-    Switch,
     Button,
+    FormItem,
+    Input,
     Modal,
+    ModalBody,
+    ModalFooter,
     ModalTitle,
+    Switch,
     Textarea,
+    useToast,
 } from '@vertesia/ui/core';
-import { SelectContentType } from '../types/SelectContentType';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { useState } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { SelectContentType } from '../types/SelectContentType';
 
 interface CreateCollectionFormProps {
     onClose: () => void;

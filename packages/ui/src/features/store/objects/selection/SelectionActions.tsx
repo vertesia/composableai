@@ -1,10 +1,9 @@
 import type { ContentObjectTypeItem } from '@vertesia/common';
 import { Button, Popover, PopoverContent, PopoverTrigger, SelectList } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import clsx from 'clsx';
 import { EllipsisVertical, X } from 'lucide-react';
-
 import { useState } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { type DocumentSelection, useDocumentSelection } from '../DocumentSelectionProvider.js';
 import { DocumentUploadModal } from '../upload/DocumentUploadModal.js';
 import { ExportPropertiesAction } from './actions/ExportPropertiesAction';

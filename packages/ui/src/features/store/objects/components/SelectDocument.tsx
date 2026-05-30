@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-
+import type { ColumnLayout, ContentObjectItem } from '@vertesia/common';
+import { Button, ErrorBox, Spinner, useIntersectionObserver } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { clsx } from 'clsx';
 import { RefreshCw } from 'lucide-react';
-
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { DocumentsFacetsNav } from '../../../facets';
 import { DocumentTable } from '../DocumentTable';
 import {
@@ -12,10 +13,6 @@ import {
 } from '../search/DocumentSearchContext';
 import { DocumentSearchProvider } from '../search/DocumentSearchProvider';
 import { ContentDispositionButton } from './ContentDispositionButton';
-
-import type { ColumnLayout, ContentObjectItem } from '@vertesia/common';
-import { Button, ErrorBox, Spinner, useIntersectionObserver } from '@vertesia/ui/core';
-import { useUITranslation } from '@vertesia/ui/i18n';
 
 const layout: ColumnLayout[] = [
     { name: 'Name', field: 'properties.title', type: 'string', fallback: 'name' },

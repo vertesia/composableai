@@ -1,5 +1,6 @@
 import type { AgentRun } from '@vertesia/common';
-import { Button, Dropdown, MenuGroup, MenuItem, cn, useToast } from '@vertesia/ui/core';
+import { Button, cn, Dropdown, MenuGroup, MenuItem, useToast } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     Bot,
@@ -13,7 +14,6 @@ import {
     RefreshCcw,
     XIcon,
 } from 'lucide-react';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { PayloadBuilderProvider, usePayloadBuilder } from '../../PayloadBuilder';
 import type { AgentConversationViewMode } from './AllMessagesMixed';
 import { getConversationUrl } from './utils';

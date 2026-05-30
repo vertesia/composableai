@@ -1,5 +1,5 @@
-import * as React from 'react';
 import { ChevronRight, MoreHorizontal } from 'lucide-react';
+import * as React from 'react';
 
 import { cn } from '../libs/utils';
 import { Button } from './button';

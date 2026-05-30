@@ -1,3 +1,4 @@
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     ApiKey,
     ApiKeyReadResponse,
@@ -7,7 +8,6 @@ import type {
     CreatePublicKeyPayload,
     DeleteOperationResult,
 } from '@vertesia/common';
-import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 
 export class ApiKeysApi extends ApiTopic {
     constructor(parent: ClientBase) {

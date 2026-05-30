@@ -2,11 +2,11 @@
  * Skill transformer preset for markdown files with frontmatter
  */
 
-import path from 'node:path';
 import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { z } from 'zod';
-import type { TransformerPreset } from '../types.js';
 import { parseFrontmatter } from '../parsers/frontmatter.js';
+import type { TransformerPreset } from '../types.js';
 import { discoverSkillAssets } from '../utils/asset-discovery.js';
 
 /**

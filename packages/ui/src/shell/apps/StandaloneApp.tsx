@@ -1,9 +1,9 @@
 import type { AppInstallationWithManifest, ProjectRef } from '@vertesia/common';
-import { Center, useFetch, SelectBox } from '@vertesia/ui/core';
+import { Center, SelectBox, useFetch } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from '@vertesia/ui/session';
 import { LockIcon } from 'lucide-react';
 import { type ComponentType, type ReactNode, useEffect, useMemo, useState } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { AppInstallationProvider } from './AppInstallationProvider';
 
 interface StandaloneAppProps {

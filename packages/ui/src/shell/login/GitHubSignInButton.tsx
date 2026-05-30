@@ -1,7 +1,7 @@
-import { GithubAuthProvider, signInWithRedirect } from 'firebase/auth';
-import { getFirebaseAuth } from '@vertesia/ui/session';
 import { Button } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { getFirebaseAuth } from '@vertesia/ui/session';
+import { GithubAuthProvider, signInWithRedirect } from 'firebase/auth';
 
 interface GitHubSignInButtonProps {
     redirectTo?: string;
