@@ -1,7 +1,7 @@
 import type { AuditMeter } from './audit-trail.js';
 import type { JsonLogicRule, WorkflowRuleInputType } from './store/index.js';
 
-export type EventCategory = 'audit' | 'content' | 'workflow' | 'security' | 'system' | 'domain';
+export type EventCategory = 'content' | 'workflow' | 'security' | 'billing' | 'system';
 
 export type EventPriority = 'high' | 'normal' | 'low';
 
@@ -10,8 +10,6 @@ export type WebhookSigningMode = 'signed' | 'legacy_unsigned';
 export type WebhookPayloadMode = 'event_envelope' | 'legacy_notify_endpoint';
 
 export type EventOutboxStatus = 'pending' | 'routing' | 'routed' | 'partially_routed' | 'failed' | 'dropped';
-
-export type AuditMirrorStatus = 'not_applicable' | 'pending' | 'succeeded' | 'retrying' | 'failed';
 
 export type EventDeliveryIntentStatus =
     | 'pending'
@@ -41,6 +39,7 @@ export interface EventRef {
 export interface PlatformEvent extends EventRef {
     timestamp: string;
     source: string;
+    audit_trail?: boolean;
     replay_of?: string;
     replay_root_event_id?: string;
     replayed_by?: string;
@@ -155,12 +154,11 @@ export interface PublishPlatformEventPayload {
 
 export interface PublishPlatformEventResponse {
     event_id: string;
-    outbox_id: string;
+    outbox_id?: string;
     status: EventOutboxStatus;
     matched_subscription_count: number;
     materialized_intent_count: number;
     enqueued_intent_count: number;
-    audit_mirror_status: AuditMirrorStatus;
 }
 
 export interface WorkflowEventInput<T = Record<string, unknown>> {
