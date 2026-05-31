@@ -1,4 +1,4 @@
-import { Trans, useUITranslation } from '@vertesia/ui/i18n';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 
 const allowedOrgs = import.meta.env.VITE_VERTESIA_ALLOWED_ORGS
@@ -11,27 +11,17 @@ const allowedOrgs = import.meta.env.VITE_VERTESIA_ALLOWED_ORGS
 
 export function OrgGate({ children }: { children: React.ReactNode }) {
     const session = useUserSession();
-    const { t, i18n } = useUITranslation();
+    const { t } = useUITranslation();
     if (allowedOrgs && !allowedOrgs.has(session.account?.id)) {
         return (
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100vh',
-                    padding: '2rem',
-                }}
-            >
-                <div style={{ textAlign: 'center', maxWidth: '480px' }}>
-                    <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{t('access.denied')}</h1>
-                    <p style={{ color: '#666' }}>
-                        <Trans
-                            i18n={i18n}
-                            i18nKey="access.orgNotAuthorized"
-                            values={{ name: session.account?.name ?? '' }}
-                            components={{ strong: <strong /> }}
-                        />
+            <div className="flex h-screen items-center justify-center p-8">
+                <div className="max-w-md text-center">
+                    <h1 className="mb-2 text-2xl font-semibold">{t('access.denied')}</h1>
+                    <p className="text-muted">
+                        {t('access.orgNotAuthorized', {
+                            name: session.account?.name ?? '',
+                            interpolation: { escapeValue: false },
+                        })}
                     </p>
                 </div>
             </div>

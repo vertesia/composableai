@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { getProcessDefinitionValidationResult, getProcessInteractionValidationSelectors } from '@vertesia/common';
+import * as VertesiaCommon from '@vertesia/common';
 import { ServerConfig } from '../lib/config.js';
 import server from '../lib/server.js';
 
@@ -16,6 +16,16 @@ const SYSTEM_INTERACTION_SELECTORS = [
     'sys:AppReviewer',
     'sys:AppSolutionArchitect',
 ];
+
+const getProcessInteractionValidationSelectors =
+    typeof VertesiaCommon.getProcessInteractionValidationSelectors === 'function'
+        ? VertesiaCommon.getProcessInteractionValidationSelectors
+        : () => [];
+
+const getProcessDefinitionValidationResult =
+    typeof VertesiaCommon.getProcessDefinitionValidationResult === 'function'
+        ? VertesiaCommon.getProcessDefinitionValidationResult
+        : () => ({ errors: [] });
 
 function names(items, selector) {
     return (items || []).map(selector).filter(Boolean).sort();

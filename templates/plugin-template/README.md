@@ -396,7 +396,7 @@ The scaffolded plugin targets a **WCAG 2.1 AA baseline** out of the box. The `bi
 
 - **Prefer `<Button>` over raw `<button>`.** `Button` from `@vertesia/ui/core` provides consistent focus rings, deprecation-safe ARIA forwarding, and disabled state. Use raw `<button type="button">` only inside primitives that spread hook props onto the DOM (e.g. a downshift-style toggle); add a one-line comment explaining why.
 - **Icon-only buttons require an accessible name.** Pass `aria-label`. Example: `<Button aria-label="Refresh" onClick={…}><RefreshIcon /></Button>`. The included `InlineFilterButton` follows this pattern. Avoid the deprecated `alt` prop — it is forwarded to `aria-label` for one release with a console warning.
-- **Sortable table headers use `<SortableTableHeaderCell>`** from `@vertesia/ui/core`. It renders a real `<button>` inside the `<th>`, sets `aria-sort`, and is keyboard-operable automatically. The bundled `SortableHead` example wraps this primitive.
+- **Sortable table headers use the bundled `SortableHead` helper**. It renders a real `<button>` inside the `<th>`, sets `aria-sort`, and is keyboard-operable automatically.
 - **Form controls go through `<FormItem>`.** Use the `helpText` prop for persistent helper text and the `error` prop for validation messages — both auto-wire `aria-describedby` and `aria-invalid` on a single element child. The `description` prop is hover-only (renders as a tooltip on an Info icon) and is *not* an accessible substitute for `helpText`.
 - **Headers and labels matter for screen readers.** Set the page title in `index.html`, keep `lang="en"` (or your locale) on `<html>`, and make sure every input has a `<label htmlFor>` (or use `FormItem`).
 

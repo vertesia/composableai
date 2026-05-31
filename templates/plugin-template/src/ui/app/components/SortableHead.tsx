@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import { SortableTableHeaderCell, type SortDirection } from '@vertesia/ui/core';
 
 export type SortDir = 'asc' | 'desc';
+type AriaSortDirection = 'ascending' | 'descending' | 'none';
 
 interface SortableHeadProps<TField extends string> {
     field: TField;
@@ -12,7 +12,7 @@ interface SortableHeadProps<TField extends string> {
     className?: string;
 }
 
-const directionToAria: Record<SortDir, SortDirection> = {
+const directionToAria: Record<SortDir, AriaSortDirection> = {
     asc: 'ascending',
     desc: 'descending',
 };
@@ -27,14 +27,14 @@ export function SortableHead<TField extends string>({
 }: SortableHeadProps<TField>) {
     const isActive = activeField === field;
     const Icon = isActive ? (direction === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
+    const ariaSort = isActive ? directionToAria[direction] : 'none';
+
     return (
-        <SortableTableHeaderCell
-            sortDirection={isActive ? directionToAria[direction] : 'none'}
-            onSort={() => onSort(field)}
-            className={`text-start select-none${className ? ` ${className}` : ''}`}
-            sortIndicator={() => <Icon className={`size-3 ${isActive ? '' : 'opacity-40'}`} aria-hidden="true" />}
-        >
-            {label}
-        </SortableTableHeaderCell>
+        <th aria-sort={ariaSort} className={`text-start select-none${className ? ` ${className}` : ''}`}>
+            <button type="button" className="flex w-full items-center gap-1 text-start" onClick={() => onSort(field)}>
+                <span>{label}</span>
+                <Icon className={`size-3 ${isActive ? '' : 'opacity-40'}`} aria-hidden="true" />
+            </button>
+        </th>
     );
 }

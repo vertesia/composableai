@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "@vertesia/ui/styles.css";
+@import "@vertesia/ui/css/index.css";
 
 @plugin "@tailwindcss/forms";
 

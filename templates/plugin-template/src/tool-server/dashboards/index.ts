@@ -1,5 +1,3 @@
-import type { AppDashboardDefinition } from '@vertesia/common';
-
 /**
  * Dashboards exposed by this plugin.
  *
@@ -9,6 +7,7 @@ import type { AppDashboardDefinition } from '@vertesia/common';
  *
  * Add a definition object per dashboard, or import from sibling files.
  *
- * @see AppDashboardDefinition in @vertesia/common
+ * Wire this into ServerConfig once your @vertesia/tools-sdk version supports
+ * app-contributed dashboards.
  */
-export const dashboards: AppDashboardDefinition[] = [];
+export const dashboards = [];

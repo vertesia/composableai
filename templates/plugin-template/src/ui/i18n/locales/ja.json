@@ -2,7 +2,7 @@
   "access.account": "アカウント",
   "access.denied": "アクセスが拒否されました",
   "access.noPermission": "プロジェクト「{{project}}」で {{name}} アプリを表示する権限がありません。",
-  "access.orgNotAuthorized": "組織 <strong>{{name}}</strong> はこのアプリケーションへのアクセスを許可されていません。",
+  "access.orgNotAuthorized": "組織 {{name}} はこのアプリケーションへのアクセスを許可されていません。",
   "access.project": "プロジェクト",
   "access.selectAccount": "アカウントを選択",
   "access.selectProject": "プロジェクトを選択",

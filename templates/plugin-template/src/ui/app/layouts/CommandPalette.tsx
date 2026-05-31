@@ -18,13 +18,16 @@ function isMacLike(): boolean {
 }
 
 function buildItems(t: (key: string) => string): PaletteItem[] {
-    return routes
-        .filter((route) => !route.hideFromNav && route.label)
-        .map((route) => ({
+    return routes.flatMap((route) => {
+        if (route.hideFromNav || !route.label) {
+            return [];
+        }
+        return {
             path: route.path,
-            label: route.label!.includes('.') ? t(route.label!) : route.label!,
+            label: route.label.includes('.') ? t(route.label) : route.label,
             icon: route.icon,
-        }));
+        };
+    });
 }
 
 export function CommandPaletteTrigger({ onOpen }: { onOpen: () => void }) {

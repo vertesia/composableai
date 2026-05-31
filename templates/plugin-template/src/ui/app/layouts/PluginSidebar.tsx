@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ModeToggle } from '@vertesia/ui/core';
-import { useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { SidebarSection, useSidebarToggle } from '@vertesia/ui/layout';
 import { useLocation, useRouterBasePath } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
@@ -61,9 +61,18 @@ function getConversationLabel(
     return t('nav.conversation');
 }
 
+function formatRecentTime(value: Date | string | number | null | undefined): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    }).format(date);
+}
+
 export function PluginSidebar() {
     const { t } = useUITranslation();
-    const { formatTime } = useLocaleFormat();
     const path = useLocation().pathname;
     const basePath = useRouterBasePath();
     const { isOpen } = useSidebarToggle();
@@ -131,7 +140,7 @@ export function PluginSidebar() {
                         <SidebarSection title={t('nav.recent')}>
                             {conversations.map((conv) => {
                                 const convPath = `${basePath}/chat/${conv.run_id}`;
-                                const label = getConversationLabel(conv, t, formatTime);
+                                const label = getConversationLabel(conv, t, formatRecentTime);
                                 return (
                                     <AppSidebarItem
                                         key={conv.run_id}
