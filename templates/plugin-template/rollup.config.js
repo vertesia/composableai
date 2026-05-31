@@ -9,7 +9,10 @@
  *
  * Browser bundles are in rollup.config.browser.js
  */
+import { builtinModules } from 'node:module';
+import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import {
     vertesiaImportPlugin,
@@ -20,6 +23,15 @@ import {
     templateCollectionTransformer,
     promptTransformer,
 } from '@vertesia/build-tools';
+
+// The published service runtime imports lib/server.js with NO node_modules
+// (the app-gateway runtime never runs `pnpm install`). So the bundle must be
+// self-contained: bundle @vertesia/*, hono, and every other dependency, leaving
+// only Node built-ins external. Externalizing app deps here produced bare
+// `import '@vertesia/tools-sdk'` in lib/server.js and a "Service runtime bundle
+// is not self-contained" publish failure.
+const nodeBuiltins = new Set([...builtinModules, ...builtinModules.map((m) => `node:${m}`)]);
+const isNodeBuiltin = (id) => nodeBuiltins.has(id) || id.startsWith('node:');
 
 // ============================================================================
 // Exit Plugin - Forces process exit after build completes
@@ -52,14 +64,9 @@ const serverBuild = {
         preserveModulesRoot: 'src/tool-server',
         entryFileNames: '[name].js',
     },
-    external: (id) => {
-        // Keep relative imports as part of the bundle
-        if (id.startsWith('.') || id.startsWith('/')) {
-            return false;
-        }
-        // Externalize all node modules and absolute imports
-        return true;
-    },
+    // Bundle everything except Node built-ins so the published runtime is
+    // self-contained (no node_modules at runtime).
+    external: (id) => isNodeBuiltin(id),
     // Treat TypeScript diagnostics from @rollup/plugin-typescript as build errors
     // instead of warnings, so type issues fail the build.
     onwarn(warning, defaultHandler) {
@@ -90,6 +97,8 @@ const serverBuild = {
             declarationDir: 'lib',
             sourceMap: true,
         }),
+        nodeResolve({ exportConditions: ['node', 'import', 'module', 'default'], preferBuiltins: true }),
+        commonjs(),
         json(),
         exitPlugin(),
     ],
