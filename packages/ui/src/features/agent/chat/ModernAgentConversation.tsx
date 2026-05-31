@@ -867,6 +867,8 @@ function ModernAgentConversationInner({
     // Read inside handleSendMessage (a stable callback) without widening its deps.
     const isWorkflowTerminalRef = useRef(isWorkflowTerminal);
     isWorkflowTerminalRef.current = isWorkflowTerminal;
+    const canContinueConversationRef = useRef(canContinueConversation);
+    canContinueConversationRef.current = canContinueConversation;
 
     console.debug('[ModernAgentConversation] render', {
         agentRunId,
@@ -1153,6 +1155,11 @@ function ModernAgentConversationInner({
         (message: string) => {
             const trimmed = message.trim();
             if (!trimmed || isSendingRef.current) return;
+
+            // A terminal run only accepts input when it can be continued (restarted).
+            // handleSendMessage is also reachable from inline message actions (AllMessagesMixed),
+            // so guard here too — read-only terminal views that hide the composer must not restart.
+            if (isWorkflowTerminalRef.current && !canContinueConversationRef.current) return;
 
             // Block if files are still processing
             if (hasProcessingFilesRef.current) {

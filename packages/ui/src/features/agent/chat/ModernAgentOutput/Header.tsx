@@ -38,6 +38,12 @@ export interface HeaderProps {
     onExportPdf?: () => void;
     /** Called to show run details/internals modal */
     onShowDetails?: () => void;
+    /**
+     * @deprecated No longer used. Continuing a completed conversation now happens
+     * automatically when the user sends a message. Kept as an optional no-op to preserve
+     * type compatibility for external consumers of this public component.
+     */
+    onRestart?: (newRun: AgentRun) => void;
     /** Called after a clone succeeds — receives the new AgentRun */
     onClone?: (newRun: AgentRun) => void;
     /** Show green indicator when receiving streaming chunks */
