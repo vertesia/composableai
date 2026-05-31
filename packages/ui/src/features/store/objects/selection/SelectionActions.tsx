@@ -144,7 +144,8 @@ function SelectionActionsPopover({
     allowMutations = true,
     allowDelete = true,
     allowWorkflowRun = true,
-}: SelectionActionsPopoverProps & Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete' | 'allowWorkflowRun'>>) {
+}: SelectionActionsPopoverProps &
+    Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete' | 'allowWorkflowRun'>>) {
     const context = useObjectsActionContext();
     const executeAction = (action: ObjectsActionSpec) => {
         context.run(action.id);
@@ -207,11 +208,7 @@ function getAvailableActions(
         if (action.id === 'delete' || action.id === 'deleteFromCollections') {
             return permissions.allowDelete;
         }
-        if (
-            action.id === 'changeType' ||
-            action.id === 'addToCollection' ||
-            action.id === 'removeFromCollection'
-        ) {
+        if (action.id === 'changeType' || action.id === 'addToCollection' || action.id === 'removeFromCollection') {
             return permissions.allowMutations;
         }
         return true;

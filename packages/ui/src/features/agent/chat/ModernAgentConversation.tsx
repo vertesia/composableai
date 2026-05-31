@@ -314,31 +314,40 @@ function StartWorkflowView({
     const dragCounterRef = useRef(0);
 
     // Drag and drop handlers for file staging
-    const handleDragEnter = useCallback((e: React.DragEvent) => {
-        if (!canStageFiles) return;
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounterRef.current++;
-        if (e.dataTransfer?.types?.includes('Files')) {
-            setIsDragOver(true);
-        }
-    }, [canStageFiles]);
+    const handleDragEnter = useCallback(
+        (e: React.DragEvent) => {
+            if (!canStageFiles) return;
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounterRef.current++;
+            if (e.dataTransfer?.types?.includes('Files')) {
+                setIsDragOver(true);
+            }
+        },
+        [canStageFiles],
+    );
 
-    const handleDragOver = useCallback((e: React.DragEvent) => {
-        if (!canStageFiles) return;
-        e.preventDefault();
-        e.stopPropagation();
-    }, [canStageFiles]);
+    const handleDragOver = useCallback(
+        (e: React.DragEvent) => {
+            if (!canStageFiles) return;
+            e.preventDefault();
+            e.stopPropagation();
+        },
+        [canStageFiles],
+    );
 
-    const handleDragLeave = useCallback((e: React.DragEvent) => {
-        if (!canStageFiles) return;
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounterRef.current--;
-        if (dragCounterRef.current === 0) {
-            setIsDragOver(false);
-        }
-    }, [canStageFiles]);
+    const handleDragLeave = useCallback(
+        (e: React.DragEvent) => {
+            if (!canStageFiles) return;
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounterRef.current--;
+            if (dragCounterRef.current === 0) {
+                setIsDragOver(false);
+            }
+        },
+        [canStageFiles],
+    );
 
     const handleDrop = useCallback(
         (e: React.DragEvent) => {
@@ -1231,31 +1240,40 @@ function ModernAgentConversationInner({
     );
 
     // Drag and drop handlers for full-panel file upload
-    const handleDragEnter = useCallback((e: React.DragEvent) => {
-        if (!canUploadFiles) return;
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounterRef.current++;
-        if (e.dataTransfer?.types?.includes('Files')) {
-            setIsDragOver(true);
-        }
-    }, [canUploadFiles]);
+    const handleDragEnter = useCallback(
+        (e: React.DragEvent) => {
+            if (!canUploadFiles) return;
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounterRef.current++;
+            if (e.dataTransfer?.types?.includes('Files')) {
+                setIsDragOver(true);
+            }
+        },
+        [canUploadFiles],
+    );
 
-    const handleDragOver = useCallback((e: React.DragEvent) => {
-        if (!canUploadFiles) return;
-        e.preventDefault();
-        e.stopPropagation();
-    }, [canUploadFiles]);
+    const handleDragOver = useCallback(
+        (e: React.DragEvent) => {
+            if (!canUploadFiles) return;
+            e.preventDefault();
+            e.stopPropagation();
+        },
+        [canUploadFiles],
+    );
 
-    const handleDragLeave = useCallback((e: React.DragEvent) => {
-        if (!canUploadFiles) return;
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounterRef.current--;
-        if (dragCounterRef.current === 0) {
-            setIsDragOver(false);
-        }
-    }, [canUploadFiles]);
+    const handleDragLeave = useCallback(
+        (e: React.DragEvent) => {
+            if (!canUploadFiles) return;
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounterRef.current--;
+            if (dragCounterRef.current === 0) {
+                setIsDragOver(false);
+            }
+        },
+        [canUploadFiles],
+    );
 
     const handleDrop = useCallback(
         (e: React.DragEvent) => {
