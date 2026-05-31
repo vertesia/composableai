@@ -760,6 +760,7 @@ function ModernAgentConversationInner({
         debugChunkFlash,
         addOptimisticMessage,
         removeOptimisticMessages,
+        reconnect: reconnectStream,
         agentRunStatus,
         workflowRunId,
         serverFileUpdates,
@@ -854,6 +855,20 @@ function ModernAgentConversationInner({
             normalizedStatus === 'TIMED_OUT'
         );
     }, [effectiveWorkflowStatus]);
+
+    // When a terminal conversation can be restarted (interactive + a restart handler),
+    // we keep the composer visible and seamlessly resume the agent on the next message
+    // instead of forcing the user to click "Continue Conversation".
+    const canContinueConversation = useMemo(
+        () => isWorkflowTerminal && interactive && !!onRestart,
+        [isWorkflowTerminal, interactive, onRestart],
+    );
+
+    // Read inside handleSendMessage (a stable callback) without widening its deps.
+    const isWorkflowTerminalRef = useRef(isWorkflowTerminal);
+    isWorkflowTerminalRef.current = isWorkflowTerminal;
+    const canContinueConversationRef = useRef(canContinueConversation);
+    canContinueConversationRef.current = canContinueConversation;
 
     console.debug('[ModernAgentConversation] render', {
         agentRunId,
@@ -1114,6 +1129,10 @@ function ModernAgentConversationInner({
     // Notify parent when input availability is determined
     useEffect(() => {
         if (messages.length === 0) return;
+        if (canContinueConversation) {
+            onShowInputChange?.(true);
+            return;
+        }
         if (!showInput) {
             onShowInputChange?.(false);
             return;
@@ -1125,7 +1144,7 @@ function ModernAgentConversationInner({
         if (effectiveWorkflowStatus !== null) {
             onShowInputChange?.(true);
         }
-    }, [showInput, effectiveWorkflowStatus, messages.length, onShowInputChange]);
+    }, [showInput, effectiveWorkflowStatus, messages.length, onShowInputChange, canContinueConversation]);
 
     // ────────────────────────────────────────────
     // Handlers
@@ -1136,6 +1155,11 @@ function ModernAgentConversationInner({
         (message: string) => {
             const trimmed = message.trim();
             if (!trimmed || isSendingRef.current) return;
+
+            // A terminal run only accepts input when it can be continued (restarted).
+            // handleSendMessage is also reachable from inline message actions (AllMessagesMixed),
+            // so guard here too — read-only terminal views that hide the composer must not restart.
+            if (isWorkflowTerminalRef.current && !canContinueConversationRef.current) return;
 
             // Block if files are still processing
             if (hasProcessingFilesRef.current) {
@@ -1178,14 +1202,29 @@ function ModernAgentConversationInner({
                 _messageId: messageId,
             };
 
-            client.agents
-                .sendSignal(agentRunId, 'UserInput', {
+            const sendUserInput = () =>
+                client.agents.sendSignal(agentRunId, 'UserInput', {
                     message: messageContent,
                     metadata,
-                } as UserInputSignal)
-                .then(() => {
-                    onAttachmentsSent?.();
-                })
+                } as UserInputSignal);
+
+            // When the workflow has already completed, restart it first so it resumes
+            // from the existing conversation history, then deliver the message. Temporal
+            // buffers the signal until the new run is ready to receive it. We reconnect
+            // the stream in place (rather than remounting via onRestart) so the existing
+            // timeline is preserved and the new exchange appends seamlessly at the bottom.
+            const deliver = isWorkflowTerminalRef.current
+                ? client.agents.restart(agentRunId).then(() => {
+                      reconnectStream();
+                      return sendUserInput().then(() => {
+                          onAttachmentsSent?.();
+                      });
+                  })
+                : sendUserInput().then(() => {
+                      onAttachmentsSent?.();
+                  });
+
+            deliver
                 .catch((err) => {
                     removeOptimisticMessages((m) => m.details?._messageId === messageId);
                     toast({
@@ -1206,6 +1245,7 @@ function ModernAgentConversationInner({
             getAttachedDocs,
             getMessageContext,
             onAttachmentsSent,
+            reconnectStream,
             addOptimisticMessage,
             removeOptimisticMessages,
             t,
@@ -1450,7 +1490,6 @@ function ModernAgentConversationInner({
                         onTogglePlanPanel={handleTogglePlanPanel}
                         onDownload={downloadConversation}
                         resetWorkflow={resetWorkflow}
-                        onRestart={onRestart}
                         onClone={onClone}
                         onShowDetails={onShowDetails}
                         onExportPdf={exportConversationPdf}
@@ -1509,7 +1548,7 @@ function ModernAgentConversationInner({
 
             {!hideMessageInput && (
                 <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-                    {effectiveWorkflowStatus && effectiveWorkflowStatus !== 'RUNNING' ? (
+                    {effectiveWorkflowStatus && effectiveWorkflowStatus !== 'RUNNING' && !canContinueConversation ? (
                         <MessageBox
                             status={effectiveWorkflowStatus === 'COMPLETED' ? 'success' : 'done'}
                             icon={null}
@@ -1518,7 +1557,7 @@ function ModernAgentConversationInner({
                             This Workflow is {effectiveWorkflowStatus}
                         </MessageBox>
                     ) : (
-                        showInput && (
+                        (showInput || canContinueConversation) && (
                             <MessageInput
                                 onSend={handleSendMessage}
                                 onStop={handleStopWorkflow}
