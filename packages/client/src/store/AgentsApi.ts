@@ -355,6 +355,61 @@ export class AgentsApi extends ApiTopic {
             }
         };
 
+        // SSE reconnection exhausted. The run is durable and still executing
+        // server-side — only the live view dropped. Failing fatally here aborts
+        // headless consumers (CLI `agents stream`, agent test harnesses) before
+        // they can read the result. Instead degrade gracefully: poll GET /updates
+        // for any messages we missed and exit cleanly once the run is terminal,
+        // even if the terminal message never streamed.
+        const POLL_INTERVAL_MS = 5000;
+        const isTerminalStatus = (status: unknown): boolean =>
+            typeof status === 'string' && ['completed', 'failed', 'cancelled'].includes(status);
+        const degradeToPolling = (reason: unknown) => {
+            if (isClosed) return;
+            cleanup();
+            console.warn(
+                `Agent stream ${id}: SSE unavailable after ${maxReconnectAttempts} attempts; falling back to /updates polling.`,
+                reason instanceof Error ? reason.message : reason,
+            );
+            const tick = async () => {
+                if (isClosed) return;
+                try {
+                    const recent = await this.retrieveMessages(id, lastMessageTimestamp || undefined);
+                    for (const msg of recent) {
+                        if (isClosed) return;
+                        if ((msg.timestamp || 0) <= lastMessageTimestamp) continue;
+                        lastMessageTimestamp = msg.timestamp || lastMessageTimestamp;
+                        if (onMessage) onMessage(msg, exit);
+                        if (isClosed) return;
+                        if (shouldCloseAgentRunStream(msg, id)) {
+                            exit(null);
+                            return;
+                        }
+                    }
+                } catch {
+                    // transient poll error — retry next tick
+                }
+                if (isClosed) return;
+                // Exit even when no terminal message ever streams, by reading the run record.
+                try {
+                    const run = (await this.get(`/${id}`)) as { status?: unknown };
+                    if (isTerminalStatus(run?.status)) {
+                        exit(null);
+                        return;
+                    }
+                } catch {
+                    // ignore — retry next tick
+                }
+                if (!isClosed) {
+                    reconnectTimer = setTimeout(() => {
+                        reconnectTimer = null;
+                        void tick();
+                    }, POLL_INTERVAL_MS);
+                }
+            };
+            void tick();
+        };
+
         if (signal) {
             if (signal.aborted) {
                 isClosed = true;
@@ -480,9 +535,7 @@ export class AgentsApi extends ApiTopic {
                             if (!isClosed) void setupStream(true);
                         }, delay);
                     } else {
-                        isClosed = true;
-                        cleanup();
-                        rejectFn(
+                        degradeToPolling(
                             new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`),
                         );
                     }
@@ -497,9 +550,7 @@ export class AgentsApi extends ApiTopic {
                         if (!isClosed) void setupStream(true);
                     }, delay);
                 } else {
-                    isClosed = true;
-                    cleanup();
-                    rejectFn(err);
+                    degradeToPolling(err);
                 }
             }
         };
