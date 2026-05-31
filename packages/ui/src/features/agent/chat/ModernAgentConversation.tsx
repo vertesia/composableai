@@ -760,6 +760,7 @@ function ModernAgentConversationInner({
         debugChunkFlash,
         addOptimisticMessage,
         removeOptimisticMessages,
+        reconnect: reconnectStream,
         agentRunStatus,
         workflowRunId,
         serverFileUpdates,
@@ -1202,15 +1203,16 @@ function ModernAgentConversationInner({
 
             // When the workflow has already completed, restart it first so it resumes
             // from the existing conversation history, then deliver the message. Temporal
-            // buffers the signal until the new run is ready to receive it.
+            // buffers the signal until the new run is ready to receive it. We reconnect
+            // the stream in place (rather than remounting via onRestart) so the existing
+            // timeline is preserved and the new exchange appends seamlessly at the bottom.
             const deliver = isWorkflowTerminalRef.current
-                ? client.agents.restart(agentRunId).then((newRun) =>
-                      sendUserInput().then(() => {
+                ? client.agents.restart(agentRunId).then(() => {
+                      reconnectStream();
+                      return sendUserInput().then(() => {
                           onAttachmentsSent?.();
-                          // Reconnect the stream to the freshly running workflow.
-                          onRestart?.(newRun);
-                      }),
-                  )
+                      });
+                  })
                 : sendUserInput().then(() => {
                       onAttachmentsSent?.();
                   });
@@ -1236,7 +1238,7 @@ function ModernAgentConversationInner({
             getAttachedDocs,
             getMessageContext,
             onAttachmentsSent,
-            onRestart,
+            reconnectStream,
             addOptimisticMessage,
             removeOptimisticMessages,
             t,
@@ -1481,7 +1483,6 @@ function ModernAgentConversationInner({
                         onTogglePlanPanel={handleTogglePlanPanel}
                         onDownload={downloadConversation}
                         resetWorkflow={resetWorkflow}
-                        onRestart={onRestart}
                         onClone={onClone}
                         onShowDetails={onShowDetails}
                         onExportPdf={exportConversationPdf}
