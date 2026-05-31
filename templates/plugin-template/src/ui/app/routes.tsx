@@ -1,12 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
-import { Database, HomeIcon, MessagesSquare, PlusCircle } from 'lucide-react';
+import { HomeIcon, PlusCircle } from 'lucide-react';
 import type { Route } from '@vertesia/ui/router';
 import { ChatPage } from './pages/ChatPage';
-import { ContentObjectDetailPage } from './pages/ContentObjectDetailPage';
-import { ContentObjectsPage } from './pages/ContentObjectsPage';
-import { ConversationsPage } from './pages/ConversationsPage';
 import { HomePage } from './pages/HomePage';
-import { SettingsPage } from './pages/SettingsPage';
 
 export type PluginRoute = Route & {
     label?: string;
@@ -14,29 +10,16 @@ export type PluginRoute = Route & {
     hideFromNav?: boolean;
 };
 
+// Minimal default surface: a Home page and the built-in assistant chat.
+// Nav is derived from this manifest (entries with a `label` and no `hideFromNav`).
+// Build your app's pages here; see examples/ui for working references
+// (Store-object list/detail, conversations list, settings) to copy and adapt.
 export const routes: PluginRoute[] = [
     {
         path: '/',
         label: 'nav.home',
         icon: HomeIcon,
         Component: () => <HomePage />,
-    },
-    {
-        path: '/objects',
-        label: 'nav.objects',
-        icon: Database,
-        Component: () => <ContentObjectsPage />,
-    },
-    {
-        path: '/objects/:id',
-        hideFromNav: true,
-        Component: () => <ContentObjectDetailPage />,
-    },
-    {
-        path: '/conversations',
-        label: 'nav.conversations',
-        icon: MessagesSquare,
-        Component: () => <ConversationsPage />,
     },
     {
         path: '/chat',
@@ -48,10 +31,6 @@ export const routes: PluginRoute[] = [
         path: '/chat/:agentRunId',
         hideFromNav: true,
         Component: () => <ChatPage />,
-    },
-    {
-        path: '/settings',
-        Component: () => <SettingsPage />,
     },
     {
         path: '*',

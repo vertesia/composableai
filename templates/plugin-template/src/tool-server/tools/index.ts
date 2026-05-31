@@ -1,3 +1,2 @@
-import { ExampleTools } from './examples/index.js';
-
-export const tools = [ExampleTools];
+// Register app-owned tools here. See examples/tool-server/tools for working references.
+export const tools = [];

@@ -1,3 +1,2 @@
-import { ExampleInteractions } from './examples/index.js';
-
-export const interactions = [ExampleInteractions];
+// Register app-owned interactions here. See examples/tool-server/interactions for working references.
+export const interactions = [];
