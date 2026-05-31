@@ -458,6 +458,12 @@ export interface AppManifestData {
     oauth_providers?: Record<string, MCPOAuthConfig>;
 
     /**
+     * Server-computed list of oauth_providers keys that have an active publisher-owned
+     * OAuth provider publication. Consumers install these without providing client credentials.
+     */
+    shared_oauth_provider_keys?: string[];
+
+    /**
      * An URL providing interactions definitions in JSON format.
      * The URL must provide 2 endpoints:
      * 1. GET URL - must return a JSON array with the list of interactions (as AppInteractionRef[])
@@ -794,6 +800,13 @@ export interface AppInstallationProviderBinding {
     oauth_provider_name: string;
 }
 
+export interface AppInstallationSharedProviderBinding {
+    /** Key from AppManifestData.oauth_providers */
+    provider_key: string;
+    /** MongoDB ObjectId of the active AppOAuthProviderPublication */
+    publication_id: string;
+}
+
 export interface AppInstallation {
     id: string;
     project: string; // the project where the app is installed
@@ -818,6 +831,11 @@ export interface AppInstallation {
      */
     provider_bindings?: AppInstallationProviderBinding[];
     /**
+     * OAuth bindings that resolve to publisher-owned shared OAuth provider publications.
+     * Consumer installations keep this binding but do not create a local OAuthProvider.
+     */
+    shared_provider_bindings?: AppInstallationSharedProviderBinding[];
+    /**
      * Per-installation override of the manifest's access_control policy.
      * When set, takes precedence over the manifest value. When undefined, the
      * manifest value (or 'all' default) applies.
@@ -835,6 +853,34 @@ export interface AppInstallationWithManifest extends Omit<AppInstallation, 'mani
      * Populated by the GET /installations/all endpoint.
      */
     oauth_collection_ids?: string[];
+}
+
+export type AppOAuthProviderPublicationStatus = 'active' | 'disabled';
+
+export interface AppOAuthProviderPublication {
+    id: string;
+    /** Public/shared app manifest id. */
+    manifest: string;
+    /** Publisher project that owns the source app installation and OAuth provider. */
+    publisher_project: string;
+    /** Publisher AppInstallation id used as the source of truth. */
+    publisher_installation: string;
+    /** Key from AppManifestData.oauth_providers. */
+    provider_key: string;
+    /** Publisher-owned OAuthProvider id containing the encrypted client secret. */
+    oauth_provider: string;
+    status: AppOAuthProviderPublicationStatus;
+    created_by: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface PublishAppOAuthProviderPayload {
+    /**
+     * Optional explicit OAuthProvider id. When omitted, the server uses the
+     * publisher installation's provider_bindings entry for provider_key.
+     */
+    oauth_provider_id?: string;
 }
 
 export interface AppInstallationListEntry extends Omit<AppInstallation, 'manifest'> {

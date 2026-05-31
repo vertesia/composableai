@@ -5,10 +5,12 @@ import type {
     AppInstallationListEntry,
     AppInstallationPayload,
     AppInstallationWithManifest,
+    AppOAuthProviderPublication,
     AppManifest,
     AppManifestData,
     AppToolCollection,
     CountResult,
+    PublishAppOAuthProviderPayload,
     ProjectRef,
     RequireAtLeastOne,
     UpdateAppInstallationToolAllowlistPayload,
@@ -86,6 +88,21 @@ export default class AppsApi extends ApiTopic {
      */
     uninstall(installationId: string): Promise<CountResult> {
         return this.del(`/install/${installationId}`);
+    }
+
+    publishOAuthProvider(
+        installationId: string,
+        providerKey: string,
+        payload: PublishAppOAuthProviderPayload = {},
+    ): Promise<AppOAuthProviderPublication> {
+        return this.post(`/installations/${installationId}/oauth-provider-publications/${providerKey}`, { payload });
+    }
+
+    disableOAuthProviderPublication(
+        installationId: string,
+        providerKey: string,
+    ): Promise<AppOAuthProviderPublication> {
+        return this.del(`/installations/${installationId}/oauth-provider-publications/${providerKey}`);
     }
 
     /**
