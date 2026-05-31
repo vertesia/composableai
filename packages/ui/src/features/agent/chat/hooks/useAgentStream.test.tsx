@@ -4,14 +4,16 @@ import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAgentStream } from './useAgentStream';
 
-type StreamMessagesMock = ReturnType<typeof vi.fn<
-    (
-        id: string,
-        onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
-        since?: number,
-        signal?: AbortSignal,
-    ) => Promise<unknown>
->>;
+type StreamMessagesMock = ReturnType<
+    typeof vi.fn<
+        (
+            id: string,
+            onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+            since?: number,
+            signal?: AbortSignal,
+        ) => Promise<unknown>
+    >
+>;
 
 function createMessage(type: AgentMessageType, timestamp: number, message: string): AgentMessage {
     return {
