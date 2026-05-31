@@ -1,4 +1,4 @@
-import { Button, ErrorBox, Modal, ModalBody, ModalTitle } from '@vertesia/ui/core';
+import { Button, ErrorBox, Modal, ModalBody, ModalTitle, Switch } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     ChevronDownIcon,
@@ -44,7 +44,7 @@ function TreeNode({ node, depth, runId, onPreview, onDownload, downloadingPath }
             <div>
                 <Button
                     variant="unstyled"
-                    className="flex items-center gap-1.5 w-full text-start py-1 px-1 rounded hover:bg-muted/30 text-sm"
+                    className="flex justify-start items-center gap-1.5 w-full text-start py-1 px-1 rounded hover:bg-muted/30 text-sm"
                     style={{ paddingLeft: `${depth * 16 + 4}px` }}
                     onClick={() => setExpanded((prev) => !prev)}
                 >
@@ -169,7 +169,13 @@ interface ArtifactsTabProps {
 function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
-    const { tree, flatFiles, isLoading, error, refresh } = useArtifacts(client, runId, refreshKey);
+    const [showSystem, setShowSystem] = useState(false);
+    const { tree, flatFiles, totalCount, systemHiddenCount, isLoading, error, refresh } = useArtifacts(
+        client,
+        runId,
+        refreshKey,
+        showSystem,
+    );
     const [downloadingPath, setDownloadingPath] = useState<string | null>(null);
     const [previewPath, setPreviewPath] = useState<string | null>(null);
 
@@ -221,7 +227,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
         );
     }
 
-    if (isLoading && flatFiles.length === 0) {
+    if (isLoading && totalCount === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-8 text-muted">
                 <Loader2Icon className="size-6 animate-spin mb-2" />
@@ -250,7 +256,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
         );
     }
 
-    if (flatFiles.length === 0) {
+    if (totalCount === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-8 text-muted">
                 <PackageIcon className="size-8 mb-2" />
@@ -266,28 +272,41 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
     return (
         <div className="flex flex-col h-full">
             {/* Top bar */}
-            <div className="flex items-center justify-between px-3 py-2 border-b text-xs text-muted">
-                <span>
+            <div className="flex items-center justify-between gap-2 px-3 py-2 border-b text-xs text-muted">
+                <span className="shrink-0">
                     {flatFiles.length} file{flatFiles.length !== 1 ? 's' : ''}
+                    {!showSystem && systemHiddenCount > 0 ? ` · ${systemHiddenCount} hidden` : ''}
                 </span>
-                <Button variant="ghost" size="sm" onClick={refresh} disabled={isLoading} className="h-6 w-6 p-0">
-                    <RefreshCwIcon className={`size-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-                </Button>
+                <div className="flex items-center gap-1">
+                    <Switch size="sm" value={showSystem} onChange={setShowSystem}>
+                        <span className="text-xs text-muted">{t('agent.showSystemArtifacts')}</span>
+                    </Switch>
+                    <Button variant="ghost" size="sm" onClick={refresh} disabled={isLoading} className="h-6 w-6 p-0">
+                        <RefreshCwIcon className={`size-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                    </Button>
+                </div>
             </div>
 
             {/* Tree */}
             <div className="flex-1 overflow-y-auto p-2">
-                {tree.map((node) => (
-                    <TreeNode
-                        key={node.path}
-                        node={node}
-                        depth={0}
-                        runId={runId}
-                        onPreview={handlePreview}
-                        onDownload={handleDownload}
-                        downloadingPath={downloadingPath}
-                    />
-                ))}
+                {tree.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center text-muted">
+                        <PackageIcon className="size-8 mb-2" />
+                        <span className="text-sm">{t('agent.onlySystemArtifacts')}</span>
+                    </div>
+                ) : (
+                    tree.map((node) => (
+                        <TreeNode
+                            key={node.path}
+                            node={node}
+                            depth={0}
+                            runId={runId}
+                            onPreview={handlePreview}
+                            onDownload={handleDownload}
+                            downloadingPath={downloadingPath}
+                        />
+                    ))
+                )}
             </div>
             {previewSource && (
                 <Modal

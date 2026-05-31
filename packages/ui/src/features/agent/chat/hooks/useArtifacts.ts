@@ -15,14 +15,31 @@ export interface ArtifactTreeNode {
 }
 
 // ---------------------------------------------------------------------------
-// Internal files we never show to the user
+// System artifacts — agent execution internals (tool I/O hydration,
+// conversation snapshots, process state, archives). Hidden by default and
+// revealed via the "Show system files" toggle.
 // ---------------------------------------------------------------------------
 
-const INTERNAL_FILE_PATTERNS = [/conversation\.json$/, /-conversation\.json$/, /^tools\.json$/];
+// Matched against the run-relative path: any path with one of these directory
+// segments is agent scaffolding rather than a user-facing output.
+const SYSTEM_DIR_PATTERN = /(^|\/)(tool-inputs|tool-results|archive)(\/|$)/;
+const SYSTEM_PROCESS_PATTERN = /(^|\/)process\/(history|state)(\/|$)/;
 
-function isInternalFile(relativePath: string): boolean {
+// Matched against the file basename.
+const SYSTEM_BASENAME_PATTERNS = [
+    /conversation\.json$/, // conversation.json, <id>-conversation.json
+    /^conversation-checkpoint-\d+\.json$/,
+    /^tools\.json$/,
+    /^tool-input-refs\.json$/,
+    /^toolu[_-]/i, // per-tool-use input/result hydration payloads
+];
+
+export function isSystemArtifact(relativePath: string): boolean {
+    if (SYSTEM_DIR_PATTERN.test(relativePath) || SYSTEM_PROCESS_PATTERN.test(relativePath)) {
+        return true;
+    }
     const basename = relativePath.split('/').pop() ?? relativePath;
-    return INTERNAL_FILE_PATTERNS.some((re) => re.test(basename));
+    return SYSTEM_BASENAME_PATTERNS.some((re) => re.test(basename));
 }
 
 // ---------------------------------------------------------------------------
@@ -88,15 +105,26 @@ function stripToRelativePath(fullPath: string, runId: string): string {
 // ---------------------------------------------------------------------------
 
 export interface UseArtifactsResult {
+    /** Tree of the currently visible files (respects `showSystem`). */
     tree: ArtifactTreeNode[];
+    /** Currently visible files (respects `showSystem`). */
     flatFiles: string[];
+    /** Total number of artifacts in the run, including system files. */
+    totalCount: number;
+    /** Number of system files currently hidden (0 when `showSystem` is true). */
+    systemHiddenCount: number;
     isLoading: boolean;
     error: string | null;
     refresh: () => void;
 }
 
-export function useArtifacts(client: VertesiaClient, runId: string | undefined, refreshKey = 0): UseArtifactsResult {
-    const [flatFiles, setFlatFiles] = useState<string[]>([]);
+export function useArtifacts(
+    client: VertesiaClient,
+    runId: string | undefined,
+    refreshKey = 0,
+    showSystem = false,
+): UseArtifactsResult {
+    const [allFiles, setAllFiles] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [manualRefreshKey, setManualRefreshKey] = useState(0);
@@ -113,13 +141,13 @@ export function useArtifacts(client: VertesiaClient, runId: string | undefined, 
             const paths = await client.files.listArtifacts(runId);
             if (fetchId !== fetchIdRef.current) return; // stale
 
-            const relatives = paths.map((p) => stripToRelativePath(p, runId)).filter((p) => p && !isInternalFile(p));
+            const relatives = paths.map((p) => stripToRelativePath(p, runId)).filter((p) => !!p);
 
-            setFlatFiles(relatives);
+            setAllFiles(relatives);
         } catch (err) {
             if (fetchId !== fetchIdRef.current) return;
             setError(err instanceof Error ? err.message : 'Failed to list artifacts');
-            setFlatFiles([]);
+            setAllFiles([]);
         } finally {
             if (fetchId === fetchIdRef.current) {
                 setIsLoading(false);
@@ -133,11 +161,16 @@ export function useArtifacts(client: VertesiaClient, runId: string | undefined, 
         void fetchArtifacts();
     }, [fetchArtifacts, refreshKey, manualRefreshKey]);
 
+    const flatFiles = useMemo(
+        () => (showSystem ? allFiles : allFiles.filter((p) => !isSystemArtifact(p))),
+        [allFiles, showSystem],
+    );
     const tree = useMemo(() => buildTree(flatFiles), [flatFiles]);
+    const systemHiddenCount = allFiles.length - flatFiles.length;
 
     const refresh = useCallback(() => {
         setManualRefreshKey((k) => k + 1);
     }, []);
 
-    return { tree, flatFiles, isLoading, error, refresh };
+    return { tree, flatFiles, totalCount: allFiles.length, systemHiddenCount, isLoading, error, refresh };
 }
