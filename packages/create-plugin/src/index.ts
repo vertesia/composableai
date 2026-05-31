@@ -41,6 +41,11 @@ async function main() {
         .option('--local-templates <path>', 'Use local template directory instead of fetching from GitHub')
         .option('--skip-install', 'Skip dependency installation after copying and configuring the template', false)
         .option(
+            '--full',
+            'Start from the full scaffold (overlay examples/ onto src/) instead of the minimal one',
+            false,
+        )
+        .option(
             '--package-manager <manager>',
             'Package manager to use: pnpm or npm (overrides template default and interactive selection)',
         )
@@ -63,6 +68,7 @@ Documentation: ${config.docsUrl}
         dev: boolean;
         localTemplates?: string;
         skipInstall: boolean;
+        full: boolean;
         packageManager?: string;
     }>();
     const {
@@ -72,6 +78,7 @@ Documentation: ${config.docsUrl}
         dev,
         localTemplates,
         skipInstall,
+        full,
         packageManager: packageManagerOverride,
     } = opts;
 
@@ -87,7 +94,7 @@ Documentation: ${config.docsUrl}
             },
             {
                 onCancel: () => {
-                    console.log(chalk.red('\n❌ Installation cancelled.\n'));
+                    console.log(chalk.red('\nInstallation cancelled.\n'));
                     process.exit(1);
                 },
             },
@@ -97,18 +104,18 @@ Documentation: ${config.docsUrl}
 
     // Validate project name
     if (!validation.projectNamePattern.test(projectName)) {
-        console.log(chalk.red(`❌ ${validation.projectNameError}\n`));
+        console.log(chalk.red(`${validation.projectNameError}\n`));
         process.exit(1);
     }
 
     if (validation.reservedNames.includes(projectName)) {
-        console.log(chalk.red(`❌ "${projectName}" is a reserved name. Please choose a different name.\n`));
+        console.log(chalk.red(`"${projectName}" is a reserved name. Please choose a different name.\n`));
         process.exit(1);
     }
 
     // Check if directory already exists
     if (fs.existsSync(projectName)) {
-        console.log(chalk.red(`❌ Directory "${projectName}" already exists.\n`));
+        console.log(chalk.red(`Directory "${projectName}" already exists.\n`));
         process.exit(1);
     }
 
@@ -118,7 +125,7 @@ Documentation: ${config.docsUrl}
 
         // Show the selected template name with branch if specified
         const branchInfo = branch ? chalk.gray(` (branch: ${branch})`) : '';
-        console.log(`${chalk.blue.bold(`\n🚀 Create ${selectedTemplate.name}`) + branchInfo}\n`);
+        console.log(`${chalk.blue.bold(`\nCreate ${selectedTemplate.name}`) + branchInfo}\n`);
 
         // Step 2: Download template from GitHub (or copy from local path)
         await downloadTemplate(projectName, selectedTemplate.repository, localTemplates);
@@ -157,7 +164,20 @@ Documentation: ${config.docsUrl}
         // Step 9: Remove meta files
         removeMetaFiles(projectName, templateConfig);
 
-        // Step 9: Run pre-install hooks (if any) - e.g., CLI authentication for private registries
+        // Step 9b: Full scaffold — overlay examples/ onto src/ (opt-in via --full).
+        // The default scaffold is intentionally minimal; --full installs the working
+        // example features and populated tool-server collections.
+        const applyExamplesScript = `${projectName}/scripts/apply-examples.mjs`;
+        if (full) {
+            if (fs.existsSync(applyExamplesScript)) {
+                console.log(chalk.blue('Applying full scaffold (examples)...\n'));
+                execSync('node scripts/apply-examples.mjs', { cwd: projectName, stdio: 'inherit' });
+            } else {
+                console.log(chalk.yellow('--full requested but scripts/apply-examples.mjs is missing; skipping.\n'));
+            }
+        }
+
+        // Step 10: Run pre-install hooks (if any) - e.g., CLI authentication for private registries
         let skipDependencyInstall = false;
         if (templateConfig.preInstall) {
             const preInstallSuccess = await runPreInstallHooks(
@@ -167,7 +187,7 @@ Documentation: ${config.docsUrl}
                 nonInteractive,
             );
             if (!preInstallSuccess) {
-                console.log(chalk.yellow('⚠️  Pre-install hooks failed. Skipping dependency installation.\n'));
+                console.log(chalk.yellow('Pre-install hooks failed. Skipping dependency installation.\n'));
                 console.log(chalk.gray('You can install dependencies manually after resolving the issue:\n'));
                 console.log(chalk.gray(`  cd ${projectName}`));
                 console.log(chalk.gray(`  ${packageManager} install\n`));
@@ -177,7 +197,7 @@ Documentation: ${config.docsUrl}
 
         // Step 10: Install dependencies
         if (skipInstall) {
-            console.log(chalk.yellow('⚠️  Skipping dependency installation (--skip-install).\n'));
+            console.log(chalk.yellow('Skipping dependency installation (--skip-install).\n'));
             console.log(chalk.gray('You can install dependencies manually when needed:\n'));
             console.log(chalk.gray(`  cd ${projectName}`));
             console.log(chalk.gray(`  ${packageManager} install\n`));
@@ -196,9 +216,7 @@ Documentation: ${config.docsUrl}
         // Step 12: Success!
         showSuccess(projectName, packageManager, selectedTemplate.name, selectedTemplate.repository);
     } catch (error) {
-        console.log(
-            chalk.red(`\n❌ Installation failed: ${error instanceof Error ? error.message : 'Unknown error'}\n`),
-        );
+        console.log(chalk.red(`\nInstallation failed: ${error instanceof Error ? error.message : 'Unknown error'}\n`));
 
         process.exit(1);
     }
@@ -208,7 +226,7 @@ Documentation: ${config.docsUrl}
  * Show success message
  */
 function showSuccess(projectName: string, packageManager: string, templateName: string, repository: string): void {
-    console.log(chalk.green.bold('✅ Project created successfully!\n'));
+    console.log(chalk.green.bold('Project created successfully!\n'));
     console.log(chalk.gray('Next steps:\n'));
     console.log(chalk.cyan(`  cd ${projectName}`));
     console.log(chalk.cyan(`  ${packageManager} run dev`));
@@ -220,6 +238,6 @@ function showSuccess(projectName: string, packageManager: string, templateName: 
 
 // Run the installer
 main().catch((error) => {
-    console.error(chalk.red(`\n❌ Fatal error: ${error.message}\n`));
+    console.error(chalk.red(`\nFatal error: ${error.message}\n`));
     process.exit(1);
 });

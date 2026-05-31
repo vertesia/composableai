@@ -10,3 +10,6 @@ export const ExampleInteractions = new InteractionCollection({
     icon,
     interactions: [whatColor, assistant],
 });
+
+// config.ts imports `interactions` from here; minimal scaffold exports `[]`.
+export const interactions = [ExampleInteractions];

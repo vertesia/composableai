@@ -9,3 +9,6 @@ export const ExampleTypes = new ContentTypesCollection({
     icon,
     types: [ArticleType],
 });
+
+// config.ts imports `types` from here; minimal scaffold exports `[]`.
+export const types = [ExampleTypes];

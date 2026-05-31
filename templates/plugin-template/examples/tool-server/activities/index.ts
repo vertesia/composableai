@@ -7,3 +7,6 @@ export const ExampleActivities = new ActivityCollection({
     description: 'A collection of example remote activities for DSL workflows',
     activities: [WordCountActivity],
 });
+
+// config.ts imports `activities` from here; minimal scaffold exports `[]`.
+export const activities = [ExampleActivities];

@@ -35,7 +35,7 @@ export async function downloadTemplate(
         const templateDir = extractTemplateDirName(repository);
         const sourcePath = path.resolve(localTemplatesPath, templateDir);
 
-        console.log(chalk.blue('📦 Copying template from local directory...\n'));
+        console.log(chalk.blue('Copying template from local directory...\n'));
         console.log(chalk.gray(`   Source: ${sourcePath}`));
         console.log(chalk.gray(`   Target: ./${projectName}\n`));
 
@@ -50,11 +50,11 @@ export async function downloadTemplate(
                 return !rel.startsWith('/node_modules') && !rel.startsWith('/dist') && !rel.startsWith('/.pnpm');
             },
         });
-        console.log(chalk.green('   ✓ Template copied\n'));
+        console.log(chalk.green('   Template copied\n'));
         return;
     }
 
-    console.log(chalk.blue('📦 Downloading template from GitHub...\n'));
+    console.log(chalk.blue('Downloading template from GitHub...\n'));
     console.log(chalk.gray(`   Repository: ${repository}`));
     console.log(chalk.gray(`   Target: ./${projectName}\n`));
 
@@ -69,12 +69,12 @@ export async function downloadTemplate(
     });
 
     emitter.on('warn', (warning) => {
-        console.log(chalk.yellow(`   ⚠️  ${warning.message}`));
+        console.log(chalk.yellow(`   ${warning.message}`));
     });
 
     try {
         await emitter.clone(projectName);
-        console.log(chalk.green('   ✓ Template downloaded\n'));
+        console.log(chalk.green('   Template downloaded\n'));
     } catch (error) {
         throw new Error(`Failed to download template: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

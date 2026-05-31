@@ -131,13 +131,13 @@ export function replaceVariables(
         return;
     }
 
-    console.log(chalk.blue('✏️  Configuring files...\n'));
+    console.log(chalk.blue('Configuring files...\n'));
 
     for (const file of templateConfig.files) {
         const filePath = path.join(projectName, file);
 
         if (!fs.existsSync(filePath)) {
-            console.log(chalk.yellow(`   ⚠️  File not found: ${file} (skipping)`));
+            console.log(chalk.yellow(`   File not found: ${file} (skipping)`));
             continue;
         }
 
@@ -157,7 +157,7 @@ export function replaceVariables(
 
         if (modified) {
             fs.writeFileSync(filePath, content);
-            console.log(chalk.gray(`   ✓ ${file}`));
+            console.log(chalk.gray(`   ${file}`));
         }
     }
 
@@ -175,12 +175,12 @@ export function adjustPackageJson(
     isDev: boolean,
     packageManager: string,
 ): void {
-    console.log(chalk.blue('📝 Adjusting package.json...\n'));
+    console.log(chalk.blue('Adjusting package.json...\n'));
 
     const packageJsonPath = path.join(projectName, 'package.json');
 
     if (!fs.existsSync(packageJsonPath)) {
-        console.log(chalk.yellow('   ⚠️  package.json not found (skipping adjustment)'));
+        console.log(chalk.yellow('   package.json not found (skipping adjustment)'));
         console.log();
         return;
     }
@@ -192,13 +192,13 @@ export function adjustPackageJson(
         const newName = answers.PROJECT_NAME || projectName;
         if (packageJson.name !== newName) {
             packageJson.name = newName;
-            console.log(chalk.gray(`   ✓ Set package name to "${newName}"`));
+            console.log(chalk.gray(`   Set package name to "${newName}"`));
         }
 
         // Pin the chosen package manager via Corepack
         if (answers.PM_VERSION) {
             packageJson.packageManager = `${packageManager}@${answers.PM_VERSION}`;
-            console.log(chalk.gray(`   ✓ Set packageManager to "${packageJson.packageManager}"`));
+            console.log(chalk.gray(`   Set packageManager to "${packageJson.packageManager}"`));
         }
 
         // 2. Replace workspace:* with pinned versions
@@ -240,7 +240,7 @@ export function adjustPackageJson(
         if (workspaceReplacements > 0) {
             const method = versionMap ? 'pinned' : 'latest';
             console.log(
-                chalk.gray(`   ✓ Resolved ${workspaceReplacements} workspace:* dependencies to ${method} versions`),
+                chalk.gray(`   Resolved ${workspaceReplacements} workspace:* dependencies to ${method} versions`),
             );
         }
 
@@ -249,7 +249,7 @@ export function adjustPackageJson(
     } catch (error) {
         console.log(
             chalk.yellow(
-                `   ⚠️  Failed to adjust package.json: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                `   Failed to adjust package.json: ${error instanceof Error ? error.message : 'Unknown error'}`,
             ),
         );
     }
@@ -267,7 +267,7 @@ export function handleConditionalRemoves(
 ): void {
     if (!templateConfig.conditionalRemove) return;
 
-    console.log(chalk.blue('🔧 Applying conditional configurations...\n'));
+    console.log(chalk.blue('Applying conditional configurations...\n'));
 
     for (const [varName, conditions] of Object.entries(templateConfig.conditionalRemove)) {
         const value = String(answers[varName]);
@@ -278,7 +278,7 @@ export function handleConditionalRemoves(
                 const filePath = path.join(projectName, file);
                 if (fs.existsSync(filePath)) {
                     fs.rmSync(filePath, { recursive: true, force: true });
-                    console.log(chalk.gray(`   ✓ Removed: ${file}`));
+                    console.log(chalk.gray(`   Removed: ${file}`));
                 }
             }
         }
@@ -294,7 +294,7 @@ export function handleConditionalRemoves(
 export function renameFiles(projectName: string, templateConfig: TemplateConfig): void {
     if (!templateConfig.renameFiles) return;
 
-    console.log(chalk.blue('📝 Renaming files...\n'));
+    console.log(chalk.blue('Renaming files...\n'));
 
     for (const [source, destination] of Object.entries(templateConfig.renameFiles)) {
         const sourcePath = path.join(projectName, source);
@@ -302,9 +302,9 @@ export function renameFiles(projectName: string, templateConfig: TemplateConfig)
 
         if (fs.existsSync(sourcePath)) {
             fs.renameSync(sourcePath, destPath);
-            console.log(chalk.gray(`   ✓ ${source} → ${destination}`));
+            console.log(chalk.gray(`   ${source} → ${destination}`));
         } else {
-            console.log(chalk.yellow(`   ⚠️  File not found: ${source} (skipping rename)`));
+            console.log(chalk.yellow(`   File not found: ${source} (skipping rename)`));
         }
     }
 
@@ -315,7 +315,7 @@ export function renameFiles(projectName: string, templateConfig: TemplateConfig)
  * Remove meta files that shouldn't be in the user's project
  */
 export function removeMetaFiles(projectName: string, templateConfig: TemplateConfig): void {
-    console.log(chalk.blue('🧹 Cleaning up...\n'));
+    console.log(chalk.blue('Cleaning up...\n'));
 
     const filesToRemove = templateConfig.removeAfterInstall || [];
 
@@ -323,7 +323,7 @@ export function removeMetaFiles(projectName: string, templateConfig: TemplateCon
         const filePath = path.join(projectName, file);
         if (fs.existsSync(filePath)) {
             fs.rmSync(filePath, { recursive: true, force: true });
-            console.log(chalk.gray(`   ✓ Removed: ${file}`));
+            console.log(chalk.gray(`   Removed: ${file}`));
         }
     }
 

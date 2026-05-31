@@ -203,6 +203,9 @@ export pnpm_config_registry="${VERDACCIO_URL}"
 TEMPLATES_PATH="$(cd "${SCRIPT_DIR}/../.." && pwd)/templates"
 EXTRA_CREATE_ARGS="--local-templates ${TEMPLATES_PATH}"
 
+# Minimal scaffold (default) built with pnpm.
+echo ""
+echo "--- Mode: minimal (default scaffold, pnpm) ---"
 bootstrap_template "integration-test-plugin"
 
 echo ""
@@ -211,10 +214,13 @@ cat "${TEST_PROJECT_DIR}/package.json"
 
 build_project
 
+# Full scaffold (examples overlaid onto src via --full) built with npm.
+echo ""
+echo "--- Mode: full (--full scaffold, npm) ---"
 TEST_PROJECT_DIR_NPM=""
-bootstrap_template "integration-test-plugin-npm" npm
+EXTRA_CREATE_ARGS="${EXTRA_CREATE_ARGS} --full" bootstrap_template "integration-test-plugin-npm" npm
 TEST_PROJECT_DIR_NPM="$TEST_PROJECT_DIR"
 build_project_npm
 
 echo ""
-echo "✅ Template integration test passed!"
+echo "Template integration test passed (minimal + full)!"

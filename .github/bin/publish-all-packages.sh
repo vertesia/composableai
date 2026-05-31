@@ -132,19 +132,19 @@ update_template_versions() {
     fs.writeFileSync(pkgPath, JSON.stringify(p, null, 2) + '\n');
   "
 
-  echo "  ✓ Updated packages/create-plugin/package.json templateVersions"
+  echo "  Updated packages/create-plugin/package.json templateVersions"
 
   # Update version in each template's package.json (except worker-template)
   for tpl_dir in templates/*; do
     if [ -d "$tpl_dir" ] && [ -f "$tpl_dir/package.json" ]; then
       tpl_name=$(basename "$tpl_dir")
       if [ "$tpl_name" = "worker-template" ]; then
-        echo "  ⏭ Skipping ${tpl_dir} (independent versioning)"
+        echo "  Skipping ${tpl_dir} (independent versioning)"
         continue
       fi
       cd "$tpl_dir"
       npm version "${new_version}" --no-git-tag-version
-      echo "  ✓ Updated ${tpl_dir}/package.json version to ${new_version}"
+      echo "  Updated ${tpl_dir}/package.json version to ${new_version}"
       cd ../..
     fi
   done
@@ -193,9 +193,9 @@ write_github_summary() {
 
   # Determine title based on dry run mode
   if [ "$DRY_RUN" = "true" ]; then
-    title="## 🧪 Dry Run Summary"
+    title="## Dry Run Summary"
   else
-    title="## 📦 Published Packages"
+    title="## Published Packages"
   fi
 
   # Write summary table

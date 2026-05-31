@@ -6,7 +6,26 @@ the typecheckers ignore it. The default app surface (`src/ui/app/`) ships minima
 on purpose — a Home page plus the built-in assistant chat — so you build only what
 the request needs instead of deleting scaffolding you don't.
 
-## How to use these
+## Want everything wired up?
+
+If you'd rather start from the full surface (Store-object list/detail,
+conversations, settings, and the populated tool-server collections), scaffold
+with `--full`:
+
+```bash
+npm init @vertesia/plugin my-plugin -- --full
+```
+
+or, in an existing project, overlay the examples onto `src/` at any time:
+
+```bash
+node scripts/apply-examples.mjs
+```
+
+This copies `examples/ui/{features,pages}` and `examples/tool-server/*` into
+`src/`, where their relative imports resolve, and swaps in the full router.
+
+## How to use these (à la carte)
 
 Read the example that matches what you're building, then **copy the relevant
 files into `src/` and adapt them** (fix the relative import paths — examples were

@@ -9,3 +9,6 @@ export const ExampleTools = new ToolCollection({
     icon,
     tools: [CalculatorTool],
 });
+
+// config.ts imports `tools` from here; minimal scaffold exports `[]`.
+export const tools = [ExampleTools];

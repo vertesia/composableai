@@ -80,7 +80,7 @@ export async function promptUser(
             }
         }
     } else {
-        console.log(chalk.blue('⚙️  Configure your project:\n'));
+        console.log(chalk.blue('Configure your project:\n'));
 
         const userAnswers = await prompts(processedPrompts as Parameters<typeof prompts>[0], {
             onCancel: () => {

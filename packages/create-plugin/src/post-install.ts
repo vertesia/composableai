@@ -21,7 +21,7 @@ function commandExists(command: string): boolean {
  * Install a global npm package
  */
 async function installGlobalPackage(packageName: string, packageManager: string): Promise<boolean> {
-    console.log(chalk.blue(`📦 Installing ${packageName}...\n`));
+    console.log(chalk.blue(`Installing ${packageName}...\n`));
 
     return new Promise((resolve) => {
         const args = packageManager === 'npm' ? ['install', '-g', packageName] : ['add', '-g', packageName];
@@ -34,16 +34,16 @@ async function installGlobalPackage(packageName: string, packageManager: string)
 
         child.on('close', (code) => {
             if (code === 0) {
-                console.log(chalk.green(`   ✓ ${packageName} installed successfully\n`));
+                console.log(chalk.green(`   ${packageName} installed successfully\n`));
                 resolve(true);
             } else {
-                console.log(chalk.yellow(`   ⚠️  Failed to install ${packageName}\n`));
+                console.log(chalk.yellow(`   Failed to install ${packageName}\n`));
                 resolve(false);
             }
         });
 
         child.on('error', () => {
-            console.log(chalk.yellow(`   ⚠️  Failed to install ${packageName}\n`));
+            console.log(chalk.yellow(`   Failed to install ${packageName}\n`));
             resolve(false);
         });
     });
@@ -88,7 +88,7 @@ async function runInstallHooks(
     }
 
     const phaseLabel = phase === 'pre' ? 'pre-install' : 'post-install';
-    console.log(chalk.blue(`🔧 Running ${phaseLabel} hooks...\n`));
+    console.log(chalk.blue(`Running ${phaseLabel} hooks...\n`));
 
     // Check and install CLI package if needed
     if (config.cliPackage) {
@@ -112,11 +112,11 @@ async function runInstallHooks(
             if (installCli) {
                 const installed = await installGlobalPackage(config.cliPackage, packageManager);
                 if (!installed) {
-                    console.log(chalk.yellow(`   ⚠️  Skipping ${phaseLabel} commands that require the CLI\n`));
+                    console.log(chalk.yellow(`   Skipping ${phaseLabel} commands that require the CLI\n`));
                     return false;
                 }
             } else {
-                console.log(chalk.yellow(`   ⚠️  Skipping ${phaseLabel} commands that require the CLI\n`));
+                console.log(chalk.yellow(`   Skipping ${phaseLabel} commands that require the CLI\n`));
                 return false;
             }
         }
@@ -134,7 +134,7 @@ async function runInstallHooks(
             });
 
             if (!proceed) {
-                console.log(chalk.gray(`   ⏭️  Skipped: ${cmd.name}\n`));
+                console.log(chalk.gray(`   Skipped: ${cmd.name}\n`));
                 continue;
             }
         }
@@ -143,9 +143,9 @@ async function runInstallHooks(
         const success = await runCommand(cmd.command, projectName);
 
         if (success) {
-            console.log(chalk.green(`   ✓ ${cmd.name} completed\n`));
+            console.log(chalk.green(`   ${cmd.name} completed\n`));
         } else {
-            console.log(chalk.yellow(`   ⚠️  ${cmd.name} failed (you can run it manually later)\n`));
+            console.log(chalk.yellow(`   ${cmd.name} failed (you can run it manually later)\n`));
             // For pre-install, a failure is critical - return false to skip dependency installation
             if (phase === 'pre') {
                 return false;
