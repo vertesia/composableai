@@ -33,6 +33,8 @@ export enum Permission {
     manage_billing = 'account:billing',
     /** View cost and usage analytics */
     billing_read = 'billing:read',
+    /** View account and project audit events. */
+    audit_read = 'audit:read',
     account_member = 'account:member',
 
     content_read = 'content:read',

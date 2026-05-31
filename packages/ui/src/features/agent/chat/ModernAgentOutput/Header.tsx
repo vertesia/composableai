@@ -39,6 +39,8 @@ export interface HeaderProps {
     onExportPdf?: () => void;
     /** Called to show run details/internals modal */
     onShowDetails?: () => void;
+    /** Whether workflow control actions such as cancel should be shown. */
+    allowWorkflowControl?: boolean;
     /** Called after a restart succeeds — receives the new AgentRun */
     onRestart?: (newRun: AgentRun) => void;
     /** Called after a clone succeeds — receives the new AgentRun */
@@ -67,6 +69,7 @@ export default function Header({
     resetWorkflow,
     onExportPdf,
     onShowDetails,
+    allowWorkflowControl = true,
     onRestart,
     onClone,
     isReceivingChunks = false,
@@ -164,6 +167,7 @@ export default function Header({
                         resetWorkflow={resetWorkflow}
                         onExportPdf={onExportPdf}
                         onShowDetails={onShowDetails}
+                        allowWorkflowControl={allowWorkflowControl}
                         onRestart={onRestart}
                         onClone={onClone}
                     />
@@ -212,6 +216,7 @@ function MoreDropdown({
     resetWorkflow,
     onExportPdf,
     onShowDetails,
+    allowWorkflowControl = true,
     onRestart,
     onClone,
 }: {
@@ -225,6 +230,7 @@ function MoreDropdown({
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
     onShowDetails?: () => void;
+    allowWorkflowControl?: boolean;
     onRestart?: (newRun: AgentRun) => void;
     onClone?: (newRun: AgentRun) => void;
 }) {
@@ -356,7 +362,7 @@ function MoreDropdown({
                         <GitFork className="size-3.5 text-muted" /> {t('agent.cloneConversation')}
                     </MenuItem>
                 )}
-                {!isTerminal && (
+                {allowWorkflowControl && !isTerminal && (
                     <MenuItem onClick={cancelWorkflow} variant="destructive">
                         <XIcon className="size-3.5" /> {t('agent.cancelWorkflow')}
                     </MenuItem>
