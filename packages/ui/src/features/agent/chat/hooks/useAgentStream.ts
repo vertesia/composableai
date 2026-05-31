@@ -28,6 +28,12 @@ export interface UseAgentStreamResult {
     addOptimisticMessage: (msg: AgentMessage) => void;
     /** Remove optimistic messages matching a predicate */
     removeOptimisticMessages: (predicate: (msg: AgentMessage) => boolean) => void;
+    /**
+     * Re-open the SSE stream for the SAME agentRunId without clearing the existing
+     * timeline. Used after restarting a completed workflow so newly produced messages
+     * append seamlessly at the bottom instead of forcing a full reload.
+     */
+    reconnect: () => void;
     /** AgentRun status fetched from API (RUNNING, COMPLETED, FAILED, etc.) */
     agentRunStatus: string | null;
     /** Temporal workflow run ID (first_workflow_run_id from AgentRun) */
@@ -59,6 +65,20 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
 
     // Server-side file processing status updates
     const [serverFileUpdates, setServerFileUpdates] = useState<Map<string, ConversationFile>>(new Map());
+
+    // Bumped to re-open the stream in place (same agentRunId) without resetting the timeline.
+    const [streamNonce, setStreamNonce] = useState(0);
+    const reconnect = useCallback(() => setStreamNonce((n) => n + 1), []);
+
+    // Tracks the last agentRunId the stream effect ran for, so a reconnect (nonce bump)
+    // can be distinguished from switching to a different conversation.
+    const prevAgentRunIdRef = useRef<string | null>(null);
+
+    // Highest message timestamp delivered so far. On a same-run reconnect this is passed
+    // as the `since` cursor so the history replay excludes the previous run's terminal
+    // (COMPLETE/TERMINATED) message — otherwise streamMessages would treat that stale
+    // event as stream-ending and close before the restarted run's reply arrives.
+    const lastDeliveredTsRef = useRef(0);
 
     // Streaming messages by streaming_id for real-time chunk aggregation
     const [streamingMessages, setStreamingMessages] = useState<Map<string, StreamingData>>(new Map());
@@ -100,14 +120,28 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
 
     // Stream messages from the agent
     useEffect(() => {
-        // Reset all state when agentRunId changes (new agent)
-        console.debug('[useAgentStream] effect:start', { agentRunId });
-        setMessages([]);
-        setAgentRunStatus(null);
-        setWorkflowRunId(null);
-        setStreamingMessages(new Map());
-        setServerFileUpdates(new Map());
+        // Only reset state when switching to a different conversation. A reconnect
+        // (nonce bump for the same agentRunId) keeps the existing timeline so newly
+        // streamed messages append in place — re-delivered history is de-duped by
+        // timestamp below.
+        const isNewConversation = prevAgentRunIdRef.current !== agentRunId;
+        prevAgentRunIdRef.current = agentRunId;
+
+        console.debug('[useAgentStream] effect:start', { agentRunId, streamNonce, isNewConversation });
+        if (isNewConversation) {
+            setMessages([]);
+            setAgentRunStatus(null);
+            setWorkflowRunId(null);
+            setStreamingMessages(new Map());
+            setServerFileUpdates(new Map());
+            lastDeliveredTsRef.current = 0;
+        }
         const abortController = new AbortController();
+
+        // Resume from the last delivered message on a reconnect; fetch full history for a
+        // new conversation. The cursor is exclusive server-side (ts > since), so the prior
+        // run's terminal message is skipped on reconnect.
+        const since = isNewConversation ? undefined : lastDeliveredTsRef.current || undefined;
 
         // Check agent run status
         client.agents
@@ -129,6 +163,11 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                 agentRunId,
                 (message) => {
                     if (abortController.signal.aborted) return;
+
+                    // Advance the reconnect cursor past every delivered message.
+                    if (message.timestamp && message.timestamp > lastDeliveredTsRef.current) {
+                        lastDeliveredTsRef.current = message.timestamp;
+                    }
 
                     // Handle streaming chunks separately for real-time aggregation
                     // PERFORMANCE: Batch updates using RAF instead of immediate state updates
@@ -241,7 +280,7 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                         });
                     }
                 },
-                undefined,
+                since,
                 abortController.signal,
             )
             .catch((error) => {
@@ -253,7 +292,9 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
         return () => {
             console.debug('[useAgentStream] effect:cleanup', { agentRunId });
             abortController.abort();
-            setMessages([]);
+            // Note: messages are intentionally NOT cleared here. Switching conversations
+            // resets them at effect start (isNewConversation); a reconnect must preserve
+            // the timeline so the UI doesn't flash/reload.
             cancelScheduledStreamingFlush();
             pendingStreamingChunks.current.clear();
             if (debugFlashTimeout.current) {
@@ -261,7 +302,7 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                 debugFlashTimeout.current = null;
             }
         };
-    }, [agentRunId, client.agents, flushStreamingChunks, cancelScheduledStreamingFlush]);
+    }, [agentRunId, streamNonce, client.agents, flushStreamingChunks, cancelScheduledStreamingFlush]);
 
     // Flush pending streaming chunks when tab becomes visible.
     useEffect(() => {
@@ -303,6 +344,7 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
         debugChunkFlash,
         addOptimisticMessage,
         removeOptimisticMessages,
+        reconnect,
         agentRunStatus,
         workflowRunId,
         serverFileUpdates,

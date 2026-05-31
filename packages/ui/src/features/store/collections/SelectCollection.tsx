@@ -161,7 +161,7 @@ export function SelectCollection({
         : !!selectedCollection;
 
     const renderTrailingIcon = () => {
-        if (showClearOption) {
+        if (showClearOption && !disabled) {
             return (
                 <Button
                     variant="unstyled"
