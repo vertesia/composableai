@@ -491,6 +491,16 @@ export interface IndexingStatusResponse {
         properties_values_trimmed?: number;
         /** Total bytes dropped from oversized property values */
         properties_bytes_dropped?: number;
+        /** Total batcher flushes across all completed shards (cumulative) */
+        batches_flushed?: number;
+        /** Total ES bulk requests sent across all completed shards (cumulative) */
+        bulk_chunks_written?: number;
+        /** Total per-document ES bulk-item failures across all shards (cumulative). Counts docs ES rejected — they aren't in the indexed set. */
+        bulk_errors?: number;
+        /** Average documents per batch flush (written / batches_flushed) — useful to spot under/over-batching */
+        avg_docs_per_batch?: number;
+        /** Average chunks per batch (>1 means bulk_size_bytes cap is splitting batches frequently) */
+        avg_chunks_per_batch?: number;
         /** Documents processed per second */
         docs_per_second: number;
         /** Elapsed time in seconds */
@@ -512,6 +522,46 @@ export interface StartProjectReindexPayload {
     concurrency?: number;
     bulk_size_bytes?: number;
     bulk_concurrency?: number;
+}
+
+/**
+ * Auto-tunes shard sizing based on project doc count.
+ *
+ * Returns:
+ * - shard_size: target docs per shard (workflow path uses this; zeno-bulk
+ *   computes shard count from total/shard_size).
+ * - parallel_shard_count: max in-flight shard activities (workflow path only).
+ * - max_shards: hard cap on shard count for the direct path. Direct path
+ *   passes this as `shards` to zeno-bulk so all shards run as cursors in
+ *   ONE process; without this cap, an under-estimated shard_size (e.g.
+ *   from stale estimatedDocumentCount) can spawn 10+ in-flight cursors
+ *   and exceed Cloud Run memory.
+ *
+ * Explicit overrides should bypass this function and use user-provided values.
+ */
+export function autoTuneReindexParams(docCount: number): {
+    shard_size: number;
+    parallel_shard_count: number;
+    max_shards: number;
+} {
+    if (docCount < 50_000) {
+        // Tiny/small project: aim for ~4 shards, with a 5k floor.
+        return {
+            shard_size: Math.max(Math.ceil(docCount / 4), 5_000),
+            parallel_shard_count: Math.min(4, Math.max(1, Math.ceil(docCount / 5_000))),
+            max_shards: 4,
+        };
+    }
+    if (docCount < 500_000) {
+        // Medium project: 50k shards → 1-10 shards
+        return { shard_size: 50_000, parallel_shard_count: 8, max_shards: 10 };
+    }
+    if (docCount < 2_000_000) {
+        // Large project: 100k shards → 5-20 shards
+        return { shard_size: 100_000, parallel_shard_count: 8, max_shards: 20 };
+    }
+    // Huge project: stick to 250k shards to keep coordination overhead bounded.
+    return { shard_size: 250_000, parallel_shard_count: 8, max_shards: 40 };
 }
 
 export interface ReindexAgentRunsPayload {
@@ -596,15 +646,6 @@ export interface CreateReindexTargetResult {
 }
 
 /**
- * Result from getting reindex range
- */
-export interface ReindexRangeResult {
-    first: string | null;
-    last: string | null;
-    count: number;
-}
-
-/**
  * Result from fetching a batch
  */
 export interface FetchBatchResult {
@@ -686,6 +727,15 @@ export interface IndexShardResult {
     written: number;
     skipped: number;
     errors: number;
+    /** Per-document ES bulk-item errors (e.g. mapping timeouts). Doc-level data-quality, not pipeline failure. */
+    bulk_errors?: number;
+    /** Sampled details of bulk-item failures (capped at 100 per shard). */
+    bulk_error_sample?: Array<{
+        tenant?: string;
+        doc_id: string;
+        type: string;
+        reason: string;
+    }>;
     embeddings_written?: number;
     skipped_embeddings?: number;
     embeddings_text_written?: number;
@@ -696,6 +746,12 @@ export interface IndexShardResult {
     embeddings_properties_skipped?: number;
     properties_values_trimmed?: number;
     properties_bytes_dropped?: number;
+    batches_flushed?: number;
+    bulk_chunks_written?: number;
+    avg_docs_per_batch?: number;
+    avg_chunks_per_batch?: number;
+    avg_bytes_per_doc?: number;
+    avg_bytes_per_chunk?: number;
     read_docs_s: string;
     write_docs_s: string;
     read_mb: string;
@@ -732,6 +788,16 @@ export interface ReindexViaBulkRequest {
     project_id?: string;
     backend?: ElasticsearchBackend;
     dry_run?: boolean;
+    /** Approximate documents per shard; drives auto-shard count (total / shard_size). Default 250_000. */
+    shard_size?: number;
+    /** Explicit shard count. When set, overrides shard_size-based auto-sharding. Useful to cap in-process concurrency for the direct path. */
+    shards?: number;
+    /** Number of ES bulk-write workers per shard. Default 10. */
+    bulk_concurrency?: number;
+    /** Hard cap per ES bulk request body in bytes. Default 12 MB. */
+    bulk_size_bytes?: number;
+    /** Max documents per batcher flush (size cap still regulates ES bulk requests). Default 200. */
+    bulk_max_docs?: number;
 }
 
 export interface ReindexViaBulkResult {
@@ -752,6 +818,12 @@ export interface ReindexViaBulkResult {
     embeddings_properties_skipped?: number;
     properties_values_trimmed?: number;
     properties_bytes_dropped?: number;
+    batches_flushed?: number;
+    bulk_chunks_written?: number;
+    avg_docs_per_batch?: number;
+    avg_chunks_per_batch?: number;
+    avg_bytes_per_doc?: number;
+    avg_bytes_per_chunk?: number;
     read_docs_s: string;
     write_docs_s: string;
     read_mb: string;
