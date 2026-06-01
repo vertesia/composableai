@@ -740,6 +740,7 @@ export function DocumentUploadModal({
                     <div className="max-h-96 overflow-y-auto">
                         {fileStatuses.map((fileStatus, index) => (
                             <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: file names can repeat in the same upload; index disambiguates
                                 key={`${fileStatus.file.name}-${index}`}
                                 className="flex items-center py-2 border-b border-border last:border-b-0"
                             >

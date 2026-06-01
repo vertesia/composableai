@@ -895,6 +895,7 @@ function ToolCallGroupComponent({
 
                         return (
                             <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: timestamps can collide across concurrent tool calls; idx disambiguates
                                 key={`${m.timestamp}-${idx}`}
                                 className={cn(
                                     'border-b border-gray-100 dark:border-gray-800 last:border-b-0',
@@ -1040,6 +1041,7 @@ function ToolCallGroupComponent({
                 <div className="group">
                     {messages.map((message, index) => (
                         <ToolCallItem
+                            // biome-ignore lint/suspicious/noArrayIndexKey: timestamps can collide across concurrent tool calls; index disambiguates
                             key={`${message.timestamp}-${index}`}
                             message={message}
                             isExpanded={expandedItems.has(index)}
