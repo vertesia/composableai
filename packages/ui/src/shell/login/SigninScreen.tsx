@@ -13,14 +13,14 @@ import SignInTenantBlockedStep from './SignInTenantBlockedStep';
 import SignInTenantStep from './SignInTenantStep';
 import SignupForm from './SignupForm';
 import {
-    clearLastSession,
+    clearLastSuccessfulLogin,
     clearPendingSignin,
     isInviteRequiredError,
-    type LastSession,
+    type LastSuccessfulLogin,
     type ProviderId,
-    readLastSession,
+    readLastSuccessfulLogin,
     readPendingSignin,
-    writeLastSession,
+    writeLastSuccessfulLogin,
 } from './signInUtils';
 
 interface SigninScreenProps {
@@ -54,9 +54,9 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
     const { isLoading, user, authError, signOut } = useUserSession();
     const { trackEvent } = useUXTracking();
 
-    const [storedSession, setStoredSession] = useState<LastSession | null>(() => readLastSession());
+    const [storedSession, setStoredSession] = useState<LastSuccessfulLogin | null>(() => readLastSuccessfulLogin());
     const [mode, setMode] = useState<Mode>(() => {
-        const s = readLastSession();
+        const s = readLastSuccessfulLogin();
         return s ? 'returning' : 'email';
     });
     const [email, setEmail] = useState('');
@@ -81,12 +81,12 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
         }
     }, [authError]);
 
-    // On successful login, finalize the lastSession entry with the user's name.
+    // On successful login, finalize the last-successful-login entry with the user's name.
     useEffect(() => {
         if (!user) return;
         const pending = readPendingSignin();
         if (!pending) return;
-        writeLastSession({
+        writeLastSuccessfulLogin({
             email: pending.email,
             lastProvider: pending.provider,
             tenantName: pending.tenantName,
@@ -107,7 +107,7 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath 
     }, []);
 
     const onNotYou = useCallback(() => {
-        clearLastSession();
+        clearLastSuccessfulLogin();
         clearPendingSignin();
         setStoredSession(null);
         setEmail('');

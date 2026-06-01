@@ -11,21 +11,21 @@ import {
 // email resolution at sign-in time, not encoded here.
 export type ProviderId = 'google' | 'github' | 'microsoft' | 'oidc';
 
-export interface LastSession {
+export interface LastSuccessfulLogin {
     email: string;
     name?: string;
     lastProvider: ProviderId;
     tenantName?: string;
 }
 
-const LAST_SESSION_KEY = 'vt.lastSession';
+const LAST_SUCCESSFUL_LOGIN_KEY = 'vt.lastSuccessfulLogin';
 const PENDING_SIGNIN_KEY = 'vt.pendingSignin';
 
-export function readLastSession(): LastSession | null {
+export function readLastSuccessfulLogin(): LastSuccessfulLogin | null {
     try {
-        const raw = localStorage.getItem(LAST_SESSION_KEY);
+        const raw = localStorage.getItem(LAST_SUCCESSFUL_LOGIN_KEY);
         if (!raw) return null;
-        const v = JSON.parse(raw) as LastSession;
+        const v = JSON.parse(raw) as LastSuccessfulLogin;
         if (!v?.email || !v?.lastProvider) return null;
         return v;
     } catch {
@@ -33,17 +33,17 @@ export function readLastSession(): LastSession | null {
     }
 }
 
-export function writeLastSession(s: LastSession): void {
+export function writeLastSuccessfulLogin(s: LastSuccessfulLogin): void {
     try {
-        localStorage.setItem(LAST_SESSION_KEY, JSON.stringify(s));
+        localStorage.setItem(LAST_SUCCESSFUL_LOGIN_KEY, JSON.stringify(s));
     } catch {
         // localStorage unavailable — returning view just won't surface next time
     }
 }
 
-export function clearLastSession(): void {
+export function clearLastSuccessfulLogin(): void {
     try {
-        localStorage.removeItem(LAST_SESSION_KEY);
+        localStorage.removeItem(LAST_SUCCESSFUL_LOGIN_KEY);
     } catch {
         // ignore
     }

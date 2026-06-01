@@ -11,14 +11,14 @@ import {
 import {
     emailInitial,
     firstNameFromEmail,
-    type LastSession,
+    type LastSuccessfulLogin,
     type ProviderId,
     providerLabel,
     startSignIn,
 } from './signInUtils';
 
 interface SignInReturningStepProps {
-    session: LastSession;
+    session: LastSuccessfulLogin;
     onNotYou: () => void;
     onProviderClicked: (provider: ProviderId) => void;
     redirectTo?: string;
