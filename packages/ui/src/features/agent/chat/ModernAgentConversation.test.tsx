@@ -48,10 +48,22 @@ vi.mock('./ModernAgentOutput/MessageInput', () => ({
 }));
 
 vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
-    default: ({ onSendMessage }: { onSendMessage: (message: string) => void }) => (
-        <button type="button" onClick={() => onSendMessage('follow up')}>
-            inline send
-        </button>
+    default: ({
+        messages,
+        streamingMessages,
+        onSendMessage,
+    }: {
+        messages: AgentMessage[];
+        streamingMessages: Map<string, unknown>;
+        onSendMessage?: (message: string) => void;
+    }) => (
+        <div>
+            <div data-testid="rendered-message-count">{messages.length}</div>
+            <div data-testid="rendered-streaming-count">{streamingMessages.size}</div>
+            <button type="button" disabled={!onSendMessage} onClick={() => onSendMessage?.('follow up')}>
+                inline send
+            </button>
+        </div>
     ),
 }));
 
@@ -85,10 +97,15 @@ function createMessage(type: AgentMessageType, message: string): AgentMessage {
     };
 }
 
-function mockStreamState(options: { messages: AgentMessage[]; isCompleted?: boolean; agentRunStatus?: string | null }) {
+function mockStreamState(options: {
+    messages: AgentMessage[];
+    isCompleted?: boolean;
+    agentRunStatus?: string | null;
+    streamingMessages?: Map<string, unknown>;
+}) {
     mocks.useAgentStream.mockReturnValue({
         messages: options.messages,
-        streamingMessages: new Map(),
+        streamingMessages: options.streamingMessages ?? new Map(),
         isCompleted: options.isCompleted ?? true,
         debugChunkFlash: false,
         addOptimisticMessage: mocks.addOptimisticMessage,
@@ -211,5 +228,45 @@ describe('ModernAgentConversation send handling', () => {
             'UserInput',
             expect.objectContaining({ message: 'follow up' }),
         );
+    });
+
+    it('test playback controls slice rendered messages without mutating the live stream', () => {
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'first question'),
+                createMessage(AgentMessageType.ANSWER, 'first answer'),
+                createMessage(AgentMessageType.QUESTION, 'second question'),
+                createMessage(AgentMessageType.ANSWER, 'second answer'),
+                createMessage(AgentMessageType.COMPLETE, 'done'),
+            ],
+            streamingMessages: new Map([
+                [
+                    'stream-1',
+                    {
+                        text: 'live stream',
+                        startTimestamp: Date.now(),
+                    },
+                ],
+            ]),
+        });
+
+        renderConversation({ enableTestPlayback: true });
+
+        expect(screen.getByTestId('rendered-message-count').textContent).toBe('5');
+        expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('1');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Previous user turn' }));
+
+        expect(screen.getByTestId('rendered-message-count').textContent).toBe('3');
+        expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('0');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Previous message' }));
+
+        expect(screen.getByTestId('rendered-message-count').textContent).toBe('2');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Jump to live' }));
+
+        expect(screen.getByTestId('rendered-message-count').textContent).toBe('5');
+        expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('1');
     });
 });

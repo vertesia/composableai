@@ -1279,6 +1279,8 @@ interface AllMessagesMixedProps {
     initialRequestTemplate?: AgentInitialRequestTemplate;
     /** Message types to exclude from the conversation view */
     hiddenMessageTypes?: AgentMessageType[];
+    /** Test/playback mode: keep the current scroll position while the rendered message slice changes. */
+    disableAutoScroll?: boolean;
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
@@ -1309,6 +1311,7 @@ function AllMessagesMixedComponent({
     initialRequestTitle,
     initialRequestTemplate,
     hiddenMessageTypes,
+    disableAutoScroll = false,
 }: AllMessagesMixedProps) {
     if (!artifactRunId) {
         console.warn('[AllMessagesMixed] artifactRunId prop is missing!');
@@ -1383,6 +1386,7 @@ function AllMessagesMixedComponent({
         void messages.length;
         void streamingMessages.size;
         void streamingContentBucket;
+        if (disableAutoScroll) return;
         // Respect user's scroll position — don't yank them back to the bottom
         if (userScrolledUpRef.current) return;
 
@@ -1405,7 +1409,7 @@ function AllMessagesMixedComponent({
                 scrollScheduledRef.current = null;
             }
         };
-    }, [messages.length, streamingMessages.size, streamingContentBucket, performScroll]);
+    }, [messages.length, streamingMessages.size, streamingContentBucket, performScroll, disableAutoScroll]);
 
     // Sort all messages chronologically and dedupe adjacent identical messages
     // Low-signal messages are suppressed at the source (server-side) via shouldSuppressLowSignalMessage
@@ -1654,6 +1658,9 @@ function AllMessagesMixedComponent({
             tabIndex={0}
             className="flex-1 min-h-0 h-full w-full max-w-full overflow-y-auto overflow-x-hidden px-1.5 sm:px-2.5 lg:px-3 flex flex-col relative focus:outline-none"
             data-testid="all-messages-mixed"
+            data-message-count={messages.length}
+            data-streaming-count={streamingMessages.size}
+            data-view-mode={viewMode}
         >
             {/* Global styles for vprose markdown content */}
             <style>{`

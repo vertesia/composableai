@@ -23,9 +23,18 @@ import {
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { ArrowUpIcon, Bot, CheckCircle, Cpu, FileTextIcon, UploadIcon, XIcon } from 'lucide-react';
+import {
+    ArrowUpIcon,
+    Bot,
+    CheckCircle,
+    Cpu,
+    FileTextIcon,
+    UploadIcon,
+    XIcon,
+} from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
 import type {
@@ -50,8 +59,15 @@ import { SkillWidgetProvider } from './SkillWidgetProvider';
 import { ArtifactUrlCacheProvider } from './useArtifactUrlCache.js';
 import { VegaLiteChart } from './VegaLiteChart';
 import { ThinkingMessages } from './WaitingMessages';
+import {
+    type AgentChatPlaybackCursor,
+    createPlaybackState,
+    isLocalhostAgentChatPlaybackEnabled,
+} from './playback';
 
 export type StartWorkflowFn = (initialMessage?: string) => Promise<{ agent_run_id: string } | undefined>;
+
+const EMPTY_STREAMING_MESSAGES = new Map<string, never>();
 
 function getTimestampMs(timestamp: number | string | undefined): number {
     if (typeof timestamp === 'number') return timestamp;
@@ -181,6 +197,26 @@ function printElementToPdf(sourceElement: HTMLElement, title: string): boolean {
     }, 1000);
 
     return true;
+}
+
+function sanitizeFilenamePart(value: string): string {
+    return value
+        .trim()
+        .replace(/[^a-z0-9-_]+/gi, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 80);
+}
+
+function downloadJsonFile(filename: string, payload: unknown) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
 }
 
 export interface ModernAgentConversationProps {
@@ -344,6 +380,8 @@ export interface ModernAgentConversationProps {
     pendingStartMessage?: string;
     /** Timestamp for the internal optimistic first-message waiting state. */
     pendingStartTimestamp?: number;
+    /** Test-only: local display playback controls. Slices rendered chat messages without mutating conversation state. */
+    enableTestPlayback?: boolean;
 }
 
 export function ModernAgentConversation(props: ModernAgentConversationProps) {
@@ -916,6 +954,7 @@ function ModernAgentConversationInner({
     conversationTab = false,
     pendingStartMessage,
     pendingStartTimestamp,
+    enableTestPlayback,
 }: ModernAgentConversationProps & { agentRunId: string }) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
@@ -989,6 +1028,7 @@ function ModernAgentConversationInner({
     );
     const [isStopping, setIsStopping] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
+    const [testPlaybackCursor, setTestPlaybackCursor] = useState<AgentChatPlaybackCursor>('live');
     const [activeWorkstreams, setActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
     const [completedWorkstreams, setCompletedWorkstreams] = useState<
         Array<{ launch_id: string; workstream_id: string; status: 'completed' | 'canceled' }>
@@ -1100,6 +1140,27 @@ function ModernAgentConversationInner({
         }));
         return [...running, ...completed];
     }, [activeWorkstreams, completedWorkstreams]);
+
+    const isTestPlaybackEnabled = enableTestPlayback ?? isLocalhostAgentChatPlaybackEnabled();
+    const playbackState = useMemo(
+        () => createPlaybackState(messages, testPlaybackCursor, isTestPlaybackEnabled),
+        [isTestPlaybackEnabled, messages, testPlaybackCursor],
+    );
+    const clampedTestPlaybackCursor = playbackState.cursor;
+    const isTestPlaybackLive = playbackState.isLive;
+    const displayedMessages = playbackState.displayedMessages;
+    const displayedStreamingMessages = isTestPlaybackLive ? streamingMessages : EMPTY_STREAMING_MESSAGES;
+    const displayedIsCompleted = isTestPlaybackLive ? isCompleted : false;
+
+    useEffect(() => {
+        if (!isTestPlaybackEnabled) {
+            if (testPlaybackCursor !== 'live') setTestPlaybackCursor('live');
+            return;
+        }
+        if (clampedTestPlaybackCursor !== testPlaybackCursor) {
+            setTestPlaybackCursor(clampedTestPlaybackCursor);
+        }
+    }, [clampedTestPlaybackCursor, isTestPlaybackEnabled, testPlaybackCursor]);
 
     // ────────────────────────────────────────────
     // Stable callbacks
@@ -1561,6 +1622,36 @@ function ModernAgentConversationInner({
         }
     };
 
+    const exportReplayFixture = useCallback(() => {
+        const exportedAt = new Date().toISOString();
+        const streamingFrame =
+            streamingMessages.size > 0
+                ? [
+                      {
+                          cursor: 'live',
+                          streamingMessages: Array.from(streamingMessages, ([id, data]) => ({ id, ...data })),
+                      },
+                  ]
+                : undefined;
+        const fixture = {
+            metadata: {
+                title: actualTitle,
+                agent_run_id: agentRunId,
+                exported_at: exportedAt,
+                message_count: messages.length,
+            },
+            messages,
+            ...(streamingFrame ? { streamingFrames: streamingFrame } : {}),
+        };
+        const filename = `${sanitizeFilenamePart(actualTitle) || 'agent-chat'}-${sanitizeFilenamePart(agentRunId)}.json`;
+        downloadJsonFile(filename, fixture);
+        toast({
+            status: 'success',
+            title: t('agent.testPlayback.fixtureExported'),
+            duration: 2000,
+        });
+    }, [actualTitle, agentRunId, messages, streamingMessages, t, toast]);
+
     const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
     const exportConversationPdf = () => {
@@ -1636,6 +1727,10 @@ function ModernAgentConversationInner({
     const conversationAreaJsx = (
         <div
             ref={conversationRef}
+            data-agent-test-playback-enabled={isTestPlaybackEnabled || undefined}
+            data-agent-playback-cursor={isTestPlaybackEnabled ? clampedTestPlaybackCursor : undefined}
+            data-agent-live-message-count={messages.length}
+            data-agent-rendered-message-count={displayedMessages.length}
             className={cn(
                 'flex flex-col min-h-0 min-w-0 border-0',
                 conversationTab
@@ -1664,6 +1759,7 @@ function ModernAgentConversationInner({
                         showPlanButton={showRightPanelProp && !conversationTab}
                         onTogglePlanPanel={handleTogglePlanPanel}
                         onDownload={downloadConversation}
+                        onExportFixture={messages.length > 0 ? exportReplayFixture : undefined}
                         resetWorkflow={resetWorkflow}
                         onClone={onClone}
                         onShowDetails={onShowDetails}
@@ -1674,13 +1770,21 @@ function ModernAgentConversationInner({
                 </div>
             )}
 
+            {isTestPlaybackEnabled && (
+                <AgentChatPlaybackControls
+                    cursor={clampedTestPlaybackCursor}
+                    messages={messages}
+                    onChangeCursor={setTestPlaybackCursor}
+                />
+            )}
+
             {messages.length === 0 && !isCompleted && pendingStartMessage && pendingStartTimestamp ? (
                 <PendingStartConversation message={pendingStartMessage} startedAt={pendingStartTimestamp} />
             ) : (
                 <AllMessagesMixed
-                    messages={messages}
+                    messages={displayedMessages}
                     bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
-                    isCompleted={isCompleted}
+                    isCompleted={displayedIsCompleted}
                     plan={getActivePlan.plan}
                     workstreamStatus={getActivePlan.workstreamStatus}
                     showPlanPanel={showRightPanelProp && showSlidingPanel}
@@ -1689,8 +1793,8 @@ function ModernAgentConversationInner({
                     activePlanIndex={activePlanIndex}
                     onChangePlan={handleChangePlan}
                     taskLabels={taskLabels}
-                    streamingMessages={streamingMessages}
-                    onSendMessage={handleSendMessage}
+                    streamingMessages={displayedStreamingMessages}
+                    onSendMessage={isTestPlaybackLive ? handleSendMessage : undefined}
                     messageItemClassNames={messageItemClassNames}
                     messageStyleOverrides={messageStyleOverrides}
                     toolCallGroupClassNames={toolCallGroupClassNames}
@@ -1710,6 +1814,7 @@ function ModernAgentConversationInner({
                     initialRequestTitle={initialRequestTitle}
                     initialRequestTemplate={initialRequestTemplate}
                     hiddenMessageTypes={hiddenMessageTypes}
+                    disableAutoScroll={!isTestPlaybackLive}
                 />
             )}
 
@@ -1737,7 +1842,7 @@ function ModernAgentConversationInner({
                             <MessageInput
                                 onSend={handleSendMessage}
                                 onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
-                                disabled={isUploading}
+                                disabled={isUploading || !isTestPlaybackLive}
                                 isSending={isSending || isUploading}
                                 isStopping={isStopping}
                                 isStreaming={!isCompleted}

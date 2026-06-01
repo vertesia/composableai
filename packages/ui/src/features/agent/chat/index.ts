@@ -7,8 +7,26 @@ export {
     type VegaLiteChartSpec,
 } from './AgentChart';
 export * from './AnimatedThinkingDots';
+export {
+    AgentChatFixtureReplay,
+    type AgentChatFixtureReplayProps,
+    type AgentChatReplayFixture,
+    type AgentChatReplayStreamingFrame,
+    type AgentChatReplayStreamingMessage,
+} from './AgentChatFixtureReplay';
+export { AgentChatPlaybackControls, type AgentChatPlaybackControlsProps } from './AgentChatPlaybackControls';
 export * from './JumpingDots';
 export { ModernAgentConversation, type ModernAgentConversationProps } from './ModernAgentConversation';
+export {
+    type AgentChatPlaybackCursor,
+    type AgentChatPlaybackState,
+    clampPlaybackCursor,
+    createPlaybackState,
+    getNextUserTurnIndex,
+    getPlaybackCursorIndex,
+    getPreviousUserTurnIndex,
+    isLocalhostAgentChatPlaybackEnabled,
+} from './playback';
 export { VegaLiteChart } from './VegaLiteChart';
 export * from './WaitingMessages';
 // AskUser widget for displaying agent prompts/questions

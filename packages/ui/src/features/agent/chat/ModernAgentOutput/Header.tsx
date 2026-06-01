@@ -33,6 +33,7 @@ export interface HeaderProps {
     showPlanButton?: boolean;
     onTogglePlanPanel: () => void;
     onDownload?: () => void;
+    onExportFixture?: () => void;
     // onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
@@ -68,6 +69,7 @@ export default function Header({
     showPlanButton = true,
     onTogglePlanPanel,
     onDownload,
+    onExportFixture,
     // onCopyRunId,
     resetWorkflow,
     onExportPdf,
@@ -152,6 +154,7 @@ export default function Header({
                         isTerminal={isTerminal}
                         onClose={onClose}
                         onDownload={onDownload}
+                        onExportFixture={onExportFixture}
                         resetWorkflow={resetWorkflow}
                         onExportPdf={onExportPdf}
                         onShowDetails={onShowDetails}
@@ -176,6 +179,7 @@ function MoreDropdown({
     isTerminal,
     onClose,
     onDownload,
+    onExportFixture,
     resetWorkflow,
     onExportPdf,
     onShowDetails,
@@ -188,6 +192,7 @@ function MoreDropdown({
     isTerminal: boolean;
     onClose?: () => void;
     onDownload?: () => void;
+    onExportFixture?: () => void;
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
@@ -305,6 +310,11 @@ function MoreDropdown({
                 {onExportPdf && (
                     <MenuItem onClick={onExportPdf}>
                         <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.exportAsPdf')}
+                    </MenuItem>
+                )}
+                {onExportFixture && (
+                    <MenuItem onClick={onExportFixture}>
+                        <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.testPlayback.exportFixture')}
                     </MenuItem>
                 )}
                 {onClose && isModal && (
