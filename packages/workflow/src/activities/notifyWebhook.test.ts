@@ -153,6 +153,46 @@ describe('Webhook should be notified', () => {
         });
     });
 
+    it('should send a raw body when provided', async () => {
+        const mockResponse = {
+            ok: true,
+            status: 202,
+            statusText: 'Accepted',
+            url: defaultParams.webhook,
+        };
+        mockFetch.mockResolvedValueOnce(mockResponse as Response);
+
+        const body = JSON.stringify({ event: { event_id: 'evt-1' } });
+        const payload = createTestPayload({
+            body,
+            headers: {
+                'content-type': 'application/json',
+                'X-Vertesia-Event-Id': 'evt-1',
+            },
+            timeout_ms: 5000,
+        });
+
+        const res: NotifyWebhookResult = await testEnv.run(notifyWebhook, payload);
+
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+        const [url, options] = mockFetch.mock.calls[0];
+        expect(url).toBe(defaultParams.webhook);
+        expect(options).toMatchObject({
+            method: 'POST',
+            body,
+            headers: {
+                'content-type': 'application/json',
+                'X-Vertesia-Event-Id': 'evt-1',
+            },
+        });
+        expect(options?.signal).toBeInstanceOf(AbortSignal);
+        expect(res).toEqual({
+            status: 202,
+            message: 'Accepted',
+            url: defaultParams.webhook,
+        });
+    });
+
     it('should send workflow info in new POST format when detail is undefined', async () => {
         // Mock successful response
         const mockResponse = {

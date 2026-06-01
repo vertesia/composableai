@@ -18,9 +18,11 @@ export interface NotifyWebhookParams {
     workflow_run_id: string; //The ID of the specific workflow run sending the notification
     event_name: string; //The event that triggered the notification (e.g. "completed", "failed", etc.)
     detail?: Record<string, unknown>; // additional data about the event if any. It will be send to the webhook when using POST
+    body?: string; // raw request body. When set, it bypasses workflow notification payload formatting.
     //target_url: string; //URL to send the notification to
     method: 'GET' | 'POST'; //HTTP method to use
     headers?: Record<string, string>; // additional headers to send
+    timeout_ms?: number;
 }
 
 export interface WebhookNotificationPayload {
@@ -62,20 +64,31 @@ export async function notifyWebhook(
     const headers = {
         ...defaultHeaders,
     };
-    if (hasBody) {
+    if (hasBody && !hasHeader(headers, 'content-type')) {
         headers['Content-Type'] = 'application/json';
     }
-    const body = hasBody ? await createRequestBody(payload, params, version) : undefined;
+    const body = params.body ?? (hasBody ? await createRequestBody(payload, params, version) : undefined);
 
     log.info(`Notifying webhook at ${target_url}`);
-    const res = await fetch(target_url, {
-        method,
-        body,
-        headers,
-    }).catch((err) => {
-        log.error(`An error occurred while notifying webhook at ${target_url}`, { err });
-        throw err;
-    });
+    const timeoutMs = typeof params.timeout_ms === 'number' && params.timeout_ms > 0 ? params.timeout_ms : undefined;
+    const controller = timeoutMs ? new AbortController() : undefined;
+    const timeout = timeoutMs ? setTimeout(() => controller?.abort(), timeoutMs) : undefined;
+    let res: Response;
+    try {
+        res = await fetch(target_url, {
+            method,
+            body,
+            headers,
+            ...(controller ? { signal: controller.signal } : {}),
+        }).catch((err) => {
+            log.error(`An error occurred while notifying webhook at ${target_url}`, { err });
+            throw err;
+        });
+    } finally {
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+    }
 
     if (!res.ok) {
         log.warn(`Webhook endpoint ${target_url} returned an error - ${res.status} ${res.statusText}`, {
@@ -98,6 +111,11 @@ export async function notifyWebhook(
     }
 
     return { status: res.status, message: res.statusText, url: res.url };
+}
+
+function hasHeader(headers: Record<string, string>, name: string): boolean {
+    const lowerName = name.toLowerCase();
+    return Object.keys(headers).some((header) => header.toLowerCase() === lowerName);
 }
 
 // --------------------------------------

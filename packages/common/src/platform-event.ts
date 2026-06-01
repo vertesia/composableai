@@ -13,14 +13,12 @@ export type EventOutboxStatus = 'pending' | 'routing' | 'routed' | 'partially_ro
 
 export type EventDeliveryIntentStatus =
     | 'pending'
-    | 'enqueued'
-    | 'delivering'
+    | 'starting'
+    | 'running'
     | 'succeeded'
     | 'retrying'
     | 'failed'
     | 'cancelled';
-
-export type EventDeliveryTaskType = 'webhook' | 'workflow';
 
 export interface EventRef {
     event_id: string;
@@ -70,6 +68,7 @@ export interface EventSubscriptionFilter {
 export interface WorkflowEventDeliveryTarget {
     type: 'workflow';
     endpoint: string;
+    workflow_class?: string;
     task_queue?: string;
     vars?: Record<string, unknown>;
     input_type?: WorkflowRuleInputType;
@@ -97,15 +96,6 @@ export interface MatchedEventSubscriptionSnapshot {
     subscription_name: string;
     target: EventDeliveryTarget;
     priority: EventPriority;
-}
-
-export interface EventDeliveryTaskPayload {
-    task_type: EventDeliveryTaskType;
-    intent_id: string;
-    event_id: string;
-    account_id: string | null;
-    project_id: string | null;
-    tenant_id: string | null;
 }
 
 export interface EventSubscription {
