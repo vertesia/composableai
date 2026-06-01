@@ -39,6 +39,7 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
     return {
         serverUrl: payload.config.studio_url,
         storeUrl: payload.config.store_url,
+        inferenceUrl: payload.config.inference_url,
         tokenServerUrl: token.iss,
         apikey: payload.auth_token,
         fetch: getWorkflowFetch(),

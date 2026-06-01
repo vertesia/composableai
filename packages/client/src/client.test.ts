@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { isTokenExpired, VertesiaClient } from './client';
+import { decodeEndpoints, isTokenExpired, VertesiaClient } from './client';
 
 describe('Test Vertesia Client', () => {
     test('Initialization with studio and zeno URLs', () => {
@@ -48,6 +48,7 @@ describe('Test Vertesia Client', () => {
         expect(client).toBeDefined();
         expect(client.baseUrl).toBe('https://api.vertesia.io');
         expect(client.storeUrl).toBe('https://api.vertesia.io');
+        expect(client.inferenceUrl).toBe('https://api.vertesia.io');
         expect(client.tokenServerUrl).toBe('https://sts.vertesia.io');
     });
 
@@ -119,6 +120,27 @@ describe('Test Vertesia Client', () => {
         expect(client).toBeDefined();
         expect(client.baseUrl).toBe('http://localhost:8091');
         expect(client.storeUrl).toBe('http://localhost:8092');
+        expect(client.inferenceUrl).toBe('http://localhost:8091');
+    });
+
+    test('Initialization with inference URL override', () => {
+        const client = new VertesiaClient({
+            serverUrl: 'http://localhost:8091',
+            storeUrl: 'http://localhost:8092',
+            inferenceUrl: 'http://localhost:8094',
+            tokenServerUrl: 'http://localhost:8093',
+        });
+
+        expect(client.inferenceUrl).toBe('http://localhost:8094');
+        expect(client.getInferenceUrl('/api/v1/inference/execute')).toBe('http://localhost:8094/api/v1/inference/execute');
+    });
+
+    test('local decoded endpoints include inference executor', () => {
+        expect(decodeEndpoints('local')).toMatchObject({
+            studio: 'http://localhost:8091',
+            store: 'http://localhost:8092',
+            inference: 'http://localhost:8094',
+        });
     });
 
     test('Initialization with overrides', () => {

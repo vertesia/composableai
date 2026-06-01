@@ -121,6 +121,7 @@ export interface AuthTokenPayload {
               studio: string;
               store: string;
               token?: string;
+              inference?: string;
           };
 
     iss: string; //issuer

@@ -556,6 +556,8 @@ export interface Endpoints {
     store?: string;
     /** The token server base URL */
     token?: string;
+    /** The inference executor API base URL */
+    inference?: string;
     /** The browser-facing Studio UI (composable-ui) base URL */
     ui?: string;
 }

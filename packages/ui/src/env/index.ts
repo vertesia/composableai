@@ -14,6 +14,7 @@ export interface EnvProps {
     endpoints: {
         zeno: string;
         studio: string;
+        inference?: string;
         sts: string; // Security Token Service endpoint
         mcp?: string;
     };

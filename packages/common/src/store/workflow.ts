@@ -75,6 +75,7 @@ export interface WorkflowExecutionBaseParams<T = Record<string, unknown>> {
     config?: {
         studio_url: string;
         store_url: string;
+        inference_url?: string;
         slack_app_url?: string;
         enabled_integrations?: string[]; //list of enabled integrations
     };

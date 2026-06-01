@@ -72,7 +72,7 @@ export async function executeInteractionByName<P = unknown>(
     onChunk?: (chunk: string) => void,
 ): Promise<InteractionExecutionResult<P>> {
     const stream = !!onChunk;
-    const response = await client.post<InteractionExecutionResult<P>>('/api/v1/execute', {
+    const response = await client.post<InteractionExecutionResult<P>>(client.getInferenceUrl('/api/v1/inference/execute'), {
         payload: {
             ...payload,
             interaction,
@@ -93,7 +93,7 @@ function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk:
         void (async () => {
             try {
                 const EventSourceImpl = await EventSourceProvider();
-                const streamUrl = new URL(`${client.runs.baseUrl}/${runId}/stream`);
+                const streamUrl = new URL(client.getInferenceUrl(`/api/v1/inference/runs/${runId}/stream`));
                 const bearerToken = client._auth ? await client._auth() : undefined;
 
                 if (bearerToken) {
@@ -134,7 +134,7 @@ export async function executeInteractionAsync(
     client: VertesiaClient,
     payload: AsyncExecutionPayload,
 ): Promise<AsyncExecutionResult> {
-    return await client.post('/api/v1/execute/async', {
+    return await client.post(client.getInferenceUrl('/api/v1/inference/execute/async'), {
         payload,
     });
 }
@@ -143,7 +143,7 @@ export async function checkRateLimit(
     client: VertesiaClient,
     payload: RateLimitRequestPayload,
 ): Promise<RateLimitRequestResponse> {
-    return await client.post('/api/v1/execute/rate-limit/request', {
+    return await client.post(client.getInferenceUrl('/api/v1/inference/execute/rate-limit/request'), {
         payload,
     });
 }

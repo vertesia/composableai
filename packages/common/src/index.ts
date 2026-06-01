@@ -15,6 +15,7 @@ export * from './facets.js';
 export * from './group.js';
 export * from './host-utils.js';
 export * from './integrations.js';
+export * from './inference-executor.js';
 export * from './interaction.js';
 export * from './json.js';
 export * from './json-schema.js';

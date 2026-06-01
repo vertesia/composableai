@@ -34,6 +34,7 @@ class UserSession {
             this.client = new VertesiaClient({
                 serverUrl: Env.endpoints.studio,
                 storeUrl: Env.endpoints.zeno,
+                inferenceUrl: Env.endpoints.inference,
                 tokenServerUrl: Env.endpoints.sts,
             });
         }

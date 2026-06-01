@@ -101,7 +101,8 @@ export class RunsApi extends ApiTopic {
             }
             payload = { ...payload, tags };
         }
-        const r = await this.post<ExecutionRun<ParamsT>>('/', {
+        const client = this.client as VertesiaClient;
+        const r = await client.post<ExecutionRun<ParamsT>>(client.getInferenceUrl('/api/v1/inference/runs'), {
             payload,
         });
         return enhanceExecutionRun<ResultT, ParamsT>(r);
@@ -113,7 +114,8 @@ export class RunsApi extends ApiTopic {
      * @returns
      */
     sendToolResults(payload: ToolResultsPayload): Promise<ExecutionResponse> {
-        return this.post(`/tool-results`, {
+        const client = this.client as VertesiaClient;
+        return client.post(client.getInferenceUrl('/api/v1/inference/runs/tool-results'), {
             payload,
         });
     }
@@ -124,7 +126,8 @@ export class RunsApi extends ApiTopic {
      * @returns
      */
     sendUserMessage(payload: UserMessagePayload): Promise<ExecutionResponse> {
-        return this.post(`/user-message`, {
+        const client = this.client as VertesiaClient;
+        return client.post(client.getInferenceUrl('/api/v1/inference/runs/user-message'), {
             payload,
         });
     }

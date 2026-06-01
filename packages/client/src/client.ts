@@ -56,6 +56,7 @@ export type VertesiaClientProps = {
         | 'api.dev1.vertesia.io';
     serverUrl?: string;
     storeUrl?: string;
+    inferenceUrl?: string;
     tokenServerUrl?: string;
     apikey?: string;
     projectId?: string;
@@ -86,6 +87,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      * tokenServerUrl
      */
     tokenServerUrl: string;
+    inferenceUrl: string;
 
     oauthClients: OAuthClientsApi;
     oauthGrants: OAuthGrantsApi;
@@ -105,7 +107,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     static async fromAuthToken(
         token: string,
         payload?: AuthTokenPayload,
-        endpoints?: { studio: string; store: string; token?: string },
+        endpoints?: { studio: string; store: string; token?: string; inference?: string },
     ) {
         if (!payload) {
             payload = decodeJWT(token);
@@ -115,6 +117,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return await new VertesiaClient({
             serverUrl: resolvedEndpoints.studio,
             storeUrl: resolvedEndpoints.store,
+            inferenceUrl: resolvedEndpoints.inference,
             tokenServerUrl: resolvedEndpoints.token || payload.iss,
         }).withApiKey(token);
     }
@@ -128,6 +131,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     ) {
         let studioServerUrl: string;
         let zenoServerUrl: string;
+        let inferenceServerUrl: string;
 
         if (opts.serverUrl) {
             studioServerUrl = opts.serverUrl;
@@ -145,7 +149,16 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             throw new Error("Parameter 'site' or 'storeUrl' is required for VertesiaClient");
         }
 
+        if (opts.inferenceUrl) {
+            inferenceServerUrl = opts.inferenceUrl;
+        } else if (opts.site) {
+            inferenceServerUrl = `https://${opts.site}`;
+        } else {
+            inferenceServerUrl = studioServerUrl;
+        }
+
         super(studioServerUrl, opts.fetch);
+        this.inferenceUrl = inferenceServerUrl;
 
         if (opts.tokenServerUrl) {
             this.tokenServerUrl = opts.tokenServerUrl;
@@ -329,6 +342,13 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.baseUrl;
     }
 
+    getInferenceUrl(path: string) {
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+            return path;
+        }
+        return `${this.inferenceUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+    }
+
     /**
      *
      * Generate a token for use with other Vertesia's services
@@ -463,6 +483,7 @@ function getEndpointsFromDomain(domain: string) {
         return {
             studio: `http://localhost:8091`,
             store: `http://localhost:8092`,
+            inference: `http://localhost:8094`,
             token: getRuntimeStsUrl() ?? 'https://sts.dev1.vertesia.io',
         };
     } else {
@@ -472,6 +493,7 @@ function getEndpointsFromDomain(domain: string) {
         return {
             studio: url,
             store: url,
+            inference: url,
             token: url.replace('api', 'sts'),
         };
     }
