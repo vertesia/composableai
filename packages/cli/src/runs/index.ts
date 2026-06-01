@@ -1,8 +1,8 @@
-import type { Command } from 'commander';
 import type { ExecutionRunStatus } from '@vertesia/common';
+import type { Command } from 'commander';
 import { getClient } from '../client.js';
+import { type CliOptions, getStringOption } from '../utils/options.js';
 import { writeFile } from '../utils/stdio.js';
-import { getStringOption, type CliOptions } from '../utils/options.js';
 
 type RunHistoryOptions = CliOptions<{
     page?: string;

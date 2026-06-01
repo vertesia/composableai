@@ -1,8 +1,8 @@
-import React from 'react';
 import { Button } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { AlertCircle, CheckCircle, HelpCircle, MessageSquare, Send, XCircle } from 'lucide-react';
+import React from 'react';
 import { MarkdownRenderer } from '../../../widgets/markdown/MarkdownRenderer';
-import { MessageSquare, CheckCircle, XCircle, AlertCircle, HelpCircle, Send } from 'lucide-react';
 
 /** Option for user to select */
 export interface AskUserOption {

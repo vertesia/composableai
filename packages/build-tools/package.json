@@ -1,79 +1,79 @@
 {
-  "name": "@vertesia/build-tools",
-  "version": "1.3.0",
-  "description": "Build tools for Vertesia projects - Rollup and Vite plugins for transforming imports, bundling skills, and compiling widgets",
-  "type": "module",
-  "main": "./lib/esm/index.js",
-  "types": "./lib/types/index.d.ts",
-  "files": [
-    "lib",
-    "src"
-  ],
-  "license": "Apache-2.0",
-  "scripts": {
-    "lint": "biome lint src",
-    "test": "vitest run",
-    "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
-    "build": "pnpm exec tsmod build && pnpm exec rollup -c",
-    "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
-  },
-  "exports": {
-    ".": {
-      "types": "./lib/types/index.d.ts",
-      "import": "./lib/esm/index.js",
-      "require": "./lib/cjs/index.js"
+    "name": "@vertesia/build-tools",
+    "version": "1.3.0",
+    "description": "Build tools for Vertesia projects - Rollup and Vite plugins for transforming imports, bundling skills, and compiling widgets",
+    "type": "module",
+    "main": "./lib/esm/index.js",
+    "types": "./lib/types/index.d.ts",
+    "files": [
+        "lib",
+        "src"
+    ],
+    "license": "Apache-2.0",
+    "scripts": {
+        "lint": "biome lint src",
+        "test": "vitest run",
+        "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
+        "build": "pnpm exec tsmod build && pnpm exec rollup -c",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
-    "./vite": {
-      "types": "./lib/types/vite.d.ts",
-      "import": "./lib/esm/vite.js",
-      "require": "./lib/cjs/vite.js"
-    }
-  },
-  "devDependencies": {
-    "@rollup/plugin-commonjs": "^29.0.2",
-    "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "^16.0.3",
-    "@rollup/plugin-terser": "^1.0.0",
-    "@rollup/plugin-typescript": "^12.3.0",
-    "@types/node": "^24.12.4",
-    "rollup": "^4.60.4",
-    "ts-dual-module": "^0.6.3",
-    "typescript": "^6.0.3",
-    "vitest": "^4.0.16"
-  },
-  "dependencies": {
-    "@llumiverse/common": "workspace:*",
-    "@vertesia/common": "workspace:*",
-    "gray-matter": "^4.0.3",
-    "zod": "^4.4.3"
-  },
-  "peerDependencies": {
-    "rollup": "^4.60.4"
-  },
-  "ts_dual_module": {
-    "outDir": "lib"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/vertesia/composableai.git",
-    "directory": "packages/build-tools"
-  },
-  "keywords": [
-    "vertesia",
-    "rollup",
-    "rollup-plugin",
-    "vite",
-    "vite-plugin",
-    "build-tools",
-    "imports",
-    "transform",
-    "compiler",
-    "skill",
-    "markdown",
-    "frontmatter",
-    "widget",
-    "bundler",
-    "zod",
-    "validation"
-  ]
+    "exports": {
+        ".": {
+            "types": "./lib/types/index.d.ts",
+            "import": "./lib/esm/index.js",
+            "require": "./lib/cjs/index.js"
+        },
+        "./vite": {
+            "types": "./lib/types/vite.d.ts",
+            "import": "./lib/esm/vite.js",
+            "require": "./lib/cjs/vite.js"
+        }
+    },
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^29.0.2",
+        "@rollup/plugin-json": "^6.1.0",
+        "@rollup/plugin-node-resolve": "^16.0.3",
+        "@rollup/plugin-terser": "^1.0.0",
+        "@rollup/plugin-typescript": "^12.3.0",
+        "@types/node": "^24.12.4",
+        "rollup": "^4.60.4",
+        "ts-dual-module": "^0.6.3",
+        "typescript": "^6.0.3",
+        "vitest": "^4.0.16"
+    },
+    "dependencies": {
+        "@llumiverse/common": "workspace:*",
+        "@vertesia/common": "workspace:*",
+        "gray-matter": "^4.0.3",
+        "zod": "^4.4.3"
+    },
+    "peerDependencies": {
+        "rollup": "^4.60.4"
+    },
+    "ts_dual_module": {
+        "outDir": "lib"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/build-tools"
+    },
+    "keywords": [
+        "vertesia",
+        "rollup",
+        "rollup-plugin",
+        "vite",
+        "vite-plugin",
+        "build-tools",
+        "imports",
+        "transform",
+        "compiler",
+        "skill",
+        "markdown",
+        "frontmatter",
+        "widget",
+        "bundler",
+        "zod",
+        "validation"
+    ]
 }

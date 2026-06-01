@@ -1,9 +1,9 @@
 import type React from 'react';
 import { useState } from 'react';
-import { CommandItem } from '../../command';
 import { Button } from '../../button';
-import type { Filter, FilterGroup, FilterGroupOption, FilterOption } from '../types';
+import { CommandItem } from '../../command';
 import { DynamicLabel } from '../DynamicLabel';
+import type { Filter, FilterGroup, FilterGroupOption, FilterOption } from '../types';
 
 interface SelectFilterProps {
     selectedView: string | null;

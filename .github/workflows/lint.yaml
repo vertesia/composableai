@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   composableai-lint:
-    name: Lint codebase
+    name: Check codebase
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -32,6 +32,6 @@ jobs:
       - name: Install workspace dependencies
         timeout-minutes: 5
         run: pnpm install --frozen-lockfile
-      - name: Lint codebase
+      - name: Check codebase
         timeout-minutes: 5
-        run: pnpm lint
+        run: pnpm check

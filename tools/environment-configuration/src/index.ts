@@ -1,5 +1,5 @@
-import { Command } from 'commander';
 import { VertesiaClient } from '@vertesia/client';
+import { Command } from 'commander';
 import { configureBedrockEnvironment } from './aws-bedrock.js';
 import { configureVertexAiEnvironment } from './gcp-vertex-ai.js';
 

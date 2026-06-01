@@ -1,5 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
-
 import {
     type ComplexSearchQuery,
     type ProjectConfiguration,
@@ -18,10 +16,10 @@ import {
     NumberInput,
     useToast,
 } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { Settings } from 'lucide-react';
-
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { useEffect, useRef, useState } from 'react';
 
 interface VectorSearchWidgetProps {
     onChange: (query?: ComplexSearchQuery) => void;

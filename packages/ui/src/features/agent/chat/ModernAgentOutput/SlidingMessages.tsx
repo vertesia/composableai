@@ -1,7 +1,7 @@
-import React from 'react';
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
-import MessageItem from './MessageItem';
+import React from 'react';
 import { ThinkingMessages } from '../WaitingMessages';
+import MessageItem from './MessageItem';
 
 interface SlidingMessagesProps {
     messages: AgentMessage[];

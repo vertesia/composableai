@@ -6,9 +6,10 @@ import {
     type JSONSchema,
     type Plan,
 } from '@vertesia/common';
-import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@vertesia/ui/core';
+import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
+import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     AlertTriangle,
     Brain,
@@ -20,12 +21,9 @@ import {
     Terminal,
     Wrench,
 } from 'lucide-react';
-import { useUITranslation } from '../../../../i18n/index.js';
-import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
-import { ThinkingMessages } from '../WaitingMessages';
-export type AgentConversationViewMode = 'stacked' | 'sliding';
 import { AskUserWidget } from '../AskUserWidget';
+import { ThinkingMessages } from '../WaitingMessages';
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from './BatchProgressPanel';
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
 import StreamingMessage, { type StreamingMessageClassNames } from './StreamingMessage';
@@ -38,7 +36,6 @@ import {
     shouldShowSummaryActivityFallback,
 } from './SummaryConversation';
 import ToolCallGroup, { type ToolCallGroupClassNames } from './ToolCallGroup';
-import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from './WorkstreamTabs';
 import {
     DONE_STATES,
     getWorkstreamId,
@@ -46,10 +43,13 @@ import {
     isInProgress,
     mergeConsecutiveToolGroups,
     type RenderableGroup,
-    shouldCollapseAdjacentRenderedMessage,
     type StreamingData,
     type ToolExecutionStatus,
+    shouldCollapseAdjacentRenderedMessage,
 } from './utils';
+import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from './WorkstreamTabs';
+
+export type AgentConversationViewMode = 'stacked' | 'sliding';
 
 export interface AgentInitialRequestTemplateContext {
     data: unknown;
@@ -504,7 +504,7 @@ function renderDefaultInitialRequest(
     if (fields.length === 0) return null;
 
     return (
-        <div className="space-y-2 text-left">
+        <div className="space-y-2 text-start">
             {title ? <div className="text-xs font-medium uppercase tracking-normal text-muted">{title}</div> : null}
             <dl className="space-y-2">
                 {fields.map((field) => (
@@ -602,12 +602,12 @@ function InitialRequestWaitingCard({
                     <div className="min-w-0">
                         <div>
                             <span className="font-medium">{label}</span>
-                            <span className="ml-2 text-muted/75">for {formatDuration(elapsed)}</span>
+                            <span className="ms-2 text-muted/75">for {formatDuration(elapsed)}</span>
                         </div>
                         <div className="mt-1 truncate text-muted/80">{ThinkingMessages[thinkingMessageIndex]}</div>
                     </div>
                 </div>
-                <div className="mt-3 pl-6">
+                <div className="mt-3 ps-6">
                     <AnimatedThinkingDots color="blue" />
                 </div>
             </div>
@@ -1024,7 +1024,7 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
             <button
                 type="button"
                 className={cn(
-                    'grid w-full grid-cols-[1.5rem_1fr_auto] gap-2 text-left outline-none transition-colors',
+                    'grid w-full grid-cols-[1.5rem_1fr_auto] gap-2 text-start outline-none transition-colors',
                     'focus-visible:text-foreground focus-visible:underline focus-visible:underline-offset-4',
                     hasDetails ? 'cursor-pointer hover:text-foreground' : 'cursor-default',
                 )}
@@ -1055,7 +1055,7 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
                 ) : null}
             </button>
             {hasDetails && isExpanded ? (
-                <div className="ml-7 mt-1">
+                <div className="ms-7 mt-1">
                     {item.text ? (
                         <div className="break-words text-sm leading-relaxed text-muted">{item.text}</div>
                     ) : null}
@@ -1136,7 +1136,7 @@ function SummaryActivityRow({
                 <button
                     type="button"
                     className={cn(
-                        'inline-flex max-w-full items-center gap-2 text-left outline-none',
+                        'inline-flex max-w-full items-center gap-2 text-start outline-none',
                         'focus-visible:text-foreground focus-visible:underline focus-visible:underline-offset-4',
                         canExpand ? 'cursor-pointer hover:text-foreground' : 'cursor-default',
                     )}
@@ -1182,9 +1182,9 @@ function TimelineEntry({ children, status }: { children: React.ReactNode; status
                 : 'bg-muted';
 
     return (
-        <div className="relative pl-7">
-            <div className="absolute left-2 top-0 bottom-0 w-px bg-border" />
-            <div className={cn('absolute left-[5px] top-4 size-2.5 rounded-full ring-4 ring-background', dotClass)} />
+        <div className="relative ps-7">
+            <div className="absolute start-2 top-0 bottom-0 w-px bg-border" />
+            <div className={cn('absolute start-[5px] top-4 size-2.5 rounded-full ring-4 ring-background', dotClass)} />
             {children}
         </div>
     );

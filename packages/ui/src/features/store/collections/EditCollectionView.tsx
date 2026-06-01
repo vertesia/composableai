@@ -9,27 +9,27 @@ import {
     Badge,
     Button,
     ErrorBox,
+    errorMessage,
     FormItem,
     Input,
     Panel,
     SelectBox,
     Styles,
     Textarea,
-    errorMessage,
     useFetch,
-    useToast,
     useTheme,
+    useToast,
 } from '@vertesia/ui/core';
-import { SharedPropsEditor } from './SharedPropsEditor';
-import { SyncMemberHeadsToggle } from './SyncMemberHeadsToggle';
-import { UserInfo } from '../../user/UserInfo';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { MonacoEditor, type EditorApi, GeneratedForm, ManagedObject, type Node } from '@vertesia/ui/widgets';
+import { type EditorApi, GeneratedForm, ManagedObject, MonacoEditor, type Node } from '@vertesia/ui/widgets';
 import dayjs from 'dayjs';
 import { useContext, useMemo, useRef, useState } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { UserInfo } from '../../user/UserInfo';
 import { SearchContext } from '../objects/search/DocumentSearchContext';
 import { SelectContentType, stringifyTableLayout } from '../types';
+import { SharedPropsEditor } from './SharedPropsEditor';
+import { SyncMemberHeadsToggle } from './SyncMemberHeadsToggle';
 
 interface UpdateData {
     name: string;

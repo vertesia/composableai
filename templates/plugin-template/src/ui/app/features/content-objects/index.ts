@@ -1,5 +1,5 @@
-export { ContentObjectsView } from './ContentObjectsView';
 export { ContentObjectDetailView } from './ContentObjectDetailView';
-export { ContentObjectsListStateProvider } from './ContentObjectsListStateProvider';
 export { useContentObjectsListState } from './ContentObjectsListStateContext';
-export type { SortField, FilterableField } from './types';
+export { ContentObjectsListStateProvider } from './ContentObjectsListStateProvider';
+export { ContentObjectsView } from './ContentObjectsView';
+export type { FilterableField, SortField } from './types';

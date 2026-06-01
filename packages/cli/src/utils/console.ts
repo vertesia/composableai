@@ -1,7 +1,8 @@
+import type { WriteStream } from 'node:tty';
 import ansiColors from 'ansi-colors';
 import ansiEscapes from 'ansi-escapes';
-import type { WriteStream } from 'node:tty';
 import { onExit } from 'signal-exit';
+
 /**
  * See https://github.com/sindresorhus/cli-spinners/blob/HEAD/spinners.json for more spinners
  */

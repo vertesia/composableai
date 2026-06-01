@@ -1,5 +1,4 @@
 import type { JSONSchema } from '@vertesia/common';
-import { TypeNames, type TypeSignature, parseTypeSignature } from './type-signature.js';
 import {
     addProperty,
     getTypeSignature,
@@ -8,6 +7,7 @@ import {
     setPropertyType,
     setRequireProperty,
 } from './json-schema4-utils.js';
+import { parseTypeSignature, TypeNames, type TypeSignature } from './type-signature.js';
 
 let new_prop_name_cnt = 0;
 

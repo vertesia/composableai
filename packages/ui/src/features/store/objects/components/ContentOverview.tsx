@@ -1,5 +1,3 @@
-import { memo, useEffect, useRef, useState, type RefObject } from 'react';
-
 import {
     ContentNature,
     type ContentObject,
@@ -24,11 +22,12 @@ import {
     useFetch,
     useToast,
 } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from '@vertesia/ui/widgets';
 import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from 'lucide-react';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { memo, type RefObject, useEffect, useRef, useState } from 'react';
 import { MagicPdfView } from '../../../magic-pdf';
 import { AudioPanel, ImagePanel, VideoPanel } from '../../../media-viewer';
 import { SimplePdfViewer } from '../../../pdf-viewer';

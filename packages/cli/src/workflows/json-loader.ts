@@ -1,5 +1,5 @@
-import type { DSLWorkflowSpec } from '@vertesia/common';
 import { readFile } from 'node:fs/promises';
+import type { DSLWorkflowSpec } from '@vertesia/common';
 import { errorMessage } from '../utils/options.js';
 import { ValidationError, validateWorkflow } from './validation.js';
 

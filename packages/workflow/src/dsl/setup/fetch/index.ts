@@ -1,5 +1,5 @@
-import type { ActivityFetchSpec } from '@vertesia/common';
 import type { VertesiaClient } from '@vertesia/client';
+import type { ActivityFetchSpec } from '@vertesia/common';
 import type { DataProvider } from './DataProvider.js';
 
 const factories: Record<string, (client: VertesiaClient, source?: string) => DataProvider> = {};

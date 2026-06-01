@@ -1,5 +1,5 @@
-import { ChevronDownIcon } from 'lucide-react';
 import { Button, Dropdown, MenuItem } from '@vertesia/ui/core';
+import { ChevronDownIcon } from 'lucide-react';
 import type { OpenDocument } from './types/document.js';
 
 interface DocumentTabBarProps {

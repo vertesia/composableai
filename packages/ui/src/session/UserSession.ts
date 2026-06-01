@@ -1,9 +1,8 @@
-import { jwtDecode } from 'jwt-decode';
-import { createContext, useContext } from 'react';
-
 import { VertesiaClient } from '@vertesia/client';
 import type { AuthTokenPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
+import { jwtDecode } from 'jwt-decode';
+import { createContext, useContext } from 'react';
 
 import { getComposableToken } from './auth/composable';
 import { shouldRedirectToCentralAuth } from './auth/domainRouting';

@@ -1,5 +1,5 @@
-import type { Account } from '@vertesia/common';
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type { Account } from '@vertesia/common';
 
 export default class AccountsApi extends ApiTopic {
     constructor(parent: ClientBase) {

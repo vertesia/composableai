@@ -3,18 +3,18 @@ import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { createActivitiesRoute } from './server/activities.js';
-import { createInteractionsRoute } from './server/interactions.js';
-import { createMcpRoute } from './server/mcp.js';
-import { createSiteRoute } from './server/site.js';
-import { createSkillsRoute } from './server/skills.js';
-import { createToolsRoute } from './server/tools.js';
-import type { ToolContext, ToolServerConfig } from './server/types.js';
-import type { ToolExecutionPayload } from './types.js';
-import { createTemplatesRoute } from './server/templates.js';
-import { createWidgetsRoute } from './server/widgets.js';
 import { createPackageRoute } from './server/app-package.js';
 import { createContentTypesRoute } from './server/content-types.js';
+import { createInteractionsRoute } from './server/interactions.js';
+import { createMcpRoute } from './server/mcp.js';
 import { createProcessesRoute } from './server/processes.js';
+import { createSiteRoute } from './server/site.js';
+import { createSkillsRoute } from './server/skills.js';
+import { createTemplatesRoute } from './server/templates.js';
+import { createToolsRoute } from './server/tools.js';
+import type { ToolContext, ToolServerConfig } from './server/types.js';
+import { createWidgetsRoute } from './server/widgets.js';
+import type { ToolExecutionPayload } from './types.js';
 
 // Schema for tool execution payload
 const ToolExecutionPayloadSchema = z.object({
