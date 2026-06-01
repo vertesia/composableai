@@ -21,6 +21,7 @@ export * from './json-schema.js';
 export * from './meters.js';
 export * from './model_utility.js';
 export * from './oauth.js';
+export * from './oauth-scopes.js';
 export * from './oauth-server.js';
 export * from './Progress.js';
 export * from './payload.js';

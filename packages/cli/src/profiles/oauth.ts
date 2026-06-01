@@ -3,6 +3,7 @@ import type {
     OAuthDeviceAuthorizationResponse,
     OAuthTokenResponse,
 } from '@vertesia/common';
+import { getSupportedOAuthScopes } from '@vertesia/common';
 import jwt from 'jsonwebtoken';
 import open from 'open';
 import type { Profile } from './index.js';
@@ -11,7 +12,7 @@ import type { ConfigResult } from './server/index.js';
 
 const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server';
 const OAUTH_CLIENT_METADATA_PATH = '/.well-known/oauth-client/vertesia-cli';
-const DEFAULT_OAUTH_SCOPE = 'openid profile';
+const DEFAULT_OAUTH_SCOPE = getSupportedOAuthScopes().join(' ');
 
 type OAuthProfile = Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> &
     Partial<Pick<Profile, 'account' | 'config_url' | 'project' | 'oauth_server_url'>>;
