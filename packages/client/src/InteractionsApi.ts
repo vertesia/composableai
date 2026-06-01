@@ -5,6 +5,7 @@ import type {
     ComputeInteractionFacetPayload,
     ComputedFacetResponse,
     DeleteByIdResult,
+    InteractionDeletePayload,
     GenerateInteractionPayload,
     GenerateTestDataPayload,
     GeneratedInteractionDefinition,
@@ -160,15 +161,16 @@ export default class InteractionsApi extends ApiTopic {
     }
 
     /**
-     * Delete an interaction. Pass `cascade: true` to also delete every interaction whose
-     * `parent` is this id (its draft forks and/or published versions). Cascade is forward-only
-     * and never deletes the parent of the target.
+     * Delete an interaction. Pass `{ cascade: true }` to also delete every interaction in the
+     * target's family — see {@link InteractionDeletePayload}.
      *
-     * The second argument shape is `IRequestParams & { cascade?: boolean }` so this remains
-     * assignment-compatible with the inherited `ApiTopic.delete(path, params)` signature.
+     * The signature must stay assignment-compatible with the inherited
+     * `ApiTopic.delete(path, params)`, so the parameter is `IRequestParams & InteractionDeletePayload`.
+     * Callers can keep passing only the payload (`{ cascade: true }`); IRequestParams fields are all
+     * optional.
      */
-    delete(id: string, options?: IRequestParams & { cascade?: boolean }): Promise<DeleteByIdResult> {
-        const { cascade, query, ...rest } = options ?? {};
+    delete(id: string, payload?: IRequestParams & InteractionDeletePayload): Promise<DeleteByIdResult> {
+        const { cascade, query, ...rest } = payload ?? {};
         const mergedQuery = cascade ? { ...(query ?? {}), cascade: 'true' } : (query ?? undefined);
         return super.delete(`/${id}`, { ...rest, query: mergedQuery }) as Promise<DeleteByIdResult>;
     }

@@ -519,6 +519,16 @@ export interface InteractionPublishPayload {
     tags?: string[];
 }
 
+export interface InteractionDeletePayload {
+    /**
+     * When true, also delete every interaction in the same family as the target:
+     * - If the target is the root draft, its forks and published versions are deleted.
+     * - If the target is a published version (or fork), the parent draft and all siblings are deleted.
+     * Forward-only cascade — never deletes outside the target's family.
+     */
+    cascade?: boolean;
+}
+
 export interface InteractionForkPayload {
     keepTags?: boolean;
     forkPrompts?: boolean;
