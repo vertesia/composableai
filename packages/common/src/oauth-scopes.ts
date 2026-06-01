@@ -4,11 +4,7 @@ export const OAUTH_SCOPE_OPENID = 'openid';
 export const OAUTH_SCOPE_PROFILE = 'profile';
 export const OAUTH_SCOPE_OFFLINE_ACCESS = 'offline_access';
 
-export const OAUTH_STANDARD_SCOPES = [
-    OAUTH_SCOPE_OPENID,
-    OAUTH_SCOPE_PROFILE,
-    OAUTH_SCOPE_OFFLINE_ACCESS,
-] as const;
+export const OAUTH_STANDARD_SCOPES = [OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, OAUTH_SCOPE_OFFLINE_ACCESS] as const;
 
 export type OAuthStandardScope = (typeof OAUTH_STANDARD_SCOPES)[number];
 
