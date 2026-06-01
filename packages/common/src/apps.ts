@@ -373,6 +373,37 @@ export interface RemoteActivityDefinition {
 
 export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
+
+/**
+ * Access control policy for an app installation.
+ * Declares which access surfaces are gated by per-user ACEs.
+ *
+ * - 'all' (default): every surface (UI portal, tool/endpoint use, contributions) requires
+ *   an explicit app_member ACE — the historical behavior.
+ * - 'ui': UI portal visibility requires an ACE, but tool/endpoint use and contributions
+ *   are open to anyone in the project.
+ * - 'none': fully open within the project — no ACE required for any surface.
+ *
+ * Declared on the manifest as the app's default. May be overridden per-installation.
+ */
+export type AppAccessControl = 'all' | 'ui' | 'none';
+
+/**
+ * Resolve the effective access_control policy for an installed app:
+ * installation override wins, then manifest default, then `'all'`.
+ *
+ * Shared by the STS (JWT generation), the studio-server (validation), and the UI (badge display)
+ * so the resolution rule lives in exactly one place. Named `effectiveAppAccessControl` (not just
+ * `effectiveAccessControl`) because exports from `@vertesia/common` are flattened — the broader
+ * name would risk colliding with other access-control families added later.
+ */
+export function effectiveAppAccessControl(
+    installation: { access_control?: AppAccessControl } | null | undefined,
+    manifest: { access_control?: AppAccessControl } | null | undefined,
+): AppAccessControl {
+    return installation?.access_control ?? manifest?.access_control ?? 'all';
+}
+
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.
@@ -487,6 +518,13 @@ export interface AppManifestData {
      * controls that don't apply to synthetic installations.
      */
     tags?: string[];
+
+    /**
+     * Access control policy for the app. Defaults to 'all' (ACE-gated everywhere)
+     * when undefined. See {@link AppAccessControl} for semantics. May be overridden
+     * on the AppInstallation.
+     */
+    access_control?: AppAccessControl;
 }
 
 /**
@@ -779,6 +817,12 @@ export interface AppInstallation {
      * Multiple collections sharing the same provider all resolve to the same OAuth provider.
      */
     provider_bindings?: AppInstallationProviderBinding[];
+    /**
+     * Per-installation override of the manifest's access_control policy.
+     * When set, takes precedence over the manifest value. When undefined, the
+     * manifest value (or 'all' default) applies.
+     */
+    access_control?: AppAccessControl;
     created_at: string;
     updated_at: string;
 }
@@ -814,6 +858,19 @@ export type AppOAuthProviderParams = Record<string, OAuthClientCredentials>;
 export interface AppInstallationPayload {
     app_id: string;
     settings?: Record<string, unknown>;
+    /**
+     * Per-installation override of the manifest's `access_control` policy. When provided, takes precedence
+     * over the manifest default for every access check. Sibling of `settings` — admin-controlled, not
+     * part of the app's own settings JSON.
+     *
+     * Three send-time semantics on update:
+     *  - Field omitted entirely from the payload → leave the existing override unchanged.
+     *  - Explicit `null` → clear the override, fall back to the manifest default.
+     *  - String enum → set the override to that value.
+     *
+     * (On install, the same shape applies; omit or pass `null` to use the manifest default.)
+     */
+    access_control?: AppAccessControl | null;
     /**
      * OAuth credentials for each collection, keyed by collection.id.
      * Legacy callers may still use collection.name for older manifests.

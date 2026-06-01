@@ -1,17 +1,17 @@
-import { describe, expect, it } from 'vitest';
 import { useState } from 'react';
+import { describe, expect, it } from 'vitest';
+import { FormItem } from '../core/components/FormItem.js';
 import { Button, CopyButton } from '../core/components/shadcn/button.js';
+import { Checkbox } from '../core/components/shadcn/checkbox.js';
 import { Input } from '../core/components/shadcn/input.js';
 import { Label } from '../core/components/shadcn/label.js';
-import { Checkbox } from '../core/components/shadcn/checkbox.js';
-import { Switch } from '../core/components/shadcn/switch.js';
+import { Modal, ModalBody, ModalTitle } from '../core/components/shadcn/modal/dialog.js';
 import { RadioGroup } from '../core/components/shadcn/radioGroup.js';
-import { FormItem } from '../core/components/FormItem.js';
-import { Modal, ModalTitle, ModalBody } from '../core/components/shadcn/modal/dialog.js';
-import { Table, THead, TBody, TableHeaderCell, SortableTableHeaderCell } from '../core/components/table/index.js';
 import { SelectBox } from '../core/components/shadcn/selectBox.js';
-import { renderWithProviders } from './test-utils.js';
+import { Switch } from '../core/components/shadcn/switch.js';
+import { SortableTableHeaderCell, Table, TableHeaderCell, TBody, THead } from '../core/components/table/index.js';
 import { axe } from './axe-helper.js';
+import { renderWithProviders } from './test-utils.js';
 
 describe('@vertesia/ui accessibility (axe)', () => {
     it('Button (text + icon-only with aria-label) has no violations', async () => {

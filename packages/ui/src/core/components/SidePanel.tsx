@@ -1,7 +1,7 @@
+import { AnimatePresence, motion } from 'framer-motion';
+import { Minus, X } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Minus, X } from 'lucide-react';
 import { Button } from './shadcn/button';
 
 interface SidePanelProps {

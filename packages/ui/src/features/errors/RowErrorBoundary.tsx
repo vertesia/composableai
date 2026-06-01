@@ -1,5 +1,5 @@
-import { type ErrorFallbackComponentProps, VertesiaErrorBoundary } from './VertesiaErrorBoundary';
 import type { ReactNode } from 'react';
+import { type ErrorFallbackComponentProps, VertesiaErrorBoundary } from './VertesiaErrorBoundary';
 
 interface ErrorBoundaryProps {
     children: ReactNode;

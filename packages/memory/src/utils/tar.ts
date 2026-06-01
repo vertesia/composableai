@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import { type FileHandle, open } from 'node:fs/promises';
 import { pipeline } from 'node:stream/promises';
-import tar from 'tar-stream';
 import zlib from 'node:zlib';
+import tar from 'tar-stream';
 
 export interface TarEntry {
     name: string;

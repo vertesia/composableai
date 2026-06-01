@@ -12,13 +12,13 @@
 import json from '@rollup/plugin-json';
 import typescript from '@rollup/plugin-typescript';
 import {
-    vertesiaImportPlugin,
-    skillTransformer,
+    promptTransformer,
     rawTransformer,
     skillCollectionTransformer,
-    templateTransformer,
+    skillTransformer,
     templateCollectionTransformer,
-    promptTransformer,
+    templateTransformer,
+    vertesiaImportPlugin,
 } from '@vertesia/build-tools';
 
 // ============================================================================

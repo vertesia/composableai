@@ -1,9 +1,9 @@
 import type { SignupData } from '@vertesia/common';
 import { Button, Input, RadioGroup, SelectBox } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { getFirebaseAuth } from '@vertesia/ui/session';
 import type { User } from 'firebase/auth';
 import { useEffect, useState } from 'react';
-import { getFirebaseAuth } from '@vertesia/ui/session';
-import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface CompanySizeOption {
     id: number;

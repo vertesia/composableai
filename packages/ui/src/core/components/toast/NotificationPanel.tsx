@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { CircleCheck, AlertTriangle, Info, CircleX, X } from 'lucide-react';
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { AlertTriangle, CircleCheck, CircleX, Info, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ToastProps } from './ToastProps.js';
 
 const icons = {

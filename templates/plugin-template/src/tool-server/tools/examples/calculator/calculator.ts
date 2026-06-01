@@ -1,6 +1,6 @@
+import type { ToolResultContent } from '@vertesia/common';
 import type { ToolExecutionContext, ToolExecutionPayload } from '@vertesia/tools-sdk';
 import type { CalculatorParams } from './schema.js';
-import type { ToolResultContent } from '@vertesia/common';
 
 /**
  * Safely evaluates a mathematical expression

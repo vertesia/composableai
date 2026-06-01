@@ -1,8 +1,8 @@
-import { describe, expect, it, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse, formatRgb, type Color } from 'culori';
+import { type Color, formatRgb, parse } from 'culori';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { rgb as wcagRgb } from 'wcag-contrast';
 
 /**

@@ -1,5 +1,5 @@
-import { useUserSession } from '@vertesia/ui/session';
 import type { FacetSpec } from '@vertesia/common';
+import { useUserSession } from '@vertesia/ui/session';
 import type React from 'react';
 import { useMemo } from 'react';
 import { DocumentSearch, SearchContext } from './DocumentSearchContext';

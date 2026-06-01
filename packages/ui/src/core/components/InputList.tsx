@@ -14,6 +14,7 @@ interface InputListProps {
     delimiters?: string; // space and , by default
     placeholder?: string;
     autoFocus?: boolean;
+    disabled?: boolean;
 }
 export function InputList({
     value = [],
@@ -22,10 +23,12 @@ export function InputList({
     delimiters = ', ',
     placeholder,
     autoFocus,
+    disabled = false,
 }: InputListProps) {
     const [text, setText] = useState<string>('');
 
     const onBlur = (ev: React.FocusEvent<HTMLInputElement>) => {
+        if (disabled) return;
         const v = ev.currentTarget.value;
         if (v?.trim()) {
             onChange([...value, v.trim()]);
@@ -33,6 +36,7 @@ export function InputList({
         }
     };
     const onKeyDown = (ev: React.KeyboardEvent<HTMLInputElement>) => {
+        if (disabled) return;
         const v = ev.currentTarget.value;
         const isEmpty = !v.trim();
         const key = ev.key;
@@ -51,6 +55,7 @@ export function InputList({
     };
 
     const onPaste = (ev: React.ClipboardEvent<HTMLInputElement>) => {
+        if (disabled) return;
         const pastedText = ev.clipboardData.getData('text');
         if (pastedText) {
             ev.preventDefault();
@@ -77,6 +82,7 @@ export function InputList({
     };
 
     const _onClick = (index: number): void => {
+        if (disabled) return;
         if (value && value.length > 0) {
             value.splice(index, 1);
             onChange([...value]);
@@ -89,6 +95,7 @@ export function InputList({
                 className,
                 'w-full flex flex-wrap items-center gap-1 p-2 py-1.5',
                 'rounded-md text-sm rounded-md border border-input bg-background ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted focus-visible:outline-none focus-visible:ring-1 ring-inset focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+                disabled && 'opacity-50 cursor-not-allowed',
             )}
         >
             {value &&
@@ -101,7 +108,12 @@ export function InputList({
                             // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                             key={index}
                             onClick={() => _onClick(index)}
-                            className="cursor-pointer flex-shrink-0 hover:bg-destructive hover:text-destructive transition-colors"
+                            className={clsx(
+                                'flex-shrink-0 transition-colors',
+                                disabled
+                                    ? 'cursor-not-allowed'
+                                    : 'cursor-pointer hover:bg-destructive hover:text-destructive',
+                            )}
                             title={v}
                         >
                             <span className="break-all">{v}</span>
@@ -120,6 +132,7 @@ export function InputList({
                 onChange={setText}
                 placeholder={!value || value.length === 0 ? placeholder : ''}
                 autoFocus={autoFocus}
+                disabled={disabled}
             />
         </div>
     );

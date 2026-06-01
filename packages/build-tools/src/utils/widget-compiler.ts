@@ -2,14 +2,14 @@
  * Widget compilation utility using Rollup
  */
 
-import { rollup, type RollupOptions, type OutputOptions, type Plugin } from 'rollup';
 import path from 'node:path';
-import type { WidgetConfig } from '../types.js';
-import type { WidgetMetadata } from './asset-discovery.js';
-import type { RollupTypescriptOptions } from '@rollup/plugin-typescript';
 import type { RollupJsonOptions } from '@rollup/plugin-json';
 import type { RollupNodeResolveOptions } from '@rollup/plugin-node-resolve';
 import type { Options as TerserOptions } from '@rollup/plugin-terser';
+import type { RollupTypescriptOptions } from '@rollup/plugin-typescript';
+import { type OutputOptions, type Plugin, type RollupOptions, rollup } from 'rollup';
+import type { WidgetConfig } from '../types.js';
+import type { WidgetMetadata } from './asset-discovery.js';
 import { createRollupTypescript } from './rollup-typescript.js';
 
 type PluginFactory<TOptions = undefined> = (options?: TOptions) => Plugin;

@@ -1,9 +1,9 @@
 import type { ComplexSearchPayload, ContentObjectItem, FindPayload } from '@vertesia/common';
 import { errorMessage, useToast } from '@vertesia/ui/core';
+import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { useCallback } from 'react';
 import { Md5 } from 'ts-md5';
-import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
 
 const t = i18nInstance.getFixedT(null, NAMESPACE);
 

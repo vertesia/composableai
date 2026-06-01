@@ -1,8 +1,8 @@
+import { exec } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
-import { expect, test, vi, describe } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 // Mock Temporal activity context
 vi.mock('@temporalio/activity', () => ({

@@ -1,5 +1,12 @@
-import { type CompletionResult, type JSONSchema, type ModelOptions, LlumiverseError } from '@llumiverse/common';
-import { activityInfo, ApplicationFailure, log } from '@temporalio/activity';
+import { Readable } from 'node:stream';
+import {
+    type CompletionResult,
+    type HttpTimeoutOptions,
+    type JSONSchema,
+    LlumiverseError,
+    type ModelOptions,
+} from '@llumiverse/common';
+import { ApplicationFailure, activityInfo, log } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
 import { NodeStreamSource } from '@vertesia/client/node';
 import {
@@ -15,7 +22,6 @@ import { projectResult } from '../dsl/projections.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { ActivityParamInvalidError, ActivityParamNotFoundError, ResourceExhaustedError } from '../errors.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
-import { Readable } from 'node:stream';
 
 //Example:
 //@ts-expect-error
@@ -65,6 +71,12 @@ const _JSON: DSLActivitySpec = {
 };
 export interface InteractionExecutionParams {
     /**
+     * Execution configuration shared across workflow-driven interaction calls.
+     * Activity-level fields below override this object for backward compatibility.
+     */
+    config?: InteractionExecutionConfiguration;
+
+    /**
      * The environment to use. If not specified the project default environment will be used.
      * If the latter is not specified an exception will be thrown.
      */
@@ -98,6 +110,11 @@ export interface InteractionExecutionParams {
      * Options to control generation
      */
     model_options?: ModelOptions;
+
+    /**
+     * Per-run HTTP timeouts for upstream LLM-provider calls.
+     */
+    http_timeout?: HttpTimeoutOptions;
 
     /**
      * activity won't be retried if it fails due to resource exhaustion (429)
@@ -201,20 +218,6 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
         if (executionError.statusCode === 429 && params.exit_on_resource_exhaustion) {
             throw new ResourceExhaustedError(executionError.statusCode, 'Resource exhausted - rate limit exceeded');
-        } else if (
-            is4xxNonRetryable(executionError.status) ||
-            is4xxNonRetryable(executionError.statusCode) ||
-            is4xxNonRetryable(executionError.code) ||
-            executionError.retryable === false
-        ) {
-            // 4xx HTTP errors (except retryable statuses) are permanent client errors
-            // (e.g. model not found, invalid request).
-            // Errors explicitly marked as non-retryable (e.g. LlumiverseError) also fall here.
-            // They will not be resolved by retrying.
-            throw ApplicationFailure.create({
-                message: `Interaction Execution failed ${interactionName}: ${executionError.message}`,
-                nonRetryable: true,
-            });
         } else if (executionError.message.includes('Failed to validate merged prompt schema')) {
             //issue with the input data, don't retry
             throw new ActivityParamInvalidError('prompt_data', payload.activity, executionError.message);
@@ -227,7 +230,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         // or from LlumiverseError instance (direct driver errors in some paths)
         const isRetryable =
             executionError.retryable !== undefined
-                ? true
+                ? executionError.retryable
                 : error instanceof LlumiverseError
                   ? error.retryable !== false
                   : undefined;
@@ -246,6 +249,20 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
                     nonRetryable: true,
                 });
             }
+        }
+
+        if (
+            is4xxNonRetryable(executionError.status) ||
+            is4xxNonRetryable(executionError.statusCode) ||
+            is4xxNonRetryable(executionError.code)
+        ) {
+            // 4xx HTTP errors (except retryable statuses) are permanent client errors
+            // (e.g. model not found, invalid request). The explicit retryability
+            // flag above wins when a provider marks a 4xx as transient.
+            throw ApplicationFailure.create({
+                message: `Interaction Execution failed ${interactionName}: ${executionError.message}`,
+                nonRetryable: true,
+            });
         }
 
         // Unknown retryability - rethrow as generic error (Temporal will use default retry policy)
@@ -297,11 +314,14 @@ export async function executeInteractionFromActivity(
         log.info(`Found  previous run error`, { error: previousStudioExecutionRun?.error });
     }
 
+    const configDefaults = params.config ?? {};
     const config: InteractionExecutionConfiguration = {
-        environment: params.environment,
-        model: params.model,
-        model_options: params.model_options,
-        do_validate: params.validate_result,
+        ...configDefaults,
+        environment: params.environment ?? configDefaults.environment,
+        model: params.model ?? configDefaults.model,
+        model_options: params.model_options ?? configDefaults.model_options,
+        http_timeout: params.http_timeout ?? configDefaults.http_timeout,
+        do_validate: params.validate_result ?? configDefaults.do_validate,
     };
     const data = {
         ...prompt_data,

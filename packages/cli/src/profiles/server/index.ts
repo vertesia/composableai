@@ -1,6 +1,6 @@
 import { randomInt } from 'node:crypto';
-import enquirer from 'enquirer';
 import type { Server } from 'node:http';
+import enquirer from 'enquirer';
 import open from 'open';
 import { handleCors } from './cors.js';
 import { readRequestBody, startServer } from './server.js';
@@ -16,6 +16,7 @@ export interface ConfigPayload {
 export interface ConfigResult extends Required<ConfigPayload> {
     studio_server_url: string;
     zeno_server_url: string;
+    oauth_server_url?: string;
     token: string;
     id_token?: string;
     refresh_token?: string;

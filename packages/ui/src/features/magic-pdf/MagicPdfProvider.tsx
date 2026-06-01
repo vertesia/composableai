@@ -1,6 +1,6 @@
-import { useUserSession } from '@vertesia/ui/session';
 import type { VertesiaClient } from '@vertesia/client';
 import { type ContentObject, type DocumentMetadata, PDF_RENDITION_NAME } from '@vertesia/common';
+import { useUserSession } from '@vertesia/ui/session';
 import React, { createContext, useEffect, useState } from 'react';
 
 const DEFAULT_PAGE_COUNT = 10;
