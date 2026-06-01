@@ -1,11 +1,12 @@
 /// <reference lib="dom" />
 // @vitest-environment jsdom
-import { createRoot, type Root } from 'react-dom/client';
+
 import { act } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LanguageProvider } from './LanguageProvider.js';
 import type { SupportedLanguage } from './rtl.js';
-import { useLocaleFormat, type LocaleFormat } from './useLocaleFormat.js';
+import { type LocaleFormat, useLocaleFormat } from './useLocaleFormat.js';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 

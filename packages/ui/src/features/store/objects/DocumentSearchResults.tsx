@@ -1,5 +1,4 @@
 import type { ColumnLayout, ComplexSearchQuery, ContentObject, ContentObjectItem } from '@vertesia/common';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import {
     type Filter as BaseFilter,
     Button,
@@ -15,13 +14,14 @@ import {
     useToast,
     VTooltip,
 } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import type { TypeRegistry } from '../types/TypeRegistry.js';
-import { useTypeRegistry } from '../types/TypeRegistryProvider.js';
 import { Download, ExternalLink, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDocumentFilterGroups, useDocumentFilterHandler } from '../../facets/DocumentsFacetsNav';
+import type { TypeRegistry } from '../types/TypeRegistry.js';
+import { useTypeRegistry } from '../types/TypeRegistryProvider.js';
 import { ContentDispositionButton } from './components/ContentDispositionButton';
 import { ContentOverview } from './components/ContentOverview';
 import { useDownloadFile } from './components/useDownloadFile';

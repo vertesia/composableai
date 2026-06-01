@@ -1,15 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-    AgentMessageType,
     type AgentMessage,
+    AgentMessageType,
     type CompactMessage,
-    normalizeMessageType,
-    toCompactMessage,
-    toAgentMessage,
-    parseMessage,
+    createCompactMessage,
     isCompactMessage,
     isLegacyMessage,
-    createCompactMessage,
+    normalizeMessageType,
+    parseMessage,
+    toAgentMessage,
+    toCompactMessage,
 } from './workflow.js';
 
 describe('CompactMessage converters', () => {

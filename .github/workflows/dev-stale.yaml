@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
+      actions: write # required to manage the stale action's state cache
       issues: write # required to label PRs because PR labels are issue labels
       contents: write # for delete-branch option
       pull-requests: write # required to mark and close stale PRs

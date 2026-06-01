@@ -1,26 +1,26 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { RefreshCw } from 'lucide-react';
+import type { AgentRunSearchHit } from '@vertesia/common';
 import {
     Button,
-    type FilterGroup,
-    type FilterOption,
     FilterBar,
     FilterBtn,
     FilterClear,
+    type FilterGroup,
+    type FilterOption,
     FilterProvider,
     Input,
+    Table,
     TBody,
     THead,
-    Table,
 } from '@vertesia/ui/core';
 import { GenericPageNavHeader } from '@vertesia/ui/features';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
-import type { AgentRunSearchHit } from '@vertesia/common';
+import { RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { SortableHead } from '../../components/SortableHead';
-import { ConversationRow } from './components/ConversationRow';
 import { useConversationsListState } from './ConversationsListStateContext';
-import { STATUS_VALUES, type FilterableField, type SortField } from './types';
+import { ConversationRow } from './components/ConversationRow';
+import { type FilterableField, type SortField, STATUS_VALUES } from './types';
 import { getSelectValues } from './utils';
 
 const SCROLL_HISTORY_KEY = 'conversationsScrollTop';

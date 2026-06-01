@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { ObjectWalker, AsyncObjectWalker } from './walk.js';
+import { AsyncObjectWalker, ObjectWalker } from './walk.js';
 
 /** Permissive recursive type for navigating untyped walker results in test assertions. */
 type Tree = { readonly [key: string]: Tree };

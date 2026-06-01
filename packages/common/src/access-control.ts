@@ -23,6 +23,7 @@ export enum Permission {
 
     api_key_create = 'api_key:create',
     api_key_read = 'api_key:read',
+    api_key_secret_read = 'api_key:secret_read',
     api_key_update = 'api_key:update',
     api_key_delete = 'api_key:delete',
 
@@ -32,17 +33,23 @@ export enum Permission {
     manage_billing = 'account:billing',
     /** View cost and usage analytics */
     billing_read = 'billing:read',
+    /** View account and project audit events. */
+    audit_read = 'audit:read',
     account_member = 'account:member',
 
     content_read = 'content:read',
+    content_read_all = 'content:read_all',
     content_write = 'content:write',
     content_delete = 'content:delete',
     content_admin = 'content:admin', //manage schemas
     content_superadmin = 'content:superadmin', // list all objects and collections
 
+    workflow_read = 'workflow:read',
     workflow_run = 'workflow:run',
     workflow_admin = 'workflow:admin',
     workflow_superadmin = 'workflow:superadmin',
+
+    agent_run_read = 'agent_run:read',
 
     task_read = 'task:read',
     task_manage = 'task:manage',

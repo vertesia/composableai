@@ -1,7 +1,7 @@
 import type {
+    InteractionExecutionPayload,
     InteractionExecutionResult,
     InteractionUpdatePayload,
-    InteractionExecutionPayload,
 } from '@vertesia/common';
 import { VertesiaClient, type VertesiaClientProps } from './client.js';
 import { executeInteraction } from './execute.js';

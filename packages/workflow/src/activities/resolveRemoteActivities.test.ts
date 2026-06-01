@@ -2,9 +2,9 @@ import { MockActivityEnvironment } from '@temporalio/testing';
 import { ContentEventName, type DSLActivityExecutionPayload } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    resolveRemoteActivities,
     type RemoteActivityMap,
     type ResolveRemoteActivitiesParams,
+    resolveRemoteActivities,
 } from './resolveRemoteActivities.js';
 
 vi.stubGlobal('fetch', vi.fn());

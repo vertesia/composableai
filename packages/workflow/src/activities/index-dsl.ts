@@ -1,31 +1,32 @@
 // Export here DSL activities
-export { executeRemoteActivity } from './executeRemoteActivity.js';
-export { resolveRemoteActivities } from './resolveRemoteActivities.js';
-export type { RemoteActivityInfo, RemoteActivityMap } from './resolveRemoteActivities.js';
+
 export { createDocumentTypeFromInteractionRun } from './advanced/createDocumentTypeFromInteractionRun.js';
 export { createOrUpdateDocumentFromInteractionRun } from './advanced/createOrUpdateDocumentFromInteractionRun.js';
 export { updateDocumentFromInteractionRun } from './advanced/updateDocumentFromInteractionRun.js';
 export { chunkDocument } from './chunkDocument.js';
 export { createPdfDocumentFromSource } from './createDocumentFromOther.js';
 export { executeInteraction } from './executeInteraction.js';
+export { executeRemoteActivity } from './executeRemoteActivity.js';
 export { extractDocumentText } from './extractDocumentText.js';
 export { generateDocumentProperties } from './generateDocumentProperties.js';
 export { generateEmbeddings } from './generateEmbeddings.js';
 export { generateOrAssignContentType } from './generateOrAssignContentType.js';
 export { getObjectFromStore } from './getObjectFromStore.js';
 export { handleDslError } from './handleError.js';
+export { loadChildWorkflowSpec } from './loadChildWorkflowSpec.js';
 export { prepareAudio } from './media/prepareAudio.js';
 export { prepareVideo } from './media/prepareVideo.js';
-export { probeMediaStreams } from './media/probeMediaStreams.js';
 export type { ProbeMediaStreamsResult } from './media/probeMediaStreams.js';
+export { probeMediaStreams } from './media/probeMediaStreams.js';
 export { convertPdfToStructuredText } from './media/processPdfWithTextract.js';
 export { saveGladiaTranscription } from './media/saveGladiaTranscription.js';
-export { transcribeMedia } from './media/transcribeMediaWithGladia.js';
 export type { TranscriptMediaResult } from './media/transcribeMediaWithGladia.js';
+export { transcribeMedia } from './media/transcribeMediaWithGladia.js';
 export { mergeChildArtifacts } from './mergeChildArtifacts.js';
 export { notifyWebhook } from './notifyWebhook.js';
 export { checkRateLimit } from './rateLimiter.js';
 export { generateImageRendition } from './renditions/generateImageRendition.js';
 export { generateVideoRendition } from './renditions/generateVideoRendition.js';
+export type { RemoteActivityInfo, RemoteActivityMap } from './resolveRemoteActivities.js';
+export { resolveRemoteActivities } from './resolveRemoteActivities.js';
 export { setDocumentStatus } from './setDocumentStatus.js';
-export { loadChildWorkflowSpec } from './loadChildWorkflowSpec.js';

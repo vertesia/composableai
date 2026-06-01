@@ -1,7 +1,3 @@
-import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Bot, Cpu, FileTextIcon, SendIcon, UploadIcon, XIcon } from 'lucide-react';
-import { useUserSession } from '@vertesia/ui/session';
 import {
     type ActiveWorkstreamEntry,
     type AgentMessage,
@@ -17,35 +13,38 @@ import {
     Button,
     cn,
     MessageBox,
-    Spinner,
-    useToast,
     Modal,
     ModalBody,
     ModalFooter,
     ModalTitle,
+    Spinner,
+    useToast,
 } from '@vertesia/ui/core';
-
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { useUserSession } from '@vertesia/ui/session';
+import { Bot, Cpu, FileTextIcon, SendIcon, UploadIcon, XIcon } from 'lucide-react';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
+import { useAgentPlans } from './hooks/useAgentPlans.js';
+import { useAgentStream } from './hooks/useAgentStream.js';
+import { useDocumentPanel } from './hooks/useDocumentPanel.js';
+import { useFileProcessing } from './hooks/useFileProcessing.js';
+import { ImageLightboxProvider } from './ImageLightbox';
 import type { AgentConversationViewMode } from './ModernAgentOutput/AllMessagesMixed';
+import AllMessagesMixed from './ModernAgentOutput/AllMessagesMixed';
 import type { BatchProgressPanelClassNames } from './ModernAgentOutput/BatchProgressPanel';
+import Header from './ModernAgentOutput/Header';
+import MessageInput, { type SelectedDocument, type UploadedFile } from './ModernAgentOutput/MessageInput';
 import type { MessageItemClassNames } from './ModernAgentOutput/MessageItem';
 import type { StreamingMessageClassNames } from './ModernAgentOutput/StreamingMessage';
 import type { ToolCallGroupClassNames } from './ModernAgentOutput/ToolCallGroup';
-import { ImageLightboxProvider } from './ImageLightbox';
-import AllMessagesMixed from './ModernAgentOutput/AllMessagesMixed';
-import Header from './ModernAgentOutput/Header';
-import MessageInput, { type UploadedFile, type SelectedDocument } from './ModernAgentOutput/MessageInput';
 import { getConversationUrl, getWorkstreamId } from './ModernAgentOutput/utils';
-import { ThinkingMessages } from './WaitingMessages';
 import { SkillWidgetProvider } from './SkillWidgetProvider';
 import { ArtifactUrlCacheProvider } from './useArtifactUrlCache.js';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { VegaLiteChart } from './VegaLiteChart';
-import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
-import { useAgentStream } from './hooks/useAgentStream.js';
-import { useAgentPlans } from './hooks/useAgentPlans.js';
-import { useDocumentPanel } from './hooks/useDocumentPanel.js';
-import { useFileProcessing } from './hooks/useFileProcessing.js';
+import { ThinkingMessages } from './WaitingMessages';
 
 export type StartWorkflowFn = (initialMessage?: string) => Promise<{ agent_run_id: string } | undefined>;
 
@@ -113,6 +112,8 @@ interface ModernAgentConversationProps {
     onClone?: (newRun: AgentRun) => void;
     /** Called to show run details/internals modal */
     onShowDetails?: () => void;
+    /** Whether workflow control actions such as cancel should be shown. */
+    allowWorkflowControl?: boolean;
 
     // File upload props - passed through to MessageInput
     /** Called when files are dropped/pasted/selected */
@@ -288,6 +289,8 @@ function StartWorkflowView({
     // File upload props
     acceptedFileTypes,
     maxFiles = 5,
+    hideFileUpload = false,
+    allowWorkflowControl,
 }: ModernAgentConversationProps) {
     const { t } = useUITranslation();
     const resolvedPlaceholder = placeholder ?? t('agent.typeYourMessage');
@@ -303,37 +306,51 @@ function StartWorkflowView({
 
     // Staged files - stored locally until workflow starts
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+    const canStageFiles = !hideFileUpload;
 
     // Drag and drop state
     const [isDragOver, setIsDragOver] = useState(false);
     const dragCounterRef = useRef(0);
 
     // Drag and drop handlers for file staging
-    const handleDragEnter = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounterRef.current++;
-        if (e.dataTransfer?.types?.includes('Files')) {
-            setIsDragOver(true);
-        }
-    }, []);
+    const handleDragEnter = useCallback(
+        (e: React.DragEvent) => {
+            if (!canStageFiles) return;
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounterRef.current++;
+            if (e.dataTransfer?.types?.includes('Files')) {
+                setIsDragOver(true);
+            }
+        },
+        [canStageFiles],
+    );
 
-    const handleDragOver = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-    }, []);
+    const handleDragOver = useCallback(
+        (e: React.DragEvent) => {
+            if (!canStageFiles) return;
+            e.preventDefault();
+            e.stopPropagation();
+        },
+        [canStageFiles],
+    );
 
-    const handleDragLeave = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounterRef.current--;
-        if (dragCounterRef.current === 0) {
-            setIsDragOver(false);
-        }
-    }, []);
+    const handleDragLeave = useCallback(
+        (e: React.DragEvent) => {
+            if (!canStageFiles) return;
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounterRef.current--;
+            if (dragCounterRef.current === 0) {
+                setIsDragOver(false);
+            }
+        },
+        [canStageFiles],
+    );
 
     const handleDrop = useCallback(
         (e: React.DragEvent) => {
+            if (!canStageFiles) return;
             e.preventDefault();
             e.stopPropagation();
             dragCounterRef.current = 0;
@@ -347,7 +364,7 @@ function StartWorkflowView({
                 });
             }
         },
-        [maxFiles],
+        [maxFiles, canStageFiles],
     );
 
     const handleFileInputChange = useCallback(
@@ -389,7 +406,10 @@ function StartWorkflowView({
             sessionStorage.removeItem('plan-panel-shown');
 
             toast({
-                title: stagedFiles.length > 0 ? t('agent.startingAgentUploading') : t('agent.startingAgent'),
+                title:
+                    canStageFiles && stagedFiles.length > 0
+                        ? t('agent.startingAgentUploading')
+                        : t('agent.startingAgent'),
                 status: 'info',
                 duration: 3000,
             });
@@ -405,7 +425,7 @@ function StartWorkflowView({
             }
 
             // If files are staged, add a note to the message so the agent knows files are coming
-            if (stagedFiles.length > 0) {
+            if (canStageFiles && stagedFiles.length > 0) {
                 const fileNames = stagedFiles.map((f) => f.name).join(', ');
                 messageContent = [
                     messageContent,
@@ -420,7 +440,7 @@ function StartWorkflowView({
 
                 // Upload staged files to the new run's artifact space and signal agent
                 const uploadedFiles: string[] = [];
-                if (stagedFiles.length > 0) {
+                if (canStageFiles && stagedFiles.length > 0) {
                     for (const file of stagedFiles) {
                         try {
                             const artifactPath = `files/${file.name}`;
@@ -507,7 +527,7 @@ function StartWorkflowView({
     if (startedAgentRunId) {
         return (
             <ModernAgentConversationInner
-                {...{ onClose, isModal, initialMessage, placeholder }}
+                {...{ onClose, isModal, initialMessage, placeholder, hideFileUpload, allowWorkflowControl }}
                 agentRunId={startedAgentRunId}
                 title={title}
             />
@@ -522,13 +542,13 @@ function StartWorkflowView({
                     'flex flex-col h-full w-full overflow-hidden border-0 relative',
                     fullWidth ? '' : 'max-w-4xl',
                 )}
-                onDragEnter={handleDragEnter}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
+                onDragEnter={canStageFiles ? handleDragEnter : undefined}
+                onDragOver={canStageFiles ? handleDragOver : undefined}
+                onDragLeave={canStageFiles ? handleDragLeave : undefined}
+                onDrop={canStageFiles ? handleDrop : undefined}
             >
                 {/* Drag overlay for full-panel file drop */}
-                {isDragOver && (
+                {canStageFiles && isDragOver && (
                     <div className="absolute inset-0 flex items-center justify-center bg-info-background z-50 pointer-events-none rounded-lg">
                         <div className="text-info font-medium flex items-center gap-2 text-lg">
                             <UploadIcon className="size-6" />
@@ -538,14 +558,16 @@ function StartWorkflowView({
                 )}
 
                 {/* Hidden file input */}
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept={acceptedFileTypes}
-                    onChange={handleFileInputChange}
-                    className="hidden"
-                />
+                {canStageFiles && (
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept={acceptedFileTypes}
+                        onChange={handleFileInputChange}
+                        className="hidden"
+                    />
+                )}
 
                 {/* Header */}
                 <div className="flex items-center justify-between py-2 px-3 border-b border-border bg-background">
@@ -591,7 +613,7 @@ function StartWorkflowView({
                 {/* Input Area */}
                 <div className="py-3 px-3 border-t border-border bg-background">
                     {/* Staged files display */}
-                    {stagedFiles.length > 0 && (
+                    {canStageFiles && stagedFiles.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-3">
                             {stagedFiles.map((file, index) => (
                                 <div
@@ -615,18 +637,20 @@ function StartWorkflowView({
                     )}
 
                     {/* Upload button row */}
-                    <div className="flex gap-2 mb-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isSending || stagedFiles.length >= maxFiles}
-                            className="text-xs"
-                        >
-                            <UploadIcon className="size-3.5 me-1.5" />
-                            {t('agent.upload')}
-                        </Button>
-                    </div>
+                    {canStageFiles && (
+                        <div className="flex gap-2 mb-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isSending || stagedFiles.length >= maxFiles}
+                                className="text-xs"
+                            >
+                                <UploadIcon className="size-3.5 me-1.5" />
+                                {t('agent.upload')}
+                            </Button>
+                        </div>
+                    )}
 
                     <div className="flex items-end gap-2">
                         <textarea
@@ -654,7 +678,7 @@ function StartWorkflowView({
                         </Button>
                     </div>
                     <div className="text-xs text-muted mt-2 text-center">
-                        {stagedFiles.length > 0
+                        {canStageFiles && stagedFiles.length > 0
                             ? t('agent.filesStagedCount', { count: stagedFiles.length })
                             : t('agent.enterToSend')}
                     </div>
@@ -677,6 +701,7 @@ function ModernAgentConversationInner({
     onRestart,
     onClone,
     onShowDetails,
+    allowWorkflowControl = true,
     // File upload props (onFilesSelected handled internally by handleFileUpload)
     uploadedFiles,
     onRemoveFile,
@@ -794,6 +819,7 @@ function ModernAgentConversationInner({
         serverFileUpdates,
         toast,
     );
+    const canUploadFiles = interactive && !hideFileUpload;
 
     // ────────────────────────────────────────────
     // Local state (UI-only concerns)
@@ -1048,11 +1074,11 @@ function ModernAgentConversationInner({
 
     // Expose handleFileUpload to external callers via ref
     useEffect(() => {
-        if (fileUploadRef) fileUploadRef.current = handleFileUpload;
+        if (fileUploadRef) fileUploadRef.current = canUploadFiles ? handleFileUpload : null;
         return () => {
             if (fileUploadRef) fileUploadRef.current = null;
         };
-    }, [fileUploadRef, handleFileUpload]);
+    }, [fileUploadRef, handleFileUpload, canUploadFiles]);
 
     // Notify parent when processingFiles changes
     useEffect(() => {
@@ -1253,31 +1279,44 @@ function ModernAgentConversationInner({
     );
 
     // Drag and drop handlers for full-panel file upload
-    const handleDragEnter = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounterRef.current++;
-        if (e.dataTransfer?.types?.includes('Files')) {
-            setIsDragOver(true);
-        }
-    }, []);
+    const handleDragEnter = useCallback(
+        (e: React.DragEvent) => {
+            if (!canUploadFiles) return;
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounterRef.current++;
+            if (e.dataTransfer?.types?.includes('Files')) {
+                setIsDragOver(true);
+            }
+        },
+        [canUploadFiles],
+    );
 
-    const handleDragOver = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-    }, []);
+    const handleDragOver = useCallback(
+        (e: React.DragEvent) => {
+            if (!canUploadFiles) return;
+            e.preventDefault();
+            e.stopPropagation();
+        },
+        [canUploadFiles],
+    );
 
-    const handleDragLeave = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounterRef.current--;
-        if (dragCounterRef.current === 0) {
-            setIsDragOver(false);
-        }
-    }, []);
+    const handleDragLeave = useCallback(
+        (e: React.DragEvent) => {
+            if (!canUploadFiles) return;
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounterRef.current--;
+            if (dragCounterRef.current === 0) {
+                setIsDragOver(false);
+            }
+        },
+        [canUploadFiles],
+    );
 
     const handleDrop = useCallback(
         (e: React.DragEvent) => {
+            if (!canUploadFiles) return;
             e.preventDefault();
             e.stopPropagation();
             dragCounterRef.current = 0;
@@ -1288,7 +1327,7 @@ function ModernAgentConversationInner({
                 void handleFileUpload(filesArray);
             }
         },
-        [handleFileUpload],
+        [handleFileUpload, canUploadFiles],
     );
 
     // Stop/interrupt the active workflow
@@ -1321,11 +1360,11 @@ function ModernAgentConversationInner({
 
     // Expose stop handler to external callers via ref
     useEffect(() => {
-        if (stopRef) stopRef.current = !isCompleted ? handleStopWorkflow : null;
+        if (stopRef) stopRef.current = allowWorkflowControl && !isCompleted ? handleStopWorkflow : null;
         return () => {
             if (stopRef) stopRef.current = null;
         };
-    }, [stopRef, isCompleted, handleStopWorkflow]);
+    }, [stopRef, isCompleted, handleStopWorkflow, allowWorkflowControl]);
 
     // Notify parent when stopping state changes
     useEffect(() => {
@@ -1492,6 +1531,7 @@ function ModernAgentConversationInner({
                         resetWorkflow={resetWorkflow}
                         onClone={onClone}
                         onShowDetails={onShowDetails}
+                        allowWorkflowControl={allowWorkflowControl}
                         onExportPdf={exportConversationPdf}
                         isReceivingChunks={debugChunkFlash}
                     />
@@ -1560,7 +1600,7 @@ function ModernAgentConversationInner({
                         (showInput || canContinueConversation) && (
                             <MessageInput
                                 onSend={handleSendMessage}
-                                onStop={handleStopWorkflow}
+                                onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
                                 disabled={isUploading}
                                 isSending={isSending || isUploading}
                                 isStopping={isStopping}
@@ -1568,7 +1608,7 @@ function ModernAgentConversationInner({
                                 isCompleted={isCompleted}
                                 activeTaskCount={getActiveTaskCount()}
                                 placeholder={placeholder ?? 'Type your message...'}
-                                onFilesSelected={handleFileUpload}
+                                onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
                                 uploadedFiles={uploadedFiles}
                                 onRemoveFile={onRemoveFile}
                                 acceptedFileTypes={acceptedFileTypes}
@@ -1579,7 +1619,7 @@ function ModernAgentConversationInner({
                                 selectedDocuments={selectedDocuments}
                                 onRemoveDocument={onRemoveDocument}
                                 hideObjectLinking={hideObjectLinking}
-                                hideFileUpload={hideFileUpload}
+                                hideFileUpload={!canUploadFiles}
                                 className={inputContainerClassName}
                                 inputClassName={inputClassName}
                             />
@@ -1599,16 +1639,16 @@ function ModernAgentConversationInner({
                     ref={conversationLayoutRef}
                     className={cn(
                         'flex flex-col lg:flex-row gap-2 w-full h-full relative overflow-hidden',
-                        isDragOver && 'ring-2 ring-blue-400 ring-inset',
+                        canUploadFiles && isDragOver && 'ring-2 ring-blue-400 ring-inset',
                         className,
                     )}
-                    onDragEnter={handleDragEnter}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
+                    onDragEnter={canUploadFiles ? handleDragEnter : undefined}
+                    onDragOver={canUploadFiles ? handleDragOver : undefined}
+                    onDragLeave={canUploadFiles ? handleDragLeave : undefined}
+                    onDrop={canUploadFiles ? handleDrop : undefined}
                 >
                     {/* Drag overlay for full-panel file drop */}
-                    {isDragOver && (
+                    {canUploadFiles && isDragOver && (
                         <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg">
                             <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-lg">
                                 <UploadIcon className="size-6" />

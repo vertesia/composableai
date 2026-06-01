@@ -39,6 +39,7 @@ overrides:
   "@hono/node-server@<1.19.10": "^1.19.14"
   "hono@<4.12.14": "^4.12.19"
   "serialize-javascript@<7.0.3": "^7.0.5"
+  "tmp@<0.2.6": "^0.2.6"
   "dompurify@<=3.3.3": "^3.4.5"
   "undici@>=6.0.0 <6.21.3": "7.25.0"
   vite: "$vite"

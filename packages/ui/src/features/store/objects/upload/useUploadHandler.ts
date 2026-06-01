@@ -1,6 +1,6 @@
 import { errorMessage, useToast } from '@vertesia/ui/core';
-import { useUserSession } from '@vertesia/ui/session';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
+import { useUserSession } from '@vertesia/ui/session';
 import { useDocumentSearch } from '../search/DocumentSearchContext';
 import { FileUploadAction, useSmartFileUploadProcessing } from './useSmartFileUploadProcessing';
 

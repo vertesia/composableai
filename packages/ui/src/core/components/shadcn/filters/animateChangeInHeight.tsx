@@ -1,5 +1,5 @@
-import { cn } from '../../libs/utils';
 import { useEffect, useRef, useState } from 'react';
+import { cn } from '../../libs/utils';
 
 interface AnimateChangeInHeightProps {
     children: React.ReactNode;

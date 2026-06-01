@@ -1,7 +1,7 @@
 import type { ContentObject, DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
-import { DocumentNotFoundError } from '../errors.js';
 import { projectResult } from '../dsl/projections.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
+import { DocumentNotFoundError } from '../errors.js';
 
 export interface GetObjectParams {
     select?: string;

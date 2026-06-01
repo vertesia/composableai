@@ -1,3 +1,24 @@
+import type { ContentObjectTypeItem } from '@vertesia/common';
+import {
+    Button,
+    FilterBar,
+    FilterBtn,
+    FilterClear,
+    type FilterGroup,
+    type FilterOption,
+    FilterProvider,
+    Input,
+    Spinner,
+    Table,
+    TBody,
+    THead,
+    useIntersectionObserver,
+} from '@vertesia/ui/core';
+import { GenericPageNavHeader } from '@vertesia/ui/features';
+import { useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
+import { useNavigate } from '@vertesia/ui/router';
+import { useUserSession } from '@vertesia/ui/session';
+import { RefreshCw } from 'lucide-react';
 import {
     startTransition,
     useCallback,
@@ -8,31 +29,10 @@ import {
     useRef,
     useState,
 } from 'react';
-import { RefreshCw } from 'lucide-react';
-import {
-    Button,
-    type FilterGroup,
-    type FilterOption,
-    FilterBar,
-    FilterBtn,
-    FilterClear,
-    FilterProvider,
-    Input,
-    Spinner,
-    TBody,
-    THead,
-    Table,
-    useIntersectionObserver,
-} from '@vertesia/ui/core';
-import { GenericPageNavHeader } from '@vertesia/ui/features';
-import { useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
-import { useNavigate } from '@vertesia/ui/router';
-import { useUserSession } from '@vertesia/ui/session';
-import type { ContentObjectTypeItem } from '@vertesia/common';
 import { SortableHead } from '../../components/SortableHead';
-import { ContentObjectRow } from './components/ContentObjectRow';
 import { useContentObjectsListState } from './ContentObjectsListStateContext';
-import { STATUS_VALUES, type ContentObjectRowModel, type FilterableField, type SortField } from './types';
+import { ContentObjectRow } from './components/ContentObjectRow';
+import { type ContentObjectRowModel, type FilterableField, type SortField, STATUS_VALUES } from './types';
 import { statusVariant } from './utils';
 
 const SCROLL_HISTORY_KEY = 'contentObjectsScrollTop';

@@ -9,6 +9,7 @@
         "ignoreUnknown": true,
         "includes": [
             "!!**/llumiverse",
+            "**/package.json",
             "**/*.{js,cjs,mjs,jsx,ts,tsx,css,html}",
             "!**/dist/**",
             "!**/lib/**",
