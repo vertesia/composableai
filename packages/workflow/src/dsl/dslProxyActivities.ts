@@ -14,6 +14,16 @@ export type DslSimplifiedActivityFunction<ParamsT extends object = Record<string
     params: ParamsT,
 ) => Promise<ReturnT>;
 
+export function stripWorkflowContinuationFromVars<T>(vars: T): T {
+    if (!vars || typeof vars !== 'object' || Array.isArray(vars) || !('_continuation' in vars)) {
+        return vars;
+    }
+
+    const rest = { ...(vars as Record<string, unknown>) };
+    delete rest._continuation;
+    return rest as T;
+}
+
 export function dslProxyActivities<ActivitiesT extends object>(workflowName: string, options: ActivityOptions = {}) {
     type DslActivities = {
         [K in keyof ActivitiesT]: ActivitiesT[K] extends DslActivityFunction<infer ParamsT, infer ReturnT>
@@ -34,6 +44,7 @@ export function dslProxyActivities<ActivitiesT extends object>(workflowName: str
                 return (payload: WorkflowExecutionPayload, params: Record<string, unknown>) => {
                     return activityFn({
                         ...payload,
+                        vars: stripWorkflowContinuationFromVars(payload.vars),
                         activity: {
                             name: prop as string,
                         },
