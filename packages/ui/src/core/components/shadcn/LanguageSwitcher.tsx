@@ -4,7 +4,7 @@
 // module (including LanguageProviderContext) into vertesia-ui-core.js,
 // creating a private context separate from the one the shell mounts.
 // setLanguage would then no-op.
-import { SUPPORTED_LANGUAGES, useLanguage, useUITranslation, type SupportedLanguage } from '@vertesia/ui/i18n';
+import { SUPPORTED_LANGUAGES, type SupportedLanguage, useLanguage, useUITranslation } from '@vertesia/ui/i18n';
 import { SelectBox } from './selectBox';
 
 /**

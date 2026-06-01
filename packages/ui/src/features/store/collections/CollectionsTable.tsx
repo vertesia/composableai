@@ -1,24 +1,24 @@
-import { NavLink } from '@vertesia/ui/router';
-import { useUserSession } from '@vertesia/ui/session';
-import { FolderClosed, Search, Trash2 } from 'lucide-react';
 import {
     Button,
     ConfirmModal,
+    EmptyCollection,
     ErrorBox,
+    errorMessage,
     Table,
     TBody,
     TR,
+    useFetch,
     useToast,
     VTooltip,
-    useFetch,
-    EmptyCollection,
-    errorMessage,
 } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { NavLink } from '@vertesia/ui/router';
+import { useUserSession } from '@vertesia/ui/session';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { useState, useEffect } from 'react';
+import { FolderClosed, Search, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { CreateCollectionModal } from './CreateCollection';
-import { useUITranslation } from '@vertesia/ui/i18n';
 
 dayjs.extend(relativeTime);
 

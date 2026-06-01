@@ -1,8 +1,8 @@
-import * as React from 'react';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
-import { cn } from '../libs/utils';
 import type { ReactNode } from 'react';
+import * as React from 'react';
 import { usePortalContainer } from '../../hooks/PortalContainerProvider';
+import { cn } from '../libs/utils';
 
 const TooltipProvider: typeof TooltipPrimitive.Provider = TooltipPrimitive.Provider;
 
@@ -95,4 +95,4 @@ export function VTooltip({
         </TooltipProvider>
     );
 }
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };
+export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger };

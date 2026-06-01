@@ -1,5 +1,5 @@
-import { useIntersectionObserver } from './useIntersectionObserver';
 import { useEffect, useRef, useState } from 'react';
+import { useIntersectionObserver } from './useIntersectionObserver';
 
 interface SearchResponse<ResultT, PageT> {
     /**

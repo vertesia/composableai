@@ -1,20 +1,20 @@
+import type { FacetBucket } from '@vertesia/common';
 import {
-    Button,
     type Filter as BaseFilter,
-    FilterProvider,
-    FilterBtn,
+    Button,
     FilterBar,
+    FilterBtn,
     FilterClear,
     type FilterGroup,
+    FilterProvider,
 } from '@vertesia/ui/core';
+import { RefreshCw } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { VInteractionFacet } from './utils/VInteractionFacet';
+import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
 import type { EnrichedFacetBucket } from './utils/VInteractionFacet';
+import { VInteractionFacet } from './utils/VInteractionFacet';
 import { VStringFacet } from './utils/VStringFacet';
 import { VUserFacet } from './utils/VUserFacet';
-import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
-import { RefreshCw } from 'lucide-react';
-import type { FacetBucket } from '@vertesia/common';
 
 interface AgentRunnerFacetsNavProps {
     facets: {

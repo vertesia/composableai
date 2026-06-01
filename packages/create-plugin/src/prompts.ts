@@ -1,8 +1,9 @@
 /**
  * User prompts for configuration
  */
-import prompts from 'prompts';
+
 import chalk from 'chalk';
+import prompts from 'prompts';
 import type { PromptConfig, TemplateConfig } from './template-config.js';
 import { applyMapTransform, applyTransform, concatValues } from './transforms.js';
 

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useCallback } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 
 import { cn } from '../libs/utils';
 
@@ -58,5 +58,5 @@ function Textarea({ className, minLines, maxLines, value, ...props }: TextareaPr
     );
 }
 
-export { Textarea };
 export type { TextareaProps };
+export { Textarea };

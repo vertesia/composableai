@@ -1,8 +1,8 @@
+import type { OnResultCallback } from './commands.js';
 import type { Profile } from './index.js';
 import { config, shouldRefreshProfileToken } from './index.js';
-import type { OnResultCallback } from './commands.js';
-import { canUseOAuthProfile, refreshOAuthSession } from './oauth.js';
 import { readAuthBundle, readProfileAccessToken } from './keyring.js';
+import { canUseOAuthProfile, refreshOAuthSession } from './oauth.js';
 import type { ConfigResult } from './server/index.js';
 
 export async function ensureProfileAccessToken(
@@ -53,6 +53,7 @@ export async function refreshProfileAuthentication(
     try {
         const refreshed = await refreshProfileAccessToken(profile, onResult, options);
         if (refreshed) {
+            logRefreshSuccess(profileName, refreshed);
             return refreshed;
         }
     } catch (error) {
@@ -72,6 +73,17 @@ export async function refreshProfileAuthentication(
     const updater = config.updateProfile(profileName);
     await updater.start(onResult, signal);
     return undefined;
+}
+
+function logRefreshSuccess(profileName: string, result: ConfigResult): void {
+    const expiresAtMs =
+        typeof result.access_token_expires_at === 'number'
+            ? result.access_token_expires_at
+            : typeof result.expires_in === 'number'
+              ? Date.now() + result.expires_in * 1000
+              : undefined;
+    const suffix = expiresAtMs ? ` (expires ${new Date(expiresAtMs).toISOString()})` : '';
+    console.log(`Refreshed access token for profile "${profileName}"${suffix}.`);
 }
 
 export async function refreshCurrentProfileAuthentication(

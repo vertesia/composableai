@@ -1,7 +1,7 @@
-import type React from 'react';
 import type { Element } from 'hast';
-import { useResolvedUrl, parseUrlScheme, mapSchemeToRoute } from './useResolvedUrl';
+import type React from 'react';
 import { CodeBlockPlaceholder } from './CodeBlockPlaceholder';
+import { mapSchemeToRoute, parseUrlScheme, useResolvedUrl } from './useResolvedUrl';
 
 export interface MarkdownLinkProps {
     node?: Element;

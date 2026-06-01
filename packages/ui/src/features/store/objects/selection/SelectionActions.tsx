@@ -1,10 +1,9 @@
 import type { ContentObjectTypeItem } from '@vertesia/common';
 import { Button, Popover, PopoverContent, PopoverTrigger, SelectList } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import clsx from 'clsx';
 import { EllipsisVertical, X } from 'lucide-react';
-
 import { useState } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { type DocumentSelection, useDocumentSelection } from '../DocumentSelectionProvider.js';
 import { DocumentUploadModal } from '../upload/DocumentUploadModal.js';
 import { ExportPropertiesAction } from './actions/ExportPropertiesAction';
@@ -15,8 +14,16 @@ import type { ObjectsActionSpec } from './ObjectsActionSpec';
 
 interface SelectionActionsProps {
     type?: ContentObjectTypeItem;
+    allowMutations?: boolean;
+    allowDelete?: boolean;
+    allowWorkflowRun?: boolean;
 }
-export function SelectionActions({ type }: SelectionActionsProps) {
+export function SelectionActions({
+    type,
+    allowMutations = true,
+    allowDelete = true,
+    allowWorkflowRun = true,
+}: SelectionActionsProps) {
     const selection = useDocumentSelection();
     const size = selection.size();
     const plural = size > 1 ? 's' : '';
@@ -41,13 +48,22 @@ export function SelectionActions({ type }: SelectionActionsProps) {
                         </Button>
                     </div>
                 )}
-                <SelectionActionsPopover selection={selection}>
-                    <Button variant="ghost" alt="More action" size="sm">
-                        <EllipsisVertical size={16} />
-                    </Button>
+                <SelectionActionsPopover
+                    selection={selection}
+                    allowMutations={allowMutations}
+                    allowDelete={allowDelete}
+                    allowWorkflowRun={allowWorkflowRun}
+                >
+                    {(actions) =>
+                        actions.length > 0 ? (
+                            <Button variant="ghost" alt="More action" size="sm">
+                                <EllipsisVertical size={16} />
+                            </Button>
+                        ) : null
+                    }
                 </SelectionActionsPopover>
                 {/* StartWorkflowButton must be inside the context */}
-                {hasSelection && <ActionsWrapper selection={selection} />}
+                {hasSelection && allowWorkflowRun && <ActionsWrapper selection={selection} />}
             </div>
         </ObjectsActionContextProvider>
     );
@@ -118,20 +134,37 @@ function optionLayout(option: ObjectsActionSpec) {
 }
 
 interface SelectionActionsPopoverProps {
-    children: React.ReactNode;
+    children: (actions: ObjectsActionSpec[]) => React.ReactNode;
     selection: DocumentSelection;
 }
-function SelectionActionsPopover({ selection, children }: SelectionActionsPopoverProps) {
+function SelectionActionsPopover({
+    selection,
+    children,
+    allowMutations = true,
+    allowDelete = true,
+    allowWorkflowRun = true,
+}: SelectionActionsPopoverProps &
+    Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete' | 'allowWorkflowRun'>>) {
     const context = useObjectsActionContext();
     const executeAction = (action: ObjectsActionSpec) => {
         context.run(action.id);
     };
+    const actions = getAvailableActions(context.actions, selection, {
+        allowMutations,
+        allowDelete,
+        allowWorkflowRun,
+    });
+    const trigger = children(actions);
+
+    if (!trigger) {
+        return null;
+    }
 
     return (
         <Popover hover>
-            <PopoverTrigger>{children}</PopoverTrigger>
+            <PopoverTrigger>{trigger}</PopoverTrigger>
             <PopoverContent className="p-0 w-50" align="end" sideOffset={6}>
-                <PopoverBody executeAction={executeAction} selection={selection} />
+                <PopoverBody executeAction={executeAction} actions={actions} />
             </PopoverContent>
         </Popover>
     );
@@ -139,24 +172,44 @@ function SelectionActionsPopover({ selection, children }: SelectionActionsPopove
 
 interface PopoverBodyProps {
     executeAction: (action: ObjectsActionSpec) => void;
-    selection: DocumentSelection;
+    actions: ObjectsActionSpec[];
 }
-function PopoverBody({ executeAction, selection }: PopoverBodyProps) {
-    const context = useObjectsActionContext();
-
+function PopoverBody({ executeAction, actions }: PopoverBodyProps) {
     const _executeAction = (action: ObjectsActionSpec) => {
         executeAction(action);
     };
 
-    const _selection = selection?.hasSelection()
-        ? context.actions.filter((action: ObjectsActionSpec) => !action.hideInList)
-        : [ExportPropertiesAction];
-
     return (
         <div className="rounded-md shadow-md py-2">
             <div className="px-1 text-sm">
-                <SelectList options={_selection} optionLayout={optionLayout} onChange={_executeAction} noCheck />
+                <SelectList options={actions} optionLayout={optionLayout} onChange={_executeAction} noCheck />
             </div>
         </div>
     );
+}
+
+function getAvailableActions(
+    actions: ObjectsActionSpec[],
+    selection: DocumentSelection,
+    permissions: Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete' | 'allowWorkflowRun'>>,
+): ObjectsActionSpec[] {
+    if (!selection?.hasSelection()) {
+        return [ExportPropertiesAction];
+    }
+
+    return actions.filter((action: ObjectsActionSpec) => {
+        if (action.hideInList) {
+            return false;
+        }
+        if (action.id === 'startWorkflow') {
+            return permissions.allowWorkflowRun;
+        }
+        if (action.id === 'delete' || action.id === 'deleteFromCollections') {
+            return permissions.allowDelete;
+        }
+        if (action.id === 'changeType' || action.id === 'addToCollection' || action.id === 'removeFromCollection') {
+            return permissions.allowMutations;
+        }
+        return true;
+    });
 }

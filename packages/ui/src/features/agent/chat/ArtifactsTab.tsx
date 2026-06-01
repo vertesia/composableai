@@ -1,4 +1,5 @@
 import { Button, ErrorBox } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     ChevronDownIcon,
@@ -11,8 +12,7 @@ import {
     RefreshCwIcon,
 } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
-import { useArtifacts, type ArtifactTreeNode } from './hooks/useArtifacts.js';
+import { type ArtifactTreeNode, useArtifacts } from './hooks/useArtifacts.js';
 
 // ---------------------------------------------------------------------------
 // Tree node component

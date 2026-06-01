@@ -1,11 +1,11 @@
+import { useUITranslation } from '@vertesia/ui/i18n';
 import dayjs from 'dayjs';
 import type React from 'react';
 import { useState } from 'react';
 import Calendar from 'react-calendar';
 import { Button } from '../../button';
-import type { Filter, FilterGroup } from '../types';
 import { calendarStyles } from '../filter-styles';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import type { Filter, FilterGroup } from '../types';
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];

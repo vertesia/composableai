@@ -1,7 +1,7 @@
-import type { Command } from 'commander';
-import { getClient } from '../client.js';
 import type { ExecutionEnvironment } from '@vertesia/common';
 import colors from 'ansi-colors';
+import type { Command } from 'commander';
+import { getClient } from '../client.js';
 
 export async function listEnvironments(program: Command, envId: string | undefined, options: Record<string, unknown>) {
     const client = await getClient(program);

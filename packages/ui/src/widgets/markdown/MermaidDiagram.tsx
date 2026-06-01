@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useId } from 'react';
 import mermaid from 'mermaid';
+import { useEffect, useId, useRef, useState } from 'react';
 
 const MERMAID_FONT_FAMILY =
     'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';

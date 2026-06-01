@@ -4,9 +4,9 @@
  */
 
 import Ajv from 'ajv';
-import type { FragmentTemplate, ValidationResult, ValidationError } from '../types.js';
-import { FragmentTemplateSchema } from './schemas.js';
+import type { FragmentTemplate, ValidationError, ValidationResult } from '../types.js';
 import { findClosestKey } from './fuzzyMatch.js';
+import { FragmentTemplateSchema } from './schemas.js';
 
 // Create AJV instance with all errors enabled
 const ajv = new Ajv({ allErrors: true, verbose: true });

@@ -10,15 +10,15 @@ export * from './Link.js';
 export * from './MenuList.js';
 export * from './NumberInput.js';
 export * from './Overlay.js';
-export * from './popup/index.js';
 export * from './Portal.js';
+export * from './popup/index.js';
 export * from './SelectList.js';
-export * from './shadcn/index.js';
 export * from './SidePanel.js';
 export * from './Spinner.js';
+export * from './shadcn/index.js';
 export * from './styles.js';
-export * from './table/index.js';
 export * from './TagsInput.js';
+export * from './table/index.js';
 export * from './toast/index.js';
 
 export type HeroIcon = React.ForwardRefExoticComponent<

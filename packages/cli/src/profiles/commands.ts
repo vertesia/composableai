@@ -2,13 +2,14 @@ import { VertesiaClient } from '@vertesia/client';
 import colors from 'ansi-colors';
 import enquirer from 'enquirer';
 import jwt from 'jsonwebtoken';
+import { ensureProfileAccessToken, refreshCurrentProfileAuthentication, refreshProfileAuthentication } from './auth.js';
 import {
     AVAILABLE_REGIONS,
-    DEFAULT_REGION,
-    type Region,
     config,
+    DEFAULT_REGION,
     getConfigUrl,
     getServerUrls,
+    type Region,
     shouldRefreshProfileToken,
 } from './index.js';
 import {
@@ -18,8 +19,8 @@ import {
     readAuthBundle,
     writeAuthBundle,
 } from './keyring.js';
-import { ensureProfileAccessToken, refreshCurrentProfileAuthentication, refreshProfileAuthentication } from './auth.js';
 import type { ConfigResult } from './server/index.js';
+
 const { prompt } = enquirer;
 
 export type OnResultCallback = (result: ConfigResult | undefined) => void | Promise<void>;

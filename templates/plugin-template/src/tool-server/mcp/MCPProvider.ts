@@ -1,5 +1,4 @@
-import type { MCPConnectionDetails } from '@vertesia/tools-sdk';
-import type { AuthSession } from '@vertesia/tools-sdk';
+import type { AuthSession, MCPConnectionDetails } from '@vertesia/tools-sdk';
 
 export abstract class MCPProvider {
     name: string;

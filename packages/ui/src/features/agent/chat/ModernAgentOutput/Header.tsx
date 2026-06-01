@@ -1,5 +1,6 @@
 import type { AgentRun } from '@vertesia/common';
-import { Button, Dropdown, MenuGroup, MenuItem, cn, useToast } from '@vertesia/ui/core';
+import { Button, cn, Dropdown, MenuGroup, MenuItem, useToast } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     Bot,
@@ -10,10 +11,8 @@ import {
     GitFork,
     InfoIcon,
     MoreVertical,
-    RefreshCcw,
     XIcon,
 } from 'lucide-react';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { PayloadBuilderProvider, usePayloadBuilder } from '../../PayloadBuilder';
 import type { AgentConversationViewMode } from './AllMessagesMixed';
 import { getConversationUrl } from './utils';
@@ -39,7 +38,13 @@ export interface HeaderProps {
     onExportPdf?: () => void;
     /** Called to show run details/internals modal */
     onShowDetails?: () => void;
-    /** Called after a restart succeeds — receives the new AgentRun */
+    /** Whether workflow control actions such as cancel should be shown. */
+    allowWorkflowControl?: boolean;
+    /**
+     * @deprecated No longer used. Continuing a completed conversation now happens
+     * automatically when the user sends a message. Kept as an optional no-op to preserve
+     * type compatibility for external consumers of this public component.
+     */
     onRestart?: (newRun: AgentRun) => void;
     /** Called after a clone succeeds — receives the new AgentRun */
     onClone?: (newRun: AgentRun) => void;
@@ -67,13 +72,12 @@ export default function Header({
     resetWorkflow,
     onExportPdf,
     onShowDetails,
-    onRestart,
+    allowWorkflowControl = true,
     onClone,
     isReceivingChunks = false,
     className,
 }: HeaderProps) {
     const { t } = useUITranslation();
-    const continueWorkflow = useContinueWorkflow(agentRunId, onRestart);
     return (
         <PayloadBuilderProvider>
             <div
@@ -140,19 +144,6 @@ export default function Header({
                         </div>
                     )}
 
-                    {onRestart && isTerminal && (
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={continueWorkflow}
-                            className="transition-all duration-200 rounded-md"
-                            title={t('agent.continueConversation')}
-                        >
-                            <RefreshCcw className="size-4 me-1.5" />
-                            <span className="font-medium text-xs">{t('agent.continueConversation')}</span>
-                        </Button>
-                    )}
-
                     {/* More actions */}
                     <MoreDropdown
                         agentRunId={agentRunId}
@@ -164,7 +155,7 @@ export default function Header({
                         resetWorkflow={resetWorkflow}
                         onExportPdf={onExportPdf}
                         onShowDetails={onShowDetails}
-                        onRestart={onRestart}
+                        allowWorkflowControl={allowWorkflowControl}
                         onClone={onClone}
                     />
                     {onClose && !isModal && (
@@ -178,30 +169,6 @@ export default function Header({
     );
 }
 
-function useContinueWorkflow(agentRunId: string, onRestart?: (newRun: AgentRun) => void) {
-    const { t } = useUITranslation();
-    const toast = useToast();
-    const { client } = useUserSession();
-
-    return async () => {
-        try {
-            const newRun = await client.agents.restart(agentRunId);
-            toast({
-                status: 'success',
-                title: t('agent.conversationContinued'),
-                duration: 2000,
-            });
-            onRestart?.(newRun);
-        } catch (_error) {
-            toast({
-                status: 'error',
-                title: t('agent.failedToContinueConversation'),
-                duration: 2000,
-            });
-        }
-    };
-}
-
 function MoreDropdown({
     agentRunId,
     workflowRunId,
@@ -212,7 +179,7 @@ function MoreDropdown({
     resetWorkflow,
     onExportPdf,
     onShowDetails,
-    onRestart,
+    allowWorkflowControl = true,
     onClone,
 }: {
     agentRunId: string;
@@ -225,14 +192,13 @@ function MoreDropdown({
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
     onShowDetails?: () => void;
-    onRestart?: (newRun: AgentRun) => void;
+    allowWorkflowControl?: boolean;
     onClone?: (newRun: AgentRun) => void;
 }) {
     const { t } = useUITranslation();
     const toast = useToast();
     const { client } = useUserSession();
     const builder = usePayloadBuilder();
-    const continueWorkflow = useContinueWorkflow(agentRunId, onRestart);
 
     const cancelWorkflow = async () => {
         try {
@@ -346,17 +312,12 @@ function MoreDropdown({
                         <XIcon className="size-3.5 text-muted" /> {t('agent.close')}
                     </MenuItem>
                 )}
-                {onRestart && isTerminal && (
-                    <MenuItem onClick={continueWorkflow}>
-                        <RefreshCcw className="size-3.5 text-muted" /> {t('agent.continueConversation')}
-                    </MenuItem>
-                )}
                 {onClone && (
                     <MenuItem onClick={cloneWorkflow}>
                         <GitFork className="size-3.5 text-muted" /> {t('agent.cloneConversation')}
                     </MenuItem>
                 )}
-                {!isTerminal && (
+                {allowWorkflowControl && !isTerminal && (
                     <MenuItem onClick={cancelWorkflow} variant="destructive">
                         <XIcon className="size-3.5" /> {t('agent.cancelWorkflow')}
                     </MenuItem>

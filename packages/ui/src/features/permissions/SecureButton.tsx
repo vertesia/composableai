@@ -9,8 +9,7 @@ export function SecureButton({ permission, isDisabled, title, children, ...other
     const perms = useUserPermissions();
     const hasPermission = perms.hasPermission(permission);
     if (!hasPermission) {
-        isDisabled = true;
-        title = 'You do not have permission to perform this action';
+        return null;
     }
     return (
         <Button isDisabled={isDisabled} title={title} {...others}>

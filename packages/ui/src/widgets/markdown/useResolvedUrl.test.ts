@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { parseUrlScheme, mapSchemeToRoute } from './useResolvedUrl';
+import { describe, expect, it } from 'vitest';
+import { mapSchemeToRoute, parseUrlScheme } from './useResolvedUrl';
 
 describe('parseUrlScheme', () => {
     it('should parse artifact: URLs', () => {

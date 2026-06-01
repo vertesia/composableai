@@ -2,7 +2,7 @@
  * Tests for frontmatter parser
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { parseFrontmatter } from '../src/parsers/frontmatter.js';
 
 describe('Frontmatter Parser', () => {

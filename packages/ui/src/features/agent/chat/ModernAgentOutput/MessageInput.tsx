@@ -1,4 +1,6 @@
-import { Button, Spinner, Modal, ModalBody, ModalTitle, VTooltip, cn, Textarea } from '@vertesia/ui/core';
+import { type ContentObjectItem, type ConversationFile, FileProcessingStatus } from '@vertesia/common';
+import { Button, cn, Modal, ModalBody, ModalTitle, Spinner, Textarea, VTooltip } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import {
     Activity,
     FileTextIcon,
@@ -11,9 +13,7 @@ import {
 } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { type ContentObjectItem, type ConversationFile, FileProcessingStatus } from '@vertesia/common';
 import { SelectDocument } from '../../../store/objects/components/SelectDocument';
-import { useUITranslation } from '@vertesia/ui/i18n';
 
 /** Represents an uploaded file attachment */
 export interface UploadedFile {

@@ -1,8 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
-
-import { ContentObjectTypesTable } from './ContentObjectTypesTable';
-import { useWatchSearchResult } from './search/ObjectTypeSearchContext';
-
 import {
     EmptyCollection,
     ErrorBox,
@@ -12,11 +7,13 @@ import {
     useIntersectionObserver,
     useToast,
 } from '@vertesia/ui/core';
-import { useUserSession } from '@vertesia/ui/session';
-import { useTypeRegistry } from './TypeRegistryProvider.js';
 import { useUITranslation } from '@vertesia/ui/i18n';
-
+import { useUserSession } from '@vertesia/ui/session';
+import { useEffect, useRef, useState } from 'react';
+import { ContentObjectTypesTable } from './ContentObjectTypesTable';
 import { CreateOrUpdateTypeModal, type CreateOrUpdateTypePayload } from './CreateOrUpdateTypeModal';
+import { useWatchSearchResult } from './search/ObjectTypeSearchContext';
+import { useTypeRegistry } from './TypeRegistryProvider.js';
 
 enum ChunkableOptions {
     true = 'Yes',

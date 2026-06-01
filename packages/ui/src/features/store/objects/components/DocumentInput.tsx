@@ -1,11 +1,11 @@
-import clsx from 'clsx';
-import { type ChangeEvent, useCallback, useEffect, useState } from 'react';
+import type { ContentObjectItem } from '@vertesia/common';
+import { Button, Styles, useFlag } from '@vertesia/ui/core';
 
 import { useUserSession } from '@vertesia/ui/session';
-import type { ContentObjectItem } from '@vertesia/common';
-import { ChevronsUpDown, X } from 'lucide-react';
-import { Button, Styles, useFlag } from '@vertesia/ui/core';
 import type { Node } from '@vertesia/ui/widgets';
+import clsx from 'clsx';
+import { ChevronsUpDown, X } from 'lucide-react';
+import { type ChangeEvent, useCallback, useEffect, useState } from 'react';
 
 import { SelectDocumentModal } from './SelectDocumentModal';
 

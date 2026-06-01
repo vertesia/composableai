@@ -1,7 +1,6 @@
 import * as PopoverPrimitive from '@radix-ui/react-popover';
-import * as React from 'react';
-
 import type { JSX } from 'react';
+import * as React from 'react';
 import { usePortalContainer } from '../../hooks/PortalContainerProvider';
 import { cn } from '../libs/utils';
 

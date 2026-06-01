@@ -1,9 +1,7 @@
-import { useState } from 'react';
-
-import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { Button, errorMessage, useToast } from '@vertesia/ui/core';
-
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { useState } from 'react';
 import type { ManagedSchema, SchemaNode } from '../ManagedSchema.js';
 import { TypeNames } from '../type-signature.js';
 import { Editable } from './Editable.js';

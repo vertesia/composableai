@@ -1,9 +1,9 @@
 import colors from 'ansi-colors';
 import type { Command } from 'commander';
-import { getClient } from '../client.js';
-import { config } from '../profiles/index.js';
-import { refreshCurrentProfileAuthentication } from '../profiles/auth.js';
 import enquirer from 'enquirer';
+import { getClient } from '../client.js';
+import { refreshCurrentProfileAuthentication } from '../profiles/auth.js';
+import { config } from '../profiles/index.js';
 
 const { prompt } = enquirer;
 
