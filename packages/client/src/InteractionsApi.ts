@@ -1,9 +1,10 @@
-import { ApiTopic, type ClientBase, ServerError } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase, type IRequestParams, ServerError } from '@vertesia/api-fetch-client';
 import type {
     AsyncExecutionPayload,
     AsyncExecutionResult,
     ComputeInteractionFacetPayload,
     ComputedFacetResponse,
+    DeleteByIdResult,
     GenerateInteractionPayload,
     GenerateTestDataPayload,
     GeneratedInteractionDefinition,
@@ -156,6 +157,20 @@ export default class InteractionsApi extends ApiTopic {
         return this.put(`/${id}`, {
             payload,
         });
+    }
+
+    /**
+     * Delete an interaction. Pass `cascade: true` to also delete every interaction whose
+     * `parent` is this id (its draft forks and/or published versions). Cascade is forward-only
+     * and never deletes the parent of the target.
+     *
+     * The second argument shape is `IRequestParams & { cascade?: boolean }` so this remains
+     * assignment-compatible with the inherited `ApiTopic.delete(path, params)` signature.
+     */
+    delete(id: string, options?: IRequestParams & { cascade?: boolean }): Promise<DeleteByIdResult> {
+        const { cascade, query, ...rest } = options ?? {};
+        const mergedQuery = cascade ? { ...(query ?? {}), cascade: 'true' } : (query ?? undefined);
+        return super.delete(`/${id}`, { ...rest, query: mergedQuery }) as Promise<DeleteByIdResult>;
     }
 
     /**
