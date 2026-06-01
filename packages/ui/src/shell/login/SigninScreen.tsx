@@ -11,6 +11,7 @@ import SignInProvidersStep from './SignInProvidersStep';
 import SignInReturningStep from './SignInReturningStep';
 import SignInTenantBlockedStep from './SignInTenantBlockedStep';
 import SignInTenantStep from './SignInTenantStep';
+import SignupForm from './SignupForm';
 import {
     clearLastSession,
     clearPendingSignin,
@@ -21,8 +22,6 @@ import {
     readPendingSignin,
     writeLastSession,
 } from './signInUtils';
-import SigninPreview from './SigninPreview';
-import SignupForm from './SignupForm';
 
 interface SigninScreenProps {
     isNested?: boolean;
@@ -43,9 +42,6 @@ export function SigninScreen({
     useSafeLayoutEffect(() => {
         if (allowedPrefix) setAllow(window.location.pathname.startsWith(allowedPrefix));
     }, [allowedPrefix]);
-    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === 'signin') {
-        return <SigninPreview />;
-    }
     return allow ? null : (
         <SigninScreenImpl isNested={isNested} lightLogo={lightLogo} darkLogo={darkLogo} preservePath={preservePath} />
     );
