@@ -165,8 +165,9 @@ interface ContentOverviewProps {
     object: ContentObject;
     loadText?: boolean;
     refetch?: () => Promise<unknown>;
+    canEditProperties?: boolean;
 }
-export function ContentOverview({ object, loadText, refetch }: ContentOverviewProps) {
+export function ContentOverview({ object, loadText, refetch, canEditProperties = true }: ContentOverviewProps) {
     const toast = useToast();
     const { t } = useUITranslation();
 
@@ -199,6 +200,7 @@ export function ContentOverview({ object, loadText, refetch }: ContentOverviewPr
                     object={object}
                     refetch={refetch ?? (() => Promise.resolve())}
                     handleCopyContent={handleCopyContent}
+                    canEditProperties={canEditProperties}
                 />
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -219,10 +221,12 @@ function PropertiesPanel({
     object,
     refetch,
     handleCopyContent,
+    canEditProperties,
 }: {
     object: ContentObject;
     refetch: () => Promise<unknown>;
     handleCopyContent: (content: string, type: 'text' | 'properties') => Promise<void>;
+    canEditProperties: boolean;
 }) {
     const { t } = useUITranslation();
     const [viewCode, setViewCode] = useState(false);
@@ -271,15 +275,18 @@ function PropertiesPanel({
                                 <Copy className="size-4" />
                             </Button>
                         )}
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleOpenPropertiesModal}
-                            title="Edit properties"
-                            className="flex items-center gap-2"
-                        >
-                            <SquarePen className="size-4" />
-                        </Button>
+                        {canEditProperties && (
+                            <SecureButton
+                                permission={Permission.content_write}
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleOpenPropertiesModal}
+                                title="Edit properties"
+                                className="flex items-center gap-2"
+                            >
+                                <SquarePen className="size-4" />
+                            </SecureButton>
+                        )}
                     </div>
                 </div>
 

@@ -57,11 +57,12 @@ export function getConfigUrl(value: ConfigUrlRef, region: Region = DEFAULT_REGIO
 export function getServerUrls(
     value: ConfigUrlRef,
     region: Region = DEFAULT_REGION,
-): { studio_server_url: string; zeno_server_url: string } {
+): { studio_server_url: string; zeno_server_url: string; oauth_server_url?: string } {
     if (isDevDeploymentTarget(value)) {
         return {
             studio_server_url: `https://studio-server-${value}.api.dev1.vertesia.io`,
             zeno_server_url: `https://zeno-server-${value}.api.dev1.vertesia.io`,
+            oauth_server_url: 'https://sts.dev1.vertesia.io',
         };
     }
     switch (value) {
@@ -69,26 +70,32 @@ export function getServerUrls(
             return {
                 studio_server_url: 'http://localhost:8091',
                 zeno_server_url: 'http://localhost:8092',
+                // Local CLI dev still authenticates against the shared dev1 STS.
+                oauth_server_url: 'https://sts.dev1.vertesia.io',
             };
         case 'dev-main':
             return {
                 studio_server_url: 'https://studio-server-dev-main.api.dev1.vertesia.io',
                 zeno_server_url: 'https://zeno-server-dev-main.api.dev1.vertesia.io',
+                oauth_server_url: 'https://sts.dev1.vertesia.io',
             };
         case 'dev-preview':
             return {
                 studio_server_url: 'https://studio-server-dev-preview.api.dev1.vertesia.io',
                 zeno_server_url: 'https://zeno-server-dev-preview.api.dev1.vertesia.io',
+                oauth_server_url: 'https://sts.dev1.vertesia.io',
             };
         case 'preview':
             return {
                 studio_server_url: `https://api-preview.${region}.vertesia.io`,
                 zeno_server_url: `https://api-preview.${region}.vertesia.io`,
+                oauth_server_url: `https://sts-preview.${region}.vertesia.io`,
             };
         case 'prod':
             return {
                 studio_server_url: `https://api.${region}.vertesia.io`,
                 zeno_server_url: `https://api.${region}.vertesia.io`,
+                oauth_server_url: `https://sts.${region}.vertesia.io`,
             };
         default:
             throw new Error('Unable to detect server urls from custom target.');
@@ -129,6 +136,10 @@ export interface Profile {
     project: string;
     studio_server_url: string;
     zeno_server_url: string;
+    // Optional: when set, the CLI uses this URL directly as the OAuth authorization server
+    // (no fallback derivation from studio_server_url). Old profiles without this field keep
+    // working via the legacy derivation in oauth.ts.
+    oauth_server_url?: string;
     region?: Region;
     session_tags?: string;
 }
@@ -182,6 +193,9 @@ export class ConfigureProfile {
         this.data.project = result.project;
         this.data.studio_server_url = result.studio_server_url;
         this.data.zeno_server_url = result.zeno_server_url;
+        if (result.oauth_server_url) {
+            this.data.oauth_server_url = result.oauth_server_url;
+        }
         delete this.data.apikey;
         writeAuthBundle(result.profile, {
             accessToken: result.token,
