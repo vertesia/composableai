@@ -1,4 +1,4 @@
-import { render, type RenderOptions, type RenderResult } from '@testing-library/react';
+import { type RenderOptions, type RenderResult, render } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
 // Use the relative source path so Vitest loads the same React instance the
 // tests themselves use. Going through @vertesia/ui/i18n resolves to the

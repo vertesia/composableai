@@ -12,6 +12,7 @@
  * (workflowId, runId) are internal server concerns.
  */
 
+import type { UserChannel } from '../email.js';
 import type {
     AgentSearchScope,
     ConversationVisibility,
@@ -19,11 +20,10 @@ import type {
     InteractionRef,
     RunSource,
 } from '../interaction.js';
-import type { UserChannel } from '../email.js';
 import type { AgentEvent } from '../workflow-analytics.js';
+import type { ProcessDefinitionBody, ProcessState } from './process.js';
 import type { UserInputSignal } from './signals.js';
 import type { ContentObjectTypeRef } from './store.js';
-import type { ProcessDefinitionBody, ProcessState } from './process.js';
 import type {
     AgentMessage,
     CompactMessage,

@@ -1,15 +1,15 @@
 import { type AgentMessage, AgentMessageType, type UserInputSignal } from '@vertesia/common';
-import chalk from 'chalk';
-import { getClient } from '../client.js';
 import boxen from 'boxen';
-import ora from 'ora';
-import gradient from 'gradient-string';
-import figures from 'figures';
-import logUpdate from 'log-update';
-import logSymbols from 'log-symbols';
-import * as readline from 'readline';
+import chalk from 'chalk';
 import type { Command } from 'commander';
-import { getStringOption, isRecord, type CliOptions } from '../utils/options.js';
+import figures from 'figures';
+import gradient from 'gradient-string';
+import logSymbols from 'log-symbols';
+import logUpdate from 'log-update';
+import ora from 'ora';
+import * as readline from 'readline';
+import { getClient } from '../client.js';
+import { type CliOptions, getStringOption, isRecord } from '../utils/options.js';
 
 // Define emoji icons for different message types (using integer enum keys)
 const typeIcons: Partial<Record<AgentMessageType, string>> = {

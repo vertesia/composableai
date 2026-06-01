@@ -1,5 +1,5 @@
-import { joinPath } from './path';
 import { PathWithParams } from './PathWithParams';
+import { joinPath } from './path';
 
 const BASE_PATH = Symbol('BASE_PATH');
 export { BASE_PATH };

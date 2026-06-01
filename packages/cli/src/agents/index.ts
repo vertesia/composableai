@@ -1,3 +1,4 @@
+import { setTimeout as delay } from 'node:timers/promises';
 import {
     type AgentMessage,
     AgentMessageType,
@@ -15,7 +16,6 @@ import {
 } from '@vertesia/common';
 import chalk from 'chalk';
 import type { Command } from 'commander';
-import { setTimeout as delay } from 'node:timers/promises';
 import * as readline from 'readline';
 import { registerArtifactsCommand } from '../artifacts/index.js';
 import { getClient } from '../client.js';

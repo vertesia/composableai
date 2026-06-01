@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { VertesiaClient } from '@vertesia/client';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // Tree node type

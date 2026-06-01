@@ -14,5 +14,5 @@ export { default as SecretsApi } from './SecretsApi.js';
 export type { AsyncExecutionResult };
 export type { ComputePromptFacetsResponse, ListInteractionsResponse } from './PromptsApi.js';
 export type { ComputeRunFacetsResponse, FilterOption } from './RunsApi.js';
-export * from './store/index.js';
 export * from './StreamSource.js';
+export * from './store/index.js';

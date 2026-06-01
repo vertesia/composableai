@@ -2,8 +2,8 @@
  * Tests for prompt transformer
  */
 
-import { describe, it, expect } from 'vitest';
-import { promptTransformer, PromptDefinitionSchema, PromptRole, TemplateType } from '../src/presets/prompt.js';
+import { describe, expect, it } from 'vitest';
+import { PromptDefinitionSchema, PromptRole, promptTransformer, TemplateType } from '../src/presets/prompt.js';
 
 describe('Prompt Transformer', () => {
     it('should parse handlebars prompt with frontmatter', async () => {

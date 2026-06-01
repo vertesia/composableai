@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ExternalLinkIcon, FileTextIcon, Loader2Icon, X } from 'lucide-react';
-import { useUserSession } from '@vertesia/ui/session';
 import { Button, VTooltip } from '@vertesia/ui/core';
-import { NavLink } from '@vertesia/ui/router';
-import { MarkdownRenderer } from '@vertesia/ui/widgets';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { NavLink } from '@vertesia/ui/router';
+import { useUserSession } from '@vertesia/ui/session';
+import { MarkdownRenderer } from '@vertesia/ui/widgets';
+import { ExternalLinkIcon, FileTextIcon, Loader2Icon, X } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { DocumentTabBar } from './DocumentTabBar.js';
 import type { OpenDocument } from './types/document.js';
 

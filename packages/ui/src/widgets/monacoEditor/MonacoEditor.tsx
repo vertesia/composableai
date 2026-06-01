@@ -1,9 +1,9 @@
 import { Editor } from '@monaco-editor/react';
 import { useTheme } from '@vertesia/ui/core';
-import debounce from 'debounce';
 import clsx from 'clsx';
-import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import debounce from 'debounce';
 import type * as monaco from 'monaco-editor';
+import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { registerCustomFoldingProviders } from './foldingProviders.js';
 
 export type Monaco = typeof monaco;

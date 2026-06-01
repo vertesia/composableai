@@ -85,11 +85,7 @@ function createMessage(type: AgentMessageType, message: string): AgentMessage {
     };
 }
 
-function mockStreamState(options: {
-    messages: AgentMessage[];
-    isCompleted?: boolean;
-    agentRunStatus?: string | null;
-}) {
+function mockStreamState(options: { messages: AgentMessage[]; isCompleted?: boolean; agentRunStatus?: string | null }) {
     mocks.useAgentStream.mockReturnValue({
         messages: options.messages,
         streamingMessages: new Map(),

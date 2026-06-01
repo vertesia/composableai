@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { type ReactNode, useMemo } from 'react';
 
 export function JSONCode({ data, className }: { data: unknown; className?: string }) {
     const jsonString = useMemo(() => {

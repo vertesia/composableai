@@ -1,12 +1,10 @@
-import { type ChangeEvent, useEffect, useState } from 'react';
-
-import { retrieveRendition } from '../../../utils';
-
 import type { ContentObjectItem } from '@vertesia/common';
 import { Button, Card, CardContent, Separator, VTooltip } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
-import type { DocumentSelection } from '../DocumentSelectionProvider';
 import { CheckIcon, Eye } from 'lucide-react';
+import { type ChangeEvent, useEffect, useState } from 'react';
+import { retrieveRendition } from '../../../utils';
+import type { DocumentSelection } from '../DocumentSelectionProvider';
 
 interface DocumentIconProps {
     document: ContentObjectItem;

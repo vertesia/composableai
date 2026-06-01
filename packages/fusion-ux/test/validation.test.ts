@@ -2,15 +2,15 @@
  * Tests for template validation
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import type { FragmentTemplate } from '../src/types.js';
 import {
-    validateTemplate,
-    parseAndValidateTemplate,
     findClosestKey,
     findSimilarKeys,
     formatValidationErrors,
+    parseAndValidateTemplate,
+    validateTemplate,
 } from '../src/validation/index.js';
-import type { FragmentTemplate } from '../src/types.js';
 
 describe('validateTemplate', () => {
     const validTemplate: FragmentTemplate = {

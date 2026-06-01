@@ -1,8 +1,8 @@
 import { Button, Center } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import clsx from 'clsx';
 import { ChevronsDown, ChevronsUp, Maximize, Minus, Plus } from 'lucide-react';
-import { type ReactNode, useRef, useEffect, useState, useCallback, type KeyboardEvent } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { PdfThumbnailList } from './PdfPageRenderer';
 
 // A4 portrait aspect ratio - used as fallback

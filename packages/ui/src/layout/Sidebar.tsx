@@ -1,8 +1,8 @@
-import clsx from 'clsx';
-import { useSidebarToggle } from './SidebarContext';
-import { Dot } from 'lucide-react';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@vertesia/ui/core';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@vertesia/ui/core';
 import { Nav } from '@vertesia/ui/router';
+import clsx from 'clsx';
+import { Dot } from 'lucide-react';
+import { useSidebarToggle } from './SidebarContext';
 
 interface SidebarProps {
     children: React.ReactNode | React.ReactNode[];

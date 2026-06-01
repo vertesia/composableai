@@ -9,13 +9,14 @@ import {
     PopoverTrigger,
     Spinner,
 } from '@vertesia/ui/core';
+import { useUserPermissions } from '@vertesia/ui/features';
+import { useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import clsx from 'clsx';
 import { useState } from 'react';
 import SignInModal from './SignInModal';
 import InfoList from './UserInfo';
-import { useNavigate } from '@vertesia/ui/router';
-import { useUserPermissions } from '@vertesia/ui/features';
+
 interface UserSessionMenuProps {
     name?: string;
     picture?: string;

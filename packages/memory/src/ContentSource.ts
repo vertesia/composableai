@@ -1,8 +1,8 @@
 import { createReadStream } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { globSync } from 'glob';
 import { basename, extname, resolve } from 'node:path';
 import { Readable } from 'node:stream';
+import { globSync } from 'glob';
 
 export interface ContentSource {
     getContent(): Promise<Buffer>;

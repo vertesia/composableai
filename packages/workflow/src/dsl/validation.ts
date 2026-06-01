@@ -1,5 +1,5 @@
 import type { DSLActivitySpec, DSLWorkflowSpec, DSLWorkflowStep } from '@vertesia/common';
-import { Vars, splitPath } from './vars.js';
+import { splitPath, Vars } from './vars.js';
 
 export function validateWorkflow(workflow: DSLWorkflowSpec, vars: string[] = []) {
     const errors: string[] = [];

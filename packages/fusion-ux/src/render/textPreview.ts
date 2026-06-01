@@ -3,7 +3,7 @@
  * Generates a text description of what the fragment will look like
  */
 
-import type { FragmentTemplate, FieldTemplate } from '../types.js';
+import type { FieldTemplate, FragmentTemplate } from '../types.js';
 
 /**
  * Generate sample data for preview rendering
