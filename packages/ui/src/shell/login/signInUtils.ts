@@ -38,7 +38,7 @@ export function writeLastSuccessfulLogin(s: LastSuccessfulLogin): void {
     try {
         localStorage.setItem(LAST_SUCCESSFUL_LOGIN_KEY, JSON.stringify(s));
     } catch {
-        // localStorage unavailable — returning view just won't surface next time
+        // localStorage unavailable — the record is not persisted
     }
 }
 
@@ -158,7 +158,7 @@ export async function startSignIn(
 ): Promise<{ ok: true } | { ok: false; reason: 'no-email' }> {
     if (!email) return { ok: false, reason: 'no-email' };
 
-    // If the email maps to a tenant, use the tenant's provider (overrides the button pick); else use the picked provider.
+    // A tenant-mapped email uses the tenant's provider (overriding `provider`); otherwise use `provider`.
     const tenant = await setFirebaseTenant(email);
     const auth = getFirebaseAuth();
     let effectiveIdp = provider;
@@ -180,7 +180,7 @@ export async function startSignIn(
     return { ok: true };
 }
 
-/** Sign in with a provider directly, with no email/tenant resolution (e.g. SignInModal). */
+/** Starts a provider sign-in directly, skipping email/tenant resolution and clearing any tenant routing. */
 export function startSignInWithoutTenant(provider: ProviderId, redirectTo?: string): void {
     const auth = getFirebaseAuth();
     localStorage.removeItem('tenantName');
