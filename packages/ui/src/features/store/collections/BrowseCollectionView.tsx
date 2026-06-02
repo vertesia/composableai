@@ -1,9 +1,9 @@
-import { type Collection, getContentTypeRefId, type ColumnLayout } from '@vertesia/common';
+import { type Collection, type ColumnLayout, getContentTypeRefId } from '@vertesia/common';
 import { useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
+import { DocumentSearchResults, DocumentSearchResultsWithDropZone } from '../objects/DocumentSearchResults';
 import type { TypeRegistry } from '../types/TypeRegistry.js';
 import { useTypeRegistry } from '../types/TypeRegistryProvider.js';
-import { DocumentSearchResults, DocumentSearchResultsWithDropZone } from '../objects/DocumentSearchResults';
 
 const collectionDefaultLayout: ColumnLayout[] = [
     { name: 'ID', field: 'id', type: 'objectId?slice=-7' },

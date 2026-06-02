@@ -1,5 +1,6 @@
 import type { AgentRun } from '@vertesia/common';
-import { Button, Dropdown, MenuGroup, MenuItem, cn, useToast } from '@vertesia/ui/core';
+import { Button, cn, Dropdown, MenuGroup, MenuItem, useToast } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     Bot,
@@ -12,7 +13,6 @@ import {
     MoreVertical,
     XIcon,
 } from 'lucide-react';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { PayloadBuilderProvider, usePayloadBuilder } from '../../PayloadBuilder';
 import type { AgentConversationViewMode } from './AllMessagesMixed';
 import { getConversationUrl } from './utils';
@@ -38,6 +38,8 @@ export interface HeaderProps {
     onExportPdf?: () => void;
     /** Called to show run details/internals modal */
     onShowDetails?: () => void;
+    /** Whether workflow control actions such as cancel should be shown. */
+    allowWorkflowControl?: boolean;
     /**
      * @deprecated No longer used. Continuing a completed conversation now happens
      * automatically when the user sends a message. Kept as an optional no-op to preserve
@@ -70,6 +72,7 @@ export default function Header({
     resetWorkflow,
     onExportPdf,
     onShowDetails,
+    allowWorkflowControl = true,
     onClone,
     isReceivingChunks = false,
     className,
@@ -152,6 +155,7 @@ export default function Header({
                         resetWorkflow={resetWorkflow}
                         onExportPdf={onExportPdf}
                         onShowDetails={onShowDetails}
+                        allowWorkflowControl={allowWorkflowControl}
                         onClone={onClone}
                     />
                     {onClose && !isModal && (
@@ -175,6 +179,7 @@ function MoreDropdown({
     resetWorkflow,
     onExportPdf,
     onShowDetails,
+    allowWorkflowControl = true,
     onClone,
 }: {
     agentRunId: string;
@@ -187,6 +192,7 @@ function MoreDropdown({
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
     onShowDetails?: () => void;
+    allowWorkflowControl?: boolean;
     onClone?: (newRun: AgentRun) => void;
 }) {
     const { t } = useUITranslation();
@@ -311,7 +317,7 @@ function MoreDropdown({
                         <GitFork className="size-3.5 text-muted" /> {t('agent.cloneConversation')}
                     </MenuItem>
                 )}
-                {!isTerminal && (
+                {allowWorkflowControl && !isTerminal && (
                     <MenuItem onClick={cancelWorkflow} variant="destructive">
                         <XIcon className="size-3.5" /> {t('agent.cancelWorkflow')}
                     </MenuItem>

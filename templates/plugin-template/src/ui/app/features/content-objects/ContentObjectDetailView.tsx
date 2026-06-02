@@ -1,3 +1,4 @@
+import type { ContentObject } from '@vertesia/common';
 import { Badge, ErrorBox, Spinner, useFetch } from '@vertesia/ui/core';
 import {
     AudioPanel,
@@ -12,7 +13,6 @@ import {
 import { useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink, useParams } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import type { ContentObject } from '@vertesia/common';
 import { statusVariant } from './utils';
 
 const PDF_MIME_TYPES = new Set(['application/pdf']);

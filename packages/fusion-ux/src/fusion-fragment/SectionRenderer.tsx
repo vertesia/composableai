@@ -3,11 +3,11 @@
  * Renders a section with grid layout and collapsible behavior
  */
 
-import { useState, useMemo, type ReactElement } from 'react';
+import { type ReactElement, useMemo, useState } from 'react';
 import type { SectionRendererProps } from '../types.js';
+import { ChartRenderer } from './ChartRenderer.js';
 import { FieldRenderer } from './FieldRenderer.js';
 import { TableRenderer } from './TableRenderer.js';
-import { ChartRenderer } from './ChartRenderer.js';
 
 // Layout grid configurations
 const gridLayouts = {

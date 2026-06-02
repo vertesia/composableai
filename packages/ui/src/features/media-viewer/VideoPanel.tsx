@@ -1,8 +1,8 @@
 import { ContentNature, type ContentObject, POSTER_RENDITION_NAME, type VideoMetadata } from '@vertesia/common';
 import { Spinner } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { useEffect, useState } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { WEB_SUPPORTED_VIDEO_FORMATS } from './formats.js';
 
 interface VideoPanelProps {

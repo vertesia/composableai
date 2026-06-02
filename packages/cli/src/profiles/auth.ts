@@ -1,8 +1,8 @@
+import type { OnResultCallback } from './commands.js';
 import type { Profile } from './index.js';
 import { config, shouldRefreshProfileToken } from './index.js';
-import type { OnResultCallback } from './commands.js';
-import { canUseOAuthProfile, refreshOAuthSession } from './oauth.js';
 import { readAuthBundle, readProfileAccessToken } from './keyring.js';
+import { canUseOAuthProfile, refreshOAuthSession } from './oauth.js';
 import type { ConfigResult } from './server/index.js';
 
 export async function ensureProfileAccessToken(

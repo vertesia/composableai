@@ -1,10 +1,10 @@
-import jwt from 'jsonwebtoken';
-import open from 'open';
 import type {
     OAuthAuthorizationServerMetadata,
     OAuthDeviceAuthorizationResponse,
     OAuthTokenResponse,
 } from '@vertesia/common';
+import jwt from 'jsonwebtoken';
+import open from 'open';
 import type { Profile } from './index.js';
 import type { StoredAuthBundle } from './keyring.js';
 import type { ConfigResult } from './server/index.js';
@@ -187,10 +187,7 @@ function getOAuthServerUrlCandidates(
         candidates.push(`${studioUrl.protocol}//${stsHost}`);
     }
     // dev branch services (studio-server-dev-*.api.dev1.vertesia.io) → shared dev1 STS
-    if (
-        studioUrl.hostname.endsWith('.api.dev1.vertesia.io') ||
-        studioUrl.hostname.endsWith('.ui.dev1.vertesia.io')
-    ) {
+    if (studioUrl.hostname.endsWith('.api.dev1.vertesia.io') || studioUrl.hostname.endsWith('.ui.dev1.vertesia.io')) {
         candidates.push('https://sts.dev1.vertesia.io');
     }
     return Array.from(new Set(candidates.map((candidate) => candidate.replace(/\/+$/, ''))));

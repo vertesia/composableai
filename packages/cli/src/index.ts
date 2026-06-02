@@ -1,15 +1,16 @@
 import { Command } from 'commander';
-import { registerAppsCommand } from './apps/index.js';
 import { registerAgentsCommand } from './agents/index.js';
+import { registerAppsCommand } from './apps/index.js';
 import { registerArtifactsCommand } from './artifacts/index.js';
 import { registerDataCommand } from './data/index.js';
+import { listEnvironments } from './envs/index.js';
 import { registerEventsCommand } from './events/index.js';
 import { registerIamCommand } from './iam/index.js';
-import { listEnvironments } from './envs/index.js';
 import { listInteractions } from './interactions/index.js';
 import { registerObjectsCommand } from './objects/index.js';
 import { getVersion, upgrade } from './package.js';
 import {
+    type CreateProfileOptions,
     createProfile,
     deleteProfile,
     listProfiles,
@@ -23,14 +24,14 @@ import {
     updateCurrentProfile,
     updateProfile,
     useProfile,
-    type CreateProfileOptions,
 } from './profiles/commands.js';
 import { AVAILABLE_REGIONS, DEFAULT_REGION, getConfigFile } from './profiles/index.js';
 import { listProjects, useProject } from './projects/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
-import { registerWorkflowsCommand } from './workflows/index.js';
 import { getBooleanOption, hasStatus } from './utils/options.js';
+import { registerWorkflowsCommand } from './workflows/index.js';
+
 //warnIfNotLatest();
 
 const program = new Command();

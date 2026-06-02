@@ -3,7 +3,7 @@
  * Scans a directory for subdirectories containing TEMPLATE.md files
  */
 
-import { readdirSync, statSync, existsSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { TransformerPreset } from '../types.js';
 

@@ -5,6 +5,7 @@ import {
     MarkdownRenditionFormat,
 } from '@vertesia/common';
 import { Badge, Button, cn, Dropdown, MenuItem, useToast } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
@@ -24,15 +25,14 @@ import {
     User,
 } from 'lucide-react';
 import type React from 'react';
-import { useEffect, useState, useMemo, memo, useRef } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { useDownloadFile } from '../../../store/objects/components/useDownloadFile.js';
 import { PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget } from '../AskUserWidget';
 import { useImageLightbox } from '../ImageLightbox';
+import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
 import { ThinkingMessages } from '../WaitingMessages';
 import { getWorkstreamId } from './utils';
-import { useArtifactUrlCache, getArtifactCacheKey } from '../useArtifactUrlCache.js';
-import { useDownloadFile } from '../../../store/objects/components/useDownloadFile.js';
 
 // PERFORMANCE: Move pure function outside component to avoid recreation on every render
 // Process content to enhance markdown detection for lists and thinking messages

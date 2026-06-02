@@ -4,9 +4,9 @@
  * Used by expand:* code blocks to fetch and render artifact content inline.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUserSession } from '@vertesia/ui/session';
-import { useArtifactUrlCache, getArtifactCacheKey } from '../../features/agent/chat/useArtifactUrlCache';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { getArtifactCacheKey, useArtifactUrlCache } from '../../features/agent/chat/useArtifactUrlCache';
 
 export interface ArtifactContentState<T = unknown> {
     /** The fetched content, parsed if JSON */

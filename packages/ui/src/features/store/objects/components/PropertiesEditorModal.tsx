@@ -1,12 +1,11 @@
-import { useUserSession } from '@vertesia/ui/session';
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
-import { Button, Modal, ModalBody, ModalFooter, ModalTitle, errorMessage, useToast, useTheme } from '@vertesia/ui/core';
 import type { ContentObject, JSONSchema } from '@vertesia/common';
+import { Button, errorMessage, Modal, ModalBody, ModalFooter, ModalTitle, useTheme, useToast } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
-
+import { useUserSession } from '@vertesia/ui/session';
 // Import Monaco Editor wrapper
-import { MonacoEditor, type IEditorApi } from '@vertesia/ui/widgets';
+import { type IEditorApi, MonacoEditor } from '@vertesia/ui/widgets';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Import SaveVersionConfirmModal
 import { SaveVersionConfirmModal } from './SaveVersionConfirmModal';

@@ -2,9 +2,9 @@ import { MockActivityEnvironment } from '@temporalio/testing';
 import { ApiVersions, ContentEventName, type DSLActivityExecutionPayload, type WebHookSpec } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    notifyWebhook,
     type NotifyWebhookParams,
     type NotifyWebhookResult,
+    notifyWebhook,
     type WebhookNotificationPayload,
 } from './notifyWebhook.js';
 

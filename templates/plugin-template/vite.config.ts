@@ -2,7 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { vertesiaPluginBuilder } from '@vertesia/plugin-builder';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
-import { defineConfig, type ConfigEnv, type UserConfig } from 'vite';
+import { type ConfigEnv, defineConfig, type UserConfig } from 'vite';
 import serveStatic from 'vite-plugin-serve-static';
 import { apiServerPlugin } from './vite-api-server.js';
 

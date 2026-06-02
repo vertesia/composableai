@@ -2,7 +2,7 @@ import { ApplicationFailure, log } from '@temporalio/activity';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import type { DocPart } from '../utils/chunks.js';
-import { type InteractionExecutionParams, executeInteractionFromActivity } from './executeInteraction.js';
+import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
 
 const INT_CHUNK_DOCUMENT = 'sys:ChunkDocument';
 

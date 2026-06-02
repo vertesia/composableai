@@ -1,8 +1,8 @@
 import type { Permission, ProjectRoles } from '@vertesia/common';
 import { ErrorBox, errorMessage, useFetch } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { type UserSession, useUserSession } from '@vertesia/ui/session';
 import { createContext, useContext, useMemo } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { isAnyOf } from './helpers';
 
 type ListRolesResponse = {
@@ -62,6 +62,7 @@ export class UserPermissions {
 }
 
 const UserPermissionsContext = createContext<UserPermissions | undefined>(undefined);
+
 export { UserPermissionsContext };
 
 export function useUserPermissions() {

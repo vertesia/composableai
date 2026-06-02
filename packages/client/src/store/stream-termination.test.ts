@@ -1,4 +1,4 @@
-import { AgentMessageType, type AgentMessage, type CompactMessage } from '@vertesia/common';
+import { type AgentMessage, AgentMessageType, type CompactMessage } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
 

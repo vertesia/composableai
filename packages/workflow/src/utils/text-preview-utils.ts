@@ -1,7 +1,7 @@
+import { Readable } from 'node:stream';
 import { log } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
 import { NodeStreamSource } from '@vertesia/client/node';
-import { Readable } from 'node:stream';
 import { type TextExtractionResult, TextExtractionStatus } from '../result-types.js';
 
 /**

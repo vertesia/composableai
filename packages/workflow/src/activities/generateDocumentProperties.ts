@@ -2,7 +2,7 @@ import { ApplicationFailure, log } from '@temporalio/activity';
 import type { DSLActivityExecutionPayload, DSLActivitySpec, JSONObject } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
-import { type InteractionExecutionParams, executeInteractionFromActivity } from './executeInteraction.js';
+import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
 
 const INT_EXTRACT_INFORMATION = 'sys:ExtractInformation';
 

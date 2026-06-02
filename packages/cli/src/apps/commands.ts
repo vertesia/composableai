@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import {
     AccessControlPrincipalType,
     AccessControlResourceType,
@@ -7,9 +8,8 @@ import {
 } from '@vertesia/common';
 import colors from 'ansi-colors';
 import type { Command } from 'commander';
-import { readFile } from 'node:fs/promises';
 import { getClient } from '../client.js';
-import { hasErrorCode, isRecord, type CliOptions } from '../utils/options.js';
+import { type CliOptions, hasErrorCode, isRecord } from '../utils/options.js';
 
 type ManifestOptions = CliOptions<{
     manifest?: string;

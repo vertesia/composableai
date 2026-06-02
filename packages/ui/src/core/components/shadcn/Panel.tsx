@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { VTooltip } from './tooltip';
 import { ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from './button';
+import { VTooltip } from './tooltip';
 
 interface PanelProps {
     title: string | React.ReactNode;

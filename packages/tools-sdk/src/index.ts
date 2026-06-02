@@ -1,13 +1,13 @@
 export * from './ActivityCollection.js';
-export { authorize, AuthSession } from './auth.js';
+export { AuthSession, authorize } from './auth.js';
 export * from './ContentTypesCollection.js';
-export * from './RenderingTemplateCollection.js';
 export { copyRuntimeAssets } from './copy-assets.js';
 export * from './InteractionCollection.js';
-export * from './server.js';
-export * from './server/types.js';
-export * from './site/templates.js';
+export * from './RenderingTemplateCollection.js';
 export * from './SkillCollection.js';
+export * from './server/types.js';
+export * from './server.js';
+export * from './site/templates.js';
 export * from './ToolCollection.js';
 export * from './ToolRegistry.js';
 export * from './types.js';

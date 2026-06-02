@@ -1,6 +1,7 @@
 import type { Collection, ContentObjectTypeItem, DynamicCollection } from '@vertesia/common';
 import {
     Button,
+    errorMessage,
     MessageBox,
     Modal,
     ModalBody,
@@ -8,16 +9,15 @@ import {
     ModalTitle,
     SelectBox,
     Spinner,
-    errorMessage,
     useToast,
     VTooltip,
 } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { useTypeRegistry } from '../../types/TypeRegistryProvider.js';
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from 'lucide-react';
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { useTypeRegistry } from '../../types/TypeRegistryProvider.js';
 import { FileUploadAction, type FileWithMetadata, useSmartFileUploadProcessing } from './useSmartFileUploadProcessing';
 import type { DocumentUploadResult } from './useUploadHandler';
 
@@ -740,6 +740,7 @@ export function DocumentUploadModal({
                     <div className="max-h-96 overflow-y-auto">
                         {fileStatuses.map((fileStatus, index) => (
                             <div
+                                // biome-ignore lint/suspicious/noArrayIndexKey: file names can repeat in the same upload; index disambiguates
                                 key={`${fileStatus.file.name}-${index}`}
                                 className="flex items-center py-2 border-b border-border last:border-b-0"
                             >

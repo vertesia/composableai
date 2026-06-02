@@ -1,12 +1,12 @@
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     ContentObjectType,
     ContentObjectTypeItem,
     CreateContentObjectTypePayload,
     FindPayload,
-    ObjectTypeSearchQuery,
     ObjectTypeSearchPayload,
+    ObjectTypeSearchQuery,
 } from '@vertesia/common';
-import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import { TypeCatalogApi } from './TypeCatalogApi.js';
 
 export class TypesApi extends ApiTopic {

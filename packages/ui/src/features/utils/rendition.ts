@@ -1,6 +1,6 @@
-import { isImage, isPdf, isVideo } from './mimeType.js';
 import type { VertesiaClient } from '@vertesia/client';
 import { type ContentObjectItem, ImageRenditionFormat } from '@vertesia/common';
+import { isImage, isPdf, isVideo } from './mimeType.js';
 
 //TODO we must use a setting in Env.
 const env = import.meta.env;
