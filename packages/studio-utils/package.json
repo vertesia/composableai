@@ -27,6 +27,7 @@
     ],
     "scripts": {
         "lint": "biome lint src",
+        "test": "vitest run",
         "build": "pnpm exec tsc && pnpm exec rollup -c",
         "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && pnpm exec tsc && pnpm exec rollup -c"
     },
@@ -37,7 +38,8 @@
         "@rollup/plugin-typescript": "^12.3.0",
         "@types/node": "^24.12.4",
         "rollup": "^4.60.4",
-        "typescript": "^6.0.3"
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.7"
     },
     "dependencies": {
         "@llumiverse/core": "workspace:*",
