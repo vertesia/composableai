@@ -1,6 +1,7 @@
 import type { AsyncExecutionResult } from '@vertesia/common';
 
 export type { OrphanedAppInstallation } from '@vertesia/common';
+export { getOAuthPermissionScopes, Permission } from '@vertesia/common';
 export * from './client.js';
 export type { GroupsQueryOptions } from './GroupsApi.js';
 export * from './InteractionBase.js';

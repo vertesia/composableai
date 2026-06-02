@@ -68,7 +68,6 @@ export default function SlidingMessages({ messages, isCompleted }: SlidingMessag
         <div className="flex flex-col space-y-6 overflow-y-auto py-4">
             {/* Display permanent messages */}
             {sortedPermanentMessages.map((message, index) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: timestamps can collide across concurrent workstreams; index disambiguates
                 <MessageItem key={`${message.timestamp}-${index}`} message={message} />
             ))}
 

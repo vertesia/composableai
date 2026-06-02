@@ -49,6 +49,10 @@ export interface OAuthClientCreateResponse extends OAuthClient {
     client_secret?: string;
 }
 
+export interface OAuthClientScopeMetadata {
+    supported_scopes: string[];
+}
+
 export interface OAuthGrant {
     grant_id: string;
     client_id: string;
@@ -189,6 +193,7 @@ export interface OAuthAuthorizationRequest {
     redirect_origin: string;
     resource?: string;
     requested_scopes: string[];
+    optional_scopes?: string[];
     requested_project_id?: string;
     project_binding_mode: OAuthProjectBindingMode;
     fixed_project_id?: string;
@@ -199,6 +204,14 @@ export interface OAuthAuthorizationRequest {
 
 export interface ApproveOAuthAuthorizationRequestPayload {
     project_id?: string;
+    granted_scopes: string[];
+}
+
+export interface OAuthGrantableScopesResponse {
+    project_id: string;
+    requested_permission_scopes: string[];
+    grantable_permission_scopes: string[];
+    unavailable_permission_scopes: string[];
 }
 
 export interface OAuthAuthorizationDecisionResponse {
@@ -298,13 +311,13 @@ export interface OAuthAccessTokenPayload extends Omit<AuthTokenPayload, 'type' |
 export interface OAuthIdTokenPayload {
     sub: string;
     user_id: string;
-    name: string;
+    name?: string;
     email?: string;
     picture?: string;
     type: 'oauth_id';
     client_id: string;
-    account: AuthTokenPayload['account'];
-    accounts: AuthTokenPayload['accounts'];
+    account?: AuthTokenPayload['account'];
+    accounts?: AuthTokenPayload['accounts'];
     project?: ProjectRef;
     /** User groups */
     groups?: AuthTokenPayload['groups'];

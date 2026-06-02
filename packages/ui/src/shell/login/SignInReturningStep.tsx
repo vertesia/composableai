@@ -31,7 +31,7 @@ export default function SignInReturningStep({
     redirectTo,
 }: SignInReturningStepProps) {
     const { t } = useUITranslation();
-    const firstName = session.name ? session.name.split(' ')[0]! : firstNameFromEmail(session.email);
+    const firstName = session.name ? session.name.split(' ')[0] || session.name : firstNameFromEmail(session.email);
     const displayName = session.name || firstNameFromEmail(session.email);
     const avatar = <SignInInitialsBadge initials={emailInitial(session.email)} />;
     // A stored tenantName means we resolved the user's organization.
