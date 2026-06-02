@@ -8,13 +8,22 @@ export const OAUTH_STANDARD_SCOPES = [OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, O
 
 export type OAuthStandardScope = (typeof OAUTH_STANDARD_SCOPES)[number];
 
+const NON_OAUTH_PERMISSION_SCOPES = new Set<Permission>([
+    Permission.manage_billing,
+    Permission.billing_read,
+    Permission.iam_impersonate,
+    Permission.studio_access,
+]);
+const OAUTH_PERMISSION_SCOPES = Object.values(Permission).filter(
+    (scope) => !NON_OAUTH_PERMISSION_SCOPES.has(scope),
+);
 const OAUTH_STANDARD_SCOPE_SET = new Set<string>(OAUTH_STANDARD_SCOPES);
-const OAUTH_PERMISSION_SCOPE_SET = new Set<string>(Object.values(Permission));
+const OAUTH_PERMISSION_SCOPE_SET = new Set<string>(OAUTH_PERMISSION_SCOPES);
 const OBJECT_ID_PATTERN = /^[0-9a-f]{24}$/i;
 const OAUTH_PROJECT_BINDING_SCOPE_PREFIX = 'project:';
 
 export function getOAuthPermissionScopes(): Permission[] {
-    return Object.values(Permission);
+    return [...OAUTH_PERMISSION_SCOPES];
 }
 
 export function getSupportedOAuthScopes(): string[] {

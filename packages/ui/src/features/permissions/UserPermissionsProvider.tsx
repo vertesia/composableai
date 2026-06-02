@@ -1,4 +1,4 @@
-import type { Permission, ProjectRoles } from '@vertesia/common';
+import { PrincipalType, type Permission, type ProjectRoles } from '@vertesia/common';
 import { ErrorBox, errorMessage, useFetch } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { type UserSession, useUserSession } from '@vertesia/ui/session';
@@ -32,12 +32,18 @@ export class UserPermissions {
         for (const role of roles) {
             map[role.name] = role.permissions;
         }
+        const permissionCap =
+            session.authToken.type === PrincipalType.OAuthAccess
+                ? new Set<string>(session.authToken.permissions ?? [])
+                : undefined;
         const permissions = new Set<string>();
         for (const role of userRoles) {
             const rolePermissions = map[role];
             if (rolePermissions) {
                 for (const permission of rolePermissions) {
-                    permissions.add(permission);
+                    if (!permissionCap || permissionCap.has(permission)) {
+                        permissions.add(permission);
+                    }
                 }
             }
         }

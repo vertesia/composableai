@@ -1,5 +1,5 @@
 import type { SignupData, SignupPayload } from '@vertesia/common';
-import { Button, useSafeLayoutEffect } from '@vertesia/ui/core';
+import { Button } from '@vertesia/ui/core';
 import { Env } from '@vertesia/ui/env';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { RegionTag } from '@vertesia/ui/layout';
@@ -14,10 +14,11 @@ import SignupForm from './SignupForm';
 
 interface SigninScreenProps {
     isNested?: boolean;
-    allowedPrefix?: string;
+    allowedPrefix?: string | string[];
     lightLogo?: string;
     darkLogo?: string;
     preservePath?: boolean;
+    suppressAuthErrorPrefix?: string | string[];
 }
 export function SigninScreen({
     allowedPrefix,
@@ -25,22 +26,50 @@ export function SigninScreen({
     lightLogo,
     darkLogo,
     preservePath,
+    suppressAuthErrorPrefix,
 }: SigninScreenProps) {
-    const [allow, setAllow] = useState(false);
-    useSafeLayoutEffect(() => {
-        if (allowedPrefix) setAllow(window.location.pathname.startsWith(allowedPrefix));
-    }, [allowedPrefix]);
+    const pathname = typeof window === 'undefined' ? '' : window.location.pathname;
+    const allow = matchesPathPrefix(pathname, allowedPrefix);
+    const suppressAuthError = matchesPathPrefix(pathname, suppressAuthErrorPrefix);
     return allow ? null : (
-        <SigninScreenImpl isNested={isNested} lightLogo={lightLogo} darkLogo={darkLogo} preservePath={preservePath} />
+        <SigninScreenImpl
+            isNested={isNested}
+            lightLogo={lightLogo}
+            darkLogo={darkLogo}
+            preservePath={preservePath}
+            suppressAuthError={suppressAuthError}
+        />
     );
 }
 
-function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath }: SigninScreenProps) {
+function matchesPathPrefix(pathname: string, prefix?: string | string[]) {
+    const prefixes = Array.isArray(prefix) ? prefix : prefix ? [prefix] : [];
+    return prefixes.some((candidate) => {
+        if (pathname === candidate) {
+            return true;
+        }
+        return pathname.startsWith(candidate.endsWith('/') ? candidate : `${candidate}/`);
+    });
+}
+
+function SigninScreenImpl({
+    isNested = false,
+    lightLogo,
+    darkLogo,
+    preservePath,
+    suppressAuthError,
+}: SigninScreenProps & { suppressAuthError?: boolean }) {
     const { t } = useUITranslation();
     const { isLoading, user, authError } = useUserSession();
+    const shouldHideTransientAuthError =
+        suppressAuthError && authError !== undefined && !(authError instanceof UserNotFoundError);
+
+    if (shouldHideTransientAuthError) {
+        return null;
+    }
 
     return !isLoading && !user ? (
-        <div style={{ zIndex: 999998 }} className={`${isNested ? 'absolute' : 'fixed'}overflow-y-auto `}>
+        <div style={{ zIndex: 999998 }} className={`${isNested ? 'absolute' : 'fixed'} overflow-y-auto`}>
             <div className={clsx('flex flex-col items-center justify-center py-14 px-4')}>
                 <StandardSigninPanel
                     authError={authError}

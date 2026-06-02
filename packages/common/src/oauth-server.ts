@@ -189,6 +189,7 @@ export interface OAuthAuthorizationRequest {
     redirect_origin: string;
     resource?: string;
     requested_scopes: string[];
+    optional_scopes?: string[];
     requested_project_id?: string;
     project_binding_mode: OAuthProjectBindingMode;
     fixed_project_id?: string;
@@ -199,7 +200,7 @@ export interface OAuthAuthorizationRequest {
 
 export interface ApproveOAuthAuthorizationRequestPayload {
     project_id?: string;
-    granted_scopes?: string[];
+    granted_scopes: string[];
 }
 
 export interface OAuthGrantableScopesResponse {
