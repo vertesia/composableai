@@ -152,7 +152,6 @@ function ListField({ object }: ListFieldProps) {
             {object.items.map((item, index) => {
                 return (
                     <ListItem
-                        // biome-ignore lint/suspicious/noArrayIndexKey: list items are positional and value[index] may be undefined; index is the primary identifier
                         key={`${index}-${String(value[index] ?? '')}`}
                         object={item}
                         list={object}

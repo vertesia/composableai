@@ -308,7 +308,6 @@ export function SlidingThinkingIndicator({
                         <div className="space-y-1 space-y-reverse max-h-[300px] overflow-y-auto pe-1 flex flex-col-reverse">
                             {sortedThinkingMessages.map((message, index) => (
                                 <div
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: thinking timestamps can collide across workstreams; index disambiguates
                                     key={`${message.timestamp}-${index}`}
                                     className="animate-slide-in-bottom"
                                     data-workstream-id={message.workstream_id || 'main'}
@@ -330,7 +329,6 @@ export function SlidingThinkingIndicator({
                                 {/* For each recent message, render with different opacity based on recency */}
                                 {recentMessages.map((message, index) => (
                                     <div
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: recent message timestamps can collide; index disambiguates
                                         key={`${message.timestamp}-${index}`}
                                         className={cn(
                                             'flex items-center', // Align items horizontally on same line
@@ -422,7 +420,6 @@ export function SlidingThinkingIndicator({
                             <div className="space-y-1 space-y-reverse max-h-[300px] overflow-y-auto pe-1 flex flex-col-reverse">
                                 {sortedThinkingMessages.map((message, index) => (
                                     <div
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: thinking timestamps can collide across workstreams; index disambiguates
                                         key={`${message.timestamp}-${index}`}
                                         className="animate-slide-in-bottom"
                                         data-workstream-id={message.workstream_id || 'main'}

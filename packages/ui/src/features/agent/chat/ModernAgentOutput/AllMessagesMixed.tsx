@@ -649,7 +649,6 @@ function AllMessagesMixedComponent({
                                     if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     return (
                                         <MessageErrorBoundary
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: toolRunId/firstTimestamp may collide across re-renders; groupIndex disambiguates
                                             key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}
                                         >
                                             <ToolCallGroup
@@ -667,7 +666,6 @@ function AllMessagesMixedComponent({
                                     // Render streaming message - no error boundary to avoid interrupting streaming
                                     return (
                                         <StreamingMessage
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: streamingId may not be unique across grouping passes; groupIndex disambiguates
                                             key={`streaming-${group.streamingId}-${groupIndex}`}
                                             text={group.text}
                                             workstreamId={group.workstreamId}
@@ -687,7 +685,6 @@ function AllMessagesMixedComponent({
                                     if (isBatchProgressMessage(message)) {
                                         return (
                                             <MessageErrorBoundary
-                                                // biome-ignore lint/suspicious/noArrayIndexKey: same batch_id can appear multiple times in a stream; groupIndex disambiguates
                                                 key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}
                                             >
                                                 <BatchProgressPanel
@@ -701,7 +698,6 @@ function AllMessagesMixedComponent({
                                     }
 
                                     return (
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: timestamp may collide across concurrent workstreams; groupIndex disambiguates
                                         <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
                                             <MessageItem
                                                 message={message}
@@ -764,7 +760,6 @@ function AllMessagesMixedComponent({
                                     if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     return (
                                         <MessageErrorBoundary
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: toolRunId/firstTimestamp may collide across re-renders; groupIndex disambiguates
                                             key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}
                                         >
                                             <ToolCallGroup
@@ -782,7 +777,6 @@ function AllMessagesMixedComponent({
                                     // Render streaming message - no error boundary to avoid interrupting streaming
                                     return (
                                         <StreamingMessage
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: streamingId may not be unique across grouping passes; groupIndex disambiguates
                                             key={`streaming-${group.streamingId}-${groupIndex}`}
                                             text={group.text}
                                             workstreamId={group.workstreamId}
@@ -805,7 +799,6 @@ function AllMessagesMixedComponent({
                                     if (isBatchProgressMessage(message)) {
                                         return (
                                             <MessageErrorBoundary
-                                                // biome-ignore lint/suspicious/noArrayIndexKey: same batch_id can appear multiple times in a stream; groupIndex disambiguates
                                                 key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}
                                             >
                                                 <BatchProgressPanel
@@ -819,7 +812,6 @@ function AllMessagesMixedComponent({
                                     }
 
                                     return (
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: timestamp may collide across concurrent workstreams; groupIndex disambiguates
                                         <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
                                             <MessageItem
                                                 message={message}
@@ -837,7 +829,6 @@ function AllMessagesMixedComponent({
                             {/* Recent thinking messages - displayed with streaming reveal */}
                             {recentThinking.map((thinking, idx) => (
                                 <StreamingMessage
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: thinking messages can share timestamps across workstreams; idx disambiguates
                                     key={`thinking-${thinking.timestamp}-${idx}`}
                                     text={processThinkingPlaceholder(thinking.message || '', thinkingMessageIndex)}
                                     workstreamId={getWorkstreamId(thinking)}

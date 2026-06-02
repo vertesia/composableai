@@ -13,6 +13,7 @@ interface VertesiaShellProps {
     loadingIcon?: ReactNode;
     loadOnboardingStatus?: boolean;
     preserveSignInPath?: boolean;
+    suppressSignInErrorPrefixes?: string | string[];
     /** Force a default language. If omitted, falls back to localStorage then navigator.language then 'en'. */
     defaultLanguage?: SupportedLanguage;
 }
@@ -23,6 +24,7 @@ export function VertesiaShell({
     loadingIcon,
     loadOnboardingStatus,
     preserveSignInPath,
+    suppressSignInErrorPrefixes,
     defaultLanguage,
 }: VertesiaShellProps) {
     return (
@@ -38,6 +40,7 @@ export function VertesiaShell({
                                     darkLogo={darkLogo}
                                     lightLogo={lightLogo}
                                     preservePath={preserveSignInPath}
+                                    suppressAuthErrorPrefix={suppressSignInErrorPrefixes}
                                 />
                                 <UserPermissionProvider>{children}</UserPermissionProvider>
                             </LanguageBoundI18nProvider>
