@@ -25,7 +25,7 @@ import type {
     TemplateType,
 } from './prompt.js';
 import type { ExecutionRunDocRef } from './runs.js';
-import type { ConversationState } from './store/conversation-state.js';
+import type { ConversationState, TextArtifactReference } from './store/conversation-state.js';
 import type { AccountRef } from './user.js';
 import type { LlmCallType } from './workflow-analytics.js';
 
@@ -937,6 +937,12 @@ interface ResumeConversationPayload {
 
 export interface ToolResultContent {
     content: string;
+    /**
+     * Reference to text content stored outside Temporal/API payloads. Servers that
+     * execute the next model turn should resolve this before constructing the
+     * provider prompt.
+     */
+    content_ref?: TextArtifactReference;
     is_error: boolean;
     files?: string[];
     /**
