@@ -33,9 +33,9 @@ import {
     type SupportedEmbeddingTypes,
 } from '@vertesia/common';
 
+export { getSupportedRenditionFormats, supportsVisualRendition } from '@vertesia/common';
 // Re-export rendition utilities for consumers
 export { canGenerateRendition };
-export { getSupportedRenditionFormats, supportsVisualRendition } from '@vertesia/common';
 
 import { StreamSource } from '../StreamSource.js';
 import { AnalyzeDocApi } from './AnalyzeDocApi.js';

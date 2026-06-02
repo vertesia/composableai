@@ -13,7 +13,7 @@ import type { TransformerPreset } from '../types.js';
 /**
  * Re-export types for backwards compatibility
  */
-export { TemplateType, PromptRole };
+export { PromptRole, TemplateType };
 
 /**
  * Template type alias

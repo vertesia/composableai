@@ -243,11 +243,11 @@ DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
 export {
     Dialog,
-    DialogPortal,
-    DialogOverlay,
     DialogClose,
-    DialogTrigger,
     DialogContent,
-    DialogTitle,
     DialogDescription,
+    DialogOverlay,
+    DialogPortal,
+    DialogTitle,
+    DialogTrigger,
 };
