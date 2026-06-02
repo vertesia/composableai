@@ -86,6 +86,9 @@ export class Router extends BaseRouter {
      */
     setStickyParams(params: Record<string, string> | null) {
         this.navigator.stickyParams = params != null ? params : undefined;
+        // Reflect the params in the current URL immediately, so the address bar is correct on
+        // load (not only after the first navigation).
+        this.navigator.normalizeCurrentUrl();
     }
 
     withObserver(observer?: ((event: LocationChangeEvent) => void) | undefined) {
