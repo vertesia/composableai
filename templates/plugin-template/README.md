@@ -63,12 +63,12 @@ Open <https://localhost:5173> -- the UI loads with HMR, and the tool server API 
 | Script              | Runs                           | Description                                                 |
 | ------------------- | ------------------------------ | ----------------------------------------------------------- |
 | `{{PM_RUN}} dev`          | `vite dev --mode app`          | Dev server (HTTPS) with UI HMR + tool server API middleware |
-| `{{PM_RUN}} build`        | `rollup -c && vite build (app + lib)` | Full production build (lint runs as prebuild)        |
-| `{{PM_RUN}} build:server` | `rollup -c`                    | Compile tool server to `lib/`                               |
-| `{{PM_RUN}} build:ui`     | `vite build (app + lib)`       | Build both UI targets                                       |
-| `{{PM_RUN}} build:ui:app` | `vite build --mode app`        | Standalone app to `dist/app/`                               |
-| `{{PM_RUN}} build:ui:lib` | `vite build --mode lib`        | Plugin library to `dist/lib/plugin.js`                      |
-| `{{PM_RUN}} start`        | `rollup -c && vite preview`    | Preview production build locally                            |
+| `{{PM_RUN}} check`        | `lint && typecheck && quality` | Validate source without writing build output                |
+| `{{PM_RUN}} build`        | `lint && build:service`        | Full production build                                       |
+| `{{PM_RUN}} build:app`    | `typecheck && vite build --mode app` | Standalone app publish build to `dist/app/`          |
+| `{{PM_RUN}} build:service` | `build:app && vite build --mode lib && build:server` | Full service publish build with package metadata |
+| `{{PM_RUN}} build:server` | `quality && rollup -c`         | Compile tool server and write package metadata to `lib/`    |
+| `{{PM_RUN}} start`        | `build:service && vite preview` | Preview production build locally                           |
 | `{{PM_RUN}} start:vercel` | `vercel dev`                   | Test Vercel deployment locally                              |
 
 ## Project Structure
@@ -374,10 +374,10 @@ Each resource type has an index file (`tools/index.ts`, `skills/index.ts`, etc.)
 
 ## UI Plugin
 
-The UI has two build modes:
+The service build produces two UI outputs:
 
-- **App mode** (`build:ui:app`): standalone web application, deployable independently
-- **Library mode** (`build:ui:lib`): plugin bundle that integrates into the Vertesia platform
+- **App output** (`build:app`): standalone web application in `dist/app/`
+- **Library output** (`build:service`): plugin bundle in `dist/lib/plugin.js` for Vertesia package integration
 
 In library mode, React and Vertesia dependencies are externalized (provided by the host app).
 

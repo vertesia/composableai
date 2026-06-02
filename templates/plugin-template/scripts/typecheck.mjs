@@ -7,7 +7,7 @@
  * ships a widget), `tsc --build` errors with TS18003 ("No inputs were found").
  *
  * This script auto-detects widgets and only runs the widgets typecheck when
- * at least one .tsx file is present, so the prebuild stays green for both
+ * at least one .tsx file is present, so build checks stay green for both
  * new plugins and plugins that keep widgets.
  */
 import { execSync } from 'node:child_process';

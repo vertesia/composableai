@@ -35,7 +35,7 @@ const CONFIG__inlineCss = false;
 /**
  * Vite configuration to build the plugin as a library or as a standalone application or to run the application in dev mode.
  * Use `vite build --mode lib` to build a library (plugin)
- * Use `vite build` or `vite build --mode app`to build a standalone application
+ * Use `vite build` or `vite build --mode app` to build a standalone application
  * Use `vite dev --mode app` to run the application in dev mode.
  */
 export default defineConfig((env) => {
@@ -87,7 +87,7 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
     // DEV_MODE is used by appgen/sandbox previews. Vercel also proxies to the
     // framework dev server over HTTP, so both modes disable HTTPS.
     const useHttps = process.env.DEV_MODE !== '1' && process.env.VERCEL !== '1';
-    const base = command === 'build' ? '/app/' : '/';
+    const base = command === 'build' ? process.env.VERTESIA_APP_BASE_PATH || '/app/' : '/';
 
     return {
         base, // Dev serves the standalone app at /; Vercel serves built app assets from /app/.

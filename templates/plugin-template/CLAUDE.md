@@ -30,13 +30,14 @@ IMPORTANT: You MUST invoke the relevant skill using the Skill tool BEFORE starti
 ## Build & Dev Commands
 
 ```bash
-pnpm build                 # Full build (server + UI), lint runs as prebuild
+pnpm check                 # Lint, typecheck, and app quality checks
+pnpm build                 # Full service build with lint
+pnpm build:app             # Vite: standalone app publish build -> dist/app/
+pnpm build:service         # Vite app + plugin lib + tool server package build
 pnpm build:server          # Rollup: tool server only → lib/
-pnpm build:ui:lib          # Vite: plugin library → dist/lib/plugin.js
-pnpm build:ui:app          # Vite: standalone app → dist/ui/
 
 pnpm dev                   # Vite dev server with API middleware (https://localhost:5173)
-pnpm start                 # Preview production build (build:server + vite preview)
+pnpm start                 # Preview production build (build:service + vite preview)
 ```
 
 ## Dual Build System
@@ -45,7 +46,7 @@ pnpm start                 # Preview production build (build:server + vite previ
 |-------------|---------|-----------------------------|-----------------------------|-----------------------|
 | Tool Server | Rollup  | `src/tool-server/server.ts` | `tsconfig.tool-server.json` | `lib/*.js`            |
 | UI Plugin   | Vite    | `src/ui/plugin.tsx`         | `tsconfig.ui.json`          | `dist/lib/plugin.js`  |
-| UI App      | Vite    | `src/ui/main.tsx`           | `tsconfig.ui.json`          | `dist/ui/`            |
+| UI App      | Vite    | `src/ui/main.tsx`           | `tsconfig.ui.json`          | `dist/app/`           |
 | Widgets     | Rollup  | `skills/**/*.tsx`           | `tsconfig.widgets.json`     | `dist/widgets/`       |
 
 ## Key Files

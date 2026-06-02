@@ -501,7 +501,6 @@ export interface StartAppBuildRequest {
     trigger?: AppBuildTrigger;
     target?: AppVersionTarget;
     activate?: boolean;
-    build_command?: string;
     title?: string;
     description?: string;
 }
