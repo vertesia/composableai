@@ -1,3 +1,4 @@
+import { Env } from '@vertesia/ui/env';
 import clsx from 'clsx';
 import { Info } from 'lucide-react';
 import { Children, cloneElement, Fragment, isValidElement, type ReactNode, useId, useRef } from 'react';
@@ -33,6 +34,14 @@ interface FormItemProps {
 function joinIds(...ids: Array<string | undefined | false | null>): string | undefined {
     const filtered = ids.filter((id): id is string => typeof id === 'string' && id.length > 0);
     return filtered.length > 0 ? filtered.join(' ') : undefined;
+}
+
+function canShowDevWarning(): boolean {
+    try {
+        return Env.isDev;
+    } catch {
+        return false;
+    }
 }
 
 export function FormItem({
@@ -80,11 +89,7 @@ export function FormItem({
             'aria-invalid': ariaInvalid,
         });
         wired = true;
-    } else if (
-        process.env.NODE_ENV !== 'production' &&
-        !hasWarnedRef.current &&
-        (helpText || error || childrenId === undefined)
-    ) {
+    } else if (canShowDevWarning() && !hasWarnedRef.current && (helpText || error || childrenId === undefined)) {
         hasWarnedRef.current = true;
         // eslint-disable-next-line no-console
         console.warn(

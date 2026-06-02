@@ -1,83 +1,89 @@
 import type { SignupData, SignupPayload } from '@vertesia/common';
-import { Button, useSafeLayoutEffect } from '@vertesia/ui/core';
 import { Env } from '@vertesia/ui/env';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { RegionTag } from '@vertesia/ui/layout';
 import { UserNotFoundError, useUserSession, useUXTracking } from '@vertesia/ui/session';
-import clsx from 'clsx';
 import { useCallback, useEffect, useState } from 'react';
-import EnterpriseSigninButton from './EnterpriseSigninButton';
-import GitHubSignInButton from './GitHubSignInButton';
-import GoogleSignInButton from './GoogleSignInButton';
-import MicrosoftSignInButton from './MicrosoftSigninButton';
+import SignInAuthPending from './SignInAuthPending';
+import SignInEmailStep, { type TenantInfo } from './SignInEmailStep';
+import SignInProvidersStep from './SignInProvidersStep';
+import SignInReturningStep from './SignInReturningStep';
+import SignInTenantBlockedStep from './SignInTenantBlockedStep';
+import SignInTenantStep from './SignInTenantStep';
 import SignupForm from './SignupForm';
+import {
+    clearLastSuccessfulLogin,
+    clearPendingSignin,
+    isInviteRequiredError,
+    type LastSuccessfulLogin,
+    type ProviderId,
+    readLastSuccessfulLogin,
+    readPendingSignin,
+    writeLastSuccessfulLogin,
+} from './signInUtils';
 
 interface SigninScreenProps {
     isNested?: boolean;
-    allowedPrefix?: string;
+    allowedPrefix?: string | string[];
     lightLogo?: string;
     darkLogo?: string;
     preservePath?: boolean;
+    suppressAuthErrorPrefix?: string | string[];
 }
+
 export function SigninScreen({
     allowedPrefix,
     isNested = false,
     lightLogo,
     darkLogo,
     preservePath,
+    suppressAuthErrorPrefix,
 }: SigninScreenProps) {
-    const [allow, setAllow] = useState(false);
-    useSafeLayoutEffect(() => {
-        if (allowedPrefix) setAllow(window.location.pathname.startsWith(allowedPrefix));
-    }, [allowedPrefix]);
+    const pathname = typeof window === 'undefined' ? '' : window.location.pathname;
+    const allow = matchesPathPrefix(pathname, allowedPrefix);
+    const suppressAuthError = matchesPathPrefix(pathname, suppressAuthErrorPrefix);
     return allow ? null : (
-        <SigninScreenImpl isNested={isNested} lightLogo={lightLogo} darkLogo={darkLogo} preservePath={preservePath} />
+        <SigninScreenImpl
+            isNested={isNested}
+            lightLogo={lightLogo}
+            darkLogo={darkLogo}
+            preservePath={preservePath}
+            suppressAuthError={suppressAuthError}
+        />
     );
 }
 
-function SigninScreenImpl({ isNested = false, lightLogo, darkLogo, preservePath }: SigninScreenProps) {
-    const { t } = useUITranslation();
-    const { isLoading, user, authError } = useUserSession();
-
-    return !isLoading && !user ? (
-        <div style={{ zIndex: 999998 }} className={`${isNested ? 'absolute' : 'fixed'}overflow-y-auto `}>
-            <div className={clsx('flex flex-col items-center justify-center py-14 px-4')}>
-                <StandardSigninPanel
-                    authError={authError}
-                    lightLogo={lightLogo}
-                    darkLogo={darkLogo}
-                    preservePath={preservePath}
-                />
-                <div className="flex gap-x-6 mt-10 justify-center items-center text-muted">
-                    <a href="https://vertesiahq.com/privacy" className="text-sm">
-                        {t('auth.privacyPolicy')}
-                    </a>
-                    <a href="https://vertesiahq.com/terms" className="text-sm">
-                        {t('auth.termsOfService')}
-                    </a>
-                    <RegionTag />
-                </div>
-            </div>
-        </div>
-    ) : null;
+function matchesPathPrefix(pathname: string, prefix?: string | string[]) {
+    const prefixes = Array.isArray(prefix) ? prefix : prefix ? [prefix] : [];
+    return prefixes.some((candidate) => {
+        if (pathname === candidate) {
+            return true;
+        }
+        return pathname.startsWith(candidate.endsWith('/') ? candidate : `${candidate}/`);
+    });
 }
 
-function StandardSigninPanel({
-    authError,
-    darkLogo,
+type Mode = 'email' | 'providers' | 'tenant' | 'blocked' | 'returning' | 'pending' | 'signup';
+
+function SigninScreenImpl({
+    isNested = false,
     lightLogo,
+    darkLogo,
     preservePath,
-}: {
-    authError?: Error;
-    darkLogo?: string;
-    lightLogo?: string;
-    preservePath?: boolean;
-}) {
+    suppressAuthError,
+}: SigninScreenProps & { suppressAuthError?: boolean }) {
     const { t } = useUITranslation();
-    const [signupData, setSignupData] = useState<SignupData | undefined>(undefined);
-    const [collectSignupData, setCollectSignupData] = useState(false);
-    const { signOut } = useUserSession();
+    const { isLoading, user, authError, signOut } = useUserSession();
     const { trackEvent } = useUXTracking();
+
+    const [storedSession, setStoredSession] = useState<LastSuccessfulLogin | null>(() => readLastSuccessfulLogin());
+    const [mode, setMode] = useState<Mode>(() => {
+        const s = readLastSuccessfulLogin();
+        return s ? 'returning' : 'email';
+    });
+    const [email, setEmail] = useState('');
+    const [tenant, setTenant] = useState<TenantInfo | undefined>(undefined);
+    const [pendingProvider, setPendingProvider] = useState<ProviderId | null>(null);
 
     useEffect(() => {
         if (!preservePath) {
@@ -85,99 +91,168 @@ function StandardSigninPanel({
         }
     }, [preservePath]);
 
-    const goBack = () => {
-        console.log('Going back, signing out');
-        setSignupData(undefined);
-        setCollectSignupData(false);
-        signOut();
-    };
+    // Route based on authError surfaced by the session.
+    useEffect(() => {
+        if (!authError) return;
+        if (authError instanceof UserNotFoundError) {
+            setMode('signup');
+        } else if (isInviteRequiredError(authError)) {
+            const pending = readPendingSignin();
+            if (pending) setEmail(pending.email);
+            setMode('blocked');
+        }
+    }, [authError]);
 
-    const goToSignup = useCallback(() => {
-        setSignupData(undefined);
-        setCollectSignupData(true);
+    // On successful login, finalize the last-successful-login entry with the user's name.
+    useEffect(() => {
+        if (!user) return;
+        const pending = readPendingSignin();
+        if (!pending) return;
+        writeLastSuccessfulLogin({
+            email: pending.email,
+            lastProvider: pending.provider,
+            tenantName: pending.tenantName,
+            name: user.name || undefined,
+        });
+        clearPendingSignin();
+    }, [user]);
+
+    const onProceedFromEmail = useCallback((e: string, t: TenantInfo | undefined) => {
+        setEmail(e);
+        setTenant(t);
+        setMode(t ? 'tenant' : 'providers');
     }, []);
 
-    useEffect(() => {
-        if (authError instanceof UserNotFoundError) {
-            console.log('User not found, redirecting to signup');
-            goToSignup();
-        }
-    }, [authError, goToSignup]);
+    const onBack = useCallback(() => {
+        setMode('email');
+        setTenant(undefined);
+    }, []);
 
+    const onNotYou = useCallback(() => {
+        clearLastSuccessfulLogin();
+        clearPendingSignin();
+        setStoredSession(null);
+        setEmail('');
+        setTenant(undefined);
+        setMode('email');
+        void signOut();
+    }, [signOut]);
+
+    const onProviderClicked = useCallback(
+        (provider: ProviderId) => {
+            // Tenant context comes from a resolved tenant or stored tenantName, not the provider.
+            const hasTenant = !!tenant || !!storedSession?.tenantName;
+            // Only the pre-existing enterprise_signin event; non-tenant sign-ins emit nothing.
+            if (hasTenant) trackEvent('enterprise_signin', { provider });
+            setPendingProvider(provider);
+            setMode('pending');
+            // The redirect itself happens in the calling step's startSignIn(); this just shows the pending screen.
+        },
+        [trackEvent, storedSession?.tenantName, tenant],
+    );
+
+    const goBackToFresh = useCallback(() => {
+        setEmail('');
+        setTenant(undefined);
+        setMode('email');
+        // Backing out of signup/blocked leaves a Firebase session that has no Vertesia user; clear it.
+        void signOut();
+    }, [signOut]);
+
+    // Submits the signup form to /auth/signup, then redirects into the app.
     const onSignup = (data: SignupData, fbToken: string) => {
-        console.log('Got Signup data', data);
-        setSignupData(data);
-        const payload: SignupPayload = {
-            signupData: data,
-            firebaseToken: fbToken,
-        };
+        const payload: SignupPayload = { signupData: data, firebaseToken: fbToken };
         void fetch(`${Env.endpoints.studio}/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
-        }).then((res) => {
-            console.log('Signup successful', payload, res);
-
+        }).then(() => {
             trackEvent('sign_up');
             window.location.href = '/';
         });
     };
 
-    return (
-        <>
-            {lightLogo && <img src={lightLogo} alt="logo" className="h-15 block dark:hidden" />}
-            {darkLogo && <img src={darkLogo} alt="logo" className="h-15 hidden dark:block" />}
+    const shouldHideTransientAuthError =
+        suppressAuthError && authError !== undefined && !(authError instanceof UserNotFoundError);
 
-            {signupData && (
-                <div className="my-6">
-                    {t('auth.needToMakeChange')} <Button onClick={goToSignup}> {t('auth.goBack')}</Button>
-                </div>
-            )}
-            <div className="flex flex-col space-y-2">
-                {collectSignupData && !localStorage.getItem('tenantName') ? (
-                    <SignupForm onSignup={onSignup} goBack={goBack} />
-                ) : (
-                    <div className="flex flex-col">
-                        <div className="my-4">
-                            <h2 className="text-2xl font-bold text-center">{t('auth.logInOrSignUp')}</h2>
+    if (isLoading || user || shouldHideTransientAuthError) return null;
+
+    let content: React.ReactNode = null;
+    if (mode === 'pending' && pendingProvider) {
+        content = <SignInAuthPending provider={pendingProvider} />;
+    } else if (mode === 'blocked') {
+        content = (
+            <SignInTenantBlockedStep
+                email={email || storedSession?.email || ''}
+                tenantName={tenant?.label || tenant?.name || storedSession?.tenantName || undefined}
+                onBack={goBackToFresh}
+            />
+        );
+    } else if (mode === 'signup' && !localStorage.getItem('tenantName')) {
+        content = <SignupForm onSignup={onSignup} goBack={goBackToFresh} />;
+    } else if (mode === 'tenant' && tenant) {
+        content = (
+            <SignInTenantStep
+                email={email}
+                tenant={tenant}
+                onBack={onBack}
+                onProviderClicked={() => onProviderClicked((tenant.provider ?? 'oidc') as ProviderId)}
+            />
+        );
+    } else if (mode === 'providers') {
+        content = <SignInProvidersStep email={email} onBack={onBack} onProviderClicked={onProviderClicked} />;
+    } else if (mode === 'returning' && storedSession) {
+        content = (
+            <SignInReturningStep session={storedSession} onNotYou={onNotYou} onProviderClicked={onProviderClicked} />
+        );
+    } else {
+        content = <SignInEmailStep initialEmail={email} onProceed={onProceedFromEmail} />;
+    }
+
+    return (
+        <div
+            style={{ zIndex: 999998 }}
+            className={`${isNested ? 'absolute' : 'fixed'} inset-0 overflow-y-auto bg-background`}
+        >
+            <div className="min-h-full flex flex-col items-center justify-center py-12 px-4">
+                <div className="flex flex-col items-center w-full">
+                    {(lightLogo || darkLogo) && (
+                        <div className="mb-7">
+                            {lightLogo && <img src={lightLogo} alt="Vertesia" className="h-10 block dark:hidden" />}
+                            {darkLogo && <img src={darkLogo} alt="Vertesia" className="h-10 hidden dark:block" />}
                         </div>
-                        <div className="max-w-2xl text-center my-2 px-2">
-                            {t('auth.firstTimeMessage')}
-                            <br />
-                            {t('auth.firstTimeDetails')}
-                        </div>
-                        <div className="flex items-center flex-col">
-                            <div className="py-4 w-70">
-                                <GoogleSignInButton />
-                                <GitHubSignInButton />
-                                <MicrosoftSignInButton />
-                            </div>
-                            <div className="flex items-center flex-row w-70 text-muted">
-                                <hr className="w-full" />
-                                <div className="px-2 text-xs">{t('auth.or')}</div>
-                                <hr className="w-full" />
-                            </div>
-                            <div className="py-4 w-70">
-                                <EnterpriseSigninButton />
+                    )}
+
+                    {content}
+
+                    {authError && !(authError instanceof UserNotFoundError) && !isInviteRequiredError(authError) && (
+                        <div className="mt-6 max-w-[420px] text-center text-sm text-muted">
+                            <div>
+                                {t('auth.signInError')}
+                                <br />
+                                {t('auth.signInErrorContact')}
+                                <a className="text-info mx-1" href="mailto:support@vertesiahq.com">
+                                    support@vertesiahq.com
+                                </a>
+                                {t('auth.signInErrorPersists')}
+                                <pre className="mt-2 text-xs">{t('auth.error', { message: authError.message })}</pre>
                             </div>
                         </div>
-                        {authError && !(authError instanceof UserNotFoundError) && (
-                            <div className="text-center">
-                                <div className="">
-                                    {t('auth.signInError')}
-                                    <br />
-                                    {t('auth.signInErrorContact')}
-                                    <a className="text-info mx-1" href="mailto:support@vertesiahq.com">
-                                        support@vertesiahq.com
-                                    </a>
-                                    {t('auth.signInErrorPersists')}
-                                    <pre className="mt-2">{t('auth.error', { message: authError.message })}</pre>
-                                </div>
-                            </div>
-                        )}
+                    )}
+
+                    <div className="flex items-center gap-5 mt-10 text-xs text-muted-foreground">
+                        <a href="https://vertesiahq.com/privacy" className="hover:text-foreground transition">
+                            {t('auth.privacyPolicy')}
+                        </a>
+                        <span className="text-border">·</span>
+                        <a href="https://vertesiahq.com/terms" className="hover:text-foreground transition">
+                            {t('auth.termsOfService')}
+                        </a>
+                        <span className="text-border">·</span>
+                        <RegionTag className="cursor-default" />
                     </div>
-                )}
+                </div>
             </div>
-        </>
+        </div>
     );
 }

@@ -355,4 +355,4 @@ const TabsContent: React.ForwardRefExoticComponent<
 );
 TabsContent.displayName = TabsPrimitive.Content.displayName;
 
-export { Tabs, TabsBar, TabsPanel, TabsList, TabsTrigger, TabsContent };
+export { Tabs, TabsBar, TabsContent, TabsList, TabsPanel, TabsTrigger };

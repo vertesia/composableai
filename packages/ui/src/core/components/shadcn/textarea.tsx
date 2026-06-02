@@ -58,5 +58,5 @@ function Textarea({ className, minLines, maxLines, value, ...props }: TextareaPr
     );
 }
 
-export { Textarea };
 export type { TextareaProps };
+export { Textarea };
