@@ -1,10 +1,10 @@
-import { useState, useRef, useCallback } from 'react';
 import type { ContentObject } from '@vertesia/common';
-import { Button, errorMessage, useToast, useTheme } from '@vertesia/ui/core';
-import { useUserSession } from '@vertesia/ui/session';
-import { useNavigate } from '@vertesia/ui/router';
-import { MonacoEditor, type IEditorApi } from '@vertesia/ui/widgets';
+import { Button, errorMessage, useTheme, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { useNavigate } from '@vertesia/ui/router';
+import { useUserSession } from '@vertesia/ui/session';
+import { type IEditorApi, MonacoEditor } from '@vertesia/ui/widgets';
+import { useCallback, useRef, useState } from 'react';
 import { SaveVersionConfirmModal } from './SaveVersionConfirmModal.js';
 
 interface TextEditorPanelProps {
@@ -65,13 +65,17 @@ export function TextEditorPanel({ object, text, onClose, onSaved }: TextEditorPa
             const blob = new Blob([editorText], { type: contentType });
             const file = new File([blob], fileName, { type: contentType });
 
-            const response = await store.objects.update(object.id, {
-                content: file,
-            }, {
-                createRevision: createVersion,
-                revisionLabel: versionLabel,
-                ifMatch: object.content?.etag,
-            });
+            const response = await store.objects.update(
+                object.id,
+                {
+                    content: file,
+                },
+                {
+                    createRevision: createVersion,
+                    revisionLabel: versionLabel,
+                    ifMatch: object.content?.etag,
+                },
+            );
 
             toast({
                 status: 'success',
@@ -96,9 +100,7 @@ export function TextEditorPanel({ object, text, onClose, onSaved }: TextEditorPa
             toast({
                 status: 'error',
                 title: t('store.errorSavingText'),
-                description: is412
-                    ? t('store.textConflict')
-                    : message,
+                description: is412 ? t('store.textConflict') : message,
                 duration: 5000,
             });
         } finally {
@@ -109,9 +111,7 @@ export function TextEditorPanel({ object, text, onClose, onSaved }: TextEditorPa
     return (
         <>
             <div className="flex items-center gap-2 px-2 py-1 shrink-0">
-                {isDirty && (
-                    <span className="text-xs text-attention">{t('store.unsavedChanges')}</span>
-                )}
+                {isDirty && <span className="text-xs text-attention">{t('store.unsavedChanges')}</span>}
                 <div className="flex-1" />
                 <Button variant="ghost" size="sm" onClick={onClose} disabled={isSaving}>
                     {t('store.cancelEdit')}

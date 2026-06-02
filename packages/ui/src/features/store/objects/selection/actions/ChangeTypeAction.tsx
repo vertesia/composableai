@@ -1,11 +1,10 @@
-import { useToast } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import { useCallback, useState } from "react";
-import { useUITranslation } from '@vertesia/ui/i18n';
-import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
-import { SelectContentTypeModal } from "../../../types";
-import { useObjectsActionCallback } from "../ObjectsActionHooks";
-import type { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
+import { useToast } from '@vertesia/ui/core';
+import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
+import { useUserSession } from '@vertesia/ui/session';
+import { useCallback, useState } from 'react';
+import { SelectContentTypeModal } from '../../../types';
+import { useObjectsActionCallback } from '../ObjectsActionHooks';
+import type { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
 
 export function ChangeTypeActionComponent({ action, objectIds, children }: ActionComponentTypeProps) {
     const { t } = useUITranslation();
@@ -15,7 +14,7 @@ export function ChangeTypeActionComponent({ action, objectIds, children }: Actio
     const callback = useCallback(() => {
         setOpen(true);
         return Promise.resolve(true);
-    }, [])
+    }, []);
 
     useObjectsActionCallback(action.id, callback);
 
@@ -29,25 +28,28 @@ export function ChangeTypeActionComponent({ action, objectIds, children }: Actio
         }
 
         // Execute the operation with the selected typeId
-        store.runOperation({
-            name: "change_type",
-            ids: objectIds,
-            params: { typeId }
-        }).then((r) => {
-            toast({
-                status: 'success',
-                title: t('store.actions.changeType'),
-                description: `Change the type of ${objectIds.length} objects is ${r.status === 'in_progress' ? 'in progress' : 'completed'}`,
-                duration: 2000
+        store
+            .runOperation({
+                name: 'change_type',
+                ids: objectIds,
+                params: { typeId },
+            })
+            .then((r) => {
+                toast({
+                    status: 'success',
+                    title: t('store.actions.changeType'),
+                    description: `Change the type of ${objectIds.length} objects is ${r.status === 'in_progress' ? 'in progress' : 'completed'}`,
+                    duration: 2000,
+                });
+            })
+            .catch((err) => {
+                toast({
+                    status: 'error',
+                    title: t('store.actions.errorChangingType'),
+                    description: err.message,
+                    duration: 5000,
+                });
             });
-        }).catch(err => {
-            toast({
-                status: 'error',
-                title: t('store.actions.errorChangingType'),
-                description: err.message,
-                duration: 5000
-            });
-        });
     };
 
     return (
@@ -59,18 +61,20 @@ export function ChangeTypeActionComponent({ action, objectIds, children }: Actio
                 title="Change Content Type"
                 confirmLabel="Change Type"
             >
-                <p className="pt-2 text-xs">Note: This action will raise the <code>change_type</code> event and will trigger the standard intake workflows
-                    which may reset the object properties.</p>
+                <p className="pt-2 text-xs">
+                    Note: This action will raise the <code>change_type</code> event and will trigger the standard intake
+                    workflows which may reset the object properties.
+                </p>
             </SelectContentTypeModal>
         </div>
-    )
+    );
 }
 
 const t = i18nInstance.getFixedT(null, NAMESPACE);
 export const ChangeTypeAction: ObjectsActionSpec = {
-    id: "changeType",
+    id: 'changeType',
     name: t('store.actions.changeContentType'),
     description: t('store.actions.changeContentTypeDesc'),
     confirm: false,
     component: ChangeTypeActionComponent,
-}
+};

@@ -2,12 +2,12 @@
  * Tests for frontmatter parser
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { parseFrontmatter } from '../src/parsers/frontmatter.js';
 
 describe('Frontmatter Parser', () => {
-  it('should parse YAML frontmatter', () => {
-    const markdown = `---
+    it('should parse YAML frontmatter', () => {
+        const markdown = `---
 title: Test
 author: John Doe
 tags: [one, two, three]
@@ -17,39 +17,39 @@ tags: [one, two, three]
 
 This is the content.`;
 
-    const result = parseFrontmatter(markdown);
+        const result = parseFrontmatter(markdown);
 
-    expect(result.frontmatter).toEqual({
-      title: 'Test',
-      author: 'John Doe',
-      tags: ['one', 'two', 'three']
+        expect(result.frontmatter).toEqual({
+            title: 'Test',
+            author: 'John Doe',
+            tags: ['one', 'two', 'three'],
+        });
+        expect(result.content).toContain('# Content');
+        expect(result.content).not.toContain('---');
     });
-    expect(result.content).toContain('# Content');
-    expect(result.content).not.toContain('---');
-  });
 
-  it('should handle content without frontmatter', () => {
-    const markdown = `# No Frontmatter
+    it('should handle content without frontmatter', () => {
+        const markdown = `# No Frontmatter
 
 Just plain content.`;
 
-    const result = parseFrontmatter(markdown);
+        const result = parseFrontmatter(markdown);
 
-    expect(result.frontmatter).toEqual({});
-    expect(result.content).toBe(markdown);
-  });
+        expect(result.frontmatter).toEqual({});
+        expect(result.content).toBe(markdown);
+    });
 
-  it('should handle empty content', () => {
-    const markdown = '';
+    it('should handle empty content', () => {
+        const markdown = '';
 
-    const result = parseFrontmatter(markdown);
+        const result = parseFrontmatter(markdown);
 
-    expect(result.frontmatter).toEqual({});
-    expect(result.content).toBe('');
-  });
+        expect(result.frontmatter).toEqual({});
+        expect(result.content).toBe('');
+    });
 
-  it('should handle nested objects in frontmatter', () => {
-    const markdown = `---
+    it('should handle nested objects in frontmatter', () => {
+        const markdown = `---
 config:
   nested:
     value: 123
@@ -57,11 +57,11 @@ config:
 ---
 Content`;
 
-    const result = parseFrontmatter(markdown);
+        const result = parseFrontmatter(markdown);
 
-    expect(result.frontmatter.config).toEqual({
-      nested: { value: 123 },
-      array: [1, 2, 3]
+        expect(result.frontmatter.config).toEqual({
+            nested: { value: 123 },
+            array: [1, 2, 3],
+        });
     });
-  });
 });

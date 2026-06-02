@@ -1,14 +1,13 @@
-import type React from "react";
-import { useMemo, useRef } from "react";
-import { FixLinks } from "./FixLinks";
-import { createRoute404 } from "./Route404";
-import { RouteComponent } from "./RouteComponent";
-import { NestedRouter, ReactRouterContext, type Route, useRouterContext } from "./Router";
-import type { NavigateOptions } from "./HistoryNavigator";
-
+import type React from 'react';
+import { useMemo, useRef } from 'react';
+import { FixLinks } from './FixLinks';
+import type { NavigateOptions } from './HistoryNavigator';
+import { createRoute404 } from './Route404';
+import { RouteComponent } from './RouteComponent';
+import { NestedRouter, ReactRouterContext, type Route, useRouterContext } from './Router';
 
 interface RouterProviderProps {
-    routes: Route[],
+    routes: Route[];
     /**
      * The path to use for the root resource. Defaults to '/'. Cannot contains path variables or wildcards
      */
@@ -42,28 +41,32 @@ export function NestedRouterProvider({ routes, index, children, fixLinks = false
         return nestedRouter.match(ctx.remainingPath || '/') || createRoute404();
     }, [ctx.matchedRoutePath, ctx.remainingPath, nestedRouter]);
 
-
-    const wrapWithFixLinks = fixLinks ?
-        (elem: React.ReactNode) => <FixLinks basePath={ctx.matchedRoutePath}>{elem}</FixLinks>
+    const wrapWithFixLinks = fixLinks
+        ? (elem: React.ReactNode) => <FixLinks basePath={ctx.matchedRoutePath}>{elem}</FixLinks>
         : (elem: React.ReactNode) => elem;
 
-    return nestedRouteMatch && (
-        <ReactRouterContext.Provider value={{
-            ...ctx,
-            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-            router: nestedRouter!,
-            route: nestedRouteMatch.value,
-            params: nestedRouteMatch.params,
-            matchedRoutePath: `/${nestedRouteMatch.matchedSegments.join('/')}`,
-            remainingPath: nestedRouteMatch.remainingSegments ? `/${nestedRouteMatch.remainingSegments.join('/')}` : undefined,
-            navigate: (to: string, options?: NavigateOptions) => {
-                if (nestedRouter) {
-                    return nestedRouter.navigate(to, options);
-                }
-            }
-
-        }}>
-            {wrapWithFixLinks(children ? children : <RouteComponent />)}
-        </ReactRouterContext.Provider>
-    )
+    return (
+        nestedRouteMatch && (
+            <ReactRouterContext.Provider
+                value={{
+                    ...ctx,
+                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
+                    router: nestedRouter!,
+                    route: nestedRouteMatch.value,
+                    params: nestedRouteMatch.params,
+                    matchedRoutePath: `/${nestedRouteMatch.matchedSegments.join('/')}`,
+                    remainingPath: nestedRouteMatch.remainingSegments
+                        ? `/${nestedRouteMatch.remainingSegments.join('/')}`
+                        : undefined,
+                    navigate: (to: string, options?: NavigateOptions) => {
+                        if (nestedRouter) {
+                            return nestedRouter.navigate(to, options);
+                        }
+                    },
+                }}
+            >
+                {wrapWithFixLinks(children ? children : <RouteComponent />)}
+            </ReactRouterContext.Provider>
+        )
+    );
 }

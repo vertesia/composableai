@@ -1,17 +1,26 @@
-import { type AgentMessage, AgentMessageType, type BatchProgressDetails, type Plan } from "@vertesia/common";
-import React, { useEffect, useMemo, useState, useRef, useCallback, Component, type ReactNode } from "react";
-import { cn } from "@vertesia/ui/core";
-import { useUITranslation } from '@vertesia/ui/i18n';
-import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
-import { PulsatingCircle } from "../AnimatedThinkingDots";
-export type AgentConversationViewMode = "stacked" | "sliding";
-import BatchProgressPanel, { type BatchProgressPanelClassNames } from "./BatchProgressPanel";
-import MessageItem, { type MessageItemClassNames, type MessageItemProps } from "./MessageItem";
-import StreamingMessage, { type StreamingMessageClassNames } from "./StreamingMessage";
-import ToolCallGroup, { type ToolCallGroupClassNames } from "./ToolCallGroup";
-import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { DONE_STATES, getSlidingViewMessageBuckets, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, type RenderableGroup, shouldCollapseAdjacentRenderedMessage, type StreamingData } from "./utils";
-import { ThinkingMessages } from "../WaitingMessages";
+import { type AgentMessage, AgentMessageType, type BatchProgressDetails, type Plan } from '@vertesia/common';
+import { cn } from '@vertesia/ui/core';
+import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
+import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { PulsatingCircle } from '../AnimatedThinkingDots';
+export type AgentConversationViewMode = 'stacked' | 'sliding';
+
+import { ThinkingMessages } from '../WaitingMessages';
+import BatchProgressPanel, { type BatchProgressPanelClassNames } from './BatchProgressPanel';
+import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
+import StreamingMessage, { type StreamingMessageClassNames } from './StreamingMessage';
+import ToolCallGroup, { type ToolCallGroupClassNames } from './ToolCallGroup';
+import {
+    DONE_STATES,
+    getSlidingViewMessageBuckets,
+    getWorkstreamId,
+    groupMessagesWithStreaming,
+    mergeConsecutiveToolGroups,
+    type RenderableGroup,
+    type StreamingData,
+    shouldCollapseAdjacentRenderedMessage,
+} from './utils';
+import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from './WorkstreamTabs';
 
 /** Extended group that may carry preamble info (text from a preceding single/streaming message) */
 type RenderableGroupWithPreamble = RenderableGroup & {
@@ -39,7 +48,7 @@ const NON_PREAMBLE_TYPES = new Set([
  * as consumed so it doesn't render as a separate "Agent" box.
  */
 function attachPreambles(groups: RenderableGroup[]): RenderableGroupWithPreamble[] {
-    const result: RenderableGroupWithPreamble[] = groups.map(g => ({ ...g }));
+    const result: RenderableGroupWithPreamble[] = groups.map((g) => ({ ...g }));
 
     for (let i = 1; i < result.length; i++) {
         const current = result[i];
@@ -68,7 +77,7 @@ function attachPreambles(groups: RenderableGroup[]): RenderableGroupWithPreamble
     }
 
     // Filter out consumed groups
-    return result.filter(g => !g._consumed);
+    return result.filter((g) => !g._consumed);
 }
 
 // Replace %thinking_message% placeholder with actual thinking message
@@ -87,10 +96,7 @@ const isBatchProgressMessage = (message: AgentMessage): message is AgentMessage 
 // Error boundary to catch and isolate errors in individual message components
 // Note: Markdown parsing errors are handled internally by MarkdownRenderer,
 // so this mainly catches other component errors (e.g., artifact loading, charts)
-class MessageErrorBoundary extends Component<
-    { children: ReactNode },
-    { hasError: boolean; error?: Error }
-> {
+class MessageErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error?: Error }> {
     constructor(props: { children: ReactNode }) {
         super(props);
         this.state = { hasError: false };
@@ -113,10 +119,10 @@ class MessageErrorBoundary extends Component<
         if (this.state.hasError) {
             return (
                 <div className="border-s-4 border-s-destructive bg-destructive/10 px-4 py-2 my-2 rounded-e">
-                    <p className="text-sm text-destructive font-medium">{i18nInstance.getFixedT(null, NAMESPACE)('agent.failedToRenderMessage')}</p>
-                    <p className="text-xs text-muted mt-1 truncate">
-                        {this.state.error?.message || 'Unknown error'}
+                    <p className="text-sm text-destructive font-medium">
+                        {i18nInstance.getFixedT(null, NAMESPACE)('agent.failedToRenderMessage')}
                     </p>
+                    <p className="text-xs text-muted mt-1 truncate">{this.state.error?.message || 'Unknown error'}</p>
                 </div>
             );
         }
@@ -133,7 +139,7 @@ interface AllMessagesMixedProps {
     workstreamStatus?: Map<string, 'pending' | 'in_progress' | 'completed'>;
     showPlanPanel?: boolean;
     onTogglePlanPanel?: () => void;
-    plans?: Array<{ plan: Plan, timestamp: number }>;
+    plans?: Array<{ plan: Plan; timestamp: number }>;
     activePlanIndex?: number;
     onChangePlan?: (index: number) => void;
     taskLabels?: Map<string, string>; // Maps task IDs to more descriptive labels
@@ -202,7 +208,7 @@ function AllMessagesMixedComponent({
 
     const { t } = useUITranslation();
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
+    const [activeWorkstream, setActiveWorkstream] = useState<string>('all');
 
     // PERFORMANCE: Throttle auto-scroll to prevent layout thrashing
     // During streaming, scrollIntoView was being called 30+ times/sec
@@ -251,7 +257,7 @@ function AllMessagesMixedComponent({
     const performScroll = useCallback(() => {
         if (bottomRef.current) {
             programmaticScrollRef.current = true;
-            bottomRef.current.scrollIntoView({ behavior: isStreaming ? "instant" : "smooth" });
+            bottomRef.current.scrollIntoView({ behavior: isStreaming ? 'instant' : 'smooth' });
             lastScrollTimeRef.current = Date.now();
             // Reset the programmatic flag after the browser processes the scroll
             requestAnimationFrame(() => {
@@ -294,34 +300,31 @@ function AllMessagesMixedComponent({
 
     // Sort all messages chronologically and dedupe adjacent identical messages
     // Low-signal messages are suppressed at the source (server-side) via shouldSuppressLowSignalMessage
-    const sortedMessages = React.useMemo(
-        () => {
-            const filtered = hiddenMessageTypes?.length
-                ? messages.filter(m => !hiddenMessageTypes.includes(m.type))
-                : messages;
+    const sortedMessages = React.useMemo(() => {
+        const filtered = hiddenMessageTypes?.length
+            ? messages.filter((m) => !hiddenMessageTypes.includes(m.type))
+            : messages;
 
-            const sorted = [...filtered].sort((a, b) => {
-                const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
-                const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
-                return timeA - timeB;
-            });
+        const sorted = [...filtered].sort((a, b) => {
+            const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
+            const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
+            return timeA - timeB;
+        });
 
-            const deduped: AgentMessage[] = [];
-            for (const msg of sorted) {
-                const previous = deduped[deduped.length - 1];
-                if (previous && shouldCollapseAdjacentRenderedMessage(previous, msg)) {
-                    continue;
-                }
-
-                if (previous && shouldDedupeAdjacentCompletedToolMessage(previous, msg)) {
-                    continue;
-                }
-                deduped.push(msg);
+        const deduped: AgentMessage[] = [];
+        for (const msg of sorted) {
+            const previous = deduped[deduped.length - 1];
+            if (previous && shouldCollapseAdjacentRenderedMessage(previous, msg)) {
+                continue;
             }
-            return deduped;
-        },
-        [messages, hiddenMessageTypes],
-    );
+
+            if (previous && shouldDedupeAdjacentCompletedToolMessage(previous, msg)) {
+                continue;
+            }
+            deduped.push(msg);
+        }
+        return deduped;
+    }, [messages, hiddenMessageTypes]);
 
     // Get workstreams from messages - only from message.workstream_id
     const workstreams = React.useMemo(() => {
@@ -337,16 +340,16 @@ function AllMessagesMixedComponent({
     // Count messages per workstream
     const workstreamCounts = React.useMemo(() => {
         const counts = new Map<string, number>();
-        counts.set("all", sortedMessages.length);
+        counts.set('all', sortedMessages.length);
 
         // Count main messages
-        const mainMessages = filterMessagesByWorkstream(sortedMessages, "main");
-        counts.set("main", mainMessages.length);
+        const mainMessages = filterMessagesByWorkstream(sortedMessages, 'main');
+        counts.set('main', mainMessages.length);
 
         // Count other workstreams
         sortedMessages.forEach((msg) => {
             const workstreamId = getWorkstreamId(msg);
-            if (workstreamId !== "main") {
+            if (workstreamId !== 'main') {
                 counts.set(workstreamId, (counts.get(workstreamId) || 0) + 1);
             }
         });
@@ -356,7 +359,7 @@ function AllMessagesMixedComponent({
 
     // Filter messages based on active workstream
     const displayMessages = React.useMemo(() => {
-        if (activeWorkstream === "all") {
+        if (activeWorkstream === 'all') {
             return sortedMessages;
         }
         return filterMessagesByWorkstream(sortedMessages, activeWorkstream);
@@ -376,16 +379,19 @@ function AllMessagesMixedComponent({
     const { completeStreaming, incompleteStreaming } = React.useMemo(() => {
         const complete = new Map<string, StreamingData>();
         const incomplete: Array<{ id: string; data: StreamingData }> = [];
-        const newestMessageTimestamp = displayMessages.length > 0
-            ? Math.max(...displayMessages.map(msg =>
-                typeof msg.timestamp === "number" ? msg.timestamp : new Date(msg.timestamp).getTime()
-            ))
-            : -Infinity;
+        const newestMessageTimestamp =
+            displayMessages.length > 0
+                ? Math.max(
+                      ...displayMessages.map((msg) =>
+                          typeof msg.timestamp === 'number' ? msg.timestamp : new Date(msg.timestamp).getTime(),
+                      ),
+                  )
+                : -Infinity;
 
         streamingMessages.forEach((data, id) => {
             // Filter by workstream if specified
-            if (activeWorkstream && activeWorkstream !== "all") {
-                const streamWorkstream = data.workstreamId || "main";
+            if (activeWorkstream && activeWorkstream !== 'all') {
+                const streamWorkstream = data.workstreamId || 'main';
                 if (activeWorkstream !== streamWorkstream) return;
             }
 
@@ -410,24 +416,39 @@ function AllMessagesMixedComponent({
     // Incomplete streaming is rendered separately at the end (avoids re-grouping on every chunk)
     // Then attach preamble text from preceding reasoning messages to tool_groups
     const groupedMessages = React.useMemo(
-        () => attachPreambles(mergeConsecutiveToolGroups(groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream))),
-        [displayMessages, completeStreaming, activeWorkstream]
+        () =>
+            attachPreambles(
+                mergeConsecutiveToolGroups(
+                    groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream),
+                ),
+            ),
+        [displayMessages, completeStreaming, activeWorkstream],
     );
 
     // Group important messages with ONLY complete streaming interleaved for sliding view
     const groupedImportantMessages = React.useMemo(
-        () => attachPreambles(mergeConsecutiveToolGroups(groupMessagesWithStreaming(importantMessages, completeStreaming, activeWorkstream))),
-        [importantMessages, completeStreaming, activeWorkstream]
+        () =>
+            attachPreambles(
+                mergeConsecutiveToolGroups(
+                    groupMessagesWithStreaming(importantMessages, completeStreaming, activeWorkstream),
+                ),
+            ),
+        [importantMessages, completeStreaming, activeWorkstream],
     );
 
     // Show working indicator when agent is actively processing
     const isAgentWorking = useMemo(() => {
         if (isCompleted) return false;
         // Agent is working if there are streaming messages, recent thinking, or no final answer yet
-        return streamingMessages.size > 0 || recentThinking.length > 0 || !displayMessages.some(msg =>
-            msg.type === AgentMessageType.COMPLETE ||
-            msg.type === AgentMessageType.IDLE ||
-            msg.type === AgentMessageType.TERMINATED
+        return (
+            streamingMessages.size > 0 ||
+            recentThinking.length > 0 ||
+            !displayMessages.some(
+                (msg) =>
+                    msg.type === AgentMessageType.COMPLETE ||
+                    msg.type === AgentMessageType.IDLE ||
+                    msg.type === AgentMessageType.TERMINATED,
+            )
         );
     }, [isCompleted, streamingMessages.size, recentThinking.length, displayMessages]);
 
@@ -438,7 +459,7 @@ function AllMessagesMixedComponent({
         // Group messages by workstream
         const workstreamMessages = new Map<string, AgentMessage[]>();
 
-        sortedMessages.forEach(message => {
+        sortedMessages.forEach((message) => {
             const workstreamId = getWorkstreamId(message);
             if (!workstreamMessages.has(workstreamId)) {
                 workstreamMessages.set(workstreamId, []);
@@ -449,14 +470,23 @@ function AllMessagesMixedComponent({
         // Check if each workstream is completed
         for (const [workstreamId, msgs] of workstreamMessages.entries()) {
             if (msgs.length > 0) {
-                const isCompleted = msgs.some(m => {
-                    if ([AgentMessageType.COMPLETE, AgentMessageType.IDLE, AgentMessageType.REQUEST_INPUT, AgentMessageType.TERMINATED].includes(m.type)) {
+                const isCompleted = msgs.some((m) => {
+                    if (
+                        [
+                            AgentMessageType.COMPLETE,
+                            AgentMessageType.IDLE,
+                            AgentMessageType.REQUEST_INPUT,
+                            AgentMessageType.TERMINATED,
+                        ].includes(m.type)
+                    ) {
                         return true;
                     }
                     // Workstream completion is sent as UPDATE with workstream_event: 'completed' or status: 'completed'/'canceled'
                     if (m.type === AgentMessageType.UPDATE && m.details) {
                         const d = m.details as Record<string, unknown>;
-                        return d.workstream_event === 'completed' || d.status === 'completed' || d.status === 'canceled';
+                        return (
+                            d.workstream_event === 'completed' || d.status === 'completed' || d.status === 'canceled'
+                        );
                     }
                     return false;
                 });
@@ -556,7 +586,7 @@ function AllMessagesMixedComponent({
             `}</style>
 
             {/* Workstream tabs with completion indicators */}
-            <div className={cn("sticky top-0 z-10", hideWorkstreamTabs && "hidden")}>
+            <div className={cn('sticky top-0 z-10', hideWorkstreamTabs && 'hidden')}>
                 <WorkstreamTabs
                     workstreams={workstreams}
                     activeWorkstream={activeWorkstream}
@@ -569,13 +599,18 @@ function AllMessagesMixedComponent({
             {displayMessages.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-center py-8">
                     <div className="flex items-center px-3 py-2 text-sm text-muted">
-                        {activeWorkstream === "all"
+                        {activeWorkstream === 'all'
                             ? t('agent.waitingForAgentResponse')
                             : t('agent.noMessagesInWorkstream')}
                     </div>
                 </div>
             ) : (
-                <div className={cn("flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full", messageListClassName)}>
+                <div
+                    className={cn(
+                        'flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full',
+                        messageListClassName,
+                    )}
+                >
                     {/* Friendly message — rendered outside the messages array to avoid memo issues/triggering autoscroll */}
                     {prependFriendlyMessage && (
                         <MessageItem
@@ -586,8 +621,8 @@ function AllMessagesMixedComponent({
                                 type: AgentMessageType.QUESTION,
                                 message: prependFriendlyMessage,
                                 timestamp: displayMessages[0]?.timestamp ?? Date.now(),
-                                workflow_run_id: "",
-                                workstream_id: "main",
+                                workflow_run_id: '',
+                                workstream_id: 'main',
                             }}
                         />
                     )}
@@ -602,18 +637,20 @@ function AllMessagesMixedComponent({
                                     // Render grouped tool calls
                                     const lastMessage = group.messages[group.messages.length - 1];
                                     const isTerminalToolStatus =
-                                        group.toolStatus === "completed" ||
-                                        group.toolStatus === "error" ||
-                                        group.toolStatus === "warning";
-                                    const isLatest = !isCompleted &&
+                                        group.toolStatus === 'completed' ||
+                                        group.toolStatus === 'error' ||
+                                        group.toolStatus === 'warning';
+                                    const isLatest =
+                                        !isCompleted &&
                                         isLastGroup &&
                                         !DONE_STATES.includes(lastMessage.type) &&
                                         !isTerminalToolStatus;
 
                                     if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     return (
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                                        <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}>
+                                        <MessageErrorBoundary
+                                            key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}
+                                        >
                                             <ToolCallGroup
                                                 messages={group.messages}
                                                 showPulsatingCircle={isLatest}
@@ -629,7 +666,6 @@ function AllMessagesMixedComponent({
                                     // Render streaming message - no error boundary to avoid interrupting streaming
                                     return (
                                         <StreamingMessage
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                             key={`streaming-${group.streamingId}-${groupIndex}`}
                                             text={group.text}
                                             workstreamId={group.workstreamId}
@@ -642,15 +678,15 @@ function AllMessagesMixedComponent({
                                 } else {
                                     // Render single message
                                     const message = group.message;
-                                    const isLatestMessage = !isCompleted &&
-                                        isLastGroup &&
-                                        !DONE_STATES.includes(message.type);
+                                    const isLatestMessage =
+                                        !isCompleted && isLastGroup && !DONE_STATES.includes(message.type);
 
                                     // Special handling for batch progress messages
                                     if (isBatchProgressMessage(message)) {
                                         return (
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                                            <MessageErrorBoundary key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}>
+                                            <MessageErrorBoundary
+                                                key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}
+                                            >
                                                 <BatchProgressPanel
                                                     message={message}
                                                     batchData={message.details}
@@ -662,7 +698,6 @@ function AllMessagesMixedComponent({
                                     }
 
                                     return (
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                         <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
                                             <MessageItem
                                                 message={message}
@@ -691,7 +726,12 @@ function AllMessagesMixedComponent({
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && incompleteStreaming.length === 0 && (
-                                <div className={cn("flex items-center gap-2 ps-3 py-1.5 border-s-2 border-s-purple-500", workingIndicatorClassName)}>
+                                <div
+                                    className={cn(
+                                        'flex items-center gap-2 ps-3 py-1.5 border-s-2 border-s-purple-500',
+                                        workingIndicatorClassName,
+                                    )}
+                                >
                                     <PulsatingCircle size="sm" color="blue" />
                                     <span className="text-xs text-muted">{t('agent.working')}</span>
                                 </div>
@@ -707,10 +747,11 @@ function AllMessagesMixedComponent({
                                     // Render grouped tool calls
                                     const lastMessage = group.messages[group.messages.length - 1];
                                     const isTerminalToolStatus =
-                                        group.toolStatus === "completed" ||
-                                        group.toolStatus === "error" ||
-                                        group.toolStatus === "warning";
-                                    const isLatest = !isCompleted &&
+                                        group.toolStatus === 'completed' ||
+                                        group.toolStatus === 'error' ||
+                                        group.toolStatus === 'warning';
+                                    const isLatest =
+                                        !isCompleted &&
                                         recentThinking.length === 0 &&
                                         isLastGroup &&
                                         !DONE_STATES.includes(lastMessage.type) &&
@@ -718,8 +759,9 @@ function AllMessagesMixedComponent({
 
                                     if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     return (
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                                        <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}>
+                                        <MessageErrorBoundary
+                                            key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}
+                                        >
                                             <ToolCallGroup
                                                 messages={group.messages}
                                                 showPulsatingCircle={isLatest}
@@ -735,7 +777,6 @@ function AllMessagesMixedComponent({
                                     // Render streaming message - no error boundary to avoid interrupting streaming
                                     return (
                                         <StreamingMessage
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                             key={`streaming-${group.streamingId}-${groupIndex}`}
                                             text={group.text}
                                             workstreamId={group.workstreamId}
@@ -748,7 +789,8 @@ function AllMessagesMixedComponent({
                                 } else {
                                     // Render single message
                                     const message = group.message;
-                                    const isLatestMessage = !isCompleted &&
+                                    const isLatestMessage =
+                                        !isCompleted &&
                                         recentThinking.length === 0 &&
                                         isLastGroup &&
                                         !DONE_STATES.includes(message.type);
@@ -756,8 +798,9 @@ function AllMessagesMixedComponent({
                                     // Special handling for batch progress messages
                                     if (isBatchProgressMessage(message)) {
                                         return (
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                                            <MessageErrorBoundary key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}>
+                                            <MessageErrorBoundary
+                                                key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}
+                                            >
                                                 <BatchProgressPanel
                                                     message={message}
                                                     batchData={message.details}
@@ -769,7 +812,6 @@ function AllMessagesMixedComponent({
                                     }
 
                                     return (
-                                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                         <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
                                             <MessageItem
                                                 message={message}
@@ -787,7 +829,6 @@ function AllMessagesMixedComponent({
                             {/* Recent thinking messages - displayed with streaming reveal */}
                             {recentThinking.map((thinking, idx) => (
                                 <StreamingMessage
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                     key={`thinking-${thinking.timestamp}-${idx}`}
                                     text={processThinkingPlaceholder(thinking.message || '', thinkingMessageIndex)}
                                     workstreamId={getWorkstreamId(thinking)}
@@ -811,7 +852,12 @@ function AllMessagesMixedComponent({
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && recentThinking.length === 0 && incompleteStreaming.length === 0 && (
-                                <div className={cn("flex items-center gap-2 ps-3 py-1.5 border-s-2 border-s-purple-500", workingIndicatorClassName)}>
+                                <div
+                                    className={cn(
+                                        'flex items-center gap-2 ps-3 py-1.5 border-s-2 border-s-purple-500',
+                                        workingIndicatorClassName,
+                                    )}
+                                >
                                     <PulsatingCircle size="sm" color="blue" />
                                     <span className="text-xs text-muted">{t('agent.working')}</span>
                                 </div>
@@ -831,10 +877,10 @@ const shouldDedupeAdjacentCompletedToolMessage = (previous: AgentMessage, curren
 
     const prevDetails = previous.details as { tool_status?: string } | undefined;
     const currDetails = current.details as { tool_status?: string } | undefined;
-    if (prevDetails?.tool_status !== "completed" || currDetails?.tool_status !== "completed") return false;
+    if (prevDetails?.tool_status !== 'completed' || currDetails?.tool_status !== 'completed') return false;
 
-    const prevTs = typeof previous.timestamp === "number" ? previous.timestamp : new Date(previous.timestamp).getTime();
-    const currTs = typeof current.timestamp === "number" ? current.timestamp : new Date(current.timestamp).getTime();
+    const prevTs = typeof previous.timestamp === 'number' ? previous.timestamp : new Date(previous.timestamp).getTime();
+    const currTs = typeof current.timestamp === 'number' ? current.timestamp : new Date(current.timestamp).getTime();
     return currTs - prevTs < 2000;
 };
 

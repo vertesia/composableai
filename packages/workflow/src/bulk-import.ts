@@ -1,7 +1,4 @@
-import type {
-    CreateCollectionPayload,
-    CreateContentObjectPayload,
-} from '@vertesia/common';
+import type { CreateCollectionPayload, CreateContentObjectPayload } from '@vertesia/common';
 
 export enum ItemTypes {
     CONTENT_OBJECT = 'ContentObject',
@@ -47,11 +44,7 @@ export interface StorageObjectSourceItem extends BaseItem {
     mimeType: string;
 }
 
-export type SourceItem =
-    | ContentObjectSourceItem
-    | CollectionSourceItem
-    | MetadataSourceItem
-    | StorageObjectSourceItem;
+export type SourceItem = ContentObjectSourceItem | CollectionSourceItem | MetadataSourceItem | StorageObjectSourceItem;
 
 export interface SourceItemBatch {
     index: number;
@@ -96,11 +89,14 @@ export interface BulkImportParams {
     partitionSize?: number;
     dryRun?: boolean;
     updateByContentSource?: boolean;
+    skipWorkflows?: boolean;
 }
 
 export interface PartitionError {
     partitionIndex: number;
     errorCount: number;
+    /** Workflow-level error message if the partition itself failed (vs. per-batch failures). */
+    message?: string;
 }
 
 export interface BulkImportResult {

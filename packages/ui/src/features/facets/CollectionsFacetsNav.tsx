@@ -1,8 +1,15 @@
-import { type Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, type FilterGroup } from '@vertesia/ui/core';
+import type { FacetBucket } from '@vertesia/common';
+import {
+    type Filter as BaseFilter,
+    FilterBar,
+    FilterBtn,
+    FilterClear,
+    type FilterGroup,
+    FilterProvider,
+} from '@vertesia/ui/core';
 import { useState } from 'react';
 import { useTypeRegistry } from '../store/types/TypeRegistryProvider.js';
 import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
-import type { FacetBucket } from '@vertesia/common';
 
 interface CollectionsFacetsNavProps {
     facets: {
@@ -24,17 +31,17 @@ export function useCollectionsFilterGroups(facets: CollectionsFacetsNavProps['fa
         name: 'name',
         placeholder: 'Name',
         type: 'text' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(nameFilterGroup);
 
     // add type filter as select type
     if (typeRegistry) {
-        const typeOptions = typeRegistry.types.map(type => {
+        const typeOptions = typeRegistry.types.map((type) => {
             return {
                 label: type.name,
-                value: type.id
-            }
+                value: type.id,
+            };
         });
         const typeFilterGroup = {
             name: 'types',
@@ -43,9 +50,9 @@ export function useCollectionsFilterGroups(facets: CollectionsFacetsNavProps['fa
             multiple: true,
             options: typeOptions,
             filterBy: (value: string, searchText: string) => {
-                const option = typeOptions.find(opt => opt.value === value);
+                const option = typeOptions.find((opt) => opt.value === value);
                 return option?.label?.toLowerCase().includes(searchText.toLowerCase()) ?? false;
-            }
+            },
         };
         customFilterGroups.push(typeFilterGroup);
     }
@@ -65,7 +72,7 @@ export function useCollectionsFilterHandler(search: SearchInterface) {
         // Clear all filters first, then apply new ones
         search.clearFilters(false);
 
-        newFilters.forEach(filter => {
+        newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name;
                 const filterValue = filterValueToQueryValue(filter);
@@ -90,11 +97,7 @@ export function CollectionsFacetsNav({ facets, search }: CollectionsFacetsNavPro
     };
 
     return (
-        <FilterProvider
-            filterGroups={filterGroups}
-            filters={filters}
-            setFilters={handleFilterChange}
-        >
+        <FilterProvider filterGroups={filterGroups} filters={filters} setFilters={handleFilterChange}>
             <div className="flex gap-2 items-center">
                 <FilterBtn />
                 <FilterBar />

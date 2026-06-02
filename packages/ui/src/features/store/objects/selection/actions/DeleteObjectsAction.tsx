@@ -1,11 +1,8 @@
-import { useCallback } from 'react';
-
 import { useToast } from '@vertesia/ui/core';
-import { useNavigate } from "@vertesia/ui/router";
+import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
+import { useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-
-import { useUITranslation } from '@vertesia/ui/i18n';
-import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
+import { useCallback } from 'react';
 import { useDocumentSearch } from '../../search/DocumentSearchContext';
 import { useObjectsActionContext } from '../ObjectsActionHooks';
 import type { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
@@ -26,53 +23,68 @@ export function DeleteObjectsActionComponent({ action, objectIds, children }: Ac
                 status: 'error',
                 title: t('store.actions.noObjectsSelected'),
                 description: t('store.actions.pleaseSelectObjectsToDelete'),
-                duration: 3000
+                duration: 3000,
             });
             return Promise.resolve(false);
         }
 
-        return client.store.objects.delete(objectIds).then((result) => {
-            const plural = result.deleted > 1 ? 's' : '';
-            toast({
-                status: 'success',
-                title: `${result.deleted} object${plural} deleted`,
-                duration: 2000
-            });
-            if (result.failed.length > 0) {
+        return client.store.objects
+            .delete(objectIds)
+            .then((result) => {
+                const plural = result.deleted > 1 ? 's' : '';
                 toast({
-                    status: 'warning',
-                    title: `${result.failed.length} object(s) could not be deleted`,
-                    duration: 3000
+                    status: 'success',
+                    title: `${result.deleted} object${plural} deleted`,
+                    duration: 2000,
                 });
-            }
-
-            if (search) { // we are in the objects table view
-                ctx.params?.selection?.removeAll();
-                const facets = JSON.parse(JSON.stringify(search.facets))
-                if (objectIds.length === facets._value.total) {
-                    search.resetFacets();
+                if (result.failed.length > 0) {
+                    toast({
+                        status: 'warning',
+                        title: `${result.failed.length} object(s) could not be deleted`,
+                        duration: 3000,
+                    });
                 }
-                search.search();
-            } else {
-                // we are in the object view
-                // go back to the parent
-                navigate("/objects");
-            }
-        }).catch(err => {
-            toast({
-                status: 'error',
-                title: t('store.actions.errorDeletingObjects'),
-                description: err.message,
-                duration: 5000
+
+                if (search) {
+                    // we are in the objects table view
+                    ctx.params?.selection?.removeAll();
+                    const facets = JSON.parse(JSON.stringify(search.facets));
+                    if (objectIds.length === facets._value.total) {
+                        search.resetFacets();
+                    }
+                    search.search();
+                } else {
+                    // we are in the object view
+                    // go back to the parent
+                    navigate('/objects');
+                }
+            })
+            .catch((err) => {
+                toast({
+                    status: 'error',
+                    title: t('store.actions.errorDeletingObjects'),
+                    description: err.message,
+                    duration: 5000,
+                });
             });
-        });
-    }, [client.store.objects.delete, ctx.params?.selection?.removeAll, navigate, objectIds, search, search?.facets, search?.resetFacets, search?.search, t, toast]);
+    }, [
+        client.store.objects.delete,
+        ctx.params?.selection?.removeAll,
+        navigate,
+        objectIds,
+        search,
+        search?.facets,
+        search?.resetFacets,
+        search?.search,
+        t,
+        toast,
+    ]);
 
     return (
         <ConfirmAction action={action} callback={callback}>
             {children}
         </ConfirmAction>
-    )
+    );
 }
 
 const t = i18nInstance.getFixedT(null, NAMESPACE);
@@ -83,9 +95,8 @@ export const DeleteObjectsAction: ObjectsActionSpec = {
     confirm: true,
     confirmationText: t('store.actions.confirmDeleteAll'),
     component: DeleteObjectsActionComponent,
-    destructive: true
-}
-
+    destructive: true,
+};
 
 export const DeleteObjectsFromCollectionsAction: ObjectsActionSpec = {
     id: 'deleteFromCollections',
@@ -94,5 +105,5 @@ export const DeleteObjectsFromCollectionsAction: ObjectsActionSpec = {
     confirm: true,
     confirmationText: t('store.actions.confirmDeleteSelected'),
     component: DeleteObjectsActionComponent,
-    destructive: true
-}
+    destructive: true,
+};

@@ -8,7 +8,7 @@ const TARGET_FILE = 'lib/vertesia-json.js';
 export default {
     input: 'src/index.ts',
     output: {
-        file: TARGET_FILE,         // ES module output for browser
+        file: TARGET_FILE, // ES module output for browser
         format: 'es',
         sourcemap: true,
     },
@@ -25,15 +25,15 @@ export default {
     },
     plugins: [
         nodeResolve({
-            browser: true,  // Prefer browser-compatible versions of packages
+            browser: true, // Prefer browser-compatible versions of packages
             exportConditions: ['browser', 'module', 'import'],
         }),
-        commonjs(),        // Convert CommonJS modules to ES6
+        commonjs(), // Convert CommonJS modules to ES6
         typescript({
             tsconfig: './tsconfig.web.json',
             sourceMap: true,
             declaration: false,
         }),
-        terser(),          // Optional: minify for production
+        terser(), // Optional: minify for production
     ],
 };

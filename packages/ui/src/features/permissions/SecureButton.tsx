@@ -1,6 +1,6 @@
-import type { Permission } from "@vertesia/common";
-import { Button, type ButtonProps } from "@vertesia/ui/core";
-import { useUserPermissions } from "./UserPermissionsProvider";
+import type { Permission } from '@vertesia/common';
+import { Button, type ButtonProps } from '@vertesia/ui/core';
+import { useUserPermissions } from './UserPermissionsProvider';
 
 interface SecureButtonProps extends ButtonProps {
     permission: Permission | Permission[];
@@ -9,10 +9,11 @@ export function SecureButton({ permission, isDisabled, title, children, ...other
     const perms = useUserPermissions();
     const hasPermission = perms.hasPermission(permission);
     if (!hasPermission) {
-        isDisabled = true;
-        title = 'You do not have permission to perform this action';
+        return null;
     }
     return (
-        <Button isDisabled={isDisabled} title={title} {...others}>{children}</Button>
-    )
+        <Button isDisabled={isDisabled} title={title} {...others}>
+            {children}
+        </Button>
+    );
 }

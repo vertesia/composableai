@@ -10,7 +10,6 @@
  * These are automatically synced to the sandbox when the skill is used.
  */
 
-
 /**
  * Context provided when searching for relevant skills
  */

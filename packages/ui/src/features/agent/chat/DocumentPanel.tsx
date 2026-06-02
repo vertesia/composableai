@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ExternalLinkIcon, FileTextIcon, Loader2Icon, X } from 'lucide-react';
-import { useUserSession } from '@vertesia/ui/session';
 import { Button, VTooltip } from '@vertesia/ui/core';
-import { NavLink } from '@vertesia/ui/router';
-import { MarkdownRenderer } from '@vertesia/ui/widgets';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { NavLink } from '@vertesia/ui/router';
+import { useUserSession } from '@vertesia/ui/session';
+import { MarkdownRenderer } from '@vertesia/ui/widgets';
+import { ExternalLinkIcon, FileTextIcon, Loader2Icon, X } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { DocumentTabBar } from './DocumentTabBar.js';
 import type { OpenDocument } from './types/document.js';
 
@@ -36,26 +36,29 @@ function DocumentPanelComponent({
     const [error, setError] = useState<string | null>(null);
     const [docName, setDocName] = useState<string | null>(null);
 
-    const fetchContent = useCallback(async (docId: string) => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const [textResult, obj] = await Promise.all([
-                client.store.objects.getObjectText(docId),
-                client.store.objects.retrieve(docId),
-            ]);
-            setContent(textResult.text ?? null);
-            const name = obj.name;
-            setDocName(name);
-            if (name) onUpdateDocumentTitle?.(docId, name);
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : t('agent.failedToLoadDocument');
-            setError(message);
-            setContent(null);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [client, onUpdateDocumentTitle, t]);
+    const fetchContent = useCallback(
+        async (docId: string) => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const [textResult, obj] = await Promise.all([
+                    client.store.objects.getObjectText(docId),
+                    client.store.objects.retrieve(docId),
+                ]);
+                setContent(textResult.text ?? null);
+                const name = obj.name;
+                setDocName(name);
+                if (name) onUpdateDocumentTitle?.(docId, name);
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : t('agent.failedToLoadDocument');
+                setError(message);
+                setContent(null);
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [client, onUpdateDocumentTitle, t],
+    );
 
     // Fetch content when active document changes or refreshKey bumps
     useEffect(() => {
@@ -75,23 +78,17 @@ function DocumentPanelComponent({
             <div className="flex items-center justify-between px-3 py-2 border-b border-muted/20 shrink-0">
                 <div className="flex items-center gap-2 min-w-0">
                     <FileTextIcon className="size-4 text-muted shrink-0" />
-                    <h3 className="font-bold text-sm truncate">
-                        {docName || t('agent.document')}
-                    </h3>
+                    <h3 className="font-bold text-sm truncate">{docName || t('agent.document')}</h3>
                 </div>
                 <div className="flex items-center gap-1">
-                    <DocumentTabBar
-                        documents={documents}
-                        activeId={activeDocumentId}
-                        onSelect={onSelectDocument}
-                    />
+                    <DocumentTabBar documents={documents} activeId={activeDocumentId} onSelect={onSelectDocument} />
                     {activeDocumentId && (
                         <NavLink
                             href={`/store/objects/${activeDocumentId}#overview`}
                             topLevelNav
                             className="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 w-8 hover:bg-muted/20 text-muted hover:text-foreground"
                         >
-                            <VTooltip description={t('agent.openDocument')} placement="top" size='xs'>
+                            <VTooltip description={t('agent.openDocument')} placement="top" size="xs">
                                 <ExternalLinkIcon className="size-4" />
                             </VTooltip>
                         </NavLink>
@@ -115,14 +112,10 @@ function DocumentPanelComponent({
                         <span className="ms-2 text-sm text-muted">{t('agent.loadingDocument')}</span>
                     </div>
                 ) : error ? (
-                    <div className="p-4 rounded-md bg-destructive/10 text-destructive text-sm">
-                        {error}
-                    </div>
+                    <div className="p-4 rounded-md bg-destructive/10 text-destructive text-sm">{error}</div>
                 ) : content ? (
                     <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <MarkdownRenderer artifactRunId={runId}>
-                            {content}
-                        </MarkdownRenderer>
+                        <MarkdownRenderer artifactRunId={runId}>{content}</MarkdownRenderer>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-12 text-muted">

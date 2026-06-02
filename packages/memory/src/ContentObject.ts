@@ -1,11 +1,21 @@
-import { manyToMarkdown, pdfToText, pdfToTextBuffer, transformImage, transformImageToBuffer } from "@vertesia/converters";
-import fs from "node:fs";
-import { PassThrough, Readable } from "node:stream";
-import type { Builder } from "./Builder.js";
-import type { ContentSource } from "./ContentSource.js";
+import fs from 'node:fs';
+import { PassThrough, Readable } from 'node:stream';
+import {
+    manyToMarkdown,
+    pdfToText,
+    pdfToTextBuffer,
+    transformImage,
+    transformImageToBuffer,
+} from '@vertesia/converters';
+import type { Builder } from './Builder.js';
+import type { ContentSource } from './ContentSource.js';
 
 export class ContentObject implements ContentSource {
-    constructor(public builder: Builder, public source: ContentSource, public encoding: BufferEncoding = "utf-8") { }
+    constructor(
+        public builder: Builder,
+        public source: ContentSource,
+        public encoding: BufferEncoding = 'utf-8',
+    ) {}
 
     getContent(): Promise<Buffer> {
         return this.source.getContent();
@@ -20,7 +30,6 @@ export class ContentObject implements ContentSource {
     }
 
     async copyToFile(file: string): Promise<fs.WriteStream> {
-
         const input = await this.getStream();
         const out = fs.createWriteStream(file);
         const stream = input.pipe(out);
@@ -28,14 +37,14 @@ export class ContentObject implements ContentSource {
             const handleError = (err: unknown) => {
                 reject(err);
                 out.close();
-            }
+            };
             stream.on('finish', () => {
                 resolve(stream);
                 out.close();
             });
             input.on('error', handleError);
             stream.on('error', handleError);
-        })
+        });
     }
 
     /**
@@ -59,12 +68,16 @@ export class JsonObject extends ContentObject {
 
 export interface MediaOptions {
     max_hw?: number;
-    format?: "jpeg" | "png";
+    format?: 'jpeg' | 'png';
 }
 export class MediaObject extends ContentObject {
-    constructor(builder: Builder, source: ContentSource, public options: MediaOptions = {}) {
+    constructor(
+        builder: Builder,
+        source: ContentSource,
+        public options: MediaOptions = {},
+    ) {
         super(builder, source);
-        this.encoding = "base64";
+        this.encoding = 'base64';
     }
     async getStream(): Promise<NodeJS.ReadableStream> {
         const stream = await super.getStream();
@@ -78,7 +91,6 @@ export class MediaObject extends ContentObject {
     }
 }
 
-
 export class PdfObject extends ContentObject {
     async getStream(): Promise<NodeJS.ReadableStream> {
         return Readable.from(await this.getContent());
@@ -91,10 +103,9 @@ export class PdfObject extends ContentObject {
     }
 }
 
-
 export class DocxObject extends ContentObject {
     async getBuffer(): Promise<Buffer> {
-        return Buffer.from(await manyToMarkdown(await this.getStream(), "docx"), "utf-8");
+        return Buffer.from(await manyToMarkdown(await this.getStream(), 'docx'), 'utf-8');
     }
     async getStream(): Promise<NodeJS.ReadableStream> {
         const stream = new PassThrough();
@@ -102,7 +113,6 @@ export class DocxObject extends ContentObject {
         return stream;
     }
     async getText(): Promise<string> {
-        return await manyToMarkdown(await this.getStream(), "docx");
+        return await manyToMarkdown(await this.getStream(), 'docx');
     }
-
 }

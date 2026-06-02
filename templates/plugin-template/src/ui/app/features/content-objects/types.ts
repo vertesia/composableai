@@ -17,14 +17,7 @@ export const STATUS_VALUES = Object.values(ContentObjectStatus);
 
 export type FilterableField = 'type' | 'status';
 
-export type BadgeVariant =
-    | 'default'
-    | 'secondary'
-    | 'destructive'
-    | 'attention'
-    | 'success'
-    | 'info'
-    | 'done';
+export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'attention' | 'success' | 'info' | 'done';
 
 export interface ContentObjectRowModel {
     id: string;

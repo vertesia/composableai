@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { OpenDocument } from '../types/document.js';
 
 export interface UseDocumentPanelResult {
@@ -101,8 +101,8 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
                             title: docTitle || 'Document',
                             revisionRootId,
                         };
-                        setOpenDocuments(prev => {
-                            const existingIndex = prev.findIndex(doc => isSameRevisionChain(doc, incomingDoc));
+                        setOpenDocuments((prev) => {
+                            const existingIndex = prev.findIndex((doc) => isSameRevisionChain(doc, incomingDoc));
                             if (existingIndex < 0) {
                                 return [...prev, incomingDoc];
                             }
@@ -123,7 +123,7 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
                         setActiveDocumentId(incomingDoc.id);
                         setIsDocPanelOpen(true);
                         if (details.event_class === 'document_updated') {
-                            setDocRefreshKey(k => k + 1);
+                            setDocRefreshKey((k) => k + 1);
                         }
                     }
                 }
@@ -138,13 +138,13 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
     }, []);
 
     const closeDocument = useCallback((docId: string) => {
-        setOpenDocuments(prev => {
-            const next = prev.filter(d => d.id !== docId);
+        setOpenDocuments((prev) => {
+            const next = prev.filter((d) => d.id !== docId);
             if (next.length === 0) {
                 setIsDocPanelOpen(false);
                 setActiveDocumentId(null);
             } else {
-                setActiveDocumentId(current => {
+                setActiveDocumentId((current) => {
                     if (current === docId) return next[0].id;
                     return current;
                 });
@@ -158,8 +158,8 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
     }, []);
 
     const openDocInPanel = useCallback((docId: string) => {
-        setOpenDocuments(prev => {
-            if (prev.some(d => d.id === docId)) return prev;
+        setOpenDocuments((prev) => {
+            if (prev.some((d) => d.id === docId)) return prev;
             return [...prev, { id: docId, title: 'Document', revisionRootId: docId }];
         });
         setActiveDocumentId(docId);
@@ -167,9 +167,7 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
     }, []);
 
     const updateDocumentTitle = useCallback((docId: string, title: string) => {
-        setOpenDocuments(prev => prev.map(d =>
-            d.id === docId ? { ...d, title } : d
-        ));
+        setOpenDocuments((prev) => prev.map((d) => (d.id === docId ? { ...d, title } : d)));
     }, []);
 
     return {

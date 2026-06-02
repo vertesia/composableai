@@ -1,9 +1,9 @@
-import { ContentNature, type ContentObject, POSTER_RENDITION_NAME, type VideoMetadata } from "@vertesia/common";
-import { Spinner } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import { useEffect, useState } from "react";
+import { ContentNature, type ContentObject, POSTER_RENDITION_NAME, type VideoMetadata } from '@vertesia/common';
+import { Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { WEB_SUPPORTED_VIDEO_FORMATS } from "./formats.js";
+import { useUserSession } from '@vertesia/ui/session';
+import { useEffect, useState } from 'react';
+import { WEB_SUPPORTED_VIDEO_FORMATS } from './formats.js';
 
 interface VideoPanelProps {
     /** Direct signed URL — used as-is, no resolution. */
@@ -29,15 +29,13 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
 
     const metadata = object?.metadata as VideoMetadata | undefined;
     const renditions = metadata?.renditions || [];
-    const webRendition = renditions.find(r => r.content.type === 'video/mp4')
-        || renditions.find(r => r.content.type === 'video/webm');
-    const isOriginalWebSupported = object?.content?.type
-        && WEB_SUPPORTED_VIDEO_FORMATS.includes(object.content.type);
-    const poster = renditions.find(r => r.name === POSTER_RENDITION_NAME);
-    const showsObjectFallbackEmpty = !!object
-        && object.metadata?.type === ContentNature.Video
-        && !webRendition
-        && !isOriginalWebSupported;
+    const webRendition =
+        renditions.find((r) => r.content.type === 'video/mp4') ||
+        renditions.find((r) => r.content.type === 'video/webm');
+    const isOriginalWebSupported = object?.content?.type && WEB_SUPPORTED_VIDEO_FORMATS.includes(object.content.type);
+    const poster = renditions.find((r) => r.name === POSTER_RENDITION_NAME);
+    const showsObjectFallbackEmpty =
+        !!object && object.metadata?.type === ContentNature.Video && !webRendition && !isOriginalWebSupported;
 
     useEffect(() => {
         if (url) {
@@ -70,7 +68,7 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
                     setVideoUrl(downloadUrl.url);
                 }
             } catch (error) {
-                console.error("Failed to get video URL", error);
+                console.error('Failed to get video URL', error);
             } finally {
                 setIsLoading(false);
             }
@@ -86,9 +84,10 @@ export function VideoPanel({ url, source, object, className }: VideoPanelProps) 
 
     useEffect(() => {
         if (!poster?.content?.source) return;
-        client.files.getDownloadUrl(poster.content.source)
+        client.files
+            .getDownloadUrl(poster.content.source)
             .then((response) => setPosterUrl(response.url))
-            .catch((error) => console.error("Failed to load poster image", error));
+            .catch((error) => console.error('Failed to load poster image', error));
     }, [poster, client]);
 
     if (showsObjectFallbackEmpty) {

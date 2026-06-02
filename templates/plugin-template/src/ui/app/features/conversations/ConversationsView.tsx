@@ -1,26 +1,26 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { RefreshCw } from 'lucide-react';
+import type { AgentRunSearchHit } from '@vertesia/common';
 import {
     Button,
-    type FilterGroup,
-    type FilterOption,
     FilterBar,
     FilterBtn,
     FilterClear,
+    type FilterGroup,
+    type FilterOption,
     FilterProvider,
     Input,
+    Table,
     TBody,
     THead,
-    Table,
 } from '@vertesia/ui/core';
 import { GenericPageNavHeader } from '@vertesia/ui/features';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
-import type { AgentRunSearchHit } from '@vertesia/common';
+import { RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { SortableHead } from '../../components/SortableHead';
-import { ConversationRow } from './components/ConversationRow';
 import { useConversationsListState } from './ConversationsListStateContext';
-import { STATUS_VALUES, type FilterableField, type SortField } from './types';
+import { ConversationRow } from './components/ConversationRow';
+import { type FilterableField, type SortField, STATUS_VALUES } from './types';
 import { getSelectValues } from './utils';
 
 const SCROLL_HISTORY_KEY = 'conversationsScrollTop';
@@ -50,8 +50,7 @@ function findScrollableElement(start: HTMLElement | null): HTMLElement | null {
     while (current && current !== document.body) {
         const overflowY = window.getComputedStyle(current).overflowY;
         const canScroll =
-            (overflowY === 'auto' || overflowY === 'scroll') &&
-            current.scrollHeight > current.clientHeight;
+            (overflowY === 'auto' || overflowY === 'scroll') && current.scrollHeight > current.clientHeight;
         if (canScroll) return current;
         current = current.parentElement;
     }
@@ -106,9 +105,7 @@ export function ConversationsView() {
             return;
         }
         const trySync = (): boolean => {
-            const el =
-                scrollElRef.current ??
-                findScrollableElement(scrollContainerRef.current);
+            const el = scrollElRef.current ?? findScrollableElement(scrollContainerRef.current);
             scrollElRef.current = el;
             if (!el) return false;
             const maxScroll = el.scrollHeight - el.clientHeight;
@@ -163,15 +160,13 @@ export function ConversationsView() {
     // single-agent case. Sort is also client-side (backend offers no sort).
     const displayedHits = useMemo(() => {
         const agents = new Set(getSelectValues(filters, 'agent'));
-        const filtered = agents.size > 1
-            ? hits.filter((hit) => hit.interaction && agents.has(hit.interaction))
-            : hits;
+        const filtered = agents.size > 1 ? hits.filter((hit) => hit.interaction && agents.has(hit.interaction)) : hits;
 
         const dirSign = sortDir === 'asc' ? 1 : -1;
         const getSortValue = (hit: AgentRunSearchHit): string => {
             switch (sortField) {
                 case 'topic':
-                    return ((hit.topic ?? hit.title ?? '')).toLowerCase();
+                    return (hit.topic ?? hit.title ?? '').toLowerCase();
                 case 'agent':
                     return hit.interaction ?? '';
                 case 'status':
@@ -201,35 +196,22 @@ export function ConversationsView() {
         [sortField, setSortField, setSortDir],
     );
 
-    const handleOpen = useCallback(
-        (id: string) => navigate(`/chat/${id}`),
-        [navigate],
-    );
+    const handleOpen = useCallback((id: string) => navigate(`/chat/${id}`), [navigate]);
 
     const addFilterValue = useCallback(
         (name: FilterableField, value: string, label: string) => {
-            const placeholder =
-                name === 'status'
-                    ? t('conversations.filterStatus')
-                    : t('conversations.filterAgent');
+            const placeholder = name === 'status' ? t('conversations.filterStatus') : t('conversations.filterAgent');
             const newOption: FilterOption = { value, label };
             setFilters((prev) => {
                 const existing = prev.find((f) => f.name === name);
                 if (!existing) {
-                    return [
-                        ...prev,
-                        { name, placeholder, type: 'select', multiple: true, value: [newOption] },
-                    ];
+                    return [...prev, { name, placeholder, type: 'select', multiple: true, value: [newOption] }];
                 }
                 const currentValues = Array.isArray(existing.value) ? existing.value : [];
-                const alreadyHas = currentValues.some(
-                    (v) => (typeof v === 'string' ? v : v.value) === value,
-                );
+                const alreadyHas = currentValues.some((v) => (typeof v === 'string' ? v : v.value) === value);
                 if (alreadyHas) return prev;
                 return prev.map((f) =>
-                    f === existing
-                        ? { ...f, value: [...(f.value as FilterOption[]), newOption] }
-                        : f,
+                    f === existing ? { ...f, value: [...(f.value as FilterOption[]), newOption] } : f,
                 );
             });
         },
@@ -260,10 +242,7 @@ export function ConversationsView() {
 
     return (
         <div className="flex flex-col h-full">
-            <GenericPageNavHeader
-                title={t('conversations.title')}
-                useDynamicBreadcrumbs={false}
-            />
+            <GenericPageNavHeader title={t('conversations.title')} useDynamicBreadcrumbs={false} />
             <div className="flex flex-col gap-4 p-4 flex-1 min-h-0">
                 <FilterProvider filters={filters} setFilters={setFilters} filterGroups={filterGroups}>
                     <div className="flex items-center gap-2">
@@ -341,9 +320,7 @@ export function ConversationsView() {
                         </TBody>
                     </Table>
                     {showEmpty && (
-                        <div className="text-center text-sm text-muted-foreground py-8">
-                            {t('conversations.empty')}
-                        </div>
+                        <div className="text-center text-sm text-muted-foreground py-8">{t('conversations.empty')}</div>
                     )}
                 </div>
             </div>

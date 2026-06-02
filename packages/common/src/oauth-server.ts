@@ -1,4 +1,4 @@
-import type { PrincipalType, AuthTokenPayload } from './apikey.js';
+import type { AuthTokenPayload, PrincipalType } from './apikey.js';
 import type { ProjectRef } from './project.js';
 
 export type OAuthClientType = 'public' | 'confidential';
@@ -17,7 +17,14 @@ export type OAuthClientRegistrationMode = 'registered' | 'client_id_metadata_doc
  */
 export type RemoteOAuthRegistrationMode = 'dynamic_client_registration' | 'client_id_metadata_document';
 export type OAuthGrantStatus = 'active' | 'revoked' | 'expired';
-export type OAuthGrantSortField = 'granted_at' | 'client_name' | 'user_name' | 'resource' | 'last_used_at' | 'expires_at' | 'status';
+export type OAuthGrantSortField =
+    | 'granted_at'
+    | 'client_name'
+    | 'user_name'
+    | 'resource'
+    | 'last_used_at'
+    | 'expires_at'
+    | 'status';
 export type OAuthGrantSortOrder = 'asc' | 'desc';
 
 export interface OAuthClientData {
@@ -188,6 +195,7 @@ export interface OAuthAuthorizationRequest {
     redirect_origin: string;
     resource?: string;
     requested_scopes: string[];
+    optional_scopes?: string[];
     requested_project_id?: string;
     project_binding_mode: OAuthProjectBindingMode;
     fixed_project_id?: string;
@@ -198,6 +206,14 @@ export interface OAuthAuthorizationRequest {
 
 export interface ApproveOAuthAuthorizationRequestPayload {
     project_id?: string;
+    granted_scopes: string[];
+}
+
+export interface OAuthGrantableScopesResponse {
+    project_id: string;
+    requested_permission_scopes: string[];
+    grantable_permission_scopes: string[];
+    unavailable_permission_scopes: string[];
 }
 
 export interface OAuthAuthorizationDecisionResponse {
@@ -246,7 +262,10 @@ export interface OAuthTokenRequestDeviceCode {
     client_secret?: string;
 }
 
-export type OAuthTokenRequest = OAuthTokenRequestAuthorizationCode | OAuthTokenRequestRefreshToken | OAuthTokenRequestDeviceCode;
+export type OAuthTokenRequest =
+    | OAuthTokenRequestAuthorizationCode
+    | OAuthTokenRequestRefreshToken
+    | OAuthTokenRequestDeviceCode;
 
 export interface OAuthTokenResponse {
     access_token: string;
@@ -294,13 +313,13 @@ export interface OAuthAccessTokenPayload extends Omit<AuthTokenPayload, 'type' |
 export interface OAuthIdTokenPayload {
     sub: string;
     user_id: string;
-    name: string;
+    name?: string;
     email?: string;
     picture?: string;
     type: 'oauth_id';
     client_id: string;
-    account: AuthTokenPayload['account'];
-    accounts: AuthTokenPayload['accounts'];
+    account?: AuthTokenPayload['account'];
+    accounts?: AuthTokenPayload['accounts'];
     project?: ProjectRef;
     /** User groups */
     groups?: AuthTokenPayload['groups'];

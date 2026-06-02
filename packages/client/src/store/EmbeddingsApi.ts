@@ -1,17 +1,16 @@
-import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     EmbeddingsStatusResponse,
     GenericCommandResponse,
     ProjectConfigurationEmbeddingEnablePayload,
     SupportedEmbeddingTypes,
-} from "@vertesia/common";
+} from '@vertesia/common';
 
 /**
  * @since 0.52.0
  */
 export class EmbeddingsApi extends ApiTopic {
-
-    constructor(parent: ClientBase, basePath: string = "/api/v1/embeddings") {
+    constructor(parent: ClientBase, basePath: string = '/api/v1/embeddings') {
         super(parent, basePath);
     }
 
@@ -21,11 +20,10 @@ export class EmbeddingsApi extends ApiTopic {
 
     async activate(
         type: SupportedEmbeddingTypes,
-        config: ProjectConfigurationEmbeddingEnablePayload
+        config: ProjectConfigurationEmbeddingEnablePayload,
     ): Promise<GenericCommandResponse> {
-
         if (!config.environment) {
-            throw new Error("Invalid configuration: select environment");
+            throw new Error('Invalid configuration: select environment');
         }
 
         return this.post(`${type}/enable`, { payload: config });
@@ -38,5 +36,4 @@ export class EmbeddingsApi extends ApiTopic {
     async recalculate(type: SupportedEmbeddingTypes): Promise<GenericCommandResponse> {
         return this.post(`${type}/recalculate`);
     }
-
 }

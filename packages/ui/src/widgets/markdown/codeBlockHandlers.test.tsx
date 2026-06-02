@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createDefaultCodeBlockHandlers } from './codeBlockHandlers';
 
 describe('createDefaultCodeBlockHandlers', () => {
@@ -118,11 +118,13 @@ describe('Proposal JSON parsing', () => {
                 question: spec.question || spec.title || '',
                 description: spec.description,
                 options: Array.isArray(spec.options)
-                    ? spec.options.map((opt: { id?: string; value?: string; label?: string; description?: string }) => ({
-                        id: opt.id || opt.value || '',
-                        label: opt.label || '',
-                        description: opt.description,
-                    }))
+                    ? spec.options.map(
+                          (opt: { id?: string; value?: string; label?: string; description?: string }) => ({
+                              id: opt.id || opt.value || '',
+                              label: opt.label || '',
+                              description: opt.description,
+                          }),
+                      )
                     : undefined,
                 allowFreeResponse: spec.allowFreeResponse ?? spec.multiple,
             };

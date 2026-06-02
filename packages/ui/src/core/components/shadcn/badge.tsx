@@ -1,122 +1,100 @@
-import type * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "../libs/utils"
-import { onActivateKey } from "../../utils/a11y.js"
+import { cva, type VariantProps } from 'class-variance-authority';
+import type * as React from 'react';
+import { onActivateKey } from '../../utils/a11y.js';
+import { cn } from '../libs/utils';
 
 // Base badge variants
-const badgeVariants = cva(
-  "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium",
-  {
+const badgeVariants = cva('inline-flex items-center rounded-md px-2 py-1 text-xs font-medium', {
     variants: {
-      variant: {
-        default: "text-foreground bg-muted",
-        secondary: "bg-secondary text-primary",
-        destructive: "bg-destructive text-destructive",
-        attention: "bg-attention text-attention",
-        success: "bg-success text-success",
-        info: "bg-info text-info",
-        done: "bg-done text-done",
-      },
+        variant: {
+            default: 'text-foreground bg-muted',
+            secondary: 'bg-secondary text-primary',
+            destructive: 'bg-destructive text-destructive',
+            attention: 'bg-attention text-attention',
+            success: 'bg-success text-success',
+            info: 'bg-info text-info',
+            done: 'bg-done text-done',
+        },
     },
     defaultVariants: {
-      variant: "default",
+        variant: 'default',
     },
-  }
-)
+});
 
 // Base Badge props interface
-interface BaseBadgeProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
-  VariantProps<typeof badgeVariants> {
-  children: React.ReactNode;
-  onClick?: () => void;
+interface BaseBadgeProps extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {
+    children: React.ReactNode;
+    onClick?: () => void;
 }
 
 // Base Badge component
 export function Badge({ className, variant, children, onClick, ...props }: BaseBadgeProps) {
-  const interactiveProps = onClick
-    ? { role: "button", tabIndex: 0, onClick, onKeyDown: onActivateKey(onClick) }
-    : {};
-  return (
-    <span
-      className={cn(badgeVariants({ variant }), className)}
-      {...interactiveProps}
-      {...props}
-    >
-      {children}
-    </span>
-  )
+    const interactiveProps = onClick ? { role: 'button', tabIndex: 0, onClick, onKeyDown: onActivateKey(onClick) } : {};
+    return (
+        <span className={cn(badgeVariants({ variant }), className)} {...interactiveProps} {...props}>
+            {children}
+        </span>
+    );
 }
 
 const dotBadgeVariants = cva(
-  // Base styles
-  "inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ring-border",
-  {
-    variants: {
-      variant: {
-        default: "",
-        success: "",
-        destructive: "",
-        attention: "",
-        done: "",
-        info: "",
-      }
+    // Base styles
+    'inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ring-border',
+    {
+        variants: {
+            variant: {
+                default: '',
+                success: '',
+                destructive: '',
+                attention: '',
+                done: '',
+                info: '',
+            },
+        },
+        defaultVariants: {
+            variant: 'default',
+        },
     },
-    defaultVariants: {
-      variant: "default"
-    }
-  }
 );
 
 // Separate dot variants to allow className overrides
-const dotVariants = cva("h-1.5 w-1.5", {
-  variants: {
-    variant: {
-      default: "fill-foreground",
-      success: "fill-success",
-      destructive: "fill-destructive",
-      attention: "fill-attention",
-      done: "fill-done",
-      info: "fill-info",
-    }
-  },
-  defaultVariants: {
-    variant: "default"
-  }
+const dotVariants = cva('h-1.5 w-1.5', {
+    variants: {
+        variant: {
+            default: 'fill-foreground',
+            success: 'fill-success',
+            destructive: 'fill-destructive',
+            attention: 'fill-attention',
+            done: 'fill-done',
+            info: 'fill-info',
+        },
+    },
+    defaultVariants: {
+        variant: 'default',
+    },
 });
 
-interface DotBadgeProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
-  VariantProps<typeof dotBadgeVariants> {
-  children?: React.ReactNode;
-  // Add specific dot className prop for backward compatibility
-  dotClassName?: string;
+interface DotBadgeProps extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof dotBadgeVariants> {
+    children?: React.ReactNode;
+    // Add specific dot className prop for backward compatibility
+    dotClassName?: string;
 }
 
 export function DotBadge({
-  variant,
-  className,
-  dotClassName, // New prop for dot-specific classes
-  children,
-  ...props
+    variant,
+    className,
+    dotClassName, // New prop for dot-specific classes
+    children,
+    ...props
 }: DotBadgeProps) {
-  return (
-    <span
-      className={cn(dotBadgeVariants({ variant }), className)}
-      {...props}
-    >
-      <div className="flex-shrink-0">
-        <svg
-          className={cn(dotVariants({ variant }), dotClassName)}
-          viewBox="0 0 6 6"
-          aria-hidden="true"
-        >
-          <circle cx={3} cy={3} r={3} />
-        </svg>
-      </div>
-      <span className="truncate">
-        {children}
-      </span>
-    </span>
-  );
+    return (
+        <span className={cn(dotBadgeVariants({ variant }), className)} {...props}>
+            <div className="flex-shrink-0">
+                <svg className={cn(dotVariants({ variant }), dotClassName)} viewBox="0 0 6 6" aria-hidden="true">
+                    <circle cx={3} cy={3} r={3} />
+                </svg>
+            </div>
+            <span className="truncate">{children}</span>
+        </span>
+    );
 }

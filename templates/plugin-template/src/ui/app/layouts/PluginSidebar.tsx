@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
+import type { AgentRunResponse, WorkflowRun } from '@vertesia/common';
 import { ModeToggle } from '@vertesia/ui/core';
 import { useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
 import { SidebarSection, useSidebarToggle } from '@vertesia/ui/layout';
 import { useLocation, useRouterBasePath } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { Database, HomeIcon, MessageSquare, MessagesSquare, PlusCircle, Settings } from 'lucide-react';
-import type { AgentRunResponse, WorkflowRun } from '@vertesia/common';
-import { AppSidebarItem } from './AppSidebarItem';
+import { useEffect, useState } from 'react';
 import { ASSISTANT_INTERACTION } from '../constants';
+import { AppSidebarItem } from './AppSidebarItem';
 
 const SIDEBAR_RECENT_LIMIT = 3;
 
@@ -35,8 +35,10 @@ function getConversationLabel(
     formatTime: (date: Date | string | number | null | undefined) => string,
 ): string {
     if (conv.topic) return conv.topic;
-    const input = typeof conv.input === 'object' && conv.input !== null ? conv.input as { data?: unknown } : undefined;
-    const inputData = typeof input?.data === 'object' && input.data !== null ? input.data as Record<string, unknown> : undefined;
+    const input =
+        typeof conv.input === 'object' && conv.input !== null ? (conv.input as { data?: unknown }) : undefined;
+    const inputData =
+        typeof input?.data === 'object' && input.data !== null ? (input.data as Record<string, unknown>) : undefined;
     const prompt = inputData?.user_prompt;
     if (typeof prompt === 'string' && prompt.trim()) return prompt.trim();
     if (conv.started_at) return formatTime(conv.started_at);
@@ -53,12 +55,14 @@ export function PluginSidebar() {
     const [conversations, setConversations] = useState<WorkflowRun[]>([]);
 
     useEffect(() => {
-        client.agents.list({
-            interaction: ASSISTANT_INTERACTION,
-            limit: SIDEBAR_RECENT_LIMIT,
-            sort: 'started_at',
-            order: 'desc',
-        }).then(response => setConversations(response.items.map(toWorkflowRun)));
+        client.agents
+            .list({
+                interaction: ASSISTANT_INTERACTION,
+                limit: SIDEBAR_RECENT_LIMIT,
+                sort: 'started_at',
+                order: 'desc',
+            })
+            .then((response) => setConversations(response.items.map(toWorkflowRun)));
     }, [client]);
 
     return (
@@ -109,7 +113,7 @@ export function PluginSidebar() {
                     </SidebarSection>
                     {conversations.length > 0 && (
                         <SidebarSection title={t('nav.recent')}>
-                            {conversations.map(conv => {
+                            {conversations.map((conv) => {
                                 const convPath = `${basePath}/chat/${conv.run_id}`;
                                 const label = getConversationLabel(conv, t, formatTime);
                                 return (
@@ -120,11 +124,7 @@ export function PluginSidebar() {
                                         icon={MessageSquare}
                                         className="overflow-hidden"
                                     >
-                                        <span
-                                            className="min-w-0 flex-1 truncate text-start"
-                                            dir="auto"
-                                            title={label}
-                                        >
+                                        <span className="min-w-0 flex-1 truncate text-start" dir="auto" title={label}>
                                             {label}
                                         </span>
                                     </AppSidebarItem>

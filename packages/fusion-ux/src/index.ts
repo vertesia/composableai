@@ -36,54 +36,51 @@
  * @packageDocumentation
  */
 
-// Types
-export type {
-  FragmentTemplate,
-  SectionTemplate,
-  FieldTemplate,
-  ColumnTemplate,
-  ChartTemplate,
-  VegaLiteSpec,
-  ValidationResult,
-  ValidationError,
-  FusionFragmentRendererProps,
-  SectionRendererProps,
-  FieldRendererProps,
-  FusionFragmentContextValue,
-  ValidateFusionFragmentInput,
-} from './types.js';
-
 // Components
 export {
-  FusionFragmentRenderer,
-  SectionRenderer,
-  FieldRenderer,
-  FusionFragmentProvider,
-  FusionFragmentHandler,
-  useFusionFragmentContext,
-  useFusionFragmentContextSafe,
-  createFusionFragmentCodeBlockRenderer,
-  type FusionFragmentProviderProps,
-  type FusionFragmentHandlerProps,
+    createFusionFragmentCodeBlockRenderer,
+    FieldRenderer,
+    FusionFragmentHandler,
+    type FusionFragmentHandlerProps,
+    FusionFragmentProvider,
+    type FusionFragmentProviderProps,
+    FusionFragmentRenderer,
+    SectionRenderer,
+    useFusionFragmentContext,
+    useFusionFragmentContextSafe,
 } from './fusion-fragment/index.js';
-
-// Validation utilities
-export {
-  validateTemplate,
-  parseAndValidateTemplate,
-  FragmentTemplateSchema,
-  SectionTemplateSchema,
-  FieldTemplateSchema,
-  findClosestKey,
-  findSimilarKeys,
-  formatValidationErrors,
-  formatValidationSuccess,
-  formatAvailableKeys,
-} from './validation/index.js';
-
 // Render utilities (text preview only - image rendering is in apps/tools)
 export {
-  generateTextPreview,
-  generateSampleData,
-  generateCompactPreview,
+    generateCompactPreview,
+    generateSampleData,
+    generateTextPreview,
 } from './render/index.js';
+// Types
+export type {
+    ChartTemplate,
+    ColumnTemplate,
+    FieldRendererProps,
+    FieldTemplate,
+    FragmentTemplate,
+    FusionFragmentContextValue,
+    FusionFragmentRendererProps,
+    SectionRendererProps,
+    SectionTemplate,
+    ValidateFusionFragmentInput,
+    ValidationError,
+    ValidationResult,
+    VegaLiteSpec,
+} from './types.js';
+// Validation utilities
+export {
+    FieldTemplateSchema,
+    FragmentTemplateSchema,
+    findClosestKey,
+    findSimilarKeys,
+    formatAvailableKeys,
+    formatValidationErrors,
+    formatValidationSuccess,
+    parseAndValidateTemplate,
+    SectionTemplateSchema,
+    validateTemplate,
+} from './validation/index.js';

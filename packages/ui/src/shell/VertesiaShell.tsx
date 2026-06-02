@@ -1,11 +1,10 @@
-import { ThemeProvider, ToastProvider } from "@vertesia/ui/core";
-import { UserPermissionProvider, TypeRegistryProvider } from "@vertesia/ui/features";
-import { LanguageBoundI18nProvider, LanguageProvider, type SupportedLanguage } from "@vertesia/ui/i18n";
-import { UserSessionProvider } from "@vertesia/ui/session";
-import { SplashScreen } from "./SplashScreen";
-import { SigninScreen } from "./login/SigninScreen";
-import type { ReactNode } from "react";
-
+import { ThemeProvider, ToastProvider } from '@vertesia/ui/core';
+import { TypeRegistryProvider, UserPermissionProvider } from '@vertesia/ui/features';
+import { LanguageBoundI18nProvider, LanguageProvider, type SupportedLanguage } from '@vertesia/ui/i18n';
+import { UserSessionProvider } from '@vertesia/ui/session';
+import type { ReactNode } from 'react';
+import { SigninScreen } from './login/SigninScreen';
+import { SplashScreen } from './SplashScreen';
 
 interface VertesiaShellProps {
     children: React.ReactNode;
@@ -14,10 +13,20 @@ interface VertesiaShellProps {
     loadingIcon?: ReactNode;
     loadOnboardingStatus?: boolean;
     preserveSignInPath?: boolean;
+    suppressSignInErrorPrefixes?: string | string[];
     /** Force a default language. If omitted, falls back to localStorage then navigator.language then 'en'. */
     defaultLanguage?: SupportedLanguage;
 }
-export function VertesiaShell({ children, lightLogo, darkLogo, loadingIcon, loadOnboardingStatus, preserveSignInPath, defaultLanguage }: VertesiaShellProps) {
+export function VertesiaShell({
+    children,
+    lightLogo,
+    darkLogo,
+    loadingIcon,
+    loadOnboardingStatus,
+    preserveSignInPath,
+    suppressSignInErrorPrefixes,
+    defaultLanguage,
+}: VertesiaShellProps) {
     return (
         <ToastProvider>
             <UserSessionProvider loadOnboardingStatus={loadOnboardingStatus}>
@@ -31,15 +40,14 @@ export function VertesiaShell({ children, lightLogo, darkLogo, loadingIcon, load
                                     darkLogo={darkLogo}
                                     lightLogo={lightLogo}
                                     preservePath={preserveSignInPath}
+                                    suppressAuthErrorPrefix={suppressSignInErrorPrefixes}
                                 />
-                                <UserPermissionProvider>
-                                    {children}
-                                </UserPermissionProvider>
+                                <UserPermissionProvider>{children}</UserPermissionProvider>
                             </LanguageBoundI18nProvider>
                         </LanguageProvider>
                     </ThemeProvider>
                 </TypeRegistryProvider>
             </UserSessionProvider>
         </ToastProvider>
-    )
+    );
 }

@@ -1,5 +1,5 @@
-import { type ErrorFallbackComponentProps, VertesiaErrorBoundary } from "./VertesiaErrorBoundary";
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
+import { type ErrorFallbackComponentProps, VertesiaErrorBoundary } from './VertesiaErrorBoundary';
 
 interface ErrorBoundaryProps {
     children: ReactNode;
@@ -7,12 +7,7 @@ interface ErrorBoundaryProps {
 }
 
 export function RowErrorBoundary({ children }: ErrorBoundaryProps) {
-
-    return (
-        <VertesiaErrorBoundary fallback={RowErrorFallback}>
-            {children}
-        </VertesiaErrorBoundary>
-    )
+    return <VertesiaErrorBoundary fallback={RowErrorFallback}>{children}</VertesiaErrorBoundary>;
 }
 
 function RowErrorFallback({ error }: ErrorFallbackComponentProps) {
@@ -25,5 +20,5 @@ function RowErrorFallback({ error }: ErrorFallbackComponentProps) {
                 <span className="bg-gray-400">{message}</span>
             </td>
         </tr>
-    )
+    );
 }

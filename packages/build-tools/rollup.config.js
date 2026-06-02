@@ -1,5 +1,5 @@
-import nodeResolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import nodeResolve from '@rollup/plugin-node-resolve';
 
 export default {
     input: 'lib/esm/index.js',
@@ -13,12 +13,9 @@ export default {
         'gray-matter',
         'zod',
         'typescript',
-        /^node:/,  // All node: imports
-        /^@rollup\//,  // All @rollup/* packages
-        'rollup-plugin-terser'
+        /^node:/, // All node: imports
+        /^@rollup\//, // All @rollup/* packages
+        'rollup-plugin-terser',
     ],
-    plugins: [
-        nodeResolve(),
-        commonjs(),
-    ],
+    plugins: [nodeResolve(), commonjs()],
 };

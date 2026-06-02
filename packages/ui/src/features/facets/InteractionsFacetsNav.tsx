@@ -1,5 +1,12 @@
-import { type Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, type FilterGroup } from '@vertesia/ui/core';
 import type { ComputedFacetResponse } from '@vertesia/common';
+import {
+    type Filter as BaseFilter,
+    FilterBar,
+    FilterBtn,
+    FilterClear,
+    type FilterGroup,
+    FilterProvider,
+} from '@vertesia/ui/core';
 import { useState } from 'react';
 import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
 
@@ -19,7 +26,7 @@ export function useInteractionsFilterGroups(facets: InteractionsFacetsNavProps['
         name: 'name',
         placeholder: 'Name',
         type: 'text' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(nameFilterGroup);
 
@@ -28,7 +35,7 @@ export function useInteractionsFilterGroups(facets: InteractionsFacetsNavProps['
         name: 'prompt',
         placeholder: 'Prompt Name',
         type: 'text' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(promptNameFilterGroup);
 
@@ -36,7 +43,7 @@ export function useInteractionsFilterGroups(facets: InteractionsFacetsNavProps['
         name: 'model',
         placeholder: 'Model',
         type: 'text' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(ModelFilterGroup);
 
@@ -45,7 +52,7 @@ export function useInteractionsFilterGroups(facets: InteractionsFacetsNavProps['
         name: 'tags',
         placeholder: 'Tags',
         type: 'stringList' as const,
-        multiple: true
+        multiple: true,
     };
     customFilterGroups.push(tagsFilterGroup);
 
@@ -54,7 +61,6 @@ export function useInteractionsFilterGroups(facets: InteractionsFacetsNavProps['
 
 // Hook to create filter change handler for interactions
 export function useInteractionsFilterHandler(search: SearchInterface) {
-
     return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
             search.clearFilters(true, true);
@@ -65,7 +71,7 @@ export function useInteractionsFilterHandler(search: SearchInterface) {
         // Clear all filters first without defaults, then apply new ones
         search.clearFilters(false, false);
 
-        newFilters.forEach(filter => {
+        newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name;
                 const filterValue = filterValueToQueryValue(filter);
@@ -90,11 +96,7 @@ export function InteractionsFacetsNav({ facets, search }: InteractionsFacetsNavP
     };
 
     return (
-        <FilterProvider
-            filterGroups={filterGroups}
-            filters={filters}
-            setFilters={handleFilterChange}
-        >
+        <FilterProvider filterGroups={filterGroups} filters={filters} setFilters={handleFilterChange}>
             <div className="flex gap-2 items-center">
                 <FilterBtn />
                 <FilterBar />

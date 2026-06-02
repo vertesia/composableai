@@ -1,8 +1,8 @@
+import { Env } from '@vertesia/ui/env';
 import clsx from 'clsx';
-import { Children, cloneElement, Fragment, isValidElement, type ReactNode, useId, useRef } from 'react';
-
-import { VTooltip } from './shadcn/tooltip';
 import { Info } from 'lucide-react';
+import { Children, cloneElement, Fragment, isValidElement, type ReactNode, useId, useRef } from 'react';
+import { VTooltip } from './shadcn/tooltip';
 
 interface FormItemProps {
     label: ReactNode;
@@ -25,7 +25,7 @@ interface FormItemProps {
      *  aria-describedby. */
     error?: ReactNode;
     required?: boolean;
-    direction?: "row" | "column" | "row-reverse";
+    direction?: 'row' | 'column' | 'row-reverse';
     disabled?: boolean;
     /** When true, the label row stretches to full width. Useful when placing actions (e.g. buttons) inside the label. */
     fullWidthLabel?: boolean;
@@ -36,6 +36,14 @@ function joinIds(...ids: Array<string | undefined | false | null>): string | und
     return filtered.length > 0 ? filtered.join(' ') : undefined;
 }
 
+function canShowDevWarning(): boolean {
+    try {
+        return Env.isDev;
+    } catch {
+        return false;
+    }
+}
+
 export function FormItem({
     description,
     helpText,
@@ -43,7 +51,7 @@ export function FormItem({
     required,
     label,
     className,
-    direction = "column",
+    direction = 'column',
     children,
     disabled = false,
     fullWidthLabel = false,
@@ -81,19 +89,13 @@ export function FormItem({
             'aria-invalid': ariaInvalid,
         });
         wired = true;
-        // typeof process guard: this code ships to browsers through the tsc-built
-        // `lib/esm/...` consumption path (see package.json `exports`), where Vite
-        // does NOT post-process `node_modules`. Without the guard, this branch
-        // would throw `ReferenceError: process is not defined` the first time a
-        // consumer renders a FormItem in an aria-unwireable shape. The dev warning
-        // still fires under Vitest / Storybook / SSR where `process` is defined.
-    } else if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production' && !hasWarnedRef.current && (helpText || error || childrenId === undefined)) {
+    } else if (canShowDevWarning() && !hasWarnedRef.current && (helpText || error || childrenId === undefined)) {
         hasWarnedRef.current = true;
         // eslint-disable-next-line no-console
         console.warn(
             '[@vertesia/ui] FormItem received zero, multiple, or a fragment as element children. ARIA wiring skipped. ' +
-            'Pass `childrenId` and set `id` / `aria-describedby` / `aria-invalid` on your input manually, ' +
-            'or wrap the input in a single non-fragment element.',
+                'Pass `childrenId` and set `id` / `aria-describedby` / `aria-invalid` on your input manually, ' +
+                'or wrap the input in a single non-fragment element.',
         );
     }
 
@@ -103,27 +105,43 @@ export function FormItem({
     const labelHtmlFor = wired || childrenId ? inputId : undefined;
 
     return (
-        <div className={clsx("flex w-full space-y-1", className, direction === "row" ? "flex-row justify-between items-center gap-2" : direction === "row-reverse" ? "flex-row-reverse justify-between items-center gap-2" : "flex-col")}>
+        <div
+            className={clsx(
+                'flex w-full space-y-1',
+                className,
+                direction === 'row'
+                    ? 'flex-row justify-between items-center gap-2'
+                    : direction === 'row-reverse'
+                      ? 'flex-row-reverse justify-between items-center gap-2'
+                      : 'flex-col',
+            )}
+        >
             <div className={clsx('flex items-center gap-1 mb-0', fullWidthLabel && 'w-full')}>
-                <label htmlFor={labelHtmlFor} className={`text-sm font-medium mb-1 ${disabled ? "text-muted" : ""} ${fullWidthLabel && "flex-1"}`}>
-                    {label}{required ? <span className='text-destructive -mt-4 ms-1'>*</span> : ""}
+                <label
+                    htmlFor={labelHtmlFor}
+                    className={`text-sm font-medium mb-1 ${disabled ? 'text-muted' : ''} ${fullWidthLabel && 'flex-1'}`}
+                >
+                    {label}
+                    {required ? <span className="text-destructive -mt-4 ms-1">*</span> : ''}
                 </label>
-                {
-                    description &&
-                    <div className='mx-2 flex w-4 items-center'>
-                        <VTooltip
-                            description={description}>
+                {description && (
+                    <div className="mx-2 flex w-4 items-center">
+                        <VTooltip description={description}>
                             <Info className="size-3 text-muted" />
                         </VTooltip>
                     </div>
-                }
+                )}
             </div>
             {renderedChildren}
             {helpText && (
-                <p id={helpTextId} className="text-xs text-muted">{helpText}</p>
+                <p id={helpTextId} className="text-xs text-muted">
+                    {helpText}
+                </p>
             )}
             {error && (
-                <p id={errorId} className="text-xs text-destructive">{error}</p>
+                <p id={errorId} className="text-xs text-destructive">
+                    {error}
+                </p>
             )}
         </div>
     );

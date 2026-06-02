@@ -1,18 +1,17 @@
-import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     McpOAuthConnectResponse,
     McpOAuthDisconnectResponse,
     McpOAuthTokenRequest,
     McpOAuthTokenResponse,
-    OAuthAuthStatus,
     OAuthAuthorizeResponse,
-    OAuthMetadataResponse
-} from "@vertesia/common";
+    OAuthAuthStatus,
+    OAuthMetadataResponse,
+} from '@vertesia/common';
 
 export default class RemoteMcpConnectionsApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/remote-mcp-connections");
+        super(parent, '/api/v1/remote-mcp-connections');
     }
 
     getStatus(appInstallId: string): Promise<OAuthAuthStatus[]> {
@@ -47,7 +46,7 @@ export default class RemoteMcpConnectionsApi extends ApiTopic {
 
     getToken(mcpServerUrl: string): Promise<McpOAuthTokenResponse> {
         return this.post('/token', {
-            payload: { mcp_server_url: mcpServerUrl } satisfies McpOAuthTokenRequest
+            payload: { mcp_server_url: mcpServerUrl } satisfies McpOAuthTokenRequest,
         });
     }
 }

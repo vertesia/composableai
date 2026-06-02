@@ -50,7 +50,6 @@ export async function exec(commandLine: string, options: ExecOptions = {}): Prom
     }
 }
 
-
 export function executePipe(commands: Command[], finalOutput: Writable | undefined, verbose: boolean = false) {
     return new Promise((resolve, reject) => {
         let input: Stream | undefined;
@@ -67,19 +66,18 @@ export function executePipe(commands: Command[], finalOutput: Writable | undefin
             }
             // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             input = child.stdout!;
-            child.on("error", (err: Error) => {
+            child.on('error', (err: Error) => {
                 console.error(`Failed to run ${cmd.name}`, err);
                 reject(err);
-            })
+            });
         }
         if (child) {
-            child.on("exit", (code: number | null, signal: string | null) => {
+            child.on('exit', (code: number | null, signal: string | null) => {
                 resolve(code !== null ? code : signal);
             });
             if (finalOutput) child.stdout?.pipe(finalOutput);
         } else {
-            reject(new Error("no child spawned"));
+            reject(new Error('no child spawned'));
         }
     });
-
 }

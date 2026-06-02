@@ -8,12 +8,13 @@
  *
  * Output: dist/widgets/{widget-name}.js
  */
-import { nodeResolve } from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
-import typescript from '@rollup/plugin-typescript';
-import terser from '@rollup/plugin-terser';
+
 import { globSync } from 'node:fs';
 import path from 'node:path';
+import commonjs from '@rollup/plugin-commonjs';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import terser from '@rollup/plugin-terser';
+import typescript from '@rollup/plugin-typescript';
 
 const outputDir = './dist/widgets';
 
@@ -32,9 +33,9 @@ function findWidgetEntryPoints() {
     // Use glob to find all .tsx files in skill directories
     const files = globSync('src/skills/**/*.tsx');
 
-    const widgets = files.map(file => ({
+    const widgets = files.map((file) => ({
         name: path.basename(file, '.tsx'),
-        path: file
+        path: file,
     }));
 
     // Check for duplicate widget names
@@ -44,9 +45,9 @@ function findWidgetEntryPoints() {
             const existing = nameMap.get(widget.name);
             throw new Error(
                 `Duplicate widget name "${widget.name}" found:\n` +
-                `  - ${existing}\n` +
-                `  - ${widget.path}\n` +
-                `Widget names must be unique across all skills.`
+                    `  - ${existing}\n` +
+                    `  - ${widget.path}\n` +
+                    `Widget names must be unique across all skills.`,
             );
         }
         nameMap.set(widget.name, widget.path);
@@ -58,7 +59,7 @@ function findWidgetEntryPoints() {
 // Find all widget entry points
 const widgets = findWidgetEntryPoints();
 
-console.log(`Found ${widgets.length} widget(s):`, widgets.map(w => w.name).join(', '));
+console.log(`Found ${widgets.length} widget(s):`, widgets.map((w) => w.name).join(', '));
 
 // Create a bundle configuration for each widget
 const widgetBundles = widgets.map(({ name, path: widgetPath }) => ({
@@ -68,7 +69,7 @@ const widgetBundles = widgets.map(({ name, path: widgetPath }) => ({
         entryFileNames: `${name}.js`,
         format: 'es',
         sourcemap: true,
-        inlineDynamicImports: true
+        inlineDynamicImports: true,
     },
     external: [
         // Externalize React dependencies - they should be provided by the host application
@@ -76,7 +77,7 @@ const widgetBundles = widgets.map(({ name, path: widgetPath }) => ({
         'react-dom',
         'react/jsx-runtime',
         'react/jsx-dev-runtime',
-        'react-dom/client'
+        'react-dom/client',
     ],
     // Treat TypeScript diagnostics from @rollup/plugin-typescript as build errors
     // instead of warnings, so type issues fail the build.
@@ -90,28 +91,30 @@ const widgetBundles = widgets.map(({ name, path: widgetPath }) => ({
         typescript({
             tsconfig: './tsconfig.widgets.json',
             declaration: false,
-            sourceMap: true
+            sourceMap: true,
         }),
         nodeResolve({
             browser: true,
             preferBuiltins: false,
-            extensions: ['.tsx', '.ts', '.jsx', '.js']
+            extensions: ['.tsx', '.ts', '.jsx', '.js'],
         }),
         commonjs(),
         terser({
             compress: {
-                drop_console: false
-            }
-        })
-    ]
+                drop_console: false,
+            },
+        }),
+    ],
 }));
 
 // Rollup requires at least one config, so export empty config if no widgets found
-export default widgetBundles.length > 0 ? widgetBundles : {
-    input: 'src/widgets/index.ts',  // Dummy input
-    output: {
-        file: '/dev/null',  // No output
-        format: 'es'
-    },
-    plugins: []
-};
+export default widgetBundles.length > 0
+    ? widgetBundles
+    : {
+          input: 'src/widgets/index.ts', // Dummy input
+          output: {
+              file: '/dev/null', // No output
+              format: 'es',
+          },
+          plugins: [],
+      };

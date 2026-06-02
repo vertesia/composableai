@@ -1,7 +1,6 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { type ReactNode, useEffect, useState } from "react";
-import { useUserSession } from "@vertesia/ui/session";
-
+import { useUserSession } from '@vertesia/ui/session';
+import { AnimatePresence, motion } from 'framer-motion';
+import { type ReactNode, useEffect, useState } from 'react';
 
 interface SplashScreenProps {
     icon?: ReactNode;
@@ -21,16 +20,23 @@ export function SplashScreen({ icon: Icon }: SplashScreenProps) {
             {show && (
                 <motion.div
                     style={{ zIndex: 999999, position: 'fixed', inset: 0 }}
-                    className='fixed inset-x-0 inset-y-0'
+                    className="fixed inset-x-0 inset-y-0"
                     initial={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ ease: 'easeIn', duration: 0.5 }}
                 >
-                    <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }} className="flex w-full h-full items-center justify-center">
+                    <div
+                        style={{
+                            display: 'flex',
+                            width: '100%',
+                            height: '100%',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                        className="flex w-full h-full items-center justify-center"
+                    >
                         <div className="animate-[spin_4s_linear_infinite]">
-                            <div className='animate-pulse rounded-full bg-transparent'>
-                                {Icon || <LoadingIcon />}
-                            </div>
+                            <div className="animate-pulse rounded-full bg-transparent">{Icon || <LoadingIcon />}</div>
                         </div>
                     </div>
                 </motion.div>
@@ -40,8 +46,8 @@ export function SplashScreen({ icon: Icon }: SplashScreenProps) {
 }
 
 function LoadingIcon() {
-    const stopColor1 = "currentColor";
-    const stopColor2 = "currentColor";
+    const stopColor1 = 'currentColor';
+    const stopColor2 = 'currentColor';
     // const stopColor1 = "#4F46E5";
     // const stopColor2 = "#4F46E5";
     return (
@@ -71,5 +77,5 @@ function LoadingIcon() {
                 strokeLinecap="round"
             />
         </svg>
-    )
+    );
 }

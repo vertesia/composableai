@@ -1,14 +1,11 @@
-import { SvgIcon } from "@vertesia/ui/widgets";
+import { SvgIcon } from '@vertesia/ui/widgets';
 
 interface PreviewIconProps {
     className?: string;
 }
 export function PreviewIcon({ className }: PreviewIconProps) {
-    return (
-        <SvgIcon content={SVG} className={className} />
-    )
+    return <SvgIcon content={SVG} className={className} />;
 }
-
 
 const SVG = `
 <?xml version="1.0"?>

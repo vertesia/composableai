@@ -1,22 +1,23 @@
-import type { DSLWorkflowSpec } from "@vertesia/common";
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
-import { basename, resolve } from "node:path";
-import * as ts from "typescript";
-import { ValidationError, validateWorkflow } from "./validation.js";
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { basename, resolve } from 'node:path';
+import type { DSLWorkflowSpec } from '@vertesia/common';
+import * as ts from 'typescript';
+import { ValidationError, validateWorkflow } from './validation.js';
 
-function compile(fileNames: string[], options: ts.CompilerOptions): { errors: number, emittedFiles: string[] | undefined } {
+function compile(
+    fileNames: string[],
+    options: ts.CompilerOptions,
+): { errors: number; emittedFiles: string[] | undefined } {
     const program = ts.createProgram(fileNames, {
         ...options,
         listEmittedFiles: true,
     } satisfies ts.CompilerOptions);
     const emitResult = program.emit();
 
-    const allDiagnostics = ts
-        .getPreEmitDiagnostics(program)
-        .concat(emitResult.diagnostics);
+    const allDiagnostics = ts.getPreEmitDiagnostics(program).concat(emitResult.diagnostics);
 
     let errors = 0;
-    allDiagnostics.forEach(diagnostic => {
+    allDiagnostics.forEach((diagnostic) => {
         let prefix = '';
         const categories = new Set<ts.DiagnosticCategory>();
         if (diagnostic.relatedInformation && diagnostic.relatedInformation.length > 0) {
@@ -35,32 +36,31 @@ function compile(fileNames: string[], options: ts.CompilerOptions): { errors: nu
         if (diagnostic.file) {
             // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             const { line, character } = ts.getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start!);
-            const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
+            const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
             console.log(`${prefix}${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
         } else {
-            console.log(prefix + ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"));
+            console.log(prefix + ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
         }
     });
 
     return {
         errors,
-        emittedFiles: emitResult.emittedFiles
-    }
+        emittedFiles: emitResult.emittedFiles,
+    };
 }
 
 function transpileFile(source: string, target: string, options: ts.CompilerOptions) {
-    const input = readFileSync(source, "utf-8");
+    const input = readFileSync(source, 'utf-8');
     // now simply transpile the module to javascript
     const output = ts.transpileModule(input, {
-        compilerOptions: options
+        compilerOptions: options,
     });
-    writeFileSync(target, output.outputText, "utf-8");
+    writeFileSync(target, output.outputText, 'utf-8');
 }
-
 
 function tryDeleteFile(file: string) {
     try {
-        rmSync(file)
+        rmSync(file);
     } catch {
         // ignore
     }
@@ -81,7 +81,7 @@ export function loadTsWorkflowDefinition(file: string, skipValidation: boolean =
     // since the compile will generate js files for all the dependencies.
     const result = compile([file], {
         ...baseOptions,
-        noEmit: true
+        noEmit: true,
     });
     if (result.errors > 0) {
         console.log(`Found ${result.errors} in typescript compilation. Aborting.`);
@@ -91,10 +91,12 @@ export function loadTsWorkflowDefinition(file: string, skipValidation: boolean =
     const emittedFile = resolve(`__${fname}.mjs`);
     transpileFile(file, emittedFile, baseOptions);
 
-    return import(emittedFile).then(module => {
-        if (!module.default || typeof module.default !== "object") {
-            throw new ValidationError("Workflow module does not export a default object");
-        }
-        return skipValidation ? module.default : validateWorkflow(module.default);
-    }).finally(() => tryDeleteFile(emittedFile));
+    return import(emittedFile)
+        .then((module) => {
+            if (!module.default || typeof module.default !== 'object') {
+                throw new ValidationError('Workflow module does not export a default object');
+            }
+            return skipValidation ? module.default : validateWorkflow(module.default);
+        })
+        .finally(() => tryDeleteFile(emittedFile));
 }

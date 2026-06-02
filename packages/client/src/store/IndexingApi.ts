@@ -1,33 +1,34 @@
-import { ApiTopic, type ClientBase, type ServerSentEvent } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase, type ServerSentEvent } from '@vertesia/api-fetch-client';
 import type {
-    IndexingStatusResponse,
-    GenericCommandResponse,
-    ElasticsearchDocumentData,
-    BulkIndexResult,
-    CreateReindexTargetResult,
-    ReindexRangeResult,
-    FetchBatchResult,
-    NextIndexCursorResult,
-    TriggerReindexResult,
-    ElasticsearchIndexStats,
-    IndexConfiguration,
-    FetchDocumentsByIdsResult,
-    BulkDeleteResult,
-    EnsureIndexResult,
     AnalyzeDriftBatchResult,
-    DriftAnalysisStatusResponse,
-    StartProjectReindexPayload,
+    BulkDeleteResult,
+    BulkIndexResult,
     ComputeShardsRequest,
     ComputeShardsResult,
+    CreateReindexTargetResult,
+    DriftAnalysisStatusResponse,
+    ElasticsearchBackend,
+    ElasticsearchDocumentData,
+    ElasticsearchIndexStats,
+    EnsureIndexResult,
+    FetchBatchResult,
+    FetchDocumentsByIdsResult,
+    GenericCommandResponse,
+    IndexConfiguration,
+    IndexingStatusResponse,
     IndexShardParams,
     IndexShardRequest,
     IndexShardResult,
-    SwapAliasRequest,
-    SwapAliasResult,
+    NextIndexCursorResult,
+    ReindexAgentRunsPayload,
+    ReindexAgentRunsResponse,
     ReindexViaBulkRequest,
     ReindexViaBulkResult,
-    ElasticsearchBackend,
-} from "@vertesia/common";
+    StartProjectReindexPayload,
+    SwapAliasRequest,
+    SwapAliasResult,
+    TriggerReindexResult,
+} from '@vertesia/common';
 
 /**
  * API for indexing operations on content objects.
@@ -37,8 +38,7 @@ import type {
  * and require content_admin permission.
  */
 export class IndexingApi extends ApiTopic {
-
-    constructor(parent: ClientBase, basePath: string = "/api/v1/indexing") {
+    constructor(parent: ClientBase, basePath: string = '/api/v1/indexing') {
         super(parent, basePath);
     }
 
@@ -50,7 +50,7 @@ export class IndexingApi extends ApiTopic {
      * Get Elasticsearch status for the current project
      */
     async status(): Promise<IndexingStatusResponse> {
-        return this.get("/status");
+        return this.get('/status');
     }
 
     /**
@@ -60,35 +60,42 @@ export class IndexingApi extends ApiTopic {
      * @param options Optional workflow tuning parameters
      */
     async reindex(options?: StartProjectReindexPayload): Promise<GenericCommandResponse> {
-        return this.post("/reindex", { payload: options });
+        return this.post('/reindex', { payload: options });
+    }
+
+    /**
+     * Rebuild the agent-run Elasticsearch index directly from MongoDB.
+     */
+    async reindexAgentRuns(options?: ReindexAgentRunsPayload): Promise<ReindexAgentRunsResponse> {
+        return this.post('/agent-runs/reindex', { payload: options });
     }
 
     /**
      * Trigger an on-demand drift analysis between MongoDB and Elasticsearch
      */
     async analyzeDrift(): Promise<DriftAnalysisStatusResponse> {
-        return this.post("/analyze-drift", { payload: {} });
+        return this.post('/analyze-drift', { payload: {} });
     }
 
     /**
      * Get the latest drift analysis status/result for this project
      */
     async getDriftAnalysis(): Promise<DriftAnalysisStatusResponse> {
-        return this.get("/drift-analysis");
+        return this.get('/drift-analysis');
     }
 
     /**
      * Enable indexing for this project
      */
     async enableIndexing(): Promise<GenericCommandResponse> {
-        return this.post("/enable-indexing");
+        return this.post('/enable-indexing');
     }
 
     /**
      * Disable indexing for this project
      */
     async disableIndexing(): Promise<GenericCommandResponse> {
-        return this.post("/disable-indexing");
+        return this.post('/disable-indexing');
     }
 
     /**
@@ -96,7 +103,7 @@ export class IndexingApi extends ApiTopic {
      * @deprecated Queries are now automatically enabled when indexing is enabled
      */
     async enableQueries(): Promise<GenericCommandResponse> {
-        return this.post("/enable-queries");
+        return this.post('/enable-queries');
     }
 
     /**
@@ -104,7 +111,7 @@ export class IndexingApi extends ApiTopic {
      * @deprecated Queries are now automatically enabled when indexing is enabled
      */
     async disableQueries(): Promise<GenericCommandResponse> {
-        return this.post("/disable-queries");
+        return this.post('/disable-queries');
     }
 
     // ========================================================================
@@ -115,7 +122,7 @@ export class IndexingApi extends ApiTopic {
      * Index a single document to Elasticsearch
      */
     index(objectId: string, document: ElasticsearchDocumentData): Promise<{ status: string; object_id: string }> {
-        return this.post("/internal/index", {
+        return this.post('/internal/index', {
             payload: { object_id: objectId, document },
         });
     }
@@ -124,7 +131,7 @@ export class IndexingApi extends ApiTopic {
      * Delete a document from Elasticsearch
      */
     delete(objectId: string): Promise<{ status: string; object_id: string }> {
-        return this.post("/internal/delete", {
+        return this.post('/internal/delete', {
             payload: { object_id: objectId },
         });
     }
@@ -137,9 +144,9 @@ export class IndexingApi extends ApiTopic {
      */
     bulkIndex(
         documents: Array<{ id: string; document: ElasticsearchDocumentData }>,
-        targetIndex?: string
+        targetIndex?: string,
     ): Promise<BulkIndexResult> {
-        return this.post("/internal/bulk-index", {
+        return this.post('/internal/bulk-index', {
             payload: { documents, target_index: targetIndex },
         });
     }
@@ -150,7 +157,7 @@ export class IndexingApi extends ApiTopic {
      * @param recreate If true, drops and recreates the index
      */
     ensureIndex(recreate?: boolean): Promise<EnsureIndexResult> {
-        return this.post("/internal/ensure-index", {
+        return this.post('/internal/ensure-index', {
             payload: { recreate },
         });
     }
@@ -160,7 +167,7 @@ export class IndexingApi extends ApiTopic {
      * The alias will be swapped after reindexing completes via swapAlias
      */
     createReindexTarget(): Promise<CreateReindexTargetResult> {
-        return this.post("/internal/create-reindex-target", {
+        return this.post('/internal/create-reindex-target', {
             payload: {},
         });
     }
@@ -169,17 +176,7 @@ export class IndexingApi extends ApiTopic {
      * Get Elasticsearch index statistics for the project
      */
     getStats(): Promise<ElasticsearchIndexStats> {
-        return this.post("/internal/stats", {
-            payload: {},
-        });
-    }
-
-    /**
-     * Get the _id range for reindexing (first, last, count)
-     * Used by workflow to set up cursor-based pagination
-     */
-    getReindexRange(): Promise<ReindexRangeResult> {
-        return this.post("/internal/reindex-range", {
+        return this.post('/internal/stats', {
             payload: {},
         });
     }
@@ -192,7 +189,7 @@ export class IndexingApi extends ApiTopic {
      * @param limit Maximum documents to fetch (default: 500)
      */
     fetchBatch(cursor?: string | null, limit?: number): Promise<FetchBatchResult> {
-        return this.post("/internal/fetch-batch", {
+        return this.post('/internal/fetch-batch', {
             payload: { cursor, limit },
         });
     }
@@ -205,7 +202,7 @@ export class IndexingApi extends ApiTopic {
      * @param count Maximum number of boundaries to return
      */
     getNextIndexCursor(cursor?: string | null, limit?: number, count?: number): Promise<NextIndexCursorResult> {
-        return this.post("/internal/next-cursor", {
+        return this.post('/internal/next-cursor', {
             payload: { cursor, limit, count },
         });
     }
@@ -214,7 +211,7 @@ export class IndexingApi extends ApiTopic {
      * Analyze one batch of MongoDB documents against Elasticsearch by _id and updated_at
      */
     analyzeDriftBatch(cursor?: string | null, limit?: number): Promise<AnalyzeDriftBatchResult> {
-        return this.post("/internal/analyze-drift-batch", {
+        return this.post('/internal/analyze-drift-batch', {
             payload: { cursor, limit },
         });
     }
@@ -231,12 +228,14 @@ export class IndexingApi extends ApiTopic {
         objectIds?: string[];
         recreateIndex?: boolean;
     }): Promise<TriggerReindexResult> {
-        return this.post("/internal/trigger-reindex", {
-            payload: options ? {
-                full_reindex: options.fullReindex,
-                object_ids: options.objectIds,
-                recreate_index: options.recreateIndex,
-            } : {},
+        return this.post('/internal/trigger-reindex', {
+            payload: options
+                ? {
+                      full_reindex: options.fullReindex,
+                      object_ids: options.objectIds,
+                      recreate_index: options.recreateIndex,
+                  }
+                : {},
         });
     }
 
@@ -247,7 +246,7 @@ export class IndexingApi extends ApiTopic {
      * @param objectIds Array of object IDs to fetch
      */
     fetchDocumentsByIds(objectIds: string[]): Promise<FetchDocumentsByIdsResult> {
-        return this.post("/internal/fetch-by-ids", {
+        return this.post('/internal/fetch-by-ids', {
             payload: { object_ids: objectIds },
         });
     }
@@ -258,7 +257,7 @@ export class IndexingApi extends ApiTopic {
      * @param objectIds Array of object IDs to delete
      */
     bulkDelete(objectIds: string[]): Promise<BulkDeleteResult> {
-        return this.post("/internal/bulk-delete", {
+        return this.post('/internal/bulk-delete', {
             payload: { object_ids: objectIds },
         });
     }
@@ -270,7 +269,7 @@ export class IndexingApi extends ApiTopic {
      * status, embedding dimensions, field mappings, and project configuration.
      */
     getConfiguration(): Promise<IndexConfiguration> {
-        return this.post("/internal/configuration", {
+        return this.post('/internal/configuration', {
             payload: {},
         });
     }
@@ -315,7 +314,7 @@ export class IndexingApi extends ApiTopic {
     ): Promise<ComputeShardsResult> {
         return this.zenoBulkPost('/reindex/compute-shards', {
             tenant_id: tenantId,
-            shard_size: shardSize ?? 50000,
+            shard_size: shardSize ?? 250000,
             updated_since: updatedSince,
             backend,
         } satisfies ComputeShardsRequest);
@@ -361,33 +360,52 @@ export class IndexingApi extends ApiTopic {
         onEvent?: ((event: ServerSentEvent) => void) | null,
         dryRun?: boolean,
         backend?: ElasticsearchBackend,
+        projectId?: string,
+        tuning?: {
+            shardSize?: number;
+            shards?: number;
+            bulkConcurrency?: number;
+            bulkSizeBytes?: number;
+            bulkMaxDocs?: number;
+        },
     ): Promise<ReindexViaBulkResult> {
         const bulkUrl = `${this.zenoBulkBaseUrl}/reindex`;
-        const payload = {
+        const params = {
             tenant_id: tenantId,
+            project_id: projectId,
             dry_run: dryRun ?? false,
             backend,
+            shard_size: tuning?.shardSize,
+            shards: tuning?.shards,
+            bulk_concurrency: tuning?.bulkConcurrency,
+            bulk_size_bytes: tuning?.bulkSizeBytes,
+            bulk_max_docs: tuning?.bulkMaxDocs,
         } satisfies ReindexViaBulkRequest;
 
         if (!onEvent) {
-            return this.client.post(bulkUrl, { payload });
+            return this.client.post(bulkUrl, { payload: { params } });
         }
 
         // SSE mode: stream progress events from zeno-bulk
         let lastResult: ReindexViaBulkResult | undefined;
 
-        await this.client.sseRequest('POST', bulkUrl, {
-            payload,
-        }, (event) => {
-            onEvent(event);
-            if (event.type === 'event' && event.event === 'done') {
-                try {
-                    lastResult = JSON.parse(event.data) as ReindexViaBulkResult;
-                } catch {
-                    // data might not be valid JSON
+        await this.client.sseRequest(
+            'POST',
+            bulkUrl,
+            {
+                payload: { params },
+            },
+            (event) => {
+                onEvent(event);
+                if (event.type === 'event' && event.event === 'done') {
+                    try {
+                        lastResult = JSON.parse(event.data) as ReindexViaBulkResult;
+                    } catch {
+                        // data might not be valid JSON
+                    }
                 }
-            }
-        });
+            },
+        );
 
         if (!lastResult) {
             throw new Error('zeno-bulk SSE stream ended without a done event');

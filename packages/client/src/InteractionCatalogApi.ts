@@ -1,31 +1,26 @@
-import { ApiTopic, type ClientBase } from "@vertesia/api-fetch-client";
-import type {
-    CatalogInteractionRef,
-    InCodeInteraction,
-    InteractionStatus
-} from "@vertesia/common";
-
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type { CatalogInteractionRef, InCodeInteraction, InteractionStatus } from '@vertesia/common';
 
 export class InteractionCatalogApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/interactions/catalog");
+        super(parent, '/api/v1/interactions/catalog');
     }
 
     /**
      * List all project interactions
      */
-    list(query: { status?: InteractionStatus, tag?: string } = {}): Promise<CatalogInteractionRef[]> {
-        return this.get("/", {
-            query
+    list(query: { status?: InteractionStatus; tag?: string } = {}): Promise<CatalogInteractionRef[]> {
+        return this.get('/', {
+            query,
         });
     }
 
     /**
      * List all stored interactions
      */
-    listStoredInteractions(query: { status?: InteractionStatus, tag?: string } = {}): Promise<CatalogInteractionRef[]> {
-        return this.get("/stored", {
-            query
+    listStoredInteractions(query: { status?: InteractionStatus; tag?: string } = {}): Promise<CatalogInteractionRef[]> {
+        return this.get('/stored', {
+            query,
         });
     }
 
@@ -35,8 +30,8 @@ export class InteractionCatalogApi extends ApiTopic {
     listSysInteractions(tag?: string): Promise<CatalogInteractionRef[]> {
         return this.get(`/sys`, {
             query: {
-                tag
-            }
+                tag,
+            },
         });
     }
 
@@ -46,8 +41,8 @@ export class InteractionCatalogApi extends ApiTopic {
     listAppInteractions(appName: string, tag?: string): Promise<CatalogInteractionRef[]> {
         return this.get(`/apps/${appName}`, {
             query: {
-                tag
-            }
+                tag,
+            },
         });
     }
 
@@ -57,8 +52,8 @@ export class InteractionCatalogApi extends ApiTopic {
     listAllAppInteractions(tag?: string): Promise<CatalogInteractionRef[]> {
         return this.get(`/apps`, {
             query: {
-                tag
-            }
+                tag,
+            },
         });
     }
 

@@ -1,6 +1,6 @@
 import type { ExecutionRunStatus } from './interaction.js';
+import type { SearchTypes, SupportedEmbeddingTypes } from './project.js';
 import type { CollectionSearchPayload } from './store/collections.js';
-import type { SearchTypes, SupportedEmbeddingTypes } from "./project.js";
 
 export type EmbeddingSearchConfig = Partial<Record<SupportedEmbeddingTypes, boolean>>;
 
@@ -13,16 +13,16 @@ export interface RunListingQueryOptions {
 }
 
 export interface RunListingFilters {
-    interaction?: string | string[],
-    status?: ExecutionRunStatus,
-    model?: string,
-    environment?: string,
-    tag?: string,
-    fromDate?: string,
-    toDate?: string,
-    parent?: string | string[],
-    is_root?: boolean,
-    workflow_run_ids?: string[],
+    interaction?: string | string[];
+    status?: ExecutionRunStatus;
+    model?: string;
+    environment?: string;
+    tag?: string;
+    fromDate?: string;
+    toDate?: string;
+    parent?: string | string[];
+    is_root?: boolean;
+    workflow_run_ids?: string[];
 }
 
 export type scoreAggregationTypes = 'rrf' | 'rsf' | 'smart';
@@ -129,8 +129,8 @@ export interface ComplexSearchQuery extends ObjectSearchQuery {
      * e.g. Weights of 5,3,2 will be treated as 0,3,2 if the first search type is not present in the results.
      * Ignored when scoreAggregation is 'smart'
      * Default is 'on'
-    */
-    dynamic_scaling?: dynamicScalingTypes;   // Move to top level
+     */
+    dynamic_scaling?: dynamicScalingTypes; // Move to top level
 
     /**
      * rrf: Reciprocal Rank Fusion

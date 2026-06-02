@@ -1,4 +1,4 @@
-import { ApiTopic, type ClientBase, type IRequestParams } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase, type IRequestParams } from '@vertesia/api-fetch-client';
 import {
     type ActivityCatalog,
     type AgentEvent,
@@ -15,25 +15,26 @@ import {
     type ListWorkflowInteractionsResponse,
     type ListWorkflowRunsPayload,
     type ListWorkflowRunsResponse,
-    parseMessage,
-    toAgentMessage,
     type PromptSizeAnalyticsResponse,
+    parseMessage,
     type RunsByAgentAnalyticsResponse,
-    type SignalAgentResponse,
     type SignalAgentPayload,
+    type SignalAgentResponse,
     type TimeToFirstResponseAnalyticsResponse,
     type TokenUsageAnalyticsResponse,
     type ToolAnalyticsResponse,
     type ToolParameterAnalyticsResponse,
     type TopPrincipalsAnalyticsResponse,
+    toAgentMessage,
+    type UploadWorkflowRulePayload,
     type WebSocketClientMessage,
     type WebSocketServerMessage,
     type WorkflowActionPayload,
+    type WorkflowActionResponse,
     type WorkflowAnalyticsFilterOptionsResponse,
     type WorkflowAnalyticsSummaryQuery,
     type WorkflowAnalyticsSummaryResponse,
     type WorkflowAnalyticsTimeSeriesQuery,
-    type WorkflowActionResponse,
     type WorkflowDefinitionRef,
     type WorkflowExecutionStartResult,
     type WorkflowQueryResult,
@@ -43,19 +44,18 @@ import {
     type WorkflowRunWithDetails,
     type WorkflowToolParametersQuery,
     type WorkflowUpdatePublishResponse,
-    type UploadWorkflowRulePayload,
-} from "@vertesia/common";
-import type { VertesiaClient } from "../client.js";
-import { EventSourceProvider } from "../execute.js";
-import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from "./stream-termination.js";
+} from '@vertesia/common';
+import type { VertesiaClient } from '../client.js';
+import { EventSourceProvider } from '../execute.js';
+import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
 
 export class WorkflowsApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/workflows");
+        super(parent, '/api/v1/workflows');
     }
 
     getActivityCatalog(): Promise<ActivityCatalog> {
-        return this.get("/activity-catalog");
+        return this.get('/activity-catalog');
     }
 
     listRuns(documentId: string, eventName: string, ruleId: string): Promise<ListWorkflowRunsResponse> {
@@ -65,7 +65,7 @@ export class WorkflowsApi extends ApiTopic {
     /** List conversations the users has access to */
     listConversations(payload: ListWorkflowRunsPayload): Promise<ListWorkflowRunsResponse> {
         return this.post(`/conversations`, {
-            payload
+            payload,
         });
     }
 
@@ -73,7 +73,12 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs`, { payload: payload });
     }
 
-    sendSignal(workflowId: string, runId: string, signal: string, payload?: SignalAgentPayload | null): Promise<SignalAgentResponse> {
+    sendSignal(
+        workflowId: string,
+        runId: string,
+        signal: string,
+        payload?: SignalAgentPayload | null,
+    ): Promise<SignalAgentResponse> {
         return this.post(`/runs/${workflowId}/${runId}/signal/${signal}`, { payload });
     }
 
@@ -84,9 +89,9 @@ export class WorkflowsApi extends ApiTopic {
             includeHistory?: boolean;
             historyFormat?: 'events' | 'tasks' | 'agent';
             hydratePayloads?: boolean;
-        }
+        },
     ): Promise<WorkflowRunWithDetails> {
-        const query: NonNullable<IRequestParams["query"]> = {};
+        const query: NonNullable<IRequestParams['query']> = {};
 
         // Support legacy includeHistory parameter
         if (options?.includeHistory !== undefined) {
@@ -131,16 +136,13 @@ export class WorkflowsApi extends ApiTopic {
         return this.get(`/runs/${workflowId}/${runId}/query/${queryName}`);
     }
 
-    execute(
-        name: string,
-        payload: ExecuteWorkflowPayload = {},
-    ): Promise<(WorkflowExecutionStartResult | undefined)[]> {
+    execute(name: string, payload: ExecuteWorkflowPayload = {}): Promise<(WorkflowExecutionStartResult | undefined)[]> {
         return this.post(`/execute/${name}`, { payload });
     }
 
     postMessage(runId: string, msg: AgentMessage): Promise<WorkflowUpdatePublishResponse> {
         if (!runId) {
-            throw new Error("runId is required");
+            throw new Error('runId is required');
         }
         return this.post(`/runs/${runId}/updates`, { payload: msg });
     }
@@ -152,7 +154,9 @@ export class WorkflowsApi extends ApiTopic {
      */
     async retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
         const query = { since };
-        const response = await this.get(`/runs/${workflowId}/${runId}/updates`, { query }) as WorkflowRunUpdatesResponse;
+        const response = (await this.get(`/runs/${workflowId}/${runId}/updates`, {
+            query,
+        })) as WorkflowRunUpdatesResponse;
         // Convert compact messages to AgentMessage for backward compatibility
         return response.messages.map((m: CompactMessage) => toAgentMessage(m, runId));
     }
@@ -240,33 +244,35 @@ export class WorkflowsApi extends ApiTopic {
 
                     // Use the timestamp of the last received message for reconnection
                     if (lastMessageTimestamp > 0) {
-                        streamUrl.searchParams.set("since", lastMessageTimestamp.toString());
+                        streamUrl.searchParams.set('since', lastMessageTimestamp.toString());
                     }
 
                     // Skip historical messages - we already fetched them via GET /updates
-                    streamUrl.searchParams.set("skipHistory", "true");
+                    streamUrl.searchParams.set('skipHistory', 'true');
 
                     const bearerToken = client._auth ? await client._auth() : undefined;
                     if (isClosed) return;
                     if (!bearerToken) {
                         isClosed = true;
                         cleanup();
-                        reject(new Error("No auth token available"));
+                        reject(new Error('No auth token available'));
                         return;
                     }
 
-                    const token = bearerToken.split(" ")[1];
-                    streamUrl.searchParams.set("access_token", token);
+                    const token = bearerToken.split(' ')[1];
+                    streamUrl.searchParams.set('access_token', token);
 
                     if (isReconnect) {
-                        console.log(`Reconnecting to SSE stream for run ${runId} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+                        console.log(
+                            `Reconnecting to SSE stream for run ${runId} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`,
+                        );
                     }
 
                     const sse = new EventSourceImpl(streamUrl.href);
                     currentSse = sse;
 
                     // Prevent Node from exiting prematurely
-                    interval = setInterval(() => { }, 1000);
+                    interval = setInterval(() => {}, 1000);
 
                     sse.onopen = () => {
                         if (isReconnect) {
@@ -277,8 +283,8 @@ export class WorkflowsApi extends ApiTopic {
                     };
 
                     sse.onmessage = (ev: MessageEvent) => {
-                        if (!ev.data || ev.data.startsWith(":")) {
-                            console.log("Received comment or heartbeat; ignoring it.: ", ev.data);
+                        if (!ev.data || ev.data.startsWith(':')) {
+                            console.log('Received comment or heartbeat; ignoring it.: ', ev.data);
                             return;
                         }
 
@@ -300,17 +306,19 @@ export class WorkflowsApi extends ApiTopic {
                             }
 
                             if (shouldCloseCompactRunStream(compactMessage, runId)) {
-                                console.log("Closing stream due to COMPLETE message from main workstream");
+                                console.log('Closing stream due to COMPLETE message from main workstream');
                                 if (!isClosed) {
                                     isClosed = true;
                                     cleanup();
                                     resolve(null);
                                 }
                             } else if (compactMessage.t === AgentMessageType.COMPLETE) {
-                                console.log(`Received COMPLETE message that does not close the root stream for run ${runId}`);
+                                console.log(
+                                    `Received COMPLETE message that does not close the root stream for run ${runId}`,
+                                );
                             }
                         } catch (err) {
-                            console.error("Failed to parse SSE message:", err, ev.data);
+                            console.error('Failed to parse SSE message:', err, ev.data);
                         }
                     };
 
@@ -323,7 +331,9 @@ export class WorkflowsApi extends ApiTopic {
                         // Check if we should attempt reconnection
                         if (reconnectAttempts < maxReconnectAttempts) {
                             const delay = calculateBackoffDelay(reconnectAttempts);
-                            console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+                            console.log(
+                                `Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`,
+                            );
 
                             reconnectAttempts++;
                             reconnectTimer = setTimeout(() => {
@@ -333,13 +343,17 @@ export class WorkflowsApi extends ApiTopic {
                                 }
                             }, delay);
                         } else {
-                            console.error(`Failed to reconnect to SSE stream for run ${runId} after ${maxReconnectAttempts} attempts`);
+                            console.error(
+                                `Failed to reconnect to SSE stream for run ${runId} after ${maxReconnectAttempts} attempts`,
+                            );
                             isClosed = true;
-                            reject(new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`));
+                            reject(
+                                new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`),
+                            );
                         }
                     };
                 } catch (err) {
-                    console.error("Error setting up SSE stream:", err);
+                    console.error('Error setting up SSE stream:', err);
                     if (reconnectAttempts < maxReconnectAttempts) {
                         const delay = calculateBackoffDelay(reconnectAttempts);
                         reconnectAttempts++;
@@ -371,7 +385,7 @@ export class WorkflowsApi extends ApiTopic {
                         }
                     }
                 } catch (err) {
-                    console.warn("Failed to fetch historical messages, continuing with SSE:", err);
+                    console.warn('Failed to fetch historical messages, continuing with SSE:', err);
                 }
 
                 // 2. Connect to SSE
@@ -394,7 +408,7 @@ export class WorkflowsApi extends ApiTopic {
         workflowId: string,
         runId: string,
         onMessage?: (message: CompactMessage) => void,
-        since?: number
+        since?: number,
     ): Promise<{ cleanup: () => void; sendSignal: (signalName: string, data: unknown) => void }> {
         return new Promise((resolve, reject) => {
             let reconnectAttempts = 0;
@@ -436,7 +450,9 @@ export class WorkflowsApi extends ApiTopic {
                     wsUrl.searchParams.set('access_token', token);
 
                     if (reconnectAttempts > 0) {
-                        console.log(`Reconnecting to WebSocket for run ${runId} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+                        console.log(
+                            `Reconnecting to WebSocket for run ${runId} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`,
+                        );
                     }
 
                     ws = new WebSocket(wsUrl.href);
@@ -463,13 +479,13 @@ export class WorkflowsApi extends ApiTopic {
                                             type: 'signal',
                                             signalName,
                                             data,
-                                            requestId: Date.now()
+                                            requestId: Date.now(),
                                         };
                                         ws.send(JSON.stringify(message));
                                     } else {
                                         console.warn('WebSocket not open, cannot send signal');
                                     }
-                                }
+                                },
                             });
                         }
                     };
@@ -532,7 +548,9 @@ export class WorkflowsApi extends ApiTopic {
                     ws.onclose = () => {
                         if (!isClosed && reconnectAttempts < maxReconnectAttempts) {
                             const delay = calculateBackoffDelay(reconnectAttempts);
-                            console.log(`WebSocket closed, reconnecting in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+                            console.log(
+                                `WebSocket closed, reconnecting in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`,
+                            );
                             reconnectAttempts++;
                             setTimeout(connect, delay);
                         } else if (reconnectAttempts >= maxReconnectAttempts) {
@@ -562,7 +580,7 @@ export class WorkflowsApi extends ApiTopic {
     ingestEvents(
         workflowId: string,
         runId: string,
-        events: AgentEvent[]
+        events: AgentEvent[],
     ): Promise<{ ingested: number; status?: string; error?: string }> {
         return this.post(`/runs/${workflowId}/${runId}/events`, {
             payload: { events },
@@ -577,9 +595,7 @@ export class WorkflowsApi extends ApiTopic {
      * Get workflow analytics summary.
      * Returns overall metrics including token usage, success rates, and run counts.
      */
-    getAnalyticsSummary(
-        query: WorkflowAnalyticsSummaryQuery = {}
-    ): Promise<WorkflowAnalyticsSummaryResponse> {
+    getAnalyticsSummary(query: WorkflowAnalyticsSummaryQuery = {}): Promise<WorkflowAnalyticsSummaryResponse> {
         return this.post('/analytics/summary', { payload: query });
     }
 
@@ -587,9 +603,7 @@ export class WorkflowsApi extends ApiTopic {
      * Get token usage analytics.
      * Returns token consumption metrics by model, agent, tool, or over time.
      */
-    getTokenUsageAnalytics(
-        query: WorkflowAnalyticsTimeSeriesQuery = {}
-    ): Promise<TokenUsageAnalyticsResponse> {
+    getTokenUsageAnalytics(query: WorkflowAnalyticsTimeSeriesQuery = {}): Promise<TokenUsageAnalyticsResponse> {
         return this.post('/analytics/tokens', { payload: query });
     }
 
@@ -597,9 +611,7 @@ export class WorkflowsApi extends ApiTopic {
      * Get LLM latency analytics.
      * Returns duration/latency metrics for LLM calls.
      */
-    getLlmLatencyAnalytics(
-        query: WorkflowAnalyticsTimeSeriesQuery = {}
-    ): Promise<LatencyAnalyticsResponse> {
+    getLlmLatencyAnalytics(query: WorkflowAnalyticsTimeSeriesQuery = {}): Promise<LatencyAnalyticsResponse> {
         return this.post('/analytics/latency/llm', { payload: query });
     }
 
@@ -607,9 +619,7 @@ export class WorkflowsApi extends ApiTopic {
      * Get tool latency analytics.
      * Returns duration/latency metrics for tool calls.
      */
-    getToolLatencyAnalytics(
-        query: WorkflowAnalyticsTimeSeriesQuery = {}
-    ): Promise<LatencyAnalyticsResponse> {
+    getToolLatencyAnalytics(query: WorkflowAnalyticsTimeSeriesQuery = {}): Promise<LatencyAnalyticsResponse> {
         return this.post('/analytics/latency/tools', { payload: query });
     }
 
@@ -617,9 +627,7 @@ export class WorkflowsApi extends ApiTopic {
      * Get agent/workflow latency analytics.
      * Returns duration metrics for complete workflow runs.
      */
-    getAgentLatencyAnalytics(
-        query: WorkflowAnalyticsTimeSeriesQuery = {}
-    ): Promise<LatencyAnalyticsResponse> {
+    getAgentLatencyAnalytics(query: WorkflowAnalyticsTimeSeriesQuery = {}): Promise<LatencyAnalyticsResponse> {
         return this.post('/analytics/latency/agents', { payload: query });
     }
 
@@ -627,9 +635,7 @@ export class WorkflowsApi extends ApiTopic {
      * Get error analytics.
      * Returns error rates, types, and trends.
      */
-    getErrorAnalytics(
-        query: WorkflowAnalyticsTimeSeriesQuery = {}
-    ): Promise<ErrorAnalyticsResponse> {
+    getErrorAnalytics(query: WorkflowAnalyticsTimeSeriesQuery = {}): Promise<ErrorAnalyticsResponse> {
         return this.post('/analytics/errors', { payload: query });
     }
 
@@ -637,9 +643,7 @@ export class WorkflowsApi extends ApiTopic {
      * Get tool usage analytics.
      * Returns tool invocation counts, success rates, and performance metrics.
      */
-    getToolAnalytics(
-        query: WorkflowAnalyticsSummaryQuery = {}
-    ): Promise<ToolAnalyticsResponse> {
+    getToolAnalytics(query: WorkflowAnalyticsSummaryQuery = {}): Promise<ToolAnalyticsResponse> {
         return this.post('/analytics/tools', { payload: query });
     }
 
@@ -647,9 +651,7 @@ export class WorkflowsApi extends ApiTopic {
      * Get tool parameter analytics.
      * Returns parameter value distributions for a specific tool.
      */
-    getToolParameterAnalytics(
-        query: WorkflowToolParametersQuery
-    ): Promise<ToolParameterAnalyticsResponse> {
+    getToolParameterAnalytics(query: WorkflowToolParametersQuery): Promise<ToolParameterAnalyticsResponse> {
         return this.post('/analytics/tools/parameters', { payload: query });
     }
 
@@ -658,7 +660,7 @@ export class WorkflowsApi extends ApiTopic {
      * Returns unique agents, environments, and models from telemetry data.
      */
     getAnalyticsFilterOptions(
-        query: WorkflowAnalyticsSummaryQuery = {}
+        query: WorkflowAnalyticsSummaryQuery = {},
     ): Promise<WorkflowAnalyticsFilterOptionsResponse> {
         return this.post('/analytics/filter-options', { payload: query });
     }
@@ -667,9 +669,7 @@ export class WorkflowsApi extends ApiTopic {
      * Get average prompt size (input tokens) by agent for startConversation calls.
      * This represents the initial prompt + tools size.
      */
-    getPromptSizeAnalytics(
-        query: WorkflowAnalyticsSummaryQuery = {}
-    ): Promise<PromptSizeAnalyticsResponse> {
+    getPromptSizeAnalytics(query: WorkflowAnalyticsSummaryQuery = {}): Promise<PromptSizeAnalyticsResponse> {
         return this.post('/analytics/prompt-size', { payload: query });
     }
 
@@ -677,9 +677,7 @@ export class WorkflowsApi extends ApiTopic {
      * Get top principals (users/API keys) who started the most agent runs.
      * Returns the top N principals sorted by run count descending.
      */
-    getTopPrincipalsAnalytics(
-        query: WorkflowAnalyticsSummaryQuery = {}
-    ): Promise<TopPrincipalsAnalyticsResponse> {
+    getTopPrincipalsAnalytics(query: WorkflowAnalyticsSummaryQuery = {}): Promise<TopPrincipalsAnalyticsResponse> {
         return this.post('/analytics/top-principals', { payload: query });
     }
 
@@ -687,9 +685,7 @@ export class WorkflowsApi extends ApiTopic {
      * Get agent run distribution - how many runs per agent/interaction type.
      * Returns the top N agents sorted by run count descending.
      */
-    getRunsByAgentAnalytics(
-        query: WorkflowAnalyticsSummaryQuery = {}
-    ): Promise<RunsByAgentAnalyticsResponse> {
+    getRunsByAgentAnalytics(query: WorkflowAnalyticsSummaryQuery = {}): Promise<RunsByAgentAnalyticsResponse> {
         return this.post('/analytics/runs-by-agent', { payload: query });
     }
 
@@ -699,7 +695,7 @@ export class WorkflowsApi extends ApiTopic {
      * Returns average, min, max, median, p95, and p99 metrics.
      */
     getTimeToFirstResponseAnalytics(
-        query: WorkflowAnalyticsTimeSeriesQuery = {}
+        query: WorkflowAnalyticsTimeSeriesQuery = {},
     ): Promise<TimeToFirstResponseAnalyticsResponse> {
         return this.post('/analytics/time-to-first-response', { payload: query });
     }
@@ -711,7 +707,7 @@ export class WorkflowsApi extends ApiTopic {
      * - Percentage of agents that return no tool calls at start
      */
     getFirstResponseBehaviorAnalytics(
-        query: WorkflowAnalyticsTimeSeriesQuery = {}
+        query: WorkflowAnalyticsTimeSeriesQuery = {},
     ): Promise<FirstResponseBehaviorAnalyticsResponse> {
         return this.post('/analytics/first-response-behavior', { payload: query });
     }
@@ -722,11 +718,11 @@ export class WorkflowsApi extends ApiTopic {
 
 export class WorkflowsRulesApi extends ApiTopic {
     constructor(parent: WorkflowsApi) {
-        super(parent, "/rules");
+        super(parent, '/rules');
     }
 
     list(): Promise<WorkflowRuleItem[]> {
-        return this.get("/");
+        return this.get('/');
     }
 
     retrieve(id: string): Promise<WorkflowRule> {
@@ -740,7 +736,7 @@ export class WorkflowsRulesApi extends ApiTopic {
     }
 
     create(payload: CreateWorkflowRulePayload): Promise<WorkflowRule> {
-        return this.post("/", {
+        return this.post('/', {
             payload,
         });
     }
@@ -766,11 +762,11 @@ export class WorkflowsDefinitionApi extends ApiTopic {
     //model: DSLWorkflowDefinition;
 
     constructor(parent: WorkflowsApi) {
-        super(parent, "/definitions");
+        super(parent, '/definitions');
     }
 
     list(): Promise<WorkflowDefinitionRef[]> {
-        return this.get("/");
+        return this.get('/');
     }
 
     retrieve(id: string): Promise<DSLWorkflowDefinition> {
@@ -784,7 +780,7 @@ export class WorkflowsDefinitionApi extends ApiTopic {
     }
 
     create(payload: DSLWorkflowSpec): Promise<DSLWorkflowDefinition> {
-        return this.post("/", {
+        return this.post('/', {
             payload,
         });
     }

@@ -1,8 +1,8 @@
-import type { VertesiaClient, ZenoClient } from "@vertesia/client";
-import type { MarkdownRenditionFormat, RenderMarkdownPayload } from "@vertesia/common";
-import { useCallback, useState } from "react";
-import type { ToastFn } from "@vertesia/ui/core";
+import type { VertesiaClient, ZenoClient } from '@vertesia/client';
+import type { MarkdownRenditionFormat, RenderMarkdownPayload } from '@vertesia/common';
+import type { ToastFn } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
+import { useCallback, useState } from 'react';
 
 export interface UseDownloadFileOptions {
     client: VertesiaClient | ZenoClient;
@@ -48,29 +48,32 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
     /**
      * Download a file from a content source URI using the files API to get a signed URL.
      */
-    const downloadFromContentSource = useCallback(async (uri: string, filename?: string) => {
-        if (!uri) return;
+    const downloadFromContentSource = useCallback(
+        async (uri: string, filename?: string) => {
+            if (!uri) return;
 
-        setIsDownloading(true);
-        try {
-            const result = await client.files.getDownloadUrlWithOptions({
-                file: uri,
-                name: filename
-            });
+            setIsDownloading(true);
+            try {
+                const result = await client.files.getDownloadUrlWithOptions({
+                    file: uri,
+                    name: filename,
+                });
 
-            // Trigger download
-            triggerDownload(result.url, filename);
-        } catch (err) {
-            toast({
-                status: "error",
-                title: t('store.downloadFailed'),
-                description: err instanceof Error ? err.message : t('store.failedToGetDownloadUrl'),
-                duration: 5000,
-            });
-        } finally {
-            setIsDownloading(false);
-        }
-    }, [client, toast, t]);
+                // Trigger download
+                triggerDownload(result.url, filename);
+            } catch (err) {
+                toast({
+                    status: 'error',
+                    title: t('store.downloadFailed'),
+                    description: err instanceof Error ? err.message : t('store.failedToGetDownloadUrl'),
+                    duration: 5000,
+                });
+            } finally {
+                setIsDownloading(false);
+            }
+        },
+        [client, toast, t],
+    );
 
     /**
      * Download a file from a direct URL (already signed or public).
@@ -83,103 +86,109 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
     /**
      * Internal helper to handle the render result and trigger download.
      */
-    const handleRenderResult = useCallback(async (
-        payload: RenderMarkdownPayload,
-        filename: string
-    ) => {
-        // Get the store client (ZenoClient has rendering, VertesiaClient has store.rendering)
-        const storeClient = 'store' in client ? client.store : client;
+    const handleRenderResult = useCallback(
+        async (payload: RenderMarkdownPayload, filename: string) => {
+            // Get the store client (ZenoClient has rendering, VertesiaClient has store.rendering)
+            const storeClient = 'store' in client ? client.store : client;
 
-        const rendition = await storeClient.rendering.render(payload);
+            const rendition = await storeClient.rendering.render(payload);
 
-        // Use download_url if available (direct signed URL), otherwise fall back to file_uri
-        if (rendition.download_url) {
-            triggerDownload(rendition.download_url, filename);
-        } else if (rendition.file_uri) {
-            const result = await client.files.getDownloadUrlWithOptions({
-                file: rendition.file_uri,
-                name: filename
-            });
-            triggerDownload(result.url, filename);
-        } else {
-            throw new Error("No download URL or file URI in response");
-        }
-    }, [client]);
+            // Use download_url if available (direct signed URL), otherwise fall back to file_uri
+            if (rendition.download_url) {
+                triggerDownload(rendition.download_url, filename);
+            } else if (rendition.file_uri) {
+                const result = await client.files.getDownloadUrlWithOptions({
+                    file: rendition.file_uri,
+                    name: filename,
+                });
+                triggerDownload(result.url, filename);
+            } else {
+                throw new Error('No download URL or file URI in response');
+            }
+        },
+        [client],
+    );
 
     /**
      * Render a document by objectId and download the result.
      */
-    const renderDocument = useCallback(async (
-        objectId: string,
-        options: RenderAndDownloadOptions
-    ) => {
-        setIsDownloading(true);
-        try {
-            const filename = `${options.title || "document"}.${options.format}`;
+    const renderDocument = useCallback(
+        async (objectId: string, options: RenderAndDownloadOptions) => {
+            setIsDownloading(true);
+            try {
+                const filename = `${options.title || 'document'}.${options.format}`;
 
-            await handleRenderResult({
-                object_id: objectId,
-                format: options.format,
-                title: options.title,
-                pandoc_options: options.pandocOptions,
-                use_default_template: options.useDefaultTemplate,
-                template_path: options.templateObjectId ? `store:${options.templateObjectId}` : undefined,
-            }, filename);
+                await handleRenderResult(
+                    {
+                        object_id: objectId,
+                        format: options.format,
+                        title: options.title,
+                        pandoc_options: options.pandocOptions,
+                        use_default_template: options.useDefaultTemplate,
+                        template_path: options.templateObjectId ? `store:${options.templateObjectId}` : undefined,
+                    },
+                    filename,
+                );
 
-            toast({
-                status: "success",
-                title: t('store.documentExported'),
-                description: t('store.successfullyExportedTo', { format: options.format.toUpperCase() }),
-                duration: 2000,
-            });
-        } catch (err) {
-            toast({
-                status: "error",
-                title: t('store.exportFailed'),
-                description: err instanceof Error ? err.message : t('store.failedToExportDocument'),
-                duration: 5000,
-            });
-        } finally {
-            setIsDownloading(false);
-        }
-    }, [handleRenderResult, toast, t]);
+                toast({
+                    status: 'success',
+                    title: t('store.documentExported'),
+                    description: t('store.successfullyExportedTo', { format: options.format.toUpperCase() }),
+                    duration: 2000,
+                });
+            } catch (err) {
+                toast({
+                    status: 'error',
+                    title: t('store.exportFailed'),
+                    description: err instanceof Error ? err.message : t('store.failedToExportDocument'),
+                    duration: 5000,
+                });
+            } finally {
+                setIsDownloading(false);
+            }
+        },
+        [handleRenderResult, toast, t],
+    );
 
     /**
      * Render markdown content and download the result.
      */
-    const renderContent = useCallback(async (
-        content: string,
-        options: RenderAndDownloadOptions
-    ) => {
-        setIsDownloading(true);
-        try {
-            const filename = `${options.title || "export"}.${options.format}`;
+    const renderContent = useCallback(
+        async (content: string, options: RenderAndDownloadOptions) => {
+            setIsDownloading(true);
+            try {
+                const filename = `${options.title || 'export'}.${options.format}`;
 
-            await handleRenderResult({
-                content,
-                format: options.format,
-                title: options.title,
-                artifact_run_id: options.artifactRunId,
-                pandoc_options: options.pandocOptions,
-            }, filename);
+                await handleRenderResult(
+                    {
+                        content,
+                        format: options.format,
+                        title: options.title,
+                        artifact_run_id: options.artifactRunId,
+                        pandoc_options: options.pandocOptions,
+                    },
+                    filename,
+                );
 
-            toast({
-                status: "success",
-                title: t('store.contentExported'),
-                description: t('store.successfullyExportedTo', { format: options.format.toUpperCase() }),
-                duration: 2000,
-            });
-        } catch (err) {
-            toast({
-                status: "error",
-                title: t('store.exportFailed'),
-                description: err instanceof Error ? err.message : t('store.failedToExportContent'),
-                duration: 5000,
-            });
-        } finally {
-            setIsDownloading(false);
-        }
-    }, [handleRenderResult, toast, t]);
+                toast({
+                    status: 'success',
+                    title: t('store.contentExported'),
+                    description: t('store.successfullyExportedTo', { format: options.format.toUpperCase() }),
+                    duration: 2000,
+                });
+            } catch (err) {
+                toast({
+                    status: 'error',
+                    title: t('store.exportFailed'),
+                    description: err instanceof Error ? err.message : t('store.failedToExportContent'),
+                    duration: 5000,
+                });
+            } finally {
+                setIsDownloading(false);
+            }
+        },
+        [handleRenderResult, toast, t],
+    );
 
     return {
         downloadFromContentSource,
@@ -198,16 +207,16 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
 function triggerDownload(url: string, filename?: string): void {
     // Try to fetch and create blob for proper filename control
     fetch(url)
-        .then(response => {
+        .then((response) => {
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             return response.blob();
         })
-        .then(blob => {
+        .then((blob) => {
             const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement("a");
+            const a = document.createElement('a');
             a.href = blobUrl;
             a.download = filename || getFilenameFromUrl(url);
-            a.style.display = "none";
+            a.style.display = 'none';
             document.body.appendChild(a);
             a.click();
             setTimeout(() => {
@@ -217,12 +226,12 @@ function triggerDownload(url: string, filename?: string): void {
         })
         .catch(() => {
             // CORS or fetch failed - fall back to direct link download
-            const a = document.createElement("a");
+            const a = document.createElement('a');
             a.href = url;
             a.download = filename || getFilenameFromUrl(url);
-            a.target = "_blank";
-            a.rel = "noopener noreferrer";
-            a.style.display = "none";
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.style.display = 'none';
             document.body.appendChild(a);
             a.click();
             setTimeout(() => {
@@ -237,9 +246,9 @@ function triggerDownload(url: string, filename?: string): void {
 function getFilenameFromUrl(url: string): string {
     try {
         const pathname = new URL(url).pathname;
-        const segments = pathname.split("/");
-        return segments[segments.length - 1] || "download";
+        const segments = pathname.split('/');
+        return segments[segments.length - 1] || 'download';
     } catch {
-        return "download";
+        return 'download';
     }
 }

@@ -2,7 +2,6 @@ import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type { AuditTrailQuery, AuditTrailResponse } from '@vertesia/common';
 
 export default class AuditTrailApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/audit-trail');
     }
@@ -15,7 +14,8 @@ export default class AuditTrailApi extends ApiTopic {
         if (query?.principalId) params.set('principalId', query.principalId);
         if (query?.principalType) params.set('principalType', query.principalType);
         if (query?.effectivePrincipalId) params.set('effectivePrincipalId', query.effectivePrincipalId);
-        if (query?.hasEffectivePrincipal !== undefined) params.set('hasEffectivePrincipal', String(query.hasEffectivePrincipal));
+        if (query?.hasEffectivePrincipal !== undefined)
+            params.set('hasEffectivePrincipal', String(query.hasEffectivePrincipal));
         if (query?.projectId) params.set('projectId', query.projectId);
         if (query?.from) params.set('from', query.from);
         if (query?.to) params.set('to', query.to);

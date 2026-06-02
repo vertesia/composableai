@@ -19,9 +19,12 @@ console.log(`Web UI: http://localhost:${port}/`);
 
 server.get('*', serveStatic({ root: './dist' }));
 
-serve({
-    fetch: server.fetch,
-    port,
-}, (info) => {
-    console.log(`✓ Server is running at http://localhost:${info.port}`);
-});
+serve(
+    {
+        fetch: server.fetch,
+        port,
+    },
+    (info) => {
+        console.log(`✓ Server is running at http://localhost:${info.port}`);
+    },
+);

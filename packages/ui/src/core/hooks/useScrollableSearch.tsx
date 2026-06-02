@@ -1,5 +1,5 @@
-import { useIntersectionObserver } from "./useIntersectionObserver";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
+import { useIntersectionObserver } from './useIntersectionObserver';
 
 interface SearchResponse<ResultT, PageT> {
     /**
@@ -20,8 +20,11 @@ interface SearchResponse<ResultT, PageT> {
  * @param pageSize The number of items per page
  * @returns A promise that resolves to the search response
  */
-type SearchFn<PayloadT, ResultT, PageT = number> = (payload: PayloadT, page: PageT | null, pageSize: number) => Promise<SearchResponse<ResultT, PageT>>;
-
+type SearchFn<PayloadT, ResultT, PageT = number> = (
+    payload: PayloadT,
+    page: PageT | null,
+    pageSize: number,
+) => Promise<SearchResponse<ResultT, PageT>>;
 
 interface ScrollableSearchOptions<ResultT, PayloadT, PageT = number> {
     /**
@@ -91,7 +94,10 @@ interface ScrollableSearchResult<ResultT, PayloadT, PageT = number> {
 /**
  * A hook that provides paginated search functionality with infinite scrolling support.
  */
-export function useScrollableSearch<ResultT, PayloadT, PageT = number>(opts: ScrollableSearchOptions<ResultT, PayloadT, PageT>, dependencies: unknown[] = []): ScrollableSearchResult<ResultT, PayloadT, PageT> {
+export function useScrollableSearch<ResultT, PayloadT, PageT = number>(
+    opts: ScrollableSearchOptions<ResultT, PayloadT, PageT>,
+    dependencies: unknown[] = [],
+): ScrollableSearchResult<ResultT, PayloadT, PageT> {
     const pageSize = opts.pageSize || 50;
     const [page, setPage] = useState<PageT | null>(null);
     const [lastPayload, setLastPayload] = useState<PayloadT>(opts.payload);
@@ -105,16 +111,16 @@ export function useScrollableSearch<ResultT, PayloadT, PageT = number>(opts: Scr
 
     const search = (payload: PayloadT) => {
         setPage(null);
-        setResults([]);  // Clear old results immediately
+        setResults([]); // Clear old results immediately
         setNextPage(null);
         setLastPayload(payload);
-    }
+    };
 
     const searchMore = () => {
         if (nextPage !== null) {
             setPage(nextPage);
         }
-    }
+    };
 
     useEffect(() => {
         // Increment request ID to mark previous requests as stale
@@ -122,41 +128,48 @@ export function useScrollableSearch<ResultT, PayloadT, PageT = number>(opts: Scr
         const currentRequestId = requestIdRef.current;
 
         setIsSearching(true);
-        opts.search(lastPayload, page, pageSize).then(r => {
-            // Only update state if this is still the current request
-            if (currentRequestId !== requestIdRef.current) {
-                return; // Stale request, ignore results
-            }
+        opts.search(lastPayload, page, pageSize)
+            .then((r) => {
+                // Only update state if this is still the current request
+                if (currentRequestId !== requestIdRef.current) {
+                    return; // Stale request, ignore results
+                }
 
-            // If page is null, it's a new search - replace results
-            // Otherwise, it's loading more - append results
-            if (page === null) {
-                setResults(r.result);
-            } else {
-                setResults(prev => [...prev, ...r.result]);
-            }
-            setNextPage(r.nextPage);
-            setError(null);
-        }).catch(error => {
-            // Only update error if this is still the current request
-            if (currentRequestId !== requestIdRef.current) {
-                return; // Stale request, ignore error
-            }
-            setError(error);
-        }).finally(() => {
-            // Only update isSearching if this is still the current request
-            if (currentRequestId === requestIdRef.current) {
-                setIsSearching(false);
-            }
-        });
+                // If page is null, it's a new search - replace results
+                // Otherwise, it's loading more - append results
+                if (page === null) {
+                    setResults(r.result);
+                } else {
+                    setResults((prev) => [...prev, ...r.result]);
+                }
+                setNextPage(r.nextPage);
+                setError(null);
+            })
+            .catch((error) => {
+                // Only update error if this is still the current request
+                if (currentRequestId !== requestIdRef.current) {
+                    return; // Stale request, ignore error
+                }
+                setError(error);
+            })
+            .finally(() => {
+                // Only update isSearching if this is still the current request
+                if (currentRequestId === requestIdRef.current) {
+                    setIsSearching(false);
+                }
+            });
     }, [...dependencies, lastPayload, opts.search, page, pageSize]);
 
     // Intersection observer for infinite scrolling
-    useIntersectionObserver(opts.nextPageTrigger, () => {
-        if (!isSearching && nextPage) {
-            searchMore();
-        }
-    }, { threshold: 0.1, deps: [nextPage, isSearching] });
+    useIntersectionObserver(
+        opts.nextPageTrigger,
+        () => {
+            if (!isSearching && nextPage) {
+                searchMore();
+            }
+        },
+        { threshold: 0.1, deps: [nextPage, isSearching] },
+    );
 
     return {
         search,
@@ -167,16 +180,20 @@ export function useScrollableSearch<ResultT, PayloadT, PageT = number>(opts: Scr
         hasMore: nextPage !== null,
         error,
         isSearching,
-    }
+    };
 }
 
 type DefaultSearchFn<PayloadT, ResultT> = (payload: PayloadT, offset: number, limit: number) => Promise<ResultT[]>;
 
-interface DefaultScrollableSearchOptions<ResultT, PayloadT> extends Omit<ScrollableSearchOptions<ResultT, PayloadT, number>, 'search'> {
+interface DefaultScrollableSearchOptions<ResultT, PayloadT>
+    extends Omit<ScrollableSearchOptions<ResultT, PayloadT, number>, 'search'> {
     search: DefaultSearchFn<PayloadT, ResultT>;
 }
 
-export function useDefaultScrollableSearch<ResultT, PayloadT>(opts: DefaultScrollableSearchOptions<ResultT, PayloadT>, dependencies: unknown[] = []): ScrollableSearchResult<ResultT, PayloadT, number> {
+export function useDefaultScrollableSearch<ResultT, PayloadT>(
+    opts: DefaultScrollableSearchOptions<ResultT, PayloadT>,
+    dependencies: unknown[] = [],
+): ScrollableSearchResult<ResultT, PayloadT, number> {
     const actualOpts: ScrollableSearchOptions<ResultT, PayloadT, number> = {
         ...opts,
         async search(payload, page, pageSize) {
@@ -185,9 +202,9 @@ export function useDefaultScrollableSearch<ResultT, PayloadT>(opts: DefaultScrol
             const result = await opts.search(payload, offset, pageSize);
             return {
                 result,
-                nextPage: result.length === 0 ? null : currentPage + 1
+                nextPage: result.length === 0 ? null : currentPage + 1,
             };
-        }
+        },
     };
     return useScrollableSearch<ResultT, PayloadT, number>(actualOpts, dependencies);
 }

@@ -1,15 +1,40 @@
+import type {
+    OAuthAuthorizationServerMetadata,
+    OAuthDeviceAuthorizationResponse,
+    OAuthTokenResponse,
+} from '@vertesia/common';
+import { OAUTH_SCOPE_OFFLINE_ACCESS, OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, Permission } from '@vertesia/common';
 import jwt from 'jsonwebtoken';
 import open from 'open';
-import type { OAuthAuthorizationServerMetadata, OAuthDeviceAuthorizationResponse, OAuthTokenResponse } from '@vertesia/common';
 import type { Profile } from './index.js';
 import type { StoredAuthBundle } from './keyring.js';
 import type { ConfigResult } from './server/index.js';
 
 const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server';
 const OAUTH_CLIENT_METADATA_PATH = '/.well-known/oauth-client/vertesia-cli';
-const DEFAULT_OAUTH_SCOPE = 'openid profile';
+const DEFAULT_CLI_OAUTH_SCOPES = [
+    OAUTH_SCOPE_OPENID,
+    OAUTH_SCOPE_PROFILE,
+    OAUTH_SCOPE_OFFLINE_ACCESS,
+    Permission.account_member,
+    Permission.account_read,
+    Permission.project_integration_read,
+    Permission.int_read,
+    Permission.int_execute,
+    Permission.run_read,
+    Permission.run_write,
+    Permission.content_read,
+    Permission.content_write,
+    Permission.content_delete,
+    Permission.workflow_read,
+    Permission.workflow_run,
+    Permission.agent_run_read,
+    Permission.task_read,
+    Permission.task_manage,
+];
 
-type OAuthProfile = Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> & Partial<Pick<Profile, 'account' | 'config_url' | 'project'>>;
+type OAuthProfile = Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> &
+    Partial<Pick<Profile, 'account' | 'config_url' | 'project' | 'oauth_server_url'>>;
 
 interface TokenRefs {
     account?: string;
@@ -60,7 +85,7 @@ export async function startOAuthSession(profile: OAuthProfile, signal?: AbortSig
     const { metadata, serverUrl } = await discoverAuthorizationServer(profile);
     const clientId = getOAuthClientId(serverUrl);
     const resource = getOAuthResource(metadata);
-    const scope = DEFAULT_OAUTH_SCOPE;
+    const scope = getDefaultOAuthScope(metadata);
     const deviceAuthorization = await createDeviceAuthorization(metadata, {
         clientId,
         resource,
@@ -77,7 +102,7 @@ export async function startOAuthSession(profile: OAuthProfile, signal?: AbortSig
     });
 
     const response = await pollDeviceToken(metadata, clientId, deviceAuthorization, signal);
-    return buildConfigResult(profile, response, clientId, resource);
+    return buildConfigResult(profile, response, clientId, resource, serverUrl);
 }
 
 export async function refreshOAuthSession(
@@ -94,10 +119,12 @@ export async function refreshOAuthSession(
     const clientId = getOAuthClientId(serverUrl);
     const resource = bundle?.oauthResource || readTokenRefs(bundle?.accessToken).audience || getOAuthResource(metadata);
     const response = await exchangeRefreshToken(metadata, clientId, refreshToken, resource, options.projectId);
-    return buildConfigResult(profile, response, clientId, resource);
+    return buildConfigResult(profile, response, clientId, resource, serverUrl);
 }
 
-function assertOAuthProfile(profile: OAuthProfile): asserts profile is OAuthProfile & Required<Pick<OAuthProfile, 'name' | 'studio_server_url' | 'zeno_server_url'>> {
+function assertOAuthProfile(
+    profile: OAuthProfile,
+): asserts profile is OAuthProfile & Required<Pick<OAuthProfile, 'name' | 'studio_server_url' | 'zeno_server_url'>> {
     if (!profile.name) {
         throw new Error('Profile name is required for OAuth authentication.');
     }
@@ -113,7 +140,9 @@ function withTrailingSlash(url: string): string {
     return url.endsWith('/') ? url : `${url}/`;
 }
 
-async function discoverAuthorizationServer(profile: Pick<Profile, 'studio_server_url'> & Partial<Pick<Profile, 'config_url'>>): Promise<OAuthDiscovery> {
+async function discoverAuthorizationServer(
+    profile: Pick<Profile, 'studio_server_url'> & Partial<Pick<Profile, 'config_url' | 'oauth_server_url'>>,
+): Promise<OAuthDiscovery> {
     const candidates = getOAuthServerUrlCandidates(profile);
     let unavailableError: OAuthUnavailableError | undefined;
     for (const candidate of candidates) {
@@ -131,7 +160,19 @@ async function discoverAuthorizationServer(profile: Pick<Profile, 'studio_server
             throw error;
         }
     }
-    throw unavailableError || new OAuthUnavailableError(`OAuth discovery is not available for ${profile.studio_server_url}.`);
+    throw (
+        unavailableError ||
+        new OAuthUnavailableError(`OAuth discovery is not available for ${profile.studio_server_url}.`)
+    );
+}
+
+function getDefaultOAuthScope(metadata: Partial<Pick<OAuthAuthorizationServerMetadata, 'scopes_supported'>>): string {
+    if (!Array.isArray(metadata.scopes_supported)) {
+        return DEFAULT_CLI_OAUTH_SCOPES.join(' ');
+    }
+    const supportedScopes = new Set(metadata.scopes_supported);
+    const supportedDefaultScopes = DEFAULT_CLI_OAUTH_SCOPES.filter((scope) => supportedScopes.has(scope));
+    return (supportedDefaultScopes.length > 0 ? supportedDefaultScopes : DEFAULT_CLI_OAUTH_SCOPES).join(' ');
 }
 
 function applyProfileAuthorizationEndpoint(
@@ -148,28 +189,36 @@ function applyProfileAuthorizationEndpoint(
     };
 }
 
-function getOAuthServerUrlCandidates(profile: Pick<Profile, 'studio_server_url'>): string[] {
+function getOAuthServerUrlCandidates(
+    profile: Pick<Profile, 'studio_server_url'> & Partial<Pick<Profile, 'oauth_server_url'>>,
+): string[] {
     if (process.env.VERTESIA_TOKEN_SERVER_URL) {
         return [process.env.VERTESIA_TOKEN_SERVER_URL];
     }
+    if (profile.oauth_server_url) {
+        return [profile.oauth_server_url.replace(/\/+$/, '')];
+    }
 
+    // Back-compat for profiles that predate explicit oauth_server_url: derive the STS host
+    // from the studio URL. studio-server itself is intentionally NOT in this list — it used
+    // to serve OAuth metadata in-process (apps/studio-server/src/public/oauth.ts, deleted in
+    // commit 254532963) but the canonical owner is now token-server (STS).
     const studioUrl = new URL(profile.studio_server_url);
     const isLoopbackHost = studioUrl.hostname === 'localhost' || studioUrl.hostname === '127.0.0.1';
     if (isLoopbackHost) {
         return ['https://sts.dev1.vertesia.io'];
     }
 
-    const candidates = [new URL('/', studioUrl).toString()];
+    const candidates: string[] = [];
+    // api{,-preview}.{region}.vertesia.io → sts{,-preview}.{region}.vertesia.io
     if (studioUrl.hostname.startsWith('api')) {
-        const stsHost = studioUrl.hostname.replace('api-preview.', 'api.').replace(/^api/, 'sts');
+        const stsHost = studioUrl.hostname.replace(/^api/, 'sts');
         candidates.push(`${studioUrl.protocol}//${stsHost}`);
     }
-
+    // dev branch services (studio-server-dev-*.api.dev1.vertesia.io) → shared dev1 STS
     if (studioUrl.hostname.endsWith('.api.dev1.vertesia.io') || studioUrl.hostname.endsWith('.ui.dev1.vertesia.io')) {
         candidates.push('https://sts.dev1.vertesia.io');
     }
-
-    candidates.push('https://sts.dev1.vertesia.io');
     return Array.from(new Set(candidates.map((candidate) => candidate.replace(/\/+$/, ''))));
 }
 
@@ -182,17 +231,21 @@ async function fetchAuthorizationServerMetadata(oauthServerUrl: string): Promise
             },
         });
     } catch (error) {
-        throw new OAuthUnavailableError(`OAuth discovery is not reachable at ${oauthServerUrl}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new OAuthUnavailableError(
+            `OAuth discovery is not reachable at ${oauthServerUrl}: ${error instanceof Error ? error.message : String(error)}`,
+        );
     }
 
     if (!response.ok) {
         if (response.status === 404 || response.status === 501) {
             throw new OAuthUnavailableError(`OAuth discovery is not available at ${oauthServerUrl}.`);
         }
-        throw new Error(`Failed to load OAuth authorization metadata from ${oauthServerUrl} (${response.status} ${response.statusText}).`);
+        throw new Error(
+            `Failed to load OAuth authorization metadata from ${oauthServerUrl} (${response.status} ${response.statusText}).`,
+        );
     }
 
-    const metadata = await response.json() as Partial<OAuthAuthorizationServerMetadata>;
+    const metadata = (await response.json()) as Partial<OAuthAuthorizationServerMetadata>;
     if (!metadata.authorization_endpoint || !metadata.token_endpoint || !metadata.issuer) {
         throw new Error(`Invalid OAuth authorization metadata returned by ${oauthServerUrl}.`);
     }
@@ -233,14 +286,22 @@ async function createDeviceAuthorization(
     if (!response.ok) {
         const error = await readOAuthError(response);
         if (response.status === 404 || response.status === 501) {
-            throw new OAuthUnavailableError(`OAuth device authorization is not available for this endpoint: ${error.message}`);
+            throw new OAuthUnavailableError(
+                `OAuth device authorization is not available for this endpoint: ${error.message}`,
+            );
         }
         throw new Error(`OAuth device authorization failed (${response.status}): ${error.message}`);
     }
 
-    const payload = await response.json() as Partial<OAuthDeviceAuthorizationResponse>;
-    if (!payload.device_code || !payload.user_code || !payload.verification_uri || !payload.verification_uri_complete
-        || typeof payload.expires_in !== 'number' || typeof payload.interval !== 'number') {
+    const payload = (await response.json()) as Partial<OAuthDeviceAuthorizationResponse>;
+    if (
+        !payload.device_code ||
+        !payload.user_code ||
+        !payload.verification_uri ||
+        !payload.verification_uri_complete ||
+        typeof payload.expires_in !== 'number' ||
+        typeof payload.interval !== 'number'
+    ) {
         throw new Error('OAuth device authorization endpoint returned an invalid response.');
     }
     return payload as OAuthDeviceAuthorizationResponse;
@@ -283,7 +344,7 @@ async function pollDeviceToken(
         });
 
         if (response.ok) {
-            const payload = await response.json() as Partial<OAuthTokenResponse>;
+            const payload = (await response.json()) as Partial<OAuthTokenResponse>;
             if (!payload.access_token || !payload.token_type || typeof payload.expires_in !== 'number') {
                 throw new Error('OAuth token endpoint returned an invalid response.');
             }
@@ -345,7 +406,7 @@ async function exchangeToken(endpoint: string, body: URLSearchParams): Promise<O
         throw new Error(`OAuth token exchange failed (${response.status}): ${await readErrorMessage(response)}`);
     }
 
-    const payload = await response.json() as Partial<OAuthTokenResponse>;
+    const payload = (await response.json()) as Partial<OAuthTokenResponse>;
     if (!payload.access_token || !payload.token_type || typeof payload.expires_in !== 'number') {
         throw new Error('OAuth token endpoint returned an invalid response.');
     }
@@ -403,6 +464,7 @@ function buildConfigResult(
     response: OAuthTokenResponse,
     oauthClientId: string,
     oauthResource: string,
+    oauthServerUrl: string,
 ): ConfigResult {
     const refs = readTokenRefs(response.access_token);
     const account = refs.account || profile.account;
@@ -421,6 +483,7 @@ function buildConfigResult(
         project,
         studio_server_url: profile.studio_server_url,
         zeno_server_url: profile.zeno_server_url,
+        oauth_server_url: oauthServerUrl,
         token: response.access_token,
         id_token: response.id_token,
         refresh_token: response.refresh_token,

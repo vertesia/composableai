@@ -3,7 +3,7 @@ import type { VertesiaClient } from '@vertesia/client';
 import { ContentEventName, type DSLActivityExecutionPayload } from '@vertesia/common';
 import type { ActivityContext } from '@vertesia/workflow';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { probeMediaStreams, type ProbeMediaStreamsParams, type ProbeMediaStreamsResult } from './probeMediaStreams.js';
+import { type ProbeMediaStreamsParams, type ProbeMediaStreamsResult, probeMediaStreams } from './probeMediaStreams.js';
 
 vi.mock('../../dsl/setup/ActivityContext.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../dsl/setup/ActivityContext.js')>();
@@ -119,8 +119,6 @@ describe('probeMediaStreams', () => {
             params: {} satisfies ProbeMediaStreamsParams,
         } as unknown as ActivityContext<ProbeMediaStreamsParams>);
 
-        await expect(testEnv.run(probeMediaStreams, createPayload())).rejects.toThrow(
-            'has no source',
-        );
+        await expect(testEnv.run(probeMediaStreams, createPayload())).rejects.toThrow('has no source');
     });
 });

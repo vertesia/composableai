@@ -6,17 +6,23 @@
 export function toPathName(name: string): string {
     let result = name;
     if (result.includes(' ') || result.includes('_')) {
-        result = result.split(/[\s_]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+        result = result
+            .split(/[\s_]+/)
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join('');
     }
     return result.replace(/[^a-zA-Z0-9$_\-@]/g, '-');
 }
 
 export function kebabCaseToTitle(name: string) {
-    return name.split('-').map(p => p[0].toUpperCase() + p.substring(1)).join(' ');
+    return name
+        .split('-')
+        .map((p) => p[0].toUpperCase() + p.substring(1))
+        .join(' ');
 }
 
 export function makeScriptUrl(origin: string, script: string) {
-    return join(origin, join("/scripts", script));
+    return join(origin, join('/scripts', script));
 }
 
 export function join(left: string, right: string) {
@@ -34,4 +40,3 @@ export function join(left: string, right: string) {
         return `${left}/${right}`;
     }
 }
-

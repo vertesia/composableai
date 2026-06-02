@@ -3,7 +3,7 @@ import { VertesiaClient } from '@vertesia/client';
 // Initialize the client
 const client = new VertesiaClient({
     site: 'api.vertesia.io',
-    apikey: 'your-api-key-here'
+    apikey: 'your-api-key-here',
 });
 
 async function exampleGroupsUsage() {
@@ -17,7 +17,7 @@ async function exampleGroupsUsage() {
             search: 'engineering',
             tags: ['developers'],
             limit: 10,
-            offset: 0
+            offset: 0,
         });
         console.log('Filtered groups:', filteredGroups);
 
@@ -25,7 +25,7 @@ async function exampleGroupsUsage() {
         const newGroup = await client.iam.groups.create({
             name: 'Engineering Team',
             description: 'All engineering team members',
-            tags: ['engineering', 'developers']
+            tags: ['engineering', 'developers'],
         });
         console.log('Created group:', newGroup);
 
@@ -36,7 +36,7 @@ async function exampleGroupsUsage() {
         // Update a group
         const updatedGroup = await client.iam.groups.update(newGroup.id, {
             description: 'Updated description for engineering team',
-            tags: ['engineering', 'developers', 'backend']
+            tags: ['engineering', 'developers', 'backend'],
         });
         console.log('Updated group:', updatedGroup);
 
@@ -56,7 +56,6 @@ async function exampleGroupsUsage() {
         // Delete the group
         const deleteResult = await client.iam.groups.delete(newGroup.id);
         console.log('Delete result:', deleteResult);
-
     } catch (error) {
         console.error('Error:', error);
     }
