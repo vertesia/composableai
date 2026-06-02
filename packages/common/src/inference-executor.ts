@@ -54,6 +54,7 @@ export interface InferenceExecutionOptions {
 
 export interface InferenceLedgerPrepareRequest {
     interaction?: string;
+    version?: string;
     payload?: NamedInteractionExecutionPayload;
     run?: ExecutionRunDocRef;
     run_id?: string;
@@ -63,6 +64,7 @@ export interface InferenceLedgerPrepareRequest {
 
 export interface InferenceLedgerCreateRunRequest {
     payload: NamedInteractionExecutionPayload;
+    version?: string;
 }
 
 export interface InferenceLedgerCreateRunResponse {
