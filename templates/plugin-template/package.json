@@ -82,6 +82,10 @@
         "hono": "^4.12.19",
         "html-parse-stringify": "^3.0.1",
         "lucide-react": "^1.16.0",
-        "use-sync-external-store": "^1.6.0"
+        "react-vega": "^8.0.0",
+        "use-sync-external-store": "^1.6.0",
+        "vega": "^6.2.0",
+        "vega-embed": "^7.1.0",
+        "vega-lite": "^6.4.3"
     }
 }
