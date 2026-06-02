@@ -42,6 +42,7 @@
     "dependencies": {
         "@llumiverse/core": "workspace:*",
         "@vertesia/common": "workspace:*",
-        "@vertesia/jst": "workspace:*"
+        "@vertesia/jst": "workspace:*",
+        "handlebars": "^4.7.9"
     }
 }

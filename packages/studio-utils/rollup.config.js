@@ -17,6 +17,8 @@ export default {
         '@llumiverse/core',
         '@vertesia/common',
         '@vertesia/jst',
+        // CDN-served third-party — also resolved via the import map.
+        'handlebars',
     ],
     onwarn(warning, defaultHandler) {
         if (warning.plugin === 'typescript') {
