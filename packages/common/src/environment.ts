@@ -84,6 +84,10 @@ export interface MediatorEnvConfig {
     model_options?: TextFallbackOptions;
 }
 
+export interface VertexAIEnvironmentSettings {
+    bucket_access_principal?: string;
+}
+
 export interface ExecutionEnvironment {
     id: string;
     name: string;
@@ -103,7 +107,7 @@ export interface ExecutionEnvironment {
      * Additional provider-specific settings passed through to the driver.
      * For example, custom headers for Apigee-proxied endpoints.
      */
-    settings?: Record<string, unknown>;
+    settings?: Record<string, unknown> | VertexAIEnvironmentSettings;
     account: string;
     allowed_projects?: string[];
     created_by: string,

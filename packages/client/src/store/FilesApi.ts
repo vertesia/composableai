@@ -3,6 +3,8 @@ import {
     BulkUploadUrlsPayload,
     BulkUploadUrlsResponse,
     DeleteFileResult,
+    EnsureBucketReadAccessPayload,
+    EnsureBucketReadAccessResponse,
     FileBucketResponse,
     FileListResponse,
     FileMetadataResponse,
@@ -73,6 +75,11 @@ export class FilesApi extends ApiTopic {
      */
     getOrCreateBucket(): Promise<FileBucketResponse> {
         return this.post("/bucket");
+    }
+
+    ensureBucketReadAccess(principal: string): Promise<EnsureBucketReadAccessResponse> {
+        const payload: EnsureBucketReadAccessPayload = { principal };
+        return this.post("/bucket/read-access", { payload });
     }
 
     list(prefix: string): Promise<FileListResponse> {
