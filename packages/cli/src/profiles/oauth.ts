@@ -3,6 +3,7 @@ import type {
     OAuthDeviceAuthorizationResponse,
     OAuthTokenResponse,
 } from '@vertesia/common';
+import { OAUTH_SCOPE_OFFLINE_ACCESS, OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, Permission } from '@vertesia/common';
 import jwt from 'jsonwebtoken';
 import open from 'open';
 import type { Profile } from './index.js';
@@ -11,7 +12,26 @@ import type { ConfigResult } from './server/index.js';
 
 const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server';
 const OAUTH_CLIENT_METADATA_PATH = '/.well-known/oauth-client/vertesia-cli';
-const DEFAULT_OAUTH_SCOPE = 'openid profile';
+const DEFAULT_CLI_OAUTH_SCOPES = [
+    OAUTH_SCOPE_OPENID,
+    OAUTH_SCOPE_PROFILE,
+    OAUTH_SCOPE_OFFLINE_ACCESS,
+    Permission.account_member,
+    Permission.account_read,
+    Permission.project_integration_read,
+    Permission.int_read,
+    Permission.int_execute,
+    Permission.run_read,
+    Permission.run_write,
+    Permission.content_read,
+    Permission.content_write,
+    Permission.content_delete,
+    Permission.workflow_read,
+    Permission.workflow_run,
+    Permission.agent_run_read,
+    Permission.task_read,
+    Permission.task_manage,
+];
 
 type OAuthProfile = Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> &
     Partial<Pick<Profile, 'account' | 'config_url' | 'project' | 'oauth_server_url'>>;
@@ -65,7 +85,7 @@ export async function startOAuthSession(profile: OAuthProfile, signal?: AbortSig
     const { metadata, serverUrl } = await discoverAuthorizationServer(profile);
     const clientId = getOAuthClientId(serverUrl);
     const resource = getOAuthResource(metadata);
-    const scope = DEFAULT_OAUTH_SCOPE;
+    const scope = getDefaultOAuthScope(metadata);
     const deviceAuthorization = await createDeviceAuthorization(metadata, {
         clientId,
         resource,
@@ -144,6 +164,15 @@ async function discoverAuthorizationServer(
         unavailableError ||
         new OAuthUnavailableError(`OAuth discovery is not available for ${profile.studio_server_url}.`)
     );
+}
+
+function getDefaultOAuthScope(metadata: Partial<Pick<OAuthAuthorizationServerMetadata, 'scopes_supported'>>): string {
+    if (!Array.isArray(metadata.scopes_supported)) {
+        return DEFAULT_CLI_OAUTH_SCOPES.join(' ');
+    }
+    const supportedScopes = new Set(metadata.scopes_supported);
+    const supportedDefaultScopes = DEFAULT_CLI_OAUTH_SCOPES.filter((scope) => supportedScopes.has(scope));
+    return (supportedDefaultScopes.length > 0 ? supportedDefaultScopes : DEFAULT_CLI_OAUTH_SCOPES).join(' ');
 }
 
 function applyProfileAuthorizationEndpoint(

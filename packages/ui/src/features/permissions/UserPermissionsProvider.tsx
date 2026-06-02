@@ -3,6 +3,7 @@ import {
     getPermissionsForRoles,
     listRoles,
     type Permission,
+    PrincipalType,
     type ProjectRoles,
 } from '@vertesia/common';
 import { ErrorBox, errorMessage, useFetch } from '@vertesia/ui/core';
@@ -26,7 +27,13 @@ export class UserPermissions {
         const roleNames = [...(authToken.account_roles || []), ...(authToken.project_roles || [])];
         const userRoles = new Set<string>(roleNames);
         this.roles = userRoles;
-        this.permissions = new Set(authToken.permissions ?? getPermissionsForRolesFromMappings(roleNames, roles));
+        const rolePermissions = authToken.permissions ?? getPermissionsForRolesFromMappings(roleNames, roles);
+        // OAuth access tokens are capped to the permissions granted to the token (its scopes).
+        const permissionCap =
+            authToken.type === PrincipalType.OAuthAccess ? new Set<string>(authToken.permissions ?? []) : undefined;
+        this.permissions = new Set(
+            permissionCap ? rolePermissions.filter((permission) => permissionCap.has(permission)) : rolePermissions,
+        );
     }
 
     hasPermission(permission: string | string[]) {

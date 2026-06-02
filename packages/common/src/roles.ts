@@ -55,6 +55,9 @@ class ManagerRole extends OrgMemberRole {
         super(ProjectRoles.manager, Object.values(Permission) as Permission[]);
         this.permissions.delete(Permission.account_admin);
         this.permissions.delete(Permission.manage_billing);
+        this.permissions.delete(Permission.audit_read);
+        this.permissions.delete(Permission.agent_run_read);
+        this.permissions.delete(Permission.content_read_all);
         this.permissions.delete(Permission.content_superadmin);
         this.permissions.delete(Permission.workflow_superadmin);
     }
@@ -68,6 +71,9 @@ class DeveloperRole extends OrgMemberRole {
         this.permissions.delete(Permission.project_settings_write);
         this.permissions.delete(Permission.env_admin);
         this.permissions.delete(Permission.manage_billing);
+        this.permissions.delete(Permission.audit_read);
+        this.permissions.delete(Permission.agent_run_read);
+        this.permissions.delete(Permission.content_read_all);
         this.permissions.delete(Permission.content_superadmin);
         this.permissions.delete(Permission.workflow_superadmin);
     }
@@ -119,6 +125,28 @@ class ReaderRole extends OrgMemberRole {
     }
 }
 
+const READ_ONLY_AUDIT_PERMISSIONS = [
+    Permission.studio_access,
+    Permission.account_read,
+    Permission.project_integration_read,
+    Permission.api_key_read,
+    Permission.billing_read,
+    Permission.audit_read,
+    Permission.int_read,
+    Permission.run_read,
+    Permission.content_read,
+    Permission.content_read_all,
+    Permission.task_read,
+    Permission.workflow_read,
+    Permission.agent_run_read,
+];
+
+class ReadOnlyAuditRole extends OrgMemberRole {
+    constructor(name: ProjectRoles.auditor | ProjectRoles.support) {
+        super(name, READ_ONLY_AUDIT_PERMISSIONS);
+    }
+}
+
 class BillingRole extends OrgMemberRole {
     constructor() {
         super(ProjectRoles.billing, [Permission.manage_billing]);
@@ -157,6 +185,8 @@ const roles: Record<ProjectRoles, Role> = {
     [ProjectRoles.consumer]: new ConsumerRole(),
     [ProjectRoles.executor]: new ExecutorRole(),
     [ProjectRoles.reader]: new ReaderRole(),
+    [ProjectRoles.auditor]: new ReadOnlyAuditRole(ProjectRoles.auditor),
+    [ProjectRoles.support]: new ReadOnlyAuditRole(ProjectRoles.support),
     [ProjectRoles.billing]: new BillingRole(),
     [ProjectRoles.app_member]: new AppMemberRole(),
     [ProjectRoles.member]: new OrgMemberRole(ProjectRoles.member, []),
