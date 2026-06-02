@@ -1,6 +1,7 @@
 import { getFirebaseAuth, setFirebaseTenant } from '@vertesia/ui/session';
 import {
     type AuthProvider,
+    signOut as firebaseSignOut,
     GithubAuthProvider,
     GoogleAuthProvider,
     OAuthProvider,
@@ -37,7 +38,7 @@ export function writeLastSuccessfulLogin(s: LastSuccessfulLogin): void {
     try {
         localStorage.setItem(LAST_SUCCESSFUL_LOGIN_KEY, JSON.stringify(s));
     } catch {
-        // localStorage unavailable — returning view just won't surface next time
+        // localStorage unavailable — the record is not persisted
     }
 }
 
@@ -77,6 +78,21 @@ export function clearPendingSignin(): void {
         sessionStorage.removeItem(PENDING_SIGNIN_KEY);
     } catch {
         // ignore
+    }
+}
+
+/**
+ * Clears the persisted sign-in records (last-successful-login and pending) and
+ * signs out of Firebase. Best-effort: sign-out errors (e.g. no active session)
+ * are swallowed.
+ */
+export async function resetSignInState(): Promise<void> {
+    clearLastSuccessfulLogin();
+    clearPendingSignin();
+    try {
+        await firebaseSignOut(getFirebaseAuth());
+    } catch {
+        // best-effort: no active session, or auth not initialized
     }
 }
 
@@ -142,7 +158,7 @@ export async function startSignIn(
 ): Promise<{ ok: true } | { ok: false; reason: 'no-email' }> {
     if (!email) return { ok: false, reason: 'no-email' };
 
-    // If the email maps to a tenant, use the tenant's provider (overrides the button pick); else use the picked provider.
+    // A tenant-mapped email uses the tenant's provider (overriding `provider`); otherwise use `provider`.
     const tenant = await setFirebaseTenant(email);
     const auth = getFirebaseAuth();
     let effectiveIdp = provider;
@@ -164,7 +180,7 @@ export async function startSignIn(
     return { ok: true };
 }
 
-/** Sign in with a provider directly, with no email/tenant resolution (e.g. SignInModal). */
+/** Starts a provider sign-in directly, skipping email/tenant resolution and clearing any tenant routing. */
 export function startSignInWithoutTenant(provider: ProviderId, redirectTo?: string): void {
     const auth = getFirebaseAuth();
     localStorage.removeItem('tenantName');

@@ -19,6 +19,7 @@ import {
     type ProviderId,
     readLastSuccessfulLogin,
     readPendingSignin,
+    resetSignInState,
     writeLastSuccessfulLogin,
 } from './signInUtils';
 
@@ -151,13 +152,18 @@ function SigninScreenImpl({
         [trackEvent, storedSession?.tenantName, tenant],
     );
 
-    const goBackToFresh = useCallback(() => {
+    // "Use a different email" out of the blocked/signup screen. The user reached it
+    // as a valid Firebase user with no Vertesia account, so a partial reset isn't
+    // enough: unless we also clear the persisted records and sign out of Firebase,
+    // the leftover session re-runs the invite check on the next auth change or
+    // reload and lands them back on blocked.
+    const startOver = useCallback(() => {
+        setStoredSession(null); // drop the in-memory mirror too — resetSignInState only clears storage
         setEmail('');
         setTenant(undefined);
         setMode('email');
-        // Backing out of signup/blocked leaves a Firebase session that has no Vertesia user; clear it.
-        void signOut();
-    }, [signOut]);
+        void resetSignInState();
+    }, []);
 
     // Submits the signup form to /auth/signup, then redirects into the app.
     const onSignup = (data: SignupData, fbToken: string) => {
@@ -185,11 +191,11 @@ function SigninScreenImpl({
             <SignInTenantBlockedStep
                 email={email || storedSession?.email || ''}
                 tenantName={tenant?.label || tenant?.name || storedSession?.tenantName || undefined}
-                onBack={goBackToFresh}
+                onBack={startOver}
             />
         );
     } else if (mode === 'signup' && !localStorage.getItem('tenantName')) {
-        content = <SignupForm onSignup={onSignup} goBack={goBackToFresh} />;
+        content = <SignupForm onSignup={onSignup} goBack={startOver} />;
     } else if (mode === 'tenant' && tenant) {
         content = (
             <SignInTenantStep
