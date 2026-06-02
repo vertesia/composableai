@@ -17,7 +17,7 @@
         "format:check": "pnpm exec biome format .",
         "lint": "pnpm exec biome lint",
         "lint:fix": "pnpm exec biome lint --write",
-        "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+        "prepare": "node scripts/install-git-hooks.mjs",
         "prepublishOnly": "pnpm build",
         "release": "pnpm -r publish --access public",
         "test": "pnpm -r test",
