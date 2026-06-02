@@ -24,7 +24,6 @@
         "prompt"
     ],
     "scripts": {
-        "preinstall": "pnpm exec only-allow pnpm",
         "lint": "biome lint src",
         "test": "vitest run",
         "build": "pnpm exec tsmod build && pnpm exec rollup -c",
