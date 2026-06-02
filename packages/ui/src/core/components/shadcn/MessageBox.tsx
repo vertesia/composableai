@@ -1,6 +1,6 @@
-import { Button } from './button';
-import { CircleX, CircleCheck, AlertTriangle, Info } from 'lucide-react';
+import { AlertTriangle, CircleCheck, CircleX, Info } from 'lucide-react';
 import type React from 'react';
+import { Button } from './button';
 
 interface MessageBoxProps {
     status: 'error' | 'info' | 'warning' | 'success' | 'default' | 'done';

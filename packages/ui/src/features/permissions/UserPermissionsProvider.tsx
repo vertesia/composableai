@@ -1,7 +1,7 @@
 import {
+    type AuthTokenPayload,
     getPermissionsForRoles,
     listRoles,
-    type AuthTokenPayload,
     type Permission,
     type ProjectRoles,
 } from '@vertesia/common';
@@ -69,6 +69,7 @@ function getPermissionsForRolesFromMappings(roleNames: Iterable<ProjectRoles>, r
 }
 
 const UserPermissionsContext = createContext<UserPermissions | undefined>(undefined);
+
 export { UserPermissionsContext };
 
 export function useUserPermissions() {

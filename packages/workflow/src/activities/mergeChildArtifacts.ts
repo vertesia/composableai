@@ -1,8 +1,8 @@
+import { Readable } from 'node:stream';
 import { log } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
 import { NodeStreamSource } from '@vertesia/client/node';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
-import { Readable } from 'node:stream';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 
 /**

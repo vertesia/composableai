@@ -1,8 +1,8 @@
+import { Env } from '@vertesia/ui/env';
 import clsx from 'clsx';
-import { Children, cloneElement, Fragment, isValidElement, type ReactNode, useId, useRef } from 'react';
-
-import { VTooltip } from './shadcn/tooltip';
 import { Info } from 'lucide-react';
+import { Children, cloneElement, Fragment, isValidElement, type ReactNode, useId, useRef } from 'react';
+import { VTooltip } from './shadcn/tooltip';
 
 interface FormItemProps {
     label: ReactNode;
@@ -81,11 +81,7 @@ export function FormItem({
             'aria-invalid': ariaInvalid,
         });
         wired = true;
-    } else if (
-        process.env.NODE_ENV !== 'production' &&
-        !hasWarnedRef.current &&
-        (helpText || error || childrenId === undefined)
-    ) {
+    } else if (Env.isDev && !hasWarnedRef.current && (helpText || error || childrenId === undefined)) {
         hasWarnedRef.current = true;
         // eslint-disable-next-line no-console
         console.warn(

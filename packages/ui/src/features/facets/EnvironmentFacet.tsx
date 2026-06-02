@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
-
 import type { FacetBucket, FacetNameBucket } from '@vertesia/common';
 import { SelectBox } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
-import { facetOptionNameLabel } from './utils/utils';
+import { useEffect, useState } from 'react';
 import type { SearchInterface } from './utils/SearchInterface';
+import { facetOptionNameLabel } from './utils/utils';
 
 interface EnvironmentFacetProps {
     search: SearchInterface;

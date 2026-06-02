@@ -1,9 +1,9 @@
-import { useState, type ReactNode } from 'react';
-import { Button, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, VTooltip } from '@vertesia/ui/core';
 import type { ContentObjectTypeItem } from '@vertesia/common';
-import { useTypeRegistry } from './TypeRegistryProvider.js';
+import { Button, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { CheckCircleIcon, Info } from 'lucide-react';
+import { type ReactNode, useState } from 'react';
+import { useTypeRegistry } from './TypeRegistryProvider.js';
 
 /**
  * Props for the SelectTypeModal component

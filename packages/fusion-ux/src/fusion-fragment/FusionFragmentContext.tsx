@@ -3,8 +3,8 @@
  * Provides data and update handlers to nested components
  */
 
-import { createContext, useContext, useMemo, type ReactNode, type ReactElement } from 'react';
-import type { FusionFragmentContextValue, ChartComponentProps } from '../types.js';
+import { createContext, type ReactElement, type ReactNode, useContext, useMemo } from 'react';
+import type { ChartComponentProps, FusionFragmentContextValue } from '../types.js';
 
 const FusionFragmentContext = createContext<FusionFragmentContextValue | null>(null);
 

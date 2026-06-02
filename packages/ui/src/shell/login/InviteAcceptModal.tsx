@@ -1,8 +1,8 @@
 import type { TransientToken, UserInviteTokenData } from '@vertesia/common';
 import { Button, Modal, ModalBody, ModalTitle } from '@vertesia/ui/core';
-import { useEffect, useState } from 'react';
-import { useUserSession } from '@vertesia/ui/session';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { useUserSession } from '@vertesia/ui/session';
+import { useEffect, useState } from 'react';
 
 export function InviteAcceptModal() {
     const session = useUserSession();

@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import {
     CodeBlockErrorBoundary,
     CodeBlockPlaceholder,
@@ -6,6 +5,7 @@ import {
     isIncompleteJson,
     useCodeBlockContext,
 } from '@vertesia/ui/widgets';
+import { useMemo } from 'react';
 import { AskUserWidget, type AskUserWidgetProps } from './AskUserWidget';
 
 interface ProposalOption {

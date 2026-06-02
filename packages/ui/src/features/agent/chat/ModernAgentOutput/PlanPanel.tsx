@@ -1,6 +1,6 @@
 import type { Plan } from '@vertesia/common';
-import { AlertCircle, CheckCircle, Circle, Clock } from 'lucide-react';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { AlertCircle, CheckCircle, Circle, Clock } from 'lucide-react';
 
 interface PlanPanelProps {
     plan: Plan;

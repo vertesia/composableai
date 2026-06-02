@@ -1,9 +1,9 @@
 import type { ContentObject } from '@vertesia/common';
 import { Button, Spinner, VTooltip } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { Maximize2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { PdfPageSlider } from './PdfPageSlider';
 
 interface SimplePdfViewerProps {

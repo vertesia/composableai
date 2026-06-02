@@ -1,4 +1,4 @@
-import type { PrincipalType, AuthTokenPayload } from './apikey.js';
+import type { AuthTokenPayload, PrincipalType } from './apikey.js';
 import type { ProjectRef } from './project.js';
 
 export type OAuthClientType = 'public' | 'confidential';

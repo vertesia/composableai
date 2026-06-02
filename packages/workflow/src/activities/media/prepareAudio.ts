@@ -1,22 +1,22 @@
-import { log } from '@temporalio/activity';
-import {
-    type DSLActivityExecutionPayload,
-    type DSLActivitySpec,
-    type AudioMetadata,
-    AUDIO_RENDITION_NAME,
-    ContentNature,
-    type Rendition,
-} from '@vertesia/common';
 import { execFile as execFileCallback } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import { log } from '@temporalio/activity';
+import { RequestError } from '@vertesia/api-fetch-client';
+import type { VertesiaClient } from '@vertesia/client';
+import {
+    AUDIO_RENDITION_NAME,
+    type AudioMetadata,
+    ContentNature,
+    type DSLActivityExecutionPayload,
+    type DSLActivitySpec,
+    type Rendition,
+} from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
 import { saveBlobToTempFile } from '../../utils/blobs.js';
-import type { VertesiaClient } from '@vertesia/client';
-import { RequestError } from '@vertesia/api-fetch-client';
 
 const execFileAsync = promisify(execFileCallback);
 

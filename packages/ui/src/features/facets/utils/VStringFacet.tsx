@@ -1,6 +1,6 @@
-import { facetOptionLabel } from './utils';
 import type { FacetBucket } from '@vertesia/common';
 import type { FilterGroup } from '@vertesia/ui/core';
+import { facetOptionLabel } from './utils';
 
 interface StringFacetProps {
     buckets: FacetBucket[];

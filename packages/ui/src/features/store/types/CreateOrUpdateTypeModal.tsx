@@ -1,7 +1,6 @@
-import { useState } from 'react';
-
-import { Button, Input, Modal, ModalBody, ModalFooter, ModalTitle, useToast, Textarea } from '@vertesia/ui/core';
+import { Button, Input, Modal, ModalBody, ModalFooter, ModalTitle, Textarea, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { useState } from 'react';
 
 export interface CreateOrUpdateTypePayload {
     name: string;

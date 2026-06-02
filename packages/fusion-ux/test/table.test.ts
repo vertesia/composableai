@@ -2,10 +2,10 @@
  * Tests for table layout support
  */
 
-import { describe, it, expect } from 'vitest';
-import { validateTemplate } from '../src/validation/index.js';
+import { describe, expect, it } from 'vitest';
 import { generateTextPreview } from '../src/render/textPreview.js';
 import type { FragmentTemplate } from '../src/types.js';
+import { validateTemplate } from '../src/validation/index.js';
 
 describe('table layout validation', () => {
     it('validates a correct table section', () => {

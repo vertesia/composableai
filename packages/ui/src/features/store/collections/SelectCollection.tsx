@@ -1,25 +1,24 @@
-import { Check, ChevronsUpDown, X } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
-
 import type { CollectionItem } from '@vertesia/common';
 import {
     Button,
-    cn,
-    ErrorBox,
-    errorMessage,
-    useDebounce,
-    useFetch,
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
     Command,
     CommandEmpty,
     CommandGroup,
-    CommandItem,
     CommandInput,
+    CommandItem,
+    cn,
+    ErrorBox,
+    errorMessage,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    useDebounce,
+    useFetch,
 } from '@vertesia/ui/core';
-import { useUserSession } from '@vertesia/ui/session';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { useUserSession } from '@vertesia/ui/session';
+import { Check, ChevronsUpDown, X } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 
 /**
  * A component to select a collection from a list of collections.
@@ -161,7 +160,7 @@ export function SelectCollection({
         : !!selectedCollection;
 
     const renderTrailingIcon = () => {
-        if (showClearOption) {
+        if (showClearOption && !disabled) {
             return (
                 <Button
                     variant="unstyled"

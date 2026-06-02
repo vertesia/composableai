@@ -2,8 +2,8 @@
  * Tests for text preview generation
  */
 
-import { describe, it, expect } from 'vitest';
-import { generateTextPreview, generateSampleData, generateCompactPreview } from '../src/render/textPreview.js';
+import { describe, expect, it } from 'vitest';
+import { generateCompactPreview, generateSampleData, generateTextPreview } from '../src/render/textPreview.js';
 import type { FragmentTemplate } from '../src/types.js';
 
 describe('generateTextPreview', () => {

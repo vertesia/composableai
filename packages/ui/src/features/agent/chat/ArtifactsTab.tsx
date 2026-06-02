@@ -1,4 +1,5 @@
 import { Button, ErrorBox, Modal, ModalBody, ModalTitle, Switch } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     ChevronDownIcon,
@@ -14,11 +15,10 @@ import {
 } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
 import {
-    UniversalDocumentViewer,
     type UniversalDocumentSource,
+    UniversalDocumentViewer,
 } from '../../document-viewer/UniversalDocumentViewer.js';
-import { useUITranslation } from '@vertesia/ui/i18n';
-import { useArtifacts, type ArtifactTreeNode } from './hooks/useArtifacts.js';
+import { type ArtifactTreeNode, useArtifacts } from './hooks/useArtifacts.js';
 
 // ---------------------------------------------------------------------------
 // Tree node component

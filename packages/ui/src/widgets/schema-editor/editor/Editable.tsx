@@ -1,8 +1,8 @@
+import { Button, Styles, useClickOutside, useFlag } from '@vertesia/ui/core';
 import clsx from 'clsx';
-import { type ChangeEvent, type ComponentType, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 
 import { SquarePen, Trash2 } from 'lucide-react';
-import { Button, Styles, useClickOutside, useFlag } from '@vertesia/ui/core';
+import { type ChangeEvent, type ComponentType, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 
 const VIEW_BOX = 'block text-sm sm:leading-6 rounded-md border-0 py-1.5 px-4';
 const VIEW_BOX_HOVER = `${VIEW_BOX} hover:shadow-xs hover:ring-1 hover:ring-inset hover:ring-ring`;

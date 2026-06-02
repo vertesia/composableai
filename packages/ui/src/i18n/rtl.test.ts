@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { i18nInstance } from './instance.js';
-import { isRTL, resolveLanguage, RTL_LANGUAGES, SUPPORTED_LANGUAGES } from './rtl.js';
+import { isRTL, RTL_LANGUAGES, resolveLanguage, SUPPORTED_LANGUAGES } from './rtl.js';
 
 describe('isRTL', () => {
     it.each(['ar', 'he', 'fa', 'ur'])('returns true for %s', (lng) => {

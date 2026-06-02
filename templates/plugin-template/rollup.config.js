@@ -15,13 +15,13 @@ import json from '@rollup/plugin-json';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import {
-    vertesiaImportPlugin,
-    skillTransformer,
+    promptTransformer,
     rawTransformer,
     skillCollectionTransformer,
-    templateTransformer,
+    skillTransformer,
     templateCollectionTransformer,
-    promptTransformer,
+    templateTransformer,
+    vertesiaImportPlugin,
 } from '@vertesia/build-tools';
 
 // The published service runtime imports lib/server.js with NO node_modules

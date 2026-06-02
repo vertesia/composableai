@@ -1,14 +1,14 @@
 #!/usr/bin/env node
+import { spawnSync } from 'node:child_process';
 /**
  * Smoke test for create-plugin: scaffolds a project from the local plugin
  * template into a random tmpdir, then deletes it. Avoiding the repo
  * working tree keeps the generated tree out of biome's nested-config scanner
  * and out of `git status`.
  */
-import { mkdtempSync, rmSync, existsSync } from 'node:fs';
-import { join, resolve, dirname } from 'node:path';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { spawnSync } from 'node:child_process';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

@@ -11,9 +11,9 @@ import type { ActivityContext } from '@vertesia/workflow';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TextExtractionStatus } from '../../result-types.js';
 import {
-    transcribeMedia,
     type TranscriptMediaParams,
     type TranscriptMediaResult,
+    transcribeMedia,
 } from './transcribeMediaWithGladia.js';
 
 // Mock setupActivity from the relative path used by the activity

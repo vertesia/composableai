@@ -7,10 +7,10 @@
  * Reads template.config.json from the template to determine prompts and file replacements.
  */
 
-import chalk from 'chalk';
 import { execSync } from 'node:child_process';
-import { Command } from 'commander';
 import fs from 'node:fs';
+import chalk from 'chalk';
+import { Command } from 'commander';
 import { config, validation } from './configuration.js';
 import { downloadTemplate } from './download-template.js';
 import { installDependencies, selectPackageManager } from './package-manager.js';

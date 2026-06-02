@@ -1,11 +1,11 @@
 import { type ContentObject, ImageRenditionFormat } from '@vertesia/common';
 import { Button, Spinner, useToast } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { JSONDisplay, MarkdownRenderer } from '@vertesia/ui/widgets';
 import { ChevronRight, Download, FileText, Info, LayoutGrid, Maximize2, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
 
 interface DocumentPreviewPanelProps {
     objectId: string | null;

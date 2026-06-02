@@ -1,5 +1,3 @@
-import { memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-
 import {
     ContentNature,
     type ContentObject,
@@ -24,16 +22,17 @@ import {
     useFetch,
     useToast,
 } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { JSONDisplay, Progress } from '@vertesia/ui/widgets';
 import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from 'lucide-react';
+import { memo, type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    UniversalDocumentViewer,
     type UniversalDocumentConverter,
     type UniversalDocumentSource,
+    UniversalDocumentViewer,
 } from '../../../document-viewer/UniversalDocumentViewer.js';
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { MagicPdfView } from '../../../magic-pdf';
 import { AudioPanel, ImagePanel, VideoPanel } from '../../../media-viewer';
 import { SecureButton } from '../../../permissions/SecureButton.js';
@@ -171,8 +170,9 @@ interface ContentOverviewProps {
     object: ContentObject;
     loadText?: boolean;
     refetch?: () => Promise<unknown>;
+    canEditProperties?: boolean;
 }
-export function ContentOverview({ object, loadText, refetch }: ContentOverviewProps) {
+export function ContentOverview({ object, loadText, refetch, canEditProperties = true }: ContentOverviewProps) {
     const toast = useToast();
     const { t } = useUITranslation();
 
@@ -205,6 +205,7 @@ export function ContentOverview({ object, loadText, refetch }: ContentOverviewPr
                     object={object}
                     refetch={refetch ?? (() => Promise.resolve())}
                     handleCopyContent={handleCopyContent}
+                    canEditProperties={canEditProperties}
                 />
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -225,10 +226,12 @@ function PropertiesPanel({
     object,
     refetch,
     handleCopyContent,
+    canEditProperties,
 }: {
     object: ContentObject;
     refetch: () => Promise<unknown>;
     handleCopyContent: (content: string, type: 'text' | 'properties') => Promise<void>;
+    canEditProperties: boolean;
 }) {
     const { t } = useUITranslation();
     const [viewCode, setViewCode] = useState(false);
@@ -277,15 +280,18 @@ function PropertiesPanel({
                                 <Copy className="size-4" />
                             </Button>
                         )}
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleOpenPropertiesModal}
-                            title="Edit properties"
-                            className="flex items-center gap-2"
-                        >
-                            <SquarePen className="size-4" />
-                        </Button>
+                        {canEditProperties && (
+                            <SecureButton
+                                permission={Permission.content_write}
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleOpenPropertiesModal}
+                                title="Edit properties"
+                                className="flex items-center gap-2"
+                            >
+                                <SquarePen className="size-4" />
+                            </SecureButton>
+                        )}
                     </div>
                 </div>
 

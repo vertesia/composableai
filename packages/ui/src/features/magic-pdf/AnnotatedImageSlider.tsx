@@ -1,8 +1,8 @@
 import { Button, Center, VTooltip } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import clsx from 'clsx';
 import { ChevronsDown, ChevronsUp, Image, Loader2, Maximize, Minus, Plus, ScanSearch } from 'lucide-react';
-import { useRef, type KeyboardEvent, useState, useEffect, useCallback } from 'react';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { ImageType, useMagicPdfContext } from './MagicPdfProvider';
 
 // Zoom levels as percentages (100 = fit to width)
