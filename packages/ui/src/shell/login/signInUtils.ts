@@ -1,6 +1,7 @@
 import { getFirebaseAuth, setFirebaseTenant } from '@vertesia/ui/session';
 import {
     type AuthProvider,
+    signOut as firebaseSignOut,
     GithubAuthProvider,
     GoogleAuthProvider,
     OAuthProvider,
@@ -77,6 +78,37 @@ export function clearPendingSignin(): void {
         sessionStorage.removeItem(PENDING_SIGNIN_KEY);
     } catch {
         // ignore
+    }
+}
+
+/**
+ * Resets the new sign-in flow when the user backs out of the blocked/signup
+ * screen ("use a different email"). These are the two halves of the "user keeps
+ * landing back on blocked" bug:
+ *
+ * 1. The flow's persisted state — the last-successful-login record and the
+ *    in-flight pending entry. If the blocked account was the last good login,
+ *    leaving the record means a reload re-opens the returning view for that same
+ *    account and walks the user straight back into blocked.
+ * 2. The live Firebase session. A blocked customer is a *valid* Firebase user
+ *    (the IdP login succeeded; only the Vertesia invite check failed), and
+ *    UserSession.logout() only signs out of Firebase when a Vertesia token
+ *    exists — which it never does here. Left alone, the next onAuthStateChanged
+ *    (same tab, or after a reload — Firebase persistence survives it) re-runs the
+ *    invite check and re-blocks.
+ *
+ * Tenant routing (auth.tenantId and the legacy tenantName key) is deliberately
+ * NOT touched here: startSignIn()/startSignInWithoutTenant() re-resolve and
+ * set-or-clear both immediately before every signInWithRedirect, so there is no
+ * stale value left to repair.
+ */
+export async function resetSignInState(): Promise<void> {
+    clearLastSuccessfulLogin();
+    clearPendingSignin();
+    try {
+        await firebaseSignOut(getFirebaseAuth());
+    } catch {
+        // best-effort: no active session, or auth not initialized
     }
 }
 

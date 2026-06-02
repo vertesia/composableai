@@ -19,6 +19,7 @@ import {
     type ProviderId,
     readLastSuccessfulLogin,
     readPendingSignin,
+    resetSignInState,
     writeLastSuccessfulLogin,
 } from './signInUtils';
 
@@ -152,12 +153,19 @@ function SigninScreenImpl({
     );
 
     const goBackToFresh = useCallback(() => {
+        // Clear the in-memory mirror of the cleared record so the returning view
+        // can't render (and onProviderClicked can't read a stale tenant) before
+        // a reload re-reads storage.
+        setStoredSession(null);
         setEmail('');
         setTenant(undefined);
         setMode('email');
-        // Backing out of signup/blocked leaves a Firebase session that has no Vertesia user; clear it.
-        void signOut();
-    }, [signOut]);
+        // Backing out of blocked/signup must reset the flow: forget the
+        // remembered + pending state and sign out the live (but Vertesia-less)
+        // Firebase session. Otherwise a reload or the next auth-state change
+        // re-runs the invite check and lands the user back on blocked.
+        void resetSignInState();
+    }, []);
 
     // Submits the signup form to /auth/signup, then redirects into the app.
     const onSignup = (data: SignupData, fbToken: string) => {
