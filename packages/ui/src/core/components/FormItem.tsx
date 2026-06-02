@@ -36,6 +36,14 @@ function joinIds(...ids: Array<string | undefined | false | null>): string | und
     return filtered.length > 0 ? filtered.join(' ') : undefined;
 }
 
+function canShowDevWarning(): boolean {
+    try {
+        return Env.isDev;
+    } catch {
+        return false;
+    }
+}
+
 export function FormItem({
     description,
     helpText,
@@ -81,7 +89,7 @@ export function FormItem({
             'aria-invalid': ariaInvalid,
         });
         wired = true;
-    } else if (Env.isDev && !hasWarnedRef.current && (helpText || error || childrenId === undefined)) {
+    } else if (canShowDevWarning() && !hasWarnedRef.current && (helpText || error || childrenId === undefined)) {
         hasWarnedRef.current = true;
         // eslint-disable-next-line no-console
         console.warn(
