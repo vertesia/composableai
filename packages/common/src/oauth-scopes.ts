@@ -24,10 +24,6 @@ export function getOAuthPermissionScopes(): Permission[] {
     return [...OAUTH_PERMISSION_SCOPES];
 }
 
-export function getSupportedOAuthScopes(): string[] {
-    return [...OAUTH_STANDARD_SCOPES, ...getOAuthPermissionScopes()];
-}
-
 export function isOAuthStandardScope(scope: string): scope is OAuthStandardScope {
     return OAUTH_STANDARD_SCOPE_SET.has(scope);
 }
