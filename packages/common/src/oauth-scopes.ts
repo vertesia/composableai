@@ -14,9 +14,7 @@ const NON_OAUTH_PERMISSION_SCOPES = new Set<Permission>([
     Permission.iam_impersonate,
     Permission.studio_access,
 ]);
-const OAUTH_PERMISSION_SCOPES = Object.values(Permission).filter(
-    (scope) => !NON_OAUTH_PERMISSION_SCOPES.has(scope),
-);
+const OAUTH_PERMISSION_SCOPES = Object.values(Permission).filter((scope) => !NON_OAUTH_PERMISSION_SCOPES.has(scope));
 const OAUTH_STANDARD_SCOPE_SET = new Set<string>(OAUTH_STANDARD_SCOPES);
 const OAUTH_PERMISSION_SCOPE_SET = new Set<string>(OAUTH_PERMISSION_SCOPES);
 const OBJECT_ID_PATTERN = /^[0-9a-f]{24}$/i;

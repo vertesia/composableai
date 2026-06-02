@@ -192,18 +192,18 @@ export function emailDomain(email: string): string {
 }
 
 export function capitalizeFirst(s: string): string {
-    return s ? s[0]!.toUpperCase() + s.slice(1) : s;
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
 export function emailInitial(email: string): string {
-    return (email || '?')[0]!.toUpperCase();
+    return (email || '?').charAt(0).toUpperCase();
 }
 
 export function firstNameFromEmail(email: string): string {
     const local = emailLocalPart(email);
     const parts = local.split(/[._-]+/).filter(Boolean);
     const first = parts[0] || 'friend';
-    return first[0]!.toUpperCase() + first.slice(1).toLowerCase();
+    return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 }
 
 export function isValidEmail(email: string): boolean {

@@ -1,4 +1,4 @@
-import { PrincipalType, type Permission, type ProjectRoles } from '@vertesia/common';
+import { type Permission, PrincipalType, type ProjectRoles } from '@vertesia/common';
 import { ErrorBox, errorMessage, useFetch } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { type UserSession, useUserSession } from '@vertesia/ui/session';

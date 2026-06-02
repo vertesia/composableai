@@ -3,7 +3,7 @@ import type {
     OAuthDeviceAuthorizationResponse,
     OAuthTokenResponse,
 } from '@vertesia/common';
-import { OAUTH_SCOPE_OFFLINE_ACCESS, Permission } from '@vertesia/common';
+import { OAUTH_SCOPE_OFFLINE_ACCESS, OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, Permission } from '@vertesia/common';
 import jwt from 'jsonwebtoken';
 import open from 'open';
 import type { Profile } from './index.js';
@@ -13,6 +13,8 @@ import type { ConfigResult } from './server/index.js';
 const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server';
 const OAUTH_CLIENT_METADATA_PATH = '/.well-known/oauth-client/vertesia-cli';
 const DEFAULT_CLI_OAUTH_SCOPES = [
+    OAUTH_SCOPE_OPENID,
+    OAUTH_SCOPE_PROFILE,
     OAUTH_SCOPE_OFFLINE_ACCESS,
     Permission.account_member,
     Permission.account_read,
@@ -169,7 +171,8 @@ function getDefaultOAuthScope(metadata: Partial<Pick<OAuthAuthorizationServerMet
         return DEFAULT_CLI_OAUTH_SCOPES.join(' ');
     }
     const supportedScopes = new Set(metadata.scopes_supported);
-    return DEFAULT_CLI_OAUTH_SCOPES.filter((scope) => supportedScopes.has(scope)).join(' ');
+    const supportedDefaultScopes = DEFAULT_CLI_OAUTH_SCOPES.filter((scope) => supportedScopes.has(scope));
+    return (supportedDefaultScopes.length > 0 ? supportedDefaultScopes : DEFAULT_CLI_OAUTH_SCOPES).join(' ');
 }
 
 function applyProfileAuthorizationEndpoint(
