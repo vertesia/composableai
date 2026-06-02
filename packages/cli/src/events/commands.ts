@@ -51,6 +51,9 @@ function toCreatePayload(value: Record<string, unknown>): CreateEventSubscriptio
         ...(value.scope === 'account' || value.scope === 'project' ? { scope: value.scope } : {}),
         filter: value.filter as CreateEventSubscriptionPayload['filter'],
         target: value.target as CreateEventSubscriptionPayload['target'],
+        ...(typeof value.run_as_role === 'string'
+            ? { run_as_role: value.run_as_role as CreateEventSubscriptionPayload['run_as_role'] }
+            : {}),
         ...(typeof value.enabled === 'boolean' ? { enabled: value.enabled } : {}),
         ...(value.priority === 'high' || value.priority === 'normal' || value.priority === 'low'
             ? { priority: value.priority }
@@ -71,6 +74,9 @@ function toUpdatePayload(value: Record<string, unknown>): UpdateEventSubscriptio
         ...(typeof value.description === 'string' ? { description: value.description } : {}),
         ...(value.filter !== undefined ? { filter: value.filter as UpdateEventSubscriptionPayload['filter'] } : {}),
         ...(value.target !== undefined ? { target: value.target as UpdateEventSubscriptionPayload['target'] } : {}),
+        ...(typeof value.run_as_role === 'string'
+            ? { run_as_role: value.run_as_role as UpdateEventSubscriptionPayload['run_as_role'] }
+            : {}),
         ...(typeof value.enabled === 'boolean' ? { enabled: value.enabled } : {}),
         ...(value.priority === 'high' || value.priority === 'normal' || value.priority === 'low'
             ? { priority: value.priority }

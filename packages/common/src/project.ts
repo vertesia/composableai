@@ -16,6 +16,8 @@ export enum ProjectRoles {
     manager = 'manager', // all permissions but manage_account, manage_billing
     developer = 'developer', // all permissions but manage_account, manage_billing, manage_roles, delete
     application = 'application', // executor + request_pk
+    automation = 'automation', // event-triggered automation runner
+    content_processor = 'content_processor', // trusted system content processing
     consumer = 'consumer', // required permissions for users of micro apps
     executor = 'executor', // can only read and execute interactions
     reader = 'reader', // can only read (browse)
