@@ -55,6 +55,10 @@ export interface OAuthClientCreateResponse extends OAuthClient {
     client_secret?: string;
 }
 
+export interface OAuthClientScopeMetadata {
+    supported_scopes: string[];
+}
+
 export interface OAuthGrant {
     grant_id: string;
     client_id: string;

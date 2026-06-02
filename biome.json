@@ -16,6 +16,7 @@
             "!**/node_modules/**",
             "!**/build/**",
             "!**/bin/**",
+            "!libraries/jst/test/data/**",
             "!packages/tools-admin-ui/index.html",
             "!templates/plugin-template/index.html"
         ]
