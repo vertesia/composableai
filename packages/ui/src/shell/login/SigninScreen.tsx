@@ -152,18 +152,16 @@ function SigninScreenImpl({
         [trackEvent, storedSession?.tenantName, tenant],
     );
 
-    const goBackToFresh = useCallback(() => {
-        // Clear the in-memory mirror of the cleared record so the returning view
-        // can't render (and onProviderClicked can't read a stale tenant) before
-        // a reload re-reads storage.
-        setStoredSession(null);
+    // "Use a different email" out of the blocked/signup screen. The user reached it
+    // as a valid Firebase user with no Vertesia account, so a partial reset isn't
+    // enough: unless we also clear the persisted records and sign out of Firebase,
+    // the leftover session re-runs the invite check on the next auth change or
+    // reload and lands them back on blocked.
+    const startOver = useCallback(() => {
+        setStoredSession(null); // drop the in-memory mirror too — resetSignInState only clears storage
         setEmail('');
         setTenant(undefined);
         setMode('email');
-        // Backing out of blocked/signup must reset the flow: forget the
-        // remembered + pending state and sign out the live (but Vertesia-less)
-        // Firebase session. Otherwise a reload or the next auth-state change
-        // re-runs the invite check and lands the user back on blocked.
         void resetSignInState();
     }, []);
 
@@ -193,11 +191,11 @@ function SigninScreenImpl({
             <SignInTenantBlockedStep
                 email={email || storedSession?.email || ''}
                 tenantName={tenant?.label || tenant?.name || storedSession?.tenantName || undefined}
-                onBack={goBackToFresh}
+                onBack={startOver}
             />
         );
     } else if (mode === 'signup' && !localStorage.getItem('tenantName')) {
-        content = <SignupForm onSignup={onSignup} goBack={goBackToFresh} />;
+        content = <SignupForm onSignup={onSignup} goBack={startOver} />;
     } else if (mode === 'tenant' && tenant) {
         content = (
             <SignInTenantStep
