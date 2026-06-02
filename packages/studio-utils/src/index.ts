@@ -9,3 +9,11 @@ export {
     renderTemplate,
     type SegmentPreview,
 } from './prompts/render.js';
+export {
+    type PromptValidationInput,
+    type PromptValidationIssue,
+    type PromptValidationIssueSeverity,
+    type PromptValidationIssueType,
+    type PromptValidationResult,
+    validatePrompt,
+} from './prompts/validate.js';
