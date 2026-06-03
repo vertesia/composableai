@@ -9,6 +9,7 @@ export const OAUTH_STANDARD_SCOPES = [OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, O
 export type OAuthStandardScope = (typeof OAUTH_STANDARD_SCOPES)[number];
 
 const NON_OAUTH_PERMISSION_SCOPES = new Set<Permission>([
+    Permission.api_key_secret_read,
     Permission.manage_billing,
     Permission.billing_read,
     Permission.iam_impersonate,
