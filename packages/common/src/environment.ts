@@ -88,6 +88,19 @@ export interface VertexAIEnvironmentSettings {
     bucket_access_principal?: string;
 }
 
+/**
+ * Returns the configured Vertex AI bucket access principal for an environment, or undefined.
+ * Only Vertex AI environments expose this setting; the value is trimmed and empty strings
+ * are treated as unset so callers get a single, normalized representation.
+ */
+export function getVertexBucketAccessPrincipal(
+    env: { provider?: SupportedProviders; settings?: Record<string, unknown> | VertexAIEnvironmentSettings } | undefined,
+): string | undefined {
+    if (!env || env.provider !== SupportedProviders.vertexai) return undefined;
+    const principal = (env.settings as VertexAIEnvironmentSettings | undefined)?.bucket_access_principal;
+    return typeof principal === 'string' && principal.trim().length > 0 ? principal.trim() : undefined;
+}
+
 export interface ExecutionEnvironment {
     id: string;
     name: string;
