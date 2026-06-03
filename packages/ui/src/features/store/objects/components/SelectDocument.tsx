@@ -1,4 +1,4 @@
-import type { ColumnLayout, ContentObjectItem } from '@vertesia/common';
+import type { ColumnLayout, ContentObjectItemApiResponse as ContentObjectItem } from '@vertesia/common';
 import { Button, ErrorBox, Spinner, useIntersectionObserver } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { clsx } from 'clsx';

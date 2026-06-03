@@ -1,4 +1,4 @@
-import type { ContentObjectItem } from '@vertesia/common';
+import type { ContentObjectItemApiResponse as ContentObjectItem } from '@vertesia/common';
 import { Spinner, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { DropZone } from '@vertesia/ui/widgets';

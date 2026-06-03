@@ -1,4 +1,8 @@
-import { type ContentObjectItem, type ConversationFile, FileProcessingStatus } from '@vertesia/common';
+import {
+    type ContentObjectItemApiResponse as ContentObjectItem,
+    type ConversationFile,
+    FileProcessingStatus,
+} from '@vertesia/common';
 import { Button, cn, Modal, ModalBody, ModalTitle, Spinner, Textarea, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import {

@@ -1,4 +1,4 @@
-import type { ContentObjectItem } from '@vertesia/common';
+import type { ContentObjectItemApiResponse as ContentObjectItem } from '@vertesia/common';
 import { Button, Card, CardContent, Separator, VTooltip } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { CheckIcon, Eye } from 'lucide-react';

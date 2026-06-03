@@ -1,4 +1,4 @@
-import type { ContentObjectItem } from '@vertesia/common';
+import type { ContentObject, ContentObjectItemApiResponse } from '@vertesia/common';
 import { Button, Styles, useFlag } from '@vertesia/ui/core';
 
 import { useUserSession } from '@vertesia/ui/session';
@@ -20,7 +20,7 @@ export function DocumentInput({ object }: DocumentInputProps) {
 
     const { off, on, isOn } = useFlag();
     const [actualValue, setValue] = useState(object.value != null ? String(object.value) : '');
-    const [doc, setDoc] = useState<ContentObjectItem | undefined>(undefined);
+    const [doc, setDoc] = useState<ContentObject | ContentObjectItemApiResponse | undefined>(undefined);
 
     const _onChange = (event: ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
@@ -34,7 +34,7 @@ export function DocumentInput({ object }: DocumentInputProps) {
         setDoc(undefined);
     }, [object]);
 
-    const onSelect = (value?: ContentObjectItem) => {
+    const onSelect = (value?: ContentObjectItemApiResponse) => {
         if (value) {
             const uri = `store:${value.id}`;
             setValue(uri);

@@ -1,4 +1,9 @@
-import type { ColumnLayout, ComplexSearchQuery, ContentObject, ContentObjectItem } from '@vertesia/common';
+import type {
+    ColumnLayout,
+    ComplexSearchQuery,
+    ContentObject,
+    ContentObjectItemApiResponse as ContentObjectItem,
+} from '@vertesia/common';
 import {
     type Filter as BaseFilter,
     Button,
