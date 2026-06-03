@@ -119,9 +119,9 @@ export interface ContentObjectItemApiResponse extends BaseObject {
     properties: Record<string, unknown>;
     metadata?: Record<string, unknown>;
     tokens?: {
-        count: number;
-        encoding: string;
-        etag: string;
+        count?: number;
+        encoding?: string;
+        etag?: string;
     };
     revision: ContentObjectApiRevision;
     is_deleted?: boolean;
@@ -360,9 +360,9 @@ export interface ContentObjectItem<T = JSONObject> extends BaseObject {
 
     /** Token information  */
     tokens?: {
-        count: number; // the number of tokens in the text
-        encoding: string; // the encoding used to calculate the tokens
-        etag: string; //the etag of the text used for the token count
+        count?: number; // the number of tokens in the text
+        encoding?: string; // the encoding used to calculate the tokens
+        etag?: string; //the etag of the text used for the token count
     };
 
     /**
