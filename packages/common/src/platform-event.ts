@@ -142,6 +142,60 @@ export interface UpdateEventSubscriptionPayload {
     priority?: EventPriority;
 }
 
+export interface EventDeliveryIntentSummary {
+    id: string;
+    event_id: string;
+    subscription_id: string;
+    subscription_name: string;
+    target_type: EventDeliveryTarget['type'];
+    workflow_class?: string | null;
+    priority: EventPriority;
+    status: EventDeliveryIntentStatus;
+    attempt_count: number;
+    workflow_id?: string | null;
+    workflow_run_id?: string | null;
+    response_status?: number | null;
+    last_error?: string | null;
+    next_attempt_at?: string | null;
+    started_at?: string | null;
+    completed_at?: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface EventDeliverySummary {
+    event_id: string;
+    event_category: EventCategory;
+    action: string;
+    resource_type: string;
+    resource_id: string;
+    source: string;
+    priority: EventPriority;
+    status: EventOutboxStatus;
+    matched_subscription_count: number;
+    materialized_intent_count: number;
+    enqueued_intent_count: number;
+    routing_attempt_count: number;
+    routing_error?: string | null;
+    routed_at?: string | null;
+    created_at: string;
+    updated_at: string;
+    intents: EventDeliveryIntentSummary[];
+}
+
+export interface ListEventDeliveriesPayload {
+    limit?: number;
+    event_id?: string;
+    resource_id?: string;
+    subscription_id?: string;
+    status?: EventDeliveryIntentStatus[];
+    outbox_status?: EventOutboxStatus[];
+}
+
+export interface ListEventDeliveriesResponse {
+    deliveries: EventDeliverySummary[];
+}
+
 export interface PublishPlatformEventPayload {
     event: PlatformEvent;
     priority?: EventPriority;
