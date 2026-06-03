@@ -23,7 +23,7 @@ overrides:
   serialize-javascript@<7.0.3: ^7.0.5
   tmp@<0.2.6: ^0.2.6
   dompurify@<=3.3.3: ^3.4.5
-  undici@>=6.0.0 <6.21.3: 8.3.0
+  undici@>=6.0.0 <6.21.3: 7.20.0
   vite: ^8.0.14
   is-generator-function: 1.1.2
   mdast-util-to-hast@>=13.0.0 <13.2.1: ^13.2.1
@@ -987,8 +987,8 @@ importers:
         specifier: ^3.0.3
         version: 3.0.3
       undici:
-        specifier: ^8.3.0
-        version: 8.3.0
+        specifier: ^7.20.0
+        version: 7.25.0
       yaml:
         specifier: ^2.9.0
         version: 2.9.0
@@ -6821,10 +6821,6 @@ packages:
   undici@7.25.0:
     resolution: {integrity: sha512-xXnp4kTyor2Zq+J1FfPI6Eq3ew5h6Vl0F/8d9XU5zZQf1tX9s2Su1/3PiMmUANFULpmksxkClamIZcaUqryHsQ==}
     engines: {node: '>=20.18.1'}
-
-  undici@8.3.0:
-    resolution: {integrity: sha512-TkUDgb6tl7KOGZ+7e8E3d2FYgUQgF6z5YypqjWmixVQSQERFcVrVg0ySADm2LVLRh5ljAaHTCR5Fmz3Q34rB7Q==}
-    engines: {node: '>=22.19.0'}
 
   unicorn-magic@0.3.0:
     resolution: {integrity: sha512-+QBBXBCvifc56fsbuxZQ6Sic3wqqc3WWaqxs58gvJrcOuN83HGTCwz3oS5phzU9LthRNE9VrJCFCLUgHeeFnfA==}
@@ -13819,8 +13815,6 @@ snapshots:
   undici-types@7.16.0: {}
 
   undici@7.25.0: {}
-
-  undici@8.3.0: {}
 
   unicorn-magic@0.3.0: {}
 
