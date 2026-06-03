@@ -5,7 +5,7 @@ import type {
 } from '@vertesia/common';
 import type { Command } from 'commander';
 import { getClient } from '../client.js';
-import { getStringOption, isRecord, type CliOptions } from '../utils/options.js';
+import { type CliOptions, getStringOption, isRecord } from '../utils/options.js';
 import { readJsonFile, writeFile } from '../utils/stdio.js';
 
 type EventSubscriptionFileOptions = CliOptions<{
