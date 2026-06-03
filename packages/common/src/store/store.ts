@@ -116,7 +116,7 @@ export interface ContentObjectItemApiResponse extends BaseObject {
     type?: ContentObjectApiTypeRef;
     content?: ContentSource;
     external_id?: string;
-    properties: Record<string, unknown>;
+    properties: JSONObject;
     metadata?: Record<string, unknown>;
     tokens?: {
         count?: number;
@@ -356,7 +356,13 @@ export interface ContentObjectItem<T = JSONObject> extends BaseObject {
     properties: T; // a JSON object that describes the object
 
     /** Technical metadata of the object */
-    metadata?: VideoMetadata | AudioMetadata | ImageMetadata | DocumentMetadata | ContentMetadata;
+    metadata?:
+        | VideoMetadata
+        | AudioMetadata
+        | ImageMetadata
+        | DocumentMetadata
+        | ContentMetadata
+        | Record<string, unknown>;
 
     /** Token information  */
     tokens?: {

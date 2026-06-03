@@ -1,4 +1,4 @@
-import type { ContentObjectItemApiResponse as ContentObjectItem } from '@vertesia/common';
+import type { ContentObjectItem } from '@vertesia/common';
 import { Modal, ModalBody, ModalTitle } from '@vertesia/ui/core';
 import { SelectDocument } from './SelectDocument';
 

@@ -1,4 +1,4 @@
-import type { ColumnLayout, ContentObjectItemApiResponse as ContentObjectItem } from '@vertesia/common';
+import type { ColumnLayout, ContentObjectItem } from '@vertesia/common';
 import type React from 'react';
 
 import renderers from './renderers';

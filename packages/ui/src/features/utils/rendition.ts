@@ -1,5 +1,5 @@
 import type { VertesiaClient } from '@vertesia/client';
-import { type ContentObjectItemApiResponse, ImageRenditionFormat } from '@vertesia/common';
+import { type ContentObjectItem, ImageRenditionFormat } from '@vertesia/common';
 import { isImage, isPdf, isVideo } from './mimeType.js';
 
 //TODO we must use a setting in Env.
@@ -15,7 +15,7 @@ const RENDITION_ID = 'vertesia.content_store.renditionId';
 
 export async function retrieveRendition(
     client: VertesiaClient,
-    doc: ContentObjectItemApiResponse,
+    doc: ContentObjectItem,
     setRenditionUrl: (url: string) => void,
     setRenditionAlt: (alt: string) => void,
     setRenditionStatus: (status: string) => void,
