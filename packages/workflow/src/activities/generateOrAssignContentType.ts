@@ -51,6 +51,12 @@ export interface GenerateOrAssignContentTypeParams extends InteractionExecutionP
         selectDocumentType?: string;
         generateMetadataModel?: string;
     };
+
+    /**
+     * Whether the activity may create a brand-new content type when no existing type matches.
+     * Defaults to true for backward compatibility.
+     */
+    allowNewContentTypes?: boolean;
 }
 
 export interface GenerateOrAssignContentType extends DSLActivitySpec<GenerateOrAssignContentTypeParams> {
@@ -167,6 +173,16 @@ export async function generateOrAssignContentType(
     selectedType = types.find((t) => t.name === jsonResult.document_type);
 
     if (!selectedType) {
+        if (params.allowNewContentTypes === false) {
+            log.warn('Document type not identified and new content type creation is disabled', {
+                selectedDocumentType: jsonResult.document_type,
+            });
+            return {
+                status: 'skipped',
+                message: 'new content type creation is disabled',
+                selectedDocumentType: jsonResult.document_type,
+            };
+        }
         log.warn('Document type not identified: starting type generation');
         const newType = await generateNewType(context, existing_types, content, fileRef);
         selectedType = { id: newType.id, name: newType.name };
