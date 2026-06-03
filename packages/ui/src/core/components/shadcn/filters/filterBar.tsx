@@ -385,4 +385,4 @@ function readFilterValue(item: string | FilterOption): string {
     return typeof item === 'string' ? item : item.value || '';
 }
 
-export { FilterProvider, FilterBtn, FilterBar, FilterClear };
+export { FilterBar, FilterBtn, FilterClear, FilterProvider };

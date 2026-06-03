@@ -9,6 +9,7 @@ import { shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
+
 export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
 
 const CENTRAL_AUTH_REDIRECT = 'https://internal-auth.vertesia.app/';

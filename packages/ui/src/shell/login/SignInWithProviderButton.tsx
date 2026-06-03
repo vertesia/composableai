@@ -1,0 +1,40 @@
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { SignInProviderButton } from './SignInPrimitives';
+import { type ProviderId, providerLabel, startSignIn, startSignInWithoutTenant } from './signInUtils';
+
+interface SignInWithProviderButtonProps {
+    provider: ProviderId;
+    /** Email for the tenant-aware flow. Omit for a no-tenant sign-in (e.g. SignInModal). */
+    email?: string;
+    redirectTo?: string;
+    variant?: 'outline' | 'filled';
+    /** Fired on click, before the redirect. */
+    onClick?: () => void;
+}
+
+// "Continue with <provider>" button that owns its sign-in redirect.
+export default function SignInWithProviderButton({
+    provider,
+    email,
+    redirectTo,
+    variant = 'outline',
+    onClick,
+}: SignInWithProviderButtonProps) {
+    const { t } = useUITranslation();
+    const label =
+        provider === 'oidc'
+            ? t('auth.continueWithSignIn')
+            : t('auth.continueWithProvider', { provider: providerLabel(provider) });
+
+    const signIn = () => {
+        onClick?.();
+        if (email) {
+            void startSignIn(provider, email, redirectTo);
+        } else {
+            // OIDC needs a resolved tenant; the no-email path is only hit by no-tenant buttons.
+            startSignInWithoutTenant(provider, redirectTo);
+        }
+    };
+
+    return <SignInProviderButton provider={provider} label={label} onClick={signIn} variant={variant} />;
+}
