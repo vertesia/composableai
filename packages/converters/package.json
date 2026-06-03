@@ -15,9 +15,11 @@
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "exports": {
-        "types": "./lib/types/index.d.ts",
-        "import": "./lib/esm/index.js",
-        "require": "./lib/cjs/index.js"
+        ".": {
+            "types": "./lib/types/index.d.ts",
+            "import": "./lib/esm/index.js",
+            "require": "./lib/cjs/index.js"
+        }
     },
     "devDependencies": {
         "@types/tmp": "^0.2.6",
