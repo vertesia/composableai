@@ -14,7 +14,12 @@ export interface SegmentPreview {
  *
  * Handlebars templates use {{variable}} interpolation against `data`.
  * JST (JavaScript template) bodies evaluate against `data` with the schema's top-level
- * property names exposed as globals plus the `_model` global.
+ * property names exposed as globals, plus `_model` — the active model id, which the
+ * studio-server executor injects into the input as `{ ..._model: run.modelId }` when
+ * executing an interaction (see `apps/studio-server/src/executor/ExecutionRequest.ts`
+ * and `apps/studio-server/src/executor/rendering/template.ts`). Listing it here keeps
+ * the Playground preview and `validatePrompt` in sync with runtime resolution — a JST
+ * template referencing `_model` validates fine here and renders fine in production.
  *
  * For `TemplateType.text`, the content is treated as a JST body (the JST evaluator
  * handles plain strings as no-op interpolation), matching legacy studio behavior.

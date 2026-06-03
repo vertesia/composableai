@@ -45,7 +45,13 @@ export interface PromptValidationInput {
 
 // JST's renderJsTemplate auto-adds `_` (helpers object) and runtime injects `Set` and `Array`
 // — treat them as globals so they don't appear as free vars in user templates.
-const JST_AUTO_GLOBALS = ['_', 'Array', 'Set'];
+// Globals always available to JST templates regardless of schema:
+//  - `_`, `Array`, `Set`: runtime-injected by `renderJsTemplate` (jst library)
+//  - `_model`: runtime-injected by the studio-server executor as `{ ..._model: run.modelId }`
+//    (see ExecutionRequest.ts:313 and executor/rendering/template.ts:13)
+// Keeping these in sync with `renderTemplate` in ./render.ts so a JST template that runs in
+// production also passes the validator.
+const JST_AUTO_GLOBALS = ['_', 'Array', 'Set', '_model'];
 
 function countSeverities(issues: PromptValidationIssue[]): { error_count: number; warning_count: number } {
     let error_count = 0;
@@ -87,6 +93,10 @@ function validateHandlebarsPrompt(content: string, inputSchema?: JSONSchema): Pr
         }
     }
 
+    // Render-time smoke test — always runs so syntax errors and failing helper calls are
+    // surfaced even when undeclared-variable errors are already in the list. Handlebars renders
+    // missing vars as empty strings (non-strict by default), so the render check does NOT echo
+    // the var errors — anything it reports is a distinct template problem worth showing.
     const renderSchema = inputSchema ?? ({} as JSONSchema);
     const mockData = generateMockData(renderSchema);
     const mockObject: JSONObject =

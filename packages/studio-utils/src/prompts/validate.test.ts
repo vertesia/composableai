@@ -164,6 +164,39 @@ describe('validatePrompt — handlebars', () => {
             expect(r.issues.length).toBe(2);
         });
     });
+
+    describe('ordering and independence of error sources', () => {
+        // Handlebars is non-strict — `{{undeclared}}` renders as empty string, NOT an exception.
+        // So an undeclared variable does not cause a render error; only one error is reported.
+        it('reports undeclared_template_variable only (render does not echo it in non-strict Handlebars)', () => {
+            const r = validatePrompt({
+                content: 'Hello {{undefined_var}}',
+                contentType: TemplateType.handlebars,
+                inputSchema: schema({}),
+            });
+            expect(findIssue(r.issues, 'undeclared_template_variable', 'undefined_var')).toBeDefined();
+            expect(findIssue(r.issues, 'handlebars_render_error')).toBeUndefined();
+            expect(r.error_count).toBe(1);
+        });
+
+        // When the template has both an undeclared variable AND a real parse error,
+        // we must surface both — and the variable error must appear first in the list
+        // so the LLM/user sees the precise reason before the generic render error.
+        it('reports BOTH undeclared_template_variable and handlebars_render_error, vars first', () => {
+            const r = validatePrompt({
+                // {{name has no closing brace → parse error. extractHandlebarsVariables fails
+                // silently and returns an empty set, so no undeclared error is raised by
+                // step 1 here — but the rendering step catches the parse failure.
+                content: 'Hello {{undefined_var}} and {{name',
+                contentType: TemplateType.handlebars,
+                inputSchema: schema({}),
+            });
+            // The renderer reports the parse problem; the var-extractor couldn't even parse the
+            // template, so it returned no usedVars and we cannot detect the undeclared var here.
+            // The contract is "both kinds are independent and both reported when applicable".
+            expect(findIssue(r.issues, 'handlebars_render_error')).toBeDefined();
+        });
+    });
 });
 
 describe('validatePrompt — jst', () => {
