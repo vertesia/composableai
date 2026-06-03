@@ -23,6 +23,7 @@ import SecretsApi from './SecretsApi.js';
 import SkillsApi from './SkillsApi.js';
 import { ZenoClient } from './store/client.js';
 import { VERSION, VERSION_HEADER } from './store/version.js';
+import ToolsApi from './ToolsApi.js';
 import TrainingApi from './TrainingApi.js';
 import UsersApi from './UsersApi.js';
 
@@ -375,6 +376,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     refs = new RefsApi(this);
     commands = new CommandsApi(this);
     apps = new AppsApi(this);
+    tools = new ToolsApi(this);
 }
 
 function isApiKey(apiKey: string) {
