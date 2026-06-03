@@ -19,6 +19,7 @@ const DEFAULT_CLI_OAUTH_SCOPES = [
     Permission.account_member,
     Permission.account_read,
     Permission.project_integration_read,
+    Permission.app_manage,
     Permission.int_read,
     Permission.int_execute,
     Permission.run_read,
