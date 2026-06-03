@@ -4,6 +4,7 @@ packages:
   - "!packages/memory"
   - "!packages/memory-cli"
   - "!packages/memory-commands"
+  - libraries/*
   - templates/*
   - "!templates/worker-template"
 verifyDepsBeforeRun: false

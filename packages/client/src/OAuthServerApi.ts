@@ -6,6 +6,7 @@ import type {
     OAuthAuthorizationRequest,
     OAuthDeviceAuthorizationRequest,
     OAuthDeviceAuthorizationResponse,
+    OAuthGrantableScopesResponse,
 } from '@vertesia/common';
 
 export default class OAuthServerApi extends ClientBase {
@@ -57,6 +58,10 @@ export default class OAuthServerApi extends ClientBase {
 
     retrieveRequest(requestId: string): Promise<OAuthAuthorizationRequest> {
         return this.get(`/requests/${requestId}`);
+    }
+
+    retrieveGrantableScopes(requestId: string, projectId: string): Promise<OAuthGrantableScopesResponse> {
+        return this.get(`/requests/${requestId}/grantable-scopes`, { query: { project_id: projectId } });
     }
 
     approveRequest(

@@ -10,6 +10,12 @@ export type OAuthGrantType = 'authorization_code' | 'refresh_token' | 'urn:ietf:
 export type OAuthResponseType = 'code';
 export type OAuthAuthorizationRequestStatus = 'pending' | 'denied' | 'consumed';
 export type OAuthClientRegistrationMode = 'registered' | 'client_id_metadata_document';
+/**
+ * How Vertesia identified itself to a *remote* authorization server when connecting
+ * out as an OAuth client. Distinct from {@link OAuthClientRegistrationMode}, which
+ * describes how inbound clients identified themselves to Vertesia's own AS.
+ */
+export type RemoteOAuthRegistrationMode = 'dynamic_client_registration' | 'client_id_metadata_document';
 export type OAuthGrantStatus = 'active' | 'revoked' | 'expired';
 export type OAuthGrantSortField =
     | 'granted_at'
@@ -47,6 +53,10 @@ export interface OAuthClient extends OAuthClientData {
 
 export interface OAuthClientCreateResponse extends OAuthClient {
     client_secret?: string;
+}
+
+export interface OAuthClientScopeMetadata {
+    supported_scopes: string[];
 }
 
 export interface OAuthGrant {
@@ -189,6 +199,7 @@ export interface OAuthAuthorizationRequest {
     redirect_origin: string;
     resource?: string;
     requested_scopes: string[];
+    optional_scopes?: string[];
     requested_project_id?: string;
     project_binding_mode: OAuthProjectBindingMode;
     fixed_project_id?: string;
@@ -199,6 +210,14 @@ export interface OAuthAuthorizationRequest {
 
 export interface ApproveOAuthAuthorizationRequestPayload {
     project_id?: string;
+    granted_scopes: string[];
+}
+
+export interface OAuthGrantableScopesResponse {
+    project_id: string;
+    requested_permission_scopes: string[];
+    grantable_permission_scopes: string[];
+    unavailable_permission_scopes: string[];
 }
 
 export interface OAuthAuthorizationDecisionResponse {
@@ -298,13 +317,13 @@ export interface OAuthAccessTokenPayload extends Omit<AuthTokenPayload, 'type' |
 export interface OAuthIdTokenPayload {
     sub: string;
     user_id: string;
-    name: string;
+    name?: string;
     email?: string;
     picture?: string;
     type: 'oauth_id';
     client_id: string;
-    account: AuthTokenPayload['account'];
-    accounts: AuthTokenPayload['accounts'];
+    account?: AuthTokenPayload['account'];
+    accounts?: AuthTokenPayload['accounts'];
     project?: ProjectRef;
     /** User groups */
     groups?: AuthTokenPayload['groups'];
