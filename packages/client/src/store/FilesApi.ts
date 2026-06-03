@@ -1,5 +1,6 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
+    BucketReadAccessStatusResponse,
     BulkUploadUrlsPayload,
     BulkUploadUrlsResponse,
     DeleteFileResult,
@@ -80,6 +81,10 @@ export class FilesApi extends ApiTopic {
     ensureBucketReadAccess(principal: string): Promise<EnsureBucketReadAccessResponse> {
         const payload: EnsureBucketReadAccessPayload = { principal };
         return this.post("/bucket/read-access", { payload });
+    }
+
+    getBucketReadAccessStatus(principal: string): Promise<BucketReadAccessStatusResponse> {
+        return this.get("/bucket/read-access", { query: { principal } });
     }
 
     list(prefix: string): Promise<FileListResponse> {

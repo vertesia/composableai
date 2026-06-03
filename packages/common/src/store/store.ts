@@ -736,6 +736,12 @@ export interface EnsureBucketReadAccessResponse {
     granted: boolean;
 }
 
+export interface BucketReadAccessStatusResponse {
+    bucket: string;
+    principal: string;
+    hasAccess: boolean;
+}
+
 export interface FileMetadataResponse {
     name: string;
     size: number;
