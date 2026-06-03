@@ -1,6 +1,6 @@
 import type { AgentMessage, ConversationFile, Plan } from '@vertesia/common';
 import { FileProcessingStatus } from '@vertesia/common';
-import { Badge, Button, cn, type Tab as TabDefinition, Tabs, TabsBar, TabsPanel, useToast } from '@vertesia/ui/core';
+import { Badge, Button, cn, SelectBox, type Tab as TabDefinition, Tabs, TabsPanel, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import {
@@ -537,14 +537,30 @@ function AgentRightPanelComponent({
         },
     ];
 
+    const visibleTabs = tabs.filter((tab) => tab.is_allowed === undefined || tab.is_allowed === true);
+    const currentTab = visibleTabs.find((tab) => tab.name === activeTab);
+
     return (
         <Tabs tabs={tabs} current={activeTab} onTabChange={handleTabChange} fullHeight className="px-0">
-            <div className="flex items-center border-b shrink-0 px-1">
-                <div className="flex-1 overflow-x-auto">
-                    <TabsBar className="border-b-0 mb-0 min-w-max" />
+            <div className="flex items-center border-b shrink-0 px-1 py-1 gap-1">
+                <div className="flex-1 min-w-0">
+                    <SelectBox<TabDefinition>
+                        label="Select Options"
+                        options={visibleTabs}
+                        value={currentTab}
+                        onChange={(tab) => tab && handleTabChange(tab.name)}
+                        optionLabel={(tab) => tab.label}
+                        by="name"
+                    />
                 </div>
                 {!conversationContent && (
-                    <Button variant="ghost" size="sm" className="shrink-0 ms-1" onClick={onClose}>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0 ms-1"
+                        onClick={onClose}
+                        title="Close Right Panel"
+                    >
                         <XIcon className="size-4" />
                     </Button>
                 )}
