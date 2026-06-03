@@ -596,7 +596,7 @@ export interface GetRenditionResponse {
 }
 
 export interface ObjectSearchResponse {
-    results: ContentObjectItem[];
+    results: ContentObjectItemApiResponse[];
     facets: ComputedFacetResponse;
     aggregations?: Record<string, unknown>;
 }
