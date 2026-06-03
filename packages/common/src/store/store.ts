@@ -403,12 +403,9 @@ export interface ContentObjectItem<T = JSONObject> extends BaseObject {
  * When creating from an uploaded file the content should be an URL to the uploaded file
  */
 export interface CreateContentObjectPayload<T = JSONObject>
-    extends Partial<
-        Omit<ContentObject<T>, 'id' | 'root' | 'created_at' | 'updated_at' | 'type' | 'owner' | 'metadata'>
-    > {
+    extends Partial<Omit<ContentObject<T>, 'id' | 'root' | 'created_at' | 'updated_at' | 'type' | 'owner'>> {
     id?: string; // An optional existing object ID to be replaced by the new one
     type?: string; // the object type ID
-    metadata?: Record<string, unknown>;
     generation_run_info?: GenerationRunMetadata;
 }
 
