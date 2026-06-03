@@ -29,7 +29,7 @@ function makeMessage(overrides: Partial<AgentMessage>): AgentMessage {
 }
 
 describe('ModernAgentOutput utils - tool preamble behavior', () => {
-    it('treats tool preamble thoughts as tool activity', () => {
+    it('treats tool preamble thoughts as standalone turn prose', () => {
         const preamble = makeMessage({
             message: 'I will now call tools',
             details: {
@@ -38,10 +38,25 @@ describe('ModernAgentOutput utils - tool preamble behavior', () => {
             },
         });
 
-        expect(isToolActivityMessage(preamble)).toBe(true);
+        expect(isToolActivityMessage(preamble)).toBe(false);
     });
 
-    it('groups a single tool preamble into a tool_group (not a standalone message)', () => {
+    it('treats legacy think tool rows as standalone preamble prose', () => {
+        const preamble = makeMessage({
+            message: 'Thinking about how to get the news headlines for Tokyo.',
+            details: {
+                event_class: 'activity',
+                tool: 'think',
+                tool_run_id: 'tool-1',
+                tool_status: 'running',
+                activity_group_id: 'activity-1',
+            },
+        });
+
+        expect(isToolActivityMessage(preamble)).toBe(false);
+    });
+
+    it('keeps a single tool preamble as a standalone message', () => {
         const preamble = makeMessage({
             timestamp: 1000,
             message: 'I will now call tools',
@@ -54,14 +69,35 @@ describe('ModernAgentOutput utils - tool preamble behavior', () => {
         const grouped = mergeConsecutiveToolGroups(groupMessagesWithStreaming([preamble], new Map()));
 
         expect(grouped).toHaveLength(1);
-        expect(grouped[0].type).toBe('tool_group');
-        if (grouped[0].type === 'tool_group') {
-            expect(grouped[0].messages).toHaveLength(1);
-            expect(grouped[0].messages[0].details?.display_role).toBe('tool_preamble');
+        expect(grouped[0].type).toBe('single');
+        if (grouped[0].type === 'single') {
+            expect(grouped[0].message.details?.display_role).toBe('tool_preamble');
         }
     });
 
-    it('keeps preamble and tool-call thought in the same activity tool group', () => {
+    it('keeps a legacy think tool row as a standalone message', () => {
+        const preamble = makeMessage({
+            timestamp: 1000,
+            message: 'Thinking about how to get the news headlines for Tokyo.',
+            details: {
+                event_class: 'activity',
+                tool: 'think',
+                tool_run_id: 'tool-1',
+                tool_status: 'running',
+                activity_group_id: 'activity-1',
+            },
+        });
+
+        const grouped = mergeConsecutiveToolGroups(groupMessagesWithStreaming([preamble], new Map()));
+
+        expect(grouped).toHaveLength(1);
+        expect(grouped[0].type).toBe('single');
+        if (grouped[0].type === 'single') {
+            expect(grouped[0].message.details?.tool).toBe('think');
+        }
+    });
+
+    it('keeps preamble separate from the following activity tool group', () => {
         const activityGroupId = 'activity-1';
         const preamble = makeMessage({
             timestamp: 1000,
@@ -84,12 +120,15 @@ describe('ModernAgentOutput utils - tool preamble behavior', () => {
 
         const grouped = mergeConsecutiveToolGroups(groupMessagesWithStreaming([preamble, toolCall], new Map()));
 
-        expect(grouped).toHaveLength(1);
-        expect(grouped[0].type).toBe('tool_group');
-        if (grouped[0].type === 'tool_group') {
-            expect(grouped[0].messages).toHaveLength(2);
-            expect(grouped[0].messages[0].details?.display_role).toBe('tool_preamble');
-            expect(grouped[0].messages[1].details?.tool).toBe('list-assistant-knowledge');
+        expect(grouped).toHaveLength(2);
+        expect(grouped[0].type).toBe('single');
+        if (grouped[0].type === 'single') {
+            expect(grouped[0].message.details?.display_role).toBe('tool_preamble');
+        }
+        expect(grouped[1].type).toBe('tool_group');
+        if (grouped[1].type === 'tool_group') {
+            expect(grouped[1].messages).toHaveLength(1);
+            expect(grouped[1].messages[0].details?.tool).toBe('list-assistant-knowledge');
         }
     });
 });

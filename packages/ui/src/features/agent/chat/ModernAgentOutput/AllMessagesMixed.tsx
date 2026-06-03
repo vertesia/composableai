@@ -15,6 +15,8 @@ import {
     Brain,
     ChevronDown,
     ChevronRight,
+    CheckCircle,
+    CopyIcon,
     FileText,
     Pencil,
     Search,
@@ -42,7 +44,7 @@ import {
     groupMessagesWithStreaming,
     isInProgress,
     mergeConsecutiveToolGroups,
-    type RenderableGroup,
+    isToolPreambleMessage,
     type StreamingData,
     type ToolExecutionStatus,
     shouldCollapseAdjacentRenderedMessage,
@@ -58,64 +60,6 @@ export interface AgentInitialRequestTemplateContext {
 }
 
 export type AgentInitialRequestTemplate = (context: AgentInitialRequestTemplateContext) => React.ReactNode;
-
-/** Extended group that may carry preamble info (text from a preceding single/streaming message) */
-type RenderableGroupWithPreamble = RenderableGroup & {
-    preambleText?: string;
-    preambleMessage?: AgentMessage;
-    /** When true, this group was consumed as a preamble and should not render */
-    _consumed?: boolean;
-};
-
-/** Message types that must never be consumed as preamble text */
-const NON_PREAMBLE_TYPES = new Set([
-    AgentMessageType.QUESTION,
-    AgentMessageType.COMPLETE,
-    AgentMessageType.IDLE,
-    AgentMessageType.TERMINATED,
-    AgentMessageType.ERROR,
-    AgentMessageType.REQUEST_INPUT,
-    AgentMessageType.BATCH_PROGRESS,
-]);
-
-/**
- * Scan grouped messages and attach preamble text to tool_groups.
- * When a single message (THOUGHT, UPDATE, ANSWER, etc.) immediately precedes
- * a tool_group, the text is attached as preamble and the single message is marked
- * as consumed so it doesn't render as a separate "Agent" box.
- */
-function attachPreambles(groups: RenderableGroup[]): RenderableGroupWithPreamble[] {
-    const result: RenderableGroupWithPreamble[] = groups.map((g) => ({ ...g }));
-
-    for (let i = 1; i < result.length; i++) {
-        const current = result[i];
-        const prev = result[i - 1];
-
-        // Only attach preamble to tool_groups
-        if (current.type !== 'tool_group') continue;
-        // Previous must be a single message with text content
-        if (prev.type !== 'single' || prev._consumed) continue;
-
-        const msg = prev.message;
-        const text = typeof msg.message === 'string' ? msg.message.trim() : '';
-        if (!text) continue;
-
-        // Skip messages that are tool activity themselves (already part of tool groups)
-        const isToolActivity = msg.details?.tool || msg.details?.tools;
-        if (isToolActivity) continue;
-
-        // Skip terminal/interactive message types that should always render independently
-        if (NON_PREAMBLE_TYPES.has(msg.type)) continue;
-
-        // Attach as preamble
-        current.preambleText = text;
-        current.preambleMessage = msg;
-        prev._consumed = true;
-    }
-
-    // Filter out consumed groups
-    return result.filter((g) => !g._consumed);
-}
 
 // Check if message is a batch progress message
 const isBatchProgressMessage = (message: AgentMessage): message is AgentMessage & { details: BatchProgressDetails } => {
@@ -372,8 +316,9 @@ function SummaryMessage({ message, onSendMessage, StoreLinkComponent, Collection
         return <SummaryUserBubble workstreamId={workstreamId}>{content}</SummaryUserBubble>;
     }
 
-    if (message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux) {
-        const uxConfig = (message.details as AskUserMessageDetails).ux!;
+    const requestInputDetails = message.details as AskUserMessageDetails | undefined;
+    if (message.type === AgentMessageType.REQUEST_INPUT && requestInputDetails?.ux) {
+        const uxConfig = requestInputDetails.ux;
         return (
             <div className="mx-auto w-full max-w-3xl px-1">
                 <AskUserWidget
@@ -650,10 +595,14 @@ const TOOL_DETAIL_SYSTEM_KEYS = new Set([
     'tenant_id',
     'thread_id',
     'tool',
+    'tool_event',
     'tool_iteration',
     'tool_run_id',
+    'tool_use_id',
     'tool_status',
     'tools',
+    'message_to_human',
+    'progress_messages',
     'workflow_run_id',
 ]);
 
@@ -667,15 +616,6 @@ function humanizeIdentifier(value: string): string {
         .replace(/\s+/g, ' ')
         .trim()
         .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function getFirstStringValue(details: Record<string, unknown>, keys: string[]): string | undefined {
-    for (const key of keys) {
-        const value = details[key];
-        if (typeof value === 'string' && value.trim()) return value.trim();
-        if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-    }
-    return undefined;
 }
 
 function getToolNames(details: Record<string, unknown>): string[] {
@@ -694,6 +634,30 @@ function getToolNames(details: Record<string, unknown>): string[] {
     return names;
 }
 
+const TOOL_TARGET_KEYS = [
+    'query',
+    'path',
+    'file',
+    'file_name',
+    'fileName',
+    'filename',
+    'name',
+    'title',
+    'artifact',
+    'artifact_path',
+    'url',
+    'command',
+];
+
+function getToolTargetEntry(details: Record<string, unknown>): { key: string; value: string } | undefined {
+    for (const key of TOOL_TARGET_KEYS) {
+        const value = details[key];
+        if (typeof value === 'string' && value.trim()) return { key, value: value.trim() };
+        if (typeof value === 'number' || typeof value === 'boolean') return { key, value: String(value) };
+    }
+    return undefined;
+}
+
 function getToolDetailKind(message: AgentMessage): SummaryToolDetailKind {
     const details = getDetailsRecord(message);
     const toolNames = getToolNames(details).join(' ').toLowerCase();
@@ -701,7 +665,7 @@ function getToolDetailKind(message: AgentMessage): SummaryToolDetailKind {
     const text = getMessageText(message).toLowerCase();
     const haystack = `${toolNames} ${text}`;
 
-    if (details.display_role === 'tool_preamble') return 'think';
+    if (isToolPreambleMessage(message)) return 'think';
     if (concreteTool.startsWith('learn_') || haystack.includes('learn_') || /\bskill\b/.test(text)) return 'skill';
     if (concreteTool === 'discover_tools') return 'discover';
     if (message.type === AgentMessageType.THOUGHT && !concreteTool) return 'think';
@@ -751,21 +715,8 @@ function getToolDetailLabel(kind: SummaryToolDetailKind): string {
 }
 
 function getToolTarget(details: Record<string, unknown>): string | undefined {
-    const directTarget = getFirstStringValue(details, [
-        'query',
-        'path',
-        'file',
-        'file_name',
-        'fileName',
-        'filename',
-        'name',
-        'title',
-        'artifact',
-        'artifact_path',
-        'url',
-        'command',
-    ]);
-    if (directTarget) return directTarget;
+    const directTarget = getToolTargetEntry(details);
+    if (directTarget) return directTarget.value;
 
     const files = details.files ?? details.outputFiles;
     if (Array.isArray(files) && files.length > 0) {
@@ -814,6 +765,7 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
     const details = getDetailsRecord(message);
     const consumedKeys = new Set<string>();
     const sections: SummaryToolDetailSection[] = [];
+    const targetEntry = getToolTargetEntry(details);
 
     const addSection = (label: string, keys: string[], tone?: SummaryToolDetailSection['tone']) => {
         for (const key of keys) {
@@ -840,6 +792,7 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
     ]);
     addSection('Files', ['files', 'outputFiles']);
     addSection('Error', ['error', 'stderr'], 'error');
+    if (targetEntry) consumedKeys.add(targetEntry.key);
 
     const remainingDetails = getRemainingDetailFields(details, consumedKeys);
     if (sections.length === 0 && remainingDetails) {
@@ -856,8 +809,8 @@ function buildSummaryToolDetailItem(message: AgentMessage, index: number): Summa
     const toolNames = getToolNames(details);
     const target = getToolTarget(details);
     const fallbackTitle = toolNames[0] ? humanizeIdentifier(toolNames[0]) : getReadableToolLabel(message);
-    const title = compactInlineText(target || text || fallbackTitle);
-    const normalizedText = text ? compactInlineText(text, 420) : undefined;
+    const title = kind === 'think' ? text || fallbackTitle : compactInlineText(target || text || fallbackTitle);
+    const normalizedText = text ? (kind === 'think' ? text : compactInlineText(text, 420)) : undefined;
     const shouldShowText = normalizedText && normalizedText !== title;
 
     if (!title && !shouldShowText) return undefined;
@@ -898,20 +851,20 @@ function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
             (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp),
         );
         const baseMessage = sortedMessages[sortedMessages.length - 1];
+        const startMessage = sortedMessages.find((message) => getDetailsRecord(message).tool_event === 'started');
         const firstTextMessage = sortedMessages.find((message) => getMessageText(message));
-        const mergedDetails = sortedMessages.reduce<Record<string, unknown>>(
-            (acc, message) => ({
-                ...acc,
-                ...getDetailsRecord(message),
-            }),
-            {},
-        );
+        const mergedDetails: Record<string, unknown> = {};
+        for (const message of sortedMessages) {
+            Object.assign(mergedDetails, getDetailsRecord(message));
+        }
+        const messageToHuman =
+            typeof startMessage?.details?.message_to_human === 'string' ? startMessage.details.message_to_human : '';
 
         return {
             index,
             message: {
                 ...baseMessage,
-                message: firstTextMessage ? firstTextMessage.message : baseMessage.message,
+                message: messageToHuman || (firstTextMessage ? firstTextMessage.message : baseMessage.message),
                 details: mergedDetails,
             },
         };
@@ -1014,6 +967,105 @@ function ToolDetailSection({ section }: { section: SummaryToolDetailSection }) {
     );
 }
 
+function getToolPanelTitle(item: SummaryToolDetailItem): string {
+    return item.kind === 'command' ? 'Shell' : item.label;
+}
+
+function getToolStatusLabel(status?: ToolExecutionStatus): string | undefined {
+    switch (status) {
+        case 'completed':
+            return 'Success';
+        case 'running':
+            return 'Running';
+        case 'error':
+            return 'Error';
+        case 'warning':
+            return 'Warning';
+        default:
+            return undefined;
+    }
+}
+
+function getToolStatusClassName(status?: ToolExecutionStatus): string {
+    switch (status) {
+        case 'completed':
+            return 'text-success';
+        case 'running':
+            return 'text-info';
+        case 'error':
+            return 'text-destructive';
+        case 'warning':
+            return 'text-attention';
+        default:
+            return 'text-muted';
+    }
+}
+
+function formatToolPrimaryText(item: SummaryToolDetailItem): string {
+    return item.kind === 'command' ? `$ ${item.title}` : item.title;
+}
+
+function formatToolDetailCopyText(item: SummaryToolDetailItem): string {
+    const parts = [getToolPanelTitle(item), formatToolPrimaryText(item)];
+    if (item.text) parts.push(item.text);
+
+    for (const section of item.sections) {
+        parts.push(`${section.label}\n${formatToolSectionValue(section.value)}`);
+    }
+
+    return parts.filter(Boolean).join('\n\n');
+}
+
+function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
+    const statusLabel = getToolStatusLabel(item.status);
+    const primaryText = formatToolPrimaryText(item);
+
+    const copyDetails = () => {
+        void navigator.clipboard?.writeText(formatToolDetailCopyText(item));
+    };
+
+    return (
+        <div className="mt-2 rounded-lg border border-border/70 bg-mixer-muted/10 p-3 shadow-sm">
+            <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="min-w-0 text-base font-medium text-muted">{getToolPanelTitle(item)}</div>
+                <button
+                    type="button"
+                    className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted opacity-70 transition hover:bg-mixer-muted/20 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={copyDetails}
+                    aria-label="Copy tool details"
+                    title="Copy tool details"
+                >
+                    <CopyIcon className="size-4" />
+                </button>
+            </div>
+            <pre className="mb-4 whitespace-pre-wrap break-words font-mono text-sm leading-6 text-foreground/85">
+                {primaryText}
+            </pre>
+            {item.text ? (
+                <div className="mb-3 break-words text-sm leading-6 text-foreground/75">{item.text}</div>
+            ) : null}
+            {item.sections.length > 0 ? (
+                <div className="space-y-3">
+                    {item.sections.map((section, sectionIndex) => (
+                        <ToolDetailSection key={`${section.label}-${sectionIndex}`} section={section} />
+                    ))}
+                </div>
+            ) : null}
+            {statusLabel ? (
+                <div
+                    className={cn(
+                        'mt-4 flex items-center justify-end gap-2 text-sm',
+                        getToolStatusClassName(item.status),
+                    )}
+                >
+                    {item.status === 'completed' ? <CheckCircle className="size-4" /> : null}
+                    <span>{statusLabel}</span>
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
 function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
     const isAttention = item.status === 'error' || item.status === 'warning';
     const hasDetails = Boolean(item.text || item.sections.length);
@@ -1056,25 +1108,36 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
             </button>
             {hasDetails && isExpanded ? (
                 <div className="ms-7 mt-1">
-                    {item.text ? (
-                        <div className="break-words text-sm leading-relaxed text-muted">{item.text}</div>
-                    ) : null}
-                    {item.sections.map((section, sectionIndex) => (
-                        <ToolDetailSection key={`${section.label}-${sectionIndex}`} section={section} />
-                    ))}
+                    <SummaryToolDetailPanel item={item} />
                 </div>
             ) : null}
         </div>
     );
 }
 
-function SummaryToolTimeline({ items }: { items: SummaryToolDetailItem[] }) {
+function SummaryThoughtTimelineItem({ item, artifactRunId }: { item: SummaryToolDetailItem; artifactRunId?: string }) {
+    const text = item.text ?? item.title;
+
+    return (
+        <div className="min-w-0 py-1 text-sm leading-6 text-foreground/85">
+            <div className={SUMMARY_PROSE_CLASS} style={{ overflowWrap: 'anywhere' }}>
+                <MarkdownRenderer artifactRunId={artifactRunId}>{text}</MarkdownRenderer>
+            </div>
+        </div>
+    );
+}
+
+function SummaryToolTimeline({ items, artifactRunId }: { items: SummaryToolDetailItem[]; artifactRunId?: string }) {
     return (
         <div className="mt-3 max-h-[30rem] overflow-y-auto">
-            <div className="space-y-2">
-                {items.map((item) => (
-                    <SummaryToolTimelineItem key={item.key} item={item} />
-                ))}
+            <div className="space-y-3">
+                {items.map((item) =>
+                    item.kind === 'think' ? (
+                        <SummaryThoughtTimelineItem key={item.key} item={item} artifactRunId={artifactRunId} />
+                    ) : (
+                        <SummaryToolTimelineItem key={item.key} item={item} />
+                    ),
+                )}
             </div>
         </div>
     );
@@ -1108,6 +1171,7 @@ function SummaryActivityRow({
     emptyDetailsLabel,
     defaultExpanded = false,
     className,
+    artifactRunId,
 }: {
     label: string;
     status?: ToolExecutionStatus;
@@ -1118,6 +1182,7 @@ function SummaryActivityRow({
     emptyDetailsLabel?: string;
     defaultExpanded?: boolean;
     className?: string;
+    artifactRunId?: string;
 }) {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
     const isLiveElapsed = showElapsed && durationSeconds === undefined;
@@ -1158,7 +1223,7 @@ function SummaryActivityRow({
                 </button>
                 {canExpand && isExpanded ? (
                     detailItems.length > 0 ? (
-                        <SummaryToolTimeline items={detailItems} />
+                        <SummaryToolTimeline items={detailItems} artifactRunId={artifactRunId} />
                     ) : (
                         <div className="mt-3 flex items-center gap-2 text-sm text-muted">
                             <Terminal className="size-4 opacity-70" aria-hidden="true" />
@@ -1553,15 +1618,13 @@ function AllMessagesMixedComponent({
         [summaryDisplayMessages, isDisplayCompleted, latestSummaryObservedTimestamp],
     );
 
-    // Group messages with ONLY complete streaming interleaved for stacked view
-    // Incomplete streaming is rendered separately at the end (avoids re-grouping on every chunk)
-    // Then attach preamble text from preceding reasoning messages to tool_groups
+    // Group messages with ONLY complete streaming interleaved for stacked view.
+    // Incomplete streaming is rendered separately at the end (avoids re-grouping on every chunk).
+    // Assistant prose stays as its own timeline item so thoughts remain visible between tool calls.
     const groupedMessages = React.useMemo(
         () =>
-            attachPreambles(
-                mergeConsecutiveToolGroups(
-                    groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream),
-                ),
+            mergeConsecutiveToolGroups(
+                groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream),
             ),
         [displayMessages, completeStreaming, activeWorkstream],
     );
@@ -2005,8 +2068,6 @@ function AllMessagesMixedComponent({
                                                     showPulsatingCircle={isLatest}
                                                     toolRunId={group.toolRunId}
                                                     toolStatus={group.toolStatus}
-                                                    preambleText={group.preambleText}
-                                                    preambleMessage={group.preambleMessage}
                                                     rootClassName={cn(
                                                         'rounded-lg border border-border bg-background/60 shadow-none',
                                                         toolCallGroupClassNames?.rootClassName,
@@ -2147,6 +2208,7 @@ function AllMessagesMixedComponent({
                                             details={isThinkingOnlyWork ? undefined : item.messages}
                                             defaultExpanded={item.isActive && !isThinkingOnlyWork}
                                             className={workingIndicatorClassName}
+                                            artifactRunId={artifactRunId}
                                         />
                                     );
                                 }

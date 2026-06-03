@@ -344,21 +344,25 @@ export function isToolCallMessage(message: AgentMessage): boolean {
     return message.type === AgentMessageType.THOUGHT && !!message.details?.tool;
 }
 
-function isToolPreambleMessage(message: AgentMessage): boolean {
-    const details = message.details as { display_role?: string } | undefined;
-    return message.type === AgentMessageType.THOUGHT && details?.display_role === 'tool_preamble';
+export function isToolPreambleMessage(message: AgentMessage): boolean {
+    const details = message.details as { display_role?: string; tool?: string; tool_event?: string } | undefined;
+    return (
+        message.type === AgentMessageType.THOUGHT &&
+        (details?.display_role === 'tool_preamble' || (details?.tool === 'think' && !details.tool_event))
+    );
 }
 
 /**
  * Check if a message should be rendered as part of tool activity.
- * Includes concrete tool calls plus tool preambles emitted before tool_use.
+ * Includes concrete tool calls. Explicit tool preambles are turn prose and
+ * render as standalone thought content.
  */
 export function isToolActivityMessage(message: AgentMessage): boolean {
+    if (isToolPreambleMessage(message)) return false;
     if (isToolCallMessage(message)) return true;
     if (message.type !== AgentMessageType.THOUGHT) return false;
 
     const details = message.details as { display_role?: string; tools?: unknown } | undefined;
-    if (isToolPreambleMessage(message)) return true;
     if (Array.isArray(details?.tools) && details.tools.length > 0) return true;
 
     return false;
@@ -493,6 +497,8 @@ export function groupMessagesWithStreaming(
         // REQUEST_INPUT, BatchProgressPanel for BATCH_PROGRESS) and must stay
         // standalone so MessageItem / AllMessagesMixed can route them correctly.
         if (message.type === AgentMessageType.REQUEST_INPUT || message.type === AgentMessageType.BATCH_PROGRESS) {
+            standaloneMessages.push(message);
+        } else if (isToolPreambleMessage(message)) {
             standaloneMessages.push(message);
         } else if (activityGroupId) {
             if (!activityGroups.has(activityGroupId)) {

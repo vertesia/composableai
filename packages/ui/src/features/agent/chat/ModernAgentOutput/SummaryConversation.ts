@@ -1,5 +1,11 @@
-import { AgentMessage, AgentMessageType } from "@vertesia/common";
-import { isStreamReplacedByMessage, isToolActivityMessage, StreamingData, ToolExecutionStatus } from "./utils";
+import { type AgentMessage, AgentMessageType } from "@vertesia/common";
+import {
+    isStreamReplacedByMessage,
+    isToolActivityMessage,
+    isToolPreambleMessage,
+    type StreamingData,
+    type ToolExecutionStatus,
+} from "./utils";
 
 export type SummaryConversationItem =
     | { type: "message"; message: AgentMessage }
@@ -82,7 +88,7 @@ export function isSummaryAssistantProseMessage(message: AgentMessage): boolean {
 
     if (message.type === AgentMessageType.ANSWER) return true;
 
-    if (message.details?.display_role === "tool_preamble") return false;
+    if (isToolPreambleMessage(message)) return false;
 
     // Streamed thoughts without tool metadata are model-visible prose. They remain
     // in the conversation unless buildSummaryDisplayMessages classifies them as
@@ -118,6 +124,7 @@ function shouldResumeCompletedWorkForTool(message: AgentMessage, pendingWork: Ag
 
 function isSummaryWorkMessage(message: AgentMessage): boolean {
     if (isSummaryAssistantProseMessage(message)) return false;
+    if (isToolPreambleMessage(message)) return true;
     if (isToolActivityMessage(message)) return true;
     if (message.type === AgentMessageType.UPDATE || message.type === AgentMessageType.PLAN) return true;
 

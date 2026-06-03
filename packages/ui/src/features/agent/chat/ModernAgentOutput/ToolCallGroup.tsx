@@ -14,20 +14,30 @@ import type { ToolExecutionStatus } from './utils';
 /** Keys that are internal metadata and not interesting to display */
 const META_KEYS = new Set([
     'tool',
+    'tool_event',
     'tool_run_id',
+    'tool_use_id',
     'activity_group_id',
     'event_class',
     'tool_iteration',
     'tool_status',
+    'message_to_human',
     'tools',
     'streamed',
     'files',
     'outputFiles',
     'display_role',
     'observation',
+    'progress_messages',
     'browseruse',
     'browser_use',
 ]);
+
+interface ToolProgressDetail {
+    message: string;
+    status?: ToolExecutionStatus;
+    timestamp?: number | string;
+}
 
 /** Filter out internal metadata keys, return user-facing detail entries */
 function extractInterestingDetails(details: Record<string, unknown> | undefined): Array<[string, unknown]> {
@@ -43,6 +53,21 @@ function formatDetailKey(key: string): string {
         .replace(/_/g, ' ')
         .replace(/([a-z])([A-Z])/g, '$1 $2')
         .replace(/^./, (c) => c.toUpperCase());
+}
+
+function getProgressDetails(details: Record<string, unknown> | undefined): ToolProgressDetail[] {
+    const value = details?.progress_messages;
+    if (!Array.isArray(value)) return [];
+    return value.flatMap((entry): ToolProgressDetail[] => {
+        if (!entry || typeof entry !== 'object') return [];
+        const item = entry as Record<string, unknown>;
+        const message = typeof item.message === 'string' ? item.message.trim() : '';
+        if (!message) return [];
+        const status = typeof item.status === 'string' ? (item.status as ToolExecutionStatus) : undefined;
+        const timestamp =
+            typeof item.timestamp === 'number' || typeof item.timestamp === 'string' ? item.timestamp : undefined;
+        return [{ message, status, timestamp }];
+    });
 }
 
 /** Badge color per status */
@@ -140,21 +165,34 @@ function mergeByToolRunId(messages: AgentMessage[]): AgentMessage[] {
         });
 
         // Take the last message as the base (has final status), but prefer
-        // message text from the running message (message_to_human) if the
-        // completed message has no text or empty text.
+        // message text from the start/progress messages for the display body.
         const base = msgs[msgs.length - 1];
+        const startMsg = msgs.find((m) => m.details?.tool_event === 'started');
         const runningMsg = msgs.find((m) => m.details?.tool_status === 'running');
-
-        if (runningMsg && (!base.message || base.message.trim() === '') && runningMsg.message) {
-            // Merge: use running message text with completed message details
-            const merged: AgentMessage = {
-                ...base,
-                message: runningMsg.message,
-            };
-            result.push(merged);
-        } else {
-            result.push(base);
+        const textSource = startMsg ?? runningMsg ?? msgs.find((m) => m.message?.trim());
+        const messageToHuman =
+            typeof textSource?.details?.message_to_human === 'string' ? textSource.details.message_to_human : undefined;
+        const displayMessage = messageToHuman || textSource?.message || base.message;
+        const progressMessages = msgs
+            .filter((msg) => msg.details?.tool_event === 'progress' && msg.message?.trim())
+            .map((msg) => ({
+                message: msg.message.trim(),
+                status: msg.details?.tool_status as ToolExecutionStatus | undefined,
+                timestamp: msg.timestamp,
+            }));
+        const mergedDetails: Record<string, unknown> = {};
+        for (const msg of msgs) {
+            Object.assign(mergedDetails, msg.details);
         }
+        if (progressMessages.length > 0) {
+            mergedDetails.progress_messages = progressMessages;
+        }
+
+        result.push({
+            ...base,
+            message: displayMessage,
+            details: mergedDetails,
+        });
     }
 
     // Re-sort by timestamp to maintain chronological order
@@ -437,6 +475,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                     const interestingDetails = extractInterestingDetails(
                         details as Record<string, unknown> | undefined,
                     );
+                    const progressDetails = getProgressDetails(details as Record<string, unknown> | undefined);
                     return (
                         <div
                             className={cn(
@@ -473,6 +512,24 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                                             <span className="text-foreground break-all">
                                                 {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                                             </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {progressDetails.length > 0 && (
+                                <div className="mb-2 space-y-1">
+                                    <div className="text-[10px] uppercase tracking-wide text-muted/70 font-medium">
+                                        Progress
+                                    </div>
+                                    {progressDetails.map((item, index) => (
+                                        <div key={`${item.timestamp ?? index}-${index}`} className="text-xs text-muted">
+                                            {item.timestamp && (
+                                                <span className="mr-1 text-muted/60">
+                                                    {dayjs(item.timestamp).format('HH:mm:ss')}
+                                                </span>
+                                            )}
+                                            <span>{item.message}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -955,6 +1012,9 @@ function ToolCallGroupComponent({
                                         const interestingDetails = extractInterestingDetails(
                                             details as Record<string, unknown> | undefined,
                                         );
+                                        const progressDetails = getProgressDetails(
+                                            details as Record<string, unknown> | undefined,
+                                        );
                                         return (
                                             <div className={cn('ps-5 pe-3 pb-2 text-sm', itemContentClassName)}>
                                                 {/* Badges row: tool name + status + timestamp */}
@@ -990,6 +1050,27 @@ function ToolCallGroupComponent({
                                                                         ? JSON.stringify(value)
                                                                         : String(value)}
                                                                 </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {progressDetails.length > 0 && (
+                                                    <div className="mb-1.5 space-y-1">
+                                                        <div className="text-[10px] uppercase tracking-wide text-muted/70 font-medium">
+                                                            Progress
+                                                        </div>
+                                                        {progressDetails.map((item, index) => (
+                                                            <div
+                                                                key={`${item.timestamp ?? index}-${index}`}
+                                                                className="text-xs text-muted"
+                                                            >
+                                                                {item.timestamp && (
+                                                                    <span className="mr-1 text-muted/60">
+                                                                        {dayjs(item.timestamp).format('HH:mm:ss')}
+                                                                    </span>
+                                                                )}
+                                                                <span>{item.message}</span>
                                                             </div>
                                                         ))}
                                                     </div>

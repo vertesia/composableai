@@ -77,6 +77,8 @@ export interface DSLActivityExecutionPayload<ParamsT extends object> extends Wor
     params: ParamsT;
     workflow_name: string;
     debug_mode?: boolean;
+    toolRunId?: string;
+    activityGroupId?: string;
 }
 
 export type ImportSpec = (string | Record<string, string>)[];
