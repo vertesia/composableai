@@ -1,4 +1,4 @@
-import type { JSONObject } from '@llumiverse/core';
+import type { JSONObject } from '@llumiverse/common';
 import { type JSONSchema, TemplateType } from '@vertesia/common';
 import { getFreeVariables, renderJsTemplate } from '@vertesia/jst';
 import { extractHandlebarsVariables } from './extract-vars.js';

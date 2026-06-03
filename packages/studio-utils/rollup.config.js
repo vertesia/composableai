@@ -14,7 +14,7 @@ export default {
     },
     external: [
         // Workspace shared libs — loaded from /libs/ via the runtime import map.
-        '@llumiverse/core',
+        '@llumiverse/common',
         '@vertesia/common',
         '@vertesia/jst',
         // CDN-served third-party — also resolved via the import map.

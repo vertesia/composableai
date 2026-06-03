@@ -1,4 +1,4 @@
-import type { JSONObject, JSONSchema, PromptSegment } from '@llumiverse/core';
+import type { JSONObject, JSONSchema, PromptSegment } from '@llumiverse/common';
 import { type PromptSegmentDef, PromptSegmentDefType, type PromptTemplate, TemplateType } from '@vertesia/common';
 import { CompositeError, renderHandlebarsTemplate, renderJsTemplate } from '@vertesia/jst';
 

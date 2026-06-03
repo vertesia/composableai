@@ -42,7 +42,7 @@
         "vitest": "^4.1.7"
     },
     "dependencies": {
-        "@llumiverse/core": "workspace:*",
+        "@llumiverse/common": "workspace:*",
         "@vertesia/common": "workspace:*",
         "@vertesia/jst": "workspace:*",
         "handlebars": "^4.7.9"
