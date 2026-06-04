@@ -307,8 +307,10 @@ export interface DSLWorkflowSpecWithActivities extends DSLWorkflowSpecBase {
  */
 export type DSLWorkflowSpec = DSLWorkflowSpecWithSteps | DSLWorkflowSpecWithActivities;
 
-export function withDSLWorkflowSpecDiscriminator(spec: DSLWorkflowSpecBase): DSLWorkflowSpec {
-    if ('steps' in spec && spec.steps) {
+export function withDSLWorkflowSpecDiscriminator(spec: DSLWorkflowSpecBase | undefined): DSLWorkflowSpec {
+    // Guard against a nullish spec: the `in` operator throws a cryptic
+    // "Cannot use 'in' operator to search for 'steps' in undefined" TypeError on undefined/null.
+    if (spec && 'steps' in spec && spec.steps) {
         return { ...spec, spec_format: 'steps' } as DSLWorkflowSpecWithSteps;
     }
     return { ...spec, spec_format: 'activities' } as DSLWorkflowSpecWithActivities;
