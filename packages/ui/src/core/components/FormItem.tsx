@@ -38,7 +38,7 @@ function joinIds(...ids: Array<string | undefined | false | null>): string | und
 
 function canShowDevWarning(): boolean {
     try {
-        return Env.isDev;
+        return Env.isLocalDev;
     } catch {
         return false;
     }

@@ -110,10 +110,14 @@ export function SelectContentTypeModal({
                 )}
             </ModalBody>
             <ModalFooter>
-                <Button variant="ghost" onClick={handleClose} alt={t('modal.cancel')}>
+                <Button variant="ghost" onClick={handleClose} aria-label={t('modal.cancel')} title={t('modal.cancel')}>
                     {t('modal.cancel')}
                 </Button>
-                <Button onClick={handleConfirm} alt={t('store.confirmSelection')}>
+                <Button
+                    onClick={handleConfirm}
+                    aria-label={t('store.confirmSelection')}
+                    title={t('store.confirmSelection')}
+                >
                     {t('modal.confirm')}
                 </Button>
             </ModalFooter>

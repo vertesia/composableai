@@ -528,7 +528,8 @@ export default function MessageInput({
                             className="rounded-full"
                             disabled={!isCompleted}
                             onClick={() => setIsObjectModalOpen(true)}
-                            alt={t('agent.linkObject')}
+                            aria-label={t('agent.linkObject')}
+                            title={t('agent.linkObject')}
                         >
                             <PaperclipIcon className="size-4" />
                         </Button>

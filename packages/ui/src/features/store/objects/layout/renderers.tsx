@@ -135,7 +135,8 @@ const renderers: Record<
                     {displayValue}
                     <Button
                         variant="ghost"
-                        alt="Preview Object"
+                        aria-label="Preview Object"
+                        title="Preview Object"
                         onClick={(e) => {
                             e.stopPropagation();
                             onClick?.(objectId);
@@ -176,7 +177,8 @@ const renderers: Record<
                     {displayValue}
                     <Button
                         variant="ghost"
-                        alt="Preview Object"
+                        aria-label="Preview Object"
+                        title="Preview Object"
                         onClick={(e) => {
                             e.stopPropagation();
                             onClick?.(objectId);

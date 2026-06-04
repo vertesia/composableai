@@ -180,7 +180,7 @@ function ListItem({ list, object, onDelete, disabled }: ListItemProps) {
     return (
         <div className="flex gap-2 w-full">
             <div className="flex-1">{renderItemProperty(object, editor)}</div>
-            <Button variant="ghost" onClick={onDelete} disabled={disabled} alt="Delete">
+            <Button variant="ghost" onClick={onDelete} disabled={disabled} aria-label="Delete" title="Delete">
                 <Trash2 className="size-4 text-destructive" />
             </Button>
         </div>

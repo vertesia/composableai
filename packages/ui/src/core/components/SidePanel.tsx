@@ -149,7 +149,7 @@ export function SidePanel({
 
 function CloseButton({ onClose }: { onClose: () => void }) {
     return (
-        <Button alt="Close panel" variant="ghost" onClick={onClose}>
+        <Button aria-label="Close panel" title="Close panel" variant="ghost" onClick={onClose}>
             <X className="size-6" aria-hidden="true" />
         </Button>
     );
