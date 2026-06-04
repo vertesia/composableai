@@ -1,5 +1,5 @@
-import { SyntheticEvent } from "react";
-import { useNavigate, useRouterContext } from "./Router";
+import type { SyntheticEvent } from 'react';
+import { useNavigate, useRouterContext } from './Router';
 
 /**
  * Wraps a <a href="..."> and perform the navigation to href through the router.
@@ -34,10 +34,12 @@ export function Nav({ children, to, onClick, replace = true }: NavProps) {
             navigate(target, { replace });
             onClick?.(ev);
         }
-    }
+    };
     return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: span intercepts clicks on inner <a>; keyboard a11y comes from the anchor (Enter triggers click natively).
+        // biome-ignore lint/a11y/useKeyWithClickEvents: same — the inner <a> provides keyboard activation natively.
         <span onClick={_onClick}>{children}</span>
-    )
+    );
 }
 
 /**
@@ -59,9 +61,11 @@ export function NavLink({ children, href, className, topLevelNav, clearBreadcrum
         ev.stopPropagation();
         ev.preventDefault();
         const actualRouter = topLevelNav ? router.getTopRouter() : router;
-        actualRouter.navigate(href, { replace: clearBreadcrumbs  });
-    }
+        actualRouter.navigate(href, { replace: clearBreadcrumbs });
+    };
     return (
-        <a href={href} className={className} onClick={_onClick}>{children}</a>
-    )
+        <a href={href} className={className} onClick={_onClick}>
+            {children}
+        </a>
+    );
 }

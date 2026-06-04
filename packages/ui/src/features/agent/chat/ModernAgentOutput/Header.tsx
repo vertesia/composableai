@@ -1,11 +1,21 @@
-import { AgentRun } from "@vertesia/common";
-import { Button, Dropdown, MenuGroup, MenuItem, cn, useToast } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, GitFork, InfoIcon, MoreVertical, RefreshCcw, XIcon } from "lucide-react";
-import { useUITranslation } from '../../../../i18n/index.js';
-import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
-import { type AgentConversationViewMode } from "./AllMessagesMixed";
-import { getConversationUrl } from "./utils";
+import type { AgentRun } from '@vertesia/common';
+import { Button, cn, Dropdown, MenuGroup, MenuItem, useToast } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { useUserSession } from '@vertesia/ui/session';
+import {
+    Bot,
+    ClipboardList,
+    CopyIcon,
+    DownloadCloudIcon,
+    ExternalLink,
+    GitFork,
+    InfoIcon,
+    MoreVertical,
+    XIcon,
+} from 'lucide-react';
+import { PayloadBuilderProvider, usePayloadBuilder } from '../../PayloadBuilder';
+import type { AgentConversationViewMode } from './AllMessagesMixed';
+import { getConversationUrl } from './utils';
 
 export interface HeaderProps {
     title: string;
@@ -28,7 +38,13 @@ export interface HeaderProps {
     onExportPdf?: () => void;
     /** Called to show run details/internals modal */
     onShowDetails?: () => void;
-    /** Called after a restart succeeds — receives the new AgentRun */
+    /** Whether workflow control actions such as cancel should be shown. */
+    allowWorkflowControl?: boolean;
+    /**
+     * @deprecated No longer used. Continuing a completed conversation now happens
+     * automatically when the user sends a message. Kept as an optional no-op to preserve
+     * type compatibility for external consumers of this public component.
+     */
     onRestart?: (newRun: AgentRun) => void;
     /** Called after a clone succeeds — receives the new AgentRun */
     onClone?: (newRun: AgentRun) => void;
@@ -56,39 +72,53 @@ export default function Header({
     resetWorkflow,
     onExportPdf,
     onShowDetails,
-    onRestart,
+    allowWorkflowControl = true,
     onClone,
     isReceivingChunks = false,
     className,
 }: HeaderProps) {
     const { t } = useUITranslation();
-    const continueWorkflow = useContinueWorkflow(agentRunId, onRestart);
     return (
         <PayloadBuilderProvider>
-            <div className={cn("flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0", className)}>
+            <div
+                className={cn(
+                    'flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0',
+                    className,
+                )}
+            >
                 <div className="flex flex-wrap items-center space-x-2">
                     <div className="flex items-center space-x-1">
                         <Bot className="size-5 text-muted" />
                         <span className="font-medium">{title}</span>
                     </div>
-                    <span className="text-xs text-muted ml-1 flex items-center gap-1.5">
+                    <span className="text-xs text-muted ms-1 flex items-center gap-1.5">
                         (Agent Run ID: {agentRunId})
                         {/* Streaming chunk indicator - gray when idle, purple when receiving */}
-                        <span className={cn(
-                            "w-2 h-2 rounded-full transition-colors duration-200",
-                            isReceivingChunks
-                                ? "bg-purple-500 shadow-[0_0_6px_2px_rgba(168,85,247,0.6)]"
-                                : "bg-gray-400",
-                        )} />
+                        <span
+                            className={cn(
+                                'w-2 h-2 rounded-full transition-colors duration-200',
+                                isReceivingChunks
+                                    ? 'bg-purple-500 shadow-[0_0_6px_2px_rgba(168,85,247,0.6)]'
+                                    : 'bg-gray-400',
+                            )}
+                        />
                     </span>
                 </div>
-                <div className="flex justify-end items-center space-x-2 ml-auto">
+                <div className="flex justify-end items-center space-x-2 ms-auto">
                     {/* View Mode Toggle */}
                     <div className="flex items-center space-x-1 bg-muted rounded p-0.5 mt-2 lg:mt-0">
-                        <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" onClick={() => onViewModeChange("stacked")}>
+                        <Button
+                            variant={viewMode === 'stacked' ? 'outline' : 'ghost'}
+                            size="xs"
+                            onClick={() => onViewModeChange('stacked')}
+                        >
                             {t('agent.details')}
                         </Button>
-                        <Button variant={viewMode === "sliding" ? "outline" : "ghost"} size="xs" onClick={() => onViewModeChange("sliding")}>
+                        <Button
+                            variant={viewMode === 'sliding' ? 'outline' : 'ghost'}
+                            size="xs"
+                            onClick={() => onViewModeChange('sliding')}
+                        >
                             {t('agent.summary')}
                         </Button>
                     </div>
@@ -97,32 +127,21 @@ export default function Header({
                         <div className="relative">
                             {/* Notification badge when plan is available but hidden */}
                             {hasPlan && !showPlanPanel && (
-                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border border-border z-10"></span>
+                                <span className="absolute -top-1 -end-1 w-2.5 h-2.5 bg-primary rounded-full border border-border z-10"></span>
                             )}
                             <Button
                                 size="sm"
-                                variant={showPlanPanel ? "primary" : "secondary"}
+                                variant={showPlanPanel ? 'primary' : 'secondary'}
                                 onClick={onTogglePlanPanel}
                                 className="transition-all duration-200 rounded-md"
                                 title={t('agent.toggleRightSidebar')}
                             >
-                                <ClipboardList className="size-4 mr-1.5" />
-                                <span className="font-medium text-xs">{showPlanPanel ? t('agent.hideSidebar') : t('agent.showSidebar')}</span>
+                                <ClipboardList className="size-4 me-1.5" />
+                                <span className="font-medium text-xs">
+                                    {showPlanPanel ? t('agent.hideSidebar') : t('agent.showSidebar')}
+                                </span>
                             </Button>
                         </div>
-                    )}
-
-                    {onRestart && isTerminal && (
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={continueWorkflow}
-                            className="transition-all duration-200 rounded-md"
-                            title={t('agent.continueConversation')}
-                        >
-                            <RefreshCcw className="size-4 mr-1.5" />
-                            <span className="font-medium text-xs">{t('agent.continueConversation')}</span>
-                        </Button>
                     )}
 
                     {/* More actions */}
@@ -136,7 +155,7 @@ export default function Header({
                         resetWorkflow={resetWorkflow}
                         onExportPdf={onExportPdf}
                         onShowDetails={onShowDetails}
-                        onRestart={onRestart}
+                        allowWorkflowControl={allowWorkflowControl}
                         onClone={onClone}
                     />
                     {onClose && !isModal && (
@@ -150,30 +169,6 @@ export default function Header({
     );
 }
 
-function useContinueWorkflow(agentRunId: string, onRestart?: (newRun: AgentRun) => void) {
-    const { t } = useUITranslation();
-    const toast = useToast();
-    const { client } = useUserSession();
-
-    return async () => {
-        try {
-            const newRun = await client.agents.restart(agentRunId);
-            toast({
-                status: "success",
-                title: t('agent.conversationContinued'),
-                duration: 2000,
-            });
-            onRestart?.(newRun);
-        } catch (_error) {
-            toast({
-                status: "error",
-                title: t('agent.failedToContinueConversation'),
-                duration: 2000,
-            });
-        }
-    };
-}
-
 function MoreDropdown({
     agentRunId,
     workflowRunId,
@@ -184,7 +179,7 @@ function MoreDropdown({
     resetWorkflow,
     onExportPdf,
     onShowDetails,
-    onRestart,
+    allowWorkflowControl = true,
     onClone,
 }: {
     agentRunId: string;
@@ -197,21 +192,20 @@ function MoreDropdown({
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
     onShowDetails?: () => void;
-    onRestart?: (newRun: AgentRun) => void;
+    allowWorkflowControl?: boolean;
     onClone?: (newRun: AgentRun) => void;
 }) {
     const { t } = useUITranslation();
     const toast = useToast();
     const { client } = useUserSession();
     const builder = usePayloadBuilder();
-    const continueWorkflow = useContinueWorkflow(agentRunId, onRestart);
 
     const cancelWorkflow = async () => {
         try {
-            await client.agents.terminate(agentRunId, "cancel");
+            await client.agents.terminate(agentRunId, 'cancel');
 
             toast({
-                status: "success",
+                status: 'success',
                 title: t('agent.workflowCancelled'),
                 duration: 2000,
             });
@@ -222,7 +216,7 @@ function MoreDropdown({
             return true;
         } catch (_error) {
             toast({
-                status: "error",
+                status: 'error',
                 title: t('agent.failedToCancelWorkflow'),
                 duration: 2000,
             });
@@ -234,14 +228,14 @@ function MoreDropdown({
         try {
             const newRun = await client.agents.fork(agentRunId);
             toast({
-                status: "success",
+                status: 'success',
                 title: t('agent.conversationCloned'),
                 duration: 2000,
             });
             onClone?.(newRun);
         } catch (_error) {
             toast({
-                status: "error",
+                status: 'error',
                 title: t('agent.failedToCloneConversation'),
                 duration: 2000,
             });
@@ -249,14 +243,14 @@ function MoreDropdown({
     };
 
     const openUrl = (url: string) => {
-        window.open(url, "_blank");
+        window.open(url, '_blank');
         return url;
-    }
+    };
 
     const copyAgentRunId = () => {
         navigator.clipboard.writeText(agentRunId);
         toast({
-            status: "success",
+            status: 'success',
             title: t('agent.agentRunIdCopied'),
             duration: 2000,
         });
@@ -265,7 +259,7 @@ function MoreDropdown({
     const copyWorkflowRunId = () => {
         navigator.clipboard.writeText(workflowRunId);
         toast({
-            status: "success",
+            status: 'success',
             title: t('agent.workflowRunIdCopied'),
             duration: 2000,
         });
@@ -297,13 +291,15 @@ function MoreDropdown({
                         <InfoIcon className="size-3.5 text-muted" /> {t('agent.details')}
                     </MenuItem>
                 )}
-                <MenuItem onClick={() => {
-                    if (onDownload) {
-                        onDownload();
-                    } else {
-                        getConversationUrl(client, agentRunId).then((r) => window.open(r, "_blank"));
-                    }
-                }}>
+                <MenuItem
+                    onClick={() => {
+                        if (onDownload) {
+                            onDownload();
+                        } else {
+                            void getConversationUrl(client, agentRunId).then((r) => window.open(r, '_blank'));
+                        }
+                    }}
+                >
                     <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.downloadConversation')}
                 </MenuItem>
                 {onExportPdf && (
@@ -316,17 +312,12 @@ function MoreDropdown({
                         <XIcon className="size-3.5 text-muted" /> {t('agent.close')}
                     </MenuItem>
                 )}
-                {onRestart && isTerminal && (
-                    <MenuItem onClick={continueWorkflow}>
-                        <RefreshCcw className="size-3.5 text-muted" /> {t('agent.continueConversation')}
-                    </MenuItem>
-                )}
                 {onClone && (
                     <MenuItem onClick={cloneWorkflow}>
                         <GitFork className="size-3.5 text-muted" /> {t('agent.cloneConversation')}
                     </MenuItem>
                 )}
-                {!isTerminal && (
+                {allowWorkflowControl && !isTerminal && (
                     <MenuItem onClick={cancelWorkflow} variant="destructive">
                         <XIcon className="size-3.5" /> {t('agent.cancelWorkflow')}
                     </MenuItem>

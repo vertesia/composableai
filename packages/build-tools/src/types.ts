@@ -42,10 +42,7 @@ export interface TransformResult {
 /**
  * Transform function that converts file content into exportable data
  */
-export type TransformFunction = (
-    content: string,
-    filePath: string
-) => TransformResult | Promise<TransformResult>;
+export type TransformFunction = (content: string, filePath: string) => TransformResult | Promise<TransformResult>;
 
 /**
  * Configuration for a single import transformer rule
@@ -58,7 +55,7 @@ export interface TransformerRule {
     transform: TransformFunction;
 
     /** Optional: Zod schema for validation */
-    schema?: z.ZodType<any>;
+    schema?: z.ZodType<unknown>;
 
     /** Optional: If true, the transformer generates virtual modules (no file to read) */
     virtual?: boolean;

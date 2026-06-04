@@ -1,6 +1,6 @@
-import { InteractionSpec } from "@vertesia/common";
-import { CollectionProperties, ICollection } from "./types.js";
-import { kebabCaseToTitle } from "./utils.js";
+import type { InteractionSpec } from '@vertesia/common';
+import type { CollectionProperties, ICollection } from './types.js';
+import { kebabCaseToTitle } from './utils.js';
 
 export interface InteractionCollectionProps extends CollectionProperties {
     interactions: InteractionSpec[];
@@ -11,9 +11,7 @@ export class InteractionCollection implements ICollection<InteractionSpec> {
     title?: string;
     icon?: string;
     description?: string;
-    constructor({
-        name, title, icon, description, interactions
-    }: InteractionCollectionProps) {
+    constructor({ name, title, icon, description, interactions }: InteractionCollectionProps) {
         this.name = name;
         this.title = title || kebabCaseToTitle(name);
         this.icon = icon;
@@ -36,7 +34,7 @@ export class InteractionCollection implements ICollection<InteractionSpec> {
                 } else {
                     return { done: true, value: undefined };
                 }
-            }
+            },
         };
     }
 
@@ -45,6 +43,6 @@ export class InteractionCollection implements ICollection<InteractionSpec> {
     }
 
     getInteractionByName(name: string): InteractionSpec | undefined {
-        return this.interactions.find(interaction => interaction.name === name);
+        return this.interactions.find((interaction) => interaction.name === name);
     }
 }

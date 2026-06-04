@@ -11,17 +11,21 @@
  */
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Plugin, ViteDevServer } from 'vite';
 import { getRequestListener } from '@hono/node-server';
 import {
-    vertesiaImportPlugin,
-    skillTransformer,
-    skillCollectionTransformer,
-    templateTransformer,
-    templateCollectionTransformer,
     promptTransformer,
     rawTransformer,
+    skillCollectionTransformer,
+    skillTransformer,
+    templateCollectionTransformer,
+    templateTransformer,
+    vertesiaImportPlugin,
 } from '@vertesia/build-tools';
+import type { Plugin, ViteDevServer } from 'vite';
+
+interface HonoApp {
+    fetch: (request: Request, env?: unknown, executionCtx?: unknown) => Response | Promise<Response>;
+}
 
 export interface ApiServerPluginOptions {
     /**
@@ -40,10 +44,7 @@ export interface ApiServerPluginOptions {
 }
 
 export function apiServerPlugin(options: ApiServerPluginOptions = {}): Plugin[] {
-    const {
-        entry = './src/tool-server/server.ts',
-        compiledEntry = './lib/server.js',
-    } = options;
+    const { entry = './src/tool-server/server.ts', compiledEntry = './lib/server.js' } = options;
 
     // Resolve compiledEntry to an absolute path relative to this file's directory.
     // This is necessary because Vite compiles the config to a temp directory,
@@ -101,9 +102,9 @@ function createDevListener(server: ViteDevServer, entry: string) {
 
         try {
             const mod = await server.ssrLoadModule(entry);
-            const app = mod.default;
+            const app = mod.default as HonoApp;
             const requestListener = getRequestListener(app.fetch);
-            requestListener(req, res);
+            void requestListener(req, res);
         } catch (e) {
             next(e);
         }
@@ -116,8 +117,7 @@ function createDevListener(server: ViteDevServer, entry: string) {
  */
 function createPreviewListener(compiledEntry: string) {
     // Cache the app — no hot reload in preview mode
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let appPromise: Promise<any> | null = null;
+    let appPromise: Promise<HonoApp> | null = null;
 
     return async (
         req: Parameters<Connect.NextHandleFunction>[0],
@@ -130,11 +130,11 @@ function createPreviewListener(compiledEntry: string) {
 
         try {
             if (!appPromise) {
-                appPromise = import(compiledEntry).then(mod => mod.default);
+                appPromise = import(compiledEntry).then((mod) => mod.default);
             }
             const app = await appPromise;
             const requestListener = getRequestListener(app.fetch);
-            requestListener(req, res);
+            void requestListener(req, res);
         } catch (e) {
             next(e);
         }
@@ -142,12 +142,10 @@ function createPreviewListener(compiledEntry: string) {
 }
 
 // Connect types from Vite's internals
-// eslint-disable-next-line @typescript-eslint/no-namespace
 declare namespace Connect {
     type NextHandleFunction = (
         req: import('node:http').IncomingMessage,
         res: import('node:http').ServerResponse,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        next: (err?: any) => void,
+        next: (err?: unknown) => void,
     ) => void;
 }

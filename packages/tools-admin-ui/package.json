@@ -16,6 +16,7 @@
         "./theme.css": "./src/theme.css"
     },
     "scripts": {
+        "lint": "biome lint src",
         "build": "rm -rf lib tsconfig.tsbuildinfo && tsc --build && vite build --mode lib",
         "dev": "vite dev"
     },
@@ -24,20 +25,20 @@
         "react-dom": "^19.0.0"
     },
     "devDependencies": {
-        "@tailwindcss/vite": "^4.1.17",
+        "@tailwindcss/vite": "^4.3.0",
         "@types/react": "^19.2.3",
         "@types/react-dom": "^19.2.3",
-        "@vitejs/plugin-react": "^5.1.2",
+        "@vitejs/plugin-react": "^6.0.2",
         "react": "^19.2.3",
         "react-dom": "^19.2.3",
-        "tailwindcss": "^4.1.17",
-        "typescript": "^6.0.2",
-        "vite": "^7.3.0"
+        "tailwindcss": "^4.3.0",
+        "typescript": "^6.0.3",
+        "vite": "^8.0.14"
     },
     "dependencies": {
         "@vertesia/common": "workspace:*",
         "@vertesia/ui": "workspace:*",
-        "lucide-react": "^0.562.0"
+        "lucide-react": "^1.16.0"
     },
     "repository": {
         "type": "git",

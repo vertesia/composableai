@@ -1,7 +1,7 @@
-import { ChildProcess, spawn } from 'child_process';
-import fs from 'fs';
-import { Stream, Writable } from 'stream';
-import { Command, splitPipeCommands } from '../utils/cmdline.js';
+import { type ChildProcess, spawn } from 'node:child_process';
+import fs from 'node:fs';
+import type { Stream, Writable } from 'node:stream';
+import { type Command, splitPipeCommands } from '../utils/cmdline.js';
 import { BufferWritableStream } from '../utils/stream.js';
 
 export interface ExecOptions {
@@ -13,7 +13,7 @@ export async function exec(commandLine: string, options: ExecOptions = {}): Prom
     commandLine = commandLine.trim();
     const { commands, out } = splitPipeCommands(commandLine);
     if (!commands.length) {
-        throw new Error('Invalid command line. No command: ' + commandLine);
+        throw new Error(`Invalid command line. No command: ${commandLine}`);
     }
 
     let outStream: Writable;
@@ -50,34 +50,34 @@ export async function exec(commandLine: string, options: ExecOptions = {}): Prom
     }
 }
 
-
 export function executePipe(commands: Command[], finalOutput: Writable | undefined, verbose: boolean = false) {
     return new Promise((resolve, reject) => {
         let input: Stream | undefined;
         let child: ChildProcess | undefined;
         for (const cmd of commands) {
-            verbose && console.log(`Running: ${cmd.name} ${cmd.args?.join(' ')}`);
+            if (verbose) console.log(`Running: ${cmd.name} ${cmd.args?.join(' ')}`);
             child = spawn(cmd.name, cmd.args, {
                 // in, out, err
                 stdio: ['pipe', 'pipe', 'inherit'],
             });
             if (input) {
+                // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                 input.pipe(child.stdin!);
             }
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             input = child.stdout!;
-            child.on("error", (err: Error) => {
+            child.on('error', (err: Error) => {
                 console.error(`Failed to run ${cmd.name}`, err);
                 reject(err);
-            })
+            });
         }
         if (child) {
-            child.on("exit", (code: number | null, signal: string | null) => {
+            child.on('exit', (code: number | null, signal: string | null) => {
                 resolve(code !== null ? code : signal);
             });
-            finalOutput && child.stdout?.pipe(finalOutput);
+            if (finalOutput) child.stdout?.pipe(finalOutput);
         } else {
-            reject(new Error("no child spawned"));
+            reject(new Error('no child spawned'));
         }
     });
-
 }

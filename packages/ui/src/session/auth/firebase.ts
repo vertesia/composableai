@@ -1,8 +1,8 @@
-import { UIResolvedTenant } from "@vertesia/common";
-import { Env } from "@vertesia/ui/env";
-import { Analytics, getAnalytics } from "firebase/analytics";
-import { FirebaseApp, initializeApp } from "firebase/app";
-import { Auth, getAuth } from "firebase/auth";
+import type { UIResolvedTenant } from '@vertesia/common';
+import { Env } from '@vertesia/ui/env';
+import { type Analytics, getAnalytics } from 'firebase/analytics';
+import { type FirebaseApp, initializeApp } from 'firebase/app';
+import { type Auth, getAuth } from 'firebase/auth';
 
 // Use lazy initialization to avoid accessing Env before it's initialized
 let _firebaseApp: FirebaseApp | null = null;
@@ -14,12 +14,14 @@ export function getFirebaseApp(): FirebaseApp {
     if (!_firebaseApp) {
         try {
             if (!Env.firebase) {
-                throw new Error("Firebase configuration is not available in the environment");
+                throw new Error('Firebase configuration is not available in the environment');
             }
             _firebaseApp = initializeApp(Env.firebase);
         } catch (error) {
-            console.error("Failed to initialize Firebase app:", error);
-            throw new Error("Firebase initialization failed - environment may not be properly initialized", { cause: error });
+            console.error('Failed to initialize Firebase app:', error);
+            throw new Error('Firebase initialization failed - environment may not be properly initialized', {
+                cause: error,
+            });
         }
     }
     return _firebaseApp;
@@ -39,15 +41,14 @@ export function getFirebaseAuth(): Auth {
     return _firebaseAuth;
 }
 
-
 export async function setFirebaseTenant(tenantEmail?: string) {
     if (!tenantEmail) {
-        console.log("No tenant name or email specified, skipping tenant setup");
+        console.log('No tenant name or email specified, skipping tenant setup');
         return;
     }
 
     if (!Env.firebase) {
-        console.log("Firebase configuration is not available in the environment");
+        console.log('Firebase configuration is not available in the environment');
         return;
     }
 
@@ -61,10 +62,10 @@ export async function setFirebaseTenant(tenantEmail?: string) {
         while (retries > 0) {
             try {
                 // Call the API endpoint to resolve the tenant ID
-                const response = await fetch("/api/resolve-tenant", {
-                    method: "POST",
+                const response = await fetch('/api/resolve-tenant', {
+                    method: 'POST',
                     headers: {
-                        "Content-Type": "application/json",
+                        'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                         tenantEmail: tenantEmail,
@@ -75,7 +76,7 @@ export async function setFirebaseTenant(tenantEmail?: string) {
 
                 // Check for network errors
                 if (!response) {
-                    throw new Error("No response received from tenant API");
+                    throw new Error('No response received from tenant API');
                 }
 
                 // Handle HTTP error responses
@@ -83,8 +84,8 @@ export async function setFirebaseTenant(tenantEmail?: string) {
                     // Try to parse the error response
                     try {
                         const errorData = await response.json();
-                        console.error("Failed to resolve tenant ID:", errorData.error);
-                    } catch (parseError) {
+                        console.error('Failed to resolve tenant ID:', errorData.error);
+                    } catch {
                         console.error(`Failed to resolve tenant ID: HTTP ${response.status}`);
                     }
 
@@ -100,10 +101,10 @@ export async function setFirebaseTenant(tenantEmail?: string) {
                 // Successfully got a response, parse it
                 const data = (await response.json()) as UIResolvedTenant;
 
-                if (data && data.firebaseTenantId) {
+                if (data?.firebaseTenantId) {
                     const auth = getFirebaseAuth();
                     auth.tenantId = data.firebaseTenantId;
-                    Env.firebase.providerType = data.provider ?? "oidc";
+                    Env.firebase.providerType = data.provider ?? 'oidc';
                     console.log(`Tenant ID set to ${auth.tenantId}`);
                     return data;
                 } else {
@@ -124,7 +125,7 @@ export async function setFirebaseTenant(tenantEmail?: string) {
         }
     } catch (error) {
         // Final error handler
-        console.error("Error setting Firebase tenant:", error instanceof Error ? error.message : "Unknown error");
+        console.error('Error setting Firebase tenant:', error instanceof Error ? error.message : 'Unknown error');
 
         // Continue without tenant ID - authentication will work without multi-tenancy
         // but the user will access the default tenant
@@ -138,7 +139,7 @@ export async function getFirebaseAuthToken(refresh?: boolean) {
         return user
             .getIdToken(refresh)
             .then((token) => {
-                Env.logger.info("Got Firebase token", {
+                Env.logger.info('Got Firebase token', {
                     vertesia: {
                         user_email: user.email,
                         user_name: user.displayName,
@@ -149,7 +150,7 @@ export async function getFirebaseAuthToken(refresh?: boolean) {
                 return token;
             })
             .catch((err) => {
-                Env.logger.error("Failed to get Firebase token", {
+                Env.logger.error('Failed to get Firebase token', {
                     vertesia: {
                         user_email: user.email,
                         user_name: user.displayName,
@@ -158,11 +159,11 @@ export async function getFirebaseAuthToken(refresh?: boolean) {
                         error: err,
                     },
                 });
-                console.error("Failed to get access token", err);
+                console.error('Failed to get access token', err);
                 return null;
             });
     } else {
-        Env.logger.warn("No user found");
+        Env.logger.warn('No user found');
         return Promise.resolve(null);
     }
 }

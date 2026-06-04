@@ -1,9 +1,13 @@
-import { RemoteActivityDefinition, RemoteActivityExecutionPayload, RemoteActivityExecutionResponse } from "@vertesia/common";
-import { Context } from "hono";
-import { HTTPException } from "hono/http-exception";
-import { authorize } from "./auth.js";
-import { CollectionProperties, ICollection, ToolExecutionContext } from "./types.js";
-import { kebabCaseToTitle } from "./utils.js";
+import type {
+    RemoteActivityDefinition,
+    RemoteActivityExecutionPayload,
+    RemoteActivityExecutionResponse,
+} from '@vertesia/common';
+import type { Context } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import { authorize } from './auth.js';
+import type { CollectionProperties, ICollection, ToolExecutionContext } from './types.js';
+import { kebabCaseToTitle } from './utils.js';
 
 /**
  * Context provided to activity handlers during execution.
@@ -14,15 +18,15 @@ export type ActivityExecutionContext = ToolExecutionContext;
 /**
  * Function signature for a remote activity handler.
  */
-export type ActivityFn<ParamsT extends Record<string, any> = Record<string, any>> = (
+export type ActivityFn<ParamsT extends object = Record<string, unknown>> = (
     payload: RemoteActivityExecutionPayload<ParamsT>,
-    context: ActivityExecutionContext
-) => Promise<any>;
+    context: ActivityExecutionContext,
+) => Promise<unknown>;
 
 /**
  * An activity definition within an ActivityCollection.
  */
-export interface ActivityDefinition<ParamsT extends Record<string, any> = Record<string, any>> {
+export interface ActivityDefinition<ParamsT extends object = Record<string, unknown>> {
     /** Activity name (snake_case) */
     name: string;
     /** Display title */
@@ -30,9 +34,9 @@ export interface ActivityDefinition<ParamsT extends Record<string, any> = Record
     /** Description of what the activity does */
     description?: string;
     /** JSON Schema for the activity input parameters */
-    input_schema?: Record<string, any>;
+    input_schema?: Record<string, unknown>;
     /** JSON Schema for the activity output */
-    output_schema?: Record<string, any>;
+    output_schema?: Record<string, unknown>;
     /** The activity handler function */
     run: ActivityFn<ParamsT>;
 }
@@ -71,7 +75,7 @@ export class ActivityCollection implements ICollection<ActivityDefinition> {
                     return { value: activities[index++], done: false };
                 }
                 return { done: true, value: undefined };
-            }
+            },
         };
     }
 
@@ -79,7 +83,7 @@ export class ActivityCollection implements ICollection<ActivityDefinition> {
      * Get activity definitions for discovery (metadata only, no run function).
      */
     getActivityDefinitions(): RemoteActivityDefinition[] {
-        return Object.values(this.registry).map(activity => ({
+        return Object.values(this.registry).map((activity) => ({
             name: activity.name,
             title: activity.title,
             description: activity.description,
@@ -92,7 +96,7 @@ export class ActivityCollection implements ICollection<ActivityDefinition> {
         const activity = this.registry[name];
         if (!activity) {
             throw new HTTPException(404, {
-                message: `Activity not found: ${name}. Available: ${Object.keys(this.registry).join(', ')}`
+                message: `Activity not found: ${name}. Available: ${Object.keys(this.registry).join(', ')}`,
             });
         }
         return activity;
@@ -126,11 +130,14 @@ export class ActivityCollection implements ICollection<ActivityDefinition> {
                 metadata: payload.metadata,
                 error: message,
             });
-            return ctx.json({
-                result: null,
-                is_error: true,
-                error: message,
-            } satisfies RemoteActivityExecutionResponse, 500);
+            return ctx.json(
+                {
+                    result: null,
+                    is_error: true,
+                    error: message,
+                } satisfies RemoteActivityExecutionResponse,
+                500,
+            );
         }
     }
 }

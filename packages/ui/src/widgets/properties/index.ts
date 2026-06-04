@@ -1,1 +1,1 @@
-export * from "./PropertiesView"
+export * from './PropertiesView';

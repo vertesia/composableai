@@ -4,9 +4,10 @@ import { manyToMarkdown } from './pandoc.js';
 
 export {
     manyToMarkdown,
-    pdfFileToText, pdfToText,
+    pdfFileToText,
+    pdfToText,
     pdfToTextBuffer,
     transformImage,
     transformImageToBuffer,
-    transformImageToFile
+    transformImageToFile,
 };

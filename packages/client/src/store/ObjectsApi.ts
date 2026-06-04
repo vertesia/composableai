@@ -1,52 +1,55 @@
-import { ApiTopic } from "@vertesia/api-fetch-client";
+import { ApiTopic } from '@vertesia/api-fetch-client';
 import {
-    BulkObjectCreateResult,
-    BulkObjectDeleteResult,
-    BulkObjectUpdateResult,
-    canGenerateRendition,
-    Collection,
-    ComplexSearchPayload,
-    ComputeObjectFacetPayload,
-    ContentObject,
+    type BulkObjectCreateResult,
+    type BulkObjectDeleteResult,
+    type BulkObjectUpdateResult,
+    type Collection,
+    type ComplexSearchPayload,
+    type ComputedFacetResponse,
+    type ComputeObjectFacetPayload,
+    type ContentObject,
     ContentObjectApiHeaders,
-    ContentObjectItem,
-    ContentObjectProcessingPriority,
-    ContentSource,
-    ContentObjectTextResponse,
-    CreateContentObjectPayload,
-    DeleteContentObjectResult,
-    Embedding,
-    ObjectSearchResponse,
-    ComputedFacetResponse,
-    ExportPropertiesPayload,
-    ExportPropertiesResponse,
-    FindPayload,
-    GetFileUrlPayload,
-    GetFileUrlResponse,
-    GetRenditionParams,
-    GetRenditionResponse,
+    type ContentObjectItem,
+    type ContentObjectProcessingPriority,
+    type ContentObjectTextResponse,
+    type ContentSource,
+    type CreateContentObjectPayload,
+    canGenerateRendition,
+    type DeleteContentObjectResult,
+    type Embedding,
+    type ExportPropertiesPayload,
+    type ExportPropertiesResponse,
+    type FindPayload,
+    type GetFileUrlPayload,
+    type GetFileUrlResponse,
+    type GetRenditionParams,
+    type GetRenditionResponse,
+    type GetUploadUrlPayload,
+    type ListWorkflowRunsResponse,
+    type ObjectSearchPayload,
+    type ObjectSearchQuery,
+    type ObjectSearchResponse,
+    type SetObjectEmbeddingsResponse,
+    type SupportedEmbeddingTypes,
+} from '@vertesia/common';
 
-    GetUploadUrlPayload,
-    ListWorkflowRunsResponse,
-    ObjectSearchPayload,
-    ObjectSearchQuery,
-    SetObjectEmbeddingsResponse,
-    SupportedEmbeddingTypes,
-} from "@vertesia/common";
-
+export { getSupportedRenditionFormats, supportsVisualRendition } from '@vertesia/common';
 // Re-export rendition utilities for consumers
 export { canGenerateRendition };
-export { getSupportedRenditionFormats, supportsVisualRendition } from "@vertesia/common";
 
-import { StreamSource } from "../StreamSource.js";
-import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
-import { ZenoClient } from "./client.js";
+import { StreamSource } from '../StreamSource.js';
+import { AnalyzeDocApi } from './AnalyzeDocApi.js';
+import type { ZenoClient } from './client.js';
+
+type ContentObjectWritePayload = Omit<CreateContentObjectPayload, 'content'> & {
+    content?: ContentSource | File | StreamSource;
+};
 
 export class ObjectsApi extends ApiTopic {
     declare client: ZenoClient;
 
     constructor(parent: ZenoClient) {
-        super(parent, "/api/v1/objects");
+        super(parent, '/api/v1/objects');
     }
 
     analyze(objectId: string) {
@@ -54,19 +57,19 @@ export class ObjectsApi extends ApiTopic {
     }
 
     getUploadUrl(payload: GetUploadUrlPayload): Promise<GetFileUrlResponse> {
-        return this.post("/upload-url", {
+        return this.post('/upload-url', {
             payload,
         });
     }
 
-    getDownloadUrl(fileUri: string, name?: string, disposition?: "inline" | "attachment"): Promise<{ url: string }> {
-        return this.post("/download-url", {
+    getDownloadUrl(fileUri: string, name?: string, disposition?: 'inline' | 'attachment'): Promise<{ url: string }> {
+        return this.post('/download-url', {
             payload: { file: fileUri, name, disposition } satisfies GetFileUrlPayload,
         });
     }
 
     getDownloadUrlWithOptions(payload: GetFileUrlPayload): Promise<{ url: string }> {
-        return this.post("/download-url", { payload });
+        return this.post('/download-url', { payload });
     }
 
     getContentSource(objectId: string): Promise<ContentSource> {
@@ -79,14 +82,12 @@ export class ObjectsApi extends ApiTopic {
      * @param payload Search/filter parameters
      * @returns Matching content objects
      */
-    list<T = any>(
-        payload: ObjectSearchPayload = {},
-    ): Promise<ContentObjectItem<T>[]> {
+    list<T = unknown>(payload: ObjectSearchPayload = {}): Promise<ContentObjectItem<T>[]> {
         const limit = payload.limit || 100;
         const offset = payload.offset || 0;
         const query = payload.query || ({} as ObjectSearchQuery);
 
-        return this.get("/", {
+        return this.get('/', {
             query: {
                 limit,
                 offset,
@@ -98,35 +99,33 @@ export class ObjectsApi extends ApiTopic {
         });
     }
 
-    computeFacets(
-        query: ComputeObjectFacetPayload,
-    ): Promise<ComputedFacetResponse> {
-        return this.post("/facets", {
+    computeFacets(query: ComputeObjectFacetPayload): Promise<ComputedFacetResponse> {
+        return this.post('/facets', {
             payload: query,
         });
     }
 
-    listFolders(_path: string = "/") {
-        throw new Error("Not implemented yet");
+    listFolders(_path: string = '/') {
+        throw new Error('Not implemented yet');
     }
 
     /** Find object based on query */
     find(payload: FindPayload): Promise<ContentObject[]> {
-        return this.post("/find", {
+        return this.post('/find', {
             payload,
         });
     }
 
     /** Count number of objects matching this query */
     count(payload: FindPayload): Promise<{ count: number }> {
-        return this.post("/count", {
+        return this.post('/count', {
             payload,
         });
     }
 
     /** Search object — different from find because allow full text search */
     search(payload: ComplexSearchPayload): Promise<ObjectSearchResponse> {
-        return this.post("/search", {
+        return this.post('/search', {
             payload,
         });
     }
@@ -156,7 +155,7 @@ export class ObjectsApi extends ApiTopic {
         // upload the file content to the signed URL
         /*const res = await this.fetch(url, {
             method: 'PUT',
-            //@ts-ignore: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
+            //@ts-expect-error: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
             duplex: isStream ? "half" : undefined,
             body: isStream ? source.stream : source,
             headers: {
@@ -172,11 +171,11 @@ export class ObjectsApi extends ApiTopic {
         });*/
 
         const res = await fetch(url, {
-            method: "PUT",
+            method: 'PUT',
             body: isStream ? source.stream : source,
             //@ts-expect-error: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
-            duplex: isStream ? "half" : undefined,
-            headers: sourceMimeType ? { "Content-Type": sourceMimeType } : undefined,
+            duplex: isStream ? 'half' : undefined,
+            headers: sourceMimeType ? { 'Content-Type': sourceMimeType } : undefined,
         })
             .then((res: Response) => {
                 if (res.ok) {
@@ -187,7 +186,7 @@ export class ObjectsApi extends ApiTopic {
                 }
             })
             .catch((err) => {
-                console.error("Failed to upload file", err);
+                console.error('Failed to upload file', err);
                 throw err;
             });
 
@@ -195,7 +194,7 @@ export class ObjectsApi extends ApiTopic {
         //When a server returns an ETag header, it includes the quotes around the actual hash value.
         //This is part of the HTTP specification (RFC 7232), which states that ETags should be
         //enclosed in double quotes.
-        const etag = res.headers.get("etag")?.replace(/^"(.*)"$/, "$1");
+        const etag = res.headers.get('etag')?.replace(/^"(.*)"$/, '$1');
 
         return {
             source: id,
@@ -206,20 +205,20 @@ export class ObjectsApi extends ApiTopic {
     }
 
     async create(
-        payload: CreateContentObjectPayload,
+        payload: ContentObjectWritePayload,
         options?: {
             collection_id?: string;
             processing_priority?: ContentObjectProcessingPriority;
         },
     ): Promise<ContentObject> {
+        const { content, ...payloadWithoutContent } = payload;
         const createPayload: CreateContentObjectPayload = {
-            ...payload,
+            ...payloadWithoutContent,
         };
-        if (
-            payload.content instanceof StreamSource ||
-            payload.content instanceof File
-        ) {
-            createPayload.content = await this.upload(payload.content);
+        if (content instanceof StreamSource || content instanceof File) {
+            createPayload.content = await this.upload(content);
+        } else {
+            createPayload.content = content;
         }
 
         const headers: Record<string, string> = {};
@@ -230,7 +229,7 @@ export class ObjectsApi extends ApiTopic {
             headers[ContentObjectApiHeaders.COLLECTION_ID] = options.collection_id;
         }
 
-        return await this.post("/", {
+        return await this.post('/', {
             payload: createPayload,
             headers: headers,
         });
@@ -253,9 +252,7 @@ export class ObjectsApi extends ApiTopic {
             processing_priority?: ContentObjectProcessingPriority;
         },
     ): Promise<ContentObject> {
-        const metadata = await this.client.files.getMetadata(
-            uri,
-        );
+        const metadata = await this.client.files.getMetadata(uri);
         const createPayload: CreateContentObjectPayload = {
             ...payload,
             content: {
@@ -274,7 +271,7 @@ export class ObjectsApi extends ApiTopic {
             headers[ContentObjectApiHeaders.COLLECTION_ID] = options.collection_id;
         }
 
-        return await this.post("/", {
+        return await this.post('/', {
             payload: createPayload,
             headers: headers,
         });
@@ -294,7 +291,7 @@ export class ObjectsApi extends ApiTopic {
      */
     async update(
         id: string,
-        payload: Partial<CreateContentObjectPayload>,
+        payload: Partial<ContentObjectWritePayload>,
         options?: {
             createRevision?: boolean;
             revisionLabel?: string;
@@ -304,16 +301,16 @@ export class ObjectsApi extends ApiTopic {
             ifMatch?: string;
         },
     ): Promise<ContentObject> {
+        const { content, ...payloadWithoutContent } = payload;
         const updatePayload: Partial<CreateContentObjectPayload> = {
-            ...payload,
+            ...payloadWithoutContent,
         };
 
         // Handle file upload if content is provided as File or StreamSource
-        if (
-            payload.content instanceof StreamSource ||
-            payload.content instanceof File
-        ) {
-            updatePayload.content = await this.upload(payload.content);
+        if (content instanceof StreamSource || content instanceof File) {
+            updatePayload.content = await this.upload(content);
+        } else {
+            updatePayload.content = content;
         }
 
         const headers: Record<string, string> = {};
@@ -324,13 +321,13 @@ export class ObjectsApi extends ApiTopic {
             headers[ContentObjectApiHeaders.PROCESSING_PRIORITY] = options.processing_priority;
         }
         if (options?.createRevision) {
-            headers[ContentObjectApiHeaders.CREATE_REVISION] = "true";
+            headers[ContentObjectApiHeaders.CREATE_REVISION] = 'true';
             if (options.revisionLabel) {
                 headers[ContentObjectApiHeaders.REVISION_LABEL] = options.revisionLabel;
             }
         }
         if (options?.suppressWorkflows) {
-            headers[ContentObjectApiHeaders.SUPPRESS_WORKFLOWS] = "true";
+            headers[ContentObjectApiHeaders.SUPPRESS_WORKFLOWS] = 'true';
         }
 
         return this.put(`/${id}`, {
@@ -366,13 +363,13 @@ export class ObjectsApi extends ApiTopic {
             return this.client.runOperation({
                 name: 'delete',
                 ids: idOrIds,
-                params: {}
+                params: {},
             }) as Promise<BulkObjectDeleteResult>;
         }
         return this.del(`/${idOrIds}`);
     }
 
-    bulkUpdate(updates: Record<string, Record<string, any>>): Promise<BulkObjectUpdateResult> {
+    bulkUpdate(updates: Record<string, Record<string, unknown>>): Promise<BulkObjectUpdateResult> {
         const ids = Object.keys(updates);
         return this.client.runOperation({
             name: 'update',
@@ -381,10 +378,13 @@ export class ObjectsApi extends ApiTopic {
         }) as Promise<BulkObjectUpdateResult>;
     }
 
-    bulkCreate(objects: CreateContentObjectPayload[], options?: {
-        collection_id?: string;
-        skip_workflows?: boolean;
-    }): Promise<BulkObjectCreateResult> {
+    bulkCreate(
+        objects: CreateContentObjectPayload[],
+        options?: {
+            collection_id?: string;
+            skip_workflows?: boolean;
+        },
+    ): Promise<BulkObjectCreateResult> {
         return this.client.runOperation({
             name: 'create',
             ids: [],
@@ -400,10 +400,7 @@ export class ObjectsApi extends ApiTopic {
         return this.get(`/${documentId}/renditions`);
     }
 
-    getRendition(
-        documentId: string,
-        options: GetRenditionParams,
-    ): Promise<GetRenditionResponse> {
+    getRendition(documentId: string, options: GetRenditionParams): Promise<GetRenditionResponse> {
         const query = {
             max_hw: options.max_hw,
             generate_if_missing: options.generate_if_missing,
@@ -445,19 +442,13 @@ export class ObjectsApi extends ApiTopic {
         return this.getRendition(documentId, options);
     }
 
-    exportProperties(
-        payload: ExportPropertiesPayload,
-    ): Promise<ExportPropertiesResponse> {
-        return this.post("/export", {
+    exportProperties(payload: ExportPropertiesPayload): Promise<ExportPropertiesResponse> {
+        return this.post('/export', {
             payload,
         });
     }
 
-    setEmbedding(
-        id: string,
-        type: SupportedEmbeddingTypes,
-        payload: Embedding,
-    ): Promise<SetObjectEmbeddingsResponse> {
+    setEmbedding(id: string, type: SupportedEmbeddingTypes, payload: Embedding): Promise<SetObjectEmbeddingsResponse> {
         return this.put(`/${id}/embeddings/${type}`, {
             payload,
         });

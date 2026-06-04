@@ -4,78 +4,84 @@
  * Access control interfaces
  */
 
-import { ProjectRoles } from "./project.js";
+import type { ProjectRoles } from './project.js';
 
 export enum Permission {
-    int_read = "interaction:read",
-    int_write = "interaction:write",
-    int_delete = "interaction:delete",
+    int_read = 'interaction:read',
+    int_write = 'interaction:write',
+    int_delete = 'interaction:delete',
 
-    int_execute = "interaction:execute",
-    run_read = "run:read",
-    run_write = "run:write",
+    int_execute = 'interaction:execute',
+    run_read = 'run:read',
+    run_write = 'run:write',
 
-    env_admin = "environment:admin",
+    env_admin = 'environment:admin',
 
-    project_admin = "project:admin",
-    project_integration_read = "project:integration_read",
-    project_settings_write = "project:settings_write",
+    project_admin = 'project:admin',
+    project_integration_read = 'project:integration_read',
+    project_settings_write = 'project:settings_write',
 
-    api_key_create = "api_key:create",
-    api_key_read = "api_key:read",
-    api_key_update = "api_key:update",
-    api_key_delete = "api_key:delete",
+    api_key_create = 'api_key:create',
+    api_key_read = 'api_key:read',
+    api_key_secret_read = 'api_key:secret_read',
+    api_key_update = 'api_key:update',
+    api_key_delete = 'api_key:delete',
 
-    account_read = "account:read",
-    account_write = "account:write",
-    account_admin = "account:admin",
-    manage_billing = "account:billing",
+    account_read = 'account:read',
+    account_write = 'account:write',
+    account_admin = 'account:admin',
+    manage_billing = 'account:billing',
     /** View cost and usage analytics */
-    billing_read = "billing:read",
-    account_member = "account:member",
+    billing_read = 'billing:read',
+    /** View account and project audit events. */
+    audit_read = 'audit:read',
+    account_member = 'account:member',
 
+    content_read = 'content:read',
+    content_read_all = 'content:read_all',
+    content_write = 'content:write',
+    content_delete = 'content:delete',
+    content_admin = 'content:admin', //manage schemas
+    content_superadmin = 'content:superadmin', // list all objects and collections
 
-    content_read = "content:read",
-    content_write = "content:write",
-    content_delete = "content:delete",
-    content_admin = "content:admin", //manage schemas
-    content_superadmin = "content:superadmin", // list all objects and collections
+    workflow_read = 'workflow:read',
+    workflow_run = 'workflow:run',
+    workflow_admin = 'workflow:admin',
+    workflow_superadmin = 'workflow:superadmin',
 
+    agent_run_read = 'agent_run:read',
 
-    workflow_run = "workflow:run",
-    workflow_admin = "workflow:admin",
-    workflow_superadmin = "workflow:superadmin",
+    task_read = 'task:read',
+    task_manage = 'task:manage',
 
-    iam_impersonate = "iam:impersonate",
+    iam_impersonate = 'iam:impersonate',
 
     /** whether the user has access to Sutdio App. */
-    studio_access = "studio:access",
+    studio_access = 'studio:access',
 }
 
 export enum AccessControlResourceType {
-    project = "project",
-    environment = "environment",
-    account = "account",
-    interaction = "interaction",
-    app = "application",
+    project = 'project',
+    environment = 'environment',
+    account = 'account',
+    interaction = 'interaction',
+    app = 'application',
     /** Dynamic resource matching by content properties at query time. */
-    content_set = "content_set",
+    content_set = 'content_set',
 }
 
 export enum AccessControlPrincipalType {
-    user = "user",
-    group = "group",
-    apikey = "apikey",
+    user = 'user',
+    group = 'group',
+    apikey = 'apikey',
     /** Dynamic principal matching by user/group properties at token time. */
-    principal_set = "principal_set",
+    principal_set = 'principal_set',
 }
-
-
 
 /**
  * MongoDB query syntax subset for matching properties.
  * Keys are property names, values are either direct match values or operator objects.
- * Supported operators: `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$exists`.
+ * Supported operators: `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$exists`, `$empty`, `$like`.
  *
  * In `resource_props`, values can reference principal properties using the `$principal.` prefix.
  * These are resolved at token time by substituting the user's merged property value.
@@ -87,8 +93,8 @@ export enum AccessControlPrincipalType {
  * { region: { $in: ["us-east", "eu-west"] } }               // set membership (literal)
  * { security_level: { $lte: "$principal.access_level" } }   // cross-reference (resolved at token time)
  */
-/** A single condition value: literal, or operator object (e.g. { $lte: 3 }) */
-export type PropertyConditionValue = string | number | boolean | Record<string, any>;
+/** A single condition value. Resolved and evaluated dynamically by token/content security code. */
+export type PropertyConditionValue = unknown;
 
 export type PropertyConditions = Record<string, PropertyConditionValue>;
 
@@ -123,12 +129,9 @@ export interface AccessControlEntry {
     id: string;
 }
 
-export interface ACECreatePayload extends
-    Omit<AccessControlEntry, "created_at" | "updated_at" | "id"> {
-}
+export interface ACECreatePayload extends Omit<AccessControlEntry, 'created_at' | 'updated_at' | 'id'> {}
 
-export interface ACEUpdatePayload extends Partial<ACECreatePayload> {
-}
+export interface ACEUpdatePayload extends Partial<ACECreatePayload> {}
 
 export interface RoleDefinition {
     name: ProjectRoles;
@@ -153,13 +156,7 @@ export enum SecurityLevel {
 }
 
 /** Human-readable labels for each security level, indexed by numeric value. */
-export const SecurityLevelLabels: readonly string[] = [
-    'Public',
-    'Internal',
-    'Confidential',
-    'Restricted',
-    'Secret',
-];
+export const SecurityLevelLabels: readonly string[] = ['Public', 'Internal', 'Confidential', 'Restricted', 'Secret'];
 
 /** Get the label for a security level value. Returns "Unknown" for out-of-range values. */
 export function getSecurityLevelLabel(level: number): string {
@@ -167,11 +164,9 @@ export function getSecurityLevelLabel(level: number): string {
 }
 
 export interface AcesQueryOptions {
-
-    level?: 'resource' | 'project' | 'projects' | 'account'
-    resource?: string
-    principal?: string
-    role?: string
-    type?: AccessControlResourceType
-
+    level?: 'resource' | 'project' | 'projects' | 'account';
+    resource?: string;
+    principal?: string;
+    role?: string;
+    type?: AccessControlResourceType;
 }

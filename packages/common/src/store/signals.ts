@@ -1,6 +1,6 @@
 export interface UserInputSignal {
     message: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     auth_token?: string;
     /**
      * Attachments to be processed as store objects.

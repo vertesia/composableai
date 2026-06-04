@@ -1,17 +1,17 @@
-import type { JSONObject } from "../json.js";
-import { WorkflowExecutionPayload, WorkflowRunStatus } from "./workflow.js";
+import type { JSONObject } from '../json.js';
+import type { WorkflowExecutionPayload, WorkflowRunStatus } from './workflow.js';
 
 export interface PdfToRichtextOptions {
     features?: string[];
     debug?: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
-export interface PdfToRichTextWorkflowPayload extends Omit<WorkflowExecutionPayload, "vars"> {
+export interface PdfToRichTextWorkflowPayload extends Omit<WorkflowExecutionPayload, 'vars'> {
     vars: PdfToRichtextOptions;
 }
 
-export interface TransformTablesWorkflowPayload extends Omit<WorkflowExecutionPayload, "vars"> {
+export interface TransformTablesWorkflowPayload extends Omit<WorkflowExecutionPayload, 'vars'> {
     vars: AdaptTablesParams;
     environment?: string;
 }
@@ -47,14 +47,14 @@ export interface DocTable {
     page_number?: number;
     table_number?: number;
     title?: string;
-    format: "application/csv" | "application/json";
+    format: 'application/csv' | 'application/json';
 }
 
 /**
  * Represents a table in a document that has been analyzed in CSV format
  */
 export interface DocTableCsv extends DocTable {
-    format: "application/csv";
+    format: 'application/csv';
     title?: string;
     data: string;
 }
@@ -63,15 +63,17 @@ export interface DocTableCsv extends DocTable {
  * Represents a table in a document that has been analyzed in JSON format
  */
 export interface DocTableJson extends DocTable {
-    format: "application/json";
+    format: 'application/json';
     title?: string;
     data: JSONObject[];
 }
 
+export type DocTableResponse = DocTableCsv | DocTableJson;
+
 /**
  * Output format for document processing workflows
  */
-export type DocProcessorOutputFormat = "xml" | "markdown";
+export type DocProcessorOutputFormat = 'xml' | 'markdown';
 
 /**
  * Represents a document analysis run status
@@ -84,7 +86,7 @@ export interface DocAnalyzeRunStatusResponse extends WorkflowRunStatus {
 
 export interface DocAnalyzerResultResponse {
     document?: string;
-    tables?: DocTableCsv[] | DocTableJson[];
+    tables?: DocTableResponse[];
     images?: DocImage[];
     annotated?: string | null;
 }
@@ -129,12 +131,12 @@ export interface AdaptTablesParams {
     /**
      * Format to return the data in (csv, json)
      */
-    format?: "csv" | "json";
+    format?: 'csv' | 'json';
 
     /**
      * Process the table as a whole or by page
      */
-    process_as?: "page" | "table";
+    process_as?: 'page' | 'table';
 
     /**
      * Process the table as a CSV file
@@ -163,12 +165,18 @@ export interface AdaptTablesRequest extends DocAnalyzerRequestBase, AdaptTablesP
  */
 export interface GetAdaptedTablesRequestQuery {
     raw?: boolean;
-    format: "csv" | "json";
+    format: 'csv' | 'json';
 }
 /**
  * The adapted table result format
  */
 export interface AdaptedTable {
     comment?: string;
-    data: Record<string, any>[];
+    data: Record<string, unknown>[];
+}
+
+export type AdaptedTableResponse = Record<string, AdaptedTable>;
+
+export interface AnnotatedPdfResponse {
+    url: string | null;
 }

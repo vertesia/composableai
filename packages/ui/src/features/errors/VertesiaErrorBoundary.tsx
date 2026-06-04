@@ -1,9 +1,9 @@
-import { ReactNode, ComponentType } from "react"
-import { ErrorBoundary } from "react-error-boundary";
+import type { ComponentType, ReactNode } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 
 export interface ErrorFallbackComponentProps {
-    error: any;
-    resetErrorBoundary: (...args: any[]) => void;
+    error: unknown;
+    resetErrorBoundary: (...args: unknown[]) => void;
 }
 export type ErrorBoundaryProps = {
     children: ReactNode;
@@ -11,10 +11,11 @@ export type ErrorBoundaryProps = {
 };
 
 export function VertesiaErrorBoundary({ children, fallback }: ErrorBoundaryProps) {
-    if (ErrorBoundaryInstance) { // custom error boundary?
-        return <ErrorBoundaryInstance fallback={fallback}>{children}</ErrorBoundaryInstance>
+    if (ErrorBoundaryInstance) {
+        // custom error boundary?
+        return <ErrorBoundaryInstance fallback={fallback}>{children}</ErrorBoundaryInstance>;
     } else {
-        return <ErrorBoundary FallbackComponent={fallback}>{children}</ErrorBoundary>
+        return <ErrorBoundary FallbackComponent={fallback}>{children}</ErrorBoundary>;
     }
 }
 

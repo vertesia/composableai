@@ -1,4 +1,16 @@
-export type TsPropType = "string" | "number" | "boolean" | "record" | "object" | "array" | "enum" | "literal" | "union" | "promise" | "any" | "void";
+export type TsPropType =
+    | 'string'
+    | 'number'
+    | 'boolean'
+    | 'record'
+    | 'object'
+    | 'array'
+    | 'enum'
+    | 'literal'
+    | 'union'
+    | 'promise'
+    | 'any'
+    | 'void';
 
 // generic types are replaced by "any"
 export interface ActivityTypeDefinition {

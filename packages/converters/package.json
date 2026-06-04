@@ -10,7 +10,9 @@
     ],
     "license": "Apache-2.0",
     "scripts": {
+        "lint": "biome lint src",
         "test": "vitest run",
+        "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
         "build": "pnpm exec tsmod build --esm",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
@@ -24,11 +26,11 @@
     "devDependencies": {
         "@types/tmp": "^0.2.6",
         "ts-dual-module": "^0.6.3",
-        "typescript": "^6.0.2",
+        "typescript": "^6.0.3",
         "vitest": "^4.0.16"
     },
     "dependencies": {
-        "sharp": "^0.33.5",
+        "sharp": "^0.34.5",
         "tmp": "^0.2.5"
     },
     "repository": {

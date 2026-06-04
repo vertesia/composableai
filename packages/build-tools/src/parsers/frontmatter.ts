@@ -6,7 +6,7 @@ import matter from 'gray-matter';
 
 export interface FrontmatterResult {
     /** Parsed frontmatter data */
-    frontmatter: Record<string, any>;
+    frontmatter: Record<string, unknown>;
 
     /** Content without frontmatter */
     content: string;
@@ -27,6 +27,6 @@ export function parseFrontmatter(content: string): FrontmatterResult {
     return {
         frontmatter: result.data,
         content: result.content,
-        original: content
+        original: content,
     };
 }

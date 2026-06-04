@@ -1,14 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { FixLinks } from "./FixLinks";
-import { PathMatch } from "./PathMatcher";
-import { createRoute404 } from "./Route404";
-import { RouteComponent } from "./RouteComponent";
-import { NestedRouter, ReactRouterContext, Route, useRouterContext } from "./Router";
-import { NavigateOptions } from "./HistoryNavigator";
-
+import type React from 'react';
+import { useMemo, useRef } from 'react';
+import { FixLinks } from './FixLinks';
+import type { NavigateOptions } from './HistoryNavigator';
+import { createRoute404 } from './Route404';
+import { RouteComponent } from './RouteComponent';
+import { NestedRouter, ReactRouterContext, type Route, useRouterContext } from './Router';
 
 interface RouterProviderProps {
-    routes: Route[],
+    routes: Route[];
     /**
      * The path to use for the root resource. Defaults to '/'. Cannot contains path variables or wildcards
      */
@@ -18,49 +17,56 @@ interface RouterProviderProps {
 }
 export function NestedRouterProvider({ routes, index, children, fixLinks = false }: RouterProviderProps) {
     const ctx = useRouterContext();
-    const [nestedRouteMatch, setNestedRouteMatch] = useState<PathMatch<Route> | undefined>(undefined);
+    // Capture basePath once at mount. When the parent router switches to a different
+    // top-level route (e.g. /store -> /studio), the lazy loader briefly keeps rendering
+    // this (now-stale) module with a new ctx. Keeping basePath stable lets the
+    // ctx.matchedRoutePath !== nestedRouter.basePath check below detect the mismatch and
+    // skip rendering instead of running match() against the wrong route table.
+    const basePathRef = useRef(ctx.matchedRoutePath);
     const nestedRouter = useMemo(() => {
         if (typeof window === 'undefined') return null;
-        const basePath = ctx.matchedRoutePath;
-        const nestedRouter = new NestedRouter(ctx.router, basePath, routes);
+        const nestedRouter = new NestedRouter(ctx.router, basePathRef.current, routes);
         nestedRouter.index = index;
         return nestedRouter;
-    }, []);
+    }, [ctx.router, index, routes]);
 
-
-    useEffect(() => {
-        if (nestedRouter) {
-            if (ctx.matchedRoutePath !== nestedRouter.basePath) {
-                // the change doesn't belong to this nested router
-                // it should be handled by the top level router which will change the page or the nested router
-                return;
-            }
-            const route = nestedRouter.match(ctx.remainingPath || '/') || createRoute404();
-            setNestedRouteMatch(route);
+    const nestedRouteMatch = useMemo(() => {
+        if (!nestedRouter) {
+            return undefined;
         }
-    }, [nestedRouter, ctx.remainingPath]);
+        if (ctx.matchedRoutePath !== nestedRouter.basePath) {
+            // The change belongs to another router level and will be handled there.
+            return undefined;
+        }
+        return nestedRouter.match(ctx.remainingPath || '/') || createRoute404();
+    }, [ctx.matchedRoutePath, ctx.remainingPath, nestedRouter]);
 
+    const wrapWithFixLinks = fixLinks
+        ? (elem: React.ReactNode) => <FixLinks basePath={ctx.matchedRoutePath}>{elem}</FixLinks>
+        : (elem: React.ReactNode) => elem;
 
-    const wrapWithFixLinks = fixLinks ?
-        (elem: any) => <FixLinks basePath={ctx.matchedRoutePath}>{elem}</FixLinks>
-        : (elem: any) => elem;
-
-    return nestedRouteMatch && (
-        <ReactRouterContext.Provider value={{
-            ...ctx,
-            router: nestedRouter!,
-            route: nestedRouteMatch.value,
-            params: nestedRouteMatch.params,
-            matchedRoutePath: '/' + nestedRouteMatch.matchedSegments.join('/'),
-            remainingPath: nestedRouteMatch.remainingSegments ? '/' + nestedRouteMatch.remainingSegments.join('/') : undefined,
-            navigate: (to: string, options?: NavigateOptions) => {
-                if (nestedRouter) {
-                    return nestedRouter.navigate(to, options);
-                }
-            }
-
-        }}>
-            {wrapWithFixLinks(children ? children : <RouteComponent />)}
-        </ReactRouterContext.Provider>
-    )
+    return (
+        nestedRouteMatch && (
+            <ReactRouterContext.Provider
+                value={{
+                    ...ctx,
+                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
+                    router: nestedRouter!,
+                    route: nestedRouteMatch.value,
+                    params: nestedRouteMatch.params,
+                    matchedRoutePath: `/${nestedRouteMatch.matchedSegments.join('/')}`,
+                    remainingPath: nestedRouteMatch.remainingSegments
+                        ? `/${nestedRouteMatch.remainingSegments.join('/')}`
+                        : undefined,
+                    navigate: (to: string, options?: NavigateOptions) => {
+                        if (nestedRouter) {
+                            return nestedRouter.navigate(to, options);
+                        }
+                    },
+                }}
+            >
+                {wrapWithFixLinks(children ? children : <RouteComponent />)}
+            </ReactRouterContext.Provider>
+        )
+    );
 }

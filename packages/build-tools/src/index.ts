@@ -18,40 +18,43 @@
  * ```
  */
 
+// Utilities
+export { type FrontmatterResult, parseFrontmatter } from './parsers/frontmatter.js';
 // Core plugin
 export { vertesiaImportPlugin } from './plugin.js';
 
-// Types
-export type {
-    PluginConfig,
-    TransformerRule,
-    TransformerPreset,
-    TransformFunction,
-    TransformResult,
-    AssetFile,
-    WidgetConfig
-} from './types.js';
-
 // Presets
 export {
-    skillTransformer,
-    rawTransformer,
-    skillCollectionTransformer,
-    templateTransformer,
-    templateCollectionTransformer,
+    type PromptContentType,
+    type PromptDefinition,
+    PromptDefinitionSchema,
+    PromptRole,
     promptTransformer,
+    type RenderingTemplateDefinition,
+    RenderingTemplateDefinitionSchema,
+    rawTransformer,
+    type SkillContentType,
+    type SkillDefinition,
     SkillDefinitionSchema,
     SkillPropertiesSchema,
-    RenderingTemplateDefinitionSchema,
-    PromptDefinitionSchema,
-    type SkillDefinition,
-    type SkillContentType,
-    type RenderingTemplateDefinition,
-    type PromptDefinition,
-    type PromptContentType,
-    PromptRole,
-    TemplateType
+    skillCollectionTransformer,
+    skillTransformer,
+    TemplateType,
+    templateCollectionTransformer,
+    templateTransformer,
 } from './presets/index.js';
-
-// Utilities
-export { parseFrontmatter, type FrontmatterResult } from './parsers/frontmatter.js';
+// Types
+export type {
+    AssetFile,
+    PluginConfig,
+    TransformerPreset,
+    TransformerRule,
+    TransformFunction,
+    TransformResult,
+    WidgetConfig,
+} from './types.js';
+export {
+    createRollupTypescript,
+    isRollupWatchMode,
+    type RollupTypescriptOptions,
+} from './utils/rollup-typescript.js';

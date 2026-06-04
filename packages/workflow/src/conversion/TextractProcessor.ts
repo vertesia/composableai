@@ -1,11 +1,7 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import type { Block } from "@aws-sdk/client-textract";
-import {
-    GetDocumentAnalysisCommand,
-    StartDocumentAnalysisCommand,
-    TextractClient
-} from "@aws-sdk/client-textract";
-import type { AwsCredentialIdentityProvider } from "@smithy/types";
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import type { Block } from '@aws-sdk/client-textract';
+import { GetDocumentAnalysisCommand, StartDocumentAnalysisCommand, TextractClient } from '@aws-sdk/client-textract';
+import type { AwsCredentialIdentityProvider } from '@smithy/types';
 import Papa from 'papaparse';
 
 interface BlocksMap {
@@ -33,7 +29,7 @@ interface TextractProcessorOptions {
     region: string;
     bucket: string;
     credentials?: AwsCredentialIdentityProvider;
-    log?: any;
+    log?: TextractLogger;
     detectImages?: boolean;
     /**
      * NEW: If true, includes cell-confidence information in the table CSV
@@ -41,12 +37,16 @@ interface TextractProcessorOptions {
     includeConfidenceInTables?: boolean;
 }
 
+interface TextractLogger {
+    info(message: string, metadata?: Record<string, unknown>): void;
+}
+
 export class TextractProcessor {
     private textractClient: TextractClient;
     private s3Client: S3Client;
     private fileKey: string;
     private bucket: string;
-    private log: any;
+    private log?: TextractLogger;
     private detectImages: boolean;
     /**
      * Whether or not to include confidence values in CSV output for tables.
@@ -60,7 +60,7 @@ export class TextractProcessor {
         credentials,
         log,
         detectImages = false,
-        includeConfidenceInTables = false  // NEW default = false
+        includeConfidenceInTables = false, // NEW default = false
     }: TextractProcessorOptions) {
         this.fileKey = fileKey;
         this.bucket = bucket;
@@ -70,11 +70,11 @@ export class TextractProcessor {
 
         this.textractClient = new TextractClient({
             region,
-            credentials
+            credentials,
         });
         this.s3Client = new S3Client({
             region,
-            credentials
+            credentials,
         });
     }
 
@@ -88,17 +88,13 @@ export class TextractProcessor {
                         if (word.BlockType === 'WORD') {
                             const wordText = word.Text || '';
                             // Example logic to quote numeric text with commas
-                            if (wordText.includes(',') &&
-                                wordText.replace(',', '').match(/^\d+$/)) {
+                            if (wordText.includes(',') && wordText.replace(',', '').match(/^\d+$/)) {
                                 text += `"${wordText}" `;
                             } else {
                                 text += `${wordText} `;
                             }
                         }
-                        if (
-                            word.BlockType === 'SELECTION_ELEMENT' &&
-                            word.SelectionStatus === 'SELECTED'
-                        ) {
+                        if (word.BlockType === 'SELECTION_ELEMENT' && word.SelectionStatus === 'SELECTED') {
                             text += 'X ';
                         }
                     }
@@ -140,6 +136,7 @@ export class TextractProcessor {
                                 for (const cellRel of cell.Relationships) {
                                     if (
                                         cellRel.Type === 'CHILD' &&
+                                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                                         cellRel.Ids?.includes(wordBlock.Id!)
                                     ) {
                                         return true;
@@ -159,15 +156,15 @@ export class TextractProcessor {
      */
     private getRowsColumnsMap(
         tableResult: Block,
-        blocksMap: BlocksMap
+        blocksMap: BlocksMap,
     ): {
         rows: Array<Array<{ text: string; confidence: number }>>;
     } {
         const rows: Array<Array<{ text: string; confidence: number }>> = [];
 
-        tableResult.Relationships?.forEach(relationship => {
+        tableResult.Relationships?.forEach((relationship) => {
             if (relationship.Type === 'CHILD') {
-                relationship.Ids?.forEach(childId => {
+                relationship.Ids?.forEach((childId) => {
                     const cell = blocksMap[childId];
                     if (cell.BlockType === 'CELL') {
                         const rowIndex = cell.RowIndex || 1;
@@ -200,7 +197,7 @@ export class TextractProcessor {
         tableResult: Block,
         blocksMap: BlocksMap,
         _tableIndex: number,
-        _pageNumber: number
+        _pageNumber: number,
     ): { csv: string; tableConfidence: number } {
         const { rows } = this.getRowsColumnsMap(tableResult, blocksMap);
 
@@ -222,7 +219,7 @@ export class TextractProcessor {
         }
 
         // Compute average confidence (or any other method you prefer)
-        const tableConfidence = cellCount > 0 ? (totalConfidence / cellCount) : 0;
+        const tableConfidence = cellCount > 0 ? totalConfidence / cellCount : 0;
 
         // Convert to CSV
         const csv = Papa.unparse(csvData, {
@@ -232,14 +229,14 @@ export class TextractProcessor {
             escapeChar: '"',
             header: false,
             newline: '\n',
-            skipEmptyLines: false
+            skipEmptyLines: false,
         });
 
         return { csv, tableConfidence };
     }
 
     async upload(fileBuf: Buffer): Promise<void> {
-        this.log.info('Uploading file to S3', { fileKey: this.fileKey });
+        this.log?.info('Uploading file to S3', { fileKey: this.fileKey });
         const command = new PutObjectCommand({
             Bucket: this.bucket,
             Key: this.fileKey,
@@ -253,18 +250,20 @@ export class TextractProcessor {
             DocumentLocation: {
                 S3Object: {
                     Bucket: this.bucket,
-                    Name: s3Key
-                }
+                    Name: s3Key,
+                },
             },
-            FeatureTypes: ["TABLES"]
+            FeatureTypes: ['TABLES'],
         });
         const response = await this.textractClient.send(command);
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         return response.JobId!;
     }
 
     async checkJobStatus(jobId: string): Promise<string> {
         const command = new GetDocumentAnalysisCommand({ JobId: jobId });
         const response = await this.textractClient.send(command);
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         return response.JobStatus!;
     }
 
@@ -297,9 +296,9 @@ export class TextractProcessor {
 
     private isLikelyHeader(block: Block, prevBlock: Block | null): boolean {
         if (!prevBlock) return true;
-        const gap = (block.Geometry?.BoundingBox?.Top || 0) -
-            ((prevBlock.Geometry?.BoundingBox?.Top || 0) +
-                (prevBlock.Geometry?.BoundingBox?.Height || 0));
+        const gap =
+            (block.Geometry?.BoundingBox?.Top || 0) -
+            ((prevBlock.Geometry?.BoundingBox?.Top || 0) + (prevBlock.Geometry?.BoundingBox?.Height || 0));
         return gap > 0.03;
     }
 
@@ -315,8 +314,7 @@ export class TextractProcessor {
     }
 
     private shouldMergeLines(prev: Block, current: Block): boolean {
-        const prevBottom = (prev.Geometry?.BoundingBox?.Top || 0)
-            + (prev.Geometry?.BoundingBox?.Height || 0);
+        const prevBottom = (prev.Geometry?.BoundingBox?.Top || 0) + (prev.Geometry?.BoundingBox?.Height || 0);
         const currentTop = current.Geometry?.BoundingBox?.Top || 0;
         const gap = currentTop - prevBottom;
 
@@ -330,44 +328,45 @@ export class TextractProcessor {
     async processResults(jobId: string): Promise<string> {
         let nextToken: string | undefined;
         let allBlocks: Block[] = [];
-    
+
         do {
             const command = new GetDocumentAnalysisCommand({
                 JobId: jobId,
-                NextToken: nextToken
+                NextToken: nextToken,
             });
             const response = await this.textractClient.send(command);
             allBlocks = allBlocks.concat(response.Blocks || []);
             nextToken = response.NextToken;
         } while (nextToken);
-    
+
         // Create blocks map
         const blocksMap: BlocksMap = {};
         for (const block of allBlocks) {
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             blocksMap[block.Id!] = block;
         }
-    
+
         // We'll store each page's content in sequence
         const pageContents: PageContent[] = [];
         let currentPage: PageContent | null = null;
-    
+
         // We'll keep track of a "current text block" that we're building
-        let currentTextContent = "";
+        let currentTextContent = '';
         let prevLineBlock: Block | null = null;
-    
+
         // Sort by page and vertical position
         allBlocks.sort((a, b) => {
             if (a.Page !== b.Page) return (a.Page || 0) - (b.Page || 0);
             return (a.Geometry?.BoundingBox?.Top || 0) - (b.Geometry?.BoundingBox?.Top || 0);
         });
-    
+
         for (const block of allBlocks) {
             if (block.BlockType === 'PAGE') {
                 // If we were building a text block, push it before starting a new page
                 if (currentTextContent.trim().length > 0 && currentPage) {
                     currentPage.blocks.push({
                         type: 'text',
-                        content: currentTextContent
+                        content: currentTextContent,
                     });
                 }
                 if (currentPage) {
@@ -375,32 +374,31 @@ export class TextractProcessor {
                 }
                 currentPage = {
                     pageNumber: block.Page || 0,
-                    blocks: []
+                    blocks: [],
                 };
-                currentTextContent = "";
+                currentTextContent = '';
                 prevLineBlock = null;
-            }
-            else if (currentPage && block.Page === currentPage.pageNumber) {
+            } else if (currentPage && block.Page === currentPage.pageNumber) {
                 // TABLE handling
                 if (block.BlockType === 'TABLE') {
                     // If there's a pending text block, push it first
                     if (currentTextContent.trim().length > 0) {
                         currentPage.blocks.push({
                             type: 'text',
-                            content: currentTextContent
+                            content: currentTextContent,
                         });
-                        currentTextContent = "";
+                        currentTextContent = '';
                     }
                     const { csv, tableConfidence } = this.generateTableCSV(
                         block,
                         blocksMap,
-                        currentPage.blocks.filter(b => b.type === 'table').length + 1,
-                        currentPage.pageNumber
+                        currentPage.blocks.filter((b) => b.type === 'table').length + 1,
+                        currentPage.pageNumber,
                     );
                     currentPage.blocks.push({
                         type: 'table',
                         content: csv,
-                        confidence: tableConfidence
+                        confidence: tableConfidence,
                     });
                     prevLineBlock = null;
                 }
@@ -411,18 +409,18 @@ export class TextractProcessor {
                         // just append the text. We'll call formatTextBlock to get
                         // indentation/header logic, but we won't add a leading newline.
                         const formatted = this.formatTextBlock(block, prevLineBlock);
-    
+
                         // formatTextBlock might include a leading newline if isLikelyHeader = true
                         // so you can strip it out if you want them truly "merged" into one paragraph:
-                        const mergedText = formatted.replace(/^\s*\n/, " ");
-    
-                        currentTextContent += " " + mergedText.trim();
+                        const mergedText = formatted.replace(/^\s*\n/, ' ');
+
+                        currentTextContent += ` ${mergedText.trim()}`;
                     } else {
                         // If there's an existing text block, push it
                         if (currentTextContent.trim().length > 0) {
                             currentPage.blocks.push({
                                 type: 'text',
-                                content: currentTextContent
+                                content: currentTextContent,
                             });
                         }
                         // Start a new text block
@@ -433,25 +431,25 @@ export class TextractProcessor {
                 // IMAGES (if detectImages)
                 else if (this.detectImages) {
                     const geometry = block.Geometry?.BoundingBox;
-                    if (geometry && geometry.Width && geometry.Height) {
+                    if (geometry?.Width && geometry.Height) {
                         const imagePlaceholder = this.getImagePlaceholder(block);
                         if (imagePlaceholder) {
                             // If there's a pending text block, push it first
                             if (currentTextContent.trim().length > 0) {
                                 currentPage.blocks.push({
                                     type: 'text',
-                                    content: currentTextContent
+                                    content: currentTextContent,
                                 });
-                                currentTextContent = "";
+                                currentTextContent = '';
                             }
-    
+
                             currentPage.blocks.push({
                                 type: 'image',
                                 content: imagePlaceholder,
                                 left: geometry.Left,
                                 top: geometry.Top,
                                 width: geometry.Width,
-                                height: geometry.Height
+                                height: geometry.Height,
                             });
                         }
                     }
@@ -459,18 +457,18 @@ export class TextractProcessor {
                 }
             }
         }
-    
+
         // Handle last page
         if (currentPage) {
             if (currentTextContent.trim().length > 0) {
                 currentPage.blocks.push({
                     type: 'text',
-                    content: currentTextContent
+                    content: currentTextContent,
                 });
             }
             pageContents.push(currentPage);
         }
-    
+
         // Build final output
         let fullText = '';
         let imgNumber = 1;
@@ -481,9 +479,10 @@ export class TextractProcessor {
                 if (block.type === 'text') {
                     fullText += `<text>\n${block.content}\n</text>\n\n`;
                 } else if (block.type === 'table') {
-                    const confidenceAttr = block.confidence !== undefined && this.includeConfidenceInTables
-                        ? ` confidence="${block.confidence.toFixed(2)}"`
-                        : '';
+                    const confidenceAttr =
+                        block.confidence !== undefined && this.includeConfidenceInTables
+                            ? ` confidence="${block.confidence.toFixed(2)}"`
+                            : '';
                     fullText += `<table number=${tableNumber++} type="csv" ${confidenceAttr}>\n`;
                     fullText += `${block.content}\n`;
                     fullText += `</table>\n\n`;
@@ -493,14 +492,13 @@ export class TextractProcessor {
                     const topAttr = block.top ? ` top="${block.top.toFixed(4)}"` : '';
                     const widthAttr = block.width ? ` width="${block.width.toFixed(4)}"` : '';
                     const heightAttr = block.height ? ` height="${block.height.toFixed(4)}"` : '';
-    
+
                     fullText += `<image id="${imgNumber++}" ${leftAttr}${topAttr}${widthAttr}${heightAttr}>\n${block.content.trim()}\n</image>\n\n`;
                 }
             }
             fullText += `</page>\n\n`;
         }
-    
+
         return fullText;
     }
-    
 }

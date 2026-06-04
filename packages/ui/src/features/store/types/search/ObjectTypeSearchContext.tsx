@@ -1,11 +1,10 @@
-import { ContentObjectTypeItem, ObjectTypeSearchQuery } from "@vertesia/common";
-import { VertesiaClient, ZenoClient } from "@vertesia/client";
-import { SharedState, useWatchSharedState } from "@vertesia/ui/core";
-import { createContext, useContext } from "react";
-
+import type { VertesiaClient, ZenoClient } from '@vertesia/client';
+import type { ContentObjectTypeItem, ObjectTypeSearchQuery } from '@vertesia/common';
+import { SharedState, useWatchSharedState } from '@vertesia/ui/core';
+import { createContext, useContext } from 'react';
 
 interface ObjectTypeSearchResult {
-    objects: ContentObjectTypeItem[],
+    objects: ContentObjectTypeItem[];
     error?: Error;
     isLoading: boolean;
 }
@@ -15,7 +14,10 @@ export class ObjectTypeSearch {
 
     query: ObjectTypeSearchQuery = {};
 
-    constructor(public client: VertesiaClient | ZenoClient, public limit = 100) { }
+    constructor(
+        public client: VertesiaClient | ZenoClient,
+        public limit = 100,
+    ) {}
 
     get objects() {
         return this.result.value.objects;
@@ -30,18 +32,18 @@ export class ObjectTypeSearch {
     }
 
     getFilterValue(name: string) {
-        return (this.query as any)[name];
+        return (this.query as Record<string, unknown>)[name];
     }
 
-    setFilterValue(name: string, value: any) {
-        (this.query as any)[name] = value;
-        this.search();
+    setFilterValue(name: string, value: unknown) {
+        (this.query as Record<string, unknown>)[name] = value;
+        void this.search();
     }
 
     reset(isLoading = false) {
         this.result.value = {
             objects: [],
-            isLoading
+            isLoading,
         };
     }
 
@@ -50,8 +52,8 @@ export class ObjectTypeSearch {
         this.result.value = {
             objects: prev.objects,
             isLoading: value,
-            error: prev.error
-        }
+            error: prev.error,
+        };
     }
 
     async _search(loadMore = false) {
@@ -61,27 +63,30 @@ export class ObjectTypeSearch {
         this.result.value = {
             isLoading: true,
             objects: loadMore ? this.objects : [],
-        }
+        };
         const limit = this.limit;
         const offset = this.objects.length;
-        return this.client.types.list({
-            limit,
-            offset,
-            query: this.query
-        }).then(async (result) => {
-            this.result.value = {
-                isLoading: false,
-                objects: this.objects.concat(result)
-            }
-            return true;
-        }).catch((err) => {
-            this.result.value = {
-                error: err,
-                isLoading: false,
-                objects: this.objects
-            }
-            throw err;
-        })
+        return this.client.types
+            .list({
+                limit,
+                offset,
+                query: this.query,
+            })
+            .then(async (result) => {
+                this.result.value = {
+                    isLoading: false,
+                    objects: this.objects.concat(result),
+                };
+                return true;
+            })
+            .catch((err) => {
+                this.result.value = {
+                    error: err,
+                    isLoading: false,
+                    objects: this.objects,
+                };
+                throw err;
+            });
     }
 
     search() {
@@ -102,6 +107,7 @@ export class ObjectTypeSearch {
 const ObjectTypeSearchContext = createContext<ObjectTypeSearch | undefined>(undefined);
 
 export function useSearch() {
+    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
     return useContext(ObjectTypeSearchContext)!;
 }
 

@@ -1,8 +1,8 @@
-import React from "react";
-import { Button } from "@vertesia/ui/core";
-import { useUITranslation } from "@vertesia/ui/i18n";
-import { MarkdownRenderer } from "@vertesia/ui/widgets";
-import { MessageSquare, CheckCircle, XCircle, AlertCircle, HelpCircle, Send } from "lucide-react";
+import { Button } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { AlertCircle, CheckCircle, HelpCircle, MessageSquare, Send, XCircle } from 'lucide-react';
+import React from 'react';
+import { MarkdownRenderer } from '../../../widgets/markdown/MarkdownRenderer';
 
 /** Option for user to select */
 export interface AskUserOption {
@@ -37,7 +37,7 @@ export interface AskUserWidgetProps {
     /** Custom icon to display */
     icon?: React.ReactNode;
     /** Variant for styling */
-    variant?: "default" | "warning" | "info" | "success";
+    variant?: 'default' | 'warning' | 'info' | 'success';
     /** Hide the default icon */
     hideIcon?: boolean;
     /** Hide the border */
@@ -70,24 +70,24 @@ export interface AskUserWidgetProps {
 
 const VARIANT_STYLES = {
     default: {
-        border: "border-l-attention",
-        bg: "bg-amber-50 dark:bg-amber-900/20",
-        icon: "text-attention",
+        border: 'border-s-attention',
+        bg: 'bg-amber-50 dark:bg-amber-900/20',
+        icon: 'text-attention',
     },
     warning: {
-        border: "border-l-destructive",
-        bg: "bg-red-50 dark:bg-red-900/20",
-        icon: "text-destructive",
+        border: 'border-s-destructive',
+        bg: 'bg-red-50 dark:bg-red-900/20',
+        icon: 'text-destructive',
     },
     info: {
-        border: "border-l-info",
-        bg: "bg-blue-50 dark:bg-blue-900/20",
-        icon: "text-info",
+        border: 'border-s-info',
+        bg: 'bg-blue-50 dark:bg-blue-900/20',
+        icon: 'text-info',
     },
     success: {
-        border: "border-l-success",
-        bg: "bg-green-50 dark:bg-green-900/20",
-        icon: "text-success",
+        border: 'border-s-success',
+        bg: 'bg-green-50 dark:bg-green-900/20',
+        icon: 'text-success',
     },
 };
 
@@ -116,7 +116,7 @@ export function AskUserWidget({
     placeholder,
     isLoading = false,
     icon,
-    variant = "default",
+    variant = 'default',
     hideIcon = false,
     hideBorder = false,
     // Styling props
@@ -134,7 +134,7 @@ export function AskUserWidget({
 }: AskUserWidgetProps) {
     const { t } = useUITranslation();
     const resolvedPlaceholder = placeholder ?? t('agent.typeYourResponse');
-    const [inputValue, setInputValue] = React.useState("");
+    const [inputValue, setInputValue] = React.useState('');
     const [selectedOptions, setSelectedOptions] = React.useState<Set<string>>(new Set());
     const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -163,38 +163,40 @@ export function AskUserWidget({
     const handleSubmit = () => {
         if (inputValue.trim() && onSubmit) {
             onSubmit(inputValue.trim());
-            setInputValue("");
+            setInputValue('');
         }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter" && !e.shiftKey) {
+        if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSubmit();
         }
     };
 
-    const borderClass = hideBorder ? "" : `border-l-4 ${styles.border}`;
+    const borderClass = hideBorder ? '' : `border-s-4 ${styles.border}`;
 
     return (
-        <div className={`my-4 font-sans ${className || ""}`}>
-            <div
-                className={`${borderClass} ${styles.bg} rounded-r-lg shadow-sm ${cardClassName || ""}`}
-            >
+        <div className={`my-4 font-sans ${className || ''}`}>
+            <div className={`${borderClass} ${styles.bg} rounded-e-lg shadow-sm ${cardClassName || ''}`}>
                 {/* Header with icon and question */}
-                <div className={`px-4 py-3 ${headerClassName || ""}`}>
+                <div className={`px-4 py-3 ${headerClassName || ''}`}>
                     <div className="flex items-start gap-3">
                         {!hideIcon && (
-                            <div className={`flex-shrink-0 mt-0.5 ${styles.icon} ${iconClassName || ""}`}>
+                            <div className={`flex-shrink-0 mt-0.5 ${styles.icon} ${iconClassName || ''}`}>
                                 {icon || <DefaultIcon className="size-5" />}
                             </div>
                         )}
                         <div className="flex-1 min-w-0">
-                            <div className={`prose prose-sm dark:prose-invert max-w-none text-gray-900 dark:text-gray-100 ${questionClassName || ""}`}>
+                            <div
+                                className={`prose prose-sm dark:prose-invert max-w-none text-gray-900 dark:text-gray-100 ${questionClassName || ''}`}
+                            >
                                 <MarkdownRenderer>{question}</MarkdownRenderer>
                             </div>
                             {description && (
-                                <p className={`mt-1 text-sm text-gray-600 dark:text-gray-400 ${descriptionClassName || ""}`}>
+                                <p
+                                    className={`mt-1 text-sm text-gray-600 dark:text-gray-400 ${descriptionClassName || ''}`}
+                                >
                                     {description}
                                 </p>
                             )}
@@ -204,7 +206,7 @@ export function AskUserWidget({
 
                 {/* Options */}
                 {options && options.length > 0 && (
-                    <div className={`px-4 pb-3 pt-1 ${optionsClassName || ""}`}>
+                    <div className={`px-4 pb-3 pt-1 ${optionsClassName || ''}`}>
                         {multiSelect ? (
                             /* Multi-select mode with checkboxes */
                             <div className="space-y-2">
@@ -212,11 +214,12 @@ export function AskUserWidget({
                                     <label
                                         key={option.id}
                                         className={`flex items-start gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors
-                                            ${selectedOptions.has(option.id)
-                                                ? "bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700"
-                                                : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            ${
+                                                selectedOptions.has(option.id)
+                                                    ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700'
+                                                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
                                             }
-                                            ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                                            ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         <input
                                             type="checkbox"
@@ -246,7 +249,9 @@ export function AskUserWidget({
                                         className="flex items-center gap-2"
                                     >
                                         <Send className="size-4" />
-                                        {selectedOptions.size > 0 ? t('agent.submitSelectionCount', { count: selectedOptions.size }) : t('agent.submitSelection')}
+                                        {selectedOptions.size > 0
+                                            ? t('agent.submitSelectionCount', { count: selectedOptions.size })
+                                            : t('agent.submitSelection')}
                                     </Button>
                                 </div>
                             </div>
@@ -254,17 +259,18 @@ export function AskUserWidget({
                             /* Single-select mode - always use full-width card layout for clarity */
                             <div className="flex flex-col gap-2 w-full">
                                 {options.map((option) => (
-                                    <button
+                                    <Button
+                                        variant="unstyled"
                                         key={option.id}
                                         onClick={() => onSelect?.(option.id)}
                                         disabled={isLoading}
-                                        className={`w-full h-auto whitespace-normal text-left px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700
+                                        className={`w-full h-auto whitespace-normal text-start px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700
                                             bg-white dark:bg-gray-800
                                             hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600
                                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
                                             transition-colors
-                                            ${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-                                            ${buttonClassName || ""}`}
+                                            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                                            ${buttonClassName || ''}`}
                                     >
                                         <div className="flex items-start gap-3">
                                             {option.icon && (
@@ -283,7 +289,7 @@ export function AskUserWidget({
                                                 )}
                                             </div>
                                         </div>
-                                    </button>
+                                    </Button>
                                 ))}
                             </div>
                         )}
@@ -292,7 +298,7 @@ export function AskUserWidget({
 
                 {/* Free-form input */}
                 {allowFreeResponse && (
-                    <div className={`px-4 pb-3 pt-1 ${inputContainerClassName || ""}`}>
+                    <div className={`px-4 pb-3 pt-1 ${inputContainerClassName || ''}`}>
                         <div className="flex gap-2">
                             <input
                                 ref={inputRef}
@@ -302,7 +308,7 @@ export function AskUserWidget({
                                 onKeyDown={handleKeyDown}
                                 placeholder={resolvedPlaceholder}
                                 disabled={isLoading}
-                                className={`flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${inputClassName || ""}`}
+                                className={`flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${inputClassName || ''}`}
                             />
                             <Button
                                 size="sm"
@@ -310,7 +316,7 @@ export function AskUserWidget({
                                 disabled={isLoading || !inputValue.trim()}
                                 className={submitButtonClassName}
                             >
-                                {isLoading ? "..." : t('agent.send')}
+                                {isLoading ? '...' : t('agent.send')}
                             </Button>
                         </div>
                     </div>
@@ -331,7 +337,7 @@ export interface ConfirmationWidgetProps {
     confirmLabel?: string;
     cancelLabel?: string;
     isLoading?: boolean;
-    variant?: "default" | "warning";
+    variant?: 'default' | 'warning';
     className?: string;
 }
 
@@ -343,7 +349,7 @@ export function ConfirmationWidget({
     confirmLabel,
     cancelLabel,
     isLoading = false,
-    variant = "default",
+    variant = 'default',
     className,
 }: ConfirmationWidgetProps) {
     const { t } = useUITranslation();
@@ -358,18 +364,18 @@ export function ConfirmationWidget({
             className={className}
             options={[
                 {
-                    id: "confirm",
+                    id: 'confirm',
                     label: resolvedConfirmLabel,
                     icon: <CheckCircle className="size-4" />,
                 },
                 {
-                    id: "cancel",
+                    id: 'cancel',
                     label: resolvedCancelLabel,
                     icon: <XCircle className="size-4" />,
                 },
             ]}
             onSelect={(id) => {
-                if (id === "confirm") onConfirm();
+                if (id === 'confirm') onConfirm();
                 else onCancel();
             }}
         />

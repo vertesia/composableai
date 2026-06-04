@@ -2,11 +2,11 @@
  * Skill transformer preset for markdown files with frontmatter
  */
 
-import path from 'node:path';
 import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { z } from 'zod';
-import type { TransformerPreset } from '../types.js';
 import { parseFrontmatter } from '../parsers/frontmatter.js';
+import type { TransformerPreset } from '../types.js';
 import { discoverSkillAssets } from '../utils/asset-discovery.js';
 
 /**
@@ -17,77 +17,88 @@ export type SkillContentType = 'md' | 'jst';
 /**
  * Context triggers for auto-injection of skills (for frontmatter validation)
  */
-const SkillContextTriggersFrontmatterSchema = z.object({
-    keywords: z.array(z.string()).optional(),
-    tool_names: z.array(z.string()).optional(),
-    data_patterns: z.array(z.string()).optional()
-}).strict();
+const SkillContextTriggersFrontmatterSchema = z
+    .object({
+        keywords: z.array(z.string()).optional(),
+        tool_names: z.array(z.string()).optional(),
+        data_patterns: z.array(z.string()).optional(),
+    })
+    .strict();
 
 /**
  * Context triggers for auto-injection of skills (for output validation)
  */
-const SkillContextTriggersSchema = z.object({
-    keywords: z.array(z.string()).optional(),
-    tool_names: z.array(z.string()).optional(),
-    data_patterns: z.array(z.string()).optional()
-}).optional();
+const SkillContextTriggersSchema = z
+    .object({
+        keywords: z.array(z.string()).optional(),
+        tool_names: z.array(z.string()).optional(),
+        data_patterns: z.array(z.string()).optional(),
+    })
+    .optional();
 
 /**
  * Execution configuration for skills that need code execution (for frontmatter validation)
  */
-const SkillExecutionFrontmatterSchema = z.object({
-    language: z.string(),
-    packages: z.array(z.string()).optional(),
-    system_packages: z.array(z.string()).optional(),
-    template: z.string().optional()
-}).strict();
+const SkillExecutionFrontmatterSchema = z
+    .object({
+        language: z.string(),
+        packages: z.array(z.string()).optional(),
+        system_packages: z.array(z.string()).optional(),
+        template: z.string().optional(),
+    })
+    .strict();
 
 /**
  * Execution configuration for skills that need code execution (for output validation)
  */
-const SkillExecutionSchema = z.object({
-    language: z.string(),
-    packages: z.array(z.string()).optional(),
-    system_packages: z.array(z.string()).optional(),
-    template: z.string().optional()
-}).optional();
+const SkillExecutionSchema = z
+    .object({
+        language: z.string(),
+        packages: z.array(z.string()).optional(),
+        system_packages: z.array(z.string()).optional(),
+        template: z.string().optional(),
+    })
+    .optional();
 
 /**
  * Zod schema for skill frontmatter validation
  * This validates the YAML frontmatter before transformation
  * Supports both flat and nested structures
  */
-const SkillFrontmatterSchema = z.object({
-    // Required fields
-    name: z.string().min(1, 'Skill name is required'),
-    description: z.string().min(1, 'Skill description is required'),
+const SkillFrontmatterSchema = z
+    .object({
+        // Required fields
+        name: z.string().min(1, 'Skill name is required'),
+        description: z.string().min(1, 'Skill description is required'),
 
-    // Optional fields
-    title: z.string().optional(),
-    content_type: z.enum(['md', 'jst']).optional(),
+        // Optional fields
+        title: z.string().optional(),
+        content_type: z.enum(['md', 'jst']).optional(),
 
-    // Flat structure fields (legacy)
-    keywords: z.array(z.string()).optional(),
-    tools: z.array(z.string()).optional(),
-    data_patterns: z.array(z.string()).optional(),
-    language: z.string().optional(),
-    packages: z.array(z.string()).optional(),
-    system_packages: z.array(z.string()).optional(),
+        // Flat structure fields (legacy)
+        keywords: z.array(z.string()).optional(),
+        tools: z.array(z.string()).optional(),
+        data_patterns: z.array(z.string()).optional(),
+        language: z.string().optional(),
+        packages: z.array(z.string()).optional(),
+        system_packages: z.array(z.string()).optional(),
 
-    // Nested structure fields
-    context_triggers: SkillContextTriggersFrontmatterSchema.optional(),
-    execution: SkillExecutionFrontmatterSchema.optional(),
-    related_tools: z.array(z.string()).optional(),
-    input_schema: z.object({
-        type: z.literal('object'),
-        properties: z.record(z.any()).optional(),
-        required: z.array(z.string()).optional()
-    }).optional(),
+        // Nested structure fields
+        context_triggers: SkillContextTriggersFrontmatterSchema.optional(),
+        execution: SkillExecutionFrontmatterSchema.optional(),
+        input_schema: z
+            .object({
+                type: z.literal('object'),
+                properties: z.record(z.string(), z.unknown()).optional(),
+                required: z.array(z.string()).optional(),
+            })
+            .optional(),
 
-    // Asset fields (auto-discovered but can be overridden)
-    scripts: z.array(z.string()).optional(),
-    widgets: z.array(z.string()).optional()
-}).strict();
+        // Asset fields (auto-discovered but can be overridden)
+        scripts: z.array(z.string()).optional(),
+        widgets: z.array(z.string()).optional(),
+    })
+    .strict();
 
 /**
  * MUST be kept in sync with @vertesia/tools-sdk SkillDefinition
@@ -98,23 +109,27 @@ const SkillFrontmatterSchema = z.object({
  * Note: The isEnabled property is not included in this schema because Zod cannot
  * properly validate function signatures. It will be type-checked by TypeScript instead.
  */
-export const SkillDefinitionSchema = z.object({
-    name: z.string().min(1, 'Skill name is required'),
-    title: z.string().optional(),
-    description: z.string().min(1, 'Skill description is required'),
-    instructions: z.string(),
-    content_type: z.enum(['md', 'jst']),
-    input_schema: z.object({
-        type: z.literal('object'),
-        properties: z.record(z.any()).optional(),
-        required: z.array(z.string()).optional()
-    }).optional(),
-    context_triggers: SkillContextTriggersSchema,
-    execution: SkillExecutionSchema,
-    related_tools: z.array(z.string()).optional(),
-    scripts: z.array(z.string()).optional(),
-    widgets: z.array(z.string()).optional()
-}).passthrough();
+export const SkillDefinitionSchema = z
+    .object({
+        name: z.string().min(1, 'Skill name is required'),
+        title: z.string().optional(),
+        description: z.string().min(1, 'Skill description is required'),
+        instructions: z.string(),
+        content_type: z.enum(['md', 'jst']),
+        input_schema: z
+            .object({
+                type: z.literal('object'),
+                properties: z.record(z.string(), z.unknown()).optional(),
+                required: z.array(z.string()).optional(),
+            })
+            .optional(),
+        context_triggers: SkillContextTriggersSchema,
+        execution: SkillExecutionSchema,
+        tools: z.array(z.string()).optional(),
+        scripts: z.array(z.string()).optional(),
+        widgets: z.array(z.string()).optional(),
+    })
+    .passthrough();
 
 /**
  * Schema for validating properties exported from properties.ts
@@ -131,6 +146,8 @@ export const SkillPropertiesSchema = SkillDefinitionSchema.partial().passthrough
  * Can also be imported from consumer packages for type safety
  */
 export type SkillDefinition = z.infer<typeof SkillDefinitionSchema>;
+
+type SkillFrontmatter = z.infer<typeof SkillFrontmatterSchema>;
 
 /**
  * Build a SkillDefinition from frontmatter and markdown content.
@@ -151,7 +168,7 @@ export type SkillDefinition = z.infer<typeof SkillDefinitionSchema>;
  *    execution:
  *      language: python
  *      packages: [...]
- *    related_tools: [...]
+ *    tools: [...]
  *
  * @param frontmatter - Parsed frontmatter object
  * @param instructions - Markdown content (body of the file)
@@ -161,11 +178,11 @@ export type SkillDefinition = z.infer<typeof SkillDefinitionSchema>;
  * @returns Skill definition object
  */
 function buildSkillDefinition(
-    frontmatter: Record<string, any>,
+    frontmatter: SkillFrontmatter,
     instructions: string,
     contentType: SkillContentType,
     widgets: string[],
-    scripts: string[]
+    scripts: string[],
 ): SkillDefinition {
     const skill: SkillDefinition = {
         name: frontmatter.name,
@@ -181,7 +198,7 @@ function buildSkillDefinition(
     // Nested: context_triggers: { keywords: [...], tool_names: [...] }
     // Flat: keywords: [...], tools: [...]
     const contextTriggers = frontmatter.context_triggers;
-    const hasNestedTriggers = contextTriggers && typeof contextTriggers === 'object';
+    const hasNestedTriggers = contextTriggers !== undefined;
     const hasFlatTriggers = frontmatter.keywords || frontmatter.tools || frontmatter.data_patterns;
 
     if (hasNestedTriggers || hasFlatTriggers) {
@@ -194,29 +211,32 @@ function buildSkillDefinition(
 
     // Build execution config - support both flat and nested structure
     const execution = frontmatter.execution;
-    const hasNestedExecution = execution && typeof execution === 'object';
-    const hasFlatExecution = frontmatter.language;
 
-    if (hasNestedExecution || hasFlatExecution) {
+    if (execution) {
         skill.execution = {
-            language: hasNestedExecution ? execution.language : frontmatter.language,
-            packages: hasNestedExecution ? execution.packages : frontmatter.packages,
-            system_packages: hasNestedExecution ? execution.system_packages : frontmatter.system_packages,
+            language: execution.language,
+            packages: execution.packages,
+            system_packages: execution.system_packages,
         };
+    } else if (frontmatter.language) {
+        skill.execution = {
+            language: frontmatter.language,
+            packages: frontmatter.packages,
+            system_packages: frontmatter.system_packages,
+        };
+    }
 
+    if (skill.execution) {
         // Extract code template from instructions if present
         const codeBlockMatch = instructions.match(/```(?:python|javascript|typescript|js|ts|py)\n([\s\S]*?)```/);
-        if (codeBlockMatch) {
+        if (codeBlockMatch?.[1]) {
             skill.execution.template = codeBlockMatch[1].trim();
         }
     }
 
-    // Related tools - support both direct field and from tools field
-    if (frontmatter.related_tools) {
-        skill.related_tools = frontmatter.related_tools;
-    } else if (frontmatter.tools && !hasNestedTriggers) {
-        // If tools is not part of context_triggers, use it as related_tools
-        skill.related_tools = frontmatter.tools;
+    // Tools unlocked by this skill (from frontmatter `tools:` key)
+    if (frontmatter.tools) {
+        skill.tools = frontmatter.tools;
     }
 
     // Input schema from frontmatter
@@ -256,30 +276,30 @@ export const skillTransformer: TransformerPreset = {
         // Validate frontmatter first to catch unknown properties
         const frontmatterValidation = SkillFrontmatterSchema.safeParse(frontmatter);
         if (!frontmatterValidation.success) {
-            const errors = frontmatterValidation.error.errors
+            const errors = frontmatterValidation.error.issues
                 .map((err) => {
                     const pathStr = err.path.length > 0 ? err.path.join('.') : 'frontmatter';
                     return `  - ${pathStr}: ${err.message}`;
                 })
                 .join('\n');
-            throw new Error(
-                `Invalid frontmatter in ${filePath}:\n${errors}`
-            );
+            throw new Error(`Invalid frontmatter in ${filePath}:\n${errors}`);
         }
 
+        const validatedFrontmatter = frontmatterValidation.data;
+
         // Determine content type from frontmatter or file extension
-        const content_type: SkillContentType = frontmatter.content_type || 'md';
+        const content_type: SkillContentType = validatedFrontmatter.content_type || 'md';
 
         // Discover assets (scripts and widgets) in the skill directory
         const assets = discoverSkillAssets(filePath);
 
         // Build skill definition using the same logic as parseSkillFile in tools-sdk
         const skillData = buildSkillDefinition(
-            frontmatter,
+            validatedFrontmatter,
             markdown,
             content_type,
             assets.widgets,
-            assets.scripts
+            assets.scripts,
         );
 
         // Check if properties.ts exists in the skill directory
@@ -306,14 +326,14 @@ export default { ...skill, ...properties };
                 data: skillData,
                 assets: assets.assetFiles,
                 widgets: assets.widgetMetadata,
-                code
+                code,
             };
         }
 
         return {
             data: skillData,
             assets: assets.assetFiles,
-            widgets: assets.widgetMetadata
+            widgets: assets.widgetMetadata,
         };
-    }
+    },
 };

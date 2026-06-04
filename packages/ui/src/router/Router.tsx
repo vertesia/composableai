@@ -1,12 +1,14 @@
-import { createContext, useContext, useEffect } from "react";
-import { HistoryNavigator, LocationChangeEvent, NavigateOptions } from "./HistoryNavigator";
-import { PathMatch, PathMatcher } from "./PathMatcher";
-import { isRootPath, joinPath } from "./path";
+import { createContext, useContext, useEffect } from 'react';
+import { HistoryNavigator, type LocationChangeEvent, type NavigateOptions } from './HistoryNavigator';
+import { type PathMatch, PathMatcher } from './PathMatcher';
+import { isRootPath, joinPath, type PathMatchParams } from './path';
 
-export type LazyImportFn = () => Promise<any>;
+export type RouteComponentProps = PathMatchParams;
+export type LazyRouteModule = { default: React.ComponentType<Record<string, never>> };
+export type LazyImportFn = () => Promise<LazyRouteModule>;
 export interface ComponentRoute {
     path: string;
-    Component: React.ComponentType<any>;
+    Component: React.ComponentType<RouteComponentProps>;
 }
 export interface LazyComponentRoute {
     path: string;
@@ -15,7 +17,7 @@ export interface LazyComponentRoute {
 export type Route = ComponentRoute | LazyComponentRoute;
 
 export interface RouteMatch extends PathMatch<Route> {
-    state: any;
+    state: unknown;
 }
 
 export interface NavigationPrompt {
@@ -38,6 +40,7 @@ export abstract class BaseRouter {
 
     match(path: string): PathMatch<Route> | null {
         const useIndex = isRootPath(path) && this.index;
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         return this.matcher.match(useIndex ? this.index! : path);
     }
 
@@ -51,16 +54,16 @@ export class Router extends BaseRouter {
     constructor(routes: Route[], updateState: (route: RouteMatch | null) => void) {
         super(routes);
         this.navigator.addListener((event: LocationChangeEvent) => {
-            if (event.isCancelable && this.prompt && !!this.prompt.when) {
+            if (event.isCancelable && this.prompt?.when) {
                 if (!window.confirm(this.prompt.message)) return;
             }
             if (this.observer) {
                 this.observer(event);
             }
             // only process afterChange events
-            if (event.name === "afterChange") {
+            if (event.name === 'afterChange') {
                 const match = this.match(event.location.pathname);
-                if (match && match.value) {
+                if (match?.value) {
                     updateState({
                         ...match,
                         state: event.state,
@@ -123,7 +126,7 @@ export class NestedRouter extends BaseRouter {
     }
 
     navigate(path: string, options?: NavigateOptions | undefined): void {
-         // base path is nested by default in a NestedRouter unless explicitly set to false by caller
+        // base path is nested by default in a NestedRouter unless explicitly set to false by caller
         const isBasePathNested = options?.isBasePathNested ?? true;
         let basePath: string;
 
@@ -151,7 +154,7 @@ export interface RouterContext {
     route: Route;
     router: BaseRouter;
     params: Record<string, string>;
-    state: any;
+    state: unknown;
     /**
      * The path that matched the route. For wildcard `/*` paths this does not include the wildcard part.
      * You can get the wildcard path from `remainingPath`.
@@ -167,7 +170,7 @@ export { ReactRouterContext };
 export function useRouterContext() {
     const ctx = useContext(ReactRouterContext);
     if (!ctx) {
-        throw new Error("useRouter must be used within a RouterProvider");
+        throw new Error('useRouter must be used within a RouterProvider');
     }
     return ctx;
 }
@@ -201,31 +204,34 @@ export function usePageTitle(title: string) {
     useEffect(() => {
         const prev = document.title;
         document.title = title;
-        return () => { document.title = prev; };
+        return () => {
+            document.title = prev;
+        };
     }, [title]);
 }
 
 export function useNavigationPrompt(prompt: NavigationPrompt) {
     const { router } = useRouterContext();
+    const topRouter = router.getTopRouter();
     useEffect(() => {
-        router.getTopRouter().prompt = prompt;
+        topRouter.prompt = prompt;
         return () => {
-            router.getTopRouter().prompt = undefined;
+            topRouter.prompt = undefined;
         };
-    }, []);
+    }, [prompt, topRouter]);
 
     useEffect(() => {
         if (prompt.when) {
             const doBlock = prompt.when;
-            const listener = function (ev: Event) {
+            const listener = (ev: Event) => {
                 if (doBlock) {
                     ev.preventDefault();
-                    (ev as any).returnValue = "";
+                    (ev as BeforeUnloadEvent).returnValue = '';
                 }
             };
-            window.addEventListener("beforeunload", listener);
+            window.addEventListener('beforeunload', listener);
             return () => {
-                window.removeEventListener("beforeunload", listener);
+                window.removeEventListener('beforeunload', listener);
             };
         }
     }, [prompt.when]);

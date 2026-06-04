@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect } from 'react';
 
-const useSafeLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+const useSafeLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
-export { useSafeLayoutEffect }
+export { useSafeLayoutEffect };

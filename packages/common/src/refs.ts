@@ -1,34 +1,29 @@
-
-
 export enum ResolvableRefType {
-    project = "Project",
-    projects = "Projects",
-    environment = "Environment",
-    user = "User",
-    account = "Account",
-    interaction = "Interaction",
-    userGroup = "UserGroup"
+    project = 'Project',
+    projects = 'Projects',
+    environment = 'Environment',
+    user = 'User',
+    account = 'Account',
+    interaction = 'Interaction',
+    userGroup = 'UserGroup',
 }
 
 export interface ResolvableRef {
-    type: ResolvableRefType
-    id: string
+    type: ResolvableRefType;
+    id: string;
 }
 
 export interface RefResolutionRequest {
-
-    refs: ResolvableRef[]
-
+    refs: ResolvableRef[];
 }
 
-
 export interface ResourceRef {
-    id: string
-    name: string
-    type: string
-    description?: string
-    version?: number
-    status?: string
-    tags?: string[]
-    endpoint?: string
+    id: string;
+    name: string;
+    type: string;
+    description?: string;
+    version?: number;
+    status?: string;
+    tags?: string[];
+    endpoint?: string;
 }

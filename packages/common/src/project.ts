@@ -1,7 +1,8 @@
-import { SupportedIntegrations } from "./integrations.js";
-import { ContentObjectTypeRef } from "./store/store.js";
-import { WorkflowRunStatus } from "./store/workflow.js";
-import { AccountRef } from "./user.js";
+import type { JSONSchemaType } from 'ajv';
+import type { SupportedIntegrations } from './integrations.js';
+import type { ContentObjectTypeRef } from './store/store.js';
+import type { WorkflowRunStatus } from './store/workflow.js';
+import type { AccountRef } from './user.js';
 
 export interface ICreateProjectPayload {
     name: string;
@@ -10,18 +11,20 @@ export interface ICreateProjectPayload {
     auto_config?: boolean;
 }
 export enum ProjectRoles {
-    owner = "owner", // all permissions
-    admin = "admin", // all permissions
-    manager = "manager", // all permissions but manage_account, manage_billing
-    developer = "developer", // all permissions but manage_account, manage_billing, manage_roles, delete
-    application = "application", // executor + request_pk
-    consumer = "consumer", // required permissions for users of micro apps
-    executor = "executor", // can only read and execute interactions
-    reader = "reader", // can only read (browse)
-    billing = "billing", // can only manage billings
-    member = "member", // can only access, but no specific permissions
-    app_member = "app_member", // used to mark an user have access to an application. does not provide any permission on its own
-    content_superadmin = "content_superadmin", // can see all content objects and collections
+    owner = 'owner', // all permissions
+    admin = 'admin', // all permissions
+    manager = 'manager', // all permissions but manage_account, manage_billing
+    developer = 'developer', // all permissions but manage_account, manage_billing, manage_roles, delete
+    application = 'application', // executor + request_pk
+    consumer = 'consumer', // required permissions for users of micro apps
+    executor = 'executor', // can only read and execute interactions
+    reader = 'reader', // can only read (browse)
+    auditor = 'auditor', // can read all non-admin resources without mutation permissions
+    support = 'support', // Vertesia support read-only role
+    billing = 'billing', // can only manage billings
+    member = 'member', // can only access, but no specific permissions
+    app_member = 'app_member', // used to mark an user have access to an application. does not provide any permission on its own
+    content_superadmin = 'content_superadmin', // can see all content objects and collections
 }
 
 export function isRoleIncludedIn(role: string, includingRole: string) {
@@ -39,11 +42,10 @@ export function isRoleIncludedIn(role: string, includingRole: string) {
     }
 }
 
-
 export interface PopulatedProjectRef {
     id: string;
     name: string;
-    account: AccountRef
+    account: AccountRef;
 }
 export interface ProjectRef {
     id: string;
@@ -66,11 +68,10 @@ export interface ListProjectsQuery {
 }
 
 export enum ResourceVisibility {
-    public = "public",
-    account = "account",
-    project = "project"
+    public = 'public',
+    account = 'account',
+    project = 'project',
 }
-
 
 // ==========================================
 // Project Model Defaults Types
@@ -100,28 +101,30 @@ export interface ModalityDefaults {
  * Categories group one or more system interactions for default model assignment.
  */
 export enum SystemInteractionCategory {
-    content_type = "content_type",
-    intake = "intake",
-    analysis = "analysis",
-    non_applicable = "non_applicable"
+    content_type = 'content_type',
+    intake = 'intake',
+    analysis = 'analysis',
+    agent = 'agent',
+    non_applicable = 'non_applicable',
 }
 
 /**
  * Map system interaction endpoints to categories.
  */
 export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCategory> = {
-    "ExtractInformation": SystemInteractionCategory.intake,
-    "SelectDocumentType": SystemInteractionCategory.intake,
-    "GenerateMetadataModel": SystemInteractionCategory.content_type,
-    "ChunkDocument": SystemInteractionCategory.intake,
-    "IdentifyTextSections": SystemInteractionCategory.intake,
-    "AnalyzeDocument": SystemInteractionCategory.analysis,
-    "ReduceTextSections": SystemInteractionCategory.analysis,
-    "GenericAgent": SystemInteractionCategory.non_applicable,
-    "AdhocTaskAgent": SystemInteractionCategory.non_applicable,
-    "Mediator": SystemInteractionCategory.non_applicable,
-    "AnalyzeConversation": SystemInteractionCategory.analysis,
-    "GetAgentConversationTopic": SystemInteractionCategory.analysis,
+    ExtractInformation: SystemInteractionCategory.intake,
+    SelectDocumentType: SystemInteractionCategory.intake,
+    GenerateMetadataModel: SystemInteractionCategory.content_type,
+    ChunkDocument: SystemInteractionCategory.intake,
+    IdentifyTextSections: SystemInteractionCategory.intake,
+    AnalyzeDocument: SystemInteractionCategory.analysis,
+    ReduceTextSections: SystemInteractionCategory.analysis,
+    GenericAgent: SystemInteractionCategory.non_applicable,
+    AdhocTaskAgent: SystemInteractionCategory.non_applicable,
+    Mediator: SystemInteractionCategory.non_applicable,
+    AnalyzeConversation: SystemInteractionCategory.analysis,
+    GetAgentConversationTopic: SystemInteractionCategory.analysis,
+    StudioAssistant: SystemInteractionCategory.agent,
 };
 
 /**
@@ -131,7 +134,7 @@ export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCate
  * @param endpoint - The interaction endpoint name
  */
 export function getSystemInteractionCategory(endpoint: string): SystemInteractionCategory | undefined {
-    if (endpoint.startsWith("sys:")) {
+    if (endpoint.startsWith('sys:')) {
         // Strip sys: prefix
         endpoint = endpoint.substring(4);
     }
@@ -158,16 +161,115 @@ export interface ProjectModelDefaults {
     system?: SystemDefaults;
 }
 
+export type BrowserUseRiskPolicy = 'read_only' | 'low_write' | 'requires_approval' | 'unrestricted';
+
+export type BrowserUseScreenshotCapture = 'off' | 'on_action' | 'each_turn';
+
+export interface BrowserUseProjectConfiguration {
+    /**
+     * Enable the browser_use workflow-level tool for this project.
+     * Defaults to true when omitted.
+     */
+    enabled?: boolean;
+    /**
+     * Risk policy used when the tool call does not specify one.
+     * Defaults to low_write.
+     */
+    default_policy?: BrowserUseRiskPolicy;
+    /**
+     * Maximum policy a tool call may request. Requested policies above this
+     * are clamped down to the project maximum. Defaults to unrestricted.
+     */
+    max_policy?: BrowserUseRiskPolicy;
+    /**
+     * Optional project-wide host allowlist. When present, browser_use calls
+     * can only request hosts contained by this list.
+     */
+    allowed_hosts?: string[];
+    /**
+     * Allow saved Playwright scripts to hydrate artifacts/documents as files
+     * inside the browser sandbox for upload flows. Defaults to true.
+     */
+    allow_file_uploads?: boolean;
+    /**
+     * Allow the browser_playwright_script tool in browser workstreams.
+     * Defaults to true.
+     */
+    allow_playwright_scripts?: boolean;
+    /**
+     * Persist browser screenshots for UI progress. Defaults to on_action.
+     */
+    capture_screenshots?: BrowserUseScreenshotCapture;
+    /**
+     * Prefer unannotated screenshots in the browser-use UI widget when both
+     * raw and annotated captures are available. Defaults to true.
+     */
+    prefer_raw_screenshots?: boolean;
+}
+
+export const BrowserUseProjectConfigurationSchema: JSONSchemaType<BrowserUseProjectConfiguration> = {
+    type: 'object',
+    properties: {
+        enabled: {
+            type: 'boolean',
+            nullable: true,
+            description: 'Enable the browser_use workflow-level tool for this project. Defaults to true.',
+        },
+        default_policy: {
+            type: 'string',
+            nullable: true,
+            enum: ['read_only', 'low_write', 'requires_approval', 'unrestricted'],
+            description: 'Risk policy used when a browser_use call does not specify one. Defaults to low_write.',
+        },
+        max_policy: {
+            type: 'string',
+            nullable: true,
+            enum: ['read_only', 'low_write', 'requires_approval', 'unrestricted'],
+            description: 'Maximum risk policy a browser_use call may request. Defaults to unrestricted.',
+        },
+        allowed_hosts: {
+            type: 'array',
+            nullable: true,
+            items: { type: 'string' },
+            description:
+                'Optional project-wide host allowlist. When present, browser_use calls can only request hosts contained by this list.',
+        },
+        allow_file_uploads: {
+            type: 'boolean',
+            nullable: true,
+            description:
+                'Allow replay scripts to hydrate artifacts/documents as files in the browser sandbox. Defaults to true.',
+        },
+        allow_playwright_scripts: {
+            type: 'boolean',
+            nullable: true,
+            description: 'Allow browser_playwright_script in browser workstreams. Defaults to true.',
+        },
+        capture_screenshots: {
+            type: 'string',
+            nullable: true,
+            enum: ['off', 'on_action', 'each_turn'],
+            description: 'Persist browser screenshots for UI progress. Defaults to on_action.',
+        },
+        prefer_raw_screenshots: {
+            type: 'boolean',
+            nullable: true,
+            description: 'Prefer unannotated screenshots in the browser-use UI widget. Defaults to true.',
+        },
+    },
+    required: [],
+    additionalProperties: false,
+};
+
 // ==========================================
 // Project Configuration
 // ==========================================
 
-export type ProjectSearchTier = "standard" | "performance";
-export type ElasticsearchBackend = "serverless" | "hosted";
+export type ProjectSearchTier = 'standard' | 'performance';
+export type ElasticsearchBackend = 'serverless' | 'hosted';
 
 export interface ProjectConfiguration {
-
-    human_context: string;
+    human_context?: string;
 
     defaults?: ProjectModelDefaults;
 
@@ -176,10 +278,10 @@ export interface ProjectConfiguration {
     sync_content_properties?: boolean;
 
     embeddings: {
-        text?: ProjectConfigurationEmbeddings;
-        image?: ProjectConfigurationEmbeddings;
-        properties?: ProjectConfigurationEmbeddings
-    }
+        text?: ProjectConfigurationEmbedding;
+        image?: ProjectConfigurationEmbedding;
+        properties?: ProjectConfigurationEmbedding;
+    };
 
     datacenter?: string;
     storage_bucket?: string;
@@ -229,12 +331,16 @@ export interface ProjectConfiguration {
     main_language?: string;
 
     /**
+     * Project defaults and caps for browser_use agent workstreams.
+     */
+    browser_use?: BrowserUseProjectConfiguration;
+
+    /**
      * Object ID of a content object containing a custom LaTeX template (.latex file)
      * to use as the branded PDF template. When set, "Export as Branded PDF" uses this
      * template instead of the built-in Vertesia default template.
      */
     pdf_template_object_id?: string;
-
 }
 
 // export interface ProjectConfigurationEmbeddings {
@@ -245,26 +351,32 @@ export interface ProjectConfiguration {
 // }
 
 export enum SupportedEmbeddingTypes {
-    text = "text",
-    image = "image",
-    properties = "properties"
+    text = 'text',
+    image = 'image',
+    properties = 'properties',
 }
 
 export enum FullTextType {
-    full_text = "full_text"
+    full_text = 'full_text',
 }
 
 export type SearchTypes = SupportedEmbeddingTypes | FullTextType;
 
 export const SearchTypes = {
     ...SupportedEmbeddingTypes,
-    ...FullTextType
+    ...FullTextType,
 } as const;
 
-export interface ProjectConfigurationEmbeddings {
-    environment: string;
+export interface ProjectConfigurationEmbedding {
+    environment?: string;
     enabled: boolean;
-    dimensions: number;
+    dimensions?: number;
+    max_tokens?: number;
+    model?: string;
+}
+
+export interface ProjectConfigurationEmbeddingEnablePayload {
+    environment: string;
     max_tokens?: number;
     model?: string;
 }
@@ -276,10 +388,10 @@ export interface Project {
     description?: string;
     account: string;
     configuration: ProjectConfiguration;
-    integrations: Map<string, any>;
+    integrations?: Map<string, unknown>;
     plugins: string[];
-    created_by: string,
-    updated_by: string,
+    created_by: string;
+    updated_by: string;
     created_at: Date;
     updated_at: Date;
 }
@@ -289,15 +401,13 @@ export interface ProjectCreatePayload {
     description?: string;
 }
 
-export interface ProjectUpdatePayload extends Partial<Project> { }
+export interface ProjectUpdatePayload extends Partial<Project> {}
 
 export interface ProjectPluginsUpdatePayload {
     plugins: string[];
 }
 
-
-export const ProjectRefPopulate = "id name account";
-
+export const ProjectRefPopulate = 'id name account';
 
 export interface EmbeddingsStatusResponse {
     status: string;
@@ -306,10 +416,10 @@ export interface EmbeddingsStatusResponse {
     embeddingsModels?: string[];
     objectsWithEmbeddings?: number;
     vectorIndex: {
-        status: "READY" | "PENDING" | "DELETING" | "ABSENT",
-        name?: string,
-        type?: string
-    }
+        status: 'READY' | 'PENDING' | 'DELETING' | 'ABSENT';
+        name?: string;
+        type?: string;
+    };
 }
 
 /**
@@ -431,7 +541,11 @@ export interface StartProjectReindexPayload {
  *
  * Explicit overrides should bypass this function and use user-provided values.
  */
-export function autoTuneReindexParams(docCount: number): { shard_size: number; parallel_shard_count: number; max_shards: number } {
+export function autoTuneReindexParams(docCount: number): {
+    shard_size: number;
+    parallel_shard_count: number;
+    max_shards: number;
+} {
     if (docCount < 50_000) {
         // Tiny/small project: aim for ~4 shards, with a 5k floor.
         return {

@@ -1,11 +1,11 @@
 // ================== Content Type Endpoints ==================
 
-import { InCodeTypeDefinition } from "@vertesia/common";
-import { Context, Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
-import { ContentTypesCollection } from "../ContentTypesCollection.js";
-import { ToolServerConfig } from "./types.js";
-import { toPathName } from "../utils.js";
+import type { InCodeTypeDefinition } from '@vertesia/common';
+import { type Context, Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import type { ContentTypesCollection } from '../ContentTypesCollection.js';
+import { toPathName } from '../utils.js';
+import type { ToolServerConfig } from './types.js';
 
 export function createContentTypesRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { types = [] } = config;
@@ -16,7 +16,7 @@ export function createContentTypesRoute(app: Hono, basePath: string, config: Too
 
         for (const coll of types) {
             for (const type of coll.types) {
-                allTypes.push({ ...type, id: coll.name + ":" + toPathName(type.name) });
+                allTypes.push({ ...type, id: `${coll.name}:${toPathName(type.name)}` });
             }
         }
 
@@ -24,7 +24,7 @@ export function createContentTypesRoute(app: Hono, basePath: string, config: Too
             title: 'All Content Types',
             description: 'All available content types across all collections',
             types: allTypes,
-            collections: types.map(i => ({
+            collections: types.map((i) => ({
                 name: i.name,
                 title: i.title,
                 description: i.description,
@@ -43,47 +43,42 @@ export function createContentTypesRoute(app: Hono, basePath: string, config: Too
         const parts = name.split(':');
         if (parts.length !== 2) {
             throw new HTTPException(400, {
-                message: "Invalid content type name. Expected format 'collection:type'"
+                message: "Invalid content type name. Expected format 'collection:type'",
             });
         }
         const collName = parts[0];
         const typeName = toPathName(parts[1]);
-        const ctype = types.find(t => t.name === collName)?.getTypeByName(typeName);
+        const ctype = types.find((t) => t.name === collName)?.getTypeByName(typeName);
         if (ctype) {
-            return c.json({ ...ctype, id: collName + ":" + typeName });
+            return c.json({ ...ctype, id: `${collName}:${typeName}` });
         }
 
         throw new HTTPException(404, {
-            message: "No content type found with name: " + name
+            message: `No content type found with name: ${name}`,
         });
     });
-
 }
-
-
-
 
 function createContentTypeEndpoints(coll: ContentTypesCollection): Hono {
     const endpoint = new Hono();
 
     endpoint.get('/', (c: Context) => {
-        return c.json(coll.types.map(t => ({ ...t, id: coll.name + ":" + toPathName(t.name) })));
+        return c.json(coll.types.map((t) => ({ ...t, id: `${coll.name}:${toPathName(t.name)}` })));
     });
 
     endpoint.get('/:name', (c: Context) => {
         const name = c.req.param('name');
-        const ctype = coll.types.find(t => toPathName(t.name) === name);
+        const ctype = coll.types.find((t) => toPathName(t.name) === name);
         if (!ctype) {
             throw new HTTPException(404, {
-                message: "No content type found with name: " + name
+                message: `No content type found with name: ${name}`,
             });
         }
         return c.json({
             ...ctype,
-            id: coll.name + ":" + toPathName(ctype.name)
+            id: `${coll.name}:${toPathName(ctype.name)}`,
         });
     });
-
 
     return endpoint;
 }

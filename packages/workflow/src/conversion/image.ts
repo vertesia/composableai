@@ -1,8 +1,9 @@
-import { log } from "@temporalio/activity";
-import { execFile as execFileCallback } from "child_process";
-import fs from "fs";
-import { file } from "tmp-promise";
-import { promisify } from "util";
+import { execFile as execFileCallback } from 'node:child_process';
+import fs from 'node:fs';
+import { promisify } from 'node:util';
+import { log } from '@temporalio/activity';
+import { file } from 'tmp-promise';
+
 const execFile = promisify(execFileCallback);
 
 /**
@@ -22,14 +23,16 @@ export async function imageResizer(
     format: string,
     progressive: boolean = true,
     colorspaceCorrection: boolean = true,
-    colorspace: 'RGB' | 'LAB' | 'LUV' | 'sigmoidal' = 'RGB'
+    colorspace: 'RGB' | 'LAB' | 'LUV' | 'sigmoidal' = 'RGB',
 ): Promise<string> {
-    log.debug(`[image-resizer] Resizing image: ${inputPath} to max_hw: ${max_hw}, format: ${format}, progressive: ${progressive}, colorspaceCorrection: ${colorspaceCorrection ? colorspace : 'disabled'}`);
+    log.debug(
+        `[image-resizer] Resizing image: ${inputPath} to max_hw: ${max_hw}, format: ${format}, progressive: ${progressive}, colorspaceCorrection: ${colorspaceCorrection ? colorspace : 'disabled'}`,
+    );
 
-    const allowedFormats = ["jpg", "jpeg", "png", "webp"];
+    const allowedFormats = ['jpg', 'jpeg', 'png', 'webp'];
 
-    if (!format || format.trim() === "") {
-        throw new Error(`Invalid format: ${format}.Supported : ${allowedFormats.join(", ")}`);
+    if (!format || format.trim() === '') {
+        throw new Error(`Invalid format: ${format}.Supported : ${allowedFormats.join(', ')}`);
     }
 
     //check that max_hw is valid
@@ -55,34 +58,34 @@ export async function imageResizer(
         }
 
         // Progressive loading options
-        let conversionOption = "";
+        let conversionOption = '';
 
         // Only add progressive option for formats that support it
         if (progressive) {
             // JPEG and some other formats support progressive loading
             const lowerFormat = format.toLowerCase();
-            if (lowerFormat === "jpg" || lowerFormat === "jpeg") {
-                conversionOption = "-interlace JPEG";
+            if (lowerFormat === 'jpg' || lowerFormat === 'jpeg') {
+                conversionOption = '-interlace JPEG';
                 log.debug(`Enabling interlaced ${lowerFormat.toUpperCase()} format`);
-            } else if (lowerFormat === "png") {
-                conversionOption = "-interlace PNG";
+            } else if (lowerFormat === 'png') {
+                conversionOption = '-interlace PNG';
                 log.debug(`Enabling interlaced ${lowerFormat.toUpperCase()} format`);
-            } else if (lowerFormat === "gif") {
-                conversionOption = "-interlace GIF";
+            } else if (lowerFormat === 'gif') {
+                conversionOption = '-interlace GIF';
                 log.debug(`Enabling interlaced ${lowerFormat.toUpperCase()} format`);
             }
         }
 
         log.debug(`Resizing image using ImageMagick: ${inputPath} -> ${outputPath}`);
 
-        const command = `convert`
-        let args = [inputPath];
+        const command = `convert`;
+        const args = [inputPath];
 
         // Add JPEG shrink-on-load optimization
-        args.push("-define", `jpeg:size=${max_hw * 3}x${max_hw * 3}`);
+        args.push('-define', `jpeg:size=${max_hw * 3}x${max_hw * 3}`);
 
         // Remove metadata
-        args.push("-strip");
+        args.push('-strip');
 
         // https://usage.imagemagick.org/filter/nicolas/#downsample
         // Add colorspace correction if enabled
@@ -91,33 +94,33 @@ export async function imageResizer(
                 case 'RGB':
                     // Linear light, recommended default
                     // Convert from sRGB to linear RGB for processing
-                    args.push("-colorspace", "RGB");
-                    log.debug("Using linear RGB colorspace for resize processing");
+                    args.push('-colorspace', 'RGB');
+                    log.debug('Using linear RGB colorspace for resize processing');
                     break;
                 case 'LAB':
                     // Perceptual linear light
                     // Use LAB colorspace which separates intensity from color
                     // Better for avoiding color clipping and distortion
-                    args.push("-colorspace", "LAB");
-                    log.debug("Using LAB colorspace for resize processing");
+                    args.push('-colorspace', 'LAB');
+                    log.debug('Using LAB colorspace for resize processing');
                     break;
                 case 'LUV':
                     // Perceptual linear light
                     // Alternative to LAB with perceptually uniform color deltas
-                    args.push("-colorspace", "LUV");
-                    log.debug("Using LUV colorspace for resize processing");
+                    args.push('-colorspace', 'LUV');
+                    log.debug('Using LUV colorspace for resize processing');
                     break;
                 case 'sigmoidal':
                     // Sigmoidal colorspace modification to reduce ringing artifacts
-                    args.push("-colorspace", "RGB");
-                    args.push("+sigmoidal-contrast", "6.5,50%");
-                    log.debug("Using sigmoidal contrast modification for resize processing");
+                    args.push('-colorspace', 'RGB');
+                    args.push('+sigmoidal-contrast', '6.5,50%');
+                    log.debug('Using sigmoidal contrast modification for resize processing');
                     break;
             }
         }
 
         // Resize operation
-        args.push("-resize", `${max_hw}x${max_hw}>`);
+        args.push('-resize', `${max_hw}x${max_hw}>`);
 
         // Restore colorspace after processing
         if (colorspaceCorrection) {
@@ -126,25 +129,25 @@ export async function imageResizer(
                 case 'LAB':
                 case 'LUV':
                     // Convert back to sRGB for output
-                    args.push("-colorspace", "sRGB");
+                    args.push('-colorspace', 'sRGB');
                     break;
                 case 'sigmoidal':
                     // Restore from sigmoidal modification and convert to sRGB
-                    args.push("-sigmoidal-contrast", "6.5,50%");
-                    args.push("-colorspace", "sRGB");
+                    args.push('-sigmoidal-contrast', '6.5,50%');
+                    args.push('-colorspace', 'sRGB');
                     break;
             }
         }
 
         // Add progressive/interlace options
         if (conversionOption) {
-            args.push(...conversionOption.split(" "));
+            args.push(...conversionOption.split(' '));
         }
 
         // Output path
         args.push(outputPath);
 
-        log.debug(`ImageMagick command: ${command} ${args.join(" ")}`);
+        log.debug(`ImageMagick command: ${command} ${args.join(' ')}`);
 
         const { stderr } = await execFile(command, args);
 

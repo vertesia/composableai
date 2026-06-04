@@ -4,8 +4,8 @@
 
 import path from 'node:path';
 import { z } from 'zod';
-import type { TransformerPreset } from '../types.js';
 import { parseFrontmatter } from '../parsers/frontmatter.js';
+import type { TransformerPreset } from '../types.js';
 import { discoverTemplateAssets } from '../utils/template-asset-discovery.js';
 
 /**
@@ -13,27 +13,33 @@ import { discoverTemplateAssets } from '../utils/template-asset-discovery.js';
  * Only includes fields authored by the user.
  * The name and id are inferred from the directory structure.
  */
-const TemplateFrontmatterSchema = z.object({
-    title: z.string().optional(),
-    description: z.string().min(1, 'Template description is required'),
-    tags: z.array(z.string()).optional(),
-    type: z.enum(['presentation', 'document']),
-}).strict();
+const TemplateFrontmatterSchema = z
+    .object({
+        title: z.string().optional(),
+        description: z.string().min(1, 'Template description is required'),
+        tags: z.array(z.string()).optional(),
+        type: z.enum(['presentation', 'document']),
+    })
+    .strict();
+
+type TemplateFrontmatter = z.infer<typeof TemplateFrontmatterSchema>;
 
 /**
  * MUST be kept in sync with @vertesia/tools-sdk RenderingTemplateDefinition
  * Zod schema for template definition
  */
-export const RenderingTemplateDefinitionSchema = z.object({
-    id: z.string().min(1, 'Template id is required'),
-    name: z.string().min(1, 'Template name is required'),
-    title: z.string().optional(),
-    description: z.string().min(1, 'Template description is required'),
-    instructions: z.string(),
-    tags: z.array(z.string()).optional(),
-    type: z.enum(['presentation', 'document']),
-    assets: z.array(z.string()),
-}).passthrough();
+export const RenderingTemplateDefinitionSchema = z
+    .object({
+        id: z.string().min(1, 'Template id is required'),
+        name: z.string().min(1, 'Template name is required'),
+        title: z.string().optional(),
+        description: z.string().min(1, 'Template description is required'),
+        instructions: z.string(),
+        tags: z.array(z.string()).optional(),
+        type: z.enum(['presentation', 'document']),
+        assets: z.array(z.string()),
+    })
+    .passthrough();
 
 /**
  * TypeScript type inferred from the Zod schema
@@ -78,16 +84,15 @@ export const templateTransformer: TransformerPreset = {
         // Validate frontmatter
         const frontmatterValidation = TemplateFrontmatterSchema.safeParse(frontmatter);
         if (!frontmatterValidation.success) {
-            const errors = frontmatterValidation.error.errors
+            const errors = frontmatterValidation.error.issues
                 .map((err) => {
                     const pathStr = err.path.length > 0 ? err.path.join('.') : 'frontmatter';
                     return `  - ${pathStr}: ${err.message}`;
                 })
                 .join('\n');
-            throw new Error(
-                `Invalid frontmatter in ${filePath}:\n${errors}`
-            );
+            throw new Error(`Invalid frontmatter in ${filePath}:\n${errors}`);
         }
+        const validatedFrontmatter: TemplateFrontmatter = frontmatterValidation.data;
 
         // Derive template path from directory structure
         const { category, templateName, relative: templatePath } = deriveTemplatePathInfo(filePath);
@@ -100,17 +105,17 @@ export const templateTransformer: TransformerPreset = {
         const templateData: RenderingTemplateDefinition = {
             id: `${category}:${templateName}`,
             name: templateName,
-            title: frontmatter.title,
-            description: frontmatter.description,
+            title: validatedFrontmatter.title,
+            description: validatedFrontmatter.description,
             instructions: markdown,
-            tags: frontmatter.tags,
-            type: frontmatter.type,
-            assets: assets.fileNames.map(f => `/templates/${templatePath}/${f}`),
+            tags: validatedFrontmatter.tags,
+            type: validatedFrontmatter.type,
+            assets: assets.fileNames.map((f) => `/templates/${templatePath}/${f}`),
         };
 
         return {
             data: templateData,
             assets: assets.assetFiles,
         };
-    }
+    },
 };

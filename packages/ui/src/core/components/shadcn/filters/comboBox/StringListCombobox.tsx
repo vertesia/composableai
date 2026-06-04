@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { InputList } from "../../../InputList";
-import { Button } from "../../button";
-import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
+import { useState } from 'react';
+import { InputList } from '../../../InputList';
+import { Button } from '../../button';
+import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 
 export const StringListCombobox = ({
     filterType,
@@ -30,15 +30,13 @@ export const StringListCombobox = ({
                 }
             }}
         >
-            <PopoverTrigger
-                className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition"
-            >
+            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition">
                 <div className="flex gap-1.5 items-center">
-                    {filterValues.length > 0 ? (
-                        filterValues.length === 1 ? filterValues[0] : `${filterValues.length} tags`
-                    ) : (
-                        "Add tags..."
-                    )}
+                    {filterValues.length > 0
+                        ? filterValues.length === 1
+                            ? filterValues[0]
+                            : `${filterValues.length} tags`
+                        : 'Add tags...'}
                 </div>
             </PopoverTrigger>
             <PopoverContent className="w-[300px] p-3">
@@ -46,11 +44,7 @@ export const StringListCombobox = ({
                     <div className="flex items-center p-1.5 text-xs text-muted">
                         <span>{filterType}</span>
                     </div>
-                    <InputList
-                        value={tags}
-                        onChange={setTags}
-                        placeholder={`Add ${filterType.toLowerCase()}...`}
-                    />
+                    <InputList value={tags} onChange={setTags} placeholder={`Add ${filterType.toLowerCase()}...`} />
                     <div className="flex gap-2 justify-end">
                         <Button
                             size="sm"
@@ -62,10 +56,7 @@ export const StringListCombobox = ({
                         >
                             Cancel
                         </Button>
-                        <Button
-                            size="sm"
-                            onClick={handleApply}
-                        >
+                        <Button size="sm" onClick={handleApply}>
                             Apply
                         </Button>
                     </div>

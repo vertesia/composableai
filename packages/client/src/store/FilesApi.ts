@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type {
     BucketReadAccessStatusResponse,
     BulkUploadUrlsPayload,
     BulkUploadUrlsResponse,
@@ -14,14 +14,14 @@ import {
     GetFileUrlResponse,
     GetUploadUrlPayload,
     SetFileMetadataPayload,
-} from "@vertesia/common";
-import { StreamSource } from "../StreamSource.js";
+} from '@vertesia/common';
+import { StreamSource } from '../StreamSource.js';
 
-export const MEMORIES_PREFIX = "memories";
-export const ARTIFACTS_PREFIX = "agents";
+export const MEMORIES_PREFIX = 'memories';
+export const ARTIFACTS_PREFIX = 'agents';
 
 export function getMemoryFilePath(name: string) {
-    const nameWithExt = name.endsWith(".tar.gz") ? name : name + ".tar.gz";
+    const nameWithExt = name.endsWith('.tar.gz') ? name : `${name}.tar.gz`;
     return `${MEMORIES_PREFIX}/${nameWithExt}`;
 }
 
@@ -36,11 +36,11 @@ export function getAgentArtifactPath(runId: string, name: string): string {
 
 export class FilesApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/files");
+        super(parent, '/api/v1/files');
     }
 
     async deleteFile(path: string, prefix?: boolean): Promise<DeleteFileResult> {
-        return this.delete(`/${path}`, { query: { prefix } });
+        return this.del(`/${path}`, { query: { prefix } });
     }
 
     /**
@@ -51,7 +51,7 @@ export class FilesApi extends ApiTopic {
      * @returns
      */
     getMetadata(uri: string): Promise<FileMetadataResponse> {
-        return this.get("/metadata", {
+        return this.get('/metadata', {
             query: {
                 file: uri,
             },
@@ -66,7 +66,7 @@ export class FilesApi extends ApiTopic {
      */
     setFileMetadata(file: string, metadata: Record<string, string>): Promise<FileMetadataUpdateResult> {
         const payload: SetFileMetadataPayload = { file, metadata };
-        return this.put("/metadata", { payload });
+        return this.put('/metadata', { payload });
     }
 
     /**
@@ -75,16 +75,16 @@ export class FilesApi extends ApiTopic {
      * @returns
      */
     getOrCreateBucket(): Promise<FileBucketResponse> {
-        return this.post("/bucket");
+        return this.post('/bucket');
     }
 
     ensureBucketReadAccess(principal: string): Promise<EnsureBucketReadAccessResponse> {
         const payload: EnsureBucketReadAccessPayload = { principal };
-        return this.post("/bucket/read-access", { payload });
+        return this.post('/bucket/read-access', { payload });
     }
 
     getBucketReadAccessStatus(principal: string): Promise<BucketReadAccessStatusResponse> {
-        return this.get("/bucket/read-access", { query: { principal } });
+        return this.get('/bucket/read-access', { query: { principal } });
     }
 
     list(prefix: string): Promise<FileListResponse> {
@@ -92,19 +92,19 @@ export class FilesApi extends ApiTopic {
     }
 
     getUploadUrl(payload: GetUploadUrlPayload): Promise<GetFileUrlResponse> {
-        return this.post("/upload-url", {
+        return this.post('/upload-url', {
             payload,
         });
     }
 
     // Strictly typed: provide either simple args or a full payload via a separate method
-    getDownloadUrl(file: string, name?: string, disposition?: "inline" | "attachment"): Promise<GetFileUrlResponse> {
+    getDownloadUrl(file: string, name?: string, disposition?: 'inline' | 'attachment'): Promise<GetFileUrlResponse> {
         const payload: GetFileUrlPayload = { file, name, disposition };
-        return this.post("/download-url", { payload });
+        return this.post('/download-url', { payload });
     }
 
     getDownloadUrlWithOptions(payload: GetFileUrlPayload): Promise<GetFileUrlResponse> {
-        return this.post("/download-url", { payload });
+        return this.post('/download-url', { payload });
     }
 
     /**
@@ -114,7 +114,7 @@ export class FilesApi extends ApiTopic {
      * @returns Array of upload URL responses
      */
     bulkGetUploadUrls(payload: BulkUploadUrlsPayload): Promise<BulkUploadUrlsResponse> {
-        return this.post("/bulk-upload-urls", { payload });
+        return this.post('/bulk-upload-urls', { payload });
     }
 
     /**
@@ -123,8 +123,11 @@ export class FilesApi extends ApiTopic {
      * @param concurrency - Maximum number of concurrent uploads (default: 10)
      * @returns Array of upload results with source URI, name, type, and etag
      */
-    async bulkUpload(sources: (StreamSource | File)[], concurrency = 10): Promise<{ source: string; name: string; type?: string; etag?: string }[]> {
-        const fileDescriptors = sources.map(s => ({
+    async bulkUpload(
+        sources: (StreamSource | File)[],
+        concurrency = 10,
+    ): Promise<{ source: string; name: string; type?: string; etag?: string }[]> {
+        const fileDescriptors = sources.map((s) => ({
             name: s.name,
             mime_type: s.type,
             id: s instanceof StreamSource ? s.id : undefined,
@@ -158,7 +161,7 @@ export class FilesApi extends ApiTopic {
 
                     const etag = res.headers.get('etag')?.replace(/^"(.*)"$/, '$1');
                     results[idx] = { source: id, name: source.name, type: sourceMimeType, etag };
-                })
+                }),
             );
         }
 
@@ -175,12 +178,12 @@ export class FilesApi extends ApiTopic {
         const { url, id, path } = await this.getUploadUrl(source);
 
         await fetch(url, {
-            method: "PUT",
+            method: 'PUT',
             body: isStream ? source.stream : source,
             //@ts-expect-error: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
-            duplex: isStream ? "half" : undefined,
+            duplex: isStream ? 'half' : undefined,
             headers: {
-                "Content-Type": source.type || "application/gzip",
+                'Content-Type': source.type || 'application/gzip',
             },
         })
             .then((res: Response) => {
@@ -192,7 +195,7 @@ export class FilesApi extends ApiTopic {
                 }
             })
             .catch((err) => {
-                console.error("Failed to upload file", { err, url, id, path });
+                console.error('Failed to upload file', { err, url, id, path });
                 throw err;
             });
 
@@ -206,13 +209,11 @@ export class FilesApi extends ApiTopic {
      */
     async downloadFile(location: string): Promise<ReadableStream<Uint8Array<ArrayBuffer>>> {
         //if start with HTTPS, no download url needed - assume it's signed already
-        const needSign = !location.startsWith("https:");
-        const { url } = needSign
-            ? await this.getDownloadUrl(location)
-            : { url: location };
+        const needSign = !location.startsWith('https:');
+        const { url } = needSign ? await this.getDownloadUrl(location) : { url: location };
 
         const res = await fetch(url, {
-            method: "GET",
+            method: 'GET',
         })
             .then((res: Response) => {
                 if (res.ok) {
@@ -223,9 +224,7 @@ export class FilesApi extends ApiTopic {
                     throw new Error(`File at ${url} is forbidden`);
                 } else {
                     console.log(res);
-                    throw new Error(
-                        `Failed to download file ${location}: ${res.statusText}`,
-                    );
+                    throw new Error(`Failed to download file ${location}: ${res.statusText}`);
                 }
             })
             .catch((err) => {
@@ -234,9 +233,7 @@ export class FilesApi extends ApiTopic {
             });
 
         if (!res.body) {
-            throw new Error(
-                `No body in response while downloading file ${location}`,
-            );
+            throw new Error(`No body in response while downloading file ${location}`);
         }
 
         return res.body;
@@ -249,41 +246,27 @@ export class FilesApi extends ApiTopic {
      * @returns The destination file URI
      */
     async copyFile(source: string, dest: string): Promise<string> {
-        const response = await this.post("/copy", {
+        const response = (await this.post('/copy', {
             payload: { source, dest },
-        }) as { success: boolean; source: string; dest: string };
+        })) as { success: boolean; source: string; dest: string };
         return response.dest;
     }
 
     async uploadMemoryPack(source: StreamSource | File): Promise<string> {
         const fileId = getMemoryFilePath(source.name);
-        const nameWithExt = source.name.endsWith(".tar.gz")
-            ? source.name
-            : source.name + ".tar.gz";
+        const nameWithExt = source.name.endsWith('.tar.gz') ? source.name : `${source.name}.tar.gz`;
         if (source instanceof File) {
             const file = source as File;
-            return this.uploadFile(
-                new StreamSource(file.stream(), nameWithExt, file.type, fileId),
-            );
+            return this.uploadFile(new StreamSource(file.stream(), nameWithExt, file.type, fileId));
         } else {
-            return this.uploadFile(
-                new StreamSource(
-                    source.stream,
-                    nameWithExt,
-                    source.type,
-                    fileId,
-                ),
-            );
+            return this.uploadFile(new StreamSource(source.stream, nameWithExt, source.type, fileId));
         }
     }
 
-    async downloadMemoryPack(
-        name: string,
-        gunzip: boolean = false,
-    ): Promise<ReadableStream<Uint8Array>> {
+    async downloadMemoryPack(name: string, gunzip: boolean = false): Promise<ReadableStream<Uint8Array>> {
         let stream = await this.downloadFile(getMemoryFilePath(name));
         if (gunzip) {
-            const ds = new DecompressionStream("gzip");
+            const ds = new DecompressionStream('gzip');
             stream = stream.pipeThrough(ds);
         }
         return stream;
@@ -297,7 +280,7 @@ export class FilesApi extends ApiTopic {
      * @returns Array of file paths matching the prefix
      */
     listByPrefix(prefix: string): Promise<{ files: string[] }> {
-        return this.get("/list", { query: { prefix } });
+        return this.get('/list', { query: { prefix } });
     }
 
     /**
@@ -311,13 +294,9 @@ export class FilesApi extends ApiTopic {
         const artifactPath = getAgentArtifactPath(runId, name);
         if (source instanceof File) {
             const file = source as File;
-            return this.uploadFile(
-                new StreamSource(file.stream(), name, file.type, artifactPath)
-            );
+            return this.uploadFile(new StreamSource(file.stream(), name, file.type, artifactPath));
         } else {
-            return this.uploadFile(
-                new StreamSource(source.stream, name, source.type, artifactPath)
-            );
+            return this.uploadFile(new StreamSource(source.stream, name, source.type, artifactPath));
         }
     }
 
@@ -342,7 +321,7 @@ export class FilesApi extends ApiTopic {
     getArtifactDownloadUrl(
         runId: string,
         name: string,
-        disposition?: "inline" | "attachment"
+        disposition?: 'inline' | 'attachment',
     ): Promise<GetFileUrlResponse> {
         const artifactPath = getAgentArtifactPath(runId, name);
         return this.getDownloadUrl(artifactPath, name, disposition);

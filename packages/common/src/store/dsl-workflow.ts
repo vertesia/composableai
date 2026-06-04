@@ -1,8 +1,8 @@
-import { StringValue } from "ms";
-import { ToolExecutionMetadata } from "../tool-execution.js";
-import { BaseObject } from "./common.js";
-import { WorkflowExecutionPayload } from "./index.js";
-import { ParentClosePolicyType } from "./temporalio.js";
+import type { StringValue } from 'ms';
+import type { ToolExecutionMetadata } from '../tool-execution.js';
+import type { BaseObject } from './common.js';
+import type { WorkflowExecutionPayload } from './index.js';
+import type { ParentClosePolicyType } from './temporalio.js';
 
 export type DurationValue = StringValue | number;
 
@@ -23,14 +23,17 @@ export interface WorkflowInputFile {
  * Discriminated union for workflow inputs.
  * Workflows can accept either a list of object IDs (existing behavior) OR a list of file references (new).
  */
+/**
+ * @discriminator inputType
+ */
 export type WorkflowInput =
-    | { inputType: 'objectIds', objectIds: string[] }
-    | { inputType: 'files', files: WorkflowInputFile[] };
+    | { inputType: 'objectIds'; objectIds: string[] }
+    | { inputType: 'files'; files: WorkflowInputFile[] };
 
 /**
  * The payload sent when starting a workflow from the temporal client to the workflow instance.
  */
-export interface DSLWorkflowExecutionPayload extends WorkflowExecutionPayload {
+export interface DSLWorkflowExecutionPayload extends WorkflowExecutionPayload<Record<string, unknown>> {
     /**
      * The workflow definition to be used by the DSL workflow.
      * If a dsl workflow is executed and no definition is provided the workflow will fail.
@@ -69,20 +72,19 @@ export type WorkflowSearchAttributes = Record<string, WorkflowSearchAttributeVal
 /**
  * The payload for a DSL activity execution.
  */
-export interface DSLActivityExecutionPayload<ParamsT extends Record<string, any>> extends WorkflowExecutionPayload {
+export interface DSLActivityExecutionPayload<ParamsT extends object> extends WorkflowExecutionPayload {
     activity: DSLActivitySpec;
     params: ParamsT;
     workflow_name: string;
     debug_mode?: boolean;
 }
 
-
 export type ImportSpec = (string | Record<string, string>)[];
 export interface ActivityFetchSpec {
     /**
      * The data provider name
      */
-    type: "document" | "document_type" | "interaction_run";
+    type: 'document' | 'document_type' | 'interaction_run';
     /**
      * An optional URI to the data source.
      */
@@ -90,7 +92,7 @@ export interface ActivityFetchSpec {
     /**
      * The query to be executed by the data provider
      */
-    query: Record<string, any>;
+    query: Record<string, unknown>;
     /**
      * a string of space separated field names.
      * Prefix a field name with "-" to exclude it from the result.
@@ -107,7 +109,7 @@ export interface ActivityFetchSpec {
      * 1. ignore - Ignore and return an empty array for multi objects query (or undefined for single object query) or empty array for multiple objects throw an error.
      * 2. throw - Throw an error if the object or no objects are found.
      */
-    on_not_found?: "ignore" | "throw";
+    on_not_found?: 'ignore' | 'throw';
 }
 
 export interface DSLWorkflowStepBase {
@@ -115,10 +117,10 @@ export interface DSLWorkflowStepBase {
      * The type fo the step.
      * If not set defaults to "activity"
      */
-    type: "activity" | "workflow";
+    type: 'activity' | 'workflow';
 }
 
-export interface DSLActivitySpec<PARAMS extends Record<string, any> = Record<string, any>> {
+export interface DSLActivitySpec<PARAMS extends object = Record<string, unknown>> {
     /**
      * The name of the activity function
      */
@@ -153,7 +155,7 @@ export interface DSLActivitySpec<PARAMS extends Record<string, any> = Record<str
      * {$eq: {name: value}},
      * Ex: {$eq: {wfVarName: value}}
      */
-    condition?: Record<string, any>;
+    condition?: Record<string, unknown>;
 
     /**
      * The import spec is used to import data from workflow variables.
@@ -172,7 +174,7 @@ export interface DSLActivitySpec<PARAMS extends Record<string, any> = Record<str
     /**
      * Projection to apply to the result. Not all activities support this.
      */
-    projection?: never | Record<string, any>;
+    projection?: never | Record<string, unknown>;
 
     // ---------- Optional features not implemented in a first step ------------
     /**
@@ -193,19 +195,21 @@ export interface DSLActivitySpec<PARAMS extends Record<string, any> = Record<str
     options?: DSLActivityOptions;
 }
 
-export interface DSLActivityStep<PARAMS extends Record<string, any> = Record<string, any>> extends DSLActivitySpec<PARAMS>, DSLWorkflowStepBase {
-    type: "activity";
+export interface DSLActivityStep<PARAMS extends object = Record<string, unknown>>
+    extends DSLActivitySpec<PARAMS>,
+        DSLWorkflowStepBase {
+    type: 'activity';
 }
 
 export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
-    type: "workflow";
+    type: 'workflow';
     // the workflow endpoint to run
     name: string;
     /**
      * The parameters to pass to the child workflow.
      * These parameters will be merged over the parent workflow vars and passed altogether to the child workflow.
      */
-    vars?: Record<string, any>;
+    vars?: Record<string, unknown>;
     // whether or not to wait for the workflow to finish.
     // default is false. (the parent workflow will await for the workflow to finish)
     async?: boolean;
@@ -221,14 +225,14 @@ export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
      * The child workflow will only execute if the condition is satisfied.
      * Example: {$eq: {wfVarName: value}}
      */
-    condition?: Record<string, any>;
+    condition?: Record<string, unknown>;
     /**
      * In case the dslWorkflow is used as a child workflow the spec is used to define the child workflow.
      * If spec is defined then the name must be "dslWorkflow"
      */
     spec?: DSLWorkflowSpec;
     options?: {
-        memo?: Record<string, any>;
+        memo?: Record<string, unknown>;
         retry?: DSLRetryPolicy;
         searchAttributes?: WorkflowSearchAttributes;
         taskQueue?: string;
@@ -242,9 +246,12 @@ export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
         //cancellationType
         //versioningIntent
         //workflowIdReusePolicy
-    }
+    };
 }
 
+/**
+ * @discriminator type
+ */
 export type DSLWorkflowStep = DSLActivityStep | DSLChildWorkflowStep;
 
 export interface DSLWorkflowSpecBase {
@@ -260,7 +267,7 @@ export interface DSLWorkflowSpecBase {
 
     // a dictionary of vars to initialize the workflow execution vars
     // Initial vars cannot contains references to other vars
-    vars: Record<string, any>;
+    vars: Record<string, unknown>;
     // activity options that apply to all activities within the workflow
     options?: DSLActivityOptions;
     // the name of the variable that will hold the workflow result
@@ -270,6 +277,7 @@ export interface DSLWorkflowSpecBase {
 }
 
 export interface DSLWorkflowSpecWithSteps extends DSLWorkflowSpecBase {
+    spec_format: 'steps';
     steps: DSLWorkflowStep[];
     /**
      * @deprecated use steps instead
@@ -281,6 +289,7 @@ export interface DSLWorkflowSpecWithSteps extends DSLWorkflowSpecBase {
  * @deprecated use steps instead
  */
 export interface DSLWorkflowSpecWithActivities extends DSLWorkflowSpecBase {
+    spec_format: 'activities';
     steps?: never;
     /**
      * @deprecated use steps instead
@@ -293,13 +302,27 @@ export interface DSLWorkflowSpecWithActivities extends DSLWorkflowSpecBase {
  * steps was added after activities and may contain a mix of activities and other tasks like exec child workflows.
  * For backward compatibility we keep the activities field as a fallback but one should use one or the other not both.
  */
+/**
+ * @discriminator spec_format
+ */
 export type DSLWorkflowSpec = DSLWorkflowSpecWithSteps | DSLWorkflowSpecWithActivities;
+
+export function withDSLWorkflowSpecDiscriminator(spec: DSLWorkflowSpecBase): DSLWorkflowSpec {
+    if ('steps' in spec && spec.steps) {
+        return { ...spec, spec_format: 'steps' } as DSLWorkflowSpecWithSteps;
+    }
+    return { ...spec, spec_format: 'activities' } as DSLWorkflowSpecWithActivities;
+}
 
 export interface DSLWorkflowDefinition extends BaseObject, DSLWorkflowSpecBase {
     // an optional JSON schema to describe the input vars of the workflow.
-    input_schema?: Record<string, any>;
+    input_schema?: Record<string, unknown>;
     activities?: DSLActivitySpec[];
     steps?: DSLWorkflowStep[];
+}
+
+export interface DSLWorkflowDefinitionResponse extends DSLWorkflowDefinition {
+    spec_format: 'steps' | 'activities';
 }
 
 export interface WorkflowDefinitionRef {
@@ -311,13 +334,13 @@ export interface WorkflowDefinitionRef {
     updated_at: Date;
 }
 
-export const WorkflowDefinitionRefPopulate = "id name description tags created_at updated_at"
+export const WorkflowDefinitionRefPopulate = 'id name description tags created_at updated_at';
 
 /**
  * Payload sent to a remote activity endpoint on a tool server.
  * This is POSTed by the `executeRemoteActivity` bridge activity.
  */
-export interface RemoteActivityExecutionPayload<ParamsT extends Record<string, any> = Record<string, any>> {
+export interface RemoteActivityExecutionPayload<ParamsT extends object = Record<string, unknown>> {
     /** The activity name (unprefixed, as known by the tool server) */
     activity_name: string;
     /** The resolved activity parameters */
@@ -331,7 +354,7 @@ export interface RemoteActivityExecutionPayload<ParamsT extends Record<string, a
  */
 export interface RemoteActivityExecutionResponse {
     /** The result data (stored into workflow vars via the step's `output` field) */
-    result: any;
+    result: unknown;
     /** Whether the execution failed */
     is_error?: boolean;
     /** Error message if is_error is true */

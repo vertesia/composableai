@@ -1,17 +1,13 @@
-import { describe, expect, it } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { describe, expect, it } from 'vitest';
 import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
 
 function renderMarkdownToHtml(markdown: string): string {
     return renderToStaticMarkup(
-        React.createElement(
-            Markdown,
-            { remarkPlugins: [remarkGfm], urlTransform: (url: string) => url },
-            markdown
-        )
+        React.createElement(Markdown, { remarkPlugins: [remarkGfm], urlTransform: (url: string) => url }, markdown),
     );
 }
 
