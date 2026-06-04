@@ -558,6 +558,43 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  packages/studio-utils:
+    dependencies:
+      '@llumiverse/common':
+        specifier: workspace:*
+        version: link:../../llumiverse/common
+      '@vertesia/common':
+        specifier: workspace:*
+        version: link:../common
+      '@vertesia/jst':
+        specifier: workspace:*
+        version: link:../../libraries/jst
+      handlebars:
+        specifier: ^4.7.9
+        version: 4.7.9
+    devDependencies:
+      '@rollup/plugin-commonjs':
+        specifier: ^29.0.2
+        version: 29.0.2(rollup@4.60.4)
+      '@rollup/plugin-node-resolve':
+        specifier: ^16.0.3
+        version: 16.0.3(rollup@4.60.4)
+      '@rollup/plugin-terser':
+        specifier: ^1.0.0
+        version: 1.0.0(rollup@4.60.4)
+      '@types/node':
+        specifier: ^24.12.4
+        version: 24.12.4
+      rollup:
+        specifier: ^4.60.4
+        version: 4.60.4
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.7
+        version: 4.1.7(@types/node@24.12.4)(jsdom@29.1.1(@noble/hashes@1.8.0))(vite@8.0.14(@types/node@24.12.4)(esbuild@0.28.0)(jiti@2.6.1)(terser@5.46.0)(tsx@4.22.3)(yaml@2.9.0))
+
   packages/tools-admin-ui:
     dependencies:
       '@vertesia/common':
