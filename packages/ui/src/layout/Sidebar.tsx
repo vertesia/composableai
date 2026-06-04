@@ -1,7 +1,9 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@vertesia/ui/core';
 import { Nav } from '@vertesia/ui/router';
+import { UserSessionContext } from '@vertesia/ui/session';
 import clsx from 'clsx';
 import { Dot } from 'lucide-react';
+import { useContext } from 'react';
 import { useSidebarToggle } from './SidebarContext';
 
 interface SidebarProps {
@@ -82,6 +84,7 @@ export interface SidebarItemProps {
     id?: string; //HTML ID of the element
     external?: boolean; //If true, the link will open in a new tab
     replace?: boolean; //If true, navigation replaces the current history entry instead of pushing
+    skipStickyParams?: boolean; //If true, do not append the account (a) & project (p) sticky params to the href
 }
 export function SidebarItem({
     external,
@@ -94,8 +97,20 @@ export function SidebarItem({
     current,
     onClick,
     replace,
+    skipStickyParams,
 }: SidebarItemProps) {
     const { toggleMobile } = useSidebarToggle();
+    const session = useContext(UserSessionContext);
+    // Persist the active tenant (account `a` + project `p`) on the href itself so that opening the
+    // link in a new tab or copying its address keeps the current account/project. Reads the session
+    // context directly rather than the throwing useUserSession() hook, so it stays safe in apps that
+    // don't mount a UserSessionProvider (e.g. admin-ui) — there it just leaves the href untouched.
+    const account = session?.account;
+    const project = session?.project;
+    const resolvedHref =
+        !skipStickyParams && account && project && href.startsWith('/')
+            ? `${href}${href.includes('?') ? '&' : '?'}p=${project.id}&a=${account.id}`
+            : href;
     const _closeSideBar = () => {
         setTimeout(() => {
             toggleMobile(false);
@@ -103,7 +118,7 @@ export function SidebarItem({
     };
     const onClickWrapper = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
         if (external) {
-            window.open(href, '_blank');
+            window.open(resolvedHref, '_blank');
             event.preventDefault(); // Prevent default link behavior
             event.stopPropagation(); // Stop the event from propagating
         } else if (onClick) {
@@ -115,7 +130,7 @@ export function SidebarItem({
             <Nav to={to} onClick={_closeSideBar} replace={replace}>
                 <SidebarTooltip text={children as string}>
                     <a
-                        href={href}
+                        href={resolvedHref}
                         onClick={onClickWrapper}
                         className={clsx(
                             current
