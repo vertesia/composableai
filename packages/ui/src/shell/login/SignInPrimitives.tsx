@@ -305,10 +305,10 @@ export function SignInProviderButton({ provider, label, onClick, variant = 'outl
                 variant="unstyled"
                 size="none"
                 onClick={onClick}
-                className="cursor-pointer group h-[42px] w-full inline-flex items-center gap-3 pl-3.5 pr-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
+                className="cursor-pointer group h-[42px] w-full inline-flex items-center gap-3 ps-3.5 pe-3 rounded-md border border-border bg-background text-sm font-medium text-foreground transition hover:bg-muted-background"
             >
                 <Icon className="!size-[18px] shrink-0" />
-                <span className="flex-1 text-left">{label}</span>
+                <span className="flex-1 text-start">{label}</span>
                 <ArrowRight className={arrowClass} />
             </Button>
         );

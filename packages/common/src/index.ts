@@ -40,6 +40,7 @@ export * from './store/index.js';
 export * from './sts-token-types.js';
 export * from './tenant.js';
 export * from './tool-execution.js';
+export * from './tools.js';
 export * from './training.js';
 export * from './transient-tokens.js';
 export * from './user.js';
