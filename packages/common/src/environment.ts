@@ -77,6 +77,24 @@ export interface MediatorEnvConfig {
     model_options?: TextFallbackOptions;
 }
 
+export interface ExecutionEnvironmentSettings {
+    [key: string]: unknown;
+    bucket_access_principal?: string;
+}
+
+/**
+ * Returns the configured Vertex AI bucket access principal for an environment, or undefined.
+ * Only Vertex AI environments expose this setting; the value is trimmed and empty strings
+ * are treated as unset so callers get a single, normalized representation.
+ */
+export function getVertexBucketAccessPrincipal(
+    env: { provider?: SupportedProviders; settings?: ExecutionEnvironmentSettings } | undefined,
+): string | undefined {
+    if (!env || env.provider !== SupportedProviders.vertexai) return undefined;
+    const principal = env.settings?.bucket_access_principal;
+    return typeof principal === 'string' && principal.trim().length > 0 ? principal.trim() : undefined;
+}
+
 export interface ExecutionEnvironment {
     id: string;
     name: string;
@@ -96,7 +114,7 @@ export interface ExecutionEnvironment {
      * Additional provider-specific settings passed through to the driver.
      * For example, custom headers for Apigee-proxied endpoints.
      */
-    settings?: Record<string, unknown>;
+    settings?: ExecutionEnvironmentSettings;
     account: string;
     allowed_projects?: string[];
     created_by: string;
