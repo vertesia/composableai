@@ -77,7 +77,8 @@ export interface MediatorEnvConfig {
     model_options?: TextFallbackOptions;
 }
 
-export interface VertexAIEnvironmentSettings {
+export interface ExecutionEnvironmentSettings {
+    [key: string]: unknown;
     bucket_access_principal?: string;
 }
 
@@ -87,12 +88,10 @@ export interface VertexAIEnvironmentSettings {
  * are treated as unset so callers get a single, normalized representation.
  */
 export function getVertexBucketAccessPrincipal(
-    env:
-        | { provider?: SupportedProviders; settings?: Record<string, unknown> | VertexAIEnvironmentSettings }
-        | undefined,
+    env: { provider?: SupportedProviders; settings?: ExecutionEnvironmentSettings } | undefined,
 ): string | undefined {
     if (!env || env.provider !== SupportedProviders.vertexai) return undefined;
-    const principal = (env.settings as VertexAIEnvironmentSettings | undefined)?.bucket_access_principal;
+    const principal = env.settings?.bucket_access_principal;
     return typeof principal === 'string' && principal.trim().length > 0 ? principal.trim() : undefined;
 }
 
@@ -115,7 +114,7 @@ export interface ExecutionEnvironment {
      * Additional provider-specific settings passed through to the driver.
      * For example, custom headers for Apigee-proxied endpoints.
      */
-    settings?: Record<string, unknown> | VertexAIEnvironmentSettings;
+    settings?: ExecutionEnvironmentSettings;
     account: string;
     allowed_projects?: string[];
     created_by: string;
