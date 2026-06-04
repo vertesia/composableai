@@ -9,6 +9,7 @@ import type {
     WorkflowInputType,
 } from '@vertesia/common';
 import { DocumentNotFoundError, WorkflowExecutionError, WorkflowParamNotFoundError } from '../../errors.js';
+import { activityWorkflowExecution } from '../../utils/activity-info.js';
 import { getProjectFromToken } from '../../utils/auth.js';
 import { getVertesiaClient } from '../../utils/client.js';
 import { Vars } from '../vars.js';
@@ -53,7 +54,7 @@ export class ActivityContext<ParamsT extends object> {
     }
 
     get runId() {
-        const runId = activityInfo().workflowExecution.runId;
+        const runId = activityWorkflowExecution().runId;
         if (!runId) {
             log.error('No runId found in activityInfo');
             throw new WorkflowParamNotFoundError(
@@ -65,7 +66,7 @@ export class ActivityContext<ParamsT extends object> {
     }
 
     get workflowId() {
-        const workflowId = activityInfo().workflowExecution.workflowId;
+        const workflowId = activityWorkflowExecution().workflowId;
         if (!workflowId) {
             log.error('No workflowId found in activityInfo');
             throw new WorkflowParamNotFoundError(
