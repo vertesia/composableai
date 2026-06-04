@@ -51,9 +51,9 @@
         "seedrandom": "^3.0.5",
         "sharp": "^0.34.5",
         "tiktoken": "^1.0.22",
-        "tmp": "^0.2.5",
+        "tmp": "^0.2.7",
         "tmp-promise": "^3.0.3",
-        "undici": "^7.20.0",
+        "undici": "^7.26.0",
         "yaml": "^2.9.0"
     },
     "ts_dual_module": {
