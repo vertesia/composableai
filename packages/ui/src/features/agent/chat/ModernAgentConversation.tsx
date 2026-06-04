@@ -1256,14 +1256,14 @@ function ModernAgentConversationInner({
             // timeline is preserved and the new exchange appends seamlessly at the bottom.
             const deliver = isWorkflowTerminalRef.current
                 ? client.agents.restart(agentRunId).then(() => {
-                    reconnectStream();
-                    return sendUserInput().then(() => {
-                        onAttachmentsSent?.();
-                    });
-                })
+                      reconnectStream();
+                      return sendUserInput().then(() => {
+                          onAttachmentsSent?.();
+                      });
+                  })
                 : sendUserInput().then(() => {
-                    onAttachmentsSent?.();
-                });
+                      onAttachmentsSent?.();
+                  });
 
             deliver
                 .catch((err) => {
@@ -1520,10 +1520,10 @@ function ModernAgentConversationInner({
                 conversationTab
                     ? 'flex-1 h-full'
                     : isRightPanelVisible
-                        ? 'w-full flex-1 min-h-[50vh]'
-                        : fullWidth
-                            ? 'flex-1 w-full'
-                            : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`,
+                      ? 'w-full flex-1 min-h-[50vh]'
+                      : fullWidth
+                        ? 'flex-1 w-full'
+                        : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`,
             )}
         >
             {!hideHeader && (
@@ -1709,9 +1709,9 @@ function ModernAgentConversationInner({
                                         const minConversationWidth = 420;
                                         const maxRightPanelWidth = container
                                             ? Math.max(
-                                                minRightPanelWidth,
-                                                container.getBoundingClientRect().width - minConversationWidth,
-                                            )
+                                                  minRightPanelWidth,
+                                                  container.getBoundingClientRect().width - minConversationWidth,
+                                              )
                                             : minRightPanelWidth + 600;
                                         setRightPanelWidth((w) =>
                                             Math.min(Math.max(w + delta, minRightPanelWidth), maxRightPanelWidth),
@@ -1728,8 +1728,8 @@ function ModernAgentConversationInner({
                                 style={
                                     !conversationTab
                                         ? ({
-                                            ['--agent-right-panel-width' as string]: `${rightPanelWidth}px`,
-                                        } as React.CSSProperties)
+                                              ['--agent-right-panel-width' as string]: `${rightPanelWidth}px`,
+                                          } as React.CSSProperties)
                                         : undefined
                                 }
                             >
