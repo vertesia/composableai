@@ -2,7 +2,7 @@
  * Rollup Configuration for Server Build
  *
  * This configuration handles:
- * 1. TypeScript compilation (src → lib) with preserveModules
+ * 1. TypeScript compilation (src → lib) as short-path bundles
  * 2. Import transformations via @vertesia/build-tools
  *    - Raw file imports (?raw) for template files
  *    - Skill imports (?skill) for markdown skill definitions
@@ -55,14 +55,14 @@ const serverBuild = {
     input: {
         server: './src/tool-server/server.ts',
         'server-node': './src/tool-server/server-node.ts',
+        config: './src/tool-server/config.ts',
     },
     output: {
         dir: 'lib',
         format: 'es',
         sourcemap: true,
-        preserveModules: true,
-        preserveModulesRoot: 'src/tool-server',
         entryFileNames: '[name].js',
+        chunkFileNames: 'chunks/[name]-[hash].js',
     },
     // Bundle everything except Node built-ins so the published runtime is
     // self-contained (no node_modules at runtime).
