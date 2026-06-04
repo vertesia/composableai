@@ -58,9 +58,9 @@
     },
     "exports": {
         "types": "./lib/types/index.d.ts",
-        "default": "./lib/esm/index.js",
         "import": "./lib/esm/index.js",
-        "require": "./lib/cjs/index.js"
+        "require": "./lib/cjs/index.js",
+        "default": "./lib/esm/index.js"
     },
     "types": "./lib/types/index.d.ts"
 }

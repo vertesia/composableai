@@ -46,6 +46,9 @@
     // patch, minor, and major; security fixes bypass via the `vulnerabilityAlerts` block
     // above.
     {
+      "matchPackageNames": [
+        "*"
+      ],
       "minimumReleaseAge": "7 days"
     },
     // Catch-all npm dependencies, later groups take precedence
@@ -218,6 +221,21 @@
       "allowedVersions": "<25",
       "rangeStrategy": "bump"
     },
+        {
+      // The undici Agent is passed as a dispatcher to Node's built-in global
+      // fetch (see core/src/http-agent.ts). undici v8 renamed the dispatch
+      // handler interface (onRequestStart), so a v8 Agent is rejected by the
+      // v7 fetch bundled in Node 24 ("invalid onRequestStart method"). Keep
+      // undici aligned with Node's bundled major until the runtime ships v8.
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "undici"
+      ],
+      "allowedVersions": "<8",
+      "rangeStrategy": "bump"
+    },
     {
       "groupName": "package manager dependencies",
       "matchManagers": [
@@ -248,7 +266,7 @@
         "node"
       ],
       "matchDatasources": [
-        "node"
+        "node-version"
       ],
       "matchDepTypes": [
         "engines"

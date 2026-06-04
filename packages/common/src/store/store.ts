@@ -725,6 +725,22 @@ export interface GetFileUrlResponse {
     path: string;
 }
 
+export interface EnsureBucketReadAccessPayload {
+    principal: string;
+}
+
+export interface EnsureBucketReadAccessResponse {
+    bucket: string;
+    principal: string;
+    granted: boolean;
+}
+
+export interface BucketReadAccessStatusResponse {
+    bucket: string;
+    principal: string;
+    hasAccess: boolean;
+}
+
 export interface FileMetadataResponse {
     name: string;
     size: number;

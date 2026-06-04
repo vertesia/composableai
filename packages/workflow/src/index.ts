@@ -28,6 +28,7 @@ export { dslWorkflow } from './dsl/dsl-workflow.js';
 export * from './dsl/setup/ActivityContext.js';
 export * from './errors.js';
 export * from './result-types.js';
+export * from './utils/activity-info.js';
 export * from './utils/blobs.js';
 export * from './utils/client.js';
 export * from './utils/renditions.js';
