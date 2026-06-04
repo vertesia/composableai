@@ -5,6 +5,25 @@ import typescript from '@rollup/plugin-typescript';
 
 const TARGET_FILE = 'lib/vertesia-studio-utils.js';
 
+/**
+ * Force the Node process to exit cleanly once the build has finished writing.
+ *
+ * `@rollup/plugin-typescript` is known to keep a TypeScript worker thread alive after the
+ * bundle is closed, which prevents the rollup process from exiting and causes turbo to
+ * hang on this task in CI (the same workaround exists in `templates/plugin-template/rollup.config.js`).
+ */
+function forceExitPlugin() {
+    return {
+        name: 'force-exit-after-build',
+        writeBundle() {
+            process.exit(0);
+        },
+        closeBundle() {
+            process.exit(0);
+        },
+    };
+}
+
 export default {
     input: 'src/index.ts',
     output: {
@@ -38,5 +57,6 @@ export default {
             declaration: false,
         }),
         terser(),
+        forceExitPlugin(),
     ],
 };

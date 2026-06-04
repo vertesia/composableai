@@ -43,9 +43,7 @@ jobs:
         run: pnpm install
       - name: Build workspace
         timeout-minutes: 10
-        # Diagnostic: skip @vertesia/studio-utils to test whether it's the trigger of
-        # the CI hang at default concurrency. Revert this filter once we know.
-        run: pnpm exec turbo run build --output-logs=full --filter='!@vertesia/studio-utils'
+        run: pnpm build
       - name: Typecheck and run package tests
         timeout-minutes: 10
         run: pnpm ci:test
@@ -72,8 +70,7 @@ jobs:
         run: pnpm install
       - name: Build workspace
         timeout-minutes: 10
-        # See unit-tests build step — same diagnostic filter applied here.
-        run: pnpm exec turbo run build --output-logs=full --filter='!@vertesia/studio-utils'
+        run: pnpm build
       - name: Template integration test - Plugin
         timeout-minutes: 10
         run: ./.github/bin/test-template-integration.sh --release-type snapshot --template "Vertesia Plugin"
