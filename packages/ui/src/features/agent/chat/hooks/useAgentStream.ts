@@ -283,6 +283,25 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                 since,
                 abortController.signal,
             )
+            .then(() => {
+                // The stream resolves when the run reaches a terminal state. The status was
+                // fetched once at effect start and may still read RUNNING, so re-fetch the
+                // authoritative status now — otherwise a run that FAILS while the panel is
+                // open never surfaces the failed UI until the conversation is remounted.
+                if (abortController.signal.aborted) return undefined;
+                return client.agents
+                    .getInternals(agentRunId)
+                    .then((agentRun) => {
+                        if (!abortController.signal.aborted) {
+                            setAgentRunStatus(agentRun.status?.toUpperCase() ?? null);
+                        }
+                    })
+                    .catch((error) => {
+                        if (!abortController.signal.aborted) {
+                            console.error('Failed to refresh agent run status on stream end:', error);
+                        }
+                    });
+            })
             .catch((error) => {
                 if (!abortController.signal.aborted) {
                     console.error('Failed to stream agent messages:', error);
