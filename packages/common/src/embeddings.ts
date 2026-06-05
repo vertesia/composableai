@@ -1,4 +1,7 @@
 import type { EmbeddingsResult, EmbeddingTaskType } from '@llumiverse/common';
+import type { SupportedEmbeddingTypes } from './project.js';
+import type { ComplexSearchQuery } from './query.js';
+import type { Embedding, RevisionInfo } from './store/store.js';
 
 /**
  * Wire-format inputs accepted by the studio-server embeddings endpoint.
@@ -74,3 +77,96 @@ export interface EmbeddingsApiRequest {
  * that prefer to consume types from @vertesia/common.
  */
 export type EmbeddingsApiResult = EmbeddingsResult;
+
+/**
+ * Optional object context to include alongside exported embedding vectors.
+ */
+export interface ExportEmbeddingsIncludeOptions {
+    /**
+     * Include object properties. Disabled by default because properties may be large or sensitive.
+     */
+    properties?: boolean;
+    /**
+     * Include technical object metadata. Disabled by default because metadata may be large.
+     */
+    metadata?: boolean;
+    /**
+     * Include object revision details. Enabled by default.
+     */
+    revision?: boolean;
+}
+
+/**
+ * Request one page of project embeddings for export.
+ */
+export interface ExportEmbeddingsPageRequest {
+    /**
+     * Embedding types to export. Defaults to all supported embedding types.
+     */
+    embedding_types?: SupportedEmbeddingTypes[];
+    /**
+     * Maximum records to return in this page. Server applies a bounded maximum.
+     */
+    limit?: number;
+    /**
+     * Opaque cursor returned by the previous page.
+     */
+    cursor?: string;
+    /**
+     * Optional content object filters. Full-text and vector ranking options are ignored for export paging.
+     */
+    query?: ComplexSearchQuery;
+    /**
+     * Include all revisions. Defaults to false, exporting only head revisions.
+     */
+    all_revisions?: boolean;
+    /**
+     * Optional object context selectors.
+     */
+    include?: ExportEmbeddingsIncludeOptions;
+}
+
+/**
+ * Exported object identity and context for a single embedding row.
+ */
+export interface ExportedEmbeddingObject {
+    id: string;
+    name: string;
+    external_id?: string;
+    type?: {
+        id?: string;
+        code?: string;
+        name?: string;
+    };
+    location: string;
+    content?: {
+        source?: string;
+        type?: string;
+        name?: string;
+        etag?: string;
+    };
+    created_at: string;
+    updated_at: string;
+    revision?: RevisionInfo;
+    properties?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+}
+
+/**
+ * One exported content object with all requested embeddings present on that object.
+ */
+export interface ExportedEmbeddingRecord {
+    object: ExportedEmbeddingObject;
+    embeddings: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
+}
+
+/**
+ * One cursor page of exported embeddings.
+ */
+export interface ExportEmbeddingsPageResponse {
+    schema_version: 1;
+    items: ExportedEmbeddingRecord[];
+    has_more: boolean;
+    next_cursor?: string;
+    exported_count: number;
+}

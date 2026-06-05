@@ -2,6 +2,7 @@ export * from './AgentsApi.js';
 export * from './client.js';
 export * from './DataApi.js';
 export * from './EmailApi.js';
+export * from './EmbeddingsApi.js';
 export * from './errors.js';
 export * from './FilesApi.js';
 export * from './HiveMemoryApi.js';

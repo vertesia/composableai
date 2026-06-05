@@ -40,12 +40,14 @@
   ],
   "references": [
     {
-      "path": "../common/tsconfig.json",
+      "path": "../common/tsconfig.json"
     },
     {
-      "path": "../client/tsconfig.json",
-    }
-  ,
+      "path": "../client/tsconfig.json"
+    },
+    {
+      "path": "../embeddings-export/tsconfig.json"
+    },
     { "path": "../../llumiverse/common/tsconfig.json" },
     { "path": "../workflow/tsconfig.json" }
   ]
