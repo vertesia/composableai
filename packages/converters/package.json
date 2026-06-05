@@ -13,7 +13,7 @@
         "lint": "biome lint src",
         "test": "vitest run",
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
-        "build": "pnpm exec tsmod build --esm",
+        "build": "pnpm exec rimraf ./lib ./tsconfig.tsbuildinfo && pnpm exec tsmod build --esm",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "exports": {
