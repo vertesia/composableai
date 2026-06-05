@@ -1,9 +1,8 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@vertesia/ui/core';
 import { Nav } from '@vertesia/ui/router';
-import { UserSessionContext } from '@vertesia/ui/session';
+import { useTenantHref } from '@vertesia/ui/session';
 import clsx from 'clsx';
 import { Dot } from 'lucide-react';
-import { useContext } from 'react';
 import { useSidebarToggle } from './SidebarContext';
 
 interface SidebarProps {
@@ -72,24 +71,6 @@ export function SidebarTooltip({ children, text }: { children: React.ReactNode; 
     );
 }
 
-/**
- * Append the active tenant (account `a` + project `p`) query params to an internal href so that
- * opening the link in a new tab or copying its address preserves the current account/project.
- *
- * Idempotent: any existing `a`/`p` are replaced rather than duplicated, and other query params and
- * the hash are preserved. Returns the href unchanged for external/non-path hrefs or when the tenant
- * is not yet known.
- */
-function withTenantParams(href: string, account?: { id: string }, project?: { id: string }): string {
-    if (!account || !project || !href.startsWith('/')) {
-        return href;
-    }
-    const url = new URL(href, 'http://localhost'); // dummy base so relative paths parse
-    url.searchParams.set('p', project.id);
-    url.searchParams.set('a', account.id);
-    return url.pathname + url.search + url.hash;
-}
-
 export interface SidebarItemProps {
     href: string;
     to?: string;
@@ -118,10 +99,7 @@ export function SidebarItem({
     skipStickyParams,
 }: SidebarItemProps) {
     const { toggleMobile } = useSidebarToggle();
-    const session = useContext(UserSessionContext);
-    // Reads the session context directly (not the throwing useUserSession() hook) so it stays a safe
-    // no-op in apps that don't mount a UserSessionProvider, e.g. admin-ui.
-    const resolvedHref = skipStickyParams ? href : withTenantParams(href, session?.account, session?.project);
+    const resolvedHref = useTenantHref(href, { skip: skipStickyParams });
     const _closeSideBar = () => {
         setTimeout(() => {
             toggleMobile(false);
