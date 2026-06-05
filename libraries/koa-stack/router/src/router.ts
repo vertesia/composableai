@@ -327,7 +327,7 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
     }
 
     onError(ctx: Context, err: unknown): void {
-        errorHandler(ctx, err, { htmlRoot: joinPath(this.webRoot, '/errors'), ...this.errorHandlerOpts });
+        errorHandler(ctx, err, this.errorHandlerOpts);
     }
 
     /**

@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import type { Context } from 'koa';
 import statuses from 'statuses';
 
@@ -41,8 +39,6 @@ export interface ErrorInfo {
 }
 
 export interface ErrorHandlerOpts {
-    htmlRoot?: string; // a directory on the file system that contains error files as [statusCode].html
-    renderHTML?: (content: string, info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) => string;
     ctypes?: ErrorContentType | ErrorContentType[]; // force a content type for the error
     json?: ErrorFormatter; // a json error serializer
     xml?: ErrorFormatter;
@@ -55,25 +51,6 @@ export interface ErrorHandlerOpts {
      * The error info is used to write the response to the client (and can also be used by the log function)
      */
     updateErrorInfo?: (ctx: Context, error: ErrorObject, info: ErrorInfo) => void;
-}
-
-/**
- * Read a file, but only if the resolved path stays within `allowedRoot`.
- * Acts as a path-traversal sanitizer: callers may build `file` from untrusted
- * input (e.g. an HTTP status code on an Error object), but escape attempts
- * (`../etc/passwd`, absolute paths outside the root) are rejected.
- */
-function readFile(file: string, allowedRoot: string) {
-    const resolvedRoot = path.resolve(allowedRoot);
-    const resolvedFile = path.resolve(resolvedRoot, file);
-    if (resolvedFile !== resolvedRoot && !resolvedFile.startsWith(resolvedRoot + path.sep)) {
-        return null;
-    }
-    try {
-        return fs.readFileSync(resolvedFile).toString();
-    } catch {
-        return null;
-    }
 }
 
 function json(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
@@ -92,28 +69,12 @@ function json(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
 }
 
 function html(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
-    let content: string | null | undefined;
     if (opts.html) {
-        content = opts.html(info, error, opts);
-    } else {
-        // Constrain to a valid HTTP status integer before path interpolation —
-        // statusCode flows from a thrown error and could be anything at runtime.
-        const code =
-            Number.isInteger(info.statusCode) && info.statusCode >= 100 && info.statusCode <= 599
-                ? info.statusCode
-                : 500;
-        content = readFile(`${code}.html`, opts.htmlRoot || process.cwd());
-        // use a template engine if needed
-        if (content && opts.renderHTML) {
-            content = opts.renderHTML(content, info, error, opts);
-        }
-        if (!content) {
-            const title = `${info.statusCode} ${info.error}`;
-            const message = info.message ? `<p>${info.message}` : '';
-            content = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${title}</title></head><body style='padding:20px'><h1>${title}</h1>${message}</body></html>`;
-        }
+        return opts.html(info, error, opts);
     }
-    return content;
+    const title = `${info.statusCode} ${info.error}`;
+    const message = info.message ? `<p>${info.message}` : '';
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${title}</title></head><body style='padding:20px'><h1>${title}</h1>${message}</body></html>`;
 }
 
 function xml(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
@@ -232,17 +193,6 @@ function handleResponse(ctx: Context, err: ErrorObject, opts: ErrorHandlerOpts =
     return info;
 }
 
-/**
- * Allowed options: {
- *  dir,
- *  json,
- *  html,
- *  text,
- *  renderHTML
- * }
- * @param {*} opts
- * @returns
- */
 export function errorHandler(ctx: Context, err: unknown, opts: ErrorHandlerOpts = {}) {
     // When dealing with cross-globals a normal `instanceof` check doesn't work properly.
     // See https://github.com/koajs/koa/issues/1466
