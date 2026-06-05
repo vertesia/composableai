@@ -24,6 +24,10 @@ export interface EmbeddingsExportStreamOptions extends ExportEmbeddingsPageReque
      */
     filename?: string;
     /**
+     * Project id/name used by the default filename when filename is omitted.
+     */
+    project?: EmbeddingsExportFilenameProject;
+    /**
      * Called after each fetched page and once at completion.
      */
     onProgress?: (progress: EmbeddingsExportProgress) => void;
@@ -40,7 +44,13 @@ export interface EmbeddingsExportStreamResult {
     compression: EmbeddingsExportCompression;
 }
 
+export interface EmbeddingsExportFilenameProject {
+    id?: string;
+    name?: string;
+}
+
 type EmbeddingsExportClient = Pick<ZenoClient, 'embeddings'>;
+const MAX_PROJECT_NAME_FILENAME_LENGTH = 80;
 
 export async function* iterateEmbeddingExportPages(
     client: EmbeddingsExportClient,
@@ -89,7 +99,14 @@ export function createEmbeddingsExportStream(
     client: EmbeddingsExportClient,
     options: EmbeddingsExportStreamOptions = {},
 ): EmbeddingsExportStreamResult {
-    const { compression = 'gzip', filename = defaultExportFilename(), onProgress, signal, ...request } = options;
+    const {
+        compression = 'gzip',
+        filename = createEmbeddingsExportFilename(options.project),
+        onProgress,
+        signal,
+        project: _project,
+        ...request
+    } = options;
     const jsonlStream = createJsonlStream(client, request, { signal, onProgress });
     const stream = compression === 'gzip' ? gzipStream(jsonlStream) : jsonlStream;
     const extension = compression === 'gzip' ? '.jsonl.gz' : '.jsonl';
@@ -140,6 +157,39 @@ function throwIfAborted(signal: AbortSignal | undefined): void {
     }
 }
 
-function defaultExportFilename(): string {
-    return `embeddings-export-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+export function createEmbeddingsExportFilename(project?: EmbeddingsExportFilenameProject, date = new Date()): string {
+    const parts = [
+        'embed-export',
+        sanitizeFilenamePart(project?.id),
+        sanitizeFilenamePart(project?.name, MAX_PROJECT_NAME_FILENAME_LENGTH),
+        compactTimestamp(date),
+    ];
+    return parts.filter(Boolean).join('-');
+}
+
+export function compactTimestamp(date = new Date()): string {
+    const pad = (value: number) => value.toString().padStart(2, '0');
+    return [
+        date.getFullYear().toString(),
+        pad(date.getMonth() + 1),
+        pad(date.getDate()),
+        pad(date.getHours()),
+        pad(date.getMinutes()),
+        pad(date.getSeconds()),
+    ].join('');
+}
+
+function sanitizeFilenamePart(value: string | undefined, maxLength?: number): string | undefined {
+    const normalized = value
+        ?.trim()
+        .replace(/[^\w.-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+    if (!normalized) {
+        return undefined;
+    }
+    if (!maxLength || normalized.length <= maxLength) {
+        return normalized;
+    }
+    return normalized.slice(0, maxLength).replace(/^-|-$/g, '') || undefined;
 }

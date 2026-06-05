@@ -3,9 +3,14 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { createGzip } from 'node:zlib';
 import { type ComplexSearchQuery, type ExportEmbeddingsPageRequest, SupportedEmbeddingTypes } from '@vertesia/common';
-import { type EmbeddingsExportProgress, iterateEmbeddingExportRecords } from '@vertesia/embeddings-export';
+import {
+    createEmbeddingsExportFilename,
+    type EmbeddingsExportProgress,
+    iterateEmbeddingExportRecords,
+} from '@vertesia/embeddings-export';
 import type { Command } from 'commander';
 import { getClient } from '../client.js';
+import { config } from '../profiles/index.js';
 import { type CliOptions, getBooleanOption, getStringOption } from '../utils/options.js';
 
 type ExportEmbeddingsOptions = CliOptions<{
@@ -29,7 +34,7 @@ type ExportCompression = 'gzip' | 'none';
 export async function exportEmbeddings(program: Command, options: ExportEmbeddingsOptions) {
     const client = await getClient(program);
     const compression = normalizeCompression(options.compression);
-    const outputPath = getStringOption(options.output) ?? defaultOutputPath(compression);
+    const outputPath = getStringOption(options.output) ?? (await defaultOutputPath(client, compression));
     const request = buildExportRequest(options);
     const progress = createProgressReporter(options);
     const source = Readable.from(createJsonlBuffers(client.store, request, progress));
@@ -159,7 +164,13 @@ function createProgressReporter(options: ExportEmbeddingsOptions): (progress: Em
     };
 }
 
-function defaultOutputPath(compression: ExportCompression): string {
+async function defaultOutputPath(
+    client: Awaited<ReturnType<typeof getClient>>,
+    compression: ExportCompression,
+): Promise<string> {
     const suffix = compression === 'gzip' ? 'jsonl.gz' : 'jsonl';
-    return `embeddings-export-${new Date().toISOString().replace(/[:.]/g, '-')}.${suffix}`;
+    const projectId =
+        process.env.VERTESIA_PROJECT_ID || process.env.COMPOSABLE_PROMPTS_PROJECT_ID || config.current?.project;
+    const project = projectId ? await client.projects.retrieve(projectId) : undefined;
+    return `${createEmbeddingsExportFilename({ id: projectId, name: project?.name })}.${suffix}`;
 }

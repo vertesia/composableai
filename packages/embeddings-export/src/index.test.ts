@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createEmbeddingsExportStream, iterateEmbeddingExportRecords } from './index.js';
+import {
+    compactTimestamp,
+    createEmbeddingsExportFilename,
+    createEmbeddingsExportStream,
+    iterateEmbeddingExportRecords,
+} from './index.js';
 
 describe('embeddings export helpers', () => {
     it('iterates paged export records', async () => {
@@ -101,6 +106,52 @@ describe('embeddings export helpers', () => {
         expect(output.trim()).toBe(
             '{"object":{"id":"object-1","name":"Object 1","location":"/","created_at":"2026-01-01T00:00:00.000Z","updated_at":"2026-01-01T00:00:00.000Z"},"embeddings":{"text":{"model":"text-model","values":[1,2,3]}}}',
         );
+    });
+
+    it('creates compact project export filenames', () => {
+        const date = new Date(2026, 4, 6, 18, 54, 22);
+
+        expect(compactTimestamp(date)).toBe('20260506185422');
+        expect(
+            createEmbeddingsExportFilename(
+                {
+                    id: '670f9ec8f036f3d24a4ca5e5',
+                    name: 'LR Testing / Local',
+                },
+                date,
+            ),
+        ).toBe('embed-export-670f9ec8f036f3d24a4ca5e5-LR-Testing-Local-20260506185422');
+    });
+
+    it('caps long project names in export filenames', () => {
+        const date = new Date(2026, 4, 6, 18, 54, 22);
+        const filename = createEmbeddingsExportFilename(
+            {
+                id: 'project-id',
+                name: `${'a'.repeat(120)} tail`,
+            },
+            date,
+        );
+
+        expect(filename).toBe(`embed-export-project-id-${'a'.repeat(80)}-20260506185422`);
+    });
+
+    it('uses project metadata in default stream filenames', () => {
+        const client = {
+            embeddings: {
+                exportPage: vi.fn(),
+            },
+        };
+
+        const result = createEmbeddingsExportStream(client, {
+            compression: 'gzip',
+            project: {
+                id: 'project-id',
+                name: 'Project Name',
+            },
+        });
+
+        expect(result.filename).toMatch(/^embed-export-project-id-Project-Name-\d{14}\.jsonl\.gz$/);
     });
 });
 

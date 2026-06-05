@@ -7,7 +7,10 @@ export function registerEmbeddingsCommand(program: Command) {
     embeddings
         .command('export')
         .description('Export stored project embeddings as paged JSONL or JSONL.GZ')
-        .option('-o, --output [path]', 'Output file path. Defaults to embeddings-export-<timestamp>.jsonl.gz')
+        .option(
+            '-o, --output [path]',
+            'Output file path. Defaults to embed-export-<projectid>-<projectname>-<timestamp>.jsonl.gz',
+        )
         .option('--compression [compression]', 'Compression: gzip or none', 'gzip')
         .option('--embedding-types [types]', 'Comma-separated embedding types: text,image,properties')
         .option('-l, --limit [limit]', 'Records to fetch per API page', '500')
