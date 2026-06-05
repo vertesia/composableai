@@ -92,7 +92,7 @@ function packageJsonName(packageJson) {
 }
 
 function isTemplateScaffoldPackageName(name) {
-    return name === 'plugin-template' || /^integration-test-plugin-\d+$/.test(name ?? '');
+    return name === 'plugin-template' || /^(integration|smoke)-test-plugin(-npm)?-\d+$/.test(name ?? '');
 }
 
 function itemId(item) {
