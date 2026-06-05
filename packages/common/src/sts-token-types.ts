@@ -2,6 +2,7 @@
  * STS Token Request Types
  * These types define the structure for token requests to the Security Token Service
  */
+import type { ProjectRoles } from './project.js';
 
 export type TokenType = 'apikey' | 'user' | 'project' | 'environment' | 'agent' | 'service_account';
 export type SigningAlgorithm = 'ES256' | 'RS256';
@@ -80,7 +81,7 @@ export interface ServiceAccountTokenRequest extends BaseTokenRequest {
     type: 'service_account';
     account_id: string;
     project_id: string; // Will verify it belongs to account
-    roles?: string[]; // Optional - roles for the service account token
+    roles?: ProjectRoles[]; // Optional - roles for the service account token
     name?: string;
 }
 

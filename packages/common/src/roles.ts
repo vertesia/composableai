@@ -2,8 +2,7 @@ import { Permission } from './access-control.js';
 import { ProjectRoles } from './project.js';
 
 export class Role {
-    readonly permissions: Set<Permission>;
-
+    permissions: Set<Permission>;
     constructor(
         public name: ProjectRoles,
         permissions: Permission[],
@@ -20,39 +19,44 @@ export class RoleList {
     private constructor(public readonly roles: Role[]) {}
 
     static fromRoleNames(roleNames: ProjectRoles[]): RoleList {
-        return new RoleList(roleNames.map((roleName) => getRoleByName(roleName)));
+        const roles = roleNames.map((r) => getRoleByName(r));
+        return new RoleList(roles);
     }
 
     static fromRoleName(roleName: ProjectRoles): RoleList {
-        return new RoleList([getRoleByName(roleName)]);
+        const roles = [getRoleByName(roleName)];
+        return new RoleList(roles);
     }
 
-    hasPermission(permission: Permission): boolean {
-        return this.roles.some((role) => role.hasPermission(permission));
+    hasPermission(perm: Permission): boolean {
+        return this.roles.some((role) => role.hasPermission(perm));
     }
 }
 
 class OrgMemberRole extends Role {
-    constructor(name: ProjectRoles, permissions: Permission[]) {
+    constructor(
+        public name: ProjectRoles,
+        permissions: Permission[],
+    ) {
         super(name, [Permission.account_member, ...permissions]);
     }
 }
 
 class OwnerRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.owner, Object.values(Permission) as Permission[]);
+        super(ProjectRoles.owner, Object.values(Permission));
     }
 }
 
 class AdminRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.admin, Object.values(Permission) as Permission[]);
+        super(ProjectRoles.admin, Object.values(Permission));
     }
 }
 
 class ManagerRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.manager, Object.values(Permission) as Permission[]);
+        super(ProjectRoles.manager, Object.values(Permission));
         this.permissions.delete(Permission.account_admin);
         this.permissions.delete(Permission.manage_billing);
         this.permissions.delete(Permission.audit_read);
@@ -65,7 +69,7 @@ class ManagerRole extends OrgMemberRole {
 
 class DeveloperRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.developer, Object.values(Permission) as Permission[]);
+        super(ProjectRoles.developer, Object.values(Permission));
         this.permissions.delete(Permission.account_admin);
         this.permissions.delete(Permission.project_admin);
         this.permissions.delete(Permission.project_settings_write);
@@ -89,7 +93,7 @@ class ApplicationRole extends OrgMemberRole {
             Permission.content_write,
             Permission.content_read,
             Permission.content_write,
-            Permission.content_admin,
+            Permission.content_admin, // required for now as we need to create types
             Permission.project_admin,
             Permission.workflow_run,
             Permission.project_settings_write,
@@ -98,10 +102,40 @@ class ApplicationRole extends OrgMemberRole {
     }
 }
 
+class AutomationRole extends OrgMemberRole {
+    constructor() {
+        super(ProjectRoles.automation, [
+            Permission.content_read,
+            Permission.content_write,
+            Permission.content_admin,
+            Permission.int_read,
+            Permission.int_execute,
+            Permission.run_read,
+            Permission.workflow_run,
+            Permission.project_integration_read,
+        ]);
+    }
+}
+
+class ContentProcessorRole extends OrgMemberRole {
+    constructor() {
+        super(ProjectRoles.content_processor, [
+            Permission.content_read,
+            Permission.content_write,
+            Permission.content_admin,
+            Permission.content_superadmin,
+            Permission.int_execute,
+            Permission.workflow_read,
+            Permission.workflow_run,
+            Permission.run_read,
+        ]);
+    }
+}
+
 class ConsumerRole extends OrgMemberRole {
     constructor() {
         super(ProjectRoles.consumer, [
-            Permission.content_admin,
+            Permission.content_admin, // Temporary permission; micro apps will need to create types instead via user roles
             Permission.content_read,
             Permission.content_write,
             Permission.content_delete,
@@ -168,7 +202,7 @@ class AppMemberRole extends OrgMemberRole {
     }
 }
 
-class ContentSuperAdminRole extends DeveloperRole {
+class ContentSuperAdmin extends DeveloperRole {
     constructor() {
         super();
         this.name = ProjectRoles.content_superadmin;
@@ -182,6 +216,8 @@ const roles: Record<ProjectRoles, Role> = {
     [ProjectRoles.manager]: new ManagerRole(),
     [ProjectRoles.developer]: new DeveloperRole(),
     [ProjectRoles.application]: new ApplicationRole(),
+    [ProjectRoles.automation]: new AutomationRole(),
+    [ProjectRoles.content_processor]: new ContentProcessorRole(),
     [ProjectRoles.consumer]: new ConsumerRole(),
     [ProjectRoles.executor]: new ExecutorRole(),
     [ProjectRoles.reader]: new ReaderRole(),
@@ -190,7 +226,7 @@ const roles: Record<ProjectRoles, Role> = {
     [ProjectRoles.billing]: new BillingRole(),
     [ProjectRoles.app_member]: new AppMemberRole(),
     [ProjectRoles.member]: new OrgMemberRole(ProjectRoles.member, []),
-    [ProjectRoles.content_superadmin]: new ContentSuperAdminRole(),
+    [ProjectRoles.content_superadmin]: new ContentSuperAdmin(),
 };
 
 export function getRoleByName(name: ProjectRoles): Role {
