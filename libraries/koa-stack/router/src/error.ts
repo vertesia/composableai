@@ -57,9 +57,20 @@ export interface ErrorHandlerOpts {
     updateErrorInfo?: (ctx: Context, error: ErrorObject, info: ErrorInfo) => void;
 }
 
-function readFile(file: string) {
+/**
+ * Read a file, but only if the resolved path stays within `allowedRoot`.
+ * Acts as a path-traversal sanitizer: callers may build `file` from untrusted
+ * input (e.g. an HTTP status code on an Error object), but escape attempts
+ * (`../etc/passwd`, absolute paths outside the root) are rejected.
+ */
+function readFile(file: string, allowedRoot: string) {
+    const resolvedRoot = path.resolve(allowedRoot);
+    const resolvedFile = path.resolve(resolvedRoot, file);
+    if (resolvedFile !== resolvedRoot && !resolvedFile.startsWith(resolvedRoot + path.sep)) {
+        return null;
+    }
     try {
-        return fs.readFileSync(file).toString();
+        return fs.readFileSync(resolvedFile).toString();
     } catch {
         return null;
     }
@@ -91,7 +102,7 @@ function html(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
             Number.isInteger(info.statusCode) && info.statusCode >= 100 && info.statusCode <= 599
                 ? info.statusCode
                 : 500;
-        content = readFile(path.resolve(opts.htmlRoot || process.cwd(), `${code}.html`));
+        content = readFile(`${code}.html`, opts.htmlRoot || process.cwd());
         // use a template engine if needed
         if (content && opts.renderHTML) {
             content = opts.renderHTML(content, info, error, opts);
