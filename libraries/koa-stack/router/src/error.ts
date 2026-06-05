@@ -142,14 +142,9 @@ function handleResponse(ctx: Context, err: ErrorObject, opts: ErrorHandlerOpts =
     const { res } = ctx;
 
     // first unset all headers
-    /* istanbul ignore else */
     const accessControlAllowOrigin = res.getHeader('Access-Control-Allow-Origin');
-    if (typeof res.getHeaderNames === 'function') {
-        for (const name of res.getHeaderNames()) {
-            res.removeHeader(name);
-        }
-    } else {
-        (res as any)._headers = {}; // Node < 7.7
+    for (const name of res.getHeaderNames()) {
+        res.removeHeader(name);
     }
     // restore cors header to have the real error sent to the client
     if (accessControlAllowOrigin) {

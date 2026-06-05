@@ -16,9 +16,12 @@ declare module 'koa' {
 export interface OwnOpts {
     formidable?: formidable.Options;
     inflate?: inflate.Options;
-    form?: (data: string) => unknown;
-    json?: (data: string) => unknown;
-    xml?: (data: string) => unknown;
+    // biome-ignore lint/suspicious/noExplicitAny: custom parser returns user-defined shape
+    form?: (data: string) => any;
+    // biome-ignore lint/suspicious/noExplicitAny: custom parser returns user-defined shape
+    json?: (data: string) => any;
+    // biome-ignore lint/suspicious/noExplicitAny: custom parser returns user-defined shape
+    xml?: (data: string) => any;
 }
 export type LazyBodyOpts = readRawBody.Options & OwnOpts;
 
@@ -62,11 +65,19 @@ async function getRawBodyText(koaRequest: Request, opts: LazyBodyOpts): Promise<
 export class LazyBody {
     ctx: Context;
     type: FormType;
-    data: unknown;
+    // biome-ignore lint/suspicious/noExplicitAny: parsed HTTP body — caller types per route
+    data: any;
     raw: string;
     files: formidable.Files | null | undefined;
 
-    constructor(ctx: Context, type: FormType, data: unknown, raw: string, files: formidable.Files | null | undefined) {
+    constructor(
+        ctx: Context,
+        type: FormType,
+        // biome-ignore lint/suspicious/noExplicitAny: parsed HTTP body — caller types per route
+        data: any,
+        raw: string,
+        files: formidable.Files | null | undefined,
+    ) {
         this.ctx = ctx;
         this.type = type;
         this.data = data;
@@ -208,7 +219,8 @@ enum FormType {
 
 async function createBody(koaRequest: Request, opts: LazyBodyOpts) {
     let type: FormType,
-        data: unknown,
+        // biome-ignore lint/suspicious/noExplicitAny: parsed HTTP body — caller types per route
+        data: any,
         raw: string,
         files: formidable.Files | null | undefined = null;
     if (koaRequest.is('multipart')) {
