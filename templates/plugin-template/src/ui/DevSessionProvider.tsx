@@ -5,8 +5,8 @@ import {
     UserSession,
     UserSessionContext,
 } from '@vertesia/ui/session';
-import { useMemo } from 'react';
 import type { ReactNode } from 'react';
+import { useMemo } from 'react';
 
 function decodeJwtPayload(token: string): AuthTokenPayload {
     const [, payload] = token.split('.');

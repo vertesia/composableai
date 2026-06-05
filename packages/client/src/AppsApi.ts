@@ -1,5 +1,7 @@
 import { ApiTopic, type ClientBase, type ServerError } from '@vertesia/api-fetch-client';
 import type {
+    ActivateAppVersionResponse,
+    AppBuildProgress,
     AppDeleteSummary,
     AppInstallation,
     AppInstallationKind,
@@ -11,10 +13,8 @@ import type {
     AppPackage,
     AppPackageScope,
     AppToolCollection,
-    AppBuildProgress,
     AppVersionListQuery,
     AppVersionRecord,
-    ActivateAppVersionResponse,
     CountResult,
     ProjectRef,
     RequireAtLeastOne,

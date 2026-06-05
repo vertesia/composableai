@@ -8,7 +8,7 @@ import {
 } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
-import { generateEmbeddings, type GenerateEmbeddingsParams } from './generateEmbeddings.js';
+import { type GenerateEmbeddingsParams, generateEmbeddings } from './generateEmbeddings.js';
 
 vi.mock('../dsl/setup/ActivityContext.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../dsl/setup/ActivityContext.js')>();

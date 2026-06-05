@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { PromptRole } from '@llumiverse/common';
 import { PROCESS_DEFINITION_FORMAT_VERSION, TemplateType } from '@vertesia/common';
+import { describe, expect, it } from 'vitest';
 import { ContentTypesCollection } from '../ContentTypesCollection.js';
 import { InteractionCollection } from '../InteractionCollection.js';
 import { buildAppPackage } from './app-package.js';

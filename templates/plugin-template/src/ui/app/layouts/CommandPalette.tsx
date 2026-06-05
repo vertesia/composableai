@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Command, Search } from 'lucide-react';
 import { Modal } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
-import { routes } from '../routes';
+import { Command, Search } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PluginRoute } from '../routes';
+import { routes } from '../routes';
 
 interface PaletteItem {
     path: string;

@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bot, X } from 'lucide-react';
+import type { CreateAgentRunPayload } from '@vertesia/common';
 import { Button, SidePanel } from '@vertesia/ui/core';
 import { ModernAgentConversation } from '@vertesia/ui/features';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useLocation } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import type { CreateAgentRunPayload } from '@vertesia/common';
+import { Bot, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ASSISTANT_INTERACTION } from '../constants';
-import { OPEN_ASSISTANT_EVENT } from './assistantEvents';
 import type { OpenAssistantDetail } from './assistantEvents';
+import { OPEN_ASSISTANT_EVENT } from './assistantEvents';
 
 /**
  * Route-aware assistant context. Replace this builder for your plugin to

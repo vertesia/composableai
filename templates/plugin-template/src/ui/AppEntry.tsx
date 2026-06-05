@@ -1,15 +1,15 @@
-import { ToastProvider, ThemeProvider } from '@vertesia/ui/core';
+import { ThemeProvider, ToastProvider } from '@vertesia/ui/core';
 import { TypeRegistryProvider, UserPermissionProvider } from '@vertesia/ui/features';
 import { I18nProvider } from '@vertesia/ui/i18n';
-import { RouterProvider, type Route } from '@vertesia/ui/router';
+import { type Route, RouterProvider } from '@vertesia/ui/router';
 import { StandaloneApp, VertesiaShell } from '@vertesia/ui/shell';
 import type { ReactNode } from 'react';
 import { App } from './app/App';
 import { OrgGate } from './app/layouts/OrgGate';
 import { PluginAccessDenied } from './app/layouts/PluginAccessDenied';
 import { PluginLayout } from './app/layouts/PluginLayout';
-import { DevSessionProvider } from './DevSessionProvider';
 import { setUsePluginAssets } from './assets';
+import { DevSessionProvider } from './DevSessionProvider';
 
 setUsePluginAssets(false);
 

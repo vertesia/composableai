@@ -48,6 +48,26 @@ function resolveInternalVersion(
     return latest ? { version: latest, pinned: false } : null;
 }
 
+function rewritePackageManagerScripts(
+    packageJson: { scripts?: Record<string, string> },
+    packageManager: string,
+): number {
+    if (!packageJson.scripts) return 0;
+
+    let replacements = 0;
+    const runCommand = `${packageManager} run`;
+
+    for (const [scriptName, scriptCommand] of Object.entries(packageJson.scripts)) {
+        const updatedCommand = scriptCommand.replace(/\bpnpm run\b/g, runCommand);
+        if (updatedCommand !== scriptCommand) {
+            packageJson.scripts[scriptName] = updatedCommand;
+            replacements++;
+        }
+    }
+
+    return replacements;
+}
+
 /**
  * Escape special regex characters
  */
@@ -200,6 +220,11 @@ export function adjustPackageJson(
         if (answers.PM_VERSION) {
             packageJson.packageManager = `${packageManager}@${answers.PM_VERSION}`;
             console.log(chalk.gray(`   Set packageManager to "${packageJson.packageManager}"`));
+        }
+
+        const scriptReplacements = rewritePackageManagerScripts(packageJson, packageManager);
+        if (scriptReplacements > 0) {
+            console.log(chalk.gray(`   Updated ${scriptReplacements} scripts for ${packageManager}`));
         }
 
         // 2. Replace workspace:* with pinned versions

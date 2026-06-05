@@ -1,6 +1,6 @@
+import type { Route } from '@vertesia/ui/router';
 import type { LucideIcon } from 'lucide-react';
 import { Database, HomeIcon, MessagesSquare, PlusCircle, Settings } from 'lucide-react';
-import type { Route } from '@vertesia/ui/router';
 import { ChatPage } from './pages/ChatPage';
 import { ContentObjectDetailPage } from './pages/ContentObjectDetailPage';
 import { ContentObjectsPage } from './pages/ContentObjectsPage';
