@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import type { EndpointRoute } from './router.js';
-import { ApiVersion, EndpointVersions } from './version.js';
+import { ApiVersion, EndpointVersions, type VersionedEndpointRoute } from './version.js';
 
 // Helper function to create mock versioned endpoint routes
-function createMockRoute(version: number): any {
+function createMockRoute(version: number): VersionedEndpointRoute {
     return {
         version,
         key: `GET:/test`,
         pathPattern: '/test',
         method: 'GET',
         absPathPattern: '/test',
-    };
+    } as VersionedEndpointRoute;
 }
 
 // Helper function to create mock default route
@@ -21,7 +21,7 @@ function createMockDefaultRoute(): EndpointRoute {
         pathPattern: '/test',
         method: 'GET',
         absPathPattern: '/test',
-    } as any;
+    } as EndpointRoute;
 }
 
 describe('ApiVersion class', () => {

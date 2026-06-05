@@ -3,7 +3,24 @@ import path from 'node:path';
 import type { Context } from 'koa';
 import statuses from 'statuses';
 
-export type ErrorFormatter = (info: ErrorInfo, error: Error | any, opts: ErrorHandlerOpts) => string;
+/**
+ * Structural type for errors handled by the koa-stack error handler.
+ * Covers `Error`, `ServerError`, Koa HTTP errors, and Node fs errors.
+ * All extra properties are optional — the handler defends against missing fields.
+ */
+export interface ErrorObject extends Error {
+    status?: number;
+    statusCode?: number;
+    code?: string;
+    expose?: boolean;
+    details?: string;
+    ctype?: string;
+    data?: unknown;
+    headers?: Record<string, string | string[]>;
+    headerSent?: boolean;
+}
+
+export type ErrorFormatter = (info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) => string;
 
 export enum ErrorContentType {
     html,
@@ -25,19 +42,19 @@ export interface ErrorInfo {
 
 export interface ErrorHandlerOpts {
     htmlRoot?: string; // a directory on the file system that contains error files as [statusCode].html
-    renderHTML?: (content: string, info: ErrorInfo, error: Error | object, opts: ErrorHandlerOpts) => string;
+    renderHTML?: (content: string, info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) => string;
     ctypes?: ErrorContentType | ErrorContentType[]; // force a content type for the error
     json?: ErrorFormatter; // a json error serializer
     xml?: ErrorFormatter;
     html?: ErrorFormatter;
     text?: ErrorFormatter;
     // if log is specified does not delegate errors to koa error handler
-    log?: (ctx: Context, error: Error | object, info?: ErrorInfo | undefined) => void;
+    log?: (ctx: Context, error: ErrorObject, info?: ErrorInfo | undefined) => void;
     /**
      * Update / adjust the generated error info object
      * The error info is used to write the response to the client (and can also be used by the log function)
      */
-    updateErrorInfo?: (ctx: Context, error: Error | object, info: ErrorInfo) => void;
+    updateErrorInfo?: (ctx: Context, error: ErrorObject, info: ErrorInfo) => void;
 }
 
 function readFile(file: string) {
@@ -48,7 +65,7 @@ function readFile(file: string) {
     }
 }
 
-function json(info: ErrorInfo, error: Error | object, opts: ErrorHandlerOpts) {
+function json(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
     let content: string | undefined;
     if (opts.json) {
         content = opts.json(info, error, opts);
@@ -63,7 +80,7 @@ function json(info: ErrorInfo, error: Error | object, opts: ErrorHandlerOpts) {
     return content;
 }
 
-function html(info: ErrorInfo, error: Error | object, opts: ErrorHandlerOpts) {
+function html(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
     let content: string | null | undefined;
     if (opts.html) {
         content = opts.html(info, error, opts);
@@ -82,7 +99,7 @@ function html(info: ErrorInfo, error: Error | object, opts: ErrorHandlerOpts) {
     return content;
 }
 
-function xml(info: ErrorInfo, error: Error | object, opts: ErrorHandlerOpts) {
+function xml(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
     let content: string | undefined;
     if (opts.xml) {
         content = opts.xml(info, error, opts);
@@ -93,7 +110,7 @@ function xml(info: ErrorInfo, error: Error | object, opts: ErrorHandlerOpts) {
     }
 }
 
-function text(info: ErrorInfo, error: Error | object, opts: ErrorHandlerOpts) {
+function text(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
     let content: string | undefined;
     if (opts.text) {
         content = opts.text(info, error, opts);
@@ -121,7 +138,7 @@ function getContentType(ctx: Context, ctypes?: string | string[]) {
     return type || ErrorContentType.text;
 }
 
-function handleResponse(ctx: Context, err: Error | any, opts: ErrorHandlerOpts = {}): ErrorInfo {
+function handleResponse(ctx: Context, err: ErrorObject, opts: ErrorHandlerOpts = {}): ErrorInfo {
     const { res } = ctx;
 
     // first unset all headers
@@ -214,21 +231,24 @@ function handleResponse(ctx: Context, err: Error | any, opts: ErrorHandlerOpts =
  * @param {*} opts
  * @returns
  */
-export function errorHandler(ctx: Context, err: Error | any, opts: ErrorHandlerOpts = {}) {
+export function errorHandler(ctx: Context, err: unknown, opts: ErrorHandlerOpts = {}) {
     // When dealing with cross-globals a normal `instanceof` check doesn't work properly.
     // See https://github.com/koajs/koa/issues/1466
     // We can probably remove it once jest fixes https://github.com/facebook/jest/issues/2549.
     const isNativeError = Object.prototype.toString.call(err) === '[object Error]' || err instanceof Error;
+    let error: ErrorObject;
     if (!isNativeError) {
         const errObj = err;
-        err = new Error(`non-error thrown: ${JSON.stringify(err)}`);
-        err.data = errObj;
+        error = new Error(`non-error thrown: ${JSON.stringify(err)}`) as ErrorObject;
+        error.data = errObj;
         console.error('non-error thrown', errObj);
+    } else {
+        error = err as ErrorObject;
     }
 
     let headerSent = false;
     if (ctx.headerSent || !ctx.writable) {
-        headerSent = err.headerSent = true;
+        headerSent = error.headerSent = true;
     }
 
     let info: ErrorInfo | undefined;
@@ -239,18 +259,18 @@ export function errorHandler(ctx: Context, err: Error | any, opts: ErrorHandlerO
         // handler and log.
         delegate = true;
     } else {
-        info = handleResponse(ctx, err, opts);
+        info = handleResponse(ctx, error, opts);
         // only delegate to koa unknownn or >= 500 http errors (i.e. real errors)
         if (info.status && info.status >= 500) {
             delegate = true;
         }
     }
 
-    if (opts.log) opts.log(ctx, err, info);
+    if (opts.log) opts.log(ctx, error, info);
 
     // do not delegate if log is specified
     if (!opts.log && delegate) {
         // delegate tp koa error handler
-        ctx.app.emit('error', err, ctx);
+        ctx.app.emit('error', error, ctx);
     }
 }

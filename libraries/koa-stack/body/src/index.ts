@@ -16,9 +16,9 @@ declare module 'koa' {
 export interface OwnOpts {
     formidable?: formidable.Options;
     inflate?: inflate.Options;
-    form?: (data: string) => any;
-    json?: (data: string) => any;
-    xml?: (data: string) => any;
+    form?: (data: string) => unknown;
+    json?: (data: string) => unknown;
+    xml?: (data: string) => unknown;
 }
 export type LazyBodyOpts = readRawBody.Options & OwnOpts;
 
@@ -62,11 +62,11 @@ async function getRawBodyText(koaRequest: Request, opts: LazyBodyOpts): Promise<
 export class LazyBody {
     ctx: Context;
     type: FormType;
-    data: any;
+    data: unknown;
     raw: string;
     files: formidable.Files | null | undefined;
 
-    constructor(ctx: Context, type: FormType, data: any, raw: string, files: formidable.Files | null | undefined) {
+    constructor(ctx: Context, type: FormType, data: unknown, raw: string, files: formidable.Files | null | undefined) {
         this.ctx = ctx;
         this.type = type;
         this.data = data;
@@ -208,7 +208,7 @@ enum FormType {
 
 async function createBody(koaRequest: Request, opts: LazyBodyOpts) {
     let type: FormType,
-        data: any,
+        data: unknown,
         raw: string,
         files: formidable.Files | null | undefined = null;
     if (koaRequest.is('multipart')) {

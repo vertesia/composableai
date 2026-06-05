@@ -88,7 +88,7 @@ function createRegexpPrefixMatcher(prefix: string): PrefixMatcher {
     return (ctx: Context, path: string) => {
         const m = matcher(path);
         if (m) {
-            const params = m.params as any;
+            const params = m.params as { _?: string[] };
             ctx.$router.path = params._ ? `/${params._.join('/')}` : '/';
             ctx.$router.update(params);
             return true;

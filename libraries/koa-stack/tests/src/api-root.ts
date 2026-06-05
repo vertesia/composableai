@@ -1,7 +1,7 @@
 import { filters, get, guard, intercept, post, Resource, type Router, routes, serve } from '@koa-stack/router';
 import type { Context, Next } from 'koa';
 
-async function intrerceptor1(this: any, ctx: Context, endpoint: (ctx: Context) => Promise<any>) {
+async function intrerceptor1(this: unknown, ctx: Context, endpoint: (ctx: Context) => Promise<unknown>) {
     const result = await endpoint(ctx);
     if (this instanceof ApiIntercept) {
         return `intercepted: ${result || ''}`;
