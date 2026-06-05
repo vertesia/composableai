@@ -11,7 +11,7 @@
     "license": "Apache-2.0",
     "scripts": {
         "lint": "biome lint src",
-        "build": "pnpm exec tsmod build && pnpm exec rollup -c",
+        "build": "pnpm exec rimraf ./lib ./tsconfig.tsbuildinfo && pnpm exec tsmod build && pnpm exec rollup -c",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
         "test": "vitest run",
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
