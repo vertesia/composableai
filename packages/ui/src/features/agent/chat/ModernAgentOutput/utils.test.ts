@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
     buildSummaryConversationItems,
     buildSummaryDisplayMessages,
-    getSummaryConversationLatestTimestamp,
     getSummaryActivityAnchorTimestamp,
+    getSummaryConversationLatestTimestamp,
     isInitialSummaryActivityFallback,
     shouldShowSummaryActivityFallback,
 } from './SummaryConversation';
@@ -895,6 +895,54 @@ describe('ModernAgentOutput summary conversation items', () => {
         );
 
         expect(summaryMessages).toEqual([answer]);
+    });
+
+    it('keeps completed answer streams as assistant prose when a later tool message follows', () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: 'What are the news headlines in Tokyo today?',
+        });
+        const thinkingMarker = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Thinking...',
+            details: {
+                display_role: 'thinking',
+                activity_id: 'reply-1',
+            },
+        });
+        const updatePlan = makeMessage({
+            timestamp: 4000,
+            type: AgentMessageType.THOUGHT,
+            message: 'I have extracted the relevant news headlines and presented them.',
+            details: {
+                tool: 'update_plan',
+                tool_status: 'running',
+                tool_run_id: 'tool-1',
+            },
+        });
+
+        const summaryMessages = buildSummaryDisplayMessages(
+            [question, thinkingMarker, updatePlan],
+            new Map([
+                [
+                    'reply-1',
+                    {
+                        text: 'Here are some of the top news headlines related to Tokyo today.',
+                        startTimestamp: 3000,
+                        activityId: 'reply-1',
+                        isComplete: true,
+                    },
+                ],
+            ]),
+        );
+
+        const streamedAnswer = summaryMessages.find(
+            (message) => message.message === 'Here are some of the top news headlines related to Tokyo today.',
+        );
+        expect(streamedAnswer?.type).toBe(AgentMessageType.ANSWER);
+        expect(streamedAnswer?.details?.display_role).toBeUndefined();
     });
 });
 

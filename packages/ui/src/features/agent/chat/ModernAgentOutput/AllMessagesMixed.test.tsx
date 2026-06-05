@@ -1,11 +1,12 @@
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { VertesiaClient } from '@vertesia/client';
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
-import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../../../../i18n/index.js';
 import { UserSession, UserSessionContext } from '../../../../session/index.js';
 import AllMessagesMixed from './AllMessagesMixed';
+import type { StreamingData } from './utils';
 
 function makeMessage(overrides: Partial<AgentMessage>): AgentMessage {
     return {
@@ -18,7 +19,11 @@ function makeMessage(overrides: Partial<AgentMessage>): AgentMessage {
     };
 }
 
-function renderSummary(messages: AgentMessage[], isCompleted = false) {
+function renderSummary(
+    messages: AgentMessage[],
+    isCompleted = false,
+    streamingMessages = new Map<string, StreamingData>(),
+) {
     const bottomRef = React.createRef<HTMLDivElement>() as React.RefObject<HTMLDivElement>;
 
     return render(
@@ -29,6 +34,7 @@ function renderSummary(messages: AgentMessage[], isCompleted = false) {
                 viewMode="sliding"
                 isCompleted={isCompleted}
                 artifactRunId="run-1"
+                streamingMessages={streamingMessages}
             />
         </I18nProvider>,
     );
@@ -242,6 +248,58 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('Thinking about how to get the news headlines for Tokyo.')).not.toBeNull();
         expect(screen.queryByRole('button', { name: /Tool\s+Thinking about how/ })).toBeNull();
         expect(screen.getByRole('button', { name: /Tool\s*Updating 1 tasks of our plan/ })).not.toBeNull();
+    });
+
+    it('renders completed streaming answers as visible summary prose before later tool activity', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'What are the news headlines in Tokyo today?',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.THOUGHT,
+                    message: 'Thinking...',
+                    details: {
+                        display_role: 'thinking',
+                        activity_id: 'reply-1',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 4_000,
+                    type: AgentMessageType.THOUGHT,
+                    message: 'I have extracted the relevant news headlines and presented them.',
+                    details: {
+                        tool: 'update_plan',
+                        tool_status: 'running',
+                        tool_run_id: 'tool-1',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 5_000,
+                    type: AgentMessageType.IDLE,
+                    message: 'Waiting for your command...',
+                }),
+            ],
+            true,
+            new Map([
+                [
+                    'reply-1',
+                    {
+                        text: 'Here are some of the top news headlines related to Tokyo today.',
+                        startTimestamp: 3_000,
+                        activityId: 'reply-1',
+                        isComplete: true,
+                    },
+                ],
+            ]),
+        );
+
+        expect(screen.getByText('What are the news headlines in Tokyo today?')).not.toBeNull();
+        expect(screen.getByText('Here are some of the top news headlines related to Tokyo today.')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Worked\s*for/ })).not.toBeNull();
     });
 
     it('keeps a stacked thought as its own message instead of consuming it as a tool preamble', () => {
