@@ -21,6 +21,7 @@ import {
 import { projectResult } from '../dsl/projections.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { ActivityParamInvalidError, ActivityParamNotFoundError, ResourceExhaustedError } from '../errors.js';
+import { activityWorkflowExecution } from '../utils/activity-info.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
 
 //Example:
@@ -190,7 +191,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
                         const buffer = Buffer.from(base64Data, 'base64');
 
                         // Generate filename
-                        const { runId } = activityInfo().workflowExecution;
+                        const { runId } = activityWorkflowExecution();
                         const { activityId } = activityInfo();
                         const filename = `generated-image-${runId}-${activityId}-${index}.png`;
 
@@ -279,14 +280,15 @@ export async function executeInteractionFromActivity(
 ) {
     const userTags = params.tags;
     const info = activityInfo();
-    const runId = info.workflowExecution.runId;
+    const execution = activityWorkflowExecution(info);
+    const runId = execution.runId;
     let tags = ['workflow'];
     if (userTags) {
         tags = tags.concat(userTags);
     }
     const workflow: ExecutionRunWorkflow = {
-        run_id: info.workflowExecution.runId,
-        workflow_id: info.workflowExecution.workflowId,
+        run_id: execution.runId,
+        workflow_id: execution.workflowId,
         activity_type: info.activityType,
     };
 

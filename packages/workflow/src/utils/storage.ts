@@ -1,11 +1,12 @@
 import { basename } from 'node:path';
 import type { Readable } from 'node:stream';
-import { activityInfo, log } from '@temporalio/activity';
+import { log } from '@temporalio/activity';
 import { ApplicationFailure } from '@temporalio/workflow';
 import type { VertesiaClient } from '@vertesia/client';
 import { NodeStreamSource } from '@vertesia/client/node';
 import mime from 'mime';
 import { fetchBlobAsBuffer } from '../utils/blobs.js';
+import { activityWorkflowExecution } from './activity-info.js';
 
 export const agentStoragePath = (runId: string) => `agents/${runId}`;
 
@@ -26,7 +27,7 @@ export async function saveAgentArtifact(
     mimeType: string = 'application/json',
     storageId?: string,
 ) {
-    const id = storageId || activityInfo().workflowExecution.runId;
+    const id = storageId || activityWorkflowExecution().runId;
     const ext = mime.getExtension(mimeType);
     if (!name) {
         throw ApplicationFailure.nonRetryable(`Name is required`);
@@ -50,7 +51,7 @@ export async function saveAgentArtifact(
 }
 
 export async function fetchAgentArtifact(client: VertesiaClient, name: string, storageId?: string) {
-    const id = storageId || activityInfo().workflowExecution.runId;
+    const id = storageId || activityWorkflowExecution().runId;
     const filePath = `${agentStoragePath(id)}/${name}`;
     return fetchBlobAsBuffer(client, filePath);
 }

@@ -20,7 +20,7 @@ const UnknownPosition = {
     column: 0,
 } as Position;
 
-class ValidationError extends Error {
+export class ValidationError extends Error {
     constructor(
         message: string,
         public node: Node,
@@ -144,7 +144,13 @@ const defaultAcornOpts = {
     sourceType: 'script',
 } as Options;
 
-export function validate(code: string, opts: ValidationOptions = {}) {
+/**
+ * Parse `code` and build the scope tree (one full AST walk). The returned root scope
+ * has `locals` populated for every nested function/block and has unsafe-construct
+ * errors accumulated in `root.errors`. Identifier resolution (the "Unknown identifier"
+ * check) is a separate second walk done by `validate` / `getFreeVariables`.
+ */
+function buildScopeTree(code: string, opts: ValidationOptions): { root: Scope; program: Node } {
     const acornOpts: Options = opts.acorn ? { ...defaultAcornOpts, ...opts.acorn } : defaultAcornOpts;
     const program = parse(code, acornOpts);
 
@@ -281,6 +287,12 @@ export function validate(code: string, opts: ValidationOptions = {}) {
         },
     } as RecursiveVisitors<Scope>);
 
+    return { root, program };
+}
+
+export function validate(code: string, opts: ValidationOptions = {}) {
+    const { root, program } = buildScopeTree(code, opts);
+
     recursiveWalk(program, root, {
         Function(node: AcornFunction, state, c) {
             baseVisitor.Function(node, (node as ScopedNode).$scope || state, c);
@@ -295,6 +307,40 @@ export function validate(code: string, opts: ValidationOptions = {}) {
     } as RecursiveVisitors<Scope>);
 
     return root;
+}
+
+export interface FreeVariablesResult {
+    /** Identifiers referenced in `code` that are not bound by any enclosing scope and not in `opts.globals`. */
+    vars: Set<string>;
+    /** Errors for unsafe constructs (with/for/while/import/class/this/dynamic property access/blacklisted props). Does not include identifier-resolution errors. */
+    errors: ValidationError[];
+}
+
+/**
+ * Walk `code` and return every identifier that is referenced but not bound by any
+ * enclosing function/variable declaration and not listed in `opts.globals`. Pass
+ * known runtime-injected names (e.g. JST's `_`, `Array`, `Set`) in `opts.globals`
+ * so they don't appear as free vars. Also surfaces unsafe-construct errors from
+ * the same parse pass.
+ */
+export function getFreeVariables(code: string, opts: ValidationOptions = {}): FreeVariablesResult {
+    const { root, program } = buildScopeTree(code, opts);
+
+    const vars = new Set<string>();
+    recursiveWalk(program, root, {
+        Function(node: AcornFunction, state, c) {
+            baseVisitor.Function(node, (node as ScopedNode).$scope || state, c);
+        },
+        Identifier(node, state, c) {
+            const identifier = node as unknown as Identifier;
+            if (!isSafeIdentifier(node) && !state.isDefined(identifier.name)) {
+                vars.add(identifier.name);
+            }
+            baseVisitor.Identifier(node, state, c);
+        },
+    } as RecursiveVisitors<Scope>);
+
+    return { vars, errors: root.errors };
 }
 
 export class CompositeError extends Error {
