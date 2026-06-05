@@ -3,7 +3,7 @@ import type { Context, Middleware, Next } from 'koa';
 import compose from 'koa-compose';
 import send from 'koa-send';
 
-import { type ErrorHandlerOpts, errorHandler } from './error.js';
+import { type ErrorHandlerOpts, type ErrorObject, errorHandler } from './error.js';
 import {
     createPathMatcherUnsafe,
     createPathPrefixMatcherUnsafe,
@@ -21,9 +21,13 @@ declare module 'koa' {
     }
 }
 
-export type EndpointInterceptorFn = (this: any, ctx: Context, endpoint: (ctx: Context) => Promise<any>) => Promise<any>;
+export type EndpointInterceptorFn = (
+    this: unknown,
+    ctx: Context,
+    endpoint: (ctx: Context) => Promise<unknown>,
+) => Promise<unknown>;
 
-export type RouteTarget = (ctx: Context) => Promise<any>;
+export type RouteTarget = (ctx: Context) => Promise<unknown>;
 export type RouterGuard = (ctx: Context) => boolean;
 
 export interface Route {
@@ -36,7 +40,7 @@ export interface EndpointRouteOptions {
 }
 
 export class RouterContext {
-    params: any = {};
+    params: Record<string, string | string[]> = {};
     path: string;
     matchedPattern?: string;
     matchedVersion?: number; // the matched endpoint version if any
@@ -66,7 +70,7 @@ export class EndpointRoute implements Route {
     method: string | null | undefined;
     matcher: PathMatcher;
     target: RouteTarget;
-    thisArg: any;
+    thisArg: unknown;
     // an endpoint version if a version was set. A version is a date number like: 20250921
     version?: number;
     _absPathPattern?: string;
@@ -78,7 +82,7 @@ export class EndpointRoute implements Route {
         method: string | null | undefined,
         pathPattern: string,
         target: RouteTarget,
-        thisArg?: any,
+        thisArg?: unknown,
     ) {
         this.router = router;
         this.pathPattern = normalizePath(pathPattern);
@@ -164,7 +168,7 @@ class ServeRoute implements Route {
                 return false;
         }
     }
-    async dispatch(ctx: Context): Promise<any> {
+    async dispatch(ctx: Context): Promise<void> {
         let path = ctx.$router.path || '/'; // trailing path
         if (path === '/') {
             // exact match
@@ -175,7 +179,7 @@ class ServeRoute implements Route {
         try {
             await send(ctx, path.startsWith('/') ? `.${path}` : path, this.opts);
         } catch (err) {
-            if ((err as any).code === 'ENOENT') {
+            if ((err as ErrorObject).code === 'ENOENT') {
                 ctx.throw(404, `File not found: ${ctx.path}`);
             } else {
                 ctx.throw(500, `Failed to fetch file: ${ctx.path}`);
@@ -322,7 +326,7 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         };
     }
 
-    onError(ctx: Context, err: any): void {
+    onError(ctx: Context, err: unknown): void {
         errorHandler(ctx, err, { htmlRoot: joinPath(this.webRoot, '/errors'), ...this.errorHandlerOpts });
     }
 
@@ -366,7 +370,7 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         method: string | null | undefined,
         path: string,
         target: RouteTarget,
-        thisArg?: any,
+        thisArg?: unknown,
         opts?: EndpointRouteOptions,
     ) {
         const route = new EndpointRoute(this, method, path, target, thisArg);
@@ -393,7 +397,7 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
      * @param target
      * @returns
      */
-    mount(prefix: string, target?: any) {
+    mount(prefix: string, target?: Resource | (new () => Resource)) {
         const router = new Router(prefix, { webRoot: this.webRoot }, this);
         // inherit error handling from parent router
         if (this.errorHandlerOpts) router.withErrorHandler(this.errorHandlerOpts);
@@ -427,34 +431,48 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         });
     }
 
-    get(pattern: string, target: RouteTarget, thisArg?: any) {
+    get(pattern: string, target: RouteTarget, thisArg?: unknown) {
         this.route('GET', pattern, target, thisArg);
     }
-    head(pattern: string, target: RouteTarget, thisArg?: any) {
+    head(pattern: string, target: RouteTarget, thisArg?: unknown) {
         this.route('HED', pattern, target, thisArg);
     }
-    options(pattern: string, target: RouteTarget, thisArg?: any) {
+    options(pattern: string, target: RouteTarget, thisArg?: unknown) {
         this.route('OPTIONS', pattern, target, thisArg);
     }
-    put(pattern: string, target: RouteTarget, thisArg?: any) {
+    put(pattern: string, target: RouteTarget, thisArg?: unknown) {
         this.route('PUT', pattern, target, thisArg);
     }
-    post(pattern: string, target: RouteTarget, thisArg?: any) {
+    post(pattern: string, target: RouteTarget, thisArg?: unknown) {
         this.route('POST', pattern, target, thisArg);
     }
-    delete(pattern: string, target: RouteTarget, thisArg?: any) {
+    delete(pattern: string, target: RouteTarget, thisArg?: unknown) {
         this.route('DELETE', pattern, target, thisArg);
     }
-    patch(pattern: string, target: RouteTarget, thisArg?: any) {
+    patch(pattern: string, target: RouteTarget, thisArg?: unknown) {
         this.route('PATCH', pattern, target, thisArg);
     }
-    trace(pattern: string, target: RouteTarget, thisArg?: any) {
+    trace(pattern: string, target: RouteTarget, thisArg?: unknown) {
         this.route('TRACE', pattern, target, thisArg);
     }
 }
 export class Router extends AbstractRouter<Router> {}
 
-export type RouterSetup = (resource: any, router: Router) => void;
+export type RouterSetup = (resource: Resource, router: Router) => void;
+
+/**
+ * A class constructor decorated by `@routes` / `@filters` / `@get` etc.
+ *
+ * The decorators stash a `$routerSetup` array on the constructor at runtime; TS
+ * doesn't see that field through plain class typing, so we accept it structurally.
+ * `Resource.setup()` walks the prototype chain through this shape.
+ */
+export type DecoratedResourceClass = (abstract new (
+    // biome-ignore lint/suspicious/noExplicitAny: decorator target — any class constructor signature is allowed
+    ...args: any[]
+) => unknown) & {
+    $routerSetup?: RouterSetup[];
+};
 export abstract class Resource {
     /**
      * Setup the router coresponding to this resource.
@@ -463,7 +481,7 @@ export abstract class Resource {
      * @param router
      */
     setup(router: Router) {
-        let ctor = this.constructor as any;
+        let ctor: DecoratedResourceClass | null = this.constructor as DecoratedResourceClass;
         while (ctor && ctor !== Resource) {
             // setup decorators registered on ctor
             if (Array.isArray(ctor.$routerSetup)) {
@@ -471,7 +489,7 @@ export abstract class Resource {
                     setup(this, router);
                 }
             }
-            ctor = Object.getPrototypeOf(ctor);
+            ctor = Object.getPrototypeOf(ctor) as DecoratedResourceClass | null;
         }
     }
 }

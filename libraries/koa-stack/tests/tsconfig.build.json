@@ -16,7 +16,7 @@
     ],
     "compilerOptions": {
         "rootDir": "./src",
-        "outDir": "./build",
+        "outDir": "./lib",
         "paths": {
             "@koa-stack/server": [
                 "../server/build"

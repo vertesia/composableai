@@ -7,7 +7,7 @@
     "main": "index.js",
     "scripts": {
         "build": "pnpm run clean && tsc --project ./tsconfig.build.json",
-        "clean": "rimraf ./build",
+        "clean": "rimraf ./lib",
         "test": "pnpm exec vitest run -r ./src"
     },
     "keywords": [],

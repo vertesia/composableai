@@ -144,16 +144,6 @@
                     }
                 }
             }
-        },
-        {
-            "includes": ["libraries/koa-stack/router/src/decorators.ts"],
-            "linter": {
-                "rules": {
-                    "suspicious": {
-                        "noExplicitAny": "off"
-                    }
-                }
-            }
         }
     ]
 }

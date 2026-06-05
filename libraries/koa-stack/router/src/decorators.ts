@@ -1,14 +1,19 @@
 import type { Context, Middleware } from 'koa';
 import compose from 'koa-compose';
-import type { EndpointInterceptorFn, EndpointRouteOptions, Resource, Router, RouterSetup } from './router.js';
+import type {
+    DecoratedResourceClass,
+    EndpointInterceptorFn,
+    EndpointRouteOptions,
+    Resource,
+    Router,
+    RouterGuard,
+    RouterSetup,
+    RouteTarget,
+} from './router.js';
 
-/**
- * The target of a class decorator — a class constructor. Used in place of the banned
- * `Function` type for clearer intent (these accept any class).
- */
-type ClassTarget = abstract new (...args: any[]) => any;
+type ResourceMembers<T> = Resource & Record<string, T>;
 
-function getOrCreateSetupChain(target: any): RouterSetup[] {
+function getOrCreateSetupChain(target: DecoratedResourceClass): RouterSetup[] {
     if (!Object.hasOwn(target, '$routerSetup')) {
         Object.defineProperty(target, '$routerSetup', {
             value: [],
@@ -17,38 +22,37 @@ function getOrCreateSetupChain(target: any): RouterSetup[] {
             writable: false,
         });
     }
-    return target.$routerSetup;
+    return target.$routerSetup as RouterSetup[];
 }
 
+type ClassDecoratorArgs = [DecoratedResourceClass];
+type MethodDecoratorArgs = [object, string, PropertyDescriptor];
+
 export function filters(...middlewares: Middleware[]) {
-    return (...args: any[]) => {
+    return (...args: ClassDecoratorArgs | MethodDecoratorArgs) => {
         if (args.length === 1) {
-            const cls = args[0] as ClassTarget;
-            return resourceFilters(cls, middlewares);
-        } else if (args.length === 3) {
-            const target = args[0];
-            const propertyKey = args[1] as string;
-            const descriptor = args[2] as PropertyDescriptor;
-            return endpointFilters(target, propertyKey, descriptor, middlewares);
+            return resourceFilters(args[0], middlewares);
         }
+        const [target, propertyKey, descriptor] = args;
+        return endpointFilters(target, propertyKey, descriptor, middlewares);
     };
 }
 
-function resourceFilters(cls: ClassTarget, middlewares: Middleware[]) {
+function resourceFilters(cls: DecoratedResourceClass, middlewares: Middleware[]) {
     const chain = getOrCreateSetupChain(cls);
     for (const middleware of middlewares) {
-        chain.push((_resource: any, router: Router) => {
+        chain.push((_resource: Resource, router: Router) => {
             router.use(middleware);
         });
     }
 }
 function endpointFilters(
-    _target: any,
+    _target: object,
     _propertyKey: string,
     descriptor: PropertyDescriptor,
     middlewares: Middleware[],
 ) {
-    const endpoint = descriptor.value as (ctx: Context) => Promise<any>;
+    const endpoint = descriptor.value as (ctx: Context) => Promise<unknown>;
     const filterFn = compose(middlewares);
 
     descriptor.value = async function (ctx: Context) {
@@ -68,10 +72,10 @@ function endpointFilters(
 export type ResourceConstructor<T extends Resource = Resource> = new () => T;
 
 export function routes(map: Record<string, Resource | ResourceConstructor>) {
-    return (cls: ClassTarget) => {
+    return (cls: DecoratedResourceClass) => {
         const chain = getOrCreateSetupChain(cls);
         for (const key in map) {
-            chain.push((_resource: any, router: Router) => {
+            chain.push((_resource: Resource, router: Router) => {
                 router.mount(key, map[key]);
             });
         }
@@ -82,34 +86,36 @@ export function routes(map: Record<string, Resource | ResourceConstructor>) {
 // export function mount(path: string) {
 //     return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
 //         const isGetter = !!descriptor.get;
-//         getOrCreateSetupChain(target.constructor).push((resource: any, router: Router) => {
+//         getOrCreateSetupChain(target.constructor).push((resource: Resource, router: Router) => {
 //             const value = resource[propertyKey];
 //             router.mount(path, isGetter ? value : value());
 //         });
 //     }
 // }
 // export function use(target: any, propertyKey: string, descriptor: PropertyDescriptor): void {
-//     getOrCreateSetupChain(target.constructor).push((resource: any, router: Router) => {
+//     getOrCreateSetupChain(target.constructor).push((resource: Resource, router: Router) => {
 //         router.use(resource[propertyKey].bind(resource));
 //     });
 // }
 
 export function serve(path: string) {
-    return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
-        const isGetter = !!descriptor.get;
-        getOrCreateSetupChain(target.constructor).push((resource: any, router: Router) => {
-            const value = resource[propertyKey];
-            router.serve(path, isGetter ? value : value());
-        });
+    return (target: object, propertyKey: string, _descriptor: PropertyDescriptor) => {
+        getOrCreateSetupChain(target.constructor as DecoratedResourceClass).push(
+            (resource: Resource, router: Router) => {
+                const value = (resource as ResourceMembers<string | (() => string)>)[propertyKey];
+                router.serve(path, typeof value === 'string' ? value : value());
+            },
+        );
     };
 }
 
-export function guard(target: any, propertyKey: string, _descriptor: PropertyDescriptor): void {
-    getOrCreateSetupChain(target.constructor).push((resource: any, router: Router) => {
+export function guard(target: object, propertyKey: string, _descriptor: PropertyDescriptor): void {
+    getOrCreateSetupChain(target.constructor as DecoratedResourceClass).push((resource: Resource, router: Router) => {
         // we only register it if not other guard was registered
         // this enables overwriting guards from derived classes
         if (!router.guard) {
-            router.withGuard(resource[propertyKey].bind(resource));
+            const guardFn = (resource as ResourceMembers<RouterGuard>)[propertyKey];
+            router.withGuard(guardFn.bind(resource));
         }
     });
 }
@@ -123,10 +129,13 @@ export function guard(target: any, propertyKey: string, _descriptor: PropertyDes
  * @returns
  */
 function _route(method: string, path: string, opts?: EndpointRouteOptions) {
-    return (target: any, propertyKey: string, _descriptor: PropertyDescriptor) => {
-        getOrCreateSetupChain(target.constructor).push((resource: any, router: Router) => {
-            router.route(method, path, resource[propertyKey], resource, opts);
-        });
+    return (target: object, propertyKey: string, _descriptor: PropertyDescriptor) => {
+        getOrCreateSetupChain(target.constructor as DecoratedResourceClass).push(
+            (resource: Resource, router: Router) => {
+                const handler = (resource as ResourceMembers<RouteTarget>)[propertyKey];
+                router.route(method, path, handler, resource, opts);
+            },
+        );
     };
 }
 /**
@@ -170,9 +179,9 @@ export function trace(path: string = '/', opts?: EndpointRouteOptions) {
  * @param interceptor The interceptor function. If null is passed any inherited interceptor is removed
  */
 export function intercept(interceptor: EndpointInterceptorFn | null) {
-    return (cls: ClassTarget) => {
+    return (cls: DecoratedResourceClass) => {
         const chain = getOrCreateSetupChain(cls);
-        chain.push((_resource: any, router: Router) => {
+        chain.push((_resource: Resource, router: Router) => {
             router.interceptor = interceptor;
         });
     };
