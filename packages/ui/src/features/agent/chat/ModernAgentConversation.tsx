@@ -169,6 +169,9 @@ interface ModernAgentConversationProps {
     hideHeader?: boolean;
     /** Hide the internal message input (for apps that render their own) */
     hideMessageInput?: boolean;
+    /** Custom action shown in place of the input box when the run status is FAILED.
+     *  When omitted, the default "This Workflow is FAILED" message box is shown. */
+    failedAction?: React.ReactNode;
     /** Hide the internal plan panel (for apps that render their own) */
     hidePlanPanel?: boolean;
     /** Hide workstream tabs */
@@ -716,6 +719,7 @@ function ModernAgentConversationInner({
     // Section visibility
     hideHeader,
     hideMessageInput,
+    failedAction,
     hidePlanPanel,
     hideWorkstreamTabs,
     showRightPanel: showRightPanelProp = true,
@@ -885,9 +889,20 @@ function ModernAgentConversationInner({
     // When a terminal conversation can be restarted (interactive + a restart handler),
     // we keep the composer visible and seamlessly resume the agent on the next message
     // instead of forcing the user to click "Continue Conversation".
+    // FAILED runs are excluded: a failed run is a dead end, so we surface the failed box /
+    // `failedAction` (e.g. an explicit Restart button) instead of silently resuming.
     const canContinueConversation = useMemo(
-        () => isWorkflowTerminal && interactive && !!onRestart,
-        [isWorkflowTerminal, interactive, onRestart],
+        () => isWorkflowTerminal && effectiveWorkflowStatus?.toUpperCase() !== 'FAILED' && interactive && !!onRestart,
+        [isWorkflowTerminal, effectiveWorkflowStatus, interactive, onRestart],
+    );
+
+    // A failed run is a dead end: the input box must never show, in any state. We key off
+    // both effectiveWorkflowStatus and the authoritative API status (agentRunStatus) so the
+    // loading race (status fetch vs. message stream, where `showInput` defaults to `true`)
+    // can't transiently re-show the composer once we know the run failed.
+    const isFailed = useMemo(
+        () => effectiveWorkflowStatus?.toUpperCase() === 'FAILED' || agentRunStatus?.toUpperCase() === 'FAILED',
+        [effectiveWorkflowStatus, agentRunStatus],
     );
 
     // Read inside handleSendMessage (a stable callback) without widening its deps.
@@ -1588,7 +1603,16 @@ function ModernAgentConversationInner({
 
             {!hideMessageInput && (
                 <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-                    {effectiveWorkflowStatus && effectiveWorkflowStatus !== 'RUNNING' && !canContinueConversation ? (
+                    {isFailed ? (
+                        // FAILED takes priority over every other branch so the composer can
+                        // never render for a failed run. Use the caller's action when provided,
+                        // otherwise fall back to the default failed message box.
+                        (failedAction ?? (
+                            <MessageBox status="error" icon={null} className="m-2">
+                                This Workflow is FAILED
+                            </MessageBox>
+                        ))
+                    ) : effectiveWorkflowStatus && effectiveWorkflowStatus !== 'RUNNING' && !canContinueConversation ? (
                         <MessageBox
                             status={effectiveWorkflowStatus === 'COMPLETED' ? 'success' : 'done'}
                             icon={null}

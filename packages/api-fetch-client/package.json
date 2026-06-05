@@ -20,7 +20,7 @@
         "test": "ESBK_TSCONFIG_PATH=./test/tsconfig.json pnpm exec mocha -r tsx --exit ./test/**/*.ts",
         "lint": "biome lint src",
         "typecheck:test": "tsc -p test/tsconfig.json --noEmit",
-        "build": "pnpm exec tsmod build",
+        "build": "pnpm exec rimraf ./lib ./tsconfig.tsbuildinfo && pnpm exec tsmod build",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "repository": {

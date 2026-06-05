@@ -114,6 +114,27 @@ export class HistoryNavigator {
         return path;
     }
 
+    /**
+     * Rewrite the current browser URL in place so that the sticky params are present, without
+     * navigating. Used on load / when the params first become known so the address bar reflects
+     * the active account/project before the first navigation.
+     *
+     * Idempotent and side-effect-light: only calls replaceState when the URL would actually
+     * change, preserves the existing history state, and never fires a location-change event
+     * (so there is no route re-match or component remount).
+     */
+    normalizeCurrentUrl() {
+        if (typeof window === 'undefined' || !this.stickyParams) {
+            return;
+        }
+        const current = window.location.pathname + window.location.search + window.location.hash;
+        const normalized = this.addStickyParams(current);
+        if (normalized !== current) {
+            const to = new URL(normalized, window.location.href);
+            window.history.replaceState(window.history.state, '', to.href);
+        }
+    }
+
     navigate(to: string, options: NavigateOptions = {}) {
         if (options.stepsBack && options.stepsBack > 0) {
             this.stepBack(options.stepsBack, options);
