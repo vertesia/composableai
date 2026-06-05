@@ -146,9 +146,7 @@
             }
         },
         {
-            "includes": [
-                "libraries/koa-stack/**/*.{js,ts}"
-            ],
+            "includes": ["libraries/koa-stack/**/*.{js,ts}"],
             "linter": {
                 "rules": {
                     "suspicious": {
