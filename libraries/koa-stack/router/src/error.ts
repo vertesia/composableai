@@ -85,7 +85,13 @@ function html(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
     if (opts.html) {
         content = opts.html(info, error, opts);
     } else {
-        content = readFile(path.resolve(opts.htmlRoot || process.cwd(), `${info.statusCode}.html`));
+        // Constrain to a valid HTTP status integer before path interpolation —
+        // statusCode flows from a thrown error and could be anything at runtime.
+        const code =
+            Number.isInteger(info.statusCode) && info.statusCode >= 100 && info.statusCode <= 599
+                ? info.statusCode
+                : 500;
+        content = readFile(path.resolve(opts.htmlRoot || process.cwd(), `${code}.html`));
         // use a template engine if needed
         if (content && opts.renderHTML) {
             content = opts.renderHTML(content, info, error, opts);
