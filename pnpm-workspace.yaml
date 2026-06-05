@@ -5,6 +5,7 @@ packages:
   - "!packages/memory-cli"
   - "!packages/memory-commands"
   - libraries/*
+  - libraries/koa-stack/*
   - templates/*
   - "!templates/worker-template"
 verifyDepsBeforeRun: false

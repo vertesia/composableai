@@ -144,6 +144,18 @@
                     }
                 }
             }
+        },
+        {
+            "includes": [
+                "libraries/koa-stack/**/*.{js,ts}"
+            ],
+            "linter": {
+                "rules": {
+                    "suspicious": {
+                        "noExplicitAny": "off"
+                    }
+                }
+            }
         }
     ]
 }

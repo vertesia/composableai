@@ -1,0 +1,24 @@
+{
+    "extends": "../tsconfig.base.json",
+    "references": [
+        {
+            "path": "../router"
+        },
+        {
+            "path": "../body"
+        }
+    ],
+    "compilerOptions": {
+        "rootDir": "./src",
+        "outDir": "./lib/esm",
+        "declarationDir": "./lib/types",
+        "paths": {
+            "@koa-stack/router": [
+                "../router/src"
+            ],
+            "@koa-stack/body": [
+                "../body/src"
+            ]
+        },
+    }
+}

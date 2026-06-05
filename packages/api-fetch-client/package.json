@@ -46,8 +46,8 @@
     },
     "homepage": "https://github.com/vertesia/composableai/tree/main/packages/api-fetch-client#readme",
     "devDependencies": {
-        "@koa-stack/router": "^0.24.0",
-        "@koa-stack/server": "^0.24.0",
+        "@koa-stack/router": "workspace:*",
+        "@koa-stack/server": "workspace:*",
         "@types/koa": "^2.15.2",
         "@types/mocha": "^10.0.10",
         "@types/node": "^24.12.4",
