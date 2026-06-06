@@ -1,0 +1,28 @@
+{
+    "name": "@koa-stack/tests",
+    "version": "0.24.0",
+    "private": true,
+    "description": "Tests",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "build": "pnpm run clean && tsc --project ./tsconfig.build.json",
+        "clean": "rimraf ./lib",
+        "test": "pnpm exec vitest run -r ./src"
+    },
+    "keywords": [],
+    "author": "stefanescu.bogdan@gmail.com",
+    "license": "MIT",
+    "dependencies": {
+        "@koa-stack/body": "workspace:*",
+        "@koa-stack/router": "workspace:*",
+        "@koa-stack/server": "workspace:*",
+        "koa": "^2.15.3"
+    },
+    "devDependencies": {
+        "@types/koa": "^2.15.2",
+        "@types/supertest": "^6.0.2",
+        "supertest": "^7.0.0",
+        "vitest": "^1.5.1"
+    }
+}
