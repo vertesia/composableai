@@ -43,12 +43,8 @@ export function Nav({ children, to, onClick, replace = true }: NavProps) {
 }
 
 /**
- * A anchor tag that performs navigation through the router.
- *
- * In-app routes (relative or `/`-absolute paths, no `_blank` target) are intercepted and routed, and
- * the rendered href carries the active tenant sticky params (account `a` + project `p`) so that
- * opening the link in a new tab or copying its address preserves the current account/project.
- * External URLs and explicit new-tab targets render as a plain anchor and are left to the browser.
+ * An anchor that navigates via the router. Internal paths are intercepted and carry the active
+ * tenant sticky params (a/p); external URLs and `_blank` targets fall through to the browser.
  */
 interface NavLinkProps {
     children: React.ReactNode | React.ReactNode[];
@@ -60,10 +56,8 @@ interface NavLinkProps {
      */
     topLevelNav?: boolean;
     clearBreadcrumbs?: boolean;
-    /** replace the current history entry instead of pushing a new one (defaults to clearBreadcrumbs) */
-    replace?: boolean;
-    /** if true, do not append the account (a) & project (p) sticky params to the href */
-    skipStickyParams?: boolean;
+    replace?: boolean; //If true, replace the current history entry instead of pushing (defaults to clearBreadcrumbs)
+    skipStickyParams?: boolean; //If true, do not append the account (a) & project (p) sticky params to the href
 }
 export function NavLink({
     children,
@@ -76,16 +70,11 @@ export function NavLink({
     skipStickyParams,
 }: NavLinkProps) {
     const { router } = useRouterContext();
-    // Classify the link: anything that isn't an external URL, an explicit new-tab target, or a bare
-    // hash is an in-app route — including relative paths (`../`, `./`). Relative links must be routed
-    // too; otherwise they fall through to the global link listener, which re-applies the module base
-    // path (e.g. `/store`) on top of the already-resolved path and lands on the wrong URL.
+    // In-app route = not an external URL, `_blank` target, or bare hash. Relative paths count too —
+    // they must be routed, else the global link listener re-applies the module base path (wrong URL).
     const isAnchorOrEmpty = !href || href.startsWith('#');
     const isExternal = /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//') || (!!target && target !== '_self');
     const isInternal = !isAnchorOrEmpty && !isExternal;
-    // For in-app routes, bake in the active tenant sticky params (account `a` + project `p`) the
-    // router already holds, so opening in a new tab or copying the address preserves the current
-    // account/project. Uses the router's own params (no session dependency); a no-op until they're set.
     const resolvedHref = !skipStickyParams && isInternal ? router.getTopRouter().navigator.addStickyParams(href) : href;
     const _onClick = (ev: SyntheticEvent) => {
         if (ev.defaultPrevented || !isInternal) {
