@@ -609,6 +609,18 @@ export interface AppManifestData {
      */
     color?: string;
 
+    /**
+     * Optional preview screenshot for the app-management UI, captured by the builder during a
+     * build/QA run. Resolved client-side from the owning agent run's artifact storage, so it
+     * carries both the run id and the artifact path.
+     */
+    preview_screenshot?: {
+        /** Agent run id whose artifact storage holds the screenshot. */
+        agent_run_id: string;
+        /** Artifact path within that storage, e.g. "preview-checks/app-preview-<ts>.png". */
+        artifact: string;
+    };
+
     status: 'beta' | 'stable' | 'deprecated';
 
     /**
