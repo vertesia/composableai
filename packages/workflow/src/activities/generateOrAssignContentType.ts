@@ -13,6 +13,12 @@ import { executeInteractionFromActivity, type InteractionExecutionParams } from 
 const INT_SELECT_DOCUMENT_TYPE = 'sys:SelectDocumentType';
 const INT_GENERATE_METADATA_MODEL = 'sys:GenerateMetadataModel';
 
+// Always-present system fallback type (registered in zeno's SystemContentTypeRegistry). When type
+// selection finds no existing match and new-type generation is disabled, documents are assigned
+// this generic type so they still get a minimal property set + a processing hint for later typing.
+const GENERIC_DOCUMENT_TYPE_ID = 'sys:GenericDocument';
+const GENERIC_DOCUMENT_TYPE_NAME = 'GenericDocument';
+
 interface RetryableError extends Error {
     retryable?: boolean;
 }
@@ -174,18 +180,17 @@ export async function generateOrAssignContentType(
 
     if (!selectedType) {
         if (params.allowNewContentTypes === false) {
-            log.warn('Document type not identified and new content type creation is disabled', {
+            // Type generation is disabled (handled separately, e.g. via the Studio Assistant), so
+            // fall back to the generic system type rather than leaving the document untyped.
+            log.info('Document type not identified; assigning GenericDocument fallback', {
                 selectedDocumentType: jsonResult.document_type,
             });
-            return {
-                status: 'skipped',
-                message: 'new content type creation is disabled',
-                selectedDocumentType: jsonResult.document_type,
-            };
+            selectedType = { id: GENERIC_DOCUMENT_TYPE_ID, name: GENERIC_DOCUMENT_TYPE_NAME };
+        } else {
+            log.warn('Document type not identified: starting type generation');
+            const newType = await generateNewType(context, existing_types, content, fileRef);
+            selectedType = { id: newType.id, name: newType.name };
         }
-        log.warn('Document type not identified: starting type generation');
-        const newType = await generateNewType(context, existing_types, content, fileRef);
-        selectedType = { id: newType.id, name: newType.name };
     }
 
     if (!selectedType) {
