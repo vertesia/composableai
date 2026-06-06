@@ -1,0 +1,41 @@
+{
+    "name": "@koa-stack/server",
+    "version": "0.24.0",
+    "description": " A web server based on koa with advanced routing, lazy body and flexbile error handling",
+    "main": "./lib/cjs/index.js",
+    "type": "module",
+    "scripts": {
+        "build": "pnpm exec tsmod build",
+        "clean": "rimraf ./lib",
+        "test": "echo \"Error: no test specified\""
+    },
+    "files": [
+        "lib",
+        "src"
+    ],
+    "keywords": [
+        "web",
+        "server",
+        "koa"
+    ],
+    "author": "stefanescu.bogdan@gmail.com",
+    "license": "MIT",
+    "dependencies": {
+        "@koa-stack/body": "workspace:*",
+        "@koa-stack/router": "workspace:*",
+        "koa": "^2.15.3"
+    },
+    "ts_dual_module": {
+        "outDir": "lib"
+    },
+    "exports": {
+        "types": "./lib/types/index.d.ts",
+        "import": "./lib/esm/index.js",
+        "require": "./lib/cjs/index.js"
+    },
+    "types": "./lib/types/index.d.ts",
+    "devDependencies": {
+        "@types/koa": "^2.15.2",
+        "ts-dual-module": "^0.6.3"
+    }
+}
