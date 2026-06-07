@@ -20,7 +20,7 @@
         "@types/node": "^24.12.4",
         "@types/tar-stream": "^3.1.4",
         "ts-dual-module": "^0.6.3",
-        "vitest": "^4.0.16"
+        "vitest": "^4.1.8"
     },
     "dependencies": {
         "@vertesia/converters": "workspace:*",

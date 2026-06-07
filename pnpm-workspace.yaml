@@ -5,6 +5,7 @@ packages:
   - "!packages/memory-cli"
   - "!packages/memory-commands"
   - libraries/*
+  - libraries/koa-stack/*
   - templates/*
   - "!templates/worker-template"
 verifyDepsBeforeRun: false
@@ -21,6 +22,8 @@ minimumReleaseAgeStrict: true
 minimumReleaseAgeExclude:
   - "@vertesia/*"
   - "@llumiverse/*"
+  # Renovate security update: vitest@4.1.0
+  - vitest@4.1.0
 patchedDependencies:
   "ts-dual-module@0.6.3": patches/ts-dual-module@0.6.3.patch
 overrides:
