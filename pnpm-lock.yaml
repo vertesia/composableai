@@ -9,10 +9,11 @@ overrides:
   react-dom: 19.2.3
   '@types/react': 19.2.3
   '@types/react-dom': 19.2.3
-  brace-expansion@>=1.0.0 <2.0.0: ^5.0.6
-  brace-expansion@>=2.0.0 <3.0.0: ^5.0.6
+  brace-expansion@>=4.0.0 <5.0.6: ^5.0.6
+  brace-expansion@>=3.0.0 <4.0.0: maintenance-v3
+  brace-expansion@>=2.0.0 <3.0.0: maintenance-v2
+  brace-expansion@<2.0.0: maintenance-v1
   '@isaacs/brace-expansion@>=5.0.0 <6.0.0': ^5.0.1
-  brace-expansion@<5.0.6: ^5.0.6
   cross-spawn@<6.0.6: ^7.0.6
   esbuild@<0.25.0: ^0.28.0
   glob@>=10.2.0 <10.5.0: ^13.0.6
@@ -120,6 +121,9 @@ importers:
       '@types/papaparse':
         specifier: ^5.5.1
         version: 5.5.2
+      '@vertesia/build-tools':
+        specifier: workspace:*
+        version: link:../../packages/build-tools
       rollup:
         specifier: ^4.60.4
         version: 4.60.4
@@ -477,6 +481,9 @@ importers:
       '@types/node':
         specifier: ^24.12.4
         version: 24.12.4
+      '@vertesia/build-tools':
+        specifier: workspace:*
+        version: link:../build-tools
       rollup:
         specifier: ^4.60.4
         version: 4.60.4
@@ -631,6 +638,9 @@ importers:
       '@rollup/plugin-typescript':
         specifier: ^12.3.0
         version: 12.3.0(rollup@4.60.4)(tslib@2.8.1)(typescript@6.0.3)
+      '@vertesia/build-tools':
+        specifier: workspace:*
+        version: link:../build-tools
       rollup:
         specifier: ^4.60.4
         version: 4.60.4
@@ -4306,6 +4316,9 @@ packages:
   bail@2.0.2:
     resolution: {integrity: sha512-0xO6mYd7JB2YesxDKplafRpsiOzPt9V02ddPCLbY1xYGPOX24NTyN50qnUxgCPcSoYMhKpAuBTjQoRZCAkUDRw==}
 
+  balanced-match@1.0.2:
+    resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
+
   balanced-match@4.0.4:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
     engines: {node: 18 || 20 || >=22}
@@ -4323,6 +4336,9 @@ packages:
   boxen@8.0.1:
     resolution: {integrity: sha512-F3PH5k5juxom4xktynS7MoFY+NUWH5LC4CnH11YB8NPew+HLpmBLCybSAEyb2F+4pRXhuhWqFesoQd6DAyc2hw==}
     engines: {node: '>=18'}
+
+  brace-expansion@2.1.1:
+    resolution: {integrity: sha512-WR1cURNjuvBLMZBMbqM0UoE+WAfdUcEV1ccD8PVBVOI+Z3ND4+SZbN8RsfT2bMuG1qwz5RFvPukSZm5fF2D5eA==}
 
   brace-expansion@5.0.6:
     resolution: {integrity: sha512-kLpxurY4Z4r9sgMsyG0Z9uzsBlgiU/EFKhj/h91/8yHu0edo7XuixOIH3VcJ8kkxs6/jPzoI6U9Vj3WqbMQ94g==}
@@ -10275,6 +10291,8 @@ snapshots:
 
   bail@2.0.2: {}
 
+  balanced-match@1.0.2: {}
+
   balanced-match@4.0.4: {}
 
   baseline-browser-mapping@2.9.19: {}
@@ -10295,6 +10313,10 @@ snapshots:
       type-fest: 4.41.0
       widest-line: 5.0.0
       wrap-ansi: 9.0.2
+
+  brace-expansion@2.1.1:
+    dependencies:
+      balanced-match: 1.0.2
 
   brace-expansion@5.0.6:
     dependencies:
@@ -12265,7 +12287,7 @@ snapshots:
 
   minimatch@9.0.9:
     dependencies:
-      brace-expansion: 5.0.6
+      brace-expansion: 2.1.1
 
   minimist@1.2.8: {}
 
