@@ -64,6 +64,27 @@ function getTimestampMs(timestamp: number | string | undefined): number {
     return Number.isFinite(parsed) ? parsed : Date.now();
 }
 
+function deriveActiveWorkstreamsFromMessages(messages: AgentMessage[]): WorkstreamInfo[] {
+    const latestByWorkstream = new Map<string, AgentMessage>();
+
+    for (const message of messages) {
+        const workstreamId = getWorkstreamId(message);
+        if (workstreamId === 'main' || workstreamId === 'all') continue;
+        latestByWorkstream.set(workstreamId, message);
+    }
+
+    return Array.from(latestByWorkstream.entries())
+        .filter(([, message]) => ![AgentMessageType.COMPLETE, AgentMessageType.IDLE].includes(message.type))
+        .map(([workstreamId]) => ({
+            workstream_id: workstreamId,
+            launch_id: `message-derived:${workstreamId}`,
+            elapsed_ms: 0,
+            deadline_ms: 0,
+            remaining_ms: 0,
+            status: 'running' as const,
+        }));
+}
+
 function formatCompactDuration(seconds: number): string {
     if (seconds < 60) return `${seconds}s`;
     const minutes = Math.floor(seconds / 60);
@@ -1122,28 +1143,41 @@ function ModernAgentConversationInner({
         };
     }, [plans, activePlanIndex, workstreamStatusMap]);
 
+    const messageDerivedActiveWorkstreams = useMemo(() => deriveActiveWorkstreamsFromMessages(messages), [messages]);
+
     const panelWorkstreams = useMemo<WorkstreamInfo[]>(() => {
-        const running: WorkstreamInfo[] = activeWorkstreams.map((ws) => ({
-            workstream_id: ws.workstream_id,
-            launch_id: ws.launch_id,
-            elapsed_ms: ws.elapsed_ms,
-            deadline_ms: ws.deadline_ms,
-            remaining_ms: Math.max(0, ws.deadline_ms - ws.elapsed_ms),
-            status: ws.status,
-            phase: ws.latest_progress?.phase,
-            child_workflow_id: ws.child_workflow_id,
-            child_workflow_run_id: ws.child_workflow_run_id,
-        }));
-        const completed: WorkstreamInfo[] = completedWorkstreams.map((ws) => ({
-            workstream_id: ws.workstream_id,
-            launch_id: ws.launch_id,
-            elapsed_ms: 0,
-            deadline_ms: 0,
-            remaining_ms: 0,
-            status: ws.status,
-        }));
+        const running: WorkstreamInfo[] =
+            activeWorkstreams.length > 0
+                ? activeWorkstreams.map((ws) => ({
+                      workstream_id: ws.workstream_id,
+                      launch_id: ws.launch_id,
+                      elapsed_ms: ws.elapsed_ms,
+                      deadline_ms: ws.deadline_ms,
+                      remaining_ms: Math.max(0, ws.deadline_ms - ws.elapsed_ms),
+                      status: ws.status,
+                      phase: ws.latest_progress?.phase,
+                      child_workflow_id: ws.child_workflow_id,
+                      child_workflow_run_id: ws.child_workflow_run_id,
+                  }))
+                : messageDerivedActiveWorkstreams;
+        const runningWorkstreamIds = new Set(running.map((ws) => ws.workstream_id));
+        const completed: WorkstreamInfo[] = completedWorkstreams
+            .filter((ws) => !runningWorkstreamIds.has(ws.workstream_id))
+            .map((ws) => ({
+                workstream_id: ws.workstream_id,
+                launch_id: ws.launch_id,
+                elapsed_ms: 0,
+                deadline_ms: 0,
+                remaining_ms: 0,
+                status: ws.status,
+            }));
         return [...running, ...completed];
-    }, [activeWorkstreams, completedWorkstreams]);
+    }, [activeWorkstreams, completedWorkstreams, messageDerivedActiveWorkstreams]);
+
+    const activeTaskCount = useMemo(
+        () => panelWorkstreams.filter((ws) => ws.status === 'running').length,
+        [panelWorkstreams],
+    );
 
     const isTestPlaybackEnabled = enableTestPlayback ?? isLocalhostAgentChatPlaybackEnabled();
     const playbackState = useMemo(
@@ -1572,43 +1606,6 @@ function ModernAgentConversationInner({
         onStoppingChange?.(isStopping);
     }, [isStopping, onStoppingChange]);
 
-    // Calculate number of active tasks for the status indicator
-    const getActiveTaskCount = (): number => {
-        if (activeWorkstreams.length > 0) {
-            return activeWorkstreams.filter((ws) => ws.status === 'running').length;
-        }
-
-        if (!messages.length) return 0;
-
-        // Group messages by workstream
-        const workstreamMessages = new Map<string, AgentMessage[]>();
-
-        messages.forEach((message) => {
-            const workstreamId = getWorkstreamId(message);
-            if (workstreamId !== 'main' && workstreamId !== 'all') {
-                if (!workstreamMessages.has(workstreamId)) {
-                    workstreamMessages.set(workstreamId, []);
-                }
-                workstreamMessages.get(workstreamId)?.push(message);
-            }
-        });
-
-        // Count workstreams that don't have completion messages
-        let activeCount = 0;
-
-        for (const [_, msgs] of workstreamMessages.entries()) {
-            if (msgs.length > 0) {
-                const lastMessage = msgs[msgs.length - 1];
-                // If the last message isn't a completion message, the workstream is active
-                if (![AgentMessageType.COMPLETE, AgentMessageType.IDLE].includes(lastMessage.type)) {
-                    activeCount++;
-                }
-            }
-        }
-
-        return activeCount;
-    };
-
     const actualTitle = title || t('agent.agentConversation');
 
     // Handle downloading conversation
@@ -1860,7 +1857,7 @@ function ModernAgentConversationInner({
                                 isStopping={isStopping}
                                 isStreaming={!isCompleted}
                                 isCompleted={isCompleted}
-                                activeTaskCount={getActiveTaskCount()}
+                                activeTaskCount={activeTaskCount}
                                 placeholder={placeholder ?? 'Type your message...'}
                                 onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
                                 uploadedFiles={uploadedFiles}

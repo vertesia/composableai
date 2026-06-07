@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
     restart: vi.fn(),
     sendSignal: vi.fn(),
     headerProps: vi.fn(),
+    messageInputProps: vi.fn(),
+    rightPanelProps: vi.fn(),
     useAgentStream: vi.fn(),
     useAgentPlans: vi.fn(),
     useDocumentPanel: vi.fn(),
@@ -44,11 +46,14 @@ vi.mock('./ModernAgentOutput/Header', () => ({
 }));
 
 vi.mock('./ModernAgentOutput/MessageInput', () => ({
-    default: ({ onSend }: { onSend: (message: string) => void }) => (
-        <button type="button" onClick={() => onSend('follow up')}>
-            composer send
-        </button>
-    ),
+    default: (props: { onSend: (message: string) => void; activeTaskCount?: number }) => {
+        mocks.messageInputProps(props);
+        return (
+            <button type="button" onClick={() => props.onSend('follow up')}>
+                composer send
+            </button>
+        );
+    },
 }));
 
 vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
@@ -72,7 +77,10 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
 }));
 
 vi.mock('./AgentRightPanel.js', () => ({
-    AgentRightPanel: () => <div data-testid="agent-right-panel" />,
+    AgentRightPanel: (props: { activeWorkstreams?: Array<{ workstream_id: string; status: string }> }) => {
+        mocks.rightPanelProps(props);
+        return <div data-testid="agent-right-panel" />;
+    },
 }));
 
 vi.mock('./hooks/useAgentStream.js', () => ({
@@ -249,6 +257,42 @@ describe('ModernAgentConversation send handling', () => {
         renderConversation({ interactive: false, onRestart: vi.fn() });
 
         expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
+    });
+
+    it('uses message-derived active workstreams for the composer count and right panel fallback', async () => {
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'main request'),
+                { ...createMessage(AgentMessageType.ANSWER, 'alpha update'), workstream_id: 'alpha' },
+                { ...createMessage(AgentMessageType.ANSWER, 'beta update'), workstream_id: 'beta' },
+                { ...createMessage(AgentMessageType.COMPLETE, 'gamma done'), workstream_id: 'gamma' },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({
+            hideMessageInput: false,
+            hideWorkstreamTabs: false,
+            showRightPanel: true,
+        });
+
+        await waitFor(() => {
+            expect(mocks.rightPanelProps).toHaveBeenCalled();
+        });
+
+        const latestRightPanelProps = mocks.rightPanelProps.mock.lastCall?.[0] as {
+            activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
+        };
+        const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
+            activeTaskCount?: number;
+        };
+
+        expect(latestRightPanelProps.activeWorkstreams).toEqual([
+            expect.objectContaining({ workstream_id: 'alpha', status: 'running' }),
+            expect.objectContaining({ workstream_id: 'beta', status: 'running' }),
+        ]);
+        expect(latestMessageInputProps.activeTaskCount).toBe(2);
     });
 
     it('sends directly without restart while the run is active', async () => {
