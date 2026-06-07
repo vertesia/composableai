@@ -54,12 +54,24 @@ async function extractFromObject(
     objectId: string,
     objectIds: string[],
 ): Promise<TextExtractionResult> {
-    const r = await client.objects.find({
-        query: { _id: objectId },
-        limit: 1,
-        select: '+text',
-    });
-    const doc = r[0] as ContentObject;
+    // Fetch the exact revision by id rather than `find({_id, revision.head:true})`.
+    // `find` filters to HEAD revisions, so if a newer revision is created while this
+    // intake is in flight (e.g. an update with `createRevision: true`), the original
+    // revision this workflow was queued for becomes non-head and `find` returns empty —
+    // failing intake with a spurious "not found" even though the revision still exists.
+    // A direct GET by id resolves the specific revision regardless of head.
+    let doc: ContentObject;
+    try {
+        doc = (await client.objects.retrieve(objectId, '+text')) as ContentObject;
+    } catch (err: unknown) {
+        const status =
+            err && typeof err === 'object' && 'status' in err ? (err as { status?: number }).status : undefined;
+        if (status === 404) {
+            log.error(`Document ${objectId} not found`);
+            throw new DocumentNotFoundError(`Document ${objectId} not found`, objectIds);
+        }
+        throw err;
+    }
     if (!doc) {
         log.error(`Document ${objectId} not found`);
         throw new DocumentNotFoundError(`Document ${objectId} not found`, objectIds);
