@@ -121,12 +121,16 @@ async function toReplayableBody(body: BodyInit | null | undefined): Promise<Body
                 if (done) {
                     break;
                 }
-                if (value != null) {
-                    parts.push(chunkToBlobPart(value));
-                }
+                // Normalize every chunk (a stray null/undefined is rejected by
+                // chunkToBlobPart) so a malformed stream fails loudly instead of
+                // silently uploading a truncated body.
+                parts.push(chunkToBlobPart(value));
             }
-        } finally {
             reader.releaseLock();
+        } catch (err) {
+            // Signal the producer to stop and release its resources before propagating.
+            await reader.cancel(err).catch(() => undefined);
+            throw err;
         }
         return new Blob(parts);
     }

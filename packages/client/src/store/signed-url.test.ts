@@ -114,10 +114,10 @@ describe('fetchSignedUrl', () => {
         // produces (NodeStreamSource wraps text bodies this way). `new Response(stream).blob()`
         // rejects these under undici with "Received non-Uint8Array chunk"; the helper must
         // encode them to bytes instead.
-        const stream = new ReadableStream({
+        const stream = new ReadableStream<string>({
             start(controller) {
-                controller.enqueue('hello ' as unknown as Uint8Array);
-                controller.enqueue('world' as unknown as Uint8Array);
+                controller.enqueue('hello ');
+                controller.enqueue('world');
                 controller.close();
             },
         });
@@ -138,9 +138,9 @@ describe('fetchSignedUrl', () => {
             return Promise.resolve(response(200, 'ok'));
         });
 
-        const stream = new ReadableStream({
+        const stream = new ReadableStream<string | Uint8Array>({
             start(controller) {
-                controller.enqueue('a' as unknown as Uint8Array);
+                controller.enqueue('a');
                 controller.enqueue(new TextEncoder().encode('b'));
                 controller.close();
             },
@@ -156,9 +156,9 @@ describe('fetchSignedUrl', () => {
     });
 
     it('throws on an object-mode stream chunk instead of silently corrupting the upload', async () => {
-        const stream = new ReadableStream({
+        const stream = new ReadableStream<unknown>({
             start(controller) {
-                controller.enqueue({ not: 'bytes' } as unknown as Uint8Array);
+                controller.enqueue({ not: 'bytes' });
                 controller.close();
             },
         });
