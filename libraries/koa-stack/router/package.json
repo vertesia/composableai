@@ -22,14 +22,14 @@
     "author": "stefanescu.bogdan@gmail.com",
     "license": "MIT",
     "dependencies": {
-        "koa": "^2.15.3",
+        "koa": "^3.2.1",
         "koa-compose": "^4.1.0",
         "koa-send": "^5.0.1",
         "path-to-regexp": "^6.2.2",
         "statuses": "^2.0.1"
     },
     "devDependencies": {
-        "@types/koa": "^2.15.2",
+        "@types/koa": "^3.0.3",
         "@types/koa-compose": "^3.2.8",
         "@types/koa-send": "^4.1.3",
         "@types/statuses": "^2.0.1",

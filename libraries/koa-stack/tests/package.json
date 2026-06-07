@@ -17,10 +17,10 @@
         "@koa-stack/body": "workspace:*",
         "@koa-stack/router": "workspace:*",
         "@koa-stack/server": "workspace:*",
-        "koa": "^2.15.3"
+        "koa": "^3.2.1"
     },
     "devDependencies": {
-        "@types/koa": "^2.15.2",
+        "@types/koa": "^3.0.3",
         "@types/supertest": "^6.0.2",
         "supertest": "^7.0.0",
         "vitest": "^4.0.0"

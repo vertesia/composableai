@@ -23,7 +23,7 @@
     "dependencies": {
         "@koa-stack/body": "workspace:*",
         "@koa-stack/router": "workspace:*",
-        "koa": "^2.15.3"
+        "koa": "^3.2.1"
     },
     "ts_dual_module": {
         "outDir": "lib"
@@ -35,7 +35,7 @@
     },
     "types": "./lib/types/index.d.ts",
     "devDependencies": {
-        "@types/koa": "^2.15.2",
+        "@types/koa": "^3.0.3",
         "ts-dual-module": "^0.6.3"
     }
 }
