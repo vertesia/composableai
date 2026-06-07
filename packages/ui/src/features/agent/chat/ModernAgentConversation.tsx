@@ -1060,15 +1060,16 @@ function ModernAgentConversationInner({
         );
     }, [effectiveWorkflowStatus]);
 
-    // When a terminal conversation can be restarted (interactive + a restart handler),
+    // When a terminal conversation can be restarted (host provided a restart handler),
     // we keep the composer visible and seamlessly resume the agent on the next message
     // instead of forcing the user to click "Continue Conversation".
     // FAILED runs are excluded: a failed run is a dead end, so we surface the failed box /
     // `failedAction` (e.g. an explicit Restart button) instead of silently resuming.
     const canContinueConversation = useMemo(
-        () => isWorkflowTerminal && effectiveWorkflowStatus?.toUpperCase() !== 'FAILED' && interactive && !!onRestart,
-        [isWorkflowTerminal, effectiveWorkflowStatus, interactive, onRestart],
+        () => isWorkflowTerminal && effectiveWorkflowStatus?.toUpperCase() !== 'FAILED' && !!onRestart,
+        [isWorkflowTerminal, effectiveWorkflowStatus, onRestart],
     );
+    const shouldRenderMessageInputArea = !hideMessageInput || canContinueConversation;
 
     // A failed run is a dead end: the input box must never show, in any state. We key off
     // both effectiveWorkflowStatus and the authoritative API status (agentRunStatus) so the
@@ -1762,7 +1763,7 @@ function ModernAgentConversationInner({
                         showPlanButton={showRightPanelProp && !conversationTab}
                         onTogglePlanPanel={handleTogglePlanPanel}
                         onDownload={downloadConversation}
-                        onExportFixture={messages.length > 0 ? exportReplayFixture : undefined}
+                        onExportFixture={exportReplayFixture}
                         resetWorkflow={resetWorkflow}
                         onClone={onClone}
                         onShowDetails={onShowDetails}
@@ -1821,7 +1822,7 @@ function ModernAgentConversationInner({
                 />
             )}
 
-            {!hideMessageInput && (
+            {shouldRenderMessageInputArea && (
                 <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
                     {isFailed ? (
                         // FAILED takes priority over every other branch so the composer can

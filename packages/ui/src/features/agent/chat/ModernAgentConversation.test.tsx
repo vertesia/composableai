@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
     reconnect: vi.fn(),
     restart: vi.fn(),
     sendSignal: vi.fn(),
+    headerProps: vi.fn(),
     useAgentStream: vi.fn(),
     useAgentPlans: vi.fn(),
     useDocumentPanel: vi.fn(),
@@ -36,7 +37,10 @@ vi.mock('./SkillWidgetProvider', () => ({
 }));
 
 vi.mock('./ModernAgentOutput/Header', () => ({
-    default: () => <div data-testid="agent-header" />,
+    default: (props: { onExportFixture?: () => void }) => {
+        mocks.headerProps(props);
+        return <div data-testid="agent-header" />;
+    },
 }));
 
 vi.mock('./ModernAgentOutput/MessageInput', () => ({
@@ -207,6 +211,46 @@ describe('ModernAgentConversation send handling', () => {
         expect(mocks.addOptimisticMessage).not.toHaveBeenCalled();
     });
 
+    it('shows the composer for a restart-capable terminal run even when the host hides normal input', () => {
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+            agentRunStatus: 'COMPLETED',
+        });
+        mocks.useAgentPlans.mockReturnValue({
+            plans: [],
+            activePlanIndex: 0,
+            setActivePlanIndex: vi.fn(),
+            workstreamStatusMap: new Map(),
+            showInput: false,
+            showSlidingPanel: false,
+            setShowSlidingPanel: vi.fn(),
+        });
+
+        renderConversation({ interactive: false, onRestart: vi.fn() });
+
+        expect(screen.getByRole('button', { name: 'composer send' })).not.toBeNull();
+    });
+
+    it('keeps the composer hidden for active non-interactive runs when the host hides input', () => {
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            agentRunStatus: 'RUNNING',
+        });
+        mocks.useAgentPlans.mockReturnValue({
+            plans: [],
+            activePlanIndex: 0,
+            setActivePlanIndex: vi.fn(),
+            workstreamStatusMap: new Map(),
+            showInput: false,
+            showSlidingPanel: false,
+            setShowSlidingPanel: vi.fn(),
+        });
+
+        renderConversation({ interactive: false, onRestart: vi.fn() });
+
+        expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
+    });
+
     it('sends directly without restart while the run is active', async () => {
         mockStreamState({
             messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
@@ -268,5 +312,21 @@ describe('ModernAgentConversation send handling', () => {
 
         expect(screen.getByTestId('rendered-message-count').textContent).toBe('5');
         expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('1');
+    });
+
+    it('keeps the replay fixture export action available while messages are empty', () => {
+        mockStreamState({
+            messages: [],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideHeader: false });
+
+        expect(mocks.headerProps).toHaveBeenCalledWith(
+            expect.objectContaining({
+                onExportFixture: expect.any(Function),
+            }),
+        );
     });
 });
