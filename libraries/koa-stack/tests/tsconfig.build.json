@@ -1,0 +1,44 @@
+{
+    "references": [
+        {
+            "path": "../server"
+        },
+        {
+            "path": "../router"
+        },
+        {
+            "path": "../body"
+        }
+    ],
+    "include": ["./src/**/*"],
+    "compilerOptions": {
+        "composite": true,
+        "sourceMap": true,
+        "forceConsistentCasingInFileNames": true,
+        "experimentalDecorators": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "target": "ES2022",
+        "useDefineForClassFields": true,
+        "lib": ["ES2022"],
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "declaration": true,
+        "declarationMap": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "rootDir": "./src",
+        "outDir": "./lib",
+        "paths": {
+            "@koa-stack/server": ["../server/build"],
+            "@koa-stack/router": ["../router/build"],
+            "@koa-stack/body": ["../body/build"]
+        }
+    },
+    "exclude": ["node_modules", "**/node_modules", "lib", "**/lib", "**/*.test.ts"]
+}
