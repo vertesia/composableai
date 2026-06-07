@@ -1,13 +1,12 @@
 import { log } from '@temporalio/activity';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
-import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
 import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
 
 const INT_DETECT_LANGUAGE = 'sys:DetectLanguage';
 
-// The first ~3 pages of text are plenty to identify the language; keep the call small and cheap.
-const DEFAULT_FIRST_PAGES_MAX_TOKENS = 2500;
+// A short head of the text is enough to identify the language; keep the call tiny.
+const DEFAULT_MAX_CHARS = 500;
 
 const LANGUAGE_RESULT_SCHEMA: InteractionExecutionParams['result_schema'] = {
     type: 'object',
@@ -19,8 +18,8 @@ const LANGUAGE_RESULT_SCHEMA: InteractionExecutionParams['result_schema'] = {
 
 export interface DetectDocumentLanguageParams extends InteractionExecutionParams {
     interactionName?: string;
-    /** Truncate the document text to roughly the first pages before detecting the language. */
-    truncate?: TruncateSpec;
+    /** Number of leading characters of the document text to inspect (default 500). */
+    maxChars?: number;
 }
 
 export interface DetectDocumentLanguage extends DSLActivitySpec<DetectDocumentLanguageParams> {
@@ -50,7 +49,7 @@ export async function detectDocumentLanguage(payload: DSLActivityExecutionPayloa
         return { status: 'skipped', message: 'no-text' };
     }
 
-    const content = truncByMaxTokens(doc.text, params.truncate ?? DEFAULT_FIRST_PAGES_MAX_TOKENS);
+    const content = doc.text.slice(0, params.maxChars ?? DEFAULT_MAX_CHARS);
 
     let res: Awaited<ReturnType<typeof executeInteractionFromActivity>>;
     try {
