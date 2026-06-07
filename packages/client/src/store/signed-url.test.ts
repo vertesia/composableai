@@ -168,6 +168,7 @@ describe('fetchSignedUrl', () => {
         ).rejects.toThrow(TypeError);
         // The bad body is rejected before any network call is attempted.
         expect(fetchMock).not.toHaveBeenCalled();
+        expect(stream.locked).toBe(false);
     });
 
     it('honors a numeric Retry-After header when scheduling the retry', async () => {

@@ -126,11 +126,12 @@ async function toReplayableBody(body: BodyInit | null | undefined): Promise<Body
                 // silently uploading a truncated body.
                 parts.push(chunkToBlobPart(value));
             }
-            reader.releaseLock();
         } catch (err) {
             // Signal the producer to stop and release its resources before propagating.
             await reader.cancel(err).catch(() => undefined);
             throw err;
+        } finally {
+            reader.releaseLock();
         }
         return new Blob(parts);
     }
