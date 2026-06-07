@@ -103,6 +103,74 @@ describe('fetchSignedUrl', () => {
         expect(bodies[0]).toBe(bodies[1]);
     });
 
+    it('buffers a string-chunk ReadableStream body without throwing (regression: non-Uint8Array chunk)', async () => {
+        const bodies: unknown[] = [];
+        fetchMock.mockImplementation((_url: string, init: RequestInit) => {
+            bodies.push(init.body);
+            return Promise.resolve(response(200, 'ok'));
+        });
+
+        // A web stream that yields *string* chunks — what `Readable.toWeb(Readable.from(text))`
+        // produces (NodeStreamSource wraps text bodies this way). `new Response(stream).blob()`
+        // rejects these under undici with "Received non-Uint8Array chunk"; the helper must
+        // encode them to bytes instead.
+        const stream = new ReadableStream<string>({
+            start(controller) {
+                controller.enqueue('hello ');
+                controller.enqueue('world');
+                controller.close();
+            },
+        });
+
+        const res = await runAllTimers(
+            fetchSignedUrl('https://storage/x', { method: 'PUT', body: stream as unknown as BodyInit }),
+        );
+
+        expect(res.status).toBe(200);
+        expect(bodies[0]).toBeInstanceOf(Blob);
+        expect(await (bodies[0] as Blob).text()).toBe('hello world');
+    });
+
+    it('buffers a mixed-chunk ReadableStream body, encoding strings and keeping bytes', async () => {
+        const bodies: unknown[] = [];
+        fetchMock.mockImplementation((_url: string, init: RequestInit) => {
+            bodies.push(init.body);
+            return Promise.resolve(response(200, 'ok'));
+        });
+
+        const stream = new ReadableStream<string | Uint8Array>({
+            start(controller) {
+                controller.enqueue('a');
+                controller.enqueue(new TextEncoder().encode('b'));
+                controller.close();
+            },
+        });
+
+        const res = await runAllTimers(
+            fetchSignedUrl('https://storage/x', { method: 'PUT', body: stream as unknown as BodyInit }),
+        );
+
+        expect(res.status).toBe(200);
+        expect(bodies[0]).toBeInstanceOf(Blob);
+        expect(await (bodies[0] as Blob).text()).toBe('ab');
+    });
+
+    it('throws on an object-mode stream chunk instead of silently corrupting the upload', async () => {
+        const stream = new ReadableStream<unknown>({
+            start(controller) {
+                controller.enqueue({ not: 'bytes' });
+                controller.close();
+            },
+        });
+
+        await expect(
+            fetchSignedUrl('https://storage/x', { method: 'PUT', body: stream as unknown as BodyInit }),
+        ).rejects.toThrow(TypeError);
+        // The bad body is rejected before any network call is attempted.
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(stream.locked).toBe(false);
+    });
+
     it('honors a numeric Retry-After header when scheduling the retry', async () => {
         fetchMock
             .mockResolvedValueOnce(response(503, 'slow down', { 'retry-after': '2' }))

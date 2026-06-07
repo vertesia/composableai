@@ -65,18 +65,75 @@ function backoffMs(attempt: number, baseDelayMs: number, maxDelayMs: number, res
     return Math.floor(Math.random() * capped);
 }
 
+const textEncoder = new TextEncoder();
+
+/**
+ * Normalize one `ReadableStream` chunk to a byte-backed `BlobPart`.
+ *
+ * A web stream produced from a Node `Readable.from(<string>)` (e.g. via
+ * `Readable.toWeb`, which `NodeStreamSource` uses) yields *string* chunks. Buffering
+ * such a stream with `new Response(stream).blob()` throws under undici with
+ * "TypeError: Received non-Uint8Array chunk", which breaks every signed-URL upload of
+ * a text/JSON body (extracted text previews, agent artifacts, tool storage). Encoding
+ * chunks ourselves keeps both string and binary bodies uploadable.
+ */
+function chunkToBlobPart(chunk: unknown): BlobPart {
+    if (typeof chunk === 'string') {
+        return textEncoder.encode(chunk);
+    }
+    if (chunk instanceof Blob) {
+        return chunk;
+    }
+    if (chunk instanceof ArrayBuffer) {
+        return new Uint8Array(chunk);
+    }
+    // Covers Uint8Array and every other typed-array / DataView view.
+    if (ArrayBuffer.isView(chunk)) {
+        return new Uint8Array(chunk.buffer as ArrayBuffer, chunk.byteOffset, chunk.byteLength);
+    }
+    // Fail loud rather than uploading e.g. "[object Object]" from an accidental
+    // object-mode stream — silently corrupting the stored content is worse than a clear error.
+    throw new TypeError(
+        `Unsupported signed-URL upload chunk of type "${typeof chunk}"; ` +
+            `body streams must yield string or binary (Uint8Array/ArrayBuffer/DataView/Blob) chunks.`,
+    );
+}
+
 /**
  * Buffer a `ReadableStream` body into a `Blob` so the request can be safely
  * replayed across retries. Other body types (`Blob`/`File`, `ArrayBuffer`,
  * typed arrays, strings, `URLSearchParams`) are already replayable and pass
  * through unchanged.
+ *
+ * The stream is drained manually (rather than `new Response(stream).blob()`) so that
+ * string chunks are encoded to bytes — see {@link chunkToBlobPart}.
  */
 async function toReplayableBody(body: BodyInit | null | undefined): Promise<BodyInit | undefined> {
     if (body == null) {
         return undefined;
     }
     if (typeof ReadableStream !== 'undefined' && body instanceof ReadableStream) {
-        return await new Response(body).blob();
+        const reader = (body as ReadableStream<unknown>).getReader();
+        const parts: BlobPart[] = [];
+        try {
+            for (;;) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    break;
+                }
+                // Normalize every chunk (a stray null/undefined is rejected by
+                // chunkToBlobPart) so a malformed stream fails loudly instead of
+                // silently uploading a truncated body.
+                parts.push(chunkToBlobPart(value));
+            }
+        } catch (err) {
+            // Signal the producer to stop and release its resources before propagating.
+            await reader.cancel(err).catch(() => undefined);
+            throw err;
+        } finally {
+            reader.releaseLock();
+        }
+        return new Blob(parts);
     }
     return body;
 }
