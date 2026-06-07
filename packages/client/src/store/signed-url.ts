@@ -91,8 +91,12 @@ function chunkToBlobPart(chunk: unknown): BlobPart {
     if (ArrayBuffer.isView(chunk)) {
         return new Uint8Array(chunk.buffer as ArrayBuffer, chunk.byteOffset, chunk.byteLength);
     }
-    // Unknown chunk type — fall back to its string representation.
-    return textEncoder.encode(String(chunk));
+    // Fail loud rather than uploading e.g. "[object Object]" from an accidental
+    // object-mode stream — silently corrupting the stored content is worse than a clear error.
+    throw new TypeError(
+        `Unsupported signed-URL upload chunk of type "${typeof chunk}"; ` +
+            `body streams must yield string or binary (Uint8Array/ArrayBuffer/DataView/Blob) chunks.`,
+    );
 }
 
 /**

@@ -155,6 +155,21 @@ describe('fetchSignedUrl', () => {
         expect(await (bodies[0] as Blob).text()).toBe('ab');
     });
 
+    it('throws on an object-mode stream chunk instead of silently corrupting the upload', async () => {
+        const stream = new ReadableStream({
+            start(controller) {
+                controller.enqueue({ not: 'bytes' } as unknown as Uint8Array);
+                controller.close();
+            },
+        });
+
+        await expect(
+            fetchSignedUrl('https://storage/x', { method: 'PUT', body: stream as unknown as BodyInit }),
+        ).rejects.toThrow(TypeError);
+        // The bad body is rejected before any network call is attempted.
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it('honors a numeric Retry-After header when scheduling the retry', async () => {
         fetchMock
             .mockResolvedValueOnce(response(503, 'slow down', { 'retry-after': '2' }))
