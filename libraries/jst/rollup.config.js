@@ -1,12 +1,14 @@
 import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
-import typescript from '@rollup/plugin-typescript';
 
+// Bundles the already-built ES output (`lib/index.js`, produced by `tsc`) into a single
+// browser-friendly file consumed by composable-ui's CDN runtime. Build script: `tsc && rollup -c`.
+// No @rollup/plugin-typescript here — its TS-watcher would leak file/dir watchers and hang turbo.
 const TARGET_FILE = 'lib/vertesia-jst.js';
 
 export default {
-    input: 'src/index.ts',
+    input: 'lib/index.js',
     output: {
         file: TARGET_FILE,
         format: 'es',
@@ -20,23 +22,12 @@ export default {
         'dayjs',
         'papaparse',
     ],
-    onwarn(warning, defaultHandler) {
-        if (warning.plugin === 'typescript') {
-            throw new Error(warning.message ?? String(warning));
-        }
-        defaultHandler(warning);
-    },
     plugins: [
         nodeResolve({
             browser: true,
             exportConditions: ['browser', 'module', 'import'],
         }),
         commonjs(),
-        typescript({
-            tsconfig: './tsconfig.web.json',
-            sourceMap: true,
-            declaration: false,
-        }),
         terser(),
     ],
 };
