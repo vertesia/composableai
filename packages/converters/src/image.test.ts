@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
 import { expect, test } from 'vitest';
-import { createImageTransformer } from './image';
+import { createImageTransformer } from './image.js';
 
 test('should resize an image to a maximum height or width', async () => {
     const max_hw = 1596;

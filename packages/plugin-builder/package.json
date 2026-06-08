@@ -27,6 +27,7 @@
         "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc"
     },
     "devDependencies": {
+        "@vertesia/tsconfig": "workspace:*",
         "typescript": "^6.0.3"
     },
     "dependencies": {

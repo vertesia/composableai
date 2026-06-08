@@ -4,6 +4,7 @@
     "description": "Vertesia UI components and and hooks",
     "type": "module",
     "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
     "files": [
         "lib",
         "src",
@@ -20,7 +21,7 @@
         "hooks"
     ],
     "scripts": {
-        "build": "pnpm exec rimraf ./lib && tsc -b && pnpm exec rollup -c",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc -b && pnpm exec rollup -c",
         "lint": "biome lint src && pnpm run check:rtl-classes",
         "lint:fix": "biome lint --write src",
         "check:rtl-classes": "node scripts/check-rtl-classes.mjs --mode=strict",
@@ -116,11 +117,11 @@
         "@types/papaparse": "^5.5.2",
         "@types/react": "^19.2.3",
         "@types/react-dom": "^19.2.3",
+        "@vertesia/tsconfig": "workspace:*",
         "axe-core": "^4.11.4",
         "culori": "^4.0.2",
         "i18next-cli": "^1.58.0",
         "jsdom": "^29.1.1",
-        "rimraf": "^6.1.3",
         "rollup": "^4.60.4",
         "typescript": "^6.0.3",
         "vitest": "^4.0.16",
@@ -143,86 +144,48 @@
         "./css/custom-tooltips.css": "./src/css/custom-tooltips.css",
         "./css/base.css": "./src/css/base.css",
         "./router": {
-            "types": "./lib/types/router/index.d.ts",
-            "default": "./lib/esm/router/index.js"
+            "types": "./lib/router/index.d.ts",
+            "default": "./lib/router/index.js"
         },
         "./env": {
-            "types": "./lib/types/env/index.d.ts",
-            "default": "./lib/esm/env/index.js"
+            "types": "./lib/env/index.d.ts",
+            "default": "./lib/env/index.js"
         },
         "./session": {
-            "types": "./lib/types/session/index.d.ts",
-            "default": "./lib/esm/session/index.js"
+            "types": "./lib/session/index.d.ts",
+            "default": "./lib/session/index.js"
         },
         "./core": {
-            "types": "./lib/types/core/index.d.ts",
-            "default": "./lib/esm/core/index.js"
+            "types": "./lib/core/index.d.ts",
+            "default": "./lib/core/index.js"
         },
         "./widgets": {
-            "types": "./lib/types/widgets/index.d.ts",
-            "default": "./lib/esm/widgets/index.js"
+            "types": "./lib/widgets/index.d.ts",
+            "default": "./lib/widgets/index.js"
         },
         "./code": {
-            "types": "./lib/types/code/index.d.ts",
-            "default": "./lib/esm/code/index.js"
+            "types": "./lib/code/index.d.ts",
+            "default": "./lib/code/index.js"
         },
         "./form": {
-            "types": "./lib/types/form/index.d.ts",
-            "default": "./lib/esm/form/index.js"
+            "types": "./lib/form/index.d.ts",
+            "default": "./lib/form/index.js"
         },
         "./layout": {
-            "types": "./lib/types/layout/index.d.ts",
-            "default": "./lib/esm/layout/index.js"
+            "types": "./lib/layout/index.d.ts",
+            "default": "./lib/layout/index.js"
         },
         "./features": {
-            "types": "./lib/types/features/index.d.ts",
-            "default": "./lib/esm/features/index.js"
+            "types": "./lib/features/index.d.ts",
+            "default": "./lib/features/index.js"
         },
         "./shell": {
-            "types": "./lib/types/shell/index.d.ts",
-            "default": "./lib/esm/shell/index.js"
+            "types": "./lib/shell/index.d.ts",
+            "default": "./lib/shell/index.js"
         },
         "./i18n": {
-            "types": "./lib/types/i18n/index.d.ts",
-            "default": "./lib/esm/i18n/index.js"
-        }
-    },
-    "types": "./lib/index.d.ts",
-    "typesVersions": {
-        "*": {
-            "router": [
-                "./lib/types/router/index.d.ts"
-            ],
-            "env": [
-                "./lib/types/env/index.d.ts"
-            ],
-            "session": [
-                "./lib/types/session/index.d.ts"
-            ],
-            "core": [
-                "./lib/types/core/index.d.ts"
-            ],
-            "widgets": [
-                "./lib/types/widgets/index.d.ts"
-            ],
-            "code": [
-                "./lib/types/code/index.d.ts"
-            ],
-            "features": [
-                "./lib/types/features/index.d.ts"
-            ],
-            "layout": [
-                "./lib/types/layout/index.d.ts"
-            ],
-            "form": [
-                "./lib/types/form/index.d.ts"
-            ],
-            "shell": [
-                "./lib/types/shell/index.d.ts"
-            ],
-            "i18n": [
-                "./lib/types/i18n/index.d.ts"
-            ]
+            "types": "./lib/i18n/index.d.ts",
+            "default": "./lib/i18n/index.js"
         }
     },
     "repository": {

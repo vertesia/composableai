@@ -1,0 +1,18 @@
+// For UI libraries: emit declarations + (optionally) JS via `tsc`, but designed to
+// be consumed by bundlers (Vite, Rollup) that handle their own module resolution.
+// Bundler-style resolution lets the source omit `.js` extensions and rely on the
+// downstream bundler to wire imports. JSX is enabled. DOM + iterables in scope.
+//
+// Consumers: @vertesia/ui, @vertesia/fusion-ux, @vertesia/tools-admin-ui.
+//
+// Note: packages that emit ONLY types (no JS — tsc is just for declarations,
+// vite builds the runtime) should additionally set `emitDeclarationOnly: true`
+// in their own tsconfig.
+{
+    "extends": "./web-lib.json",
+    "compilerOptions": {
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "jsx": "react-jsx"
+    }
+}
