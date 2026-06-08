@@ -63,6 +63,12 @@ export interface GenerateOrAssignContentTypeParams extends InteractionExecutionP
      * Defaults to true for backward compatibility.
      */
     allowNewContentTypes?: boolean;
+
+    /**
+     * Type id to assign when no existing type matches and generation is disabled. Resolved in this
+     * project; falls back to sys:GenericDocument if unset or unresolvable.
+     */
+    fallbackTypeId?: string;
 }
 
 export interface GenerateOrAssignContentType extends DSLActivitySpec<GenerateOrAssignContentTypeParams> {
@@ -181,11 +187,9 @@ export async function generateOrAssignContentType(
     if (!selectedType) {
         if (params.allowNewContentTypes === false) {
             // Type generation is disabled (handled separately, e.g. via the Studio Assistant), so
-            // fall back to the generic system type rather than leaving the document untyped.
-            log.info('Document type not identified; assigning GenericDocument fallback', {
-                selectedDocumentType: jsonResult.document_type,
-            });
-            selectedType = { id: GENERIC_DOCUMENT_TYPE_ID, name: GENERIC_DOCUMENT_TYPE_NAME };
+            // fall back to the project's default type (or sys:GenericDocument) rather than leaving
+            // the document untyped.
+            selectedType = await resolveFallbackType(context, params.fallbackTypeId, jsonResult.document_type);
         } else {
             log.warn('Document type not identified: starting type generation');
             const newType = await generateNewType(context, existing_types, content, fileRef);
@@ -208,6 +212,34 @@ export async function generateOrAssignContentType(
         name: selectedType.name,
         isNew: !types.find((t) => t.name === selectedType.name),
     };
+}
+
+/**
+ * Resolve the fallback type to assign when selection finds no match: the project's configured
+ * default content type if set and resolvable, otherwise the platform sys:GenericDocument.
+ */
+async function resolveFallbackType(
+    context: ActivityContext<GenerateOrAssignContentTypeParams>,
+    fallbackTypeId: string | undefined,
+    selectedDocumentType: unknown,
+): Promise<{ id: string; name: string }> {
+    if (fallbackTypeId && fallbackTypeId !== GENERIC_DOCUMENT_TYPE_ID) {
+        try {
+            const resolved = await context.client.types.catalog.resolve(fallbackTypeId);
+            log.info('Document type not identified; assigning project default content type', {
+                fallbackTypeId,
+                selectedDocumentType,
+            });
+            return { id: resolved.id ?? fallbackTypeId, name: resolved.name ?? fallbackTypeId };
+        } catch (error) {
+            log.warn('Configured default content type not resolvable; using GenericDocument', {
+                fallbackTypeId,
+                error: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+    log.info('Document type not identified; assigning GenericDocument fallback', { selectedDocumentType });
+    return { id: GENERIC_DOCUMENT_TYPE_ID, name: GENERIC_DOCUMENT_TYPE_NAME };
 }
 
 async function generateNewType(

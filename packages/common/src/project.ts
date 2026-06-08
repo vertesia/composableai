@@ -314,6 +314,13 @@ export interface ProjectIntakeConfiguration {
      * Defaults to 1000.
      */
     new_content_type_project_doc_limit?: number;
+
+    /**
+     * Default content type assigned during intake when type selection finds no matching type.
+     * A type id resolvable in this project (a stored `oid:` type, an `app:` type, or a `sys:` type).
+     * Defaults to the platform `sys:GenericDocument` when unset.
+     */
+    default_content_type?: string;
 }
 
 export interface ProjectConfiguration {
