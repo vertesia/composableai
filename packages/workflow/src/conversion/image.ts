@@ -75,11 +75,11 @@ export async function imageResizer(
 
         log.debug(`Resizing image using ImageMagick: ${inputPath} -> ${outputPath}`);
 
-        const command = `convert`
-        let args = [inputPath];
+        const command = "convert";
+        const args = ["-define", `jpeg:size=${max_hw * 3}x${max_hw * 3}`];
 
-        // Add JPEG shrink-on-load optimization
-        args.push("-define", `jpeg:size=${max_hw * 3}x${max_hw * 3}`);
+        // Add input after JPEG shrink-on-load optimization so ImageMagick can apply it while decoding.
+        args.push(inputPath);
 
         // Remove metadata
         args.push("-strip");
