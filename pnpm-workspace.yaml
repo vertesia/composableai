@@ -24,8 +24,6 @@ minimumReleaseAgeExclude:
   - "@llumiverse/*"
   # Renovate security update: vitest@4.1.0
   - vitest@4.1.0
-patchedDependencies:
-  "ts-dual-module@0.6.3": patches/ts-dual-module@0.6.3.patch
 overrides:
   react: "19.2.3"
   react-dom: "19.2.3"
