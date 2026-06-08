@@ -10,7 +10,9 @@ export enum ContentObjectApiHeaders {
     PROCESSING_PRIORITY = 'x-processing-priority',
     CREATE_REVISION = 'x-create-revision',
     REVISION_LABEL = 'x-revision-label',
-    /** When set to 'true', prevents this update from triggering workflow rules */
+    /**
+     * @deprecated Events are now always emitted. This flag only suppresses workflow delivery targets.
+     */
     SUPPRESS_WORKFLOWS = 'x-suppress-workflows',
 }
 
@@ -35,6 +37,9 @@ export interface UpdateContentObjectHeaders {
     'x-create-revision'?: boolean;
     'x-revision-label'?: string;
     'x-processing-priority'?: ContentObjectProcessingPriority;
+    /**
+     * @deprecated Events are now always emitted. This flag only suppresses workflow delivery targets.
+     */
     'x-suppress-workflows'?: boolean;
 }
 

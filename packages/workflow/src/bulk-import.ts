@@ -89,6 +89,7 @@ export interface BulkImportParams {
     partitionSize?: number;
     dryRun?: boolean;
     updateByContentSource?: boolean;
+    /** @deprecated Events are now always emitted. This only suppresses workflow delivery targets. */
     skipWorkflows?: boolean;
 }
 
