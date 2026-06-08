@@ -2,8 +2,13 @@
 // owns module resolution and JS emission; `tsc` only typechecks. `noEmit: true`,
 // `moduleResolution: bundler`, JSX enabled, full DOM lib including iterables.
 //
-// Intended consumers: apps/composable-ui, apps/admin-ui, apps/auth-ui, apps/docs,
-// apps/tools, plugins/* — anything that runs in the browser via a bundler.
+// `allowImportingTsExtensions: true` lets Vite-style `.ts` extensions in
+// relative imports pass typechecking (TS itself doesn't emit so no `.js`
+// rewrite needed).
+//
+// Intended consumers: apps/composable-ui, apps/admin-ui, apps/auth-ui,
+// apps/docs, apps/tools, plugins/* — anything that runs in the browser via
+// a bundler.
 //
 // Note: UI libraries that emit declarations via `tsc` and bundle JS separately
 // (e.g. fusion-ux, tools-admin-ui, @vertesia/ui) need a hybrid setup — extend
@@ -11,10 +16,11 @@
 {
     "extends": "./base.json",
     "compilerOptions": {
-        "module": "preserve",
+        "module": "ESNext",
         "moduleResolution": "bundler",
         "lib": ["ES2024", "DOM", "DOM.Iterable"],
         "jsx": "react-jsx",
+        "allowImportingTsExtensions": true,
         "noEmit": true
     }
 }
