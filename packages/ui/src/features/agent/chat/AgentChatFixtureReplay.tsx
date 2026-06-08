@@ -4,7 +4,9 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { DownloadCloudIcon, Pause, Play } from 'lucide-react';
 import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
+import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import AllMessagesMixed, { type AgentConversationViewMode } from './ModernAgentOutput/AllMessagesMixed';
+import { getPendingRequestInputMessage } from './ModernAgentOutput/requestInputMessages';
 import { isInProgress, type StreamingData } from './ModernAgentOutput/utils';
 import {
     type AgentChatPlaybackCursor,
@@ -157,6 +159,10 @@ export function AgentChatFixtureReplay({
     }, [autoStepMs, cursor, isPlaying, messages.length, repeat, setCursor]);
 
     const isCompleted = displayedMessages.length > 0 && !isInProgress(displayedMessages);
+    const pendingRequestInputMessage = useMemo(
+        () => getPendingRequestInputMessage(displayedMessages),
+        [displayedMessages],
+    );
     const resolvedTitle = title ?? fixture.metadata?.title ?? t('agent.testPlayback.fixtureTitle');
     const downloadFixture = useCallback(() => {
         const payload: AgentChatReplayFixture = {
@@ -172,6 +178,9 @@ export function AgentChatFixtureReplay({
         const filename = `${sanitizeFilenamePart(resolvedTitle) || 'agent-chat'}-${sanitizeFilenamePart(runId)}.json`;
         downloadJsonFile(filename, payload);
     }, [fixture, messages.length, resolvedTitle]);
+    const handleReplayRequestInput = useCallback(() => {
+        setCursor(getNextCursor(playback.cursor, messages.length));
+    }, [messages.length, playback.cursor, setCursor]);
 
     return (
         <div
@@ -221,7 +230,15 @@ export function AgentChatFixtureReplay({
                 bottomRef={bottomRef as RefObject<HTMLDivElement>}
                 artifactRunId={fixture.metadata?.agent_run_id ?? 'agent-chat-fixture'}
                 viewMode={viewMode}
+                renderRequestInputControls={!pendingRequestInputMessage}
             />
+            {pendingRequestInputMessage && (
+                <AgentRequestInputOverlay
+                    message={pendingRequestInputMessage}
+                    onSendMessage={handleReplayRequestInput}
+                    isLoading={false}
+                />
+            )}
         </div>
     );
 }

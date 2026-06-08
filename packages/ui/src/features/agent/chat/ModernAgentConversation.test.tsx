@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
     restart: vi.fn(),
     sendSignal: vi.fn(),
     headerProps: vi.fn(),
+    allMessagesMixedProps: vi.fn(),
     messageInputProps: vi.fn(),
     rightPanelProps: vi.fn(),
     useAgentStream: vi.fn(),
@@ -66,19 +67,24 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
         messages,
         streamingMessages,
         onSendMessage,
+        renderRequestInputControls,
     }: {
         messages: AgentMessage[];
         streamingMessages: Map<string, unknown>;
         onSendMessage?: (message: string) => void;
-    }) => (
-        <div>
-            <div data-testid="rendered-message-count">{messages.length}</div>
-            <div data-testid="rendered-streaming-count">{streamingMessages.size}</div>
-            <button type="button" disabled={!onSendMessage} onClick={() => onSendMessage?.('follow up')}>
-                inline send
-            </button>
-        </div>
-    ),
+        renderRequestInputControls?: boolean;
+    }) => {
+        mocks.allMessagesMixedProps({ messages, streamingMessages, onSendMessage, renderRequestInputControls });
+        return (
+            <div>
+                <div data-testid="rendered-message-count">{messages.length}</div>
+                <div data-testid="rendered-streaming-count">{streamingMessages.size}</div>
+                <button type="button" disabled={!onSendMessage} onClick={() => onSendMessage?.('follow up')}>
+                    inline send
+                </button>
+            </div>
+        );
+    },
 }));
 
 vi.mock('./AgentRightPanel.js', () => ({
@@ -321,6 +327,46 @@ describe('ModernAgentConversation send handling', () => {
             expect.objectContaining({ workstream_id: 'beta', status: 'running' }),
         ]);
         expect(latestMessageInputProps.activeTaskCount).toBe(2);
+    });
+
+    it('shows a bottom request overlay for pending ask input even when normal input is hidden', async () => {
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'What is your favorite color?'),
+                    details: {
+                        ux: {
+                            options: [
+                                { id: 'red', label: 'Red' },
+                                { id: 'blue', label: 'Blue' },
+                            ],
+                        },
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation();
+
+        expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
+        expect(screen.getByText('What is your favorite color?')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Blue/ })).not.toBeNull();
+        expect(mocks.allMessagesMixedProps.mock.lastCall?.[0]).toEqual(
+            expect.objectContaining({ renderRequestInputControls: false }),
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /Blue/ }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledTimes(1);
+        });
+        expect(mocks.sendSignal).toHaveBeenCalledWith(
+            'agent-run-1',
+            'UserInput',
+            expect.objectContaining({ message: 'blue' }),
+        );
     });
 
     it('sends directly without restart while the run is active', async () => {

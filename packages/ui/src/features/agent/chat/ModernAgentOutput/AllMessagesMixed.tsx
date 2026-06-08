@@ -28,6 +28,12 @@ import { AskUserWidget } from '../AskUserWidget';
 import { ThinkingMessages } from '../WaitingMessages';
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from './BatchProgressPanel';
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
+import {
+    getAnsweredRequestInputKeys,
+    getPendingRequestInputMessage,
+    getRequestInputMessageKey,
+    isRequestInputAnswered,
+} from './requestInputMessages';
 import StreamingMessage, { type StreamingMessageClassNames } from './StreamingMessage';
 import {
     buildSummaryConversationItems,
@@ -146,53 +152,6 @@ function getMessageText(message: AgentMessage): string {
     if (!message.message) return '';
     if (typeof message.message === 'object') return JSON.stringify(message.message, null, 2);
     return String(message.message).trim();
-}
-
-function getRequestInputMessageKey(message: AgentMessage): string {
-    const details = message.details as Record<string, unknown> | undefined;
-    const keyParts = [
-        details?.request_id,
-        details?.requestId,
-        details?.activity_id,
-        details?.activityId,
-        details?.tool_run_id,
-        details?.toolRunId,
-        message.timestamp,
-        getMessageText(message),
-    ];
-    return keyParts
-        .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
-        .map(String)
-        .join('|');
-}
-
-function getAnsweredRequestInputKeys(messages: AgentMessage[]): Set<string> {
-    const answered = new Set<string>();
-
-    messages.forEach((message, index) => {
-        if (message.type !== AgentMessageType.REQUEST_INPUT) return;
-
-        const workstreamId = getWorkstreamId(message);
-        for (let nextIndex = index + 1; nextIndex < messages.length; nextIndex += 1) {
-            const nextMessage = messages[nextIndex];
-            if (getWorkstreamId(nextMessage) !== workstreamId) continue;
-
-            if (nextMessage.type === AgentMessageType.REQUEST_INPUT) break;
-            if (nextMessage.type === AgentMessageType.QUESTION) {
-                answered.add(getRequestInputMessageKey(message));
-                break;
-            }
-        }
-    });
-
-    return answered;
-}
-
-function isRequestInputAnswered(message: AgentMessage, answeredRequestInputKeys: Set<string>): boolean {
-    return (
-        message.type === AgentMessageType.REQUEST_INPUT &&
-        answeredRequestInputKeys.has(getRequestInputMessageKey(message))
-    );
 }
 
 interface SummaryMessageProps {
@@ -1442,6 +1401,8 @@ interface AllMessagesMixedProps {
     hiddenMessageTypes?: AgentMessageType[];
     /** Test/playback mode: keep the current scroll position while the rendered message slice changes. */
     disableAutoScroll?: boolean;
+    /** Whether REQUEST_INPUT messages render their active controls in the transcript. */
+    renderRequestInputControls?: boolean;
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
@@ -1473,6 +1434,7 @@ function AllMessagesMixedComponent({
     initialRequestTemplate,
     hiddenMessageTypes,
     disableAutoScroll = false,
+    renderRequestInputControls = true,
 }: AllMessagesMixedProps) {
     if (!artifactRunId) {
         console.warn('[AllMessagesMixed] artifactRunId prop is missing!');
@@ -1642,6 +1604,17 @@ function AllMessagesMixedComponent({
     const answeredRequestInputKeys = React.useMemo(
         () => getAnsweredRequestInputKeys(displayMessages),
         [displayMessages],
+    );
+    const externallyRenderedRequestInputKey = React.useMemo(() => {
+        if (renderRequestInputControls) return undefined;
+        const pendingRequestInput = getPendingRequestInputMessage(displayMessages);
+        return pendingRequestInput ? getRequestInputMessageKey(pendingRequestInput) : undefined;
+    }, [displayMessages, renderRequestInputControls]);
+    const shouldHideRequestInputMessage = React.useCallback(
+        (message: AgentMessage) =>
+            message.type === AgentMessageType.REQUEST_INPUT &&
+            externallyRenderedRequestInputKey === getRequestInputMessageKey(message),
+        [externallyRenderedRequestInputKey],
     );
 
     const fallbackWorkingStartedAtRef = useRef(Date.now());
@@ -2206,6 +2179,7 @@ function AllMessagesMixedComponent({
                                 } else {
                                     // Render single message
                                     const message = group.message;
+                                    if (shouldHideRequestInputMessage(message)) return null;
                                     const isLatestMessage =
                                         !isCompleted && isLastGroup && !DONE_STATES.includes(message.type);
 
@@ -2319,6 +2293,7 @@ function AllMessagesMixedComponent({
                                 }
 
                                 const message = item.message;
+                                if (shouldHideRequestInputMessage(message)) return null;
                                 if (isBatchProgressMessage(message)) {
                                     return (
                                         <MessageErrorBoundary

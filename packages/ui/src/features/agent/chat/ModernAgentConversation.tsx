@@ -27,6 +27,7 @@ import { ArrowUpIcon, Bot, CheckCircle, Cpu, FileTextIcon, UploadIcon, XIcon } f
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
+import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
@@ -44,6 +45,7 @@ import type { BatchProgressPanelClassNames } from './ModernAgentOutput/BatchProg
 import Header from './ModernAgentOutput/Header';
 import MessageInput, { type SelectedDocument, type UploadedFile } from './ModernAgentOutput/MessageInput';
 import type { MessageItemClassNames } from './ModernAgentOutput/MessageItem';
+import { getPendingRequestInputMessage } from './ModernAgentOutput/requestInputMessages';
 import type { StreamingMessageClassNames } from './ModernAgentOutput/StreamingMessage';
 import type { ToolCallGroupClassNames } from './ModernAgentOutput/ToolCallGroup';
 import { getConversationUrl, getWorkstreamId, isInProgress } from './ModernAgentOutput/utils';
@@ -1190,6 +1192,11 @@ function ModernAgentConversationInner({
     const displayedStreamingMessages = isTestPlaybackLive ? streamingMessages : EMPTY_STREAMING_MESSAGES;
     const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
     const displayedIsCompleted = isTestPlaybackLive ? effectiveIsCompleted : false;
+    const pendingRequestInputMessage = useMemo(
+        () => getPendingRequestInputMessage(displayedMessages),
+        [displayedMessages],
+    );
+    const shouldShowRequestInputOverlay = Boolean(pendingRequestInputMessage) && !isFailed;
 
     useEffect(() => {
         if (!isTestPlaybackEnabled) {
@@ -1817,67 +1824,79 @@ function ModernAgentConversationInner({
                     initialRequestTemplate={initialRequestTemplate}
                     hiddenMessageTypes={hiddenMessageTypes}
                     disableAutoScroll={!isTestPlaybackLive}
+                    renderRequestInputControls={!shouldShowRequestInputOverlay}
                 />
             )}
 
-            {shouldRenderMessageInputArea && (
-                <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-                    {isFailed ? (
-                        // FAILED takes priority over every other branch so the composer can
-                        // never render for a failed run. Use the caller's action when provided,
-                        // otherwise fall back to the default failed message box.
-                        (failedAction ?? (
-                            <MessageBox status="error" icon={null} className="m-2">
-                                This Workflow is FAILED
-                            </MessageBox>
-                        ))
-                    ) : effectiveWorkflowStatus && effectiveWorkflowStatus !== 'RUNNING' && !canContinueConversation ? (
-                        viewMode === 'sliding' && effectiveWorkflowStatus === 'COMPLETED' ? (
-                            <div className="mx-auto w-full max-w-3xl px-4 py-3 text-sm text-muted">
-                                <div className="flex items-center gap-2 border-t border-success/25 pt-3 text-success">
-                                    <CheckCircle className="size-4" />
-                                    <span className="font-medium">Workflow completed</span>
+            {shouldShowRequestInputOverlay ? (
+                <AgentRequestInputOverlay
+                    message={pendingRequestInputMessage}
+                    onSendMessage={handleSendMessage}
+                    disabled={isUploading || !isTestPlaybackLive}
+                    isLoading={isSending || isUploading}
+                />
+            ) : (
+                shouldRenderMessageInputArea && (
+                    <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                        {isFailed ? (
+                            // FAILED takes priority over every other branch so the composer can
+                            // never render for a failed run. Use the caller's action when provided,
+                            // otherwise fall back to the default failed message box.
+                            (failedAction ?? (
+                                <MessageBox status="error" icon={null} className="m-2">
+                                    This Workflow is FAILED
+                                </MessageBox>
+                            ))
+                        ) : effectiveWorkflowStatus &&
+                          effectiveWorkflowStatus !== 'RUNNING' &&
+                          !canContinueConversation ? (
+                            viewMode === 'sliding' && effectiveWorkflowStatus === 'COMPLETED' ? (
+                                <div className="mx-auto w-full max-w-3xl px-4 py-3 text-sm text-muted">
+                                    <div className="flex items-center gap-2 border-t border-success/25 pt-3 text-success">
+                                        <CheckCircle className="size-4" />
+                                        <span className="font-medium">Workflow completed</span>
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <MessageBox
+                                    status={effectiveWorkflowStatus === 'COMPLETED' ? 'success' : 'done'}
+                                    icon={null}
+                                    className="m-2"
+                                >
+                                    This Workflow is {effectiveWorkflowStatus}
+                                </MessageBox>
+                            )
                         ) : (
-                            <MessageBox
-                                status={effectiveWorkflowStatus === 'COMPLETED' ? 'success' : 'done'}
-                                icon={null}
-                                className="m-2"
-                            >
-                                This Workflow is {effectiveWorkflowStatus}
-                            </MessageBox>
-                        )
-                    ) : (
-                        (showInput || canContinueConversation) && (
-                            <MessageInput
-                                onSend={handleSendMessage}
-                                onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
-                                disabled={isUploading || !isTestPlaybackLive}
-                                isSending={isSending || isUploading}
-                                isStopping={isStopping}
-                                isStreaming={!effectiveIsCompleted}
-                                isCompleted={effectiveIsCompleted}
-                                activeTaskCount={activeTaskCount}
-                                placeholder={placeholder ?? 'Type your message...'}
-                                onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
-                                uploadedFiles={uploadedFiles}
-                                onRemoveFile={onRemoveFile}
-                                acceptedFileTypes={acceptedFileTypes}
-                                maxFiles={maxFiles}
-                                processingFiles={processingFiles}
-                                hasProcessingFiles={hasProcessingFiles}
-                                renderDocumentSearch={renderDocumentSearch}
-                                selectedDocuments={selectedDocuments}
-                                onRemoveDocument={onRemoveDocument}
-                                hideObjectLinking={hideObjectLinking}
-                                hideFileUpload={!canUploadFiles}
-                                className={inputContainerClassName}
-                                inputClassName={inputClassName}
-                            />
-                        )
-                    )}
-                </div>
+                            (showInput || canContinueConversation) && (
+                                <MessageInput
+                                    onSend={handleSendMessage}
+                                    onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
+                                    disabled={isUploading || !isTestPlaybackLive}
+                                    isSending={isSending || isUploading}
+                                    isStopping={isStopping}
+                                    isStreaming={!effectiveIsCompleted}
+                                    isCompleted={effectiveIsCompleted}
+                                    activeTaskCount={activeTaskCount}
+                                    placeholder={placeholder ?? 'Type your message...'}
+                                    onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
+                                    uploadedFiles={uploadedFiles}
+                                    onRemoveFile={onRemoveFile}
+                                    acceptedFileTypes={acceptedFileTypes}
+                                    maxFiles={maxFiles}
+                                    processingFiles={processingFiles}
+                                    hasProcessingFiles={hasProcessingFiles}
+                                    renderDocumentSearch={renderDocumentSearch}
+                                    selectedDocuments={selectedDocuments}
+                                    onRemoveDocument={onRemoveDocument}
+                                    hideObjectLinking={hideObjectLinking}
+                                    hideFileUpload={!canUploadFiles}
+                                    className={inputContainerClassName}
+                                    inputClassName={inputClassName}
+                                />
+                            )
+                        )}
+                    </div>
+                )
             )}
         </div>
     );

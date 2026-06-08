@@ -1,5 +1,5 @@
-import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import { describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../../../i18n/index.js';
 import { AgentChatFixtureReplay, type AgentChatReplayFixture } from './AgentChatFixtureReplay';
@@ -9,12 +9,19 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
         messages,
         streamingMessages,
         viewMode,
+        renderRequestInputControls,
     }: {
         messages: AgentMessage[];
         streamingMessages: Map<string, unknown>;
         viewMode: string;
+        renderRequestInputControls?: boolean;
     }) => (
-        <div data-testid="all-messages-mixed" data-message-count={messages.length} data-view-mode={viewMode}>
+        <div
+            data-testid="all-messages-mixed"
+            data-message-count={messages.length}
+            data-view-mode={viewMode}
+            data-render-request-input-controls={renderRequestInputControls}
+        >
             <div data-testid="fixture-rendered-count">{messages.length}</div>
             <div data-testid="fixture-streaming-count">{streamingMessages.size}</div>
         </div>
@@ -84,5 +91,34 @@ describe('AgentChatFixtureReplay', () => {
         expect(screen.getByTestId('fixture-streaming-count').textContent).toBe('1');
         fireEvent.click(screen.getByRole('button', { name: 'Next message' }));
         expect(screen.getByTestId('fixture-streaming-count').textContent).toBe('0');
+    });
+
+    it('moves pending ask controls into the bottom overlay and advances replay on selection', () => {
+        renderReplay({
+            messages: [
+                {
+                    ...message(AgentMessageType.REQUEST_INPUT, 'What is your favorite color?', 1),
+                    details: {
+                        ux: {
+                            options: [
+                                { id: 'red', label: 'Red' },
+                                { id: 'blue', label: 'Blue' },
+                            ],
+                        },
+                    },
+                },
+                message(AgentMessageType.QUESTION, 'blue', 2),
+            ],
+        });
+
+        expect(screen.getByTestId('all-messages-mixed').getAttribute('data-render-request-input-controls')).toBe(
+            'false',
+        );
+        fireEvent.click(screen.getByRole('button', { name: /Blue/ }));
+
+        expect(screen.getByTestId('fixture-rendered-count').textContent).toBe('2');
+        expect(screen.getByTestId('all-messages-mixed').getAttribute('data-render-request-input-controls')).toBe(
+            'true',
+        );
     });
 });
