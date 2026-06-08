@@ -1,5 +1,6 @@
 import { log } from "@temporalio/activity";
 import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
+import fs from "fs";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError, WorkflowParamNotFoundError } from "../../errors.js";
 import { saveBlobToTempFile } from "../../utils/blobs.js";
@@ -72,40 +73,47 @@ export async function generateImageRendition(
         );
     }
 
-    //array of rendition files to upload
-    let renditionPages: string[] = [];
+    let imageFile: string | undefined;
 
-    const imageFile = await saveBlobToTempFile(
-        client,
-        inputObject.content.source,
-    );
-    log.debug(`Image ${objectId} copied to ${imageFile}`);
-    renditionPages.push(imageFile);
-
-
-    //IF no etag, log and use use object id as etag
-    if (!inputObject.content.etag) {
-        log.warn(`Document ${objectId} has no etag, using object id as etag`);
-    }
-    const contentEtag = inputObject.content.etag ?? inputObject.id;
-
-    const uploaded = await uploadRenditionPages(
-        client,
-        contentEtag,
-        [imageFile],
-        params,
-    );
-
-    if (!uploaded || !uploaded.length || !uploaded[0]) {
-        log.error(`Failed to upload rendition for ${objectId}`, { uploaded });
-        throw new Error(
-            `Failed to upload rendition for ${objectId} - upload object is empty`,
+    try {
+        imageFile = await saveBlobToTempFile(
+            client,
+            inputObject.content.source,
         );
-    }
+        log.debug(`Image ${objectId} copied to ${imageFile}`);
 
-    return {
-        uploads: uploaded.map((u) => u),
-        format: params.format,
-        status: "success",
-    };
+        //IF no etag, log and use use object id as etag
+        if (!inputObject.content.etag) {
+            log.warn(`Document ${objectId} has no etag, using object id as etag`);
+        }
+        const contentEtag = inputObject.content.etag ?? inputObject.id;
+
+        const uploaded = await uploadRenditionPages(
+            client,
+            contentEtag,
+            [imageFile],
+            params,
+        );
+
+        if (!uploaded || !uploaded.length || !uploaded[0]) {
+            log.error(`Failed to upload rendition for ${objectId}`, { uploaded });
+            throw new Error(
+                `Failed to upload rendition for ${objectId} - upload object is empty`,
+            );
+        }
+
+        return {
+            uploads: uploaded.map((u) => u),
+            format: params.format,
+            status: "success",
+        };
+    } finally {
+        if (imageFile) {
+            try {
+                await fs.promises.unlink(imageFile);
+            } catch (err) {
+                log.warn(`Failed to clean temporary image file for ${objectId}`, { err });
+            }
+        }
+    }
 }
