@@ -47,11 +47,11 @@
     "devDependencies": {
         "@koa-stack/router": "workspace:*",
         "@koa-stack/server": "workspace:*",
-        "@types/koa": "^2.15.2",
+        "@types/koa": "^3.0.3",
         "@types/mocha": "^10.0.10",
         "@types/node": "^24.12.4",
         "@vertesia/tsconfig": "workspace:*",
-        "koa": "^2.16.4",
+        "koa": "^3.2.0",
         "mocha": "^11.7.6",
         "tsx": "^4.22.3",
         "typescript": "^6.0.3"

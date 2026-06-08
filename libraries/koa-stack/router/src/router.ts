@@ -424,9 +424,9 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         this.routes.push(new ServeRoute(pattern, resolvePath(this.webRoot, target), opts));
     }
 
-    redirect(method: string | null | undefined, pattern: string, target: string, alt?: string) {
+    redirect(method: string | null | undefined, pattern: string, target: string) {
         this.route(method, pattern, (ctx) => {
-            ctx.redirect(target, alt);
+            ctx.redirect(target);
             return Promise.resolve();
         });
     }

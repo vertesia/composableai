@@ -16,10 +16,10 @@
         "@koa-stack/body": "workspace:*",
         "@koa-stack/router": "workspace:*",
         "@koa-stack/server": "workspace:*",
-        "koa": "^2.15.3"
+        "koa": "^3.2.0"
     },
     "devDependencies": {
-        "@types/koa": "^2.15.2",
+        "@types/koa": "^3.0.3",
         "@types/supertest": "^6.0.2",
         "@vertesia/tsconfig": "workspace:*",
         "supertest": "^7.0.0",
