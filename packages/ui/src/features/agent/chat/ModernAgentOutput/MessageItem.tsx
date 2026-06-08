@@ -160,6 +160,8 @@ export interface MessageItemProps extends MessageItemClassNames {
     showPulsatingCircle?: boolean;
     /** Callback when user sends a message (e.g., from proposal selection) */
     onSendMessage?: (message: string) => void;
+    /** Whether a REQUEST_INPUT message has already been answered by a later user message */
+    requestInputAnswered?: boolean;
     /** Sparse per-type overrides for MESSAGE_STYLES (deep-merged with defaults) */
     messageStyleOverrides?: Partial<Record<AgentMessageType | 'default', Partial<MessageStyleConfig>>>;
     /** Custom component to render store/document links instead of default NavLink navigation */
@@ -247,6 +249,7 @@ function MessageItemComponent({
     message,
     showPulsatingCircle = false,
     onSendMessage,
+    requestInputAnswered = false,
     className,
     cardClassName,
     headerClassName,
@@ -689,6 +692,8 @@ function MessageItemComponent({
                                       onSelect={(optionId) => onSendMessage?.(optionId)}
                                       onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
                                       hideBorder
+                                      compact
+                                      answered={requestInputAnswered}
                                   />
                               );
                           })()
@@ -802,6 +807,7 @@ const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
         prevProps.message.timestamp === nextProps.message.timestamp &&
         prevProps.showPulsatingCircle === nextProps.showPulsatingCircle &&
         prevProps.onSendMessage === nextProps.onSendMessage &&
+        prevProps.requestInputAnswered === nextProps.requestInputAnswered &&
         prevProps.messageStyleOverrides === nextProps.messageStyleOverrides &&
         MESSAGE_ITEM_CLASS_NAME_KEYS.every((key) => prevProps[key] === nextProps[key])
     );

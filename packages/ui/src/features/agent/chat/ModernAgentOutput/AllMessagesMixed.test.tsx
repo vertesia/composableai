@@ -282,6 +282,86 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('App publish blocked until preview validation passes')).not.toBeNull();
     });
 
+    it('renders pending ask options compactly in summary view', () => {
+        renderSummary([
+            makeMessage({
+                timestamp: 1_000,
+                type: AgentMessageType.REQUEST_INPUT,
+                message: 'What is your favorite color?',
+                details: {
+                    ux: {
+                        options: [
+                            { id: 'red', label: 'Red', description: 'The color of fire and passion' },
+                            { id: 'blue', label: 'Blue', description: 'The color of the sky and ocean' },
+                        ],
+                    },
+                },
+            }),
+        ]);
+
+        expect(screen.getByText('What is your favorite color?')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Blue\s*The color of the sky and ocean/ })).not.toBeNull();
+    });
+
+    it('keeps only the ask question after the user answers in summary view', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.REQUEST_INPUT,
+                    message: 'What is your favorite color?',
+                    details: {
+                        ux: {
+                            options: [
+                                { id: 'red', label: 'Red', description: 'The color of fire and passion' },
+                                { id: 'blue', label: 'Blue', description: 'The color of the sky and ocean' },
+                            ],
+                        },
+                    },
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'blue',
+                }),
+            ],
+            true,
+        );
+
+        expect(screen.getByText('What is your favorite color?')).not.toBeNull();
+        expect(screen.getByText('blue')).not.toBeNull();
+        expect(screen.queryByText('The color of the sky and ocean')).toBeNull();
+        expect(screen.queryByRole('button', { name: /Blue/ })).toBeNull();
+    });
+
+    it('keeps only the ask question after the user answers in stacked view', () => {
+        renderStacked([
+            makeMessage({
+                timestamp: 1_000,
+                type: AgentMessageType.REQUEST_INPUT,
+                message: 'What is your favorite color?',
+                details: {
+                    ux: {
+                        options: [
+                            { id: 'red', label: 'Red', description: 'The color of fire and passion' },
+                            { id: 'blue', label: 'Blue', description: 'The color of the sky and ocean' },
+                        ],
+                    },
+                },
+            }),
+            makeMessage({
+                timestamp: 2_000,
+                type: AgentMessageType.QUESTION,
+                message: 'blue',
+            }),
+        ]);
+
+        expect(screen.getByText('What is your favorite color?')).not.toBeNull();
+        expect(screen.getByText('blue')).not.toBeNull();
+        expect(screen.queryByText('The color of the sky and ocean')).toBeNull();
+        expect(screen.queryByRole('button', { name: /Blue/ })).toBeNull();
+    });
+
     it('renders thought prose between tool rows inside expanded work details', () => {
         renderSummary(
             [

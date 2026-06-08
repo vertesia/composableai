@@ -148,9 +148,57 @@ function getMessageText(message: AgentMessage): string {
     return String(message.message).trim();
 }
 
+function getRequestInputMessageKey(message: AgentMessage): string {
+    const details = message.details as Record<string, unknown> | undefined;
+    const keyParts = [
+        details?.request_id,
+        details?.requestId,
+        details?.activity_id,
+        details?.activityId,
+        details?.tool_run_id,
+        details?.toolRunId,
+        message.timestamp,
+        getMessageText(message),
+    ];
+    return keyParts
+        .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
+        .map(String)
+        .join('|');
+}
+
+function getAnsweredRequestInputKeys(messages: AgentMessage[]): Set<string> {
+    const answered = new Set<string>();
+
+    messages.forEach((message, index) => {
+        if (message.type !== AgentMessageType.REQUEST_INPUT) return;
+
+        const workstreamId = getWorkstreamId(message);
+        for (let nextIndex = index + 1; nextIndex < messages.length; nextIndex += 1) {
+            const nextMessage = messages[nextIndex];
+            if (getWorkstreamId(nextMessage) !== workstreamId) continue;
+
+            if (nextMessage.type === AgentMessageType.REQUEST_INPUT) break;
+            if (nextMessage.type === AgentMessageType.QUESTION) {
+                answered.add(getRequestInputMessageKey(message));
+                break;
+            }
+        }
+    });
+
+    return answered;
+}
+
+function isRequestInputAnswered(message: AgentMessage, answeredRequestInputKeys: Set<string>): boolean {
+    return (
+        message.type === AgentMessageType.REQUEST_INPUT &&
+        answeredRequestInputKeys.has(getRequestInputMessageKey(message))
+    );
+}
+
 interface SummaryMessageProps {
     message: AgentMessage;
     onSendMessage?: (message: string) => void;
+    requestInputAnswered?: boolean;
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
     CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
 }
@@ -272,7 +320,13 @@ function SummaryUserBubble({
     );
 }
 
-function SummaryMessage({ message, onSendMessage, StoreLinkComponent, CollectionLinkComponent }: SummaryMessageProps) {
+function SummaryMessage({
+    message,
+    onSendMessage,
+    requestInputAnswered = false,
+    StoreLinkComponent,
+    CollectionLinkComponent,
+}: SummaryMessageProps) {
     const content = getMessageText(message);
     const workstreamId = getWorkstreamId(message);
     const runId = (message as { workflow_run_id?: string }).workflow_run_id;
@@ -329,6 +383,8 @@ function SummaryMessage({ message, onSendMessage, StoreLinkComponent, Collection
                     onSelect={(optionId) => onSendMessage?.(optionId)}
                     onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
                     hideBorder
+                    compact
+                    answered={requestInputAnswered}
                 />
             </div>
         );
@@ -1583,6 +1639,11 @@ function AllMessagesMixedComponent({
         return filterMessagesByWorkstream(sortedMessages, activeWorkstream);
     }, [sortedMessages, activeWorkstream]);
 
+    const answeredRequestInputKeys = React.useMemo(
+        () => getAnsweredRequestInputKeys(displayMessages),
+        [displayMessages],
+    );
+
     const fallbackWorkingStartedAtRef = useRef(Date.now());
     const hasInitialRequest =
         Boolean(prependFriendlyMessage?.trim()) ||
@@ -2172,6 +2233,10 @@ function AllMessagesMixedComponent({
                                                     message={message}
                                                     showPulsatingCircle={isLatestMessage}
                                                     onSendMessage={onSendMessage}
+                                                    requestInputAnswered={isRequestInputAnswered(
+                                                        message,
+                                                        answeredRequestInputKeys,
+                                                    )}
                                                     cardClassName={cn(
                                                         'rounded-lg border border-border bg-background/60 shadow-none',
                                                         messageItemClassNames?.cardClassName,
@@ -2274,6 +2339,10 @@ function AllMessagesMixedComponent({
                                         <SummaryMessage
                                             message={message}
                                             onSendMessage={onSendMessage}
+                                            requestInputAnswered={isRequestInputAnswered(
+                                                message,
+                                                answeredRequestInputKeys,
+                                            )}
                                             StoreLinkComponent={StoreLinkComponent}
                                             CollectionLinkComponent={CollectionLinkComponent}
                                         />
