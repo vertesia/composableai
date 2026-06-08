@@ -269,14 +269,19 @@ export const BrowserUseProjectConfigurationSchema: JSONSchemaType<BrowserUseProj
 
 export type ProjectSearchTier = 'standard' | 'performance';
 export type ElasticsearchBackend = 'serverless' | 'hosted';
-export type ProjectContentTypeStrategy = 'classic' | 'agent';
 
 export interface ProjectIntakeConfiguration {
     /**
      * Generate table-of-content sections during standard document intake.
-     * Defaults to true.
+     * Defaults to false.
      */
-    generate_table_of_contents?: boolean;
+    generate_toc?: boolean;
+
+    /**
+     * Skip table-of-content generation when the document text exceeds this many characters.
+     * Avoids sending very large documents through the TOC interactions. Unset means no limit.
+     */
+    generate_toc_max_size?: number;
 
     /**
      * Select or assign a content type during standard intake.
@@ -289,31 +294,6 @@ export interface ProjectIntakeConfiguration {
      * Defaults to true.
      */
     generate_properties?: boolean;
-
-    /**
-     * Content type selection strategy. "classic" uses the existing selection/generation interactions.
-     * "agent" uses an intake agent that can inspect documents/types and evolve existing types.
-     * Defaults to "classic".
-     */
-    content_type_strategy?: ProjectContentTypeStrategy;
-
-    /**
-     * Whether intake may create brand-new content types.
-     * Defaults to true, then bounded by new_content_type_project_doc_limit.
-     */
-    allow_new_content_types?: boolean;
-
-    /**
-     * Whether agentic intake may update an existing content type when it is close but incomplete.
-     * Defaults to true.
-     */
-    allow_type_evolution?: boolean;
-
-    /**
-     * Stop creating brand-new content types after the project has this many root documents.
-     * Defaults to 1000.
-     */
-    new_content_type_project_doc_limit?: number;
 
     /**
      * Default content type assigned during intake when type selection finds no matching type.
