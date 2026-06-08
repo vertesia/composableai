@@ -52,6 +52,7 @@ import {
 } from '@vertesia/common';
 import type { VertesiaClient } from '../client.js';
 import { EventSourceProvider } from '../execute.js';
+import { fetchSignedUrl } from './signed-url.js';
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
 
 export class AgentsApi extends ApiTopic {
@@ -753,7 +754,7 @@ export class AgentsApi extends ApiTopic {
         })) as AgentArtifactUrlResponse;
 
         // 2. Upload directly to cloud storage
-        const res = await fetch(result.url, {
+        const res = await fetchSignedUrl(result.url, {
             method: 'PUT',
             body: content,
             headers: { 'Content-Type': mimeType },
@@ -771,7 +772,7 @@ export class AgentsApi extends ApiTopic {
      */
     async downloadArtifact(id: string, path: string): Promise<ReadableStream<Uint8Array>> {
         const { url } = await this.getArtifactUrl(id, path, 'attachment');
-        const res = await fetch(url);
+        const res = await fetchSignedUrl(url);
         if (!res.ok) {
             throw new Error(`Failed to download artifact: ${res.statusText}`);
         }

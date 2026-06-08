@@ -2,6 +2,12 @@ import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
 import typescript from '@rollup/plugin-typescript';
+import { createRollupTypescript } from '@vertesia/build-tools';
+import ts from 'typescript';
+
+// Wrap the TS module so @rollup/plugin-typescript doesn't leave a TS watch program (and its
+// file/dir watchers) open after a one-shot build — otherwise rollup never exits and hangs turbo.
+const buildTypescript = createRollupTypescript(ts);
 
 const TARGET_FILE = 'lib/vertesia-client.js';
 
@@ -34,6 +40,7 @@ export default {
         commonjs(), // Convert CommonJS modules to ES6
         typescript({
             tsconfig: './tsconfig.web.json',
+            typescript: buildTypescript,
             sourceMap: true,
             declaration: false,
         }),
