@@ -21,12 +21,17 @@ export interface SegmentPreview {
  * the Playground preview and `validatePrompt` in sync with runtime resolution — a JST
  * template referencing `_model` validates fine here and renders fine in production.
  *
- * For `TemplateType.text`, the content is treated as a JST body (the JST evaluator
- * handles plain strings as no-op interpolation), matching legacy studio behavior.
+ * For `TemplateType.text`, the content is returned verbatim — it is static text, not a
+ * template — matching the studio-server executor (see `apps/studio-server/src/executor/
+ * rendering/template.ts`). Routing it through the JST evaluator would compile the prose as
+ * JavaScript and throw on any plain sentence (e.g. "You are a helpful assistant.").
  */
 export function renderTemplate(code: string, contentType: TemplateType, schema: JSONSchema, data: JSONObject): string {
     if (contentType === TemplateType.handlebars) {
         return renderHandlebarsTemplate(code, data);
+    }
+    if (contentType === TemplateType.text) {
+        return code;
     }
     const globals = [...(schema.properties ? Object.keys(schema.properties) : []), '_model'];
     return renderJsTemplate(code, globals, data);
@@ -86,12 +91,19 @@ function renderTemplateSegment(segment: PromptSegmentDef<PromptTemplate>, data: 
         return { title: '(unknown segment)', content: '', error: new Error('Prompt segment is missing its template') };
     }
     const schema = segment.template.inputSchema || {};
-    const content = renderTemplate(segment.template.content, segment.template.content_type, schema, data);
-    return {
-        title: `@${segment.template.role}`,
-        content,
-        segmentId: segment.template.id,
-    };
+    const title = `@${segment.template.role}`;
+    try {
+        const content = renderTemplate(segment.template.content, segment.template.content_type, schema, data);
+        return { title, content, segmentId: segment.template.id };
+    } catch (error) {
+        // Isolate the failure to this segment so the remaining segments still render.
+        return {
+            title,
+            content: error instanceof Error ? error.message : String(error),
+            segmentId: segment.template.id,
+            error: error instanceof Error ? error : new Error(String(error)),
+        };
+    }
 }
 
 export function renderSegments(segments: PromptSegmentDef<PromptTemplate>[], data: JSONObject): SegmentPreview[] {

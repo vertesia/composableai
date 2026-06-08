@@ -12,6 +12,7 @@ import { FusionFragmentProvider } from '@vertesia/fusion-ux';
 import {
     Button,
     cn,
+    insertNewlineAtCursor,
     MessageBox,
     Modal,
     ModalBody,
@@ -669,11 +670,19 @@ function StartWorkflowView({
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key !== 'Enter') return;
+        const hasModifier = e.metaKey || e.ctrlKey || e.altKey || e.shiftKey;
+        if (!hasModifier) {
+            // Plain Enter sends.
             e.preventDefault();
             void startWorkflowWithMessage();
+            return;
         }
-        // Shift+Enter allows newline (default textarea behavior)
+        // Shift+Enter inserts \n natively; Cmd/Ctrl/Alt+Enter do not in most browsers.
+        if (!e.shiftKey) {
+            e.preventDefault();
+            insertNewlineAtCursor(e.currentTarget, setInputValue);
+        }
     };
 
     // Auto-resize textarea as content grows

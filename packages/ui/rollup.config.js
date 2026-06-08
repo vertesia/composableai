@@ -9,11 +9,10 @@ import { defineConfig } from 'rollup';
 import { EXTERNALS } from './externals.js';
 
 const outputDir = path.resolve('lib');
-const esmOutputDir = path.join(outputDir, 'esm');
 
-// Get all directories with index.ts or index.tsx
-const entries = fs.readdirSync(esmOutputDir).filter((name) => {
-    const dir = path.join(esmOutputDir, name);
+// Get all directories with an index.js (each becomes a CDN-bundled named export).
+const entries = fs.readdirSync(outputDir).filter((name) => {
+    const dir = path.join(outputDir, name);
     try {
         if (fs.statSync(dir).isDirectory()) {
             return fs.existsSync(path.join(dir, 'index.js'));
@@ -25,7 +24,7 @@ const entries = fs.readdirSync(esmOutputDir).filter((name) => {
 });
 
 const jsEntries = entries.map((name) => ({
-    input: path.join(outputDir, 'esm', name, 'index.js'),
+    input: path.join(outputDir, name, 'index.js'),
     output: {
         file: path.join(outputDir, `vertesia-ui-${name}.js`),
         format: 'es',

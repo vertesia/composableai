@@ -1,5 +1,15 @@
 import { type ContentObjectItem, type ConversationFile, FileProcessingStatus } from '@vertesia/common';
-import { Button, cn, Modal, ModalBody, ModalTitle, Spinner, Textarea, VTooltip } from '@vertesia/ui/core';
+import {
+    Button,
+    cn,
+    insertNewlineAtCursor,
+    Modal,
+    ModalBody,
+    ModalTitle,
+    Spinner,
+    Textarea,
+    VTooltip,
+} from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import {
     Activity,
@@ -257,15 +267,23 @@ export default function MessageInput({
     const lastEscapeRef = useRef<number>(0);
 
     const keyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            const hasMessage = value.trim().length > 0;
-
-            if (hasMessage) {
-                // If there's a message, send it (this will interrupt + send message via UserInput signal)
-                handleSend();
+        if (e.key === 'Enter') {
+            const hasModifier = e.metaKey || e.ctrlKey || e.altKey || e.shiftKey;
+            if (!hasModifier) {
+                // Plain Enter sends. Enter with no text does nothing (don't stop, don't send).
+                e.preventDefault();
+                if (value.trim().length > 0) {
+                    // If there's a message, send it (this will interrupt + send message via UserInput signal)
+                    handleSend();
+                }
+                return;
             }
-            // Enter with no text does nothing (don't stop, don't send)
+            // Shift+Enter inserts \n natively; Cmd/Ctrl/Alt+Enter do not in most browsers.
+            if (!e.shiftKey) {
+                e.preventDefault();
+                insertNewlineAtCursor(e.currentTarget, setValue);
+            }
+            return;
         }
 
         // Double Escape to stop the agent
@@ -279,7 +297,6 @@ export default function MessageInput({
                 lastEscapeRef.current = now;
             }
         }
-        // Shift+Enter allows newline (default textarea behavior)
     };
 
     // Auto-resize textarea as content grows

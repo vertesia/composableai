@@ -2,7 +2,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 
 export default {
-    input: 'lib/esm/index.js',
+    input: 'lib/index.js',
     output: {
         file: 'lib/build-tools.js',
         format: 'es',

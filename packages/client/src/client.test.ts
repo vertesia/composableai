@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { isTokenExpired, VertesiaClient } from './client';
+import { isTokenExpired, VertesiaClient } from './client.js';
 
 describe('Test Vertesia Client', () => {
     test('Initialization with studio and zeno URLs', () => {
