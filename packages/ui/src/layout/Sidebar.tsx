@@ -101,7 +101,7 @@ export function SidebarItem({
     const { router } = useRouterContext();
     // Append the active tenant sticky params (account `a` + project `p`) the router holds to internal
     // hrefs, so opening a nav item in a new tab or copying its address preserves the current
-    // account/project. Sourced from the router — no session dependency in the layout layer.
+    // account/project.
     const resolvedHref =
         !skipStickyParams && href.startsWith('/') ? router.getTopRouter().navigator.addStickyParams(href) : href;
     const _closeSideBar = () => {
