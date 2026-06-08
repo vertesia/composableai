@@ -79,6 +79,6 @@
         "@vertesia/ui": "workspace:*",
         "dotenv": "^17.4.2",
         "hono": "^4.12.19",
-        "lucide-react": "^1.16.0"
+        "lucide-react": "^1.17.0"
     }
 }

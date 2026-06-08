@@ -41,7 +41,9 @@ jobs:
 
           {
             echo "should_merge=false"
+            echo "should_repair_lock=false"
             echo "pr_url="
+            echo "pr_number="
           } >> "$GITHUB_OUTPUT"
 
           prs_json="$(gh pr list \
@@ -114,11 +116,6 @@ jobs:
             echo "Skipping PR #$pr_number: missing dependencies label."
             exit 0
           fi
-          if [[ "$merge_state" == "DIRTY" ]]; then
-            echo "Skipping PR #$pr_number: PR has merge conflicts."
-            exit 0
-          fi
-
           if ! jq -e '.[0].files | all(.changeType == "MODIFIED")' <<< "$prs_json" >/dev/null; then
             echo "Skipping PR #$pr_number: PR includes non-modified file changes."
             jq -r '.[0].files[] | select(.changeType != "MODIFIED") | "- \(.changeType) \(.path)"' <<< "$prs_json"
@@ -158,6 +155,16 @@ jobs:
             ))
           ' <<< "$prs_json" >/dev/null; then
             echo "Skipping PR #$pr_number: PR contains commits not authored by Renovate or the lockfile repair workflow."
+            exit 0
+          fi
+
+          if [[ "$merge_state" == "DIRTY" ]]; then
+            echo "PR #$pr_number has merge conflicts; attempting pnpm-lock-only repair."
+            {
+              echo "should_repair_lock=true"
+              echo "pr_url=$pr_url"
+              echo "pr_number=$pr_number"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -205,7 +212,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Generate automerge token
-        if: steps.eligibility.outputs.should_merge == 'true'
+        if: steps.eligibility.outputs.should_merge == 'true' || steps.eligibility.outputs.should_repair_lock == 'true'
         id: generate-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
@@ -214,6 +221,46 @@ jobs:
           permission-actions: read
           permission-contents: write
           permission-pull-requests: write
+
+      - name: Checkout PR branch for pnpm lock repair
+        if: steps.eligibility.outputs.should_repair_lock == 'true'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          ref: ${{ github.event.workflow_run.head_branch }}
+          fetch-depth: 0
+          submodules: false
+          persist-credentials: false
+
+      - name: Init submodules for pnpm workspace
+        if: steps.eligibility.outputs.should_repair_lock == 'true'
+        run: git submodule update --init --recursive --depth=1
+
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+        if: steps.eligibility.outputs.should_repair_lock == 'true'
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        if: steps.eligibility.outputs.should_repair_lock == 'true'
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Repair pnpm lock conflict
+        if: steps.eligibility.outputs.should_repair_lock == 'true'
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.eligibility.outputs.pr_number }}
+        run: |
+          set +e
+          .github/bin/update-pnpm-lock.sh
+          status="$?"
+          set -e
+          if [[ "$status" == "2" ]]; then
+            echo "PR conflict is not pnpm-lock.yaml-only; leaving it for manual resolution."
+            exit 0
+          fi
+          exit "$status"
 
       - name: Approve and merge eligible Renovate PR
         if: steps.eligibility.outputs.should_merge == 'true'
