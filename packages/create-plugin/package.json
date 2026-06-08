@@ -46,6 +46,7 @@
         "@types/degit": "^2.8.6",
         "@types/node": "^24.12.4",
         "@types/prompts": "^2.4.9",
+        "@vertesia/tsconfig": "workspace:*",
         "typescript": "^6.0.3"
     }
 }
