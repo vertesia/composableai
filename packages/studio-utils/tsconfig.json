@@ -1,7 +1,6 @@
 {
     "extends": "@vertesia/tsconfig/lib.json",
     "compilerOptions": {
-        "composite": false,
         "rootDir": "./src",
         "outDir": "./lib"
     },
