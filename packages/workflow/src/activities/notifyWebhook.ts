@@ -1,4 +1,4 @@
-import { log } from '@temporalio/activity';
+import { ApplicationFailure, log } from '@temporalio/activity';
 import { VertesiaClient } from '@vertesia/client';
 import {
     ApiVersions,
@@ -9,6 +9,7 @@ import {
 } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { WorkflowParamNotFoundError } from '../errors.js';
+import { safeFetch, URLValidationError } from '../security/ssrf.js';
 import { getVertesiaClientOptions } from '../utils/client.js';
 
 export interface NotifyWebhookParams {
@@ -46,7 +47,7 @@ export interface NotifyWebhookResult {
 export async function notifyWebhook(
     payload: DSLActivityExecutionPayload<NotifyWebhookParams>,
 ): Promise<NotifyWebhookResult> {
-    const { params } = await setupActivity<NotifyWebhookParams>(payload);
+    const { params, client } = await setupActivity<NotifyWebhookParams>(payload);
     const { webhook, method, headers: defaultHeaders } = params;
     // resolve the url and the api version of the webhook
     let target_url: string, version: number | undefined;
@@ -58,6 +59,22 @@ export async function notifyWebhook(
     }
 
     if (!target_url) throw new WorkflowParamNotFoundError('target_url');
+
+    try {
+        await client.apps.validateUrl(target_url);
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        log.warn('URL validation blocked webhook endpoint', {
+            url: target_url,
+            workflow_id: params.workflow_id,
+            workflow_run_id: params.workflow_run_id,
+            error: message,
+        });
+        throw ApplicationFailure.create({
+            message: `Webhook endpoint blocked: ${message}`,
+            nonRetryable: true,
+        });
+    }
 
     const hasBody = method === 'POST'; //body is sent only for POST, always includes workflow info
 
@@ -75,12 +92,24 @@ export async function notifyWebhook(
     const timeout = timeoutMs ? setTimeout(() => controller?.abort(), timeoutMs) : undefined;
     let res: Response;
     try {
-        res = await fetch(target_url, {
+        res = await safeFetch(target_url, {
             method,
             body,
             headers,
             ...(controller ? { signal: controller.signal } : {}),
-        }).catch((err) => {
+        }).catch((err: unknown) => {
+            if (err instanceof URLValidationError) {
+                log.warn('Redirect blocked on webhook endpoint', {
+                    url: target_url,
+                    workflow_id: params.workflow_id,
+                    workflow_run_id: params.workflow_run_id,
+                    error: err.message,
+                });
+                throw ApplicationFailure.create({
+                    message: `Webhook endpoint blocked: ${err.message}`,
+                    nonRetryable: true,
+                });
+            }
             log.error(`An error occurred while notifying webhook at ${target_url}`, { err });
             throw err;
         });
