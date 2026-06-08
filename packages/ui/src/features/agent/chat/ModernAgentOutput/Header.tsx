@@ -1,6 +1,7 @@
 import type { AgentRun } from '@vertesia/common';
 import { Button, cn, Dropdown, MenuGroup, MenuItem, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { useRouterContext } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     Bot,
@@ -199,6 +200,7 @@ function MoreDropdown({
     const toast = useToast();
     const { client } = useUserSession();
     const builder = usePayloadBuilder();
+    const { router } = useRouterContext();
 
     const cancelWorkflow = async () => {
         try {
@@ -243,8 +245,11 @@ function MoreDropdown({
     };
 
     const openUrl = (url: string) => {
-        window.open(url, '_blank');
-        return url;
+        // Carry the active tenant sticky params (a/p) on internal routes so the new tab keeps the
+        // current account/project; leave absolute/external URLs untouched.
+        const href = url.startsWith('/') ? router.getTopRouter().navigator.addStickyParams(url) : url;
+        window.open(href, '_blank');
+        return href;
     };
 
     const copyAgentRunId = () => {
