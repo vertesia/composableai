@@ -1,0 +1,20 @@
+// For applications consumed by a bundler (Vite, Rollup, esbuild). The bundler
+// owns module resolution and JS emission; `tsc` only typechecks. `noEmit: true`,
+// `moduleResolution: bundler`, JSX enabled, full DOM lib including iterables.
+//
+// Intended consumers: apps/composable-ui, apps/admin-ui, apps/auth-ui, apps/docs,
+// apps/tools, plugins/* — anything that runs in the browser via a bundler.
+//
+// Note: UI libraries that emit declarations via `tsc` and bundle JS separately
+// (e.g. fusion-ux, tools-admin-ui, @vertesia/ui) need a hybrid setup — extend
+// `lib.json` and override module/moduleResolution to `bundler`, not this file.
+{
+    "extends": "./base.json",
+    "compilerOptions": {
+        "module": "preserve",
+        "moduleResolution": "bundler",
+        "lib": ["ES2024", "DOM", "DOM.Iterable"],
+        "jsx": "react-jsx",
+        "noEmit": true
+    }
+}

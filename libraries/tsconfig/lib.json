@@ -1,0 +1,18 @@
+// For Node-only libraries that emit to `lib/` via `tsc` and are published/consumed
+// as workspace deps. Strict ESM (`nodenext`), composite (project references), emits
+// declarations + maps. No Web APIs in scope.
+//
+// Consumers: koa-stack/*, jst, build-tools, create-plugin, studio-utils, workflow,
+// and other server-only utilities. UI libs and Web-API consumers should use
+// `web-lib.json` instead.
+{
+    "extends": "./base.json",
+    "compilerOptions": {
+        "composite": true,
+        "declaration": true,
+        "declarationMap": true,
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "experimentalDecorators": true
+    }
+}

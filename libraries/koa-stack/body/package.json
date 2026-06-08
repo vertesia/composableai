@@ -2,11 +2,10 @@
     "name": "@koa-stack/body",
     "version": "0.24.0",
     "description": "Expose the request body as a promise in koa Context.body",
-    "main": "./lib/cjs/index.js",
     "type": "module",
     "scripts": {
-        "build": "pnpm exec tsmod build",
-        "clean": "rimraf ./lib",
+        "build": "tsc",
+        "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo",
         "test": "echo \"Error: no test specified\""
     },
     "files": [
@@ -33,16 +32,16 @@
         "@types/inflation": "^2.0.4",
         "@types/koa": "^2.15.2",
         "@types/qs": "^6.9.15",
+        "@vertesia/tsconfig": "workspace:*",
         "fast-xml-parser": "^5.2.5",
-        "ts-dual-module": "^0.6.3"
+        "typescript": "^6.0.3"
     },
-    "ts_dual_module": {
-        "outDir": "lib"
-    },
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
     "exports": {
-        "types": "./lib/types/index.d.ts",
-        "import": "./lib/esm/index.js",
-        "require": "./lib/cjs/index.js"
-    },
-    "types": "./lib/types/index.d.ts"
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        }
+    }
 }
