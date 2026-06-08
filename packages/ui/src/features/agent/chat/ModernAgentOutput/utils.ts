@@ -345,10 +345,10 @@ export function isToolCallMessage(message: AgentMessage): boolean {
 }
 
 export function isToolPreambleMessage(message: AgentMessage): boolean {
-    const details = message.details as { display_role?: string; tool?: string; tool_event?: string } | undefined;
+    const details = message.details as { display_role?: string; tool?: string } | undefined;
     return (
         message.type === AgentMessageType.THOUGHT &&
-        (details?.display_role === 'tool_preamble' || (details?.tool === 'think' && !details.tool_event))
+        (details?.display_role === 'tool_preamble' || details?.tool === 'think')
     );
 }
 

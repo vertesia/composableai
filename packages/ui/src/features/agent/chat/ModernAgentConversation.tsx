@@ -46,7 +46,7 @@ import MessageInput, { type SelectedDocument, type UploadedFile } from './Modern
 import type { MessageItemClassNames } from './ModernAgentOutput/MessageItem';
 import type { StreamingMessageClassNames } from './ModernAgentOutput/StreamingMessage';
 import type { ToolCallGroupClassNames } from './ModernAgentOutput/ToolCallGroup';
-import { getConversationUrl, getWorkstreamId } from './ModernAgentOutput/utils';
+import { getConversationUrl, getWorkstreamId, isInProgress } from './ModernAgentOutput/utils';
 import { type AgentChatPlaybackCursor, createPlaybackState, isLocalhostAgentChatPlaybackEnabled } from './playback';
 import { SkillWidgetProvider } from './SkillWidgetProvider';
 import { ArtifactUrlCacheProvider } from './useArtifactUrlCache.js';
@@ -1188,7 +1188,8 @@ function ModernAgentConversationInner({
     const isTestPlaybackLive = playbackState.isLive;
     const displayedMessages = playbackState.displayedMessages;
     const displayedStreamingMessages = isTestPlaybackLive ? streamingMessages : EMPTY_STREAMING_MESSAGES;
-    const displayedIsCompleted = isTestPlaybackLive ? isCompleted : false;
+    const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
+    const displayedIsCompleted = isTestPlaybackLive ? effectiveIsCompleted : false;
 
     useEffect(() => {
         if (!isTestPlaybackEnabled) {
@@ -1332,7 +1333,7 @@ function ModernAgentConversationInner({
 
     // Poll active workstreams from backend query for right-panel visibility and details.
     useEffect(() => {
-        const shouldPoll = !isCompleted || activeWorkstreams.length > 0;
+        const shouldPoll = !effectiveIsCompleted || activeWorkstreams.length > 0;
         if (!shouldPoll) {
             setActiveWorkstreams((prev) => (prev.length === 0 ? prev : []));
             return;
@@ -1376,7 +1377,7 @@ function ModernAgentConversationInner({
             isCancelled = true;
             window.clearInterval(pollHandle);
         };
-    }, [client.agents, agentRunId, isCompleted, activeWorkstreams.length]);
+    }, [client.agents, agentRunId, effectiveIsCompleted, activeWorkstreams.length]);
 
     // Auto-switch to Workstreams tab the first time workstreams become active
     const hasAutoSwitchedToWorkstreamsRef = useRef(false);
@@ -1595,11 +1596,11 @@ function ModernAgentConversationInner({
 
     // Expose stop handler to external callers via ref
     useEffect(() => {
-        if (stopRef) stopRef.current = allowWorkflowControl && !isCompleted ? handleStopWorkflow : null;
+        if (stopRef) stopRef.current = allowWorkflowControl && !effectiveIsCompleted ? handleStopWorkflow : null;
         return () => {
             if (stopRef) stopRef.current = null;
         };
-    }, [stopRef, isCompleted, handleStopWorkflow, allowWorkflowControl]);
+    }, [stopRef, effectiveIsCompleted, handleStopWorkflow, allowWorkflowControl]);
 
     // Notify parent when stopping state changes
     useEffect(() => {
@@ -1747,7 +1748,7 @@ function ModernAgentConversationInner({
                 <div className="flex-shrink-0">
                     <Header
                         title={actualTitle}
-                        isCompleted={isCompleted}
+                        isCompleted={effectiveIsCompleted}
                         isTerminal={isWorkflowTerminal}
                         onClose={onClose}
                         isModal={isModal}
@@ -1779,7 +1780,7 @@ function ModernAgentConversationInner({
                 />
             )}
 
-            {messages.length === 0 && !isCompleted && pendingStartMessage && pendingStartTimestamp ? (
+            {messages.length === 0 && !effectiveIsCompleted && pendingStartMessage && pendingStartTimestamp ? (
                 <PendingStartConversation message={pendingStartMessage} startedAt={pendingStartTimestamp} />
             ) : (
                 <AllMessagesMixed
@@ -1855,8 +1856,8 @@ function ModernAgentConversationInner({
                                 disabled={isUploading || !isTestPlaybackLive}
                                 isSending={isSending || isUploading}
                                 isStopping={isStopping}
-                                isStreaming={!isCompleted}
-                                isCompleted={isCompleted}
+                                isStreaming={!effectiveIsCompleted}
+                                isCompleted={effectiveIsCompleted}
                                 activeTaskCount={activeTaskCount}
                                 placeholder={placeholder ?? 'Type your message...'}
                                 onFilesSelected={canUploadFiles ? handleFileUpload : undefined}

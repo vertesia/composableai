@@ -46,7 +46,12 @@ vi.mock('./ModernAgentOutput/Header', () => ({
 }));
 
 vi.mock('./ModernAgentOutput/MessageInput', () => ({
-    default: (props: { onSend: (message: string) => void; activeTaskCount?: number }) => {
+    default: (props: {
+        onSend: (message: string) => void;
+        activeTaskCount?: number;
+        isCompleted?: boolean;
+        isStreaming?: boolean;
+    }) => {
         mocks.messageInputProps(props);
         return (
             <button type="button" onClick={() => props.onSend('follow up')}>
@@ -257,6 +262,29 @@ describe('ModernAgentConversation send handling', () => {
         renderConversation({ interactive: false, onRestart: vi.fn() });
 
         expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
+    });
+
+    it('unlocks the composer when an idle marker arrives before the stream completion flag updates', () => {
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'What are the news headlines in Japan today?'),
+                createMessage(AgentMessageType.THOUGHT, 'Searching for the latest news headlines from Japan...'),
+                createMessage(AgentMessageType.ANSWER, 'Here are the top news headlines from Japan today.'),
+                createMessage(AgentMessageType.IDLE, 'Waiting for your command...'),
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideMessageInput: false });
+
+        const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
+            isCompleted?: boolean;
+            isStreaming?: boolean;
+        };
+
+        expect(latestMessageInputProps.isCompleted).toBe(true);
+        expect(latestMessageInputProps.isStreaming).toBe(false);
     });
 
     it('uses message-derived active workstreams for the composer count and right panel fallback', async () => {

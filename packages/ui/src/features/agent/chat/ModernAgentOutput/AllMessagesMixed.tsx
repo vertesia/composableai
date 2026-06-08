@@ -9,13 +9,12 @@ import {
 import { cn } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
-import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     AlertTriangle,
     Brain,
+    CheckCircle,
     ChevronDown,
     ChevronRight,
-    CheckCircle,
     CopyIcon,
     FileText,
     Pencil,
@@ -23,6 +22,7 @@ import {
     Terminal,
     Wrench,
 } from 'lucide-react';
+import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget } from '../AskUserWidget';
 import { ThinkingMessages } from '../WaitingMessages';
@@ -43,11 +43,11 @@ import {
     getWorkstreamId,
     groupMessagesWithStreaming,
     isInProgress,
-    mergeConsecutiveToolGroups,
     isToolPreambleMessage,
+    mergeConsecutiveToolGroups,
     type StreamingData,
-    type ToolExecutionStatus,
     shouldCollapseAdjacentRenderedMessage,
+    type ToolExecutionStatus,
 } from './utils';
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from './WorkstreamTabs';
 
@@ -573,6 +573,7 @@ interface SummaryToolDetailItem {
     kind: SummaryToolDetailKind;
     label: string;
     title: string;
+    command?: string;
     text?: string;
     status?: ToolExecutionStatus;
     sections: SummaryToolDetailSection[];
@@ -808,8 +809,14 @@ function buildSummaryToolDetailItem(message: AgentMessage, index: number): Summa
     const kind = getToolDetailKind(message);
     const toolNames = getToolNames(details);
     const target = getToolTarget(details);
+    const command = typeof details.command === 'string' && details.command.trim() ? details.command.trim() : undefined;
     const fallbackTitle = toolNames[0] ? humanizeIdentifier(toolNames[0]) : getReadableToolLabel(message);
-    const title = kind === 'think' ? text || fallbackTitle : compactInlineText(target || text || fallbackTitle);
+    const title =
+        kind === 'think'
+            ? text || fallbackTitle
+            : kind === 'command'
+              ? compactInlineText(text || command || fallbackTitle)
+              : compactInlineText(target || text || fallbackTitle);
     const normalizedText = text ? (kind === 'think' ? text : compactInlineText(text, 420)) : undefined;
     const shouldShowText = normalizedText && normalizedText !== title;
 
@@ -820,6 +827,7 @@ function buildSummaryToolDetailItem(message: AgentMessage, index: number): Summa
         kind,
         label: getToolDetailLabel(kind),
         title,
+        command,
         text: shouldShowText ? normalizedText : undefined,
         status: details.tool_status as ToolExecutionStatus | undefined,
         sections: getToolDetailSections(message),
@@ -827,35 +835,53 @@ function buildSummaryToolDetailItem(message: AgentMessage, index: number): Summa
 }
 
 function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
-    const byRunId = new Map<string, { index: number; messages: AgentMessage[] }>();
+    const byGroupId = new Map<string, { index: number; messages: AgentMessage[] }>();
     const ungrouped: Array<{ index: number; message: AgentMessage }> = [];
 
     messages.forEach((message, index) => {
         const details = getDetailsRecord(message);
-        const runId = typeof details.tool_run_id === 'string' ? details.tool_run_id : undefined;
-        if (!runId) {
+        const activityGroupId =
+            typeof details.activity_group_id === 'string' && details.activity_group_id.trim()
+                ? details.activity_group_id
+                : undefined;
+        const runId =
+            typeof details.tool_run_id === 'string' && details.tool_run_id.trim() ? details.tool_run_id : undefined;
+        const groupId = activityGroupId ? `activity:${activityGroupId}` : runId ? `run:${runId}` : undefined;
+        if (!groupId) {
             ungrouped.push({ index, message });
             return;
         }
 
-        const group = byRunId.get(runId);
+        const group = byGroupId.get(groupId);
         if (group) {
             group.messages.push(message);
         } else {
-            byRunId.set(runId, { index, messages: [message] });
+            byGroupId.set(groupId, { index, messages: [message] });
         }
     });
 
-    const grouped = Array.from(byRunId.values()).map(({ index, messages: runMessages }) => {
+    const grouped = Array.from(byGroupId.values()).map(({ index, messages: runMessages }) => {
         const sortedMessages = [...runMessages].sort(
             (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp),
         );
         const baseMessage = sortedMessages[sortedMessages.length - 1];
         const startMessage = sortedMessages.find((message) => getDetailsRecord(message).tool_event === 'started');
         const firstTextMessage = sortedMessages.find((message) => getMessageText(message));
+        const commandTextMessage = sortedMessages.findLast((message) => getMessageText(message).startsWith('$ '));
+        const latestStatusMessage = sortedMessages.findLast(
+            (message) =>
+                (message.type === AgentMessageType.ERROR || message.type === AgentMessageType.WARNING) &&
+                getMessageText(message),
+        );
         const mergedDetails: Record<string, unknown> = {};
         for (const message of sortedMessages) {
             Object.assign(mergedDetails, getDetailsRecord(message));
+        }
+        if (latestStatusMessage && mergedDetails.error === undefined && mergedDetails.stderr === undefined) {
+            mergedDetails.error = getMessageText(latestStatusMessage);
+        }
+        if (commandTextMessage && mergedDetails.command === undefined) {
+            mergedDetails.command = getMessageText(commandTextMessage);
         }
         const messageToHuman =
             typeof startMessage?.details?.message_to_human === 'string' ? startMessage.details.message_to_human : '';
@@ -971,38 +997,10 @@ function getToolPanelTitle(item: SummaryToolDetailItem): string {
     return item.kind === 'command' ? 'Shell' : item.label;
 }
 
-function getToolStatusLabel(status?: ToolExecutionStatus): string | undefined {
-    switch (status) {
-        case 'completed':
-            return 'Success';
-        case 'running':
-            return 'Running';
-        case 'error':
-            return 'Error';
-        case 'warning':
-            return 'Warning';
-        default:
-            return undefined;
-    }
-}
-
-function getToolStatusClassName(status?: ToolExecutionStatus): string {
-    switch (status) {
-        case 'completed':
-            return 'text-success';
-        case 'running':
-            return 'text-info';
-        case 'error':
-            return 'text-destructive';
-        case 'warning':
-            return 'text-attention';
-        default:
-            return 'text-muted';
-    }
-}
-
 function formatToolPrimaryText(item: SummaryToolDetailItem): string {
-    return item.kind === 'command' ? `$ ${item.title}` : item.title;
+    if (item.kind !== 'command') return item.title;
+    const command = item.command || item.title;
+    return command.trim().startsWith('$') ? command : `$ ${command}`;
 }
 
 function formatToolDetailCopyText(item: SummaryToolDetailItem): string {
@@ -1016,60 +1014,102 @@ function formatToolDetailCopyText(item: SummaryToolDetailItem): string {
     return parts.filter(Boolean).join('\n\n');
 }
 
+async function copyTextToClipboard(text: string): Promise<boolean> {
+    try {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+            return true;
+        }
+    } catch {
+        // Fall back to the older textarea path below.
+    }
+
+    if (typeof document === 'undefined') return false;
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.insetInlineStart = '-9999px';
+    textarea.style.top = '0';
+    document.body.appendChild(textarea);
+
+    try {
+        textarea.focus();
+        textarea.select();
+        return document.execCommand('copy');
+    } catch {
+        return false;
+    } finally {
+        textarea.remove();
+    }
+}
+
 function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
-    const statusLabel = getToolStatusLabel(item.status);
-    const primaryText = formatToolPrimaryText(item);
+    const copyText = formatToolDetailCopyText(item);
+    const commandText = item.kind === 'command' && item.command ? formatToolPrimaryText(item) : undefined;
+    const fallbackText = !commandText && item.sections.length === 0 ? item.text : undefined;
+    const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+    const copyResetRef = useRef<number | undefined>(undefined);
+
+    useEffect(() => {
+        return () => {
+            if (copyResetRef.current !== undefined) window.clearTimeout(copyResetRef.current);
+        };
+    }, []);
 
     const copyDetails = () => {
-        void navigator.clipboard?.writeText(formatToolDetailCopyText(item));
+        void copyTextToClipboard(copyText).then((success) => {
+            setCopyState(success ? 'copied' : 'failed');
+            if (copyResetRef.current !== undefined) window.clearTimeout(copyResetRef.current);
+            copyResetRef.current = window.setTimeout(() => setCopyState('idle'), 2000);
+        });
     };
 
     return (
-        <div className="mt-2 rounded-lg border border-border/70 bg-mixer-muted/10 p-3 shadow-sm">
-            <div className="mb-3 flex items-start justify-between gap-3">
-                <div className="min-w-0 text-base font-medium text-muted">{getToolPanelTitle(item)}</div>
+        <div className="relative mt-2 rounded-lg border border-border/70 bg-mixer-muted/10 p-3 shadow-sm">
+            <div className="absolute end-2 top-2">
                 <button
                     type="button"
-                    className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted opacity-70 transition hover:bg-mixer-muted/20 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className={cn(
+                        'inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted opacity-70 transition',
+                        'hover:bg-mixer-muted/20 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        copyState === 'copied' && 'text-success opacity-100',
+                        copyState === 'failed' && 'text-destructive opacity-100',
+                    )}
                     onClick={copyDetails}
                     aria-label="Copy tool details"
                     title="Copy tool details"
                 >
-                    <CopyIcon className="size-4" />
+                    {copyState === 'copied' ? <CheckCircle className="size-4" /> : <CopyIcon className="size-4" />}
                 </button>
             </div>
-            <pre className="mb-4 whitespace-pre-wrap break-words font-mono text-sm leading-6 text-foreground/85">
-                {primaryText}
-            </pre>
-            {item.text ? (
-                <div className="mb-3 break-words text-sm leading-6 text-foreground/75">{item.text}</div>
-            ) : null}
-            {item.sections.length > 0 ? (
-                <div className="space-y-3">
-                    {item.sections.map((section, sectionIndex) => (
-                        <ToolDetailSection key={`${section.label}-${sectionIndex}`} section={section} />
-                    ))}
-                </div>
-            ) : null}
-            {statusLabel ? (
-                <div
-                    className={cn(
-                        'mt-4 flex items-center justify-end gap-2 text-sm',
-                        getToolStatusClassName(item.status),
-                    )}
-                >
-                    {item.status === 'completed' ? <CheckCircle className="size-4" /> : null}
-                    <span>{statusLabel}</span>
-                </div>
-            ) : null}
+            <div className="pe-7">
+                {commandText ? (
+                    <pre className="mb-3 whitespace-pre-wrap break-words font-mono text-sm leading-6 text-foreground/85">
+                        {commandText}
+                    </pre>
+                ) : null}
+                {fallbackText ? (
+                    <div className="mb-3 break-words text-sm leading-6 text-foreground/75">{fallbackText}</div>
+                ) : null}
+                {item.sections.length > 0 ? (
+                    <div className="space-y-3">
+                        {item.sections.map((section, sectionIndex) => (
+                            <ToolDetailSection key={`${section.label}-${sectionIndex}`} section={section} />
+                        ))}
+                    </div>
+                ) : null}
+            </div>
+            {copyState === 'failed' ? <div className="mt-3 text-xs text-destructive">Copy failed</div> : null}
         </div>
     );
 }
 
 function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
     const isAttention = item.status === 'error' || item.status === 'warning';
-    const hasDetails = Boolean(item.text || item.sections.length);
-    const [isExpanded, setIsExpanded] = useState(isAttention);
+    const hasDetails = Boolean(item.command || item.text || item.sections.length);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     return (
         <div className="min-w-0">
@@ -1107,7 +1147,7 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
                 ) : null}
             </button>
             {hasDetails && isExpanded ? (
-                <div className="ms-7 mt-1">
+                <div className="mt-1">
                     <SummaryToolDetailPanel item={item} />
                 </div>
             ) : null}
@@ -1129,7 +1169,7 @@ function SummaryThoughtTimelineItem({ item, artifactRunId }: { item: SummaryTool
 
 function SummaryToolTimeline({ items, artifactRunId }: { items: SummaryToolDetailItem[]; artifactRunId?: string }) {
     return (
-        <div className="mt-3 max-h-[30rem] overflow-y-auto">
+        <div className="mt-3">
             <div className="space-y-3">
                 {items.map((item) =>
                     item.kind === 'think' ? (

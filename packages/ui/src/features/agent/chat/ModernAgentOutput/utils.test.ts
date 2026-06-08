@@ -48,8 +48,11 @@ describe('ModernAgentOutput utils - tool preamble behavior', () => {
                 event_class: 'activity',
                 tool: 'think',
                 tool_run_id: 'tool-1',
+                tool_use_id: 'tool-1',
                 tool_status: 'running',
+                tool_event: 'started',
                 activity_group_id: 'activity-1',
+                message_to_human: 'Thinking about how to get the news headlines for Tokyo.',
             },
         });
 
@@ -83,8 +86,11 @@ describe('ModernAgentOutput utils - tool preamble behavior', () => {
                 event_class: 'activity',
                 tool: 'think',
                 tool_run_id: 'tool-1',
+                tool_use_id: 'tool-1',
                 tool_status: 'running',
+                tool_event: 'started',
                 activity_group_id: 'activity-1',
+                message_to_human: 'Thinking about how to get the news headlines for Tokyo.',
             },
         });
 
@@ -411,6 +417,87 @@ describe('ModernAgentOutput summary conversation items', () => {
         });
     });
 
+    it('keeps recovered tool-scoped errors inside the surrounding work block', () => {
+        const publishStart = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Preparing app publish for appgen-123',
+            details: {
+                activity_group_id: 'activity-10',
+                tool: 'app_publish',
+                tool_run_id: 'publish-run-1',
+                tool_status: 'running',
+            },
+        });
+        const publishError = makeMessage({
+            timestamp: 1100,
+            type: AgentMessageType.ERROR,
+            message: 'App publish blocked until preview validation passes',
+            details: {
+                activity_group_id: 'activity-10',
+                tool: 'app_publish',
+                tool_run_id: 'publish-run-1',
+                tool_status: 'error',
+            },
+        });
+        const nextToolStart = makeMessage({
+            timestamp: 1200,
+            type: AgentMessageType.THOUGHT,
+            message: 'Starting the dev server to get a live preview URL...',
+            details: {
+                activity_group_id: 'activity-11',
+                tool: 'app_dev_server_start',
+                tool_run_id: 'dev-server-run-1',
+                tool_status: 'running',
+            },
+        });
+
+        const items = buildSummaryConversationItems([publishStart, publishError, nextToolStart], false);
+
+        expect(items).toHaveLength(1);
+        expect(items[0]).toMatchObject({
+            type: 'work',
+            isActive: true,
+            status: 'running',
+            messages: [publishStart, publishError, nextToolStart],
+        });
+    });
+
+    it('marks an unresolved trailing tool-scoped error as needing attention', () => {
+        const publishStart = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Preparing app publish for appgen-123',
+            details: {
+                activity_group_id: 'activity-10',
+                tool: 'app_publish',
+                tool_run_id: 'publish-run-1',
+                tool_status: 'running',
+            },
+        });
+        const publishError = makeMessage({
+            timestamp: 1100,
+            type: AgentMessageType.ERROR,
+            message: 'App publish blocked until preview validation passes',
+            details: {
+                activity_group_id: 'activity-10',
+                tool: 'app_publish',
+                tool_run_id: 'publish-run-1',
+                tool_status: 'error',
+            },
+        });
+
+        const items = buildSummaryConversationItems([publishStart, publishError], false);
+
+        expect(items).toHaveLength(1);
+        expect(items[0]).toMatchObject({
+            type: 'work',
+            isActive: true,
+            status: 'error',
+            messages: [publishStart, publishError],
+        });
+    });
+
     it('hides transient thinking once the work segment completes', () => {
         const tool = makeMessage({
             timestamp: 1000,
@@ -597,6 +684,39 @@ describe('ModernAgentOutput summary conversation items', () => {
         const items = buildSummaryConversationItems([thinking, idle], true);
 
         expect(items).toEqual([]);
+    });
+
+    it('closes pending work when an idle marker arrives even if parent completion lags', () => {
+        const tool = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Searching for current headlines',
+            details: {
+                tool: 'web_search_serper',
+                tool_status: 'running',
+                tool_run_id: 'tool-1',
+                activity_group_id: 'activity-1',
+            },
+        });
+        const idle = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.IDLE,
+            message: 'Waiting for your command...',
+            details: {
+                event_class: 'activity',
+            },
+        });
+
+        const items = buildSummaryConversationItems([tool, idle], false);
+
+        expect(items).toHaveLength(1);
+        expect(items[0]).toMatchObject({
+            type: 'work',
+            isActive: false,
+            status: 'completed',
+            messages: [tool],
+            endTimestamp: 2000,
+        });
     });
 
     it('hides transient thinking when a later ignored message is persisted', () => {

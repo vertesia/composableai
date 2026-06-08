@@ -100,30 +100,54 @@ export function isSummaryAssistantProseMessage(message: AgentMessage): boolean {
     return message.type === AgentMessageType.THOUGHT && Boolean(message.details?.streamed);
 }
 
+function isToolScopedStatusMessage(message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.ERROR && message.type !== AgentMessageType.WARNING) return false;
+
+    const details = message.details as
+        | {
+              activity_group_id?: unknown;
+              tool?: unknown;
+              tool_event?: unknown;
+              tool_run_id?: unknown;
+              tool_status?: unknown;
+          }
+        | undefined;
+
+    return Boolean(
+        details?.tool ||
+            details?.tool_status ||
+            details?.tool_run_id ||
+            details?.activity_group_id ||
+            details?.tool_event,
+    );
+}
+
 function isSummaryPrimaryMessage(message: AgentMessage): boolean {
     return (
         message.type === AgentMessageType.QUESTION ||
         isSummaryAssistantProseMessage(message) ||
         message.type === AgentMessageType.REQUEST_INPUT ||
         message.type === AgentMessageType.TERMINATED ||
-        message.type === AgentMessageType.ERROR ||
-        message.type === AgentMessageType.WARNING
+        ((message.type === AgentMessageType.ERROR || message.type === AgentMessageType.WARNING) &&
+            !isToolScopedStatusMessage(message))
     );
 }
 
+function getMessageExecutionStatus(message: AgentMessage): ToolExecutionStatus | undefined {
+    const status = message.details?.tool_status;
+    if (status === 'running' || status === 'completed' || status === 'error' || status === 'warning') return status;
+    if (message.type === AgentMessageType.ERROR) return 'error';
+    if (message.type === AgentMessageType.WARNING) return 'warning';
+    return undefined;
+}
+
 function getSummaryWorkStatus(messages: AgentMessage[], isActive: boolean): ToolExecutionStatus {
-    if (
-        messages.some((message) => message.type === AgentMessageType.ERROR || message.details?.tool_status === 'error')
-    ) {
-        return 'error';
+    for (let index = messages.length - 1; index >= 0; index--) {
+        const status = getMessageExecutionStatus(messages[index]);
+        if (status === 'error' || status === 'warning') return status;
+        if (status) return isActive ? 'running' : 'completed';
     }
-    if (
-        messages.some(
-            (message) => message.type === AgentMessageType.WARNING || message.details?.tool_status === 'warning',
-        )
-    ) {
-        return 'warning';
-    }
+
     return isActive ? 'running' : 'completed';
 }
 
@@ -138,6 +162,7 @@ function shouldResumeCompletedWorkForTool(message: AgentMessage, pendingWork: Ag
 
 function isSummaryWorkMessage(message: AgentMessage): boolean {
     if (isSummaryAssistantProseMessage(message)) return false;
+    if (isToolScopedStatusMessage(message)) return true;
     if (isToolPreambleMessage(message)) return true;
     if (isToolActivityMessage(message)) return true;
     if (message.type === AgentMessageType.UPDATE || message.type === AgentMessageType.PLAN) return true;
@@ -181,6 +206,7 @@ export function buildSummaryConversationItems(
 
     for (const message of messages) {
         if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
+            flushWork(false, message);
             continue;
         }
 

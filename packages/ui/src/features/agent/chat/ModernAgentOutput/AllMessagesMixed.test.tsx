@@ -144,14 +144,142 @@ describe('AllMessagesMixed summary view', () => {
         const workingRow = screen.getByRole('button', { name: /Working\s*for\s*1s/ });
         expect(workingRow.getAttribute('aria-expanded')).toBe('true');
         expect(screen.getByText('Bash')).not.toBeNull();
-        expect(screen.getByText('pnpm run build')).not.toBeNull();
+        expect(screen.getByText('Running build')).not.toBeNull();
+        expect(screen.queryByText('$ pnpm run build')).toBeNull();
 
-        const toolRow = screen.getByRole('button', { name: /Bash\s*pnpm run build/ });
+        const toolRow = screen.getByRole('button', { name: /Bash\s*Running build/ });
         fireEvent.click(toolRow);
 
-        expect(screen.getByText('Shell')).not.toBeNull();
+        expect(screen.queryByText('Shell')).toBeNull();
         expect(screen.getByText('$ pnpm run build')).not.toBeNull();
-        expect(screen.getByText('Running')).not.toBeNull();
+        expect(screen.queryByText('Running')).toBeNull();
+    });
+
+    it('merges legacy activity progress rows with different tool run ids', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Build the app.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    message: 'Running production build preflight...',
+                    details: {
+                        activity_group_id: 'activity-8',
+                        tool: 'execute_shell',
+                        tool_run_id: 'wrapper-run',
+                        tool_status: 'running',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    message: '$ cd /home/daytona/src && pnpm run build completed successfully',
+                    details: {
+                        activity_group_id: 'activity-8',
+                        tool: 'execute_shell',
+                        tool_run_id: 'progress-run',
+                        tool_status: 'completed',
+                        output: 'Build output',
+                    },
+                }),
+            ],
+            true,
+        );
+
+        const workedRow = screen.getByRole('button', { name: /Worked\s*for\s*1s/ });
+        fireEvent.click(workedRow);
+
+        expect(screen.getByRole('button', { name: /Bash\s*Running production build preflight/ })).not.toBeNull();
+        expect(screen.queryByRole('button', { name: /\$ cd \/home\/daytona\/src/ })).toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: /Bash\s*Running production build preflight/ }));
+
+        expect(screen.getByText('$ cd /home/daytona/src && pnpm run build completed successfully')).not.toBeNull();
+        expect(screen.getByText('Build output')).not.toBeNull();
+        expect(screen.queryByText('Success')).toBeNull();
+    });
+
+    it('copies expanded tool details without requiring the parent row click target', () => {
+        const writeText = vi.fn().mockResolvedValue(undefined);
+        Object.defineProperty(navigator, 'clipboard', {
+            configurable: true,
+            value: { writeText },
+        });
+
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Find Japan news.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    message: 'Searching for Japan news',
+                    details: {
+                        tool: 'web_search_serper',
+                        tool_status: 'completed',
+                        tool_run_id: 'tool-1',
+                        query: 'Japan news',
+                        output: 'Found 5 results',
+                    },
+                }),
+            ],
+            true,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /Worked\s*for/ }));
+        fireEvent.click(screen.getByRole('button', { name: /Search\s*Japan news/ }));
+        fireEvent.click(screen.getByRole('button', { name: 'Copy tool details' }));
+
+        expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Found 5 results'));
+    });
+
+    it('does not expand tool error details by default', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Publish the app.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    message: 'Publishing app...',
+                    details: {
+                        activity_group_id: 'activity-10',
+                        tool: 'app_publish',
+                        tool_run_id: 'publish-wrapper',
+                        tool_status: 'running',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    type: AgentMessageType.ERROR,
+                    message: 'App publish blocked until preview validation passes',
+                    details: {
+                        activity_group_id: 'activity-10',
+                        tool: 'app_publish',
+                        tool_run_id: 'publish-progress',
+                        tool_status: 'error',
+                    },
+                }),
+            ],
+            true,
+        );
+
+        const workRow = screen.getByRole('button', { name: /Work needs attention\s*for\s*1s/ });
+        fireEvent.click(workRow);
+
+        const toolRow = screen.getByRole('button', { name: /Tool\s*Publishing app/ });
+        expect(toolRow.getAttribute('aria-expanded')).toBe('false');
+        expect(screen.queryByText('App publish blocked until preview validation passes')).toBeNull();
+
+        fireEvent.click(toolRow);
+
+        expect(screen.getByText('App publish blocked until preview validation passes')).not.toBeNull();
     });
 
     it('renders thought prose between tool rows inside expanded work details', () => {
@@ -217,14 +345,17 @@ describe('AllMessagesMixed summary view', () => {
                 }),
                 makeMessage({
                     timestamp: 2_000,
-                    message: 'Thinking about how to get the news headlines for Tokyo.',
+                    message: 'Searching for the latest news headlines from Japan...',
                     details: {
                         event_class: 'activity',
                         tool: 'think',
                         tool_run_id: 'tool-1',
+                        tool_use_id: 'tool-1',
                         tool_iteration: 1,
                         tool_status: 'running',
+                        tool_event: 'started',
                         activity_group_id: 'activity-1',
+                        message_to_human: 'Searching for the latest news headlines from Japan...',
                     },
                 }),
                 makeMessage({
@@ -245,8 +376,8 @@ describe('AllMessagesMixed summary view', () => {
         const workedRow = screen.getByRole('button', { name: /Worked\s*for/ });
         fireEvent.click(workedRow);
 
-        expect(screen.getByText('Thinking about how to get the news headlines for Tokyo.')).not.toBeNull();
-        expect(screen.queryByRole('button', { name: /Tool\s+Thinking about how/ })).toBeNull();
+        expect(screen.getByText('Searching for the latest news headlines from Japan...')).not.toBeNull();
+        expect(screen.queryByRole('button', { name: /Tool\s+Searching for/ })).toBeNull();
         expect(screen.getByRole('button', { name: /Tool\s*Updating 1 tasks of our plan/ })).not.toBeNull();
     });
 
@@ -300,6 +431,47 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('What are the news headlines in Tokyo today?')).not.toBeNull();
         expect(screen.getByText('Here are some of the top news headlines related to Tokyo today.')).not.toBeNull();
         expect(screen.getByRole('button', { name: /Worked\s*for/ })).not.toBeNull();
+    });
+
+    it('keeps a persisted streamed answer visible and closes work after idle', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'What are the news headlines in Japan today?',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    message: 'Searching for current headlines',
+                    details: {
+                        tool: 'web_search_serper',
+                        tool_status: 'completed',
+                        tool_run_id: 'tool-1',
+                        activity_group_id: 'activity-1',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    type: AgentMessageType.ANSWER,
+                    message: 'Here are the top news headlines and key stories from Japan today.',
+                    details: {
+                        streamed: true,
+                        activity_id: 'reply-1',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_500,
+                    type: AgentMessageType.IDLE,
+                    message: 'Waiting for your command...',
+                }),
+            ],
+            false,
+        );
+
+        expect(screen.getByText('Here are the top news headlines and key stories from Japan today.')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Worked\s*for\s*1s/ })).not.toBeNull();
+        expect(screen.queryByRole('button', { name: /Working\s*for/ })).toBeNull();
     });
 
     it('keeps a stacked thought as its own message instead of consuming it as a tool preamble', () => {
