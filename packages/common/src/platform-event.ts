@@ -1,6 +1,7 @@
 import type { AuditMeter } from './audit-trail.js';
+import type { ConversationVisibility, InteractionExecutionConfiguration } from './interaction.js';
 import type { ProjectRoles } from './project.js';
-import type { JsonLogicRule, WorkflowRuleInputType } from './store/index.js';
+import type { JsonLogicRule, ProcessDefinitionBody, ProcessRunType, WorkflowRuleInputType } from './store/index.js';
 
 export type EventCategory = 'content' | 'workflow' | 'security' | 'billing' | 'system';
 
@@ -90,7 +91,46 @@ export interface WebhookEventDeliveryTarget {
     custom_data?: Record<string, unknown>;
 }
 
-export type EventDeliveryTarget = WorkflowEventDeliveryTarget | WebhookEventDeliveryTarget;
+export const DEFAULT_EVENT_AGENT_INTERACTION_REF = 'sys:GeneralAgent';
+
+export interface AgentEventDeliveryTarget {
+    type: 'agent';
+    /**
+     * Interaction ID, app ref, or system ref. Defaults to the general-purpose system agent.
+     */
+    interaction_ref?: string;
+    data?: Record<string, unknown>;
+    config?: InteractionExecutionConfiguration;
+    interactive?: boolean;
+    visibility?: ConversationVisibility;
+    tags?: string[];
+    categories?: string[];
+    tool_names?: string[];
+    max_iterations?: number;
+    debug_mode?: boolean;
+}
+
+export interface ProcessEventDeliveryTarget {
+    type: 'process';
+    /**
+     * Stored process ID, app ref, or system ref. Required unless process_definition is supplied.
+     */
+    process_ref?: string;
+    process_version?: number;
+    process_definition?: ProcessDefinitionBody;
+    run_type?: ProcessRunType;
+    data?: Record<string, unknown>;
+    config?: Record<string, unknown>;
+    visibility?: ConversationVisibility;
+    tags?: string[];
+    categories?: string[];
+}
+
+export type EventDeliveryTarget =
+    | WorkflowEventDeliveryTarget
+    | WebhookEventDeliveryTarget
+    | AgentEventDeliveryTarget
+    | ProcessEventDeliveryTarget;
 
 export interface MatchedEventSubscriptionSnapshot {
     subscription_id: string;
