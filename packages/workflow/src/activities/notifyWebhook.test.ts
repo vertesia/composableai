@@ -190,6 +190,16 @@ describe('Webhook should be notified', () => {
         expect(mockFetch).not.toHaveBeenCalled();
     });
 
+    it('should retry transient central URL validation failures', async () => {
+        const transientError = Object.assign(new Error('studio-server unavailable'), { statusCode: 503 });
+        mockValidateUrl.mockRejectedValueOnce(transientError);
+
+        const payload = createTestPayload();
+
+        await expect(testEnv.run(notifyWebhook, payload)).rejects.toThrow('studio-server unavailable');
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+
     it('should block webhook redirects', async () => {
         mockFetch.mockResolvedValueOnce(
             new Response(null, {

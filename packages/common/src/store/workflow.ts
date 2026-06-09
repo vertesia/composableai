@@ -58,7 +58,8 @@ export interface WorkflowExecutionBaseParams<T = Record<string, unknown>> {
      * The user input ar custom user options that can be used to configure the workflow.
      * You can see the user input as the arguments for a command line app.
      *
-     * In the case of workflows started by events (e.g. using a a workflow rule) the user input vars will be initialized with the workflow rule configuration field.
+     * In the case of workflows started by event subscriptions, the user input vars
+     * are initialized from the subscription target configuration.
      *
      * In case of dsl workflows the workflow execution payload vars will be applied over the default vars values stored in the DSL vars field.
      */
@@ -242,7 +243,7 @@ export interface ListWorkflowRunsPayload {
     event_name?: string;
 
     /**
-     * The workflow rule ID that triggered the workflow.
+     * Legacy workflow rule ID filter, when applicable.
      */
     rule_id?: string;
 
@@ -1324,7 +1325,7 @@ export interface AgentIntakeWorkflowParams {
     http_timeout?: HttpTimeoutOptions;
 
     /**
-     * LLM execution config. Prefer this for workflow-rule-driven execution settings.
+     * LLM execution config. Prefer this for event-subscription-driven execution settings.
      */
     config?: InteractionExecutionConfiguration;
 

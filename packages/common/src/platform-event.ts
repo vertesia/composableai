@@ -179,6 +179,15 @@ export interface EventSubscription {
     created_at?: string;
     updated_at?: string;
     migrated_from_workflow_rule_id?: string;
+    /**
+     * System subscription ID replaced by this stored subscription. Set only for
+     * tenant-specific system overrides created by migrations or platform code.
+     */
+    overrides_system_subscription_id?: string;
+    /**
+     * True when this system subscription was created from a legacy customer override.
+     */
+    customer_override?: boolean;
 }
 
 export interface CreateEventSubscriptionPayload {

@@ -44,6 +44,24 @@ export interface NotifyWebhookResult {
     url: string;
 }
 
+function validationStatusCode(error: unknown): number | undefined {
+    if (typeof error !== 'object' || error === null) {
+        return undefined;
+    }
+    const record = error as { statusCode?: unknown; status?: unknown; code?: unknown };
+    const status = record.statusCode ?? record.status ?? record.code;
+    return typeof status === 'number' ? status : undefined;
+}
+
+function isNonRetryableUrlValidationError(error: unknown): boolean {
+    const status = validationStatusCode(error);
+    if (status !== undefined) {
+        return status >= 400 && status < 500;
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    return /blocked|not allowed|forbidden|invalid url|internal hosts|private network|metadata/i.test(message);
+}
+
 export async function notifyWebhook(
     payload: DSLActivityExecutionPayload<NotifyWebhookParams>,
 ): Promise<NotifyWebhookResult> {
@@ -64,6 +82,15 @@ export async function notifyWebhook(
         await client.apps.validateUrl(target_url);
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
+        if (!isNonRetryableUrlValidationError(err)) {
+            log.warn('URL validation preflight failed; retrying webhook notification', {
+                url: target_url,
+                workflow_id: params.workflow_id,
+                workflow_run_id: params.workflow_run_id,
+                error: message,
+            });
+            throw err;
+        }
         log.warn('URL validation blocked webhook endpoint', {
             url: target_url,
             workflow_id: params.workflow_id,
