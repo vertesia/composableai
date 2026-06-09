@@ -31,6 +31,15 @@ export interface UseResolvedUrlOptions {
 }
 
 /**
+ * Strip the optional `//` authority separator (and any stray leading slashes) that may follow a
+ * scheme colon, so `collection://<id>` and `collection:<id>` resolve identically. Without this,
+ * an LLM-emitted `collection://<id>` produced a malformed `/store/collections///<id>` route.
+ */
+function stripSchemePath(raw: string): string {
+    return raw.trim().replace(/^\/+/, '');
+}
+
+/**
  * Parses a URL and returns its scheme and path
  */
 export function parseUrlScheme(rawUrl: string): { scheme: UrlScheme; path: string } {
@@ -41,13 +50,13 @@ export function parseUrlScheme(rawUrl: string): { scheme: UrlScheme; path: strin
         return { scheme: 'image', path: rawUrl.slice(6).trim() };
     }
     if (rawUrl.startsWith('store:')) {
-        return { scheme: 'store', path: rawUrl.slice(6).trim() };
+        return { scheme: 'store', path: stripSchemePath(rawUrl.slice(6)) };
     }
-    if (rawUrl.startsWith('document://')) {
-        return { scheme: 'document', path: rawUrl.slice(11).trim() };
+    if (rawUrl.startsWith('document:')) {
+        return { scheme: 'document', path: stripSchemePath(rawUrl.slice(9)) };
     }
     if (rawUrl.startsWith('collection:')) {
-        return { scheme: 'collection', path: rawUrl.slice(11).trim() };
+        return { scheme: 'collection', path: stripSchemePath(rawUrl.slice(11)) };
     }
     return { scheme: 'standard', path: rawUrl };
 }
