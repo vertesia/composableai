@@ -79,4 +79,23 @@ describe('normalizeCustomSchemeLinks', () => {
         expect(output).toContain('[fenced](artifact:out/INVOICE 2025-001.pdf)');
         expect(output).toContain('[regular](<artifact:out/INVOICE 2025-001.pdf>)');
     });
+
+    it('normalizes each custom scheme', () => {
+        expect(normalizeCustomSchemeLinks('[a](store:x y)')).toBe('[a](<store:x y>)');
+        expect(normalizeCustomSchemeLinks('[a](collection:x y)')).toBe('[a](<collection:x y>)');
+        expect(normalizeCustomSchemeLinks('[a](document://x y)')).toBe('[a](<document://x y>)');
+        expect(normalizeCustomSchemeLinks('![a](image:x y)')).toBe('![a](<image:x y>)');
+    });
+
+    // Regression guard for CodeQL js/polynomial-redos: excluding `[` from the
+    // link-text/destination classes makes a run of '[' (or '[](image:' groups)
+    // with no closing delimiter linear instead of quadratic.
+    it('runs in linear time on pathological bracket runs', () => {
+        const inputs = ['['.repeat(100_000), '[](image:'.repeat(100_000)];
+        for (const evil of inputs) {
+            const start = performance.now();
+            normalizeCustomSchemeLinks(evil);
+            expect(performance.now() - start).toBeLessThan(1000);
+        }
+    });
 });
