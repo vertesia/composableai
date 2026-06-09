@@ -162,7 +162,9 @@ export function printElementToPdf(sourceElement: HTMLElement, title: string): bo
 
     const doc = iframeWindow.document;
     doc.open();
-    doc.write(`<!doctype html><html><head><title>${title}</title></head><body></body></html>`);
+    // Write a static skeleton only; the (untrusted) title is assigned via doc.title below,
+    // which sets it as text and avoids constructing HTML from input (CodeQL js/html-constructed-from-input).
+    doc.write('<!doctype html><html><head><title></title></head><body></body></html>');
     doc.close();
     doc.title = title;
 
