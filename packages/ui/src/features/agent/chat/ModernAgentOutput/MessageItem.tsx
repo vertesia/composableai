@@ -32,63 +32,8 @@ import { AskUserWidget } from '../AskUserWidget';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
 import { ThinkingMessages } from '../WaitingMessages';
+import { processContentForMarkdown } from './processContentForMarkdown';
 import { getWorkstreamId } from './utils';
-
-// PERFORMANCE: Move pure function outside component to avoid recreation on every render
-// Process content to enhance markdown detection for lists and thinking messages
-function processContentForMarkdown(
-    content: string | object,
-    messageType: AgentMessageType,
-    originalMessage?: string,
-): string | object {
-    // If content is not a string, return it as is
-    if (typeof content !== 'string') {
-        return content;
-    }
-
-    // Special handling for thought messages to ensure proper markdown formatting
-    if (
-        messageType === AgentMessageType.THOUGHT ||
-        (typeof originalMessage === 'string' &&
-            (originalMessage.toLowerCase().includes('thinking about') ||
-                originalMessage.toLowerCase().includes("i'm thinking") ||
-                originalMessage.toLowerCase().includes('💭')))
-    ) {
-        let formattedContent = content;
-
-        // Check for numbering patterns like "1. First item 2. Second item"
-        if (/\d+\.\s+.+/.test(formattedContent)) {
-            // Format numbered lists by adding newlines between items
-            formattedContent = formattedContent.replace(/(\d+\.\s+.+?)(?=\s+\d+\.\s+|$)/g, '$1\n\n');
-
-            // Make sure nested content under numbered items is properly indented
-            formattedContent = formattedContent.replace(/(\d+\.\s+.+\n)([^\d\n][^:])/g, '$1  $2');
-        }
-
-        // Handle colon-prefixed items that should be on separate lines
-        if (formattedContent.includes(':') && !formattedContent.includes('\n\n')) {
-            formattedContent = formattedContent.replace(
-                /\b(First|Next|Then|Finally|Lastly|Additionally|Step \d+):\s+/gi,
-                '\n\n$&',
-            );
-        }
-
-        // Handle thinking points or list-like structures even without numbers
-        if (formattedContent.includes(' - ')) {
-            formattedContent = formattedContent.replace(/\s+-\s+/g, '\n- ');
-        }
-
-        return formattedContent;
-    }
-
-    // Normal processing for non-thinking messages
-    if (/\d+\.\s+.+/.test(content) && !content.includes('\n\n')) {
-        // Add proper line breaks for numbered lists that aren't already properly formatted
-        return content.replace(/(\d+\.\s+.+?)(?=\s+\d+\.\s+|$)/g, '$1\n\n');
-    }
-
-    return content;
-}
 
 /** className overrides for MessageItem — single source of truth for all className overrides. */
 export interface MessageItemClassNames {
