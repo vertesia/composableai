@@ -193,7 +193,15 @@ export interface CreateEventSubscriptionPayload {
 }
 
 // Update is Create made partial, minus `scope` (scope is fixed at creation).
-export type UpdateEventSubscriptionPayload = Partial<Omit<CreateEventSubscriptionPayload, 'scope'>>;
+export interface UpdateEventSubscriptionPayload {
+    name?: string;
+    description?: string;
+    filter?: EventSubscriptionFilter;
+    target?: EventDeliveryTargetInput;
+    run_as_role?: ProjectRoles;
+    enabled?: boolean;
+    priority?: EventPriority;
+}
 
 export interface EventSubscriptionMutationResponse {
     subscription: EventSubscription;
