@@ -10,7 +10,7 @@ describe('processContentForMarkdown', () => {
 
     it('splits inline numbered lists for regular messages', () => {
         expect(processContentForMarkdown('1. First 2. Second', AgentMessageType.ANSWER)).toBe(
-            '1. First\n\n 2. Second\n\n',
+            '1. First\n\n2. Second\n\n',
         );
     });
 
@@ -35,6 +35,7 @@ describe('processContentForMarkdown', () => {
         const cases: [string | object, AgentMessageType][] = [
             ['0. x '.repeat(100_000), AgentMessageType.ANSWER],
             ['0. x '.repeat(100_000), AgentMessageType.THOUGHT],
+            [`0.\t!${'!0.\t!'.repeat(100_000)}`, AgentMessageType.ANSWER],
             [`${' '.repeat(100_000)}- x`, AgentMessageType.THOUGHT],
             ['0'.repeat(100_000), AgentMessageType.ANSWER],
         ];
