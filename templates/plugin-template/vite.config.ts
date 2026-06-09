@@ -35,6 +35,7 @@ const VERTESIA_UI_PATH = '';
 const CONFIG__inlineCss = false;
 const REACT_IMPORT_MAP_PLACEHOLDER = '<!-- vertesia-react-importmap -->';
 const nodeRequire = createRequire(import.meta.url);
+let cachedReactImportMapHtml: string | undefined;
 
 function getPackageVersion(packageName: string): string {
     const packageJsonPath = nodeRequire.resolve(`${packageName}/package.json`);
@@ -46,8 +47,18 @@ function getPackageVersion(packageName: string): string {
 }
 
 function getReactImportMapHtml(): string {
+    if (cachedReactImportMapHtml) {
+        return cachedReactImportMapHtml;
+    }
+
     const reactVersion = getPackageVersion('react');
     const reactDomVersion = getPackageVersion('react-dom');
+    if (reactVersion !== reactDomVersion) {
+        throw new Error(
+            `React import map requires react and react-dom versions to match; got ${reactVersion} and ${reactDomVersion}`,
+        );
+    }
+
     const imports = {
         react: `https://esm.sh/react@${reactVersion}`,
         'react-dom': `https://esm.sh/react-dom@${reactDomVersion}`,
@@ -56,9 +67,10 @@ function getReactImportMapHtml(): string {
         'react/jsx-dev-runtime': `https://esm.sh/react@${reactVersion}/jsx-dev-runtime`,
     };
 
-    return `<script type="importmap">
+    cachedReactImportMapHtml = `<script type="importmap">
 ${JSON.stringify({ imports }, null, 2)}
   </script>`;
+    return cachedReactImportMapHtml;
 }
 
 function reactImportMapPlugin(): Plugin {
