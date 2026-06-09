@@ -6,7 +6,7 @@
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
     "bin": {
-        "vertesia-build": "./lib/bin/build.js"
+        "vertesia-build": "lib/bin/build.js"
     },
     "files": [
         "lib",
