@@ -31,9 +31,8 @@ export interface UseResolvedUrlOptions {
 }
 
 /**
- * Strip the optional `//` authority separator (and any stray leading slashes) that may follow a
- * scheme colon, so `collection://<id>` and `collection:<id>` resolve identically. Without this,
- * an LLM-emitted `collection://<id>` produced a malformed `/store/collections///<id>` route.
+ * Strip an optional `//` authority (and stray leading slashes) after a scheme colon so
+ * `scheme://path` and `scheme:path` parse identically.
  */
 function stripSchemePath(raw: string): string {
     return raw.trim().replace(/^\/+/, '');

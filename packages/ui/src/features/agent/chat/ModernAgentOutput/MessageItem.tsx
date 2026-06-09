@@ -360,10 +360,8 @@ function MessageItemComponent({
                 children?: React.ReactNode;
             }) => {
                 const href = props.href || '';
-                // Append the active tenant sticky params (account `a` + project `p`) to internal
-                // store/collection routes so copy-link / open-in-new-tab preserve the current
-                // account & project. Idempotent: PathWithParams.add() uses set(), so re-applying it
-                // (e.g. inside NavLink) never duplicates the params.
+                // Carry the active account (`a`) & project (`p`) params on internal routes so
+                // copy-link / open-in-new-tab preserve the current tenant.
                 const withParams = href.startsWith('/') ? router.getTopRouter().navigator.addStickyParams(href) : href;
                 if (href.includes('/store/objects')) {
                     if (StoreLinkComponent) {
