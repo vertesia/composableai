@@ -5,6 +5,9 @@
     "type": "module",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
+    "bin": {
+        "vertesia-build": "./lib/bin/build.js"
+    },
     "files": [
         "lib",
         "src"
@@ -14,7 +17,7 @@
         "lint": "biome lint src",
         "test": "vitest run",
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc && pnpm exec rollup -c",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc && pnpm exec rollup -c && chmod +x ./lib/bin/build.js",
         "clean": "rm -rf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "exports": {
@@ -23,8 +26,8 @@
             "default": "./lib/index.js"
         },
         "./vite": {
-            "types": "./lib/vite.d.ts",
-            "default": "./lib/vite.js"
+            "types": "./lib/vite/dev-server.d.ts",
+            "default": "./lib/vite/dev-server.js"
         }
     },
     "devDependencies": {
@@ -42,6 +45,7 @@
     "dependencies": {
         "@llumiverse/common": "workspace:*",
         "@vertesia/common": "workspace:*",
+        "esbuild": "^0.25.0",
         "gray-matter": "^4.0.3",
         "zod": "^4.4.3"
     },

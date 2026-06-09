@@ -21,9 +21,9 @@
  */
 
 import type { Plugin } from 'rollup';
-import { vertesiaImportPlugin } from './plugin.js';
-import { promptTransformer, rawTransformer, skillTransformer } from './presets/index.js';
-import type { PluginConfig } from './types.js';
+import { promptTransformer, rawTransformer, skillTransformer } from '../core/transformers/index.js';
+import type { PluginConfig } from '../core/types.js';
+import { vertesiaImportPlugin } from '../rollup/plugin.js';
 
 /**
  * Creates a pre-configured Vite plugin for tool server dev mode.

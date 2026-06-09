@@ -5,10 +5,10 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Plugin } from 'rollup';
-import type { AssetFile, PluginConfig, TransformerRule } from './types.js';
-import { copyAssets } from './utils/asset-copy.js';
-import type { WidgetMetadata } from './utils/asset-discovery.js';
-import { compileWidgets } from './utils/widget-compiler.js';
+import type { AssetFile, PluginConfig, TransformerRule } from '../core/types.js';
+import { copyAssets } from '../core/utils/asset-copy.js';
+import type { WidgetMetadata } from '../core/utils/asset-discovery.js';
+import { compileWidgets } from './widget-compiler.js';
 
 /**
  * Creates a Rollup plugin that transforms imports based on configured rules

@@ -8,9 +8,9 @@ import type { RollupNodeResolveOptions } from '@rollup/plugin-node-resolve';
 import type { Options as TerserOptions } from '@rollup/plugin-terser';
 import type { RollupTypescriptOptions } from '@rollup/plugin-typescript';
 import { type OutputOptions, type Plugin, type RollupOptions, rollup } from 'rollup';
-import type { WidgetConfig } from '../types.js';
-import type { WidgetMetadata } from './asset-discovery.js';
-import { createRollupTypescript } from './rollup-typescript.js';
+import type { WidgetConfig } from '../core/types.js';
+import type { WidgetMetadata } from '../core/utils/asset-discovery.js';
+import { createRollupTypescript } from './typescript.js';
 
 type PluginFactory<TOptions = undefined> = (options?: TOptions) => Plugin;
 

@@ -1,8 +1,8 @@
 /**
- * Vertesia Rollup Import Plugin
+ * Vertesia Build Tools
  *
- * A flexible Rollup plugin for transforming imports with custom compilers and validation.
- * Supports preset transformers for common use cases (skills, raw files) and custom transformers.
+ * Transformers for custom import syntaxes (`?skill`, `?raw`, `?prompt`, `?template`,
+ * `?skills`, `?templates`) plus rollup + vite plugins that wire them in.
  *
  * @example
  * ```typescript
@@ -18,12 +18,16 @@
  * ```
  */
 
-// Utilities
-export { type FrontmatterResult, parseFrontmatter } from './parsers/frontmatter.js';
-// Core plugin
-export { vertesiaImportPlugin } from './plugin.js';
-
-// Presets
+// esbuild-based widget bundler
+export {
+    compileWidget,
+    compileWidgets,
+    type WidgetCompilerConfig,
+    type WidgetInput,
+} from './core/compilers/widget.js';
+// Parsers
+export { type FrontmatterResult, parseFrontmatter } from './core/parsers/frontmatter.js';
+// Transformers (the pure transformation functions)
 export {
     type PromptContentType,
     type PromptDefinition,
@@ -42,7 +46,7 @@ export {
     TemplateType,
     templateCollectionTransformer,
     templateTransformer,
-} from './presets/index.js';
+} from './core/transformers/index.js';
 // Types
 export type {
     AssetFile,
@@ -52,9 +56,23 @@ export type {
     TransformFunction,
     TransformResult,
     WidgetConfig,
-} from './types.js';
+} from './core/types.js';
+// CLI-friendly transformer name registry
+export {
+    BUILTIN_TRANSFORMER_NAMES,
+    BUILTIN_TRANSFORMERS,
+    resolveTransformerNames,
+} from './import-transform/builtins.js';
+// Standalone import transformer (tsc → vertesia-build pipeline)
+export {
+    type TransformImportsOptions,
+    type TransformImportsResult,
+    transformImports,
+} from './import-transform/index.js';
+// Rollup integration
+export { vertesiaImportPlugin } from './rollup/plugin.js';
 export {
     createRollupTypescript,
     isRollupWatchMode,
     type RollupTypescriptOptions,
-} from './utils/rollup-typescript.js';
+} from './rollup/typescript.js';

@@ -5,7 +5,7 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { discoverSkillAssets } from '../src/utils/asset-discovery.js';
+import { discoverSkillAssets } from '../src/core/utils/asset-discovery.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
