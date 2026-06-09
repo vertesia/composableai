@@ -87,10 +87,16 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
     // DEV_MODE is used by appgen/sandbox previews. Vercel also proxies to the
     // framework dev server over HTTP, so both modes disable HTTPS.
     const useHttps = process.env.DEV_MODE !== '1' && process.env.VERCEL !== '1';
-    const base = command === 'build' ? process.env.VERTESIA_APP_BASE_PATH || '/app/' : '/';
+    // Build with a RELATIVE base so asset URLs are mount-agnostic (`./assets/x.js`, not `/app/...`).
+    // The serving layer is the only thing that knows the real mount path — which for appgen is a
+    // version-stamped deep path assigned at publish time (`/tenants/<t>/apps/<a>/versions/<v>/app/`),
+    // unknowable at build time. The app-gateway injects a matching `<base href="<mount>/">` into the
+    // served index.html, so relative asset refs resolve under whatever mount the app is served at
+    // (published, version-pinned, or live preview). Dev still serves at `/`.
+    const base = command === 'build' ? './' : '/';
 
     return {
-        base, // Dev serves the standalone app at /; Vercel serves built app assets from /app/.
+        base,
         plugins: [
             tailwindcss(),
             react(),
