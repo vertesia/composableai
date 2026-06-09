@@ -80,7 +80,9 @@ export interface WorkflowEventDeliveryTarget {
 export interface WebhookEventDeliveryTarget {
     type: 'webhook';
     url: string;
+    /** Server-managed: whether a signing secret is stored. Set by the server, never by callers. */
     has_secret: boolean;
+    /** Server-managed: label of the active signing secret. */
     secret_label?: string;
     signing_mode?: WebhookSigningMode;
     payload_mode?: WebhookPayloadMode;
@@ -89,7 +91,6 @@ export interface WebhookEventDeliveryTarget {
     timeout_ms?: number;
     result_path?: string;
     custom_data?: Record<string, unknown>;
-    rotate_signing_secret?: boolean;
 }
 
 export const DEFAULT_EVENT_AGENT_INTERACTION_REF = 'sys:GeneralAgent';
@@ -133,6 +134,24 @@ export type EventDeliveryTarget =
     | AgentEventDeliveryTarget
     | ProcessEventDeliveryTarget;
 
+// --- Input (write) target shapes ---
+// The full target types above are the read model (include server-managed fields). Create/update
+// callers supply the input shapes below: server-managed fields (has_secret, secret_label,
+// migrated_rule_name) are omitted, and write-only directives (rotate_signing_secret) are added.
+
+export type WorkflowEventDeliveryTargetInput = Omit<WorkflowEventDeliveryTarget, 'migrated_rule_name'>;
+
+export type WebhookEventDeliveryTargetInput = Omit<WebhookEventDeliveryTarget, 'has_secret' | 'secret_label'> & {
+    /** Request rotation of the stored signing secret on update. */
+    rotate_signing_secret?: boolean;
+};
+
+export type EventDeliveryTargetInput =
+    | WorkflowEventDeliveryTargetInput
+    | WebhookEventDeliveryTargetInput
+    | AgentEventDeliveryTarget
+    | ProcessEventDeliveryTarget;
+
 export interface MatchedEventSubscriptionSnapshot {
     subscription_id: string;
     subscription_name: string;
@@ -167,21 +186,14 @@ export interface CreateEventSubscriptionPayload {
     description?: string;
     scope?: 'account' | 'project';
     filter: EventSubscriptionFilter;
-    target: EventDeliveryTarget;
+    target: EventDeliveryTargetInput;
     run_as_role?: ProjectRoles;
     enabled?: boolean;
     priority?: EventPriority;
 }
 
-export interface UpdateEventSubscriptionPayload {
-    name?: string;
-    description?: string;
-    filter?: EventSubscriptionFilter;
-    target?: EventDeliveryTarget;
-    run_as_role?: ProjectRoles;
-    enabled?: boolean;
-    priority?: EventPriority;
-}
+// Update is Create made partial, minus `scope` (scope is fixed at creation).
+export type UpdateEventSubscriptionPayload = Partial<Omit<CreateEventSubscriptionPayload, 'scope'>>;
 
 export interface EventSubscriptionMutationResponse {
     subscription: EventSubscription;
