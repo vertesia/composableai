@@ -14,7 +14,7 @@
         "dev": "vite dev --mode app",
         "lint": "biome lint src",
         "prebuild": "biome lint src && tsc --build --noEmit",
-        "build:server": "tsc -p tsconfig.tool-server.json && pnpm exec vertesia-build",
+        "build:server": "tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js",
         "build:ui:app": "vite build --mode app",
         "build:ui:lib": "vite build --mode lib",
         "build:ui": "vite build --mode app && vite build --mode lib",
