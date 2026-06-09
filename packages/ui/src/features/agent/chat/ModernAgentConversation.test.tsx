@@ -182,6 +182,7 @@ describe('ModernAgentConversation send handling', () => {
             processingFiles: new Map(),
             hasProcessingFiles: false,
             handleFileUpload: vi.fn(),
+            removeProcessingFile: vi.fn(),
         });
     });
 
@@ -317,6 +318,7 @@ describe('ModernAgentConversation send handling', () => {
 
         const latestRightPanelProps = mocks.rightPanelProps.mock.lastCall?.[0] as {
             activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
+            activeTab?: string;
         };
         const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
             activeTaskCount?: number;
@@ -326,6 +328,7 @@ describe('ModernAgentConversation send handling', () => {
             expect.objectContaining({ workstream_id: 'alpha', status: 'running' }),
             expect.objectContaining({ workstream_id: 'beta', status: 'running' }),
         ]);
+        expect(latestRightPanelProps.activeTab).toBe('plan');
         expect(latestMessageInputProps.activeTaskCount).toBe(2);
     });
 

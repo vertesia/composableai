@@ -8,7 +8,9 @@ import {
 } from '@vertesia/common';
 import { cn } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
-import { MarkdownRenderer } from '@vertesia/ui/widgets';
+import { NavLink } from '@vertesia/ui/router';
+import { MarkdownRenderer, type MarkdownRendererProps } from '@vertesia/ui/widgets';
+import type { Element } from 'hast';
 import {
     AlertTriangle,
     Brain,
@@ -26,6 +28,7 @@ import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useR
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget } from '../AskUserWidget';
 import { ThinkingMessages } from '../WaitingMessages';
+import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from './BatchProgressPanel';
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
 import {
@@ -171,6 +174,115 @@ const SUMMARY_PROSE_CLASS = [
 ].join(' ');
 
 const USER_BUBBLE_COLLAPSE_THRESHOLD = 520;
+const STORE_LINK_MARKDOWN_RE =
+    /\[[^\]]+\]\((?:\/store\/(?:objects|collections)\/|store:|document:|document:\/\/|collection:)[^)]+\)/;
+const DEFAULT_AGENT_MARKDOWN_COMPONENTS: MarkdownRendererProps['components'] = {
+    table: AgentMarkdownTable,
+};
+
+type HastTextNode = {
+    value?: unknown;
+    children?: unknown[];
+};
+
+function getHastText(node: unknown): string {
+    if (!node || typeof node !== 'object') return '';
+    const typedNode = node as HastTextNode;
+    if (typeof typedNode.value === 'string') return typedNode.value;
+    if (!Array.isArray(typedNode.children)) return '';
+    return typedNode.children.map(getHastText).join('');
+}
+
+function getElementChildren(node: unknown, tagName?: string): Element[] {
+    if (!node || typeof node !== 'object') return [];
+    const children = (node as { children?: unknown[] }).children;
+    if (!Array.isArray(children)) return [];
+    return children.filter((child): child is Element => {
+        if (!child || typeof child !== 'object') return false;
+        const childElement = child as Element;
+        return tagName ? childElement.tagName === tagName : typeof childElement.tagName === 'string';
+    });
+}
+
+function getTableRows(node?: Element): string[][] {
+    const sections = getElementChildren(node).filter((child) => child.tagName === 'thead' || child.tagName === 'tbody');
+    return sections.flatMap((section) =>
+        getElementChildren(section, 'tr').map((row) =>
+            getElementChildren(row)
+                .filter((cell) => cell.tagName === 'th' || cell.tagName === 'td')
+                .map((cell) => getHastText(cell).replace(/\s+/g, ' ').trim()),
+        ),
+    );
+}
+
+function getTableBodyRows(node?: Element): string[][] {
+    return getElementChildren(node, 'tbody').flatMap((section) =>
+        getElementChildren(section, 'tr').map((row) =>
+            getElementChildren(row, 'td').map((cell) => getHastText(cell).replace(/\s+/g, ' ').trim()),
+        ),
+    );
+}
+
+function getCompactTableColumns(node?: Element): Set<number> {
+    const rows = getTableRows(node);
+    const bodyRows = getTableBodyRows(node);
+    const columnCount = Math.max(0, ...rows.map((row) => row.length));
+    if (columnCount <= 1) return new Set();
+
+    const compactColumns = new Set<number>();
+    for (let columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
+        const bodyValues = bodyRows
+            .map((row) => row[columnIndex] || '')
+            .map((value) => value.trim())
+            .filter(Boolean);
+        if (bodyValues.length === 0) continue;
+
+        const lengths = bodyValues.map((value) => value.length);
+        const maxLength = Math.max(...lengths);
+        const avgLength = lengths.reduce((sum, length) => sum + length, 0) / lengths.length;
+        const hasLongToken = bodyValues.some((value) => /\S{12,}/.test(value));
+
+        if (maxLength <= 16 && avgLength <= 10 && !hasLongToken) {
+            compactColumns.add(columnIndex);
+        }
+    }
+
+    if (compactColumns.size >= columnCount) {
+        return new Set();
+    }
+
+    return compactColumns;
+}
+
+function AgentMarkdownTable({
+    node,
+    className,
+    children,
+    ...props
+}: React.TableHTMLAttributes<HTMLTableElement> & {
+    node?: Element;
+    children?: React.ReactNode;
+}) {
+    const columnCount = Math.max(0, ...getTableRows(node).map((row) => row.length));
+    const compactColumns = getCompactTableColumns(node);
+    const columnKeys = Array.from({ length: columnCount }, (_value, index) => `agent-markdown-table-column-${index}`);
+
+    return (
+        <table {...props} className={className}>
+            {columnCount > 0 && compactColumns.size > 0 ? (
+                <colgroup>
+                    {columnKeys.map((columnKey, index) => (
+                        <col
+                            key={columnKey}
+                            className={compactColumns.has(index) ? 'agent-markdown-table-compact-col' : undefined}
+                        />
+                    ))}
+                </colgroup>
+            ) : null}
+            {children}
+        </table>
+    );
+}
 
 function getReactNodeTextLength(node: React.ReactNode): number {
     if (node === null || node === undefined || typeof node === 'boolean') return 0;
@@ -222,16 +334,22 @@ function SummaryUserBubble({
     children,
     workstreamId,
     className,
+    artifactRunId,
+    markdownComponents,
 }: {
     children: React.ReactNode;
     workstreamId?: string;
     className?: string;
+    artifactRunId?: string;
+    markdownComponents?: MarkdownRendererProps['components'];
 }) {
     const { t } = useUITranslation();
     const [isExpanded, setIsExpanded] = useState(false);
     const contentLength = useMemo(() => getReactNodeTextLength(children), [children]);
     const shouldCollapse = contentLength > USER_BUBBLE_COLLAPSE_THRESHOLD;
     const isPlainText = typeof children === 'string' || typeof children === 'number';
+    const textContent = isPlainText ? String(children) : '';
+    const shouldRenderMarkdown = typeof children === 'string' && STORE_LINK_MARKDOWN_RE.test(children);
 
     useEffect(() => {
         if (!shouldCollapse && isExpanded) {
@@ -252,13 +370,27 @@ function SummaryUserBubble({
             >
                 <div
                     className={cn(
-                        isPlainText && 'whitespace-pre-wrap',
+                        isPlainText && !shouldRenderMarkdown && 'whitespace-pre-wrap',
                         shouldCollapse &&
                             !isExpanded &&
                             'max-h-72 overflow-hidden [mask-image:linear-gradient(to_bottom,black_76%,transparent_100%)]',
                     )}
                 >
-                    {children}
+                    {shouldRenderMarkdown ? (
+                        <MarkdownRenderer
+                            artifactRunId={artifactRunId}
+                            components={markdownComponents}
+                            className={cn(
+                                'agent-markdown vprose prose max-w-none break-words text-sm leading-6 text-foreground/90',
+                                'prose-p:my-0 prose-p:leading-6 prose-a:text-foreground prose-a:underline prose-a:decoration-muted prose-a:underline-offset-4',
+                                '[&_p+_p]:mt-2',
+                            )}
+                        >
+                            {textContent}
+                        </MarkdownRenderer>
+                    ) : (
+                        children
+                    )}
                 </div>
                 {shouldCollapse && (
                     <button
@@ -289,9 +421,14 @@ function SummaryMessage({
     const content = getMessageText(message);
     const workstreamId = getWorkstreamId(message);
     const runId = (message as { workflow_run_id?: string }).workflow_run_id;
+    const parsedQuestion = useMemo(
+        () => (message.type === AgentMessageType.QUESTION ? parseUserMessageAttachments(content) : null),
+        [content, message.type],
+    );
 
     const markdownComponents = useMemo(
         () => ({
+            ...DEFAULT_AGENT_MARKDOWN_COMPONENTS,
             a: ({
                 node: _node,
                 ref: _ref,
@@ -303,20 +440,34 @@ function SummaryMessage({
                 children?: React.ReactNode;
             }) => {
                 const href = props.href || '';
-                if (href.includes('/store/objects') && StoreLinkComponent) {
+                if (href.includes('/store/objects')) {
                     const documentId = href.split('/store/objects/')[1] || '';
+                    if (StoreLinkComponent) {
+                        return (
+                            <StoreLinkComponent href={href} documentId={documentId}>
+                                {props.children}
+                            </StoreLinkComponent>
+                        );
+                    }
                     return (
-                        <StoreLinkComponent href={href} documentId={documentId}>
+                        <NavLink href={href} topLevelNav>
                             {props.children}
-                        </StoreLinkComponent>
+                        </NavLink>
                     );
                 }
-                if (href.includes('/store/collections') && CollectionLinkComponent) {
+                if (href.includes('/store/collections')) {
                     const collectionId = href.split('/store/collections/')[1] || '';
+                    if (CollectionLinkComponent) {
+                        return (
+                            <CollectionLinkComponent href={href} collectionId={collectionId}>
+                                {props.children}
+                            </CollectionLinkComponent>
+                        );
+                    }
                     return (
-                        <CollectionLinkComponent href={href} collectionId={collectionId}>
+                        <NavLink href={href} topLevelNav>
                             {props.children}
-                        </CollectionLinkComponent>
+                        </NavLink>
                     );
                 }
                 return <a {...props} target="_blank" rel="noopener noreferrer" />;
@@ -326,7 +477,34 @@ function SummaryMessage({
     );
 
     if (message.type === AgentMessageType.QUESTION) {
-        return <SummaryUserBubble workstreamId={workstreamId}>{content}</SummaryUserBubble>;
+        const questionBody = parsedQuestion?.body ?? content;
+        const attachments = parsedQuestion?.attachments ?? [];
+
+        return (
+            <>
+                {attachments.length > 0 && (
+                    <div className="mx-auto flex w-full max-w-3xl justify-end px-1">
+                        <AttachmentPreviewList
+                            items={attachments}
+                            artifactRunId={runId}
+                            align="end"
+                            variant="message"
+                            StoreLinkComponent={StoreLinkComponent}
+                            CollectionLinkComponent={CollectionLinkComponent}
+                        />
+                    </div>
+                )}
+                {questionBody && (
+                    <SummaryUserBubble
+                        workstreamId={workstreamId}
+                        artifactRunId={runId}
+                        markdownComponents={markdownComponents}
+                    >
+                        {questionBody}
+                    </SummaryUserBubble>
+                )}
+            </>
+        );
     }
 
     const requestInputDetails = message.details as AskUserMessageDetails | undefined;
@@ -1181,7 +1359,9 @@ function SummaryThoughtTimelineItem({ item, artifactRunId }: { item: SummaryTool
     return (
         <div className="min-w-0 py-1 text-sm leading-6 text-foreground/85">
             <div className={SUMMARY_PROSE_CLASS} style={{ overflowWrap: 'anywhere' }}>
-                <MarkdownRenderer artifactRunId={artifactRunId}>{text}</MarkdownRenderer>
+                <MarkdownRenderer artifactRunId={artifactRunId} components={DEFAULT_AGENT_MARKDOWN_COMPONENTS}>
+                    {text}
+                </MarkdownRenderer>
             </div>
         </div>
     );
@@ -1215,7 +1395,9 @@ function SummaryStreamingMessage({
     return (
         <div className="mx-auto w-full max-w-3xl px-1" data-workstream-id={workstreamId}>
             <div className={SUMMARY_PROSE_CLASS} style={{ overflowWrap: 'anywhere' }}>
-                <MarkdownRenderer artifactRunId={artifactRunId}>{text}</MarkdownRenderer>
+                <MarkdownRenderer artifactRunId={artifactRunId} components={DEFAULT_AGENT_MARKDOWN_COMPONENTS}>
+                    {text}
+                </MarkdownRenderer>
             </div>
         </div>
     );
@@ -2011,7 +2193,7 @@ function AllMessagesMixedComponent({
                     border-collapse: collapse;
                     border-spacing: 0;
                     font-size: 0.8125rem;
-                    table-layout: auto;
+                    table-layout: fixed;
                     background: transparent;
                 }
                 .agent-markdown thead {
@@ -2025,8 +2207,9 @@ function AllMessagesMixedComponent({
                     padding: 0.55rem 0.75rem;
                     text-align: left;
                     vertical-align: top;
-                    overflow-wrap: break-word;
+                    overflow-wrap: anywhere;
                     word-break: normal;
+                    white-space: normal;
                 }
                 .agent-markdown th {
                     color: var(--muted);
@@ -2041,9 +2224,12 @@ function AllMessagesMixedComponent({
                 }
                 .agent-markdown th:first-child,
                 .agent-markdown td:first-child {
-                    min-width: 8.5rem;
-                    width: 1%;
-                    white-space: nowrap;
+                    min-width: 0;
+                    width: auto;
+                    white-space: normal;
+                }
+                .agent-markdown .agent-markdown-table-compact-col {
+                    width: clamp(4rem, 9%, 7rem);
                 }
                 .agent-markdown tr:last-child td {
                     border-bottom: 0;

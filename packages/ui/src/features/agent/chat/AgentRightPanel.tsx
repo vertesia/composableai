@@ -193,6 +193,40 @@ interface WorkstreamsTabProps {
     runId?: string;
 }
 
+function formatWorkstreamName(workstreamId: string) {
+    const normalized = workstreamId
+        .replace(/^workstream[:_-]?/i, '')
+        .replace(/[:_-]+/g, ' ')
+        .trim();
+
+    if (!normalized) return workstreamId;
+
+    return normalized
+        .split(/\s+/)
+        .map((part) => {
+            const lower = part.toLowerCase();
+            if (lower === 'qa') return 'QA';
+            if (lower === 'ui') return 'UI';
+            if (lower === 'api') return 'API';
+            if (lower === 'url') return 'URL';
+            return lower.charAt(0).toUpperCase() + lower.slice(1);
+        })
+        .join(' ');
+}
+
+function getWorkstreamStatusClass(status: WorkstreamInfo['status']) {
+    switch (status) {
+        case 'running':
+            return 'bg-info';
+        case 'canceling':
+            return 'bg-attention';
+        case 'completed':
+            return 'bg-success';
+        case 'canceled':
+            return 'bg-destructive';
+    }
+}
+
 function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
@@ -223,97 +257,135 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
     if (workstreams.length === 0) {
         return (
             <RightPanelEmptyState icon={<LayoutListIcon className="mb-2 size-8" />}>
-                {t('agent.noActiveWorkstreams')}
+                {t('agent.noActiveParallelTasks')}
             </RightPanelEmptyState>
         );
     }
 
     return (
-        <div className="p-3 space-y-2">
-            {workstreams.map((ws) => {
-                const isActive = ws.status === 'running' || ws.status === 'canceling';
-                const elapsed = Math.round(ws.elapsed_ms / 1000);
-                const remaining = Math.round(ws.remaining_ms / 1000);
-                const progress =
-                    ws.deadline_ms > 0 ? Math.min(100, Math.round((ws.elapsed_ms / ws.deadline_ms) * 100)) : 0;
-                const browserUse = browserUseByWorkstream.get(ws.workstream_id);
+        <div className="h-full min-h-0 overflow-y-auto px-2 py-2">
+            <div className="px-1 pb-2 text-xs text-muted">{t('agent.parallelWorkDescription')}</div>
+            <div className="divide-y divide-border/60">
+                {workstreams.map((ws) => {
+                    const isActive = ws.status === 'running' || ws.status === 'canceling';
+                    const elapsed = Math.round(ws.elapsed_ms / 1000);
+                    const remaining = Math.max(0, Math.round(ws.remaining_ms / 1000));
+                    const progress =
+                        ws.deadline_ms > 0 ? Math.min(100, Math.round((ws.elapsed_ms / ws.deadline_ms) * 100)) : 0;
+                    const browserUse = browserUseByWorkstream.get(ws.workstream_id);
+                    const hasDeadline = ws.deadline_ms > 0;
+                    const meta = [
+                        ws.phase ? formatWorkstreamName(ws.phase) : undefined,
+                        elapsed > 0 ? t('agent.elapsed', { seconds: elapsed }) : undefined,
+                        hasDeadline && remaining > 0 ? t('agent.remaining', { seconds: remaining }) : undefined,
+                    ].filter(Boolean);
 
-                const statusBadge =
-                    ws.status === 'running' ? (
-                        <Badge variant="info">{ws.phase || 'running'}</Badge>
-                    ) : ws.status === 'canceling' ? (
-                        <Badge variant="attention">canceling</Badge>
-                    ) : ws.status === 'completed' ? (
-                        <Badge variant="done">{t('agent.completed')}</Badge>
-                    ) : (
-                        <Badge variant="destructive">{t('agent.canceled')}</Badge>
-                    );
+                    const statusBadge =
+                        ws.status === 'running' ? (
+                            <Badge variant="info">{t('agent.running')}</Badge>
+                        ) : ws.status === 'canceling' ? (
+                            <Badge variant="attention">{t('agent.canceling')}</Badge>
+                        ) : ws.status === 'completed' ? (
+                            <Badge variant="done">{t('agent.completed')}</Badge>
+                        ) : (
+                            <Badge variant="destructive">{t('agent.canceled')}</Badge>
+                        );
 
-                return (
-                    <RightPanelErrorBoundary
-                        key={ws.launch_id}
-                        title={t('agent.workstreamRenderError')}
-                        description={renderErrorDescription}
-                        compact
-                    >
-                        <div className="p-3 border rounded-md space-y-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium truncate">{ws.workstream_id}</span>
-                                {statusBadge}
-                            </div>
-                            {/* Progress bar — only for active workstreams */}
-                            {isActive && (
-                                <>
-                                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-info rounded-full transition-all duration-500"
-                                            style={{ width: `${progress}%` }}
-                                        />
+                    return (
+                        <RightPanelErrorBoundary
+                            key={ws.launch_id}
+                            title={t('agent.workstreamRenderError')}
+                            description={renderErrorDescription}
+                            compact
+                        >
+                            <div className="py-3">
+                                <div className="flex items-start gap-2">
+                                    <span
+                                        className={cn(
+                                            'mt-2 size-2 shrink-0 rounded-full',
+                                            getWorkstreamStatusClass(ws.status),
+                                        )}
+                                        aria-hidden="true"
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex min-w-0 items-center justify-between gap-2">
+                                            <span
+                                                className="min-w-0 truncate text-sm font-medium text-foreground"
+                                                title={ws.workstream_id}
+                                            >
+                                                {formatWorkstreamName(ws.workstream_id)}
+                                            </span>
+                                            {statusBadge}
+                                        </div>
+
+                                        {meta.length > 0 && (
+                                            <div className="mt-0.5 truncate text-xs text-muted">{meta.join(' · ')}</div>
+                                        )}
+
+                                        {isActive && hasDeadline && (
+                                            <div
+                                                className="mt-2 h-1 rounded-full bg-muted"
+                                                role="progressbar"
+                                                aria-valuemin={0}
+                                                aria-valuemax={100}
+                                                aria-valuenow={progress}
+                                                aria-valuetext={t('agent.workstreamProgress', {
+                                                    percent: progress,
+                                                })}
+                                            >
+                                                <div
+                                                    className="h-full rounded-full bg-info transition-all duration-500"
+                                                    style={{ width: `${progress}%` }}
+                                                />
+                                            </div>
+                                        )}
+
+                                        {browserUse && (
+                                            <RightPanelErrorBoundary
+                                                title={t('agent.browserWidgetRenderError')}
+                                                description={renderErrorDescription}
+                                                compact
+                                            >
+                                                <BrowserUseWidget
+                                                    state={browserUse}
+                                                    runId={runId}
+                                                    compact
+                                                    className="mt-2"
+                                                />
+                                            </RightPanelErrorBoundary>
+                                        )}
+
+                                        {ws.child_workflow_run_id && (
+                                            <div className="mt-2 flex flex-wrap gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 px-2 text-xs text-muted hover:text-foreground"
+                                                    // biome-ignore lint/style/noNonNullAssertion: TS can't prove narrowing here.
+                                                    onClick={() => copyRunId(ws.child_workflow_run_id!)}
+                                                >
+                                                    <ClipboardCopyIcon className="size-3 me-1" />
+                                                    {t('agent.copyRunId')}
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 px-2 text-xs text-muted hover:text-foreground"
+                                                    // biome-ignore lint/style/noNonNullAssertion: TS can't prove narrowing here.
+                                                    onClick={() => downloadConversation(ws.child_workflow_run_id!)}
+                                                >
+                                                    <DownloadCloudIcon className="size-3 me-1" />
+                                                    {t('agent.download')}
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="flex justify-between text-xs text-muted">
-                                        <span>{t('agent.elapsed', { seconds: elapsed })}</span>
-                                        <span>{t('agent.remaining', { seconds: remaining })}</span>
-                                    </div>
-                                </>
-                            )}
-                            {browserUse && (
-                                <RightPanelErrorBoundary
-                                    title={t('agent.browserWidgetRenderError')}
-                                    description={renderErrorDescription}
-                                    compact
-                                >
-                                    <BrowserUseWidget state={browserUse} runId={runId} />
-                                </RightPanelErrorBoundary>
-                            )}
-                            {/* Actions */}
-                            {ws.child_workflow_run_id && (
-                                <div className="flex gap-1 pt-1 border-t border-muted">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-xs h-7 px-2 text-muted hover:text-foreground"
-                                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                                        onClick={() => copyRunId(ws.child_workflow_run_id!)}
-                                    >
-                                        <ClipboardCopyIcon className="size-3 me-1" />
-                                        {t('agent.copyRunId')}
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-xs h-7 px-2 text-muted hover:text-foreground"
-                                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                                        onClick={() => downloadConversation(ws.child_workflow_run_id!)}
-                                    >
-                                        <DownloadCloudIcon className="size-3 me-1" />
-                                        {t('agent.download')}
-                                    </Button>
                                 </div>
-                            )}
-                        </div>
-                    </RightPanelErrorBoundary>
-                );
-            })}
+                            </div>
+                        </RightPanelErrorBoundary>
+                    );
+                })}
+            </div>
         </div>
     );
 }
@@ -347,16 +419,16 @@ function RightPanelTabSelect({
                     aria-haspopup="menu"
                     aria-expanded={open}
                     className={cn(
-                        'inline-flex min-w-32 max-w-60 flex-row items-center justify-between gap-2 rounded-md border border-border bg-transparent px-2.5 py-2 text-start text-inherit sm:max-w-72',
+                        'inline-flex min-w-40 max-w-56 flex-row items-center justify-between gap-2 rounded-md border border-border bg-transparent px-2.5 py-2 text-start text-inherit',
                         'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                         'hover:bg-muted',
                     )}
                 >
-                    <span className="min-w-0 truncate text-sm">{currentTab?.label}</span>
+                    <span className="min-w-0 flex-1 overflow-hidden text-sm">{currentTab?.label}</span>
                     <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" aria-hidden="true" />
                 </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="z-[1000000] min-w-[var(--radix-dropdown-menu-trigger-width)]">
+            <DropdownMenuContent align="start" className="z-[1000000] min-w-56 max-w-[min(24rem,calc(100vw-1rem))]">
                 {tabs.map((tab) => {
                     const isSelected = tab.name === activeTab;
 
@@ -369,7 +441,7 @@ function RightPanelTabSelect({
                                 setOpen(false);
                             }}
                         >
-                            <span className="min-w-0 truncate">{tab.label}</span>
+                            <span className="min-w-0 flex-1 overflow-hidden">{tab.label}</span>
                             {isSelected && <CheckIcon className="size-4 shrink-0" aria-hidden="true" />}
                         </DropdownMenuItem>
                     );
@@ -431,7 +503,6 @@ function AgentRightPanelComponent({
     plans = [],
     activePlanIndex = 0,
     onChangePlan,
-    showPlan,
 
     // Workstreams
     activeWorkstreams = [],
@@ -478,7 +549,6 @@ function AgentRightPanelComponent({
     const hasWorkstreams = !hideWorkstreams && activeWorkstreams.length > 0;
     const hasDocuments = openDocuments.length > 0;
     const hasUploads = processingFiles ? processingFiles.size > 0 : false;
-    const hasPlan = showPlan && plan;
     const withTabBoundary = useCallback(
         (name: string, content: React.ReactNode) => (
             <RightPanelErrorBoundary
@@ -504,13 +574,7 @@ function AgentRightPanelComponent({
         ...(conversationContent ? [conversationTab] : []),
         {
             name: 'plan',
-            label: hasPlan ? (
-                <span className="flex items-center gap-1">
-                    {t('agent.plan')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" />
-                </span>
-            ) : (
-                t('agent.plan')
-            ),
+            label: t('agent.plan'),
             content: withTabBoundary(
                 t('agent.plan'),
                 plan ? (
@@ -534,17 +598,17 @@ function AgentRightPanelComponent({
         {
             name: 'workstreams',
             label: hasWorkstreams ? (
-                <span className="flex items-center gap-1">
-                    {t('agent.workstreams')}{' '}
-                    <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">
+                <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap">
+                    {t('agent.parallelTasks')}{' '}
+                    <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-info px-1.5 py-0.5 text-[10px] text-info">
                         {activeWorkstreams.length}
                     </span>
                 </span>
             ) : (
-                t('agent.workstreams')
+                t('agent.parallelTasks')
             ),
             content: withTabBoundary(
-                t('agent.workstreams'),
+                t('agent.parallelTasks'),
                 <WorkstreamsTab workstreams={activeWorkstreams} messages={messages} runId={runId} />,
             ),
             is_allowed: !hideWorkstreams,
@@ -552,9 +616,9 @@ function AgentRightPanelComponent({
         {
             name: 'documents',
             label: hasDocuments ? (
-                <span className="flex items-center gap-1">
+                <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap">
                     {t('agent.documents')}{' '}
-                    <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">
+                    <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-info px-1.5 py-0.5 text-[10px] text-info">
                         {openDocuments.length}
                     </span>
                 </span>
@@ -585,7 +649,7 @@ function AgentRightPanelComponent({
         {
             name: 'uploads',
             label: hasUploads ? (
-                <span className="flex items-center gap-1">
+                <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap">
                     {t('agent.uploads')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" />
                 </span>
             ) : (

@@ -1195,6 +1195,14 @@ export interface ConversationFileRef {
 }
 
 /**
+ * Reference to a file removed from the conversation attachment set.
+ */
+export interface ConversationFileRemovedRef {
+    /** Client-generated unique ID */
+    id: string;
+}
+
+/**
  * Get the Redis pub/sub channel name for workflow messages.
  * Used by both publishers (workflow activities, studio-server) and subscribers (zeno-server, clients).
  * @param workflowRunId - The Temporal workflow run ID (NOT the interaction execution run ID)

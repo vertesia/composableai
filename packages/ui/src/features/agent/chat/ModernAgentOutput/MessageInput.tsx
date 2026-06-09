@@ -1,10 +1,22 @@
 import { type ContentObjectItem, type ConversationFile, FileProcessingStatus } from '@vertesia/common';
-import { Button, cn, insertNewlineAtCursor, Modal, ModalBody, ModalTitle, Spinner, Textarea } from '@vertesia/ui/core';
+import {
+    Button,
+    cn,
+    Dropdown,
+    insertNewlineAtCursor,
+    MenuItem,
+    Modal,
+    ModalBody,
+    ModalTitle,
+    Spinner,
+    Textarea,
+} from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { Activity, ArrowUpIcon, FileTextIcon, PaperclipIcon, SquareIcon, UploadIcon, XIcon } from 'lucide-react';
+import { Activity, ArrowUpIcon, FileTextIcon, PaperclipIcon, PlusIcon, SquareIcon, UploadIcon } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SelectDocument } from '../../../store/objects/components/SelectDocument';
+import { type AttachmentPreviewItem, AttachmentPreviewList } from './AttachmentPreview';
 
 /** Represents an uploaded file attachment */
 export interface UploadedFile {
@@ -42,12 +54,16 @@ interface MessageInputProps {
     uploadedFiles?: UploadedFile[];
     /** Called when user removes an uploaded file */
     onRemoveFile?: (fileId: string) => void;
+    /** Called when user removes a workflow-processed file */
+    onRemoveProcessingFile?: (fileId: string) => void;
     /** Accepted file types (e.g., ".pdf,.doc,.png") */
     acceptedFileTypes?: string;
     /** Max number of files allowed */
     maxFiles?: number;
     /** Files being processed by the workflow */
     processingFiles?: Map<string, ConversationFile>;
+    /** Run ID used to resolve artifact thumbnails for ready uploaded images. */
+    artifactRunId?: string;
     /** Whether any files are still uploading or processing */
     hasProcessingFiles?: boolean;
 
@@ -67,6 +83,8 @@ interface MessageInputProps {
     hideObjectLinking?: boolean;
     // Hide file upload (for apps that don't use it)
     hideFileUpload?: boolean;
+    /** Disable the local input drop overlay when a parent view owns drag/drop handling */
+    disableDropZone?: boolean;
 
     // Styling props for Tailwind customization
     /** Additional className for the container */
@@ -89,9 +107,11 @@ export default function MessageInput({
     onFilesSelected,
     uploadedFiles = [],
     onRemoveFile,
+    onRemoveProcessingFile,
     acceptedFileTypes,
     maxFiles = 5,
     processingFiles,
+    artifactRunId,
     hasProcessingFiles = false,
     // Document search props
     renderDocumentSearch,
@@ -101,6 +121,7 @@ export default function MessageInput({
     hideObjectLinking = false,
     // File upload
     hideFileUpload = false,
+    disableDropZone = false,
     // Styling props
     className,
     inputClassName,
@@ -113,6 +134,77 @@ export default function MessageInput({
     const [isObjectModalOpen, setIsObjectModalOpen] = useState(false);
     const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
+    const canUploadFiles = Boolean(onFilesSelected && !hideFileUpload);
+    const canDropFiles = canUploadFiles && !disableDropZone;
+    const hasAttachmentActions = !hideObjectLinking || canUploadFiles || Boolean(renderDocumentSearch);
+    const uploadLimitReached = uploadedFiles.length >= maxFiles;
+    const handleRemoveProcessingFile = onRemoveProcessingFile ?? onRemoveFile;
+    const attachmentItems = useMemo<AttachmentPreviewItem[]>(() => {
+        const items: AttachmentPreviewItem[] = [];
+        if (!hideFileUpload && processingFiles) {
+            for (const file of processingFiles.values()) {
+                const previewUrl = (file as ConversationFile & { preview_url?: string }).preview_url;
+                const status =
+                    file.status === FileProcessingStatus.UPLOADING
+                        ? t('agent.uploading')
+                        : file.status === FileProcessingStatus.PROCESSING
+                          ? t('agent.processing')
+                          : file.status === FileProcessingStatus.ERROR
+                            ? t('agent.error')
+                            : file.status === FileProcessingStatus.READY
+                              ? t('agent.ready')
+                              : file.status;
+                items.push({
+                    id: file.id,
+                    name: file.name,
+                    contentType: file.content_type,
+                    artifactPath: file.artifact_path,
+                    previewUrl,
+                    removable: Boolean(handleRemoveProcessingFile),
+                    statusLabel: status,
+                    statusTone:
+                        file.status === FileProcessingStatus.ERROR
+                            ? 'destructive'
+                            : file.status === FileProcessingStatus.READY
+                              ? 'success'
+                              : 'attention',
+                });
+            }
+        }
+        if (!hideFileUpload) {
+            for (const file of uploadedFiles) {
+                items.push({
+                    id: file.id,
+                    name: file.name,
+                    contentType: file.type,
+                    artifactPath: file.artifact_path,
+                    previewUrl: file.previewUrl,
+                    removable: Boolean(onRemoveFile),
+                    statusLabel: t('agent.ready'),
+                    statusTone: 'success',
+                });
+            }
+        }
+        for (const doc of selectedDocuments) {
+            items.push({
+                id: doc.id,
+                name: doc.name,
+                href: `/store/objects/${doc.id}`,
+                removable: Boolean(onRemoveDocument),
+                statusTone: 'info',
+            });
+        }
+        return items;
+    }, [
+        handleRemoveProcessingFile,
+        hideFileUpload,
+        onRemoveDocument,
+        onRemoveFile,
+        processingFiles,
+        selectedDocuments,
+        t,
+        uploadedFiles,
+    ]);
 
     useEffect(() => {
         if (!disabled && isCompleted) ref.current?.focus();
@@ -121,7 +213,7 @@ export default function MessageInput({
     // File handling
     const handleFiles = useCallback(
         (files: FileList | File[]) => {
-            if (!onFilesSelected) return;
+            if (!canUploadFiles || !onFilesSelected) return;
 
             const fileArray = Array.from(files);
             const remainingSlots = maxFiles - uploadedFiles.length;
@@ -131,7 +223,7 @@ export default function MessageInput({
                 onFilesSelected(filesToAdd);
             }
         },
-        [onFilesSelected, maxFiles, uploadedFiles.length],
+        [canUploadFiles, onFilesSelected, maxFiles, uploadedFiles.length],
     );
 
     // Drag and drop handlers
@@ -139,11 +231,11 @@ export default function MessageInput({
         (e: React.DragEvent) => {
             e.preventDefault();
             e.stopPropagation();
-            if (onFilesSelected) {
+            if (canDropFiles) {
                 setIsDragOver(true);
             }
         },
-        [onFilesSelected],
+        [canDropFiles],
     );
 
     const handleDragLeave = useCallback((e: React.DragEvent) => {
@@ -158,17 +250,17 @@ export default function MessageInput({
             e.stopPropagation();
             setIsDragOver(false);
 
-            if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+            if (canDropFiles && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
                 handleFiles(e.dataTransfer.files);
             }
         },
-        [handleFiles],
+        [canDropFiles, handleFiles],
     );
 
     // Paste handler for files
     const handlePaste = useCallback(
         (e: React.ClipboardEvent) => {
-            if (!onFilesSelected) return;
+            if (!canUploadFiles) return;
 
             const items = e.clipboardData?.items;
             if (!items) return;
@@ -197,19 +289,19 @@ export default function MessageInput({
                 handleFiles(files);
             }
         },
-        [onFilesSelected, handleFiles],
+        [canUploadFiles, handleFiles],
     );
 
     // File input change handler
     const handleFileInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
-            if (e.target.files && e.target.files.length > 0) {
+            if (canUploadFiles && e.target.files && e.target.files.length > 0) {
                 handleFiles(e.target.files);
                 // Reset input so same file can be selected again
                 e.target.value = '';
             }
         },
-        [handleFiles],
+        [canUploadFiles, handleFiles],
     );
 
     const openFileDialog = useCallback(() => {
@@ -327,15 +419,15 @@ export default function MessageInput({
         <div
             className={cn(
                 'px-3 py-3 flex-shrink-0 transition-all fixed lg:sticky bottom-0 start-0 end-0 lg:start-auto lg:end-auto w-full bg-background/95 backdrop-blur z-10',
-                isDragOver && 'bg-info/10 border-info',
+                isDragOver && canDropFiles && 'bg-info/10 border-info',
                 className,
             )}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
+            onDragOver={canDropFiles ? handleDragOver : undefined}
+            onDragLeave={canDropFiles ? handleDragLeave : undefined}
+            onDrop={canDropFiles ? handleDrop : undefined}
         >
             {/* Drag overlay */}
-            {isDragOver && (
+            {isDragOver && canDropFiles && (
                 <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 rounded-lg z-10 pointer-events-none">
                     <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2">
                         <UploadIcon className="size-5" />
@@ -345,7 +437,7 @@ export default function MessageInput({
             )}
 
             {/* Hidden file input */}
-            {onFilesSelected && (
+            {canUploadFiles && (
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -358,85 +450,22 @@ export default function MessageInput({
 
             {/* Input row */}
             <div className="mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-border/70 bg-mixer-muted/15 p-2.5 shadow-lg shadow-black/5">
-                {((!hideFileUpload && (uploadedFiles.length > 0 || (processingFiles && processingFiles.size > 0))) ||
-                    selectedDocuments.length > 0) && (
-                    <div className="flex flex-wrap gap-1.5">
-                        {!hideFileUpload &&
-                            processingFiles &&
-                            Array.from(processingFiles.values()).map((file) => (
-                                <div
-                                    key={file.id}
-                                    className={cn(
-                                        'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs',
-                                        file.status === FileProcessingStatus.ERROR
-                                            ? 'bg-destructive/10 text-destructive'
-                                            : file.status === FileProcessingStatus.READY
-                                              ? 'bg-success/10 text-success'
-                                              : 'bg-attention/10 text-attention',
-                                    )}
-                                >
-                                    <FileTextIcon
-                                        className={cn(
-                                            'size-3.5',
-                                            (file.status === FileProcessingStatus.UPLOADING ||
-                                                file.status === FileProcessingStatus.PROCESSING) &&
-                                                'animate-pulse',
-                                        )}
-                                    />
-                                    <span className="max-w-[140px] truncate">{file.name}</span>
-                                    <span className="opacity-70">
-                                        {file.status === FileProcessingStatus.UPLOADING
-                                            ? t('agent.uploading')
-                                            : file.status === FileProcessingStatus.PROCESSING
-                                              ? t('agent.processing')
-                                              : file.status === FileProcessingStatus.ERROR
-                                                ? t('agent.error')
-                                                : file.status === FileProcessingStatus.READY
-                                                  ? t('agent.ready')
-                                                  : file.status}
-                                    </span>
-                                </div>
-                            ))}
-                        {!hideFileUpload &&
-                            uploadedFiles.map((file) => (
-                                <div
-                                    key={file.id}
-                                    className="flex items-center gap-1.5 rounded-md bg-success/10 px-2 py-1 text-xs text-success"
-                                >
-                                    <FileTextIcon className="size-3.5" />
-                                    <span className="max-w-[140px] truncate">{file.name}</span>
-                                    {onRemoveFile && (
-                                        <Button
-                                            variant="unstyled"
-                                            aria-label={`Remove ${file.name}`}
-                                            onClick={() => onRemoveFile(file.id)}
-                                            className="ms-1 rounded p-0.5 hover:bg-success/20"
-                                        >
-                                            <XIcon className="size-3" />
-                                        </Button>
-                                    )}
-                                </div>
-                            ))}
-                        {selectedDocuments.map((doc) => (
-                            <div
-                                key={doc.id}
-                                className="flex items-center gap-1.5 rounded-md bg-info/10 px-2 py-1 text-xs text-info"
-                            >
-                                <FileTextIcon className="size-3.5" />
-                                <span className="max-w-[140px] truncate">{doc.name}</span>
-                                {onRemoveDocument && (
-                                    <Button
-                                        variant="unstyled"
-                                        aria-label={`Remove ${doc.name}`}
-                                        onClick={() => onRemoveDocument(doc.id)}
-                                        className="ms-1 rounded p-0.5 hover:bg-info/20"
-                                    >
-                                        <XIcon className="size-3" />
-                                    </Button>
-                                )}
-                            </div>
-                        ))}
-                    </div>
+                {attachmentItems.length > 0 && (
+                    <AttachmentPreviewList
+                        items={attachmentItems}
+                        artifactRunId={artifactRunId}
+                        variant="composer"
+                        onRemove={(id) => {
+                            if (processingFiles?.has(id)) {
+                                handleRemoveProcessingFile?.(id);
+                            } else if (uploadedFiles.some((file) => file.id === id)) {
+                                onRemoveFile?.(id);
+                            } else {
+                                onRemoveDocument?.(id);
+                            }
+                        }}
+                        className="gap-1.5"
+                    />
                 )}
                 <div className="flex min-w-0 flex-1">
                     <Textarea
@@ -450,7 +479,7 @@ export default function MessageInput({
                         placeholder={
                             isStreaming
                                 ? `${t('agent.agentWorking')} ${t('agent.enterToSend')}`
-                                : onFilesSelected
+                                : canUploadFiles
                                   ? `${t('agent.askAnything')} ${t('agent.enterToSend')}`
                                   : `${resolvedPlaceholder} ${t('agent.enterToSend')}`
                         }
@@ -464,46 +493,44 @@ export default function MessageInput({
                 </div>
                 <div className="flex items-center justify-between gap-3">
                     <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                        {!hideObjectLinking && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8 rounded-full text-muted"
-                                disabled={!isCompleted}
-                                onClick={() => setIsObjectModalOpen(true)}
-                                aria-label={t('agent.linkObject')}
+                        {hasAttachmentActions && (
+                            <Dropdown
+                                align="left"
+                                trigger={
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-8 rounded-full text-muted hover:bg-muted"
+                                        aria-label={t('agent.addAttachment')}
+                                    >
+                                        <PlusIcon className="size-4" />
+                                    </Button>
+                                }
                             >
-                                <PaperclipIcon className="size-4" />
-                            </Button>
-                        )}
-                        {onFilesSelected && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={openFileDialog}
-                                disabled={disabled || uploadedFiles.length >= maxFiles}
-                                className="h-8 rounded-full px-2 text-xs text-muted"
-                            >
-                                <UploadIcon className="size-3.5 me-1.5" />
-                                {t('agent.upload')}
-                            </Button>
-                        )}
-                        {renderDocumentSearch && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setIsDocSearchOpen(true)}
-                                disabled={disabled}
-                                className="h-8 rounded-full px-2 text-xs text-muted"
-                            >
-                                <FileTextIcon className="size-3.5 me-1.5" />
-                                {t('agent.searchDocuments')}
-                                {selectedDocuments.length > 0 && (
-                                    <span className="ms-1.5 inline-flex items-center justify-center rounded-full bg-info/20 px-1.5 py-0.5 text-[10px] font-medium text-info">
-                                        {selectedDocuments.length}
-                                    </span>
+                                {!hideObjectLinking && (
+                                    <MenuItem onClick={() => setIsObjectModalOpen(true)} isDisabled={!isCompleted}>
+                                        <PaperclipIcon className="size-4" />
+                                        {t('agent.linkObject')}
+                                    </MenuItem>
                                 )}
-                            </Button>
+                                {canUploadFiles && (
+                                    <MenuItem onClick={openFileDialog} isDisabled={uploadLimitReached}>
+                                        <UploadIcon className="size-4" />
+                                        {t('agent.upload')}
+                                    </MenuItem>
+                                )}
+                                {renderDocumentSearch && (
+                                    <MenuItem onClick={() => setIsDocSearchOpen(true)}>
+                                        <FileTextIcon className="size-4" />
+                                        <span>{t('agent.searchDocuments')}</span>
+                                        {selectedDocuments.length > 0 && (
+                                            <span className="ms-auto inline-flex items-center justify-center rounded-full bg-info/20 px-1.5 py-0.5 text-[10px] font-medium text-info">
+                                                {selectedDocuments.length}
+                                            </span>
+                                        )}
+                                    </MenuItem>
+                                )}
+                            </Dropdown>
                         )}
                         {activeTaskCount > 0 && (
                             <span className="inline-flex h-8 items-center gap-1 rounded-full px-2 text-xs text-muted">

@@ -38,10 +38,10 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath, forceExpand
 
     if (node.isDirectory) {
         return (
-            <div>
+            <div className="min-w-0">
                 <Button
                     variant="unstyled"
-                    className="flex w-auto max-w-full items-center gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted/30"
+                    className="flex w-full max-w-full items-center justify-start gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted/30"
                     style={{ paddingInlineStart: `${depth * 14 + 4}px` }}
                     onClick={() => setExpanded((prev) => !prev)}
                     aria-expanded={isExpanded}
@@ -79,22 +79,24 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath, forceExpand
     const isDownloading = downloadingPath === node.path;
 
     return (
-        <Button
-            variant="unstyled"
-            className="flex w-auto max-w-full items-center gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted/30"
-            style={{ paddingInlineStart: `${depth * 14 + 4}px` }}
-            onClick={() => onDownload(node.path)}
-            disabled={isDownloading}
-            title={node.path}
-        >
-            {isDownloading ? (
-                <Loader2Icon className="size-3.5 shrink-0 animate-spin text-info" />
-            ) : (
-                <span className="size-3.5 shrink-0" />
-            )}
-            <FileIcon className="size-4 shrink-0 text-muted" />
-            <span className="min-w-0 truncate">{node.name}</span>
-        </Button>
+        <div className="min-w-0">
+            <Button
+                variant="unstyled"
+                className="flex w-full max-w-full items-center justify-start gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted/30"
+                style={{ paddingInlineStart: `${depth * 14 + 4}px` }}
+                onClick={() => onDownload(node.path)}
+                disabled={isDownloading}
+                title={node.path}
+            >
+                {isDownloading ? (
+                    <Loader2Icon className="size-3.5 shrink-0 animate-spin text-info" />
+                ) : (
+                    <span className="size-3.5 shrink-0" />
+                )}
+                <FileIcon className="size-4 shrink-0 text-muted" />
+                <span className="min-w-0 truncate">{node.name}</span>
+            </Button>
+        </div>
     );
 }
 
@@ -264,7 +266,9 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
                     <SearchIcon className="pointer-events-none absolute start-2 top-1/2 size-3.5 -translate-y-1/2 text-muted" />
                     <Input
                         id={filterInputId}
-                        type="search"
+                        type="text"
+                        role="searchbox"
+                        autoComplete="off"
                         placeholder={t('form.filter')}
                         value={filterValue}
                         onChange={setFilterValue}
@@ -276,7 +280,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
             {/* Tree */}
             <div className="flex-1 overflow-y-auto px-3 pb-2">
                 {filteredTree.length > 0 ? (
-                    <div className="inline-block min-w-full align-top">
+                    <div className="min-w-0">
                         {filteredTree.map((node) => (
                             <TreeNode
                                 key={`${runId}:${node.path}`}

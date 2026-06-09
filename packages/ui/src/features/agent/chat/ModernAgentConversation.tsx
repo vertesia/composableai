@@ -1030,13 +1030,20 @@ function ModernAgentConversationInner({
         updateDocumentTitle,
     } = useDocumentPanel(messages);
 
-    const { processingFiles, hasProcessingFiles, handleFileUpload } = useFileProcessing(
+    const { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile } = useFileProcessing(
         client,
         agentRunId,
         serverFileUpdates,
         toast,
     );
     const canUploadFiles = interactive && !hideFileUpload;
+
+    const handleRemoveProcessingFile = useCallback(
+        (fileId: string) => {
+            void removeProcessingFile(fileId);
+        },
+        [removeProcessingFile],
+    );
 
     // ────────────────────────────────────────────
     // Local state (UI-only concerns)
@@ -1401,15 +1408,6 @@ function ModernAgentConversationInner({
             window.clearInterval(pollHandle);
         };
     }, [client.agents, agentRunId, effectiveIsCompleted, activeWorkstreams.length]);
-
-    // Auto-switch to Workstreams tab the first time workstreams become active
-    const hasAutoSwitchedToWorkstreamsRef = useRef(false);
-    useEffect(() => {
-        if (panelWorkstreams.length > 0 && !hasAutoSwitchedToWorkstreamsRef.current) {
-            hasAutoSwitchedToWorkstreamsRef.current = true;
-            setRightPanelTab('workstreams');
-        }
-    }, [panelWorkstreams.length]);
 
     // Notify parent when input availability is determined
     useEffect(() => {
@@ -1905,15 +1903,18 @@ function ModernAgentConversationInner({
                                     onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
                                     uploadedFiles={uploadedFiles}
                                     onRemoveFile={onRemoveFile}
+                                    onRemoveProcessingFile={handleRemoveProcessingFile}
                                     acceptedFileTypes={acceptedFileTypes}
                                     maxFiles={maxFiles}
                                     processingFiles={processingFiles}
+                                    artifactRunId={agentRunId}
                                     hasProcessingFiles={hasProcessingFiles}
                                     renderDocumentSearch={renderDocumentSearch}
                                     selectedDocuments={selectedDocuments}
                                     onRemoveDocument={onRemoveDocument}
                                     hideObjectLinking={hideObjectLinking}
                                     hideFileUpload={!canUploadFiles}
+                                    disableDropZone={canUploadFiles}
                                     className={inputContainerClassName}
                                     inputClassName={inputClassName}
                                 />

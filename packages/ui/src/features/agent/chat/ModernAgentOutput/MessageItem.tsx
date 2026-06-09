@@ -32,6 +32,7 @@ import { AskUserWidget } from '../AskUserWidget';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
 import { ThinkingMessages } from '../WaitingMessages';
+import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import { processContentForMarkdown } from './processContentForMarkdown';
 import { getWorkstreamId } from './utils';
 
@@ -293,15 +294,23 @@ function MessageItemComponent({
         return content;
     }, [message.message]);
 
+    const parsedUserAttachments = useMemo(
+        () => (message.type === AgentMessageType.QUESTION ? parseUserMessageAttachments(messageContent) : null),
+        [messageContent, message.type],
+    );
+
+    const visibleMessageContent = parsedUserAttachments?.body ?? messageContent;
+    const messageAttachments = parsedUserAttachments?.attachments ?? [];
+
     // PERFORMANCE: Memoize processed content - expensive regex operations only run when messageContent changes
     const processedContent = useMemo(() => {
-        if (!messageContent) return '';
+        if (!visibleMessageContent) return '';
         return processContentForMarkdown(
-            messageContent,
+            visibleMessageContent,
             message.type,
             typeof message.message === 'string' ? message.message : undefined,
         );
-    }, [messageContent, message.type, message.message]);
+    }, [visibleMessageContent, message.type, message.message]);
 
     // Copy message content to clipboard
     const copyToClipboard = () => {
@@ -642,14 +651,25 @@ function MessageItemComponent({
                                   />
                               );
                           })()
-                        : messageContent && (
+                        : visibleMessageContent && (
                               <div
                                   className="message-content break-words w-full"
                                   style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
                               >
-                                  {renderContent(processedContent || messageContent)}
+                                  {renderContent(processedContent || visibleMessageContent)}
                               </div>
                           )}
+
+                    {messageAttachments.length > 0 && (
+                        <AttachmentPreviewList
+                            items={messageAttachments}
+                            artifactRunId={runId}
+                            variant="message"
+                            className={cn(visibleMessageContent && 'mt-3')}
+                            StoreLinkComponent={StoreLinkComponent}
+                            CollectionLinkComponent={CollectionLinkComponent}
+                        />
+                    )}
 
                     {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
                     {artifactLinks.length > 0 && (

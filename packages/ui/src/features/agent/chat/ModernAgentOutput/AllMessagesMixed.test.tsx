@@ -162,6 +162,63 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.queryByText('Running')).toBeNull();
     });
 
+    it('renders question attachment markdown as a store object link in summary view', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: [
+                        'what is in this image?',
+                        '',
+                        'Attachments:',
+                        '[tokyo-tower_1 (1).jpg](/store/objects/6a17fc9544c9629943624589)',
+                    ].join('\n'),
+                }),
+            ],
+            true,
+            new Map(),
+            {
+                StoreLinkComponent: ({ href, documentId, children }) => (
+                    <a href={href} data-document-id={documentId}>
+                        {children}
+                    </a>
+                ),
+            },
+        );
+
+        const link = screen.getByRole('link', { name: 'tokyo-tower_1 (1).jpg' });
+
+        expect(screen.getByText('what is in this image?')).not.toBeNull();
+        expect(screen.queryByText('Attachments:')).toBeNull();
+        expect(link.getAttribute('href')).toBe('/store/objects/6a17fc9544c9629943624589');
+        expect(link.getAttribute('data-document-id')).toBe('6a17fc9544c9629943624589');
+        expect(screen.queryByText('[tokyo-tower_1 (1).jpg](/store/objects/6a17fc9544c9629943624589)')).toBeNull();
+    });
+
+    it('renders uploaded image artifacts as attachments instead of raw markdown', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: [
+                        'what is in this image?',
+                        '',
+                        '**Uploaded Artifacts:**',
+                        '- [tokyo.png](artifact:files/tokyo.png) (image - use view_image tool)',
+                    ].join('\n'),
+                }),
+            ],
+            true,
+        );
+
+        expect(screen.getByText('what is in this image?')).not.toBeNull();
+        expect(screen.getByText('tokyo.png')).not.toBeNull();
+        expect(screen.queryByText(/Uploaded Artifacts/i)).toBeNull();
+        expect(screen.queryByText(/\[tokyo\.png\]/)).toBeNull();
+    });
+
     it('merges legacy activity progress rows with different tool run ids', () => {
         renderSummary(
             [

@@ -215,13 +215,7 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                     if (message.type === AgentMessageType.SYSTEM) {
                         const details = message.details as FileProcessingDetails | undefined;
                         if (details?.system_type === 'file_processing' && details.files) {
-                            setServerFileUpdates((prev) => {
-                                const newMap = new Map(prev);
-                                for (const file of details.files) {
-                                    newMap.set(file.id, file);
-                                }
-                                return newMap;
-                            });
+                            setServerFileUpdates(new Map(details.files.map((file) => [file.id, file])));
                             return;
                         }
                         // Other SYSTEM messages fall through to normal handling
