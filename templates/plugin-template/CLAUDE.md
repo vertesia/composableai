@@ -108,6 +108,23 @@ explicitly asks for a dark, immersive, or heavily branded treatment.
 - Translate customer brand material into small accents, badges, labels, chart
   colors, and optional theme variables rather than full-page theming.
 
+## App name is one value
+
+The app name is a single value that MUST be identical in **four** places:
+
+1. `package.json` `name`
+2. `import.meta.env.VITE_APP_NAME` (set in `.env.app`)
+3. The plugin manifest name
+4. The `app:<name>:` namespace used for app-owned type ids, interaction ids, and activity ids
+
+Always derive `app:` ids from `import.meta.env.VITE_APP_NAME` — e.g. `` `app:${import.meta.env.VITE_APP_NAME}:bookmark` `` — **never** a hardcoded string literal. A literal silently drifts from the real app name and breaks portability.
+
+> **App-owned types are in-code strings, not ObjectIds.** A content object's `type` is EITHER a stored-type ObjectId OR an in-code-type string `app:<app-name>:<local>`. Portable apps MUST pass the in-code string directly: `client.objects.create({ type: 'app:<name>:<local>', ... })` is correct (the platform resolves it from the app's package, including during preview for the owner). NEVER resolve an app-owned type to a project-local ObjectId (e.g. a `useTypeIds`/`types.list`→id hook) — that is non-portable and an anti-pattern.
+
+## Publish target
+
+An app that registers any backend resources (types, interactions, activities, tools, or skills) in `src/tool-server/config.ts` MUST publish as `service`. `static` is only for pure-UI apps with no `config.ts` registrations — a `static` publish ships no tool server, so app-owned types/interactions/activities won't resolve.
+
 ## Plugin-Specific Conventions
 
 - ESM with `.js` import extensions in tool-server code: `import { x } from "./foo.js"`
@@ -122,7 +139,7 @@ explicitly asks for a dark, immersive, or heavily branded treatment.
 Fast-path reminders — these bite often enough to flag here even though the relevant skill covers them:
 
 - **Import hooks are Rollup-only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` fail silently or error in Vite UI code. They work only in tool-server code.
-- **Must register in `config.ts`**: a collection that isn't wired into `config.ts` (or its per-type index) won't be served.
+- **Must register in `config.ts`**: a collection that isn't wired into `config.ts` (or its per-type index) won't be served — and is silently dropped from the published package at publish.
 - **`Input.onChange` takes the value directly** (`onChange={setValue}`), not a React event — `Textarea` uses standard events.
 
 For full UI patterns (tables, filters, sort, security) see `vertesia-ui`; for tool-server scaffolding conventions see `vertesia-tool-server-resource`.

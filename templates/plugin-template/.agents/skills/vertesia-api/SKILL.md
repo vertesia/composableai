@@ -83,6 +83,20 @@ const { url } = await client.objects.getDownloadUrl(fileUri);
 const analysis = await client.objects.analyze(objectId);
 ```
 
+### Creating an object with an app-owned type
+
+An object's `type` is EITHER a stored-type ObjectId OR an in-code-type **string** `app:<app-name>:<local>`. For an app-owned type, build the in-code string from the app name and pass it directly:
+
+```typescript
+const APP = import.meta.env.VITE_APP_NAME;
+await client.objects.create({
+    type: `app:${APP}:bookmark`,
+    properties: { title, url },
+});
+```
+
+Never resolve the type to an ObjectId (e.g. via `types.list` → id) — the in-code string is portable and the platform resolves it from the app's package (including during preview for the owner).
+
 ## Workflow / Conversation Operations
 
 ```typescript

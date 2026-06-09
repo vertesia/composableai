@@ -49,7 +49,7 @@ Prefer realistic generated content uploaded to Vertesia over hardcoded UI mock d
 When seeding app-defined content:
 
 - Use query/search names such as `clm_contract` for filters and object searches.
-- Use the resolved app type code such as `app:<app-name>:clm:ClmContract` for object creation.
+- For object creation, pass the in-code app type **string** directly — `app:<app-name>:clm:ClmContract` — to `client.objects.create({ type, ... })`. Do NOT resolve it to a project-local ObjectId (no `types.list`/`getTypeByName` → id); the in-code string is what makes the app portable.
 - If UI actions create child records, use the same explicit app type codes there too.
 - If agent runs or workflow `executeInteraction` calls target app interactions, use the full app interaction id such as `app:<app-name>:clm:ExtractContractMetadata`.
 
