@@ -36,9 +36,10 @@
         "@rollup/plugin-node-resolve": "^16.0.3",
         "@rollup/plugin-terser": "^1.0.0",
         "@types/node": "^24.12.4",
+        "@vertesia/tsconfig": "workspace:*",
         "rollup": "^4.60.4",
         "typescript": "^6.0.3",
-        "vitest": "^4.1.7"
+        "vitest": "^4.1.8"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",

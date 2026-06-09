@@ -64,13 +64,13 @@ function validDefinition(): ProcessDefinitionBody {
 
 describe('process definition JSON schema', () => {
     it('accepts current process engine definition features', () => {
-        const validate = new Ajv({ allErrors: true, strict: false }).compile(ProcessDefinitionBodyJsonSchema);
+        const validate = new Ajv.default({ allErrors: true, strict: false }).compile(ProcessDefinitionBodyJsonSchema);
 
         expect(validate(validDefinition())).toBe(true);
     });
 
     it('rejects malformed process definition shape for editor diagnostics', () => {
-        const validate = new Ajv({ allErrors: true, strict: false }).compile(ProcessDefinitionBodyJsonSchema);
+        const validate = new Ajv.default({ allErrors: true, strict: false }).compile(ProcessDefinitionBodyJsonSchema);
         const invalidDefinition = {
             format_version: PROCESS_DEFINITION_FORMAT_VERSION,
             process: 'invoice_review',

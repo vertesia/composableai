@@ -344,19 +344,23 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      * @returns AuthTokenResponse
      */
     async getAuthToken(token?: string): Promise<AuthTokenResponse> {
-        return fetch(`${this.tokenServerUrl}/token/issue`, {
-            method: 'POST',
+        // Route through the base client (absolute URL) so the call benefits from the
+        // retry policy. The default retry methods exclude POST as non-idempotent, but
+        // /token/issue is safe to retry, so we opt POST in explicitly for this request.
+        return this.post<AuthTokenResponse>(`${this.tokenServerUrl}/token/issue`, {
             headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
+                'content-type': 'application/json',
+                authorization: `Bearer ${token}`,
             },
-        })
-            .then((response) => response.json())
-            .then((data) => data as AuthTokenResponse)
-            .catch((error) => {
-                console.error(`Error fetching token from ${this.tokenServerUrl}:`, { error });
-                throw error;
-            });
+            retryPolicy: {
+                attempts: 4,
+                methods: ['POST'],
+                statuses: [429, 500, 502, 503, 504],
+            },
+        }).catch((error) => {
+            console.error(`Error fetching token from ${this.tokenServerUrl}:`, { error });
+            throw error;
+        });
     }
 
     get initialHeaders() {

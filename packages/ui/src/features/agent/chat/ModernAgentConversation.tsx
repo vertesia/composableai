@@ -12,6 +12,7 @@ import { FusionFragmentProvider } from '@vertesia/fusion-ux';
 import {
     Button,
     cn,
+    insertNewlineAtCursor,
     MessageBox,
     Modal,
     ModalBody,
@@ -72,7 +73,9 @@ function printElementToPdf(sourceElement: HTMLElement, title: string): boolean {
 
     const doc = iframeWindow.document;
     doc.open();
-    doc.write(`<!doctype html><html><head><title>${title}</title></head><body></body></html>`);
+    // Write a static skeleton only; the (untrusted) title is assigned via doc.title below,
+    // which sets it as text and avoids constructing HTML from input (CodeQL js/html-constructed-from-input).
+    doc.write('<!doctype html><html><head><title></title></head><body></body></html>');
     doc.close();
     doc.title = title;
 
@@ -505,11 +508,19 @@ function StartWorkflowView({
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key !== 'Enter') return;
+        const hasModifier = e.metaKey || e.ctrlKey || e.altKey || e.shiftKey;
+        if (!hasModifier) {
+            // Plain Enter sends.
             e.preventDefault();
             void startWorkflowWithMessage();
+            return;
         }
-        // Shift+Enter allows newline (default textarea behavior)
+        // Shift+Enter inserts \n natively; Cmd/Ctrl/Alt+Enter do not in most browsers.
+        if (!e.shiftKey) {
+            e.preventDefault();
+            insertNewlineAtCursor(e.currentTarget, setInputValue);
+        }
     };
 
     // Auto-resize textarea as content grows

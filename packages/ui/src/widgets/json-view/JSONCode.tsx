@@ -28,10 +28,15 @@ export function JSONCode({ data, className }: { data: unknown; className?: strin
     );
 }
 
-const JSON_TOKEN_PATTERN =
-    /("(?:\\.|[^"\\])*"(?=\s*:))|("(?:\\.|[^"\\])*")|\b(true|false|null)\b|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g;
+// A single string sub-pattern (not two near-identical alternatives) — duplicating
+// `"(?:\\.|[^"\\])*"` across a `(key)|(value)` disjunction caused polynomial
+// backtracking (CodeQL js/polynomial-redos). Key vs value is decided in JS below.
+// The closing quote is optional (`"?`) so a malformed unterminated string tokenizes in
+// one pass instead of being re-scanned at every `"` (well-formed JSON always closes it).
+const JSON_TOKEN_PATTERN = /("(?:\\.|[^"\\])*"?)|\b(true|false|null)\b|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g;
+const KEY_SUFFIX = /^\s*:/;
 
-function renderJsonLine(line: string) {
+export function renderJsonLine(line: string) {
     JSON_TOKEN_PATTERN.lastIndex = 0;
     const parts: ReactNode[] = [];
     let cursor = 0;
@@ -42,8 +47,10 @@ function renderJsonLine(line: string) {
             parts.push(line.slice(cursor, match.index));
         }
 
-        const [token, key, stringValue, literal, numberValue] = match;
-        const className = key
+        const [token, stringValue, literal, numberValue] = match;
+        // A string is a key when immediately followed by a colon.
+        const isKey = stringValue !== undefined && KEY_SUFFIX.test(line.slice(match.index + token.length));
+        const className = isKey
             ? 'text-info'
             : stringValue
               ? 'text-success'
