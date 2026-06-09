@@ -18,9 +18,9 @@
         "build:ui:app": "vite build --mode app",
         "build:ui:lib": "vite build --mode lib",
         "build:ui": "vite build --mode app && vite build --mode lib",
-        "build": "pnpm run build:server && vite build --mode app && vite build --mode lib",
-        "preview": "pnpm run build:server && vite preview",
-        "start": "pnpm run build:server && vite preview",
+        "build": "tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js && vite build --mode app && vite build --mode lib",
+        "preview": "tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js && vite preview",
+        "start": "tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js && vite preview",
         "start:vercel": "vercel dev",
         "test": "echo \"(no tests in template scaffold)\""
     },
