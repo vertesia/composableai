@@ -10,7 +10,6 @@ import {
     Loader2Icon,
     PackageIcon,
     RefreshCwIcon,
-    SearchIcon,
 } from 'lucide-react';
 import React, { useCallback, useId, useMemo, useState } from 'react';
 import { type ArtifactTreeNode, useArtifacts } from './hooks/useArtifacts.js';
@@ -259,22 +258,19 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
                         <RefreshCwIcon className={`size-3.5 ${isLoading ? 'animate-spin' : ''}`} />
                     </Button>
                 </div>
-                <div className="relative">
-                    <label htmlFor={filterInputId} className="sr-only">
-                        {t('form.filter')}
-                    </label>
-                    <SearchIcon className="pointer-events-none absolute start-2 top-1/2 size-3.5 -translate-y-1/2 text-muted" />
-                    <Input
-                        id={filterInputId}
-                        type="text"
-                        role="searchbox"
-                        autoComplete="off"
-                        placeholder={t('form.filter')}
-                        value={filterValue}
-                        onChange={setFilterValue}
-                        className="h-8 ps-7 text-sm"
-                    />
-                </div>
+                <label htmlFor={filterInputId} className="sr-only">
+                    {t('form.filter')}
+                </label>
+                <Input
+                    id={filterInputId}
+                    type="text"
+                    role="searchbox"
+                    autoComplete="off"
+                    placeholder={t('store.searchPlaceholder')}
+                    value={filterValue}
+                    onChange={setFilterValue}
+                    clearable={true}
+                />
             </div>
 
             {/* Tree */}
