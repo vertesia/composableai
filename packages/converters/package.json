@@ -27,7 +27,7 @@
         "@types/tmp": "^0.2.6",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "^6.0.3",
-        "vitest": "^4.0.16"
+        "vitest": "^4.1.8"
     },
     "dependencies": {
         "sharp": "^0.34.5",
