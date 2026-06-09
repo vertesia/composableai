@@ -89,6 +89,7 @@ export interface WebhookEventDeliveryTarget {
     timeout_ms?: number;
     result_path?: string;
     custom_data?: Record<string, unknown>;
+    rotate_signing_secret?: boolean;
 }
 
 export const DEFAULT_EVENT_AGENT_INTERACTION_REF = 'sys:GeneralAgent';
@@ -180,6 +181,11 @@ export interface UpdateEventSubscriptionPayload {
     run_as_role?: ProjectRoles;
     enabled?: boolean;
     priority?: EventPriority;
+}
+
+export interface EventSubscriptionMutationResponse {
+    subscription: EventSubscription;
+    webhook_signing_secret?: string;
 }
 
 export interface EventDeliveryIntentSummary {

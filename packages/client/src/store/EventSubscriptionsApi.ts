@@ -3,6 +3,7 @@ import type {
     CreateEventSubscriptionPayload,
     DeleteCountResult,
     EventSubscription,
+    EventSubscriptionMutationResponse,
     UpdateEventSubscriptionPayload,
 } from '@vertesia/common';
 
@@ -19,11 +20,11 @@ export class EventSubscriptionsApi extends ApiTopic {
         return this.get(`/${id}`);
     }
 
-    create(payload: CreateEventSubscriptionPayload): Promise<EventSubscription> {
+    create(payload: CreateEventSubscriptionPayload): Promise<EventSubscriptionMutationResponse> {
         return this.post('/', { payload });
     }
 
-    update(id: string, payload: UpdateEventSubscriptionPayload): Promise<EventSubscription> {
+    update(id: string, payload: UpdateEventSubscriptionPayload): Promise<EventSubscriptionMutationResponse> {
         return this.put(`/${id}`, { payload });
     }
 

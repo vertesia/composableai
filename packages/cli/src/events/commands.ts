@@ -121,8 +121,11 @@ export async function getEventSubscription(
 export async function createEventSubscription(program: Command, options: EventSubscriptionFileOptions) {
     const payload = toCreatePayload(readPayload(requireFile(options)));
     const client = await getClient(program);
-    const subscription = await client.store.events.subscriptions.create(payload);
-    console.log('Created event subscription', subscription.id);
+    const response = await client.store.events.subscriptions.create(payload);
+    console.log('Created event subscription', response.subscription.id);
+    if (response.webhook_signing_secret) {
+        console.log('Webhook signing secret', response.webhook_signing_secret);
+    }
 }
 
 export async function updateEventSubscription(
@@ -132,8 +135,11 @@ export async function updateEventSubscription(
 ) {
     const payload = toUpdatePayload(readPayload(requireFile(options)));
     const client = await getClient(program);
-    const subscription = await client.store.events.subscriptions.update(subscriptionId, payload);
-    console.log('Updated event subscription', subscription.id);
+    const response = await client.store.events.subscriptions.update(subscriptionId, payload);
+    console.log('Updated event subscription', response.subscription.id);
+    if (response.webhook_signing_secret) {
+        console.log('Webhook signing secret', response.webhook_signing_secret);
+    }
 }
 
 export async function applyEventSubscription(
@@ -148,13 +154,19 @@ export async function applyEventSubscription(
         : await findExistingSubscription(program, payload);
 
     if (existing) {
-        const subscription = await client.store.events.subscriptions.update(existing.id, toUpdatePayload(payload));
-        console.log('Updated event subscription', subscription.id);
+        const response = await client.store.events.subscriptions.update(existing.id, toUpdatePayload(payload));
+        console.log('Updated event subscription', response.subscription.id);
+        if (response.webhook_signing_secret) {
+            console.log('Webhook signing secret', response.webhook_signing_secret);
+        }
         return;
     }
 
-    const subscription = await client.store.events.subscriptions.create(toCreatePayload(payload));
-    console.log('Created event subscription', subscription.id);
+    const response = await client.store.events.subscriptions.create(toCreatePayload(payload));
+    console.log('Created event subscription', response.subscription.id);
+    if (response.webhook_signing_secret) {
+        console.log('Webhook signing secret', response.webhook_signing_secret);
+    }
 }
 
 export async function deleteEventSubscription(

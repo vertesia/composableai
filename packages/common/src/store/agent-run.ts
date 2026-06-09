@@ -20,6 +20,7 @@ import type {
     InteractionRef,
     RunSource,
 } from '../interaction.js';
+import type { EventRef } from '../platform-event.js';
 import type { AgentEvent } from '../workflow-analytics.js';
 import type { ProcessDefinitionBody, ProcessState } from './process.js';
 import type { UserInputSignal } from './signals.js';
@@ -51,7 +52,7 @@ export type AgentRunArchiveState = 'none' | 'pending' | 'archiving' | 'complete'
 /**
  * How the agent run was created.
  */
-export type AgentRunType = 'api' | 'schedule';
+export type AgentRunType = 'api' | 'schedule' | 'event_subscription';
 
 /**
  * Internal discriminator key for documents stored in the agent_runs collection.
@@ -127,6 +128,12 @@ export interface RunBase {
 
     /** Schedule ID — set when this run was triggered by a Temporal schedule */
     schedule_id?: string;
+
+    /** Event subscription ID — set when this run was triggered by the event bus. */
+    event_subscription_id?: string;
+
+    /** Event reference — set when this run was triggered by the event bus. */
+    event_ref?: EventRef;
 
     /** Archive lifecycle state */
     archive_state?: AgentRunArchiveState;
@@ -724,6 +731,12 @@ export interface AgentRunSearchHit {
 
     /** Schedule ID (if schedule-triggered) */
     schedule_id?: string;
+
+    /** Event subscription ID (if event-triggered) */
+    event_subscription_id?: string;
+
+    /** Event reference (if event-triggered) */
+    event_ref?: EventRef;
 
     /** How the run was created */
     source_type?: AgentRunType;
