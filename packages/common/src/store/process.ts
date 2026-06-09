@@ -159,6 +159,15 @@ export interface ProcessContextDefinition {
     initial: Record<string, unknown>;
 }
 
+export interface ProcessLimitsDefinition {
+    /**
+     * Maximum total node transitions for the whole run (across continueAsNew).
+     * Bounds non-terminating loops; clamped to the engine's absolute ceiling.
+     * Defaults to the engine default when unset.
+     */
+    max_transitions?: number;
+}
+
 export interface ProcessDefinitionBody {
     format_version: ProcessDefinitionFormatVersion;
     process: string;
@@ -167,6 +176,8 @@ export interface ProcessDefinitionBody {
     model?: string;
     context: ProcessContextDefinition;
     nodes: Record<string, NodeDefinition>;
+    /** Optional runtime safety limits for the whole process run. */
+    limits?: ProcessLimitsDefinition;
     metadata?: ProcessDefinitionMetadata;
 }
 

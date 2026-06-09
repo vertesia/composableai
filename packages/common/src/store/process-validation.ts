@@ -86,14 +86,79 @@ export function getProcessDefinitionValidationResult(
         errors.push('context.initial is missing');
     }
 
+    if (definition.limits?.max_transitions !== undefined) {
+        const max = definition.limits.max_transitions;
+        if (!Number.isInteger(max) || max < 1) {
+            errors.push('limits.max_transitions must be a positive integer');
+        }
+    }
+
     for (const [nodeId, node] of Object.entries(definition.nodes ?? {})) {
         validateNodeDefinition(definition, nodeId, node, errors, context);
     }
+
+    validateReachability(definition, errors);
 
     return {
         valid: errors.length === 0,
         errors,
     };
+}
+
+/**
+ * A process must be able to terminate: there has to be at least one `final`
+ * node, and at least one of them must be reachable from `initial` by following
+ * declared transitions and condition branches. Without this an author can
+ * publish a graph that loops forever (caught at runtime only by the engine's
+ * transition budget). We stop at the first violation to avoid noisy output and
+ * skip the check entirely when the graph is already structurally broken.
+ */
+function validateReachability(definition: ProcessDefinitionBody, errors: string[]): void {
+    const nodes = definition.nodes ?? {};
+    const nodeIds = Object.keys(nodes);
+    if (nodeIds.length === 0 || !definition.initial || !nodes[definition.initial]) {
+        return; // structural errors already reported; nothing reliable to traverse
+    }
+
+    const finals = nodeIds.filter((id) => nodes[id]?.type === 'final');
+    if (finals.length === 0) {
+        errors.push('process has no final node; it can never complete');
+        return;
+    }
+
+    const reachable = new Set<string>();
+    const queue: string[] = [definition.initial];
+    while (queue.length > 0) {
+        const id = queue.shift() as string;
+        if (reachable.has(id)) {
+            continue;
+        }
+        reachable.add(id);
+        const node = nodes[id];
+        if (!node) {
+            continue;
+        }
+        const targets = new Set<string>();
+        for (const transition of node.transitions ?? []) {
+            if (transition.to) {
+                targets.add(transition.to);
+            }
+        }
+        for (const branch of getConditionBranches(node)) {
+            if (branch.to) {
+                targets.add(branch.to);
+            }
+        }
+        for (const target of targets) {
+            if (nodes[target] && !reachable.has(target)) {
+                queue.push(target);
+            }
+        }
+    }
+
+    if (!finals.some((id) => reachable.has(id))) {
+        errors.push(`no final node is reachable from initial node "${definition.initial}"`);
+    }
 }
 
 function validateNodeDefinition(

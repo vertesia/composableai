@@ -429,4 +429,67 @@ describe('process definition validation', () => {
 
         expect(() => validateProcessDefinitionBody(definition)).toThrow('exceeds maximum node count');
     });
+
+    it('rejects a definition with no final node', () => {
+        const definition = validDefinition();
+        // Turn the only final into a non-final node that loops back to review.
+        definition.nodes.approved = {
+            type: 'human_task',
+            task: { title: 'Re-review', fields: [] },
+            transitions: [{ to: 'review', trigger: 'user' }],
+        };
+
+        const result = getProcessDefinitionValidationResult(definition);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('process has no final node; it can never complete');
+    });
+
+    it('rejects a definition whose only final node is unreachable from initial', () => {
+        const definition = validDefinition();
+        // review loops to a tool node and back; the final "approved" exists but
+        // nothing routes to it.
+        definition.nodes.review.transitions = [{ to: 'loop', trigger: 'user' }];
+        definition.nodes.loop = {
+            type: 'tool',
+            tool: 'think',
+            transitions: [{ to: 'review' }],
+        };
+
+        const result = getProcessDefinitionValidationResult(definition);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('no final node is reachable from initial node "review"');
+    });
+
+    it('accepts a definition where a final node is reachable through a cycle', () => {
+        const definition = validDefinition();
+        // review -> loop -> review (cycle) and review -> approved (final).
+        definition.nodes.review.transitions = [
+            { to: 'loop', trigger: 'user' },
+            { to: 'approved', trigger: 'user' },
+        ];
+        definition.nodes.loop = {
+            type: 'tool',
+            tool: 'think',
+            transitions: [{ to: 'review' }],
+        };
+
+        expect(() => validateProcessDefinitionBody(definition)).not.toThrow();
+    });
+
+    it('accepts a positive limits.max_transitions', () => {
+        const definition = validDefinition();
+        definition.limits = { max_transitions: 250 };
+
+        expect(() => validateProcessDefinitionBody(definition)).not.toThrow();
+    });
+
+    it('rejects a non-positive or non-integer limits.max_transitions', () => {
+        for (const bad of [0, -5, 2.5]) {
+            const definition = validDefinition();
+            definition.limits = { max_transitions: bad };
+            const result = getProcessDefinitionValidationResult(definition);
+            expect(result.valid).toBe(false);
+            expect(result.errors).toContain('limits.max_transitions must be a positive integer');
+        }
+    });
 });
