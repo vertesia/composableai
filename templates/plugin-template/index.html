@@ -25,16 +25,60 @@
       } catch (_e) {}
     })();
   </script>
-  <script type="importmap">
-      {
-        "imports": {
-          "react": "https://esm.sh/react@19.1.2",
-          "react-dom": "https://esm.sh/react-dom@19.1.2",
-          "react-dom/client": "https://esm.sh/react-dom@19.1.2/client",
-          "react/jsx-runtime": "https://esm.sh/react@19.1.2/jsx-runtime"
+  <!-- vertesia-react-importmap -->
+  <script>
+    (() => {
+      const reloadParam = '__vertesia_reload';
+      const storageKey = 'vertesia:stale-asset-reload';
+
+      function isLocalDevHost() {
+        return ['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(window.location.hostname);
+      }
+
+      function reloadOnce() {
+        if (isLocalDevHost()) return;
+
+        try {
+          const url = new URL(window.location.href);
+          const reloadKey = window.location.origin + window.location.pathname;
+          const alreadyRetried =
+            url.searchParams.has(reloadParam) || window.sessionStorage.getItem(storageKey) === reloadKey;
+
+          if (alreadyRetried) return;
+
+          window.sessionStorage.setItem(storageKey, reloadKey);
+          url.searchParams.set(reloadParam, String(Date.now()));
+          window.location.replace(url.toString());
+        } catch (error) {
+          console.error('Failed to recover from stale asset load:', error);
         }
       }
-    </script>
+
+      window.addEventListener('vite:preloadError', (event) => {
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        reloadOnce();
+      });
+
+      window.addEventListener(
+        'error',
+        (event) => {
+          if (event.target && (event.target.tagName === 'SCRIPT' || event.target.tagName === 'LINK')) {
+            reloadOnce();
+          }
+        },
+        true,
+      );
+
+      window.addEventListener('load', () => {
+        try {
+          const url = new URL(window.location.href);
+          if (!url.searchParams.has(reloadParam)) return;
+          url.searchParams.delete(reloadParam);
+          window.history.replaceState(window.history.state, document.title, url.pathname + url.search + url.hash);
+        } catch (_error) {}
+      });
+    })();
+  </script>
 </head>
 
 <body>

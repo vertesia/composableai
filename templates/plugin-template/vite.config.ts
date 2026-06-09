@@ -1,8 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import tailwindcss from '@tailwindcss/vite';
 import { vertesiaPluginBuilder } from '@vertesia/plugin-builder';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
-import { type ConfigEnv, defineConfig, type UserConfig } from 'vite';
+import { type ConfigEnv, defineConfig, type Plugin, type UserConfig } from 'vite';
 import serveStatic from 'vite-plugin-serve-static';
 import { apiServerPlugin } from './vite-api-server.js';
 
@@ -31,6 +33,46 @@ const VERTESIA_UI_PATH = '';
  * If you use shadow dom isolation for the plugin you must set this to false.
  */
 const CONFIG__inlineCss = false;
+const REACT_IMPORT_MAP_PLACEHOLDER = '<!-- vertesia-react-importmap -->';
+const nodeRequire = createRequire(import.meta.url);
+
+function getPackageVersion(packageName: string): string {
+    const packageJsonPath = nodeRequire.resolve(`${packageName}/package.json`);
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as { version?: string };
+    if (!packageJson.version) {
+        throw new Error(`Unable to resolve ${packageName} package version`);
+    }
+    return packageJson.version;
+}
+
+function getReactImportMapHtml(): string {
+    const reactVersion = getPackageVersion('react');
+    const reactDomVersion = getPackageVersion('react-dom');
+    const imports = {
+        react: `https://esm.sh/react@${reactVersion}`,
+        'react-dom': `https://esm.sh/react-dom@${reactDomVersion}`,
+        'react-dom/client': `https://esm.sh/react-dom@${reactDomVersion}/client`,
+        'react/jsx-runtime': `https://esm.sh/react@${reactVersion}/jsx-runtime`,
+        'react/jsx-dev-runtime': `https://esm.sh/react@${reactVersion}/jsx-dev-runtime`,
+    };
+
+    return `<script type="importmap">
+${JSON.stringify({ imports }, null, 2)}
+  </script>`;
+}
+
+function reactImportMapPlugin(): Plugin {
+    return {
+        name: 'vertesia-react-import-map',
+        transformIndexHtml(html) {
+            const importMapHtml = getReactImportMapHtml();
+            if (html.includes(REACT_IMPORT_MAP_PLACEHOLDER)) {
+                return html.replace(REACT_IMPORT_MAP_PLACEHOLDER, importMapHtml);
+            }
+            return html.replace('</head>', `  ${importMapHtml}\n</head>`);
+        },
+    };
+}
 
 /**
  * Vite configuration to build the plugin as a library or as a standalone application or to run the application in dev mode.
@@ -93,6 +135,7 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
         plugins: [
             tailwindcss(),
             react(),
+            reactImportMapPlugin(),
             // HTTPS is required for Firebase auth but must be disabled under vercel dev
             ...(useHttps ? [basicSsl()] : []),
             // serve lib/plugin.js content in dev mode
