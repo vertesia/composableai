@@ -34,7 +34,7 @@
         "@types/statuses": "^2.0.1",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "^6.0.3",
-        "vitest": "^4.0.0"
+        "vitest": "^4.1.8"
     },
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
