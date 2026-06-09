@@ -254,6 +254,61 @@ function getCompactTableColumns(node?: Element): Set<number> {
     return compactColumns;
 }
 
+function clampNumber(value: number, min: number, max: number): number {
+    return Math.min(max, Math.max(min, value));
+}
+
+function getLongestTokenLength(values: string[]): number {
+    return values.reduce((longest, value) => {
+        const tokens = value.match(/\S+/g) || [];
+        return Math.max(longest, ...tokens.map((token) => token.length));
+    }, 0);
+}
+
+interface AgentMarkdownTableColumnLayout {
+    key: string;
+    compact: boolean;
+    width: string;
+}
+
+function getTableColumnLayouts(node?: Element): AgentMarkdownTableColumnLayout[] {
+    const rows = getTableRows(node);
+    const columnCount = Math.max(0, ...rows.map((row) => row.length));
+    if (columnCount <= 1) return [];
+
+    const compactColumns = getCompactTableColumns(node);
+    const weights = Array.from({ length: columnCount }, (_value, columnIndex) => {
+        if (compactColumns.has(columnIndex)) {
+            return 8;
+        }
+
+        const values = rows
+            .map((row) => row[columnIndex] || '')
+            .map((value) => value.trim())
+            .filter(Boolean);
+        if (values.length === 0) return 18;
+
+        const lengths = values.map((value) => value.length);
+        const maxLength = Math.max(...lengths);
+        const avgLength = lengths.reduce((sum, length) => sum + length, 0) / lengths.length;
+        const longestTokenLength = getLongestTokenLength(values);
+
+        return clampNumber(avgLength * 0.7 + maxLength * 0.25 + longestTokenLength * 0.45, 18, 90);
+    });
+
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    if (totalWeight <= 0) return [];
+
+    return weights.map((weight, columnIndex) => {
+        const width = `${((weight / totalWeight) * 100).toFixed(3)}%`;
+        return {
+            key: `agent-markdown-table-column-${columnIndex}`,
+            compact: compactColumns.has(columnIndex),
+            width,
+        };
+    });
+}
+
 function AgentMarkdownTable({
     node,
     className,
@@ -263,18 +318,21 @@ function AgentMarkdownTable({
     node?: Element;
     children?: React.ReactNode;
 }) {
-    const columnCount = Math.max(0, ...getTableRows(node).map((row) => row.length));
-    const compactColumns = getCompactTableColumns(node);
-    const columnKeys = Array.from({ length: columnCount }, (_value, index) => `agent-markdown-table-column-${index}`);
+    const columnLayouts = getTableColumnLayouts(node);
 
     return (
         <table {...props} className={className}>
-            {columnCount > 0 && compactColumns.size > 0 ? (
+            {columnLayouts.length > 0 ? (
                 <colgroup>
-                    {columnKeys.map((columnKey, index) => (
+                    {columnLayouts.map((columnLayout) => (
                         <col
-                            key={columnKey}
-                            className={compactColumns.has(index) ? 'agent-markdown-table-compact-col' : undefined}
+                            key={columnLayout.key}
+                            className={columnLayout.compact ? 'agent-markdown-table-compact-col' : undefined}
+                            style={
+                                {
+                                    '--agent-markdown-table-column-width': columnLayout.width,
+                                } as React.CSSProperties
+                            }
                         />
                     ))}
                 </colgroup>
@@ -2222,14 +2280,21 @@ function AllMessagesMixedComponent({
                 .agent-markdown td {
                     color: inherit;
                 }
+                .agent-markdown th + th,
+                .agent-markdown td + td {
+                    padding-inline-start: 1.75rem;
+                }
                 .agent-markdown th:first-child,
                 .agent-markdown td:first-child {
                     min-width: 0;
                     width: auto;
                     white-space: normal;
                 }
+                .agent-markdown col {
+                    width: var(--agent-markdown-table-column-width);
+                }
                 .agent-markdown .agent-markdown-table-compact-col {
-                    width: clamp(4rem, 9%, 7rem);
+                    width: clamp(4.75rem, var(--agent-markdown-table-column-width), 7rem);
                 }
                 .agent-markdown tr:last-child td {
                     border-bottom: 0;

@@ -219,6 +219,34 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.queryByText(/\[tokyo\.png\]/)).toBeNull();
     });
 
+    it('balances markdown table columns from their content size', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.ANSWER,
+                    message: [
+                        '| Requirement | Status | Evidence |',
+                        '| --- | --- | --- |',
+                        '| Hydrate existing app `appgen-6a23acdeac98748242db1da6` via `app_workspace_init` | ✅ | `hydrated_from_git.app_id = appgen-6a23acdeac98748242db1da6`, commit `2fc2f54` |',
+                        '| Do NOT create a new app | ✅ | No `new_app: true` passed; workspace hydrated from git remote |',
+                        '| Add concise subtitle under "Loan Pipeline" heading | ✅ | Replaced static `"Commercial loan origination dashboard"` with dynamic `"N applications · $X total pipeline value"` |',
+                    ].join('\n'),
+                }),
+            ],
+            true,
+        );
+
+        const columns = Array.from(screen.getByRole('table').querySelectorAll('col'));
+        const contentWidths = [columns[0], columns[2]].map((column) =>
+            Number.parseFloat(column.style.getPropertyValue('--agent-markdown-table-column-width')),
+        );
+
+        expect(columns).toHaveLength(3);
+        expect(columns[1]?.classList.contains('agent-markdown-table-compact-col')).toBe(true);
+        expect(contentWidths[1]).toBeGreaterThan(contentWidths[0]);
+    });
+
     it('merges legacy activity progress rows with different tool run ids', () => {
         renderSummary(
             [
