@@ -103,7 +103,6 @@
   "agent.panelRenderError": "{{name}} could not be rendered",
   "agent.panelRenderErrorDescription": "The rest of the agent viewer is still available.",
   "agent.payload": "Payload",
-  "agent.parallelTasks": "Parallel Tasks",
   "agent.parallelWorkDescription": "Parallel tasks running alongside this conversation.",
   "agent.pdfExportFailed": "PDF export failed",
   "agent.pdfExportReady": "PDF export ready",

@@ -599,16 +599,16 @@ function AgentRightPanelComponent({
             name: 'workstreams',
             label: hasWorkstreams ? (
                 <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap">
-                    {t('agent.parallelTasks')}{' '}
+                    {t('agent.workstreams')}{' '}
                     <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-info px-1.5 py-0.5 text-[10px] text-info">
                         {activeWorkstreams.length}
                     </span>
                 </span>
             ) : (
-                t('agent.parallelTasks')
+                t('agent.workstreams')
             ),
             content: withTabBoundary(
-                t('agent.parallelTasks'),
+                t('agent.workstreams'),
                 <WorkstreamsTab workstreams={activeWorkstreams} messages={messages} runId={runId} />,
             ),
             is_allowed: !hideWorkstreams,
