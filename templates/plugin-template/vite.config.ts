@@ -201,6 +201,7 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
     // Vercel dev proxies to the framework dev server over HTTP — HTTPS would break that.
     const useHttps = !process.env.VERCEL;
     const base = command === 'build' ? '/app/' : '/';
+    const isVercelBuild = command === 'build' && process.env.VERCEL === '1';
 
     return {
         base, // Dev serves the admin UI at /; Vercel serves built app assets from /app/.
@@ -208,7 +209,7 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
             tailwindcss(),
             react(),
             reactImportMapPlugin(),
-            staleAssetRecoveryPlugin(command === 'build'),
+            staleAssetRecoveryPlugin(isVercelBuild),
             // HTTPS is required for Firebase auth but must be disabled under vercel dev
             ...(useHttps ? [basicSsl()] : []),
             // serve lib/plugin.js content in dev mode
