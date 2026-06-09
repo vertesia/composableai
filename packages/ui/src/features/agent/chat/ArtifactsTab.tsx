@@ -41,7 +41,7 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath, forceExpand
             <div>
                 <Button
                     variant="unstyled"
-                    className="flex items-center gap-1.5 w-full min-w-0 text-start py-1 px-1 rounded hover:bg-muted/30 text-sm"
+                    className="flex w-auto max-w-full items-center gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted/30"
                     style={{ paddingInlineStart: `${depth * 14 + 4}px` }}
                     onClick={() => setExpanded((prev) => !prev)}
                     aria-expanded={isExpanded}
@@ -81,7 +81,7 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath, forceExpand
     return (
         <Button
             variant="unstyled"
-            className="flex items-center gap-1.5 w-full min-w-0 text-start py-1 px-1 rounded hover:bg-muted/30 text-sm"
+            className="flex w-auto max-w-full items-center gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted/30"
             style={{ paddingInlineStart: `${depth * 14 + 4}px` }}
             onClick={() => onDownload(node.path)}
             disabled={isDownloading}
@@ -274,9 +274,9 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
             </div>
 
             {/* Tree */}
-            <div className="flex-1 overflow-y-auto px-2 pb-2">
+            <div className="flex-1 overflow-y-auto px-3 pb-2">
                 {filteredTree.length > 0 ? (
-                    <div className="w-full">
+                    <div className="inline-block min-w-full align-top">
                         {filteredTree.map((node) => (
                             <TreeNode
                                 key={`${runId}:${node.path}`}

@@ -54,6 +54,13 @@ function getLatestMessageTimestamp(messages: AgentMessage[]): number {
 
 const TOOL_PREAMBLE_MATCH_WINDOW_MS = 60_000;
 
+function getStringDetail(message: AgentMessage, key: 'activity_id' | 'activity_group_id'): string | undefined {
+    const value = message.details?.[key];
+    if (typeof value !== 'string') return undefined;
+    const trimmed = value.trim();
+    return trimmed ? trimmed : undefined;
+}
+
 function filterTransientThinkingMessages(
     messages: AgentMessage[],
     isActive: boolean,
@@ -235,15 +242,29 @@ export function buildSummaryConversationItems(
 }
 
 function findMatchingToolActivity(data: StreamingData, messages: AgentMessage[]): AgentMessage | undefined {
-    const exactMatch = data.activityId
-        ? messages.find(
-              (message) =>
-                  isToolActivityMessage(message) &&
-                  (message.details?.activity_id === data.activityId ||
-                      message.details?.activity_group_id === data.activityId),
-          )
-        : undefined;
-    if (exactMatch) return exactMatch;
+    if (data.activityId) {
+        const exactMatch = messages.find(
+            (message) =>
+                isToolActivityMessage(message) &&
+                (getStringDetail(message, 'activity_id') === data.activityId ||
+                    getStringDetail(message, 'activity_group_id') === data.activityId),
+        );
+        if (exactMatch) return exactMatch;
+
+        const bridgedActivityGroupId = messages.find(
+            (message) =>
+                getStringDetail(message, 'activity_id') === data.activityId &&
+                getStringDetail(message, 'activity_group_id'),
+        )?.details?.activity_group_id;
+        if (typeof bridgedActivityGroupId === 'string') {
+            const bridgedMatch = messages.find(
+                (message) =>
+                    isToolActivityMessage(message) &&
+                    getStringDetail(message, 'activity_group_id') === bridgedActivityGroupId,
+            );
+            if (bridgedMatch) return bridgedMatch;
+        }
+    }
 
     if (data.isComplete) {
         return undefined;
@@ -279,6 +300,9 @@ export function buildSummaryDisplayMessages(
         const text = data.text.trim();
         if (!text || isStreamReplacedByMessage(data, messages)) return;
         const matchingToolMessage = findMatchingToolActivity(data, messages);
+        const matchingActivityGroupId = matchingToolMessage
+            ? getStringDetail(matchingToolMessage, 'activity_group_id')
+            : undefined;
 
         streamingMessages.push({
             timestamp: data.startTimestamp,
@@ -288,6 +312,7 @@ export function buildSummaryDisplayMessages(
             workstream_id: data.workstreamId,
             details: {
                 activity_id: data.activityId,
+                activity_group_id: matchingActivityGroupId,
                 display_role: matchingToolMessage ? 'tool_preamble' : undefined,
                 source: 'streaming_summary',
                 streamed: true,

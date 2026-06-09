@@ -988,6 +988,70 @@ describe('ModernAgentOutput summary conversation items', () => {
         ]);
     });
 
+    it('resolves completed pre-tool streams through transient thinking activity groups', () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: 'What are the news headlines in Japan today?',
+        });
+        const tool = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Searching for Japan news headlines via Serper...',
+            details: {
+                activity_group_id: 'activity-10',
+                tool: 'web_search_serper',
+                tool_status: 'completed',
+                tool_run_id: 'tool-1',
+            },
+        });
+        const thinkingMarker = makeMessage({
+            timestamp: 4000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Thinking...',
+            details: {
+                activity_id: 'thinking-10',
+                activity_group_id: 'activity-10',
+                display_role: 'thinking',
+            },
+        });
+
+        const summaryMessages = buildSummaryDisplayMessages(
+            [question, tool, thinkingMarker],
+            new Map([
+                [
+                    'thinking-10',
+                    {
+                        text: 'I will now perform a web search to retrieve the latest news headlines.',
+                        startTimestamp: 2000,
+                        activityId: 'thinking-10',
+                        isComplete: true,
+                    },
+                ],
+            ]),
+        );
+        const streamedPreamble = summaryMessages.find(
+            (message) => message.message === 'I will now perform a web search to retrieve the latest news headlines.',
+        );
+
+        expect(streamedPreamble).toMatchObject({
+            type: AgentMessageType.THOUGHT,
+            details: {
+                activity_group_id: 'activity-10',
+                display_role: 'tool_preamble',
+                tools: ['web_search_serper'],
+            },
+        });
+
+        const items = buildSummaryConversationItems(summaryMessages, true);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work']);
+        if (items[1].type !== 'work') {
+            throw new Error('Expected bridged streaming preamble to be grouped into the work row');
+        }
+        expect(items[1].messages).toEqual([streamedPreamble, tool]);
+    });
+
     it('does not duplicate completed streaming prose once persisted prose replaces it', () => {
         const answer = makeMessage({
             timestamp: 3000,

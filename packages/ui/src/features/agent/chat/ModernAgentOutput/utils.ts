@@ -248,6 +248,9 @@ export function isStreamReplacedByMessage(streaming: StreamingData, messages: Ag
         if (getWorkstreamId(message) !== streamWorkstreamId) return false;
 
         if (streaming.activityId && message.details?.activity_id === streaming.activityId) {
+            if (message.details?.display_role === 'thinking') {
+                return false;
+            }
             if (isToolCallMessage(message) || message.details?.tool_status) {
                 return false;
             }

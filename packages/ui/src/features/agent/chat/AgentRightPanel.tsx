@@ -347,7 +347,7 @@ function RightPanelTabSelect({
                     aria-haspopup="menu"
                     aria-expanded={open}
                     className={cn(
-                        'flex w-full flex-row items-center justify-between gap-2 rounded-md border border-border bg-transparent p-2 text-start text-inherit',
+                        'inline-flex min-w-32 max-w-60 flex-row items-center justify-between gap-2 rounded-md border border-border bg-transparent px-2.5 py-2 text-start text-inherit sm:max-w-72',
                         'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                         'hover:bg-muted',
                     )}
@@ -356,7 +356,7 @@ function RightPanelTabSelect({
                     <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" aria-hidden="true" />
                 </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="z-[1000000]">
+            <DropdownMenuContent align="start" className="z-[1000000] min-w-[var(--radix-dropdown-menu-trigger-width)]">
                 {tabs.map((tab) => {
                     const isSelected = tab.name === activeTab;
 
@@ -524,7 +524,9 @@ function AgentRightPanelComponent({
                         onChangePlan={onChangePlan}
                     />
                 ) : (
-                    <RightPanelEmptyState>{t('agent.noPlanAvailable')}</RightPanelEmptyState>
+                    <RightPanelEmptyState icon={<LayoutListIcon className="mb-2 size-8" />}>
+                        {t('agent.noPlanAvailable')}
+                    </RightPanelEmptyState>
                 ),
             ),
             is_allowed: true,
@@ -614,8 +616,8 @@ function AgentRightPanelComponent({
     const visibleTabs = tabs.filter((tab) => tab.is_allowed === undefined || tab.is_allowed === true);
     return (
         <Tabs tabs={tabs} current={activeTab} onTabChange={handleTabChange} fullHeight className="px-0">
-            <div className="flex items-center shrink-0 px-1 py-1 gap-1">
-                <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between shrink-0 px-1 py-1 gap-1">
+                <div className="min-w-0">
                     <RightPanelTabSelect
                         ariaLabel={t('agent.selectRightPanelSection')}
                         tabs={visibleTabs}

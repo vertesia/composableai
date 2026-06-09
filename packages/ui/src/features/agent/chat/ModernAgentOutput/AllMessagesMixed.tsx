@@ -855,6 +855,11 @@ function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
 
     messages.forEach((message, index) => {
         const details = getDetailsRecord(message);
+        if (isToolPreambleMessage(message)) {
+            ungrouped.push({ index, message });
+            return;
+        }
+
         const activityGroupId =
             typeof details.activity_group_id === 'string' && details.activity_group_id.trim()
                 ? details.activity_group_id
@@ -1815,41 +1820,44 @@ function AllMessagesMixedComponent({
                 .vprose > h3 + * {
                     margin-top: 0.375rem;
                 }
-                /* Tables need more separation and better styling */
+                /* Tables should read like part of the conversation, not a separate app grid. */
                 .vprose table {
                     margin-top: 0.875rem;
                     margin-bottom: 0.875rem;
                     border-collapse: collapse;
                     width: 100%;
+                    background: transparent;
                 }
                 .vprose th,
                 .vprose td {
                     padding: 0.5rem 0.625rem;
-                    border: 1px solid var(--gray-6, #e5e7eb);
+                    border: 0;
+                    border-bottom: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
+                    background: transparent;
                     text-align: left;
                 }
                 .vprose thead th {
-                    background-color: var(--gray-3, #f3f4f6);
+                    background: transparent;
                     font-weight: 600;
-                    color: var(--gray-11, #6b7280);
+                    color: var(--muted);
                     font-size: 0.75rem;
-                    text-transform: uppercase;
-                    letter-spacing: 0.05em;
+                    text-transform: none;
+                    letter-spacing: 0;
                 }
                 .vprose tbody tr:hover {
-                    background-color: var(--gray-2, #f9fafb);
+                    background: transparent;
                 }
                 /* Dark mode table styles */
                 .dark .vprose th,
                 .dark .vprose td {
-                    border-color: var(--gray-7, #374151);
+                    border-color: color-mix(in oklch, var(--border) 70%, transparent);
                 }
                 .dark .vprose thead th {
-                    background-color: var(--gray-4, #1f2937);
-                    color: var(--gray-11, #9ca3af);
+                    background: transparent;
+                    color: var(--muted);
                 }
                 .dark .vprose tbody tr:hover {
-                    background-color: var(--gray-3, #111827);
+                    background: transparent;
                 }
                 /* Horizontal rules as section dividers */
                 .vprose hr {
@@ -1999,21 +2007,22 @@ function AllMessagesMixedComponent({
                     width: 100%;
                     max-width: 100%;
                     margin: 0.9rem 0 1rem;
-                    border: 1px solid var(--border);
-                    border-radius: 0.75rem;
-                    border-collapse: separate;
+                    border: 0;
+                    border-collapse: collapse;
                     border-spacing: 0;
                     font-size: 0.8125rem;
                     table-layout: auto;
+                    background: transparent;
                 }
                 .agent-markdown thead {
-                    background: var(--muted-background);
+                    background: transparent;
                 }
                 .agent-markdown th,
                 .agent-markdown td {
                     border: 0;
-                    border-bottom: 1px solid var(--border);
-                    padding: 0.55rem 0.7rem;
+                    border-bottom: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
+                    background: transparent;
+                    padding: 0.55rem 0.75rem;
                     text-align: left;
                     vertical-align: top;
                     overflow-wrap: break-word;
@@ -2021,7 +2030,7 @@ function AllMessagesMixedComponent({
                 }
                 .agent-markdown th {
                     color: var(--muted);
-                    font-size: 0.6875rem;
+                    font-size: 0.75rem;
                     font-weight: 600;
                     letter-spacing: 0;
                     text-transform: none;
@@ -2036,18 +2045,14 @@ function AllMessagesMixedComponent({
                     width: 1%;
                     white-space: nowrap;
                 }
-                .agent-markdown th + th,
-                .agent-markdown td + td {
-                    border-left: 1px solid var(--border);
-                }
                 .agent-markdown tr:last-child td {
                     border-bottom: 0;
                 }
                 .agent-markdown tbody tr:nth-child(even) {
-                    background: color-mix(in oklch, var(--muted-background) 55%, transparent);
+                    background: transparent;
                 }
                 .agent-markdown tbody tr:hover {
-                    background: var(--muted-background);
+                    background: transparent;
                 }
             `}</style>
 
