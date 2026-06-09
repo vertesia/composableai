@@ -23,8 +23,9 @@
  *
  * Groups:
  *   [1] leading indent
- *   [2] directive name (word chars only)
- *   [3] optional inline content (may be empty)
+ *   [2] raw text between the opening and closing fences
+ *
+ * The directive name and optional inline content are split from group [2] in JS.
  *
  * Only matches when both opening and closing ::: are on the SAME line,
  * so it won't interfere with properly formatted multi-line containers.
