@@ -525,7 +525,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                                     {progressDetails.map((item, index) => (
                                         <div key={`${item.timestamp ?? index}-${index}`} className="text-xs text-muted">
                                             {item.timestamp && (
-                                                <span className="mr-1 text-muted/60">
+                                                <span className="me-1 text-muted/60">
                                                     {dayjs(item.timestamp).format('HH:mm:ss')}
                                                 </span>
                                             )}
@@ -1066,7 +1066,7 @@ function ToolCallGroupComponent({
                                                                 className="text-xs text-muted"
                                                             >
                                                                 {item.timestamp && (
-                                                                    <span className="mr-1 text-muted/60">
+                                                                    <span className="me-1 text-muted/60">
                                                                         {dayjs(item.timestamp).format('HH:mm:ss')}
                                                                     </span>
                                                                 )}

@@ -23,6 +23,7 @@ function renderSummary(
     messages: AgentMessage[],
     isCompleted = false,
     streamingMessages = new Map<string, StreamingData>(),
+    props: Partial<React.ComponentProps<typeof AllMessagesMixed>> = {},
 ) {
     const bottomRef = React.createRef<HTMLDivElement>() as React.RefObject<HTMLDivElement>;
 
@@ -35,12 +36,17 @@ function renderSummary(
                 isCompleted={isCompleted}
                 artifactRunId="run-1"
                 streamingMessages={streamingMessages}
+                {...props}
             />
         </I18nProvider>,
     );
 }
 
-function renderStacked(messages: AgentMessage[], isCompleted = true) {
+function renderStacked(
+    messages: AgentMessage[],
+    isCompleted = true,
+    props: Partial<React.ComponentProps<typeof AllMessagesMixed>> = {},
+) {
     const bottomRef = React.createRef<HTMLDivElement>() as React.RefObject<HTMLDivElement>;
     const session = new UserSession({
         files: {
@@ -57,6 +63,7 @@ function renderStacked(messages: AgentMessage[], isCompleted = true) {
                     viewMode="stacked"
                     isCompleted={isCompleted}
                     artifactRunId="run-1"
+                    {...props}
                 />
             </UserSessionContext.Provider>
         </I18nProvider>,
@@ -332,6 +339,31 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('blue')).not.toBeNull();
         expect(screen.queryByText('The color of the sky and ocean')).toBeNull();
         expect(screen.queryByRole('button', { name: /Blue/ })).toBeNull();
+    });
+
+    it('does not duplicate the initial request once the persisted user prompt is present', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Ask me what my favorite color is. give me choices',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'green',
+                }),
+            ],
+            true,
+            new Map(),
+            {
+                initialRequestData: 'Ask me what my favorite color is. give me choices',
+            },
+        );
+
+        expect(screen.getAllByText('Ask me what my favorite color is. give me choices')).toHaveLength(1);
+        expect(screen.getByText('green')).not.toBeNull();
     });
 
     it('keeps only the ask question after the user answers in stacked view', () => {

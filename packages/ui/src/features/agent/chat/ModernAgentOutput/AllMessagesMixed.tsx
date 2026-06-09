@@ -1622,6 +1622,11 @@ function AllMessagesMixedComponent({
         Boolean(prependFriendlyMessage?.trim()) ||
         hasInitialRequestValue(initialRequestData) ||
         initialRequestTemplate !== undefined;
+    const hasPersistedUserQuestion = useMemo(
+        () => displayMessages.some((message) => message.type === AgentMessageType.QUESTION),
+        [displayMessages],
+    );
+    const shouldRenderInitialRequest = hasInitialRequest && !hasPersistedUserQuestion;
 
     const latestDisplayMessageTimestamp = useMemo(() => {
         if (displayMessages.length === 0) return -Infinity;
@@ -2086,7 +2091,7 @@ function AllMessagesMixedComponent({
                     )}
                 >
                     {/* Friendly message — rendered outside the messages array to avoid memo issues/triggering autoscroll */}
-                    {hasInitialRequest && (
+                    {shouldRenderInitialRequest && (
                         <InitialRequestMessage
                             key="initial-request"
                             data={initialRequestData}

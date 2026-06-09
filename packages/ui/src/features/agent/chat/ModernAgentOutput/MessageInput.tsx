@@ -1,26 +1,7 @@
 import { type ContentObjectItem, type ConversationFile, FileProcessingStatus } from '@vertesia/common';
-import {
-    Button,
-    cn,
-    insertNewlineAtCursor,
-    Modal,
-    ModalBody,
-    ModalTitle,
-    Spinner,
-    Textarea,
-    VTooltip,
-} from '@vertesia/ui/core';
+import { Button, cn, insertNewlineAtCursor, Modal, ModalBody, ModalTitle, Spinner, Textarea } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import {
-    Activity,
-    ArrowUpIcon,
-    FileTextIcon,
-    HelpCircleIcon,
-    PaperclipIcon,
-    SquareIcon,
-    UploadIcon,
-    XIcon,
-} from 'lucide-react';
+import { Activity, ArrowUpIcon, FileTextIcon, PaperclipIcon, SquareIcon, UploadIcon, XIcon } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SelectDocument } from '../../../store/objects/components/SelectDocument';
@@ -345,7 +326,7 @@ export default function MessageInput({
         // biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target only; file selection is also exposed via the upload button.
         <div
             className={cn(
-                'px-3 py-4 border-t border-border/60 flex-shrink-0 transition-all fixed lg:sticky bottom-0 start-0 end-0 lg:start-auto lg:end-auto w-full bg-background/95 backdrop-blur z-10',
+                'px-3 py-3 flex-shrink-0 transition-all fixed lg:sticky bottom-0 start-0 end-0 lg:start-auto lg:end-auto w-full bg-background/95 backdrop-blur z-10',
                 isDragOver && 'bg-info/10 border-info',
                 className,
             )}
@@ -375,105 +356,80 @@ export default function MessageInput({
                 />
             )}
 
-            {/* Uploaded files preview */}
-            {!hideFileUpload && (uploadedFiles.length > 0 || (processingFiles && processingFiles.size > 0)) && (
-                <div className="flex flex-col gap-2 mb-3">
-                    <div>
-                        <div className="flex items-center gap-1 mb-1">
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                {t('agent.uploadedFiles')}
-                            </span>
-                            <VTooltip description={t('agent.filesUploadedDescription')} placement="top" size="md">
-                                <HelpCircleIcon className="size-3 text-gray-400 dark:text-gray-500" />
-                            </VTooltip>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            {/* Processing files (uploading/processing/error) */}
-                            {processingFiles &&
-                                Array.from(processingFiles.values()).map((file) => (
-                                    <div
-                                        key={file.id}
-                                        className={cn(
-                                            'flex items-center gap-1.5 px-2 py-1 rounded-md text-sm',
-                                            file.status === FileProcessingStatus.ERROR
-                                                ? 'bg-destructive/10 text-destructive'
-                                                : file.status === FileProcessingStatus.READY
-                                                  ? 'bg-success/10 text-success'
-                                                  : 'bg-attention/10 text-attention',
-                                        )}
-                                    >
-                                        <FileTextIcon
-                                            className={cn(
-                                                'size-3.5',
-                                                (file.status === FileProcessingStatus.UPLOADING ||
-                                                    file.status === FileProcessingStatus.PROCESSING) &&
-                                                    'animate-pulse',
-                                            )}
-                                        />
-                                        <span className="max-w-[120px] truncate">{file.name}</span>
-                                        <span className="text-xs opacity-70">
-                                            {file.status === FileProcessingStatus.UPLOADING
-                                                ? t('agent.uploading')
-                                                : file.status === FileProcessingStatus.PROCESSING
-                                                  ? t('agent.processing')
-                                                  : file.status === FileProcessingStatus.ERROR
-                                                    ? t('agent.error')
-                                                    : file.status === FileProcessingStatus.READY
-                                                      ? t('agent.ready')
-                                                      : file.status}
-                                        </span>
-                                    </div>
-                                ))}
-                            {/* Uploaded files (with remove button) */}
-                            {uploadedFiles.map((file) => (
+            {/* Input row */}
+            <div className="mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-border/70 bg-mixer-muted/15 p-2.5 shadow-lg shadow-black/5">
+                {((!hideFileUpload && (uploadedFiles.length > 0 || (processingFiles && processingFiles.size > 0))) ||
+                    selectedDocuments.length > 0) && (
+                    <div className="flex flex-wrap gap-1.5">
+                        {!hideFileUpload &&
+                            processingFiles &&
+                            Array.from(processingFiles.values()).map((file) => (
                                 <div
                                     key={file.id}
-                                    className="flex items-center gap-1.5 px-2 py-1 bg-success/10 text-success rounded-md text-sm"
+                                    className={cn(
+                                        'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs',
+                                        file.status === FileProcessingStatus.ERROR
+                                            ? 'bg-destructive/10 text-destructive'
+                                            : file.status === FileProcessingStatus.READY
+                                              ? 'bg-success/10 text-success'
+                                              : 'bg-attention/10 text-attention',
+                                    )}
+                                >
+                                    <FileTextIcon
+                                        className={cn(
+                                            'size-3.5',
+                                            (file.status === FileProcessingStatus.UPLOADING ||
+                                                file.status === FileProcessingStatus.PROCESSING) &&
+                                                'animate-pulse',
+                                        )}
+                                    />
+                                    <span className="max-w-[140px] truncate">{file.name}</span>
+                                    <span className="opacity-70">
+                                        {file.status === FileProcessingStatus.UPLOADING
+                                            ? t('agent.uploading')
+                                            : file.status === FileProcessingStatus.PROCESSING
+                                              ? t('agent.processing')
+                                              : file.status === FileProcessingStatus.ERROR
+                                                ? t('agent.error')
+                                                : file.status === FileProcessingStatus.READY
+                                                  ? t('agent.ready')
+                                                  : file.status}
+                                    </span>
+                                </div>
+                            ))}
+                        {!hideFileUpload &&
+                            uploadedFiles.map((file) => (
+                                <div
+                                    key={file.id}
+                                    className="flex items-center gap-1.5 rounded-md bg-success/10 px-2 py-1 text-xs text-success"
                                 >
                                     <FileTextIcon className="size-3.5" />
-                                    <span className="max-w-[120px] truncate">{file.name}</span>
+                                    <span className="max-w-[140px] truncate">{file.name}</span>
                                     {onRemoveFile && (
                                         <Button
                                             variant="unstyled"
                                             aria-label={`Remove ${file.name}`}
                                             onClick={() => onRemoveFile(file.id)}
-                                            className="ms-1 p-0.5 hover:bg-success/20 rounded"
+                                            className="ms-1 rounded p-0.5 hover:bg-success/20"
                                         >
                                             <XIcon className="size-3" />
                                         </Button>
                                     )}
                                 </div>
                             ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Selected documents section — always visible regardless of hideFileUpload */}
-            {selectedDocuments.length > 0 && (
-                <div className="mb-3">
-                    <div className="flex items-center gap-1 mb-1">
-                        <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                            {t('agent.documentAttachments')}
-                        </span>
-                        <VTooltip description={t('agent.documentAttachmentsDescription')} placement="top" size="md">
-                            <HelpCircleIcon className="size-3 text-blue-400 dark:text-blue-500" />
-                        </VTooltip>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
                         {selectedDocuments.map((doc) => (
                             <div
                                 key={doc.id}
-                                className="flex items-center gap-1.5 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-md text-sm text-blue-700 dark:text-blue-300"
+                                className="flex items-center gap-1.5 rounded-md bg-info/10 px-2 py-1 text-xs text-info"
                             >
                                 <FileTextIcon className="size-3.5" />
-                                <span className="max-w-[120px] truncate">{doc.name}</span>
+                                <span className="max-w-[140px] truncate">{doc.name}</span>
                                 {onRemoveDocument && (
                                     <Button
                                         variant="unstyled"
                                         aria-label={`Remove ${doc.name}`}
                                         onClick={() => onRemoveDocument(doc.id)}
-                                        className="ms-1 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded"
+                                        className="ms-1 rounded p-0.5 hover:bg-info/20"
                                     >
                                         <XIcon className="size-3" />
                                     </Button>
@@ -481,46 +437,7 @@ export default function MessageInput({
                             </div>
                         ))}
                     </div>
-                </div>
-            )}
-
-            {/* Action buttons row */}
-            {(onFilesSelected || renderDocumentSearch) && (
-                <div className="mx-auto flex max-w-3xl gap-2 mb-2">
-                    {onFilesSelected && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={openFileDialog}
-                            disabled={disabled || uploadedFiles.length >= maxFiles}
-                            className="text-xs text-muted"
-                        >
-                            <UploadIcon className="size-3.5 me-1.5" />
-                            {t('agent.upload')}
-                        </Button>
-                    )}
-                    {renderDocumentSearch && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setIsDocSearchOpen(true)}
-                            disabled={disabled}
-                            className="text-xs text-muted"
-                        >
-                            <FileTextIcon className="size-3.5 me-1.5" />
-                            {t('agent.searchDocuments')}
-                            {selectedDocuments.length > 0 && (
-                                <span className="ms-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-blue-600 text-white">
-                                    {selectedDocuments.length}
-                                </span>
-                            )}
-                        </Button>
-                    )}
-                </div>
-            )}
-
-            {/* Input row */}
-            <div className="mx-auto flex max-w-3xl flex-col gap-3 rounded-2xl border border-border/70 bg-mixer-muted/15 p-3 shadow-lg shadow-black/5">
+                )}
                 <div className="flex min-w-0 flex-1">
                     <Textarea
                         ref={ref}
@@ -529,34 +446,70 @@ export default function MessageInput({
                         onChange={(e) => setValue(e.target.value)}
                         onPaste={handlePaste}
                         disabled={disabled}
+                        aria-label={resolvedPlaceholder}
                         placeholder={
                             isStreaming
-                                ? t('agent.agentWorking')
+                                ? `${t('agent.agentWorking')} ${t('agent.enterToSend')}`
                                 : onFilesSelected
-                                  ? t('agent.askAnything')
-                                  : resolvedPlaceholder
+                                  ? `${t('agent.askAnything')} ${t('agent.enterToSend')}`
+                                  : `${resolvedPlaceholder} ${t('agent.enterToSend')}`
                         }
-                        rows={2}
-                        style={{ minHeight: '60px', maxHeight: '200px' }}
+                        rows={1}
+                        style={{ maxHeight: '160px' }}
                         className={cn(
-                            'min-h-[72px] resize-none border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0',
+                            'min-h-[44px] resize-none border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0',
                             inputClassName,
                         )}
                     />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                         {!hideObjectLinking && (
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="rounded-full text-muted"
+                                className="size-8 rounded-full text-muted"
                                 disabled={!isCompleted}
                                 onClick={() => setIsObjectModalOpen(true)}
-                                alt={t('agent.linkObject')}
+                                aria-label={t('agent.linkObject')}
                             >
                                 <PaperclipIcon className="size-4" />
                             </Button>
+                        )}
+                        {onFilesSelected && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={openFileDialog}
+                                disabled={disabled || uploadedFiles.length >= maxFiles}
+                                className="h-8 rounded-full px-2 text-xs text-muted"
+                            >
+                                <UploadIcon className="size-3.5 me-1.5" />
+                                {t('agent.upload')}
+                            </Button>
+                        )}
+                        {renderDocumentSearch && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsDocSearchOpen(true)}
+                                disabled={disabled}
+                                className="h-8 rounded-full px-2 text-xs text-muted"
+                            >
+                                <FileTextIcon className="size-3.5 me-1.5" />
+                                {t('agent.searchDocuments')}
+                                {selectedDocuments.length > 0 && (
+                                    <span className="ms-1.5 inline-flex items-center justify-center rounded-full bg-info/20 px-1.5 py-0.5 text-[10px] font-medium text-info">
+                                        {selectedDocuments.length}
+                                    </span>
+                                )}
+                            </Button>
+                        )}
+                        {activeTaskCount > 0 && (
+                            <span className="inline-flex h-8 items-center gap-1 rounded-full px-2 text-xs text-muted">
+                                <Activity className="size-3 text-attention" />
+                                {t('agent.activeWorkstreams', { count: activeTaskCount })}
+                            </span>
                         )}
                     </div>
                     {/* Show Stop button only when streaming AND no text entered */}
@@ -574,6 +527,7 @@ export default function MessageInput({
                                 '[&_svg]:text-destructive disabled:[&_svg]:text-muted',
                             )}
                             title={t('agent.stopAgent')}
+                            aria-label={t('agent.stopAgent')}
                         >
                             {isStopping ? (
                                 <Spinner size="sm" />
@@ -593,26 +547,12 @@ export default function MessageInput({
                                 'disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100',
                             )}
                             title={hasProcessingFiles ? t('agent.waitForFiles') : undefined}
+                            aria-label={hasProcessingFiles ? t('agent.waitForFiles') : t('agent.send')}
                         >
                             {isSending ? <Spinner size="sm" /> : <ArrowUpIcon className="size-4" />}
                         </Button>
                     )}
                 </div>
-            </div>
-
-            <div className="mx-auto max-w-3xl text-xs text-muted mt-2 text-center">
-                {activeTaskCount > 0 ? (
-                    <div className="flex items-center justify-center">
-                        <Activity className="h-3 w-3 me-1 text-attention" />
-                        <span>{t('agent.activeWorkstreams', { count: activeTaskCount })}</span>
-                    </div>
-                ) : isStreaming ? (
-                    t('agent.agentWorkingStop')
-                ) : disabled ? (
-                    t('agent.agentProcessing')
-                ) : (
-                    t('agent.enterToSend')
-                )}
             </div>
 
             {/* Object Selection Modal */}

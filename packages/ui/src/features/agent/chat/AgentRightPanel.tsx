@@ -1,10 +1,25 @@
 import type { AgentMessage, ConversationFile, Plan } from '@vertesia/common';
 import { FileProcessingStatus } from '@vertesia/common';
-import { Badge, Button, cn, SelectBox, type Tab as TabDefinition, Tabs, TabsPanel, useToast } from '@vertesia/ui/core';
+import {
+    Badge,
+    Button,
+    Center,
+    cn,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    type Tab as TabDefinition,
+    Tabs,
+    TabsPanel,
+    useToast,
+} from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     CheckCircleIcon,
+    CheckIcon,
+    ChevronsUpDownIcon,
     ClipboardCopyIcon,
     DownloadCloudIcon,
     FileTextIcon,
@@ -45,6 +60,15 @@ interface UploadedDocumentsProps {
     files?: Map<string, ConversationFile>;
 }
 
+function RightPanelEmptyState({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
+    return (
+        <Center className="h-full min-h-[240px] flex-col text-center text-muted">
+            {icon}
+            <span className="text-sm">{children}</span>
+        </Center>
+    );
+}
+
 function UploadedDocumentsTab({ files }: UploadedDocumentsProps) {
     const { t } = useUITranslation();
     const filesArray = useMemo(() => {
@@ -81,12 +105,11 @@ function UploadedDocumentsTab({ files }: UploadedDocumentsProps) {
     };
 
     return (
-        <div className="">
+        <div className="h-full min-h-0">
             {filesArray.length === 0 ? (
-                <div className="flex flex-col items-center justify-center text-sm text-muted text-center py-8">
-                    <FileTextIcon className="size-8 mb-2" />
+                <RightPanelEmptyState icon={<FileTextIcon className="mb-2 size-8" />}>
                     {t('agent.noFilesUploadedYet')}
-                </div>
+                </RightPanelEmptyState>
             ) : (
                 <div className="space-y-2 p-2">
                     {filesArray.map((file) => (
@@ -199,10 +222,9 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
 
     if (workstreams.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-8 text-muted">
-                <LayoutListIcon className="size-8 mb-2" />
-                <span className="text-sm">{t('agent.noActiveWorkstreams')}</span>
-            </div>
+            <RightPanelEmptyState icon={<LayoutListIcon className="mb-2 size-8" />}>
+                {t('agent.noActiveWorkstreams')}
+            </RightPanelEmptyState>
         );
     }
 
@@ -301,6 +323,61 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
 // ---------------------------------------------------------------------------
 
 type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'payload' | 'conversation';
+
+function RightPanelTabSelect({
+    tabs,
+    activeTab,
+    onChange,
+    ariaLabel,
+}: {
+    tabs: TabDefinition[];
+    activeTab: RightPanelTab;
+    onChange: (tab: RightPanelTab) => void;
+    ariaLabel: string;
+}) {
+    const [open, setOpen] = useState(false);
+    const currentTab = tabs.find((tab) => tab.name === activeTab) ?? tabs[0];
+
+    return (
+        <DropdownMenu open={open} onOpenChange={setOpen}>
+            <DropdownMenuTrigger asChild>
+                <button
+                    type="button"
+                    aria-label={ariaLabel}
+                    aria-haspopup="menu"
+                    aria-expanded={open}
+                    className={cn(
+                        'flex w-full flex-row items-center justify-between gap-2 rounded-md border border-border bg-transparent p-2 text-start text-inherit',
+                        'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                        'hover:bg-muted',
+                    )}
+                >
+                    <span className="min-w-0 truncate text-sm">{currentTab?.label}</span>
+                    <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" aria-hidden="true" />
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="z-[1000000]">
+                {tabs.map((tab) => {
+                    const isSelected = tab.name === activeTab;
+
+                    return (
+                        <DropdownMenuItem
+                            key={tab.name}
+                            className="min-h-9 justify-between gap-3 px-2 py-1.5 text-sm"
+                            onSelect={() => {
+                                onChange(tab.name as RightPanelTab);
+                                setOpen(false);
+                            }}
+                        >
+                            <span className="min-w-0 truncate">{tab.label}</span>
+                            {isSelected && <CheckIcon className="size-4 shrink-0" aria-hidden="true" />}
+                        </DropdownMenuItem>
+                    );
+                })}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
 
 export interface AgentRightPanelProps {
     /** Optional payload content to show as a "Payload" tab */
@@ -447,9 +524,7 @@ function AgentRightPanelComponent({
                         onChangePlan={onChangePlan}
                     />
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-8 text-muted">
-                        <span className="text-sm">{t('agent.noPlanAvailable')}</span>
-                    </div>
+                    <RightPanelEmptyState>{t('agent.noPlanAvailable')}</RightPanelEmptyState>
                 ),
             ),
             is_allowed: true,
@@ -498,10 +573,9 @@ function AgentRightPanelComponent({
                         runId={runId}
                     />
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-8 text-muted">
-                        <FileTextIcon className="size-8 mb-2" />
-                        <span className="text-sm">{t('agent.noDocumentsOpen')}</span>
-                    </div>
+                    <RightPanelEmptyState icon={<FileTextIcon className="mb-2 size-8" />}>
+                        {t('agent.noDocumentsOpen')}
+                    </RightPanelEmptyState>
                 ),
             ),
             is_allowed: true,
@@ -538,19 +612,15 @@ function AgentRightPanelComponent({
     ];
 
     const visibleTabs = tabs.filter((tab) => tab.is_allowed === undefined || tab.is_allowed === true);
-    const currentTab = visibleTabs.find((tab) => tab.name === activeTab);
-
     return (
         <Tabs tabs={tabs} current={activeTab} onTabChange={handleTabChange} fullHeight className="px-0">
-            <div className="flex items-center border-b shrink-0 px-1 py-1 gap-1">
+            <div className="flex items-center shrink-0 px-1 py-1 gap-1">
                 <div className="flex-1 min-w-0">
-                    <SelectBox<TabDefinition>
-                        label="Select Options"
-                        options={visibleTabs}
-                        value={currentTab}
-                        onChange={(tab) => tab && handleTabChange(tab.name)}
-                        optionLabel={(tab) => tab.label}
-                        by="name"
+                    <RightPanelTabSelect
+                        ariaLabel={t('agent.selectRightPanelSection')}
+                        tabs={visibleTabs}
+                        activeTab={activeTab}
+                        onChange={handleTabChange}
                     />
                 </div>
                 {!conversationContent && (
@@ -565,7 +635,7 @@ function AgentRightPanelComponent({
                     </Button>
                 )}
             </div>
-            <TabsPanel className="pt-0" />
+            <TabsPanel className="flex-1 min-h-0 pt-0 pb-0" />
         </Tabs>
     );
 }

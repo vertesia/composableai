@@ -11,7 +11,9 @@ import {
     ExternalLink,
     GitFork,
     InfoIcon,
+    MessageSquareText,
     MoreVertical,
+    Rows3,
     XIcon,
 } from 'lucide-react';
 import { PayloadBuilderProvider, usePayloadBuilder } from '../../PayloadBuilder';
@@ -21,6 +23,7 @@ import { getConversationUrl } from './utils';
 export interface HeaderProps {
     title: string;
     isCompleted: boolean;
+    variant?: 'full' | 'compact';
     /** Workflow is in a terminal state (completed/failed/cancelled) — not just idle */
     isTerminal?: boolean;
     onClose?: () => void;
@@ -58,6 +61,7 @@ export interface HeaderProps {
 
 export default function Header({
     title,
+    variant = 'full',
     isTerminal = false,
     onClose,
     isModal,
@@ -81,6 +85,127 @@ export default function Header({
     className,
 }: HeaderProps) {
     const { t } = useUITranslation();
+    const isCompact = variant === 'compact';
+    const nextViewMode: AgentConversationViewMode = viewMode === 'sliding' ? 'stacked' : 'sliding';
+    const verboseLabel = t('agent.verbose');
+    const summaryLabel = t('agent.summary');
+    const nextViewModeLabel = nextViewMode === 'stacked' ? verboseLabel : summaryLabel;
+    const controls = (
+        <div
+            className={cn(
+                isCompact ? 'flex flex-col items-center gap-1' : 'flex justify-end items-center gap-2 ms-auto',
+            )}
+        >
+            {/* View Mode Toggle */}
+            {isCompact ? (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onViewModeChange(nextViewMode)}
+                    className="size-8 rounded-lg"
+                    title={nextViewModeLabel}
+                    aria-label={nextViewModeLabel}
+                >
+                    {nextViewMode === 'stacked' ? (
+                        <Rows3 className="size-4" />
+                    ) : (
+                        <MessageSquareText className="size-4" />
+                    )}
+                </Button>
+            ) : (
+                <div className="flex items-center gap-1 bg-muted rounded p-0.5 mt-2 lg:mt-0">
+                    <Button
+                        variant={viewMode === 'stacked' ? 'outline' : 'ghost'}
+                        size="xs"
+                        onClick={() => onViewModeChange('stacked')}
+                        aria-pressed={viewMode === 'stacked'}
+                        className="gap-1.5"
+                    >
+                        <Rows3 className="size-3.5" />
+                        {verboseLabel}
+                    </Button>
+                    <Button
+                        variant={viewMode === 'sliding' ? 'outline' : 'ghost'}
+                        size="xs"
+                        onClick={() => onViewModeChange('sliding')}
+                        aria-pressed={viewMode === 'sliding'}
+                        className="gap-1.5"
+                    >
+                        <MessageSquareText className="size-3.5" />
+                        {summaryLabel}
+                    </Button>
+                </div>
+            )}
+
+            {showPlanButton && (
+                <div className="relative">
+                    {/* Notification badge when plan is available but hidden */}
+                    {hasPlan && !showPlanPanel && (
+                        <span className="absolute -top-1 -end-1 w-2.5 h-2.5 bg-primary rounded-full border border-border z-10"></span>
+                    )}
+                    <Button
+                        size={variant === 'compact' ? 'icon' : 'sm'}
+                        variant={showPlanPanel ? 'primary' : 'secondary'}
+                        onClick={onTogglePlanPanel}
+                        className={cn(
+                            'transition-all duration-200 rounded-md',
+                            variant === 'compact' && 'size-8 rounded-lg',
+                        )}
+                        title={t('agent.toggleRightSidebar')}
+                    >
+                        <ClipboardList className={cn('size-4', variant === 'full' && 'me-1.5')} />
+                        {variant === 'full' ? (
+                            <span className="font-medium text-xs">
+                                {showPlanPanel ? t('agent.hideSidebar') : t('agent.showSidebar')}
+                            </span>
+                        ) : (
+                            <span className="sr-only">
+                                {showPlanPanel ? t('agent.hideSidebar') : t('agent.showSidebar')}
+                            </span>
+                        )}
+                    </Button>
+                </div>
+            )}
+
+            {/* More actions */}
+            <MoreDropdown
+                compact={isCompact}
+                agentRunId={agentRunId}
+                workflowRunId={workflowRunId}
+                isModal={isModal}
+                isTerminal={isTerminal}
+                onClose={onClose}
+                onDownload={onDownload}
+                onExportFixture={onExportFixture}
+                resetWorkflow={resetWorkflow}
+                onExportPdf={onExportPdf}
+                onShowDetails={onShowDetails}
+                allowWorkflowControl={allowWorkflowControl}
+                onClone={onClone}
+            />
+            {onClose && !isModal && (
+                <Button size="xs" variant="ghost" onClick={onClose} aria-label={t('agent.close')}>
+                    <XIcon className="size-4" />
+                </Button>
+            )}
+        </div>
+    );
+
+    if (variant === 'compact') {
+        return (
+            <PayloadBuilderProvider>
+                <div
+                    className={cn(
+                        'inline-flex items-center rounded-xl border border-border/70 bg-background/90 p-1 shadow-lg shadow-black/10 backdrop-blur',
+                        className,
+                    )}
+                >
+                    {controls}
+                </div>
+            </PayloadBuilderProvider>
+        );
+    }
+
     return (
         <PayloadBuilderProvider>
             <div
@@ -107,73 +232,14 @@ export default function Header({
                         />
                     </span>
                 </div>
-                <div className="flex justify-end items-center space-x-2 ms-auto">
-                    {/* View Mode Toggle */}
-                    <div className="flex items-center space-x-1 bg-muted rounded p-0.5 mt-2 lg:mt-0">
-                        <Button
-                            variant={viewMode === 'stacked' ? 'outline' : 'ghost'}
-                            size="xs"
-                            onClick={() => onViewModeChange('stacked')}
-                        >
-                            {t('agent.details')}
-                        </Button>
-                        <Button
-                            variant={viewMode === 'sliding' ? 'outline' : 'ghost'}
-                            size="xs"
-                            onClick={() => onViewModeChange('sliding')}
-                        >
-                            {t('agent.summary')}
-                        </Button>
-                    </div>
-
-                    {showPlanButton && (
-                        <div className="relative">
-                            {/* Notification badge when plan is available but hidden */}
-                            {hasPlan && !showPlanPanel && (
-                                <span className="absolute -top-1 -end-1 w-2.5 h-2.5 bg-primary rounded-full border border-border z-10"></span>
-                            )}
-                            <Button
-                                size="sm"
-                                variant={showPlanPanel ? 'primary' : 'secondary'}
-                                onClick={onTogglePlanPanel}
-                                className="transition-all duration-200 rounded-md"
-                                title={t('agent.toggleRightSidebar')}
-                            >
-                                <ClipboardList className="size-4 me-1.5" />
-                                <span className="font-medium text-xs">
-                                    {showPlanPanel ? t('agent.hideSidebar') : t('agent.showSidebar')}
-                                </span>
-                            </Button>
-                        </div>
-                    )}
-
-                    {/* More actions */}
-                    <MoreDropdown
-                        agentRunId={agentRunId}
-                        workflowRunId={workflowRunId}
-                        isModal={isModal}
-                        isTerminal={isTerminal}
-                        onClose={onClose}
-                        onDownload={onDownload}
-                        onExportFixture={onExportFixture}
-                        resetWorkflow={resetWorkflow}
-                        onExportPdf={onExportPdf}
-                        onShowDetails={onShowDetails}
-                        allowWorkflowControl={allowWorkflowControl}
-                        onClone={onClone}
-                    />
-                    {onClose && !isModal && (
-                        <Button size="xs" variant="ghost" onClick={onClose}>
-                            <XIcon className="size-4" />
-                        </Button>
-                    )}
-                </div>
+                {controls}
             </div>
         </PayloadBuilderProvider>
     );
 }
 
 function MoreDropdown({
+    compact = false,
     agentRunId,
     workflowRunId,
     isModal,
@@ -187,6 +253,7 @@ function MoreDropdown({
     allowWorkflowControl = true,
     onClone,
 }: {
+    compact?: boolean;
     agentRunId: string;
     workflowRunId: string;
     isModal: boolean;
@@ -279,7 +346,13 @@ function MoreDropdown({
         <Dropdown
             align="right"
             trigger={
-                <Button size="xs" variant="ghost" title={t('agent.moreActions')}>
+                <Button
+                    size={compact ? 'icon' : 'xs'}
+                    variant="ghost"
+                    title={t('agent.moreActions')}
+                    aria-label={t('agent.moreActions')}
+                    className={compact ? 'size-8 rounded-lg' : undefined}
+                >
                     <MoreVertical className="size-4" />
                 </Button>
             }

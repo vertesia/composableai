@@ -306,6 +306,8 @@ export interface ModernAgentConversationProps {
     hideObjectLinking?: boolean;
     /** Hide the internal header (for apps that render their own) */
     hideHeader?: boolean;
+    /** Header density. Use compact when the surrounding page already identifies the run. */
+    headerVariant?: 'full' | 'compact';
     /** Hide the internal message input (for apps that render their own) */
     hideMessageInput?: boolean;
     /** Custom action shown in place of the input box when the run status is FAILED.
@@ -448,6 +450,7 @@ function StartWorkflowView({
     hideHeader = false,
     hideFileUpload = false,
     hideObjectLinking,
+    headerVariant,
     inputContainerClassName,
     inputClassName,
     className,
@@ -710,6 +713,7 @@ function StartWorkflowView({
                     placeholder,
                     fullWidth,
                     hideHeader,
+                    headerVariant,
                     hideFileUpload,
                     hideObjectLinking,
                     inputContainerClassName,
@@ -917,6 +921,7 @@ function ModernAgentConversationInner({
     hideObjectLinking,
     // Section visibility
     hideHeader,
+    headerVariant = 'full',
     hideMessageInput,
     failedAction,
     hidePlanPanel,
@@ -1741,6 +1746,33 @@ function ModernAgentConversationInner({
         [getActivePlan.plan],
     );
 
+    const renderConversationHeader = (variant: 'full' | 'compact') => (
+        <Header
+            title={actualTitle}
+            variant={variant}
+            isCompleted={effectiveIsCompleted}
+            isTerminal={isWorkflowTerminal}
+            onClose={onClose}
+            isModal={isModal}
+            agentRunId={agentRunId}
+            workflowRunId={workflowRunId || ''}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            showPlanPanel={showRightPanelProp && showSlidingPanel}
+            hasPlan={showRightPanelProp && plans.length > 0}
+            showPlanButton={showRightPanelProp && !conversationTab}
+            onTogglePlanPanel={handleTogglePlanPanel}
+            onDownload={downloadConversation}
+            onExportFixture={exportReplayFixture}
+            resetWorkflow={resetWorkflow}
+            onClone={onClone}
+            onShowDetails={onShowDetails}
+            allowWorkflowControl={allowWorkflowControl}
+            onExportPdf={exportConversationPdf}
+            isReceivingChunks={debugChunkFlash}
+        />
+    );
+
     // Conversation area inner content — shared between main layout and conversationTab mode
     const conversationAreaJsx = (
         <div
@@ -1760,32 +1792,13 @@ function ModernAgentConversationInner({
                         : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`,
             )}
         >
-            {!hideHeader && (
-                <div className="flex-shrink-0">
-                    <Header
-                        title={actualTitle}
-                        isCompleted={effectiveIsCompleted}
-                        isTerminal={isWorkflowTerminal}
-                        onClose={onClose}
-                        isModal={isModal}
-                        agentRunId={agentRunId}
-                        workflowRunId={workflowRunId || ''}
-                        viewMode={viewMode}
-                        onViewModeChange={handleViewModeChange}
-                        showPlanPanel={showRightPanelProp && showSlidingPanel}
-                        hasPlan={showRightPanelProp && plans.length > 0}
-                        showPlanButton={showRightPanelProp && !conversationTab}
-                        onTogglePlanPanel={handleTogglePlanPanel}
-                        onDownload={downloadConversation}
-                        onExportFixture={exportReplayFixture}
-                        resetWorkflow={resetWorkflow}
-                        onClone={onClone}
-                        onShowDetails={onShowDetails}
-                        allowWorkflowControl={allowWorkflowControl}
-                        onExportPdf={exportConversationPdf}
-                        isReceivingChunks={debugChunkFlash}
-                    />
+            {!hideHeader && headerVariant === 'compact' && (
+                <div className="flex flex-shrink-0 justify-end border-b border-border/60 px-2 py-1 lg:hidden">
+                    {renderConversationHeader('compact')}
                 </div>
+            )}
+            {!hideHeader && headerVariant !== 'compact' && (
+                <div className="flex-shrink-0">{renderConversationHeader(headerVariant)}</div>
             )}
 
             {isTestPlaybackEnabled && (
@@ -1939,6 +1952,12 @@ function ModernAgentConversationInner({
                     {/* Conversation Area — hidden when conversationTab moves it into the right panel */}
                     {!conversationTab && conversationAreaJsx}
 
+                    {!conversationTab && headerVariant === 'compact' && !hideHeader && (
+                        <div className="hidden h-full w-12 shrink-0 items-start justify-center px-1 pt-2 lg:flex">
+                            {renderConversationHeader('compact')}
+                        </div>
+                    )}
+
                     {/* Unified Right Panel — Plan | Workstreams | Documents | Uploads */}
                     {isRightPanelVisible && (
                         <>
@@ -1979,7 +1998,7 @@ function ModernAgentConversationInner({
                                 className={
                                     conversationTab
                                         ? 'w-full h-full overflow-auto'
-                                        : 'w-full lg:w-[var(--agent-right-panel-width)] lg:shrink-0 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-s'
+                                        : 'w-full lg:w-[var(--agent-right-panel-width)] lg:shrink-0 min-h-[50vh] lg:h-full border-t lg:border-t-0'
                                 }
                                 style={
                                     !conversationTab

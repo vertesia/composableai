@@ -1,7 +1,7 @@
 import type { Plan } from '@vertesia/common';
-import { Badge, Button, cn } from '@vertesia/ui/core';
+import { Badge, Button, Center, cn } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { AlertCircle, CheckCircle, Circle, Clock } from 'lucide-react';
+import { CheckCircle, Circle, ClipboardList, Clock } from 'lucide-react';
 import React from 'react';
 
 interface InlinePlanPanelProps {
@@ -30,6 +30,19 @@ function InlineSlidingPlanPanelComponent({
         return null;
     }
 
+    const planTasks = plan.plan || [];
+
+    if (planTasks.length === 0) {
+        return (
+            <div className="h-full overflow-hidden">
+                <Center className="h-full min-h-[240px] flex-col text-center text-muted">
+                    <ClipboardList className="mb-2 size-8" />
+                    <span className="text-sm">{t('agent.noPlanAvailable')}</span>
+                </Center>
+            </div>
+        );
+    }
+
     // Render the normal panel
     return (
         <div className="h-full overflow-hidden">
@@ -40,8 +53,6 @@ function InlineSlidingPlanPanelComponent({
                     <div className="flex items-center gap-2">
                         {/* Calculate progress based on plan tasks, regardless of workstream */}
                         {(() => {
-                            // Get all tasks from the plan itself
-                            const planTasks = plan.plan || [];
                             const totalTasks = planTasks.length;
 
                             // Count completed tasks by checking their status in workstreamStatus
@@ -114,78 +125,67 @@ function InlineSlidingPlanPanelComponent({
                     </div>
 
                     <div className="divide-y divide-muted/20 max-h-[calc(100vh-350px)] overflow-y-auto">
-                        {plan.plan && plan.plan.length > 0 ? (
-                            plan.plan.map((task, index) => {
-                                // Extract task info with null checks
-                                const taskId = task.id ? task.id.toString() : `task-${index}`;
-                                const taskGoal = task.goal || `Task ${index + 1}`;
+                        {planTasks.map((task, index) => {
+                            // Extract task info with null checks
+                            const taskId = task.id ? task.id.toString() : `task-${index}`;
+                            const taskGoal = task.goal || `Task ${index + 1}`;
 
-                                // Determine task status - use task.status if available or lookup from workstream
-                                let status: 'pending' | 'in_progress' | 'completed' | 'skipped' =
-                                    task.status || 'pending';
-                                if (workstreamStatus.has(taskId)) {
-                                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                                    status = workstreamStatus.get(taskId)!;
-                                }
+                            // Determine task status - use task.status if available or lookup from workstream
+                            let status: 'pending' | 'in_progress' | 'completed' | 'skipped' = task.status || 'pending';
+                            if (workstreamStatus.has(taskId)) {
+                                // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
+                                status = workstreamStatus.get(taskId)!;
+                            }
 
-                                // Determine status icon and style
-                                let StatusIcon = Circle;
-                                let statusColor = 'text-muted';
+                            // Determine status icon and style
+                            let StatusIcon = Circle;
+                            let statusColor = 'text-muted';
 
-                                if (status === 'in_progress') {
-                                    StatusIcon = Clock;
-                                    statusColor = 'text-info';
-                                } else if (status === 'completed') {
-                                    StatusIcon = CheckCircle;
-                                    statusColor = 'text-success';
-                                }
+                            if (status === 'in_progress') {
+                                StatusIcon = Clock;
+                                statusColor = 'text-info';
+                            } else if (status === 'completed') {
+                                StatusIcon = CheckCircle;
+                                statusColor = 'text-success';
+                            }
 
-                                return (
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                                    <div key={index} className="flex p-3 my-1">
-                                        <div className={`me-2 mt-0.5 flex-shrink-0 text-muted`}>{taskId}</div>
-                                        <div className="w-full">
-                                            <div className="text-sm font-medium mb-2 text-muted">{taskGoal}</div>
-                                            <div className="mt-1 flex justify-end items-center">
-                                                <div className={`me-2 mt-0.5 flex-shrink-0 ${statusColor}`}>
-                                                    <StatusIcon className="size-3.5" />
-                                                </div>
-                                                <Badge
-                                                    variant={
-                                                        status === 'completed'
-                                                            ? 'success'
-                                                            : status === 'in_progress'
-                                                              ? 'info'
-                                                              : 'default'
-                                                    }
-                                                >
-                                                    {status === 'completed'
-                                                        ? t('agent.completed')
-                                                        : status === 'in_progress'
-                                                          ? t('agent.inProgress')
-                                                          : t('agent.pending')}
-                                                </Badge>
+                            return (
+                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
+                                <div key={index} className="flex p-3 my-1">
+                                    <div className={`me-2 mt-0.5 flex-shrink-0 text-muted`}>{taskId}</div>
+                                    <div className="w-full">
+                                        <div className="text-sm font-medium mb-2 text-muted">{taskGoal}</div>
+                                        <div className="mt-1 flex justify-end items-center">
+                                            <div className={`me-2 mt-0.5 flex-shrink-0 ${statusColor}`}>
+                                                <StatusIcon className="size-3.5" />
                                             </div>
+                                            <Badge
+                                                variant={
+                                                    status === 'completed'
+                                                        ? 'success'
+                                                        : status === 'in_progress'
+                                                          ? 'info'
+                                                          : 'default'
+                                                }
+                                            >
+                                                {status === 'completed'
+                                                    ? t('agent.completed')
+                                                    : status === 'in_progress'
+                                                      ? t('agent.inProgress')
+                                                      : t('agent.pending')}
+                                            </Badge>
                                         </div>
                                     </div>
-                                );
-                            })
-                        ) : (
-                            <div className="p-3 text-center text-muted italic">
-                                <AlertCircle className="size-4 mx-auto mb-2 text-attention" />
-                                <p className="text-xs">{t('agent.noPlanDetected')}</p>
-                                <p className="text-xs mt-1">{t('agent.plansWillAppear')}</p>
-                            </div>
-                        )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 
                 {/* Workstream Status Summary - excluding main and task IDs from the plan */}
                 {(() => {
                     // Get all task IDs from the plan for filtering
-                    const planTaskIds = new Set(
-                        (plan.plan || []).filter((task) => task?.id).map((task) => task.id.toString()),
-                    );
+                    const planTaskIds = new Set(planTasks.filter((task) => task?.id).map((task) => task.id.toString()));
 
                     // Filter out 'main' workstream and any IDs that are tasks in the plan
                     const workstreamEntries = Array.from(workstreamStatus.entries()).filter(
