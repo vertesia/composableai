@@ -34,6 +34,7 @@ const VERTESIA_UI_PATH = '';
  */
 const CONFIG__inlineCss = false;
 const REACT_IMPORT_MAP_PLACEHOLDER = '<!-- vertesia-react-importmap -->';
+const STALE_ASSET_RECOVERY_PLACEHOLDER = '<!-- vertesia-stale-asset-recovery -->';
 const nodeRequire = createRequire(import.meta.url);
 let cachedReactImportMapHtml: string | undefined;
 
@@ -82,6 +83,65 @@ function reactImportMapPlugin(): Plugin {
                 return html.replace(REACT_IMPORT_MAP_PLACEHOLDER, importMapHtml);
             }
             return html.replace('</head>', `  ${importMapHtml}\n</head>`);
+        },
+    };
+}
+
+function getStaleAssetRecoveryHtml(): string {
+    return `<script>
+    (() => {
+      const reloadParam = '__vertesia_reload';
+      const storageKey = 'vertesia:stale-asset-reload';
+
+      function reloadOnce() {
+        try {
+          const url = new URL(window.location.href);
+          const reloadKey = window.location.origin + window.location.pathname;
+          const alreadyRetried =
+            url.searchParams.has(reloadParam) || window.sessionStorage.getItem(storageKey) === reloadKey;
+
+          if (alreadyRetried) return;
+
+          window.sessionStorage.setItem(storageKey, reloadKey);
+          url.searchParams.set(reloadParam, String(Date.now()));
+          window.location.replace(url.toString());
+        } catch (error) {
+          console.error('Failed to recover from stale asset load:', error);
+        }
+      }
+
+      window.addEventListener('vite:preloadError', (event) => {
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        reloadOnce();
+      });
+
+      window.addEventListener(
+        'error',
+        (event) => {
+          if (event.target && (event.target.tagName === 'SCRIPT' || event.target.tagName === 'LINK')) {
+            reloadOnce();
+          }
+        },
+        true,
+      );
+
+      window.addEventListener('load', () => {
+        try {
+          const url = new URL(window.location.href);
+          if (!url.searchParams.has(reloadParam)) return;
+          url.searchParams.delete(reloadParam);
+          window.history.replaceState(window.history.state, document.title, url.pathname + url.search + url.hash);
+        } catch (_error) {}
+      });
+    })();
+  </script>`;
+}
+
+function staleAssetRecoveryPlugin(enabled: boolean): Plugin {
+    return {
+        name: 'vertesia-stale-asset-recovery',
+        transformIndexHtml(html) {
+            return html.replace(STALE_ASSET_RECOVERY_PLACEHOLDER, enabled ? getStaleAssetRecoveryHtml() : '');
         },
     };
 }
@@ -148,6 +208,7 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
             tailwindcss(),
             react(),
             reactImportMapPlugin(),
+            staleAssetRecoveryPlugin(command === 'build'),
             // HTTPS is required for Firebase auth but must be disabled under vercel dev
             ...(useHttps ? [basicSsl()] : []),
             // serve lib/plugin.js content in dev mode
