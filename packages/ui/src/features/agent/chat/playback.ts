@@ -10,10 +10,7 @@ export interface AgentChatPlaybackState {
     displayedMessages: AgentMessage[];
 }
 
-export function clampPlaybackCursor(
-    cursor: AgentChatPlaybackCursor,
-    messageCount: number,
-): AgentChatPlaybackCursor {
+export function clampPlaybackCursor(cursor: AgentChatPlaybackCursor, messageCount: number): AgentChatPlaybackCursor {
     if (cursor === 'live') return cursor;
     if (messageCount === 0) return 'live';
     return Math.min(Math.max(cursor, 0), messageCount - 1);
@@ -25,10 +22,7 @@ export function getPlaybackCursorIndex(cursor: AgentChatPlaybackCursor, messageC
     return Math.min(Math.max(cursor, 0), messageCount - 1);
 }
 
-export function getPreviousUserTurnIndex(
-    messages: AgentMessage[],
-    cursor: AgentChatPlaybackCursor,
-): number | null {
+export function getPreviousUserTurnIndex(messages: AgentMessage[], cursor: AgentChatPlaybackCursor): number | null {
     if (messages.length === 0) return null;
     const currentIndex = cursor === 'live' ? messages.length : getPlaybackCursorIndex(cursor, messages.length);
 
@@ -78,16 +72,20 @@ function getHashSearchParams(hash: string): URLSearchParams {
     return new URLSearchParams(hash.slice(queryStart + 1));
 }
 
-export function isLocalhostAgentChatPlaybackEnabled(): boolean {
+export function isLocalhostAgentChatPlaybackAvailable(): boolean {
     if (typeof window === 'undefined') return false;
     const hostname = window.location.hostname;
-    const isLocalhost =
+    return (
         hostname === 'localhost' ||
         hostname === '127.0.0.1' ||
         hostname === '[::1]' ||
         hostname.endsWith('.localhost') ||
-        hostname.endsWith('.local');
-    if (!isLocalhost) return false;
+        hostname.endsWith('.local')
+    );
+}
+
+export function isLocalhostAgentChatPlaybackEnabled(): boolean {
+    if (!isLocalhostAgentChatPlaybackAvailable()) return false;
 
     const params = new URLSearchParams(window.location.search);
     const hashParams = getHashSearchParams(window.location.hash);

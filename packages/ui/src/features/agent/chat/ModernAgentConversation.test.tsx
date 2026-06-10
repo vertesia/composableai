@@ -1,7 +1,7 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import type React from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../../__tests__/test-utils.js';
 import { ModernAgentConversation } from './ModernAgentConversation';
 
@@ -40,7 +40,12 @@ vi.mock('./SkillWidgetProvider', () => ({
 }));
 
 vi.mock('./ModernAgentOutput/Header', () => ({
-    default: (props: { onExportFixture?: () => void }) => {
+    default: (props: {
+        onExportFixture?: () => void;
+        showPlaybackButton?: boolean;
+        isPlaybackEnabled?: boolean;
+        onTogglePlayback?: () => void;
+    }) => {
         mocks.headerProps(props);
         return <div data-testid="agent-header" />;
     },
@@ -66,11 +71,13 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
     default: ({
         messages,
         streamingMessages,
+        bottomRef,
         onSendMessage,
         renderRequestInputControls,
     }: {
         messages: AgentMessage[];
         streamingMessages: Map<string, unknown>;
+        bottomRef: React.RefObject<HTMLDivElement>;
         onSendMessage?: (message: string) => void;
         renderRequestInputControls?: boolean;
     }) => {
@@ -82,6 +89,7 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
                 <button type="button" disabled={!onSendMessage} onClick={() => onSendMessage?.('follow up')}>
                     inline send
                 </button>
+                <div ref={bottomRef} data-testid="bottom-sentinel" />
             </div>
         );
     },
@@ -184,6 +192,10 @@ describe('ModernAgentConversation send handling', () => {
             handleFileUpload: vi.fn(),
             removeProcessingFile: vi.fn(),
         });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('restarts a terminal continuable run before sending the follow-up message', async () => {
@@ -395,7 +407,11 @@ describe('ModernAgentConversation send handling', () => {
         );
     });
 
-    it('test playback controls slice rendered messages without mutating the live stream', () => {
+    it('test playback controls slice rendered messages and scroll forward without mutating the live stream', async () => {
+        const originalScrollIntoView = Element.prototype.scrollIntoView;
+        const scrollIntoView = vi.fn();
+        Element.prototype.scrollIntoView = scrollIntoView;
+
         mockStreamState({
             messages: [
                 createMessage(AgentMessageType.QUESTION, 'first question'),
@@ -415,24 +431,79 @@ describe('ModernAgentConversation send handling', () => {
             ]),
         });
 
-        renderConversation({ enableTestPlayback: true });
+        try {
+            renderConversation({ enableTestPlayback: true });
 
-        expect(screen.getByTestId('rendered-message-count').textContent).toBe('5');
-        expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('1');
+            expect(screen.getByTestId('rendered-message-count').textContent).toBe('5');
+            expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('1');
 
-        fireEvent.click(screen.getByRole('button', { name: 'Previous user turn' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Jump to first message' }));
 
-        expect(screen.getByTestId('rendered-message-count').textContent).toBe('3');
-        expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('0');
+            expect(screen.getByTestId('rendered-message-count').textContent).toBe('1');
+            expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('0');
+            expect(scrollIntoView).not.toHaveBeenCalled();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Previous message' }));
+            fireEvent.change(screen.getByRole('textbox', { name: 'Playback position' }), {
+                target: { value: '3' },
+            });
 
-        expect(screen.getByTestId('rendered-message-count').textContent).toBe('2');
+            expect(screen.getByTestId('rendered-message-count').textContent).toBe('3');
+            await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+            scrollIntoView.mockClear();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Jump to live' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Previous message' }));
 
-        expect(screen.getByTestId('rendered-message-count').textContent).toBe('5');
-        expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('1');
+            expect(screen.getByTestId('rendered-message-count').textContent).toBe('2');
+            expect(scrollIntoView).not.toHaveBeenCalled();
+
+            fireEvent.click(screen.getByRole('button', { name: 'Jump to latest message' }));
+
+            expect(screen.getByTestId('rendered-message-count').textContent).toBe('5');
+            expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('0');
+            await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+            scrollIntoView.mockClear();
+
+            fireEvent.click(screen.getByRole('button', { name: 'Jump to live' }));
+
+            expect(screen.getByTestId('rendered-message-count').textContent).toBe('5');
+            expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('1');
+            await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+        } finally {
+            Element.prototype.scrollIntoView = originalScrollIntoView;
+        }
+    });
+
+    it('exposes a local header toggle for test playback controls', () => {
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'first question'),
+                createMessage(AgentMessageType.ANSWER, 'first answer'),
+            ],
+        });
+
+        renderConversation({ hideHeader: false, showTestPlaybackToggle: true });
+
+        const calls = mocks.headerProps.mock.calls;
+        const headerProps = calls[calls.length - 1][0] as {
+            showPlaybackButton?: boolean;
+            isPlaybackEnabled?: boolean;
+            onTogglePlayback?: () => void;
+        };
+
+        expect(headerProps.showPlaybackButton).toBe(true);
+        expect(headerProps.isPlaybackEnabled).toBe(false);
+        expect(screen.queryByTestId('agent-test-playback-controls')).toBeNull();
+
+        act(() => {
+            headerProps.onTogglePlayback?.();
+        });
+
+        expect(screen.getByTestId('agent-test-playback-controls')).toBeTruthy();
+        expect(mocks.headerProps).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                isPlaybackEnabled: true,
+            }),
+        );
     });
 
     it('keeps the replay fixture export action available while messages are empty', () => {

@@ -163,7 +163,7 @@ export function AgentChatFixtureReplay({
         () => getPendingRequestInputMessage(displayedMessages),
         [displayedMessages],
     );
-    const resolvedTitle = title ?? fixture.metadata?.title ?? t('agent.testPlayback.fixtureTitle');
+    const resolvedTitle = title ?? fixture.metadata?.title ?? t('agent.rewind.fixtureTitle');
     const downloadFixture = useCallback(() => {
         const payload: AgentChatReplayFixture = {
             ...fixture,
@@ -196,7 +196,7 @@ export function AgentChatFixtureReplay({
                 <div className="min-w-0">
                     <div className="truncate text-sm font-medium">{resolvedTitle}</div>
                     <div className="text-xs text-muted">
-                        {t('agent.testPlayback.fixtureMeta', {
+                        {t('agent.rewind.fixtureMeta', {
                             messageCount: messages.length,
                             loops: completedLoops,
                         })}
@@ -205,7 +205,7 @@ export function AgentChatFixtureReplay({
                 <div className="flex items-center gap-2">
                     <Button type="button" variant="secondary" size="sm" onClick={downloadFixture}>
                         <DownloadCloudIcon className="size-4" />
-                        <span className="ms-1.5">{t('agent.testPlayback.exportFixture')}</span>
+                        <span className="ms-1.5">{t('agent.rewind.exportFixture')}</span>
                     </Button>
                     {autoStepMs && autoStepMs > 0 && (
                         <Button
@@ -216,7 +216,7 @@ export function AgentChatFixtureReplay({
                         >
                             {isPlaying ? <Pause className="size-4" /> : <Play className="size-4" />}
                             <span className="ms-1.5">
-                                {isPlaying ? t('agent.testPlayback.pause') : t('agent.testPlayback.resume')}
+                                {isPlaying ? t('agent.rewind.pause') : t('agent.rewind.resume')}
                             </span>
                         </Button>
                     )}

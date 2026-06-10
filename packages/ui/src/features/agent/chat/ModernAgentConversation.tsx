@@ -50,7 +50,13 @@ import { getPendingRequestInputMessage } from './ModernAgentOutput/requestInputM
 import type { StreamingMessageClassNames } from './ModernAgentOutput/StreamingMessage';
 import type { ToolCallGroupClassNames } from './ModernAgentOutput/ToolCallGroup';
 import { getConversationUrl, getWorkstreamId, isInProgress } from './ModernAgentOutput/utils';
-import { type AgentChatPlaybackCursor, createPlaybackState, isLocalhostAgentChatPlaybackEnabled } from './playback';
+import {
+    type AgentChatPlaybackCursor,
+    createPlaybackState,
+    getPlaybackCursorIndex,
+    isLocalhostAgentChatPlaybackAvailable,
+    isLocalhostAgentChatPlaybackEnabled,
+} from './playback';
 import { SkillWidgetProvider } from './SkillWidgetProvider';
 import { ArtifactUrlCacheProvider } from './useArtifactUrlCache.js';
 import { VegaLiteChart } from './VegaLiteChart';
@@ -401,6 +407,8 @@ export interface ModernAgentConversationProps {
     pendingStartTimestamp?: number;
     /** Test-only: local display playback controls. Slices rendered chat messages without mutating conversation state. */
     enableTestPlayback?: boolean;
+    /** Test-only: show a local toggle for display playback controls in the conversation action rail. */
+    showTestPlaybackToggle?: boolean;
 }
 
 export function ModernAgentConversation(props: ModernAgentConversationProps) {
@@ -986,6 +994,7 @@ function ModernAgentConversationInner({
     pendingStartMessage,
     pendingStartTimestamp,
     enableTestPlayback,
+    showTestPlaybackToggle = false,
 }: ModernAgentConversationProps & { agentRunId: string }) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
@@ -1067,12 +1076,15 @@ function ModernAgentConversationInner({
     const [isStopping, setIsStopping] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
     const [testPlaybackCursor, setTestPlaybackCursor] = useState<AgentChatPlaybackCursor>('live');
+    const [isTestPlaybackToggleEnabled, setIsTestPlaybackToggleEnabled] = useState(false);
+    const [playbackScrollRequestId, setPlaybackScrollRequestId] = useState(0);
     const [activeWorkstreams, setActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
     const [completedWorkstreams, setCompletedWorkstreams] = useState<
         Array<{ launch_id: string; workstream_id: string; status: 'completed' | 'canceled' }>
     >([]);
     const workstreamFetchFailedRef = useRef(false);
     const dragCounterRef = useRef(0);
+    const pendingPlaybackScrollRef = useRef(false);
 
     // PERFORMANCE: Refs for values used inside useCallback to avoid re-creating the callback
     const isSendingRef = useRef(isSending);
@@ -1204,7 +1216,10 @@ function ModernAgentConversationInner({
         [panelWorkstreams],
     );
 
-    const isTestPlaybackEnabled = enableTestPlayback ?? isLocalhostAgentChatPlaybackEnabled();
+    const canShowTestPlaybackToggle =
+        showTestPlaybackToggle && enableTestPlayback === undefined && isLocalhostAgentChatPlaybackAvailable();
+    const isTestPlaybackEnabled =
+        enableTestPlayback ?? (isLocalhostAgentChatPlaybackEnabled() || isTestPlaybackToggleEnabled);
     const playbackState = useMemo(
         () => createPlaybackState(messages, testPlaybackCursor, isTestPlaybackEnabled),
         [isTestPlaybackEnabled, messages, testPlaybackCursor],
@@ -1221,6 +1236,24 @@ function ModernAgentConversationInner({
     );
     const shouldShowRequestInputOverlay = Boolean(pendingRequestInputMessage) && !isFailed;
 
+    const handleToggleTestPlayback = useCallback(() => {
+        setIsTestPlaybackToggleEnabled((prev) => !prev);
+    }, []);
+
+    const handleChangeTestPlaybackCursor = useCallback(
+        (nextCursor: AgentChatPlaybackCursor) => {
+            const currentIndex = getPlaybackCursorIndex(clampedTestPlaybackCursor, messages.length);
+            const nextIndex = getPlaybackCursorIndex(nextCursor, messages.length);
+            const returningToLive = nextCursor === 'live' && clampedTestPlaybackCursor !== 'live';
+            if (isTestPlaybackEnabled && (nextIndex > currentIndex || returningToLive)) {
+                pendingPlaybackScrollRef.current = true;
+                setPlaybackScrollRequestId((requestId) => requestId + 1);
+            }
+            setTestPlaybackCursor(nextCursor);
+        },
+        [clampedTestPlaybackCursor, isTestPlaybackEnabled, messages.length],
+    );
+
     useEffect(() => {
         if (!isTestPlaybackEnabled) {
             if (testPlaybackCursor !== 'live') setTestPlaybackCursor('live');
@@ -1230,6 +1263,16 @@ function ModernAgentConversationInner({
             setTestPlaybackCursor(clampedTestPlaybackCursor);
         }
     }, [clampedTestPlaybackCursor, isTestPlaybackEnabled, testPlaybackCursor]);
+
+    useEffect(() => {
+        void playbackScrollRequestId;
+        if (!isTestPlaybackEnabled || !pendingPlaybackScrollRef.current) return;
+        pendingPlaybackScrollRef.current = false;
+        const animationFrame = window.requestAnimationFrame(() => {
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        });
+        return () => window.cancelAnimationFrame(animationFrame);
+    }, [isTestPlaybackEnabled, playbackScrollRequestId]);
 
     // ────────────────────────────────────────────
     // Stable callbacks
@@ -1670,7 +1713,7 @@ function ModernAgentConversationInner({
         downloadJsonFile(filename, fixture);
         toast({
             status: 'success',
-            title: t('agent.testPlayback.fixtureExported'),
+            title: t('agent.rewind.fixtureExported'),
             duration: 2000,
         });
     }, [actualTitle, agentRunId, messages, streamingMessages, t, toast]);
@@ -1762,6 +1805,9 @@ function ModernAgentConversationInner({
             hasPlan={showRightPanelProp && plans.length > 0}
             showPlanButton={showRightPanelProp && !conversationTab}
             onTogglePlanPanel={handleTogglePlanPanel}
+            showPlaybackButton={canShowTestPlaybackToggle}
+            isPlaybackEnabled={isTestPlaybackEnabled}
+            onTogglePlayback={handleToggleTestPlayback}
             onDownload={downloadConversation}
             onExportFixture={exportReplayFixture}
             resetWorkflow={resetWorkflow}
@@ -1802,11 +1848,13 @@ function ModernAgentConversationInner({
             )}
 
             {isTestPlaybackEnabled && (
-                <AgentChatPlaybackControls
-                    cursor={clampedTestPlaybackCursor}
-                    messages={messages}
-                    onChangeCursor={setTestPlaybackCursor}
-                />
+                <div className="flex flex-shrink-0 justify-end px-2 py-1.5">
+                    <AgentChatPlaybackControls
+                        cursor={clampedTestPlaybackCursor}
+                        messages={messages}
+                        onChangeCursor={handleChangeTestPlaybackCursor}
+                    />
+                </div>
             )}
 
             {messages.length === 0 && !effectiveIsCompleted && pendingStartMessage && pendingStartTimestamp ? (

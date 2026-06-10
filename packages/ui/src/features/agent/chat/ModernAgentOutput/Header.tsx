@@ -13,6 +13,7 @@ import {
     InfoIcon,
     MessageSquareText,
     MoreVertical,
+    Rewind,
     Rows3,
     XIcon,
 } from 'lucide-react';
@@ -36,6 +37,10 @@ export interface HeaderProps {
     hasPlan?: boolean;
     showPlanButton?: boolean;
     onTogglePlanPanel: () => void;
+    /** Show the local display playback toggle next to the conversation controls. */
+    showPlaybackButton?: boolean;
+    isPlaybackEnabled?: boolean;
+    onTogglePlayback?: () => void;
     onDownload?: () => void;
     onExportFixture?: () => void;
     // onCopyRunId?: () => void;
@@ -70,9 +75,11 @@ export default function Header({
     viewMode,
     onViewModeChange,
     showPlanPanel,
-    hasPlan = false,
     showPlanButton = true,
     onTogglePlanPanel,
+    showPlaybackButton = false,
+    isPlaybackEnabled = false,
+    onTogglePlayback,
     onDownload,
     onExportFixture,
     // onCopyRunId,
@@ -139,13 +146,9 @@ export default function Header({
 
             {showPlanButton && (
                 <div className="relative">
-                    {/* Notification badge when plan is available but hidden */}
-                    {hasPlan && !showPlanPanel && (
-                        <span className="absolute -top-1 -end-1 w-2.5 h-2.5 bg-primary rounded-full border border-border z-10"></span>
-                    )}
                     <Button
                         size={variant === 'compact' ? 'icon' : 'sm'}
-                        variant={showPlanPanel ? 'primary' : 'secondary'}
+                        variant={showPlanPanel ? 'primary' : 'ghost'}
                         onClick={onTogglePlanPanel}
                         className={cn(
                             'transition-all duration-200 rounded-md',
@@ -165,6 +168,29 @@ export default function Header({
                         )}
                     </Button>
                 </div>
+            )}
+
+            {showPlaybackButton && onTogglePlayback && (
+                <Button
+                    type="button"
+                    size={variant === 'compact' ? 'icon' : 'sm'}
+                    variant={isPlaybackEnabled ? 'primary' : 'ghost'}
+                    onClick={onTogglePlayback}
+                    aria-pressed={isPlaybackEnabled}
+                    aria-label={t('agent.rewind.label')}
+                    title={t('agent.rewind.label')}
+                    className={cn(
+                        'transition-all duration-200 rounded-md',
+                        variant === 'compact' && 'size-8 rounded-lg',
+                    )}
+                >
+                    <Rewind className={cn('size-4', variant === 'full' && 'me-1.5')} />
+                    {variant === 'full' ? (
+                        <span className="font-medium text-xs">{t('agent.rewind.label')}</span>
+                    ) : (
+                        <span className="sr-only">{t('agent.rewind.label')}</span>
+                    )}
+                </Button>
             )}
 
             {/* More actions */}
@@ -392,7 +418,7 @@ function MoreDropdown({
                 )}
                 {onExportFixture && (
                     <MenuItem onClick={onExportFixture}>
-                        <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.testPlayback.exportFixture')}
+                        <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.rewind.exportFixture')}
                     </MenuItem>
                 )}
                 {onClose && isModal && (

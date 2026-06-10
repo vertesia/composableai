@@ -6,7 +6,6 @@ export {
     type RechartsChartSpec,
     type VegaLiteChartSpec,
 } from './AgentChart';
-export * from './AnimatedThinkingDots';
 export {
     AgentChatFixtureReplay,
     type AgentChatFixtureReplayProps,
@@ -15,20 +14,7 @@ export {
     type AgentChatReplayStreamingMessage,
 } from './AgentChatFixtureReplay';
 export { AgentChatPlaybackControls, type AgentChatPlaybackControlsProps } from './AgentChatPlaybackControls';
-export * from './JumpingDots';
-export { ModernAgentConversation, type ModernAgentConversationProps } from './ModernAgentConversation';
-export {
-    type AgentChatPlaybackCursor,
-    type AgentChatPlaybackState,
-    clampPlaybackCursor,
-    createPlaybackState,
-    getNextUserTurnIndex,
-    getPlaybackCursorIndex,
-    getPreviousUserTurnIndex,
-    isLocalhostAgentChatPlaybackEnabled,
-} from './playback';
-export { VegaLiteChart } from './VegaLiteChart';
-export * from './WaitingMessages';
+export * from './AnimatedThinkingDots';
 // AskUser widget for displaying agent prompts/questions
 export {
     type AskUserOption,
@@ -37,6 +23,8 @@ export {
     ConfirmationWidget,
     type ConfirmationWidgetProps,
 } from './AskUserWidget';
+export * from './JumpingDots';
+export { ModernAgentConversation, type ModernAgentConversationProps } from './ModernAgentConversation';
 // AgentConversationViewMode type for external use
 export type {
     AgentConversationViewMode,
@@ -61,4 +49,17 @@ export type { StreamingMessageClassNames, StreamingMessageProps } from './Modern
 export { default as StreamingMessage } from './ModernAgentOutput/StreamingMessage';
 // ToolCallGroup types for external use
 export type { ToolCallGroupClassNames } from './ModernAgentOutput/ToolCallGroup';
+export {
+    type AgentChatPlaybackCursor,
+    type AgentChatPlaybackState,
+    clampPlaybackCursor,
+    createPlaybackState,
+    getNextUserTurnIndex,
+    getPlaybackCursorIndex,
+    getPreviousUserTurnIndex,
+    isLocalhostAgentChatPlaybackAvailable,
+    isLocalhostAgentChatPlaybackEnabled,
+} from './playback';
 export * from './SkillWidgetProvider';
+export { VegaLiteChart } from './VegaLiteChart';
+export * from './WaitingMessages';
