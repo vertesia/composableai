@@ -121,6 +121,8 @@ Always derive `app:` ids from `import.meta.env.VITE_APP_NAME` — e.g. `` `app:$
 
 > **App-owned types are in-code strings, not ObjectIds.** A content object's `type` is EITHER a stored-type ObjectId OR an in-code-type string `app:<app-name>:<local>`. Portable apps MUST pass the in-code string directly: `client.objects.create({ type: 'app:<name>:<local>', ... })` is correct (the platform resolves it from the app's package, including during preview for the owner). NEVER resolve an app-owned type to a project-local ObjectId (e.g. a `useTypeIds`/`types.list`→id hook) — that is non-portable and an anti-pattern.
 
+> **For TYPES, `<local>` is the declared type `name` — bare, no collection segment.** `app:<name>:contract` is correct; `app:<name>:contracts:contract` is the legacy alias. The `ContentTypesCollection` a type is registered in is code organization only and is NOT part of the type's identity — so type names MUST be unique across collections (the package build fails otherwise). This differs from interactions/activities/tools, where the collection IS part of the id (`app:<name>:<collection>:<interaction>`).
+
 ## Publish target
 
 An app that registers any backend resources (types, interactions, activities, tools, or skills) in `src/tool-server/config.ts` MUST publish as `service`. `static` is only for pure-UI apps with no `config.ts` registrations — a `static` publish ships no tool server, so app-owned types/interactions/activities won't resolve.

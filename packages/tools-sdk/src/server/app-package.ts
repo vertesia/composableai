@@ -65,13 +65,23 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
         pkg.interactions = allInteractions;
     },
     async types(pkg: AppPackage, config: ToolServerConfig) {
+        // A type's public id is its BARE name: stored objects reference it as the portable
+        // `app:<app>:<type>` string, so the in-code collection (a code-organization grouping,
+        // unlike tool/skill collections which are semantic) must NOT leak into the id.
+        // Names must therefore be unique across collections — fail the package build otherwise.
         const allTypes: InCodeTypeDefinition[] = [];
+        const seen = new Map<string, string>();
         for (const coll of config.types || []) {
             for (const type of coll.types) {
-                allTypes.push({
-                    ...type,
-                    id: `${coll.name}:${type.name}`,
-                });
+                const existing = seen.get(type.name);
+                if (existing) {
+                    throw new Error(
+                        `Duplicate content type name '${type.name}' (collections '${existing}' and '${coll.name}'). ` +
+                            `Type names must be unique across collections so the portable 'app:<app>:${type.name}' ref resolves.`,
+                    );
+                }
+                seen.set(type.name, coll.name);
+                allTypes.push({ ...type, id: type.name });
             }
         }
         pkg.types = allTypes;

@@ -70,6 +70,8 @@ One file per type in `src/tool-server/types/<collection>/<type-name>.ts` (`InCod
 
 Key fields: `name` (snake_case), `object_schema` (JSON Schema with `additionalProperties: false`), `table_layout` (columns for the UI), `is_chunkable`, `strict_mode`.
 
+The type's public id is its `name`, bare — referenced everywhere as `app:<app-name>:<name>` (no collection segment; the collection only organizes code, unlike interactions/activities where the collection is part of the id). Type names must therefore be unique across collections; the package build fails on duplicates.
+
 → Code in `REFERENCE.md` § Content Type.
 
 ### Rendering Template

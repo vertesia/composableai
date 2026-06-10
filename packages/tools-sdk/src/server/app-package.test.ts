@@ -83,7 +83,7 @@ describe('buildAppPackage', () => {
         });
 
         expect(pkg.interactions?.map((interaction) => interaction.id)).toEqual(['claims:review']);
-        expect(pkg.types?.map((type) => type.id)).toEqual(['claims:claim']);
+        expect(pkg.types?.map((type) => type.id)).toEqual(['claim']);
         expect(pkg.processes?.map((process) => process.id)).toEqual(['claims:intake']);
         expect(pkg.dashboards?.map((dashboard) => dashboard.id)).toEqual(['claims:ops']);
         expect(pkg.ui?.src).toBe('https://apps.example.test/lib/plugin.js');
@@ -107,7 +107,34 @@ describe('buildAppPackage', () => {
 
         const pkg = await buildAppPackage(config, { scope: 'types' });
 
-        expect(pkg.types?.map((type) => type.id)).toEqual(['claims:claim']);
+        expect(pkg.types?.map((type) => type.id)).toEqual(['claim']);
         expect(pkg.interactions).toBeUndefined();
+    });
+});
+
+describe('buildAppPackage type identity', () => {
+    it('exposes the bare type name as the public id (collections are code organization only)', async () => {
+        const config = {
+            types: [
+                new ContentTypesCollection({ name: 'claims', types: [{ name: 'claim' }] }),
+                new ContentTypesCollection({ name: 'audit', types: [{ name: 'audit_event' }] }),
+            ],
+        } satisfies ToolServerConfig;
+
+        const pkg = await buildAppPackage(config, { scope: 'types' });
+        expect(pkg.types?.map((type) => type.id)).toEqual(['claim', 'audit_event']);
+    });
+
+    it('fails the package build when a type name is duplicated across collections', async () => {
+        const config = {
+            types: [
+                new ContentTypesCollection({ name: 'claims', types: [{ name: 'claim' }] }),
+                new ContentTypesCollection({ name: 'legacy', types: [{ name: 'claim' }] }),
+            ],
+        } satisfies ToolServerConfig;
+
+        await expect(buildAppPackage(config, { scope: 'types' })).rejects.toThrow(
+            /Duplicate content type name 'claim'/,
+        );
     });
 });
