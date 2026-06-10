@@ -35,21 +35,8 @@
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { resolveTransformerNames } from '../import-transform/builtins.js';
-import { type TransformImportsOptions, transformImports } from '../import-transform/index.js';
-
-interface RawConfig {
-    libDir?: unknown;
-    srcDir?: unknown;
-    transformers?: unknown;
-    assetsDir?: unknown;
-    widgetsDir?: unknown;
-    widgetConfig?: unknown;
-}
-
-interface ResolvedConfig extends TransformImportsOptions {}
-
-const CONFIG_KEY = 'vertesia-build';
+import { transformImports } from '../import-transform/index.js';
+import { resolveConfig, VertesiaBuildConfigError } from './config.js';
 
 function fail(message: string): never {
     console.error(`vertesia-build: ${message}`);
@@ -71,78 +58,18 @@ function readPackageJson(cwd: string): Record<string, unknown> {
     }
 }
 
-function resolveConfig(cwd: string): ResolvedConfig {
-    const pkg = readPackageJson(cwd);
-    const raw = pkg[CONFIG_KEY];
-
-    if (raw === undefined) {
-        fail(`missing "${CONFIG_KEY}" key in package.json at ${cwd}.`);
-    }
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-        fail(`"${CONFIG_KEY}" must be an object in package.json.`);
-    }
-    const cfg = raw as RawConfig;
-
-    if (typeof cfg.libDir !== 'string' || cfg.libDir.length === 0) {
-        fail(`"${CONFIG_KEY}.libDir" must be a non-empty string.`);
-    }
-    if (typeof cfg.srcDir !== 'string' || cfg.srcDir.length === 0) {
-        fail(`"${CONFIG_KEY}.srcDir" must be a non-empty string.`);
-    }
-    if (!Array.isArray(cfg.transformers) || cfg.transformers.length === 0) {
-        fail(`"${CONFIG_KEY}.transformers" must be a non-empty array of transformer names.`);
-    }
-    const names: string[] = [];
-    for (const entry of cfg.transformers) {
-        if (typeof entry !== 'string' || entry.length === 0) {
-            fail(`every entry in "${CONFIG_KEY}.transformers" must be a non-empty string.`);
-        }
-        names.push(entry);
-    }
-
-    let transformers: TransformImportsOptions['transformers'];
-    try {
-        transformers = resolveTransformerNames(names);
-    } catch (error) {
-        fail((error as Error).message);
-    }
-
-    const resolved: ResolvedConfig = {
-        libDir: path.resolve(cwd, cfg.libDir),
-        srcDir: path.resolve(cwd, cfg.srcDir),
-        transformers,
-    };
-
-    if (cfg.assetsDir !== undefined) {
-        if (cfg.assetsDir === false) {
-            resolved.assetsDir = false;
-        } else if (typeof cfg.assetsDir === 'string' && cfg.assetsDir.length > 0) {
-            resolved.assetsDir = path.resolve(cwd, cfg.assetsDir);
-        } else {
-            fail(`"${CONFIG_KEY}.assetsDir" must be a string path or false.`);
-        }
-    }
-
-    if (cfg.widgetsDir !== undefined) {
-        if (typeof cfg.widgetsDir !== 'string' || cfg.widgetsDir.length === 0) {
-            fail(`"${CONFIG_KEY}.widgetsDir" must be a non-empty string when set.`);
-        }
-        resolved.widgetsDir = cfg.widgetsDir;
-    }
-
-    if (cfg.widgetConfig !== undefined) {
-        if (typeof cfg.widgetConfig !== 'object' || cfg.widgetConfig === null || Array.isArray(cfg.widgetConfig)) {
-            fail(`"${CONFIG_KEY}.widgetConfig" must be an object when set.`);
-        }
-        resolved.widgetConfig = cfg.widgetConfig as TransformImportsOptions['widgetConfig'];
-    }
-
-    return resolved;
-}
-
 async function main(): Promise<void> {
     const cwd = process.cwd();
-    const options = resolveConfig(cwd);
+    const pkg = readPackageJson(cwd);
+    let options;
+    try {
+        options = resolveConfig(pkg, cwd);
+    } catch (error) {
+        if (error instanceof VertesiaBuildConfigError) {
+            fail(error.message);
+        }
+        throw error;
+    }
     const result = await transformImports(options);
     console.log(
         `vertesia-build: files=${result.filesProcessed} chunks=${result.chunksEmitted} ` +

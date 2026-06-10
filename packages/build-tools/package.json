@@ -26,11 +26,12 @@
             "default": "./lib/index.js"
         },
         "./vite": {
-            "types": "./lib/vite/dev-server.d.ts",
-            "default": "./lib/vite/dev-server.js"
+            "types": "./lib/vite/index.d.ts",
+            "default": "./lib/vite/index.js"
         }
     },
     "devDependencies": {
+        "@hono/node-server": "^2.0.4",
         "@rollup/plugin-commonjs": "^29.0.3",
         "@rollup/plugin-json": "^6.1.0",
         "@rollup/plugin-node-resolve": "^16.0.3",
@@ -40,6 +41,7 @@
         "@vertesia/tsconfig": "workspace:*",
         "rollup": "^4.61.0",
         "typescript": "^6.0.3",
+        "vite": "^8.0.16",
         "vitest": "^4.1.8"
     },
     "dependencies": {
@@ -50,7 +52,17 @@
         "zod": "^4.4.3"
     },
     "peerDependencies": {
-        "rollup": "^4.61.0"
+        "@hono/node-server": "^2.0.0",
+        "rollup": "^4.61.0",
+        "vite": "^8.0.0"
+    },
+    "peerDependenciesMeta": {
+        "@hono/node-server": {
+            "optional": true
+        },
+        "vite": {
+            "optional": true
+        }
     },
     "repository": {
         "type": "git",
