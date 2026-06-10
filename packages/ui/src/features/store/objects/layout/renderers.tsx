@@ -133,6 +133,7 @@ const renderers: Record<
                 <td key={index} className="flex justify-start items-center gap-2">
                     <Button
                         variant="ghost"
+                        aria-label="Preview Object"
                         title="Preview Object"
                         onClick={(e) => {
                             e.stopPropagation();
