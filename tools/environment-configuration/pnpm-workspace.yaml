@@ -1,7 +1,7 @@
 packages:
   - "."
 overrides:
-  "@biomejs/biome": "2.4.4"
+  "@biomejs/biome": "2.4.16"
   "@types/node": "^24.12.4"
   "minimatch@>=3.0.0 <4.0.0": "legacy-v3"
   "minimatch@>=9.0.0 <10.0.0": "legacy-v9"
