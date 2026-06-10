@@ -200,22 +200,21 @@ export function ContentOverview({ object, loadText, refetch, canEditProperties =
 
     return (
         <ResizablePanelGroup direction="horizontal" className="h-full">
-            <ResizablePanel className="min-w-[100px]">
-                <PropertiesPanel
-                    object={object}
-                    refetch={refetch ?? (() => Promise.resolve())}
-                    handleCopyContent={handleCopyContent}
-                    canEditProperties={canEditProperties}
-                />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-
-            <ResizablePanel className="min-w-[100px]">
+            <ResizablePanel defaultSize={67} className="min-w-[100px]">
                 <DataPanel
                     object={object}
                     loadText={loadText ?? false}
                     handleCopyContent={handleCopyContent}
                     refetch={refetch}
+                />
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={33} className="min-w-[100px]">
+                <PropertiesPanel
+                    object={object}
+                    refetch={refetch ?? (() => Promise.resolve())}
+                    handleCopyContent={handleCopyContent}
+                    canEditProperties={canEditProperties}
                 />
             </ResizablePanel>
         </ResizablePanelGroup>

@@ -54,8 +54,10 @@ function normalizeMermaidCodeForBrowser(code: string): string {
  * Force Mermaid SVG output to scale with container width.
  * This keeps text and shapes proportional when the container shrinks/expands.
  */
-function makeSvgResponsive(svg: string): string {
-    return svg.replace(/<svg([^>]*)>/i, (_full, attrs: string) => {
+export function makeSvgResponsive(svg: string): string {
+    // `[^<>]` (not `[^>]`) so a run like `<svg<svg…` can't be re-scanned at every
+    // position; tag attributes never contain `<`/`>` (CodeQL js/polynomial-redos).
+    return svg.replace(/<svg([^<>]*)>/i, (_full, attrs: string) => {
         let nextAttrs = attrs.replace(/\swidth="[^"]*"/i, '').replace(/\sheight="[^"]*"/i, '');
 
         if (/style="/i.test(nextAttrs)) {

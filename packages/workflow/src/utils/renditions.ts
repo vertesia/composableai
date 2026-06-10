@@ -66,7 +66,7 @@ export async function uploadRenditionPages(
                     ? params.outputPath
                     : `${params.outputPath}/${String(i).padStart(4, '0')}.${params.format}`
                 : getRenditionPagePath(contentEtag, params, i);
-            let resizedImagePath = null;
+            let resizedImagePath: string | undefined;
 
             try {
                 log.debug(`Resizing image for ${contentEtag} page ${i}`, {
@@ -113,6 +113,14 @@ export async function uploadRenditionPages(
                     error: err,
                 });
                 return Promise.reject(`Upload failed: ${message}`);
+            } finally {
+                if (resizedImagePath) {
+                    try {
+                        fs.unlinkSync(resizedImagePath);
+                    } catch (err) {
+                        log.warn(`Failed to clean resized rendition file for ${contentEtag} page ${i}`, { err });
+                    }
+                }
             }
         }),
     );

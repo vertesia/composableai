@@ -9,6 +9,7 @@
         "lib.json",
         "web-lib.json",
         "ui-lib.json",
+        "server-app.json",
         "app.json"
     ],
     "exports": {
@@ -16,6 +17,7 @@
         "./lib.json": "./lib.json",
         "./web-lib.json": "./web-lib.json",
         "./ui-lib.json": "./ui-lib.json",
+        "./server-app.json": "./server-app.json",
         "./app.json": "./app.json"
     }
 }

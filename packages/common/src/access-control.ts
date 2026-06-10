@@ -18,7 +18,6 @@ export enum Permission {
     env_admin = 'environment:admin',
 
     app_manage = 'app:manage',
-
     project_admin = 'project:admin',
     project_integration_read = 'project:integration_read',
     project_settings_write = 'project:settings_write',
