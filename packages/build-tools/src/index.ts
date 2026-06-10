@@ -1,20 +1,33 @@
 /**
  * Vertesia Build Tools
  *
- * Transformers for custom import syntaxes (`?skill`, `?raw`, `?prompt`, `?template`,
- * `?skills`, `?templates`) plus rollup + vite plugins that wire them in.
+ * Transformers for custom import syntaxes (`?skill`, `?raw`, `?prompt`,
+ * `?template`, `?skills`, `?templates`, and bare `SKILL.md` / `TEMPLATE.md`),
+ * a standalone CLI (`vertesia-build`) that runs them as a post-`tsc` step,
+ * and Vite plugins for dev-mode integration.
+ *
+ * Two consumer entry points:
+ *
+ *   - **Build-time:** invoke the `vertesia-build` CLI from your package
+ *     scripts (after `tsc`). Config lives under `vertesia-build` in your
+ *     `package.json`. The CLI calls `transformImports()` internally — you
+ *     can also call it directly if you need finer control.
+ *
+ *   - **Dev-time (Vite):** import `vertesiaDevServerPlugin` (or
+ *     `apiServerPlugin` for full Hono tool-server wiring) from
+ *     `@vertesia/build-tools/vite`. Same transformers, same behavior,
+ *     applied to source files at request time.
  *
  * @example
  * ```typescript
- * import { vertesiaImportPlugin, skillTransformer, rawTransformer } from '@vertesia/build-tools';
+ * import { transformImports } from '@vertesia/build-tools';
  *
- * export default {
- *   plugins: [
- *     vertesiaImportPlugin({
- *       transformers: [skillTransformer, rawTransformer]
- *     })
- *   ]
- * };
+ * await transformImports({
+ *   libDir: './lib',
+ *   srcDir: './src',
+ *   transformers: ['skill', 'raw'],
+ *   assetsDir: './dist',
+ * });
  * ```
  */
 
@@ -50,12 +63,10 @@ export {
 // Types
 export type {
     AssetFile,
-    PluginConfig,
     TransformerPreset,
     TransformerRule,
     TransformFunction,
     TransformResult,
-    WidgetConfig,
 } from './core/types.js';
 // CLI-friendly transformer name registry
 export {
@@ -69,10 +80,3 @@ export {
     type TransformImportsResult,
     transformImports,
 } from './import-transform/index.js';
-// Rollup integration
-export { vertesiaImportPlugin } from './rollup/plugin.js';
-export {
-    createRollupTypescript,
-    isRollupWatchMode,
-    type RollupTypescriptOptions,
-} from './rollup/typescript.js';

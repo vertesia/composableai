@@ -1,9 +1,7 @@
 /**
  * Standalone import transformer for Vertesia query-style imports.
  *
- * Replaces the build-time work that `vertesiaImportPlugin` used to perform
- * inside a rollup pipeline. Operates directly on the JavaScript output of
- * `tsc`:
+ * Operates directly on the JavaScript output of `tsc`:
  *
  *   1. Walk `libDir` for `.js` files containing query imports.
  *   2. For each occurrence, resolve back to the corresponding source asset

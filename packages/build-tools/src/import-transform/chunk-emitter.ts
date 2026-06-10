@@ -2,8 +2,8 @@
  * Runs a transformer against a source file and writes the resulting module
  * as a standalone `.js` chunk inside the lib output.
  *
- * The generated module mirrors the code produced by the rollup `load()` hook
- * in `vertesiaImportPlugin` — it supports `imports`, `code`, and default
+ * The generated module mirrors the historical code produced by the legacy
+ * rollup `load()` hook — it supports `imports`, `code`, and default
  * `export default <data>` payloads — so the runtime behavior of
  * import-transformed builds matches the legacy rollup-based pipeline
  * byte-for-byte.
