@@ -6,7 +6,7 @@ import {
 } from '@vertesia/common';
 import { Badge, Button, cn, Dropdown, MenuItem, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { NavLink } from '@vertesia/ui/router';
+import { NavLink, useRouterContext } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
 import dayjs from 'dayjs';
@@ -216,6 +216,7 @@ function MessageItemComponent({
     const toast = useToast();
     const urlCache = useArtifactUrlCache();
     const { openImage } = useImageLightbox();
+    const { router } = useRouterContext();
     // Use refs to avoid triggering effect re-runs when these stable values are accessed
     const clientRef = useRef(client);
     clientRef.current = client;
@@ -371,17 +372,20 @@ function MessageItemComponent({
                 children?: React.ReactNode;
             }) => {
                 const href = props.href || '';
+                // Carry the active account (`a`) & project (`p`) params on internal routes so
+                // copy-link / open-in-new-tab preserve the current tenant.
+                const withParams = href.startsWith('/') ? router.getTopRouter().navigator.addStickyParams(href) : href;
                 if (href.includes('/store/objects')) {
                     if (StoreLinkComponent) {
                         const documentId = href.split('/store/objects/')[1] || '';
                         return (
-                            <StoreLinkComponent href={href} documentId={documentId}>
+                            <StoreLinkComponent href={withParams} documentId={documentId}>
                                 {props.children}
                             </StoreLinkComponent>
                         );
                     }
                     return (
-                        <NavLink href={href} topLevelNav>
+                        <NavLink href={withParams} topLevelNav>
                             {props.children}
                         </NavLink>
                     );
@@ -390,13 +394,13 @@ function MessageItemComponent({
                     if (CollectionLinkComponent) {
                         const collectionId = href.split('/store/collections/')[1] || '';
                         return (
-                            <CollectionLinkComponent href={href} collectionId={collectionId}>
+                            <CollectionLinkComponent href={withParams} collectionId={collectionId}>
                                 {props.children}
                             </CollectionLinkComponent>
                         );
                     }
                     return (
-                        <NavLink href={href} topLevelNav>
+                        <NavLink href={withParams} topLevelNav>
                             {props.children}
                         </NavLink>
                     );
@@ -421,7 +425,7 @@ function MessageItemComponent({
                 );
             },
         }),
-        [openImage, StoreLinkComponent, CollectionLinkComponent],
+        [openImage, StoreLinkComponent, CollectionLinkComponent, router],
     );
 
     // Render content with markdown support - all messages now rendered as markdown

@@ -106,7 +106,7 @@ export function SidePanel({
                                             // biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-label kept for AT users; div has no semantic role because separator/slider would require valuenow/min/max
                                             <div
                                                 aria-label="Resize panel"
-                                                className={`absolute ${dragHandleClass} top-0 bottom-0 w-3 cursor-ew-resize hover:bg-indigo-500 transition-colors flex items-center justify-center`}
+                                                className={`absolute ${dragHandleClass} top-0 bottom-0 w-3 z-25 cursor-ew-resize hover:bg-indigo-500 transition-colors flex items-center justify-center`}
                                                 onMouseDown={handleDragStart}
                                             >
                                                 <Minus className="rotate-90 font-semibold" strokeWidth={4} />
