@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     getArtifactCacheKey,
     getFileCacheKey,
+    isProjectFilePath,
     useArtifactUrlCache,
 } from '../../features/agent/chat/useArtifactUrlCache';
 
@@ -107,7 +108,7 @@ export function useResolvedUrl({
         // For artifact/image schemes, check cache first
         if (urlCache && (scheme === 'artifact' || scheme === 'image')) {
             let cacheKey: string;
-            if (scheme === 'artifact' && artifactRunId && !path.startsWith('agents/')) {
+            if (scheme === 'artifact' && artifactRunId && !isProjectFilePath(path)) {
                 cacheKey = getArtifactCacheKey(artifactRunId, path, disposition);
             } else {
                 cacheKey = getFileCacheKey(path);
@@ -143,7 +144,7 @@ export function useResolvedUrl({
             let url: string;
 
             if (scheme === 'artifact') {
-                if (artifactRunId && !path.startsWith('agents/')) {
+                if (artifactRunId && !isProjectFilePath(path)) {
                     const cacheKey = getArtifactCacheKey(artifactRunId, path, disposition);
                     if (currentUrlCache) {
                         url = await currentUrlCache.getOrFetch(cacheKey, async () => {

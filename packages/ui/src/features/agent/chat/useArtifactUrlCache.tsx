@@ -67,6 +67,15 @@ export function useArtifactUrlCache(): ArtifactUrlCacheContextValue | null {
 }
 
 /**
+ * Whether an artifact: path points directly into the project bucket
+ * (agents/ run prefixes, documents/ repository copies made by create_document)
+ * rather than being a run-local shorthand like out/chart.png.
+ */
+export function isProjectFilePath(path: string): boolean {
+    return path.startsWith('agents/') || path.startsWith('documents/');
+}
+
+/**
  * Generate a cache key for an artifact URL.
  */
 export function getArtifactCacheKey(runId: string, path: string, disposition: string = 'inline'): string {
