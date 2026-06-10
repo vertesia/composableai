@@ -25,9 +25,9 @@ function stringifyTemplateValue(value: unknown): string {
 }
 
 export function renderAgentRequestTemplate(template: string, data: unknown): string {
-    return template.replace(/\{\{\s*([\w.-]+|\.)\s*\}\}/g, (_match, path: string) => (
-        stringifyTemplateValue(getTemplatePathValue(data, path))
-    ));
+    return template.replace(/\{\{\s*([\w.-]+|\.)\s*\}\}/g, (_match, path: string) =>
+        stringifyTemplateValue(getTemplatePathValue(data, path)),
+    );
 }
 
 export function renderAgentRequestFallback(data: unknown): string {

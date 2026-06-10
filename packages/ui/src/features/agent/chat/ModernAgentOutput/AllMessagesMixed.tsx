@@ -61,6 +61,7 @@ import {
     isInProgress,
     isToolPreambleMessage,
     mergeConsecutiveToolGroups,
+    type RenderableGroup,
     type StreamingData,
     shouldCollapseAdjacentRenderedMessage,
     type ToolExecutionStatus,
@@ -855,6 +856,7 @@ function InitialRequestWaitingCard({
 type SummaryToolDetailKind = 'search' | 'read' | 'edit' | 'command' | 'skill' | 'discover' | 'think' | 'tool';
 
 interface SummaryToolDetailSection {
+    key: string;
     label: string;
     value: unknown;
     tone?: 'default' | 'error';
@@ -1024,12 +1026,68 @@ function compactInlineText(value: string, maxLength = 160): string {
     return normalized.length > maxLength ? `${normalized.slice(0, maxLength - 1)}...` : normalized;
 }
 
+const MESSAGE_RENDER_ID_DETAIL_KEYS = [
+    'batch_id',
+    'activity_group_id',
+    'activity_id',
+    'tool_run_id',
+    'tool_use_id',
+    'streaming_id',
+    'chunk_index',
+    'tool_iteration',
+    'tool_event',
+];
+
+function getStableDetailIdentity(details: Record<string, unknown>): string | undefined {
+    for (const key of MESSAGE_RENDER_ID_DETAIL_KEYS) {
+        const value = details[key];
+        if (typeof value === 'string' && value.trim()) return `${key}:${value.trim()}`;
+        if (typeof value === 'number' || typeof value === 'boolean') return `${key}:${value}`;
+    }
+    return undefined;
+}
+
+function getAgentMessageRenderKey(message: AgentMessage, prefix = 'message'): string {
+    const details = getDetailsRecord(message);
+    const detailIdentity = getStableDetailIdentity(details);
+    const contentIdentity = compactInlineText(getMessageText(message), 96);
+
+    return [
+        prefix,
+        message.workstream_id || 'main',
+        message.workflow_run_id,
+        message.timestamp,
+        message.type,
+        detailIdentity ?? contentIdentity,
+    ]
+        .filter(Boolean)
+        .join(':');
+}
+
+function getRenderableGroupKey(group: RenderableGroup): string {
+    if (group.type === 'single') {
+        return getAgentMessageRenderKey(group.message);
+    }
+
+    if (group.type === 'streaming') {
+        return `streaming:${group.streamingId}:${group.startTimestamp}:${group.workstreamId || 'main'}`;
+    }
+
+    const firstMessage = group.messages[0];
+    const lastMessage = group.messages[group.messages.length - 1];
+    const firstKey = firstMessage ? getAgentMessageRenderKey(firstMessage, 'first') : group.firstTimestamp;
+    const lastKey = lastMessage ? getAgentMessageRenderKey(lastMessage, 'last') : group.firstTimestamp;
+
+    return ['group', group.toolRunId, group.firstTimestamp, firstKey, lastKey].filter(Boolean).join(':');
+}
+
 function formatToolSectionValue(value: unknown): string {
     const text = stringifyRequestValue(value).trim();
     return text.length > 2400 ? `${text.slice(0, 2400)}\n...` : text;
 }
 
 function createToolSection(
+    key: string,
     label: string,
     value: unknown,
     tone?: SummaryToolDetailSection['tone'],
@@ -1037,7 +1095,7 @@ function createToolSection(
     if (value === null || value === undefined || value === '') return undefined;
     if (Array.isArray(value) && value.length === 0) return undefined;
     if (isRecordValue(value) && Object.keys(value).length === 0) return undefined;
-    return { label, value, tone };
+    return { key, label, value, tone };
 }
 
 function getRemainingDetailFields(
@@ -1062,7 +1120,7 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
 
     const addSection = (label: string, keys: string[], tone?: SummaryToolDetailSection['tone']) => {
         for (const key of keys) {
-            const section = createToolSection(label, details[key], tone);
+            const section = createToolSection(key, label, details[key], tone);
             if (section) {
                 consumedKeys.add(key);
                 sections.push(section);
@@ -1089,7 +1147,7 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
 
     const remainingDetails = getRemainingDetailFields(details, consumedKeys);
     if (sections.length === 0 && remainingDetails) {
-        sections.push({ label: 'Details', value: remainingDetails });
+        sections.push({ key: 'details', label: 'Details', value: remainingDetails });
     }
 
     return sections;
@@ -1244,14 +1302,16 @@ function ToolDetailSection({ section }: { section: SummaryToolDetailSection }) {
     const hideLabel = section.label === 'Output';
 
     if (isFileList) {
+        const fileLabels = Array.from(new Set(value.map((file) => stringifyRequestValue(file))));
+
         return (
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                {value.map((file, index) => (
+                {fileLabels.map((fileLabel) => (
                     <span
-                        key={`${stringifyRequestValue(file)}-${index}`}
+                        key={fileLabel}
                         className="rounded-md bg-mixer-muted/15 px-1.5 py-0.5 font-mono text-[11px] text-muted"
                     >
-                        {compactInlineText(stringifyRequestValue(file), 64)}
+                        {compactInlineText(fileLabel, 64)}
                     </span>
                 ))}
             </div>
@@ -1392,8 +1452,8 @@ function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
                 ) : null}
                 {item.sections.length > 0 ? (
                     <div className="space-y-3">
-                        {item.sections.map((section, sectionIndex) => (
-                            <ToolDetailSection key={`${section.label}-${sectionIndex}`} section={section} />
+                        {item.sections.map((section) => (
+                            <ToolDetailSection key={section.key} section={section} />
                         ))}
                     </div>
                 ) : null}
@@ -2433,10 +2493,7 @@ function AllMessagesMixedComponent({
 
                                     if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     return (
-                                        <TimelineEntry
-                                            key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}
-                                            status={group.toolStatus}
-                                        >
+                                        <TimelineEntry key={getRenderableGroupKey(group)} status={group.toolStatus}>
                                             <MessageErrorBoundary>
                                                 <ToolCallGroup
                                                     {...toolCallGroupClassNames}
@@ -2465,7 +2522,7 @@ function AllMessagesMixedComponent({
                                 } else if (group.type === 'streaming') {
                                     // Render streaming message - no error boundary to avoid interrupting streaming
                                     return (
-                                        <TimelineEntry key={`streaming-${group.streamingId}-${groupIndex}`}>
+                                        <TimelineEntry key={getRenderableGroupKey(group)}>
                                             <StreamingMessage
                                                 {...streamingMessageClassNames}
                                                 text={group.text}
@@ -2504,7 +2561,7 @@ function AllMessagesMixedComponent({
                                     }
 
                                     return (
-                                        <TimelineEntry key={`${message.timestamp}-${groupIndex}`} status="message">
+                                        <TimelineEntry key={getAgentMessageRenderKey(message)} status="message">
                                             <MessageErrorBoundary>
                                                 <MessageItem
                                                     {...messageItemClassNames}
@@ -2571,14 +2628,14 @@ function AllMessagesMixedComponent({
                     ) : (
                         // Summary view - conversation turns with per-turn work disclosure
                         <>
-                            {summaryConversationItems.map((item, itemIndex) => {
+                            {summaryConversationItems.map((item) => {
                                 if (item.type === 'work') {
                                     if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     const isThinkingOnlyWork = isTransientThinkingWork(item.messages);
 
                                     return (
                                         <SummaryActivityRow
-                                            key={`work-${item.id}-${item.isActive ? 'active' : 'done'}-${itemIndex}`}
+                                            key={`work-${item.id}-${item.isActive ? 'active' : 'done'}-${item.status}`}
                                             label={getSummaryActivityLabel(item.status, item.isActive)}
                                             status={item.status}
                                             timestamp={item.startTimestamp}
@@ -2599,9 +2656,7 @@ function AllMessagesMixedComponent({
                                 if (shouldHideRequestInputMessage(message)) return null;
                                 if (isBatchProgressMessage(message)) {
                                     return (
-                                        <MessageErrorBoundary
-                                            key={`batch-${message.details.batch_id}-${message.timestamp}-${itemIndex}`}
-                                        >
+                                        <MessageErrorBoundary key={getAgentMessageRenderKey(message, 'batch')}>
                                             <BatchProgressPanel
                                                 message={message}
                                                 batchData={message.details}
@@ -2613,7 +2668,7 @@ function AllMessagesMixedComponent({
                                 }
 
                                 return (
-                                    <MessageErrorBoundary key={`${message.timestamp}-${itemIndex}`}>
+                                    <MessageErrorBoundary key={getAgentMessageRenderKey(message, 'summary')}>
                                         <SummaryMessage
                                             message={message}
                                             onSendMessage={onSendMessage}

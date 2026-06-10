@@ -70,6 +70,10 @@ function getProgressDetails(details: Record<string, unknown> | undefined): ToolP
     });
 }
 
+function getProgressDetailKey(item: ToolProgressDetail): string {
+    return ['progress', item.timestamp ?? 'no-time', item.status ?? 'status', item.message].join(':');
+}
+
 /** Badge color per status */
 function statusBadgeClass(status?: ToolExecutionStatus): string {
     switch (status) {
@@ -522,8 +526,8 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                                     <div className="text-[10px] uppercase tracking-wide text-muted/70 font-medium">
                                         Progress
                                     </div>
-                                    {progressDetails.map((item, index) => (
-                                        <div key={`${item.timestamp ?? index}-${index}`} className="text-xs text-muted">
+                                    {progressDetails.map((item) => (
+                                        <div key={getProgressDetailKey(item)} className="text-xs text-muted">
                                             {item.timestamp && (
                                                 <span className="me-1 text-muted/60">
                                                     {dayjs(item.timestamp).format('HH:mm:ss')}
@@ -1060,9 +1064,9 @@ function ToolCallGroupComponent({
                                                         <div className="text-[10px] uppercase tracking-wide text-muted/70 font-medium">
                                                             Progress
                                                         </div>
-                                                        {progressDetails.map((item, index) => (
+                                                        {progressDetails.map((item) => (
                                                             <div
-                                                                key={`${item.timestamp ?? index}-${index}`}
+                                                                key={getProgressDetailKey(item)}
                                                                 className="text-xs text-muted"
                                                             >
                                                                 {item.timestamp && (
