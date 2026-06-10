@@ -29,7 +29,12 @@ import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useR
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget } from '../AskUserWidget';
 import { ThinkingMessages } from '../WaitingMessages';
-import { formatWorkstreamName, getWorkstreamLaunchDetails, type WorkstreamLaunchDetails } from '../workstreams.js';
+import {
+    formatWorkstreamName,
+    getWorkstreamDisplayName,
+    getWorkstreamLaunchDetails,
+    type WorkstreamLaunchDetails,
+} from '../workstreams.js';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from './BatchProgressPanel';
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
@@ -175,7 +180,9 @@ function SummaryWorkstreamLaunchMessage({
     details: WorkstreamLaunchDetails;
 }) {
     const { t } = useUITranslation();
-    const workstreamName = formatWorkstreamName(details.workstreamId);
+    const workstreamName = getWorkstreamDisplayName(details.workstreamId, details.interaction);
+    const interactionName = details.interaction ? formatWorkstreamName(details.interaction) : '';
+    const secondaryName = interactionName && interactionName !== workstreamName ? interactionName : undefined;
 
     return (
         <div className="mx-auto w-full max-w-3xl px-1" data-workstream-id={details.workstreamId}>
@@ -185,13 +192,8 @@ function SummaryWorkstreamLaunchMessage({
                     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                         <span className="font-medium text-muted">{t('agent.workstreams')}</span>
                         <span className="min-w-0 truncate text-foreground/85">{workstreamName}</span>
-                        <span className="inline-flex items-center rounded-full bg-info/10 px-1.5 py-0.5 text-xs font-medium text-info">
-                            {t('agent.running')}
-                        </span>
                     </div>
-                    {details.interaction && (
-                        <div className="mt-0.5 truncate text-xs text-muted/75">{details.interaction}</div>
-                    )}
+                    {secondaryName && <div className="mt-0.5 truncate text-xs text-muted/75">{secondaryName}</div>}
                     <span className="sr-only">{getMessageText(message)}</span>
                 </div>
             </div>

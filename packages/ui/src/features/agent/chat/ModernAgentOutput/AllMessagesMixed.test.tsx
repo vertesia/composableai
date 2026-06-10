@@ -4,6 +4,7 @@ import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../../../../i18n/index.js';
+import { ReactRouterContext, type RouterContext } from '../../../../router/index.js';
 import { UserSession, UserSessionContext } from '../../../../session/index.js';
 import AllMessagesMixed from './AllMessagesMixed';
 import type { StreamingData } from './utils';
@@ -53,19 +54,37 @@ function renderStacked(
             getArtifactDownloadUrl: vi.fn(),
         },
     } as unknown as VertesiaClient);
+    const routerContext = {
+        location: window.location,
+        route: { path: '/', Component: () => null },
+        params: {},
+        state: null,
+        matchedRoutePath: '/',
+        navigate: vi.fn(),
+        router: {
+            navigate: vi.fn(),
+            getTopRouter: () => ({
+                navigator: {
+                    addStickyParams: (href: string) => href,
+                },
+            }),
+        },
+    } as unknown as RouterContext;
 
     return render(
         <I18nProvider lng="en">
-            <UserSessionContext.Provider value={session}>
-                <AllMessagesMixed
-                    messages={messages}
-                    bottomRef={bottomRef}
-                    viewMode="stacked"
-                    isCompleted={isCompleted}
-                    artifactRunId="run-1"
-                    {...props}
-                />
-            </UserSessionContext.Provider>
+            <ReactRouterContext.Provider value={routerContext}>
+                <UserSessionContext.Provider value={session}>
+                    <AllMessagesMixed
+                        messages={messages}
+                        bottomRef={bottomRef}
+                        viewMode="stacked"
+                        isCompleted={isCompleted}
+                        artifactRunId="run-1"
+                        {...props}
+                    />
+                </UserSessionContext.Provider>
+            </ReactRouterContext.Provider>
         </I18nProvider>,
     );
 }
@@ -192,8 +211,75 @@ describe('AllMessagesMixed summary view', () => {
 
         expect(screen.getByText('Workstreams')).not.toBeNull();
         expect(screen.getByText('QA Tasks')).not.toBeNull();
-        expect(screen.getByText('Running')).not.toBeNull();
-        expect(screen.getByText('sys:BrowserAgent')).not.toBeNull();
+        expect(screen.getByText('Browser Agent')).not.toBeNull();
+    });
+
+    it('suppresses JSON-only child workstream results in summary view', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Generate a picture.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.THOUGHT,
+                    message: 'I am generating the image with a specialist agent.',
+                    details: {
+                        streamed: true,
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    type: AgentMessageType.UPDATE,
+                    message: 'Workstream "ImageGeneratorAgent-16b7f73a-8e8e-40b7-b891-cb47a78c38c6" launched',
+                    workstream_id: 'ImageGeneratorAgent-16b7f73a-8e8e-40b7-b891-cb47a78c38c6',
+                    details: {
+                        event_class: 'activity',
+                        workstream_event: 'launched',
+                        launch_id: 'launch-1',
+                        workstream_id: 'ImageGeneratorAgent-16b7f73a-8e8e-40b7-b891-cb47a78c38c6',
+                        kind: 'agent',
+                        interaction: 'ImageGeneratorAgent',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 4_000,
+                    type: AgentMessageType.ANSWER,
+                    message: '{"generated_images":["store:object-1"]}',
+                    workstream_id: 'ImageGeneratorAgent-16b7f73a-8e8e-40b7-b891-cb47a78c38c6',
+                    details: {
+                        event_class: 'user_content',
+                        streamed: true,
+                    },
+                }),
+                makeMessage({
+                    timestamp: 5_000,
+                    type: AgentMessageType.ANSWER,
+                    message: 'I saved the generated image as a content object.',
+                    workstream_id: 'main',
+                }),
+            ],
+            true,
+            new Map([
+                [
+                    'stream-json',
+                    {
+                        text: '{"generated_images":["store:object-2"]}',
+                        workstreamId: 'ImageGeneratorAgent-16b7f73a-8e8e-40b7-b891-cb47a78c38c6',
+                        isComplete: true,
+                        startTimestamp: 4_500,
+                    },
+                ],
+            ]),
+        );
+
+        expect(screen.getByText('Generate a picture.')).not.toBeNull();
+        expect(screen.getByText('Image Generator Agent')).not.toBeNull();
+        expect(screen.getByText('I saved the generated image as a content object.')).not.toBeNull();
+        expect(screen.queryByText(/generated_images/)).toBeNull();
+        expect(screen.queryByText(/store:object/)).toBeNull();
     });
 
     it('renders question attachment markdown as a store object link in summary view', () => {

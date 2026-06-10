@@ -12,11 +12,25 @@ import {
     Textarea,
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { Activity, ArrowUpIcon, FileTextIcon, PaperclipIcon, PlusIcon, SquareIcon, UploadIcon } from 'lucide-react';
+import {
+    Activity,
+    ArrowUpIcon,
+    Bot,
+    FileTextIcon,
+    PaperclipIcon,
+    PlusIcon,
+    SquareIcon,
+    UploadIcon,
+} from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SelectDocument } from '../../../store/objects/components/SelectDocument';
-import { formatWorkstreamName, getWorkstreamStatusClass, type WorkstreamInfo } from '../workstreams.js';
+import {
+    formatWorkstreamName,
+    getWorkstreamDisplayName,
+    getWorkstreamStatusClass,
+    type WorkstreamInfo,
+} from '../workstreams.js';
 import { type AttachmentPreviewItem, AttachmentPreviewList } from './AttachmentPreview';
 
 /** Represents an uploaded file attachment */
@@ -458,6 +472,53 @@ export default function MessageInput({
                 />
             )}
 
+            {runningWorkstreams.length > 0 && (
+                <div className="mx-auto mb-2 w-full max-w-3xl px-1" data-agent-active-workstreams>
+                    <output
+                        className="flex flex-col gap-1.5 rounded-2xl border border-border/70 bg-background/95 p-2 text-xs text-muted shadow-lg shadow-black/5"
+                        aria-live="polite"
+                    >
+                        <div className="flex items-center gap-2 px-1 font-medium">
+                            <Bot className="size-3.5 text-muted" aria-hidden="true" />
+                            <span>{t('agent.activeWorkstreams', { count: runningWorkstreams.length })}</span>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                            {visibleRunningWorkstreams.map((workstream) => {
+                                const workstreamName = getWorkstreamDisplayName(
+                                    workstream.workstream_id,
+                                    workstream.interaction,
+                                );
+
+                                return (
+                                    <span
+                                        key={workstream.launch_id || workstream.workstream_id}
+                                        className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-1 text-sm text-foreground/80"
+                                        title={workstreamName}
+                                    >
+                                        <span
+                                            className={cn(
+                                                'size-1.5 shrink-0 rounded-full',
+                                                getWorkstreamStatusClass(workstream.status),
+                                            )}
+                                            aria-hidden="true"
+                                        />
+                                        <span className="truncate font-medium">{workstreamName}</span>
+                                        {workstream.phase && (
+                                            <span className="truncate text-xs text-muted/75">
+                                                {formatWorkstreamName(workstream.phase)}
+                                            </span>
+                                        )}
+                                    </span>
+                                );
+                            })}
+                            {hiddenRunningWorkstreamCount > 0 && (
+                                <span className="px-1 py-1 text-xs text-muted">+{hiddenRunningWorkstreamCount}</span>
+                            )}
+                        </div>
+                    </output>
+                </div>
+            )}
+
             {/* Input row */}
             <div className="mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-border/70 bg-mixer-muted/15 p-2.5 shadow-lg shadow-black/5">
                 {attachmentItems.length > 0 && (
@@ -542,40 +603,12 @@ export default function MessageInput({
                                 )}
                             </Dropdown>
                         )}
-                        {activeWorkstreamCount > 0 && (
+                        {runningWorkstreams.length === 0 && activeWorkstreamCount > 0 && (
                             <output className="flex min-w-0 flex-wrap items-center gap-1.5" aria-live="polite">
                                 <span className="inline-flex h-8 items-center gap-1 rounded-full px-2 text-xs text-muted">
                                     <Activity className="size-3 text-attention" />
                                     {t('agent.activeWorkstreams', { count: activeWorkstreamCount })}
                                 </span>
-                                {visibleRunningWorkstreams.map((workstream) => (
-                                    <span
-                                        key={workstream.launch_id || workstream.workstream_id}
-                                        className="inline-flex h-8 min-w-0 max-w-44 items-center gap-1.5 rounded-full border border-border/60 px-2 text-xs text-muted"
-                                        title={formatWorkstreamName(workstream.workstream_id)}
-                                    >
-                                        <span
-                                            className={cn(
-                                                'size-1.5 shrink-0 rounded-full',
-                                                getWorkstreamStatusClass(workstream.status),
-                                            )}
-                                            aria-hidden="true"
-                                        />
-                                        <span className="truncate">
-                                            {formatWorkstreamName(workstream.workstream_id)}
-                                        </span>
-                                        {workstream.phase && (
-                                            <span className="truncate text-muted/70">
-                                                {formatWorkstreamName(workstream.phase)}
-                                            </span>
-                                        )}
-                                    </span>
-                                ))}
-                                {hiddenRunningWorkstreamCount > 0 && (
-                                    <span className="inline-flex h-8 items-center rounded-full px-2 text-xs text-muted">
-                                        +{hiddenRunningWorkstreamCount}
-                                    </span>
-                                )}
                             </output>
                         )}
                     </div>

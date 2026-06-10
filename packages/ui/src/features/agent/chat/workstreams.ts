@@ -1,8 +1,9 @@
-import type { AgentMessage } from '@vertesia/common';
+import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 
 export interface WorkstreamInfo {
     workstream_id: string;
     launch_id: string;
+    interaction?: string;
     elapsed_ms: number;
     deadline_ms: number;
     remaining_ms: number;
@@ -24,6 +25,10 @@ export interface WorkstreamLaunchDetails {
 export function formatWorkstreamName(workstreamId: string) {
     const normalized = workstreamId
         .replace(/^workstream[:_-]?/i, '')
+        .replace(/^sys:/i, '')
+        .replace(/[-_:]?[0-9a-f]{8}-[0-9a-f-]{12,}$/i, '')
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
         .replace(/[:_-]+/g, ' ')
         .trim();
 
@@ -40,6 +45,60 @@ export function formatWorkstreamName(workstreamId: string) {
             return lower.charAt(0).toUpperCase() + lower.slice(1);
         })
         .join(' ');
+}
+
+function isGeneratedWorkstreamId(workstreamId: string) {
+    return /[0-9a-f]{8}-[0-9a-f-]{12,}/i.test(workstreamId);
+}
+
+export function getWorkstreamDisplayName(workstreamId: string, interaction?: string) {
+    const formattedInteraction = interaction ? formatWorkstreamName(interaction) : '';
+    const formattedWorkstream = formatWorkstreamName(workstreamId);
+
+    if (!formattedInteraction) return formattedWorkstream;
+    if (isGeneratedWorkstreamId(workstreamId)) return formattedInteraction;
+
+    const normalizedInteraction = formattedInteraction.toLowerCase().replace(/\s+/g, '');
+    const normalizedWorkstream = formattedWorkstream.toLowerCase().replace(/\s+/g, '');
+    if (normalizedWorkstream.startsWith(normalizedInteraction)) return formattedInteraction;
+
+    return formattedWorkstream;
+}
+
+function getMessageText(message: AgentMessage): string {
+    if (!message.message) return '';
+    if (typeof message.message === 'object') return JSON.stringify(message.message, null, 2);
+    return String(message.message).trim();
+}
+
+function isNonMainWorkstreamId(workstreamId: unknown): workstreamId is string {
+    if (typeof workstreamId !== 'string') return false;
+    const normalized = workstreamId.trim().toLowerCase();
+    return Boolean(normalized && normalized !== 'main' && normalized !== 'all');
+}
+
+function isJsonLikeText(text: string): boolean {
+    const trimmed = text.trim();
+    if (!trimmed || !/^[{[]/.test(trimmed)) return false;
+
+    try {
+        JSON.parse(trimmed);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+export function isWorkstreamInternalResultText(text: string, workstreamId?: unknown): boolean {
+    return isNonMainWorkstreamId(workstreamId) && isJsonLikeText(text);
+}
+
+export function isWorkstreamInternalResultMessage(message: AgentMessage): boolean {
+    if (!isWorkstreamInternalResultText(getMessageText(message), message.workstream_id)) return false;
+    if (message.type !== AgentMessageType.ANSWER && message.type !== AgentMessageType.COMPLETE) return false;
+
+    const eventClass = message.details?.event_class;
+    return eventClass === 'user_content' || message.details?.streamed === true;
 }
 
 export function getWorkstreamStatusClass(status: WorkstreamInfo['status']) {

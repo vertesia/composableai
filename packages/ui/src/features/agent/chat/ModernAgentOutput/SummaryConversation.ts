@@ -1,5 +1,9 @@
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
-import { getWorkstreamLaunchDetails } from '../workstreams.js';
+import {
+    getWorkstreamLaunchDetails,
+    isWorkstreamInternalResultMessage,
+    isWorkstreamInternalResultText,
+} from '../workstreams.js';
 import {
     isStreamReplacedByMessage,
     isToolActivityMessage,
@@ -95,6 +99,8 @@ function filterTransientThinkingMessages(
 }
 
 export function isSummaryAssistantProseMessage(message: AgentMessage): boolean {
+    if (isWorkstreamInternalResultMessage(message)) return false;
+
     const text = getMessageText(message);
     if (!text || isLowSignalSummaryText(text)) return false;
 
@@ -131,6 +137,8 @@ function isToolScopedStatusMessage(message: AgentMessage): boolean {
 }
 
 function isSummaryPrimaryMessage(message: AgentMessage): boolean {
+    if (isWorkstreamInternalResultMessage(message)) return false;
+
     return (
         message.type === AgentMessageType.QUESTION ||
         Boolean(getWorkstreamLaunchDetails(message)) ||
@@ -170,6 +178,7 @@ function shouldResumeCompletedWorkForTool(message: AgentMessage, pendingWork: Ag
 }
 
 function isSummaryWorkMessage(message: AgentMessage): boolean {
+    if (isWorkstreamInternalResultMessage(message)) return false;
     if (isSummaryAssistantProseMessage(message)) return false;
     if (getWorkstreamLaunchDetails(message)) return false;
     if (isToolScopedStatusMessage(message)) return true;
@@ -302,6 +311,7 @@ export function buildSummaryDisplayMessages(
     completeStreaming.forEach((data, streamingId) => {
         const text = data.text.trim();
         if (!text || isStreamReplacedByMessage(data, messages)) return;
+        if (isWorkstreamInternalResultText(text, data.workstreamId)) return;
         const matchingToolMessage = findMatchingToolActivity(data, messages);
         const matchingActivityGroupId = matchingToolMessage
             ? getStringDetail(matchingToolMessage, 'activity_group_id')

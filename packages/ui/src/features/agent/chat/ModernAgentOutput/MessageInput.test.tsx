@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { type ConversationFile, FileProcessingStatus } from '@vertesia/common';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../../../__tests__/test-utils.js';
@@ -168,7 +168,7 @@ describe('MessageInput', () => {
         expect(screen.getByText('Ready')).not.toBeNull();
     });
 
-    it('shows active workstream names in the compact composer status row', () => {
+    it('shows active workstream names above the compact composer', () => {
         renderWithProviders(
             <MessageInput
                 onSend={vi.fn()}
@@ -195,9 +195,17 @@ describe('MessageInput', () => {
             />,
         );
 
-        expect(screen.getByText('Agent has 2 active workstreams running')).not.toBeNull();
-        expect(screen.getByText('QA Tasks')).not.toBeNull();
-        expect(screen.getByText('QA Assignee')).not.toBeNull();
-        expect(screen.getByText('Browser Use')).not.toBeNull();
+        const tray = document.querySelector('[data-agent-active-workstreams]');
+        if (!(tray instanceof HTMLElement)) {
+            throw new Error('Expected active workstream tray to be rendered');
+        }
+
+        expect(within(tray).getByText('Agent has 2 active workstreams running')).not.toBeNull();
+        expect(within(tray).getByText('QA Tasks')).not.toBeNull();
+        expect(within(tray).getByText('QA Assignee')).not.toBeNull();
+        expect(within(tray).getByText('Browser Use')).not.toBeNull();
+        expect(
+            tray.compareDocumentPosition(screen.getByRole('textbox')) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy();
     });
 });

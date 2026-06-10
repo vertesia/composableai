@@ -414,6 +414,64 @@ describe('ModernAgentConversation send handling', () => {
         ]);
     });
 
+    it('keeps launched workstreams active when their child transcript emits JSON results', async () => {
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'main request'),
+                {
+                    ...createMessage(
+                        AgentMessageType.UPDATE,
+                        'Workstream "ImageGeneratorAgent-16b7f73a-8e8e-40b7-b891-cb47a78c38c6" launched',
+                    ),
+                    workstream_id: 'ImageGeneratorAgent-16b7f73a-8e8e-40b7-b891-cb47a78c38c6',
+                    details: {
+                        workstream_event: 'launched',
+                        workstream_id: 'ImageGeneratorAgent-16b7f73a-8e8e-40b7-b891-cb47a78c38c6',
+                        launch_id: 'launch-image',
+                        interaction: 'ImageGeneratorAgent',
+                    },
+                },
+                {
+                    ...createMessage(
+                        AgentMessageType.COMPLETE,
+                        '{\n  "generated_images": ["store:65dbb885-d76f-431a-a01e-0511d70730a5"]\n}',
+                    ),
+                    workstream_id: 'ImageGeneratorAgent-16b7f73a-8e8e-40b7-b891-cb47a78c38c6',
+                    details: {
+                        event_class: 'user_content',
+                        streamed: true,
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({
+            hideMessageInput: false,
+            hideWorkstreamTabs: false,
+            showRightPanel: true,
+        });
+
+        await waitFor(() => {
+            expect(mocks.rightPanelProps).toHaveBeenCalled();
+        });
+
+        const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
+            activeTaskCount?: number;
+            activeWorkstreams?: Array<{ workstream_id: string; status: string; interaction?: string }>;
+        };
+
+        expect(latestMessageInputProps.activeTaskCount).toBe(1);
+        expect(latestMessageInputProps.activeWorkstreams).toEqual([
+            expect.objectContaining({
+                workstream_id: 'ImageGeneratorAgent-16b7f73a-8e8e-40b7-b891-cb47a78c38c6',
+                interaction: 'ImageGeneratorAgent',
+                status: 'running',
+            }),
+        ]);
+    });
+
     it('shows a bottom request overlay for pending ask input even when normal input is hidden', async () => {
         mockStreamState({
             messages: [
@@ -477,7 +535,7 @@ describe('ModernAgentConversation send handling', () => {
         );
     });
 
-    it('test playback controls slice rendered messages and scroll forward without mutating the live stream', async () => {
+    it('playback controls slice rendered messages and scroll forward without mutating the live stream', async () => {
         const originalScrollIntoView = Element.prototype.scrollIntoView;
         const scrollIntoView = vi.fn();
         Element.prototype.scrollIntoView = scrollIntoView;
@@ -502,7 +560,7 @@ describe('ModernAgentConversation send handling', () => {
         });
 
         try {
-            renderConversation({ enableTestPlayback: true });
+            renderConversation({ enablePlayback: true });
 
             expect(screen.getByTestId('rendered-message-count').textContent).toBe('5');
             expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('1');
@@ -543,7 +601,7 @@ describe('ModernAgentConversation send handling', () => {
         }
     });
 
-    it('exposes a local header toggle for test playback controls', () => {
+    it('exposes a local header toggle for playback controls', () => {
         mockStreamState({
             messages: [
                 createMessage(AgentMessageType.QUESTION, 'first question'),
@@ -551,7 +609,7 @@ describe('ModernAgentConversation send handling', () => {
             ],
         });
 
-        renderConversation({ hideHeader: false, showTestPlaybackToggle: true });
+        renderConversation({ hideHeader: false, showPlaybackToggle: true });
 
         const calls = mocks.headerProps.mock.calls;
         const headerProps = calls[calls.length - 1][0] as {

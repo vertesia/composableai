@@ -61,7 +61,12 @@ import { SkillWidgetProvider } from './SkillWidgetProvider';
 import { ArtifactUrlCacheProvider } from './useArtifactUrlCache.js';
 import { VegaLiteChart } from './VegaLiteChart';
 import { ThinkingMessages } from './WaitingMessages';
-import { getWorkstreamLifecycleStatus, isWorkstreamTerminalMessage } from './workstreams.js';
+import {
+    getWorkstreamLaunchDetails,
+    getWorkstreamLifecycleStatus,
+    isWorkstreamInternalResultMessage,
+    isWorkstreamTerminalMessage,
+} from './workstreams.js';
 
 export type StartWorkflowFn = (initialMessage?: string) => Promise<{ agent_run_id: string } | undefined>;
 
@@ -76,8 +81,24 @@ function getTimestampMs(timestamp: number | string | undefined): number {
 
 function deriveActiveWorkstreamsFromMessages(messages: AgentMessage[]): WorkstreamInfo[] {
     const latestByWorkstream = new Map<string, AgentMessage>();
+    const launchesByWorkstream = new Map<
+        string,
+        { launch_id?: string; interaction?: string; child_workflow_id?: string; child_workflow_run_id?: string }
+    >();
 
     for (const message of messages) {
+        const launchDetails = getWorkstreamLaunchDetails(message);
+        if (launchDetails) {
+            launchesByWorkstream.set(launchDetails.workstreamId, {
+                launch_id: launchDetails.launchId,
+                interaction: launchDetails.interaction,
+                child_workflow_id: launchDetails.childWorkflowId,
+                child_workflow_run_id: launchDetails.childWorkflowRunId,
+            });
+        }
+
+        if (isWorkstreamInternalResultMessage(message)) continue;
+
         const workstreamId = getWorkstreamId(message);
         if (workstreamId === 'main' || workstreamId === 'all') continue;
         latestByWorkstream.set(workstreamId, message);
@@ -88,14 +109,20 @@ function deriveActiveWorkstreamsFromMessages(messages: AgentMessage[]): Workstre
             if ([AgentMessageType.COMPLETE, AgentMessageType.IDLE].includes(message.type)) return false;
             return !isWorkstreamTerminalMessage(message);
         })
-        .map(([workstreamId, message]) => ({
-            workstream_id: workstreamId,
-            launch_id: `message-derived:${workstreamId}`,
-            elapsed_ms: 0,
-            deadline_ms: 0,
-            remaining_ms: 0,
-            status: getWorkstreamLifecycleStatus(message) ?? 'running',
-        }));
+        .map(([workstreamId, message]) => {
+            const launch = launchesByWorkstream.get(workstreamId);
+            return {
+                workstream_id: workstreamId,
+                launch_id: launch?.launch_id ?? `message-derived:${workstreamId}`,
+                interaction: launch?.interaction,
+                elapsed_ms: 0,
+                deadline_ms: 0,
+                remaining_ms: 0,
+                status: getWorkstreamLifecycleStatus(message) ?? 'running',
+                child_workflow_id: launch?.child_workflow_id,
+                child_workflow_run_id: launch?.child_workflow_run_id,
+            };
+        });
 }
 
 function formatCompactDuration(seconds: number): string {
@@ -409,10 +436,10 @@ export interface ModernAgentConversationProps {
     pendingStartMessage?: string;
     /** Timestamp for the internal optimistic first-message waiting state. */
     pendingStartTimestamp?: number;
-    /** Test-only: local display playback controls. Slices rendered chat messages without mutating conversation state. */
-    enableTestPlayback?: boolean;
-    /** Test-only: show a local toggle for display playback controls in the conversation action rail. */
-    showTestPlaybackToggle?: boolean;
+    /** Force display playback controls on or off. When omitted, local playback can be toggled from the header. */
+    enablePlayback?: boolean;
+    /** Show a local toggle for display playback controls in the conversation action rail. */
+    showPlaybackToggle?: boolean;
 }
 
 export function ModernAgentConversation(props: ModernAgentConversationProps) {
@@ -997,8 +1024,8 @@ function ModernAgentConversationInner({
     conversationTab = false,
     pendingStartMessage,
     pendingStartTimestamp,
-    enableTestPlayback,
-    showTestPlaybackToggle = false,
+    enablePlayback,
+    showPlaybackToggle = true,
 }: ModernAgentConversationProps & { agentRunId: string }) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
@@ -1079,8 +1106,8 @@ function ModernAgentConversationInner({
     );
     const [isStopping, setIsStopping] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
-    const [testPlaybackCursor, setTestPlaybackCursor] = useState<AgentChatPlaybackCursor>('live');
-    const [isTestPlaybackToggleEnabled, setIsTestPlaybackToggleEnabled] = useState(false);
+    const [playbackCursor, setPlaybackCursor] = useState<AgentChatPlaybackCursor>('live');
+    const [isPlaybackToggleEnabled, setIsPlaybackToggleEnabled] = useState(false);
     const [playbackScrollRequestId, setPlaybackScrollRequestId] = useState(0);
     const [activeWorkstreams, setActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
     const [completedWorkstreams, setCompletedWorkstreams] = useState<
@@ -1192,6 +1219,7 @@ function ModernAgentConversationInner({
                 ? activeWorkstreams.map((ws) => ({
                       workstream_id: ws.workstream_id,
                       launch_id: ws.launch_id,
+                      interaction: ws.interaction,
                       elapsed_ms: ws.elapsed_ms,
                       deadline_ms: ws.deadline_ms,
                       remaining_ms: Math.max(0, ws.deadline_ms - ws.elapsed_ms),
@@ -1220,63 +1248,62 @@ function ModernAgentConversationInner({
         [panelWorkstreams],
     );
 
-    const canShowTestPlaybackToggle =
-        showTestPlaybackToggle && enableTestPlayback === undefined && isLocalhostAgentChatPlaybackAvailable();
-    const isTestPlaybackEnabled =
-        enableTestPlayback ?? (isLocalhostAgentChatPlaybackEnabled() || isTestPlaybackToggleEnabled);
+    const canShowPlaybackToggle =
+        showPlaybackToggle && enablePlayback === undefined && isLocalhostAgentChatPlaybackAvailable();
+    const isPlaybackEnabled = enablePlayback ?? (isLocalhostAgentChatPlaybackEnabled() || isPlaybackToggleEnabled);
     const playbackState = useMemo(
-        () => createPlaybackState(messages, testPlaybackCursor, isTestPlaybackEnabled),
-        [isTestPlaybackEnabled, messages, testPlaybackCursor],
+        () => createPlaybackState(messages, playbackCursor, isPlaybackEnabled),
+        [isPlaybackEnabled, messages, playbackCursor],
     );
-    const clampedTestPlaybackCursor = playbackState.cursor;
-    const isTestPlaybackLive = playbackState.isLive;
+    const clampedPlaybackCursor = playbackState.cursor;
+    const isPlaybackLive = playbackState.isLive;
     const displayedMessages = playbackState.displayedMessages;
-    const displayedStreamingMessages = isTestPlaybackLive ? streamingMessages : EMPTY_STREAMING_MESSAGES;
+    const displayedStreamingMessages = isPlaybackLive ? streamingMessages : EMPTY_STREAMING_MESSAGES;
     const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
-    const displayedIsCompleted = isTestPlaybackLive ? effectiveIsCompleted : false;
+    const displayedIsCompleted = isPlaybackLive ? effectiveIsCompleted : false;
     const pendingRequestInputMessage = useMemo(
         () => getPendingRequestInputMessage(displayedMessages),
         [displayedMessages],
     );
     const shouldShowRequestInputOverlay = Boolean(pendingRequestInputMessage) && !isFailed;
 
-    const handleToggleTestPlayback = useCallback(() => {
-        setIsTestPlaybackToggleEnabled((prev) => !prev);
+    const handleTogglePlayback = useCallback(() => {
+        setIsPlaybackToggleEnabled((prev) => !prev);
     }, []);
 
-    const handleChangeTestPlaybackCursor = useCallback(
+    const handleChangePlaybackCursor = useCallback(
         (nextCursor: AgentChatPlaybackCursor) => {
-            const currentIndex = getPlaybackCursorIndex(clampedTestPlaybackCursor, messages.length);
+            const currentIndex = getPlaybackCursorIndex(clampedPlaybackCursor, messages.length);
             const nextIndex = getPlaybackCursorIndex(nextCursor, messages.length);
-            const returningToLive = nextCursor === 'live' && clampedTestPlaybackCursor !== 'live';
-            if (isTestPlaybackEnabled && (nextIndex > currentIndex || returningToLive)) {
+            const returningToLive = nextCursor === 'live' && clampedPlaybackCursor !== 'live';
+            if (isPlaybackEnabled && (nextIndex > currentIndex || returningToLive)) {
                 pendingPlaybackScrollRef.current = true;
                 setPlaybackScrollRequestId((requestId) => requestId + 1);
             }
-            setTestPlaybackCursor(nextCursor);
+            setPlaybackCursor(nextCursor);
         },
-        [clampedTestPlaybackCursor, isTestPlaybackEnabled, messages.length],
+        [clampedPlaybackCursor, isPlaybackEnabled, messages.length],
     );
 
     useEffect(() => {
-        if (!isTestPlaybackEnabled) {
-            if (testPlaybackCursor !== 'live') setTestPlaybackCursor('live');
+        if (!isPlaybackEnabled) {
+            if (playbackCursor !== 'live') setPlaybackCursor('live');
             return;
         }
-        if (clampedTestPlaybackCursor !== testPlaybackCursor) {
-            setTestPlaybackCursor(clampedTestPlaybackCursor);
+        if (clampedPlaybackCursor !== playbackCursor) {
+            setPlaybackCursor(clampedPlaybackCursor);
         }
-    }, [clampedTestPlaybackCursor, isTestPlaybackEnabled, testPlaybackCursor]);
+    }, [clampedPlaybackCursor, isPlaybackEnabled, playbackCursor]);
 
     useEffect(() => {
         void playbackScrollRequestId;
-        if (!isTestPlaybackEnabled || !pendingPlaybackScrollRef.current) return;
+        if (!isPlaybackEnabled || !pendingPlaybackScrollRef.current) return;
         pendingPlaybackScrollRef.current = false;
         const animationFrame = window.requestAnimationFrame(() => {
             bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
         });
         return () => window.cancelAnimationFrame(animationFrame);
-    }, [isTestPlaybackEnabled, playbackScrollRequestId]);
+    }, [isPlaybackEnabled, playbackScrollRequestId]);
 
     // ────────────────────────────────────────────
     // Stable callbacks
@@ -1812,9 +1839,9 @@ function ModernAgentConversationInner({
             hasPlan={showRightPanelProp && plans.length > 0}
             showPlanButton={showRightPanelProp && !conversationTab}
             onTogglePlanPanel={handleTogglePlanPanel}
-            showPlaybackButton={canShowTestPlaybackToggle}
-            isPlaybackEnabled={isTestPlaybackEnabled}
-            onTogglePlayback={handleToggleTestPlayback}
+            showPlaybackButton={canShowPlaybackToggle}
+            isPlaybackEnabled={isPlaybackEnabled}
+            onTogglePlayback={handleTogglePlayback}
             onDownload={downloadConversation}
             onExportFixture={exportReplayFixture}
             resetWorkflow={resetWorkflow}
@@ -1830,8 +1857,8 @@ function ModernAgentConversationInner({
     const conversationAreaJsx = (
         <div
             ref={conversationRef}
-            data-agent-test-playback-enabled={isTestPlaybackEnabled || undefined}
-            data-agent-playback-cursor={isTestPlaybackEnabled ? clampedTestPlaybackCursor : undefined}
+            data-agent-playback-enabled={isPlaybackEnabled || undefined}
+            data-agent-playback-cursor={isPlaybackEnabled ? clampedPlaybackCursor : undefined}
             data-agent-live-message-count={messages.length}
             data-agent-rendered-message-count={displayedMessages.length}
             className={cn(
@@ -1854,12 +1881,12 @@ function ModernAgentConversationInner({
                 <div className="flex-shrink-0">{renderConversationHeader(headerVariant)}</div>
             )}
 
-            {isTestPlaybackEnabled && (
+            {isPlaybackEnabled && (
                 <div className="flex flex-shrink-0 justify-end px-2 py-1.5">
                     <AgentChatPlaybackControls
-                        cursor={clampedTestPlaybackCursor}
+                        cursor={clampedPlaybackCursor}
                         messages={messages}
-                        onChangeCursor={handleChangeTestPlaybackCursor}
+                        onChangeCursor={handleChangePlaybackCursor}
                     />
                 </div>
             )}
@@ -1880,7 +1907,7 @@ function ModernAgentConversationInner({
                     onChangePlan={handleChangePlan}
                     taskLabels={taskLabels}
                     streamingMessages={displayedStreamingMessages}
-                    onSendMessage={isTestPlaybackLive ? handleSendMessage : undefined}
+                    onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
                     messageItemClassNames={messageItemClassNames}
                     messageStyleOverrides={messageStyleOverrides}
                     toolCallGroupClassNames={toolCallGroupClassNames}
@@ -1900,7 +1927,7 @@ function ModernAgentConversationInner({
                     initialRequestTitle={initialRequestTitle}
                     initialRequestTemplate={initialRequestTemplate}
                     hiddenMessageTypes={hiddenMessageTypes}
-                    disableAutoScroll={!isTestPlaybackLive}
+                    disableAutoScroll={!isPlaybackLive}
                     renderRequestInputControls={!shouldShowRequestInputOverlay}
                 />
             )}
@@ -1909,7 +1936,7 @@ function ModernAgentConversationInner({
                 <AgentRequestInputOverlay
                     message={pendingRequestInputMessage}
                     onSendMessage={handleSendMessage}
-                    disabled={isUploading || !isTestPlaybackLive}
+                    disabled={isUploading || !isPlaybackLive}
                     isLoading={isSending || isUploading}
                 />
             ) : (
@@ -1948,7 +1975,7 @@ function ModernAgentConversationInner({
                                 <MessageInput
                                     onSend={handleSendMessage}
                                     onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
-                                    disabled={isUploading || !isTestPlaybackLive}
+                                    disabled={isUploading || !isPlaybackLive}
                                     isSending={isSending || isUploading}
                                     isStopping={isStopping}
                                     isStreaming={!effectiveIsCompleted}
