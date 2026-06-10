@@ -895,7 +895,7 @@ function ToolCallGroupComponent({
 
                         return (
                             <div
-                                key={`${m.timestamp}-${idx}`}
+                                key={`${m.workstream_id ?? 'main'}-${m.timestamp}-${m.type}`}
                                 className={cn(
                                     'border-b border-gray-100 dark:border-gray-800 last:border-b-0',
                                     itemClassName,
@@ -1040,7 +1040,7 @@ function ToolCallGroupComponent({
                 <div className="group">
                     {messages.map((message, index) => (
                         <ToolCallItem
-                            key={`${message.timestamp}-${index}`}
+                            key={`${message.workstream_id ?? 'main'}-${message.timestamp}-${message.type}`}
                             message={message}
                             isExpanded={expandedItems.has(index)}
                             onToggle={() => toggleItem(index)}

@@ -21,8 +21,12 @@ export default function StackedMessages({ messages }: StackedMessagesProps) {
 
     return (
         <div className="flex flex-col overflow-y-auto space-y-6 py-4">
-            {sortedMessages.map((message, index) => (
-                <MessageItem key={`${message.timestamp}-${index}`} message={message} showPulsatingCircle={false} />
+            {sortedMessages.map((message) => (
+                <MessageItem
+                    key={`${message.workstream_id ?? 'main'}-${message.timestamp}-${message.type}`}
+                    message={message}
+                    showPulsatingCircle={false}
+                />
             ))}
         </div>
     );
