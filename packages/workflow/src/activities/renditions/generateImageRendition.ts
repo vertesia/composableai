@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { log } from '@temporalio/activity';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
@@ -64,29 +65,37 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
         );
     }
 
-    //array of rendition files to upload
-    const renditionPages: string[] = [];
+    let imageFile: string | undefined;
 
-    const imageFile = await saveBlobToTempFile(client, inputObject.content.source);
-    log.debug(`Image ${objectId} copied to ${imageFile}`);
-    renditionPages.push(imageFile);
+    try {
+        imageFile = await saveBlobToTempFile(client, inputObject.content.source);
+        log.debug(`Image ${objectId} copied to ${imageFile}`);
 
-    //IF no etag, log and use use object id as etag
-    if (!inputObject.content.etag) {
-        log.warn(`Document ${objectId} has no etag, using object id as etag`);
+        //IF no etag, log and use use object id as etag
+        if (!inputObject.content.etag) {
+            log.warn(`Document ${objectId} has no etag, using object id as etag`);
+        }
+        const contentEtag = inputObject.content.etag ?? inputObject.id;
+
+        const uploaded = await uploadRenditionPages(client, contentEtag, [imageFile], params);
+
+        if (!uploaded?.length || !uploaded[0]) {
+            log.error(`Failed to upload rendition for ${objectId}`, { uploaded });
+            throw new Error(`Failed to upload rendition for ${objectId} - upload object is empty`);
+        }
+
+        return {
+            uploads: uploaded.map((u) => u),
+            format: params.format,
+            status: 'success',
+        };
+    } finally {
+        if (imageFile) {
+            try {
+                await fs.promises.unlink(imageFile);
+            } catch (err) {
+                log.warn(`Failed to clean temporary image file for ${objectId}`, { err });
+            }
+        }
     }
-    const contentEtag = inputObject.content.etag ?? inputObject.id;
-
-    const uploaded = await uploadRenditionPages(client, contentEtag, [imageFile], params);
-
-    if (!uploaded?.length || !uploaded[0]) {
-        log.error(`Failed to upload rendition for ${objectId}`, { uploaded });
-        throw new Error(`Failed to upload rendition for ${objectId} - upload object is empty`);
-    }
-
-    return {
-        uploads: uploaded.map((u) => u),
-        format: params.format,
-        status: 'success',
-    };
 }
