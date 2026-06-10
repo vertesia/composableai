@@ -130,12 +130,10 @@ const renderers: Record<
             const objectId = getObjectId(value);
             const displayValue = transforms.reduce((v, t) => t(v), objectId);
             return (
-                <td key={index} className="flex justify-between items-center gap-2">
-                    {hasSlice ? '~' : ''}
-                    {displayValue}
+                <td key={index} className="flex justify-start items-center gap-2">
                     <Button
                         variant="ghost"
-                        alt="Preview Object"
+                        title="Preview Object"
                         onClick={(e) => {
                             e.stopPropagation();
                             onClick?.(objectId);
@@ -143,6 +141,8 @@ const renderers: Record<
                     >
                         <Eye className="size-4" />
                     </Button>
+                    {hasSlice ? '~' : ''}
+                    {displayValue}
                 </td>
             );
         };

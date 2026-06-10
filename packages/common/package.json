@@ -24,11 +24,11 @@
         }
     },
     "devDependencies": {
-        "@rollup/plugin-commonjs": "^29.0.2",
+        "@rollup/plugin-commonjs": "^29.0.3",
         "@rollup/plugin-node-resolve": "^16.0.3",
         "@rollup/plugin-terser": "^1.0.0",
         "@vertesia/tsconfig": "workspace:*",
-        "rollup": "^4.60.4",
+        "rollup": "^4.61.0",
         "typescript": "^6.0.3",
         "vitest": "^4.1.8"
     },

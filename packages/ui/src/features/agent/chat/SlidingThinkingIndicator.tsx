@@ -306,9 +306,9 @@ export function SlidingThinkingIndicator({
                     (showDetails ? (
                         // Show details view - always show all thinking messages regardless of completion state
                         <div className="space-y-1 space-y-reverse max-h-[300px] overflow-y-auto pe-1 flex flex-col-reverse">
-                            {sortedThinkingMessages.map((message, index) => (
+                            {sortedThinkingMessages.map((message) => (
                                 <div
-                                    key={`${message.timestamp}-${index}`}
+                                    key={`${message.workstream_id ?? 'main'}-${message.timestamp}-${message.type}`}
                                     className="animate-slide-in-bottom"
                                     data-workstream-id={message.workstream_id || 'main'}
                                 >
@@ -329,7 +329,7 @@ export function SlidingThinkingIndicator({
                                 {/* For each recent message, render with different opacity based on recency */}
                                 {recentMessages.map((message, index) => (
                                     <div
-                                        key={`${message.timestamp}-${index}`}
+                                        key={`${message.workstream_id ?? 'main'}-${message.timestamp}-${message.type}`}
                                         className={cn(
                                             'flex items-center', // Align items horizontally on same line
                                             // Use the new animations for smoother transitions
@@ -418,9 +418,9 @@ export function SlidingThinkingIndicator({
                         ) : (
                             // Stacked View - Show all thinking messages
                             <div className="space-y-1 space-y-reverse max-h-[300px] overflow-y-auto pe-1 flex flex-col-reverse">
-                                {sortedThinkingMessages.map((message, index) => (
+                                {sortedThinkingMessages.map((message) => (
                                     <div
-                                        key={`${message.timestamp}-${index}`}
+                                        key={`${message.workstream_id ?? 'main'}-${message.timestamp}-${message.type}`}
                                         className="animate-slide-in-bottom"
                                         data-workstream-id={message.workstream_id || 'main'}
                                     >

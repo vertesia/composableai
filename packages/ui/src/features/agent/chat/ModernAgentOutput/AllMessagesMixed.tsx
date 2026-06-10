@@ -648,9 +648,7 @@ function AllMessagesMixedComponent({
 
                                     if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     return (
-                                        <MessageErrorBoundary
-                                            key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}
-                                        >
+                                        <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}`}>
                                             <ToolCallGroup
                                                 messages={group.messages}
                                                 showPulsatingCircle={isLatest}
@@ -666,7 +664,7 @@ function AllMessagesMixedComponent({
                                     // Render streaming message - no error boundary to avoid interrupting streaming
                                     return (
                                         <StreamingMessage
-                                            key={`streaming-${group.streamingId}-${groupIndex}`}
+                                            key={`streaming-${group.streamingId}`}
                                             text={group.text}
                                             workstreamId={group.workstreamId}
                                             isComplete={group.isComplete}
@@ -685,7 +683,7 @@ function AllMessagesMixedComponent({
                                     if (isBatchProgressMessage(message)) {
                                         return (
                                             <MessageErrorBoundary
-                                                key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}
+                                                key={`batch-${message.details.batch_id}-${message.timestamp}`}
                                             >
                                                 <BatchProgressPanel
                                                     message={message}
@@ -698,7 +696,9 @@ function AllMessagesMixedComponent({
                                     }
 
                                     return (
-                                        <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
+                                        <MessageErrorBoundary
+                                            key={`${message.workstream_id ?? 'main'}-${message.timestamp}-${message.type}`}
+                                        >
                                             <MessageItem
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
@@ -759,9 +759,7 @@ function AllMessagesMixedComponent({
 
                                     if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     return (
-                                        <MessageErrorBoundary
-                                            key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}
-                                        >
+                                        <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}`}>
                                             <ToolCallGroup
                                                 messages={group.messages}
                                                 showPulsatingCircle={isLatest}
@@ -777,7 +775,7 @@ function AllMessagesMixedComponent({
                                     // Render streaming message - no error boundary to avoid interrupting streaming
                                     return (
                                         <StreamingMessage
-                                            key={`streaming-${group.streamingId}-${groupIndex}`}
+                                            key={`streaming-${group.streamingId}`}
                                             text={group.text}
                                             workstreamId={group.workstreamId}
                                             isComplete={group.isComplete}
@@ -799,7 +797,7 @@ function AllMessagesMixedComponent({
                                     if (isBatchProgressMessage(message)) {
                                         return (
                                             <MessageErrorBoundary
-                                                key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}
+                                                key={`batch-${message.details.batch_id}-${message.timestamp}`}
                                             >
                                                 <BatchProgressPanel
                                                     message={message}
@@ -812,7 +810,9 @@ function AllMessagesMixedComponent({
                                     }
 
                                     return (
-                                        <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
+                                        <MessageErrorBoundary
+                                            key={`${message.workstream_id ?? 'main'}-${message.timestamp}-${message.type}`}
+                                        >
                                             <MessageItem
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
@@ -829,7 +829,7 @@ function AllMessagesMixedComponent({
                             {/* Recent thinking messages - displayed with streaming reveal */}
                             {recentThinking.map((thinking, idx) => (
                                 <StreamingMessage
-                                    key={`thinking-${thinking.timestamp}-${idx}`}
+                                    key={`thinking-${getWorkstreamId(thinking)}-${thinking.timestamp}`}
                                     text={processThinkingPlaceholder(thinking.message || '', thinkingMessageIndex)}
                                     workstreamId={getWorkstreamId(thinking)}
                                     isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"

@@ -31,14 +31,14 @@
         }
     },
     "devDependencies": {
-        "@rollup/plugin-commonjs": "^29.0.2",
+        "@rollup/plugin-commonjs": "^29.0.3",
         "@rollup/plugin-json": "^6.1.0",
         "@rollup/plugin-node-resolve": "^16.0.3",
         "@rollup/plugin-terser": "^1.0.0",
         "@rollup/plugin-typescript": "^12.3.0",
         "@types/node": "^24.12.4",
         "@vertesia/tsconfig": "workspace:*",
-        "rollup": "^4.60.4",
+        "rollup": "^4.61.0",
         "typescript": "^6.0.3",
         "vitest": "^4.1.8"
     },
@@ -50,7 +50,7 @@
         "zod": "^4.4.3"
     },
     "peerDependencies": {
-        "rollup": "^4.60.4"
+        "rollup": "^4.61.0"
     },
     "repository": {
         "type": "git",

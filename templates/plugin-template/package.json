@@ -58,7 +58,7 @@
         "react-dom": "^19.2.7"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.4.15",
+        "@biomejs/biome": "2.4.16",
         "@hono/vite-dev-server": "^0.26.0",
         "@tailwindcss/forms": "^0.5.11",
         "@tailwindcss/vite": "^4.3.0",
@@ -80,7 +80,7 @@
         "vite-plugin-serve-static": "^2.2.0"
     },
     "dependencies": {
-        "@hono/node-server": "^2.0.0",
+        "@hono/node-server": "^2.0.4",
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
@@ -88,7 +88,7 @@
         "@vertesia/tools-sdk": "workspace:*",
         "@vertesia/ui": "workspace:*",
         "dotenv": "^17.4.2",
-        "hono": "^4.12.19",
+        "hono": "^4.12.23",
         "lucide-react": "^1.17.0"
     }
 }

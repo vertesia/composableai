@@ -31,24 +31,24 @@
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
     },
     "peerDependencies": {
-        "handlebars": ">=4.0.0"
+        "handlebars": ">=4.7.9"
     },
     "devDependencies": {
-        "@rollup/plugin-commonjs": "^29.0.2",
+        "@rollup/plugin-commonjs": "^29.0.3",
         "@rollup/plugin-node-resolve": "^16.0.3",
         "@rollup/plugin-terser": "^1.0.0",
-        "@types/estree": "^1.0.8",
-        "@types/papaparse": "^5.5.1",
+        "@types/estree": "^1.0.9",
+        "@types/papaparse": "^5.5.2",
         "@vertesia/tsconfig": "workspace:*",
-        "rollup": "^4.60.4",
+        "rollup": "^4.61.0",
         "typescript": "^6.0.3",
         "vitest": "^4.1.8"
     },
     "dependencies": {
-        "@types/node": "^24.1.0",
-        "acorn": "8.15.0",
-        "acorn-walk": "8.3.4",
-        "dayjs": "^1.11.19",
+        "@types/node": "^24.12.4",
+        "acorn": "8.16.0",
+        "acorn-walk": "8.3.5",
+        "dayjs": "^1.11.21",
         "papaparse": "^5.5.3"
     },
     "main": "./lib/index.js",
