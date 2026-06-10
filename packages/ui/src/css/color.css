@@ -60,8 +60,8 @@
   --topnav-border: oklch(0.922 0 0);
   --topnav-ring: oklch(0.708 0 0);
 
+  --preprod: oklch(63.89% 0.103 201.59);
   --preview: oklch(46.95% 0.233 303.17);
-  --staging: oklch(63.89% 0.103 201.59);
   --development: oklch(44.30% 0.193 261.11);
 
 }
@@ -129,8 +129,8 @@
   --topnav-border: oklch(0.269 0 0);
   --topnav-ring: oklch(0.439 0 0);
 
+  --preprod: oklch(63.89% 0.103 201.59);
   --preview: oklch(46.95% 0.233 303.17);
-  --staging: oklch(63.89% 0.103 201.59);
   --development: oklch(44.30% 0.193 261.11);
 
 }
