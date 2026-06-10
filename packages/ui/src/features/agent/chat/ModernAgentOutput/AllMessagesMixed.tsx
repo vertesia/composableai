@@ -13,6 +13,7 @@ import { MarkdownRenderer, type MarkdownRendererProps } from '@vertesia/ui/widge
 import type { Element } from 'hast';
 import {
     AlertTriangle,
+    Bot,
     Brain,
     CheckCircle,
     ChevronDown,
@@ -28,6 +29,7 @@ import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useR
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget } from '../AskUserWidget';
 import { ThinkingMessages } from '../WaitingMessages';
+import { formatWorkstreamName, getWorkstreamLaunchDetails, type WorkstreamLaunchDetails } from '../workstreams.js';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from './BatchProgressPanel';
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
@@ -163,6 +165,38 @@ interface SummaryMessageProps {
     requestInputAnswered?: boolean;
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
     CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
+}
+
+function SummaryWorkstreamLaunchMessage({
+    message,
+    details,
+}: {
+    message: AgentMessage;
+    details: WorkstreamLaunchDetails;
+}) {
+    const { t } = useUITranslation();
+    const workstreamName = formatWorkstreamName(details.workstreamId);
+
+    return (
+        <div className="mx-auto w-full max-w-3xl px-1" data-workstream-id={details.workstreamId}>
+            <div className="flex items-start gap-3 border-b border-border/70 py-2 text-sm text-muted">
+                <Bot className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden="true" />
+                <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="font-medium text-muted">{t('agent.workstreams')}</span>
+                        <span className="min-w-0 truncate text-foreground/85">{workstreamName}</span>
+                        <span className="inline-flex items-center rounded-full bg-info/10 px-1.5 py-0.5 text-xs font-medium text-info">
+                            {t('agent.running')}
+                        </span>
+                    </div>
+                    {details.interaction && (
+                        <div className="mt-0.5 truncate text-xs text-muted/75">{details.interaction}</div>
+                    )}
+                    <span className="sr-only">{getMessageText(message)}</span>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 const SUMMARY_PROSE_CLASS = [
@@ -477,6 +511,7 @@ function SummaryMessage({
     CollectionLinkComponent,
 }: SummaryMessageProps) {
     const content = getMessageText(message);
+    const workstreamLaunchDetails = getWorkstreamLaunchDetails(message);
     const workstreamId = getWorkstreamId(message);
     const runId = (message as { workflow_run_id?: string }).workflow_run_id;
     const parsedQuestion = useMemo(
@@ -533,6 +568,10 @@ function SummaryMessage({
         }),
         [StoreLinkComponent, CollectionLinkComponent],
     );
+
+    if (workstreamLaunchDetails) {
+        return <SummaryWorkstreamLaunchMessage message={message} details={workstreamLaunchDetails} />;
+    }
 
     if (message.type === AgentMessageType.QUESTION) {
         const questionBody = parsedQuestion?.body ?? content;

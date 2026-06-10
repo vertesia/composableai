@@ -35,22 +35,9 @@ import { DocumentPanel } from './DocumentPanel.js';
 import InlineSlidingPlanPanel from './ModernAgentOutput/InlineSlidingPlanPanel';
 import { getConversationUrl } from './ModernAgentOutput/utils.js';
 import type { OpenDocument } from './types/document.js';
+import { formatWorkstreamName, getWorkstreamStatusClass, type WorkstreamInfo } from './workstreams.js';
 
-// ---------------------------------------------------------------------------
-// Workstream list types
-// ---------------------------------------------------------------------------
-
-export interface WorkstreamInfo {
-    workstream_id: string;
-    launch_id: string;
-    elapsed_ms: number;
-    deadline_ms: number;
-    remaining_ms: number;
-    status: 'running' | 'canceling' | 'completed' | 'canceled';
-    phase?: string;
-    child_workflow_id?: string;
-    child_workflow_run_id?: string;
-}
+export type { WorkstreamInfo } from './workstreams.js';
 
 // ---------------------------------------------------------------------------
 // UploadedDocuments (moved from WorkflowPayloadForm)
@@ -191,40 +178,6 @@ interface WorkstreamsTabProps {
     workstreams: WorkstreamInfo[];
     messages: AgentMessage[];
     runId?: string;
-}
-
-function formatWorkstreamName(workstreamId: string) {
-    const normalized = workstreamId
-        .replace(/^workstream[:_-]?/i, '')
-        .replace(/[:_-]+/g, ' ')
-        .trim();
-
-    if (!normalized) return workstreamId;
-
-    return normalized
-        .split(/\s+/)
-        .map((part) => {
-            const lower = part.toLowerCase();
-            if (lower === 'qa') return 'QA';
-            if (lower === 'ui') return 'UI';
-            if (lower === 'api') return 'API';
-            if (lower === 'url') return 'URL';
-            return lower.charAt(0).toUpperCase() + lower.slice(1);
-        })
-        .join(' ');
-}
-
-function getWorkstreamStatusClass(status: WorkstreamInfo['status']) {
-    switch (status) {
-        case 'running':
-            return 'bg-info';
-        case 'canceling':
-            return 'bg-attention';
-        case 'completed':
-            return 'bg-success';
-        case 'canceled':
-            return 'bg-destructive';
-    }
 }
 
 function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {

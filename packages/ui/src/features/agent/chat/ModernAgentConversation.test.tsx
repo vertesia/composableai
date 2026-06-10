@@ -55,6 +55,7 @@ vi.mock('./ModernAgentOutput/MessageInput', () => ({
     default: (props: {
         onSend: (message: string) => void;
         activeTaskCount?: number;
+        activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
         isCompleted?: boolean;
         isStreaming?: boolean;
     }) => {
@@ -334,6 +335,7 @@ describe('ModernAgentConversation send handling', () => {
         };
         const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
             activeTaskCount?: number;
+            activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
         };
 
         expect(latestRightPanelProps.activeWorkstreams).toEqual([
@@ -342,6 +344,74 @@ describe('ModernAgentConversation send handling', () => {
         ]);
         expect(latestRightPanelProps.activeTab).toBe('plan');
         expect(latestMessageInputProps.activeTaskCount).toBe(2);
+        expect(latestMessageInputProps.activeWorkstreams).toEqual([
+            expect.objectContaining({ workstream_id: 'alpha', status: 'running' }),
+            expect.objectContaining({ workstream_id: 'beta', status: 'running' }),
+        ]);
+    });
+
+    it('does not count completed workstream lifecycle messages as active in the composer fallback', async () => {
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'main request'),
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'Workstream "qa_tasks" launched'),
+                    workstream_id: 'qa_tasks',
+                    details: {
+                        workstream_event: 'launched',
+                        workstream_id: 'qa_tasks',
+                        launch_id: 'launch-qa-tasks',
+                    },
+                },
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'Workstream "qa_tasks" completed'),
+                    workstream_id: 'qa_tasks',
+                    details: {
+                        workstream_event: 'completed',
+                        workstream_id: 'qa_tasks',
+                        launch_id: 'launch-qa-tasks',
+                        status: 'completed',
+                    },
+                },
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'Workstream "qa_assignee" launched'),
+                    workstream_id: 'qa_assignee',
+                    details: {
+                        workstream_event: 'launched',
+                        workstream_id: 'qa_assignee',
+                        launch_id: 'launch-qa-assignee',
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({
+            hideMessageInput: false,
+            hideWorkstreamTabs: false,
+            showRightPanel: true,
+        });
+
+        await waitFor(() => {
+            expect(mocks.rightPanelProps).toHaveBeenCalled();
+        });
+
+        const latestRightPanelProps = mocks.rightPanelProps.mock.lastCall?.[0] as {
+            activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
+        };
+        const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
+            activeTaskCount?: number;
+            activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
+        };
+
+        expect(latestRightPanelProps.activeWorkstreams).toEqual([
+            expect.objectContaining({ workstream_id: 'qa_assignee', status: 'running' }),
+        ]);
+        expect(latestMessageInputProps.activeTaskCount).toBe(1);
+        expect(latestMessageInputProps.activeWorkstreams).toEqual([
+            expect.objectContaining({ workstream_id: 'qa_assignee', status: 'running' }),
+        ]);
     });
 
     it('shows a bottom request overlay for pending ask input even when normal input is hidden', async () => {

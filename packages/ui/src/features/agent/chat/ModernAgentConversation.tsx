@@ -61,6 +61,7 @@ import { SkillWidgetProvider } from './SkillWidgetProvider';
 import { ArtifactUrlCacheProvider } from './useArtifactUrlCache.js';
 import { VegaLiteChart } from './VegaLiteChart';
 import { ThinkingMessages } from './WaitingMessages';
+import { getWorkstreamLifecycleStatus, isWorkstreamTerminalMessage } from './workstreams.js';
 
 export type StartWorkflowFn = (initialMessage?: string) => Promise<{ agent_run_id: string } | undefined>;
 
@@ -83,14 +84,17 @@ function deriveActiveWorkstreamsFromMessages(messages: AgentMessage[]): Workstre
     }
 
     return Array.from(latestByWorkstream.entries())
-        .filter(([, message]) => ![AgentMessageType.COMPLETE, AgentMessageType.IDLE].includes(message.type))
-        .map(([workstreamId]) => ({
+        .filter(([, message]) => {
+            if ([AgentMessageType.COMPLETE, AgentMessageType.IDLE].includes(message.type)) return false;
+            return !isWorkstreamTerminalMessage(message);
+        })
+        .map(([workstreamId, message]) => ({
             workstream_id: workstreamId,
             launch_id: `message-derived:${workstreamId}`,
             elapsed_ms: 0,
             deadline_ms: 0,
             remaining_ms: 0,
-            status: 'running' as const,
+            status: getWorkstreamLifecycleStatus(message) ?? 'running',
         }));
 }
 
@@ -1080,7 +1084,7 @@ function ModernAgentConversationInner({
     const [playbackScrollRequestId, setPlaybackScrollRequestId] = useState(0);
     const [activeWorkstreams, setActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
     const [completedWorkstreams, setCompletedWorkstreams] = useState<
-        Array<{ launch_id: string; workstream_id: string; status: 'completed' | 'canceled' }>
+        Array<{ launch_id: string; workstream_id: string; status: WorkstreamInfo['status'] }>
     >([]);
     const workstreamFetchFailedRef = useRef(false);
     const dragCounterRef = useRef(0);
@@ -1429,7 +1433,10 @@ function ModernAgentConversationInner({
                     completed.map((c) => ({
                         launch_id: c.launch_id,
                         workstream_id: c.workstream_id,
-                        status: c.status === 'canceled' ? 'canceled' : 'completed',
+                        status:
+                            c.status === 'canceled' || c.status === 'failed' || c.status === 'timeout'
+                                ? c.status
+                                : 'completed',
                     })),
                 );
                 workstreamFetchFailedRef.current = false;
@@ -1947,6 +1954,7 @@ function ModernAgentConversationInner({
                                     isStreaming={!effectiveIsCompleted}
                                     isCompleted={effectiveIsCompleted}
                                     activeTaskCount={activeTaskCount}
+                                    activeWorkstreams={panelWorkstreams}
                                     placeholder={placeholder ?? 'Type your message...'}
                                     onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
                                     uploadedFiles={uploadedFiles}

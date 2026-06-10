@@ -167,4 +167,37 @@ describe('MessageInput', () => {
         expect(screen.getByRole('img', { name: 'wrong.png' })).not.toBeNull();
         expect(screen.getByText('Ready')).not.toBeNull();
     });
+
+    it('shows active workstream names in the compact composer status row', () => {
+        renderWithProviders(
+            <MessageInput
+                onSend={vi.fn()}
+                isStreaming
+                activeWorkstreams={[
+                    {
+                        workstream_id: 'qa_tasks',
+                        launch_id: 'launch-1',
+                        elapsed_ms: 0,
+                        deadline_ms: 0,
+                        remaining_ms: 0,
+                        status: 'running',
+                    },
+                    {
+                        workstream_id: 'qa_assignee',
+                        launch_id: 'launch-2',
+                        elapsed_ms: 0,
+                        deadline_ms: 0,
+                        remaining_ms: 0,
+                        status: 'running',
+                        phase: 'browser_use',
+                    },
+                ]}
+            />,
+        );
+
+        expect(screen.getByText('Agent has 2 active workstreams running')).not.toBeNull();
+        expect(screen.getByText('QA Tasks')).not.toBeNull();
+        expect(screen.getByText('QA Assignee')).not.toBeNull();
+        expect(screen.getByText('Browser Use')).not.toBeNull();
+    });
 });

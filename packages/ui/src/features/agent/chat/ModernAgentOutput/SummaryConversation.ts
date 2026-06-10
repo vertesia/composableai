@@ -1,4 +1,5 @@
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
+import { getWorkstreamLaunchDetails } from '../workstreams.js';
 import {
     isStreamReplacedByMessage,
     isToolActivityMessage,
@@ -132,6 +133,7 @@ function isToolScopedStatusMessage(message: AgentMessage): boolean {
 function isSummaryPrimaryMessage(message: AgentMessage): boolean {
     return (
         message.type === AgentMessageType.QUESTION ||
+        Boolean(getWorkstreamLaunchDetails(message)) ||
         isSummaryAssistantProseMessage(message) ||
         message.type === AgentMessageType.REQUEST_INPUT ||
         message.type === AgentMessageType.TERMINATED ||
@@ -169,6 +171,7 @@ function shouldResumeCompletedWorkForTool(message: AgentMessage, pendingWork: Ag
 
 function isSummaryWorkMessage(message: AgentMessage): boolean {
     if (isSummaryAssistantProseMessage(message)) return false;
+    if (getWorkstreamLaunchDetails(message)) return false;
     if (isToolScopedStatusMessage(message)) return true;
     if (isToolPreambleMessage(message)) return true;
     if (isToolActivityMessage(message)) return true;

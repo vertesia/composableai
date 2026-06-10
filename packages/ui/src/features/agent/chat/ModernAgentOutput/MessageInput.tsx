@@ -16,6 +16,7 @@ import { Activity, ArrowUpIcon, FileTextIcon, PaperclipIcon, PlusIcon, SquareIco
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SelectDocument } from '../../../store/objects/components/SelectDocument';
+import { formatWorkstreamName, getWorkstreamStatusClass, type WorkstreamInfo } from '../workstreams.js';
 import { type AttachmentPreviewItem, AttachmentPreviewList } from './AttachmentPreview';
 
 /** Represents an uploaded file attachment */
@@ -45,6 +46,7 @@ interface MessageInputProps {
     isStreaming?: boolean;
     isCompleted?: boolean;
     activeTaskCount?: number;
+    activeWorkstreams?: WorkstreamInfo[];
     placeholder?: string;
 
     // File upload props
@@ -102,6 +104,7 @@ export default function MessageInput({
     isStreaming = false,
     isCompleted = false,
     activeTaskCount = 0,
+    activeWorkstreams = [],
     placeholder,
     // File upload props
     onFilesSelected,
@@ -139,6 +142,13 @@ export default function MessageInput({
     const hasAttachmentActions = !hideObjectLinking || canUploadFiles || Boolean(renderDocumentSearch);
     const uploadLimitReached = uploadedFiles.length >= maxFiles;
     const handleRemoveProcessingFile = onRemoveProcessingFile ?? onRemoveFile;
+    const runningWorkstreams = useMemo(
+        () => activeWorkstreams.filter((ws) => ws.status === 'running' || ws.status === 'canceling'),
+        [activeWorkstreams],
+    );
+    const activeWorkstreamCount = runningWorkstreams.length || activeTaskCount;
+    const visibleRunningWorkstreams = runningWorkstreams.slice(0, 3);
+    const hiddenRunningWorkstreamCount = Math.max(0, runningWorkstreams.length - visibleRunningWorkstreams.length);
     const attachmentItems = useMemo<AttachmentPreviewItem[]>(() => {
         const items: AttachmentPreviewItem[] = [];
         if (!hideFileUpload && processingFiles) {
@@ -532,11 +542,41 @@ export default function MessageInput({
                                 )}
                             </Dropdown>
                         )}
-                        {activeTaskCount > 0 && (
-                            <span className="inline-flex h-8 items-center gap-1 rounded-full px-2 text-xs text-muted">
-                                <Activity className="size-3 text-attention" />
-                                {t('agent.activeWorkstreams', { count: activeTaskCount })}
-                            </span>
+                        {activeWorkstreamCount > 0 && (
+                            <output className="flex min-w-0 flex-wrap items-center gap-1.5" aria-live="polite">
+                                <span className="inline-flex h-8 items-center gap-1 rounded-full px-2 text-xs text-muted">
+                                    <Activity className="size-3 text-attention" />
+                                    {t('agent.activeWorkstreams', { count: activeWorkstreamCount })}
+                                </span>
+                                {visibleRunningWorkstreams.map((workstream) => (
+                                    <span
+                                        key={workstream.launch_id || workstream.workstream_id}
+                                        className="inline-flex h-8 min-w-0 max-w-44 items-center gap-1.5 rounded-full border border-border/60 px-2 text-xs text-muted"
+                                        title={formatWorkstreamName(workstream.workstream_id)}
+                                    >
+                                        <span
+                                            className={cn(
+                                                'size-1.5 shrink-0 rounded-full',
+                                                getWorkstreamStatusClass(workstream.status),
+                                            )}
+                                            aria-hidden="true"
+                                        />
+                                        <span className="truncate">
+                                            {formatWorkstreamName(workstream.workstream_id)}
+                                        </span>
+                                        {workstream.phase && (
+                                            <span className="truncate text-muted/70">
+                                                {formatWorkstreamName(workstream.phase)}
+                                            </span>
+                                        )}
+                                    </span>
+                                ))}
+                                {hiddenRunningWorkstreamCount > 0 && (
+                                    <span className="inline-flex h-8 items-center rounded-full px-2 text-xs text-muted">
+                                        +{hiddenRunningWorkstreamCount}
+                                    </span>
+                                )}
+                            </output>
                         )}
                     </div>
                     {/* Show Stop button only when streaming AND no text entered */}

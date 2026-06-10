@@ -162,6 +162,40 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.queryByText('Running')).toBeNull();
     });
 
+    it('renders workstream launch events as inline workstream rows', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Check the app.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.UPDATE,
+                    message: 'Workstream "qa_tasks" launched',
+                    workstream_id: 'qa_tasks',
+                    details: {
+                        event_class: 'activity',
+                        workstream_event: 'launched',
+                        launch_id: 'launch-1',
+                        workstream_id: 'qa_tasks',
+                        kind: 'agent',
+                        interaction: 'sys:BrowserAgent',
+                        child_workflow_id: 'workstream:qa_tasks',
+                        child_workflow_run_id: 'run-qa-tasks',
+                    },
+                }),
+            ],
+            true,
+        );
+
+        expect(screen.getByText('Workstreams')).not.toBeNull();
+        expect(screen.getByText('QA Tasks')).not.toBeNull();
+        expect(screen.getByText('Running')).not.toBeNull();
+        expect(screen.getByText('sys:BrowserAgent')).not.toBeNull();
+    });
+
     it('renders question attachment markdown as a store object link in summary view', () => {
         renderSummary(
             [
