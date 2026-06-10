@@ -210,24 +210,40 @@ function AttachmentPreview({
         success: 'bg-success text-success',
     }[item.statusTone ?? 'muted'];
 
-    const removeButton =
-        onRemove && item.removable !== false ? (
-            <Button
-                variant="unstyled"
-                aria-label={t('agent.removeFile', { name: item.name })}
-                onClick={(event) => {
-                    event.stopPropagation();
-                    event.preventDefault();
-                    onRemove(item.id);
-                }}
-                className={cn(
-                    'absolute -end-1.5 -top-1.5 inline-flex size-5 items-center justify-center rounded-full',
-                    'border border-border bg-background text-muted shadow-sm transition-colors hover:text-foreground',
-                )}
-            >
-                <XIcon className="size-3" aria-hidden="true" />
-            </Button>
-        ) : null;
+    const canRemove = Boolean(onRemove && item.removable !== false);
+    const handleRemove = (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        event.preventDefault();
+        onRemove?.(item.id);
+    };
+    const removeButton = canRemove ? (
+        <Button
+            variant="unstyled"
+            size="none"
+            aria-label={t('agent.removeFile', { name: item.name })}
+            onClick={handleRemove}
+            className={cn(
+                'absolute -end-1.5 -top-1.5 inline-flex size-5 items-center justify-center rounded-full',
+                'border border-border bg-background text-muted shadow-sm transition-colors hover:text-foreground',
+            )}
+        >
+            <XIcon className="size-3" aria-hidden="true" />
+        </Button>
+    ) : null;
+    const inlineRemoveButton = canRemove ? (
+        <Button
+            variant="unstyled"
+            size="none"
+            aria-label={t('agent.removeFile', { name: item.name })}
+            onClick={handleRemove}
+            className={cn(
+                '-me-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted',
+                'transition-colors hover:bg-mixer-muted/30 hover:text-foreground',
+            )}
+        >
+            <XIcon className="size-3.5" aria-hidden="true" />
+        </Button>
+    ) : null;
 
     if (shouldRenderThumbnail && resolvedUrl) {
         return (
@@ -265,28 +281,55 @@ function AttachmentPreview({
         );
     }
 
+    const attachmentIcon = isImage ? (
+        <ImageIcon className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
+    ) : (
+        <FileTextIcon className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
+    );
+    const attachmentLabel = (
+        <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
+            {attachmentIcon}
+            <span className={cn('truncate', variant === 'composer' ? 'max-w-[14rem]' : 'max-w-[16rem]')}>
+                {item.name}
+            </span>
+            {item.statusLabel ? (
+                <span className={cn('shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium', statusClassName)}>
+                    {item.statusLabel}
+                </span>
+            ) : null}
+        </span>
+    );
+
+    if (variant === 'composer') {
+        return (
+            <span
+                className={cn(
+                    'inline-flex min-h-8 max-w-full items-center gap-1 rounded-xl border border-border/60',
+                    'bg-mixer-muted/15 px-2.5 py-1 text-sm text-foreground/80 transition-colors',
+                    item.href && 'hover:bg-mixer-muted/25',
+                )}
+            >
+                <AttachmentLink
+                    item={item}
+                    StoreLinkComponent={StoreLinkComponent}
+                    CollectionLinkComponent={CollectionLinkComponent}
+                >
+                    {attachmentLabel}
+                </AttachmentLink>
+                {inlineRemoveButton}
+            </span>
+        );
+    }
+
     const chipContent = (
         <span
             className={cn(
                 'inline-flex max-w-full items-center gap-1.5 rounded-md border border-border/60 bg-mixer-muted/15',
-                'text-xs text-foreground/80 transition-colors',
-                variant === 'composer' ? 'px-2 py-1' : 'px-2.5 py-1.5',
+                'px-2.5 py-1.5 text-xs text-foreground/80 transition-colors',
                 item.href && 'hover:bg-mixer-muted/25',
             )}
         >
-            {isImage ? (
-                <ImageIcon className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
-            ) : (
-                <FileTextIcon className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
-            )}
-            <span className={cn('truncate', variant === 'composer' ? 'max-w-[9rem]' : 'max-w-[16rem]')}>
-                {item.name}
-            </span>
-            {item.statusLabel ? (
-                <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-medium', statusClassName)}>
-                    {item.statusLabel}
-                </span>
-            ) : null}
+            {attachmentLabel}
         </span>
     );
 
