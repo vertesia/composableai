@@ -67,8 +67,11 @@ export default function SlidingMessages({ messages, isCompleted }: SlidingMessag
     return (
         <div className="flex flex-col space-y-6 overflow-y-auto py-4">
             {/* Display permanent messages */}
-            {sortedPermanentMessages.map((message, index) => (
-                <MessageItem key={`${message.timestamp}-${index}`} message={message} />
+            {sortedPermanentMessages.map((message) => (
+                <MessageItem
+                    key={`${message.workstream_id ?? 'main'}-${message.timestamp}-${message.type}`}
+                    message={message}
+                />
             ))}
 
             {/* Only show the latest thinking message when not completed */}

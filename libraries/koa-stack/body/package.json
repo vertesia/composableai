@@ -21,19 +21,19 @@
     "author": "stefanescu.bogdan@gmail.com",
     "license": "MIT",
     "dependencies": {
-        "formidable": "^3.5.1",
+        "formidable": "^3.5.4",
         "inflation": "^2.1.0",
         "koa": "^3.2.0",
-        "qs": "^6.12.1",
-        "raw-body": "^2.5.2"
+        "qs": "^6.15.2",
+        "raw-body": "^2.5.3"
     },
     "devDependencies": {
-        "@types/formidable": "^3.4.5",
+        "@types/formidable": "^3.5.1",
         "@types/inflation": "^2.0.4",
         "@types/koa": "^3.0.3",
-        "@types/qs": "^6.9.15",
+        "@types/qs": "^6.15.1",
         "@vertesia/tsconfig": "workspace:*",
-        "fast-xml-parser": "^5.2.5",
+        "fast-xml-parser": "^5.8.0",
         "typescript": "^6.0.3"
     },
     "main": "./lib/index.js",
