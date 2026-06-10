@@ -227,10 +227,6 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
         },
         // for authentication with Firebase
         server: {
-            // Bind IPv4 loopback so Vite detects an existing 127.0.0.1 listener and falls through.
-            host: '127.0.0.1',
-            port: 5173,
-            strictPort: false,
             proxy: {
                 '/__/auth': {
                     target: 'https://dengenlabs.firebaseapp.com',
