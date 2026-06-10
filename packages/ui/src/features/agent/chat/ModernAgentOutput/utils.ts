@@ -330,6 +330,8 @@ export type RenderableGroup =
           firstTimestamp: number;
           toolRunId?: string;
           toolStatus?: ToolExecutionStatus;
+          preambleText?: string;
+          preambleMessage?: AgentMessage;
       }
     | {
           type: 'streaming';
@@ -752,6 +754,8 @@ export function mergeConsecutiveToolGroups(groups: RenderableGroup[]): Renderabl
         firstTimestamp: number;
         toolRunId?: string;
         toolStatus?: ToolExecutionStatus;
+        preambleText?: string;
+        preambleMessage?: AgentMessage;
     } | null = null;
 
     const flushPending = () => {
@@ -762,6 +766,8 @@ export function mergeConsecutiveToolGroups(groups: RenderableGroup[]): Renderabl
                 firstTimestamp: pendingToolGroup.firstTimestamp,
                 toolRunId: pendingToolGroup.toolRunId,
                 toolStatus: pendingToolGroup.toolStatus,
+                preambleText: pendingToolGroup.preambleText,
+                preambleMessage: pendingToolGroup.preambleMessage,
             });
             pendingToolGroup = null;
         }
@@ -777,12 +783,18 @@ export function mergeConsecutiveToolGroups(groups: RenderableGroup[]): Renderabl
                 if (!pendingToolGroup.toolRunId && group.toolRunId) {
                     pendingToolGroup.toolRunId = group.toolRunId;
                 }
+                if (!pendingToolGroup.preambleMessage && group.preambleMessage) {
+                    pendingToolGroup.preambleMessage = group.preambleMessage;
+                    pendingToolGroup.preambleText = group.preambleText;
+                }
             } else {
                 pendingToolGroup = {
                     messages: [...group.messages],
                     firstTimestamp: group.firstTimestamp,
                     toolRunId: group.toolRunId,
                     toolStatus: group.toolStatus,
+                    preambleText: group.preambleText,
+                    preambleMessage: group.preambleMessage,
                 };
             }
         } else {

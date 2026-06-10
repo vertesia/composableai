@@ -31,7 +31,7 @@
     },
     "dependencies": {
         "sharp": "^0.34.5",
-        "tmp": "^0.2.5"
+        "tmp": "^0.2.7"
     },
     "repository": {
         "type": "git",

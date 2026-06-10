@@ -859,7 +859,7 @@ function StartWorkflowView({
                             <div className="flex flex-wrap gap-2">
                                 {stagedFiles.map((file, index) => (
                                     <div
-                                        key={`${file.name}-${index}`}
+                                        key={`${file.name}-${file.size}-${file.lastModified}`}
                                         className="flex items-center gap-1.5 rounded-md bg-attention/10 px-2 py-1 text-sm text-attention"
                                     >
                                         <FileTextIcon className="size-3.5" />

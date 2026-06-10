@@ -2444,6 +2444,8 @@ function AllMessagesMixedComponent({
                                                     showPulsatingCircle={isLatest}
                                                     toolRunId={group.toolRunId}
                                                     toolStatus={group.toolStatus}
+                                                    preambleText={group.preambleText}
+                                                    preambleMessage={group.preambleMessage}
                                                     rootClassName={cn(
                                                         'rounded-lg border border-border bg-background/60 shadow-none',
                                                         toolCallGroupClassNames?.rootClassName,
@@ -2489,7 +2491,7 @@ function AllMessagesMixedComponent({
                                     if (isBatchProgressMessage(message)) {
                                         return (
                                             <MessageErrorBoundary
-                                                key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}
+                                                key={`batch-${message.details.batch_id}-${message.timestamp}`}
                                             >
                                                 <BatchProgressPanel
                                                     message={message}
@@ -2589,7 +2591,6 @@ function AllMessagesMixedComponent({
                                             details={isThinkingOnlyWork ? undefined : item.messages}
                                             defaultExpanded={item.isActive && !isThinkingOnlyWork}
                                             className={workingIndicatorClassName}
-                                            artifactRunId={artifactRunId}
                                         />
                                     );
                                 }
