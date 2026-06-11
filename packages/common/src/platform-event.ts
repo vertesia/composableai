@@ -9,7 +9,14 @@ export type EventPriority = 'high' | 'normal' | 'low';
 
 export type WebhookSigningMode = 'signed' | 'legacy_unsigned';
 
-export type WebhookPayloadMode = 'event_envelope' | 'legacy_notify_endpoint';
+/**
+ * Webhook delivery body format:
+ * - event_envelope: the full platform event + delivery metadata (default for new subscriptions)
+ * - legacy_notify_endpoint: pre-2025-10 notify_endpoints body {workflowId, runId, status, result}
+ * - workflow_notification: post-COMPLETION_RESULT_V1 notify_endpoints body
+ *   {workflow_id, workflow_name, workflow_run_id, event_name, detail}
+ */
+export type WebhookPayloadMode = 'event_envelope' | 'legacy_notify_endpoint' | 'workflow_notification';
 
 export type EventOutboxStatus = 'pending' | 'routing' | 'routed' | 'partially_routed' | 'failed' | 'dropped';
 
@@ -57,6 +64,44 @@ export interface PlatformEvent extends EventRef {
     resource_data?: Record<string, unknown>;
     resource_version?: string;
     details?: Record<string, unknown>;
+}
+
+/**
+ * Lifecycle actions published by the workflow completion interceptor. The names intentionally
+ * match the legacy notify_endpoints event_name values so migrated webhook subscribers receive
+ * byte-identical status/event_name fields.
+ */
+export type WorkflowLifecycleAction = 'workflow_completed' | 'workflow_failed';
+
+/**
+ * Resource flavor of a workflow lifecycle event, derived from the Temporal workflow type:
+ * ExecuteConversationWorkflow -> agent_run, ExecuteProcessWorkflow -> process_run,
+ * anything else -> workflow_run.
+ */
+export type WorkflowLifecycleResourceType = 'workflow_run' | 'agent_run' | 'process_run';
+
+/**
+ * Body of POST /internal/events/publish (zeno-server, workload-identity gated). Sent by Temporal
+ * workers to publish a workflow lifecycle event to the event bus; the server fills event ids,
+ * tenant, timestamp and causality from caused_by.
+ */
+export interface PublishWorkflowLifecycleEventRequest {
+    account_id: string;
+    project_id: string;
+    action: WorkflowLifecycleAction;
+    resource_type: WorkflowLifecycleResourceType;
+    workflow_id: string;
+    workflow_run_id: string;
+    workflow_type: string;
+    /** Rule/subscription name that started the run (payload.wf_rule_name), used for filtering. */
+    workflow_rule_name?: string;
+    initiated_by?: string;
+    /** Workflow return value for completed runs. */
+    result?: unknown;
+    /** Error message for failed runs. */
+    error?: string;
+    /** EventRef of the event that started the workflow (payload.vars.event_ref), if any. */
+    caused_by?: EventRef;
 }
 
 export interface EventSubscriptionFilter {
@@ -249,7 +294,6 @@ export interface EventDeliverySummary {
     status: EventOutboxStatus;
     matched_subscription_count: number;
     materialized_intent_count: number;
-    enqueued_intent_count: number;
     routing_attempt_count: number;
     routing_error?: string | null;
     routed_at?: string | null;
@@ -282,7 +326,6 @@ export interface PublishPlatformEventResponse {
     status: EventOutboxStatus;
     matched_subscription_count: number;
     materialized_intent_count: number;
-    enqueued_intent_count: number;
 }
 
 export interface WorkflowEventInput<T = Record<string, unknown>> {

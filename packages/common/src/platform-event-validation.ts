@@ -14,6 +14,63 @@ export const MAX_WEBHOOK_TIMEOUT_MS = 50_000;
 export const EVENT_CATEGORIES: readonly EventCategory[] = ['content', 'workflow', 'security', 'billing', 'system'];
 export const EVENT_PRIORITIES: readonly EventPriority[] = ['high', 'normal', 'low'];
 
+/** Role an event subscription runs as when none is specified. */
+export const DEFAULT_EVENT_SUBSCRIPTION_RUN_AS_ROLE = ProjectRoles.automation;
+
+/**
+ * Roles a user may select for an event subscription's run_as_role. System subscriptions may use
+ * additional roles (e.g. content_processor); this list gates user input in the API, agent tools,
+ * and UI — keep all three consuming this constant.
+ */
+export const EVENT_SUBSCRIPTION_RUN_AS_ROLES: readonly ProjectRoles[] = [
+    ProjectRoles.automation,
+    ProjectRoles.executor,
+    ProjectRoles.reader,
+];
+
+/**
+ * JSONLogic operators accepted in event subscription filter conditions. The event-bus evaluator
+ * rejects any operator not in this list (fail closed); the UI condition editor uses it for
+ * completion and validation.
+ */
+export const EVENT_CONDITION_JSON_LOGIC_OPERATORS: readonly string[] = [
+    '!',
+    '!!',
+    '!=',
+    '!==',
+    '%',
+    '*',
+    '+',
+    '-',
+    '/',
+    '<',
+    '<=',
+    '==',
+    '===',
+    '>',
+    '>=',
+    '?:',
+    'all',
+    'and',
+    'cat',
+    'filter',
+    'if',
+    'in',
+    'log',
+    'map',
+    'max',
+    'merge',
+    'min',
+    'missing',
+    'missing_some',
+    'none',
+    'or',
+    'reduce',
+    'some',
+    'substr',
+    'var',
+];
+
 export interface EventSubscriptionValidationResult {
     valid: boolean;
     errors: string[];
@@ -98,9 +155,12 @@ function validateTarget(target: unknown, errors: string[]): void {
             if (
                 t.payload_mode !== undefined &&
                 t.payload_mode !== 'event_envelope' &&
-                t.payload_mode !== 'legacy_notify_endpoint'
+                t.payload_mode !== 'legacy_notify_endpoint' &&
+                t.payload_mode !== 'workflow_notification'
             ) {
-                errors.push('webhook target.payload_mode must be "event_envelope" or "legacy_notify_endpoint"');
+                errors.push(
+                    'webhook target.payload_mode must be "event_envelope", "legacy_notify_endpoint" or "workflow_notification"',
+                );
             }
             if (t.encrypted_headers === true) {
                 errors.push('webhook target.encrypted_headers is not supported');

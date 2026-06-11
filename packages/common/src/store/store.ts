@@ -11,7 +11,7 @@ export enum ContentObjectApiHeaders {
     CREATE_REVISION = 'x-create-revision',
     REVISION_LABEL = 'x-revision-label',
     /**
-     * @deprecated Events are now always emitted. This flag only suppresses workflow delivery targets.
+     * @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire.
      */
     SUPPRESS_WORKFLOWS = 'x-suppress-workflows',
 }
@@ -38,7 +38,7 @@ export interface UpdateContentObjectHeaders {
     'x-revision-label'?: string;
     'x-processing-priority'?: ContentObjectProcessingPriority;
     /**
-     * @deprecated Events are now always emitted. This flag only suppresses workflow delivery targets.
+     * @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire.
      */
     'x-suppress-workflows'?: boolean;
 }

@@ -263,7 +263,7 @@ export class ObjectsApi extends ApiTopic {
      * @param options Additional options
      * @param options.createRevision Whether to create a new revision instead of updating in place
      * @param options.revisionLabel Optional label for the revision (e.g., "v1.2")
-     * @param options.suppressWorkflows Deprecated. Events are always emitted; this only suppresses workflow delivery targets.
+     * @param options.suppressWorkflows Deprecated. Events are always emitted; this suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire.
      * @returns The updated object or newly created revision
      */
     async update(
@@ -273,7 +273,7 @@ export class ObjectsApi extends ApiTopic {
             createRevision?: boolean;
             revisionLabel?: string;
             processing_priority?: ContentObjectProcessingPriority;
-            /** @deprecated Events are now always emitted. This only suppresses workflow delivery targets. */
+            /** @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire. */
             suppressWorkflows?: boolean;
             /** If provided, the server will reject the update with 412 if the document's content etag no longer matches. */
             ifMatch?: string;
@@ -360,7 +360,7 @@ export class ObjectsApi extends ApiTopic {
         objects: CreateContentObjectPayload[],
         options?: {
             collection_id?: string;
-            /** @deprecated Events are now always emitted. This only suppresses workflow delivery targets. */
+            /** @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire. */
             skip_workflows?: boolean;
         },
     ): Promise<BulkObjectCreateResult> {
