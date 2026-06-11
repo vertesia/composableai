@@ -384,6 +384,7 @@ export class ObjectsApi extends ApiTopic {
     bulkCreate(objects: CreateContentObjectPayload[], options?: {
         collection_id?: string;
         skip_workflows?: boolean;
+        processing_priority?: ContentObjectProcessingPriority;
     }): Promise<BulkObjectCreateResult> {
         return this.client.runOperation({
             name: 'create',
