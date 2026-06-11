@@ -1265,6 +1265,9 @@ function ModernAgentConversationInner({
         [displayedMessages],
     );
     const shouldShowRequestInputOverlay = Boolean(pendingRequestInputMessage) && !isFailed;
+    const isViewingPlaybackHistory = isPlaybackEnabled && !isPlaybackLive;
+    const shouldShowLiveRequestInputOverlay = shouldShowRequestInputOverlay && !isViewingPlaybackHistory;
+    const shouldRenderLiveMessageInputArea = shouldRenderMessageInputArea && !isViewingPlaybackHistory;
 
     const handleTogglePlayback = useCallback(() => {
         setIsPlaybackToggleEnabled((prev) => !prev);
@@ -1927,11 +1930,11 @@ function ModernAgentConversationInner({
                     initialRequestTemplate={initialRequestTemplate}
                     hiddenMessageTypes={hiddenMessageTypes}
                     disableAutoScroll={!isPlaybackLive}
-                    renderRequestInputControls={!shouldShowRequestInputOverlay}
+                    renderRequestInputControls={isPlaybackLive && !shouldShowLiveRequestInputOverlay}
                 />
             )}
 
-            {shouldShowRequestInputOverlay ? (
+            {shouldShowLiveRequestInputOverlay ? (
                 <AgentRequestInputOverlay
                     message={pendingRequestInputMessage}
                     onSendMessage={handleSendMessage}
@@ -1939,7 +1942,7 @@ function ModernAgentConversationInner({
                     isLoading={isSending || isUploading}
                 />
             ) : (
-                shouldRenderMessageInputArea && (
+                shouldRenderLiveMessageInputArea && (
                     <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
                         {isFailed ? (
                             // FAILED takes priority over every other branch so the composer can

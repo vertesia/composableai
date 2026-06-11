@@ -41,6 +41,22 @@ describe('AgentChatPlaybackControls', () => {
         expect(onChangeCursor).toHaveBeenCalledWith(2);
     });
 
+    it('scrubs directly to a message with the playback slider', () => {
+        const onChangeCursor = vi.fn();
+
+        renderWithProviders(
+            <AgentChatPlaybackControls cursor={0} messages={messages} onChangeCursor={onChangeCursor} />,
+        );
+
+        const positionSlider = screen.getByRole('slider', { name: 'Playback position' });
+        expect(positionSlider.getAttribute('aria-valuemin')).toBe('1');
+        expect(positionSlider.getAttribute('aria-valuemax')).toBe('3');
+
+        fireEvent.keyDown(positionSlider, { key: 'End' });
+
+        expect(onChangeCursor).toHaveBeenCalledWith(2);
+    });
+
     it('edits and clamps the playback position without native number controls', () => {
         const onChangeCursor = vi.fn();
 

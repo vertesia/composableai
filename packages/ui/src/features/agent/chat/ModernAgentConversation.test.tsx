@@ -601,6 +601,29 @@ describe('ModernAgentConversation send handling', () => {
         }
     });
 
+    it('hides the composer while viewing rewound playback history', () => {
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'first question'),
+                createMessage(AgentMessageType.ANSWER, 'first answer'),
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ enablePlayback: true, hideMessageInput: false });
+
+        expect(screen.getByRole('button', { name: 'composer send' })).not.toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Jump to first message' }));
+
+        expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Jump to live' }));
+
+        expect(screen.getByRole('button', { name: 'composer send' })).not.toBeNull();
+    });
+
     it('exposes a local header toggle for playback controls', () => {
         mockStreamState({
             messages: [
