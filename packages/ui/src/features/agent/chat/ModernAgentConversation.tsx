@@ -849,10 +849,7 @@ function StartWorkflowView({
                 </div>
 
                 {/* Input Area */}
-                <div
-                    className="shrink-0 bg-background px-4 pb-4 pt-2"
-                    style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
-                >
+                <div className="shrink-0 bg-background px-4 pb-safe-area-4 pt-2">
                     <div
                         className={cn(
                             'mx-auto flex max-w-3xl flex-col gap-3 rounded-2xl border border-border/70 bg-mixer-muted/15 p-3 shadow-lg shadow-black/5',
@@ -1928,7 +1925,7 @@ function ModernAgentConversationInner({
                 />
             ) : (
                 shouldRenderLiveMessageInputArea && (
-                    <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                    <div className="flex-shrink-0 pb-safe-area">
                         {isFailed ? (
                             // FAILED takes priority over every other branch so the composer can
                             // never render for a failed run. Use the caller's action when provided,

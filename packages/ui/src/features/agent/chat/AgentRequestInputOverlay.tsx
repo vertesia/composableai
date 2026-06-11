@@ -32,10 +32,10 @@ export function AgentRequestInputOverlay({
             className={cn(
                 'flex-shrink-0 border-t border-border/70 bg-background/95 backdrop-blur',
                 'fixed bottom-0 end-0 start-0 z-20 lg:sticky lg:start-auto lg:end-auto',
+                'pb-safe-area',
                 className,
             )}
             data-agent-request-input-overlay
-            style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
             <div className="mx-auto w-full max-w-3xl px-3 py-3">
                 <AskUserWidget
