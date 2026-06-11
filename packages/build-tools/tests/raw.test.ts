@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { rawTransformer } from '../src/presets/raw.js';
+import { rawTransformer } from '../src/core/transformers/raw.js';
 
 describe('Raw Transformer', () => {
     it('should return content as-is', async () => {

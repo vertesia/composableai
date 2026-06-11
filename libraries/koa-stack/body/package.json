@@ -23,7 +23,7 @@
     "dependencies": {
         "formidable": "^3.5.4",
         "inflation": "^2.1.0",
-        "koa": "^3.2.0",
+        "koa": "^3.2.1",
         "qs": "^6.15.2",
         "raw-body": "^3.0.2"
     },
