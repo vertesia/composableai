@@ -6,7 +6,7 @@ import {
     getNextUserTurnIndex,
     getPlaybackCursorIndex,
     getPreviousUserTurnIndex,
-    isLocalhostAgentChatPlaybackEnabled,
+    isAgentChatPlaybackEnabled,
 } from './playback';
 
 function message(type: AgentMessageType, text: string): AgentMessage {
@@ -57,14 +57,14 @@ describe('agent chat playback helpers', () => {
         expect(live.displayedMessages).toBe(messages);
     });
 
-    it('enables localhost playback from regular and hash-route query params', () => {
+    it('enables playback from regular and hash-route query params', () => {
         window.history.pushState(null, '', '/store/agents/run-1?agentChatPlayback=1#conversation');
-        expect(isLocalhostAgentChatPlaybackEnabled()).toBe(true);
+        expect(isAgentChatPlaybackEnabled()).toBe(true);
 
         window.history.pushState(null, '', '/store/agents/run-1?p=project#conversation?agentChatPlayback=1');
-        expect(isLocalhostAgentChatPlaybackEnabled()).toBe(true);
+        expect(isAgentChatPlaybackEnabled()).toBe(true);
 
         window.history.pushState(null, '', '/store/agents/run-1?p=project#conversation');
-        expect(isLocalhostAgentChatPlaybackEnabled()).toBe(false);
+        expect(isAgentChatPlaybackEnabled()).toBe(false);
     });
 });

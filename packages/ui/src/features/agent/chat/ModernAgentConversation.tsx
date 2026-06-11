@@ -54,8 +54,8 @@ import {
     type AgentChatPlaybackCursor,
     createPlaybackState,
     getPlaybackCursorIndex,
-    isLocalhostAgentChatPlaybackAvailable,
-    isLocalhostAgentChatPlaybackEnabled,
+    isAgentChatPlaybackAvailable,
+    isAgentChatPlaybackEnabled,
 } from './playback';
 import { SkillWidgetProvider } from './SkillWidgetProvider';
 import { ArtifactUrlCacheProvider } from './useArtifactUrlCache.js';
@@ -1248,9 +1248,8 @@ function ModernAgentConversationInner({
         [panelWorkstreams],
     );
 
-    const canShowPlaybackToggle =
-        showPlaybackToggle && enablePlayback === undefined && isLocalhostAgentChatPlaybackAvailable();
-    const isPlaybackEnabled = enablePlayback ?? (isLocalhostAgentChatPlaybackEnabled() || isPlaybackToggleEnabled);
+    const canShowPlaybackToggle = showPlaybackToggle && enablePlayback === undefined && isAgentChatPlaybackAvailable();
+    const isPlaybackEnabled = enablePlayback ?? (isAgentChatPlaybackEnabled() || isPlaybackToggleEnabled);
     const playbackState = useMemo(
         () => createPlaybackState(messages, playbackCursor, isPlaybackEnabled),
         [isPlaybackEnabled, messages, playbackCursor],

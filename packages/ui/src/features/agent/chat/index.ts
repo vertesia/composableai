@@ -57,6 +57,8 @@ export {
     getNextUserTurnIndex,
     getPlaybackCursorIndex,
     getPreviousUserTurnIndex,
+    isAgentChatPlaybackAvailable,
+    isAgentChatPlaybackEnabled,
     isLocalhostAgentChatPlaybackAvailable,
     isLocalhostAgentChatPlaybackEnabled,
 } from './playback';

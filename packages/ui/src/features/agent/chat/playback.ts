@@ -72,23 +72,22 @@ function getHashSearchParams(hash: string): URLSearchParams {
     return new URLSearchParams(hash.slice(queryStart + 1));
 }
 
-export function isLocalhostAgentChatPlaybackAvailable(): boolean {
+export function isAgentChatPlaybackAvailable(): boolean {
     if (typeof window === 'undefined') return false;
-    const hostname = window.location.hostname;
-    return (
-        hostname === 'localhost' ||
-        hostname === '127.0.0.1' ||
-        hostname === '[::1]' ||
-        hostname.endsWith('.localhost') ||
-        hostname.endsWith('.local')
-    );
+    return true;
 }
 
-export function isLocalhostAgentChatPlaybackEnabled(): boolean {
-    if (!isLocalhostAgentChatPlaybackAvailable()) return false;
+export function isAgentChatPlaybackEnabled(): boolean {
+    if (!isAgentChatPlaybackAvailable()) return false;
 
     const params = new URLSearchParams(window.location.search);
     const hashParams = getHashSearchParams(window.location.hash);
     const value = params.get('agentChatPlayback') ?? hashParams.get('agentChatPlayback');
     return value === '1' || value === 'true';
 }
+
+/** @deprecated Playback is no longer localhost-only. Use isAgentChatPlaybackAvailable instead. */
+export const isLocalhostAgentChatPlaybackAvailable = isAgentChatPlaybackAvailable;
+
+/** @deprecated Playback is no longer localhost-only. Use isAgentChatPlaybackEnabled instead. */
+export const isLocalhostAgentChatPlaybackEnabled = isAgentChatPlaybackEnabled;
