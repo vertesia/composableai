@@ -14,7 +14,8 @@ export function JSONSwitcher({
             <Button
                 variant={viewCode ? 'ghost' : 'primary'}
                 size="sm"
-                alt="Preview properties"
+                aria-label="Preview properties"
+                title="Preview properties"
                 onClick={() => setViewCode(false)}
             >
                 {title}
@@ -22,7 +23,8 @@ export function JSONSwitcher({
             <Button
                 variant={viewCode ? 'primary' : 'ghost'}
                 size="sm"
-                alt="View in JSON format"
+                aria-label="View in JSON format"
+                title="View in JSON format"
                 onClick={() => setViewCode(true)}
             >
                 JSON

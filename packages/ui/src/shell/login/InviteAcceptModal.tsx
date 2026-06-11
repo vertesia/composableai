@@ -19,15 +19,12 @@ export function InviteAcceptModal() {
                     // Filter out legacy invites that do not have account data
                     const notLegacyInvites = invites.filter((i) => i.data.account);
                     if (notLegacyInvites.length === 0) {
-                        console.log('No valid invites found, closing modal');
                         return;
                     }
                     // If we have valid invites, show the modal
-                    console.log('Found valid invites', notLegacyInvites.length);
                     setShowModal(true);
                     setInvites(notLegacyInvites);
                 } else {
-                    console.log('No invites found, closing modal');
                     setShowModal(false);
                 }
             })

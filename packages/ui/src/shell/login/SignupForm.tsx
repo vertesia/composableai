@@ -98,7 +98,6 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
         window.localStorage.setItem('composableSignupData', JSON.stringify(signupData));
 
         const fbToken = await getFirebaseAuth().currentUser?.getIdToken();
-        console.log('Got firebase token', getFirebaseAuth(), fbToken);
         if (!fbToken) {
             console.error('No firebase token found');
             return;

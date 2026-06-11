@@ -98,9 +98,12 @@ class UserSession {
         this.isLoading = false;
         this.client.withAuthCallback(() => this.authCallback);
         this.authToken = jwtDecode(token) as unknown as AuthTokenPayload;
-        console.log(
-            `Logging in as ${this.authToken?.name} with account ${this.authToken?.account.name} (${this.authToken?.account.id}, and project ${this.authToken?.project?.name} (${this.authToken?.project?.id})`,
-        );
+        Env.logger.debug('User session login completed', {
+            vertesia: {
+                account_id: this.authToken.account.id,
+                project_id: this.authToken.project?.id,
+            },
+        });
 
         //store selected account in local storage
         localStorage.setItem(LastSelectedAccountId_KEY, this.authToken.account.id);
@@ -123,12 +126,12 @@ class UserSession {
     }
 
     logout() {
-        console.log('Logging out');
+        Env.logger.debug('Logging out');
 
         if (shouldRedirectToCentralAuth()) {
             // Redirect to central auth for logout
             // Central auth will handle Firebase logout
-            console.log('Using central auth logout');
+            Env.logger.debug('Using central auth logout');
             this.authError = undefined;
             this.isLoading = false;
             this.authToken = undefined;
@@ -143,7 +146,7 @@ class UserSession {
             location.replace(logoutUrl.toString());
         } else {
             // Use Firebase logout directly
-            console.log('Using Firebase logout');
+            Env.logger.debug('Using Firebase logout');
             const wasLoggedIn = !!this.authToken;
             if (this.authToken) {
                 void getFirebaseAuth().signOut();
@@ -229,7 +232,7 @@ class UserSession {
 
     async fetchOnboardingStatus(): Promise<boolean> {
         if (this.onboardingComplete) {
-            console.log('Onboarding already completed');
+            Env.logger.debug('Onboarding already completed');
             return false;
         }
         const previousStatus = this.onboardingComplete;

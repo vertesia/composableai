@@ -100,7 +100,8 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
                         variant="ghost"
                         size="xs"
                         onClick={() => setIsFullscreen(false)}
-                        alt={t('pdf.closeFullscreen')}
+                        aria-label={t('pdf.closeFullscreen')}
+                        title={t('pdf.closeFullscreen')}
                     >
                         <X className="size-4" />
                     </Button>

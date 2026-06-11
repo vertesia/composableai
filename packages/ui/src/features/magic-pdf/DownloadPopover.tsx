@@ -30,7 +30,13 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
     // For markdown processor, only one download option - render simple button
     if (processorType === 'markdown') {
         return (
-            <Button variant="ghost" size="xs" onClick={() => onDownload('document.md')} alt={t('pdf.download')}>
+            <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => onDownload('document.md')}
+                aria-label={t('pdf.download')}
+                title={t('pdf.download')}
+            >
                 <Download className="size-4" />
             </Button>
         );
@@ -40,7 +46,7 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
     return (
         <Popover>
             <PopoverTrigger>
-                <Button variant="ghost" size="xs" alt={t('pdf.download')}>
+                <Button variant="ghost" size="xs" aria-label={t('pdf.download')} title={t('pdf.download')}>
                     <Download className="size-4" />
                 </Button>
             </PopoverTrigger>

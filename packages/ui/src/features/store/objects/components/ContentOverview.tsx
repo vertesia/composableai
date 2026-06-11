@@ -247,7 +247,8 @@ function PropertiesPanel({
                         <Button
                             variant={`${viewCode ? 'ghost' : 'primary'}`}
                             size="sm"
-                            alt={t('store.previewProperties')}
+                            aria-label={t('store.previewProperties')}
+                            title={t('store.previewProperties')}
                             onClick={() => setViewCode(!viewCode)}
                         >
                             Properties
@@ -255,7 +256,8 @@ function PropertiesPanel({
                         <Button
                             variant={`${viewCode ? 'primary' : 'ghost'}`}
                             size="sm"
-                            alt={t('store.viewInJsonFormat')}
+                            aria-label={t('store.viewInJsonFormat')}
+                            title={t('store.viewInJsonFormat')}
                             onClick={() => setViewCode(!viewCode)}
                         >
                             JSON
@@ -422,7 +424,8 @@ function DataPanel({
                             <Button
                                 variant={currentPanel === PanelView.Image ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewImage')}
+                                aria-label={t('store.viewImage')}
+                                title={t('store.viewImage')}
                                 onClick={() => setCurrentPanel(PanelView.Image)}
                             >
                                 Image
@@ -432,7 +435,8 @@ function DataPanel({
                             <Button
                                 variant={currentPanel === PanelView.Video ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewVideo')}
+                                aria-label={t('store.viewVideo')}
+                                title={t('store.viewVideo')}
                                 onClick={() => setCurrentPanel(PanelView.Video)}
                             >
                                 Video
@@ -442,7 +446,8 @@ function DataPanel({
                             <Button
                                 variant={currentPanel === PanelView.Audio ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewAudio')}
+                                aria-label={t('store.viewAudio')}
+                                title={t('store.viewAudio')}
                                 onClick={() => setCurrentPanel(PanelView.Audio)}
                             >
                                 Audio
@@ -452,7 +457,8 @@ function DataPanel({
                             <Button
                                 variant={currentPanel === PanelView.Transcript ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewTranscript')}
+                                aria-label={t('store.viewTranscript')}
+                                title={t('store.viewTranscript')}
                                 onClick={() => setCurrentPanel(PanelView.Transcript)}
                             >
                                 Transcript
@@ -461,7 +467,8 @@ function DataPanel({
                         <Button
                             variant={currentPanel === PanelView.Text ? 'primary' : 'ghost'}
                             size="sm"
-                            alt={t('store.viewText')}
+                            aria-label={t('store.viewText')}
+                            title={t('store.viewText')}
                             onClick={() => setCurrentPanel(PanelView.Text)}
                         >
                             Text
@@ -470,7 +477,8 @@ function DataPanel({
                             <Button
                                 variant={currentPanel === PanelView.Pdf ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewPdf')}
+                                aria-label={t('store.viewPdf')}
+                                title={t('store.viewPdf')}
                                 onClick={() => setCurrentPanel(PanelView.Pdf)}
                             >
                                 PDF
@@ -480,7 +488,8 @@ function DataPanel({
                             <Button
                                 variant={currentPanel === PanelView.Pdf ? 'primary' : 'ghost'}
                                 size="sm"
-                                alt={t('store.viewAsPdf')}
+                                aria-label={t('store.viewAsPdf')}
+                                title={t('store.viewAsPdf')}
                                 onClick={() => {
                                     setCurrentPanel(PanelView.Pdf);
                                     if (!pdfRendition && !officePdfUrl && !officePdfConverting) {
@@ -687,7 +696,14 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
                     </>
                 )}
                 {isDownloading ? (
-                    <Button variant="ghost" size="sm" disabled className="flex items-center gap-2" alt="download">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled
+                        className="flex items-center gap-2"
+                        aria-label="download"
+                        title="download"
+                    >
                         <Spinner size="sm" />
                     </Button>
                 ) : (
@@ -698,7 +714,8 @@ function TextActions({ object, text, fullText, handleCopyContent, onToggleEdit, 
                                 size="sm"
                                 disabled={!text}
                                 className="flex items-center gap-2"
-                                alt="download"
+                                aria-label="download"
+                                title="download"
                             >
                                 <Download className="size-4" />
                             </Button>

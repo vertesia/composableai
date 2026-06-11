@@ -90,7 +90,7 @@ function SelectDocumentImpl({ onRowClick, selectedIds }: Readonly<SelectDocument
             <div className="flex justify-between items-center flex-shrink-0">
                 <DocumentsFacetsNav facets={facets} search={facetSearch} />
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={handleRefetch} alt="Refresh">
+                    <Button variant="outline" onClick={handleRefetch} aria-label="Refresh" title="Refresh">
                         <RefreshCw size={16} />
                     </Button>
                     <ContentDispositionButton onUpdate={setIsGridView} />

@@ -1,4 +1,4 @@
-import { type ApiKey, PrincipalType, type User, type UserGroup } from '@vertesia/common';
+import { PrincipalType, type User, type UserGroup } from '@vertesia/common';
 import { Avatar, errorMessage, Popover, PopoverContent, PopoverTrigger, Table, useFetch } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -7,7 +7,6 @@ import type { ReactNode } from 'react';
 
 const USER_CACHE: Record<string, Promise<User>> = {};
 const GROUP_CACHE: Record<string, Promise<UserGroup>> = {};
-const APIKEY_CACHE: Record<string, Promise<ApiKey>> = {};
 
 function isNotFoundError(error: unknown) {
     return typeof error === 'object' && error !== null && 'status' in error && error.status === 404;
@@ -51,19 +50,6 @@ export function useFetchGroupInfo(groupId: string) {
     return useFetch(() => cachedFetch(GROUP_CACHE, groupId, () => client.iam.groups.retrieve(groupId)), {
         deps: [groupId],
         condition: () => !!groupId,
-    });
-}
-
-/**
- * Fetch the API key information given a key ID.
- * @param keyId
- */
-export function useFetchApiKeyInfo(keyId: string) {
-    const { client } = useUserSession();
-
-    return useFetch(() => cachedFetch(APIKEY_CACHE, keyId, () => client.apikeys.retrieve(keyId)), {
-        deps: [keyId],
-        condition: () => !!keyId,
     });
 }
 
@@ -185,20 +171,19 @@ function AgentAvatar({
     const { t } = useUITranslation();
     // Fetch user info - must call hooks unconditionally per React rules
     const shouldFetchUser = onBehalfOfType === 'user' && onBehalfOfId;
-    const shouldFetchApiKey = onBehalfOfType === 'apikey' && onBehalfOfId;
+    const apiKeyId = onBehalfOfType === 'apikey' ? onBehalfOfId : undefined;
+    const isApiKeyPrincipal = !!apiKeyId;
 
     const userResult = useFetchUserInfo(onBehalfOfId || '');
-    const apiKeyResult = useFetchApiKeyInfo(onBehalfOfId || '');
 
     // Only use the data if we should fetch it
     const user = shouldFetchUser ? userResult.data : undefined;
-    const apiKey = shouldFetchApiKey ? apiKeyResult.data : undefined;
 
     // Determine title and description
     const shortenedAgentId = agentId.slice(-6);
     const title = user
         ? t('user.agentOnBehalfOf')
-        : apiKey
+        : isApiKeyPrincipal
           ? t('user.agentOnBehalfOfApiKey')
           : `${t('user.serviceAccount')}~${shortenedAgentId}`;
     const _title = isScheduleAgent ? t('user.schedule', { title }) : title;
@@ -214,13 +199,13 @@ function AgentAvatar({
                     </div>
                 </div>
             )}
-            {apiKey && (
+            {isApiKeyPrincipal && (
                 <div>
-                    <div className="font-medium">{apiKey.name}</div>
-                    <div className="text-xs text-muted-foreground">Key ID: {apiKey.id}</div>
+                    <div className="font-medium">{t('user.privateKey')}</div>
+                    <div className="text-xs text-muted-foreground">Key ID: {apiKeyId}</div>
                 </div>
             )}
-            {!user && !apiKey && (
+            {!user && !isApiKeyPrincipal && (
                 <>
                     <div>{t('user.serviceAccountDescription')}</div>
                     <div className="text-gray-800 dark:text-gray-500 text-sm">
@@ -249,7 +234,7 @@ function AgentAvatar({
                             className="border-2 border-white dark:border-gray-800"
                         />
                     )}
-                    {apiKey && (
+                    {isApiKeyPrincipal && (
                         <Avatar
                             name="API"
                             color="bg-gray-400"
@@ -260,7 +245,11 @@ function AgentAvatar({
                 </div>
                 {showTitle && (
                     <div className="text-sm font-semibold truncate">
-                        {user ? `Agent      (${user.name || user.email})` : apiKey ? `Agent (${apiKey.name})` : title}
+                        {user
+                            ? `Agent (${user.name || user.email})`
+                            : apiKeyId
+                              ? `Agent (${t('user.privateKey')} ~${apiKeyId.slice(-6)})`
+                              : title}
                     </div>
                 )}
             </div>
@@ -529,18 +518,6 @@ interface ApiKeyAvatarProps extends InfoProps {
 }
 export function ApiKeyAvatar({ keyId, showTitle = false, size = 'md' }: ApiKeyAvatarProps) {
     const { t } = useUITranslation();
-    const { data, error } = useFetchApiKeyInfo(keyId);
-
-    if (error) {
-        if (isNotFoundError(error)) {
-            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-pink-500" />;
-        }
-        return <ErrorAvatar title={t('user.failedToFetchApiKey')} error={error} showTitle={showTitle} size={size} />;
-    }
-
-    if (!data) {
-        return <AvatarPlaceholder />;
-    }
 
     const title = t('user.privateKey');
     const avatar = <Avatar name={'PK'} color="bg-pink-500" size={size} />;
@@ -548,15 +525,7 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = 'md' }: ApiKeyAv
         <Table className="dark:bg-gray-800 dark:text-gray-200 table-fixed w-full">
             <tr>
                 <td className="font-semibold w-20">{t('user.key')}</td>
-                <td className="truncate max-w-0">{data?.name}</td>
-            </tr>
-            <tr>
-                <td className="font-semibold w-20">{t('user.account')}</td>
-                <td className="truncate max-w-0">{data?.account}</td>
-            </tr>
-            <tr>
-                <td className="font-semibold w-20">{t('user.project')}</td>
-                <td className="truncate max-w-0">{data?.project.name}</td>
+                <td className="truncate max-w-0">{keyId}</td>
             </tr>
         </Table>
     );
@@ -565,11 +534,7 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = 'md' }: ApiKeyAv
         <UserPopoverPanel title={title} description={description}>
             <div className="flex flex-row items-center gap-2">
                 {avatar}
-                {showTitle && (
-                    <div className="text-sm font-semibold">
-                        {data?.name || data?.account || data?.project.name || t('user.unknown')}
-                    </div>
-                )}
+                {showTitle && <div className="text-sm font-semibold">{`${title} ~${keyId.slice(-6)}`}</div>}
             </div>
         </UserPopoverPanel>
     );

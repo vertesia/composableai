@@ -43,17 +43,17 @@ export function getFirebaseAuth(): Auth {
 
 export async function setFirebaseTenant(tenantEmail?: string) {
     if (!tenantEmail) {
-        console.log('No tenant name or email specified, skipping tenant setup');
+        Env.logger.debug('No tenant name or email specified, skipping tenant setup');
         return;
     }
 
     if (!Env.firebase) {
-        console.log('Firebase configuration is not available in the environment');
+        Env.logger.debug('Firebase configuration is not available in the environment');
         return;
     }
 
     try {
-        if (tenantEmail) console.log(`Resolving tenant ID from email: ${tenantEmail}`);
+        Env.logger.debug('Resolving tenant ID from email');
 
         // Add retry logic with exponential backoff
         let retries = 3;
@@ -105,7 +105,7 @@ export async function setFirebaseTenant(tenantEmail?: string) {
                     const auth = getFirebaseAuth();
                     auth.tenantId = data.firebaseTenantId;
                     Env.firebase.providerType = data.provider ?? 'oidc';
-                    console.log(`Tenant ID set to ${auth.tenantId}`);
+                    Env.logger.debug('Firebase tenant ID set');
                     return data;
                 } else {
                     console.error(`Invalid response format, missing tenantId for ${tenantEmail}`);
@@ -139,7 +139,7 @@ export async function getFirebaseAuthToken(refresh?: boolean) {
         return user
             .getIdToken(refresh)
             .then((token) => {
-                Env.logger.info('Got Firebase token', {
+                Env.logger.debug('Got Firebase token', {
                     vertesia: {
                         user_email: user.email,
                         user_name: user.displayName,
@@ -163,7 +163,7 @@ export async function getFirebaseAuthToken(refresh?: boolean) {
                 return null;
             });
     } else {
-        Env.logger.warn('No user found');
+        Env.logger.debug('No user found');
         return Promise.resolve(null);
     }
 }

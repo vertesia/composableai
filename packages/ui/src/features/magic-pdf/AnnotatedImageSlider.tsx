@@ -255,7 +255,13 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
     return (
         <div ref={ref} className={clsx('flex flex-col items-stretch gap-y-2', className)}>
             <div className="relative flex items-center justify-center px-2 h-9">
-                <Button variant="ghost" size="xs" onClick={goPrev} alt={t('pdf.previousPage')}>
+                <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={goPrev}
+                    aria-label={t('pdf.previousPage')}
+                    title={t('pdf.previousPage')}
+                >
                     <ChevronsUp className="size-4" />
                 </Button>
                 <div className="absolute start-2 flex items-center gap-x-1">
@@ -302,7 +308,13 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                 ))}
             </div>
             <div className="flex items-center justify-center h-9">
-                <Button variant="ghost" size="xs" onClick={goNext} alt={t('pdf.nextPage')}>
+                <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={goNext}
+                    aria-label={t('pdf.nextPage')}
+                    title={t('pdf.nextPage')}
+                >
                     <ChevronsDown className="size-4" />
                 </Button>
             </div>
