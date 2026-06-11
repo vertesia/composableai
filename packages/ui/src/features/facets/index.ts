@@ -11,6 +11,8 @@ export {
     useInteractionsFilterGroups,
     useInteractionsFilterHandler,
 } from './InteractionsFacetsNav';
+export { ProcessDefinitionsFacetsNav, useProcessDefinitionsFilterGroups } from './ProcessDefinitionsFacetsNav';
+export { ProcessRunsFacetsNav, useProcessRunsFilterGroups } from './ProcessRunsFacetsNav';
 export { PromptsFacetsNav, usePromptsFilterGroups, usePromptsFilterHandler } from './PromptsFacetsNav';
 export { RunsFacetsNav, useRunsFilterGroups, useRunsFilterHandler } from './RunsFacetsNav';
 export * from './utils/SearchInterface';
