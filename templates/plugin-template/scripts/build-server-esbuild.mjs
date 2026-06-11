@@ -20,6 +20,11 @@ const rules = [
 ].filter((r) => r && typeof r.transform === 'function' && r.pattern);
 
 const ANY = new RegExp(rules.map((r) => r.pattern.source).join('|'));
+// Widgets (.tsx) referenced by ?skills collections are reported by the transform as
+// result.widgets = [{ name, path }]. The rollup build compiled them via build-tools'
+// compileWidgets (rollup, react external); we collect them here and esbuild-compile them
+// to dist/widgets/<name>.js after the server bundle so widget apps keep working.
+const collectedWidgets = new Map();
 const plugin = {
     name: 'vertesia-transforms',
     setup(b) {
@@ -42,6 +47,10 @@ const plugin = {
                 } catch {}
             }
             const r = await rule.transform(content, clean);
+            for (const w of r.widgets || []) {
+                const wp = isAbsolute(w.path) ? w.path : resolve(dirname(clean), w.path);
+                collectedWidgets.set(w.name, wp);
+            }
             const imports = r.imports ? `${r.imports.join('\n')}\n\n` : '';
             return { contents: `${imports}${r.code || ''}`, loader: 'js', resolveDir: dirname(clean) };
         });
@@ -64,3 +73,24 @@ await build({
     logLevel: 'warning',
 });
 console.log('[B] esbuild self-contained bundle -> lib/server.js, lib/server-node.js, lib/config.js');
+
+// Compile skill widgets to dist/widgets/<name>.js (browser ESM, React provided by the host).
+// Mirrors build-tools' compileWidgets DEFAULT_EXTERNALS so the widget loads in the app shell.
+if (collectedWidgets.size > 0) {
+    mkdirSync('dist/widgets', { recursive: true });
+    const WIDGET_EXTERNAL = ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom/client'];
+    for (const [name, path] of collectedWidgets) {
+        await build({
+            entryPoints: [path],
+            bundle: true,
+            platform: 'browser',
+            format: 'esm',
+            target: 'es2022',
+            jsx: 'automatic',
+            external: WIDGET_EXTERNAL,
+            outfile: `dist/widgets/${name}.js`,
+            logLevel: 'warning',
+        });
+    }
+    console.log(`[B] compiled ${collectedWidgets.size} widget(s) -> dist/widgets/`);
+}
