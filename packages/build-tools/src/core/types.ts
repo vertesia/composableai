@@ -1,8 +1,8 @@
 /**
- * Type definitions for the Vertesia Rollup Import Plugin
+ * Type definitions shared across the Vertesia build-tools pipeline:
+ * transformers, transformer results, and asset metadata produced by them.
  */
 
-import type { Plugin } from 'rollup';
 import type { z } from 'zod';
 
 /**
@@ -65,73 +65,7 @@ export interface TransformerRule {
 }
 
 /**
- * Widget compilation configuration
- */
-export interface WidgetConfig {
-    /**
-     * External dependencies that should not be bundled
-     * Default: ['react', 'react-dom', 'react/jsx-runtime']
-     */
-    external?: string[];
-
-    /**
-     * Path to tsconfig.json for widget compilation
-     * Default: './tsconfig.json'
-     */
-    tsconfig?: string;
-
-    /**
-     * Additional options to pass to @rollup/plugin-typescript
-     */
-    typescript?: Record<string, unknown>;
-
-    /**
-     * Minify widget output
-     * Default: false
-     */
-    minify?: boolean;
-}
-
-/**
- * Plugin configuration
- */
-export interface PluginConfig {
-    /** Array of transformer rules to apply */
-    transformers: TransformerRule[];
-
-    /**
-     * Root directory for asset output (scripts, widgets, etc.)
-     * - If specified: assets will be copied to this directory
-     * - If false: asset copying is disabled
-     * - Default: './dist'
-     */
-    assetsDir?: string | false;
-
-    /**
-     * Directory for script files relative to assetsDir
-     * Default: 'scripts'
-     */
-    scriptsDir?: string;
-
-    /**
-     * Directory for widget files relative to assetsDir
-     * Default: 'widgets'
-     */
-    widgetsDir?: string;
-
-    /**
-     * Widget compilation configuration
-     * If provided, discovered widgets will be automatically compiled
-     */
-    widgetConfig?: WidgetConfig;
-}
-
-/**
- * Type for transformer presets
+ * Type for transformer presets — alias for `TransformerRule` used by the
+ * built-in preset modules (skill, raw, prompt, template, …).
  */
 export type TransformerPreset = TransformerRule;
-
-/**
- * Plugin factory return type
- */
-export type VertesiaImportPlugin = (config: PluginConfig) => Plugin;

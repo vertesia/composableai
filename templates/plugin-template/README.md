@@ -96,9 +96,7 @@ plugin-template/
 │       └── index.css              # Tailwind CSS 4 entry
 ├── api/
 │   └── index.js                   # Vercel serverless adapter
-├── vite.config.ts                 # UI + dev server config
-├── vite-api-server.ts             # Vite plugin: mounts Hono as middleware
-├── rollup.config.js               # Tool server build config
+├── vite.config.ts                 # UI + dev server config (uses apiServerPlugin from @vertesia/build-tools/vite)
 ├── vercel.json                    # Vercel deployment config
 └── package.json
 ```
@@ -107,7 +105,7 @@ plugin-template/
 
 ### Dev Mode (`{{PM_RUN}} dev`)
 
-A single Vite dev server runs at `https://localhost:5173`. The `vite-api-server.ts` plugin mounts the Hono tool server as Connect middleware, so the API is served at `/api` on the same port. Tool server source is loaded via Vite's `ssrLoadModule` with hot reload. Import hooks (`?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates`) are handled by `vertesiaImportPlugin`. HTTPS is required for Firebase authentication.
+A single Vite dev server runs at `https://localhost:5173`. The `apiServerPlugin` from `@vertesia/build-tools/vite` mounts the Hono tool server as Connect middleware, so the API is served at `/api` on the same port. Tool server source is loaded via Vite's `ssrLoadModule` with hot reload. Import hooks (`?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates`) are handled by `vertesiaDevServerPlugin` (also from `@vertesia/build-tools/vite`, included automatically by `apiServerPlugin`). HTTPS is required for Firebase authentication.
 
 ### Preview Mode (`{{PM_RUN}} start`)
 

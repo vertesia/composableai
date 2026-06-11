@@ -10,7 +10,7 @@ import type { View } from 'vega';
 import type { TopLevelSpec as VisualizationSpec } from 'vega-lite';
 import { cn } from '../../../core/components/libs/utils';
 import type { VegaLiteChartSpec } from './AgentChart';
-import { getArtifactCacheKey, getFileCacheKey, useArtifactUrlCache } from './useArtifactUrlCache';
+import { getArtifactCacheKey, getFileCacheKey, isProjectFilePath, useArtifactUrlCache } from './useArtifactUrlCache';
 
 type VegaLiteChartProps = {
     spec: VegaLiteChartSpec;
@@ -658,7 +658,7 @@ export const VegaLiteChart = memo(
                         let url: string;
 
                         // Determine if this is a shorthand path or full path
-                        if (artifactRunId && !ref.artifactPath.startsWith('agents/')) {
+                        if (artifactRunId && !isProjectFilePath(ref.artifactPath)) {
                             // Shorthand path - use artifact API
                             const cacheKey = getArtifactCacheKey(artifactRunId, ref.artifactPath, 'inline');
                             if (currentUrlCache) {
