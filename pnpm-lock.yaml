@@ -1413,10 +1413,6 @@ packages:
     resolution: {integrity: sha512-YjS0qFuECClRh4qhEyW8XagW0fwEPBeZ1cfsW/gU73Kh/ExFILxbzxOfPCmzF/2DwEvhvsHYt0b0qnvStwKYrg==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/types@3.973.9':
-    resolution: {integrity: sha512-kuBfgQVdcz5Bmapc4A13YbpVw/pXkesfhetcFYwbntqas8sF41OHyd4o28+/TG2ZQdHBsv90Lsu5y6oitvYCdg==}
-    engines: {node: '>=20.0.0'}
-
   '@aws-sdk/util-locate-window@3.965.4':
     resolution: {integrity: sha512-H1onv5SkgPBK2P6JR2MjGgbOnttoNzSPIRoeZTNPZYyaplwGg50zS3amXvXqF0/qfXpWEC9rLWU564QTB9bSog==}
     engines: {node: '>=20.0.0'}
@@ -7384,20 +7380,20 @@ snapshots:
   '@aws-crypto/crc32@5.2.0':
     dependencies:
       '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.973.9
+      '@aws-sdk/types': 3.973.11
       tslib: 2.8.1
 
   '@aws-crypto/crc32c@5.2.0':
     dependencies:
       '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.973.9
+      '@aws-sdk/types': 3.973.11
       tslib: 2.8.1
 
   '@aws-crypto/sha1-browser@5.2.0':
     dependencies:
       '@aws-crypto/supports-web-crypto': 5.2.0
       '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.973.9
+      '@aws-sdk/types': 3.973.11
       '@aws-sdk/util-locate-window': 3.965.4
       '@smithy/util-utf8': 2.3.0
       tslib: 2.8.1
@@ -7407,7 +7403,7 @@ snapshots:
       '@aws-crypto/sha256-js': 5.2.0
       '@aws-crypto/supports-web-crypto': 5.2.0
       '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.973.9
+      '@aws-sdk/types': 3.973.11
       '@aws-sdk/util-locate-window': 3.965.4
       '@smithy/util-utf8': 2.3.0
       tslib: 2.8.1
@@ -7415,7 +7411,7 @@ snapshots:
   '@aws-crypto/sha256-js@5.2.0':
     dependencies:
       '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.973.9
+      '@aws-sdk/types': 3.973.11
       tslib: 2.8.1
 
   '@aws-crypto/supports-web-crypto@5.2.0':
@@ -7424,7 +7420,7 @@ snapshots:
 
   '@aws-crypto/util@5.2.0':
     dependencies:
-      '@aws-sdk/types': 3.973.9
+      '@aws-sdk/types': 3.973.11
       '@smithy/util-utf8': 2.3.0
       tslib: 2.8.1
 
@@ -7649,11 +7645,6 @@ snapshots:
       tslib: 2.8.1
 
   '@aws-sdk/types@3.973.11':
-    dependencies:
-      '@smithy/types': 4.14.3
-      tslib: 2.8.1
-
-  '@aws-sdk/types@3.973.9':
     dependencies:
       '@smithy/types': 4.14.3
       tslib: 2.8.1
