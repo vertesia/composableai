@@ -30,15 +30,19 @@ const plugin = {
     setup(b) {
         if (!rules.length) return;
         b.onResolve({ filter: ANY }, (args) => {
+            // A transformed import may be suffixed (`./SKILL.md?skill`) OR bare (`./SKILL.md`,
+            // `./TEMPLATE.md`) — handle both: no `?` means an empty query suffix, not slice(-1).
             const q = args.path.indexOf('?');
-            const clean = args.path.slice(0, q);
+            const clean = q >= 0 ? args.path.slice(0, q) : args.path;
+            const suffix = q >= 0 ? args.path.slice(q) : '';
             const abs = isAbsolute(clean) ? clean : resolve(args.resolveDir || dirname(args.importer), clean);
-            return { path: abs + args.path.slice(q), namespace: 'vtx' };
+            return { path: abs + suffix, namespace: 'vtx' };
         });
         b.onLoad({ filter: /.*/, namespace: 'vtx' }, async (args) => {
             const q = args.path.indexOf('?');
-            const clean = args.path.slice(0, q);
-            const rule = rules.find((r) => r.pattern.test(args.path.slice(q)));
+            const clean = q >= 0 ? args.path.slice(0, q) : args.path;
+            // Match the transformer against the FULL path (suffixed or bare filename).
+            const rule = rules.find((r) => r.pattern.test(args.path));
             if (!rule) throw new Error(`no transformer for ${args.path}`);
             let content = '';
             if (!rule.virtual) {
