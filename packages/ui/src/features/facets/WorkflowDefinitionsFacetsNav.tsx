@@ -10,21 +10,20 @@ import {
 import type { Dispatch, SetStateAction } from 'react';
 import { VStringFacet } from './utils/VStringFacet';
 
-interface ProcessDefinitionsFacetsNavProps {
+interface WorkflowDefinitionsFacetsNavProps {
     facets: {
-        statuses?: FacetBucket[];
+        tags?: FacetBucket[];
     };
     filters: BaseFilter[];
     setFilters: Dispatch<SetStateAction<BaseFilter[]>>;
 }
 
-// Hook to create filter groups for process definitions
-export function useProcessDefinitionsFilterGroups(facets: ProcessDefinitionsFacetsNavProps['facets']): FilterGroup[] {
+// Hook to create filter groups for workflow definitions
+export function useWorkflowDefinitionsFilterGroups(facets: WorkflowDefinitionsFacetsNavProps['facets']): FilterGroup[] {
     const customFilterGroups: FilterGroup[] = [];
 
-    // Single-select: the /processes endpoint filters by a single status server-side.
     customFilterGroups.push(
-        VStringFacet({ buckets: facets.statuses || [], name: 'status', placeholder: 'Status', multiple: false }),
+        VStringFacet({ buckets: facets.tags || [], name: 'tags', placeholder: 'Tags', multiple: true }),
     );
     customFilterGroups.push({ name: 'name', placeholder: 'Name', type: 'text', multiple: false });
 
@@ -32,12 +31,13 @@ export function useProcessDefinitionsFilterGroups(facets: ProcessDefinitionsFace
 }
 
 /**
- * Controlled facet bar for the Process Definitions table. Buckets are computed by the
+ * Controlled facet bar for the Workflow Definitions table. Buckets are computed by the
  * caller and passed in via `facets`; `filters`/`setFilters` are owned by the consuming
- * view, which applies them client-side.
+ * view, which applies them client-side (the `/definitions` endpoint returns all definitions
+ * with no server filters).
  */
-export function ProcessDefinitionsFacetsNav({ facets, filters, setFilters }: ProcessDefinitionsFacetsNavProps) {
-    const filterGroups = useProcessDefinitionsFilterGroups(facets);
+export function WorkflowDefinitionsFacetsNav({ facets, filters, setFilters }: WorkflowDefinitionsFacetsNavProps) {
+    const filterGroups = useWorkflowDefinitionsFilterGroups(facets);
 
     return (
         <FilterProvider filterGroups={filterGroups} filters={filters} setFilters={setFilters}>

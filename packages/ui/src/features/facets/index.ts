@@ -23,8 +23,10 @@ export { VInteractionFacet } from './utils/VInteractionFacet';
 export { VStringFacet } from './utils/VStringFacet';
 export { VTypeFacet } from './utils/VTypeFacet';
 export { VUserFacet } from './utils/VUserFacet';
+export { useWorkflowDefinitionsFilterGroups, WorkflowDefinitionsFacetsNav } from './WorkflowDefinitionsFacetsNav';
 export {
     useWorkflowExecutionsFilterGroups,
     useWorkflowExecutionsFilterHandler,
     WorkflowExecutionsFacetsNav,
 } from './WorkflowExecutionsFacetsNav';
+export { useWorkflowRulesFilterGroups, WorkflowRulesFacetsNav } from './WorkflowRulesFacetsNav';
