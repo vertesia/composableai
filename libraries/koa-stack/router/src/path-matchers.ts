@@ -8,6 +8,13 @@ export type PrefixMatcher = (ctx: Context, path: string) => boolean;
 function decode(val: string): string {
     return val ? decodeURIComponent(val) : val;
 }
+
+function normalizeLegacyNamedSplatParams(pattern: string): string {
+    return pattern.replace(/\/:([A-Za-z0-9_]+)([+*])(?=\/|$)/g, (_segment, name: string, modifier: string) => {
+        return modifier === '+' ? `/*${name}` : `{/*${name}}`;
+    });
+}
+
 /**
  * Safe version of createPathMatcherUnsafe. The pattern path will be normalized using the normalizePath.
  * @param pattern
@@ -37,7 +44,7 @@ export function createPathMatcherUnsafe(pattern: string): PathMatcher {
         };
     } else {
         // a regex pattern
-        return match(pattern, { decode: decode });
+        return match(normalizeLegacyNamedSplatParams(pattern), { decode: decode });
     }
 }
 
