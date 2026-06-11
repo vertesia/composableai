@@ -168,11 +168,23 @@ export class FilesApi extends ApiTopic {
     }
 
     /**
-     * Upload content to a file and return the full path (including bucket name) of the uploaded file
+     * Upload content to a file and return the file id.
      * @param source
-     * @returns
+     * @returns the uploaded file id
      */
     async uploadFile(source: StreamSource | File): Promise<string> {
+        return (await this.uploadFileWithPath(source)).id;
+    }
+
+    /**
+     * Upload content to a file and return both the file id and its storage path
+     * (e.g. "bucket-name/path/to/file"). Prefer this over {@link uploadFile} when the
+     * caller needs an importable reference (the path can be turned into a "gs://…" URL),
+     * not just the opaque id.
+     * @param source
+     * @returns the uploaded file id and storage path
+     */
+    async uploadFileWithPath(source: StreamSource | File): Promise<{ id: string; path: string }> {
         const isStream = source instanceof StreamSource;
         const { url, id, path } = await this.getUploadUrl(source);
 
@@ -191,7 +203,7 @@ export class FilesApi extends ApiTopic {
             throw new Error(`Failed to upload file: ${res.statusText}`);
         }
 
-        return id;
+        return { id, path };
     }
 
     /**

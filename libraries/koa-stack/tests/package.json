@@ -16,7 +16,7 @@
         "@koa-stack/body": "workspace:*",
         "@koa-stack/router": "workspace:*",
         "@koa-stack/server": "workspace:*",
-        "koa": "^3.2.0"
+        "koa": "^3.2.1"
     },
     "devDependencies": {
         "@types/koa": "^3.0.3",
