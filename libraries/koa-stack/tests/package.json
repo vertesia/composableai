@@ -7,7 +7,7 @@
     "scripts": {
         "build": "pnpm run clean && tsc --project ./tsconfig.build.json",
         "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo",
-        "test": "pnpm exec vitest run -r ./src"
+        "test": "pnpm exec vitest run src"
     },
     "keywords": [],
     "author": "stefanescu.bogdan@gmail.com",
