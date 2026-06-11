@@ -233,16 +233,22 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                         hasDeadline && remaining > 0 ? t('agent.remaining', { seconds: remaining }) : undefined,
                     ].filter(Boolean);
 
-                    const statusBadge =
-                        ws.status === 'running' ? (
-                            <Badge variant="info">{t('agent.running')}</Badge>
-                        ) : ws.status === 'canceling' ? (
-                            <Badge variant="attention">{t('agent.canceling')}</Badge>
-                        ) : ws.status === 'completed' ? (
-                            <Badge variant="done">{t('agent.completed')}</Badge>
-                        ) : (
-                            <Badge variant="destructive">{t('agent.canceled')}</Badge>
-                        );
+                    const statusBadge = (() => {
+                        switch (ws.status) {
+                            case 'running':
+                                return <Badge variant="info">{t('agent.running')}</Badge>;
+                            case 'canceling':
+                                return <Badge variant="attention">{t('agent.canceling')}</Badge>;
+                            case 'completed':
+                                return <Badge variant="done">{t('agent.completed')}</Badge>;
+                            case 'failed':
+                                return <Badge variant="destructive">{t('agent.failed')}</Badge>;
+                            case 'timeout':
+                                return <Badge variant="destructive">{t('agent.timeout')}</Badge>;
+                            case 'canceled':
+                                return <Badge variant="destructive">{t('agent.canceled')}</Badge>;
+                        }
+                    })();
 
                     return (
                         <RightPanelErrorBoundary

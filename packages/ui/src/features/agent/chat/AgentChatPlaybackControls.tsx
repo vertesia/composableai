@@ -85,6 +85,9 @@ export function AgentChatPlaybackControls({
         commitPosition(value);
     };
 
+    const canScrub = messageCount > 1;
+    const sliderMin = canScrub ? 1 : 0;
+    const sliderMax = Math.max(1, messageCount);
     const iconButtonClassName = 'size-7 rounded-lg text-muted hover:text-foreground disabled:opacity-35';
     const positionInputWidth = `${Math.max(3, String(messageCount).length + 1)}ch`;
 
@@ -142,7 +145,6 @@ export function AgentChatPlaybackControls({
                         onChange={(value) => {
                             const nextValue = value.replace(/\D/g, '');
                             setPositionText(nextValue);
-                            if (nextValue !== '') commitPosition(nextValue);
                         }}
                         onBlur={(event) => commitPosition(event.currentTarget.value, true)}
                         onKeyDown={(event) => {
@@ -198,12 +200,12 @@ export function AgentChatPlaybackControls({
             </div>
             <div className="px-2 pb-1">
                 <Slider
-                    min={messageCount === 0 ? 0 : 1}
-                    max={messageCount}
+                    min={sliderMin}
+                    max={sliderMax}
                     step={1}
                     value={[currentPosition]}
                     aria-label={t('agent.rewind.positionInput')}
-                    disabled={messageCount === 0}
+                    disabled={!canScrub}
                     onValueChange={([value]) => scrubToPosition(String(value))}
                     className="h-2"
                 />

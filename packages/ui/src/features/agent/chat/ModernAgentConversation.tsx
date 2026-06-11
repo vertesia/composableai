@@ -250,12 +250,16 @@ function printElementToPdf(sourceElement: HTMLElement, title: string): boolean {
     return true;
 }
 
+function trimHyphens(value: string): string {
+    let start = 0;
+    let end = value.length;
+    while (start < end && value[start] === '-') start++;
+    while (end > start && value[end - 1] === '-') end--;
+    return value.slice(start, end);
+}
+
 function sanitizeFilenamePart(value: string): string {
-    return value
-        .trim()
-        .replace(/[^a-z0-9-_]+/gi, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 80);
+    return trimHyphens(value.trim().replace(/[^a-z0-9-_]+/gi, '-')).slice(0, 80);
 }
 
 function downloadJsonFile(filename: string, payload: unknown) {
@@ -821,6 +825,7 @@ function StartWorkflowView({
                                 size="xs"
                                 variant="ghost"
                                 onClick={onClose}
+                                aria-label={t('agent.close')}
                                 title={t('agent.close')}
                                 className="text-muted hover:text-foreground"
                             >
@@ -901,6 +906,7 @@ function StartWorkflowView({
                                         size="icon"
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={isSending || stagedFiles.length >= maxFiles}
+                                        aria-label={t('agent.upload')}
                                         className="rounded-full text-muted"
                                         title={t('agent.upload')}
                                     >
@@ -919,6 +925,7 @@ function StartWorkflowView({
                                     'disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100',
                                 )}
                                 title={resolvedStartButtonText}
+                                aria-label={resolvedStartButtonText}
                             >
                                 {isSending ? <Spinner size="sm" /> : <ArrowUpIcon className="size-4" />}
                             </Button>
@@ -1030,7 +1037,6 @@ function ModernAgentConversationInner({
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const toast = useToast();
-    const instanceIdRef = useRef(`mac-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
 
     // ────────────────────────────────────────────
     // Extracted hooks
@@ -1174,27 +1180,6 @@ function ModernAgentConversationInner({
     isWorkflowTerminalRef.current = isWorkflowTerminal;
     const canContinueConversationRef = useRef(canContinueConversation);
     canContinueConversationRef.current = canContinueConversation;
-
-    console.debug('[ModernAgentConversation] render', {
-        agentRunId,
-        instanceId: instanceIdRef.current,
-        messageCount: messages.length,
-        activeWorkstreams: activeWorkstreams.length,
-    });
-
-    useEffect(() => {
-        console.debug('[ModernAgentConversation] mount', {
-            agentRunId,
-            instanceId: instanceIdRef.current,
-        });
-
-        return () => {
-            console.debug('[ModernAgentConversation] unmount', {
-                agentRunId,
-                instanceId: instanceIdRef.current,
-            });
-        };
-    }, [agentRunId]);
 
     // ────────────────────────────────────────────
     // Computed values

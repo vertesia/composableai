@@ -5,7 +5,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
 import dayjs from 'dayjs';
 import { AlertCircle, AlertTriangle, Bot, CheckCircle, ChevronDown, ChevronRight, CopyIcon } from 'lucide-react';
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { PulsatingCircle } from '../AnimatedThinkingDots';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
@@ -72,6 +72,37 @@ function getProgressDetails(details: Record<string, unknown> | undefined): ToolP
 
 function getProgressDetailKey(item: ToolProgressDetail): string {
     return ['progress', item.timestamp ?? 'no-time', item.status ?? 'status', item.message].join(':');
+}
+
+function getToolMessageKey(message: AgentMessage): string {
+    const details = message.details as Record<string, unknown> | undefined;
+    const toolRunId = typeof details?.tool_run_id === 'string' ? details.tool_run_id : undefined;
+    if (toolRunId) return `tool-run:${toolRunId}`;
+
+    const activityGroupId = typeof details?.activity_group_id === 'string' ? details.activity_group_id : undefined;
+    const toolUseId = typeof details?.tool_use_id === 'string' ? details.tool_use_id : undefined;
+    if (activityGroupId || toolUseId) {
+        return `tool:${activityGroupId ?? 'no-activity'}:${toolUseId ?? 'no-use'}`;
+    }
+
+    return [
+        'message',
+        message.workstream_id ?? 'main',
+        message.type,
+        message.timestamp,
+        getMessageActivityLabel(message),
+    ].join(':');
+}
+
+function areMessagesRenderEqual(prevMessage: AgentMessage, nextMessage: AgentMessage): boolean {
+    return (
+        prevMessage.timestamp === nextMessage.timestamp &&
+        prevMessage.type === nextMessage.type &&
+        prevMessage.message === nextMessage.message &&
+        prevMessage.details === nextMessage.details &&
+        prevMessage.workstream_id === nextMessage.workstream_id &&
+        prevMessage.workflow_run_id === nextMessage.workflow_run_id
+    );
 }
 
 /** Badge color per status */
@@ -524,7 +555,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                             {progressDetails.length > 0 && (
                                 <div className="mb-2 space-y-1">
                                     <div className="text-[10px] uppercase tracking-wide text-muted/70 font-medium">
-                                        Progress
+                                        {t('agent.progress')}
                                     </div>
                                     {progressDetails.map((item) => (
                                         <div key={getProgressDetailKey(item)} className="text-xs text-muted">
@@ -755,12 +786,13 @@ function ToolCallGroupComponent({
     itemContentClassName,
 }: ToolCallGroupProps) {
     // Merge messages sharing the same tool_run_id into single visual items
-    const messages = mergeByToolRunId(rawMessages);
+    const messages = useMemo(() => mergeByToolRunId(rawMessages), [rawMessages]);
+    const messageKeys = useMemo(() => messages.map(getToolMessageKey), [messages]);
 
     const [isCollapsed, setIsCollapsed] = useState(true);
-    const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
-    const [animatingIndices, setAnimatingIndices] = useState<Set<number>>(new Set());
-    const prevCountRef = useRef(messages.length);
+    const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+    const [animatingItems, setAnimatingItems] = useState<Set<string>>(new Set());
+    const previousKeysRef = useRef<string[]>(messageKeys);
     const { t } = useUITranslation();
     const toast = useToast();
 
@@ -798,28 +830,24 @@ function ToolCallGroupComponent({
 
     // Animate new messages when they're added
     useEffect(() => {
-        const prevCount = prevCountRef.current;
-        const currentCount = messages.length;
+        const previousKeys = previousKeysRef.current;
+        const previousKeySet = new Set(previousKeys);
+        const newKeys = messageKeys.filter((key) => !previousKeySet.has(key));
 
-        if (currentCount > prevCount) {
-            // New messages added - animate them
-            const newIndices = new Set<number>();
-            for (let i = prevCount; i < currentCount; i++) {
-                newIndices.add(i);
-            }
-            setAnimatingIndices(newIndices);
+        if (newKeys.length > 0) {
+            setAnimatingItems(new Set(newKeys));
 
             // Clear animation after it completes
             const timer = setTimeout(() => {
-                setAnimatingIndices(new Set());
+                setAnimatingItems(new Set());
             }, 500);
 
-            prevCountRef.current = currentCount;
+            previousKeysRef.current = messageKeys;
             return () => clearTimeout(timer);
         }
 
-        prevCountRef.current = currentCount;
-    }, [messages.length]);
+        previousKeysRef.current = messageKeys;
+    }, [messageKeys]);
 
     const firstMessage = messages[0];
     const lastMessage = messages[messages.length - 1];
@@ -833,13 +861,13 @@ function ToolCallGroupComponent({
     const toolSummary =
         uniqueToolCount === 1 ? `${messages.length}× ${toolNames[0]}` : `${messages.length} activity updates`;
 
-    const toggleItem = (index: number) => {
+    const toggleItem = (itemKey: string) => {
         setExpandedItems((prev) => {
             const next = new Set(prev);
-            if (next.has(index)) {
-                next.delete(index);
+            if (next.has(itemKey)) {
+                next.delete(itemKey);
             } else {
-                next.add(index);
+                next.add(itemKey);
             }
             return next;
         });
@@ -944,19 +972,20 @@ function ToolCallGroupComponent({
             {isCollapsed && (
                 <div className="px-3 py-0.5 space-y-0">
                     {messages.map((m, idx) => {
+                        const itemKey = messageKeys[idx] ?? getToolMessageKey(m);
                         const details = m.details as
                             | { tool?: string; files?: string[]; outputFiles?: string[]; observation?: string }
                             | undefined;
                         const toolName = getMessageActivityLabel(m);
                         const badgeClass = getMessageBadgeClass(m);
                         const fullMessage = typeof m.message === 'string' ? m.message : '';
-                        const isAnimating = animatingIndices.has(idx);
-                        const isItemExpanded = expandedItems.has(idx);
+                        const isAnimating = animatingItems.has(itemKey);
+                        const isItemExpanded = expandedItems.has(itemKey);
                         const files = getFilesFromDetails(details);
 
                         return (
                             <div
-                                key={`${m.workstream_id ?? 'main'}-${m.timestamp}-${m.type}`}
+                                key={itemKey}
                                 className={cn(
                                     'border-b border-gray-100 dark:border-gray-800 last:border-b-0',
                                     itemClassName,
@@ -965,9 +994,9 @@ function ToolCallGroupComponent({
                                     opacity: isAnimating ? 0 : 1,
                                     transform: isAnimating ? 'translateX(-10px)' : 'translateX(0)',
                                     transition: 'opacity 0.3s ease-out, transform 0.3s ease-out',
-                                    transitionDelay: `${(idx - (messages.length - animatingIndices.size)) * 100}ms`,
+                                    transitionDelay: `${(idx - (messages.length - animatingItems.size)) * 100}ms`,
                                     animation: isAnimating ? 'slideInFade 0.4s ease-out forwards' : 'none',
-                                    animationDelay: `${(idx - (messages.length - animatingIndices.size)) * 100}ms`,
+                                    animationDelay: `${(idx - (messages.length - animatingItems.size)) * 100}ms`,
                                 }}
                             >
                                 {/* Row header - clickable to expand */}
@@ -980,8 +1009,8 @@ function ToolCallGroupComponent({
                                         'flex items-start gap-2 py-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50',
                                         itemHeaderClassName,
                                     )}
-                                    onClick={() => toggleItem(idx)}
-                                    onKeyDown={onActivateKey(() => toggleItem(idx))}
+                                    onClick={() => toggleItem(itemKey)}
+                                    onKeyDown={onActivateKey(() => toggleItem(itemKey))}
                                     title={fullMessage}
                                 >
                                     <div className="flex-shrink-0 pt-0.5">
@@ -1062,7 +1091,7 @@ function ToolCallGroupComponent({
                                                 {progressDetails.length > 0 && (
                                                     <div className="mb-1.5 space-y-1">
                                                         <div className="text-[10px] uppercase tracking-wide text-muted/70 font-medium">
-                                                            Progress
+                                                            {t('agent.progress')}
                                                         </div>
                                                         {progressDetails.map((item) => (
                                                             <div
@@ -1123,21 +1152,24 @@ function ToolCallGroupComponent({
             {/* Expanded view - individual tool calls */}
             {!isCollapsed && (
                 <div className="group">
-                    {messages.map((message, index) => (
-                        <ToolCallItem
-                            key={`${message.workstream_id ?? 'main'}-${message.timestamp}-${message.type}`}
-                            message={message}
-                            isExpanded={expandedItems.has(index)}
-                            onToggle={() => toggleItem(index)}
-                            artifactRunId={artifactRunId}
-                            classNames={{
-                                toolBadgeClassName,
-                                itemClassName,
-                                itemHeaderClassName,
-                                itemContentClassName,
-                            }}
-                        />
-                    ))}
+                    {messages.map((message, index) => {
+                        const itemKey = messageKeys[index] ?? getToolMessageKey(message);
+                        return (
+                            <ToolCallItem
+                                key={itemKey}
+                                message={message}
+                                isExpanded={expandedItems.has(itemKey)}
+                                onToggle={() => toggleItem(itemKey)}
+                                artifactRunId={artifactRunId}
+                                classNames={{
+                                    toolBadgeClassName,
+                                    itemClassName,
+                                    itemHeaderClassName,
+                                    itemContentClassName,
+                                }}
+                            />
+                        );
+                    })}
                 </div>
             )}
         </div>
@@ -1159,12 +1191,7 @@ const ToolCallGroup = memo(ToolCallGroupComponent, (prevProps, nextProps) => {
     if (prevProps.itemClassName !== nextProps.itemClassName) return false;
     if (prevProps.itemHeaderClassName !== nextProps.itemHeaderClassName) return false;
     if (prevProps.itemContentClassName !== nextProps.itemContentClassName) return false;
-    // Compare first and last timestamps as a proxy for content changes
-    return (
-        prevProps.messages[0]?.timestamp === nextProps.messages[0]?.timestamp &&
-        prevProps.messages[prevProps.messages.length - 1]?.timestamp ===
-            nextProps.messages[nextProps.messages.length - 1]?.timestamp
-    );
+    return prevProps.messages.every((message, index) => areMessagesRenderEqual(message, nextProps.messages[index]));
 });
 
 export default ToolCallGroup;

@@ -769,11 +769,16 @@ function MessageItemComponent({
     );
 }
 
-// Memoize the component to prevent unnecessary re-renders
-// Only re-render when message timestamp, showPulsatingCircle, or className props change
+// Memoize the component to prevent unnecessary re-renders, while still allowing
+// same-timestamp message/detail updates from streaming reconciliation to render.
 const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
     return (
         prevProps.message.timestamp === nextProps.message.timestamp &&
+        prevProps.message.type === nextProps.message.type &&
+        prevProps.message.message === nextProps.message.message &&
+        prevProps.message.details === nextProps.message.details &&
+        prevProps.message.workstream_id === nextProps.message.workstream_id &&
+        prevProps.message.workflow_run_id === nextProps.message.workflow_run_id &&
         prevProps.showPulsatingCircle === nextProps.showPulsatingCircle &&
         prevProps.onSendMessage === nextProps.onSendMessage &&
         prevProps.requestInputAnswered === nextProps.requestInputAnswered &&

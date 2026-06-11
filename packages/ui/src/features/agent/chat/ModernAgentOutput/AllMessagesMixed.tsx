@@ -1976,14 +1976,14 @@ function AllMessagesMixedComponent({
     const shouldRenderInitialRequest = hasInitialRequest && !hasPersistedUserQuestion;
 
     const latestDisplayMessageTimestamp = useMemo(() => {
-        if (displayMessages.length === 0) return -Infinity;
-        return Math.max(...displayMessages.map((msg) => getTimestampMs(msg.timestamp)));
+        return displayMessages.reduce((latest, msg) => Math.max(latest, getTimestampMs(msg.timestamp)), -Infinity);
     }, [displayMessages]);
 
     const latestNonTransientDisplayMessageTimestamp = useMemo(() => {
-        const persistentMessages = displayMessages.filter((msg) => !isTransientThinkingMessage(msg));
-        if (persistentMessages.length === 0) return -Infinity;
-        return Math.max(...persistentMessages.map((msg) => getTimestampMs(msg.timestamp)));
+        return displayMessages.reduce((latest, msg) => {
+            if (isTransientThinkingMessage(msg)) return latest;
+            return Math.max(latest, getTimestampMs(msg.timestamp));
+        }, -Infinity);
     }, [displayMessages]);
 
     const isDisplayCompleted = useMemo(() => {
@@ -2082,18 +2082,20 @@ function AllMessagesMixedComponent({
     );
     const activityStartedTimestampRef = useRef<number | string>(activityAnchorCandidate);
     const wasActivityFallbackVisibleRef = useRef(false);
-
-    if (showActivityFallback) {
+    const activityStartedTimestamp = useMemo(() => {
+        if (!showActivityFallback) return activityAnchorCandidate;
         const candidateMs = getTimestampMs(activityAnchorCandidate);
         const currentMs = getTimestampMs(activityStartedTimestampRef.current);
         if (!wasActivityFallbackVisibleRef.current || candidateMs < currentMs) {
-            activityStartedTimestampRef.current = activityAnchorCandidate;
+            return activityAnchorCandidate;
         }
-        wasActivityFallbackVisibleRef.current = true;
-    } else {
-        activityStartedTimestampRef.current = activityAnchorCandidate;
-        wasActivityFallbackVisibleRef.current = false;
-    }
+        return activityStartedTimestampRef.current;
+    }, [activityAnchorCandidate, showActivityFallback]);
+
+    useEffect(() => {
+        activityStartedTimestampRef.current = activityStartedTimestamp;
+        wasActivityFallbackVisibleRef.current = showActivityFallback;
+    }, [activityStartedTimestamp, showActivityFallback]);
 
     // Determine completion status for each workstream
     const workstreamCompletionStatus = useMemo(() => {
@@ -2468,7 +2470,7 @@ function AllMessagesMixedComponent({
                     {showInitialRequestWaitingCard && (
                         <InitialRequestWaitingCard
                             label={summaryActivityFallbackLabel}
-                            timestamp={activityStartedTimestampRef.current}
+                            timestamp={activityStartedTimestamp}
                             className={workingIndicatorClassName}
                         />
                     )}
@@ -2697,7 +2699,7 @@ function AllMessagesMixedComponent({
                                 <SummaryActivityRow
                                     label={summaryActivityFallbackLabel}
                                     status="running"
-                                    timestamp={activityStartedTimestampRef.current}
+                                    timestamp={activityStartedTimestamp}
                                     showElapsed
                                     className={workingIndicatorClassName}
                                 />

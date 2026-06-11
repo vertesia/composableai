@@ -571,7 +571,11 @@ describe('ModernAgentConversation send handling', () => {
             expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('0');
             expect(scrollIntoView).not.toHaveBeenCalled();
 
-            fireEvent.change(screen.getByRole('textbox', { name: 'Playback position' }), {
+            const playbackPositionInput = screen.getByRole('textbox', { name: 'Playback position' });
+            fireEvent.change(playbackPositionInput, {
+                target: { value: '3' },
+            });
+            fireEvent.blur(playbackPositionInput, {
                 target: { value: '3' },
             });
 

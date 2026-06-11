@@ -120,6 +120,9 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
 
     // Stream messages from the agent
     useEffect(() => {
+        // A nonce bump reconnects the current conversation without clearing the timeline.
+        void streamNonce;
+
         // Only reset state when switching to a different conversation. A reconnect
         // (nonce bump for the same agentRunId) keeps the existing timeline so newly
         // streamed messages append in place — re-delivered history is de-duped by
@@ -127,7 +130,6 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
         const isNewConversation = prevAgentRunIdRef.current !== agentRunId;
         prevAgentRunIdRef.current = agentRunId;
 
-        console.debug('[useAgentStream] effect:start', { agentRunId, streamNonce, isNewConversation });
         if (isNewConversation) {
             setMessages([]);
             setAgentRunStatus(null);
@@ -303,7 +305,6 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
             });
 
         return () => {
-            console.debug('[useAgentStream] effect:cleanup', { agentRunId });
             abortController.abort();
             // Note: messages are intentionally NOT cleared here. Switching conversations
             // resets them at effect start (isNewConversation); a reconnect must preserve

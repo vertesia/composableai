@@ -57,7 +57,20 @@ describe('AgentChatPlaybackControls', () => {
         expect(onChangeCursor).toHaveBeenCalledWith(2);
     });
 
-    it('edits and clamps the playback position without native number controls', () => {
+    it('disables the slider for a single-message conversation', () => {
+        const onChangeCursor = vi.fn();
+
+        renderWithProviders(
+            <AgentChatPlaybackControls cursor={0} messages={[createMessage(1)]} onChangeCursor={onChangeCursor} />,
+        );
+
+        const positionSlider = screen.getByRole('slider', { name: 'Playback position' });
+        expect(positionSlider.getAttribute('aria-valuemin')).toBe('0');
+        expect(positionSlider.getAttribute('aria-valuemax')).toBe('1');
+        expect(positionSlider.hasAttribute('data-disabled')).toBe(true);
+    });
+
+    it('edits and clamps the playback position on blur without native number controls', () => {
         const onChangeCursor = vi.fn();
 
         renderWithProviders(
@@ -69,9 +82,15 @@ describe('AgentChatPlaybackControls', () => {
         expect(positionInput.getAttribute('type')).toBe('text');
 
         fireEvent.change(positionInput, { target: { value: '2' } });
+        expect(onChangeCursor).not.toHaveBeenCalled();
+
+        fireEvent.blur(positionInput, { target: { value: '2' } });
         expect(onChangeCursor).toHaveBeenLastCalledWith(1);
 
         fireEvent.change(positionInput, { target: { value: '99' } });
+        expect(onChangeCursor).toHaveBeenCalledTimes(1);
+
+        fireEvent.blur(positionInput, { target: { value: '99' } });
         expect(onChangeCursor).toHaveBeenLastCalledWith(2);
     });
 });

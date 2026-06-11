@@ -41,5 +41,5 @@ export function renderAgentRequestMessage(template: string | undefined, data: un
     if (!trimmedTemplate) return renderAgentRequestFallback(data);
 
     const rendered = renderAgentRequestTemplate(trimmedTemplate, data).trim();
-    return rendered || renderAgentRequestFallback(data);
+    return rendered;
 }

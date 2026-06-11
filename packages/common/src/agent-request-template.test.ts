@@ -31,9 +31,10 @@ describe('agent request template rendering', () => {
         expect(renderAgentRequestMessage(undefined, 'plain request')).toBe('plain request');
     });
 
-    test('falls back to structured JSON when template renders empty', () => {
+    test('suppresses configured templates that render empty', () => {
         const data = { missing: null };
 
-        expect(renderAgentRequestMessage('{{missing}}', data)).toBe(JSON.stringify(data, null, 2));
+        expect(renderAgentRequestMessage('{{missing}}', data)).toBe('');
+        expect(renderAgentRequestMessage('{{unknown}}', { task: 'hidden' })).toBe('');
     });
 });

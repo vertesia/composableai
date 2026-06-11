@@ -71,12 +71,16 @@ function getNextCursor(cursor: AgentChatPlaybackCursor, messageCount: number): A
     return cursorIndex >= messageCount - 1 ? 'live' : cursorIndex + 1;
 }
 
+function trimHyphens(value: string): string {
+    let start = 0;
+    let end = value.length;
+    while (start < end && value[start] === '-') start++;
+    while (end > start && value[end - 1] === '-') end--;
+    return value.slice(start, end);
+}
+
 function sanitizeFilenamePart(value: string): string {
-    return value
-        .trim()
-        .replace(/[^a-z0-9-_]+/gi, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 80);
+    return trimHyphens(value.trim().replace(/[^a-z0-9-_]+/gi, '-')).slice(0, 80);
 }
 
 function downloadJsonFile(filename: string, payload: unknown) {

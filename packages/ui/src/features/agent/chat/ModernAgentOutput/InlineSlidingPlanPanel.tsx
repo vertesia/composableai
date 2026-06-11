@@ -62,7 +62,7 @@ function InlineSlidingPlanPanelComponent({
                         <div className="min-w-0">
                             <div className="text-sm font-medium text-foreground">{t('agent.taskProgress')}</div>
                             <div className="text-xs text-muted">
-                                {completedTasks}/{totalTasks} {t('agent.completed').toLowerCase()}
+                                {t('agent.tasksCompleted', { completed: completedTasks, total: totalTasks })}
                             </div>
                         </div>
 

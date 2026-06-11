@@ -79,7 +79,13 @@ function getArtifactPath(item: AttachmentPreviewItem): string | undefined {
 }
 
 function getStoreObjectId(href: string): string {
-    return href.split('/store/objects/')[1] || href.replace(/^store:/, '').replace(/^document:\/\//, '');
+    const pathId = href.split('/store/objects/')[1];
+    if (pathId) return pathId.split(/[?#]/)[0];
+
+    return href
+        .replace(/^store:/, '')
+        .replace(/^document:(?:\/\/)?/, '')
+        .split(/[?#]/)[0];
 }
 
 function getCollectionId(href: string): string {
@@ -117,7 +123,11 @@ function AttachmentLink({
                 </StoreLinkComponent>
             );
         }
-        return <a href={href.startsWith('store:') ? `/store/objects/${documentId}` : href}>{children}</a>;
+        return (
+            <a href={href.startsWith('store:') || href.startsWith('document:') ? `/store/objects/${documentId}` : href}>
+                {children}
+            </a>
+        );
     }
 
     if (isCollectionHref(href)) {
@@ -207,7 +217,7 @@ function AttachmentPreview({
         destructive: 'bg-destructive/15 text-destructive',
         info: 'bg-info/15 text-info',
         muted: 'bg-muted text-muted',
-        success: 'bg-success text-success',
+        success: 'bg-success/15 text-success',
     }[item.statusTone ?? 'muted'];
 
     const canRemove = Boolean(onRemove && item.removable !== false);

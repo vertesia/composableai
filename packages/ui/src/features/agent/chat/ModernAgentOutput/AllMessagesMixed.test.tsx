@@ -316,6 +316,32 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.queryByText('[tokyo-tower_1 (1).jpg](/store/objects/6a17fc9544c9629943624589)')).toBeNull();
     });
 
+    it('normalizes document attachment links to store object ids', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: ['review this', '', 'Attachments:', '[brief.pdf](document:doc-123)'].join('\n'),
+                }),
+            ],
+            true,
+            new Map(),
+            {
+                StoreLinkComponent: ({ href, documentId, children }) => (
+                    <a href={href} data-document-id={documentId}>
+                        {children}
+                    </a>
+                ),
+            },
+        );
+
+        const link = screen.getByRole('link', { name: 'brief.pdf' });
+
+        expect(link.getAttribute('href')).toBe('document:doc-123');
+        expect(link.getAttribute('data-document-id')).toBe('doc-123');
+    });
+
     it('renders uploaded image artifacts as attachments instead of raw markdown', () => {
         renderSummary(
             [
