@@ -51,6 +51,7 @@ import {
     getSummaryActivityAnchorTimestamp,
     isInitialSummaryActivityFallback,
     isTransientThinkingMessage,
+    isTransientWorkStatusMessage,
     shouldShowSummaryActivityFallback,
 } from './SummaryConversation';
 import ToolCallGroup, { type ToolCallGroupClassNames } from './ToolCallGroup';
@@ -146,7 +147,7 @@ function getSummaryWorkLabel(status: ToolExecutionStatus, isActive: boolean): st
 }
 
 function isTransientThinkingWork(messages: AgentMessage[]): boolean {
-    return messages.length > 0 && messages.every(isTransientThinkingMessage);
+    return messages.length > 0 && messages.every(isTransientWorkStatusMessage);
 }
 
 function getSummaryActivityLabel(status: ToolExecutionStatus, isActive: boolean): string {

@@ -534,6 +534,105 @@ describe('ModernAgentOutput summary conversation items', () => {
         });
     });
 
+    it('shows retry warnings as transient active work', () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: 'Build the app.',
+        });
+        const retryWarning = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.WARNING,
+            message: 'Retrying operation (attempt 2 of 10, waited ~10s)...',
+            details: {
+                attempt: 2,
+                maxAttempts: 10,
+                estimatedBackoffSeconds: 10,
+                activityId: '140',
+            },
+        });
+
+        const items = buildSummaryConversationItems([question, retryWarning], false);
+
+        expect(items).toHaveLength(2);
+        expect(items[1]).toMatchObject({
+            type: 'work',
+            isActive: true,
+            status: 'warning',
+            messages: [retryWarning],
+        });
+    });
+
+    it('hides retry warnings once a later agent message arrives', () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: 'Build the app.',
+        });
+        const retryWarning = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.WARNING,
+            message: 'Retrying operation (attempt 2 of 10, waited ~10s)...',
+            details: {
+                attempt: 2,
+                maxAttempts: 10,
+                estimatedBackoffSeconds: 10,
+                activityId: '140',
+            },
+        });
+        const answer = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.ANSWER,
+            message: 'Recovered and completed the work.',
+        });
+
+        const items = buildSummaryConversationItems([question, retryWarning, answer], true);
+
+        expect(items).toHaveLength(2);
+        expect(items).toEqual([
+            { type: 'message', message: question },
+            { type: 'message', message: answer },
+        ]);
+    });
+
+    it('removes retry warnings from recovered work groups', () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.QUESTION,
+            message: 'Build the app.',
+        });
+        const retryWarning = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.WARNING,
+            message: 'Retrying operation (attempt 2 of 10, waited ~10s)...',
+            details: {
+                attempt: 2,
+                maxAttempts: 10,
+                estimatedBackoffSeconds: 10,
+                activityId: '140',
+            },
+        });
+        const tool = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Running command',
+            details: {
+                tool: 'execute_shell',
+                tool_status: 'running',
+                tool_run_id: 'tool-1',
+            },
+        });
+
+        const items = buildSummaryConversationItems([question, retryWarning, tool], false);
+
+        expect(items[1]).toMatchObject({
+            type: 'work',
+            isActive: true,
+            status: 'running',
+            messages: [tool],
+        });
+    });
+
     it('keeps completed tool work active while post-tool thinking is current', () => {
         const tool = makeMessage({
             timestamp: 1000,

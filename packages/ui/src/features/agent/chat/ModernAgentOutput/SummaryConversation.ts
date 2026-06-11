@@ -46,6 +46,24 @@ export function isTransientThinkingMessage(message: AgentMessage): boolean {
     return message.type === AgentMessageType.THOUGHT && message.details?.display_role === 'thinking';
 }
 
+export function isTransientWorkStatusMessage(message: AgentMessage): boolean {
+    if (isTransientThinkingMessage(message)) return true;
+    if (message.type !== AgentMessageType.WARNING) return false;
+
+    const details = message.details;
+    const normalizedText = getMessageText(message)
+        .replace(/^[^A-Za-z0-9]+/, '')
+        .toLowerCase();
+
+    return (
+        typeof details?.attempt === 'number' &&
+        typeof details?.maxAttempts === 'number' &&
+        typeof details?.estimatedBackoffSeconds === 'number' &&
+        typeof details?.activityId === 'string' &&
+        (normalizedText.startsWith('retrying operation') || normalizedText.startsWith('retrying checkpoint operation'))
+    );
+}
+
 function getTimestampMs(timestamp: number | string | undefined): number {
     if (typeof timestamp === 'number') return timestamp;
     if (!timestamp) return -Infinity;
@@ -66,33 +84,33 @@ function getStringDetail(message: AgentMessage, key: 'activity_id' | 'activity_g
     return trimmed ? trimmed : undefined;
 }
 
-function filterTransientThinkingMessages(
+function filterTransientWorkStatusMessages(
     messages: AgentMessage[],
     isActive: boolean,
     latestObservedTimestamp: number,
 ): AgentMessage[] {
-    if (!messages.some(isTransientThinkingMessage)) return messages;
-    if (!isActive) return messages.filter((message) => !isTransientThinkingMessage(message));
+    if (!messages.some(isTransientWorkStatusMessage)) return messages;
+    if (!isActive) return messages.filter((message) => !isTransientWorkStatusMessage(message));
 
-    let lastNonThinkingIndex = -1;
-    let lastThinkingIndex = -1;
+    let lastNonTransientIndex = -1;
+    let lastTransientIndex = -1;
 
     messages.forEach((message, index) => {
-        if (isTransientThinkingMessage(message)) {
-            lastThinkingIndex = index;
+        if (isTransientWorkStatusMessage(message)) {
+            lastTransientIndex = index;
         } else {
-            lastNonThinkingIndex = index;
+            lastNonTransientIndex = index;
         }
     });
 
     return messages.filter((message, index) => {
-        if (!isTransientThinkingMessage(message)) return true;
+        if (!isTransientWorkStatusMessage(message)) return true;
 
-        // Keep only the current trailing thinking state. Any later observed
+        // Keep only the current trailing transient state. Any later observed
         // persisted or streaming message makes the marker stale.
         return (
-            index === lastThinkingIndex &&
-            index > lastNonThinkingIndex &&
+            index === lastTransientIndex &&
+            index > lastNonTransientIndex &&
             getTimestampMs(message.timestamp) >= latestObservedTimestamp
         );
     });
@@ -146,7 +164,8 @@ function isSummaryPrimaryMessage(message: AgentMessage): boolean {
         message.type === AgentMessageType.REQUEST_INPUT ||
         message.type === AgentMessageType.TERMINATED ||
         ((message.type === AgentMessageType.ERROR || message.type === AgentMessageType.WARNING) &&
-            !isToolScopedStatusMessage(message))
+            !isToolScopedStatusMessage(message) &&
+            !isTransientWorkStatusMessage(message))
     );
 }
 
@@ -181,6 +200,7 @@ function isSummaryWorkMessage(message: AgentMessage): boolean {
     if (isWorkstreamInternalResultMessage(message)) return false;
     if (isSummaryAssistantProseMessage(message)) return false;
     if (getWorkstreamLaunchDetails(message)) return false;
+    if (isTransientWorkStatusMessage(message)) return true;
     if (isToolScopedStatusMessage(message)) return true;
     if (isToolPreambleMessage(message)) return true;
     if (isToolActivityMessage(message)) return true;
@@ -200,7 +220,7 @@ export function buildSummaryConversationItems(
     const flushWork = (isActive: boolean, endMessage?: AgentMessage) => {
         if (pendingWork.length === 0) return;
 
-        const visibleWork = filterTransientThinkingMessages(pendingWork, isActive, latestObservedTimestamp);
+        const visibleWork = filterTransientWorkStatusMessages(pendingWork, isActive, latestObservedTimestamp);
         if (visibleWork.length === 0) {
             pendingWork = [];
             return;
