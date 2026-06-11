@@ -1003,7 +1003,7 @@ export interface RunSource {
     client_ip: string;
 }
 
-export type ExecutionRunInteraction = Interaction | InteractionRef;
+export type ExecutionRunInteraction = InteractionRef;
 
 export interface BaseExecutionRun<P = unknown> {
     readonly id: string;
