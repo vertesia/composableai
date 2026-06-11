@@ -17,6 +17,7 @@
         "format": "pnpm exec biome format --write .",
         "format:check": "pnpm exec biome format .",
         "lint": "pnpm exec biome lint",
+        "lint:actions": "scripts/run-actionlint.sh",
         "lint:fix": "pnpm exec biome lint --write",
         "prepare": "node --input-type=module -e \"import { existsSync } from 'node:fs'; if (existsSync('scripts/install-git-hooks.mjs')) await import('./scripts/install-git-hooks.mjs');\"",
         "prepublishOnly": "pnpm build",
