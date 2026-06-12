@@ -1,14 +1,14 @@
+import { extname } from 'node:path';
 import micromatch from 'micromatch';
-import { extname } from "path";
-import { AbstractContentSource } from "./ContentSource.js";
-import { loadTarIndex, TarEntryIndex, TarIndex } from "./utils/tar.js";
+import { AbstractContentSource } from './ContentSource.js';
+import { loadTarIndex, type TarEntryIndex, type TarIndex } from './utils/tar.js';
 
-export const MEMORY_METADATA_ENTRY = "metadata.json";
+export const MEMORY_METADATA_ENTRY = 'metadata.json';
 
 const EXPORT_CONTENT_KEY = '@content:';
 const EXPORT_ENTRY_KEY = '@file:';
 const EXPORT_PROPERTY_KEY = '@';
-const mediaExtensions = new Set([".jpg", ".jpeg", ".png"])
+const mediaExtensions = new Set(['.jpg', '.jpeg', '.png']);
 
 /**
  * Projection cannot contains both include and exclude keys
@@ -17,13 +17,13 @@ export interface ProjectionProperties {
     [key: string]: boolean | 0 | 1;
 }
 
-function applyProjection(projection: ProjectionProperties, object: any) {
+function applyProjection(projection: ProjectionProperties, object: unknown) {
     const keys = Object.keys(projection);
     if (keys.length < 1) {
         return object;
     }
     const isInclusion = !!projection[keys[0]];
-    const out: any = {};
+    const out: unknown = {};
     if (isInclusion) {
         for (const key of Object.keys(object)) {
             if (projection[key]) {
@@ -41,10 +41,9 @@ function applyProjection(projection: ProjectionProperties, object: any) {
     return out;
 }
 
-
 export abstract class MemoryPack {
     abstract readonly file: string;
-    abstract getMetadata(projection?: ProjectionProperties): Promise<Record<string, any>>;
+    abstract getMetadata(projection?: ProjectionProperties): Promise<Record<string, unknown>>;
     abstract getEntry(path: string): MemoryEntry | null;
     abstract getEntryContent(path: string): Promise<Buffer | null>;
     abstract getEntryText(path: string, encoding?: BufferEncoding): Promise<string | null>;
@@ -53,9 +52,9 @@ export abstract class MemoryPack {
     abstract getEntriesContent(filters?: string[]): Promise<Buffer[]>;
     abstract getEntriesText(filters?: string[], encoding?: BufferEncoding): Promise<string[]>;
 
-    async exportObject(mapping: Record<string, any>): Promise<Record<string, any>> {
-        let metadata: any;
-        const result: Record<string, any> = {};
+    async exportObject(mapping: Record<string, unknown>): Promise<Record<string, unknown>> {
+        let metadata: unknown;
+        const result: Record<string, unknown> = {};
         for (const key of Object.keys(mapping)) {
             const value = mapping[key];
             if (typeof value === 'string') {
@@ -81,7 +80,9 @@ export abstract class MemoryPack {
                     const isMulti = selector.includes('*') || selector.includes(',');
                     if (isMulti) {
                         const entries = this.getEntries(selector.split(','));
-                        result[key] = await Promise.all(entries.map(entry => entry.getText().then(content => ({ name: entry.name, content }))));
+                        result[key] = await Promise.all(
+                            entries.map((entry) => entry.getText().then((content) => ({ name: entry.name, content }))),
+                        );
                     } else {
                         const entry = this.getEntry(selector);
                         result[key] = entry ? { name: entry.name, content: await entry.getText() } : null;
@@ -103,27 +104,34 @@ export abstract class MemoryPack {
     }
 }
 
-
 export class MemoryEntry extends AbstractContentSource {
-    constructor(public index: TarIndex, public name: string, public offset: number, public size: number) {
+    constructor(
+        public index: TarIndex,
+        public name: string,
+        public offset: number,
+        public size: number,
+    ) {
         super();
     }
     getContent(): Promise<Buffer> {
         return this.index.getContentAt(this.offset, this.size);
     }
-    getText(encoding: BufferEncoding = "utf-8"): Promise<string> {
+    getText(encoding: BufferEncoding = 'utf-8'): Promise<string> {
         return this.getContent().then((b) => b.toString(encoding));
     }
 }
 
 export class TarMemoryPack extends MemoryPack {
-    constructor(public file: string, public index: TarIndex) {
+    constructor(
+        public file: string,
+        public index: TarIndex,
+    ) {
         super();
         if (!index.get(MEMORY_METADATA_ENTRY)) {
-            throw new Error("Invalid memory tar file. Context entry not found");
+            throw new Error('Invalid memory tar file. Context entry not found');
         }
     }
-    async getMetadata(projection?: ProjectionProperties): Promise<Record<string, any>> {
+    async getMetadata(projection?: ProjectionProperties): Promise<Record<string, unknown>> {
         const content = await this.index.getContent(MEMORY_METADATA_ENTRY);
         if (content) {
             let metadata = JSON.parse(content.toString('utf-8'));
@@ -132,7 +140,7 @@ export class TarMemoryPack extends MemoryPack {
             }
             return metadata;
         } else {
-            throw new Error("Invalid memory tar file. Context entry not found");
+            throw new Error('Invalid memory tar file. Context entry not found');
         }
     }
 
@@ -197,13 +205,11 @@ export class TarMemoryPack extends MemoryPack {
     static async loadFile(file: string) {
         const index = await loadTarIndex(file);
         if (!index) {
-            throw new Error("Invalid memory tar file. Cannot load index");
+            throw new Error('Invalid memory tar file. Cannot load index');
         }
         return new TarMemoryPack(file, index);
     }
-
 }
-
 
 export function loadMemoryPack(location: string): Promise<MemoryPack> {
     // TODO we only support file paths as location for now
@@ -212,17 +218,16 @@ export function loadMemoryPack(location: string): Promise<MemoryPack> {
 
 function getTextEncodingForPath(path: string) {
     const ext = extname(path);
-    return mediaExtensions.has(ext) ? "base64" : "utf-8";
+    return mediaExtensions.has(ext) ? 'base64' : 'utf-8';
 }
 
-
-function resolveProperty(obj: Record<string, any>, key: string) {
+function resolveProperty(obj: Record<string, unknown>, key: string) {
     if (key.includes('.')) {
         const keys = key.split('.');
         let value = obj;
         for (const k of keys) {
             value = value[k];
-            if (value == undefined) {
+            if (value === undefined) {
                 return undefined;
             }
         }

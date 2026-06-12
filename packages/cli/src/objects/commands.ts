@@ -1,21 +1,73 @@
-import { VertesiaClient } from "@vertesia/client";
-import { NodeStreamSource } from "@vertesia/client/node";
-import { ContentObject, ContentObjectTypeItem, CreateContentObjectPayload } from "@vertesia/common";
-import { Command } from "commander";
-import enquirer from "enquirer";
-import { Stats, createReadStream, createWriteStream, type Dirent } from "node:fs";
-import { readdir, stat } from "node:fs/promises";
+import { createReadStream, createWriteStream, type Dirent, type Stats } from 'node:fs';
+import { readdir, stat } from 'node:fs/promises';
+import { basename, join, resolve } from 'node:path';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
+import type { QueryResult, VertesiaClient } from '@vertesia/client';
+import { NodeStreamSource } from '@vertesia/client/node';
+import type {
+    ComplexSearchPayload,
+    ContentObject,
+    ContentObjectItem,
+    ContentObjectItemApiResponse,
+    ContentObjectTypeItem,
+    CreateContentObjectPayload,
+    ObjectSearchPayload,
+} from '@vertesia/common';
+import type { Command } from 'commander';
+import enquirer from 'enquirer';
 import { glob } from 'glob';
-import mime from "mime";
-import { basename, join, resolve } from "path";
-import { pipeline } from "stream/promises";
-import { Readable } from "stream";
-import { getClient } from "../client.js";
+import mime from 'mime';
+import { getClient } from '../client.js';
+import { type CliOptions, getStringOption, hasErrorCode } from '../utils/options.js';
+
 const { prompt } = enquirer;
 
-const AUTOMATIC_TYPE_SELECTION = "auto";
-const AUTOMATIC_TYPE_SELECTION_DESC = "Auto (Vertesia will analyze the file and select the most appropriate type)";
-const TYPE_SELECTION_ERROR = "TypeSelectionError";
+const AUTOMATIC_TYPE_SELECTION = 'auto';
+const AUTOMATIC_TYPE_SELECTION_DESC = 'Auto (Vertesia will analyze the file and select the most appropriate type)';
+const TYPE_SELECTION_ERROR = 'TypeSelectionError';
+
+interface JsonOutputOptions {
+    json?: boolean;
+}
+
+interface ListObjectsOptions extends JsonOutputOptions {
+    limit?: string;
+    skip?: string;
+}
+
+interface SearchObjectsOptions extends JsonOutputOptions {
+    limit?: string;
+    type?: string;
+    path?: string;
+    select?: string;
+}
+
+interface QueryObjectsOptions extends JsonOutputOptions {
+    dsl?: string;
+}
+
+type CreateObjectOptions = CliOptions<{
+    name?: string;
+    type?: string;
+    path?: string;
+    recursive?: boolean;
+}>;
+
+type DownloadObjectOptions = CliOptions<{
+    output?: string;
+}>;
+
+interface TypeChoice {
+    name: string;
+    value: string;
+    id?: string;
+}
+
+interface TypePromptState {
+    focused: TypeChoice;
+}
 
 function splitInChunksWithSize<T>(arr: Array<T>, size: number): T[][] {
     if (size < 1) {
@@ -47,34 +99,38 @@ async function listFilesInDirectory(dir: string, recursive = false): Promise<str
     return await readdir(dir, {
         withFileTypes: true,
         recursive,
-    }).then((entries: Dirent[]) => entries.filter(ent => {
-        // exclude hidden files and include only file with extensions
-        return ent.isFile() && ent.name.lastIndexOf('.') > 0;
-    }).map(ent => {
-        // In Node.js 22+, use parentPath; fallback to dir for older versions
-        const parentPath = 'parentPath' in ent ? (ent as Dirent & { parentPath: string }).parentPath : dir;
-        return join(parentPath, ent.name);
-    }));
+    }).then((entries: Dirent[]) =>
+        entries
+            .filter((ent) => {
+                // exclude hidden files and include only file with extensions
+                return ent.isFile() && ent.name.lastIndexOf('.') > 0;
+            })
+            .map((ent) => {
+                // In Node.js 22+, use parentPath; fallback to dir for older versions
+                const parentPath = 'parentPath' in ent ? (ent as Dirent & { parentPath: string }).parentPath : dir;
+                return join(parentPath, ent.name);
+            }),
+    );
 }
 
-export async function createObject(program: Command, files: string[], options: Record<string, any>) {
+export async function createObject(program: Command, files: string[], options: CreateObjectOptions) {
     if (files.length === 0) {
-        return "No files specified"
+        return 'No files specified';
     } else if (files.length > 1) {
-        const types: any[] = await listTypes(program);
-        const questions: any[] = [];
+        const types = await listTypes(program);
+        const questions = [];
         if (!options.type) {
             questions.push({
                 type: 'select',
                 name: 'type',
-                message: "Select a Type",
+                message: 'Select a Type',
                 choices: types,
                 limit: 10,
-                result() {
+                result(this: TypePromptState) {
                     return this.focused.value;
-                }
+                },
             });
-            const response: any = await prompt(questions);
+            const response = await prompt<{ type: string }>(questions);
             options.type = response.type;
         } else {
             const searchedType = findTypeValue(types, options.type);
@@ -94,15 +150,15 @@ export async function createObject(program: Command, files: string[], options: R
         if (file.indexOf('*') > -1) {
             const files = await glob(file);
             return createObjectFromFiles(program, files, options);
-        } else if (file.includes("://")) {
+        } else if (file.includes('://')) {
             return createObjectFromExternalSource(await getClient(program), file, options);
         } else {
             file = resolve(file);
             let stats: Stats;
             try {
                 stats = await stat(file);
-            } catch (err: any) {
-                if (err.code === 'ENOENT') {
+            } catch (err: unknown) {
+                if (hasErrorCode(err, 'ENOENT')) {
                     console.error('No such file or directory: ', file);
                     process.exit(2);
                 }
@@ -110,21 +166,21 @@ export async function createObject(program: Command, files: string[], options: R
                 process.exit(2);
             }
 
-            const types: any[] = await listTypes(program);
-            const questions: any[] = [];
+            const types = await listTypes(program);
+            const questions = [];
             if (stats.isFile()) {
                 if (!options.type) {
                     questions.push({
                         type: 'select',
                         name: 'type',
-                        message: "Select a Type",
+                        message: 'Select a Type',
                         choices: types,
                         limit: 10,
-                        result() {
+                        result(this: TypePromptState) {
                             return this.focused.value;
-                        }
+                        },
                     });
-                    const response: any = await prompt(questions);
+                    const response = await prompt<{ type: string }>(questions);
                     options.type = response.type;
                 } else {
                     const searchedType = findTypeValue(types, options.type);
@@ -144,42 +200,44 @@ export async function createObject(program: Command, files: string[], options: R
                 questions.push({
                     type: 'select',
                     name: 'type',
-                    message: "Select a Type (the type will be used for all the files in the directory)",
+                    message: 'Select a Type (the type will be used for all the files in the directory)',
                     choices: types,
                     limit: 10,
-                    result() {
+                    result(this: TypePromptState) {
                         return this.focused.value;
-                    }
+                    },
                 });
-                const response: any = await prompt(questions);
+                const response = await prompt<{ type: string }>(questions);
                 options.type = response.type;
 
                 if (options.type === AUTOMATIC_TYPE_SELECTION) {
                     delete options.type;
                 }
 
-                const files = await listFilesInDirectory(file, options.recursive || false);
+                const files = await listFilesInDirectory(file, options.recursive ?? false);
                 return createObjectFromFiles(program, files, options);
             }
         }
     }
 }
 
-export async function createObjectFromFiles(program: Command, files: string[], options: Record<string, any>) {
+export async function createObjectFromFiles(program: Command, files: string[], options: CreateObjectOptions) {
     if (!options) options = {};
     // split in 10 chunks
     const chunks = splitInChunks(files, 10);
-    Promise.all(chunks.map(async (chunk) => {
-        for (const file of chunk) {
-            await createObjectFromFile(program, file, options);
-        }
-    }));
+    void Promise.all(
+        chunks.map(async (chunk) => {
+            for (const file of chunk) {
+                await createObjectFromFile(program, file, options);
+            }
+        }),
+    );
 }
 
-export async function createObjectFromFile(program: Command, file: string, options: Record<string, any>) {
+export async function createObjectFromFile(program: Command, file: string, options: CreateObjectOptions) {
     const client = await getClient(program);
     let res: ContentObject;
-    if (file.startsWith("s3://") || file.startsWith("gs://")) {
+    if (file.startsWith('s3://') || file.startsWith('gs://')) {
         res = await createObjectFromExternalSource(client, file, options);
     } else {
         res = await createObjectFromLocalFile(client, file, options);
@@ -188,7 +246,7 @@ export async function createObjectFromFile(program: Command, file: string, optio
     return res;
 }
 
-export async function createObjectFromLocalFile(client: VertesiaClient, file: string, options: Record<string, any>) {
+export async function createObjectFromLocalFile(client: VertesiaClient, file: string, options: CreateObjectOptions) {
     const fileName = basename(file);
     const stream = createReadStream(file);
 
@@ -208,7 +266,7 @@ export async function createObjectFromLocalFile(client: VertesiaClient, file: st
     return res;
 }
 
-async function createObjectFromExternalSource(client: VertesiaClient, uri: string, options: Record<string, any>) {
+async function createObjectFromExternalSource(client: VertesiaClient, uri: string, options: CreateObjectOptions) {
     return client.objects.createFromExternalSource(uri, {
         name: options.name,
         type: options.type,
@@ -216,9 +274,14 @@ async function createObjectFromExternalSource(client: VertesiaClient, uri: strin
     });
 }
 
-export async function updateObject(program: Command, objectId: string, type: string, _options: Record<string, any>) {
-    const types: any[] = await listTypes(program);
-    let searchedType = findTypeValue(types, type);
+export async function updateObject(
+    program: Command,
+    objectId: string,
+    type: string,
+    _options: Record<string, unknown>,
+) {
+    const types = await listTypes(program);
+    let searchedType: string | undefined = findTypeValue(types, type);
     if (searchedType === TYPE_SELECTION_ERROR) {
         console.error(`${type} is not an existing type`);
         process.exit(2);
@@ -231,26 +294,80 @@ export async function updateObject(program: Command, objectId: string, type: str
     console.log(await client.objects.update(objectId, payload));
 }
 
-export async function deleteObject(program: Command, objectId: string, _options: Record<string, any>) {
+export async function deleteObject(program: Command, objectId: string, _options: Record<string, unknown>) {
     const client = await getClient(program);
     await client.objects.delete(objectId);
 }
 
-export async function getObject(program: Command, objectId: string, _options: Record<string, any>) {
+export async function getObject(program: Command, objectId: string, _options: Record<string, unknown>) {
     const client = await getClient(program);
     const object = await client.objects.retrieve(objectId);
     console.log(object);
 }
 
-export async function listObjects(program: Command, _folderPath: string | undefined, _options: Record<string, any>) {
+export async function getObjectText(program: Command, objectId: string, options: JsonOutputOptions) {
     const client = await getClient(program);
-    const objects = await client.objects.list();
-    console.log(objects.map(o => `${o.id}\t ${o.name}`).join('\n'));
+    const text = await client.objects.getObjectText(objectId);
+    if (options.json) {
+        printJson(text);
+        return;
+    }
+    console.log(text.text);
 }
 
-export async function listTypes(program: Command) {
-    const types: any[] = []
-    types.push({ name: AUTOMATIC_TYPE_SELECTION_DESC, value: AUTOMATIC_TYPE_SELECTION })
+export async function listObjects(program: Command, folderPath: string | undefined, options: ListObjectsOptions) {
+    const client = await getClient(program);
+    const payload: ObjectSearchPayload = {
+        limit: readOptionalIntegerOption(options.limit),
+        offset: readOptionalIntegerOption(options.skip),
+    };
+    if (folderPath) {
+        payload.query = { location: folderPath };
+    }
+    const objects = await client.objects.list(payload);
+    if (options.json) {
+        printJson(objects);
+        return;
+    }
+    printObjectItems(objects);
+}
+
+export async function searchObjects(program: Command, query: string, options: SearchObjectsOptions) {
+    const client = await getClient(program);
+    const payload: ComplexSearchPayload = {
+        limit: readOptionalIntegerOption(options.limit) ?? 20,
+        select: options.select,
+        query: {
+            full_text: query,
+            ...(options.type ? { type: options.type } : {}),
+            ...(options.path ? { location: options.path } : {}),
+        },
+    };
+    const results = await client.objects.search(payload);
+    if (options.json) {
+        printJson(results);
+        return;
+    }
+    printObjectItems(results.results);
+    if (results.facets.total !== undefined) {
+        console.error(`Found ${results.facets.total} results`);
+    }
+}
+
+export async function queryObjects(program: Command, options: QueryObjectsOptions) {
+    const payload = readQueryPayload(options);
+    const client = await getClient(program);
+    const result = await client.store.query.execute(payload);
+    if (options.json) {
+        printJson(result);
+        return;
+    }
+    printQueryResult(result);
+}
+
+export async function listTypes(program: Command): Promise<TypeChoice[]> {
+    const types: TypeChoice[] = [];
+    types.push({ name: AUTOMATIC_TYPE_SELECTION_DESC, value: AUTOMATIC_TYPE_SELECTION });
 
     const client = await getClient(program);
     const platformTypes: ContentObjectTypeItem[] = await client.types.list();
@@ -260,12 +377,12 @@ export async function listTypes(program: Command) {
     return types;
 }
 
-export function findTypeValue(types: any[], name: string) {
-    const type = types.find(type => type.name === name || type.id === name);
+export function findTypeValue(types: TypeChoice[], name: string) {
+    const type = types.find((type) => type.name === name || type.id === name);
     return type ? type.value : TYPE_SELECTION_ERROR;
 }
 
-export async function downloadObjectContent(program: Command, objectId: string, options: Record<string, any>) {
+export async function downloadObjectContent(program: Command, objectId: string, options: DownloadObjectOptions) {
     const client = await getClient(program);
 
     // Get object to find content source and name
@@ -273,7 +390,7 @@ export async function downloadObjectContent(program: Command, objectId: string, 
     const contentSource = await client.objects.getContentSource(objectId);
 
     if (!contentSource?.source) {
-        console.error("Object has no downloadable content");
+        console.error('Object has no downloadable content');
         process.exit(1);
     }
 
@@ -286,10 +403,123 @@ export async function downloadObjectContent(program: Command, objectId: string, 
         process.exit(1);
     }
 
-    const outputPath = options.output || object.name;
-    const nodeStream = Readable.fromWeb(response.body as any);
+    const outputPath = getStringOption(options.output) || object.name;
+    const nodeStream = Readable.fromWeb(response.body as NodeReadableStream<Uint8Array>);
     const writeStream = createWriteStream(outputPath);
     await pipeline(nodeStream, writeStream);
 
     console.log(`Downloaded to: ${outputPath}`);
+}
+
+function readOptionalIntegerOption(value: string | undefined): number | undefined {
+    if (value === undefined || value === '') {
+        return undefined;
+    }
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+        console.error(`Invalid numeric option: ${value}`);
+        process.exit(2);
+    }
+    return parsed;
+}
+
+function readQueryPayload(options: QueryObjectsOptions): { dsl: Record<string, unknown> } {
+    if (!options.dsl) {
+        console.error('Specify --dsl with a JSON object.');
+        process.exit(2);
+    }
+    try {
+        const dsl = JSON.parse(options.dsl ?? '');
+        if (!isRecord(dsl)) {
+            console.error('Invalid JSON for --dsl: expected a JSON object.');
+            process.exit(2);
+        }
+        return { dsl };
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`Invalid JSON for --dsl: ${message}`);
+        process.exit(2);
+    }
+}
+
+function printJson(value: unknown) {
+    console.log(JSON.stringify(value, null, 2));
+}
+
+function printObjectItems(objects: Array<ContentObjectItem<unknown> | ContentObjectItemApiResponse>) {
+    if (objects.length === 0) {
+        console.log('No objects found');
+        return;
+    }
+    console.log(
+        objects
+            .map((object) => {
+                const typeName = readObjectTypeName(object);
+                const location = object.location ?? '';
+                const status = object.status ?? '';
+                return [object.id, object.name, typeName, status, location].join('\t');
+            })
+            .join('\n'),
+    );
+}
+
+function readObjectTypeName(object: ContentObjectItem<unknown> | ContentObjectItemApiResponse): string {
+    if (!object.type) {
+        return '';
+    }
+    if (typeof object.type === 'string') {
+        return object.type;
+    }
+    return object.type.name || object.type.id || '';
+}
+
+function printQueryResult(result: QueryResult) {
+    if (result.type === 'dsl') {
+        if (!result.hits || result.hits.length === 0) {
+            console.log('No hits');
+            return;
+        }
+        console.log(
+            result.hits
+                .map((hit) =>
+                    JSON.stringify({
+                        id: hit.id,
+                        score: hit.score,
+                        source: hit.source,
+                    }),
+                )
+                .join('\n'),
+        );
+        return;
+    }
+
+    const columns = result.columns?.map((column) => column.name) ?? [];
+    const rows = result.rows ?? [];
+    if (columns.length > 0) {
+        console.log(columns.join('\t'));
+    }
+    if (rows.length === 0) {
+        if (columns.length === 0) {
+            console.log('No rows');
+        }
+        return;
+    }
+    console.log(rows.map((row) => row.map((value) => formatQueryValue(value)).join('\t')).join('\n'));
+}
+
+function formatQueryValue(value: unknown): string {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    if (typeof value === 'string') {
+        return value;
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') {
+        return String(value);
+    }
+    return JSON.stringify(value);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

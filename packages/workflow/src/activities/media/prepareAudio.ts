@@ -1,17 +1,24 @@
+import { execFile as execFileCallback } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { promisify } from 'node:util';
 import { log } from '@temporalio/activity';
-import { DSLActivityExecutionPayload, DSLActivitySpec, AudioMetadata, AUDIO_RENDITION_NAME, ContentNature, Rendition } from '@vertesia/common';
-import { exec } from 'child_process';
-import fs from 'fs';
-import os from 'os';
-import path from 'path';
-import { promisify } from 'util';
+import { RequestError } from '@vertesia/api-fetch-client';
+import type { VertesiaClient } from '@vertesia/client';
+import {
+    AUDIO_RENDITION_NAME,
+    type AudioMetadata,
+    ContentNature,
+    type DSLActivityExecutionPayload,
+    type DSLActivitySpec,
+    type Rendition,
+} from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
 import { saveBlobToTempFile } from '../../utils/blobs.js';
-import { VertesiaClient } from '@vertesia/client';
-import { RequestError } from '@vertesia/api-fetch-client';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFileCallback);
 
 // Default configuration constants
 const DEFAULT_AUDIO_BITRATE = '128k'; // Default audio bitrate for AAC encoding
@@ -71,13 +78,11 @@ export interface PrepareAudioResult {
  */
 async function getAudioMetadata(audioPath: string): Promise<AudioMetadataExtended> {
     try {
-        const command = `ffprobe -v quiet -print_format json -show_format -show_streams "${audioPath}"`;
-        const { stdout } = await execAsync(command);
-        const metadata = JSON.parse(stdout) as FFProbeOutput;
+        const args = ['-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', audioPath];
+        const { stdout } = await execFileAsync('ffprobe', args);
+        const metadata = JSON.parse(stdout.toString()) as FFProbeOutput;
 
-        const audioStream = metadata.streams.find(
-            (stream) => stream.codec_type === 'audio',
-        );
+        const audioStream = metadata.streams.find((stream) => stream.codec_type === 'audio');
 
         if (!audioStream) {
             throw new Error('No audio stream found in file');
@@ -91,12 +96,8 @@ async function getAudioMetadata(audioPath: string): Promise<AudioMetadataExtende
 
         return { duration, codec, bitrate, sampleRate, channels };
     } catch (error) {
-        log.error(
-            `Failed to get audio metadata: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
-        throw new Error(
-            `Failed to probe audio metadata: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
+        log.error(`Failed to get audio metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(`Failed to probe audio metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 }
 
@@ -112,22 +113,26 @@ async function generateAudioRendition(
     const outputFile = path.join(outputDir, 'audio.m4a');
 
     const command = [
-        'ffmpeg',
         '-y', // Overwrite output
-        '-i', `"${audioPath}"`,
-        '-c:a', 'aac', // AAC codec
-        '-b:a', audioBitrate, // Audio bitrate
-        '-movflags', '+faststart', // Enable streaming
-        `"${outputFile}"`,
-    ].join(' ');
+        '-i',
+        audioPath,
+        '-c:a',
+        'aac', // AAC codec
+        '-b:a',
+        audioBitrate, // Audio bitrate
+        '-movflags',
+        '+faststart', // Enable streaming
+        outputFile,
+    ];
 
-    log.info('Generating web audio rendition (AAC M4A)', { command, audioBitrate });
+    log.info('Generating web audio rendition (AAC M4A)', { command: 'ffmpeg', args: command, audioBitrate });
 
     try {
-        const { stderr } = await execAsync(command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const { stderr } = await execFileAsync('ffmpeg', command, { maxBuffer: FFMPEG_MAX_BUFFER });
+        const stderrText = stderr.toString();
 
-        if (stderr && !stderr.includes('frame=')) {
-            log.debug(`FFmpeg stderr for audio rendition: ${stderr}`);
+        if (stderrText && !stderrText.includes('frame=')) {
+            log.debug(`FFmpeg stderr for audio rendition: ${stderrText}`);
         }
 
         // Verify output file was created
@@ -140,9 +145,7 @@ async function generateAudioRendition(
             return null;
         }
     } catch (error) {
-        log.error(
-            `Failed to generate audio rendition: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
+        log.error(`Failed to generate audio rendition: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return null;
     }
 }
@@ -197,11 +200,7 @@ async function uploadAudioAsRendition(
 export async function prepareAudio(
     payload: DSLActivityExecutionPayload<PrepareAudioParams>,
 ): Promise<PrepareAudioResult> {
-    const {
-        client,
-        objectId,
-        params,
-    } = await setupActivity<PrepareAudioParams>(payload);
+    const { client, objectId, params } = await setupActivity<PrepareAudioParams>(payload);
 
     const audioBitrate = params.audioBitrate ?? DEFAULT_AUDIO_BITRATE;
 
@@ -221,14 +220,12 @@ export async function prepareAudio(
         throw new DocumentNotFoundError(`Document ${objectId} has no source`, [objectId]);
     }
 
-    if (!inputObject.content.type ||
-        (!inputObject.content.type.startsWith('audio/') && !inputObject.content.type.startsWith('video/'))) {
+    if (
+        !inputObject.content.type ||
+        (!inputObject.content.type.startsWith('audio/') && !inputObject.content.type.startsWith('video/'))
+    ) {
         log.error(`Document ${objectId} is not an audio file: ${inputObject.content.type}`);
-        throw new InvalidContentTypeError(
-            objectId,
-            'audio/* or video/*',
-            inputObject.content.type || 'unknown',
-        );
+        throw new InvalidContentTypeError(objectId, 'audio/* or video/*', inputObject.content.type || 'unknown');
     }
 
     // Download audio to temp file
@@ -242,11 +239,7 @@ export async function prepareAudio(
 
         // Step 2: Generate web audio rendition (AAC M4A)
         log.info('Generating web audio rendition');
-        const renditionFile = await generateAudioRendition(
-            audioFile,
-            tempOutputDir,
-            audioBitrate,
-        );
+        const renditionFile = await generateAudioRendition(audioFile, tempOutputDir, audioBitrate);
 
         // Step 3: Upload generated rendition
         const renditions: Rendition[] = [];
@@ -307,9 +300,7 @@ export async function prepareAudio(
         }
 
         // Wrap unknown errors in Error
-        throw new Error(
-            `Failed to prepare audio ${objectId}: ${errorMessage}`,
-        );
+        throw new Error(`Failed to prepare audio ${objectId}: ${errorMessage}`);
     } finally {
         // Clean up temporary files
         const cleanupPromises: Promise<void>[] = [];

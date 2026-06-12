@@ -1,0 +1,18 @@
+// Same as `lib.json` but with the Web APIs (`fetch`, `ReadableStream`,
+// `TextDecoderStream`, `Response`, ...) in scope. Use for isomorphic libraries
+// that target both Node and the browser, or Node libraries that consume modern
+// Web APIs that aren't typed in `@types/node` alone.
+//
+// Consumers: api-fetch-client, client, common, converters, json, memory,
+// memory-cli, memory-commands, plugin-builder, react, tools-sdk, cli (anything
+// that uses fetch/Streams/TextDecoder etc.).
+//
+// Side note: `DOM` brings `window`/`document`/`navigator` into global scope — a
+// theoretical footgun for pure server code, but in practice unproblematic since
+// no one writes those references by accident on the server.
+{
+    "extends": "./lib.json",
+    "compilerOptions": {
+        "lib": ["ES2024", "DOM", "DOM.Iterable"]
+    }
+}

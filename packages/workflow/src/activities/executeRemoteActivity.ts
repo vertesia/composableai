@@ -1,11 +1,11 @@
-import { ApplicationFailure, log } from "@temporalio/activity";
-import {
+import { ApplicationFailure, log } from '@temporalio/activity';
+import type {
     DSLActivityExecutionPayload,
     RemoteActivityExecutionPayload,
     RemoteActivityExecutionResponse,
-} from "@vertesia/common";
-import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { URLValidationError, safeFetch } from "../security/ssrf.js";
+} from '@vertesia/common';
+import { setupActivity } from '../dsl/setup/ActivityContext.js';
+import { safeFetch, URLValidationError } from '../security/ssrf.js';
 
 /**
  * Parameters for the executeRemoteActivity bridge activity.
@@ -16,13 +16,13 @@ export interface ExecuteRemoteActivityParams {
     /** The activity name (unprefixed, as known by the tool server) */
     activity_name: string;
     /** The resolved parameters for the activity */
-    params: Record<string, any>;
+    params: Record<string, unknown>;
     /** App installation ID */
     app_install_id: string;
     /** App name */
     app_name: string;
     /** App installation settings */
-    app_settings?: Record<string, any>;
+    app_settings?: Record<string, unknown>;
 }
 
 /**
@@ -38,7 +38,7 @@ export interface ExecuteRemoteActivityParams {
  */
 export async function executeRemoteActivity(
     payload: DSLActivityExecutionPayload<ExecuteRemoteActivityParams>,
-): Promise<any> {
+): Promise<unknown> {
     const ctx = await setupActivity<ExecuteRemoteActivityParams>(payload);
     const { params, runId, client } = ctx;
     const { url, activity_name, params: activityParams, app_install_id, app_settings } = params;
@@ -47,7 +47,11 @@ export async function executeRemoteActivity(
     try {
         await client.apps.validateUrl(url);
     } catch (e) {
-        log.warn("URL validation blocked remote activity endpoint", { activity: activity_name, url, error: (e as Error).message });
+        log.warn('URL validation blocked remote activity endpoint', {
+            activity: activity_name,
+            url,
+            error: (e as Error).message,
+        });
         throw ApplicationFailure.create({
             message: `Remote activity ${activity_name} blocked: ${(e as Error).message}`,
             nonRetryable: true,
@@ -61,38 +65,50 @@ export async function executeRemoteActivity(
             run_id: runId,
             app_install_id,
             app_settings,
-            endpoints: payload.config ? {
-                studio: payload.config.studio_url,
-                store: payload.config.store_url,
-            } : undefined,
+            endpoints: payload.config
+                ? {
+                      studio: payload.config.studio_url,
+                      store: payload.config.store_url,
+                  }
+                : undefined,
         },
     };
 
     let response: Response;
     try {
         response = await safeFetch(url, {
-            method: "POST",
+            method: 'POST',
             headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": `Bearer ${payload.auth_token}`,
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                Authorization: `Bearer ${payload.auth_token}`,
             },
             body: JSON.stringify(executionPayload),
         });
     } catch (err: unknown) {
         if (err instanceof URLValidationError) {
-            log.warn("Redirect blocked on remote activity endpoint", { activity: activity_name, url, error: err.message });
+            log.warn('Redirect blocked on remote activity endpoint', {
+                activity: activity_name,
+                url,
+                error: err.message,
+            });
             throw ApplicationFailure.create({
                 message: `Remote activity ${activity_name} blocked: ${err.message}`,
                 nonRetryable: true,
             });
         }
         const message = err instanceof Error ? err.message : String(err);
-        log.warn("Failed to reach remote activity endpoint", {
-            error: message, activity: activity_name, endpoint: url, runId, app_install_id,
+        log.warn('Failed to reach remote activity endpoint', {
+            error: message,
+            activity: activity_name,
+            endpoint: url,
+            runId,
+            app_install_id,
         });
         // Network-level failure — let Temporal retry
-        throw new Error(`Failed to reach remote activity endpoint (activity: ${activity_name}, endpoint: ${url}): ${message}`);
+        throw new Error(
+            `Failed to reach remote activity endpoint (activity: ${activity_name}, endpoint: ${url}): ${message}`,
+        );
     }
 
     const responseText = await response.text();
@@ -107,8 +123,12 @@ export async function executeRemoteActivity(
         } catch {
             // Not JSON — use the status line
         }
-        log.warn("Remote activity returned HTTP error", {
-            activity: activity_name, endpoint: url, status: response.status, runId, app_install_id,
+        log.warn('Remote activity returned HTTP error', {
+            activity: activity_name,
+            endpoint: url,
+            status: response.status,
+            runId,
+            app_install_id,
             responsePreview: responseText.slice(0, 500),
         });
         const msg = `Remote activity ${activity_name} failed: ${errorMessage}`;
@@ -126,10 +146,13 @@ export async function executeRemoteActivity(
     let responseJson: RemoteActivityExecutionResponse;
     try {
         responseJson = JSON.parse(responseText);
-    } catch (err: unknown) {
-        const preview = responseText.length > 200 ? responseText.slice(0, 200) + '...' : responseText;
-        log.warn("Invalid JSON response from remote activity", {
-            activity: activity_name, endpoint: url, runId, app_install_id,
+    } catch {
+        const preview = responseText.length > 200 ? `${responseText.slice(0, 200)}...` : responseText;
+        log.warn('Invalid JSON response from remote activity', {
+            activity: activity_name,
+            endpoint: url,
+            runId,
+            app_install_id,
             responsePreview: preview,
         });
         throw ApplicationFailure.create({
@@ -139,8 +162,12 @@ export async function executeRemoteActivity(
     }
 
     if (responseJson.is_error) {
-        log.warn("Remote activity returned error", {
-            activity: activity_name, endpoint: url, error: responseJson.error, runId, app_install_id,
+        log.warn('Remote activity returned error', {
+            activity: activity_name,
+            endpoint: url,
+            error: responseJson.error,
+            runId,
+            app_install_id,
         });
         throw ApplicationFailure.create({
             message: `Remote activity ${activity_name}: ${responseJson.error}`,

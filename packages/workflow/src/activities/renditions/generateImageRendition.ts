@@ -1,35 +1,31 @@
-import { log } from "@temporalio/activity";
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
-import fs from "fs";
-import { setupActivity } from "../../dsl/setup/ActivityContext.js";
-import { DocumentNotFoundError, WorkflowParamNotFoundError } from "../../errors.js";
-import { saveBlobToTempFile } from "../../utils/blobs.js";
-import {
-    ImageRenditionParams,
-    uploadRenditionPages,
-} from "../../utils/renditions.js";
+import fs from 'node:fs';
+import { log } from '@temporalio/activity';
+import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
+import { setupActivity } from '../../dsl/setup/ActivityContext.js';
+import { DocumentNotFoundError, WorkflowParamNotFoundError } from '../../errors.js';
+import { saveBlobToTempFile } from '../../utils/blobs.js';
+import { type ImageRenditionParams, uploadRenditionPages } from '../../utils/renditions.js';
 
-interface GenerateImageRenditionParams extends ImageRenditionParams { }
+interface GenerateImageRenditionParams extends ImageRenditionParams {}
 
-export interface GenerateImageRendition
-    extends DSLActivitySpec<GenerateImageRenditionParams> {
-    name: "generateImageRendition";
+interface LegacyImageRenditionParams {
+    maxHeightWidth?: number;
+    format_output?: ImageRenditionParams['format'];
 }
 
-export async function generateImageRendition(
-    payload: DSLActivityExecutionPayload<GenerateImageRenditionParams>,
-) {
-    const {
-        client,
-        objectId,
-        params: originParams,
-    } = await setupActivity<GenerateImageRenditionParams>(payload);
+export interface GenerateImageRendition extends DSLActivitySpec<GenerateImageRenditionParams> {
+    name: 'generateImageRendition';
+}
+
+export async function generateImageRendition(payload: DSLActivityExecutionPayload<GenerateImageRenditionParams>) {
+    const { client, objectId, params: originParams } = await setupActivity<GenerateImageRenditionParams>(payload);
 
     // Fix: Use maxHeightWidth if max_hw is not provided
+    const legacyParams = originParams as LegacyImageRenditionParams;
     const params = {
         ...originParams,
-        max_hw: originParams.max_hw || (originParams as any).maxHeightWidth || 1596, // Default to 1596 if both are missing
-        format: originParams.format || (originParams as any).format_output || "png", // Default to png if format is missing
+        max_hw: originParams.max_hw || legacyParams.maxHeightWidth || 1596, // Default to 1596 if both are missing
+        format: originParams.format || legacyParams.format_output || 'png', // Default to png if format is missing
     };
 
     log.debug(`Generating image rendition for ${objectId}`, {
@@ -37,9 +33,10 @@ export async function generateImageRendition(
         params,
     });
 
-    const inputObject = await client.objects.retrieve(objectId).catch((err) => {
+    const inputObject = await client.objects.retrieve(objectId).catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
         log.error(`Failed to retrieve document ${objectId}`, { err });
-        if (err.message.includes("not found")) {
+        if (message.includes('not found')) {
             throw new DocumentNotFoundError(`Document ${objectId} not found`, [objectId]);
         }
         throw err;
@@ -60,13 +57,8 @@ export async function generateImageRendition(
         throw new DocumentNotFoundError(`Document ${objectId} has no source`, [objectId]);
     }
 
-    if (
-        !inputObject.content.type ||
-        !inputObject.content.type?.startsWith("image/")
-    ) {
-        log.error(
-            `Document ${objectId} is not an image or a video: ${inputObject.content.type}`,
-        );
+    if (!inputObject.content.type?.startsWith('image/')) {
+        log.error(`Document ${objectId} is not an image or a video: ${inputObject.content.type}`);
         throw new DocumentNotFoundError(
             `Document ${objectId} is not an image or a video: ${inputObject.content.type}`,
             [objectId],
@@ -76,10 +68,7 @@ export async function generateImageRendition(
     let imageFile: string | undefined;
 
     try {
-        imageFile = await saveBlobToTempFile(
-            client,
-            inputObject.content.source,
-        );
+        imageFile = await saveBlobToTempFile(client, inputObject.content.source);
         log.debug(`Image ${objectId} copied to ${imageFile}`);
 
         //IF no etag, log and use use object id as etag
@@ -88,24 +77,17 @@ export async function generateImageRendition(
         }
         const contentEtag = inputObject.content.etag ?? inputObject.id;
 
-        const uploaded = await uploadRenditionPages(
-            client,
-            contentEtag,
-            [imageFile],
-            params,
-        );
+        const uploaded = await uploadRenditionPages(client, contentEtag, [imageFile], params);
 
-        if (!uploaded || !uploaded.length || !uploaded[0]) {
+        if (!uploaded?.length || !uploaded[0]) {
             log.error(`Failed to upload rendition for ${objectId}`, { uploaded });
-            throw new Error(
-                `Failed to upload rendition for ${objectId} - upload object is empty`,
-            );
+            throw new Error(`Failed to upload rendition for ${objectId} - upload object is empty`);
         }
 
         return {
             uploads: uploaded.map((u) => u),
             format: params.format,
-            status: "success",
+            status: 'success',
         };
     } finally {
         if (imageFile) {

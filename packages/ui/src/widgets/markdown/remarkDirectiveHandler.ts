@@ -8,7 +8,9 @@
  *   :::note / :::warning / :::tip / :::caution / :::important → callout <div>s
  *   :::name             → <div class="md-name"> (generic fallback)
  */
-import { visit, type VisitorResult } from 'unist-util-visit';
+import { type VisitorResult, visit } from 'unist-util-visit';
+
+type RemarkTree = Parameters<typeof visit>[0];
 
 // Callout types mapped to CSS modifier classes (semantic design system)
 const CALLOUT_TYPES: Record<string, string> = {
@@ -39,19 +41,17 @@ interface DirectiveNode {
 }
 
 export function remarkDirectiveHandler() {
-     
-    return (tree: any) => {
+    return (tree: RemarkTree) => {
         visit(tree, (node): VisitorResult => {
-            if (
-                node.type !== 'containerDirective' &&
-                node.type !== 'leafDirective' &&
-                node.type !== 'textDirective'
-            ) {
+            if (node.type !== 'containerDirective' && node.type !== 'leafDirective' && node.type !== 'textDirective') {
                 return;
             }
 
             const d = node as unknown as DirectiveNode;
-            const data = d.data || (d.data = {});
+            if (!d.data) {
+                d.data = {};
+            }
+            const data = d.data;
             const attrs = d.attributes || {};
             const name = d.name;
 
@@ -107,9 +107,7 @@ export function remarkDirectiveHandler() {
             data.hName = 'div';
             data.hProperties = {
                 className: `md-${name}`,
-                ...Object.fromEntries(
-                    Object.entries(attrs).filter(([k]) => k !== 'class'),
-                ),
+                ...Object.fromEntries(Object.entries(attrs).filter(([k]) => k !== 'class')),
             };
             if (attrs.class) {
                 data.hProperties.className += ` ${attrs.class}`;

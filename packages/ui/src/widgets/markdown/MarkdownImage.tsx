@@ -1,30 +1,22 @@
-import React from 'react';
-import { useResolvedUrl, parseUrlScheme } from './useResolvedUrl';
+import type React from 'react';
 import { CodeBlockPlaceholder } from './CodeBlockPlaceholder';
+import { parseUrlScheme, useResolvedUrl } from './useResolvedUrl';
 
 export interface MarkdownImageProps {
-    node?: any;
+    node?: unknown;
     src?: string;
     alt?: string;
     className?: string;
     artifactRunId?: string;
     /** Existing image component to delegate to for standard URLs */
-    ExistingImg?: React.ComponentType<any>;
+    ExistingImg?: React.ComponentType<MarkdownImageProps>;
 }
 
 /**
  * Markdown image component with support for custom URL schemes.
  * Handles artifact: and image: URLs with loading states and error handling.
  */
-export function MarkdownImage({
-    node,
-    src,
-    alt,
-    className,
-    artifactRunId,
-    ExistingImg,
-    ...rest
-}: MarkdownImageProps) {
+export function MarkdownImage({ node, src, alt, className, artifactRunId, ExistingImg, ...rest }: MarkdownImageProps) {
     const rawSrc = src || '';
     const { scheme } = parseUrlScheme(rawSrc);
 
@@ -37,15 +29,7 @@ export function MarkdownImage({
     }
 
     // For artifact: and image: URLs, use the resolver
-    return (
-        <ResolvedImage
-            rawSrc={rawSrc}
-            alt={alt}
-            artifactRunId={artifactRunId}
-            className={className}
-            rest={rest}
-        />
-    );
+    return <ResolvedImage rawSrc={rawSrc} alt={alt} artifactRunId={artifactRunId} className={className} rest={rest} />;
 }
 
 /**
@@ -75,13 +59,7 @@ function ResolvedImage({
     }
 
     if (error) {
-        return (
-            <CodeBlockPlaceholder
-                type="image"
-                error={error}
-                onRetry={retry}
-            />
-        );
+        return <CodeBlockPlaceholder type="image" error={error} onRetry={retry} />;
     }
 
     if (!url) {

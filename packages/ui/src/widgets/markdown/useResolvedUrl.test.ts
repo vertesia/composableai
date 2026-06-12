@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { parseUrlScheme, mapSchemeToRoute } from './useResolvedUrl';
+import { describe, expect, it } from 'vitest';
+import { mapSchemeToRoute, parseUrlScheme } from './useResolvedUrl';
 
 describe('parseUrlScheme', () => {
     it('should parse artifact: URLs', () => {
@@ -30,6 +30,29 @@ describe('parseUrlScheme', () => {
         const result = parseUrlScheme('collection:my-collection');
         expect(result.scheme).toBe('collection');
         expect(result.path).toBe('my-collection');
+    });
+
+    it('should strip the // authority from collection:// URLs', () => {
+        const result = parseUrlScheme('collection://my-collection');
+        expect(result.scheme).toBe('collection');
+        expect(result.path).toBe('my-collection');
+    });
+
+    it('should strip the // authority from store:// URLs', () => {
+        const result = parseUrlScheme('store://abc123');
+        expect(result.scheme).toBe('store');
+        expect(result.path).toBe('abc123');
+    });
+
+    it('should parse document: URLs without the // authority', () => {
+        const result = parseUrlScheme('document:doc-id-123');
+        expect(result.scheme).toBe('document');
+        expect(result.path).toBe('doc-id-123');
+    });
+
+    it('should map collection:// through to a single-slash route', () => {
+        const { scheme, path } = parseUrlScheme('collection://my-collection');
+        expect(mapSchemeToRoute(scheme, path)).toBe('/store/collections/my-collection');
     });
 
     it('should parse standard URLs', () => {

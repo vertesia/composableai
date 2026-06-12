@@ -1,12 +1,9 @@
-import React, { createContext, useContext, useCallback, useRef } from "react";
+import React, { createContext, useCallback, useContext, useRef } from 'react';
 
 interface ArtifactUrlCacheContextValue {
     getUrl: (key: string) => string | undefined;
     setUrl: (key: string, url: string) => void;
-    getOrFetch: (
-        key: string,
-        fetcher: () => Promise<string>
-    ) => Promise<string>;
+    getOrFetch: (key: string, fetcher: () => Promise<string>) => Promise<string>;
 }
 
 const ArtifactUrlCacheContext = createContext<ArtifactUrlCacheContextValue | null>(null);
@@ -27,10 +24,7 @@ export function ArtifactUrlCacheProvider({ children }: { children: React.ReactNo
         cacheRef.current.set(key, url);
     }, []);
 
-    const getOrFetch = useCallback(async (
-        key: string,
-        fetcher: () => Promise<string>
-    ): Promise<string> => {
+    const getOrFetch = useCallback(async (key: string, fetcher: () => Promise<string>): Promise<string> => {
         // Return cached URL if available
         const cached = cacheRef.current.get(key);
         if (cached) {
@@ -44,29 +38,24 @@ export function ArtifactUrlCacheProvider({ children }: { children: React.ReactNo
         }
 
         // Start new fetch and cache the promise
-        const promise = fetcher().then((url) => {
-            cacheRef.current.set(key, url);
-            pendingRef.current.delete(key);
-            return url;
-        }).catch((err) => {
-            pendingRef.current.delete(key);
-            throw err;
-        });
+        const promise = fetcher()
+            .then((url) => {
+                cacheRef.current.set(key, url);
+                pendingRef.current.delete(key);
+                return url;
+            })
+            .catch((err) => {
+                pendingRef.current.delete(key);
+                throw err;
+            });
 
         pendingRef.current.set(key, promise);
         return promise;
     }, []);
 
-    const value = React.useMemo(
-        () => ({ getUrl, setUrl, getOrFetch }),
-        [getUrl, setUrl, getOrFetch]
-    );
+    const value = React.useMemo(() => ({ getUrl, setUrl, getOrFetch }), [getUrl, setUrl, getOrFetch]);
 
-    return (
-        <ArtifactUrlCacheContext.Provider value={value}>
-            {children}
-        </ArtifactUrlCacheContext.Provider>
-    );
+    return <ArtifactUrlCacheContext.Provider value={value}>{children}</ArtifactUrlCacheContext.Provider>;
 }
 
 /**
@@ -78,9 +67,18 @@ export function useArtifactUrlCache(): ArtifactUrlCacheContextValue | null {
 }
 
 /**
+ * Whether an artifact: path points directly into the project bucket
+ * (agents/ run prefixes, documents/ repository copies made by create_document)
+ * rather than being a run-local shorthand like out/chart.png.
+ */
+export function isProjectFilePath(path: string): boolean {
+    return path.startsWith('agents/') || path.startsWith('documents/');
+}
+
+/**
  * Generate a cache key for an artifact URL.
  */
-export function getArtifactCacheKey(runId: string, path: string, disposition: string = "inline"): string {
+export function getArtifactCacheKey(runId: string, path: string, disposition: string = 'inline'): string {
     return `artifact:${runId}:${path}:${disposition}`;
 }
 

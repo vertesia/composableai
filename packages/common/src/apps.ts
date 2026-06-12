@@ -1,9 +1,9 @@
-import { JSONObject, JSONSchema, ToolDefinition } from "@llumiverse/common";
-import { CatalogInteractionRef } from "./interaction.js";
-import { DSLActivityOptions, InCodeTypeDefinition } from "./store/index.js";
+import type { JSONObject, JSONSchema, ToolDefinition } from '@llumiverse/common';
+import type { CatalogInteractionRef } from './interaction.js';
+import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from './store/index.js';
 
 /** Allowed values for AppUINavItem.preferredSection */
-export const PREFERRED_SECTIONS = ["default", "footer", "settings"] as const;
+export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
 
 /**
  * Additional navigation item for an app's UI configuration.
@@ -44,7 +44,7 @@ export interface AppUIConfig {
      * - shadow - use Shadow DOM to fully isolate the plugin from the host.
      * - css - use CSS processing (like prefixing or other isolation techniques). Ligther but plugins may conflict with the host
      */
-    isolation?: "shadow" | "css";
+    isolation?: 'shadow' | 'css';
     /**
      * Navigation items for the app's sidebar UI.
      * Only applicable for apps with UI capability in shell contexts (ie. CompositeApp shell).
@@ -72,12 +72,12 @@ export interface AppInstallationsQuery {
 /**
  * Authentication type for tool collections
  */
-export type ToolCollectionAuthType = "oauth" | "other";
+export type ToolCollectionAuthType = 'oauth' | 'other';
 
 /**
  * Tool collection type
  */
-export type ToolCollectionType = "mcp" | "vertesia_sdk";
+export type ToolCollectionType = 'mcp' | 'vertesia_sdk';
 
 /**
  * Base tool collection configuration
@@ -131,7 +131,7 @@ export interface MCPOAuthConfig {
  * MCP tool collection configuration (requires name, description, and namespace)
  */
 export interface MCPToolCollectionObject extends BaseToolCollectionObject {
-    type: "mcp";
+    type: 'mcp';
 
     /**
      * Stable identifier for this collection.
@@ -196,7 +196,7 @@ export interface MCPToolCollectionObject extends BaseToolCollectionObject {
  * Vertesia SDK tool collection configuration
  */
 export interface VertesiaSDKToolCollectionObject extends BaseToolCollectionObject {
-    type: "vertesia_sdk";
+    type: 'vertesia_sdk';
 
     /**
      * Optional namespace to use for tool names from this collection.
@@ -220,14 +220,17 @@ export interface VertesiaSDKToolCollectionObject extends BaseToolCollectionObjec
 /**
  * Tool collection configuration (object format)
  */
+/**
+ * @discriminator type
+ */
 export type ToolCollectionObject = MCPToolCollectionObject | VertesiaSDKToolCollectionObject;
 
 /**
- * Tool collection can be either:
- * - A string URL (legacy format, with "mcp:" prefix for MCP servers)
- * - An object with url, type, and optional auth (new format)
+ * Backward-compatible TypeScript alias. Public API payloads should reference
+ * ToolCollectionObject directly so generated clients do not create a wrapper
+ * model around the discriminated union.
  */
-export type ToolCollection = string | ToolCollectionObject;
+export type ToolCollection = ToolCollectionObject;
 
 export const MCP_COLLECTION_ID_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
 export const MCP_COLLECTION_NAMESPACE_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
@@ -255,45 +258,33 @@ export function getDefaultOAuthAppNameForCollectionId(collectionId: string): str
 
 /**
  * Normalizes a tool collection to the object format.
- * Handles backward compatibility with string URLs.
+ * Applies optional `{{var}}` substitution to the URL so manifests can reference
+ * deployment-time variables like `{{studio_ui}}`.
  *
- * @param collection - String URL or ToolCollectionObject
+ * @param collection - ToolCollectionObject
+ * @param vars - Optional endpoint variables to substitute in URLs
  * @returns Normalized ToolCollectionObject
  */
-export function normalizeToolCollection(collection: ToolCollection): ToolCollectionObject {
-    if (typeof collection === 'string') {
-        // Legacy string format
-        if (collection.startsWith('mcp:')) {
-            const url = collection.substring('mcp:'.length);
-            // For legacy MCP strings, derive name and prefix from URL
-            const urlObj = new URL(url);
-            const name = urlObj.hostname.replace(/\./g, '-');
-            const id = deriveMCPCollectionId(urlObj.hostname);
-            return {
-                url,
-                type: 'mcp',
-                id,
-                name,
-                description: `MCP server at ${url}`,
-                namespace: name
-            };
-        }
-        return {
-            url: collection,
-            type: 'vertesia_sdk'
-        };
+export function normalizeToolCollection(collection: ToolCollectionObject, vars?: Endpoints): ToolCollectionObject {
+    if (!collection || typeof collection !== 'object') {
+        throw new TypeError('Tool collection must be an object');
     }
-    // Already in object format
+    const substitutedUrl = vars && collection.url ? substituteEndpoints(collection.url, vars) : collection.url;
+    const urlChanged = substitutedUrl !== collection.url;
     if (collection.type === 'mcp') {
         const fallbackId = deriveMCPCollectionId(collection.id || collection.name || collection.url);
-        return {
-            ...collection,
-            id: collection.id || fallbackId,
-        };
+        if (urlChanged || !collection.id) {
+            return {
+                ...collection,
+                url: substitutedUrl,
+                id: collection.id || fallbackId,
+            };
+        }
+    } else if (urlChanged) {
+        return { ...collection, url: substitutedUrl };
     }
     return collection;
 }
-
 
 /**
  * Metadata hints from MCP tool annotations (per MCP spec).
@@ -316,7 +307,7 @@ export interface MCPToolAnnotations {
  */
 export interface AgentToolDefinition extends ToolDefinition {
     /**
-     * The tool execution URL. It can be an absolute URL or a path in which case the URL is obtained 
+     * The tool execution URL. It can be an absolute URL or a path in which case the URL is obtained
      * using the base URL of the tool server API. Ex: http://tool-server.com/api/
      * Example of relative URLs: "tools/my-tool-collection" or "/api/tools/my-tool-collection"
      */
@@ -328,18 +319,29 @@ export interface AgentToolDefinition extends ToolDefinition {
     /**
      * Whether this tool is available by default.
      * - true/undefined: Tool is always available to agents
-     * - false: Tool is only available when activated by a skill's related_tools
+     * - false: Tool is only available when enabled by a skill via `tools`
      */
     default?: boolean;
     /**
-     * For skill tools (learn_*): list of related tool names that become available
-     * when this skill is called. Used for dynamic tool discovery.
+     * For skill tools (`learn_*`): the tool names this skill enables when called.
+     * Matches the `tools:` key used in SKILL.md frontmatter and built-in skill
+     * definitions — one name across the whole stack.
      */
-    related_tools?: string[];
+    tools?: string[];
     /**
      * MCP tool annotations providing hints about tool behavior and safety.
      */
     annotations?: MCPToolAnnotations;
+    /**
+     * When true, agents must obtain explicit user confirmation via `ask_user`
+     * (Yes/No) before invoking this tool. If the user answers No, the tool
+     * must not run and should return an error indicating the user declined.
+     *
+     * Stronger than `annotations.destructiveHint` (which is only a hint) —
+     * this is a hard contract the agent is expected to honor. Set on tools
+     * that perform irreversible or destructive actions (e.g. delete_*).
+     */
+    requires_user_confirmation?: boolean;
 }
 
 /**
@@ -357,9 +359,9 @@ export interface RemoteActivityDefinition {
     /** Description of what the activity does */
     description?: string;
     /** JSON Schema for the activity input parameters */
-    input_schema?: Record<string, any>;
+    input_schema?: Record<string, unknown>;
     /** JSON Schema for the activity output */
-    output_schema?: Record<string, any>;
+    output_schema?: Record<string, unknown>;
     /**
      * The activity execution URL. Can be absolute or relative to the tool server base URL.
      * If not provided, the collection-specific activities endpoint is used.
@@ -369,8 +371,39 @@ export interface RemoteActivityDefinition {
     options?: DSLActivityOptions;
 }
 
-export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'templates';
+export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
+
+/**
+ * Access control policy for an app installation.
+ * Declares which access surfaces are gated by per-user ACEs.
+ *
+ * - 'all' (default): every surface (UI portal, tool/endpoint use, contributions) requires
+ *   an explicit app_member ACE — the historical behavior.
+ * - 'ui': UI portal visibility requires an ACE, but tool/endpoint use and contributions
+ *   are open to anyone in the project.
+ * - 'none': fully open within the project — no ACE required for any surface.
+ *
+ * Declared on the manifest as the app's default. May be overridden per-installation.
+ */
+export type AppAccessControl = 'all' | 'ui' | 'none';
+
+/**
+ * Resolve the effective access_control policy for an installed app:
+ * installation override wins, then manifest default, then `'all'`.
+ *
+ * Shared by the STS (JWT generation), the studio-server (validation), and the UI (badge display)
+ * so the resolution rule lives in exactly one place. Named `effectiveAppAccessControl` (not just
+ * `effectiveAccessControl`) because exports from `@vertesia/common` are flattened — the broader
+ * name would risk colliding with other access-control families added later.
+ */
+export function effectiveAppAccessControl(
+    installation: { access_control?: AppAccessControl } | null | undefined,
+    manifest: { access_control?: AppAccessControl } | null | undefined,
+): AppAccessControl {
+    return installation?.access_control ?? manifest?.access_control ?? 'all';
+}
+
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.
@@ -384,7 +417,7 @@ export interface AppManifestData {
      * - "private": visible only to the owning account
      * - "vertesia": visible only to Vertesia team members (any project)
      */
-    visibility: "public" | "private" | "vertesia";
+    visibility: 'public' | 'private' | 'vertesia';
 
     title: string;
     description: string;
@@ -401,19 +434,19 @@ export interface AppManifestData {
      */
     color?: string;
 
-    status: "beta" | "stable" | "deprecated"
+    status: 'beta' | 'stable' | 'deprecated';
 
     /**
-     * The UI configuration of the app. If not specified and the app "ui" is in the app capabilities 
+     * The UI configuration of the app. If not specified and the app "ui" is in the app capabilities
      * then the ui configuration will be fetched from the endpoint property.
      */
-    ui?: AppUIConfig
+    ui?: AppUIConfig;
 
     /**
      * A list of tool collections endpoints to be used by this app.
      * Prefer using endpoint over tool_collections.
      */
-    tool_collections?: ToolCollection[]
+    tool_collections?: ToolCollectionObject[];
 
     /**
      * Named OAuth providers shared across multiple MCP tool collections.
@@ -429,7 +462,7 @@ export interface AppManifestData {
      * The URL must provide 2 endpoints:
      * 1. GET URL - must return a JSON array with the list of interactions (as AppInteractionRef[])
      * 2. GET URL/{interaction_name} - must return the full interaction definition for the specified interaction.
-     * This feature is for advanced composition of interactions. Prefer using endpoint. 
+     * This feature is for advanced composition of interactions. Prefer using endpoint.
      */
     interactions?: string;
 
@@ -456,11 +489,12 @@ export interface AppManifestData {
      * - tools
      * - interactions
      * - types
+     * - processes
      * - settings
      * - all (the default if no scope is provided)
      *  You can also use comma-separated values to combine scopes (e.g. "ui,tools").
-     * 
-     * Example: 
+     *
+     * Example:
      * - ?scope=ui,tools - returns only the UI configuration
      */
     endpoint?: string;
@@ -472,41 +506,180 @@ export interface AppManifestData {
      * Only dev environment names are allowed as keys (starting with "desktop-" or "dev-").
      */
     endpoint_overrides?: Record<string, string>;
+
+    /**
+     * Optional app version string (e.g. "1.0.0") — informational.
+     */
+    version?: string;
+
+    /**
+     * Free-form tags used for classification and filtering. Platform apps
+     * carry `"system"` so UIs can skip install/uninstall/manage-permission
+     * controls that don't apply to synthetic installations.
+     */
+    tags?: string[];
+
+    /**
+     * Access control policy for the app. Defaults to 'all' (ACE-gated everywhere)
+     * when undefined. See {@link AppAccessControl} for semantics. May be overridden
+     * on the AppInstallation.
+     */
+    access_control?: AppAccessControl;
 }
+
+/**
+ * Reserved deployment environment names that may never be used as endpoint
+ * override keys. Reserving them prevents a manifest from hijacking auto-resolution
+ * on a shared production studio-server (whose `Env.environment` is one of these).
+ */
+const RESERVED_ENDPOINT_OVERRIDE_ENVS = new Set(['production', 'preview', 'staging']);
 
 /**
  * Returns true if the given environment name is allowed as an endpoint override key.
- * Only "desktop-" or "dev-" prefixed names are valid.
+ * Any non-empty name is accepted except the reserved shared-deployment names.
  */
 export function isValidEndpointOverrideEnv(envName: string): boolean {
-    return envName.startsWith('desktop-') || envName.startsWith('dev-');
+    if (!envName) return false;
+    return !RESERVED_ENDPOINT_OVERRIDE_ENVS.has(envName.toLowerCase());
 }
 
 /**
- * Resolves the effective endpoint for an app given an optional environment name.
- * Returns the override endpoint if the env name matches a valid dev environment, otherwise the default endpoint.
+ * Deployment-time URL endpoints that can be referenced in app manifest URLs
+ * via `{{key}}` placeholders. The caller (typically studio-server) supplies
+ * these from environment config so that system apps can ship a single manifest
+ * with endpoints like `{{studio}}/api/package` that resolve per deployment.
+ */
+export interface Endpoints {
+    /** The Studio API (studio-server) base URL */
+    studio?: string;
+    /** The Store API (zeno-server) base URL */
+    store?: string;
+    /** The token server base URL */
+    token?: string;
+    /** The browser-facing Studio UI (composable-ui) base URL */
+    ui?: string;
+}
+
+/**
+ * Substitutes `{{key}}` placeholders in a URL with the matching endpoint.
+ * Unknown placeholders are left untouched (so failures surface as fetch errors
+ * with the unresolved placeholder visible, rather than silently pointing nowhere).
+ * Trailing slashes on replacement values are stripped to avoid `//api/...` joins.
+ */
+export function substituteEndpoints(url: string, endpoints?: Endpoints): string {
+    if (!url || !endpoints) return url;
+    return url.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key: string) => {
+        const value = (endpoints as Record<string, string | undefined>)[key];
+        if (typeof value !== 'string' || !value) return match;
+        return trimTrailingSlashes(value);
+    });
+}
+
+function trimTrailingSlashes(value: string): string {
+    let end = value.length;
+    while (end > 0 && value[end - 1] === '/') {
+        end--;
+    }
+    return end === value.length ? value : value.slice(0, end);
+}
+
+/**
+ * Resolves the effective endpoint for an app.
+ *
+ * Order of resolution:
+ * 1. If `requestedOverride` matches an `endpoint_overrides` key, use that URL
+ *    (caller must verify the user is allowed to use the override).
+ * 2. Else if `envName` matches an `endpoint_overrides` key, use that URL
+ *    (auto-resolution from the studio-server's deployment env).
+ * 3. Otherwise use the main `endpoint`.
+ * 4. Apply `{{var}}` substitution using `vars`.
  */
 export function resolveAppEndpoint(
     manifest: Pick<AppManifestData, 'endpoint' | 'endpoint_overrides'>,
-    envName?: string
+    envName?: string,
+    vars?: Endpoints,
+    requestedOverride?: string,
 ): string | undefined {
-    if (envName && manifest.endpoint_overrides?.[envName] && isValidEndpointOverrideEnv(envName)) {
-        return manifest.endpoint_overrides[envName];
+    let raw: string | undefined;
+    if (
+        requestedOverride &&
+        manifest.endpoint_overrides?.[requestedOverride] &&
+        isValidEndpointOverrideEnv(requestedOverride)
+    ) {
+        raw = manifest.endpoint_overrides[requestedOverride];
+    } else if (envName && manifest.endpoint_overrides?.[envName] && isValidEndpointOverrideEnv(envName)) {
+        raw = manifest.endpoint_overrides[envName];
+    } else {
+        raw = manifest.endpoint;
     }
-    return manifest.endpoint;
+    return raw ? substituteEndpoints(raw, vars) : raw;
 }
 
-export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'templates' | 'settings' | 'widgets' | 'activities' | 'all';
+/**
+ * Resolves all URL placeholders in a manifest in place (both `endpoint` and
+ * `tool_collections[].url`). Intended for server-side serialization — clients and
+ * downstream workers receive already-substituted URLs so they don't need to know
+ * about deployment-time vars.
+ *
+ * Mutates the manifest rather than returning a copy so it works cleanly with
+ * Mongoose populated subdocs.
+ */
+export function resolveManifestUrls(
+    manifest: Partial<AppManifestData> | null | undefined,
+    envName?: string,
+    vars?: Endpoints,
+    requestedOverride?: string,
+): void {
+    if (!manifest) return;
+
+    if (manifest.endpoint) {
+        const resolved = resolveAppEndpoint(manifest, envName, vars, requestedOverride);
+        if (resolved && resolved !== manifest.endpoint) {
+            manifest.endpoint = resolved;
+        }
+    }
+
+    const toolCollections = manifest.tool_collections as ToolCollectionObject[] | undefined;
+    if (toolCollections && Array.isArray(toolCollections)) {
+        for (let i = 0; i < toolCollections.length; i++) {
+            const item = toolCollections[i];
+            if (item && typeof item === 'object' && item.url) {
+                const sub = substituteEndpoints(item.url, vars);
+                if (sub !== item.url) item.url = sub;
+            }
+        }
+    }
+}
+
+export type AppPackageScope =
+    | 'ui'
+    | 'tools'
+    | 'interactions'
+    | 'types'
+    | 'processes'
+    | 'templates'
+    | 'settings'
+    | 'widgets'
+    | 'activities'
+    | 'all';
 export interface AppPackage {
     /**
      * The UI configuration of the app
      */
-    ui?: AppUIConfig
+    ui?: AppUIConfig;
 
     /**
      * A list of tools exposed by the app.
      */
-    tools?: AgentToolDefinition[]
+    tools?: AgentToolDefinition[];
+
+    /**
+     * A list of skills (`learn_*` tools) exposed by the app. Kept separate from
+     * `tools` so clients can render them distinctly — consumers that don't care
+     * (e.g. the worker building a combined tool registry) should concatenate
+     * the two lists.
+     */
+    skills?: AgentToolDefinition[];
 
     /**
      * A list of interactions exposed by the app
@@ -517,6 +690,11 @@ export interface AppPackage {
      * A list of types.
      */
     types?: InCodeTypeDefinition[];
+
+    /**
+     * A list of process definitions exposed by the app.
+     */
+    processes?: InCodeProcessDefinition[];
 
     /**
      * Templates provided by the app.
@@ -620,7 +798,7 @@ export interface AppInstallation {
     id: string;
     project: string; // the project where the app is installed
     manifest: string; // the app manifest
-    settings?: Record<string, any>; // settings for the app installation
+    settings?: Record<string, unknown>; // settings for the app installation
     /**
      * Admin-managed allowlist of tool names permitted for this installation.
      * When undefined, all tools from the app are permitted.
@@ -639,6 +817,12 @@ export interface AppInstallation {
      * Multiple collections sharing the same provider all resolve to the same OAuth provider.
      */
     provider_bindings?: AppInstallationProviderBinding[];
+    /**
+     * Per-installation override of the manifest's access_control policy.
+     * When set, takes precedence over the manifest value. When undefined, the
+     * manifest value (or 'all' default) applies.
+     */
+    access_control?: AppAccessControl;
     created_at: string;
     updated_at: string;
 }
@@ -673,7 +857,20 @@ export type AppOAuthProviderParams = Record<string, OAuthClientCredentials>;
 
 export interface AppInstallationPayload {
     app_id: string;
-    settings?: Record<string, any>;
+    settings?: Record<string, unknown>;
+    /**
+     * Per-installation override of the manifest's `access_control` policy. When provided, takes precedence
+     * over the manifest default for every access check. Sibling of `settings` — admin-controlled, not
+     * part of the app's own settings JSON.
+     *
+     * Three send-time semantics on update:
+     *  - Field omitted entirely from the payload → leave the existing override unchanged.
+     *  - Explicit `null` → clear the override, fall back to the manifest default.
+     *  - String enum → set the override to that value.
+     *
+     * (On install, the same shape applies; omit or pass `null` to use the manifest default.)
+     */
+    access_control?: AppAccessControl | null;
     /**
      * OAuth credentials for each collection, keyed by collection.id.
      * Legacy callers may still use collection.name for older manifests.
@@ -711,7 +908,7 @@ export interface AppToolCollection {
     /**
      * the tools provided by this collection
      */
-    tools: AgentToolDefinition[]
+    tools: AgentToolDefinition[];
 }
 
 /**
@@ -743,7 +940,7 @@ export interface ProjectToolInfo {
      * The app installation settings.
      * Only included for agent tokens, not user tokens (security: may contain API keys).
      */
-    settings?: Record<string, any>;
+    settings?: Record<string, unknown>;
 }
 
 /**
@@ -829,10 +1026,9 @@ export interface CompositeAppLogoOverrides {
     hideFooterLogo?: boolean;
 }
 
-
 /**
  * Message banner overrides for the shell header.
-*/
+ */
 export type CompositeAppMessageStyle = 'foreground' | 'info' | 'success' | 'attention' | 'destructive';
 export interface CompositeAppMessageOverrides {
     /** Message text to display */
@@ -995,9 +1191,9 @@ export interface CompositeAppHomePlugin {
  */
 export interface CompositeAppConfig {
     /**
-     * The unique identifier for this CompositeApp configuration 
+     * The unique identifier for this CompositeApp configuration
      * Undefined if the configuration doesn't exists yet.
-    */
+     */
     id?: string;
     /** The project this CompositeApp belongs to */
     project: string;

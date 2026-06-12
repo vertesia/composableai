@@ -1,21 +1,22 @@
-import { TriangleAlert } from "lucide-react"
-import React, { useRef } from "react"
-import { useUITranslation } from "@vertesia/ui/i18n"
-import { Modal, ModalTitle, ModalFooter } from "./dialog"
-import { Button } from "../button"
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { TriangleAlert } from 'lucide-react';
+import type React from 'react';
+import { useRef } from 'react';
+import { Button } from '../button';
+import { Modal, ModalFooter, ModalTitle } from './dialog';
 
 interface ConfirmModalProps {
-    title: string
-    content: string | React.ReactNode
-    onConfirm: () => void
-    onCancel: () => void
-    isOpen: boolean
-    isLoading?: boolean
+    title: string;
+    content: string | React.ReactNode;
+    onConfirm: () => void;
+    onCancel: () => void;
+    isOpen: boolean;
+    isLoading?: boolean;
 }
 
 export function ConfirmModal({ title, content, onConfirm, onCancel, isOpen, isLoading }: ConfirmModalProps) {
-    const { t } = useUITranslation()
-    const cancelButtonRef = useRef(null)
+    const { t } = useUITranslation();
+    const cancelButtonRef = useRef(null);
 
     return (
         <Modal isOpen={isOpen} onClose={onCancel} description="Confirm Modal">
@@ -23,33 +24,23 @@ export function ConfirmModal({ title, content, onConfirm, onCancel, isOpen, isLo
                 <div className="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
                     <TriangleAlert className="size-6 text-red-600" aria-hidden="true" />
                 </div>
-                <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                    <ModalTitle className="leading-6" show >
+                <div className="mt-3 text-center sm:ms-4 sm:mt-0 sm:text-start">
+                    <ModalTitle className="leading-6" show>
                         {title}
                     </ModalTitle>
                     <div className="mt-2">
-                        <div className="prose text-sm text-gray-500">
-                            {content}
-                        </div>
+                        <div className="prose text-sm text-gray-500">{content}</div>
                     </div>
                 </div>
             </div>
             <ModalFooter align="right">
-                <Button
-                    variant="destructive"
-                    onClick={onConfirm}
-                    isLoading={isLoading}
-                >
+                <Button variant="destructive" onClick={onConfirm} isLoading={isLoading}>
                     {t('modal.confirm')}
                 </Button>
-                <Button
-                    variant="outline"
-                    onClick={onCancel}
-                    ref={cancelButtonRef}
-                >
+                <Button variant="outline" onClick={onCancel} ref={cancelButtonRef}>
                     {t('modal.cancel')}
                 </Button>
             </ModalFooter>
         </Modal>
-    )
+    );
 }

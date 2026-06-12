@@ -1,1 +1,1 @@
-export * from "./ActivityDoc";
+export * from './ActivityDoc';

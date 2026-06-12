@@ -6,8 +6,8 @@
 
 import { FusionFragmentHandler, FusionFragmentProvider } from '@vertesia/fusion-ux';
 import DOMPurify from 'dompurify';
-import { useMemo, type ReactElement } from 'react';
-import { type VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
+import { type ReactElement, useMemo } from 'react';
+import type { VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
 import { useCodeBlockContext } from './CodeBlockContext';
 import { CodeBlockErrorBoundary, CodeBlockPlaceholder } from './CodeBlockPlaceholder';
@@ -43,7 +43,7 @@ export interface ArtifactContentRendererProps {
 function autoDetectRenderType(
     content: unknown,
     path: string,
-    contentType?: 'json' | 'text' | 'binary'
+    contentType?: 'json' | 'text' | 'binary',
 ): ExpandRenderType {
     const ext = path.split('.').pop()?.toLowerCase();
 
@@ -130,22 +130,20 @@ function TableRenderer({ content }: { content: unknown }): ReactElement {
         }
 
         const headers = Object.keys(first);
-        const rows = content.map(row =>
-            headers.map(h => {
+        const rows = content.map((row) =>
+            headers.map((h) => {
                 const val = (row as Record<string, unknown>)[h];
                 if (val === null || val === undefined) return '';
                 if (typeof val === 'object') return JSON.stringify(val);
                 return String(val);
-            })
+            }),
         );
 
         return { headers, rows };
     }, [content]);
 
     if (headers.length === 0) {
-        return (
-            <CodeBlockPlaceholder type="table" error="No table data found" />
-        );
+        return <CodeBlockPlaceholder type="table" error="No table data found" />;
     }
 
     return (
@@ -154,7 +152,8 @@ function TableRenderer({ content }: { content: unknown }): ReactElement {
                 <thead>
                     <tr className="border-b">
                         {headers.map((h, i) => (
-                            <th key={i} className="px-3 py-2 text-left font-medium text-muted">
+                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
+                            <th key={i} className="px-3 py-2 text-start font-medium text-muted">
                                 {h}
                             </th>
                         ))}
@@ -162,8 +161,10 @@ function TableRenderer({ content }: { content: unknown }): ReactElement {
                 </thead>
                 <tbody>
                     {rows.slice(0, 100).map((row, i) => (
+                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                         <tr key={i} className="border-b border-muted/20">
                             {row.map((cell, j) => (
+                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                 <td key={j} className="px-3 py-2">
                                     {cell}
                                 </td>
@@ -172,11 +173,7 @@ function TableRenderer({ content }: { content: unknown }): ReactElement {
                     ))}
                 </tbody>
             </table>
-            {rows.length > 100 && (
-                <div className="text-sm text-muted py-2">
-                    Showing 100 of {rows.length} rows
-                </div>
-            )}
+            {rows.length > 100 && <div className="text-sm text-muted py-2">Showing 100 of {rows.length} rows</div>}
         </div>
     );
 }
@@ -222,8 +219,10 @@ export function makeSvgResponsive(svg: string): string {
             .replace(/\swidth\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i, '')
             .replace(/\sheight\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i, '');
         if (/style="/i.test(a)) {
-            a = a.replace(/style="([^"]*)"/i, (_: string, v: string) =>
-                `style="${v};width:100%;height:auto;display:block;max-width:100%;"`);
+            a = a.replace(
+                /style="([^"]*)"/i,
+                (_: string, v: string) => `style="${v};width:100%;height:auto;display:block;max-width:100%;"`,
+            );
         } else {
             a += ' style="width:100%;height:auto;display:block;max-width:100%;"';
         }
@@ -251,6 +250,7 @@ function MockupRenderer({ content }: { content: unknown }): ReactElement {
     return (
         <div
             style={{ margin: '16px 0', width: '100%', overflowX: 'auto' }}
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG content is processed/sanitized upstream for inline rendering
             dangerouslySetInnerHTML={{ __html: processedSvg }}
         />
     );
@@ -263,14 +263,7 @@ function ImageRenderer({ content, path }: { content: unknown; path: string }): R
     const url = typeof content === 'string' ? content : '';
     const alt = path.split('/').pop() || 'Artifact image';
 
-    return (
-        <img
-            src={url}
-            alt={alt}
-            className="max-w-full h-auto rounded"
-            loading="lazy"
-        />
-    );
+    return <img src={url} alt={alt} className="max-w-full h-auto rounded" loading="lazy" />;
 }
 
 /**
@@ -317,12 +310,7 @@ export function ArtifactContentRenderer({
         case 'vega-lite': {
             const spec = toVegaLiteSpec(content);
             if (!spec) {
-                return (
-                    <CodeBlockPlaceholder
-                        type="chart"
-                        error="Invalid Vega-Lite specification"
-                    />
-                );
+                return <CodeBlockPlaceholder type="chart" error="Invalid Vega-Lite specification" />;
             }
             return (
                 <CodeBlockErrorBoundary type="chart" fallbackCode={JSON.stringify(content, null, 2)}>
@@ -377,9 +365,7 @@ export function ArtifactContentRenderer({
             return (
                 <CodeBlockErrorBoundary type="markdown" fallbackCode={markdownContent}>
                     {MarkdownRenderer ? (
-                        <MarkdownRenderer artifactRunId={runId}>
-                            {markdownContent}
-                        </MarkdownRenderer>
+                        <MarkdownRenderer artifactRunId={runId}>{markdownContent}</MarkdownRenderer>
                     ) : (
                         <pre className="overflow-x-auto p-3 bg-muted/10 rounded text-sm">
                             <code>{markdownContent}</code>
@@ -402,8 +388,6 @@ export function ArtifactContentRenderer({
                     <ImageRenderer content={content} path={path} />
                 </CodeBlockErrorBoundary>
             );
-
-        case 'code':
         default:
             return <CodeRenderer content={content} path={path} />;
     }

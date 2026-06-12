@@ -1,5 +1,4 @@
 export class PathWithParams {
-
     path: string;
     params: URLSearchParams;
     hash: string;
@@ -29,6 +28,6 @@ export class PathWithParams {
         return this;
     }
     toString() {
-        return this.path + '?' + this.params.toString() + this.hash;
+        return `${this.path}?${this.params.toString()}${this.hash}`;
     }
 }

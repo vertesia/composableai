@@ -1,5 +1,5 @@
-import { cn } from "@vertesia/ui/core";
-import { useEffect, useRef, useState } from "react";
+import { cn } from '@vertesia/ui/core';
+import { useEffect, useRef, useState } from 'react';
 
 interface AnimatedThinkingDotsProps {
     className?: string;
@@ -10,20 +10,26 @@ interface AnimatedThinkingDotsProps {
 export function AnimatedThinkingDots({ className, inline = false, color = 'blue' }: AnimatedThinkingDotsProps) {
     // Enhanced gradient colors based on the color prop
     const gradientColors = {
-        blue: "from-blue-400 to-indigo-500 dark:from-blue-500 dark:to-indigo-400",
-        purple: "from-purple-400 to-violet-500 dark:from-purple-500 dark:to-violet-400",
-        teal: "from-teal-400 to-emerald-500 dark:from-teal-500 dark:to-emerald-400",
-        green: "from-green-400 to-emerald-500 dark:from-green-500 dark:to-emerald-400",
-        amber: "from-amber-400 to-orange-500 dark:from-amber-500 dark:to-orange-400"
+        blue: 'from-blue-400 to-indigo-500 dark:from-blue-500 dark:to-indigo-400',
+        purple: 'from-purple-400 to-violet-500 dark:from-purple-500 dark:to-violet-400',
+        teal: 'from-teal-400 to-emerald-500 dark:from-teal-500 dark:to-emerald-400',
+        green: 'from-green-400 to-emerald-500 dark:from-green-500 dark:to-emerald-400',
+        amber: 'from-amber-400 to-orange-500 dark:from-amber-500 dark:to-orange-400',
     };
 
     const gradientClass = gradientColors[color];
 
     return (
-        <div className={cn("flex items-center gap-1.5", inline ? "inline-flex" : "", className)}>
-            <div className={`w-2 h-2 bg-gradient-to-r ${gradientClass} rounded-full animate-[bounce_1.2s_ease-in-out_infinite]`} />
-            <div className={`w-2 h-2 bg-gradient-to-r ${gradientClass} rounded-full animate-[bounce_1.2s_ease-in-out_0.2s_infinite]`} />
-            <div className={`w-2 h-2 bg-gradient-to-r ${gradientClass} rounded-full animate-[bounce_1.2s_ease-in-out_0.4s_infinite]`} />
+        <div className={cn('flex items-center gap-1.5', inline ? 'inline-flex' : '', className)}>
+            <div
+                className={`w-2 h-2 bg-gradient-to-r ${gradientClass} rounded-full animate-[bounce_1.2s_ease-in-out_infinite]`}
+            />
+            <div
+                className={`w-2 h-2 bg-gradient-to-r ${gradientClass} rounded-full animate-[bounce_1.2s_ease-in-out_0.2s_infinite]`}
+            />
+            <div
+                className={`w-2 h-2 bg-gradient-to-r ${gradientClass} rounded-full animate-[bounce_1.2s_ease-in-out_0.4s_infinite]`}
+            />
         </div>
     );
 }
@@ -39,7 +45,7 @@ export function PulsatingCircle({ className, size = 'md', color = 'blue' }: Puls
     const sizeClasses = {
         sm: 'w-3 h-3',
         md: 'w-5 h-5',
-        lg: 'w-7 h-7'
+        lg: 'w-7 h-7',
     };
 
     // Enhanced color mapping with gradients
@@ -48,34 +54,35 @@ export function PulsatingCircle({ className, size = 'md', color = 'blue' }: Puls
         purple: 'bg-purple-500 dark:bg-purple-400',
         teal: 'bg-teal-500 dark:bg-teal-400',
         green: 'bg-green-500 dark:bg-green-400',
-        amber: 'bg-amber-500 dark:bg-amber-400'
+        amber: 'bg-amber-500 dark:bg-amber-400',
     };
 
     // Return enhanced implementation using smoother animations
     return (
-        <span className={cn("relative flex", className)}>
+        <span className={cn('relative flex', className)}>
             {/* Outer ripple effect */}
-            <span className={cn(
-                "animate-ping absolute inline-flex h-full w-full rounded-full opacity-60",
-                colorClasses[color]
-            )}></span>
+            <span
+                className={cn(
+                    'animate-ping absolute inline-flex h-full w-full rounded-full opacity-60',
+                    colorClasses[color],
+                )}
+            ></span>
 
             {/* Middle pulse */}
-            <span className={cn(
-                "animate-pulse absolute inline-flex h-[80%] w-[80%] rounded-full opacity-80",
-                colorClasses[color]
-            )} style={{
-                left: '10%',
-                top: '10%',
-                animationDuration: '2s'
-            }}></span>
+            <span
+                className={cn(
+                    'animate-pulse absolute inline-flex h-[80%] w-[80%] rounded-full opacity-80',
+                    colorClasses[color],
+                )}
+                style={{
+                    left: '10%',
+                    top: '10%',
+                    animationDuration: '2s',
+                }}
+            ></span>
 
             {/* Core circle */}
-            <span className={cn(
-                "relative inline-flex rounded-full",
-                colorClasses[color],
-                sizeClasses[size]
-            )}></span>
+            <span className={cn('relative inline-flex rounded-full', colorClasses[color], sizeClasses[size])}></span>
         </span>
     );
 }
@@ -92,21 +99,18 @@ export function TypedDots({ className, color = 'blue' }: TypedDotsProps) {
         purple: 'text-purple-600 dark:text-purple-400',
         teal: 'text-teal-600 dark:text-teal-400',
         green: 'text-green-600 dark:text-green-400',
-        amber: 'text-amber-600 dark:text-amber-400'
+        amber: 'text-amber-600 dark:text-amber-400',
     };
 
     useEffect(() => {
         const intervalId = setInterval(() => {
-            setDots(prev =>
-                prev === '.' ? '..' :
-                    prev === '..' ? '...' : '.'
-            );
+            setDots((prev) => (prev === '.' ? '..' : prev === '..' ? '...' : '.'));
         }, 500);
 
         return () => clearInterval(intervalId);
     }, []);
 
-    return <span className={cn(colorClasses[color], "font-bold", className)}>{dots}</span>;
+    return <span className={cn(colorClasses[color], 'font-bold', className)}>{dots}</span>;
 }
 
 interface PulsingMessageLoaderProps {
@@ -119,32 +123,38 @@ export function PulsingMessageLoader({ message, className, color = 'blue' }: Pul
     const colorClasses = {
         blue: {
             dot: 'bg-blue-500 dark:bg-blue-400',
-            text: 'text-blue-700 dark:text-blue-300'
+            text: 'text-blue-700 dark:text-blue-300',
         },
         purple: {
             dot: 'bg-purple-500 dark:bg-purple-400',
-            text: 'text-purple-700 dark:text-purple-300'
+            text: 'text-purple-700 dark:text-purple-300',
         },
         teal: {
             dot: 'bg-teal-500 dark:bg-teal-400',
-            text: 'text-teal-700 dark:text-teal-300'
+            text: 'text-teal-700 dark:text-teal-300',
         },
         green: {
             dot: 'bg-green-500 dark:bg-green-400',
-            text: 'text-green-700 dark:text-green-300'
+            text: 'text-green-700 dark:text-green-300',
         },
         amber: {
             dot: 'bg-amber-500 dark:bg-amber-400',
-            text: 'text-amber-700 dark:text-amber-300'
-        }
+            text: 'text-amber-700 dark:text-amber-300',
+        },
     };
 
     return (
-        <div className={cn("flex items-center gap-2 py-1", className)}>
+        <div className={cn('flex items-center gap-2 py-1', className)}>
             <div className="flex space-x-1">
                 <div className={`w-1.5 h-1.5 ${colorClasses[color].dot} rounded-full animate-bounce`} />
-                <div className={`w-1.5 h-1.5 ${colorClasses[color].dot} rounded-full animate-bounce`} style={{ animationDelay: '0.2s' }} />
-                <div className={`w-1.5 h-1.5 ${colorClasses[color].dot} rounded-full animate-bounce`} style={{ animationDelay: '0.4s' }} />
+                <div
+                    className={`w-1.5 h-1.5 ${colorClasses[color].dot} rounded-full animate-bounce`}
+                    style={{ animationDelay: '0.2s' }}
+                />
+                <div
+                    className={`w-1.5 h-1.5 ${colorClasses[color].dot} rounded-full animate-bounce`}
+                    style={{ animationDelay: '0.4s' }}
+                />
             </div>
             <div className={`${colorClasses[color].text} font-medium text-xs`}>{message}</div>
         </div>
@@ -174,7 +184,7 @@ export function ThinkingBar({ className, color = 'blue', width = 'md', message }
             ([entry]) => {
                 isVisibleRef.current = entry.isIntersecting;
             },
-            { threshold: 0 }
+            { threshold: 0 },
         );
         observer.observe(element);
         return () => observer.disconnect();
@@ -186,7 +196,7 @@ export function ThinkingBar({ className, color = 'blue', width = 'md', message }
         md: 'w-32',
         lg: 'w-48',
         xl: 'w-64',
-        full: 'w-full'
+        full: 'w-full',
     };
 
     // Color classes
@@ -195,7 +205,7 @@ export function ThinkingBar({ className, color = 'blue', width = 'md', message }
         purple: 'bg-purple-200 dark:bg-purple-900/30',
         teal: 'bg-teal-200 dark:bg-teal-900/30',
         green: 'bg-green-200 dark:bg-green-900/30',
-        amber: 'bg-amber-200 dark:bg-amber-900/30'
+        amber: 'bg-amber-200 dark:bg-amber-900/30',
     };
 
     const barColorClasses = {
@@ -203,7 +213,7 @@ export function ThinkingBar({ className, color = 'blue', width = 'md', message }
         purple: 'bg-gradient-to-r from-purple-400 to-purple-500 dark:from-purple-500 dark:to-purple-400',
         teal: 'bg-gradient-to-r from-teal-400 to-teal-500 dark:from-teal-500 dark:to-teal-400',
         green: 'bg-gradient-to-r from-green-400 to-green-500 dark:from-green-500 dark:to-green-400',
-        amber: 'bg-gradient-to-r from-amber-400 to-amber-500 dark:from-amber-500 dark:to-amber-400'
+        amber: 'bg-gradient-to-r from-amber-400 to-amber-500 dark:from-amber-500 dark:to-amber-400',
     };
 
     const textColorClasses = {
@@ -211,7 +221,7 @@ export function ThinkingBar({ className, color = 'blue', width = 'md', message }
         purple: 'text-purple-700 dark:text-purple-300',
         teal: 'text-teal-700 dark:text-teal-300',
         green: 'text-green-700 dark:text-green-300',
-        amber: 'text-amber-700 dark:text-amber-300'
+        amber: 'text-amber-700 dark:text-amber-300',
     };
 
     // Using requestAnimationFrame for smoother animation
@@ -230,15 +240,13 @@ export function ThinkingBar({ className, color = 'blue', width = 'md', message }
             const deltaTime = now - lastUpdateTime;
             lastUpdateTime = now;
 
-            setProgress(prev => {
+            setProgress((prev) => {
                 // Calculate movement based on time delta for consistent animation speed
                 // regardless of frame rate
                 const timeBasedChange = speed * (deltaTime / 16); // Normalize to 60fps
 
                 // Calculate next progress based on direction
-                let next = direction === 'increasing'
-                    ? prev + timeBasedChange
-                    : prev - timeBasedChange;
+                const next = direction === 'increasing' ? prev + timeBasedChange : prev - timeBasedChange;
 
                 // Handle direction changes at boundaries with easing
                 if (next >= 85) {
@@ -255,7 +263,7 @@ export function ThinkingBar({ className, color = 'blue', width = 'md', message }
 
                 // Occasionally adjust speed slightly (less frequently) for subtle natural feeling
                 if (Math.random() > 0.99) {
-                    setSpeed(prev => Math.max(0.2, Math.min(0.5, prev + (Math.random() * 0.1 - 0.05))));
+                    setSpeed((prev) => Math.max(0.2, Math.min(0.5, prev + (Math.random() * 0.1 - 0.05))));
                 }
 
                 return next;
@@ -272,18 +280,20 @@ export function ThinkingBar({ className, color = 'blue', width = 'md', message }
     }, [direction, speed]);
 
     return (
-        <div ref={containerRef} className={cn("flex flex-col gap-1", className)}>
-            {message && (
-                <div className={`text-xs font-medium ${textColorClasses[color]} mb-1`}>
-                    {message}
-                </div>
-            )}
-            <div className={cn("h-1.5 rounded-full overflow-hidden shadow-inner", colorClasses[color], widthClasses[width])}>
+        <div ref={containerRef} className={cn('flex flex-col gap-1', className)}>
+            {message && <div className={`text-xs font-medium ${textColorClasses[color]} mb-1`}>{message}</div>}
+            <div
+                className={cn(
+                    'h-1.5 rounded-full overflow-hidden shadow-inner',
+                    colorClasses[color],
+                    widthClasses[width],
+                )}
+            >
                 <div
-                    className={cn("h-full rounded-full", barColorClasses[color])}
+                    className={cn('h-full rounded-full', barColorClasses[color])}
                     style={{
                         width: `${progress}%`,
-                        transition: 'width 150ms cubic-bezier(0.4, 0.0, 0.2, 1)' // Material Design easing for smoothness
+                        transition: 'width 150ms cubic-bezier(0.4, 0.0, 0.2, 1)', // Material Design easing for smoothness
                     }}
                 ></div>
             </div>
@@ -312,7 +322,7 @@ export function WavyThinking({ className, color = 'blue', size = 'md' }: WavyThi
             ([entry]) => {
                 isVisibleRef.current = entry.isIntersecting;
             },
-            { threshold: 0 }
+            { threshold: 0 },
         );
         observer.observe(element);
         return () => observer.disconnect();
@@ -322,7 +332,7 @@ export function WavyThinking({ className, color = 'blue', size = 'md' }: WavyThi
     const sizeClasses = {
         sm: { width: 'w-16', height: 'h-4', barWidth: 'w-0.5', gap: 'gap-[2px]' },
         md: { width: 'w-20', height: 'h-5', barWidth: 'w-1', gap: 'gap-[3px]' },
-        lg: { width: 'w-24', height: 'h-6', barWidth: 'w-1.5', gap: 'gap-1' }
+        lg: { width: 'w-24', height: 'h-6', barWidth: 'w-1.5', gap: 'gap-1' },
     };
 
     // Enhanced color classes with gradients for more visual appeal
@@ -331,7 +341,7 @@ export function WavyThinking({ className, color = 'blue', size = 'md' }: WavyThi
         purple: 'bg-gradient-to-b from-purple-400 to-purple-500 dark:from-purple-400 dark:to-purple-500',
         teal: 'bg-gradient-to-b from-teal-400 to-teal-500 dark:from-teal-400 dark:to-teal-500',
         green: 'bg-gradient-to-b from-green-400 to-green-500 dark:from-green-400 dark:to-green-500',
-        amber: 'bg-gradient-to-b from-amber-400 to-amber-500 dark:from-amber-400 dark:to-amber-500'
+        amber: 'bg-gradient-to-b from-amber-400 to-amber-500 dark:from-amber-400 dark:to-amber-500',
     };
 
     // Use requestAnimationFrame for smooth animation
@@ -351,11 +361,13 @@ export function WavyThinking({ className, color = 'blue', size = 'md' }: WavyThi
             time += 0.02; // Increment time for animation
 
             // Update each bar's height with smooth sine wave
-            const newHeights = Array(7).fill(0).map((_, index) => {
-                // Calculate height using smooth sine wave with individual phase and speed
-                // Scale to make sure it stays within 10% to 90% range
-                return 10 + (Math.sin(time * speeds[index] + phases[index]) + 1) * 40;
-            });
+            const newHeights = Array(7)
+                .fill(0)
+                .map((_, index) => {
+                    // Calculate height using smooth sine wave with individual phase and speed
+                    // Scale to make sure it stays within 10% to 90% range
+                    return 10 + (Math.sin(time * speeds[index] + phases[index]) + 1) * 40;
+                });
 
             setBarHeights(newHeights);
             animationFrameId = requestAnimationFrame(animateBars);
@@ -372,25 +384,22 @@ export function WavyThinking({ className, color = 'blue', size = 'md' }: WavyThi
         <div
             ref={containerRef}
             className={cn(
-                "flex items-end justify-center",
+                'flex items-end justify-center',
                 sizeClasses[size].width,
                 sizeClasses[size].height,
                 sizeClasses[size].gap,
-                className
+                className,
             )}
         >
             {barHeights.map((height, i) => (
                 <div
+                    // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length array of 7 visual bars never re-orders
                     key={i}
-                    className={cn(
-                        sizeClasses[size].barWidth,
-                        "rounded-full transform-gpu",
-                        colorClasses[color]
-                    )}
+                    className={cn(sizeClasses[size].barWidth, 'rounded-full transform-gpu', colorClasses[color])}
                     style={{
                         height: `${height}%`,
                         transition: 'height 100ms cubic-bezier(0.4, 0.0, 0.2, 1)', // Smooth transition
-                        opacity: 0.9
+                        opacity: 0.9,
                     }}
                 ></div>
             ))}

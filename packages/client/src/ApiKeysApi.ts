@@ -1,5 +1,13 @@
-import { ApiKey, ApiKeyReadResponse, ApiKeyWithValue, AuthTokenResponse, CreateOrUpdateApiKeyPayload, CreatePublicKeyPayload, DeleteOperationResult } from '@vertesia/common';
-import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type {
+    ApiKey,
+    ApiKeyReadResponse,
+    ApiKeyWithValue,
+    AuthTokenResponse,
+    CreateOrUpdateApiKeyPayload,
+    CreatePublicKeyPayload,
+    DeleteOperationResult,
+} from '@vertesia/common';
 
 export class ApiKeysApi extends ApiTopic {
     constructor(parent: ClientBase) {

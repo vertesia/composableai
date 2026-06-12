@@ -1,6 +1,9 @@
-import { useEffect, type ReactNode } from 'react';
-import { I18nextProvider, useTranslation } from 'react-i18next';
+import { type ReactNode, useEffect } from 'react';
+import { I18nextProvider, Trans, useTranslation } from 'react-i18next';
 import { i18nInstance, NAMESPACE } from './instance.js';
+import { useLanguage } from './LanguageProvider.js';
+
+export { Trans };
 
 export interface I18nProviderProps {
     /** Force a specific language. If omitted, uses browser language detection with 'en' fallback. */
@@ -27,11 +30,18 @@ export function I18nProvider({ lng, children }: I18nProviderProps) {
         }
     }, [lng]);
 
-    return (
-        <I18nextProvider i18n={i18nInstance}>
-            {children}
-        </I18nextProvider>
-    );
+    return <I18nextProvider i18n={i18nInstance}>{children}</I18nextProvider>;
+}
+
+/**
+ * Binds i18next to the language reported by the surrounding `LanguageProvider`.
+ * Use this inside `VertesiaShell` (or wherever a `LanguageProvider` ancestor is
+ * available) so language changes propagate to all `useUITranslation()` callers
+ * without a static `lng` prop.
+ */
+export function LanguageBoundI18nProvider({ children }: { children: ReactNode }) {
+    const { language } = useLanguage();
+    return <I18nProvider lng={language}>{children}</I18nProvider>;
 }
 
 /**
@@ -43,3 +53,16 @@ export function useUITranslation() {
 }
 
 export { i18nInstance, NAMESPACE } from './instance.js';
+export {
+    LanguageProvider,
+    LanguageProviderContext,
+    useLanguage,
+} from './LanguageProvider.js';
+export {
+    isRTL,
+    RTL_LANGUAGES,
+    resolveLanguage,
+    SUPPORTED_LANGUAGES,
+    type SupportedLanguage,
+} from './rtl.js';
+export { type LocaleFormat, useLocaleFormat } from './useLocaleFormat.js';

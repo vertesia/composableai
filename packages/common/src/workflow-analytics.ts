@@ -15,7 +15,7 @@ export enum AgentEventType {
     AgentRunStarted = 'agent_run_started',
     AgentRunCompleted = 'agent_run_completed',
     LlmCall = 'llm_call',
-    ToolCall = 'tool_call'
+    ToolCall = 'tool_call',
 }
 
 /**
@@ -32,7 +32,6 @@ export enum LlmCallType {
     Checkpoint = 'checkpoint',
     /** Nested interaction call from within tools */
     NestedInteraction = 'nested_interaction',
-
 }
 
 /**
@@ -58,7 +57,7 @@ export enum TelemetryToolType {
  */
 export interface BaseAgentEvent {
     /** Type of the event */
-    eventType: string;
+    eventType: AgentEventType;
     /** ISO 8601 timestamp */
     timestamp: string;
     /** Globally unique ID for this agent run */
@@ -138,7 +137,7 @@ export interface AgentRunCompletedEvent extends BaseAgentEvent {
  * Emitted for each LLM call (start/resume conversation)
  * Note: model, environmentId, environmentType are required (override base optional)
  */
-export interface LlmCallEvent extends BaseAgentEvent {
+interface BaseLlmCallEvent extends BaseAgentEvent {
     eventType: AgentEventType.LlmCall;
     /** Number of input/prompt tokens */
     promptTokens: number;
@@ -165,6 +164,8 @@ export interface LlmCallEvent extends BaseAgentEvent {
     /** Error type if failed */
     errorType?: string;
 }
+
+export interface LlmCallEvent extends BaseLlmCallEvent {}
 
 // ============================================================================
 // Tool Call Events
@@ -238,18 +239,14 @@ export interface NestedInteractionEvent extends LlmCallEvent {
     toolType: TelemetryToolType;
 }
 
-
 // ============================================================================
 // Union type for all events
 // ============================================================================
 
-export type AgentEvent =
-    | AgentRunStartedEvent
-    | AgentRunCompletedEvent
-    | LlmCallEvent
-    | ToolCallEvent
-    | CheckpointCreatedEvent
-    | NestedInteractionEvent;   
+/**
+ * @discriminator eventType
+ */
+export type AgentEvent = AgentRunStartedEvent | AgentRunCompletedEvent | LlmCallEvent | ToolCallEvent;
 
 /**
  * Workflow Analytics Types
@@ -271,12 +268,12 @@ export type WorkflowAnalyticsResolution = 'minute' | 'hour' | 'day' | 'week' | '
  * Dimensions to group analytics by
  */
 export type WorkflowAnalyticsGroupBy =
-    | 'model'           // Group by LLM model (claude-3-5-sonnet, gemini-1.5-pro, etc.)
-    | 'environment'     // Group by environment/driver (vertexai, bedrock, openai)
-    | 'tool'            // Group by tool name
-    | 'toolType'        // Group by tool type (builtin, interaction, remote, skill)
-    | 'agent'           // Group by agent/interaction name
-    | 'errorType';      // Group by error type
+    | 'model' // Group by LLM model (claude-3-5-sonnet, gemini-1.5-pro, etc.)
+    | 'environment' // Group by environment/driver (vertexai, bedrock, openai)
+    | 'tool' // Group by tool name
+    | 'toolType' // Group by tool type (builtin, interaction, remote, skill)
+    | 'agent' // Group by agent/interaction name
+    | 'errorType'; // Group by error type
 
 /**
  * Filter criteria for workflow analytics queries

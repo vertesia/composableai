@@ -1,22 +1,25 @@
-import { decodeEndpoints, VertesiaClient } from "@vertesia/client";
-import { AuthTokenPayload } from "@vertesia/common";
-import { Context } from "hono";
-import { HTTPException } from "hono/http-exception";
-import { createLocalJWKSet, decodeJwt, JSONWebKeySet, jwtVerify, JWTVerifyGetKey } from "jose";
-import { ToolExecutionContext } from "./types.js";
+import { decodeEndpoints, VertesiaClient } from '@vertesia/client';
+import type { AuthTokenPayload } from '@vertesia/common';
+import type { Context } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import { createLocalJWKSet, decodeJwt, type JSONWebKeySet, type JWTVerifyGetKey, jwtVerify } from 'jose';
+import type { ToolExecutionContext } from './types.js';
+
 const cache: Record<string, JWTVerifyGetKey> = {};
 
 export async function getJwks(url: string) {
     if (!cache[url]) {
         console.log('JWKS cache miss for: ', url);
-        const jwks = await fetch(url).then(r => {
-            if (r.ok) {
-                return r.json() as Promise<JSONWebKeySet>;
-            }
-            throw new Error("Fetching jwks failed with code: " + r.status);
-        }).catch(err => {
-            throw new Error("Failed to fetch jwks: " + err.message);
-        })
+        const jwks = await fetch(url)
+            .then((r) => {
+                if (r.ok) {
+                    return r.json() as Promise<JSONWebKeySet>;
+                }
+                throw new Error(`Fetching jwks failed with code: ${r.status}`);
+            })
+            .catch((err) => {
+                throw new Error(`Failed to fetch jwks: ${err.message}`);
+            });
         cache[url] = createLocalJWKSet(jwks);
     }
     return cache[url];
@@ -25,15 +28,14 @@ export async function getJwks(url: string) {
 export async function verifyToken(token: string) {
     const decodedJwt = decodeJwt(token);
     if (!decodedJwt.iss) {
-        throw new Error("No issuer URL found in JWT");
+        throw new Error('No issuer URL found in JWT');
     }
     if (!isAllowedIssuer(decodedJwt.iss)) {
-        throw new Error("Issuer is not allowed: " + decodedJwt.iss);
+        throw new Error(`Issuer is not allowed: ${decodedJwt.iss}`);
     }
     const jwks = await getJwks(`${decodedJwt.iss}/.well-known/jwks`);
     return await jwtVerify<AuthTokenPayload>(token, jwks);
 }
-
 
 export interface EndpointOverrides {
     studio?: string;
@@ -51,31 +53,32 @@ export async function authorize(ctx: Context, endpointOverrides?: EndpointOverri
     const auth = ctx.req.header('Authorization');
     if (!auth) {
         throw new HTTPException(401, {
-            message: `Missing Authorization header`
+            message: `Missing Authorization header`,
         });
     }
     const [scheme, value] = auth.trim().split(' ');
     if (scheme.toLowerCase() !== 'bearer') {
         throw new HTTPException(401, {
-            message: `Authorization scheme ${scheme} is not supported`
+            message: `Authorization scheme ${scheme} is not supported`,
         });
     }
     if (!value) {
         throw new HTTPException(401, {
-            message: `Missing bearer token value`
+            message: `Missing bearer token value`,
         });
     }
     try {
         const { payload } = await verifyToken(value);
         assertAllowedOrg(payload);
         const session = new AuthSession(value, payload, endpointOverrides, toolContext);
-        ctx.set("auth", session);
+        ctx.set('auth', session);
         return session;
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (err instanceof HTTPException) throw err;
+        const message = err instanceof Error ? err.message : String(err);
         throw new HTTPException(401, {
-            message: err.message,
-            cause: err
+            message,
+            cause: err,
         });
     }
 }
@@ -93,7 +96,7 @@ export class AuthSession implements ToolExecutionContext {
         public token: string,
         public payload: AuthTokenPayload,
         endpointOverrides?: EndpointOverrides,
-        toolContext?: ToolContext
+        toolContext?: ToolContext,
     ) {
         const decoded = decodeEndpoints(payload.endpoints);
         // Use overrides from workflow config if provided, falling back to JWT endpoints
@@ -121,7 +124,7 @@ export class AuthSession implements ToolExecutionContext {
 }
 
 function isAllowedIssuer(iss: string) {
-    return iss.endsWith(".vertesia.io") || iss.endsWith(".becomposable.com");
+    return iss.endsWith('.vertesia.io') || iss.endsWith('.becomposable.com');
 }
 
 /**
@@ -133,7 +136,12 @@ function getAllowedOrgs(): Set<string> | null {
     if (_allowedOrgs === undefined) {
         const raw = process.env.VERTESIA_ALLOWED_ORGS;
         _allowedOrgs = raw
-            ? new Set(raw.split(',').map(s => s.trim()).filter(Boolean))
+            ? new Set(
+                  raw
+                      .split(',')
+                      .map((s) => s.trim())
+                      .filter(Boolean),
+              )
             : null;
     }
     return _allowedOrgs;

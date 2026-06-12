@@ -1,32 +1,13 @@
 {
-  "compilerOptions": {
-    /* Visit https://aka.ms/tsconfig to read more about this file */
-    /* Projects */
-    // "incremental": true,                              /* Save .tsbuildinfo files to allow for incremental compilation of projects. */
-    "composite": true, /* Enable constraints that allow a TypeScript project to be used with project references. */
-    // "tsBuildInfoFile": "./.tsbuildinfo",              /* Specify the path to .tsbuildinfo incremental compilation file. */
-    // "disableSourceOfProjectReferenceRedirect": true,  /* Disable preferring source files instead of declaration files when referencing composite projects. */
-    // "disableSolutionSearching": true,                 /* Opt a project out of multi-project reference checking when editing. */
-    // "disableReferencedProjectLoad": true,             /* Reduce the number of projects loaded automatically by TypeScript. */
-    /* Language and Environment */
-    "target": "ES2024", /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
-    "experimentalDecorators": true, /* Enable experimental support for legacy experimental decorators. */
-    "module": "NodeNext", /* Specify what module code is generated. */
-    "rootDir": ".", /* Specify the root folder within your source files. */
-    "paths": {
-      "api-fetch-client": [
-        "../src"
-      ]
-    }, /* Specify a set of entries that re-map imports to additional lookup locations. */
-    "noEmit": true, /* Disable emitting files from a compilation. */
-    "esModuleInterop": true, /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
-    "forceConsistentCasingInFileNames": true, /* Ensure that casing is correct in imports. */
-    "strict": true, /* Enable all strict type-checking options. */ /* Skip type checking .d.ts files that are included with TypeScript. */
-    "skipLibCheck": true /* Skip type checking all .d.ts files. */
-  },
-  "references": [
-    {
-      "path": "../tsconfig.json"
-    }
-  ]
+    "extends": "@vertesia/tsconfig/lib.json",
+    "compilerOptions": {
+        "rootDir": ".",
+        "noEmit": true,
+        "composite": false,
+        "types": ["mocha"]
+    },
+    "include": ["."],
+    "references": [
+        { "path": "../tsconfig.json" }
+    ]
 }

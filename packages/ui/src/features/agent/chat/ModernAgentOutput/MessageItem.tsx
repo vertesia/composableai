@@ -1,71 +1,40 @@
-import { AgentMessage, AgentMessageType, AskUserMessageDetails, MarkdownRenditionFormat } from "@vertesia/common";
-import { Badge, Button, cn, Dropdown, MenuItem, useToast } from "@vertesia/ui/core";
-import { NavLink } from "@vertesia/ui/router";
-import { useUserSession } from "@vertesia/ui/session";
-import { MarkdownRenderer } from "@vertesia/ui/widgets";
-import dayjs from "dayjs";
-import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, type LucideIcon, MessageSquare, RefreshCcw, User } from "lucide-react";
-import React, { useEffect, useState, useMemo, memo, useRef } from "react";
-import { useUITranslation } from '../../../../i18n/index.js';
-import { PulsatingCircle } from "../AnimatedThinkingDots";
-import { AskUserWidget } from "../AskUserWidget";
-import { useImageLightbox } from "../ImageLightbox";
-import { ThinkingMessages } from "../WaitingMessages";
-import { getWorkstreamId } from "./utils";
-import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
-import { useDownloadFile } from "../../../store/index.js";
-
-// PERFORMANCE: Move pure function outside component to avoid recreation on every render
-// Process content to enhance markdown detection for lists and thinking messages
-function processContentForMarkdown(content: string | object, messageType: AgentMessageType, originalMessage?: string): string | object {
-    // If content is not a string, return it as is
-    if (typeof content !== "string") {
-        return content;
-    }
-
-    // Special handling for thought messages to ensure proper markdown formatting
-    if (
-        messageType === AgentMessageType.THOUGHT ||
-        (typeof originalMessage === "string" &&
-            (originalMessage.toLowerCase().includes("thinking about") ||
-                originalMessage.toLowerCase().includes("i'm thinking") ||
-                originalMessage.toLowerCase().includes("💭")))
-    ) {
-        let formattedContent = content;
-
-        // Check for numbering patterns like "1. First item 2. Second item"
-        if (/\d+\.\s+.+/.test(formattedContent)) {
-            // Format numbered lists by adding newlines between items
-            formattedContent = formattedContent.replace(/(\d+\.\s+.+?)(?=\s+\d+\.\s+|$)/g, "$1\n\n");
-
-            // Make sure nested content under numbered items is properly indented
-            formattedContent = formattedContent.replace(/(\d+\.\s+.+\n)([^\d\n][^:])/g, "$1  $2");
-        }
-
-        // Handle colon-prefixed items that should be on separate lines
-        if (formattedContent.includes(":") && !formattedContent.includes("\n\n")) {
-            formattedContent = formattedContent.replace(
-                /\b(First|Next|Then|Finally|Lastly|Additionally|Step \d+):\s+/gi,
-                "\n\n$&",
-            );
-        }
-
-        // Handle thinking points or list-like structures even without numbers
-        if (formattedContent.includes(" - ")) {
-            formattedContent = formattedContent.replace(/\s+-\s+/g, "\n- ");
-        }
-
-        return formattedContent;
-    }
-
-    // Normal processing for non-thinking messages
-    if (/\d+\.\s+.+/.test(content) && !content.includes("\n\n")) {
-        // Add proper line breaks for numbered lists that aren't already properly formatted
-        return content.replace(/(\d+\.\s+.+?)(?=\s+\d+\.\s+|$)/g, "$1\n\n");
-    }
-
-    return content;
-}
+import {
+    type AgentMessage,
+    AgentMessageType,
+    type AskUserMessageDetails,
+    MarkdownRenditionFormat,
+} from '@vertesia/common';
+import { Badge, Button, cn, Dropdown, MenuItem, useToast } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { NavLink, useRouterContext } from '@vertesia/ui/router';
+import { useUserSession } from '@vertesia/ui/session';
+import { MarkdownRenderer } from '@vertesia/ui/widgets';
+import dayjs from 'dayjs';
+import {
+    AlertCircle,
+    Bot,
+    CheckCircle,
+    Clock,
+    CopyIcon,
+    Download,
+    Info,
+    Layers,
+    type LucideIcon,
+    MessageSquare,
+    RefreshCcw,
+    User,
+} from 'lucide-react';
+import type React from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { useDownloadFile } from '../../../store/objects/components/useDownloadFile.js';
+import { PulsatingCircle } from '../AnimatedThinkingDots';
+import { AskUserWidget } from '../AskUserWidget';
+import { useImageLightbox } from '../ImageLightbox';
+import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
+import { ThinkingMessages } from '../WaitingMessages';
+import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
+import { processContentForMarkdown } from './processContentForMarkdown';
+import { getWorkstreamId } from './utils';
 
 /** className overrides for MessageItem — single source of truth for all className overrides. */
 export interface MessageItemClassNames {
@@ -93,9 +62,16 @@ export interface MessageItemClassNames {
 
 /** Keys of {@link MessageItemClassNames} — drives className merging and memo comparison. */
 const MESSAGE_ITEM_CLASS_NAME_KEYS: (keyof MessageItemClassNames)[] = [
-    'className', 'cardClassName', 'headerClassName', 'contentClassName',
-    'timestampClassName', 'senderClassName', 'iconClassName',
-    'detailsClassName', 'artifactsClassName', 'proseClassName',
+    'className',
+    'cardClassName',
+    'headerClassName',
+    'contentClassName',
+    'timestampClassName',
+    'senderClassName',
+    'iconClassName',
+    'detailsClassName',
+    'artifactsClassName',
+    'proseClassName',
 ];
 
 /** Merge className slots across base, prop, and override layers with consistent priority. */
@@ -106,7 +82,7 @@ function mergeClassNames(
 ): MessageItemClassNames {
     const result: Record<string, string | undefined> = {};
     for (const key of MESSAGE_ITEM_CLASS_NAME_KEYS) {
-        result[key] = cn(base[key], props[key], ...overrides.map(o => o?.[key]));
+        result[key] = cn(base[key], props[key], ...overrides.map((o) => o?.[key]));
     }
     return result as MessageItemClassNames;
 }
@@ -130,6 +106,8 @@ export interface MessageItemProps extends MessageItemClassNames {
     showPulsatingCircle?: boolean;
     /** Callback when user sends a message (e.g., from proposal selection) */
     onSendMessage?: (message: string) => void;
+    /** Whether a REQUEST_INPUT message has already been answered by a later user message */
+    requestInputAnswered?: boolean;
     /** Sparse per-type overrides for MESSAGE_STYLES (deep-merged with defaults) */
     messageStyleOverrides?: Partial<Record<AgentMessageType | 'default', Partial<MessageStyleConfig>>>;
     /** Custom component to render store/document links instead of default NavLink navigation */
@@ -140,28 +118,84 @@ export interface MessageItemProps extends MessageItemClassNames {
 
 // Consolidated Studio/default message styling - single source of truth
 export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleConfig> = {
-    [AgentMessageType.ANSWER]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.COMPLETE]: { borderColor: 'border-l-success', iconColor: 'text-success', sender: 'Completed', Icon: CheckCircle },
-    [AgentMessageType.IDLE]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
-    [AgentMessageType.REQUEST_INPUT]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Input', Icon: User },
-    [AgentMessageType.QUESTION]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
-    [AgentMessageType.THOUGHT]: { borderColor: 'border-l-purple-500', iconColor: 'text-purple-600 dark:text-purple-400', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.ERROR]: { borderColor: 'border-l-destructive', iconColor: 'text-destructive', sender: 'Error', Icon: AlertCircle },
-    [AgentMessageType.UPDATE]: { borderColor: 'border-l-success', iconColor: 'text-success', sender: 'Update', Icon: Info },
-    [AgentMessageType.PLAN]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Plan', Icon: MessageSquare },
-    [AgentMessageType.TERMINATED]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'Terminated', Icon: CheckCircle },
-    [AgentMessageType.WARNING]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Warning', Icon: AlertCircle },
-    [AgentMessageType.SYSTEM]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
-    [AgentMessageType.STREAMING_CHUNK]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.BATCH_PROGRESS]: { borderColor: 'border-l-blue-500', iconColor: 'text-blue-600 dark:text-blue-400', sender: 'Batch', Icon: Layers },
-    [AgentMessageType.RESTARTING]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Restarting', Icon: RefreshCcw },
-    default: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.ANSWER]: { borderColor: 'border-s-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.COMPLETE]: {
+        borderColor: 'border-s-success',
+        iconColor: 'text-success',
+        sender: 'Completed',
+        Icon: CheckCircle,
+    },
+    [AgentMessageType.IDLE]: { borderColor: 'border-s-info', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
+    [AgentMessageType.REQUEST_INPUT]: {
+        borderColor: 'border-s-attention',
+        iconColor: 'text-attention',
+        sender: 'Input',
+        Icon: User,
+    },
+    [AgentMessageType.QUESTION]: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
+    [AgentMessageType.THOUGHT]: {
+        borderColor: 'border-s-purple-500',
+        iconColor: 'text-purple-600 dark:text-purple-400',
+        sender: 'Agent',
+        Icon: Bot,
+    },
+    [AgentMessageType.ERROR]: {
+        borderColor: 'border-s-destructive',
+        iconColor: 'text-destructive',
+        sender: 'Error',
+        Icon: AlertCircle,
+    },
+    [AgentMessageType.UPDATE]: {
+        borderColor: 'border-s-success',
+        iconColor: 'text-success',
+        sender: 'Update',
+        Icon: Info,
+    },
+    [AgentMessageType.PLAN]: {
+        borderColor: 'border-s-attention',
+        iconColor: 'text-attention',
+        sender: 'Plan',
+        Icon: MessageSquare,
+    },
+    [AgentMessageType.TERMINATED]: {
+        borderColor: 'border-s-muted',
+        iconColor: 'text-muted',
+        sender: 'Terminated',
+        Icon: CheckCircle,
+    },
+    [AgentMessageType.WARNING]: {
+        borderColor: 'border-s-attention',
+        iconColor: 'text-attention',
+        sender: 'Warning',
+        Icon: AlertCircle,
+    },
+    [AgentMessageType.SYSTEM]: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
+    [AgentMessageType.STREAMING_CHUNK]: {
+        borderColor: 'border-s-info',
+        iconColor: 'text-info',
+        sender: 'Agent',
+        Icon: Bot,
+    },
+    [AgentMessageType.BATCH_PROGRESS]: {
+        borderColor: 'border-s-blue-500',
+        iconColor: 'text-blue-600 dark:text-blue-400',
+        sender: 'Batch',
+        Icon: Layers,
+    },
+    [AgentMessageType.RESTARTING]: {
+        borderColor: 'border-s-attention',
+        iconColor: 'text-attention',
+        sender: 'Restarting',
+        Icon: RefreshCcw,
+    },
+    default: { borderColor: 'border-s-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
 };
 
 function MessageItemComponent({
     message,
     showPulsatingCircle = false,
     onSendMessage,
+    requestInputAnswered = false,
     className,
     cardClassName,
     headerClassName,
@@ -182,6 +216,7 @@ function MessageItemComponent({
     const toast = useToast();
     const urlCache = useArtifactUrlCache();
     const { openImage } = useImageLightbox();
+    const { router } = useRouterContext();
     // Use refs to avoid triggering effect re-runs when these stable values are accessed
     const clientRef = useRef(client);
     clientRef.current = client;
@@ -197,25 +232,49 @@ function MessageItemComponent({
         const typeOverrides = messageStyleOverrides?.[message.type];
 
         return {
-            ...base, ...defaultOverrides, ...typeOverrides,
-            ...mergeClassNames(base, {
-                className, cardClassName, headerClassName, contentClassName,
-                timestampClassName, senderClassName, iconClassName,
-                detailsClassName, artifactsClassName, proseClassName,
-            }, defaultOverrides, typeOverrides),
+            ...base,
+            ...defaultOverrides,
+            ...typeOverrides,
+            ...mergeClassNames(
+                base,
+                {
+                    className,
+                    cardClassName,
+                    headerClassName,
+                    contentClassName,
+                    timestampClassName,
+                    senderClassName,
+                    iconClassName,
+                    detailsClassName,
+                    artifactsClassName,
+                    proseClassName,
+                },
+                defaultOverrides,
+                typeOverrides,
+            ),
         };
-    }, [message.type, messageStyleOverrides,
-        className, cardClassName, headerClassName, contentClassName,
-        timestampClassName, senderClassName, iconClassName,
-        detailsClassName, artifactsClassName, proseClassName]);
+    }, [
+        message.type,
+        messageStyleOverrides,
+        className,
+        cardClassName,
+        headerClassName,
+        contentClassName,
+        timestampClassName,
+        senderClassName,
+        iconClassName,
+        detailsClassName,
+        artifactsClassName,
+        proseClassName,
+    ]);
 
     // PERFORMANCE: Memoize message content extraction - only recalculates when message changes
     const messageContent = useMemo(() => {
-        let content = "";
+        let content = '';
 
         if (message.message) {
             // Check if message.message is an object
-            if (typeof message.message === "object") {
+            if (typeof message.message === 'object') {
                 // Use JSONView for objects - we'll need to stringify it for now
                 content = JSON.stringify(message.message, null, 2);
             } else if (message.message.trim) {
@@ -227,7 +286,7 @@ function MessageItemComponent({
         }
 
         // Replace %thinking_message% placeholder with a thinking message
-        if (typeof content === "string" && content.includes("%thinking_message%")) {
+        if (typeof content === 'string' && content.includes('%thinking_message%')) {
             // Get a random thinking message since we don't have access to thinkingMessageIndex here
             const randomIndex = Math.floor(Math.random() * ThinkingMessages.length);
             content = content.replace(/%thinking_message%/g, ThinkingMessages[randomIndex]);
@@ -236,31 +295,39 @@ function MessageItemComponent({
         return content;
     }, [message.message]);
 
+    const parsedUserAttachments = useMemo(
+        () => (message.type === AgentMessageType.QUESTION ? parseUserMessageAttachments(messageContent) : null),
+        [messageContent, message.type],
+    );
+
+    const visibleMessageContent = parsedUserAttachments?.body ?? messageContent;
+    const messageAttachments = parsedUserAttachments?.attachments ?? [];
+
     // PERFORMANCE: Memoize processed content - expensive regex operations only run when messageContent changes
     const processedContent = useMemo(() => {
-        if (!messageContent) return "";
+        if (!visibleMessageContent) return '';
         return processContentForMarkdown(
-            messageContent,
+            visibleMessageContent,
             message.type,
-            typeof message.message === "string" ? message.message : undefined
+            typeof message.message === 'string' ? message.message : undefined,
         );
-    }, [messageContent, message.type, message.message]);
+    }, [visibleMessageContent, message.type, message.message]);
 
     // Copy message content to clipboard
     const copyToClipboard = () => {
-        const content = messageContent || "";
+        const content = messageContent || '';
         const detailsContent =
-            typeof message.details === "string"
+            typeof message.details === 'string'
                 ? message.details
                 : message.details
-                    ? JSON.stringify(message.details, null, 2)
-                    : "";
+                  ? JSON.stringify(message.details, null, 2)
+                  : '';
 
-        const textToCopy = [content, detailsContent ? "\n\nDetails:\n" + detailsContent : ""].join("").trim();
+        const textToCopy = [content, detailsContent ? `\n\nDetails:\n${detailsContent}` : ''].join('').trim();
 
         navigator.clipboard.writeText(textToCopy).then(() => {
             toast({
-                status: "success",
+                status: 'success',
                 title: t('agent.copiedToClipboard'),
                 duration: 2000,
             });
@@ -273,14 +340,14 @@ function MessageItemComponent({
 
         if (!content.trim()) {
             toast({
-                status: "error",
+                status: 'error',
                 title: t('agent.noContentToExport'),
                 duration: 2000,
             });
             return;
         }
 
-        const title = `Message ${dayjs(message.timestamp).format("YYYY-MM-DD HH-mm-ss")}`;
+        const title = `Message ${dayjs(message.timestamp).format('YYYY-MM-DD HH-mm-ss')}`;
         await exportContent(content, {
             format,
             title,
@@ -292,61 +359,79 @@ function MessageItemComponent({
     const hasExportableContent = typeof messageContent === 'string' && messageContent.trim().length > 0;
 
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
-    const markdownComponents = useMemo(() => ({
-        a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
-            const href = props.href || "";
-            if (href.includes("/store/objects")) {
-                if (StoreLinkComponent) {
-                    const documentId = href.split("/store/objects/")[1] || "";
-                    return <StoreLinkComponent href={href} documentId={documentId}>{props.children}</StoreLinkComponent>;
+    const markdownComponents = useMemo(
+        () => ({
+            a: ({
+                node,
+                ref,
+                ...props
+            }: {
+                node?: unknown;
+                ref?: unknown;
+                href?: string;
+                children?: React.ReactNode;
+            }) => {
+                const href = props.href || '';
+                // Carry the active account (`a`) & project (`p`) params on internal routes so
+                // copy-link / open-in-new-tab preserve the current tenant.
+                const withParams = href.startsWith('/') ? router.getTopRouter().navigator.addStickyParams(href) : href;
+                if (href.includes('/store/objects')) {
+                    if (StoreLinkComponent) {
+                        const documentId = href.split('/store/objects/')[1] || '';
+                        return (
+                            <StoreLinkComponent href={withParams} documentId={documentId}>
+                                {props.children}
+                            </StoreLinkComponent>
+                        );
+                    }
+                    return (
+                        <NavLink href={withParams} topLevelNav>
+                            {props.children}
+                        </NavLink>
+                    );
                 }
-                return (
-                    <NavLink
-                        href={href}
-                        topLevelNav
-                    >
-                        {props.children}
-                    </NavLink>
-                );
-            }
-            if (href.includes("/store/collections")) {
-                if (CollectionLinkComponent) {
-                    const collectionId = href.split("/store/collections/")[1] || "";
-                    return <CollectionLinkComponent href={href} collectionId={collectionId}>{props.children}</CollectionLinkComponent>;
+                if (href.includes('/store/collections')) {
+                    if (CollectionLinkComponent) {
+                        const collectionId = href.split('/store/collections/')[1] || '';
+                        return (
+                            <CollectionLinkComponent href={withParams} collectionId={collectionId}>
+                                {props.children}
+                            </CollectionLinkComponent>
+                        );
+                    }
+                    return (
+                        <NavLink href={withParams} topLevelNav>
+                            {props.children}
+                        </NavLink>
+                    );
                 }
+                return <a {...props} target="_blank" rel="noopener noreferrer" />;
+            },
+            img: ({ node, ref, ...props }: { node?: unknown; ref?: unknown; src?: string; alt?: string }) => {
                 return (
-                    <NavLink
-                        href={href}
-                        topLevelNav
+                    <Button
+                        variant="unstyled"
+                        className="block p-0"
+                        onClick={() => props.src && openImage(props.src, props.alt)}
+                        aria-label={props.alt || props.src || 'image'}
                     >
-                        {props.children}
-                    </NavLink>
+                        <img
+                            {...props}
+                            alt={props.alt ?? ''}
+                            className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
+                            loading="lazy"
+                        />
+                    </Button>
                 );
-            }
-            return (
-                <a
-                    {...props}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                />
-            );
-        },
-        img: ({ node, ref, ...props }: { node?: any; ref?: any; src?: string; alt?: string }) => {
-            return (
-                <img
-                    {...props}
-                    className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
-                    loading="lazy"
-                    onClick={() => props.src && openImage(props.src, props.alt)}
-                />
-            );
-        },
-    }), [openImage, StoreLinkComponent, CollectionLinkComponent]);
+            },
+        }),
+        [openImage, StoreLinkComponent, CollectionLinkComponent, router],
+    );
 
     // Render content with markdown support - all messages now rendered as markdown
     const renderContent = (content: string | object) => {
         // Handle object content (JSON)
-        if (typeof content === "object") {
+        if (typeof content === 'object') {
             return (
                 <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-700">
                     {JSON.stringify(content, null, 2)}
@@ -355,18 +440,24 @@ function MessageItemComponent({
         }
 
         // Handle string content with markdown - content is already processed
-        const runId = (message as any).workflow_run_id as string | undefined;
+        const runId = message.workflow_run_id;
 
         if (!runId && typeof content === 'string' && content.includes('artifact:')) {
             console.warn('[MessageItem] message contains artifact references but workflow_run_id is missing!', {
                 type: message.type,
-                workflow_run_id: (message as any).workflow_run_id,
+                workflow_run_id: message.workflow_run_id,
                 hasArtifact: content.includes('artifact:'),
             });
         }
 
         return (
-            <div className={cn("vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words", resolvedStyle.proseClassName)} style={{ overflowWrap: 'anywhere' }}>
+            <div
+                className={cn(
+                    'vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words',
+                    resolvedStyle.proseClassName,
+                )}
+                style={{ overflowWrap: 'anywhere' }}
+            >
                 <MarkdownRenderer
                     artifactRunId={runId}
                     onProposalSelect={(optionId) => onSendMessage?.(optionId)}
@@ -384,12 +475,10 @@ function MessageItemComponent({
         { displayName: string; artifactPath: string; url: string; isImage: boolean }[]
     >([]);
 
-    // Create stable key from message for dependency tracking
-    const runId = (message as any).workflow_run_id as string | undefined;
-    const details = message.details as any;
+    const runId = message.workflow_run_id;
+    const details = message.details;
     // Check both outputFiles (from execute_shell) and files (from tool results like dashboard tools)
-    const outputFiles: unknown = details?.outputFiles ?? details?.files;
-    const outputFilesKey = Array.isArray(outputFiles) ? outputFiles.join(",") : "";
+    const outputFiles = details?.outputFiles ?? details?.files;
 
     useEffect(() => {
         const loadArtifacts = async () => {
@@ -404,15 +493,15 @@ function MessageItemComponent({
             try {
                 const entries = await Promise.all(
                     outputFiles.map(async (name: unknown) => {
-                        if (typeof name !== "string" || !name.trim()) return null;
+                        if (typeof name !== 'string' || !name.trim()) return null;
                         const trimmed = name.trim();
                         // Strip artifact: protocol prefix to get the artifact-relative path
-                        const artifactPath = trimmed.startsWith("artifact:") ? trimmed.slice(9) : trimmed;
+                        const artifactPath = trimmed.startsWith('artifact:') ? trimmed.slice(9) : trimmed;
 
-                        const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
-                        const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
+                        const ext = artifactPath.split('.').pop()?.toLowerCase() || '';
+                        const imageExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg']);
                         const isImage = imageExtensions.has(ext);
-                        const disposition = isImage ? "inline" : "attachment";
+                        const disposition = isImage ? 'inline' : 'attachment';
 
                         try {
                             // Use cache if available
@@ -421,11 +510,19 @@ function MessageItemComponent({
 
                             if (currentUrlCache) {
                                 url = await currentUrlCache.getOrFetch(cacheKey, async () => {
-                                    const result = await currentClient.files.getArtifactDownloadUrl(runId, artifactPath, disposition);
+                                    const result = await currentClient.files.getArtifactDownloadUrl(
+                                        runId,
+                                        artifactPath,
+                                        disposition,
+                                    );
                                     return result.url;
                                 });
                             } else {
-                                const result = await currentClient.files.getArtifactDownloadUrl(runId, artifactPath, disposition);
+                                const result = await currentClient.files.getArtifactDownloadUrl(
+                                    runId,
+                                    artifactPath,
+                                    disposition,
+                                );
                                 url = result.url;
                             }
 
@@ -448,13 +545,13 @@ function MessageItemComponent({
                     ),
                 );
             } catch (error) {
-                console.error("Error loading artifact URLs from message details", error);
+                console.error('Error loading artifact URLs from message details', error);
                 setArtifactLinks([]);
             }
         };
 
-        loadArtifacts();
-    }, [runId, outputFilesKey]);
+        void loadArtifacts();
+    }, [runId, outputFiles]);
 
     const workstreamId = getWorkstreamId(message);
     const { Icon } = resolvedStyle;
@@ -468,30 +565,39 @@ function MessageItemComponent({
     };
 
     return (
-        <div className={cn("w-full max-w-full", resolvedStyle.className)}>
+        <div className={cn('w-full max-w-full', resolvedStyle.className)}>
             <div
-                className={cn("border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden", resolvedStyle.borderColor, resolvedStyle.cardClassName)}
+                className={cn(
+                    'border-s-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden',
+                    resolvedStyle.borderColor,
+                    resolvedStyle.cardClassName,
+                )}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
-                <div className={cn("flex items-center justify-between px-4 py-1.5", resolvedStyle.headerClassName)}>
+                <div className={cn('flex items-center justify-between px-4 py-1.5', resolvedStyle.headerClassName)}>
                     <div className="flex items-center gap-1.5">
-                        <div className={cn(showPulsatingCircle ? "animate-fadeIn" : "", resolvedStyle.iconClassName)}>
+                        <div className={cn(showPulsatingCircle ? 'animate-fadeIn' : '', resolvedStyle.iconClassName)}>
                             {renderIcon()}
                         </div>
-                        <span className={cn("text-xs font-medium text-muted", resolvedStyle.senderClassName)}>{SENDER_I18N_KEYS[resolvedStyle.sender] ? t(SENDER_I18N_KEYS[resolvedStyle.sender]) : resolvedStyle.sender}</span>
-                        {workstreamId !== "main" && workstreamId !== "all" && (
-                            <Badge variant="default" className="text-xs text-muted ml-1">
+                        <span className={cn('text-xs font-medium text-muted', resolvedStyle.senderClassName)}>
+                            {SENDER_I18N_KEYS[resolvedStyle.sender]
+                                ? t(SENDER_I18N_KEYS[resolvedStyle.sender])
+                                : resolvedStyle.sender}
+                        </span>
+                        {workstreamId !== 'main' && workstreamId !== 'all' && (
+                            <Badge variant="default" className="text-xs text-muted ms-1">
                                 {workstreamId}
                             </Badge>
                         )}
                     </div>
                     <div className="flex items-center gap-1.5 print:hidden">
-                        <span className={cn("text-[11px] text-muted/70", resolvedStyle.timestampClassName)}>
-                            {dayjs(message.timestamp).format("HH:mm:ss")}
+                        <span className={cn('text-[11px] text-muted/70', resolvedStyle.timestampClassName)}>
+                            {dayjs(message.timestamp).format('HH:mm:ss')}
                         </span>
                         <Button
-                            variant="ghost" size="xs"
+                            variant="ghost"
+                            size="xs"
                             onClick={copyToClipboard}
                             className="text-muted/50 hover:text-muted h-5 w-5 p-0"
                             title={t('agent.copyMessage')}
@@ -502,7 +608,8 @@ function MessageItemComponent({
                             <Dropdown
                                 trigger={
                                     <Button
-                                        variant="ghost" size="xs"
+                                        variant="ghost"
+                                        size="xs"
                                         className="text-muted/50 hover:text-muted h-5 w-5 p-0"
                                         title={t('agent.exportMessage')}
                                         disabled={isExportingFile}
@@ -523,123 +630,160 @@ function MessageItemComponent({
                 </div>
 
                 {/* Message content */}
-                <div className={cn("px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden", resolvedStyle.contentClassName)}>
-                {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
-                {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux ? (
-                    (() => {
-                        const uxConfig = (message.details as AskUserMessageDetails).ux!;
-                        return (
-                            <AskUserWidget
-                                question={typeof messageContent === 'string' ? messageContent : ''}
-                                options={uxConfig.options}
-                                variant={uxConfig.variant}
-                                multiSelect={uxConfig.multiSelect}
-                                onSelect={(optionId) => onSendMessage?.(optionId)}
-                                onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(", "))}
-                                hideBorder
-                            />
-                        );
-                    })()
-                ) : messageContent && (
-                    <div className="message-content break-words w-full" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
-                        {renderContent(processedContent || messageContent)}
-                    </div>
-                )}
+                <div
+                    className={cn(
+                        'px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden',
+                        resolvedStyle.contentClassName,
+                    )}
+                >
+                    {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
+                    {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux
+                        ? (() => {
+                              // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
+                              const uxConfig = (message.details as AskUserMessageDetails).ux!;
+                              return (
+                                  <AskUserWidget
+                                      question={typeof messageContent === 'string' ? messageContent : ''}
+                                      options={uxConfig.options}
+                                      variant={uxConfig.variant}
+                                      multiSelect={uxConfig.multiSelect}
+                                      onSelect={(optionId) => onSendMessage?.(optionId)}
+                                      onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                                      hideBorder
+                                      compact
+                                      answered={requestInputAnswered}
+                                  />
+                              );
+                          })()
+                        : visibleMessageContent && (
+                              <div
+                                  className="message-content break-words w-full"
+                                  style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+                              >
+                                  {renderContent(processedContent || visibleMessageContent)}
+                              </div>
+                          )}
 
-                {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
-                {artifactLinks.length > 0 && (
-                    <div className={cn("mt-3 text-xs", resolvedStyle.artifactsClassName)}>
-                        <div className="font-medium text-muted mb-1">Artifacts</div>
+                    {messageAttachments.length > 0 && (
+                        <AttachmentPreviewList
+                            items={messageAttachments}
+                            artifactRunId={runId}
+                            variant="message"
+                            className={cn(visibleMessageContent && 'mt-3')}
+                            StoreLinkComponent={StoreLinkComponent}
+                            CollectionLinkComponent={CollectionLinkComponent}
+                        />
+                    )}
 
-                        {/* Inline previews for image artifacts */}
-                        {artifactLinks.some(a => a.isImage) && (
-                            <div className="mb-2 flex flex-wrap gap-3">
-                                {artifactLinks
-                                    .filter(a => a.isImage)
-                                    .map(({ displayName, artifactPath, url }) => (
-                                        <div
-                                            key={`${artifactPath}-preview`}
-                                            className="max-w-xs cursor-pointer"
-                                            onClick={() => openImage(url, displayName)}
-                                        >
-                                            <img
-                                                src={url}
-                                                alt={displayName}
-                                                className="max-w-full h-auto rounded-lg shadow-sm hover:shadow-md transition-shadow"
-                                            />
-                                            <div className="mt-1 text-[11px] text-muted truncate">
-                                                {displayName}
-                                            </div>
-                                        </div>
-                                    ))}
+                    {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
+                    {artifactLinks.length > 0 && (
+                        <div className={cn('mt-3 text-xs', resolvedStyle.artifactsClassName)}>
+                            <div className="font-medium text-muted mb-1">Artifacts</div>
+
+                            {/* Inline previews for image artifacts */}
+                            {artifactLinks.some((a) => a.isImage) && (
+                                <div className="mb-2 flex flex-wrap gap-3">
+                                    {artifactLinks
+                                        .filter((a) => a.isImage)
+                                        .map(({ displayName, artifactPath, url }) => (
+                                            <Button
+                                                variant="unstyled"
+                                                key={`${artifactPath}-preview`}
+                                                className="max-w-xs cursor-pointer text-start p-0"
+                                                onClick={() => openImage(url, displayName)}
+                                                aria-label={displayName}
+                                            >
+                                                <img
+                                                    src={url}
+                                                    alt={displayName}
+                                                    className="max-w-full h-auto rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                                                />
+                                                <div className="mt-1 text-[11px] text-muted truncate">
+                                                    {displayName}
+                                                </div>
+                                            </Button>
+                                        ))}
+                                </div>
+                            )}
+
+                            {/* Buttons for all artifacts (files and images) */}
+                            <div className="flex flex-wrap gap-2 print:hidden">
+                                {artifactLinks.map(({ displayName, artifactPath, url }) => (
+                                    <Button
+                                        key={artifactPath + url}
+                                        variant="outline"
+                                        size="xs"
+                                        className="px-2 py-1 text-xs"
+                                        onClick={() => window.open(url, '_blank')}
+                                        title={artifactPath}
+                                    >
+                                        {displayName}
+                                    </Button>
+                                ))}
                             </div>
-                        )}
-
-                        {/* Buttons for all artifacts (files and images) */}
-                        <div className="flex flex-wrap gap-2 print:hidden">
-                            {artifactLinks.map(({ displayName, artifactPath, url }) => (
-                                <Button
-                                    key={artifactPath + url}
-                                    variant="outline"
-                                    size="xs"
-                                    className="px-2 py-1 text-xs"
-                                    onClick={() => window.open(url, "_blank")}
-                                    title={artifactPath}
-                                >
-                                    {displayName}
-                                </Button>
-                            ))}
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Optional details section */}
-                {message.details && (
-                    <div className={cn("mt-2 print:hidden", resolvedStyle.detailsClassName)}>
-                        <button
-                            onClick={() => setShowDetails(!showDetails)}
-                            className="text-[11px] text-muted flex items-center"
-                        >
-                            {showDetails ? t('agent.hideDetails') : t('agent.showDetails')}
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className={`h-3 w-3 ml-1 transition-transform ${showDetails ? "rotate-180" : ""}`}
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
+                    {/* Optional details section */}
+                    {message.details && (
+                        <div className={cn('mt-2 print:hidden', resolvedStyle.detailsClassName)}>
+                            <Button
+                                variant="unstyled"
+                                onClick={() => setShowDetails(!showDetails)}
+                                className="text-[11px] text-muted flex items-center"
                             >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
+                                {showDetails ? t('agent.hideDetails') : t('agent.showDetails')}
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className={`h-3 w-3 ms-1 transition-transform ${showDetails ? 'rotate-180' : ''}`}
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 9l-7 7-7-7"
+                                    />
+                                </svg>
+                            </Button>
 
-                        {showDetails && (
-                            <div className="mt-1 p-1.5 bg-muted border border-mixer-muted/40 rounded text-sm">
-                                {typeof message.details === "string" ? (
-                                    renderContent(message.details)
-                                ) : (
-                                    <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-muted">
-                                        {JSON.stringify(message.details, null, 2)}
-                                    </pre>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
+                            {showDetails && (
+                                <div className="mt-1 p-1.5 bg-muted border border-mixer-muted/40 rounded text-sm">
+                                    {typeof message.details === 'string' ? (
+                                        renderContent(message.details)
+                                    ) : (
+                                        <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-muted">
+                                            {JSON.stringify(message.details, null, 2)}
+                                        </pre>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
 }
 
-// Memoize the component to prevent unnecessary re-renders
-// Only re-render when message timestamp, showPulsatingCircle, or className props change
+// Memoize the component to prevent unnecessary re-renders, while still allowing
+// same-timestamp message/detail updates from streaming reconciliation to render.
 const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
     return (
         prevProps.message.timestamp === nextProps.message.timestamp &&
+        prevProps.message.type === nextProps.message.type &&
+        prevProps.message.message === nextProps.message.message &&
+        prevProps.message.details === nextProps.message.details &&
+        prevProps.message.workstream_id === nextProps.message.workstream_id &&
+        prevProps.message.workflow_run_id === nextProps.message.workflow_run_id &&
         prevProps.showPulsatingCircle === nextProps.showPulsatingCircle &&
         prevProps.onSendMessage === nextProps.onSendMessage &&
+        prevProps.requestInputAnswered === nextProps.requestInputAnswered &&
         prevProps.messageStyleOverrides === nextProps.messageStyleOverrides &&
-        MESSAGE_ITEM_CLASS_NAME_KEYS.every(key => prevProps[key] === nextProps[key])
+        MESSAGE_ITEM_CLASS_NAME_KEYS.every((key) => prevProps[key] === nextProps[key])
     );
 });
 

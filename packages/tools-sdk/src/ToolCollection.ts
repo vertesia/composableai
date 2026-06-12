@@ -1,27 +1,34 @@
-import { AgentToolDefinition } from "@vertesia/common";
-import { existsSync, readdirSync, statSync } from "fs";
-import { Context } from "hono";
-import { HTTPException } from "hono/http-exception";
-import { join } from "path";
-import { pathToFileURL } from "url";
-import { authorize } from "./auth.js";
-import { ToolContext } from "./server/types.js";
-import { ToolRegistry } from "./ToolRegistry.js";
-import type { CollectionProperties, ICollection, Tool, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError, ToolUseContext } from "./types.js";
-import { kebabCaseToTitle } from "./utils.js";
+import { existsSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import type { AgentToolDefinition } from '@vertesia/common';
+import type { Context } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import { authorize } from './auth.js';
+import type { ToolContext } from './server/types.js';
+import { ToolRegistry } from './ToolRegistry.js';
+import type {
+    CollectionProperties,
+    ICollection,
+    Tool,
+    ToolExecutionPayload,
+    ToolExecutionResponse,
+    ToolExecutionResponseError,
+    ToolUseContext,
+} from './types.js';
+import { kebabCaseToTitle } from './utils.js';
 
 export interface ToolCollectionProperties extends CollectionProperties {
     /**
      * The tools
      */
-    tools: Tool<any>[];
+    tools: Tool[];
 }
 
 /**
  * Implements a tools collection endpoint
  */
-export class ToolCollection implements ICollection<Tool<any>> {
-
+export class ToolCollection implements ICollection<Tool> {
     /**
      * A kebab case collection name. Must only contains alphanumeric and dash characters,
      * The name can be used to generate the path where the collection is exposed.
@@ -29,7 +36,7 @@ export class ToolCollection implements ICollection<Tool<any>> {
      */
     name: string;
     /**
-     * Optional title for UI display. 
+     * Optional title for UI display.
      * If not provided the title will be generated form the kebab case name by replacing - with spaces and upper casing first letter in words.
      */
     title?: string;
@@ -38,7 +45,7 @@ export class ToolCollection implements ICollection<Tool<any>> {
      */
     icon?: string;
     /**
-     * A short description 
+     * A short description
      */
     description?: string;
     /**
@@ -46,9 +53,7 @@ export class ToolCollection implements ICollection<Tool<any>> {
      */
     tools: ToolRegistry;
 
-    constructor({
-        name, title, icon, description, tools
-    }: ToolCollectionProperties) {
+    constructor({ name, title, icon, description, tools }: ToolCollectionProperties) {
         this.name = name;
         this.title = title || kebabCaseToTitle(name);
         this.icon = icon;
@@ -57,27 +62,27 @@ export class ToolCollection implements ICollection<Tool<any>> {
         this.tools = new ToolRegistry(name, tools);
     }
 
-    [Symbol.iterator](): Iterator<Tool<any>> {
+    [Symbol.iterator](): Iterator<Tool> {
         let index = 0;
         const tools = this.tools.getTools();
 
         return {
-            next(): IteratorResult<Tool<any>> {
+            next(): IteratorResult<Tool> {
                 if (index < tools.length) {
                     return { value: tools[index++], done: false };
                 } else {
                     return { done: true, value: undefined };
                 }
-            }
+            },
         };
     }
 
-    map<U>(callback: (tool: Tool<any>, index: number) => U): U[] {
+    map<U>(callback: (tool: Tool, index: number) => U): U[] {
         return this.tools.getTools().map(callback);
     }
 
-    async execute(ctx: Context, preParsedPayload?: ToolExecutionPayload<any>): Promise<Response> {
-        let payload: ToolExecutionPayload<any> | undefined = preParsedPayload;
+    async execute(ctx: Context, preParsedPayload?: ToolExecutionPayload): Promise<Response> {
+        let payload: ToolExecutionPayload | undefined = preParsedPayload;
         try {
             if (!payload) {
                 payload = await readPayload(ctx);
@@ -99,27 +104,33 @@ export class ToolCollection implements ICollection<Tool<any>> {
             const r = await this.tools.runTool(payload, session);
             return ctx.json({
                 ...r,
-                tool_use_id: payload.tool_use.id
+                tool_use_id: payload.tool_use.id,
             } satisfies ToolExecutionResponse);
-        } catch (err: any) { // HTTPException ?
-            const status = err.status || 500;
+        } catch (err: unknown) {
+            // HTTPException ?
+            const status = err instanceof HTTPException ? err.status : 500;
+            const message = err instanceof Error ? err.message : 'Error executing tool';
+            const stack = err instanceof Error ? err.stack : undefined;
             const toolName = payload?.tool_use?.tool_name;
             const toolUseId = payload?.tool_use?.id;
 
-            console.error("[ToolCollection] Tool execution failed", {
+            console.error('[ToolCollection] Tool execution failed', {
                 collection: this.name,
                 tool: toolName,
                 toolUseId,
-                error: err.message,
+                error: message,
                 status,
-                stack: err.stack,
+                stack,
             });
 
-            return ctx.json({
-                tool_use_id: toolUseId || "undefined",
-                error: err.message || "Error executing tool",
-                status
-            } satisfies ToolExecutionResponseError, status)
+            return ctx.json(
+                {
+                    tool_use_id: toolUseId || 'undefined',
+                    error: message,
+                    status,
+                } satisfies ToolExecutionResponseError,
+                status,
+            );
         }
     }
 
@@ -131,11 +142,9 @@ export class ToolCollection implements ICollection<Tool<any>> {
     getToolDefinitions(context?: ToolUseContext): AgentToolDefinition[] {
         return this.tools.getDefinitions(context);
     }
-
 }
 
-
-function readPayload(ctx: Context): ToolExecutionPayload<any> {
+function readPayload(ctx: Context): ToolExecutionPayload {
     const toolCtx = ctx as ToolContext;
 
     // Check if body was already parsed and validated by middleware
@@ -145,7 +154,8 @@ function readPayload(ctx: Context): ToolExecutionPayload<any> {
 
     // If no payload, middleware couldn't parse/validate - return error
     throw new HTTPException(400, {
-        message: 'Invalid or missing tool execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }'
+        message:
+            'Invalid or missing tool execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }',
     });
 }
 
@@ -166,8 +176,8 @@ function readPayload(ctx: Context): ToolExecutionPayload<any> {
  * @param toolsDir - Path to the tools directory (e.g., /path/to/collection/tools)
  * @returns Promise resolving to array of Tool objects
  */
-export async function loadToolsFromDirectory(toolsDir: string): Promise<Tool<any>[]> {
-    const tools: Tool<any>[] = [];
+export async function loadToolsFromDirectory(toolsDir: string): Promise<Tool[]> {
+    const tools: Tool[] = [];
 
     if (!existsSync(toolsDir)) {
         console.warn(`Tools directory not found: ${toolsDir}`);
@@ -213,4 +223,3 @@ export async function loadToolsFromDirectory(toolsDir: string): Promise<Tool<any
 
     return tools;
 }
-

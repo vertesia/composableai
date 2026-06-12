@@ -1,16 +1,16 @@
-import { JSONSchema } from "@llumiverse/common";
+import type { JSONSchema } from '@llumiverse/common';
 
 export interface CalculatorParams {
     expression: string;
 }
 
 export const Schema = {
-    type: "object",
+    type: 'object',
     properties: {
         expression: {
-            type: "string",
-            description: "A mathematical expression to evaluate (e.g., '2 + 2', '10 * 5 - 3', '2^8')"
-        }
+            type: 'string',
+            description: "A mathematical expression to evaluate (e.g., '2 + 2', '10 * 5 - 3', '2^8')",
+        },
     },
-    required: ["expression"]
+    required: ['expression'],
 } satisfies JSONSchema;

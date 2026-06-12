@@ -1,4 +1,4 @@
-name: update-git-submodule
+name: (sync) Update Git submodule
 
 on:
   repository_dispatch:
@@ -22,31 +22,45 @@ env:
   TARGET_LLUMIVERSE_URL: https://github.com/vertesia/llumiverse/commit/${{ inputs.llumiverse_sha || github.event.client_payload.llumiverse_sha }}
   TARGET_COMPOSABLEAI_BRANCH: ${{ inputs.branch || github.event.client_payload.branch }}
 
+concurrency:
+  # Serialize runs targeting the same branch so two simultaneous dispatches
+  # don't race on PR cleanup or push competing temp branches.
+  group: update-git-submodule-${{ inputs.branch || github.event.client_payload.branch }}
+  cancel-in-progress: false
+
 permissions:
-  contents: write # required for pushing changes to the repository, deleting old branches
-  pull-requests: write # required for creating new pull requests and closing old ones
+  contents: read
 
 jobs:
   update-submodule:
+    name: Update submodule
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Scopes secrets (GITHUB_TOKEN, REPO_STUDIO_ACCESS_TOKEN) to a dedicated
+    # environment (zizmor: secrets-outside-env).
+    environment: build
+    permissions:
+      contents: write       # required for pushing the temp branch and deleting old branches
+      pull-requests: write  # required for creating new PRs and closing superseded ones
     steps:
       - name: Validate branch
         run: |
-          if [[ "${{ env.TARGET_COMPOSABLEAI_BRANCH }}" != "main" && "${{ env.TARGET_COMPOSABLEAI_BRANCH }}" != "preview" ]]; then
-            echo "::error::Invalid branch '${{ env.TARGET_COMPOSABLEAI_BRANCH }}'. Only 'main' and 'preview' branches are supported."
+          if [[ "${TARGET_COMPOSABLEAI_BRANCH}" != "main" && "${TARGET_COMPOSABLEAI_BRANCH}" != "preview" ]]; then
+            echo "::error::Invalid branch '${TARGET_COMPOSABLEAI_BRANCH}'. Only 'main' and 'preview' branches are supported."
             exit 1
           fi
-          echo "Branch '${{ env.TARGET_COMPOSABLEAI_BRANCH }}' is valid."
+          echo "Branch '${TARGET_COMPOSABLEAI_BRANCH}' is valid."
 
       - name: Checkout Repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           submodules: recursive
           fetch-depth: 0 # Fetch all history to ensure we can access the specified commit
           ref: ${{ env.TARGET_COMPOSABLEAI_BRANCH }}
+          persist-credentials: false
 
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v6
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 24
           cache: pnpm
@@ -56,7 +70,7 @@ jobs:
         run: |
           current_llumiverse_sha="$(git ls-tree --format='%(objectname)' HEAD llumiverse)"
 
-          if [ "$current_llumiverse_sha" = "${{ env.TARGET_LLUMIVERSE_SHA }}" ]; then
+          if [ "$current_llumiverse_sha" = "${TARGET_LLUMIVERSE_SHA}" ]; then
             echo "No update needed. Submodule 'llumiverse' is already at target SHA."
             echo "skip=true" >> $GITHUB_OUTPUT
           else
@@ -69,10 +83,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Fetching pull requests with labels: [branch:${{ env.TARGET_COMPOSABLEAI_BRANCH }}] and [workflow:update-llumiverse]..."
+          echo "Fetching pull requests with labels: [branch:${TARGET_COMPOSABLEAI_BRANCH}] and [workflow:update-llumiverse]..."
           pr_list=$(gh pr list \
             --repo vertesia/composableai \
-            --label branch:${{ env.TARGET_COMPOSABLEAI_BRANCH }} \
+            --label branch:${TARGET_COMPOSABLEAI_BRANCH} \
             --label workflow:update-llumiverse \
             --state open \
             --json number,title \
@@ -109,6 +123,7 @@ jobs:
         if: ${{ steps.precheck.outputs.skip != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
           export TARGET_LLUMIVERSE_MSG="$(git -C llumiverse log --format="%cd: %s by %an" --date=short -1 $TARGET_LLUMIVERSE_SHA)"
           export TARGET_LLUMIVERSE_EMAIL="$(git -C llumiverse log --format="%ae" -1 $TARGET_LLUMIVERSE_SHA)"
@@ -152,11 +167,26 @@ jobs:
             echo "Lockfile updated" >&2
           fi
 
-          git push origin $TEMP_BRANCH
+          # Push the branch over SSH with the deploy key rather than GITHUB_TOKEN.
+          # Pushes authenticated with GITHUB_TOKEN do not trigger `on: push`
+          # workflows (GitHub's recursion guard), so the (test) Build and test and
+          # (lint) Lint codebase checks would never run on the sync branch. A
+          # deploy-key push is a regular push and does trigger them, which is what
+          # the automerge-llumiverse workflow gates on. The PR itself is still
+          # created below with GITHUB_TOKEN so its author stays github-actions,
+          # distinct from the automerge app that later approves it.
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -t rsa,ecdsa,ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
+            git push "git@github.com:${GITHUB_REPOSITORY}.git" "$TEMP_BRANCH"
 
           pr_body=$(cat <<EOF
           This PR updates the llumiverse submodule to ${TARGET_LLUMIVERSE_URL}. It was generated by [GitHub Actions](https://github.com/vertesia/composableai/actions/runs/${GITHUB_RUN_ID:-0}).
-          EOF)
+          EOF
+          )
 
           if [ -n "$MAYBE_LLUMIVERSE_PR" ]; then
             pr_body+="
@@ -172,8 +202,9 @@ jobs:
           new_pr_url=$(gh pr create \
               --title "chore: update llumiverse to ${TARGET_LLUMIVERSE_SHA::7}" \
               --body "${pr_body}" \
-              --base ${{ env.TARGET_COMPOSABLEAI_BRANCH }} \
-              --label "branch:${{ env.TARGET_COMPOSABLEAI_BRANCH }}" \
+              --base "${TARGET_COMPOSABLEAI_BRANCH}" \
+              --head "${TEMP_BRANCH}" \
+              --label "branch:${TARGET_COMPOSABLEAI_BRANCH}" \
               --label "workflow:update-llumiverse")
           new_pr_number=$(echo "$new_pr_url" | grep -oP '(?<=pull/)\d+')
 
@@ -190,9 +221,11 @@ jobs:
         if: ${{ steps.precheck.outputs.skip != 'true' && steps.update-submodule.outputs.author_login }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STEPS_UPDATE_SUBMODULE_OUTPUTS_NEW_PR_NUMBER: ${{ steps.update-submodule.outputs.new_pr_number }}
+          STEPS_UPDATE_SUBMODULE_OUTPUTS_AUTHOR_LOGIN: ${{ steps.update-submodule.outputs.author_login }}
         run: |
-          gh pr edit "${{ steps.update-submodule.outputs.new_pr_number }}" \
-            --add-assignee "${{ steps.update-submodule.outputs.author_login }}"
+          gh pr edit "${STEPS_UPDATE_SUBMODULE_OUTPUTS_NEW_PR_NUMBER}" \
+            --add-assignee "${STEPS_UPDATE_SUBMODULE_OUTPUTS_AUTHOR_LOGIN}"
 
       - name: Notify studio for Slack notification
         # Dispatch to the private studio repo so it can look up the developer's
@@ -202,14 +235,18 @@ jobs:
           curl -L \
             -X POST \
             -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.REPO_STUDIO_ACCESS_TOKEN }}" \
+            -H "Authorization: Bearer ${REPO_STUDIO_ACCESS_TOKEN}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             --fail-with-body \
             https://api.github.com/repos/vertesia/studio/dispatches \
             -d '{
               "event_type": "composableai-pr-notification",
               "client_payload": {
-                "github_login": "${{ steps.update-submodule.outputs.author_login }}",
-                "message": "Please review this PR which brings your llumiverse changes to composableai: ${{ steps.update-submodule.outputs.new_pr_url }}"
+                "github_login": "${STEPS_UPDATE_SUBMODULE_OUTPUTS_AUTHOR_LOGIN}",
+                "message": "Please review this PR which brings your llumiverse changes to composableai: ${STEPS_UPDATE_SUBMODULE_OUTPUTS_NEW_PR_URL}"
               }
             }'
+        env:
+          REPO_STUDIO_ACCESS_TOKEN: ${{ secrets.REPO_STUDIO_ACCESS_TOKEN }}
+          STEPS_UPDATE_SUBMODULE_OUTPUTS_AUTHOR_LOGIN: ${{ steps.update-submodule.outputs.author_login }}
+          STEPS_UPDATE_SUBMODULE_OUTPUTS_NEW_PR_URL: ${{ steps.update-submodule.outputs.new_pr_url }}

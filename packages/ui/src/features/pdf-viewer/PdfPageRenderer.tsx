@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
 import { Loader2 } from 'lucide-react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { Document, Page, pdfjs } from 'react-pdf';
 
 // Configure PDF.js worker - use CDN for the worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -10,7 +10,7 @@ function LoadingSpinner({ className, size = 'md' }: { className?: string; size?:
     const sizeClasses = {
         sm: 'w-4 h-4',
         md: 'w-6 h-6',
-        lg: 'w-8 h-8'
+        lg: 'w-8 h-8',
     };
     return (
         <div className={`flex items-center justify-center ${className || ''}`}>
@@ -38,7 +38,7 @@ export function PdfPageRenderer({
     renderTextLayer = false,
     renderAnnotationLayer = false,
     onLoadSuccess,
-    onError
+    onError,
 }: PdfPageRendererProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -64,15 +64,8 @@ export function PdfPageRenderer({
 
     return (
         <div className={className}>
-            {loading && (
-                <LoadingSpinner className="py-4" size="md" />
-            )}
-            <Document
-                file={pdfUrl}
-                onLoadSuccess={handleLoadSuccess}
-                onLoadError={handleError}
-                loading={null}
-            >
+            {loading && <LoadingSpinner className="py-4" size="md" />}
+            <Document file={pdfUrl} onLoadSuccess={handleLoadSuccess} onLoadError={handleError} loading={null}>
                 <Page
                     pageNumber={pageNumber}
                     width={width}
@@ -95,7 +88,9 @@ interface PageDimensions {
 // PDF document proxy type
 interface PDFDocumentProxy {
     numPages: number;
-    getPage: (pageNum: number) => Promise<{ getViewport: (options: { scale: number }) => { width: number; height: number } }>;
+    getPage: (
+        pageNum: number,
+    ) => Promise<{ getViewport: (options: { scale: number }) => { width: number; height: number } }>;
 }
 
 // Context for sharing PDF state
@@ -136,7 +131,7 @@ export function SharedPdfProvider({ pdfUrl, urlLoading = false, children, onLoad
             setPageDimensions({
                 width: viewport.width,
                 height: viewport.height,
-                aspectRatio: viewport.width / viewport.height
+                aspectRatio: viewport.width / viewport.height,
             });
         } catch (err) {
             console.error('Failed to get page dimensions:', err);
@@ -157,7 +152,7 @@ export function SharedPdfProvider({ pdfUrl, urlLoading = false, children, onLoad
         numPages,
         loading: isLoading,
         error,
-        pageDimensions
+        pageDimensions,
     };
 
     // Render function that children use to render pages
@@ -173,11 +168,7 @@ export function SharedPdfProvider({ pdfUrl, urlLoading = false, children, onLoad
     );
 
     if (error) {
-        return (
-            <div className="flex items-center justify-center text-destructive text-sm py-4">
-                Failed to load PDF
-            </div>
-        );
+        return <div className="flex items-center justify-center text-destructive text-sm py-4">Failed to load PDF</div>;
     }
 
     return (
@@ -280,7 +271,7 @@ function VirtualizedThumbnail({
     onSelect,
     renderThumbnail,
     aspectRatio = A4_ASPECT_RATIO,
-    rootMargin = '200px 0px'
+    rootMargin = '200px 0px',
 }: {
     pageNumber: number;
     width?: number;
@@ -305,7 +296,7 @@ function VirtualizedThumbnail({
                     setHasBeenVisible(true);
                 }
             },
-            { rootMargin, threshold: 0 }
+            { rootMargin, threshold: 0 },
         );
 
         observer.observe(container);
@@ -325,10 +316,7 @@ function VirtualizedThumbnail({
             renderTextLayer={false}
             renderAnnotationLayer={false}
             loading={
-                <div
-                    className="flex items-center justify-center bg-muted"
-                    style={{ height: placeholderHeight }}
-                >
+                <div className="flex items-center justify-center bg-muted" style={{ height: placeholderHeight }}>
                     <LoadingSpinner size="sm" />
                 </div>
             }
@@ -348,7 +336,7 @@ function VirtualizedThumbnail({
                 pageNumber,
                 isSelected,
                 pageElement,
-                onSelect
+                onSelect,
             })}
         </div>
     );
@@ -387,7 +375,7 @@ export function PdfThumbnailList({
     onAspectRatioChange,
     onItemHeightChange,
     calculateItemHeight,
-    onPageCountChange
+    onPageCountChange,
 }: PdfThumbnailListProps) {
     const [error, setError] = useState<Error | null>(null);
     const [visibleRange, setVisibleRange] = useState({ start: 0, end: Math.min(15, pageCount) });
@@ -400,23 +388,26 @@ export function PdfThumbnailList({
     }, []);
 
     // Get actual page dimensions and count from PDF on load
-    const handleLoadSuccess = useCallback(async (pdf: PDFDocumentProxy) => {
-        // Report actual page count from PDF
-        onPageCountChange?.(pdf.numPages);
+    const handleLoadSuccess = useCallback(
+        async (pdf: PDFDocumentProxy) => {
+            // Report actual page count from PDF
+            onPageCountChange?.(pdf.numPages);
 
-        try {
-            const page = await pdf.getPage(1);
-            const viewport = page.getViewport({ scale: 1 });
-            const ratio = viewport.width / viewport.height;
-            setAspectRatio(ratio);
-            onAspectRatioChange?.(ratio);
-        } catch (err) {
-            console.error('Failed to get page dimensions:', err);
-            // Fall back to A4 if we can't get dimensions
-            setAspectRatio(A4_ASPECT_RATIO);
-            onAspectRatioChange?.(A4_ASPECT_RATIO);
-        }
-    }, [onAspectRatioChange, onPageCountChange]);
+            try {
+                const page = await pdf.getPage(1);
+                const viewport = page.getViewport({ scale: 1 });
+                const ratio = viewport.width / viewport.height;
+                setAspectRatio(ratio);
+                onAspectRatioChange?.(ratio);
+            } catch (err) {
+                console.error('Failed to get page dimensions:', err);
+                // Fall back to A4 if we can't get dimensions
+                setAspectRatio(A4_ASPECT_RATIO);
+                onAspectRatioChange?.(A4_ASPECT_RATIO);
+            }
+        },
+        [onAspectRatioChange, onPageCountChange],
+    );
 
     // Use A4 as fallback if aspect ratio not yet determined
     const effectiveAspectRatio = aspectRatio ?? A4_ASPECT_RATIO;
@@ -425,9 +416,7 @@ export function PdfThumbnailList({
     const placeholderHeight = thumbnailWidth ? Math.round(thumbnailWidth / effectiveAspectRatio) : 200;
     // Total height per item - use custom calculator if provided, otherwise default formula
     // Default: padding (p-2 = 8px top + 8px bottom) + page number text (~24px) + gap
-    const itemHeight = calculateItemHeight
-        ? calculateItemHeight(placeholderHeight)
-        : placeholderHeight + 16 + 24 + 8;
+    const itemHeight = calculateItemHeight ? calculateItemHeight(placeholderHeight) : placeholderHeight + 16 + 24 + 8;
 
     // Notify parent of item height changes for scroll calculations
     useEffect(() => {
@@ -457,7 +446,7 @@ export function PdfThumbnailList({
             const start = Math.max(0, firstVisible - WINDOW_BUFFER);
             const end = Math.min(pageCount, lastVisible + WINDOW_BUFFER);
 
-            setVisibleRange(prev => {
+            setVisibleRange((prev) => {
                 if (prev.start !== start || prev.end !== end) {
                     return { start, end };
                 }
@@ -474,11 +463,7 @@ export function PdfThumbnailList({
     }, [itemHeight, pageCount, scrollContainerRef]);
 
     if (error) {
-        return (
-            <div className="flex items-center justify-center text-destructive text-sm py-4">
-                Failed to load PDF
-            </div>
-        );
+        return <div className="flex items-center justify-center text-destructive text-sm py-4">Failed to load PDF</div>;
     }
 
     if (urlLoading || !pdfUrl) {
@@ -504,15 +489,17 @@ export function PdfThumbnailList({
                 {hasAspectRatio ? (
                     <>
                         {/* Top spacer for pages above visible window */}
-                        {topSpacerHeight > 0 && (
-                            <div style={{ height: topSpacerHeight }} />
-                        )}
+                        {topSpacerHeight > 0 && <div style={{ height: topSpacerHeight }} />}
 
                         {/* Only render pages within the visible window */}
                         {Array.from({ length: visibleRange.end - visibleRange.start }, (_, index) => {
                             const pageNumber = visibleRange.start + index + 1;
                             return (
-                                <div key={pageNumber} data-page-index={pageNumber - 1} style={{ height: itemHeight, overflow: 'hidden' }}>
+                                <div
+                                    key={pageNumber}
+                                    data-page-index={pageNumber - 1}
+                                    style={{ height: itemHeight, overflow: 'hidden' }}
+                                >
                                     <VirtualizedThumbnail
                                         pageNumber={pageNumber}
                                         width={thumbnailWidth}
@@ -526,9 +513,7 @@ export function PdfThumbnailList({
                         })}
 
                         {/* Bottom spacer for pages below visible window */}
-                        {bottomSpacerHeight > 0 && (
-                            <div style={{ height: bottomSpacerHeight }} />
-                        )}
+                        {bottomSpacerHeight > 0 && <div style={{ height: bottomSpacerHeight }} />}
                     </>
                 ) : (
                     <LoadingSpinner className="py-4" size="md" />
@@ -557,7 +542,7 @@ export function PdfDocumentRenderer({
     className,
     renderTextLayer = false,
     renderAnnotationLayer = false,
-    onPageChange
+    onPageChange,
 }: PdfDocumentRendererProps) {
     const [numPages, setNumPages] = useState<number>(0);
     const [loading, setLoading] = useState(true);
@@ -589,15 +574,8 @@ export function PdfDocumentRenderer({
 
     return (
         <div className={className}>
-            {loading && (
-                <LoadingSpinner className="py-8" size="lg" />
-            )}
-            <Document
-                file={pdfUrl}
-                onLoadSuccess={handleLoadSuccess}
-                onLoadError={handleError}
-                loading={null}
-            >
+            {loading && <LoadingSpinner className="py-8" size="lg" />}
+            <Document file={pdfUrl} onLoadSuccess={handleLoadSuccess} onLoadError={handleError} loading={null}>
                 <Page
                     pageNumber={Math.min(pageNumber, numPages || 1)}
                     width={width}

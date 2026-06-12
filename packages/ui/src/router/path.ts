@@ -1,6 +1,6 @@
 export type PathMatchParams = Record<string, string> & {
     _?: string[];
-}
+};
 
 export function isRootPath(path: string) {
     return path === '/' || path === '';
@@ -14,7 +14,7 @@ export function joinPath(path1: string, path2: string) {
     } else if (path2.startsWith('/')) {
         path2 = path1 + path2;
     } else {
-        path2 = path1 + '/' + path2;
+        path2 = `${path1}/${path2}`;
     }
     return path2;
 }
@@ -26,7 +26,8 @@ export function getPathSegments(path: string) {
     if (path === '/') {
         return [''];
     }
-    let s = 0, e = path.length;
+    let s = 0,
+        e = path.length;
     if (path.startsWith('./')) {
         s = 2;
     } else if (path.startsWith('/')) {

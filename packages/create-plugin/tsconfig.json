@@ -1,30 +1,9 @@
 {
-  "compilerOptions": {
-    "target": "ES2024",
-    "module": "ES2022",
-    "lib": [
-      "ES2024"
-    ],
-    "moduleResolution": "bundler",
-    "rootDir": "./src",
-    "outDir": "./lib",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "types": [
-      "node"
-    ]
-  },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "lib"
-  ]
+    "extends": "@vertesia/tsconfig/lib.json",
+    "compilerOptions": {
+        "rootDir": "./src",
+        "outDir": "./lib",
+        "types": ["node"]
+    },
+    "include": ["src/**/*"]
 }

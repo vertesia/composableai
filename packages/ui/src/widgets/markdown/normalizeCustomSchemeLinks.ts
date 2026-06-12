@@ -1,18 +1,15 @@
-const CUSTOM_SCHEME_PREFIXES = [
-    'artifact:',
-    'image:',
-    'store:',
-    'document://',
-    'collection:',
-];
+const CUSTOM_SCHEME_PREFIXES = ['artifact:', 'image:', 'store:', 'document://', 'collection:'];
 
-const CUSTOM_LINK_REGEX = /(!?\[[^\]\n]*\]\()((?:artifact:|image:|store:|document:\/\/|collection:)[^)]+)(\))/g;
+// Excludes `[` from the link-text and destination classes: a long run of `[` (or
+// `[](image:` groups) with no closing delimiter would otherwise be re-scanned at every
+// start position, giving polynomial backtracking (CodeQL js/polynomial-redos).
+const CUSTOM_LINK_REGEX = /(!?\[[^[\]\n]*\]\()((?:artifact:|image:|store:|document:\/\/|collection:)[^)[\n]+)(\))/g;
 const INLINE_CODE_REGEX = /`[^`\n]*`/g;
 const FENCED_CODE_BLOCK_REGEX = /(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2(?=\n|$)/g;
 const LINK_TITLE_SUFFIX_REGEX = /\s+("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\([^)]*\))\s*$/;
 
 function hasCustomScheme(destination: string): boolean {
-    return CUSTOM_SCHEME_PREFIXES.some(prefix => destination.startsWith(prefix));
+    return CUSTOM_SCHEME_PREFIXES.some((prefix) => destination.startsWith(prefix));
 }
 
 function wrapCustomDestination(destinationWithOptionalTitle: string): string {
@@ -50,10 +47,8 @@ function normalizeCustomLinksInText(text: string): string {
 function normalizeOutsideInlineCode(text: string): string {
     let result = '';
     let lastIndex = 0;
-    let match: RegExpExecArray | null;
 
-    INLINE_CODE_REGEX.lastIndex = 0;
-    while ((match = INLINE_CODE_REGEX.exec(text)) !== null) {
+    for (const match of text.matchAll(INLINE_CODE_REGEX)) {
         result += normalizeCustomLinksInText(text.slice(lastIndex, match.index));
         result += match[0];
         lastIndex = match.index + match[0].length;
@@ -71,16 +66,14 @@ function normalizeOutsideInlineCode(text: string): string {
  * We apply this only outside fenced/inline code spans.
  */
 export function normalizeCustomSchemeLinks(markdown: string): string {
-    if (!markdown || !CUSTOM_SCHEME_PREFIXES.some(prefix => markdown.includes(prefix))) {
+    if (!markdown || !CUSTOM_SCHEME_PREFIXES.some((prefix) => markdown.includes(prefix))) {
         return markdown;
     }
 
     let result = '';
     let lastIndex = 0;
-    let match: RegExpExecArray | null;
 
-    FENCED_CODE_BLOCK_REGEX.lastIndex = 0;
-    while ((match = FENCED_CODE_BLOCK_REGEX.exec(markdown)) !== null) {
+    for (const match of markdown.matchAll(FENCED_CODE_BLOCK_REGEX)) {
         result += normalizeOutsideInlineCode(markdown.slice(lastIndex, match.index));
         result += match[0];
         lastIndex = match.index + match[0].length;

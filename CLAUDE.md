@@ -6,6 +6,8 @@
 - Run tests: `pnpm test` (all tests)
 - Run single test: `cd packages/<package> && pnpm test -- -t "<test name>"`
 - Lint: `pnpm lint` (all packages)
+- Format: `pnpm format`
+- Check formatting without writing: `pnpm format:check`
 
 # Code Structure
 
@@ -22,8 +24,8 @@ This Git repository is a mono-repository built on top of pnpm.
 - Use async/await with proper error handling (no floating promises)
 - Objects: use shorthand notation
 - Unused variables prefix: `_` (e.g., `_unused`)
-- Line length: 120 characters, single quotes
+- Line length: 120 characters, 4-space indentation, single quotes
 - Component patterns: follow existing naming, directory structure and import patterns
 - Always use proper typing - avoid `any` when possible
 - Error handling: use proper error types and propagation, especially with async code
-- Formatting: follows Prettier configuration
+- Formatting: follows `biome.json` in this repository

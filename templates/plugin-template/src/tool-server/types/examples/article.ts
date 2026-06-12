@@ -1,35 +1,35 @@
-import { InCodeTypeSpec } from "@vertesia/common";
+import type { InCodeTypeSpec } from '@vertesia/common';
 
 /**
  * Example content type: Article
  * A simple schema for article content with title and author
  */
 export const ArticleType = {
-    name: "article",
-    description: "A simple article content type with title and author metadata",
-    tags: ["content", "example", "article"],
+    name: 'article',
+    description: 'A simple article content type with title and author metadata',
+    tags: ['content', 'example', 'article'],
 
     /**
      * JSON Schema defining the structure of an article
      */
     object_schema: {
-        type: "object",
+        type: 'object',
         properties: {
             title: {
-                type: "string",
-                description: "The title of the article",
+                type: 'string',
+                description: 'The title of the article',
                 minLength: 1,
-                maxLength: 200
+                maxLength: 200,
             },
             author: {
-                type: "string",
-                description: "The author of the article",
+                type: 'string',
+                description: 'The author of the article',
                 minLength: 1,
-                maxLength: 100
-            }
+                maxLength: 100,
+            },
         },
-        required: ["title", "author"],
-        additionalProperties: false
+        required: ['title', 'author'],
+        additionalProperties: false,
     },
 
     /**
@@ -37,15 +37,15 @@ export const ArticleType = {
      */
     table_layout: [
         {
-            field: "properties.title",
-            name: "Title",
-            type: "string"
+            field: 'properties.title',
+            name: 'Title',
+            type: 'string',
         },
         {
-            field: "properties.author",
-            name: "Author",
-            type: "string"
-        }
+            field: 'properties.author',
+            name: 'Author',
+            type: 'string',
+        },
     ],
 
     /**
@@ -56,5 +56,5 @@ export const ArticleType = {
     /**
      * Enforce strict validation against the schema
      */
-    strict_mode: true
+    strict_mode: true,
 } satisfies InCodeTypeSpec;

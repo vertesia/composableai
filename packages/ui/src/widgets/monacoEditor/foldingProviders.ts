@@ -19,6 +19,7 @@ export function registerCustomFoldingProviders(monacoInstance: typeof import('mo
                     if (match) {
                         const level = match[1].length;
                         while (stack.length > 0 && stack[stack.length - 1].level >= level) {
+                            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                             const top = stack.pop()!;
                             if (lineNumber - 1 > top.line) {
                                 ranges.push({ start: top.line, end: lineNumber - 1 });
@@ -29,6 +30,7 @@ export function registerCustomFoldingProviders(monacoInstance: typeof import('mo
                 }
                 const lastLine = lines.length;
                 while (stack.length > 0) {
+                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                     const top = stack.pop()!;
                     if (lastLine > top.line) {
                         ranges.push({ start: top.line, end: lastLine });
@@ -70,14 +72,33 @@ export function registerCustomFoldingProviders(monacoInstance: typeof import('mo
 
                         for (let j = 0; j < line.length; j++) {
                             const ch = line[j];
-                            if (ch === '\\') { j++; continue; }
-                            if (inString) { if (ch === stringChar) inString = false; continue; }
-                            if (inTemplate) { if (ch === '`') inTemplate = false; continue; }
-                            if (ch === '`') { inTemplate = true; continue; }
-                            if (ch === '"' || ch === "'") { inString = true; stringChar = ch; continue; }
+                            if (ch === '\\') {
+                                j++;
+                                continue;
+                            }
+                            if (inString) {
+                                if (ch === stringChar) inString = false;
+                                continue;
+                            }
+                            if (inTemplate) {
+                                if (ch === '`') inTemplate = false;
+                                continue;
+                            }
+                            if (ch === '`') {
+                                inTemplate = true;
+                                continue;
+                            }
+                            if (ch === '"' || ch === "'") {
+                                inString = true;
+                                stringChar = ch;
+                                continue;
+                            }
                             // Brace folding — only outside strings/templates
-                            if (ch === '{') { braceStack.push(lineNumber); }
+                            if (ch === '{') {
+                                braceStack.push(lineNumber);
+                            }
                             if (ch === '}' && braceStack.length > 0) {
+                                // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                                 const start = braceStack.pop()!;
                                 // If there is non-whitespace content after `}` on this line
                                 // (e.g. "} else {"), end the fold at the previous line so
@@ -93,7 +114,11 @@ export function registerCustomFoldingProviders(monacoInstance: typeof import('mo
                             const match = headingPattern.exec(line);
                             if (match) {
                                 const level = match[1].length;
-                                while (headingStack.length > 0 && headingStack[headingStack.length - 1].level >= level) {
+                                while (
+                                    headingStack.length > 0 &&
+                                    headingStack[headingStack.length - 1].level >= level
+                                ) {
+                                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                                     const top = headingStack.pop()!;
                                     if (lineNumber - 1 > top.line) {
                                         headingRanges.push({ start: top.line, end: lineNumber - 1 });
@@ -104,6 +129,7 @@ export function registerCustomFoldingProviders(monacoInstance: typeof import('mo
                             // Template just closed — seal all open heading sections here
                             if (!inTemplate) {
                                 while (headingStack.length > 0) {
+                                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                                     const top = headingStack.pop()!;
                                     if (lineNumber > top.line) {
                                         headingRanges.push({ start: top.line, end: lineNumber });

@@ -1,9 +1,9 @@
-import { basename, dirname, extname, join } from "path";
+import { basename, dirname, extname, join } from 'node:path';
 
 /**
  * The path argument is the empty string when mapping streams or buffers not related to a file system file.
  */
-export type PathMapperFn = ((path: string, index: number) => string);
+export type PathMapperFn = (path: string, index: number) => string;
 
 export function createPathRewrite(path: string): PathMapperFn {
     let truncPath: (path: string) => string;
@@ -16,22 +16,22 @@ export function createPathRewrite(path: string): PathMapperFn {
         }
         truncPath = (path: string) => {
             return path.substring(basePath.length);
-        }
+        };
         path = path.substring(index + 1);
     } else {
         truncPath = (path: string) => {
             return basename(path);
-        }
+        };
     }
     if (path === '*') {
         // preserve path
         return truncPath;
-    } else if (path.endsWith("/*")) {
+    } else if (path.endsWith('/*')) {
         const prefix = path.slice(0, -2);
         return (path: string) => {
             path = truncPath(path);
             return join(prefix, path);
-        }
+        };
     } else {
         // use path builder
         return buildPathRewrite(path, truncPath);
@@ -43,17 +43,20 @@ function buildPathRewrite(path: string, truncPath: (path: string) => string): Pa
     const parts: ((path: Path, index: number) => string)[] = [];
     let lastIndex = 0;
     for (const m of path.matchAll(RX_PARTS)) {
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         if (m.index! > lastIndex) {
             const literal = path.substring(lastIndex, m.index);
             parts.push(() => literal);
         }
-        if (m[1]) { // %d/
-            parts.push((path: Path) => path.dirname ? path.dirname + '/' : '');
-        } else if (m[2]) { // .?%e
+        if (m[1]) {
+            // %d/
+            parts.push((path: Path) => (path.dirname ? `${path.dirname}/` : ''));
+        } else if (m[2]) {
+            // .?%e
             if (m[2][0] === '.') {
                 parts.push((path: Path) => path.extname || '');
             } else {
-                parts.push((path: Path) => path.extname ? path.extname.slice(1) : ''); // extension without dot
+                parts.push((path: Path) => (path.extname ? path.extname.slice(1) : '')); // extension without dot
             }
         } else if (m[3]) {
             switch (m[3]) {
@@ -75,9 +78,11 @@ function buildPathRewrite(path: string, truncPath: (path: string) => string): Pa
                 case '%i': // index
                     parts.push((_path: Path, index: number) => String(index));
                     break;
-                default: throw new Error(`Bug: should never happen`);
+                default:
+                    throw new Error(`Bug: should never happen`);
             }
         }
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         lastIndex = m.index! + m[0].length;
     }
     if (!parts.length) {
@@ -94,10 +99,9 @@ function buildPathRewrite(path: string, truncPath: (path: string) => string): Pa
                 out.push(part(pathObj, index));
             }
             return out.join('');
-        }
+        };
     }
 }
-
 
 export class Path {
     _name?: string;
@@ -108,7 +112,7 @@ export class Path {
     /**
      * The complete path value
      */
-    value: string
+    value: string;
 
     /**
      * The file name (the last portion of the path). Includes the extension if present.

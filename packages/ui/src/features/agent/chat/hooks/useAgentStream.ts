@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import type { VertesiaClient } from '@vertesia/client';
+import type * as Common from '@vertesia/common';
 import {
     type AgentMessage,
     AgentMessageType,
     type ConversationFile,
     type FileProcessingDetails,
 } from '@vertesia/common';
-import type * as Common from '@vertesia/common';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { insertMessageInTimeline, isInProgress } from '../ModernAgentOutput/utils';
 
 /** Streaming data for a single active stream, keyed by streaming/activity ID */
@@ -28,6 +28,12 @@ export interface UseAgentStreamResult {
     addOptimisticMessage: (msg: AgentMessage) => void;
     /** Remove optimistic messages matching a predicate */
     removeOptimisticMessages: (predicate: (msg: AgentMessage) => boolean) => void;
+    /**
+     * Re-open the SSE stream for the SAME agentRunId without clearing the existing
+     * timeline. Used after restarting a completed workflow so newly produced messages
+     * append seamlessly at the bottom instead of forcing a full reload.
+     */
+    reconnect: () => void;
     /** AgentRun status fetched from API (RUNNING, COMPLETED, FAILED, etc.) */
     agentRunStatus: string | null;
     /** Temporal workflow run ID (first_workflow_run_id from AgentRun) */
@@ -51,10 +57,7 @@ export interface UseAgentStreamResult {
  * File-processing SYSTEM messages are passed through to the messages array
  * (Option A from the plan) so downstream hooks can react to them.
  */
-export function useAgentStream(
-    client: VertesiaClient,
-    agentRunId: string,
-): UseAgentStreamResult {
+export function useAgentStream(client: VertesiaClient, agentRunId: string): UseAgentStreamResult {
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
     const [agentRunStatus, setAgentRunStatus] = useState<string | null>(null);
@@ -62,6 +65,20 @@ export function useAgentStream(
 
     // Server-side file processing status updates
     const [serverFileUpdates, setServerFileUpdates] = useState<Map<string, ConversationFile>>(new Map());
+
+    // Bumped to re-open the stream in place (same agentRunId) without resetting the timeline.
+    const [streamNonce, setStreamNonce] = useState(0);
+    const reconnect = useCallback(() => setStreamNonce((n) => n + 1), []);
+
+    // Tracks the last agentRunId the stream effect ran for, so a reconnect (nonce bump)
+    // can be distinguished from switching to a different conversation.
+    const prevAgentRunIdRef = useRef<string | null>(null);
+
+    // Highest message timestamp delivered so far. On a same-run reconnect this is passed
+    // as the `since` cursor so the history replay excludes the previous run's terminal
+    // (COMPLETE/TERMINATED) message — otherwise streamMessages would treat that stale
+    // event as stream-ending and close before the restarted run's reply arrives.
+    const lastDeliveredTsRef = useRef(0);
 
     // Streaming messages by streaming_id for real-time chunk aggregation
     const [streamingMessages, setStreamingMessages] = useState<Map<string, StreamingData>>(new Map());
@@ -103,17 +120,34 @@ export function useAgentStream(
 
     // Stream messages from the agent
     useEffect(() => {
-        // Reset all state when agentRunId changes (new agent)
-        console.debug('[useAgentStream] effect:start', { agentRunId });
-        setMessages([]);
-        setAgentRunStatus(null);
-        setWorkflowRunId(null);
-        setStreamingMessages(new Map());
-        setServerFileUpdates(new Map());
+        // A nonce bump reconnects the current conversation without clearing the timeline.
+        void streamNonce;
+
+        // Only reset state when switching to a different conversation. A reconnect
+        // (nonce bump for the same agentRunId) keeps the existing timeline so newly
+        // streamed messages append in place — re-delivered history is de-duped by
+        // timestamp below.
+        const isNewConversation = prevAgentRunIdRef.current !== agentRunId;
+        prevAgentRunIdRef.current = agentRunId;
+
+        if (isNewConversation) {
+            setMessages([]);
+            setAgentRunStatus(null);
+            setWorkflowRunId(null);
+            setStreamingMessages(new Map());
+            setServerFileUpdates(new Map());
+            lastDeliveredTsRef.current = 0;
+        }
         const abortController = new AbortController();
 
+        // Resume from the last delivered message on a reconnect; fetch full history for a
+        // new conversation. The cursor is exclusive server-side (ts > since), so the prior
+        // run's terminal message is skipped on reconnect.
+        const since = isNewConversation ? undefined : lastDeliveredTsRef.current || undefined;
+
         // Check agent run status
-        client.agents.getInternals(agentRunId)
+        client.agents
+            .getInternals(agentRunId)
             .then((agentRun) => {
                 if (!abortController.signal.aborted) {
                     setAgentRunStatus(agentRun.status?.toUpperCase() ?? null);
@@ -126,120 +160,144 @@ export function useAgentStream(
                 }
             });
 
-        client.agents.streamMessages(agentRunId, (message) => {
-            if (abortController.signal.aborted) return;
+        client.agents
+            .streamMessages(
+                agentRunId,
+                (message) => {
+                    if (abortController.signal.aborted) return;
 
-            // Handle streaming chunks separately for real-time aggregation
-            // PERFORMANCE: Batch updates using RAF instead of immediate state updates
-            if (message.type === AgentMessageType.STREAMING_CHUNK) {
-                const details = message.details as Common.StreamingChunkDetails;
-                const streamKey = details?.activity_id || details?.streaming_id;
-                if (!streamKey) return;
-
-                // Accumulate chunks in the ref (no state update yet)
-                const current = pendingStreamingChunks.current.get(streamKey) || {
-                    text: '',
-                    workstreamId: message.workstream_id,
-                    startTimestamp: Date.now(),
-                    activityId: details?.activity_id,
-                };
-                const newText = current.text + (message.message || '');
-
-                pendingStreamingChunks.current.set(streamKey, {
-                    text: newText,
-                    workstreamId: message.workstream_id,
-                    isComplete: details.is_final,
-                    startTimestamp: current.startTimestamp,
-                    activityId: details?.activity_id,
-                });
-
-                // Schedule a flush if not already scheduled (~60 updates/sec max)
-                if (streamingFlushScheduled.current === null) {
-                    if (document.hidden) {
-                        streamingFlushScheduled.current = {
-                            mode: 'timeout',
-                            id: window.setTimeout(flushStreamingChunks, 16),
-                        };
-                    } else {
-                        streamingFlushScheduled.current = {
-                            mode: 'raf',
-                            id: requestAnimationFrame(flushStreamingChunks),
-                        };
+                    // Advance the reconnect cursor past every delivered message.
+                    if (message.timestamp && message.timestamp > lastDeliveredTsRef.current) {
+                        lastDeliveredTsRef.current = message.timestamp;
                     }
-                }
-                return;
-            }
 
-            // Handle file processing SYSTEM messages — update serverFileUpdates
-            // for downstream useFileProcessing hook, don't add to messages array
-            if (message.type === AgentMessageType.SYSTEM) {
-                const details = message.details as FileProcessingDetails | undefined;
-                if (details?.system_type === 'file_processing' && details.files) {
-                    setServerFileUpdates(prev => {
-                        const newMap = new Map(prev);
-                        for (const file of details.files) {
-                            newMap.set(file.id, file);
+                    // Handle streaming chunks separately for real-time aggregation
+                    // PERFORMANCE: Batch updates using RAF instead of immediate state updates
+                    if (message.type === AgentMessageType.STREAMING_CHUNK) {
+                        const details = message.details as Common.StreamingChunkDetails;
+                        const streamKey = details?.activity_id || details?.streaming_id;
+                        if (!streamKey) return;
+
+                        // Accumulate chunks in the ref (no state update yet)
+                        const current = pendingStreamingChunks.current.get(streamKey) || {
+                            text: '',
+                            workstreamId: message.workstream_id,
+                            startTimestamp: Date.now(),
+                            activityId: details?.activity_id,
+                        };
+                        const newText = current.text + (message.message || '');
+
+                        pendingStreamingChunks.current.set(streamKey, {
+                            text: newText,
+                            workstreamId: message.workstream_id,
+                            isComplete: details.is_final,
+                            startTimestamp: current.startTimestamp,
+                            activityId: details?.activity_id,
+                        });
+
+                        // Schedule a flush if not already scheduled (~60 updates/sec max)
+                        if (streamingFlushScheduled.current === null) {
+                            if (document.hidden) {
+                                streamingFlushScheduled.current = {
+                                    mode: 'timeout',
+                                    id: window.setTimeout(flushStreamingChunks, 16),
+                                };
+                            } else {
+                                streamingFlushScheduled.current = {
+                                    mode: 'raf',
+                                    id: requestAnimationFrame(flushStreamingChunks),
+                                };
+                            }
                         }
-                        return newMap;
+                        return;
+                    }
+
+                    // Handle file processing SYSTEM messages — update serverFileUpdates
+                    // for downstream useFileProcessing hook, don't add to messages array
+                    if (message.type === AgentMessageType.SYSTEM) {
+                        const details = message.details as FileProcessingDetails | undefined;
+                        if (details?.system_type === 'file_processing' && details.files) {
+                            setServerFileUpdates(new Map(details.files.map((file) => [file.id, file])));
+                            return;
+                        }
+                        // Other SYSTEM messages fall through to normal handling
+                    }
+
+                    // When THOUGHT or ANSWER arrives with activity_id, remove matching streaming message
+                    if (
+                        (message.type === AgentMessageType.THOUGHT || message.type === AgentMessageType.ANSWER) &&
+                        message.details?.activity_id
+                    ) {
+                        const activityId = message.details.activity_id as string;
+                        pendingStreamingChunks.current.delete(activityId);
+                        setStreamingMessages((prev) => {
+                            if (prev.has(activityId)) {
+                                const next = new Map(prev);
+                                next.delete(activityId);
+                                return next;
+                            }
+                            return prev;
+                        });
+                    }
+
+                    // On COMPLETE or IDLE, flush any pending chunks
+                    if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
+                        if (pendingStreamingChunks.current.size > 0) {
+                            flushStreamingChunks();
+                        }
+                    }
+
+                    const hasContent = !!message.message;
+                    const isStateMessage = [
+                        AgentMessageType.COMPLETE,
+                        AgentMessageType.IDLE,
+                        AgentMessageType.TERMINATED,
+                        AgentMessageType.REQUEST_INPUT,
+                    ].includes(message.type);
+
+                    if (hasContent || isStateMessage) {
+                        setMessages((prev) => {
+                            // Check for duplicate by timestamp
+                            if (prev.find((m) => m.timestamp === message.timestamp)) {
+                                return prev;
+                            }
+
+                            // For QUESTION messages from server, replace any optimistic version
+                            if (message.type === AgentMessageType.QUESTION && !message.details?._optimistic) {
+                                const withoutOptimistic = prev.filter(
+                                    (m) => !(m.type === AgentMessageType.QUESTION && m.details?._optimistic),
+                                );
+                                insertMessageInTimeline(withoutOptimistic, message);
+                                return [...withoutOptimistic];
+                            }
+
+                            insertMessageInTimeline(prev, message);
+                            return [...prev];
+                        });
+                    }
+                },
+                since,
+                abortController.signal,
+            )
+            .then(() => {
+                // The stream resolves when the run reaches a terminal state. The status was
+                // fetched once at effect start and may still read RUNNING, so re-fetch the
+                // authoritative status now — otherwise a run that FAILS while the panel is
+                // open never surfaces the failed UI until the conversation is remounted.
+                if (abortController.signal.aborted) return undefined;
+                return client.agents
+                    .getInternals(agentRunId)
+                    .then((agentRun) => {
+                        if (!abortController.signal.aborted) {
+                            setAgentRunStatus(agentRun.status?.toUpperCase() ?? null);
+                        }
+                    })
+                    .catch((error) => {
+                        if (!abortController.signal.aborted) {
+                            console.error('Failed to refresh agent run status on stream end:', error);
+                        }
                     });
-                    return;
-                }
-                // Other SYSTEM messages fall through to normal handling
-            }
-
-            // When THOUGHT or ANSWER arrives with activity_id, remove matching streaming message
-            if (
-                (message.type === AgentMessageType.THOUGHT || message.type === AgentMessageType.ANSWER) &&
-                message.details?.activity_id
-            ) {
-                const activityId = message.details.activity_id as string;
-                pendingStreamingChunks.current.delete(activityId);
-                setStreamingMessages(prev => {
-                    if (prev.has(activityId)) {
-                        const next = new Map(prev);
-                        next.delete(activityId);
-                        return next;
-                    }
-                    return prev;
-                });
-            }
-
-            // On COMPLETE or IDLE, flush any pending chunks
-            if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
-                if (pendingStreamingChunks.current.size > 0) {
-                    flushStreamingChunks();
-                }
-            }
-
-            const hasContent = !!message.message;
-            const isStateMessage = [
-                AgentMessageType.COMPLETE,
-                AgentMessageType.IDLE,
-                AgentMessageType.TERMINATED,
-                AgentMessageType.REQUEST_INPUT,
-            ].includes(message.type);
-
-            if (hasContent || isStateMessage) {
-                setMessages((prev) => {
-                    // Check for duplicate by timestamp
-                    if (prev.find((m) => m.timestamp === message.timestamp)) {
-                        return prev;
-                    }
-
-                    // For QUESTION messages from server, replace any optimistic version
-                    if (message.type === AgentMessageType.QUESTION && !message.details?._optimistic) {
-                        const withoutOptimistic = prev.filter(
-                            (m) => !(m.type === AgentMessageType.QUESTION && m.details?._optimistic),
-                        );
-                        insertMessageInTimeline(withoutOptimistic, message);
-                        return [...withoutOptimistic];
-                    }
-
-                    insertMessageInTimeline(prev, message);
-                    return [...prev];
-                });
-            }
-        }, undefined, abortController.signal)
+            })
             .catch((error) => {
                 if (!abortController.signal.aborted) {
                     console.error('Failed to stream agent messages:', error);
@@ -247,9 +305,10 @@ export function useAgentStream(
             });
 
         return () => {
-            console.debug('[useAgentStream] effect:cleanup', { agentRunId });
             abortController.abort();
-            setMessages([]);
+            // Note: messages are intentionally NOT cleared here. Switching conversations
+            // resets them at effect start (isNewConversation); a reconnect must preserve
+            // the timeline so the UI doesn't flash/reload.
             cancelScheduledStreamingFlush();
             pendingStreamingChunks.current.clear();
             if (debugFlashTimeout.current) {
@@ -257,7 +316,7 @@ export function useAgentStream(
                 debugFlashTimeout.current = null;
             }
         };
-    }, [agentRunId, client.agents, flushStreamingChunks, cancelScheduledStreamingFlush]);
+    }, [agentRunId, streamNonce, client.agents, flushStreamingChunks, cancelScheduledStreamingFlush]);
 
     // Flush pending streaming chunks when tab becomes visible.
     useEffect(() => {
@@ -299,6 +358,7 @@ export function useAgentStream(
         debugChunkFlash,
         addOptimisticMessage,
         removeOptimisticMessages,
+        reconnect,
         agentRunStatus,
         workflowRunId,
         serverFileUpdates,

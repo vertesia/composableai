@@ -1,4 +1,4 @@
-import { CompletionResult } from '@llumiverse/common';
+import type { CompletionResult } from '@llumiverse/common';
 import { describe, expect, it } from 'vitest';
 import { InteractionOutput, IS_INTERACTION_OUTPUT } from './InteractionOutput.js';
 
@@ -9,7 +9,7 @@ describe('InteractionOutput', () => {
         { type: 'json', value: { name: 'Alice', age: 30 } },
         { type: 'json', value: { title: 'Engineer', level: 'Senior' } },
         { type: 'image', value: 'data:image/png;base64,iVBORw0K...' },
-        { type: 'image', value: 'https://example.com/image.jpg' }
+        { type: 'image', value: 'https://example.com/image.jpg' },
     ];
 
     describe('text accessors', () => {
@@ -19,9 +19,7 @@ describe('InteractionOutput', () => {
         });
 
         it('should return empty string when no text results exist', () => {
-            const output = InteractionOutput.from([
-                { type: 'json', value: { foo: 'bar' } }
-            ]);
+            const output = InteractionOutput.from([{ type: 'json', value: { foo: 'bar' } }]);
             expect(output.text()).toBe('');
         });
 
@@ -29,7 +27,6 @@ describe('InteractionOutput', () => {
             const output = InteractionOutput.from(sampleResults);
             expect(output.texts()).toEqual(['Hello, ', 'World!']);
         });
-
     });
 
     describe('object accessors', () => {
@@ -44,28 +41,22 @@ describe('InteractionOutput', () => {
             const objects = output.objects();
             expect(objects).toEqual([
                 { name: 'Alice', age: 30 },
-                { title: 'Engineer', level: 'Senior' }
+                { title: 'Engineer', level: 'Senior' },
             ]);
         });
 
         it('should parse text as JSON when no JSON result exists', () => {
-            const output = InteractionOutput.from([
-                { type: 'text', value: '{"foo":"bar"}' }
-            ]);
+            const output = InteractionOutput.from([{ type: 'text', value: '{"foo":"bar"}' }]);
             expect(output.object()).toEqual({ foo: 'bar' });
         });
 
         it('should throw error when no JSON result and text is not valid JSON', () => {
-            const output = InteractionOutput.from([
-                { type: 'text', value: 'not json' }
-            ]);
+            const output = InteractionOutput.from([{ type: 'text', value: 'not json' }]);
             expect(() => output.object()).toThrow();
         });
 
         it('should throw error when no JSON result and no text', () => {
-            const output = InteractionOutput.from([
-                { type: 'image', value: 'data:image/png;base64,abc' }
-            ]);
+            const output = InteractionOutput.from([{ type: 'image', value: 'data:image/png;base64,abc' }]);
             expect(() => output.object()).toThrow('No JSON result found and no text available to parse');
         });
     });
@@ -78,19 +69,13 @@ describe('InteractionOutput', () => {
 
         it('should return all images', () => {
             const output = InteractionOutput.from(sampleResults);
-            expect(output.images()).toEqual([
-                'data:image/png;base64,iVBORw0K...',
-                'https://example.com/image.jpg'
-            ]);
+            expect(output.images()).toEqual(['data:image/png;base64,iVBORw0K...', 'https://example.com/image.jpg']);
         });
 
         it('should throw error when no image result exists', () => {
-            const output = InteractionOutput.from([
-                { type: 'text', value: 'hello' }
-            ]);
+            const output = InteractionOutput.from([{ type: 'text', value: 'hello' }]);
             expect(() => output.image()).toThrow('No image result found');
         });
-
     });
 
     describe('utility methods', () => {
@@ -106,43 +91,37 @@ describe('InteractionOutput', () => {
 
         it('should stringify all parts with default separator and compact JSON', () => {
             const output = InteractionOutput.from(sampleResults);
-            const result = output.stringify('\n', 0);  // Explicitly request compact JSON
+            const result = output.stringify('\n', 0); // Explicitly request compact JSON
 
             expect(result).toBe(
                 'Hello, \n' +
-                'World!\n' +
-                '{"name":"Alice","age":30}\n' +
-                '{"title":"Engineer","level":"Senior"}\n' +
-                'data:image/png;base64,iVBORw0K...\n' +
-                'https://example.com/image.jpg'
+                    'World!\n' +
+                    '{"name":"Alice","age":30}\n' +
+                    '{"title":"Engineer","level":"Senior"}\n' +
+                    'data:image/png;base64,iVBORw0K...\n' +
+                    'https://example.com/image.jpg',
             );
         });
 
         it('should stringify all parts with formatted JSON', () => {
             const mixed: CompletionResult[] = [
                 { type: 'text', value: 'Result:' },
-                { type: 'json', value: { score: 95, status: 'pass' } }
+                { type: 'json', value: { score: 95, status: 'pass' } },
             ];
             const output = InteractionOutput.from(mixed);
             const result = output.stringify('\n', 2);
 
-            expect(result).toBe(
-                'Result:\n' +
-                '{\n' +
-                '  "score": 95,\n' +
-                '  "status": "pass"\n' +
-                '}'
-            );
+            expect(result).toBe('Result:\n' + '{\n' + '  "score": 95,\n' + '  "status": "pass"\n' + '}');
         });
 
         it('should stringify with custom separator', () => {
             const mixed: CompletionResult[] = [
                 { type: 'text', value: 'A' },
                 { type: 'json', value: { x: 1 } },
-                { type: 'text', value: 'B' }
+                { type: 'text', value: 'B' },
             ];
             const output = InteractionOutput.from(mixed);
-            const result = output.stringify(' | ', 0);  // Explicitly request compact JSON
+            const result = output.stringify(' | ', 0); // Explicitly request compact JSON
 
             expect(result).toBe('A | {"x":1} | B');
         });
@@ -150,14 +129,13 @@ describe('InteractionOutput', () => {
         it('should stringify with empty separator', () => {
             const mixed: CompletionResult[] = [
                 { type: 'text', value: 'Hello' },
-                { type: 'text', value: 'World' }
+                { type: 'text', value: 'World' },
             ];
             const output = InteractionOutput.from(mixed);
             const result = output.stringify('');
 
             expect(result).toBe('HelloWorld');
         });
-
     });
 
     describe('Proxy functionality', () => {
@@ -172,10 +150,10 @@ describe('InteractionOutput', () => {
             expect(output.length).toBe(6);
 
             // Array methods
-            const types = output.map(r => r.type);
+            const types = output.map((r) => r.type);
             expect(types).toEqual(['text', 'text', 'json', 'json', 'image', 'image']);
 
-            const textResults = output.filter(r => r.type === 'text');
+            const textResults = output.filter((r) => r.type === 'text');
             expect(textResults).toHaveLength(2);
         });
 
@@ -190,9 +168,10 @@ describe('InteractionOutput', () => {
 
         it('should be marked with IS_INTERACTION_OUTPUT symbol', () => {
             const output = InteractionOutput.from(sampleResults);
+            const markedOutput = output as { [IS_INTERACTION_OUTPUT]?: boolean };
 
             // Check that the symbol marker is present
-            expect((output as any)[IS_INTERACTION_OUTPUT]).toBe(true);
+            expect(markedOutput[IS_INTERACTION_OUTPUT]).toBe(true);
         });
 
         it('should return the same instance when calling from() on an already wrapped array', () => {
@@ -249,7 +228,7 @@ describe('InteractionOutput', () => {
             const mixed: CompletionResult[] = [
                 { type: 'text', value: 'Start' },
                 { type: 'json', value: { count: 5 } },
-                { type: 'text', value: 'End' }
+                { type: 'text', value: 'End' },
             ];
 
             const output = InteractionOutput.from(mixed);
@@ -258,9 +237,7 @@ describe('InteractionOutput', () => {
         });
 
         it('should handle results with only one type', () => {
-            const textOnly: CompletionResult[] = [
-                { type: 'text', value: 'Only text here' }
-            ];
+            const textOnly: CompletionResult[] = [{ type: 'text', value: 'Only text here' }];
 
             const output = InteractionOutput.from(textOnly);
             expect(output.text()).toBe('Only text here');
@@ -271,11 +248,12 @@ describe('InteractionOutput', () => {
 
     describe('Type safety with generics', () => {
         it('should provide type safety with generic parameter', () => {
-            interface User { name: string; age: number; }
+            interface User {
+                name: string;
+                age: number;
+            }
 
-            const results: CompletionResult[] = [
-                { type: 'json', value: { name: 'Bob', age: 25 } }
-            ];
+            const results: CompletionResult[] = [{ type: 'json', value: { name: 'Bob', age: 25 } }];
 
             const output = InteractionOutput.from<User>(results);
             const user = output.object(); // TypeScript knows this is User
@@ -284,14 +262,19 @@ describe('InteractionOutput', () => {
             expect(user.age).toBe(25);
         });
 
-
         it('should allow type override at method level', () => {
-            interface Person { name: string; age: number; }
-            interface Address { street: string; city: string; }
+            interface Person {
+                name: string;
+                age: number;
+            }
+            interface Address {
+                street: string;
+                city: string;
+            }
 
             const results: CompletionResult[] = [
                 { type: 'json', value: { name: 'Alice', age: 30 } },
-                { type: 'json', value: { street: '123 Main', city: 'NYC' } }
+                { type: 'json', value: { street: '123 Main', city: 'NYC' } },
             ];
 
             const output = InteractionOutput.from<Person>(results);

@@ -1,0 +1,29 @@
+{
+    "name": "@koa-stack/tests",
+    "version": "0.24.0",
+    "private": true,
+    "description": "Tests",
+    "type": "module",
+    "scripts": {
+        "build": "pnpm run clean && tsc --project ./tsconfig.build.json",
+        "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo",
+        "test": "pnpm exec vitest run src"
+    },
+    "keywords": [],
+    "author": "stefanescu.bogdan@gmail.com",
+    "license": "MIT",
+    "dependencies": {
+        "@koa-stack/body": "workspace:*",
+        "@koa-stack/router": "workspace:*",
+        "@koa-stack/server": "workspace:*",
+        "koa": "^3.2.1"
+    },
+    "devDependencies": {
+        "@types/koa": "^3.0.3",
+        "@types/supertest": "^7.2.0",
+        "@vertesia/tsconfig": "workspace:*",
+        "supertest": "^7.2.2",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.8"
+    }
+}

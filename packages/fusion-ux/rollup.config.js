@@ -6,7 +6,7 @@ import terser from '@rollup/plugin-terser';
 const TARGET_FILE = 'lib/vertesia-fusion-ux.js';
 
 export default {
-    input: 'lib/esm/index.js',
+    input: 'lib/index.js',
     output: {
         file: TARGET_FILE,
         format: 'es',

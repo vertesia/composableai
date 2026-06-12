@@ -139,19 +139,19 @@ const PRINT_STYLES = `
  * @returns true if print dialog was opened successfully, false otherwise
  */
 export function printElementToPdf(sourceElement: HTMLElement, title: string): boolean {
-    if (typeof window === "undefined" || typeof document === "undefined") {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
         return false;
     }
 
     // Use a hidden iframe to avoid opening a new window
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
-    iframe.style.visibility = "hidden";
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.visibility = 'hidden';
     document.body.appendChild(iframe);
 
     const iframeWindow = iframe.contentWindow;
@@ -162,17 +162,19 @@ export function printElementToPdf(sourceElement: HTMLElement, title: string): bo
 
     const doc = iframeWindow.document;
     doc.open();
-    doc.write(`<!doctype html><html><head><title>${title}</title></head><body></body></html>`);
+    // Write a static skeleton only; the (untrusted) title is assigned via doc.title below,
+    // which sets it as text and avoids constructing HTML from input (CodeQL js/html-constructed-from-input).
+    doc.write('<!doctype html><html><head><title></title></head><body></body></html>');
     doc.close();
     doc.title = title;
 
-    const styles = document.querySelectorAll<HTMLLinkElement | HTMLStyleElement>("link[rel=\"stylesheet\"], style");
+    const styles = document.querySelectorAll<HTMLLinkElement | HTMLStyleElement>('link[rel="stylesheet"], style');
     styles.forEach((node) => {
         doc.head.appendChild(node.cloneNode(true));
     });
 
     // Add dedicated print styles
-    const printStyle = doc.createElement("style");
+    const printStyle = doc.createElement('style');
     printStyle.textContent = PRINT_STYLES;
     doc.head.appendChild(printStyle);
 

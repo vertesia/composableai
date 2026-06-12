@@ -20,7 +20,15 @@ export interface CostAnalyticsQuery {
     /** End time (ISO string or epoch ms) */
     to?: string | number;
     /** Group results by this dimension */
-    group_by?: 'model' | 'environment' | 'account' | 'project' | 'project_tag' | 'provider' | 'interaction' | 'workflow';
+    group_by?:
+        | 'model'
+        | 'environment'
+        | 'account'
+        | 'project'
+        | 'project_tag'
+        | 'provider'
+        | 'interaction'
+        | 'workflow';
     /** Time series resolution */
     resolution?: 'hour' | 'day' | 'week' | 'month';
     /** Filter by model pattern */
@@ -39,10 +47,8 @@ export interface CostAnalyticsQuery {
     run_id?: string;
     /** Filter by agent run ID */
     agent_run_id?: string;
-    /** Filter by saved-interaction ObjectId */
+    /** Filter by interaction id: stored ObjectId or namespaced in-code id */
     interaction_id?: string;
-    /** Filter by in-code interaction code (e.g. "@sys:chat") */
-    interaction_code?: string;
     /** Filter by principal (bare user or API key id; matched against the suffix of principal_id) */
     principal_id?: string;
     /** Filter by account ID (set automatically by server) */

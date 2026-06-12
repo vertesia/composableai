@@ -1,4 +1,4 @@
-import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase, type ServerError } from '@vertesia/api-fetch-client';
 import type {
     AppInstallation,
     AppInstallationKind,
@@ -14,12 +14,15 @@ import type {
     UpdateAppInstallationToolAllowlistPayload,
     ValidateUrlRequest,
     ValidateUrlResponse,
-} from "@vertesia/common";
+} from '@vertesia/common';
+
+export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest'> {
+    manifest: null;
+}
 
 export default class AppsApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/apps")
+        super(parent, '/api/v1/apps');
     }
 
     create(manifest: AppManifestData): Promise<AppManifest> {
@@ -31,12 +34,21 @@ export default class AppsApi extends ApiTopic {
     }
 
     /**
+     * Delete an app manifest by id. The owning account must permit the operation.
+     * Note: also uninstall any existing installations of this manifest before deleting,
+     * otherwise the server may refuse or leave orphaned installation records.
+     */
+    delete(id: string): Promise<CountResult> {
+        return this.del(`/${id}`);
+    }
+
+    /**
      * Get the list if tools provided by the given app.
-     * @param appId 
-     * @returns 
+     * @param appId
+     * @returns
      */
     listAppInstallationTools(appInstallId: string): Promise<AppToolCollection[]> {
-        return this.get(`/installations/${appInstallId}/tools`)
+        return this.get(`/installations/${appInstallId}/tools`);
     }
 
     /**
@@ -63,7 +75,7 @@ export default class AppsApi extends ApiTopic {
                 settings,
                 oauth_params: oauthParams,
                 oauth_provider_params: oauthProviderParams,
-            } satisfies AppInstallationPayload
+            } satisfies AppInstallationPayload,
         });
     }
 
@@ -78,35 +90,39 @@ export default class AppsApi extends ApiTopic {
 
     /**
      * get an app unstallation given its name or null if the app is not installed
-     * @returns 
+     * @returns
      */
     getAppInstallationByName(appName: string): Promise<AppInstallationWithManifest | null> {
-        return this.get(`/installations/name/${appName}`).catch((err: ServerError) => {
+        return this.get<AppInstallationWithManifest>(`/installations/name/${appName}`).catch((err: ServerError) => {
             if (err.status === 404) {
                 return null;
             } else {
                 throw err;
             }
-        })
+        });
     }
 
     /**
      * Get the project refs where the application is visible by the current user.
      * The application is specified either by id or by name.
-     * @param param0 
-     * @returns 
+     * @param param0
+     * @returns
      */
-    getAppInstallationProjects(app: RequireAtLeastOne<{ id?: string, name?: string }, 'id' | 'name'>): Promise<ProjectRef[]> {
+    getAppInstallationProjects(
+        app: RequireAtLeastOne<{ id?: string; name?: string }, 'id' | 'name'>,
+    ): Promise<ProjectRef[]> {
         if (!app.id && !app.name) {
-            throw new Error("Invalid arguments: appId or appName must be specified");
+            throw new Error('Invalid arguments: appId or appName must be specified');
         }
-        const query = app.id ? {
-            id: app.id
-        } : {
-            name: app.name
-        }
-        return this.get("/installations/projects", {
-            query
+        const query = app.id
+            ? {
+                  id: app.id,
+              }
+            : {
+                  name: app.name,
+              };
+        return this.get('/installations/projects', {
+            query,
         });
     }
 
@@ -118,7 +134,7 @@ export default class AppsApi extends ApiTopic {
         return this.get('/installations', {
             query: {
                 kind,
-            }
+            },
         });
     }
 
@@ -127,7 +143,7 @@ export default class AppsApi extends ApiTopic {
      * including orphaned installations
      * This requires project admin since access is not checked on the insytallations.
      * For a user level list of available installations (with user permission check) use getInstalledApps
-     * @returns 
+     * @returns
      */
     getAllAppInstallations(): Promise<AppInstallationListEntry[]> {
         return this.get('/installations/all');
@@ -144,8 +160,12 @@ export default class AppsApi extends ApiTopic {
         return this.put(`/installations/settings/${settingsPayload.app_id}`, {
             payload: {
                 app_id: settingsPayload.app_id,
-                settings: settingsPayload.settings
-            } satisfies AppInstallationPayload
+                settings: settingsPayload.settings,
+                // Forward access_control when the caller provided it (including explicit null to
+                // clear an override). The server uses `'access_control' in payload` to distinguish
+                // "leave unchanged" from "clear", so only spread the key when it was supplied.
+                ...('access_control' in settingsPayload ? { access_control: settingsPayload.access_control } : {}),
+            } satisfies AppInstallationPayload,
         });
     }
 
@@ -166,5 +186,4 @@ export default class AppsApi extends ApiTopic {
     validateUrl(url: string): Promise<ValidateUrlResponse> {
         return this.post('/validate-url', { payload: { url } satisfies ValidateUrlRequest });
     }
-
 }

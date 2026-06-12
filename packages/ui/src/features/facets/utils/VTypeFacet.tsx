@@ -1,6 +1,6 @@
-import { FacetBucket } from "@vertesia/common";
-import { FilterGroup } from "@vertesia/ui/core";
-import { TypeRegistry } from "../../store/types/TypeRegistry.js";
+import type { FacetBucket } from '@vertesia/common';
+import type { FilterGroup } from '@vertesia/ui/core';
+import type { TypeRegistry } from '../../store/types/TypeRegistry.js';
 
 interface VTypeFacetProps {
     buckets: FacetBucket[];
@@ -13,37 +13,37 @@ export function VTypeFacet({ buckets, typeRegistry, type = 'select', multiple = 
     // Create a map for quick lookups of type names and counts
     const typeDataMap = new Map();
     if (!typeRegistry) {
-        console.warn("Type names cannot be resolved");
+        console.warn('Type names cannot be resolved');
     }
     buckets.forEach((bucket) => {
-        let name;
+        let name: string | undefined;
         let typeId = bucket._id;
 
         if (bucket._id == null) {
-            typeId = "Document";
-            name = "Document";
+            typeId = 'Document';
+            name = 'Document';
         } else {
             name = typeRegistry?.getTypeName(bucket._id);
             if (!name) {
-                console.warn("Content Object Type not found", bucket._id);
+                console.warn('Content Object Type not found', bucket._id);
                 name = bucket._id;
             }
         }
 
         typeDataMap.set(typeId, {
             name,
-            count: bucket.count
+            count: bucket.count,
         });
     });
 
     const options = buckets.map((bucket) => {
         const actualId = bucket._id;
-        const displayKey = actualId || "Document";
+        const displayKey = actualId || 'Document';
         const typeData = typeDataMap.get(displayKey);
-        
+
         return {
             value: actualId,
-            label: typeData ? `${typeData.name} (${typeData.count})` : `Unknown (${bucket.count})`
+            label: typeData ? `${typeData.name} (${typeData.count})` : `Unknown (${bucket.count})`,
         };
     });
 
@@ -63,7 +63,7 @@ export function VTypeFacet({ buckets, typeRegistry, type = 'select', multiple = 
             return (
                 <div className="w-full flex items-center">
                     <span className="text-sm truncate">{typeData.name}</span>
-                    <span className="ml-2 text-xs">({typeData.count})</span>
+                    <span className="ms-2 text-xs">({typeData.count})</span>
                 </div>
             );
         },
@@ -74,7 +74,7 @@ export function VTypeFacet({ buckets, typeRegistry, type = 'select', multiple = 
                 return false;
             }
             return typeData.name.toLowerCase().includes(searchText.toLowerCase());
-        }
+        },
     };
 
     return customFilterGroups;
