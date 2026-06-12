@@ -1,4 +1,5 @@
 export * from './access-control.js';
+export * from './agent-request-template.js';
 export * from './analytics.js';
 export * from './apikey.js';
 export * from './apps.js';

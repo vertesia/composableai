@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { VertesiaClient } from '@vertesia/client';
-import { type AgentMessage, AgentMessageType } from '@vertesia/common';
+import { type AgentMessage, AgentMessageType, FileProcessingStatus } from '@vertesia/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAgentStream } from './useAgentStream';
 
@@ -183,5 +183,68 @@ describe('useAgentStream', () => {
         await waitFor(() => {
             expect(result.current.messages.map((message) => message.message)).toEqual(['server question', 'answer']);
         });
+    });
+
+    it('replaces file processing status with the latest server snapshot', async () => {
+        let onStreamMessage: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+            ) => Promise<unknown>
+        >(async (_id, onMessage) => {
+            onStreamMessage = onMessage;
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(onStreamMessage).toBeDefined();
+        });
+
+        act(() => {
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.SYSTEM, 1_000, 'file ready'),
+                details: {
+                    system_type: 'file_processing',
+                    batch_id: 'batch-1',
+                    files: [
+                        {
+                            id: 'file-1',
+                            name: 'wrong.png',
+                            content_type: 'image/png',
+                            size: 1,
+                            status: FileProcessingStatus.READY,
+                            started_at: 1_000,
+                        },
+                    ],
+                    pending_count: 0,
+                    ready_count: 1,
+                    error_count: 0,
+                },
+            });
+        });
+
+        expect(result.current.serverFileUpdates.has('file-1')).toBe(true);
+
+        act(() => {
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.SYSTEM, 1_100, 'file removed'),
+                details: {
+                    system_type: 'file_processing',
+                    batch_id: 'batch-1',
+                    files: [],
+                    pending_count: 0,
+                    ready_count: 0,
+                    error_count: 0,
+                },
+            });
+        });
+
+        expect(result.current.serverFileUpdates.has('file-1')).toBe(false);
     });
 });

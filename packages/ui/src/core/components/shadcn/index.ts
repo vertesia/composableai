@@ -20,6 +20,7 @@ export * from './radioGroup';
 export * from './resizeable';
 export * from './selectBox';
 export * from './separator';
+export * from './slider';
 export * from './switch';
 export * from './tabs';
 export * from './text';
