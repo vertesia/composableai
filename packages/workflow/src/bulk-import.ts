@@ -1,4 +1,8 @@
-import type { CreateCollectionPayload, CreateContentObjectPayload } from '@vertesia/common';
+import type {
+    ContentObjectProcessingPriority,
+    CreateCollectionPayload,
+    CreateContentObjectPayload,
+} from '@vertesia/common';
 
 export enum ItemTypes {
     CONTENT_OBJECT = 'ContentObject',
@@ -90,6 +94,12 @@ export interface BulkImportParams {
     dryRun?: boolean;
     updateByContentSource?: boolean;
     skipWorkflows?: boolean;
+    /**
+     * Processing priority for the document-processing workflows triggered by created objects.
+     * Defaults to `low` so bulk imports run on the low-priority ("bulk") task queue and don't
+     * compete with interactive traffic.
+     */
+    processingPriority?: ContentObjectProcessingPriority;
 }
 
 export interface PartitionError {
