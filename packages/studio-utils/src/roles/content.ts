@@ -1,5 +1,5 @@
+import type { AbacScope, RoleDomain } from '@vertesia/common';
 import { AbacRole, type Role, type RolePartition } from './classes.js';
-import type { AbacScope, RoleDomain } from './types.js';
 
 const ContentRoleDomain: RoleDomain = 'content';
 

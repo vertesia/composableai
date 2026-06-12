@@ -1,19 +1,10 @@
+import type { AbacScope, RoleDomain } from '@vertesia/common';
 import { AbacRole, type Role, type RolePartition, SystemRole } from './classes.js';
 import { contentPartition } from './content.js';
 import { systemPartition } from './system.js';
-import type { AbacScope, RoleDomain } from './types.js';
 
-// Classes + registry-bound interface (eventual destination: studio-utils)
 export { AbacRole, Role, type RolePartition, SystemRole } from './classes.js';
 export { ContentRoleNames } from './content.js';
-// Pure types (stay in `@vertesia/common` when classes migrate to studio-utils)
-export {
-    type AbacScope,
-    AbacScopes,
-    type RoleDefinition,
-    type RoleDomain,
-    type SystemRoleDefinition,
-} from './types.js';
 
 /**
  * The ordered partition registry. Partitions are queried in this order — first

@@ -1,6 +1,5 @@
+import { Permission, ProjectRoles } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
-import { Permission } from '../access-control.js';
-import { ProjectRoles } from '../project.js';
 import { ContentRoleNames } from './content.js';
 import {
     AbacRole,

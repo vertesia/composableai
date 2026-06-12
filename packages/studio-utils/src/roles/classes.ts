@@ -1,12 +1,10 @@
-import type { Permission } from '../access-control.js';
-import type { AbacScope, RoleDomain } from './types.js';
+import type { AbacScope, Permission, RoleDomain } from '@vertesia/common';
 
 /**
  * Class hierarchy and registry-bound interface for the role system. These
  * are LOGIC — they have runtime behavior (constructors, instance methods,
- * subclass dispatch via `instanceof`). They will eventually move to
- * `studio-utils` when the package-layering migration happens. The pure
- * wire-shape types stay in `./types.js` (and thus in `@vertesia/common`).
+ * subclass dispatch via `instanceof`). They live in `@vertesia/studio-utils`
+ * (not common) per the package-layering contract: only types stay in common.
  */
 
 /**
@@ -56,7 +54,7 @@ export class SystemRole extends Role<Permission> {
  * `Role<string>` because ABAC verbs aren't constrained to the central
  * `Permission` enum.
  *
- * The IAM UI filters via `listRolesForScope` which checks `instanceof AbacRole`.
+ * The IAM UI filters via `listAbacRolesForScope` which checks `instanceof AbacRole`.
  */
 export class AbacRole extends Role<string> {
     constructor(

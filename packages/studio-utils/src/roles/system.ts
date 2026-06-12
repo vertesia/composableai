@@ -1,5 +1,4 @@
-import { Permission } from '../access-control.js';
-import { ProjectRoles } from '../project.js';
+import { Permission, ProjectRoles } from '@vertesia/common';
 import { type Role, type RolePartition, SystemRole } from './classes.js';
 
 class OrgMemberRole extends SystemRole {
