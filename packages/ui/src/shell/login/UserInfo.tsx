@@ -39,9 +39,9 @@ export default function InfoList() {
 
     const session = useUserSession();
     const { account, project, client, authToken } = session;
-    const server = new URL(client.baseUrl).hostname;
-    const store = new URL(client.store.baseUrl).hostname;
-    const mcpServer = Env.endpoints.mcp ? new URL(Env.endpoints.mcp).hostname : t('user.unknown');
+    const server = client.baseUrl;
+    const store = client.store.baseUrl;
+    const mcpServer = Env.endpoints.mcp ?? t('user.unknown');
     const tenantId = project ? getTenantIdFromProject(project) : '';
 
     const tabs = [
