@@ -1,43 +1,9 @@
-import { Permission } from './access-control.js';
-import { ProjectRoles } from './project.js';
+import { Permission } from '../access-control.js';
+import { ProjectRoles } from '../project.js';
+import { type Role, type RolePartition, SystemRole } from './classes.js';
 
-export class Role {
-    permissions: Set<Permission>;
-    constructor(
-        public name: ProjectRoles,
-        permissions: Permission[],
-    ) {
-        this.permissions = new Set(permissions);
-    }
-
-    hasPermission(permission: Permission) {
-        return this.permissions.has(permission);
-    }
-}
-
-export class RoleList {
-    private constructor(public readonly roles: Role[]) {}
-
-    static fromRoleNames(roleNames: ProjectRoles[]): RoleList {
-        const roles = roleNames.map((r) => getRoleByName(r));
-        return new RoleList(roles);
-    }
-
-    static fromRoleName(roleName: ProjectRoles): RoleList {
-        const roles = [getRoleByName(roleName)];
-        return new RoleList(roles);
-    }
-
-    hasPermission(perm: Permission): boolean {
-        return this.roles.some((role) => role.hasPermission(perm));
-    }
-}
-
-class OrgMemberRole extends Role {
-    constructor(
-        public name: ProjectRoles,
-        permissions: Permission[],
-    ) {
+class OrgMemberRole extends SystemRole {
+    constructor(name: string, permissions: Permission[]) {
         super(name, [Permission.account_member, ...permissions]);
     }
 }
@@ -93,7 +59,7 @@ class ApplicationRole extends OrgMemberRole {
             Permission.content_write,
             Permission.content_read,
             Permission.content_write,
-            Permission.content_admin, // required for now as we need to create types
+            Permission.content_admin,
             Permission.project_admin,
             Permission.workflow_run,
             Permission.project_settings_write,
@@ -135,7 +101,7 @@ class ContentProcessorRole extends OrgMemberRole {
 class ConsumerRole extends OrgMemberRole {
     constructor() {
         super(ProjectRoles.consumer, [
-            Permission.content_admin, // Temporary permission; micro apps will need to create types instead via user roles
+            Permission.content_admin,
             Permission.content_read,
             Permission.content_write,
             Permission.content_delete,
@@ -210,7 +176,11 @@ class ContentSuperAdmin extends DeveloperRole {
     }
 }
 
-const roles: Record<ProjectRoles, Role> = {
+// The enum is still named `ProjectRoles` (historical); the partition's domain
+// is `system` — the foundational built-in roles, distinct from feature domains
+// like `content` or `tasks`. Renaming the enum to `SystemRoles` is a separate
+// concern to revisit later.
+const systemRoles: Record<ProjectRoles, Role> = {
     [ProjectRoles.owner]: new OwnerRole(),
     [ProjectRoles.admin]: new AdminRole(),
     [ProjectRoles.manager]: new ManagerRole(),
@@ -229,23 +199,7 @@ const roles: Record<ProjectRoles, Role> = {
     [ProjectRoles.content_superadmin]: new ContentSuperAdmin(),
 };
 
-export function getRoleByName(name: ProjectRoles): Role {
-    const role = roles[name];
-    if (!role) throw new Error(`Role ${name} not found`);
-    return role;
-}
-
-export function listRoles(): Role[] {
-    return Object.values(roles);
-}
-
-export function getPermissionsForRoles(roleNames: Iterable<ProjectRoles>): Permission[] {
-    const permissions = new Set<Permission>();
-    for (const roleName of roleNames) {
-        const role = getRoleByName(roleName);
-        for (const permission of role.permissions) {
-            permissions.add(permission);
-        }
-    }
-    return Array.from(permissions);
-}
+export const systemPartition: RolePartition = {
+    domain: 'system',
+    roles: new Map(Object.entries(systemRoles)),
+};

@@ -134,10 +134,9 @@ export interface ACECreatePayload extends Omit<AccessControlEntry, 'created_at' 
 
 export interface ACEUpdatePayload extends Partial<ACECreatePayload> {}
 
-export interface RoleDefinition {
-    name: ProjectRoles;
-    permissions: Permission[];
-}
+// RoleDefinition + SystemRoleDefinition now live in `./roles/types.js` to
+// avoid a circular import with `RoleDomain`. They remain re-exported via
+// the package's index.ts so consumers see no path change.
 
 // ============================================================================
 // BLP Security Levels
