@@ -1,6 +1,6 @@
 import type { PropertyConditions } from './access-control.js';
 import type { UserGroupRef } from './group.js';
-import type { ProjectRef, ProjectRoles } from './project.js';
+import type { ProjectRef, SystemRoles } from './project.js';
 import type { AccountRef } from './user.js';
 
 /**
@@ -21,7 +21,7 @@ export interface ApiKey {
     id: string;
     name: string;
     type: ApiKeyTypes;
-    role: ProjectRoles;
+    role: SystemRoles;
     maskedValue?: string; //masked value
     can_retrieve_value?: boolean;
     account: string; // the account id
@@ -71,11 +71,11 @@ export interface AuthTokenPayload {
     type: PrincipalType;
     account: AccountRef;
 
-    account_roles: ProjectRoles[];
+    account_roles: SystemRoles[];
     accounts: AccountRef[];
 
     project?: ProjectRef;
-    project_roles?: ProjectRoles[];
+    project_roles?: SystemRoles[];
 
     /**
      * The app names enabled for this token. Defaults to an empty array if no apps are enabled.

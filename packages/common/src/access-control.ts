@@ -4,7 +4,7 @@
  * Access control interfaces
  */
 
-import type { ProjectRoles } from './project.js';
+import type { SystemRoles } from './project.js';
 
 export enum Permission {
     int_read = 'interaction:read',
@@ -112,7 +112,7 @@ export interface AceConditions {
 }
 
 export interface AccessControlEntry {
-    role: ProjectRoles;
+    role: SystemRoles;
     resource_type: AccessControlResourceType;
     resource: string; //objectId
     principal_type: AccessControlPrincipalType;
@@ -134,10 +134,9 @@ export interface ACECreatePayload extends Omit<AccessControlEntry, 'created_at' 
 
 export interface ACEUpdatePayload extends Partial<ACECreatePayload> {}
 
-export interface RoleDefinition {
-    name: ProjectRoles;
-    permissions: Permission[];
-}
+// RoleDefinition + SystemRoleDefinition now live in `./roles/types.js` to
+// avoid a circular import with `RoleDomain`. They remain re-exported via
+// the package's index.ts so consumers see no path change.
 
 // ============================================================================
 // BLP Security Levels

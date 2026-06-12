@@ -1,5 +1,5 @@
 import type { ApiKey } from './apikey.js';
-import type { ProjectRef, ProjectRoles } from './project.js';
+import type { ProjectRef, SystemRoles } from './project.js';
 
 export interface UserWithAccounts extends User {
     accounts: AccountRef[];
@@ -110,7 +110,7 @@ export const AccountRefPopulate = 'id name';
 
 export interface InviteUserRequestPayload {
     email: string;
-    role: ProjectRoles;
+    role: SystemRoles;
 }
 
 export interface InviteUserResponsePayload {

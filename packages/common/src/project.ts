@@ -9,7 +9,7 @@ export interface ICreateProjectPayload {
     description?: string;
     auto_config?: boolean;
 }
-export enum ProjectRoles {
+export enum SystemRoles {
     owner = 'owner', // all permissions
     admin = 'admin', // all permissions
     manager = 'manager', // all permissions but manage_account, manage_billing
@@ -30,14 +30,14 @@ export enum ProjectRoles {
 
 export function isRoleIncludedIn(role: string, includingRole: string) {
     switch (includingRole) {
-        case ProjectRoles.owner:
+        case SystemRoles.owner:
             return true; // includes billing to?
-        case ProjectRoles.admin:
-            return role !== ProjectRoles.billing && role !== ProjectRoles.owner;
-        case ProjectRoles.developer:
-            return role === ProjectRoles.developer;
-        case ProjectRoles.billing:
-            return role === ProjectRoles.billing;
+        case SystemRoles.admin:
+            return role !== SystemRoles.billing && role !== SystemRoles.owner;
+        case SystemRoles.developer:
+            return role === SystemRoles.developer;
+        case SystemRoles.billing:
+            return role === SystemRoles.billing;
         default:
             return false;
     }
