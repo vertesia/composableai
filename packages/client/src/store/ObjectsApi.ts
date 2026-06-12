@@ -360,6 +360,7 @@ export class ObjectsApi extends ApiTopic {
         options?: {
             collection_id?: string;
             skip_workflows?: boolean;
+            processing_priority?: ContentObjectProcessingPriority;
         },
     ): Promise<BulkObjectCreateResult> {
         return this.client.runOperation({
