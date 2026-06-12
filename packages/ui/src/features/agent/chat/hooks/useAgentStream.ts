@@ -120,6 +120,9 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
 
     // Stream messages from the agent
     useEffect(() => {
+        // A nonce bump reconnects the current conversation without clearing the timeline.
+        void streamNonce;
+
         // Only reset state when switching to a different conversation. A reconnect
         // (nonce bump for the same agentRunId) keeps the existing timeline so newly
         // streamed messages append in place — re-delivered history is de-duped by
@@ -127,7 +130,6 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
         const isNewConversation = prevAgentRunIdRef.current !== agentRunId;
         prevAgentRunIdRef.current = agentRunId;
 
-        console.debug('[useAgentStream] effect:start', { agentRunId, streamNonce, isNewConversation });
         if (isNewConversation) {
             setMessages([]);
             setAgentRunStatus(null);
@@ -215,13 +217,7 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                     if (message.type === AgentMessageType.SYSTEM) {
                         const details = message.details as FileProcessingDetails | undefined;
                         if (details?.system_type === 'file_processing' && details.files) {
-                            setServerFileUpdates((prev) => {
-                                const newMap = new Map(prev);
-                                for (const file of details.files) {
-                                    newMap.set(file.id, file);
-                                }
-                                return newMap;
-                            });
+                            setServerFileUpdates(new Map(details.files.map((file) => [file.id, file])));
                             return;
                         }
                         // Other SYSTEM messages fall through to normal handling
@@ -309,7 +305,6 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
             });
 
         return () => {
-            console.debug('[useAgentStream] effect:cleanup', { agentRunId });
             abortController.abort();
             // Note: messages are intentionally NOT cleared here. Switching conversations
             // resets them at effect start (isNewConversation); a reconnect must preserve

@@ -19,13 +19,16 @@ import {
     ModalFooter,
     ModalTitle,
     Spinner,
+    Textarea,
     useToast,
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { Bot, Cpu, FileTextIcon, SendIcon, UploadIcon, XIcon } from 'lucide-react';
+import { ArrowUpIcon, Bot, CheckCircle, Cpu, FileTextIcon, UploadIcon, XIcon } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
+import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
@@ -33,21 +36,173 @@ import { useAgentStream } from './hooks/useAgentStream.js';
 import { useDocumentPanel } from './hooks/useDocumentPanel.js';
 import { useFileProcessing } from './hooks/useFileProcessing.js';
 import { ImageLightboxProvider } from './ImageLightbox';
-import type { AgentConversationViewMode } from './ModernAgentOutput/AllMessagesMixed';
+import type {
+    AgentConversationViewMode,
+    AgentInitialRequestTemplate,
+    AgentInitialRequestTemplateContext,
+} from './ModernAgentOutput/AllMessagesMixed';
 import AllMessagesMixed from './ModernAgentOutput/AllMessagesMixed';
 import type { BatchProgressPanelClassNames } from './ModernAgentOutput/BatchProgressPanel';
 import Header from './ModernAgentOutput/Header';
 import MessageInput, { type SelectedDocument, type UploadedFile } from './ModernAgentOutput/MessageInput';
 import type { MessageItemClassNames } from './ModernAgentOutput/MessageItem';
+import { getPendingRequestInputMessage } from './ModernAgentOutput/requestInputMessages';
 import type { StreamingMessageClassNames } from './ModernAgentOutput/StreamingMessage';
 import type { ToolCallGroupClassNames } from './ModernAgentOutput/ToolCallGroup';
-import { getConversationUrl, getWorkstreamId } from './ModernAgentOutput/utils';
+import { getConversationUrl, getWorkstreamId, isInProgress } from './ModernAgentOutput/utils';
+import {
+    type AgentChatPlaybackCursor,
+    createPlaybackState,
+    getPlaybackCursorIndex,
+    isAgentChatPlaybackAvailable,
+    isAgentChatPlaybackEnabled,
+} from './playback';
 import { SkillWidgetProvider } from './SkillWidgetProvider';
 import { ArtifactUrlCacheProvider } from './useArtifactUrlCache.js';
 import { VegaLiteChart } from './VegaLiteChart';
 import { ThinkingMessages } from './WaitingMessages';
+import {
+    getWorkstreamLaunchDetails,
+    getWorkstreamLifecycleStatus,
+    isWorkstreamInternalResultMessage,
+    isWorkstreamTerminalMessage,
+} from './workstreams.js';
 
 export type StartWorkflowFn = (initialMessage?: string) => Promise<{ agent_run_id: string } | undefined>;
+
+const EMPTY_STREAMING_MESSAGES = new Map<string, never>();
+
+function getTimestampMs(timestamp: number | string | undefined): number {
+    if (typeof timestamp === 'number') return timestamp;
+    if (!timestamp) return Date.now();
+    const parsed = new Date(timestamp).getTime();
+    return Number.isFinite(parsed) ? parsed : Date.now();
+}
+
+function deriveActiveWorkstreamsFromMessages(messages: AgentMessage[]): WorkstreamInfo[] {
+    const latestByWorkstream = new Map<string, AgentMessage>();
+    const launchesByWorkstream = new Map<
+        string,
+        { launch_id?: string; interaction?: string; child_workflow_id?: string; child_workflow_run_id?: string }
+    >();
+
+    for (const message of messages) {
+        const launchDetails = getWorkstreamLaunchDetails(message);
+        if (launchDetails) {
+            launchesByWorkstream.set(launchDetails.workstreamId, {
+                launch_id: launchDetails.launchId,
+                interaction: launchDetails.interaction,
+                child_workflow_id: launchDetails.childWorkflowId,
+                child_workflow_run_id: launchDetails.childWorkflowRunId,
+            });
+        }
+
+        if (isWorkstreamInternalResultMessage(message)) continue;
+
+        const workstreamId = getWorkstreamId(message);
+        if (workstreamId === 'main' || workstreamId === 'all') continue;
+        latestByWorkstream.set(workstreamId, message);
+    }
+
+    return Array.from(latestByWorkstream.entries())
+        .filter(([, message]) => {
+            if ([AgentMessageType.COMPLETE, AgentMessageType.IDLE].includes(message.type)) return false;
+            return !isWorkstreamTerminalMessage(message);
+        })
+        .map(([workstreamId, message]) => {
+            const launch = launchesByWorkstream.get(workstreamId);
+            return {
+                workstream_id: workstreamId,
+                launch_id: launch?.launch_id ?? `message-derived:${workstreamId}`,
+                interaction: launch?.interaction,
+                elapsed_ms: 0,
+                deadline_ms: 0,
+                remaining_ms: 0,
+                status: getWorkstreamLifecycleStatus(message) ?? 'running',
+                child_workflow_id: launch?.child_workflow_id,
+                child_workflow_run_id: launch?.child_workflow_run_id,
+            };
+        });
+}
+
+function formatCompactDuration(seconds: number): string {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+}
+
+function useElapsedSeconds(timestamp?: number | string, enabled = true): number {
+    const [elapsed, setElapsed] = useState(() =>
+        Math.max(0, Math.floor((Date.now() - getTimestampMs(timestamp)) / 1000)),
+    );
+
+    useEffect(() => {
+        if (!enabled) return;
+
+        const updateElapsed = () => {
+            setElapsed(Math.max(0, Math.floor((Date.now() - getTimestampMs(timestamp)) / 1000)));
+        };
+
+        updateElapsed();
+        const intervalId = window.setInterval(updateElapsed, 1000);
+        return () => window.clearInterval(intervalId);
+    }, [enabled, timestamp]);
+
+    return elapsed;
+}
+
+function useThinkingMessageIndex(enabled = true): number {
+    const [thinkingMessageIndex, setThinkingMessageIndex] = useState(0);
+
+    useEffect(() => {
+        if (!enabled) return;
+
+        const intervalId = window.setInterval(() => {
+            setThinkingMessageIndex(() => Math.floor(Math.random() * ThinkingMessages.length));
+        }, 4000);
+        return () => window.clearInterval(intervalId);
+    }, [enabled]);
+
+    return thinkingMessageIndex;
+}
+
+function PendingStartConversation({ message, startedAt }: { message: string; startedAt: number }) {
+    const { t } = useUITranslation();
+    const elapsed = useElapsedSeconds(startedAt);
+    const thinkingMessageIndex = useThinkingMessageIndex();
+
+    return (
+        <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-end gap-6 px-1 py-8">
+            <div className="flex w-full justify-end">
+                <div
+                    className={cn(
+                        'max-w-[min(44rem,82%)] rounded-[1.35rem] bg-mixer-muted/35 px-4 py-2.5',
+                        'break-words text-sm font-normal leading-6 text-foreground/90 shadow-sm shadow-black/5',
+                        'dark:bg-mixer-muted/15 dark:text-foreground/88 dark:shadow-none [overflow-wrap:anywhere]',
+                    )}
+                >
+                    <div className="whitespace-pre-wrap">{message}</div>
+                </div>
+            </div>
+            <div className="border-b border-border/70 pb-4 text-sm text-muted">
+                <div className="flex items-center gap-3">
+                    <PulsatingCircle size="sm" color="blue" />
+                    <div className="min-w-0">
+                        <div>
+                            <span className="font-medium">{t('agent.preparing')}</span>
+                            <span className="ms-2 text-muted/75">for {formatCompactDuration(elapsed)}</span>
+                        </div>
+                        <div className="mt-1 truncate text-muted/80">{ThinkingMessages[thinkingMessageIndex]}</div>
+                    </div>
+                </div>
+                <div className="mt-3 ps-6">
+                    <AnimatedThinkingDots color="blue" />
+                </div>
+            </div>
+        </div>
+    );
+}
 
 function printElementToPdf(sourceElement: HTMLElement, title: string): boolean {
     if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -95,7 +250,31 @@ function printElementToPdf(sourceElement: HTMLElement, title: string): boolean {
     return true;
 }
 
-interface ModernAgentConversationProps {
+function trimHyphens(value: string): string {
+    let start = 0;
+    let end = value.length;
+    while (start < end && value[start] === '-') start++;
+    while (end > start && value[end - 1] === '-') end--;
+    return value.slice(start, end);
+}
+
+function sanitizeFilenamePart(value: string): string {
+    return trimHyphens(value.trim().replace(/[^a-z0-9-_]+/gi, '-')).slice(0, 80);
+}
+
+function downloadJsonFile(filename: string, payload: unknown) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+}
+
+export interface ModernAgentConversationProps {
     /** Stable AgentRun ID — the primary identifier for all runtime operations. */
     agentRunId?: string;
     title?: string;
@@ -170,6 +349,8 @@ interface ModernAgentConversationProps {
     hideObjectLinking?: boolean;
     /** Hide the internal header (for apps that render their own) */
     hideHeader?: boolean;
+    /** Header density. Use compact when the surrounding page already identifies the run. */
+    headerVariant?: 'full' | 'compact';
     /** Hide the internal message input (for apps that render their own) */
     hideMessageInput?: boolean;
     /** Custom action shown in place of the input box when the run status is FAILED.
@@ -231,6 +412,14 @@ interface ModernAgentConversationProps {
     /** Optional message to display as the first user message in the conversation.
      *  Purely visual/UI — not sent to temporal. Renders as a QUESTION MessageItem before real messages. */
     prependFriendlyMessage?: string;
+    /** Optional structured request data to render as the first user entry in the conversation. */
+    initialRequestData?: unknown;
+    /** Optional schema used by the default request renderer. */
+    initialRequestSchema?: AgentInitialRequestTemplateContext['schema'];
+    /** Optional label/title for the default structured request renderer. */
+    initialRequestTitle?: string;
+    /** Optional agent-specific request renderer for arbitrary input schemas. */
+    initialRequestTemplate?: AgentInitialRequestTemplate;
 
     // Fusion fragment props
     /**
@@ -247,6 +436,14 @@ interface ModernAgentConversationProps {
     conversationContent?: React.ReactNode;
     /** When true, renders the conversation inside the right panel as a "Conversation" tab */
     conversationTab?: boolean;
+    /** Internal optimistic first message shown while a newly-started run is waiting for persisted messages. */
+    pendingStartMessage?: string;
+    /** Timestamp for the internal optimistic first-message waiting state. */
+    pendingStartTimestamp?: number;
+    /** Force display playback controls on or off. When omitted, local playback can be toggled from the header. */
+    enablePlayback?: boolean;
+    /** Show a local toggle for display playback controls in the conversation action rail. */
+    showPlaybackToggle?: boolean;
 }
 
 export function ModernAgentConversation(props: ModernAgentConversationProps) {
@@ -295,7 +492,13 @@ function StartWorkflowView({
     // File upload props
     acceptedFileTypes,
     maxFiles = 5,
+    hideHeader = false,
     hideFileUpload = false,
+    hideObjectLinking,
+    headerVariant,
+    inputContainerClassName,
+    inputClassName,
+    className,
     allowWorkflowControl,
 }: ModernAgentConversationProps) {
     const { t } = useUITranslation();
@@ -306,6 +509,8 @@ function StartWorkflowView({
     const [inputValue, setInputValue] = useState<string>('');
     const [isSending, setIsSending] = useState(false);
     const [startedAgentRunId, setStartedAgentRunId] = useState<string | null>(null);
+    const [pendingStartMessage, setPendingStartMessage] = useState<string | null>(null);
+    const [pendingStartTimestamp, setPendingStartTimestamp] = useState<number | null>(null);
     const toast = useToast();
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -440,6 +645,9 @@ function StartWorkflowView({
                 ].join('\n');
             }
 
+            setPendingStartMessage(messageContent);
+            setPendingStartTimestamp(Date.now());
+
             const newRun = await startWorkflow(messageContent);
             if (newRun) {
                 const agentId = newRun.agent_run_id;
@@ -496,6 +704,8 @@ function StartWorkflowView({
                 });
             }
         } catch (err: unknown) {
+            setPendingStartMessage(null);
+            setPendingStartTimestamp(null);
             toast({
                 title: t('agent.errorStarting'),
                 status: 'error',
@@ -541,19 +751,35 @@ function StartWorkflowView({
     if (startedAgentRunId) {
         return (
             <ModernAgentConversationInner
-                {...{ onClose, isModal, initialMessage, placeholder, hideFileUpload, allowWorkflowControl }}
+                {...{
+                    onClose,
+                    isModal,
+                    initialMessage,
+                    placeholder,
+                    fullWidth,
+                    hideHeader,
+                    headerVariant,
+                    hideFileUpload,
+                    hideObjectLinking,
+                    inputContainerClassName,
+                    inputClassName,
+                    className,
+                    allowWorkflowControl,
+                }}
                 agentRunId={startedAgentRunId}
                 title={title}
+                pendingStartMessage={pendingStartMessage ?? undefined}
+                pendingStartTimestamp={pendingStartTimestamp ?? undefined}
             />
         );
     }
 
     return (
-        <div className="flex flex-col h-full bg-background items-center">
+        <div className={cn('flex h-full flex-col items-center bg-background', className)}>
             {/* biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target only; file selection is also exposed via the upload button. */}
             <div
                 className={cn(
-                    'flex flex-col h-full w-full overflow-hidden border-0 relative',
+                    'relative flex h-full w-full flex-col overflow-hidden border-0',
                     fullWidth ? '' : 'max-w-4xl',
                 )}
                 onDragEnter={canStageFiles ? handleDragEnter : undefined}
@@ -584,90 +810,77 @@ function StartWorkflowView({
                 )}
 
                 {/* Header */}
-                <div className="flex items-center justify-between py-2 px-3 border-b border-border bg-background">
-                    <div className="flex items-center space-x-2">
-                        <div className="p-1">
-                            <Cpu className="size-3.5 text-muted" />
+                {!hideHeader && (
+                    <div className="flex items-center justify-between border-b border-border/60 bg-background px-3 py-2">
+                        <div className="flex items-center gap-2">
+                            <div className="p-1">
+                                <Cpu className="size-3.5 text-muted" />
+                            </div>
+                            <span className="text-sm font-medium text-foreground">{resolvedTitle}</span>
                         </div>
-                        <span className="font-medium text-sm text-foreground">{resolvedTitle}</span>
-                    </div>
 
-                    {/* Close button if needed */}
-                    {onClose && !isModal && (
-                        <Button
-                            size="xs"
-                            variant="ghost"
-                            onClick={onClose}
-                            title={t('agent.close')}
-                            className="text-muted hover:text-foreground"
-                        >
-                            <XIcon className="size-4" />
-                        </Button>
-                    )}
-                </div>
-
-                {/* Empty conversation area with instructions */}
-                <div className="flex-1 overflow-y-auto bg-background flex flex-col items-center justify-end">
-                    <div className="w-full px-4 py-6">
-                        {initialMessage ? (
-                            <div className="px-4 py-3 mb-4 bg-info-background border-s-2 border-info text-info">
-                                {initialMessage}
-                            </div>
-                        ) : (
-                            <div className="bg-card p-4 border-s-2 border-info">
-                                <div className="text-base text-foreground font-medium">{t('agent.enterMessage')}</div>
-                                <div className="mt-3 text-sm text-muted">
-                                    {t('agent.typeQuestionBelow', { buttonText: resolvedStartButtonText })}
-                                </div>
-                            </div>
+                        {/* Close button if needed */}
+                        {onClose && !isModal && (
+                            <Button
+                                size="xs"
+                                variant="ghost"
+                                onClick={onClose}
+                                aria-label={t('agent.close')}
+                                title={t('agent.close')}
+                                className="text-muted hover:text-foreground"
+                            >
+                                <XIcon className="size-4" />
+                            </Button>
                         )}
                     </div>
+                )}
+
+                {/* Empty conversation area with instructions */}
+                <div className="flex flex-1 flex-col items-center justify-end overflow-y-auto bg-background px-4">
+                    {pendingStartMessage && pendingStartTimestamp ? (
+                        <PendingStartConversation message={pendingStartMessage} startedAt={pendingStartTimestamp} />
+                    ) : (
+                        <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-end py-8">
+                            {initialMessage && (
+                                <div className="text-[15px] leading-relaxed text-foreground/80">{initialMessage}</div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Input Area */}
-                <div className="py-3 px-3 border-t border-border bg-background">
-                    {/* Staged files display */}
-                    {canStageFiles && stagedFiles.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-3">
-                            {stagedFiles.map((file, index) => (
-                                <div
-                                    key={`${file.name}-${index}`}
-                                    className="flex items-center gap-1.5 px-2 py-1 bg-attention/10 text-attention rounded-md text-sm"
-                                >
-                                    <FileTextIcon className="size-3.5" />
-                                    <span className="max-w-[120px] truncate">{file.name}</span>
-                                    <span className="text-xs opacity-70">{t('agent.staged')}</span>
-                                    <Button
-                                        variant="unstyled"
-                                        aria-label={`Remove staged file ${file.name}`}
-                                        onClick={() => removeStagedFile(index)}
-                                        className="ms-1 p-0.5 hover:bg-attention/20 rounded"
+                <div className="shrink-0 bg-background px-4 pb-safe-area-4 pt-2">
+                    <div
+                        className={cn(
+                            'mx-auto flex max-w-3xl flex-col gap-3 rounded-2xl border border-border/70 bg-mixer-muted/15 p-3 shadow-lg shadow-black/5',
+                            inputContainerClassName,
+                        )}
+                    >
+                        {/* Staged files display */}
+                        {canStageFiles && stagedFiles.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {stagedFiles.map((file, index) => (
+                                    <div
+                                        key={`${file.name}-${file.size}-${file.lastModified}`}
+                                        className="flex items-center gap-1.5 rounded-md bg-attention/10 px-2 py-1 text-sm text-attention"
                                     >
-                                        <XIcon className="size-3" />
-                                    </Button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                        <FileTextIcon className="size-3.5" />
+                                        <span className="max-w-[120px] truncate">{file.name}</span>
+                                        <span className="text-xs opacity-70">{t('agent.staged')}</span>
+                                        <Button
+                                            variant="unstyled"
+                                            aria-label={`Remove staged file ${file.name}`}
+                                            onClick={() => removeStagedFile(index)}
+                                            className="ms-1 rounded p-0.5 hover:bg-attention/20"
+                                        >
+                                            <XIcon className="size-3" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
-                    {/* Upload button row */}
-                    {canStageFiles && (
-                        <div className="flex gap-2 mb-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={isSending || stagedFiles.length >= maxFiles}
-                                className="text-xs"
-                            >
-                                <UploadIcon className="size-3.5 me-1.5" />
-                                {t('agent.upload')}
-                            </Button>
-                        </div>
-                    )}
-
-                    <div className="flex items-end gap-2">
-                        <textarea
+                        <Textarea
                             ref={inputRef}
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
@@ -675,23 +888,47 @@ function StartWorkflowView({
                             placeholder={resolvedPlaceholder}
                             disabled={isSending}
                             rows={2}
-                            className="flex-1 py-2.5 px-3 text-sm border border-border bg-background text-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring rounded-md resize-none overflow-hidden"
-                            style={{ minHeight: '60px', maxHeight: '200px' }}
-                        />
-                        <Button
-                            onClick={startWorkflowWithMessage}
-                            disabled={!inputValue.trim() || isSending}
-                            className="px-3 py-2.5 text-xs rounded-md transition-colors"
-                        >
-                            {isSending ? (
-                                <Spinner size="sm" className="me-1.5" />
-                            ) : (
-                                <SendIcon className="size-3.5 me-1.5" />
+                            className={cn(
+                                'min-h-[72px] resize-none overflow-hidden border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0',
+                                inputClassName,
                             )}
-                            {resolvedStartButtonText}
-                        </Button>
+                            style={{ minHeight: '72px', maxHeight: '200px' }}
+                        />
+
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-2">
+                                {canStageFiles && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={isSending || stagedFiles.length >= maxFiles}
+                                        aria-label={t('agent.upload')}
+                                        className="rounded-full text-muted"
+                                        title={t('agent.upload')}
+                                    >
+                                        <UploadIcon className="size-4" />
+                                    </Button>
+                                )}
+                            </div>
+                            <Button
+                                onClick={startWorkflowWithMessage}
+                                disabled={!inputValue.trim() || isSending}
+                                variant="ghost"
+                                size="icon"
+                                className={cn(
+                                    'size-9 rounded-full border border-border/60 bg-foreground text-background shadow-sm',
+                                    'hover:bg-foreground/90 hover:text-background',
+                                    'disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100',
+                                )}
+                                title={resolvedStartButtonText}
+                                aria-label={resolvedStartButtonText}
+                            >
+                                {isSending ? <Spinner size="sm" /> : <ArrowUpIcon className="size-4" />}
+                            </Button>
+                        </div>
                     </div>
-                    <div className="text-xs text-muted mt-2 text-center">
+                    <div className="mx-auto mt-2 max-w-3xl text-center text-xs text-muted">
                         {canStageFiles && stagedFiles.length > 0
                             ? t('agent.filesStagedCount', { count: stagedFiles.length })
                             : t('agent.enterToSend')}
@@ -729,6 +966,7 @@ function ModernAgentConversationInner({
     hideObjectLinking,
     // Section visibility
     hideHeader,
+    headerVariant = 'full',
     hideMessageInput,
     failedAction,
     hidePlanPanel,
@@ -781,14 +1019,21 @@ function ModernAgentConversationInner({
     StoreLinkComponent,
     CollectionLinkComponent,
     prependFriendlyMessage,
+    initialRequestData,
+    initialRequestSchema,
+    initialRequestTitle,
+    initialRequestTemplate,
     payloadContent,
     conversationContent,
     conversationTab = false,
+    pendingStartMessage,
+    pendingStartTimestamp,
+    enablePlayback,
+    showPlaybackToggle = true,
 }: ModernAgentConversationProps & { agentRunId: string }) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const toast = useToast();
-    const instanceIdRef = useRef(`mac-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
 
     // ────────────────────────────────────────────
     // Extracted hooks
@@ -828,13 +1073,20 @@ function ModernAgentConversationInner({
         updateDocumentTitle,
     } = useDocumentPanel(messages);
 
-    const { processingFiles, hasProcessingFiles, handleFileUpload } = useFileProcessing(
+    const { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile } = useFileProcessing(
         client,
         agentRunId,
         serverFileUpdates,
         toast,
     );
     const canUploadFiles = interactive && !hideFileUpload;
+
+    const handleRemoveProcessingFile = useCallback(
+        (fileId: string) => {
+            void removeProcessingFile(fileId);
+        },
+        [removeProcessingFile],
+    );
 
     // ────────────────────────────────────────────
     // Local state (UI-only concerns)
@@ -856,14 +1108,17 @@ function ModernAgentConversationInner({
         [onViewModeChangeProp],
     );
     const [isStopping, setIsStopping] = useState(false);
-    const [thinkingMessageIndex, setThinkingMessageIndex] = useState(0);
     const [isDragOver, setIsDragOver] = useState(false);
+    const [playbackCursor, setPlaybackCursor] = useState<AgentChatPlaybackCursor>('live');
+    const [isPlaybackToggleEnabled, setIsPlaybackToggleEnabled] = useState(false);
+    const [playbackScrollRequestId, setPlaybackScrollRequestId] = useState(0);
     const [activeWorkstreams, setActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
     const [completedWorkstreams, setCompletedWorkstreams] = useState<
-        Array<{ launch_id: string; workstream_id: string; status: 'completed' | 'canceled' }>
+        Array<{ launch_id: string; workstream_id: string; status: WorkstreamInfo['status'] }>
     >([]);
     const workstreamFetchFailedRef = useRef(false);
     const dragCounterRef = useRef(0);
+    const pendingPlaybackScrollRef = useRef(false);
 
     // PERFORMANCE: Refs for values used inside useCallback to avoid re-creating the callback
     const isSendingRef = useRef(isSending);
@@ -897,15 +1152,16 @@ function ModernAgentConversationInner({
         );
     }, [effectiveWorkflowStatus]);
 
-    // When a terminal conversation can be restarted (interactive + a restart handler),
+    // When a terminal conversation can be restarted (host provided a restart handler),
     // we keep the composer visible and seamlessly resume the agent on the next message
     // instead of forcing the user to click "Continue Conversation".
     // FAILED runs are excluded: a failed run is a dead end, so we surface the failed box /
     // `failedAction` (e.g. an explicit Restart button) instead of silently resuming.
     const canContinueConversation = useMemo(
-        () => isWorkflowTerminal && effectiveWorkflowStatus?.toUpperCase() !== 'FAILED' && interactive && !!onRestart,
-        [isWorkflowTerminal, effectiveWorkflowStatus, interactive, onRestart],
+        () => isWorkflowTerminal && effectiveWorkflowStatus?.toUpperCase() !== 'FAILED' && !!onRestart,
+        [isWorkflowTerminal, effectiveWorkflowStatus, onRestart],
     );
+    const shouldRenderMessageInputArea = !hideMessageInput || canContinueConversation;
 
     // A failed run is a dead end: the input box must never show, in any state. We key off
     // both effectiveWorkflowStatus and the authoritative API status (agentRunStatus) so the
@@ -922,27 +1178,6 @@ function ModernAgentConversationInner({
     const canContinueConversationRef = useRef(canContinueConversation);
     canContinueConversationRef.current = canContinueConversation;
 
-    console.debug('[ModernAgentConversation] render', {
-        agentRunId,
-        instanceId: instanceIdRef.current,
-        messageCount: messages.length,
-        activeWorkstreams: activeWorkstreams.length,
-    });
-
-    useEffect(() => {
-        console.debug('[ModernAgentConversation] mount', {
-            agentRunId,
-            instanceId: instanceIdRef.current,
-        });
-
-        return () => {
-            console.debug('[ModernAgentConversation] unmount', {
-                agentRunId,
-                instanceId: instanceIdRef.current,
-            });
-        };
-    }, [agentRunId]);
-
     // ────────────────────────────────────────────
     // Computed values
     // ────────────────────────────────────────────
@@ -958,28 +1193,101 @@ function ModernAgentConversationInner({
         };
     }, [plans, activePlanIndex, workstreamStatusMap]);
 
+    const messageDerivedActiveWorkstreams = useMemo(() => deriveActiveWorkstreamsFromMessages(messages), [messages]);
+
     const panelWorkstreams = useMemo<WorkstreamInfo[]>(() => {
-        const running: WorkstreamInfo[] = activeWorkstreams.map((ws) => ({
-            workstream_id: ws.workstream_id,
-            launch_id: ws.launch_id,
-            elapsed_ms: ws.elapsed_ms,
-            deadline_ms: ws.deadline_ms,
-            remaining_ms: Math.max(0, ws.deadline_ms - ws.elapsed_ms),
-            status: ws.status,
-            phase: ws.latest_progress?.phase,
-            child_workflow_id: ws.child_workflow_id,
-            child_workflow_run_id: ws.child_workflow_run_id,
-        }));
-        const completed: WorkstreamInfo[] = completedWorkstreams.map((ws) => ({
-            workstream_id: ws.workstream_id,
-            launch_id: ws.launch_id,
-            elapsed_ms: 0,
-            deadline_ms: 0,
-            remaining_ms: 0,
-            status: ws.status,
-        }));
+        const running: WorkstreamInfo[] =
+            activeWorkstreams.length > 0
+                ? activeWorkstreams.map((ws) => ({
+                      workstream_id: ws.workstream_id,
+                      launch_id: ws.launch_id,
+                      interaction: ws.interaction,
+                      elapsed_ms: ws.elapsed_ms,
+                      deadline_ms: ws.deadline_ms,
+                      remaining_ms: Math.max(0, ws.deadline_ms - ws.elapsed_ms),
+                      status: ws.status,
+                      phase: ws.latest_progress?.phase,
+                      child_workflow_id: ws.child_workflow_id,
+                      child_workflow_run_id: ws.child_workflow_run_id,
+                  }))
+                : messageDerivedActiveWorkstreams;
+        const runningWorkstreamIds = new Set(running.map((ws) => ws.workstream_id));
+        const completed: WorkstreamInfo[] = completedWorkstreams
+            .filter((ws) => !runningWorkstreamIds.has(ws.workstream_id))
+            .map((ws) => ({
+                workstream_id: ws.workstream_id,
+                launch_id: ws.launch_id,
+                elapsed_ms: 0,
+                deadline_ms: 0,
+                remaining_ms: 0,
+                status: ws.status,
+            }));
         return [...running, ...completed];
-    }, [activeWorkstreams, completedWorkstreams]);
+    }, [activeWorkstreams, completedWorkstreams, messageDerivedActiveWorkstreams]);
+
+    const activeTaskCount = useMemo(
+        () => panelWorkstreams.filter((ws) => ws.status === 'running').length,
+        [panelWorkstreams],
+    );
+
+    const canShowPlaybackToggle = showPlaybackToggle && enablePlayback === undefined && isAgentChatPlaybackAvailable();
+    const isPlaybackEnabled = enablePlayback ?? (isAgentChatPlaybackEnabled() || isPlaybackToggleEnabled);
+    const playbackState = useMemo(
+        () => createPlaybackState(messages, playbackCursor, isPlaybackEnabled),
+        [isPlaybackEnabled, messages, playbackCursor],
+    );
+    const clampedPlaybackCursor = playbackState.cursor;
+    const isPlaybackLive = playbackState.isLive;
+    const displayedMessages = playbackState.displayedMessages;
+    const displayedStreamingMessages = isPlaybackLive ? streamingMessages : EMPTY_STREAMING_MESSAGES;
+    const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
+    const displayedIsCompleted = isPlaybackLive ? effectiveIsCompleted : false;
+    const pendingRequestInputMessage = useMemo(
+        () => getPendingRequestInputMessage(displayedMessages),
+        [displayedMessages],
+    );
+    const shouldShowRequestInputOverlay = Boolean(pendingRequestInputMessage) && !isFailed;
+    const isViewingPlaybackHistory = isPlaybackEnabled && !isPlaybackLive;
+    const shouldShowLiveRequestInputOverlay = shouldShowRequestInputOverlay && !isViewingPlaybackHistory;
+    const shouldRenderLiveMessageInputArea = shouldRenderMessageInputArea && !isViewingPlaybackHistory;
+
+    const handleTogglePlayback = useCallback(() => {
+        setIsPlaybackToggleEnabled((prev) => !prev);
+    }, []);
+
+    const handleChangePlaybackCursor = useCallback(
+        (nextCursor: AgentChatPlaybackCursor) => {
+            const currentIndex = getPlaybackCursorIndex(clampedPlaybackCursor, messages.length);
+            const nextIndex = getPlaybackCursorIndex(nextCursor, messages.length);
+            const returningToLive = nextCursor === 'live' && clampedPlaybackCursor !== 'live';
+            if (isPlaybackEnabled && (nextIndex > currentIndex || returningToLive)) {
+                pendingPlaybackScrollRef.current = true;
+                setPlaybackScrollRequestId((requestId) => requestId + 1);
+            }
+            setPlaybackCursor(nextCursor);
+        },
+        [clampedPlaybackCursor, isPlaybackEnabled, messages.length],
+    );
+
+    useEffect(() => {
+        if (!isPlaybackEnabled) {
+            if (playbackCursor !== 'live') setPlaybackCursor('live');
+            return;
+        }
+        if (clampedPlaybackCursor !== playbackCursor) {
+            setPlaybackCursor(clampedPlaybackCursor);
+        }
+    }, [clampedPlaybackCursor, isPlaybackEnabled, playbackCursor]);
+
+    useEffect(() => {
+        void playbackScrollRequestId;
+        if (!isPlaybackEnabled || !pendingPlaybackScrollRef.current) return;
+        pendingPlaybackScrollRef.current = false;
+        const animationFrame = window.requestAnimationFrame(() => {
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        });
+        return () => window.cancelAnimationFrame(animationFrame);
+    }, [isPlaybackEnabled, playbackScrollRequestId]);
 
     // ────────────────────────────────────────────
     // Stable callbacks
@@ -1088,16 +1396,6 @@ function ModernAgentConversationInner({
     // Effects
     // ────────────────────────────────────────────
 
-    // Show rotating thinking messages
-    useEffect(() => {
-        if (!isCompleted) {
-            const interval = setInterval(() => {
-                setThinkingMessageIndex(() => Math.floor(Math.random() * (ThinkingMessages.length - 1)));
-            }, 4000);
-            return () => clearInterval(interval);
-        }
-    }, [isCompleted]);
-
     // Expose handleFileUpload to external callers via ref
     useEffect(() => {
         if (fileUploadRef) fileUploadRef.current = canUploadFiles ? handleFileUpload : null;
@@ -1123,7 +1421,7 @@ function ModernAgentConversationInner({
 
     // Poll active workstreams from backend query for right-panel visibility and details.
     useEffect(() => {
-        const shouldPoll = !isCompleted || activeWorkstreams.length > 0;
+        const shouldPoll = !effectiveIsCompleted || activeWorkstreams.length > 0;
         if (!shouldPoll) {
             setActiveWorkstreams((prev) => (prev.length === 0 ? prev : []));
             return;
@@ -1146,7 +1444,10 @@ function ModernAgentConversationInner({
                     completed.map((c) => ({
                         launch_id: c.launch_id,
                         workstream_id: c.workstream_id,
-                        status: c.status === 'canceled' ? 'canceled' : 'completed',
+                        status:
+                            c.status === 'canceled' || c.status === 'failed' || c.status === 'timeout'
+                                ? c.status
+                                : 'completed',
                     })),
                 );
                 workstreamFetchFailedRef.current = false;
@@ -1167,16 +1468,7 @@ function ModernAgentConversationInner({
             isCancelled = true;
             window.clearInterval(pollHandle);
         };
-    }, [client.agents, agentRunId, isCompleted, activeWorkstreams.length]);
-
-    // Auto-switch to Workstreams tab the first time workstreams become active
-    const hasAutoSwitchedToWorkstreamsRef = useRef(false);
-    useEffect(() => {
-        if (panelWorkstreams.length > 0 && !hasAutoSwitchedToWorkstreamsRef.current) {
-            hasAutoSwitchedToWorkstreamsRef.current = true;
-            setRightPanelTab('workstreams');
-        }
-    }, [panelWorkstreams.length]);
+    }, [client.agents, agentRunId, effectiveIsCompleted, activeWorkstreams.length]);
 
     // Notify parent when input availability is determined
     useEffect(() => {
@@ -1386,53 +1678,16 @@ function ModernAgentConversationInner({
 
     // Expose stop handler to external callers via ref
     useEffect(() => {
-        if (stopRef) stopRef.current = allowWorkflowControl && !isCompleted ? handleStopWorkflow : null;
+        if (stopRef) stopRef.current = allowWorkflowControl && !effectiveIsCompleted ? handleStopWorkflow : null;
         return () => {
             if (stopRef) stopRef.current = null;
         };
-    }, [stopRef, isCompleted, handleStopWorkflow, allowWorkflowControl]);
+    }, [stopRef, effectiveIsCompleted, handleStopWorkflow, allowWorkflowControl]);
 
     // Notify parent when stopping state changes
     useEffect(() => {
         onStoppingChange?.(isStopping);
     }, [isStopping, onStoppingChange]);
-
-    // Calculate number of active tasks for the status indicator
-    const getActiveTaskCount = (): number => {
-        if (activeWorkstreams.length > 0) {
-            return activeWorkstreams.filter((ws) => ws.status === 'running').length;
-        }
-
-        if (!messages.length) return 0;
-
-        // Group messages by workstream
-        const workstreamMessages = new Map<string, AgentMessage[]>();
-
-        messages.forEach((message) => {
-            const workstreamId = getWorkstreamId(message);
-            if (workstreamId !== 'main' && workstreamId !== 'all') {
-                if (!workstreamMessages.has(workstreamId)) {
-                    workstreamMessages.set(workstreamId, []);
-                }
-                workstreamMessages.get(workstreamId)?.push(message);
-            }
-        });
-
-        // Count workstreams that don't have completion messages
-        let activeCount = 0;
-
-        for (const [_, msgs] of workstreamMessages.entries()) {
-            if (msgs.length > 0) {
-                const lastMessage = msgs[msgs.length - 1];
-                // If the last message isn't a completion message, the workstream is active
-                if (![AgentMessageType.COMPLETE, AgentMessageType.IDLE].includes(lastMessage.type)) {
-                    activeCount++;
-                }
-            }
-        }
-
-        return activeCount;
-    };
 
     const actualTitle = title || t('agent.agentConversation');
 
@@ -1450,6 +1705,36 @@ function ModernAgentConversationInner({
             });
         }
     };
+
+    const exportReplayFixture = useCallback(() => {
+        const exportedAt = new Date().toISOString();
+        const streamingFrame =
+            streamingMessages.size > 0
+                ? [
+                      {
+                          cursor: 'live',
+                          streamingMessages: Array.from(streamingMessages, ([id, data]) => ({ id, ...data })),
+                      },
+                  ]
+                : undefined;
+        const fixture = {
+            metadata: {
+                title: actualTitle,
+                agent_run_id: agentRunId,
+                exported_at: exportedAt,
+                message_count: messages.length,
+            },
+            messages,
+            ...(streamingFrame ? { streamingFrames: streamingFrame } : {}),
+        };
+        const filename = `${sanitizeFilenamePart(actualTitle) || 'agent-chat'}-${sanitizeFilenamePart(agentRunId)}.json`;
+        downloadJsonFile(filename, fixture);
+        toast({
+            status: 'success',
+            title: t('agent.rewind.fixtureExported'),
+            duration: 2000,
+        });
+    }, [actualTitle, agentRunId, messages, streamingMessages, t, toast]);
 
     const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
@@ -1522,10 +1807,44 @@ function ModernAgentConversationInner({
         [getActivePlan.plan],
     );
 
+    const renderConversationHeader = (variant: 'full' | 'compact') => (
+        <Header
+            title={actualTitle}
+            variant={variant}
+            isCompleted={effectiveIsCompleted}
+            isTerminal={isWorkflowTerminal}
+            onClose={onClose}
+            isModal={isModal}
+            agentRunId={agentRunId}
+            workflowRunId={workflowRunId || ''}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            showPlanPanel={showRightPanelProp && showSlidingPanel}
+            hasPlan={showRightPanelProp && plans.length > 0}
+            showPlanButton={showRightPanelProp && !conversationTab}
+            onTogglePlanPanel={handleTogglePlanPanel}
+            showPlaybackButton={canShowPlaybackToggle}
+            isPlaybackEnabled={isPlaybackEnabled}
+            onTogglePlayback={handleTogglePlayback}
+            onDownload={downloadConversation}
+            onExportFixture={exportReplayFixture}
+            resetWorkflow={resetWorkflow}
+            onClone={onClone}
+            onShowDetails={onShowDetails}
+            allowWorkflowControl={allowWorkflowControl}
+            onExportPdf={exportConversationPdf}
+            isReceivingChunks={debugChunkFlash}
+        />
+    );
+
     // Conversation area inner content — shared between main layout and conversationTab mode
     const conversationAreaJsx = (
         <div
             ref={conversationRef}
+            data-agent-playback-enabled={isPlaybackEnabled || undefined}
+            data-agent-playback-cursor={isPlaybackEnabled ? clampedPlaybackCursor : undefined}
+            data-agent-live-message-count={messages.length}
+            data-agent-rendered-message-count={displayedMessages.length}
             className={cn(
                 'flex flex-col min-h-0 min-w-0 border-0',
                 conversationTab
@@ -1537,52 +1856,32 @@ function ModernAgentConversationInner({
                         : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`,
             )}
         >
-            {!hideHeader && (
-                <div className="flex-shrink-0">
-                    <Header
-                        title={actualTitle}
-                        isCompleted={isCompleted}
-                        isTerminal={isWorkflowTerminal}
-                        onClose={onClose}
-                        isModal={isModal}
-                        agentRunId={agentRunId}
-                        workflowRunId={workflowRunId || ''}
-                        viewMode={viewMode}
-                        onViewModeChange={handleViewModeChange}
-                        showPlanPanel={showRightPanelProp && showSlidingPanel}
-                        hasPlan={showRightPanelProp && plans.length > 0}
-                        showPlanButton={showRightPanelProp && !conversationTab}
-                        onTogglePlanPanel={handleTogglePlanPanel}
-                        onDownload={downloadConversation}
-                        resetWorkflow={resetWorkflow}
-                        onClone={onClone}
-                        onShowDetails={onShowDetails}
-                        allowWorkflowControl={allowWorkflowControl}
-                        onExportPdf={exportConversationPdf}
-                        isReceivingChunks={debugChunkFlash}
+            {!hideHeader && headerVariant === 'compact' && (
+                <div className="flex flex-shrink-0 justify-end border-b border-border/60 px-2 py-1 lg:hidden">
+                    {renderConversationHeader('compact')}
+                </div>
+            )}
+            {!hideHeader && headerVariant !== 'compact' && (
+                <div className="flex-shrink-0">{renderConversationHeader(headerVariant)}</div>
+            )}
+
+            {isPlaybackEnabled && (
+                <div className="flex flex-shrink-0 justify-end px-2 py-1.5">
+                    <AgentChatPlaybackControls
+                        cursor={clampedPlaybackCursor}
+                        messages={messages}
+                        onChangeCursor={handleChangePlaybackCursor}
                     />
                 </div>
             )}
 
-            {messages.length === 0 && !isCompleted ? (
-                <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-6">
-                    <div className="p-5 max-w-md border border-info rounded-lg shadow-sm">
-                        <div className="flex items-center space-x-3 mb-3">
-                            <PulsatingCircle size="sm" color="blue" />
-                            <div className="text-sm text-muted font-medium">
-                                {ThinkingMessages[thinkingMessageIndex]}
-                            </div>
-                        </div>
-                        <div className="mt-4 flex justify-center">
-                            <AnimatedThinkingDots color="blue" className="mt-1" />
-                        </div>
-                    </div>
-                </div>
+            {messages.length === 0 && !effectiveIsCompleted && pendingStartMessage && pendingStartTimestamp ? (
+                <PendingStartConversation message={pendingStartMessage} startedAt={pendingStartTimestamp} />
             ) : (
                 <AllMessagesMixed
-                    messages={messages}
+                    messages={displayedMessages}
                     bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
-                    isCompleted={isCompleted}
+                    isCompleted={displayedIsCompleted}
                     plan={getActivePlan.plan}
                     workstreamStatus={getActivePlan.workstreamStatus}
                     showPlanPanel={showRightPanelProp && showSlidingPanel}
@@ -1591,9 +1890,8 @@ function ModernAgentConversationInner({
                     activePlanIndex={activePlanIndex}
                     onChangePlan={handleChangePlan}
                     taskLabels={taskLabels}
-                    streamingMessages={streamingMessages}
-                    onSendMessage={handleSendMessage}
-                    thinkingMessageIndex={thinkingMessageIndex}
+                    streamingMessages={displayedStreamingMessages}
+                    onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
                     messageItemClassNames={messageItemClassNames}
                     messageStyleOverrides={messageStyleOverrides}
                     toolCallGroupClassNames={toolCallGroupClassNames}
@@ -1608,59 +1906,89 @@ function ModernAgentConversationInner({
                     StoreLinkComponent={effectiveStoreLinkComponent}
                     CollectionLinkComponent={CollectionLinkComponent}
                     prependFriendlyMessage={prependFriendlyMessage}
+                    initialRequestData={initialRequestData}
+                    initialRequestSchema={initialRequestSchema}
+                    initialRequestTitle={initialRequestTitle}
+                    initialRequestTemplate={initialRequestTemplate}
                     hiddenMessageTypes={hiddenMessageTypes}
+                    disableAutoScroll={!isPlaybackLive}
+                    renderRequestInputControls={isPlaybackLive && !shouldShowLiveRequestInputOverlay}
                 />
             )}
 
-            {!hideMessageInput && (
-                <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-                    {isFailed ? (
-                        // FAILED takes priority over every other branch so the composer can
-                        // never render for a failed run. Use the caller's action when provided,
-                        // otherwise fall back to the default failed message box.
-                        (failedAction ?? (
-                            <MessageBox status="error" icon={null} className="m-2">
-                                This Workflow is FAILED
-                            </MessageBox>
-                        ))
-                    ) : effectiveWorkflowStatus && effectiveWorkflowStatus !== 'RUNNING' && !canContinueConversation ? (
-                        <MessageBox
-                            status={effectiveWorkflowStatus === 'COMPLETED' ? 'success' : 'done'}
-                            icon={null}
-                            className="m-2"
-                        >
-                            This Workflow is {effectiveWorkflowStatus}
-                        </MessageBox>
-                    ) : (
-                        (showInput || canContinueConversation) && (
-                            <MessageInput
-                                onSend={handleSendMessage}
-                                onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
-                                disabled={isUploading}
-                                isSending={isSending || isUploading}
-                                isStopping={isStopping}
-                                isStreaming={!isCompleted}
-                                isCompleted={isCompleted}
-                                activeTaskCount={getActiveTaskCount()}
-                                placeholder={placeholder ?? 'Type your message...'}
-                                onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
-                                uploadedFiles={uploadedFiles}
-                                onRemoveFile={onRemoveFile}
-                                acceptedFileTypes={acceptedFileTypes}
-                                maxFiles={maxFiles}
-                                processingFiles={processingFiles}
-                                hasProcessingFiles={hasProcessingFiles}
-                                renderDocumentSearch={renderDocumentSearch}
-                                selectedDocuments={selectedDocuments}
-                                onRemoveDocument={onRemoveDocument}
-                                hideObjectLinking={hideObjectLinking}
-                                hideFileUpload={!canUploadFiles}
-                                className={inputContainerClassName}
-                                inputClassName={inputClassName}
-                            />
-                        )
-                    )}
-                </div>
+            {shouldShowLiveRequestInputOverlay ? (
+                <AgentRequestInputOverlay
+                    message={pendingRequestInputMessage}
+                    onSendMessage={handleSendMessage}
+                    disabled={isUploading || !isPlaybackLive}
+                    isLoading={isSending || isUploading}
+                />
+            ) : (
+                shouldRenderLiveMessageInputArea && (
+                    <div className="flex-shrink-0 pb-safe-area">
+                        {isFailed ? (
+                            // FAILED takes priority over every other branch so the composer can
+                            // never render for a failed run. Use the caller's action when provided,
+                            // otherwise fall back to the default failed message box.
+                            (failedAction ?? (
+                                <MessageBox status="error" icon={null} className="m-2">
+                                    This Workflow is FAILED
+                                </MessageBox>
+                            ))
+                        ) : effectiveWorkflowStatus &&
+                          effectiveWorkflowStatus !== 'RUNNING' &&
+                          !canContinueConversation ? (
+                            viewMode === 'sliding' && effectiveWorkflowStatus === 'COMPLETED' ? (
+                                <div className="mx-auto w-full max-w-3xl px-4 py-3 text-sm text-muted">
+                                    <div className="flex items-center gap-2 border-t border-success/25 pt-3 text-success">
+                                        <CheckCircle className="size-4" />
+                                        <span className="font-medium">Workflow completed</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <MessageBox
+                                    status={effectiveWorkflowStatus === 'COMPLETED' ? 'success' : 'done'}
+                                    icon={null}
+                                    className="m-2"
+                                >
+                                    This Workflow is {effectiveWorkflowStatus}
+                                </MessageBox>
+                            )
+                        ) : (
+                            (showInput || canContinueConversation) && (
+                                <MessageInput
+                                    onSend={handleSendMessage}
+                                    onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
+                                    disabled={isUploading || !isPlaybackLive}
+                                    isSending={isSending || isUploading}
+                                    isStopping={isStopping}
+                                    isStreaming={!effectiveIsCompleted}
+                                    isCompleted={effectiveIsCompleted}
+                                    activeTaskCount={activeTaskCount}
+                                    activeWorkstreams={panelWorkstreams}
+                                    placeholder={placeholder ?? 'Type your message...'}
+                                    onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
+                                    uploadedFiles={uploadedFiles}
+                                    onRemoveFile={onRemoveFile}
+                                    onRemoveProcessingFile={handleRemoveProcessingFile}
+                                    acceptedFileTypes={acceptedFileTypes}
+                                    maxFiles={maxFiles}
+                                    processingFiles={processingFiles}
+                                    artifactRunId={agentRunId}
+                                    hasProcessingFiles={hasProcessingFiles}
+                                    renderDocumentSearch={renderDocumentSearch}
+                                    selectedDocuments={selectedDocuments}
+                                    onRemoveDocument={onRemoveDocument}
+                                    hideObjectLinking={hideObjectLinking}
+                                    hideFileUpload={!canUploadFiles}
+                                    disableDropZone={canUploadFiles}
+                                    className={inputContainerClassName}
+                                    inputClassName={inputClassName}
+                                />
+                            )
+                        )}
+                    </div>
+                )
             )}
         </div>
     );
@@ -1693,6 +2021,12 @@ function ModernAgentConversationInner({
                     )}
                     {/* Conversation Area — hidden when conversationTab moves it into the right panel */}
                     {!conversationTab && conversationAreaJsx}
+
+                    {!conversationTab && headerVariant === 'compact' && !hideHeader && (
+                        <div className="hidden h-full w-12 shrink-0 items-start justify-center px-1 pt-2 lg:flex">
+                            {renderConversationHeader('compact')}
+                        </div>
+                    )}
 
                     {/* Unified Right Panel — Plan | Workstreams | Documents | Uploads */}
                     {isRightPanelVisible && (
@@ -1734,7 +2068,7 @@ function ModernAgentConversationInner({
                                 className={
                                     conversationTab
                                         ? 'w-full h-full overflow-auto'
-                                        : 'w-full lg:w-[var(--agent-right-panel-width)] lg:shrink-0 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-s'
+                                        : 'w-full lg:w-[var(--agent-right-panel-width)] lg:shrink-0 min-h-[50vh] lg:h-full border-t lg:border-t-0'
                                 }
                                 style={
                                     !conversationTab

@@ -79,7 +79,7 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
 
         const uploaded = await uploadRenditionPages(client, contentEtag, [imageFile], params);
 
-        if (!uploaded || !uploaded.length || !uploaded[0]) {
+        if (!uploaded?.length || !uploaded[0]) {
             log.error(`Failed to upload rendition for ${objectId}`, { uploaded });
             throw new Error(`Failed to upload rendition for ${objectId} - upload object is empty`);
         }

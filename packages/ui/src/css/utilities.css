@@ -123,6 +123,14 @@
     );
 }
 
+@utility pb-safe-area {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility pb-safe-area-4 {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+}
+
 /*
    * Mirrors an element on the x-axis only when the document is in RTL mode.
    * Apply to navigational icons (chevrons, arrows) whose direction is

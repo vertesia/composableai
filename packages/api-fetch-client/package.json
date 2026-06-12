@@ -51,12 +51,12 @@
         "@types/mocha": "^10.0.10",
         "@types/node": "^24.12.4",
         "@vertesia/tsconfig": "workspace:*",
-        "koa": "^3.2.0",
+        "koa": "^3.2.1",
         "mocha": "^11.7.6",
-        "tsx": "^4.22.3",
+        "tsx": "^4.22.4",
         "typescript": "^6.0.3"
     },
     "dependencies": {
-        "eventsource-parser": "^3.0.8"
+        "eventsource-parser": "^3.1.0"
     }
 }

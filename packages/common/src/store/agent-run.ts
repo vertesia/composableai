@@ -29,6 +29,7 @@ import type {
     CompactMessage,
     ConversationActivityState,
     ConversationFileRef,
+    ConversationFileRemovedRef,
     WorkflowRunEvent,
 } from './workflow.js';
 
@@ -442,7 +443,11 @@ export interface UpdateAgentRunStatusPayload {
 /**
  * Generic signal payload sent to a running agent workflow.
  */
-export type SignalAgentPayload = UserInputSignal | ConversationFileRef | Record<string, unknown>;
+export type SignalAgentPayload =
+    | UserInputSignal
+    | ConversationFileRef
+    | ConversationFileRemovedRef
+    | Record<string, unknown>;
 
 /**
  * Response from signaling an agent workflow.

@@ -54,7 +54,8 @@ export type VertesiaClientProps = {
         | 'api-preview.eu1.vertesia.io'
         | 'api.jp1.vertesia.io'
         | 'api-preview.jp1.vertesia.io'
-        | 'api.dev1.vertesia.io';
+        | 'api.dev1.vertesia.io'
+        | 'api-preview.dev1.vertesia.io';
     serverUrl?: string;
     storeUrl?: string;
     tokenServerUrl?: string;

@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { parseFrontmatter } from '../src/parsers/frontmatter.js';
+import { parseFrontmatter } from '../src/core/parsers/frontmatter.js';
 
 describe('Frontmatter Parser', () => {
     it('should parse YAML frontmatter', () => {

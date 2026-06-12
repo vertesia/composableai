@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import tailwindcss from '@tailwindcss/vite';
+import { apiServerPlugin } from '@vertesia/build-tools/vite';
 import { vertesiaPluginBuilder } from '@vertesia/plugin-builder';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import { type ConfigEnv, defineConfig, type Plugin, type UserConfig } from 'vite';
 import serveStatic from 'vite-plugin-serve-static';
-import { apiServerPlugin } from './vite-api-server.js';
 
 /**
  * List of dependencies that must be bundled in the plugin bundle

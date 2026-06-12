@@ -403,19 +403,32 @@ export interface CreateContentObjectPayload<T = JSONObject>
     generation_run_info?: GenerationRunMetadata;
 }
 
-export function getContentTypeRefId(type: ContentObjectTypeRef) {
-    return (type as StoredTypeRef).id || (type as InCodeTypeRef).code;
+type LegacyContentObjectTypeRef = Partial<ContentObjectTypeRef> & {
+    ref_type?: 'stored' | 'incode';
+    id?: string;
+    code?: string;
+    name?: string;
+};
+
+export function getContentTypeRefId(type: ContentObjectTypeRef): string {
+    return type.id;
 }
 
-export function withContentObjectTypeRefDiscriminator(type: ContentObjectTypeRef): ContentObjectTypeRef {
-    if ((type as StoredTypeRef).id) {
-        return { ...type, ref_type: 'stored' } as StoredTypeRef;
+export function withContentObjectTypeRefDiscriminator(
+    type: ContentObjectTypeRef | LegacyContentObjectTypeRef,
+): ContentObjectTypeRef {
+    const legacyCode = 'code' in type ? type.code : undefined;
+    const id = type.id || legacyCode || '';
+    const name = type.name || '';
+    if (type.ref_type === 'incode' || isInCodeType(id)) {
+        return { ref_type: 'incode', id, name };
     }
-    return { ...type, ref_type: 'incode' } as InCodeTypeRef;
+    return { ref_type: 'stored', id, name };
 }
 
 /**
- * Reference to a content object type. Either `id` (stored type) or `code` (in-code type) must be set.
+ * Reference to a content object type. `id` is the canonical identifier for both
+ * stored and in-code types.
  */
 /**
  * @discriminator ref_type
@@ -428,17 +441,15 @@ interface StoredTypeRef {
      * MongoDB ObjectId string for stored types
      */
     id: string;
-    code?: never;
     name: string;
 }
 
 interface InCodeTypeRef {
     ref_type: 'incode';
-    id?: never;
     /**
      * Namespaced identifier for in-code types (e.g. "sys:Invoice", "app:myapp:Contract")
      */
-    code: string;
+    id: string;
     name: string;
 }
 

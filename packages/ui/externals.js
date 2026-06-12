@@ -23,6 +23,7 @@ export const EXTERNALS = [
     '@radix-ui/react-label',
     '@radix-ui/react-popover',
     '@radix-ui/react-separator',
+    '@radix-ui/react-slider',
     '@radix-ui/react-slot',
     '@radix-ui/react-tabs',
     '@radix-ui/react-radio-group',

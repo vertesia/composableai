@@ -2,28 +2,36 @@ import { type ContentObjectItem, type ConversationFile, FileProcessingStatus } f
 import {
     Button,
     cn,
+    Dropdown,
     insertNewlineAtCursor,
+    MenuItem,
     Modal,
     ModalBody,
     ModalTitle,
     Spinner,
     Textarea,
-    VTooltip,
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import {
     Activity,
+    ArrowUpIcon,
+    Bot,
     FileTextIcon,
-    HelpCircleIcon,
     PaperclipIcon,
-    SendIcon,
-    StopCircleIcon,
+    PlusIcon,
+    SquareIcon,
     UploadIcon,
-    XIcon,
 } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SelectDocument } from '../../../store/objects/components/SelectDocument';
+import {
+    formatWorkstreamName,
+    getWorkstreamDisplayName,
+    getWorkstreamStatusClass,
+    type WorkstreamInfo,
+} from '../workstreams.js';
+import { type AttachmentPreviewItem, AttachmentPreviewList } from './AttachmentPreview';
 
 /** Represents an uploaded file attachment */
 export interface UploadedFile {
@@ -52,6 +60,7 @@ interface MessageInputProps {
     isStreaming?: boolean;
     isCompleted?: boolean;
     activeTaskCount?: number;
+    activeWorkstreams?: WorkstreamInfo[];
     placeholder?: string;
 
     // File upload props
@@ -61,12 +70,16 @@ interface MessageInputProps {
     uploadedFiles?: UploadedFile[];
     /** Called when user removes an uploaded file */
     onRemoveFile?: (fileId: string) => void;
+    /** Called when user removes a workflow-processed file */
+    onRemoveProcessingFile?: (fileId: string) => void;
     /** Accepted file types (e.g., ".pdf,.doc,.png") */
     acceptedFileTypes?: string;
     /** Max number of files allowed */
     maxFiles?: number;
     /** Files being processed by the workflow */
     processingFiles?: Map<string, ConversationFile>;
+    /** Run ID used to resolve artifact thumbnails for ready uploaded images. */
+    artifactRunId?: string;
     /** Whether any files are still uploading or processing */
     hasProcessingFiles?: boolean;
 
@@ -86,6 +99,8 @@ interface MessageInputProps {
     hideObjectLinking?: boolean;
     // Hide file upload (for apps that don't use it)
     hideFileUpload?: boolean;
+    /** Disable the local input drop overlay when a parent view owns drag/drop handling */
+    disableDropZone?: boolean;
 
     // Styling props for Tailwind customization
     /** Additional className for the container */
@@ -103,14 +118,17 @@ export default function MessageInput({
     isStreaming = false,
     isCompleted = false,
     activeTaskCount = 0,
+    activeWorkstreams = [],
     placeholder,
     // File upload props
     onFilesSelected,
     uploadedFiles = [],
     onRemoveFile,
+    onRemoveProcessingFile,
     acceptedFileTypes,
     maxFiles = 5,
     processingFiles,
+    artifactRunId,
     hasProcessingFiles = false,
     // Document search props
     renderDocumentSearch,
@@ -120,8 +138,10 @@ export default function MessageInput({
     hideObjectLinking = false,
     // File upload
     hideFileUpload = false,
+    disableDropZone = false,
     // Styling props
     className,
+    inputClassName,
 }: MessageInputProps) {
     const { t } = useUITranslation();
     const resolvedPlaceholder = placeholder ?? t('agent.typeYourMessage');
@@ -131,6 +151,84 @@ export default function MessageInput({
     const [isObjectModalOpen, setIsObjectModalOpen] = useState(false);
     const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
+    const canUploadFiles = Boolean(onFilesSelected && !hideFileUpload);
+    const canDropFiles = canUploadFiles && !disableDropZone;
+    const hasAttachmentActions = !hideObjectLinking || canUploadFiles || Boolean(renderDocumentSearch);
+    const uploadLimitReached = uploadedFiles.length >= maxFiles;
+    const handleRemoveProcessingFile = onRemoveProcessingFile ?? onRemoveFile;
+    const runningWorkstreams = useMemo(
+        () => activeWorkstreams.filter((ws) => ws.status === 'running' || ws.status === 'canceling'),
+        [activeWorkstreams],
+    );
+    const activeWorkstreamCount = runningWorkstreams.length || activeTaskCount;
+    const visibleRunningWorkstreams = runningWorkstreams.slice(0, 3);
+    const hiddenRunningWorkstreamCount = Math.max(0, runningWorkstreams.length - visibleRunningWorkstreams.length);
+    const attachmentItems = useMemo<AttachmentPreviewItem[]>(() => {
+        const items: AttachmentPreviewItem[] = [];
+        if (!hideFileUpload && processingFiles) {
+            for (const file of processingFiles.values()) {
+                const previewUrl = (file as ConversationFile & { preview_url?: string }).preview_url;
+                const status =
+                    file.status === FileProcessingStatus.UPLOADING
+                        ? t('agent.uploading')
+                        : file.status === FileProcessingStatus.PROCESSING
+                          ? t('agent.processing')
+                          : file.status === FileProcessingStatus.ERROR
+                            ? t('agent.error')
+                            : file.status === FileProcessingStatus.READY
+                              ? t('agent.ready')
+                              : file.status;
+                items.push({
+                    id: file.id,
+                    name: file.name,
+                    contentType: file.content_type,
+                    artifactPath: file.artifact_path,
+                    previewUrl,
+                    removable: Boolean(handleRemoveProcessingFile),
+                    statusLabel: status,
+                    statusTone:
+                        file.status === FileProcessingStatus.ERROR
+                            ? 'destructive'
+                            : file.status === FileProcessingStatus.READY
+                              ? 'success'
+                              : 'attention',
+                });
+            }
+        }
+        if (!hideFileUpload) {
+            for (const file of uploadedFiles) {
+                items.push({
+                    id: file.id,
+                    name: file.name,
+                    contentType: file.type,
+                    artifactPath: file.artifact_path,
+                    previewUrl: file.previewUrl,
+                    removable: Boolean(onRemoveFile),
+                    statusLabel: t('agent.ready'),
+                    statusTone: 'success',
+                });
+            }
+        }
+        for (const doc of selectedDocuments) {
+            items.push({
+                id: doc.id,
+                name: doc.name,
+                href: `/store/objects/${doc.id}`,
+                removable: Boolean(onRemoveDocument),
+                statusTone: 'info',
+            });
+        }
+        return items;
+    }, [
+        handleRemoveProcessingFile,
+        hideFileUpload,
+        onRemoveDocument,
+        onRemoveFile,
+        processingFiles,
+        selectedDocuments,
+        t,
+        uploadedFiles,
+    ]);
 
     useEffect(() => {
         if (!disabled && isCompleted) ref.current?.focus();
@@ -139,7 +237,7 @@ export default function MessageInput({
     // File handling
     const handleFiles = useCallback(
         (files: FileList | File[]) => {
-            if (!onFilesSelected) return;
+            if (!canUploadFiles || !onFilesSelected) return;
 
             const fileArray = Array.from(files);
             const remainingSlots = maxFiles - uploadedFiles.length;
@@ -149,7 +247,7 @@ export default function MessageInput({
                 onFilesSelected(filesToAdd);
             }
         },
-        [onFilesSelected, maxFiles, uploadedFiles.length],
+        [canUploadFiles, onFilesSelected, maxFiles, uploadedFiles.length],
     );
 
     // Drag and drop handlers
@@ -157,11 +255,11 @@ export default function MessageInput({
         (e: React.DragEvent) => {
             e.preventDefault();
             e.stopPropagation();
-            if (onFilesSelected) {
+            if (canDropFiles) {
                 setIsDragOver(true);
             }
         },
-        [onFilesSelected],
+        [canDropFiles],
     );
 
     const handleDragLeave = useCallback((e: React.DragEvent) => {
@@ -176,17 +274,17 @@ export default function MessageInput({
             e.stopPropagation();
             setIsDragOver(false);
 
-            if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+            if (canDropFiles && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
                 handleFiles(e.dataTransfer.files);
             }
         },
-        [handleFiles],
+        [canDropFiles, handleFiles],
     );
 
     // Paste handler for files
     const handlePaste = useCallback(
         (e: React.ClipboardEvent) => {
-            if (!onFilesSelected) return;
+            if (!canUploadFiles) return;
 
             const items = e.clipboardData?.items;
             if (!items) return;
@@ -215,19 +313,19 @@ export default function MessageInput({
                 handleFiles(files);
             }
         },
-        [onFilesSelected, handleFiles],
+        [canUploadFiles, handleFiles],
     );
 
     // File input change handler
     const handleFileInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
-            if (e.target.files && e.target.files.length > 0) {
+            if (canUploadFiles && e.target.files && e.target.files.length > 0) {
                 handleFiles(e.target.files);
                 // Reset input so same file can be selected again
                 e.target.value = '';
             }
         },
-        [handleFiles],
+        [canUploadFiles, handleFiles],
     );
 
     const openFileDialog = useCallback(() => {
@@ -344,17 +442,16 @@ export default function MessageInput({
         // biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target only; file selection is also exposed via the upload button.
         <div
             className={cn(
-                'p-3 border-t border-muted flex-shrink-0 transition-all fixed lg:sticky bottom-0 start-0 end-0 lg:start-auto lg:end-auto w-full bg-background z-10',
-                isDragOver && 'bg-blue-50 dark:bg-blue-900/20 border-blue-400',
+                'px-3 py-3 flex-shrink-0 transition-all fixed lg:sticky bottom-0 start-0 end-0 lg:start-auto lg:end-auto w-full bg-background/95 backdrop-blur z-10',
+                isDragOver && canDropFiles && 'bg-info/10 border-info',
                 className,
             )}
-            style={{ minHeight: '120px' }}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
+            onDragOver={canDropFiles ? handleDragOver : undefined}
+            onDragLeave={canDropFiles ? handleDragLeave : undefined}
+            onDrop={canDropFiles ? handleDrop : undefined}
         >
             {/* Drag overlay */}
-            {isDragOver && (
+            {isDragOver && canDropFiles && (
                 <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 rounded-lg z-10 pointer-events-none">
                     <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2">
                         <UploadIcon className="size-5" />
@@ -364,7 +461,7 @@ export default function MessageInput({
             )}
 
             {/* Hidden file input */}
-            {onFilesSelected && (
+            {canUploadFiles && (
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -375,153 +472,73 @@ export default function MessageInput({
                 />
             )}
 
-            {/* Uploaded files preview */}
-            {!hideFileUpload && (uploadedFiles.length > 0 || (processingFiles && processingFiles.size > 0)) && (
-                <div className="flex flex-col gap-2 mb-3">
-                    <div>
-                        <div className="flex items-center gap-1 mb-1">
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                {t('agent.uploadedFiles')}
-                            </span>
-                            <VTooltip description={t('agent.filesUploadedDescription')} placement="top" size="md">
-                                <HelpCircleIcon className="size-3 text-gray-400 dark:text-gray-500" />
-                            </VTooltip>
+            {runningWorkstreams.length > 0 && (
+                <div className="mx-auto mb-2 w-full max-w-3xl px-1" data-agent-active-workstreams>
+                    <output
+                        className="flex flex-col gap-1.5 rounded-2xl border border-border/70 bg-background/95 p-2 text-xs text-muted shadow-lg shadow-black/5"
+                        aria-live="polite"
+                    >
+                        <div className="flex items-center gap-2 px-1 font-medium">
+                            <Bot className="size-3.5 text-muted" aria-hidden="true" />
+                            <span>{t('agent.activeWorkstreams', { count: runningWorkstreams.length })}</span>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                            {/* Processing files (uploading/processing/error) */}
-                            {processingFiles &&
-                                Array.from(processingFiles.values()).map((file) => (
-                                    <div
-                                        key={file.id}
-                                        className={cn(
-                                            'flex items-center gap-1.5 px-2 py-1 rounded-md text-sm',
-                                            file.status === FileProcessingStatus.ERROR
-                                                ? 'bg-destructive/10 text-destructive'
-                                                : file.status === FileProcessingStatus.READY
-                                                  ? 'bg-success/10 text-success'
-                                                  : 'bg-attention/10 text-attention',
-                                        )}
+                        <div className="flex flex-col gap-0.5">
+                            {visibleRunningWorkstreams.map((workstream) => {
+                                const workstreamName = getWorkstreamDisplayName(
+                                    workstream.workstream_id,
+                                    workstream.interaction,
+                                );
+
+                                return (
+                                    <span
+                                        key={workstream.launch_id || workstream.workstream_id}
+                                        className="flex min-w-0 items-center gap-2 rounded-lg px-1 py-1 text-sm text-foreground/80"
+                                        title={workstreamName}
                                     >
-                                        <FileTextIcon
+                                        <span
                                             className={cn(
-                                                'size-3.5',
-                                                (file.status === FileProcessingStatus.UPLOADING ||
-                                                    file.status === FileProcessingStatus.PROCESSING) &&
-                                                    'animate-pulse',
+                                                'size-1.5 shrink-0 rounded-full',
+                                                getWorkstreamStatusClass(workstream.status),
                                             )}
+                                            aria-hidden="true"
                                         />
-                                        <span className="max-w-[120px] truncate">{file.name}</span>
-                                        <span className="text-xs opacity-70">
-                                            {file.status === FileProcessingStatus.UPLOADING
-                                                ? t('agent.uploading')
-                                                : file.status === FileProcessingStatus.PROCESSING
-                                                  ? t('agent.processing')
-                                                  : file.status === FileProcessingStatus.ERROR
-                                                    ? t('agent.error')
-                                                    : file.status === FileProcessingStatus.READY
-                                                      ? t('agent.ready')
-                                                      : file.status}
-                                        </span>
-                                    </div>
-                                ))}
-                            {/* Uploaded files (with remove button) */}
-                            {uploadedFiles.map((file) => (
-                                <div
-                                    key={file.id}
-                                    className="flex items-center gap-1.5 px-2 py-1 bg-success/10 text-success rounded-md text-sm"
-                                >
-                                    <FileTextIcon className="size-3.5" />
-                                    <span className="max-w-[120px] truncate">{file.name}</span>
-                                    {onRemoveFile && (
-                                        <Button
-                                            variant="unstyled"
-                                            aria-label={`Remove ${file.name}`}
-                                            onClick={() => onRemoveFile(file.id)}
-                                            className="ms-1 p-0.5 hover:bg-success/20 rounded"
-                                        >
-                                            <XIcon className="size-3" />
-                                        </Button>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Selected documents section — always visible regardless of hideFileUpload */}
-            {selectedDocuments.length > 0 && (
-                <div className="mb-3">
-                    <div className="flex items-center gap-1 mb-1">
-                        <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                            {t('agent.documentAttachments')}
-                        </span>
-                        <VTooltip description={t('agent.documentAttachmentsDescription')} placement="top" size="md">
-                            <HelpCircleIcon className="size-3 text-blue-400 dark:text-blue-500" />
-                        </VTooltip>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        {selectedDocuments.map((doc) => (
-                            <div
-                                key={doc.id}
-                                className="flex items-center gap-1.5 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-md text-sm text-blue-700 dark:text-blue-300"
-                            >
-                                <FileTextIcon className="size-3.5" />
-                                <span className="max-w-[120px] truncate">{doc.name}</span>
-                                {onRemoveDocument && (
-                                    <Button
-                                        variant="unstyled"
-                                        aria-label={`Remove ${doc.name}`}
-                                        onClick={() => onRemoveDocument(doc.id)}
-                                        className="ms-1 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded"
-                                    >
-                                        <XIcon className="size-3" />
-                                    </Button>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Action buttons row */}
-            {(onFilesSelected || renderDocumentSearch) && (
-                <div className="flex gap-2 mb-2">
-                    {onFilesSelected && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={openFileDialog}
-                            disabled={disabled || uploadedFiles.length >= maxFiles}
-                            className="text-xs"
-                        >
-                            <UploadIcon className="size-3.5 me-1.5" />
-                            {t('agent.upload')}
-                        </Button>
-                    )}
-                    {renderDocumentSearch && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsDocSearchOpen(true)}
-                            disabled={disabled}
-                            className="text-xs"
-                        >
-                            <FileTextIcon className="size-3.5 me-1.5" />
-                            {t('agent.searchDocuments')}
-                            {selectedDocuments.length > 0 && (
-                                <span className="ms-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-blue-600 text-white">
-                                    {selectedDocuments.length}
-                                </span>
+                                        <span className="truncate font-medium">{workstreamName}</span>
+                                        {workstream.phase && (
+                                            <span className="truncate text-xs text-muted/75">
+                                                {formatWorkstreamName(workstream.phase)}
+                                            </span>
+                                        )}
+                                    </span>
+                                );
+                            })}
+                            {hiddenRunningWorkstreamCount > 0 && (
+                                <span className="px-1 py-1 text-xs text-muted">+{hiddenRunningWorkstreamCount}</span>
                             )}
-                        </Button>
-                    )}
+                        </div>
+                    </output>
                 </div>
             )}
 
             {/* Input row */}
-            <div className="flex items-end space-x-2">
-                <div className="flex flex-1 items-end space-x-1">
+            <div className="mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-border/70 bg-mixer-muted/15 p-2.5 shadow-lg shadow-black/5">
+                {attachmentItems.length > 0 && (
+                    <AttachmentPreviewList
+                        items={attachmentItems}
+                        artifactRunId={artifactRunId}
+                        variant="composer"
+                        onRemove={(id) => {
+                            if (processingFiles?.has(id)) {
+                                handleRemoveProcessingFile?.(id);
+                            } else if (uploadedFiles.some((file) => file.id === id)) {
+                                onRemoveFile?.(id);
+                            } else {
+                                onRemoveDocument?.(id);
+                            }
+                        }}
+                        className="gap-1.5"
+                    />
+                )}
+                <div className="flex min-w-0 flex-1">
                     <Textarea
                         ref={ref}
                         value={value}
@@ -529,70 +546,113 @@ export default function MessageInput({
                         onChange={(e) => setValue(e.target.value)}
                         onPaste={handlePaste}
                         disabled={disabled}
+                        aria-label={resolvedPlaceholder}
                         placeholder={
                             isStreaming
-                                ? t('agent.agentWorking')
-                                : onFilesSelected
-                                  ? t('agent.askAnything')
-                                  : resolvedPlaceholder
+                                ? `${t('agent.agentWorking')} ${t('agent.enterToSend')}`
+                                : canUploadFiles
+                                  ? `${t('agent.askAnything')} ${t('agent.enterToSend')}`
+                                  : `${resolvedPlaceholder} ${t('agent.enterToSend')}`
                         }
-                        rows={2}
-                        style={{ minHeight: '60px', maxHeight: '200px' }}
+                        rows={1}
+                        style={{ maxHeight: '160px' }}
+                        className={cn(
+                            'min-h-[44px] resize-none border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0',
+                            inputClassName,
+                        )}
                     />
-                    {!hideObjectLinking && (
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                        {hasAttachmentActions && (
+                            <Dropdown
+                                align="left"
+                                trigger={
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-8 rounded-full text-muted hover:bg-muted"
+                                        aria-label={t('agent.addAttachment')}
+                                    >
+                                        <PlusIcon className="size-4" />
+                                    </Button>
+                                }
+                            >
+                                {!hideObjectLinking && (
+                                    <MenuItem onClick={() => setIsObjectModalOpen(true)} isDisabled={!isCompleted}>
+                                        <PaperclipIcon className="size-4" />
+                                        {t('agent.linkObject')}
+                                    </MenuItem>
+                                )}
+                                {canUploadFiles && (
+                                    <MenuItem onClick={openFileDialog} isDisabled={uploadLimitReached}>
+                                        <UploadIcon className="size-4" />
+                                        {t('agent.upload')}
+                                    </MenuItem>
+                                )}
+                                {renderDocumentSearch && (
+                                    <MenuItem onClick={() => setIsDocSearchOpen(true)}>
+                                        <FileTextIcon className="size-4" />
+                                        <span>{t('agent.searchDocuments')}</span>
+                                        {selectedDocuments.length > 0 && (
+                                            <span className="ms-auto inline-flex items-center justify-center rounded-full bg-info/20 px-1.5 py-0.5 text-[10px] font-medium text-info">
+                                                {selectedDocuments.length}
+                                            </span>
+                                        )}
+                                    </MenuItem>
+                                )}
+                            </Dropdown>
+                        )}
+                        {runningWorkstreams.length === 0 && activeWorkstreamCount > 0 && (
+                            <output className="flex min-w-0 flex-wrap items-center gap-1.5" aria-live="polite">
+                                <span className="inline-flex h-8 items-center gap-1 rounded-full px-2 text-xs text-muted">
+                                    <Activity className="size-3 text-attention" />
+                                    {t('agent.activeWorkstreams', { count: activeWorkstreamCount })}
+                                </span>
+                            </output>
+                        )}
+                    </div>
+                    {/* Show Stop button only when streaming AND no text entered */}
+                    {/* When user types something, show Send button to allow sending a message */}
+                    {isStreaming && onStop && !value.trim() ? (
                         <Button
+                            onClick={handleStop}
+                            disabled={isStopping}
                             variant="ghost"
-                            className="rounded-full"
-                            disabled={!isCompleted}
-                            onClick={() => setIsObjectModalOpen(true)}
-                            alt={t('agent.linkObject')}
+                            size="icon"
+                            className={cn(
+                                'size-9 rounded-full border border-border/60 bg-foreground text-background shadow-sm',
+                                'hover:bg-foreground/90 hover:text-background',
+                                'disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100',
+                                '[&_svg]:text-destructive disabled:[&_svg]:text-muted',
+                            )}
+                            title={t('agent.stopAgent')}
+                            aria-label={t('agent.stopAgent')}
                         >
-                            <PaperclipIcon className="size-4" />
+                            {isStopping ? (
+                                <Spinner size="sm" />
+                            ) : (
+                                <SquareIcon className="size-3 fill-current stroke-current" />
+                            )}
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={handleSend}
+                            disabled={disabled || isSending || !value.trim() || hasProcessingFiles}
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                                'size-9 rounded-full border border-border/60 bg-foreground text-background shadow-sm',
+                                'hover:bg-foreground/90 hover:text-background',
+                                'disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100',
+                            )}
+                            title={hasProcessingFiles ? t('agent.waitForFiles') : undefined}
+                            aria-label={hasProcessingFiles ? t('agent.waitForFiles') : t('agent.send')}
+                        >
+                            {isSending ? <Spinner size="sm" /> : <ArrowUpIcon className="size-4" />}
                         </Button>
                     )}
                 </div>
-                {/* Show Stop button only when streaming AND no text entered */}
-                {/* When user types something, show Send button to allow sending a message */}
-                {isStreaming && onStop && !value.trim() ? (
-                    <Button
-                        onClick={handleStop}
-                        disabled={isStopping}
-                        className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white"
-                        title={t('agent.stopAgent')}
-                    >
-                        {isStopping ? (
-                            <Spinner size="sm" className="me-2" />
-                        ) : (
-                            <StopCircleIcon className="size-4 me-2" />
-                        )}{' '}
-                        <span>{t('agent.stop')}</span>
-                    </Button>
-                ) : (
-                    <Button
-                        onClick={handleSend}
-                        disabled={disabled || isSending || !value.trim() || hasProcessingFiles}
-                        className="px-4 py-2.5"
-                        title={hasProcessingFiles ? t('agent.waitForFiles') : undefined}
-                    >
-                        {isSending ? <Spinner size="sm" className="me-2" /> : <SendIcon className="size-4 me-2" />}
-                        <span>{hasProcessingFiles ? t('agent.processing') : t('agent.send')}</span>
-                    </Button>
-                )}
-            </div>
-
-            <div className="text-xs text-muted mt-2 text-center">
-                {activeTaskCount > 0 ? (
-                    <div className="flex items-center justify-center">
-                        <Activity className="h-3 w-3 me-1 text-attention" />
-                        <span>{t('agent.activeWorkstreams', { count: activeTaskCount })}</span>
-                    </div>
-                ) : isStreaming ? (
-                    t('agent.agentWorkingStop')
-                ) : disabled ? (
-                    t('agent.agentProcessing')
-                ) : (
-                    t('agent.enterToSend')
-                )}
             </div>
 
             {/* Object Selection Modal */}

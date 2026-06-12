@@ -21,17 +21,17 @@
     "author": "stefanescu.bogdan@gmail.com",
     "license": "MIT",
     "dependencies": {
-        "koa": "^3.2.0",
+        "koa": "^3.2.1",
         "koa-compose": "^4.1.0",
         "koa-send": "^5.0.1",
-        "path-to-regexp": "^6.2.2",
-        "statuses": "^2.0.1"
+        "path-to-regexp": "^8.4.2",
+        "statuses": "^2.0.2"
     },
     "devDependencies": {
         "@types/koa": "^3.0.3",
-        "@types/koa-compose": "^3.2.8",
-        "@types/koa-send": "^4.1.3",
-        "@types/statuses": "^2.0.1",
+        "@types/koa-compose": "^3.2.9",
+        "@types/koa-send": "^4.1.6",
+        "@types/statuses": "^2.0.6",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "^6.0.3",
         "vitest": "^4.1.8"
