@@ -29,14 +29,22 @@ export type AbacScope = (typeof AbacScopes)[number];
 export type RoleDomain = 'system' | 'content' | 'tasks';
 
 /**
- * Wire shape of a role returned by the IAM `/roles` endpoint. Generic over
- * the permission string type so callers consuming a filtered endpoint
- * (e.g. `/roles/system`) can specialize to a tighter type like
- * `SystemRoleDefinition`.
+ * Wire shape of a role returned by the IAM `/roles` endpoint.
+ *
+ * Permissions are typed `string[]` because role names span multiple partitions
+ * (system, content, future tasks/etc.) and each partition has its own
+ * vocabulary. For the tightly-typed system-only view (with `permissions:
+ * Permission[]`) use `SystemRoleDefinition` and the `/roles/system` endpoint.
+ *
+ * NOTE: this interface is intentionally non-generic. The OpenAPI generator
+ * doesn't handle TypeScript generics cleanly in array response types and
+ * produces a degenerate `RoleDefinitionArray` schema. Keeping the wire shapes
+ * concrete avoids that. `SystemRoleDefinition` extends and narrows
+ * `permissions` to `Permission[]`.
  */
-export interface RoleDefinition<P extends string = string> {
+export interface RoleDefinition {
     name: string;
-    permissions: P[];
+    permissions: string[];
     domain: RoleDomain;
 }
 
@@ -45,4 +53,6 @@ export interface RoleDefinition<P extends string = string> {
  * `Permission` enum values. Returned by `client.iam.roles.listSystem()` and
  * by the server's `/roles/system` endpoint.
  */
-export type SystemRoleDefinition = RoleDefinition<Permission>;
+export interface SystemRoleDefinition extends RoleDefinition {
+    permissions: Permission[];
+}
