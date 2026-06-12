@@ -1,6 +1,5 @@
 import type { JSONSchemaType } from 'ajv';
 import type { SupportedIntegrations } from './integrations.js';
-import type { ContentObjectTypeRef } from './store/store.js';
 import type { WorkflowRunStatus } from './store/workflow.js';
 import type { AccountRef } from './user.js';
 
@@ -600,6 +599,21 @@ export interface ReindexAgentRunsResponse {
 // ============================================================================
 
 /**
+ * Indexed (`_source`) shape of the content type ref. Unlike the public
+ * ContentObjectTypeRef discriminated union, the index stores BOTH kinds under
+ * `id` — the ObjectId hex for stored types, the namespaced code for in-code
+ * types — so search filters and facets work on a single keyword field
+ * regardless of the kind. `ref_type` is kept to rebuild the public union on
+ * read. `code` only exists on documents written before the field was unified.
+ */
+export interface IndexedContentTypeRef {
+    ref_type: 'stored' | 'incode';
+    id: string;
+    code?: string;
+    name: string;
+}
+
+/**
  * Document data structure for Elasticsearch indexing
  */
 export interface ElasticsearchDocumentData {
@@ -607,7 +621,7 @@ export interface ElasticsearchDocumentData {
     text?: string;
     properties?: Record<string, unknown>;
     status?: string;
-    type?: ContentObjectTypeRef;
+    type?: IndexedContentTypeRef;
     security?: {
         'content:read'?: string[];
         'content:write'?: string[];
