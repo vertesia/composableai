@@ -41,6 +41,9 @@ export default function InfoList() {
     const { account, project, client, authToken } = session;
     const server = client.baseUrl;
     const store = client.store.baseUrl;
+    // Behind the unified LB, server and store share one host (path-routing splits studio
+    // vs zeno), so the Store row just duplicates Server — only show it when they differ.
+    const showStore = store.replace(/\/+$/, '') !== server.replace(/\/+$/, '');
     const mcpServer = Env.endpoints.mcp ?? t('user.unknown');
     const tenantId = project ? getTenantIdFromProject(project) : '';
 
@@ -72,7 +75,7 @@ export default function InfoList() {
                     <InfoItems title={t('user.tenantId')} value={tenantId} />
                     <InfoItems title={t('user.environment')} value={Env.type} />
                     <InfoItems title={t('user.server')} value={server} />
-                    <InfoItems title={t('user.store')} value={store} />
+                    {showStore && <InfoItems title={t('user.store')} value={store} />}
                     <InfoItems title={t('user.mcpServer')} value={mcpServer} />
                     <InfoItems title={t('user.appVersion')} value={Env.version} />
                     <InfoItems title={t('user.sdkVersion')} value={Env.sdkVersion || t('user.unknown')} />
