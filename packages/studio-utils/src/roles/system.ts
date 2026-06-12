@@ -1,4 +1,4 @@
-import { Permission, ProjectRoles } from '@vertesia/common';
+import { Permission, SystemRoles } from '@vertesia/common';
 import { type Role, type RolePartition, SystemRole } from './classes.js';
 
 class OrgMemberRole extends SystemRole {
@@ -9,19 +9,19 @@ class OrgMemberRole extends SystemRole {
 
 class OwnerRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.owner, Object.values(Permission));
+        super(SystemRoles.owner, Object.values(Permission));
     }
 }
 
 class AdminRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.admin, Object.values(Permission));
+        super(SystemRoles.admin, Object.values(Permission));
     }
 }
 
 class ManagerRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.manager, Object.values(Permission));
+        super(SystemRoles.manager, Object.values(Permission));
         this.permissions.delete(Permission.account_admin);
         this.permissions.delete(Permission.manage_billing);
         this.permissions.delete(Permission.audit_read);
@@ -34,7 +34,7 @@ class ManagerRole extends OrgMemberRole {
 
 class DeveloperRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.developer, Object.values(Permission));
+        super(SystemRoles.developer, Object.values(Permission));
         this.permissions.delete(Permission.account_admin);
         this.permissions.delete(Permission.project_admin);
         this.permissions.delete(Permission.project_settings_write);
@@ -50,7 +50,7 @@ class DeveloperRole extends OrgMemberRole {
 
 class ApplicationRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.application, [
+        super(SystemRoles.application, [
             Permission.int_read,
             Permission.int_execute,
             Permission.int_write,
@@ -69,7 +69,7 @@ class ApplicationRole extends OrgMemberRole {
 
 class AutomationRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.automation, [
+        super(SystemRoles.automation, [
             Permission.content_read,
             Permission.content_write,
             Permission.content_admin,
@@ -84,7 +84,7 @@ class AutomationRole extends OrgMemberRole {
 
 class ContentProcessorRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.content_processor, [
+        super(SystemRoles.content_processor, [
             Permission.content_read,
             Permission.content_write,
             Permission.content_admin,
@@ -99,7 +99,7 @@ class ContentProcessorRole extends OrgMemberRole {
 
 class ConsumerRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.consumer, [
+        super(SystemRoles.consumer, [
             Permission.content_admin,
             Permission.content_read,
             Permission.content_write,
@@ -114,13 +114,13 @@ class ConsumerRole extends OrgMemberRole {
 
 class ExecutorRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.executor, [Permission.int_execute, Permission.run_read, Permission.workflow_run]);
+        super(SystemRoles.executor, [Permission.int_execute, Permission.run_read, Permission.workflow_run]);
     }
 }
 
 class ReaderRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.reader, [Permission.int_read, Permission.run_read, Permission.content_read]);
+        super(SystemRoles.reader, [Permission.int_read, Permission.run_read, Permission.content_read]);
     }
 }
 
@@ -141,20 +141,20 @@ const READ_ONLY_AUDIT_PERMISSIONS = [
 ];
 
 class ReadOnlyAuditRole extends OrgMemberRole {
-    constructor(name: ProjectRoles.auditor | ProjectRoles.support) {
+    constructor(name: SystemRoles.auditor | SystemRoles.support) {
         super(name, READ_ONLY_AUDIT_PERMISSIONS);
     }
 }
 
 class BillingRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.billing, [Permission.manage_billing]);
+        super(SystemRoles.billing, [Permission.manage_billing]);
     }
 }
 
 class AppMemberRole extends OrgMemberRole {
     constructor() {
-        super(ProjectRoles.app_member, [
+        super(SystemRoles.app_member, [
             Permission.int_read,
             Permission.int_execute,
             Permission.int_write,
@@ -170,32 +170,32 @@ class AppMemberRole extends OrgMemberRole {
 class ContentSuperAdmin extends DeveloperRole {
     constructor() {
         super();
-        this.name = ProjectRoles.content_superadmin;
+        this.name = SystemRoles.content_superadmin;
         this.permissions.add(Permission.content_superadmin);
     }
 }
 
-// The enum is still named `ProjectRoles` (historical); the partition's domain
+// The enum is still named `SystemRoles` (historical); the partition's domain
 // is `system` — the foundational built-in roles, distinct from feature domains
 // like `content` or `tasks`. Renaming the enum to `SystemRoles` is a separate
 // concern to revisit later.
-const systemRoles: Record<ProjectRoles, Role> = {
-    [ProjectRoles.owner]: new OwnerRole(),
-    [ProjectRoles.admin]: new AdminRole(),
-    [ProjectRoles.manager]: new ManagerRole(),
-    [ProjectRoles.developer]: new DeveloperRole(),
-    [ProjectRoles.application]: new ApplicationRole(),
-    [ProjectRoles.automation]: new AutomationRole(),
-    [ProjectRoles.content_processor]: new ContentProcessorRole(),
-    [ProjectRoles.consumer]: new ConsumerRole(),
-    [ProjectRoles.executor]: new ExecutorRole(),
-    [ProjectRoles.reader]: new ReaderRole(),
-    [ProjectRoles.auditor]: new ReadOnlyAuditRole(ProjectRoles.auditor),
-    [ProjectRoles.support]: new ReadOnlyAuditRole(ProjectRoles.support),
-    [ProjectRoles.billing]: new BillingRole(),
-    [ProjectRoles.app_member]: new AppMemberRole(),
-    [ProjectRoles.member]: new OrgMemberRole(ProjectRoles.member, []),
-    [ProjectRoles.content_superadmin]: new ContentSuperAdmin(),
+const systemRoles: Record<SystemRoles, Role> = {
+    [SystemRoles.owner]: new OwnerRole(),
+    [SystemRoles.admin]: new AdminRole(),
+    [SystemRoles.manager]: new ManagerRole(),
+    [SystemRoles.developer]: new DeveloperRole(),
+    [SystemRoles.application]: new ApplicationRole(),
+    [SystemRoles.automation]: new AutomationRole(),
+    [SystemRoles.content_processor]: new ContentProcessorRole(),
+    [SystemRoles.consumer]: new ConsumerRole(),
+    [SystemRoles.executor]: new ExecutorRole(),
+    [SystemRoles.reader]: new ReaderRole(),
+    [SystemRoles.auditor]: new ReadOnlyAuditRole(SystemRoles.auditor),
+    [SystemRoles.support]: new ReadOnlyAuditRole(SystemRoles.support),
+    [SystemRoles.billing]: new BillingRole(),
+    [SystemRoles.app_member]: new AppMemberRole(),
+    [SystemRoles.member]: new OrgMemberRole(SystemRoles.member, []),
+    [SystemRoles.content_superadmin]: new ContentSuperAdmin(),
 };
 
 export const systemPartition: RolePartition = {

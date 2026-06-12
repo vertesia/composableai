@@ -4,7 +4,7 @@
  * Access control interfaces
  */
 
-import type { ProjectRoles } from './project.js';
+import type { SystemRoles } from './project.js';
 
 export enum Permission {
     int_read = 'interaction:read',
@@ -112,7 +112,7 @@ export interface AceConditions {
 }
 
 export interface AccessControlEntry {
-    role: ProjectRoles;
+    role: SystemRoles;
     resource_type: AccessControlResourceType;
     resource: string; //objectId
     principal_type: AccessControlPrincipalType;

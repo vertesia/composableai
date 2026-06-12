@@ -1,4 +1,4 @@
-import { Permission, ProjectRoles } from '@vertesia/common';
+import { Permission, SystemRoles } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
 import { ContentRoleNames } from './content.js';
 import {
@@ -17,7 +17,7 @@ import {
 
 describe('getRoleByName', () => {
     it('returns a system role by name', () => {
-        const role = getRoleByName(ProjectRoles.owner);
+        const role = getRoleByName(SystemRoles.owner);
         expect(role).toBeInstanceOf(SystemRole);
         expect(role.name).toBe('owner');
         expect(role.domain).toBe('system');
@@ -37,7 +37,7 @@ describe('getRoleByName', () => {
     it('queries partitions in registration order — system first', () => {
         // System partition is registered before content. Even if a future partition
         // declared a role named 'owner', the system one would still win.
-        const role = getRoleByName(ProjectRoles.owner);
+        const role = getRoleByName(SystemRoles.owner);
         expect(role.domain).toBe('system');
     });
 });
@@ -139,7 +139,7 @@ describe('getPermissionsForRoles', () => {
     });
 
     it('returns system Permission values for system roles', () => {
-        const merged = getPermissionsForRoles([ProjectRoles.reader]);
+        const merged = getPermissionsForRoles([SystemRoles.reader]);
         // reader role has: int_read, run_read, content_read + account_member (via OrgMemberRole)
         expect(merged).toContain(Permission.int_read);
         expect(merged).toContain(Permission.content_read);
@@ -149,13 +149,13 @@ describe('getPermissionsForRoles', () => {
 
 describe('Role instances', () => {
     it('SystemRole hasPermission for granted Permission', () => {
-        const owner = getRoleByName(ProjectRoles.owner);
+        const owner = getRoleByName(SystemRoles.owner);
         expect(owner.hasPermission(Permission.content_read)).toBe(true);
         expect(owner.hasPermission(Permission.manage_billing)).toBe(true);
     });
 
     it('SystemRole hasPermission false for arbitrary string', () => {
-        const reader = getRoleByName(ProjectRoles.reader);
+        const reader = getRoleByName(SystemRoles.reader);
         expect(reader.hasPermission('not_a_real_perm')).toBe(false);
     });
 
@@ -172,7 +172,7 @@ describe('Role instances', () => {
 
 describe('SystemRole vs AbacRole discrimination', () => {
     it('SystemRole instanceof Role', () => {
-        const owner = getRoleByName(ProjectRoles.owner);
+        const owner = getRoleByName(SystemRoles.owner);
         expect(owner).toBeInstanceOf(Role);
         expect(owner).toBeInstanceOf(SystemRole);
         expect(owner).not.toBeInstanceOf(AbacRole);
@@ -188,14 +188,14 @@ describe('SystemRole vs AbacRole discrimination', () => {
 
 describe('RoleList', () => {
     it('fromRoleNames composes a list checkable for permissions', () => {
-        const list = RoleList.fromRoleNames([ProjectRoles.reader, ProjectRoles.executor]);
+        const list = RoleList.fromRoleNames([SystemRoles.reader, SystemRoles.executor]);
         expect(list.hasPermission(Permission.content_read)).toBe(true); // from reader
         expect(list.hasPermission(Permission.int_execute)).toBe(true); // from executor
         expect(list.hasPermission(Permission.manage_billing)).toBe(false); // neither has it
     });
 
     it('fromRoleName composes a single-role list', () => {
-        const list = RoleList.fromRoleName(ProjectRoles.billing);
+        const list = RoleList.fromRoleName(SystemRoles.billing);
         expect(list.hasPermission(Permission.manage_billing)).toBe(true);
         expect(list.hasPermission(Permission.content_write)).toBe(false);
     });

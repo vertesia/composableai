@@ -24,7 +24,7 @@ export type AbacScope = (typeof AbacScopes)[number];
  * declare roles applicable to multiple scopes (e.g. the `content` domain owns
  * roles applicable to both `document` and `collection` scopes). The `system`
  * domain owns the built-in foundational roles (currently exposed as
- * `ProjectRoles`) — registered first so domain partitions cannot shadow them.
+ * `SystemRoles`) — registered first so domain partitions cannot shadow them.
  */
 export type RoleDomain = 'system' | 'content' | 'tasks';
 
