@@ -120,6 +120,124 @@ describe('Test requests', () => {
         assert.equal(attempts, 2);
         assert.equal(payload.attempts, 2);
     });
+    it('auto-retries pacing 429s with the exact server hint, POST included, without a retry policy', async () => {
+        let attempts = 0;
+        const startedAt = Date.now();
+        const pacingClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            if (attempts === 1) {
+                return new Response(JSON.stringify({ error: 'rate_limited_pacing' }), {
+                    status: 429,
+                    headers: {
+                        'content-type': 'application/json',
+                        'retry-after': '1',
+                        'x-ratelimit-reason': 'pacing',
+                        'x-ratelimit-retry-ms': '60',
+                    },
+                });
+            }
+            return new Response(JSON.stringify({ attempts }), {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
+            });
+        });
+
+        const payload = (await pacingClient.post('/objects', { payload: { name: 'x' } })) as { attempts: number };
+
+        assert.equal(attempts, 2);
+        assert.equal(payload.attempts, 2);
+        // Waited the precise ms hint, not the 1s Retry-After.
+        assert.ok(Date.now() - startedAt >= 55);
+        assert.ok(Date.now() - startedAt < 900);
+    });
+    it('never auto-retries quota 429s and respects the pacing budget and maxWaitMs', async () => {
+        let attempts = 0;
+        const quotaClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            return new Response(JSON.stringify({ error: 'quota_exceeded' }), {
+                status: 429,
+                headers: {
+                    'content-type': 'application/json',
+                    'retry-after': '3600',
+                    'x-ratelimit-reason': 'quota',
+                },
+            });
+        });
+        let error: unknown;
+        try {
+            await quotaClient.get('/objects');
+        } catch (err: unknown) {
+            error = err;
+        }
+        assert.equal(attempts, 1);
+        assert.equal((error as { status?: number }).status, 429);
+
+        // A pacing hint above maxWaitMs surfaces the 429 instead of waiting.
+        let slowAttempts = 0;
+        const slowClient = new FetchClient('http://example.test', async () => {
+            slowAttempts++;
+            return new Response(JSON.stringify({ error: 'rate_limited_pacing' }), {
+                status: 429,
+                headers: {
+                    'content-type': 'application/json',
+                    'x-ratelimit-reason': 'pacing',
+                    'x-ratelimit-retry-ms': '60000',
+                },
+            });
+        });
+        let slowError: unknown;
+        try {
+            await slowClient.get('/objects');
+        } catch (err: unknown) {
+            slowError = err;
+        }
+        assert.equal(slowAttempts, 1);
+        assert.equal((slowError as { status?: number }).status, 429);
+
+        // Persistent pacing exhausts its independent budget (default 2 retries = 3 attempts max).
+        let stubbornAttempts = 0;
+        const stubbornClient = new FetchClient('http://example.test', async () => {
+            stubbornAttempts++;
+            return new Response(JSON.stringify({ error: 'rate_limited_pacing' }), {
+                status: 429,
+                headers: {
+                    'content-type': 'application/json',
+                    'x-ratelimit-reason': 'pacing',
+                    'x-ratelimit-retry-ms': '10',
+                },
+            });
+        });
+        let stubbornError: unknown;
+        try {
+            await stubbornClient.get('/objects');
+        } catch (err: unknown) {
+            stubbornError = err;
+        }
+        assert.equal(stubbornAttempts, 3);
+        assert.equal((stubbornError as { status?: number }).status, 429);
+    });
+    it('pacing can be disabled per client', async () => {
+        let attempts = 0;
+        const offClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            return new Response(JSON.stringify({ error: 'rate_limited_pacing' }), {
+                status: 429,
+                headers: {
+                    'content-type': 'application/json',
+                    'x-ratelimit-reason': 'pacing',
+                    'x-ratelimit-retry-ms': '10',
+                },
+            });
+        }).withPacingRetry(false);
+        let error: unknown;
+        try {
+            await offClient.get('/objects');
+        } catch (err: unknown) {
+            error = err;
+        }
+        assert.equal(attempts, 1);
+        assert.equal((error as { status?: number }).status, 429);
+    });
     it('does not retry POST unless the request opts in', async () => {
         let attempts = 0;
         const retryClient = new FetchClient('http://example.test', async () => {
