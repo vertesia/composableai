@@ -183,7 +183,10 @@ function pacingDelayMs(res: Response, pacing: NormalizedPacingPolicy): number | 
     if (res.status !== 429 || res.headers.get(RATELIMIT_REASON_HEADER) !== 'pacing') {
         return undefined;
     }
-    const retryMs = Number(res.headers.get(RATELIMIT_RETRY_MS_HEADER));
+    // Treat an absent/empty header as "no hint" — Number(null) and Number('') are 0, which
+    // would otherwise turn a pacing 429 carrying only Retry-After into an immediate retry.
+    const rawRetryMs = res.headers.get(RATELIMIT_RETRY_MS_HEADER);
+    const retryMs = rawRetryMs ? Number(rawRetryMs) : Number.NaN;
     const delay = Number.isFinite(retryMs) && retryMs >= 0 ? retryMs : retryAfterDelayMs(res);
     if (delay === undefined || delay > pacing.maxWaitMs) {
         return undefined;

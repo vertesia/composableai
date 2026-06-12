@@ -216,6 +216,35 @@ describe('Test requests', () => {
         assert.equal(stubbornAttempts, 3);
         assert.equal((stubbornError as { status?: number }).status, 429);
     });
+    it('falls back to Retry-After when a pacing 429 has no x-ratelimit-retry-ms', async () => {
+        let attempts = 0;
+        const startedAt = Date.now();
+        const fallbackClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            if (attempts === 1) {
+                return new Response(JSON.stringify({ error: 'rate_limited_pacing' }), {
+                    status: 429,
+                    headers: {
+                        'content-type': 'application/json',
+                        'retry-after': '1',
+                        'x-ratelimit-reason': 'pacing',
+                        // no x-ratelimit-retry-ms: Number(null) must NOT become a 0ms retry
+                    },
+                });
+            }
+            return new Response(JSON.stringify({ attempts }), {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
+            });
+        });
+
+        const payload = (await fallbackClient.get('/objects')) as { attempts: number };
+
+        assert.equal(attempts, 2);
+        assert.equal(payload.attempts, 2);
+        // Honored the 1s Retry-After instead of retrying immediately.
+        assert.ok(Date.now() - startedAt >= 950);
+    });
     it('pacing can be disabled per client', async () => {
         let attempts = 0;
         const offClient = new FetchClient('http://example.test', async () => {
