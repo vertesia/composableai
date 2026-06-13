@@ -1966,7 +1966,7 @@ function ModernAgentConversationInner({
                                     isCompleted={effectiveIsCompleted}
                                     activeTaskCount={activeTaskCount}
                                     activeWorkstreams={panelWorkstreams}
-                                    placeholder={placeholder ?? 'Type your message...'}
+                                    placeholder={placeholder}
                                     onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
                                     uploadedFiles={uploadedFiles}
                                     onRemoveFile={onRemoveFile}
