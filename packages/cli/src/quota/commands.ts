@@ -19,6 +19,16 @@ export async function showStanding(program: Command, options: { json?: boolean }
 
     console.log(colors.bold(`Quota standing for tenant ${standing.tenant_id}  (base tier: ${standing.base_tier})`));
 
+    if (!standing.available) {
+        console.log(
+            colors.yellow(
+                '\n⚠ Standing unavailable: the rate-limit store is unreachable, so usage/limits could not be read. ' +
+                    'Limiters fail open in this state (requests are allowed), so this does NOT mean there are no limits.',
+            ),
+        );
+        return;
+    }
+
     console.log(colors.bold('\nAPI rate limits (per-tenant):'));
     console.log(colors.gray('  resource         burst (used/limit)      quota (used/limit)'));
     for (const r of standing.api) {

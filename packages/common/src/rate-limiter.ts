@@ -64,6 +64,11 @@ export interface QuotaStandingAdmissionClass {
 
 export interface QuotaStandingResponse {
     tenant_id: string;
+    /**
+     * False when the limiter store (Redis) was unavailable, so `api`/`admission` are empty because
+     * standing could not be read — NOT because there are no limits. Limiters fail open in this case.
+     */
+    available: boolean;
     /** Deployment base tier (env QUOTA_BASE_TIER); `default` = the static limits stand. */
     base_tier: string;
     /** Per-resource API rate-limit standing (effective limits + current usage). */
