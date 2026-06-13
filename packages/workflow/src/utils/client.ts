@@ -53,10 +53,22 @@ function parseWorkflowFetchTimeoutMs(): number | false {
         return DEFAULT_WORKFLOW_FETCH_TIMEOUT_MS;
     }
 
-    const parsed = Number.parseInt(raw, 10);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-        // 0 / invalid -> disable the default timeout (rely on per-request / Temporal start-to-close).
+    // Only an explicit 0/false disables the fail-fast timeout.
+    const normalized = raw.trim().toLowerCase();
+    if (normalized === '0' || normalized === 'false') {
         return false;
     }
-    return parsed;
+
+    // Require a plain positive integer count of milliseconds. parseInt() is too lenient — it
+    // reads "30s" as 30 (i.e. 30ms, off by 1000x) and "60000ms" as 60000 — so validate the raw
+    // string first. Any other garbage (typo, negative, unit suffix) keeps the fail-fast default
+    // rather than silently disabling the timeout, which would reintroduce the multi-minute hang.
+    if (!/^\d+$/.test(normalized) || Number.parseInt(normalized, 10) <= 0) {
+        console.warn(
+            `[workflow] Invalid ${WORKFLOW_FETCH_TIMEOUT_ENV}="${raw}"; ` +
+                `expected a positive integer in milliseconds. Falling back to ${DEFAULT_WORKFLOW_FETCH_TIMEOUT_MS}ms`,
+        );
+        return DEFAULT_WORKFLOW_FETCH_TIMEOUT_MS;
+    }
+    return Number.parseInt(normalized, 10);
 }
