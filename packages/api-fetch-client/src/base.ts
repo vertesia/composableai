@@ -19,6 +19,13 @@ export interface IRequestRetryPolicy {
      */
     statuses?: number[];
     /**
+     * Also retry any 5xx whose body is not JSON — e.g. an HTML error page from a load balancer,
+     * gateway, or Cloud Run ("no available instance" / "try again in 30 seconds"). These originate
+     * at the edge, not the application (which serializes its errors as JSON), so they are transient
+     * and safe to retry even when the exact status (often 500) is not in `statuses`. Defaults to true.
+     */
+    retryNonJsonServerErrors?: boolean;
+    /**
      * Retry network failures thrown by fetch. Defaults to true.
      */
     retryOnConnectionError?: boolean;
@@ -40,6 +47,7 @@ type NormalizedRetryPolicy = {
     attempts: number;
     methods: Set<string>;
     statuses: Set<number>;
+    retryNonJsonServerErrors: boolean;
     retryOnConnectionError: boolean;
     baseDelayMs: number;
     maxDelayMs: number;
@@ -118,6 +126,20 @@ function isReplayableBody(body: BodyInit | undefined) {
     return !body || typeof ReadableStream === 'undefined' || !(body instanceof ReadableStream);
 }
 
+/**
+ * True for a 5xx whose Content-Type is not JSON. The application serializes its errors as JSON, so a
+ * non-JSON 5xx (HTML/text, or no content-type) is an edge/LB/gateway failure — e.g. a Cloud Run
+ * "no available instance" or GFE "try again in 30 seconds" page — which is transient and retryable.
+ * Reads only headers (no body consumption), so it is safe to call before deciding to retry.
+ */
+function isNonJsonServerError(res: Response): boolean {
+    if (res.status < 500) {
+        return false;
+    }
+    const contentType = (res.headers.get('content-type') ?? '').toLowerCase();
+    return !contentType.includes('json');
+}
+
 function normalizeRetryPolicy(policy: IRequestRetryPolicy): NormalizedRetryPolicy {
     const attempts = Math.max(1, Math.floor(policy.attempts ?? DEFAULT_RETRY_ATTEMPTS));
     const baseDelayMs = Math.max(0, policy.baseDelayMs ?? DEFAULT_RETRY_BASE_DELAY_MS);
@@ -126,6 +148,7 @@ function normalizeRetryPolicy(policy: IRequestRetryPolicy): NormalizedRetryPolic
         attempts,
         methods: new Set((policy.methods ?? DEFAULT_RETRY_METHODS).map((method) => method.toUpperCase())),
         statuses: new Set(policy.statuses ?? DEFAULT_RETRY_STATUSES),
+        retryNonJsonServerErrors: policy.retryNonJsonServerErrors ?? true,
         retryOnConnectionError: policy.retryOnConnectionError ?? true,
         baseDelayMs,
         maxDelayMs,
@@ -537,12 +560,9 @@ export abstract class ClientBase {
         replayableBody: boolean,
         res: Response,
     ) {
-        return (
-            attempt < policy.attempts - 1 &&
-            replayableBody &&
-            policy.methods.has(method) &&
-            policy.statuses.has(res.status)
-        );
+        const retryableStatus =
+            policy.statuses.has(res.status) || (policy.retryNonJsonServerErrors && isNonJsonServerError(res));
+        return attempt < policy.attempts - 1 && replayableBody && policy.methods.has(method) && retryableStatus;
     }
 
     private shouldRetryConnectionError(
