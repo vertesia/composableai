@@ -2,16 +2,18 @@
  * get a zeno client for a given token
  */
 
-import type { FETCH_FN } from '@vertesia/api-fetch-client';
 import { decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
 import type { WorkflowExecutionBaseParams } from '@vertesia/common';
-import { Agent } from 'undici';
 import { WorkflowParamNotFoundError } from '../errors.js';
 
-const DEFAULT_WORKFLOW_FETCH_TIMEOUT_MS = 30 * 60 * 1000;
+// Short default timeout for ordinary workflow -> server/store calls (object GETs, status updates,
+// etc.). A stale/dead pooled connection (a server pod scaled down/rolled mid-request) used to hang
+// for the whole 30-minute undici headersTimeout; this bounds it to seconds so it fails fast and the
+// activity is retried. The long path — synchronous interaction execution, which blocks on the model —
+// sets its own long per-request timeout in @vertesia/client (executeInteraction*), overriding this.
+// Override the default via VERTESIA_WORKFLOW_FETCH_TIMEOUT_MS (0/false disables it).
+const DEFAULT_WORKFLOW_FETCH_TIMEOUT_MS = 60 * 1000;
 const WORKFLOW_FETCH_TIMEOUT_ENV = 'VERTESIA_WORKFLOW_FETCH_TIMEOUT_MS';
-
-let workflowFetch: Promise<FETCH_FN> | undefined;
 
 export function getVertesiaClient(payload: WorkflowExecutionBaseParams<unknown>) {
     return new VertesiaClient(getVertesiaClientOptions(payload));
@@ -41,46 +43,20 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
         storeUrl: payload.config.store_url,
         tokenServerUrl: token.iss,
         apikey: payload.auth_token,
-        fetch: getWorkflowFetch(),
+        timeout: parseWorkflowFetchTimeoutMs(),
     };
 }
 
-function getWorkflowFetch(): Promise<FETCH_FN> {
-    workflowFetch ??= createWorkflowFetch();
-    return workflowFetch;
-}
-
-async function createWorkflowFetch(): Promise<FETCH_FN> {
-    if (typeof globalThis.fetch !== 'function') {
-        throw new Error('No Fetch implementation found');
-    }
-
-    const timeoutMs = parseWorkflowFetchTimeoutMs();
-    if (timeoutMs === 0) {
-        return globalThis.fetch.bind(globalThis);
-    }
-
-    const dispatcher = new Agent({
-        headersTimeout: timeoutMs,
-        bodyTimeout: timeoutMs,
-    });
-
-    return (input, init) =>
-        globalThis.fetch(input, {
-            ...init,
-            dispatcher,
-        } as unknown as RequestInit);
-}
-
-function parseWorkflowFetchTimeoutMs(): number {
-    const raw = process.env[WORKFLOW_FETCH_TIMEOUT_ENV];
+function parseWorkflowFetchTimeoutMs(): number | false {
+    const raw = typeof process !== 'undefined' ? process.env?.[WORKFLOW_FETCH_TIMEOUT_ENV] : undefined;
     if (!raw) {
         return DEFAULT_WORKFLOW_FETCH_TIMEOUT_MS;
     }
 
     const parsed = Number.parseInt(raw, 10);
-    if (!Number.isFinite(parsed) || parsed < 0) {
-        return DEFAULT_WORKFLOW_FETCH_TIMEOUT_MS;
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+        // 0 / invalid -> disable the default timeout (rely on per-request / Temporal start-to-close).
+        return false;
     }
     return parsed;
 }

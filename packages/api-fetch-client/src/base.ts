@@ -79,6 +79,18 @@ export interface IRequestParams {
      * Set to false to disable a client-level retry policy for this request.
      */
     retryPolicy?: IRequestRetryPolicy | false | null;
+    /**
+     * Per-request timeout in milliseconds. Aborts the whole request — connection, response headers,
+     * AND body consumption (JSON parse) — via a browser-standard AbortSignal. A positive number sets
+     * the timeout; `false`/`null`/`0` disables it for this request (overriding any client default).
+     * When omitted, the client-level default (`withTimeout` / `defaultTimeoutMs`) applies.
+     * Not applied to SSE (`reader: 'sse'`) requests, which are long-lived by design.
+     */
+    timeoutMs?: number | false | null;
+    /**
+     * Caller-supplied AbortSignal. Merged with the timeout signal — whichever aborts first wins.
+     */
+    signal?: AbortSignal;
 }
 
 export interface IRequestParamsWithPayload extends IRequestParams {
@@ -147,6 +159,60 @@ function toError(err: unknown): Error {
     return err instanceof Error ? err : new Error(String(err));
 }
 
+/**
+ * True for an AbortSignal-driven failure (caller abort or our timeout). Checks `name` rather than
+ * `instanceof Error` because runtimes surface these as a `DOMException` (`TimeoutError`/`AbortError`),
+ * which is not always an `Error` subclass in browsers.
+ */
+function isAbortError(err: unknown): boolean {
+    return (
+        typeof err === 'object' &&
+        err !== null &&
+        'name' in err &&
+        ((err as { name: unknown }).name === 'TimeoutError' || (err as { name: unknown }).name === 'AbortError')
+    );
+}
+
+/**
+ * Browser + Node safe `AbortSignal.timeout(ms)`, with a fallback for runtimes that lack it.
+ */
+function timeoutSignal(ms: number): AbortSignal {
+    const timeoutFn = (AbortSignal as unknown as { timeout?: (ms: number) => AbortSignal }).timeout;
+    if (typeof timeoutFn === 'function') {
+        return timeoutFn(ms);
+    }
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(new DOMException('The operation timed out', 'TimeoutError')), ms);
+    return controller.signal;
+}
+
+/**
+ * Merge abort signals (caller + timeout). Uses the standard `AbortSignal.any` when available, with a
+ * manual fallback for older runtimes. Returns undefined when there is nothing to combine.
+ */
+function combineAbortSignals(signals: Array<AbortSignal | undefined>): AbortSignal | undefined {
+    const list = signals.filter((s): s is AbortSignal => !!s);
+    if (list.length === 0) {
+        return undefined;
+    }
+    if (list.length === 1) {
+        return list[0];
+    }
+    const anyFn = (AbortSignal as unknown as { any?: (s: AbortSignal[]) => AbortSignal }).any;
+    if (typeof anyFn === 'function') {
+        return anyFn(list);
+    }
+    const controller = new AbortController();
+    for (const s of list) {
+        if (s.aborted) {
+            controller.abort(s.reason);
+            break;
+        }
+        s.addEventListener('abort', () => controller.abort(s.reason), { once: true });
+    }
+    return controller.signal;
+}
+
 async function discardBody(res: Response) {
     try {
         await res.body?.cancel();
@@ -161,6 +227,7 @@ export abstract class ClientBase {
     errorFactory: (err: RequestError) => Error = (err) => err;
     verboseErrors = true;
     retryPolicy?: IRequestRetryPolicy;
+    defaultTimeoutMs?: number;
 
     abstract get headers(): Record<string, string>;
 
@@ -184,6 +251,40 @@ export abstract class ClientBase {
 
     getRetryPolicy(): IRequestRetryPolicy | undefined {
         return this.retryPolicy;
+    }
+
+    /**
+     * Set a default request timeout (ms) applied to every request unless overridden per-request via
+     * `timeoutMs`. Pass `false`/`null`/`0` to clear it. The timeout aborts the whole request
+     * (connection + response headers + body consumption) via AbortSignal.
+     */
+    withTimeout(timeoutMs?: number | false | null): this {
+        this.defaultTimeoutMs = typeof timeoutMs === 'number' && timeoutMs > 0 ? timeoutMs : undefined;
+        return this;
+    }
+
+    getTimeout(): number | undefined {
+        return this.defaultTimeoutMs;
+    }
+
+    /**
+     * Resolve the effective timeout for a request: per-request `timeoutMs` wins (a positive number
+     * sets it; `false`/`null`/`0` disables it), otherwise the client default applies. SSE streams are
+     * never given a total-request timeout.
+     */
+    protected resolveTimeout(params: IRequestParams | undefined): number | undefined {
+        if (params?.reader === 'sse') {
+            return undefined;
+        }
+        const requestTimeout = params?.timeoutMs;
+        if (requestTimeout === false || requestTimeout === null) {
+            return undefined;
+        }
+        if (typeof requestTimeout === 'number') {
+            return requestTimeout > 0 ? requestTimeout : undefined;
+        }
+        const clientTimeout = this.getTimeout();
+        return clientTimeout && clientTimeout > 0 ? clientTimeout : undefined;
     }
 
     /**
@@ -279,6 +380,11 @@ export abstract class ClientBase {
                 }
             })
             .catch((err: unknown) => {
+                // A timeout/abort during body consumption is a real failure — surface it instead of
+                // swallowing it into an error payload that would otherwise be returned as the result.
+                if (isAbortError(err)) {
+                    throw err;
+                }
                 return {
                     status: res.status,
                     error: 'Unable to load response content',
@@ -343,12 +449,21 @@ export abstract class ClientBase {
         }
 
         const normalizedMethod = method.toUpperCase();
+        // Resolved once; createRequestInit() then mints a FRESH timeout signal per attempt so each
+        // retry gets its own deadline. The signal is set on the Request, so it bounds the connection,
+        // the wait for response headers, AND body consumption (handleResponse reads res.text()).
+        const timeoutMs = this.resolveTimeout(params);
         const createRequestInit = (): RequestInit => {
-            return {
+            const signal = combineAbortSignals([params?.signal, timeoutMs ? timeoutSignal(timeoutMs) : undefined]);
+            const init: RequestInit = {
                 method: normalizedMethod,
                 headers: Object.assign({}, headers),
                 body: body,
             };
+            if (signal) {
+                init.signal = signal;
+            }
+            return init;
         };
         const retryPolicy = this.resolveRetryPolicy(params);
         const fetch = await this._fetch;
