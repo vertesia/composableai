@@ -27,6 +27,7 @@ import {
 } from './profiles/commands.js';
 import { AVAILABLE_REGIONS, DEFAULT_REGION, getConfigFile } from './profiles/index.js';
 import { listProjects, useProject } from './projects/index.js';
+import { registerQuotaCommand } from './quota/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
 import { getBooleanOption, hasStatus } from './utils/options.js';
@@ -251,6 +252,7 @@ profilesRoot
 
 registerObjectsCommand(program);
 registerWorkflowsCommand(program);
+registerQuotaCommand(program);
 
 program.parseAsync(process.argv).catch((err) => {
     console.error(err);

@@ -17,6 +17,7 @@ import OAuthProvidersApi from './OAuthProvidersApi.js';
 import OAuthServerApi from './OAuthServerApi.js';
 import ProjectsApi from './ProjectsApi.js';
 import PromptsApi from './PromptsApi.js';
+import QuotaApi from './QuotaApi.js';
 import { RefsApi } from './RefsApi.js';
 import RemoteMcpConnectionsApi from './RemoteMcpConnectionsApi.js';
 import { RunsApi } from './RunsApi.js';
@@ -388,6 +389,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     commands = new CommandsApi(this);
     apps = new AppsApi(this);
     tools = new ToolsApi(this);
+    quota = new QuotaApi(this);
 }
 
 function isApiKey(apiKey: string) {
