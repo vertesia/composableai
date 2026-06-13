@@ -502,7 +502,8 @@ function StartWorkflowView({
     allowWorkflowControl,
 }: ModernAgentConversationProps) {
     const { t } = useUITranslation();
-    const resolvedPlaceholder = placeholder ?? t('agent.typeYourMessage');
+    const canStageFiles = !hideFileUpload;
+    const resolvedPlaceholder = placeholder ?? (canStageFiles ? t('agent.askAnything') : t('agent.typeYourMessage'));
     const resolvedStartButtonText = startButtonText ?? t('agent.startAgent');
     const resolvedTitle = title ?? t('agent.startNewConversation');
     const { client } = useUserSession();
@@ -517,7 +518,6 @@ function StartWorkflowView({
 
     // Staged files - stored locally until workflow starts
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
-    const canStageFiles = !hideFileUpload;
 
     // Drag and drop state
     const [isDragOver, setIsDragOver] = useState(false);
