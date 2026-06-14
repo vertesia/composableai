@@ -46,7 +46,7 @@
         "@rollup/plugin-terser": "^0.4.4",
         "@rollup/plugin-typescript": "^12.1.2",
         "@vertesia/common": "workspace:*",
-        "esbuild": "^0.25.0",
+        "esbuild": "^0.28.0",
         "gray-matter": "^4.0.3",
         "zod": "^4.4.3"
     },
