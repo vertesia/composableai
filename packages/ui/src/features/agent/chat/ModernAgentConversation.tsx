@@ -504,7 +504,7 @@ function StartWorkflowView({
 }: ModernAgentConversationProps) {
     const { t } = useUITranslation();
     const canStageFiles = !hideFileUpload;
-    const resolvedPlaceholder = placeholder ?? (canStageFiles ? t('agent.askAnything') : t('agent.typeYourMessage'));
+    const resolvedPlaceholder = placeholder ?? t('agent.typeYourMessage');
     const resolvedStartButtonText = startButtonText ?? t('agent.startAgent');
     const resolvedTitle = title ?? t('agent.startNewConversation');
     const { client } = useUserSession();
@@ -878,6 +878,7 @@ function StartWorkflowView({
                                     <div
                                         key={`${file.name}-${file.size}-${file.lastModified}`}
                                         className="flex items-center gap-1.5 rounded-md bg-attention/10 px-2 py-1 text-sm text-attention"
+                                        title={t('agent.fileStagedTooltip')}
                                     >
                                         <FileTextIcon className="size-3.5" />
                                         <span className="max-w-[120px] truncate">{file.name}</span>
@@ -943,11 +944,6 @@ function StartWorkflowView({
                                 {isSending ? <Spinner size="sm" /> : <ArrowUpIcon className="size-4" />}
                             </Button>
                         </div>
-                    </div>
-                    <div className="mx-auto mt-2 max-w-3xl text-center text-xs text-muted">
-                        {canStageFiles && stagedFiles.length > 0
-                            ? t('agent.filesStagedCount', { count: stagedFiles.length })
-                            : t('agent.enterToSend')}
                     </div>
                 </div>
             </div>

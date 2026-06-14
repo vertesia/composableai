@@ -525,13 +525,7 @@ export default function MessageInput({
                         onPaste={handlePaste}
                         disabled={disabled}
                         aria-label={resolvedPlaceholder}
-                        placeholder={
-                            isStreaming
-                                ? `${t('agent.agentWorking')} ${t('agent.enterToSend')}`
-                                : canUploadFiles
-                                  ? `${t('agent.askAnything')} ${t('agent.enterToSend')}`
-                                  : `${resolvedPlaceholder} ${t('agent.enterToSend')}`
-                        }
+                        placeholder={resolvedPlaceholder}
                         rows={1}
                         style={{ maxHeight: '160px' }}
                         className={cn(
@@ -604,8 +598,8 @@ export default function MessageInput({
                                 'disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100',
                                 '[&_svg]:text-destructive disabled:[&_svg]:text-muted',
                             )}
-                            title={t('agent.stopAgent')}
-                            aria-label={t('agent.stopAgent')}
+                            title={t('agent.stopTooltip')}
+                            aria-label={t('agent.stopTooltip')}
                         >
                             {isStopping ? (
                                 <Spinner size="sm" />
@@ -624,7 +618,7 @@ export default function MessageInput({
                                 'hover:bg-foreground/90 hover:text-background',
                                 'disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100',
                             )}
-                            title={hasProcessingFiles ? t('agent.waitForFiles') : undefined}
+                            title={hasProcessingFiles ? t('agent.waitForFiles') : t('agent.sendTooltip')}
                             aria-label={hasProcessingFiles ? t('agent.waitForFiles') : t('agent.send')}
                         >
                             {isSending ? <Spinner size="sm" /> : <ArrowUpIcon className="size-4" />}
