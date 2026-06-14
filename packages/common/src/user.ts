@@ -88,14 +88,13 @@ export enum QuotaTier {
 
 /**
  * Default tier for an account that has no explicit `quota_tier`, derived from its `account_type`:
- * contracted customers, internal Vertesia, and partners get `enterprise`; everyone else (free,
- * prospect, unknown) gets the protective `standard` baseline.
+ * contracted customers and internal Vertesia accounts get `enterprise`; everyone else (partner,
+ * free, prospect, unknown) gets the protective `standard` baseline.
  */
 export function quotaTierForAccountType(accountType: AccountType | undefined | null): QuotaTier {
     switch (accountType) {
         case AccountType.customer:
         case AccountType.vertesia:
-        case AccountType.partner:
             return QuotaTier.enterprise;
         default:
             return QuotaTier.standard;
