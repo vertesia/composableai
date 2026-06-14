@@ -116,4 +116,9 @@ export const WF_NON_RETRYABLE_ERRORS = [
     'TokenExpiredError',
     'ZenoClientNotFoundError',
     'WorkflowExecutionError',
+    // Temporal raises NotFoundError when an activity isn't registered on the worker
+    // (e.g. a new tool whose activity barrel export was missed). Retrying can never
+    // make it appear within a worker version, and the retried failure carries the
+    // full activity list which blows the payload size limit — so fail fast.
+    'NotFoundError',
 ];
