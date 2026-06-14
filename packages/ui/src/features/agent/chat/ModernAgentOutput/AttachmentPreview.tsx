@@ -255,47 +255,36 @@ function AttachmentPreview({
         </Button>
     ) : null;
 
-    if (shouldRenderThumbnail && resolvedUrl) {
-        return (
-            <div className="relative inline-flex flex-col gap-1">
-                <Button
-                    type="button"
-                    variant="unstyled"
-                    onClick={() => openImage(resolvedUrl, item.name)}
-                    aria-label={item.name}
-                    className={cn(
-                        'group overflow-hidden rounded-xl border border-border/70 bg-mixer-muted/20 p-0 shadow-sm',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                        variant === 'composer' ? 'size-16' : 'size-24',
-                    )}
-                >
-                    <img
-                        src={resolvedUrl}
-                        alt={item.name}
-                        className="h-full w-full object-cover transition-transform group-hover:scale-[1.02]"
-                    />
-                </Button>
-                {item.statusLabel ? (
-                    <span
-                        className={cn(
-                            'absolute bottom-1 start-1 max-w-[calc(100%-0.5rem)] truncate rounded px-1.5 py-0.5',
-                            'text-[10px] font-medium shadow-sm',
-                            statusClassName,
-                        )}
-                    >
-                        {item.statusLabel}
-                    </span>
-                ) : null}
-                {removeButton}
-            </div>
+    const attachmentIcon =
+        shouldRenderThumbnail && resolvedUrl ? (
+            <Button
+                type="button"
+                variant="unstyled"
+                size="none"
+                onClick={(event) => {
+                    event.stopPropagation();
+                    event.preventDefault();
+                    openImage(resolvedUrl, item.name);
+                }}
+                aria-label={item.name}
+                title={item.name}
+                className={cn(
+                    'group shrink-0 overflow-hidden rounded border border-border/60 p-0',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    variant === 'composer' ? 'size-16' : 'size-24',
+                )}
+            >
+                <img
+                    src={resolvedUrl}
+                    alt={item.name}
+                    className="h-full w-full object-cover transition-transform group-hover:scale-[1.05]"
+                />
+            </Button>
+        ) : isImage ? (
+            <ImageIcon className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
+        ) : (
+            <FileTextIcon className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
         );
-    }
-
-    const attachmentIcon = isImage ? (
-        <ImageIcon className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
-    ) : (
-        <FileTextIcon className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
-    );
     const attachmentLabel = (
         <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
             {attachmentIcon}
@@ -313,6 +302,7 @@ function AttachmentPreview({
     if (variant === 'composer') {
         return (
             <span
+                title={item.name}
                 className={cn(
                     'inline-flex min-h-8 max-w-full items-center gap-1 rounded-xl border border-border/60',
                     'bg-mixer-muted/15 px-2.5 py-1 text-sm text-foreground/80 transition-colors',
@@ -333,6 +323,7 @@ function AttachmentPreview({
 
     const chipContent = (
         <span
+            title={item.name}
             className={cn(
                 'inline-flex max-w-full items-center gap-1.5 rounded-md border border-border/60 bg-mixer-muted/15',
                 'px-2.5 py-1.5 text-xs text-foreground/80 transition-colors',
