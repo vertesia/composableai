@@ -161,6 +161,7 @@
   "agent.unknownError": "Erro desconhecido",
   "agent.unknownTime": "Hora desconhecida",
   "agent.upload": "Enviar",
+  "agent.addAttachment": "Adicionar anexo",
   "agent.uploadedFiles": "Arquivos enviados",
   "agent.uploadFailed": "Falha no envio",
   "agent.uploading": "Enviando...",

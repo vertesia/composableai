@@ -161,6 +161,7 @@
   "agent.unknownError": "Errore sconosciuto",
   "agent.unknownTime": "Ora sconosciuta",
   "agent.upload": "Carica",
+  "agent.addAttachment": "Aggiungi allegato",
   "agent.uploadedFiles": "File caricati",
   "agent.uploadFailed": "Caricamento fallito",
   "agent.uploading": "Caricamento...",

@@ -159,6 +159,7 @@
   "agent.unknownError": "Bilinmeyen hata",
   "agent.unknownTime": "Bilinmeyen zaman",
   "agent.upload": "Yükle",
+  "agent.addAttachment": "Ek dosya ekle",
   "agent.uploadedFiles": "Yüklenen dosyalar",
   "agent.uploadFailed": "Yükleme başarısız",
   "agent.uploading": "Yükleniyor...",

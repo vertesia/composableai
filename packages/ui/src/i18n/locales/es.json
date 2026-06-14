@@ -161,6 +161,7 @@
   "agent.unknownError": "Error desconocido",
   "agent.unknownTime": "Hora desconocida",
   "agent.upload": "Subir",
+  "agent.addAttachment": "Añadir adjunto",
   "agent.uploadedFiles": "Archivos subidos",
   "agent.uploadFailed": "Error al subir",
   "agent.uploading": "Subiendo...",

@@ -545,6 +545,7 @@ export default function MessageInput({
                                         size="icon"
                                         className="size-8 rounded-full text-muted hover:bg-muted"
                                         aria-label={t('agent.addAttachment')}
+                                        title={t('agent.addAttachment')}
                                     >
                                         <PlusIcon className="size-4" />
                                     </Button>

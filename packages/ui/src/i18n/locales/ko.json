@@ -159,6 +159,7 @@
   "agent.unknownError": "알 수 없는 오류",
   "agent.unknownTime": "알 수 없는 시간",
   "agent.upload": "업로드",
+  "agent.addAttachment": "첨부 파일 추가",
   "agent.uploadedFiles": "업로드된 파일",
   "agent.uploadFailed": "업로드 실패",
   "agent.uploading": "업로드 중...",

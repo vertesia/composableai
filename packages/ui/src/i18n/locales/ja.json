@@ -159,6 +159,7 @@
   "agent.unknownError": "不明なエラー",
   "agent.unknownTime": "不明な時刻",
   "agent.upload": "アップロード",
+  "agent.addAttachment": "添付ファイルを追加",
   "agent.uploadedFiles": "アップロードされたファイル",
   "agent.uploadFailed": "アップロード失敗",
   "agent.uploading": "アップロード中...",

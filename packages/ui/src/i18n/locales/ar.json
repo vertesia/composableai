@@ -167,6 +167,7 @@
   "agent.unknownError": "خطأ غير معروف",
   "agent.unknownTime": "وقت غير معروف",
   "agent.upload": "رفع",
+  "agent.addAttachment": "إضافة مرفق",
   "agent.uploadedFiles": "الملفات المرفوعة",
   "agent.uploadFailed": "فشل الرفع",
   "agent.uploading": "جارٍ الرفع...",

@@ -159,6 +159,7 @@
   "agent.unknownError": "未知錯誤",
   "agent.unknownTime": "未知時間",
   "agent.upload": "上傳",
+  "agent.addAttachment": "新增附件",
   "agent.uploadedFiles": "已上傳檔案",
   "agent.uploadFailed": "上傳失敗",
   "agent.uploading": "上傳中...",

@@ -161,6 +161,7 @@
   "agent.unknownError": "Erreur inconnue",
   "agent.unknownTime": "Heure inconnue",
   "agent.upload": "Importer",
+  "agent.addAttachment": "Ajouter une pièce jointe",
   "agent.uploadedFiles": "Fichiers envoyés",
   "agent.uploadFailed": "Échec de l'envoi",
   "agent.uploading": "Envoi en cours...",

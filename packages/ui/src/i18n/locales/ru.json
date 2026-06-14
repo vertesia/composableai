@@ -163,6 +163,7 @@
   "agent.unknownError": "Неизвестная ошибка",
   "agent.unknownTime": "Неизвестное время",
   "agent.upload": "Загрузить",
+  "agent.addAttachment": "Добавить вложение",
   "agent.uploadedFiles": "Загруженные файлы",
   "agent.uploadFailed": "Ошибка загрузки",
   "agent.uploading": "Загрузка...",

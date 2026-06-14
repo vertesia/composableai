@@ -159,6 +159,7 @@
   "agent.unknownError": "Unbekannter Fehler",
   "agent.unknownTime": "Unbekannte Zeit",
   "agent.upload": "Hochladen",
+  "agent.addAttachment": "Anhang hinzufügen",
   "agent.uploadedFiles": "Hochgeladene Dateien",
   "agent.uploadFailed": "Upload fehlgeschlagen",
   "agent.uploading": "Wird hochgeladen...",
