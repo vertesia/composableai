@@ -3,6 +3,7 @@ import type {
     ActivateAppVersionResponse,
     AppBuildProgress,
     AppDeleteSummary,
+    AppInspectionResult,
     AppInstallation,
     AppInstallationKind,
     AppInstallationListEntry,
@@ -100,6 +101,16 @@ export default class AppsApi extends ApiTopic {
      */
     listAppInstallationTools(appInstallId: string): Promise<AppToolCollection[]> {
         return this.get(`/installations/${appInstallId}/tools`);
+    }
+
+    /**
+     * Inspect an app's registration: resolved manifest state, what the published
+     * package actually exposes per capability, endpoint reachability, install
+     * state, and diagnostics. Use this to verify what an app registers vs what it
+     * declares, instead of inferring it from failed object/import calls.
+     */
+    inspect(appIdOrName: string): Promise<AppInspectionResult> {
+        return this.get(`/${appIdOrName}/inspect`);
     }
 
     /**

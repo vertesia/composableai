@@ -935,6 +935,61 @@ export interface AppPackage {
     settings_schema?: JSONSchema;
 }
 
+/**
+ * A single diagnostic produced while inspecting an app's registration state.
+ */
+export interface AppInspectionIssue {
+    severity: 'error' | 'warning';
+    /** The capability this issue relates to, when applicable (e.g. 'types'). */
+    capability?: AppPackageScope;
+    /** Stable machine code, e.g. 'capability_declared_but_empty', 'endpoint_unreachable', 'not_installed'. */
+    code: string;
+    /** Human-readable explanation, safe to surface to the model and the UI. */
+    message: string;
+}
+
+/**
+ * Per-capability report of what an app's published package actually exposes,
+ * compared against what its manifest declares.
+ */
+export interface AppInspectionCapabilityReport {
+    capability: AppPackageScope;
+    /** True when the manifest's `capabilities` array declares this capability. */
+    declared: boolean;
+    /** The local ids the published package actually serves for this capability. */
+    exposed_ids: string[];
+    /** Convenience count of `exposed_ids`. */
+    exposed_count: number;
+}
+
+/**
+ * Result of inspecting an app's registration: the resolved manifest state, what
+ * the published package actually exposes per capability, and diagnostics. This
+ * is the ground truth used by the `app_inspect_registration` agent tool and the
+ * Build › App inspection UI to verify what is registered vs declared, instead of
+ * inferring it from failed object/import calls.
+ */
+export interface AppInspectionResult {
+    app_id: string;
+    name: string;
+    version?: string;
+    /** The resolved package endpoint for the current environment, if any. */
+    endpoint?: string;
+    /** True when the package endpoint responded to the capability probe. */
+    endpoint_reachable: boolean;
+    /** True when the app is installed in the current project. */
+    installed: boolean;
+    access_control?: string;
+    /** The capabilities declared on the manifest. */
+    capabilities: AppPackageScope[];
+    /** What the published package exposes, per capability. */
+    package: AppInspectionCapabilityReport[];
+    /** Diagnostics — errors and warnings about the registration state. */
+    issues: AppInspectionIssue[];
+    /** Populated when the package probe itself failed (endpoint error/unreachable). */
+    probe_error?: string;
+}
+
 export interface AppWidgetInfo {
     collection: string;
     skill: string;
