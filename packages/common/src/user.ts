@@ -74,18 +74,32 @@ export interface AccountBilling {
 
 /**
  * Quota/rate-limit tier assigned to an account. Code-defined tiers live in `@dglabs/quota`
- * (`QUOTA_TIERS`); these names must match its keys. An account with no `quota_tier` follows the
- * deployment's default tier (env `QUOTA_BASE_TIER`).
- * - `standard` — protective baseline limits for tester partners / unassigned (the production default).
- * - `enterprise` — high limits for contracted customers.
- * - `default` — no-op (the limiter's own static constants stand).
- * - `dev` — very low limits for branch/test deployments.
+ * (`QUOTA_TIERS`); these names must match its keys.
+ * - `standard` — protective baseline limits (the default for most accounts).
+ * - `enterprise` — high limits for contracted customers / internal / partners.
+ *
+ * An account with no explicit `quota_tier` derives its tier from `account_type` via
+ * {@link quotaTierForAccountType}.
  */
 export enum QuotaTier {
-    default = 'default',
-    dev = 'dev',
     standard = 'standard',
     enterprise = 'enterprise',
+}
+
+/**
+ * Default tier for an account that has no explicit `quota_tier`, derived from its `account_type`:
+ * contracted customers, internal Vertesia, and partners get `enterprise`; everyone else (free,
+ * prospect, unknown) gets the protective `standard` baseline.
+ */
+export function quotaTierForAccountType(accountType: AccountType | undefined | null): QuotaTier {
+    switch (accountType) {
+        case AccountType.customer:
+        case AccountType.vertesia:
+        case AccountType.partner:
+            return QuotaTier.enterprise;
+        default:
+            return QuotaTier.standard;
+    }
 }
 
 export interface Account {
