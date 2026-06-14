@@ -78,8 +78,7 @@ export interface AccountBilling {
  * - `standard` — protective baseline limits (the default for most accounts).
  * - `enterprise` — high limits for contracted customers / internal / partners.
  *
- * An account with no explicit `quota_tier` derives its tier from `account_type` via
- * {@link quotaTierForAccountType}.
+ * An account with no explicit `quota_tier` derives its tier from its `account_type`.
  */
 export enum QuotaTier {
     standard = 'standard',
