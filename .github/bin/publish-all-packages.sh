@@ -325,11 +325,21 @@ update_template_versions
 echo "=== Building all packages ==="
 pnpm build
 
-if [ "$DRY_RUN" = "false" ]; then
+# For a RELEASE, keep the strict commit-then-publish order so a release is never
+# published without its version-bump commit + tag.
+if [ "$DRY_RUN" = "false" ] && [ "$RELEASE_TYPE" = "release" ]; then
   commit_and_push
 fi
 
 publish_packages
+
+# For a SNAPSHOT (dev) build the published npm artifact is the goal; pushing the
+# version bump back to the branch is bookkeeping. Publish first (above) so a
+# branch-push failure — e.g. a deploy key without write access to a feature
+# branch — cannot block the npm publish, and treat the push as best-effort.
+if [ "$DRY_RUN" = "false" ] && [ "$RELEASE_TYPE" = "snapshot" ]; then
+  commit_and_push || echo "[WARN] snapshot version-bump push to ${REF} failed; packages were published, update create-plugin templateVersions on the branch manually."
+fi
 
 write_github_summary
 
