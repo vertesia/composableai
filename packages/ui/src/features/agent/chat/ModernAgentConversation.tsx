@@ -31,6 +31,7 @@ import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
 import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
+import { extractFilesFromClipboard } from './clipboardFiles.js';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
 import { useAgentStream } from './hooks/useAgentStream.js';
 import { useDocumentPanel } from './hooks/useDocumentPanel.js';
@@ -578,6 +579,20 @@ function StartWorkflowView({
         [maxFiles, canStageFiles],
     );
 
+    // Paste handler for files — mirrors MessageInput.handlePaste so the start
+    // screen and the live chat both accept pasted clipboard images/files. Files
+    // are staged locally here; they get uploaded when the workflow starts.
+    const handlePaste = useCallback(
+        (e: React.ClipboardEvent) => {
+            if (!canStageFiles) return;
+            const files = extractFilesFromClipboard(e.clipboardData?.items);
+            if (files.length > 0) {
+                setStagedFiles((prev) => [...prev, ...files].slice(0, maxFiles));
+            }
+        },
+        [canStageFiles, maxFiles],
+    );
+
     const handleFileInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
             if (e.target.files && e.target.files.length > 0) {
@@ -885,6 +900,7 @@ function StartWorkflowView({
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={handleKeyDown}
+                            onPaste={handlePaste}
                             placeholder={resolvedPlaceholder}
                             disabled={isSending}
                             rows={2}

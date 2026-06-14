@@ -25,6 +25,7 @@ import {
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SelectDocument } from '../../../store/objects/components/SelectDocument';
+import { extractFilesFromClipboard } from '../clipboardFiles.js';
 import {
     formatWorkstreamName,
     getWorkstreamDisplayName,
@@ -285,30 +286,7 @@ export default function MessageInput({
     const handlePaste = useCallback(
         (e: React.ClipboardEvent) => {
             if (!canUploadFiles) return;
-
-            const items = e.clipboardData?.items;
-            if (!items) return;
-
-            const files: File[] = [];
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                if (item.kind === 'file') {
-                    const file = item.getAsFile();
-                    if (file) {
-                        // If it's an image without a proper name, generate one
-                        if (item.type.startsWith('image/') && (!file.name || file.name === 'image.png')) {
-                            const extension = item.type.split('/')[1] || 'png';
-                            const namedFile = new File([file], `pasted-image-${Date.now()}.${extension}`, {
-                                type: file.type,
-                            });
-                            files.push(namedFile);
-                        } else {
-                            files.push(file);
-                        }
-                    }
-                }
-            }
-
+            const files = extractFilesFromClipboard(e.clipboardData?.items);
             if (files.length > 0) {
                 handleFiles(files);
             }
