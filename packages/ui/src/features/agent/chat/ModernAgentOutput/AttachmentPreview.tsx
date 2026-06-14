@@ -271,12 +271,12 @@ function AttachmentPreview({
                 className={cn(
                     'group shrink-0 overflow-hidden rounded border border-border/60 p-0',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    variant === 'composer' ? 'size-16' : 'size-24',
+                    variant === 'composer' ? 'size-6' : 'size-24',
                 )}
             >
                 <img
                     src={resolvedUrl}
-                    alt={item.name}
+                    alt={t('agent.enlargedView')}
                     className="h-full w-full object-cover transition-transform group-hover:scale-[1.05]"
                 />
             </Button>

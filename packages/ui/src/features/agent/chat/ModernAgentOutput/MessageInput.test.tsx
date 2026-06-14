@@ -163,7 +163,7 @@ describe('MessageInput', () => {
             />,
         );
 
-        expect(screen.getByRole('img', { name: 'wrong.png' })).not.toBeNull();
+        expect(screen.getByRole('button', { name: 'wrong.png' })).not.toBeNull();
         expect(screen.getByText('Ready')).not.toBeNull();
     });
 
