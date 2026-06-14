@@ -129,6 +129,18 @@ Always derive `app:` ids from `import.meta.env.VITE_APP_NAME` — e.g. `` `app:$
 
 An app that registers any backend resources (types, interactions, activities, tools, or skills) in `src/tool-server/config.ts` MUST publish as `service`. `static` is only for pure-UI apps with no `config.ts` registrations — a `static` publish ships no tool server, so app-owned types/interactions/activities won't resolve.
 
+## Seeding
+
+Seed the Store with demo/real objects from a **standalone script you launch during the build/test loop** — never from inside the app. Put it in `scripts/` (e.g. `scripts/seed.ts`) and run it yourself (`execute_shell`) so it creates objects via the Vertesia client against the app-owned in-code type: `client.objects.create({ type: 'app:<name>:<local>', ... })`. See the `vertesia-demo-content` skill.
+
+Do **not**:
+
+- add an in-app `/api/seed` route or a UI "Seed" button (the app must only **read** data, never own seeding — quality checks reject visible seed controls);
+- auto-seed on UI load;
+- seed with hardcoded Mongo ObjectIds or a different type id than the app-owned `app:<name>:<local>` the UI queries (that mismatch is why seeded rows don't show up).
+
+A launched script keeps seeding a dev-time concern, idempotent, and decoupled from the runtime — much cleaner than a seed route that drifts from the app's types.
+
 ## Plugin-Specific Conventions
 
 - ESM with `.js` import extensions in tool-server code: `import { x } from "./foo.js"`
