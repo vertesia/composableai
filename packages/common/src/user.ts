@@ -76,7 +76,7 @@ export interface AccountBilling {
  * Quota/rate-limit tier assigned to an account. Code-defined tiers live in `@dglabs/quota`
  * (`QUOTA_TIERS`); these names must match its keys. An account with no `quota_tier` follows the
  * deployment's default tier (env `QUOTA_BASE_TIER`).
- * - `free` — protective low limits for tester partners / unassigned (the intended production default).
+ * - `standard` — protective baseline limits for tester partners / unassigned (the production default).
  * - `enterprise` — high limits for contracted customers.
  * - `default` — no-op (the limiter's own static constants stand).
  * - `dev` — very low limits for branch/test deployments.
@@ -84,7 +84,7 @@ export interface AccountBilling {
 export enum QuotaTier {
     default = 'default',
     dev = 'dev',
-    free = 'free',
+    standard = 'standard',
     enterprise = 'enterprise',
 }
 
