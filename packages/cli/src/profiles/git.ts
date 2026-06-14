@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import process from 'node:process';
 import { ensureProfileAccessToken } from './auth.js';
 import { config, type Profile } from './index.js';
+import { getAccessTokenExpiry } from './keyring.js';
 
 interface GitAuthOptions {
     profile?: string;
@@ -38,7 +39,14 @@ export async function configureGitAuth(options: GitAuthOptions = {}) {
 export async function serveGitCredential(action: string | undefined, options: Pick<GitAuthOptions, 'profile'> = {}) {
     if (!action || action === 'get') {
         const envToken = process.env.VERTESIA_AUTH_TOKEN || process.env.VERTESIA_TOKEN;
-        if (envToken) {
+        // Serve the ambient sandbox/env token, but NOT if it's a JWT we can see has
+        // already expired. The git server answers a rejected token with
+        // `401 WWW-Authenticate: Basic`, and git responds by calling this helper
+        // again — `store`/`erase` are no-ops, so a verbatim re-serve of the same
+        // dead token produces an endless 401→get→401 credential loop. When the env
+        // token is expired we skip it and fall through to profile-based refresh
+        // (or a clear error) instead of feeding git a token it can only reject.
+        if (envToken && !isExpiredToken(envToken)) {
             writeCredential(envToken);
             return;
         }
@@ -49,6 +57,15 @@ export async function serveGitCredential(action: string | undefined, options: Pi
             if (options.profile) {
                 throw new Error(
                     `Vertesia profile '${options.profile}' was not found. Run \`vertesia auth git\` from an active profile.`,
+                );
+            }
+            if (envToken) {
+                // We reached here only because the env token is expired (the serve
+                // branch above handles a valid one) and there's no profile to refresh
+                // from. Fail clearly rather than letting git retry the dead token.
+                throw new Error(
+                    'VERTESIA_AUTH_TOKEN/VERTESIA_TOKEN is expired and no Vertesia profile is available to refresh it. ' +
+                        'Provide a fresh token or run `vertesia auth refresh`.',
                 );
             }
             throw new Error(
@@ -177,6 +194,20 @@ function removeKnownVertesiaAliases() {
 
 function shellQuote(value: string): string {
     return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
+/**
+ * True only when the token is a JWT we can decode AND its `exp` is in the past
+ * (with a 30s skew so we don't hand git a token about to die mid-operation).
+ * Opaque (non-JWT) tokens and JWTs without `exp` return false — we can't judge
+ * them, so they're served as before.
+ */
+function isExpiredToken(token: string): boolean {
+    const expiresAtMs = getAccessTokenExpiry(token);
+    if (expiresAtMs === undefined) {
+        return false;
+    }
+    return expiresAtMs - 30_000 < Date.now();
 }
 
 async function readCredentialInput(): Promise<GitCredentialInput> {
