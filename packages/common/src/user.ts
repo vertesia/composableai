@@ -72,6 +72,22 @@ export interface AccountBilling {
     stripe_customer_id?: string;
 }
 
+/**
+ * Quota/rate-limit tier assigned to an account. Code-defined tiers live in `@dglabs/quota`
+ * (`QUOTA_TIERS`); these names must match its keys. An account with no `quota_tier` follows the
+ * deployment's default tier (env `QUOTA_BASE_TIER`).
+ * - `free` — protective low limits for tester partners / unassigned (the intended production default).
+ * - `enterprise` — high limits for contracted customers.
+ * - `default` — no-op (the limiter's own static constants stand).
+ * - `dev` — very low limits for branch/test deployments.
+ */
+export enum QuotaTier {
+    default = 'default',
+    dev = 'dev',
+    free = 'free',
+    enterprise = 'enterprise',
+}
+
 export interface Account {
     id: string;
     name: string;
@@ -89,6 +105,9 @@ export interface Account {
 
     billing: AccountBilling;
 
+    /** Quota/rate-limit tier. Unset → the deployment default tier (env `QUOTA_BASE_TIER`). */
+    quota_tier?: QuotaTier;
+
     created_by: string;
     updated_by: string;
     created_at: string;
@@ -99,6 +118,7 @@ export interface UpdateAccountPayload {
     name?: string;
     email_domains?: string[];
     billing?: AccountBilling;
+    quota_tier?: QuotaTier;
 }
 
 export interface AccountRef {
