@@ -267,7 +267,7 @@ function AttachmentPreview({
                     openImage(resolvedUrl, item.name);
                 }}
                 aria-label={item.name}
-                title={item.name}
+                title={t('agent.enlargedView')}
                 className={cn(
                     'group shrink-0 overflow-hidden rounded border border-border/60 p-0',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -276,7 +276,7 @@ function AttachmentPreview({
             >
                 <img
                     src={resolvedUrl}
-                    alt={t('agent.enlargedView')}
+                    alt={item.name}
                     className="h-full w-full object-cover transition-transform group-hover:scale-[1.05]"
                 />
             </Button>
