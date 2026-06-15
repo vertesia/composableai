@@ -373,6 +373,22 @@ export interface RemoteActivityDefinition {
 }
 
 export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates' | 'dashboards';
+
+/**
+ * Canonical runtime list of {@link AppCapabilities} — the app capabilities Studio
+ * renders/supports. Co-located with the type so TypeScript rejects any drift between
+ * the two. Consumers (publish manifest derivation, etc.) must use this rather than
+ * re-listing the values.
+ */
+export const APP_CAPABILITIES: readonly AppCapabilities[] = [
+    'ui',
+    'tools',
+    'interactions',
+    'types',
+    'processes',
+    'templates',
+    'dashboards',
+];
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 
 export type AppVersionKind = 'design' | 'preview' | 'published';
@@ -873,6 +889,25 @@ export type AppPackageScope =
     | 'widgets'
     | 'activities'
     | 'all';
+
+/**
+ * Canonical runtime list of {@link AppPackageScope} — every package scope, including the
+ * catch-all `'all'`. Co-located with the type so TypeScript rejects drift. Consumers (the
+ * /package?scope= parser, the inspection report) must use this rather than re-listing.
+ */
+export const APP_PACKAGE_SCOPES: readonly AppPackageScope[] = [
+    'ui',
+    'tools',
+    'interactions',
+    'types',
+    'processes',
+    'templates',
+    'dashboards',
+    'settings',
+    'widgets',
+    'activities',
+    'all',
+];
 export interface AppPackage {
     /**
      * The UI configuration of the app
