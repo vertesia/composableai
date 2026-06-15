@@ -1,4 +1,13 @@
 {
+  "abac_perms.collection.content_manager": "集合管理员",
+  "abac_perms.collection.content_reader": "集合查看者",
+  "abac_perms.collection.content_writer": "集合编辑者",
+  "abac_perms.document.content_manager": "内容管理员",
+  "abac_perms.document.content_reader": "内容查看者",
+  "abac_perms.document.content_writer": "内容编辑者",
+  "abac_perms.scope.collection": "集合",
+  "abac_perms.scope.document": "文档",
+  "abac_perms.scope.task": "任务",
   "agent.activeWorkstreams_one": "代理有{{count}}个活跃的工作流正在运行",
   "agent.activeWorkstreams_other": "代理有{{count}}个活跃的工作流正在运行",
   "agent.agentConversation": "代理对话",

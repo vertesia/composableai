@@ -1,4 +1,13 @@
 {
+  "abac_perms.collection.content_manager": "Koleksiyon Yöneticisi",
+  "abac_perms.collection.content_reader": "Koleksiyon Okuyucusu",
+  "abac_perms.collection.content_writer": "Koleksiyon Yazarı",
+  "abac_perms.document.content_manager": "İçerik Yöneticisi",
+  "abac_perms.document.content_reader": "İçerik Okuyucusu",
+  "abac_perms.document.content_writer": "İçerik Yazarı",
+  "abac_perms.scope.collection": "Koleksiyon",
+  "abac_perms.scope.document": "Belge",
+  "abac_perms.scope.task": "Görev",
   "agent.activeWorkstreams_one": "Ajanın {{count}} aktif iş akışı çalışıyor",
   "agent.activeWorkstreams_other": "Ajanın {{count}} aktif iş akışı çalışıyor",
   "agent.agentConversation": "Ajan Konuşması",

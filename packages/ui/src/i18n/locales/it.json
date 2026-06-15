@@ -1,4 +1,13 @@
 {
+  "abac_perms.collection.content_manager": "Gestore raccolta",
+  "abac_perms.collection.content_reader": "Lettore raccolta",
+  "abac_perms.collection.content_writer": "Editore raccolta",
+  "abac_perms.document.content_manager": "Gestore contenuti",
+  "abac_perms.document.content_reader": "Lettore contenuti",
+  "abac_perms.document.content_writer": "Editore contenuti",
+  "abac_perms.scope.collection": "Raccolta",
+  "abac_perms.scope.document": "Documento",
+  "abac_perms.scope.task": "Attività",
   "agent.activeWorkstreams_one": "L'agente ha {{count}} flusso di lavoro attivo in esecuzione",
   "agent.activeWorkstreams_many": "L'agente ha {{count}} flussi di lavoro attivi in esecuzione",
   "agent.activeWorkstreams_other": "L'agente ha {{count}} flussi di lavoro attivi in esecuzione",
