@@ -5,6 +5,7 @@
  */
 
 import type { SystemRoles } from './project.js';
+import type { AbacScope } from './roles/types.js';
 
 export enum Permission {
     int_read = 'interaction:read',
@@ -109,6 +110,14 @@ export interface AceConditions {
     principal_props?: PropertyConditions;
     /** Property conditions matched against content properties at query time (ContentSet). */
     resource_props?: PropertyConditions;
+    /**
+     * Kind of object the `resource_props` matches. Used to disambiguate which
+     * partition's roles apply (e.g. content roles vs task roles) and to form
+     * the JWT `content_security` key prefix (`{scope}:{verb}`). Absent →
+     * `'document'` (default; emits bare `read`/`write`/`delete` keys for
+     * backward compatibility).
+     */
+    scope?: AbacScope;
 }
 
 export interface AccessControlEntry {
