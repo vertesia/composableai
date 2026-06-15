@@ -28,7 +28,7 @@
     "author": "Vertesia",
     "license": "Apache-2.0",
     "templateVersions": {
-        "@vertesia": "1.3.0",
+        "@vertesia": "1.4.0-dev.20260615.042549Z",
         "@llumiverse": "1.3.0"
     },
     "repository": {
