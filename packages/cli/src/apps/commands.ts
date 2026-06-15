@@ -4,7 +4,7 @@ import {
     AccessControlResourceType,
     type AppInstallationKind,
     type AppManifestData,
-    ProjectRoles,
+    SystemRoles,
 } from '@vertesia/common';
 import colors from 'ansi-colors';
 import type { Command } from 'commander';
@@ -111,7 +111,7 @@ export async function createApp(program: Command, options: ManifestOptions) {
                 principal_type: AccessControlPrincipalType.user,
                 resource: installation.id,
                 resource_type: AccessControlResourceType.app,
-                role: ProjectRoles.app_member,
+                role: SystemRoles.app_member,
             });
 
             console.log(`${colors.green('✓')} Permissions granted to ${jwt.email || jwt.sub}`);

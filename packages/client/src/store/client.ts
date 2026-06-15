@@ -34,6 +34,7 @@ export interface ZenoClientProps {
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
     retryPolicy?: IRequestRetryPolicy;
+    timeout?: number | false | null;
     fetch?: FETCH_FN | Promise<FETCH_FN>;
 }
 
@@ -52,6 +53,9 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
         }
         if (opts.retryPolicy) {
             this.withRetryPolicy(opts.retryPolicy);
+        }
+        if (opts.timeout !== undefined) {
+            this.withTimeout(opts.timeout);
         }
         this.onRequest = opts.onRequest;
         this.onResponse = opts.onResponse;

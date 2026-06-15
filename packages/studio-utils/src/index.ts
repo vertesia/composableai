@@ -17,3 +17,4 @@ export {
     type PromptValidationResult,
     validatePrompt,
 } from './prompts/validate.js';
+export * from './roles/index.js';

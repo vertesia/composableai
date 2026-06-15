@@ -17,8 +17,7 @@ describe('MessageInput', () => {
             />,
         );
 
-        expect(screen.getByPlaceholderText(/Enter to send/)).not.toBeNull();
-        expect(screen.queryByText('Enter to send • Shift+Enter for new line')).toBeNull();
+        expect(screen.getByPlaceholderText(/Type your message/)).not.toBeNull();
         expect(screen.getByText('Loan package')).not.toBeNull();
 
         fireEvent.pointerDown(screen.getByRole('button', { name: /Add attachment/i }));

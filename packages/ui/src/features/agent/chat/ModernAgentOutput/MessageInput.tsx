@@ -25,6 +25,7 @@ import {
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SelectDocument } from '../../../store/objects/components/SelectDocument';
+import { extractFilesFromClipboard } from '../clipboardFiles.js';
 import {
     formatWorkstreamName,
     getWorkstreamDisplayName,
@@ -285,30 +286,7 @@ export default function MessageInput({
     const handlePaste = useCallback(
         (e: React.ClipboardEvent) => {
             if (!canUploadFiles) return;
-
-            const items = e.clipboardData?.items;
-            if (!items) return;
-
-            const files: File[] = [];
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                if (item.kind === 'file') {
-                    const file = item.getAsFile();
-                    if (file) {
-                        // If it's an image without a proper name, generate one
-                        if (item.type.startsWith('image/') && (!file.name || file.name === 'image.png')) {
-                            const extension = item.type.split('/')[1] || 'png';
-                            const namedFile = new File([file], `pasted-image-${Date.now()}.${extension}`, {
-                                type: file.type,
-                            });
-                            files.push(namedFile);
-                        } else {
-                            files.push(file);
-                        }
-                    }
-                }
-            }
-
+            const files = extractFilesFromClipboard(e.clipboardData?.items);
             if (files.length > 0) {
                 handleFiles(files);
             }
@@ -547,13 +525,7 @@ export default function MessageInput({
                         onPaste={handlePaste}
                         disabled={disabled}
                         aria-label={resolvedPlaceholder}
-                        placeholder={
-                            isStreaming
-                                ? `${t('agent.agentWorking')} ${t('agent.enterToSend')}`
-                                : canUploadFiles
-                                  ? `${t('agent.askAnything')} ${t('agent.enterToSend')}`
-                                  : `${resolvedPlaceholder} ${t('agent.enterToSend')}`
-                        }
+                        placeholder={resolvedPlaceholder}
                         rows={1}
                         style={{ maxHeight: '160px' }}
                         className={cn(
@@ -573,6 +545,7 @@ export default function MessageInput({
                                         size="icon"
                                         className="size-8 rounded-full text-muted hover:bg-muted"
                                         aria-label={t('agent.addAttachment')}
+                                        title={t('agent.addAttachment')}
                                     >
                                         <PlusIcon className="size-4" />
                                     </Button>
@@ -626,8 +599,8 @@ export default function MessageInput({
                                 'disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100',
                                 '[&_svg]:text-destructive disabled:[&_svg]:text-muted',
                             )}
-                            title={t('agent.stopAgent')}
-                            aria-label={t('agent.stopAgent')}
+                            title={t('agent.stopTooltip')}
+                            aria-label={t('agent.stopTooltip')}
                         >
                             {isStopping ? (
                                 <Spinner size="sm" />
@@ -646,7 +619,7 @@ export default function MessageInput({
                                 'hover:bg-foreground/90 hover:text-background',
                                 'disabled:bg-mixer-muted/25 disabled:text-muted disabled:opacity-100',
                             )}
-                            title={hasProcessingFiles ? t('agent.waitForFiles') : undefined}
+                            title={hasProcessingFiles ? t('agent.waitForFiles') : t('agent.sendTooltip')}
                             aria-label={hasProcessingFiles ? t('agent.waitForFiles') : t('agent.send')}
                         >
                             {isSending ? <Spinner size="sm" /> : <ArrowUpIcon className="size-4" />}

@@ -1,28 +1,18 @@
-import {
-    type AuthTokenPayload,
-    getPermissionsForRoles,
-    listRoles,
-    type Permission,
-    PrincipalType,
-    type ProjectRoles,
-} from '@vertesia/common';
+import { type AuthTokenPayload, type Permission, PrincipalType, type SystemRoleDefinition } from '@vertesia/common';
 import { ErrorBox, errorMessage, useFetch } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { createContext, useContext, useMemo } from 'react';
 import { isAnyOf } from './helpers';
 
-type ListRolesResponse = {
-    name: ProjectRoles;
-    permissions: Permission[];
-}[];
+type ListRolesResponse = SystemRoleDefinition[];
 
 export class UserPermissions {
     system_roles: ListRolesResponse; // all roles defined in the system
     roles: Set<string>; // all roles of the current user
     permissions: Set<string>; // all permissions of the current user
 
-    constructor(authToken: AuthTokenPayload, roles: ListRolesResponse = listSystemRoles()) {
+    constructor(authToken: AuthTokenPayload, roles: ListRolesResponse = []) {
         this.system_roles = roles;
         const roleNames = [...(authToken.account_roles || []), ...(authToken.project_roles || [])];
         const userRoles = new Set<string>(roleNames);
@@ -53,18 +43,7 @@ export class UserPermissions {
     }
 }
 
-function listSystemRoles(): ListRolesResponse {
-    return listRoles().map((role) => ({
-        name: role.name,
-        permissions: Array.from(role.permissions),
-    }));
-}
-
-function getPermissionsForRolesFromMappings(roleNames: Iterable<ProjectRoles>, roles: ListRolesResponse): Permission[] {
-    if (roles.length === 0) {
-        return getPermissionsForRoles(roleNames);
-    }
-
+function getPermissionsForRolesFromMappings(roleNames: Iterable<string>, roles: ListRolesResponse): Permission[] {
     const permissionsByRole = new Map(roles.map((role) => [role.name, role.permissions]));
     const permissions = new Set<Permission>();
     for (const role of roleNames) {
@@ -97,7 +76,7 @@ export function UserPermissionProvider({ children }: UserPermissionProviderProps
     const shouldFetchRoleMappings = Boolean(authToken && !authToken.permissions);
     const { data, error, isLoading } = useFetch<ListRolesResponse | undefined>(() => {
         if (shouldFetchRoleMappings) {
-            return session.client.iam.roles.list();
+            return session.client.iam.roles.listSystem();
         }
         return Promise.resolve(undefined);
     }, [session, shouldFetchRoleMappings]);

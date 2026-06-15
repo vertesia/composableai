@@ -103,6 +103,32 @@ export default function Header({
                 isCompact ? 'flex flex-col items-center gap-1' : 'flex justify-end items-center gap-2 ms-auto',
             )}
         >
+            {showPlanButton && (
+                <div className="relative">
+                    <Button
+                        size={variant === 'compact' ? 'icon' : 'sm'}
+                        variant={showPlanPanel ? 'primary' : 'ghost'}
+                        onClick={onTogglePlanPanel}
+                        className={cn(
+                            'transition-all duration-200 rounded-md',
+                            variant === 'compact' && 'size-8 rounded-lg',
+                        )}
+                        title={t('agent.toggleRightSidebar')}
+                    >
+                        <ClipboardList className={cn('size-4', variant === 'full' && 'me-1.5')} />
+                        {variant === 'full' ? (
+                            <span className="font-medium text-xs">
+                                {showPlanPanel ? t('agent.hideSidebar') : t('agent.showSidebar')}
+                            </span>
+                        ) : (
+                            <span className="sr-only">
+                                {showPlanPanel ? t('agent.hideSidebar') : t('agent.showSidebar')}
+                            </span>
+                        )}
+                    </Button>
+                </div>
+            )}
+
             {/* View Mode Toggle */}
             {isCompact ? (
                 <Button
@@ -140,32 +166,6 @@ export default function Header({
                     >
                         <MessageSquareText className="size-3.5" />
                         {summaryLabel}
-                    </Button>
-                </div>
-            )}
-
-            {showPlanButton && (
-                <div className="relative">
-                    <Button
-                        size={variant === 'compact' ? 'icon' : 'sm'}
-                        variant={showPlanPanel ? 'primary' : 'ghost'}
-                        onClick={onTogglePlanPanel}
-                        className={cn(
-                            'transition-all duration-200 rounded-md',
-                            variant === 'compact' && 'size-8 rounded-lg',
-                        )}
-                        title={t('agent.toggleRightSidebar')}
-                    >
-                        <ClipboardList className={cn('size-4', variant === 'full' && 'me-1.5')} />
-                        {variant === 'full' ? (
-                            <span className="font-medium text-xs">
-                                {showPlanPanel ? t('agent.hideSidebar') : t('agent.showSidebar')}
-                            </span>
-                        ) : (
-                            <span className="sr-only">
-                                {showPlanPanel ? t('agent.hideSidebar') : t('agent.showSidebar')}
-                            </span>
-                        )}
                     </Button>
                 </div>
             )}

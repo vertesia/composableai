@@ -90,6 +90,7 @@ export class RunsApi extends ApiTopic {
 
     async create<ResultT = unknown, ParamsT = unknown>(
         payload: RunCreatePayload,
+        options?: { timeoutMs?: number | false | null; signal?: AbortSignal },
     ): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
         const sessionTags = (this.client as VertesiaClient).sessionTags;
         if (sessionTags) {
@@ -103,6 +104,8 @@ export class RunsApi extends ApiTopic {
         }
         const r = await this.post<ExecutionRun<ParamsT>>('/', {
             payload,
+            timeoutMs: options?.timeoutMs,
+            signal: options?.signal,
         });
         return enhanceExecutionRun<ResultT, ParamsT>(r);
     }
