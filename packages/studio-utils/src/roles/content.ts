@@ -6,7 +6,7 @@ const ContentRoleDomain: RoleDomain = 'content';
 const APPLICABLE_SCOPES: readonly AbacScope[] = ['document', 'collection'];
 
 /**
- * Names of roles owned by the `content` domain. Apply to ContentSet ACEs
+ * Names of roles owned by the `content` domain. Apply to ResourceSet ACEs
  * scoped to either `document` or `collection` — the semantics of "read
  * content" are the same for both kinds.
  */

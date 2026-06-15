@@ -40,7 +40,7 @@ export function listRolesByDomain(domain: RoleDomain): Role[] {
 }
 
 /**
- * ABAC roles applicable to a given ContentSet scope (e.g. `'document'`,
+ * ABAC roles applicable to a given ResourceSet scope (e.g. `'document'`,
  * `'collection'`). System roles are excluded — they don't carry scope semantics.
  */
 export function listAbacRolesForScope(scope: AbacScope): AbacRole[] {

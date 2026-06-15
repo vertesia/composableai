@@ -68,8 +68,18 @@ export enum AccessControlResourceType {
     account = 'account',
     interaction = 'interaction',
     app = 'application',
-    /** Dynamic resource matching by content properties at query time. */
-    content_set = 'content_set',
+    /**
+     * Dynamic resource matching by property conditions at query time. The role
+     * partitions (content, future tasks/etc.) determine which kind of object
+     * the conditions match — selected via `AceConditions.scope`.
+     *
+     * NOTE: the string value remains `'content_set'` for backward compatibility
+     * with stored ACEs and JWTs. The wire/DB rename to `'resource_set'` is a
+     * separate concern (deferred). Until then, code reads
+     * `AccessControlResourceType.resource_set` but the value on the wire stays
+     * `'content_set'`.
+     */
+    resource_set = 'content_set',
 }
 
 export enum AccessControlPrincipalType {
@@ -103,12 +113,12 @@ export type PropertyConditions = Record<string, PropertyConditionValue>;
 /**
  * Conditions attached to an ACE for dynamic matching.
  * - `principal_props`: matched against user/group properties at token time (PrincipalSet).
- * - `resource_props`: matched against content properties at query time (ContentSet).
+ * - `resource_props`: matched against object properties at query time (ResourceSet).
  */
 export interface AceConditions {
     /** Property conditions matched against user/group properties at token time (PrincipalSet). */
     principal_props?: PropertyConditions;
-    /** Property conditions matched against content properties at query time (ContentSet). */
+    /** Property conditions matched against object properties at query time (ResourceSet). */
     resource_props?: PropertyConditions;
     /**
      * Kind of object the `resource_props` matches. Used to disambiguate which

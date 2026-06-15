@@ -8,7 +8,7 @@ import type { Permission } from '../access-control.js';
  */
 
 /**
- * Kind of object a ContentSet's `resource_props` matches at query time. Used
+ * Kind of object a ResourceSet's `resource_props` matches at query time. Used
  * in `AceConditions.scope` (validated at runtime against this list) and as
  * the prefix in JWT `content_security` keys (e.g. `collection:read`).
  *
