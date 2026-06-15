@@ -254,8 +254,16 @@ export function adjustPackageJson(
                                     : `^${resolved.version}`;
                                 workspaceReplacements++;
                             } else {
-                                packageJson[depType][pkgName] = 'latest';
-                                workspaceReplacements++;
+                                // No version map entry and no resolvable registry version. Floating
+                                // a generated app onto the npm `latest` tag silently couples it to
+                                // whatever publishes next (a different major can break the build at
+                                // an unrelated time). Fail loudly instead so the caller pins a
+                                // version map or uses --dev.
+                                throw new Error(
+                                    `Cannot resolve a version for internal dependency "${pkgName}": no entry in the ` +
+                                        'pinned version map and the npm registry returned no version. ' +
+                                        'Provide a version map (CLI-pinned versions) or run with --dev to use the "dev" tag.',
+                                );
                             }
                         }
                     }
