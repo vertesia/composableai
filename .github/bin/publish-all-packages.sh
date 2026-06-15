@@ -70,6 +70,16 @@ update_package_versions() {
 
   # Update all workspace packages (excluding llumiverse)
   pnpm -r --filter "./packages/**" exec npm version "${new_version}" --no-git-tag-version
+
+  # Stamp the source commit so a published @vertesia version can be mapped back to its
+  # composableai source. `pnpm publish` (unlike `npm publish`) does not set `gitHead`, so
+  # without this a consumer of the published SDK has no precise way to fetch the source that
+  # matches the installed version. HEAD is the committed source the package is built from;
+  # the version bump above is intentionally uncommitted and is just a label.
+  git_head=$(git rev-parse HEAD)
+  echo "Stamping gitHead ${git_head} on all packages"
+  npm pkg set gitHead="${git_head}" --workspaces=false
+  pnpm -r --filter "./packages/**" exec npm pkg set gitHead="${git_head}"
 }
 
 publish_packages() {
