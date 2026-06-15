@@ -122,17 +122,8 @@ export function extractWorkstreams(messages: AgentMessage[]): Map<string, string
         ) {
             // Use the workstream_id as both the ID and the display name
             workstreams.set(message.workstream_id, message.workstream_id);
-            console.log(`Found workstream: ${message.workstream_id}`);
         }
     });
-
-    // Special case: if there's only the 'main' workstream, we want to explicitly make sure it exists
-    // This ensures that both 'all' and 'main' are added if no additional workstreams are found
-    if (workstreams.size <= 2 && !workstreams.has('main')) {
-        workstreams.set('main', t('agent.main'));
-    }
-
-    console.log('Final workstreams map:', workstreams);
 
     return workstreams;
 }

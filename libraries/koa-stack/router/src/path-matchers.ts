@@ -1,13 +1,20 @@
 import type { Context } from 'koa';
-import { type MatchFunction, match } from 'path-to-regexp';
+import { type MatchFunction, match, type ParamData } from 'path-to-regexp';
 
 export type SimplePathMatcher = (path: string) => boolean;
-export type PathMatcher = SimplePathMatcher | MatchFunction;
+export type PathMatcher = SimplePathMatcher | MatchFunction<ParamData>;
 export type PrefixMatcher = (ctx: Context, path: string) => boolean;
 
 function decode(val: string): string {
     return val ? decodeURIComponent(val) : val;
 }
+
+function normalizeLegacyNamedSplatParams(pattern: string): string {
+    return pattern.replace(/\/:([A-Za-z0-9_]+)([+*])(?=\/|$)/g, (_segment, name: string, modifier: string) => {
+        return modifier === '+' ? `/*${name}` : `{/*${name}}`;
+    });
+}
+
 /**
  * Safe version of createPathMatcherUnsafe. The pattern path will be normalized using the normalizePath.
  * @param pattern
@@ -25,9 +32,11 @@ export function createPathMatcherUnsafe(pattern: string): PathMatcher {
     if (!pattern || pattern === '/') {
         return (path: string) => !path || path === '/';
     } else if (pattern.endsWith('/*')) {
-        return match(`${pattern.substring(0, pattern.length - 1)}:_*`, { decode: decode });
+        // zero or more trailing segments: drop the trailing `/*`, append an optional wildcard group
+        return match(`${pattern.substring(0, pattern.length - 2)}{/*_}`, { decode: decode });
     } else if (pattern.endsWith('/+')) {
-        return match(`${pattern.substring(0, pattern.length - 1)}:_+`, { decode: decode });
+        // one or more trailing segments: drop the trailing `+`, append a wildcard after the slash
+        return match(`${pattern.substring(0, pattern.length - 1)}*_`, { decode: decode });
     } else if (pattern.indexOf(':') < 0 && pattern.indexOf('(') < 0) {
         // static path
         return (path: string) => {
@@ -35,11 +44,11 @@ export function createPathMatcherUnsafe(pattern: string): PathMatcher {
         };
     } else {
         // a regex pattern
-        return match(pattern, { decode: decode });
+        return match(normalizeLegacyNamedSplatParams(pattern), { decode: decode });
     }
 }
 
-export function createRegexPathMatcher(pattern: string): MatchFunction {
+export function createRegexPathMatcher(pattern: string): MatchFunction<ParamData> {
     return match(pattern, { decode: decode });
 }
 
@@ -84,7 +93,7 @@ export function createSimplePrefixMatcher(prefix: string): PrefixMatcher {
 }
 
 function createRegexpPrefixMatcher(prefix: string): PrefixMatcher {
-    const matcher = createRegexPathMatcher(`${prefix}/:_*`);
+    const matcher = createRegexPathMatcher(`${prefix}{/*_}`);
     return (ctx: Context, path: string) => {
         const m = matcher(path);
         if (m) {

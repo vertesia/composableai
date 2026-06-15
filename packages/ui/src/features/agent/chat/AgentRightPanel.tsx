@@ -1,10 +1,25 @@
 import type { AgentMessage, ConversationFile, Plan } from '@vertesia/common';
 import { FileProcessingStatus } from '@vertesia/common';
-import { Badge, Button, cn, SelectBox, type Tab as TabDefinition, Tabs, TabsPanel, useToast } from '@vertesia/ui/core';
+import {
+    Badge,
+    Button,
+    Center,
+    cn,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    type Tab as TabDefinition,
+    Tabs,
+    TabsPanel,
+    useToast,
+} from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     CheckCircleIcon,
+    CheckIcon,
+    ChevronsUpDownIcon,
     ClipboardCopyIcon,
     DownloadCloudIcon,
     FileTextIcon,
@@ -20,22 +35,9 @@ import { DocumentPanel } from './DocumentPanel.js';
 import InlineSlidingPlanPanel from './ModernAgentOutput/InlineSlidingPlanPanel';
 import { getConversationUrl } from './ModernAgentOutput/utils.js';
 import type { OpenDocument } from './types/document.js';
+import { formatWorkstreamName, getWorkstreamStatusClass, type WorkstreamInfo } from './workstreams.js';
 
-// ---------------------------------------------------------------------------
-// Workstream list types
-// ---------------------------------------------------------------------------
-
-export interface WorkstreamInfo {
-    workstream_id: string;
-    launch_id: string;
-    elapsed_ms: number;
-    deadline_ms: number;
-    remaining_ms: number;
-    status: 'running' | 'canceling' | 'completed' | 'canceled';
-    phase?: string;
-    child_workflow_id?: string;
-    child_workflow_run_id?: string;
-}
+export type { WorkstreamInfo } from './workstreams.js';
 
 // ---------------------------------------------------------------------------
 // UploadedDocuments (moved from WorkflowPayloadForm)
@@ -43,6 +45,15 @@ export interface WorkstreamInfo {
 
 interface UploadedDocumentsProps {
     files?: Map<string, ConversationFile>;
+}
+
+function RightPanelEmptyState({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
+    return (
+        <Center className="h-full min-h-[240px] flex-col text-center text-muted">
+            {icon}
+            <span className="text-sm">{children}</span>
+        </Center>
+    );
 }
 
 function UploadedDocumentsTab({ files }: UploadedDocumentsProps) {
@@ -81,12 +92,11 @@ function UploadedDocumentsTab({ files }: UploadedDocumentsProps) {
     };
 
     return (
-        <div className="">
+        <div className="h-full min-h-0">
             {filesArray.length === 0 ? (
-                <div className="flex flex-col items-center justify-center text-sm text-muted text-center py-8">
-                    <FileTextIcon className="size-8 mb-2" />
+                <RightPanelEmptyState icon={<FileTextIcon className="mb-2 size-8" />}>
                     {t('agent.noFilesUploadedYet')}
-                </div>
+                </RightPanelEmptyState>
             ) : (
                 <div className="space-y-2 p-2">
                     {filesArray.map((file) => (
@@ -199,99 +209,142 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
 
     if (workstreams.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-8 text-muted">
-                <LayoutListIcon className="size-8 mb-2" />
-                <span className="text-sm">{t('agent.noActiveWorkstreams')}</span>
-            </div>
+            <RightPanelEmptyState icon={<LayoutListIcon className="mb-2 size-8" />}>
+                {t('agent.noActiveParallelTasks')}
+            </RightPanelEmptyState>
         );
     }
 
     return (
-        <div className="p-3 space-y-2">
-            {workstreams.map((ws) => {
-                const isActive = ws.status === 'running' || ws.status === 'canceling';
-                const elapsed = Math.round(ws.elapsed_ms / 1000);
-                const remaining = Math.round(ws.remaining_ms / 1000);
-                const progress =
-                    ws.deadline_ms > 0 ? Math.min(100, Math.round((ws.elapsed_ms / ws.deadline_ms) * 100)) : 0;
-                const browserUse = browserUseByWorkstream.get(ws.workstream_id);
+        <div className="h-full min-h-0 overflow-y-auto px-2 py-2">
+            <div className="px-1 pb-2 text-xs text-muted">{t('agent.parallelWorkDescription')}</div>
+            <div className="divide-y divide-border/60">
+                {workstreams.map((ws) => {
+                    const isActive = ws.status === 'running' || ws.status === 'canceling';
+                    const elapsed = Math.round(ws.elapsed_ms / 1000);
+                    const remaining = Math.max(0, Math.round(ws.remaining_ms / 1000));
+                    const progress =
+                        ws.deadline_ms > 0 ? Math.min(100, Math.round((ws.elapsed_ms / ws.deadline_ms) * 100)) : 0;
+                    const browserUse = browserUseByWorkstream.get(ws.workstream_id);
+                    const hasDeadline = ws.deadline_ms > 0;
+                    const meta = [
+                        ws.phase ? formatWorkstreamName(ws.phase) : undefined,
+                        elapsed > 0 ? t('agent.elapsed', { seconds: elapsed }) : undefined,
+                        hasDeadline && remaining > 0 ? t('agent.remaining', { seconds: remaining }) : undefined,
+                    ].filter(Boolean);
 
-                const statusBadge =
-                    ws.status === 'running' ? (
-                        <Badge variant="info">{ws.phase || 'running'}</Badge>
-                    ) : ws.status === 'canceling' ? (
-                        <Badge variant="attention">canceling</Badge>
-                    ) : ws.status === 'completed' ? (
-                        <Badge variant="done">{t('agent.completed')}</Badge>
-                    ) : (
-                        <Badge variant="destructive">{t('agent.canceled')}</Badge>
-                    );
+                    const statusBadge = (() => {
+                        switch (ws.status) {
+                            case 'running':
+                                return <Badge variant="info">{t('agent.running')}</Badge>;
+                            case 'canceling':
+                                return <Badge variant="attention">{t('agent.canceling')}</Badge>;
+                            case 'completed':
+                                return <Badge variant="done">{t('agent.completed')}</Badge>;
+                            case 'failed':
+                                return <Badge variant="destructive">{t('agent.failed')}</Badge>;
+                            case 'timeout':
+                                return <Badge variant="destructive">{t('agent.timeout')}</Badge>;
+                            case 'canceled':
+                                return <Badge variant="destructive">{t('agent.canceled')}</Badge>;
+                        }
+                    })();
 
-                return (
-                    <RightPanelErrorBoundary
-                        key={ws.launch_id}
-                        title={t('agent.workstreamRenderError')}
-                        description={renderErrorDescription}
-                        compact
-                    >
-                        <div className="p-3 border rounded-md space-y-2">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium truncate">{ws.workstream_id}</span>
-                                {statusBadge}
-                            </div>
-                            {/* Progress bar — only for active workstreams */}
-                            {isActive && (
-                                <>
-                                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-info rounded-full transition-all duration-500"
-                                            style={{ width: `${progress}%` }}
-                                        />
+                    return (
+                        <RightPanelErrorBoundary
+                            key={ws.launch_id}
+                            title={t('agent.workstreamRenderError')}
+                            description={renderErrorDescription}
+                            compact
+                        >
+                            <div className="py-3">
+                                <div className="flex items-start gap-2">
+                                    <span
+                                        className={cn(
+                                            'mt-2 size-2 shrink-0 rounded-full',
+                                            getWorkstreamStatusClass(ws.status),
+                                        )}
+                                        aria-hidden="true"
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex min-w-0 items-center justify-between gap-2">
+                                            <span
+                                                className="min-w-0 truncate text-sm font-medium text-foreground"
+                                                title={ws.workstream_id}
+                                            >
+                                                {formatWorkstreamName(ws.workstream_id)}
+                                            </span>
+                                            {statusBadge}
+                                        </div>
+
+                                        {meta.length > 0 && (
+                                            <div className="mt-0.5 truncate text-xs text-muted">{meta.join(' · ')}</div>
+                                        )}
+
+                                        {isActive && hasDeadline && (
+                                            <div
+                                                className="mt-2 h-1 rounded-full bg-muted"
+                                                role="progressbar"
+                                                aria-valuemin={0}
+                                                aria-valuemax={100}
+                                                aria-valuenow={progress}
+                                                aria-valuetext={t('agent.workstreamProgress', {
+                                                    percent: progress,
+                                                })}
+                                            >
+                                                <div
+                                                    className="h-full rounded-full bg-info transition-all duration-500"
+                                                    style={{ width: `${progress}%` }}
+                                                />
+                                            </div>
+                                        )}
+
+                                        {browserUse && (
+                                            <RightPanelErrorBoundary
+                                                title={t('agent.browserWidgetRenderError')}
+                                                description={renderErrorDescription}
+                                                compact
+                                            >
+                                                <BrowserUseWidget
+                                                    state={browserUse}
+                                                    runId={runId}
+                                                    compact
+                                                    className="mt-2"
+                                                />
+                                            </RightPanelErrorBoundary>
+                                        )}
+
+                                        {ws.child_workflow_run_id && (
+                                            <div className="mt-2 flex flex-wrap gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 px-2 text-xs text-muted hover:text-foreground"
+                                                    // biome-ignore lint/style/noNonNullAssertion: TS can't prove narrowing here.
+                                                    onClick={() => copyRunId(ws.child_workflow_run_id!)}
+                                                >
+                                                    <ClipboardCopyIcon className="size-3 me-1" />
+                                                    {t('agent.copyRunId')}
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 px-2 text-xs text-muted hover:text-foreground"
+                                                    // biome-ignore lint/style/noNonNullAssertion: TS can't prove narrowing here.
+                                                    onClick={() => downloadConversation(ws.child_workflow_run_id!)}
+                                                >
+                                                    <DownloadCloudIcon className="size-3 me-1" />
+                                                    {t('agent.download')}
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="flex justify-between text-xs text-muted">
-                                        <span>{t('agent.elapsed', { seconds: elapsed })}</span>
-                                        <span>{t('agent.remaining', { seconds: remaining })}</span>
-                                    </div>
-                                </>
-                            )}
-                            {browserUse && (
-                                <RightPanelErrorBoundary
-                                    title={t('agent.browserWidgetRenderError')}
-                                    description={renderErrorDescription}
-                                    compact
-                                >
-                                    <BrowserUseWidget state={browserUse} runId={runId} />
-                                </RightPanelErrorBoundary>
-                            )}
-                            {/* Actions */}
-                            {ws.child_workflow_run_id && (
-                                <div className="flex gap-1 pt-1 border-t border-muted">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-xs h-7 px-2 text-muted hover:text-foreground"
-                                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                                        onClick={() => copyRunId(ws.child_workflow_run_id!)}
-                                    >
-                                        <ClipboardCopyIcon className="size-3 me-1" />
-                                        {t('agent.copyRunId')}
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-xs h-7 px-2 text-muted hover:text-foreground"
-                                        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                                        onClick={() => downloadConversation(ws.child_workflow_run_id!)}
-                                    >
-                                        <DownloadCloudIcon className="size-3 me-1" />
-                                        {t('agent.download')}
-                                    </Button>
                                 </div>
-                            )}
-                        </div>
-                    </RightPanelErrorBoundary>
-                );
-            })}
+                            </div>
+                        </RightPanelErrorBoundary>
+                    );
+                })}
+            </div>
         </div>
     );
 }
@@ -301,6 +354,61 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
 // ---------------------------------------------------------------------------
 
 type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'payload' | 'conversation';
+
+function RightPanelTabSelect({
+    tabs,
+    activeTab,
+    onChange,
+    ariaLabel,
+}: {
+    tabs: TabDefinition[];
+    activeTab: RightPanelTab;
+    onChange: (tab: RightPanelTab) => void;
+    ariaLabel: string;
+}) {
+    const [open, setOpen] = useState(false);
+    const currentTab = tabs.find((tab) => tab.name === activeTab) ?? tabs[0];
+
+    return (
+        <DropdownMenu open={open} onOpenChange={setOpen}>
+            <DropdownMenuTrigger asChild>
+                <button
+                    type="button"
+                    aria-label={ariaLabel}
+                    aria-haspopup="menu"
+                    aria-expanded={open}
+                    className={cn(
+                        'inline-flex min-w-40 max-w-56 flex-row items-center justify-between gap-2 rounded-md border border-border bg-transparent px-2.5 py-2 text-start text-inherit',
+                        'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                        'hover:bg-muted',
+                    )}
+                >
+                    <span className="min-w-0 flex-1 overflow-hidden text-sm">{currentTab?.label}</span>
+                    <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" aria-hidden="true" />
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="z-[1000000] min-w-56 max-w-[min(24rem,calc(100vw-1rem))]">
+                {tabs.map((tab) => {
+                    const isSelected = tab.name === activeTab;
+
+                    return (
+                        <DropdownMenuItem
+                            key={tab.name}
+                            className="min-h-9 justify-between gap-3 px-2 py-1.5 text-sm"
+                            onSelect={() => {
+                                onChange(tab.name as RightPanelTab);
+                                setOpen(false);
+                            }}
+                        >
+                            <span className="min-w-0 flex-1 overflow-hidden">{tab.label}</span>
+                            {isSelected && <CheckIcon className="size-4 shrink-0" aria-hidden="true" />}
+                        </DropdownMenuItem>
+                    );
+                })}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
 
 export interface AgentRightPanelProps {
     /** Optional payload content to show as a "Payload" tab */
@@ -354,7 +462,6 @@ function AgentRightPanelComponent({
     plans = [],
     activePlanIndex = 0,
     onChangePlan,
-    showPlan,
 
     // Workstreams
     activeWorkstreams = [],
@@ -401,7 +508,6 @@ function AgentRightPanelComponent({
     const hasWorkstreams = !hideWorkstreams && activeWorkstreams.length > 0;
     const hasDocuments = openDocuments.length > 0;
     const hasUploads = processingFiles ? processingFiles.size > 0 : false;
-    const hasPlan = showPlan && plan;
     const withTabBoundary = useCallback(
         (name: string, content: React.ReactNode) => (
             <RightPanelErrorBoundary
@@ -427,13 +533,7 @@ function AgentRightPanelComponent({
         ...(conversationContent ? [conversationTab] : []),
         {
             name: 'plan',
-            label: hasPlan ? (
-                <span className="flex items-center gap-1">
-                    {t('agent.plan')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" />
-                </span>
-            ) : (
-                t('agent.plan')
-            ),
+            label: t('agent.plan'),
             content: withTabBoundary(
                 t('agent.plan'),
                 plan ? (
@@ -447,9 +547,9 @@ function AgentRightPanelComponent({
                         onChangePlan={onChangePlan}
                     />
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-8 text-muted">
-                        <span className="text-sm">{t('agent.noPlanAvailable')}</span>
-                    </div>
+                    <RightPanelEmptyState icon={<LayoutListIcon className="mb-2 size-8" />}>
+                        {t('agent.noPlanAvailable')}
+                    </RightPanelEmptyState>
                 ),
             ),
             is_allowed: true,
@@ -457,9 +557,9 @@ function AgentRightPanelComponent({
         {
             name: 'workstreams',
             label: hasWorkstreams ? (
-                <span className="flex items-center gap-1">
+                <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap">
                     {t('agent.workstreams')}{' '}
-                    <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">
+                    <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-info px-1.5 py-0.5 text-[10px] text-info">
                         {activeWorkstreams.length}
                     </span>
                 </span>
@@ -475,9 +575,9 @@ function AgentRightPanelComponent({
         {
             name: 'documents',
             label: hasDocuments ? (
-                <span className="flex items-center gap-1">
+                <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap">
                     {t('agent.documents')}{' '}
-                    <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">
+                    <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-info px-1.5 py-0.5 text-[10px] text-info">
                         {openDocuments.length}
                     </span>
                 </span>
@@ -498,10 +598,9 @@ function AgentRightPanelComponent({
                         runId={runId}
                     />
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-8 text-muted">
-                        <FileTextIcon className="size-8 mb-2" />
-                        <span className="text-sm">{t('agent.noDocumentsOpen')}</span>
-                    </div>
+                    <RightPanelEmptyState icon={<FileTextIcon className="mb-2 size-8" />}>
+                        {t('agent.noDocumentsOpen')}
+                    </RightPanelEmptyState>
                 ),
             ),
             is_allowed: true,
@@ -509,7 +608,7 @@ function AgentRightPanelComponent({
         {
             name: 'uploads',
             label: hasUploads ? (
-                <span className="flex items-center gap-1">
+                <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap">
                     {t('agent.uploads')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" />
                 </span>
             ) : (
@@ -538,19 +637,15 @@ function AgentRightPanelComponent({
     ];
 
     const visibleTabs = tabs.filter((tab) => tab.is_allowed === undefined || tab.is_allowed === true);
-    const currentTab = visibleTabs.find((tab) => tab.name === activeTab);
-
     return (
         <Tabs tabs={tabs} current={activeTab} onTabChange={handleTabChange} fullHeight className="px-0">
-            <div className="flex items-center border-b shrink-0 px-1 py-1 gap-1">
-                <div className="flex-1 min-w-0">
-                    <SelectBox<TabDefinition>
-                        label="Select Options"
-                        options={visibleTabs}
-                        value={currentTab}
-                        onChange={(tab) => tab && handleTabChange(tab.name)}
-                        optionLabel={(tab) => tab.label}
-                        by="name"
+            <div className="flex items-center justify-between shrink-0 px-1 py-1 gap-1">
+                <div className="min-w-0">
+                    <RightPanelTabSelect
+                        ariaLabel={t('agent.selectRightPanelSection')}
+                        tabs={visibleTabs}
+                        activeTab={activeTab}
+                        onChange={handleTabChange}
                     />
                 </div>
                 {!conversationContent && (
@@ -565,7 +660,7 @@ function AgentRightPanelComponent({
                     </Button>
                 )}
             </div>
-            <TabsPanel className="pt-0" />
+            <TabsPanel className="flex-1 min-h-0 pt-0 pb-0" />
         </Tabs>
     );
 }

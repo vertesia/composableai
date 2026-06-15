@@ -73,6 +73,17 @@ describe('Test Vertesia Client', () => {
         expect(client.tokenServerUrl).toBe('https://sts.dev1.vertesia.io');
     });
 
+    test('Initialization with site api-preview.dev1.vertesia.io', () => {
+        const client = new VertesiaClient({
+            site: 'api-preview.dev1.vertesia.io',
+        });
+
+        expect(client).toBeDefined();
+        expect(client.baseUrl).toBe('https://api-preview.dev1.vertesia.io');
+        expect(client.storeUrl).toBe('https://api-preview.dev1.vertesia.io');
+        expect(client.tokenServerUrl).toBe('https://sts.dev1.vertesia.io');
+    });
+
     test('Initialization with regional serverUrl (api.us1)', () => {
         const client = new VertesiaClient({
             serverUrl: 'https://api.us1.vertesia.io',

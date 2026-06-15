@@ -690,6 +690,13 @@ export interface AgentRunnerOptions {
      * within this collection'.
      */
     collection_id?: string;
+
+    /**
+     * Optional user-facing template for rendering run input as the first conversation entry.
+     * Supports {{field_name}}, {{nested.field}}, {{items.0.name}}, and {{json}} placeholders
+     * resolved from the run data.
+     */
+    request_template?: string;
 }
 
 // ================= User Communication Channels ====================
@@ -1003,6 +1010,8 @@ export interface RunSource {
     client_ip: string;
 }
 
+export type ExecutionRunInteraction = InteractionRef;
+
 export interface BaseExecutionRun<P = unknown> {
     readonly id: string;
     /**
@@ -1022,12 +1031,12 @@ export interface BaseExecutionRun<P = unknown> {
      */
     parameters: P; //params used to create the interaction, only in varies on?
     tags?: string[];
-    // only set when the target interaction is a stored interaction
-    //TODO check the code where Interaction type is used (should be in run details)
-    // TODO when execution string is passed as the type of interaction
-    interaction?: string | Interaction;
-    // only set when the target interaction is an in-code interaction
-    interaction_code?: string; // Interaction code name in case of in-code interaction (not stored in the DB as an Interaction document)
+    /**
+     * Interaction reference. Stored interactions may be populated as full
+     * Interaction documents; in-code interactions are represented as refs whose
+     * `id` is the namespaced interaction id.
+     */
+    interaction?: string | ExecutionRunInteraction;
     /** Environment reference - populated with full object in API responses */
     environment: ExecutionEnvironmentRef;
     modelId?: string; //Can be undefined for virtual environments. In most cases should be defined.
@@ -1065,11 +1074,11 @@ export interface BaseExecutionRun<P = unknown> {
 }
 
 export interface ExecutionRun<P = unknown> extends BaseExecutionRun<P> {
-    interaction?: Interaction;
+    interaction?: ExecutionRunInteraction;
 }
 
 export interface PopulatedExecutionRun<P = unknown> extends BaseExecutionRun<P> {
-    interaction?: Interaction;
+    interaction?: ExecutionRunInteraction;
 }
 
 export interface ExecutionRunWorkflow {
@@ -1130,7 +1139,6 @@ export interface LegacyInteractionExecutionResult<P = unknown>
 
 export interface ExecutionRunRef extends Omit<ExecutionRun, 'result' | 'parameters' | 'interaction'> {
     interaction?: InteractionRef;
-    interaction_code?: string;
 }
 
 export const ExecutionRunRefSelect = '-result -parameters -result_schema -prompt';

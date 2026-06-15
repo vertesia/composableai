@@ -21,10 +21,10 @@
     "author": "stefanescu.bogdan@gmail.com",
     "license": "MIT",
     "dependencies": {
-        "koa": "^3.2.0",
+        "koa": "^3.2.1",
         "koa-compose": "^4.1.0",
         "koa-send": "^5.0.1",
-        "path-to-regexp": "^6.3.0",
+        "path-to-regexp": "^8.4.2",
         "statuses": "^2.0.2"
     },
     "devDependencies": {

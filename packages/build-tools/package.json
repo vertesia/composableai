@@ -1,10 +1,13 @@
 {
     "name": "@vertesia/build-tools",
     "version": "1.3.0",
-    "description": "Build tools for Vertesia projects - Rollup and Vite plugins for transforming imports, bundling skills, and compiling widgets",
+    "description": "Build tools for Vertesia projects - import transformers (skill / template / prompt / raw), esbuild widget bundler, vertesia-build CLI, and a Vite dev plugin",
     "type": "module",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
+    "bin": {
+        "vertesia-build": "lib/bin/build.js"
+    },
     "files": [
         "lib",
         "src"
@@ -14,7 +17,7 @@
         "lint": "biome lint src",
         "test": "vitest run",
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc && pnpm exec rollup -c",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc && chmod +x ./lib/bin/build.js",
         "clean": "rm -rf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "exports": {
@@ -23,30 +26,36 @@
             "default": "./lib/index.js"
         },
         "./vite": {
-            "types": "./lib/vite.d.ts",
-            "default": "./lib/vite.js"
+            "types": "./lib/vite/index.d.ts",
+            "default": "./lib/vite/index.js"
         }
     },
     "devDependencies": {
-        "@rollup/plugin-commonjs": "^29.0.3",
-        "@rollup/plugin-json": "^6.1.0",
-        "@rollup/plugin-node-resolve": "^16.0.3",
-        "@rollup/plugin-terser": "^1.0.0",
-        "@rollup/plugin-typescript": "^12.3.0",
+        "@hono/node-server": "^2.0.4",
         "@types/node": "^24.12.4",
         "@vertesia/tsconfig": "workspace:*",
-        "rollup": "^4.61.0",
         "typescript": "^6.0.3",
+        "vite": "^8.0.16",
         "vitest": "^4.1.8"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
         "@vertesia/common": "workspace:*",
+        "esbuild": "^0.28.0",
         "gray-matter": "^4.0.3",
         "zod": "^4.4.3"
     },
     "peerDependencies": {
-        "rollup": "^4.61.0"
+        "@hono/node-server": "^2.0.0",
+        "vite": "^8.0.0"
+    },
+    "peerDependenciesMeta": {
+        "@hono/node-server": {
+            "optional": true
+        },
+        "vite": {
+            "optional": true
+        }
     },
     "repository": {
         "type": "git",
@@ -55,14 +64,12 @@
     },
     "keywords": [
         "vertesia",
-        "rollup",
-        "rollup-plugin",
         "vite",
         "vite-plugin",
         "build-tools",
         "imports",
         "transform",
-        "compiler",
+        "esbuild",
         "skill",
         "markdown",
         "frontmatter",

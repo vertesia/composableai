@@ -1,4 +1,5 @@
 export * from './access-control.js';
+export * from './agent-request-template.js';
 export * from './analytics.js';
 export * from './apikey.js';
 export * from './apps.js';
@@ -32,7 +33,7 @@ export * from './prompt.js';
 export * from './query.js';
 export * from './rate-limiter.js';
 export * from './refs.js';
-export * from './roles.js';
+export * from './roles/types.js';
 export * from './runs.js';
 export * from './secrets.js';
 export * from './skill.js';

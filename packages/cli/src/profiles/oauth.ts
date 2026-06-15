@@ -12,26 +12,17 @@ import type { ConfigResult } from './server/index.js';
 
 const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server';
 const OAUTH_CLIENT_METADATA_PATH = '/.well-known/oauth-client/vertesia-cli';
-const DEFAULT_CLI_OAUTH_SCOPES = [
-    OAUTH_SCOPE_OPENID,
-    OAUTH_SCOPE_PROFILE,
-    OAUTH_SCOPE_OFFLINE_ACCESS,
-    Permission.account_member,
-    Permission.account_read,
-    Permission.project_integration_read,
-    Permission.int_read,
-    Permission.int_execute,
-    Permission.run_read,
-    Permission.run_write,
-    Permission.content_read,
-    Permission.content_write,
-    Permission.content_delete,
-    Permission.workflow_read,
-    Permission.workflow_run,
-    Permission.agent_run_read,
-    Permission.task_read,
-    Permission.task_manage,
-];
+// Base OIDC scopes that are not platform permissions.
+const BASE_OIDC_SCOPES = [OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, OAUTH_SCOPE_OFFLINE_ACCESS];
+
+// The full set of platform permission scopes. The CLI requests ALL of them and
+// never curates a subset: dropping admin scopes here (e.g. content:admin,
+// account:admin) silently denied legitimate operations — reindex, publish ACE
+// grants — even for account owners / project admins. The authorization server
+// is the right place to gate access: it downscopes the issued token to exactly
+// what the signed-in user's roles allow, so requesting everything is safe and a
+// user only ever receives the permissions they are entitled to.
+const ALL_PERMISSION_SCOPES = Object.values(Permission) as string[];
 
 type OAuthProfile = Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> &
     Partial<Pick<Profile, 'account' | 'config_url' | 'project' | 'oauth_server_url'>>;
@@ -167,12 +158,15 @@ async function discoverAuthorizationServer(
 }
 
 function getDefaultOAuthScope(metadata: Partial<Pick<OAuthAuthorizationServerMetadata, 'scopes_supported'>>): string {
-    if (!Array.isArray(metadata.scopes_supported)) {
-        return DEFAULT_CLI_OAUTH_SCOPES.join(' ');
-    }
-    const supportedScopes = new Set(metadata.scopes_supported);
-    const supportedDefaultScopes = DEFAULT_CLI_OAUTH_SCOPES.filter((scope) => supportedScopes.has(scope));
-    return (supportedDefaultScopes.length > 0 ? supportedDefaultScopes : DEFAULT_CLI_OAUTH_SCOPES).join(' ');
+    // Request every scope the server advertises — no exclusions. When the server
+    // does not advertise a list, fall back to the full known permission set. The
+    // authorization server downscopes the issued token to the user's entitlements,
+    // so this never grants more than the signed-in user's roles allow.
+    const requested =
+        Array.isArray(metadata.scopes_supported) && metadata.scopes_supported.length > 0
+            ? metadata.scopes_supported
+            : ALL_PERMISSION_SCOPES;
+    return Array.from(new Set([...BASE_OIDC_SCOPES, ...requested])).join(' ');
 }
 
 function applyProfileAuthorizationEndpoint(

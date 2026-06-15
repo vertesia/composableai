@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { SkillDefinitionSchema, skillTransformer } from '../src/presets/skill.js';
+import { SkillDefinitionSchema, skillTransformer } from '../src/core/transformers/skill.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
