@@ -142,6 +142,23 @@ publish_to_verdaccio() {
   echo "Published ${count} packages to verdaccio"
 }
 
+align_template_versions_for_verdaccio() {
+  echo ""
+  echo "=== Aligning create-plugin template versions for verdaccio ==="
+
+  node <<'NODE'
+const fs = require('fs');
+const pkgPath = 'packages/create-plugin/package.json';
+const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+pkg.templateVersions = {
+  ...(pkg.templateVersions || {}),
+  '@vertesia': pkg.version,
+};
+fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+console.log(`  @vertesia template version: ${pkg.version}`);
+NODE
+}
+
 workspace_package_dirs() {
   local repo_root
   repo_root="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -190,6 +207,7 @@ derive_tag_and_branch
 
 print_config "Template Integration Test"
 
+align_template_versions_for_verdaccio
 start_verdaccio
 publish_to_verdaccio
 

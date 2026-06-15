@@ -1,30 +1,32 @@
 import { describe, expect, test } from 'vitest';
-import { Permission } from './access-control.js';
-import { ProjectRoles } from './project.js';
-import { getPermissionsForRoles, getRoleByName, listRoles } from './roles.js';
+import { SystemRoles } from './project.js';
+import { AbacScopes } from './roles/types.js';
 
-describe('role permission catalog', () => {
-    test('lists all project roles', () => {
-        expect(
-            listRoles()
-                .map((role) => role.name)
-                .sort(),
-        ).toEqual(Object.values(ProjectRoles).sort());
+describe('shared role vocabulary', () => {
+    test('exports all system roles', () => {
+        expect(Object.values(SystemRoles).sort()).toEqual(
+            [
+                'admin',
+                'app_member',
+                'application',
+                'auditor',
+                'automation',
+                'billing',
+                'consumer',
+                'content_processor',
+                'content_superadmin',
+                'developer',
+                'executor',
+                'manager',
+                'member',
+                'owner',
+                'reader',
+                'support',
+            ].sort(),
+        );
     });
 
-    test('derives developer permissions without administrative grants', () => {
-        const developer = getRoleByName(ProjectRoles.developer);
-
-        expect(developer.hasPermission(Permission.int_read)).toBe(true);
-        expect(developer.hasPermission(Permission.account_admin)).toBe(false);
-        expect(developer.hasPermission(Permission.project_admin)).toBe(false);
-    });
-
-    test('deduplicates permissions across multiple roles', () => {
-        const permissions = getPermissionsForRoles([ProjectRoles.reader, ProjectRoles.executor]);
-
-        expect(permissions).toContain(Permission.account_member);
-        expect(permissions).toContain(Permission.content_read);
-        expect(permissions.filter((permission) => permission === Permission.account_member)).toHaveLength(1);
+    test('exports ABAC scopes used by role wire types', () => {
+        expect(AbacScopes).toEqual(['document', 'collection', 'task']);
     });
 });
