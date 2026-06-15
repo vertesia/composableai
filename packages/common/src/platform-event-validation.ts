@@ -56,7 +56,6 @@ export const EVENT_CONDITION_JSON_LOGIC_OPERATORS: readonly string[] = [
     'filter',
     'if',
     'in',
-    'log',
     'map',
     'max',
     'merge',

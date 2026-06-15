@@ -39,7 +39,7 @@ export type RateLimiterStatusResponse = RateLimiterStatus[];
  * global/discovered, so they are reported as posture, not per-tenant numbers.
  */
 export interface QuotaStandingWindow {
-    /** Effective limit for this window (after base tier + per-tenant override). */
+    /** Effective limit for this window (after effective account tier + per-tenant override). */
     limit: number;
     /** Requests used in the current window. */
     used: number;
@@ -71,6 +71,11 @@ export interface QuotaStandingResponse {
     available: boolean;
     /** Deployment base tier (env QUOTA_BASE_TIER); `default` = the static limits stand. */
     base_tier: string;
+    /**
+     * Tier used to compute the API limits below: explicit account `quota_tier`, else account_type
+     * derived tier, else `base_tier` when the account tier could not be resolved.
+     */
+    effective_tier: string;
     /** Per-resource API rate-limit standing (effective limits + current usage). */
     api: QuotaStandingResource[];
     /**

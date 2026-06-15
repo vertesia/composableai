@@ -17,7 +17,12 @@ export async function showStanding(program: Command, options: { json?: boolean }
         return;
     }
 
-    console.log(colors.bold(`Quota standing for tenant ${standing.tenant_id}  (base tier: ${standing.base_tier})`));
+    console.log(
+        colors.bold(
+            `Quota standing for tenant ${standing.tenant_id}  ` +
+                `(effective tier: ${standing.effective_tier}; base tier: ${standing.base_tier})`,
+        ),
+    );
 
     if (!standing.available) {
         console.log(

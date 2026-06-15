@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CreateEventSubscriptionPayload } from './platform-event.js';
 import {
+    EVENT_CONDITION_JSON_LOGIC_OPERATORS,
     getCreateEventSubscriptionValidationResult,
     getUpdateEventSubscriptionValidationResult,
 } from './platform-event-validation.js';
@@ -79,5 +80,9 @@ describe('event subscription input validation', () => {
         const result = getUpdateEventSubscriptionValidationResult({ target: { type: 'webhook' } as never });
         expect(result.valid).toBe(false);
         expect(result.errors.join(' ')).toContain('url');
+    });
+
+    it('does not expose side-effect JSONLogic operators for event conditions', () => {
+        expect(EVENT_CONDITION_JSON_LOGIC_OPERATORS).not.toContain('log');
     });
 });
