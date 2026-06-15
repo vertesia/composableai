@@ -142,6 +142,10 @@ export abstract class ApiTopic extends ClientBase {
         return this.client.getRetryPolicy();
     }
 
+    getTimeout() {
+        return this.client.getTimeout();
+    }
+
     get headers() {
         return this.client.headers;
     }
