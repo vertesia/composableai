@@ -3,7 +3,7 @@ import type {
     OAuthDeviceAuthorizationResponse,
     OAuthTokenResponse,
 } from '@vertesia/common';
-import { OAUTH_SCOPE_OFFLINE_ACCESS, OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE } from '@vertesia/common';
+import { OAUTH_SCOPE_OFFLINE_ACCESS, OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, Permission } from '@vertesia/common';
 import jwt from 'jsonwebtoken';
 import open from 'open';
 import type { Profile } from './index.js';
@@ -12,11 +12,12 @@ import type { ConfigResult } from './server/index.js';
 
 const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server';
 const OAUTH_CLIENT_METADATA_PATH = '/.well-known/oauth-client/vertesia-cli';
-// The CLI carries NO permission list. The authorization server is the source of truth for what
-// is grantable (advertised at runtime via scopes_supported), so adding a permission or role
-// server-side needs no CLI upgrade. These standard OIDC scopes are the only thing hard-coded —
-// used solely as the fallback when an (old) server doesn't advertise scopes_supported.
-const FALLBACK_OAUTH_SCOPES = [OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, OAUTH_SCOPE_OFFLINE_ACCESS];
+// Base OIDC scopes that are not platform permissions.
+const BASE_OIDC_SCOPES = [OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, OAUTH_SCOPE_OFFLINE_ACCESS];
+
+// Old servers may not advertise scopes_supported. In that case only, fall back to the local
+// permission catalog; modern servers remain the source of truth for grantable scopes.
+const ALL_PERMISSION_SCOPES = Object.values(Permission) as string[];
 
 type OAuthProfile = Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> &
     Partial<Pick<Profile, 'account' | 'config_url' | 'project' | 'oauth_server_url'>>;
@@ -152,14 +153,15 @@ async function discoverAuthorizationServer(
 }
 
 function getDefaultOAuthScope(metadata: Partial<Pick<OAuthAuthorizationServerMetadata, 'scopes_supported'>>): string {
-    // Request exactly what the server advertises as grantable. The server narrows the actual grant
-    // to the signing-in user's roles (consent offers requested ∩ user-permitted), so requesting the
-    // full advertised set is safe and keeps the CLI decoupled from the permission catalog.
-    if (Array.isArray(metadata.scopes_supported) && metadata.scopes_supported.length > 0) {
-        return metadata.scopes_supported.join(' ');
-    }
-    // Old server without scopes_supported: request only the standard OIDC scopes (identity + refresh).
-    return FALLBACK_OAUTH_SCOPES.join(' ');
+    // Request every scope the server advertises — no exclusions. When the server does not advertise
+    // a list, fall back to the full known permission set. The authorization server downscopes the
+    // issued token to the user's entitlements, so this never grants more than the signed-in user's
+    // roles allow.
+    const requested =
+        Array.isArray(metadata.scopes_supported) && metadata.scopes_supported.length > 0
+            ? metadata.scopes_supported
+            : ALL_PERMISSION_SCOPES;
+    return Array.from(new Set([...BASE_OIDC_SCOPES, ...requested])).join(' ');
 }
 
 function applyProfileAuthorizationEndpoint(

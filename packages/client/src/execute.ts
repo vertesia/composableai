@@ -10,6 +10,18 @@ import {
 } from '@vertesia/common';
 import type { VertesiaClient } from './client.js';
 
+/**
+ * Client-side timeout for a synchronous (non-streaming) interaction execution. The request blocks on
+ * studio-server until the model finishes — and the LLM (e.g. image generation) can legitimately take
+ * minutes — so the per-request timeout here is long, overriding any short client default. Override
+ * via the VERTESIA_INTERACTION_TIMEOUT_MS env var.
+ */
+const INTERACTION_EXECUTION_TIMEOUT_MS = (() => {
+    const raw = typeof process !== 'undefined' ? process.env?.VERTESIA_INTERACTION_TIMEOUT_MS : undefined;
+    const parsed = raw ? Number.parseInt(raw, 10) : NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 30 * 60 * 1000; // 30 minutes
+})();
+
 export async function EventSourceProvider(): Promise<typeof EventSource> {
     if (typeof globalThis.EventSource === 'function') {
         return globalThis.EventSource;
@@ -35,11 +47,16 @@ export async function executeInteraction<P = unknown>(
     onChunk?: (chunk: string) => void,
 ): Promise<InteractionExecutionResult<P>> {
     const stream = !!onChunk;
-    const response = (await client.runs.create({
-        ...payload,
-        interaction: interactionId,
-        stream,
-    })) as unknown as InteractionExecutionResult<P>;
+    const response = (await client.runs.create(
+        {
+            ...payload,
+            interaction: interactionId,
+            stream,
+        },
+        // Synchronous interaction execution blocks on the model; keep a long client timeout.
+        // (Streaming returns the run immediately, then streams over a separate channel — see below.)
+        { timeoutMs: stream ? undefined : INTERACTION_EXECUTION_TIMEOUT_MS },
+    )) as unknown as InteractionExecutionResult<P>;
     if (stream) {
         if (response.status === ExecutionRunStatus.failed) {
             return response;
@@ -78,6 +95,8 @@ export async function executeInteractionByName<P = unknown>(
             interaction,
             stream,
         } as NamedInteractionExecutionPayload,
+        // Synchronous interaction execution blocks on the model; keep a long client timeout.
+        timeoutMs: stream ? undefined : INTERACTION_EXECUTION_TIMEOUT_MS,
     });
     if (stream) {
         if (response.status === ExecutionRunStatus.failed) {

@@ -313,6 +313,68 @@ describe('Test requests', () => {
         assert.equal(attempts, 2);
         assert.equal(payload.attempts, 2);
     });
+    it('retries non-JSON 5xx (edge/LB error) even when the status is not in the policy', async () => {
+        // e.g. Cloud Run "no available instance" returns a 500 HTML page, not a JSON app error.
+        let attempts = 0;
+        const retryClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            if (attempts === 1) {
+                return new Response('<html><body>500 Server Error</body></html>', {
+                    status: 500,
+                    headers: { 'content-type': 'text/html' },
+                });
+            }
+            return new Response(JSON.stringify({ attempts }), {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
+            });
+        }).withRetryPolicy({ attempts: 2, baseDelayMs: 0, jitter: false });
+
+        const payload = (await retryClient.get('/unstable')) as { attempts: number };
+
+        assert.equal(attempts, 2);
+        assert.equal(payload.attempts, 2);
+    });
+    it('does not retry a JSON 500 (genuine application error)', async () => {
+        let attempts = 0;
+        const retryClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            return new Response(JSON.stringify({ error: 'boom' }), {
+                status: 500,
+                headers: { 'content-type': 'application/json' },
+            });
+        }).withRetryPolicy({ attempts: 3, baseDelayMs: 0, jitter: false });
+
+        let error: unknown;
+        try {
+            await retryClient.get('/app-error');
+        } catch (err: unknown) {
+            error = err;
+        }
+
+        assert.equal(attempts, 1);
+        assert.equal((error as { status?: number }).status, 500);
+    });
+    it('honors retryNonJsonServerErrors:false to opt out of non-JSON 5xx retries', async () => {
+        let attempts = 0;
+        const retryClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            return new Response('<html><body>500 Server Error</body></html>', {
+                status: 500,
+                headers: { 'content-type': 'text/html' },
+            });
+        }).withRetryPolicy({ attempts: 3, baseDelayMs: 0, jitter: false, retryNonJsonServerErrors: false });
+
+        let error: unknown;
+        try {
+            await retryClient.get('/unstable');
+        } catch (err: unknown) {
+            error = err;
+        }
+
+        assert.equal(attempts, 1);
+        assert.equal((error as { status?: number }).status, 500);
+    });
     it('retries opted-in connection errors', async () => {
         let attempts = 0;
         const retryClient = new FetchClient('http://example.test', async () => {

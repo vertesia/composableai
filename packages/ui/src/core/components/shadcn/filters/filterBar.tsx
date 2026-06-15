@@ -338,7 +338,6 @@ const FilterBtn = ({ className }: { className?: string }) => {
                         />
                     )}
                     <CommandList>
-                        <CommandEmpty>{t('filter.noMatchingFilters')}</CommandEmpty>
                         <CommandGroup>
                             {!selectedView ? getAvailableFilterGroups() : renderFilterOptions()}
                         </CommandGroup>

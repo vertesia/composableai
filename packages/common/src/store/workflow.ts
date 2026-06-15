@@ -741,14 +741,18 @@ export interface AgentMessageDetails extends Record<string, unknown> {
     event_class?: string;
     tool?: string;
     tools?: string[];
+    tool_event?: 'started' | 'progress' | 'completed' | 'failed';
     streamed?: boolean;
     display_role?: string;
     activity_id?: string;
     activity_group_id?: string;
     batch_id?: string;
     tool_run_id?: string;
+    tool_use_id?: string;
     tool_status?: ToolCallDetails['tool_status'];
     tool_iteration?: number;
+    message_to_human?: string;
+    duration_ms?: number;
     observation?: unknown;
     workflow_run_id?: string;
     outputFiles?: string[];
@@ -771,9 +775,13 @@ export interface AgentMessageDetails extends Record<string, unknown> {
 export interface ToolCallDetails {
     event_class: 'activity';
     tool: string;
+    tool_event?: 'started' | 'progress' | 'completed' | 'failed';
     tool_run_id?: string;
+    tool_use_id?: string;
     tool_status?: 'running' | 'completed' | 'error' | 'warning';
     tool_iteration?: number;
+    message_to_human?: string;
+    duration_ms?: number;
     activity_group_id?: string;
     activity_id?: string;
     files?: string[];
@@ -1186,6 +1194,14 @@ export interface ConversationFileRef {
     reference: string;
     /** Artifact path without prefix (e.g., "files/document.pdf") */
     artifact_path: string;
+}
+
+/**
+ * Reference to a file removed from the conversation attachment set.
+ */
+export interface ConversationFileRemovedRef {
+    /** Client-generated unique ID */
+    id: string;
 }
 
 /**

@@ -11,6 +11,8 @@ export {
     useInteractionsFilterGroups,
     useInteractionsFilterHandler,
 } from './InteractionsFacetsNav';
+export { ProcessDefinitionsFacetsNav, useProcessDefinitionsFilterGroups } from './ProcessDefinitionsFacetsNav';
+export { ProcessRunsFacetsNav, useProcessRunsFilterGroups } from './ProcessRunsFacetsNav';
 export { PromptsFacetsNav, usePromptsFilterGroups, usePromptsFilterHandler } from './PromptsFacetsNav';
 export { RunsFacetsNav, useRunsFilterGroups, useRunsFilterHandler } from './RunsFacetsNav';
 export * from './utils/SearchInterface';
@@ -21,8 +23,10 @@ export { VInteractionFacet } from './utils/VInteractionFacet';
 export { VStringFacet } from './utils/VStringFacet';
 export { VTypeFacet } from './utils/VTypeFacet';
 export { VUserFacet } from './utils/VUserFacet';
+export { useWorkflowDefinitionsFilterGroups, WorkflowDefinitionsFacetsNav } from './WorkflowDefinitionsFacetsNav';
 export {
     useWorkflowExecutionsFilterGroups,
     useWorkflowExecutionsFilterHandler,
     WorkflowExecutionsFacetsNav,
 } from './WorkflowExecutionsFacetsNav';
+export { useWorkflowRulesFilterGroups, WorkflowRulesFacetsNav } from './WorkflowRulesFacetsNav';

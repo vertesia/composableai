@@ -56,7 +56,8 @@ export type VertesiaClientProps = {
         | 'api-preview.eu1.vertesia.io'
         | 'api.jp1.vertesia.io'
         | 'api-preview.jp1.vertesia.io'
-        | 'api.dev1.vertesia.io';
+        | 'api.dev1.vertesia.io'
+        | 'api-preview.dev1.vertesia.io';
     serverUrl?: string;
     storeUrl?: string;
     tokenServerUrl?: string;
@@ -66,6 +67,12 @@ export type VertesiaClientProps = {
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
     retryPolicy?: IRequestRetryPolicy;
+    /**
+     * Default request timeout in ms applied to every request (studio + store) unless overridden
+     * per-request via `timeoutMs`. `false`/`null`/`0` disables it. Aborts the whole request
+     * (connection + headers + body) via AbortSignal — browser + Node safe.
+     */
+    timeout?: number | false | null;
     fetch?: FETCH_FN | Promise<FETCH_FN>;
 };
 
@@ -192,11 +199,16 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             onRequest: opts.onRequest,
             onResponse: opts.onResponse,
             retryPolicy: opts.retryPolicy,
+            timeout: opts.timeout,
             fetch: opts.fetch,
         });
 
         if (opts.retryPolicy) {
             this.withRetryPolicy(opts.retryPolicy);
+        }
+
+        if (opts.timeout !== undefined) {
+            this.withTimeout(opts.timeout);
         }
 
         if (opts.apikey) {
@@ -237,6 +249,11 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     withRetryPolicy(policy?: IRequestRetryPolicy | null) {
         this.store.withRetryPolicy(policy);
         return super.withRetryPolicy(policy);
+    }
+
+    withTimeout(timeoutMs?: number | false | null) {
+        this.store.withTimeout(timeoutMs);
+        return super.withTimeout(timeoutMs);
     }
 
     async withApiKey(apiKey: string | null) {

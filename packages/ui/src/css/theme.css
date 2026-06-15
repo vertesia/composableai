@@ -72,8 +72,8 @@
     --color-topnav-border: var(--topnav-border);
     --color-topnav-ring: var(--topnav-ring);
 
+    --color-preprod: var(--preprod);
     --color-preview: var(--preview);
-    --color-staging: var(--staging);
     --color-development: var(--development);
 
     --font-sans:

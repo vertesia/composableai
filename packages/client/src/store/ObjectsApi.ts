@@ -362,6 +362,7 @@ export class ObjectsApi extends ApiTopic {
             collection_id?: string;
             /** @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire. */
             skip_workflows?: boolean;
+            processing_priority?: ContentObjectProcessingPriority;
         },
     ): Promise<BulkObjectCreateResult> {
         return this.client.runOperation({

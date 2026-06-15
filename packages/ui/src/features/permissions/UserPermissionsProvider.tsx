@@ -1,14 +1,11 @@
-import { type Permission, PrincipalType, type ProjectRoles } from '@vertesia/common';
+import { type Permission, PrincipalType, type SystemRoleDefinition } from '@vertesia/common';
 import { ErrorBox, errorMessage, useFetch } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { type UserSession, useUserSession } from '@vertesia/ui/session';
 import { createContext, useContext, useMemo } from 'react';
 import { isAnyOf } from './helpers';
 
-type ListRolesResponse = {
-    name: ProjectRoles;
-    permissions: Permission[];
-}[];
+type ListRolesResponse = SystemRoleDefinition[];
 
 export class UserPermissions {
     system_roles: ListRolesResponse; // all roles defined in the system
@@ -87,7 +84,7 @@ export function UserPermissionProvider({ children }: UserPermissionProviderProps
     const session = useUserSession();
     const { data, error, isLoading } = useFetch<ListRolesResponse | undefined>(() => {
         if (session.user) {
-            return session.client.iam.roles.list();
+            return session.client.iam.roles.listSystem();
         } else {
             return Promise.resolve(undefined);
         }

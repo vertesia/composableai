@@ -470,7 +470,7 @@ function readObjectTypeName(object: ContentObjectItem<unknown> | ContentObjectIt
     if (typeof object.type === 'string') {
         return object.type;
     }
-    return object.type.name || object.type.id || object.type.code || '';
+    return object.type.name || object.type.id || '';
 }
 
 function printQueryResult(result: QueryResult) {

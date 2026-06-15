@@ -1137,7 +1137,7 @@ export interface CompositeAppNavItemPermissions {
     groupsAllowed?: string[];
     /** User IDs who can see this item. */
     usersAllowed?: string[];
-    /** ProjectRoles values (e.g. "developer", "manager") whose holders can see this item. */
+    /** SystemRoles values (e.g. "developer", "manager") whose holders can see this item. */
     rolesAllowed?: string[];
 }
 

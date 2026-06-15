@@ -32,6 +32,7 @@ import { AskUserWidget } from '../AskUserWidget';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
 import { ThinkingMessages } from '../WaitingMessages';
+import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import { processContentForMarkdown } from './processContentForMarkdown';
 import { getWorkstreamId } from './utils';
 
@@ -105,6 +106,8 @@ export interface MessageItemProps extends MessageItemClassNames {
     showPulsatingCircle?: boolean;
     /** Callback when user sends a message (e.g., from proposal selection) */
     onSendMessage?: (message: string) => void;
+    /** Whether a REQUEST_INPUT message has already been answered by a later user message */
+    requestInputAnswered?: boolean;
     /** Sparse per-type overrides for MESSAGE_STYLES (deep-merged with defaults) */
     messageStyleOverrides?: Partial<Record<AgentMessageType | 'default', Partial<MessageStyleConfig>>>;
     /** Custom component to render store/document links instead of default NavLink navigation */
@@ -192,6 +195,7 @@ function MessageItemComponent({
     message,
     showPulsatingCircle = false,
     onSendMessage,
+    requestInputAnswered = false,
     className,
     cardClassName,
     headerClassName,
@@ -291,15 +295,23 @@ function MessageItemComponent({
         return content;
     }, [message.message]);
 
+    const parsedUserAttachments = useMemo(
+        () => (message.type === AgentMessageType.QUESTION ? parseUserMessageAttachments(messageContent) : null),
+        [messageContent, message.type],
+    );
+
+    const visibleMessageContent = parsedUserAttachments?.body ?? messageContent;
+    const messageAttachments = parsedUserAttachments?.attachments ?? [];
+
     // PERFORMANCE: Memoize processed content - expensive regex operations only run when messageContent changes
     const processedContent = useMemo(() => {
-        if (!messageContent) return '';
+        if (!visibleMessageContent) return '';
         return processContentForMarkdown(
-            messageContent,
+            visibleMessageContent,
             message.type,
             typeof message.message === 'string' ? message.message : undefined,
         );
-    }, [messageContent, message.type, message.message]);
+    }, [visibleMessageContent, message.type, message.message]);
 
     // Copy message content to clipboard
     const copyToClipboard = () => {
@@ -638,17 +650,30 @@ function MessageItemComponent({
                                       onSelect={(optionId) => onSendMessage?.(optionId)}
                                       onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
                                       hideBorder
+                                      compact
+                                      answered={requestInputAnswered}
                                   />
                               );
                           })()
-                        : messageContent && (
+                        : visibleMessageContent && (
                               <div
                                   className="message-content break-words w-full"
                                   style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
                               >
-                                  {renderContent(processedContent || messageContent)}
+                                  {renderContent(processedContent || visibleMessageContent)}
                               </div>
                           )}
+
+                    {messageAttachments.length > 0 && (
+                        <AttachmentPreviewList
+                            items={messageAttachments}
+                            artifactRunId={runId}
+                            variant="message"
+                            className={cn(visibleMessageContent && 'mt-3')}
+                            StoreLinkComponent={StoreLinkComponent}
+                            CollectionLinkComponent={CollectionLinkComponent}
+                        />
+                    )}
 
                     {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
                     {artifactLinks.length > 0 && (
@@ -744,13 +769,19 @@ function MessageItemComponent({
     );
 }
 
-// Memoize the component to prevent unnecessary re-renders
-// Only re-render when message timestamp, showPulsatingCircle, or className props change
+// Memoize the component to prevent unnecessary re-renders, while still allowing
+// same-timestamp message/detail updates from streaming reconciliation to render.
 const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
     return (
         prevProps.message.timestamp === nextProps.message.timestamp &&
+        prevProps.message.type === nextProps.message.type &&
+        prevProps.message.message === nextProps.message.message &&
+        prevProps.message.details === nextProps.message.details &&
+        prevProps.message.workstream_id === nextProps.message.workstream_id &&
+        prevProps.message.workflow_run_id === nextProps.message.workflow_run_id &&
         prevProps.showPulsatingCircle === nextProps.showPulsatingCircle &&
         prevProps.onSendMessage === nextProps.onSendMessage &&
+        prevProps.requestInputAnswered === nextProps.requestInputAnswered &&
         prevProps.messageStyleOverrides === nextProps.messageStyleOverrides &&
         MESSAGE_ITEM_CLASS_NAME_KEYS.every((key) => prevProps[key] === nextProps[key])
     );
