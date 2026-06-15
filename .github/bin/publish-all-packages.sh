@@ -17,9 +17,11 @@ workspace_package_dirs() {
   repo_root="$(git rev-parse --show-toplevel)"
 
   # Use pnpm workspace filtering so pnpm-workspace.yaml exclusions are authoritative.
-  pnpm -r --filter "./packages/**" exec pwd | while IFS= read -r pkg_dir; do
+  # Published scope: all packages/* + libraries/jst. Libraries/koa-stack/* are
+  # published by a separate workflow (different release cadence).
+  pnpm -r --filter "./packages/**" --filter "./libraries/jst" exec pwd | while IFS= read -r pkg_dir; do
     case "$pkg_dir" in
-      "${repo_root}"/packages/*)
+      "${repo_root}"/packages/*|"${repo_root}"/libraries/jst)
         [ -f "${pkg_dir}/package.json" ] && printf '%s\n' "$pkg_dir"
         ;;
     esac
@@ -68,8 +70,8 @@ update_package_versions() {
   # Update root package.json
   npm version "${new_version}" --no-git-tag-version --workspaces=false
 
-  # Update all workspace packages (excluding llumiverse)
-  pnpm -r --filter "./packages/**" exec npm version "${new_version}" --no-git-tag-version
+  # Update all workspace packages (excluding llumiverse and libraries/koa-stack/*)
+  pnpm -r --filter "./packages/**" --filter "./libraries/jst" exec npm version "${new_version}" --no-git-tag-version
 }
 
 publish_packages() {
