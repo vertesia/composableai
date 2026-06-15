@@ -37,7 +37,8 @@ overrides:
   "brace-expansion@<2.0.0": "maintenance-v1"
   "@isaacs/brace-expansion@>=5.0.0 <6.0.0": "^5.0.1"
   "cross-spawn@<6.0.6": "^7.0.6"
-  "esbuild@<0.25.0": "^0.28.0"
+  "esbuild@<0.28.1": "^0.28.1"
+  "@grpc/grpc-js@<1.14.4": "^1.14.4"
   "glob@>=10.2.0 <10.5.0": "^13.0.6"
   "js-yaml@>=4.0.0 <4.1.1": "^4.2.0"
   # Safety net: if a transitive dep ever pulls in koa 2, force it to 3.
