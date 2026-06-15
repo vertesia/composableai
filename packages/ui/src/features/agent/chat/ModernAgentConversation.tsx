@@ -31,6 +31,7 @@ import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
 import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
+import { extractFilesFromClipboard } from './clipboardFiles.js';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
 import { useAgentStream } from './hooks/useAgentStream.js';
 import { useDocumentPanel } from './hooks/useDocumentPanel.js';
@@ -502,6 +503,7 @@ function StartWorkflowView({
     allowWorkflowControl,
 }: ModernAgentConversationProps) {
     const { t } = useUITranslation();
+    const canStageFiles = !hideFileUpload;
     const resolvedPlaceholder = placeholder ?? t('agent.typeYourMessage');
     const resolvedStartButtonText = startButtonText ?? t('agent.startAgent');
     const resolvedTitle = title ?? t('agent.startNewConversation');
@@ -517,7 +519,6 @@ function StartWorkflowView({
 
     // Staged files - stored locally until workflow starts
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
-    const canStageFiles = !hideFileUpload;
 
     // Drag and drop state
     const [isDragOver, setIsDragOver] = useState(false);
@@ -576,6 +577,20 @@ function StartWorkflowView({
             }
         },
         [maxFiles, canStageFiles],
+    );
+
+    // Paste handler for files — mirrors MessageInput.handlePaste so the start
+    // screen and the live chat both accept pasted clipboard images/files. Files
+    // are staged locally here; they get uploaded when the workflow starts.
+    const handlePaste = useCallback(
+        (e: React.ClipboardEvent) => {
+            if (!canStageFiles) return;
+            const files = extractFilesFromClipboard(e.clipboardData?.items);
+            if (files.length > 0) {
+                setStagedFiles((prev) => [...prev, ...files].slice(0, maxFiles));
+            }
+        },
+        [canStageFiles, maxFiles],
     );
 
     const handleFileInputChange = useCallback(
@@ -863,6 +878,7 @@ function StartWorkflowView({
                                     <div
                                         key={`${file.name}-${file.size}-${file.lastModified}`}
                                         className="flex items-center gap-1.5 rounded-md bg-attention/10 px-2 py-1 text-sm text-attention"
+                                        title={t('agent.fileStagedTooltip')}
                                     >
                                         <FileTextIcon className="size-3.5" />
                                         <span className="max-w-[120px] truncate">{file.name}</span>
@@ -885,6 +901,7 @@ function StartWorkflowView({
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={handleKeyDown}
+                            onPaste={handlePaste}
                             placeholder={resolvedPlaceholder}
                             disabled={isSending}
                             rows={2}
@@ -927,11 +944,6 @@ function StartWorkflowView({
                                 {isSending ? <Spinner size="sm" /> : <ArrowUpIcon className="size-4" />}
                             </Button>
                         </div>
-                    </div>
-                    <div className="mx-auto mt-2 max-w-3xl text-center text-xs text-muted">
-                        {canStageFiles && stagedFiles.length > 0
-                            ? t('agent.filesStagedCount', { count: stagedFiles.length })
-                            : t('agent.enterToSend')}
                     </div>
                 </div>
             </div>
@@ -1966,7 +1978,7 @@ function ModernAgentConversationInner({
                                     isCompleted={effectiveIsCompleted}
                                     activeTaskCount={activeTaskCount}
                                     activeWorkstreams={panelWorkstreams}
-                                    placeholder={placeholder ?? 'Type your message...'}
+                                    placeholder={placeholder}
                                     onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
                                     uploadedFiles={uploadedFiles}
                                     onRemoveFile={onRemoveFile}
