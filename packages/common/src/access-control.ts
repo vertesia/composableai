@@ -4,7 +4,6 @@
  * Access control interfaces
  */
 
-import type { SystemRoles } from './project.js';
 import type { AbacScope } from './roles/types.js';
 
 export enum Permission {
@@ -131,7 +130,14 @@ export interface AceConditions {
 }
 
 export interface AccessControlEntry {
-    role: SystemRoles;
+    /**
+     * Role name. Typed as `string` because role names now span multiple
+     * partitions: `SystemRoles` enum values for system-domain roles, and bare
+     * strings for ABAC-domain roles (e.g. `'content_reader'`,
+     * `'content_writer'`, `'content_manager'`). Mongoose schema validates the
+     * value against the registered role catalog via `getAllRoleNames()`.
+     */
+    role: string;
     resource_type: AccessControlResourceType;
     resource: string; //objectId
     principal_type: AccessControlPrincipalType;
