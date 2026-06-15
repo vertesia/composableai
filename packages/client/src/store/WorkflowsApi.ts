@@ -5,6 +5,7 @@ import {
     type AgentMessage,
     AgentMessageType,
     type CompactMessage,
+    type CreateWorkflowRulePayload,
     type DSLWorkflowDefinition,
     type DSLWorkflowSpec,
     type ErrorAnalyticsResponse,
@@ -25,6 +26,7 @@ import {
     type ToolParameterAnalyticsResponse,
     type TopPrincipalsAnalyticsResponse,
     toAgentMessage,
+    type UploadWorkflowRulePayload,
     type WebSocketClientMessage,
     type WebSocketServerMessage,
     type WorkflowActionPayload,
@@ -36,6 +38,8 @@ import {
     type WorkflowDefinitionRef,
     type WorkflowExecutionStartResult,
     type WorkflowQueryResult,
+    type WorkflowRule,
+    type WorkflowRuleItem,
     type WorkflowRunUpdatesResponse,
     type WorkflowRunWithDetails,
     type WorkflowToolParametersQuery,
@@ -708,7 +712,50 @@ export class WorkflowsApi extends ApiTopic {
         return this.post('/analytics/first-response-behavior', { payload: query });
     }
 
+    rules = new WorkflowsRulesApi(this);
     definitions = new WorkflowsDefinitionApi(this);
+}
+
+export class WorkflowsRulesApi extends ApiTopic {
+    constructor(parent: WorkflowsApi) {
+        super(parent, '/rules');
+    }
+
+    list(): Promise<WorkflowRuleItem[]> {
+        return this.get('/');
+    }
+
+    retrieve(id: string): Promise<WorkflowRule> {
+        return this.get(`/${id}`);
+    }
+
+    update(id: string, payload: UploadWorkflowRulePayload): Promise<WorkflowRule> {
+        return this.put(`/${id}`, {
+            payload,
+        });
+    }
+
+    create(payload: CreateWorkflowRulePayload): Promise<WorkflowRule> {
+        return this.post('/', {
+            payload,
+        });
+    }
+
+    delete(id: string) {
+        return this.del(`/${id}`);
+    }
+
+    execute(
+        id: string,
+        objectIds?: string[],
+        vars?: Record<string, unknown>,
+    ): Promise<({ run_id: string; workflow_id: string } | undefined)[]> {
+        const payload: ExecuteWorkflowPayload = {
+            objectIds,
+            vars,
+        };
+        return this.post(`/${id}/execute`, { payload });
+    }
 }
 
 export class WorkflowsDefinitionApi extends ApiTopic {
