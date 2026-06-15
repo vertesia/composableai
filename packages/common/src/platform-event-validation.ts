@@ -6,7 +6,7 @@ import type {
     EventSubscriptionFilter,
     UpdateEventSubscriptionPayload,
 } from './platform-event.js';
-import { ProjectRoles } from './project.js';
+import { SystemRoles } from './project.js';
 
 export const DEFAULT_WEBHOOK_TIMEOUT_MS = 30_000;
 export const MAX_WEBHOOK_TIMEOUT_MS = 50_000;
@@ -15,17 +15,17 @@ export const EVENT_CATEGORIES: readonly EventCategory[] = ['content', 'workflow'
 export const EVENT_PRIORITIES: readonly EventPriority[] = ['high', 'normal', 'low'];
 
 /** Role an event subscription runs as when none is specified. */
-export const DEFAULT_EVENT_SUBSCRIPTION_RUN_AS_ROLE = ProjectRoles.automation;
+export const DEFAULT_EVENT_SUBSCRIPTION_RUN_AS_ROLE = SystemRoles.automation;
 
 /**
  * Roles a user may select for an event subscription's run_as_role. System subscriptions may use
  * additional roles (e.g. content_processor); this list gates user input in the API, agent tools,
  * and UI — keep all three consuming this constant.
  */
-export const EVENT_SUBSCRIPTION_RUN_AS_ROLES: readonly ProjectRoles[] = [
-    ProjectRoles.automation,
-    ProjectRoles.executor,
-    ProjectRoles.reader,
+export const EVENT_SUBSCRIPTION_RUN_AS_ROLES: readonly SystemRoles[] = [
+    SystemRoles.automation,
+    SystemRoles.executor,
+    SystemRoles.reader,
 ];
 
 /**
@@ -185,7 +185,7 @@ function validateCommonFields(payload: Partial<CreateEventSubscriptionPayload>, 
     if (payload.description !== undefined && typeof payload.description !== 'string') {
         errors.push('description must be a string');
     }
-    if (payload.run_as_role !== undefined && !Object.values(ProjectRoles).includes(payload.run_as_role)) {
+    if (payload.run_as_role !== undefined && !Object.values(SystemRoles).includes(payload.run_as_role)) {
         errors.push(`run_as_role contains unsupported value: ${payload.run_as_role}`);
     }
     if (payload.enabled !== undefined && typeof payload.enabled !== 'boolean') {

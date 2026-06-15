@@ -1,6 +1,6 @@
 import type { AuditMeter } from './audit-trail.js';
 import type { ConversationVisibility, InteractionExecutionConfiguration } from './interaction.js';
-import type { ProjectRoles } from './project.js';
+import type { SystemRoles } from './project.js';
 import type { JsonLogicRule, ProcessDefinitionBody, ProcessRunType, WorkflowRuleInputType } from './store/index.js';
 
 export type EventCategory = 'content' | 'workflow' | 'security' | 'billing' | 'system';
@@ -202,7 +202,7 @@ export interface MatchedEventSubscriptionSnapshot {
     subscription_name: string;
     target: EventDeliveryTarget;
     priority: EventPriority;
-    run_as_role: ProjectRoles;
+    run_as_role: SystemRoles;
 }
 
 export interface EventSubscription {
@@ -214,7 +214,7 @@ export interface EventSubscription {
     scope: 'account' | 'project';
     filter: EventSubscriptionFilter;
     target: EventDeliveryTarget;
-    run_as_role: ProjectRoles;
+    run_as_role: SystemRoles;
     is_system: boolean;
     protected: boolean;
     enabled: boolean;
@@ -241,7 +241,7 @@ export interface CreateEventSubscriptionPayload {
     scope?: 'account' | 'project';
     filter: EventSubscriptionFilter;
     target: EventDeliveryTargetInput;
-    run_as_role?: ProjectRoles;
+    run_as_role?: SystemRoles;
     enabled?: boolean;
     priority?: EventPriority;
 }
@@ -252,7 +252,7 @@ export interface UpdateEventSubscriptionPayload {
     description?: string;
     filter?: EventSubscriptionFilter;
     target?: EventDeliveryTargetInput;
-    run_as_role?: ProjectRoles;
+    run_as_role?: SystemRoles;
     enabled?: boolean;
     priority?: EventPriority;
 }
