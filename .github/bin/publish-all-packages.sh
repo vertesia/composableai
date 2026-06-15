@@ -89,11 +89,14 @@ publish_packages() {
 
     echo "Publishing @vertesia/${pkg_name}@${pkg_version} with tag ${npm_tag}"
 
-    # Publish
+    # Publish. Don't let one package's failure (e.g. a new package whose npm OIDC
+    # trusted-publisher isn't configured yet) abort the whole run and strand the
+    # packages after it in the loop. Collect failures and report at the end; the
+    # caller fails the run so the gap is visible, but every package is attempted.
     if [ -n "$DRY_RUN_FLAG" ]; then
-      pnpm publish --access public --tag "${npm_tag}" --no-git-checks ${DRY_RUN_FLAG}
+      pnpm publish --access public --tag "${npm_tag}" --no-git-checks ${DRY_RUN_FLAG} || PUBLISH_FAILURES="${PUBLISH_FAILURES} ${pkg_name}"
     else
-      pnpm publish --access public --tag "${npm_tag}" --no-git-checks
+      pnpm publish --access public --tag "${npm_tag}" --no-git-checks || PUBLISH_FAILURES="${PUBLISH_FAILURES} ${pkg_name}"
     fi
 
     cd "$(git rev-parse --show-toplevel)"
@@ -226,6 +229,8 @@ REF=""
 DRY_RUN=false
 RELEASE_TYPE=""
 BUMP_TYPE=""
+# Space-separated list of packages whose publish failed (collected in publish_packages).
+PUBLISH_FAILURES=""
 
 # Parse named arguments
 while [[ $# -gt 0 ]]; do
@@ -342,5 +347,13 @@ if [ "$DRY_RUN" = "false" ] && [ "$RELEASE_TYPE" = "snapshot" ]; then
 fi
 
 write_github_summary
+
+# Surface any per-package publish failures (loop above continued past them so the
+# rest still publish). Fail the run so the gap is visible, after attempting all.
+if [ -n "${PUBLISH_FAILURES// /}" ]; then
+  echo "=== Packages that FAILED to publish:${PUBLISH_FAILURES} ==="
+  echo "The remaining packages WERE published. A common cause is a package whose npm OIDC trusted-publisher is not configured yet — set it up on npm and re-run."
+  exit 1
+fi
 
 echo "=== Done ==="
