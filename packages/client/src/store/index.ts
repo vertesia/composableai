@@ -2,6 +2,7 @@ export * from './AgentsApi.js';
 export * from './client.js';
 export * from './DataApi.js';
 export * from './EmailApi.js';
+export * from './EventIngestChannelsApi.js';
 export * from './EventSubscriptionsApi.js';
 export * from './EventsApi.js';
 export * from './errors.js';

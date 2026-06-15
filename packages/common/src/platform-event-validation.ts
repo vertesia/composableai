@@ -11,8 +11,33 @@ import { SystemRoles } from './project.js';
 export const DEFAULT_WEBHOOK_TIMEOUT_MS = 30_000;
 export const MAX_WEBHOOK_TIMEOUT_MS = 50_000;
 
-export const EVENT_CATEGORIES: readonly EventCategory[] = ['content', 'workflow', 'security', 'billing', 'system'];
+export const EVENT_CATEGORIES: readonly EventCategory[] = [
+    'content',
+    'workflow',
+    'security',
+    'billing',
+    'system',
+    'external',
+];
 export const EVENT_PRIORITIES: readonly EventPriority[] = ['high', 'normal', 'low'];
+
+/** Default agent-evaluator iteration budget for a semantic condition. */
+export const DEFAULT_SEMANTIC_AGENT_MAX_ITERATIONS = 10;
+/** Maximum agent-evaluator iteration budget a user may request. */
+export const MAX_SEMANTIC_AGENT_MAX_ITERATIONS = 30;
+/** Default content-excerpt size (chars) included in the interaction classifier prompt. */
+export const DEFAULT_SEMANTIC_MAX_CONTENT_CHARS = 4000;
+/** Maximum content-excerpt size (chars) a user may request. */
+export const MAX_SEMANTIC_MAX_CONTENT_CHARS = 20_000;
+/** Maximum length of a semantic condition instruction. */
+export const MAX_SEMANTIC_CONDITION_INSTRUCTION_LENGTH = 2000;
+
+/** Default action stamped on an ingested external event when none is provided/mapped. */
+export const DEFAULT_EXTERNAL_EVENT_ACTION = 'received';
+/** Default resource_type stamped on an ingested external event when none is provided/mapped. */
+export const DEFAULT_EXTERNAL_EVENT_RESOURCE_TYPE = 'external_event';
+/** Prefix combined with a channel `source` to form the event `source` (`external:<source>`). */
+export const EXTERNAL_EVENT_SOURCE_PREFIX = 'external:';
 
 /** Role an event subscription runs as when none is specified. */
 export const DEFAULT_EVENT_SUBSCRIPTION_RUN_AS_ROLE = SystemRoles.automation;
