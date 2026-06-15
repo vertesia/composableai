@@ -85,3 +85,29 @@ export interface SignEventWebhookResponse {
     timestamp: number;
     signature: string;
 }
+
+export interface EventIngestSigningSecretRequest {
+    account_id?: string;
+    project_id: string;
+}
+
+export interface EventIngestSigningSecretResponse {
+    channel_id: string;
+    secret: string;
+    secret_label: string;
+}
+
+export interface VerifyEventIngestSignatureRequest extends EventIngestSigningSecretRequest {
+    /** Raw request body bytes (exactly as received) the sender signed. */
+    body: string;
+    /** Signature value from the request header. */
+    signature_header: string;
+    algorithm?: 'sha256' | 'sha1';
+    encoding?: 'hex' | 'base64';
+    /** Literal prefix to strip from the header value, e.g. `sha256=`. */
+    prefix?: string;
+}
+
+export interface VerifyEventIngestSignatureResponse {
+    valid: boolean;
+}
