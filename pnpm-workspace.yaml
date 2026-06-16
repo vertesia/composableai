@@ -26,8 +26,8 @@ minimumReleaseAgeExclude:
   - vitest@4.1.0
   # Renovate security update: esbuild@0.28.1
   - esbuild@0.28.1
-  # Renovate security update: protobufjs@<=7.5.7@8.6.3
-  - protobufjs@<=7.5.7@8.6.3
+  # Renovate security update: protobufjs@8.6.3
+  - protobufjs@8.6.3
 overrides:
   react: "19.2.7"
   react-dom: "19.2.7"

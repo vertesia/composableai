@@ -50,7 +50,7 @@ overrides:
   yaml@>=2.0.0 <2.8.3: ^2.9.0
   picomatch@<2.3.2: ^4.0.4
   picomatch@>=4.0.0 <4.0.4: ^4.0.4
-  protobufjs@<=7.5.7: ^8.5.0
+  protobufjs@<=7.5.7: ^8.6.3
   postcss@<8.5.10: ^8.5.15
   uuid@>=11.0.0 <11.1.1: ^14.0.0
   fast-xml-builder@<=1.1.6: ^1.2.0
@@ -6054,8 +6054,8 @@ packages:
     resolution: {integrity: sha512-SAzp/O4Yh02jGdRc+uIrGoe87dkN/XtwxfZ4ZyafJHymd79ozp5VG5nyZ7ygqPM5+cpLDjjGnYFUkngonyDPOQ==}
     engines: {node: '>=14.0.0'}
 
-  protobufjs@8.5.0:
-    resolution: {integrity: sha512-df1jWDPA5VIBNRtuAHjqr09f2qN5D4Vke1wYqOQg1XJ7ZDpA7BD6L7E4tyChgGRLB5hqk2m79Zsy0WHwV9a84A==}
+  protobufjs@8.6.3:
+    resolution: {integrity: sha512-alQyzT0j401LGBtwsqu6uprjR6pfNH1UJf9N6GBFMjIcd+HzTe0/HrjAbFCqun+zvnfLarrxAtMM2xvZ+kFZ5A==}
     engines: {node: '>=12.0.0'}
 
   punycode@2.3.1:
@@ -8041,14 +8041,14 @@ snapshots:
     dependencies:
       lodash.camelcase: 4.3.0
       long: 5.3.2
-      protobufjs: 8.5.0
+      protobufjs: 8.6.3
       yargs: 17.7.2
 
   '@grpc/proto-loader@0.8.0':
     dependencies:
       lodash.camelcase: 4.3.0
       long: 5.3.2
-      protobufjs: 8.5.0
+      protobufjs: 8.6.3
       yargs: 17.7.2
 
   '@hono/node-server@1.19.14(hono@4.12.23)':
@@ -9415,7 +9415,7 @@ snapshots:
   '@temporalio/proto@1.17.2':
     dependencies:
       long: 5.3.2
-      protobufjs: 8.5.0
+      protobufjs: 8.6.3
 
   '@temporalio/testing@1.17.2(esbuild@0.28.1)(tslib@2.8.1)':
     dependencies:
@@ -9450,7 +9450,7 @@ snapshots:
       memfs: 4.56.10(tslib@2.8.1)
       nexus-rpc: 0.0.2
       proto3-json-serializer: 2.0.2
-      protobufjs: 8.5.0
+      protobufjs: 8.6.3
       rxjs: 7.8.2
       source-map: 0.7.6
       source-map-loader: 4.0.2(webpack@5.105.2(@swc/core@1.15.40)(esbuild@0.28.1))
@@ -12251,9 +12251,9 @@ snapshots:
 
   proto3-json-serializer@2.0.2:
     dependencies:
-      protobufjs: 8.5.0
+      protobufjs: 8.6.3
 
-  protobufjs@8.5.0:
+  protobufjs@8.6.3:
     dependencies:
       long: 5.3.2
 
