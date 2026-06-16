@@ -423,6 +423,18 @@ export const APP_ARTIFACT_TYPES: readonly AppArtifactType[] = [
  * (e.g. `app:<name>:main:extract-item` for interactions/agents, `app:<name>:<type>` for
  * types, `app:<name>:<process>` for processes).
  */
+/**
+ * Build progress for one artifact, maintained by the developer agent as a living checklist:
+ *  - `pending` — defined by the architect, not yet built.
+ *  - `built`   — registered in the package, not yet successfully exercised.
+ *  - `done`    — built AND successfully exercised against real data.
+ * This is the agent's self-reported claim for tracking/handoff; the capability gate verifies
+ * the truth independently via package registration + run/data telemetry and does not trust it.
+ */
+export type AppArtifactStatus = 'pending' | 'built' | 'done';
+
+export const APP_ARTIFACT_STATUSES: readonly AppArtifactStatus[] = ['pending', 'built', 'done'];
+
 export interface AppPlannedArtifact {
     /** App-owned in-code id the build must register and reference. */
     id: string;
@@ -436,6 +448,8 @@ export interface AppPlannedArtifact {
      * than blocks if it is missing or never exercised. Defaults to required (true).
      */
     required?: boolean;
+    /** Build progress, updated by the developer agent. Defaults to `pending`. */
+    status?: AppArtifactStatus;
 }
 
 /**
@@ -452,6 +466,17 @@ export interface AppCapabilityManifest {
     spec_artifact: string;
     /** Platform artifacts the build must create. */
     artifacts: AppPlannedArtifact[];
+    /**
+     * Monotonic revision, starting at 1, bumped each time the architect evolves the manifest for
+     * the SAME app on a later iteration (read the committed manifest, preserve untouched artifacts,
+     * add/modify/remove, then bump). Lets downstream agents tell which contract they are building to.
+     */
+    revision?: number;
+    /**
+     * Newest-first change notes, one entry per revision (what was added/modified/removed and why).
+     * How manifest changes are communicated to downstream agents across iterations.
+     */
+    changelog?: string[];
     /** Optional free-form notes the architect wants the builder to honor. */
     notes?: string;
 }
