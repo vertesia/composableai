@@ -162,6 +162,19 @@ function packageCapabilityIds(pkg) {
             if (id) ids.add(id);
         }
     }
+    // Activities are referenced as app:<app>:<collection>:<name> (or app:<app>:<name>) — include both
+    // forms so real activity refs in source are recognized as known ids.
+    for (const activity of Array.isArray(pkg.activities) ? pkg.activities : []) {
+        const name = itemId(activity);
+        if (!name) continue;
+        ids.add(name);
+        if (activity.collection) ids.add(`${activity.collection}:${name}`);
+    }
+    // Tools are referenced by name.
+    for (const tool of Array.isArray(pkg.tools) ? pkg.tools : []) {
+        const name = itemId(tool);
+        if (name) ids.add(name);
+    }
     return ids;
 }
 
@@ -172,16 +185,29 @@ async function validateSourceAppRefs(pkg, appName) {
 
     const files = (await walk(path.join(cwd, 'src'))).filter(isSourceFile);
     const errors = [];
-    const refPattern = new RegExp(`app:${appName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}:([A-Za-z0-9._:-]+)`, 'g');
+    // Match COMPLETE in-code ids only: word/dash segments joined by single colons, no trailing '.'
+    // or ':'. This stops false positives from doc/JSDoc fragments like `app:<app>:furniture-item.`
+    // (trailing period) or `app:<app>:main:<interaction>` (placeholder) that the old `[._:-]+` class
+    // captured as bogus "furniture-item." / "main:" refs.
+    const refPattern = new RegExp(
+        `app:${appName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}:([A-Za-z0-9_-]+(?::[A-Za-z0-9_-]+)*)`,
+        'g',
+    );
 
     for (const file of files) {
         const text = await readFile(file, 'utf8');
-        for (const match of text.matchAll(refPattern)) {
-            const localRef = match[1];
-            if (!knownIds.has(localRef)) {
-                errors.push(
-                    `${rel(file)} references app:${appName}:${localRef}, but no package capability exposes local id "${localRef}". Known ids: ${[...knownIds].sort().join(', ')}`,
-                );
+        for (const line of text.split('\n')) {
+            // Skip comment lines: JSDoc/`//` references are documentation, not runtime refs, and were
+            // the dominant source of false positives.
+            const trimmed = line.trimStart();
+            if (trimmed.startsWith('*') || trimmed.startsWith('//') || trimmed.startsWith('/*')) continue;
+            for (const match of line.matchAll(refPattern)) {
+                const localRef = match[1];
+                if (!knownIds.has(localRef)) {
+                    errors.push(
+                        `${rel(file)} references app:${appName}:${localRef}, but no package capability exposes local id "${localRef}". Known ids: ${[...knownIds].sort().join(', ')}`,
+                    );
+                }
             }
         }
     }
