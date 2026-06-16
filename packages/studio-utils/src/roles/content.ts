@@ -11,9 +11,9 @@ const APPLICABLE_SCOPES: readonly AbacScope[] = ['document', 'collection'];
  * content" are the same for both kinds.
  */
 export enum ContentRoleNames {
-    content_reader = 'content_reader',
-    content_writer = 'content_writer',
-    content_manager = 'content_manager',
+    content_reader = 'content:reader',
+    content_writer = 'content:writer',
+    content_manager = 'content:manager',
 }
 
 class ContentReaderRole extends AbacRole {
