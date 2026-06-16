@@ -32,6 +32,7 @@
     },
     "devDependencies": {
         "@hono/node-server": "^2.0.4",
+        "@types/js-yaml": "^4.0.9",
         "@types/node": "^24.12.4",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "^6.0.3",
@@ -42,7 +43,7 @@
         "@llumiverse/common": "workspace:*",
         "@vertesia/common": "workspace:*",
         "esbuild": "^0.28.0",
-        "gray-matter": "^4.0.3",
+        "js-yaml": "^4.2.0",
         "zod": "^4.4.3"
     },
     "peerDependencies": {
