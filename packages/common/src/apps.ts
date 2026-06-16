@@ -389,6 +389,76 @@ export const APP_CAPABILITIES: readonly AppCapabilities[] = [
     'templates',
     'dashboards',
 ];
+/**
+ * The platform-artifact types an app build can be required to create. A finer-grained
+ * counterpart to {@link AppCapabilities}: a single `interactions` capability may comprise
+ * several `interaction` artifacts plus `agent`, `activity`, and `tool` artifacts that
+ * {@link AppCapabilities} folds together. Used by the App Solution Architect manifest and
+ * the publish-time capability gate.
+ */
+export type AppArtifactType =
+    | 'interaction'
+    | 'agent'
+    | 'type'
+    | 'process'
+    | 'template'
+    | 'dashboard'
+    | 'activity'
+    | 'tool';
+
+export const APP_ARTIFACT_TYPES: readonly AppArtifactType[] = [
+    'interaction',
+    'agent',
+    'type',
+    'process',
+    'template',
+    'dashboard',
+    'activity',
+    'tool',
+];
+
+/**
+ * A single platform artifact the App Solution Architect requires the build to create.
+ * `id` is the app-owned in-code id the implementation must register and reference
+ * (e.g. `app:<name>:main:extract-item` for interactions/agents, `app:<name>:<type>` for
+ * types, `app:<name>:<process>` for processes).
+ */
+export interface AppPlannedArtifact {
+    /** App-owned in-code id the build must register and reference. */
+    id: string;
+    type: AppArtifactType;
+    /** Short human label. */
+    name?: string;
+    /** Why this artifact exists / what it does — carried into the build checklist. */
+    purpose?: string;
+    /**
+     * When false, the artifact is planned but optional: the capability gate warns rather
+     * than blocks if it is missing or never exercised. Defaults to required (true).
+     */
+    required?: boolean;
+}
+
+/**
+ * Structured result the App Solution Architect emits alongside its prose artifacts — the
+ * machine-readable contract for the build. The implementation MUST create and successfully
+ * exercise every required artifact before preview/publish. Persisted into the app repo as
+ * {@link APP_CAPABILITY_MANIFEST_PATH} so it survives across runs and the publish-time
+ * capability gate can verify against it deterministically. If the builder finds the plan
+ * wrong or insufficient, the orchestrator relaunches the architect to revise the manifest;
+ * the gate always checks against the latest committed copy.
+ */
+export interface AppCapabilityManifest {
+    /** Artifact-storage ref to the prose architecture spec (e.g. the architecture `.md`). */
+    spec_artifact: string;
+    /** Platform artifacts the build must create. */
+    artifacts: AppPlannedArtifact[];
+    /** Optional free-form notes the architect wants the builder to honor. */
+    notes?: string;
+}
+
+/** Repo-relative path the capability manifest is committed to, read by the publish gate. */
+export const APP_CAPABILITY_MANIFEST_PATH = 'docs/app-capability-manifest.json';
+
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 
 export type AppVersionKind = 'design' | 'preview' | 'published';
