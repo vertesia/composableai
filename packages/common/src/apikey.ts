@@ -121,8 +121,18 @@ export interface AuthTokenPayload {
     groups?: UserGroupRef[]; //group ids
 
     /** Content security conditions keyed by permission (read/write/delete).
-     *  Presence triggers restrict mode: project:* is dropped from security filters. */
+     *  Presence triggers restrict mode: project:* is dropped from security filters.
+     *
+     *  Transitional: this field is being renamed to `abac` (see [[pending-migrations]]).
+     *  Both fields are typed so consumers can dual-read during the transition.
+     *  Only one will ever be populated in a given token. */
     content_security?: ContentSecurity;
+    /**
+     * New name for `content_security`. Consumers should prefer this field and
+     * fall back to `content_security`. Sts will be flipped to emit this field
+     * once all consumers have shipped their dual-read.
+     */
+    abac?: ContentSecurity;
 
     /**
      * API endpoints information to be used with this token.
