@@ -1,8 +1,4 @@
-/**
- * Frontmatter parser utility using gray-matter
- */
-
-import matter from 'gray-matter';
+import { load as loadYaml } from 'js-yaml';
 
 export interface FrontmatterResult {
     /** Parsed frontmatter data */
@@ -15,6 +11,8 @@ export interface FrontmatterResult {
     original: string;
 }
 
+const FRONTMATTER_PATTERN = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+
 /**
  * Parse YAML frontmatter from markdown content
  *
@@ -22,11 +20,22 @@ export interface FrontmatterResult {
  * @returns Parsed frontmatter and content
  */
 export function parseFrontmatter(content: string): FrontmatterResult {
-    const result = matter(content);
+    const match = FRONTMATTER_PATTERN.exec(content);
+    if (!match) {
+        return {
+            frontmatter: {},
+            content,
+            original: content,
+        };
+    }
+
+    const parsed = loadYaml(match[1] ?? '');
+    const frontmatter =
+        parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
 
     return {
-        frontmatter: result.data,
-        content: result.content,
+        frontmatter,
+        content: content.slice(match[0].length),
         original: content,
     };
 }
