@@ -4,7 +4,7 @@ import {
     type IRequestRetryPolicy,
     type RequestError,
 } from '@vertesia/api-fetch-client';
-import type { BulkOperationPayload, BulkOperationResponse } from '@vertesia/common';
+import { APP_VERSION_HEADER, type BulkOperationPayload, type BulkOperationResponse } from '@vertesia/common';
 import { AgentsApi } from './AgentsApi.js';
 import { CollectionsApi } from './CollectionsApi.js';
 import { CostApi } from './CostApi.js';
@@ -73,6 +73,16 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
             delete this.headers[VERSION_HEADER];
         } else {
             this.headers[VERSION_HEADER] = String(version);
+        }
+        return this;
+    }
+
+    /** Pin the app version this client's requests resolve against (see VertesiaClient.withAppVersion). */
+    withAppVersion(version: string | null | undefined) {
+        if (!version) {
+            delete this.headers[APP_VERSION_HEADER];
+        } else {
+            this.headers[APP_VERSION_HEADER] = String(version);
         }
         return this;
     }

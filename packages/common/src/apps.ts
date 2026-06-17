@@ -389,6 +389,13 @@ export const APP_CAPABILITIES: readonly AppCapabilities[] = [
     'templates',
     'dashboards',
 ];
+
+/**
+ * Header carrying the app version a generated-app UI is running, so studio/zeno resolve app-owned
+ * capability refs (`app:<app>:...`) against that version (candidate testing) instead of current.
+ * Resolution-time only; never persisted. Set by the generated app template via client.withAppVersion.
+ */
+export const APP_VERSION_HEADER = 'x-vertesia-app-version';
 /**
  * The platform-artifact types an app build can be required to create. A finer-grained
  * counterpart to {@link AppCapabilities}: a single `interactions` capability may comprise
@@ -879,6 +886,8 @@ export interface Endpoints {
     ui?: string;
     /** The Smart HTTP app source git server base URL */
     git?: string;
+    /** The appgen app-gateway base URL (serves published app bundles + their `/api` runtime). */
+    gateway?: string;
 }
 
 /**

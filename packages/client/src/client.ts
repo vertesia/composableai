@@ -1,5 +1,5 @@
 import { AbstractFetchClient, type FETCH_FN, type IRequestRetryPolicy } from '@vertesia/api-fetch-client';
-import type { AuthTokenPayload, AuthTokenResponse } from '@vertesia/common';
+import { APP_VERSION_HEADER, type AuthTokenPayload, type AuthTokenResponse } from '@vertesia/common';
 import AccountApi from './AccountApi.js';
 import AccountsApi from './AccountsApi.js';
 import AnalyticsApi from './AnalyticsApi.js';
@@ -228,6 +228,20 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             delete this.headers[VERSION_HEADER];
         } else {
             this.headers[VERSION_HEADER] = String(version);
+        }
+        return this;
+    }
+
+    /**
+     * Pin the app version this client's requests resolve against. A generated app's UI sets this from
+     * its build-time `VITE_APP_VERSION` so studio/zeno resolve its `app:<app>:…` refs against that
+     * published version (candidate testing) instead of current. Pass null/empty to clear (→ current).
+     */
+    withAppVersion(version: string | null | undefined) {
+        if (!version) {
+            delete this.headers[APP_VERSION_HEADER];
+        } else {
+            this.headers[APP_VERSION_HEADER] = String(version);
         }
         return this;
     }
