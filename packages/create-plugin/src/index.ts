@@ -46,6 +46,11 @@ async function main() {
             false,
         )
         .option(
+            '--content-app',
+            'Start from the opinionated content app scaffold with types, interactions, process, UI, and exercise scripts',
+            false,
+        )
+        .option(
             '--package-manager <manager>',
             'Package manager to use: pnpm or npm (overrides template default and interactive selection)',
         )
@@ -69,6 +74,7 @@ Documentation: ${config.docsUrl}
         localTemplates?: string;
         skipInstall: boolean;
         full: boolean;
+        contentApp: boolean;
         packageManager?: string;
     }>();
     const {
@@ -79,6 +85,7 @@ Documentation: ${config.docsUrl}
         localTemplates,
         skipInstall,
         full,
+        contentApp,
         packageManager: packageManagerOverride,
     } = opts;
 
@@ -177,6 +184,20 @@ Documentation: ${config.docsUrl}
             }
         }
 
+        // Step 9c: Content app scaffold — overlay an opinionated app-owned content
+        // model, interactions, process, UI routes, and setup/exercise scripts.
+        const applyContentAppScript = `${projectName}/scripts/apply-content-app.mjs`;
+        if (contentApp) {
+            if (fs.existsSync(applyContentAppScript)) {
+                console.log(chalk.blue('Applying content app scaffold...\n'));
+                execSync('node scripts/apply-content-app.mjs', { cwd: projectName, stdio: 'inherit' });
+            } else {
+                console.log(
+                    chalk.yellow('--content-app requested but scripts/apply-content-app.mjs is missing; skipping.\n'),
+                );
+            }
+        }
+
         // Step 10: Run pre-install hooks (if any) - e.g., CLI authentication for private registries
         let skipDependencyInstall = false;
         if (templateConfig.preInstall) {
@@ -214,7 +235,7 @@ Documentation: ${config.docsUrl}
         }
 
         // Step 12: Success!
-        showSuccess(projectName, packageManager, selectedTemplate.name, selectedTemplate.repository);
+        showSuccess(projectName, packageManager, selectedTemplate.name, selectedTemplate.repository, contentApp);
     } catch (error) {
         console.log(chalk.red(`\nInstallation failed: ${error instanceof Error ? error.message : 'Unknown error'}\n`));
 
@@ -225,11 +246,21 @@ Documentation: ${config.docsUrl}
 /**
  * Show success message
  */
-function showSuccess(projectName: string, packageManager: string, templateName: string, repository: string): void {
+function showSuccess(
+    projectName: string,
+    packageManager: string,
+    templateName: string,
+    repository: string,
+    contentApp: boolean,
+): void {
     console.log(chalk.green.bold('Project created successfully!\n'));
     console.log(chalk.gray('Next steps:\n'));
     console.log(chalk.cyan(`  cd ${projectName}`));
     console.log(chalk.cyan(`  ${packageManager} run dev`));
+    if (contentApp) {
+        console.log(chalk.cyan(`  VERTESIA_TOKEN="$(vertesia auth token)" ${packageManager} run seed:content`));
+        console.log(chalk.cyan(`  VERTESIA_TOKEN="$(vertesia auth token)" ${packageManager} run exercise:content`));
+    }
     console.log();
     console.log(chalk.gray(`Documentation: ${config.docsUrl}`));
     console.log(chalk.gray(`Template: ${templateName}`));

@@ -10,6 +10,9 @@ CLI tool to create Vertesia plugins:
 # Using pnpm create (recommended)
 pnpm create @vertesia/plugin my-project
 
+# Opinionated content app scaffold
+pnpm create @vertesia/plugin field-guide-library -- --content-app
+
 # Using npm create
 npm create @vertesia/plugin my-project
 

@@ -2,6 +2,20 @@
 
 A unified template for building Vertesia plugins with a **Hono tool server** (backend) and **React UI plugin** (frontend), built and deployed as a single unit.
 
+## Presets
+
+The default scaffold is intentionally minimal. Two overlays are available when creating a project:
+
+```bash
+pnpm create @vertesia/plugin my-plugin -- --full
+pnpm create @vertesia/plugin field-guide-library -- --content-app
+```
+
+- `--full` copies generic working examples into `src/`.
+- `--content-app` installs an opinionated content app with app-owned `guide`, `location`, and `review_task`
+  types, three app interactions, a packaged guide review process, Store-backed UI routes, and
+  `seed:content` / `exercise:content` scripts.
+
 ## What You Can Build
 
 - **Tools** -- executable functions invoked by AI agents (API integrations, data processing)

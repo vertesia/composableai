@@ -93,7 +93,7 @@
     "vite.config.ts",
     "index.html",
     "src/tool-server/config.ts",
-    "src/ui/constants.ts",
+    "src/ui/app/constants.ts",
     "src/ui/env.ts",
     "src/ui/plugin.tsx",
     ".env.app.template",

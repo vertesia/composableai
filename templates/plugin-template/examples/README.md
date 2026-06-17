@@ -25,6 +25,16 @@ node scripts/apply-examples.mjs
 This copies `examples/ui/{features,pages}` and `examples/tool-server/*` into
 `src/`, where their relative imports resolve, and swaps in the full router.
 
+If you need a ready-made content-oriented app instead of generic examples, use
+the content app preset:
+
+```bash
+npm init @vertesia/plugin field-guide-library -- --content-app
+```
+
+That installs app-owned guide/location/review-task types, three interactions, a
+guide review process, Store-backed UI screens, and setup/exercise scripts.
+
 ## How to use these (à la carte)
 
 Read the example that matches what you're building, then **copy the relevant
