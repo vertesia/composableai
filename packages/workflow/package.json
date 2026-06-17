@@ -16,7 +16,7 @@
         "lint": "biome lint src",
         "test": "vitest run",
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
         "clean": "rm -rf ./lib tsconfig.tsbuildinfo"
     },
     "license": "Apache-2.0",

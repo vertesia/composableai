@@ -20,7 +20,7 @@
         "react"
     ],
     "scripts": {
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc -b && pnpm exec rollup -c",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build && pnpm exec rollup -c",
         "lint": "biome lint src",
         "lint:fix": "biome lint --write src",
         "test": "vitest run",
