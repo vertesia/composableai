@@ -24,13 +24,13 @@
         }
     },
     "devDependencies": {
-        "@types/node": "^24.12.4",
+        "@types/node": "^24.13.1",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "^6.0.3",
         "vitest": "^4.1.8"
     },
     "peerDependencies": {
-        "hono": "^4.12.23"
+        "hono": "^4.12.25"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",

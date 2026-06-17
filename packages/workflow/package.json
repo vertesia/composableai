@@ -26,7 +26,7 @@
         "@temporalio/testing": "^1.17.2",
         "@temporalio/worker": "^1.17.2",
         "@types/jsonwebtoken": "^9.0.10",
-        "@types/node": "^24.12.4",
+        "@types/node": "^24.13.1",
         "@types/papaparse": "^5.5.2",
         "@types/tmp": "^0.2.6",
         "@vertesia/tsconfig": "workspace:*",
@@ -55,7 +55,7 @@
         "tiktoken": "^1.0.22",
         "tmp": "^0.2.7",
         "tmp-promise": "^3.0.3",
-        "undici": "^7.27.0",
+        "undici": "^7.27.2",
         "yaml": "^2.9.0"
     },
     "exports": {
