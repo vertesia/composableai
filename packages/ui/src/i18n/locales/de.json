@@ -157,6 +157,7 @@
   "agent.rewind.resume": "Fortsetzen",
   "agent.toggleRightSidebar": "Rechte Seitenleiste umschalten",
   "agent.typeNewInstructions": "Geben Sie Ihre Nachricht ein, um neue Anweisungen zu geben",
+  "agent.youStoppedAfter": "Sie haben nach {{duration}} gestoppt",
   "agent.typeYourMessage": "Geben Sie Ihre Nachricht ein...",
   "agent.typeYourResponse": "Geben Sie Ihre Antwort ein...",
   "agent.unableToOpenPrint": "Druckvorschau konnte nicht geöffnet werden",

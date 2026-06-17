@@ -600,6 +600,84 @@ describe('ModernAgentConversation send handling', () => {
         expect(mocks.removeOptimisticMessages).not.toHaveBeenCalled();
     });
 
+    it('adds an optimistic stop marker and marks it received when Stop is signaled', async () => {
+        const stopRef = { current: null } as React.MutableRefObject<(() => void) | null>;
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.THOUGHT, 'working')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ stopRef });
+
+        await waitFor(() => {
+            expect(stopRef.current).toBeTypeOf('function');
+        });
+
+        act(() => {
+            stopRef.current?.();
+        });
+
+        const optimisticMessage = mocks.addOptimisticMessage.mock.calls[0]?.[0] as AgentMessage | undefined;
+        expect(optimisticMessage).toEqual(
+            expect.objectContaining({
+                type: AgentMessageType.IDLE,
+                message: 'Stopped. Waiting for your command...',
+                details: expect.objectContaining({
+                    _optimistic: true,
+                    _messageId: expect.any(String),
+                    _deliveryStatus: 'sending',
+                    status_reason: 'user_stopped',
+                }),
+            }),
+        );
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith(
+                'agent-run-1',
+                'Stop',
+                expect.objectContaining({
+                    client_message_id: optimisticMessage?.details?._messageId,
+                    metadata: expect.objectContaining({
+                        id: optimisticMessage?.details?._messageId,
+                        _messageId: optimisticMessage?.details?._messageId,
+                    }),
+                }),
+            );
+        });
+        expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(
+            optimisticMessage?.details?._messageId,
+            'received',
+        );
+    });
+
+    it('marks an optimistic stop marker failed when Stop signaling fails', async () => {
+        const stopRef = { current: null } as React.MutableRefObject<(() => void) | null>;
+        mocks.sendSignal.mockRejectedValueOnce(new Error('stop failed'));
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.THOUGHT, 'working')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ stopRef });
+
+        await waitFor(() => {
+            expect(stopRef.current).toBeTypeOf('function');
+        });
+
+        act(() => {
+            stopRef.current?.();
+        });
+
+        const optimisticMessage = mocks.addOptimisticMessage.mock.calls[0]?.[0] as AgentMessage | undefined;
+        await waitFor(() => {
+            expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(
+                optimisticMessage?.details?._messageId,
+                'failed',
+            );
+        });
+    });
+
     it('playback controls slice rendered messages and scroll forward without mutating the live stream', async () => {
         const originalScrollIntoView = Element.prototype.scrollIntoView;
         const scrollIntoView = vi.fn();

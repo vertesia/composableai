@@ -846,6 +846,37 @@ describe('ModernAgentOutput summary conversation items', () => {
         expect(items).toEqual([]);
     });
 
+    it('creates a visible stopped item for a consumed user stop idle marker', () => {
+        const thinking = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Thinking...',
+            details: {
+                display_role: 'thinking',
+                activity_group_id: 'activity-1',
+            },
+        });
+        const idle = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.IDLE,
+            message: 'Stopped. Waiting for your command...',
+            details: {
+                ack: 'stop-1',
+                status_reason: 'user_stopped',
+            },
+        });
+
+        const items = buildSummaryConversationItems([thinking, idle], true);
+
+        expect(items).toHaveLength(1);
+        expect(items[0]).toMatchObject({
+            type: 'stopped',
+            message: idle,
+            startTimestamp: 1000,
+            endTimestamp: 2000,
+        });
+    });
+
     it('closes pending work when an idle marker arrives even if parent completion lags', () => {
         const tool = makeMessage({
             timestamp: 1000,
@@ -1377,6 +1408,32 @@ describe('ModernAgentOutput utils - streamed deduplication', () => {
 
         expect(grouped).toHaveLength(1);
         expect(grouped[0].type).toBe('single');
+    });
+
+    it('does not replace a run-scoped stream with a different stream using the same activity id', () => {
+        const answer = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.ANSWER,
+            message: 'Different final text',
+            details: {
+                activity_id: 'activity-1',
+                streaming_id: 'run-b-activity-1',
+                streaming_id_scope: 'workflow_run',
+            },
+        });
+
+        expect(
+            isStreamReplacedByMessage(
+                {
+                    text: 'partial text',
+                    startTimestamp: 1000,
+                    workstreamId: 'main',
+                    activityId: 'activity-1',
+                    streamingId: 'run-a-activity-1',
+                },
+                [answer],
+            ),
+        ).toBe(false);
     });
 
     it('does not treat a tool event with the same activity id as a replacement for streamed prose', () => {

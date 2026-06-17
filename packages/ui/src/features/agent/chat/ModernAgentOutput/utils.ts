@@ -28,19 +28,40 @@ export const DONE_STATES = [
 export function isInProgress(messages: AgentMessage[]) {
     if (!messages.length) return true;
 
+    const isTerminalOptimisticFailure = (message: AgentMessage) =>
+        message.details?._optimistic &&
+        message.details?._deliveryStatus === 'failed' &&
+        DONE_STATES.includes(message.type);
+
+    const progressMessages = messages.filter((m) => !isTerminalOptimisticFailure(m));
+
     // Only the main workstream determines whether the conversation is in progress.
     // Child workstream COMPLETE/IDLE messages must not flip this flag.
-    const mainMessages = messages.filter((m) => getWorkstreamId(m) === 'main');
+    const mainMessages = progressMessages.filter((m) => getWorkstreamId(m) === 'main');
 
     // If there are no main workstream messages yet, check if there's exactly one
     // workstream — treat it as main (handles single-workstream conversations).
     if (mainMessages.length === 0) {
-        const lastMessage = messages[messages.length - 1];
+        const lastMessage = progressMessages[progressMessages.length - 1];
+        if (!lastMessage) return true;
         return !DONE_STATES.includes(lastMessage.type);
     }
 
     const lastMainMessage = mainMessages[mainMessages.length - 1];
     return !DONE_STATES.includes(lastMainMessage.type);
+}
+
+export function isUserStoppedMessage(message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.IDLE) return false;
+
+    const statusReason = message.details?.status_reason;
+    const displayRole = message.details?.display_role;
+    if (statusReason === 'user_stopped' || displayRole === 'user_stopped') return true;
+
+    return String(message.message ?? '')
+        .trim()
+        .toLowerCase()
+        .startsWith('stopped.');
 }
 
 export const formatRelative = (ts: number | string) =>
@@ -224,6 +245,7 @@ export interface StreamingData {
     isComplete?: boolean;
     startTimestamp: number;
     activityId?: string;
+    streamingId?: string;
 }
 
 function normalizeComparableText(text: unknown): string | undefined {
@@ -246,6 +268,19 @@ export function isStreamReplacedByMessage(streaming: StreamingData, messages: Ag
         const messageTimestamp = getTimestampMs(message.timestamp);
         if (messageTimestamp < streaming.startTimestamp) return false;
         if (getWorkstreamId(message) !== streamWorkstreamId) return false;
+
+        const messageStreamingId =
+            typeof message.details?.streaming_id === 'string' ? message.details.streaming_id : undefined;
+        if (streaming.streamingId && messageStreamingId) {
+            if (messageStreamingId !== streaming.streamingId) return false;
+            if (message.details?.display_role === 'thinking') {
+                return false;
+            }
+            if (isToolCallMessage(message) || message.details?.tool_status) {
+                return false;
+            }
+            return true;
+        }
 
         if (streaming.activityId && message.details?.activity_id === streaming.activityId) {
             if (message.details?.display_role === 'thinking') {

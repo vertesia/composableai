@@ -159,6 +159,7 @@
   "agent.rewind.resume": "Riprendi",
   "agent.toggleRightSidebar": "Alterna pannello laterale",
   "agent.typeNewInstructions": "Scrivi il tuo messaggio per dare nuove istruzioni",
+  "agent.youStoppedAfter": "Hai interrotto dopo {{duration}}",
   "agent.typeYourMessage": "Scrivi il tuo messaggio...",
   "agent.typeYourResponse": "Scrivi la tua risposta...",
   "agent.unableToOpenPrint": "Impossibile aprire l'anteprima di stampa",

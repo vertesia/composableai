@@ -157,6 +157,7 @@
   "agent.rewind.resume": "再開",
   "agent.toggleRightSidebar": "右サイドバーの切り替え",
   "agent.typeNewInstructions": "新しい指示を入力してください",
+  "agent.youStoppedAfter": "{{duration}}後に停止しました",
   "agent.typeYourMessage": "メッセージを入力...",
   "agent.typeYourResponse": "回答を入力...",
   "agent.unableToOpenPrint": "印刷プレビューを開けません",

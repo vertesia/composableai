@@ -157,6 +157,7 @@
   "agent.rewind.resume": "Sürdür",
   "agent.toggleRightSidebar": "Sağ kenar çubuğunu aç/kapat",
   "agent.typeNewInstructions": "Yeni talimatlar vermek için mesajınızı yazın",
+  "agent.youStoppedAfter": "{{duration}} sonra durdurdunuz",
   "agent.typeYourMessage": "Mesajınızı yazın...",
   "agent.typeYourResponse": "Yanıtınızı yazın...",
   "agent.unableToOpenPrint": "Yazdırma önizlemesi açılamadı",

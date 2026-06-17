@@ -758,6 +758,7 @@ export interface AgentMessageDetails extends Record<string, unknown> {
     files?: ConversationFile[] | string[];
     plan?: PlanTask[];
     streaming_id?: string;
+    streaming_id_scope?: 'workflow_run' | 'workstream';
     chunk_index?: number;
     is_final?: boolean;
     _optimistic?: boolean;
@@ -873,7 +874,7 @@ export interface StreamingChunkDetails {
     /** Unique identifier grouping chunks from the same stream */
     streaming_id: string;
     /** Order of this chunk within the stream (0-indexed) */
-    chunk_index: number;
+    chunk_index?: number;
     /** True if this is the final chunk of the stream */
     is_final: boolean;
     /** Activity ID for deduplication with final THOUGHT/ANSWER message */
@@ -1065,14 +1066,18 @@ export function toAgentMessage(compact: CompactMessage, workflowRunId: string = 
 
     if (compact.d !== undefined && compact.d !== null) message.details = compact.d;
 
-    // For streaming chunks, restore is_final and streaming_id in details
-    // (streaming_id removed from wire format, use workstream_id as grouping key)
+    // For streaming chunks, restore is_final and preserve an explicit streaming_id
+    // when present. Older chunks fall back to workstream_id as their grouping key.
     if (compact.t === AgentMessageType.STREAMING_CHUNK) {
+        const details: AgentMessageDetails = typeof compact.d === 'object' && compact.d !== null ? compact.d : {};
+        const streamingId = typeof details.streaming_id === 'string' ? details.streaming_id : compact.w || 'main';
+        const activityId = compact.i ?? (typeof details.activity_id === 'string' ? details.activity_id : undefined);
+
         message.details = {
-            ...(typeof compact.d === 'object' ? compact.d : {}),
-            streaming_id: compact.w || 'main', // Use workstream_id as streaming_id
+            ...details,
+            streaming_id: streamingId,
             is_final: compact.f === 1,
-            activity_id: compact.i, // For deduplication with final THOUGHT/ANSWER
+            ...(activityId ? { activity_id: activityId } : {}),
         };
     }
 

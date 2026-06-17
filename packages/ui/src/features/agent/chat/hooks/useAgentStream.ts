@@ -7,7 +7,7 @@ import {
     type FileProcessingDetails,
 } from '@vertesia/common';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { insertMessageInTimeline, isInProgress } from '../ModernAgentOutput/utils';
+import { insertMessageInTimeline, isInProgress, isUserStoppedMessage } from '../ModernAgentOutput/utils';
 
 /** Streaming data for a single active stream, keyed by streaming/activity ID */
 export interface StreamingData {
@@ -16,6 +16,7 @@ export interface StreamingData {
     isComplete?: boolean;
     startTimestamp: number;
     activityId?: string;
+    streamingId?: string;
 }
 
 export interface UseAgentStreamResult {
@@ -67,6 +68,43 @@ function getClientMessageId(message: AgentMessage): string | undefined {
 
     const ack = details?.ack;
     return typeof ack === 'string' && ack ? ack : undefined;
+}
+
+function getStringDetail(details: Common.AgentMessageDetails | undefined, key: string): string | undefined {
+    const value = details?.[key];
+    return typeof value === 'string' && value ? value : undefined;
+}
+
+function isWorkflowRunScopedStreamingId(details: Common.AgentMessageDetails | undefined): boolean {
+    return details?.streaming_id_scope === 'workflow_run';
+}
+
+function getStreamingChunkKey(message: AgentMessage): string | undefined {
+    const details = message.details;
+    const streamingId = getStringDetail(details, 'streaming_id');
+    const activityId = getStringDetail(details, 'activity_id');
+
+    if (streamingId && isWorkflowRunScopedStreamingId(details)) return streamingId;
+
+    // Backward compatibility: older compact chunks used workstream_id as
+    // streaming_id, so activity_id is the more specific key when present.
+    return activityId ?? streamingId;
+}
+
+function getStreamingReplacementKeys(message: AgentMessage): string[] {
+    const details = message.details;
+    const streamingId = getStringDetail(details, 'streaming_id');
+    const activityId = getStringDetail(details, 'activity_id');
+    const keys: string[] = [];
+
+    if (streamingId && isWorkflowRunScopedStreamingId(details)) {
+        keys.push(streamingId);
+    }
+    if (activityId) {
+        keys.push(activityId);
+    }
+
+    return [...new Set(keys)];
 }
 
 /**
@@ -202,7 +240,7 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                     // PERFORMANCE: Batch updates using RAF instead of immediate state updates
                     if (message.type === AgentMessageType.STREAMING_CHUNK) {
                         const details = message.details as Common.StreamingChunkDetails;
-                        const streamKey = details?.activity_id || details?.streaming_id;
+                        const streamKey = getStreamingChunkKey(message);
                         if (!streamKey) return;
 
                         // Accumulate chunks in the ref (no state update yet)
@@ -211,6 +249,7 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                             workstreamId: message.workstream_id,
                             startTimestamp: Date.now(),
                             activityId: details?.activity_id,
+                            streamingId: details?.streaming_id,
                         };
                         const newText = current.text + (message.message || '');
 
@@ -220,6 +259,7 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                             isComplete: details.is_final,
                             startTimestamp: current.startTimestamp,
                             activityId: details?.activity_id,
+                            streamingId: details?.streaming_id,
                         });
 
                         // Schedule a flush if not already scheduled (~60 updates/sec max)
@@ -250,21 +290,22 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                         // Other SYSTEM messages fall through to normal handling
                     }
 
-                    // When THOUGHT or ANSWER arrives with activity_id, remove matching streaming message
-                    if (
-                        (message.type === AgentMessageType.THOUGHT || message.type === AgentMessageType.ANSWER) &&
-                        message.details?.activity_id
-                    ) {
-                        const activityId = message.details.activity_id as string;
-                        pendingStreamingChunks.current.delete(activityId);
-                        setStreamingMessages((prev) => {
-                            if (prev.has(activityId)) {
-                                const next = new Map(prev);
-                                next.delete(activityId);
-                                return next;
+                    // When THOUGHT or ANSWER arrives, remove matching live streaming content.
+                    if (message.type === AgentMessageType.THOUGHT || message.type === AgentMessageType.ANSWER) {
+                        const replacementKeys = getStreamingReplacementKeys(message);
+                        if (replacementKeys.length > 0) {
+                            for (const key of replacementKeys) {
+                                pendingStreamingChunks.current.delete(key);
                             }
-                            return prev;
-                        });
+                            setStreamingMessages((prev) => {
+                                const next = new Map(prev);
+                                let changed = false;
+                                for (const key of replacementKeys) {
+                                    changed = next.delete(key) || changed;
+                                }
+                                return changed ? next : prev;
+                            });
+                        }
                     }
 
                     // On COMPLETE or IDLE, flush any pending chunks
@@ -289,8 +330,11 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                                 return prev;
                             }
 
-                            // For QUESTION messages from server, replace the matching optimistic version.
-                            if (message.type === AgentMessageType.QUESTION && !message.details?._optimistic) {
+                            // For acked server messages, replace the matching optimistic version.
+                            if (
+                                !message.details?._optimistic &&
+                                (message.type === AgentMessageType.QUESTION || isUserStoppedMessage(message))
+                            ) {
                                 const ack = typeof message.details?.ack === 'string' ? message.details.ack : undefined;
                                 const consumedMessage = ack ? withDeliveryStatus(message, 'consumed') : message;
 
@@ -298,7 +342,7 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                                     const next = prev.filter(
                                         (m) =>
                                             !(
-                                                m.type === AgentMessageType.QUESTION &&
+                                                (m.type === message.type || isUserStoppedMessage(m)) &&
                                                 m.details?._optimistic &&
                                                 getClientMessageId(m) === ack
                                             ),
@@ -307,18 +351,20 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                                     return [...next];
                                 }
 
-                                // Legacy fallback for older workflow echoes that predate `details.ack`.
-                                const matchingOptimistic = prev.filter(
-                                    (m) =>
-                                        m.type === AgentMessageType.QUESTION &&
-                                        m.details?._optimistic &&
-                                        m.message === message.message &&
-                                        (m.workstream_id ?? 'main') === (message.workstream_id ?? 'main'),
-                                );
-                                if (matchingOptimistic.length === 1) {
-                                    const next = prev.filter((m) => m !== matchingOptimistic[0]);
-                                    insertMessageInTimeline(next, message);
-                                    return [...next];
+                                if (message.type === AgentMessageType.QUESTION) {
+                                    // Legacy fallback for older workflow echoes that predate `details.ack`.
+                                    const matchingOptimistic = prev.filter(
+                                        (m) =>
+                                            m.type === AgentMessageType.QUESTION &&
+                                            m.details?._optimistic &&
+                                            m.message === message.message &&
+                                            (m.workstream_id ?? 'main') === (message.workstream_id ?? 'main'),
+                                    );
+                                    if (matchingOptimistic.length === 1) {
+                                        const next = prev.filter((m) => m !== matchingOptimistic[0]);
+                                        insertMessageInTimeline(next, message);
+                                        return [...next];
+                                    }
                                 }
                             }
 
@@ -401,11 +447,7 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
         (messageId: string, status: NonNullable<Common.AgentMessageDetails['_deliveryStatus']>) => {
             setMessages((prev) =>
                 prev.map((message) => {
-                    if (
-                        message.type === AgentMessageType.QUESTION &&
-                        message.details?._optimistic &&
-                        getClientMessageId(message) === messageId
-                    ) {
+                    if (message.details?._optimistic && getClientMessageId(message) === messageId) {
                         return withDeliveryStatus(message, status);
                     }
                     return message;

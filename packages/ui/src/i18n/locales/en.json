@@ -164,6 +164,7 @@
   "agent.rewind.resume": "Resume",
   "agent.toggleRightSidebar": "Toggle right sidebar",
   "agent.typeNewInstructions": "Type your message to give new instructions",
+  "agent.youStoppedAfter": "You stopped after {{duration}}",
   "agent.typeYourMessage": "Type your message...",
   "agent.typeYourResponse": "Type your response...",
   "agent.unableToOpenPrint": "Unable to open print preview",

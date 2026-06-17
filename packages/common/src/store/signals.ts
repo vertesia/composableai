@@ -15,6 +15,17 @@ export interface UserInputSignal {
     attachments?: Attachment[];
 }
 
+export interface StopSignal {
+    message?: string;
+    /**
+     * Client-generated id used to correlate a Stop signal with the persisted
+     * IDLE marker emitted by the workflow.
+     */
+    client_message_id?: string;
+    metadata?: Record<string, unknown>;
+    auth_token?: string;
+}
+
 /**
  * Attachment metadata for processing in conversation workflows.
  */

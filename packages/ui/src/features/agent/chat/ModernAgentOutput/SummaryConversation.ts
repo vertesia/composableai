@@ -8,12 +8,19 @@ import {
     isStreamReplacedByMessage,
     isToolActivityMessage,
     isToolPreambleMessage,
+    isUserStoppedMessage,
     type StreamingData,
     type ToolExecutionStatus,
 } from './utils';
 
 export type SummaryConversationItem =
     | { type: 'message'; message: AgentMessage }
+    | {
+          type: 'stopped';
+          message: AgentMessage;
+          startTimestamp: number | string;
+          endTimestamp: number | string;
+      }
     | {
           type: 'work';
           id: string;
@@ -252,6 +259,21 @@ export function buildSummaryConversationItems(
 
     for (const message of messages) {
         if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
+            if (isUserStoppedMessage(message)) {
+                const pendingWorkStartTimestamp = pendingWork[0]?.timestamp;
+                flushWork(false, message);
+                const previousItem = items[items.length - 1];
+                items.push({
+                    type: 'stopped',
+                    message,
+                    startTimestamp:
+                        pendingWorkStartTimestamp !== undefined && previousItem?.type === 'work'
+                            ? previousItem.startTimestamp
+                            : (pendingWorkStartTimestamp ?? message.timestamp),
+                    endTimestamp: message.timestamp,
+                });
+                continue;
+            }
             flushWork(false, message);
             continue;
         }

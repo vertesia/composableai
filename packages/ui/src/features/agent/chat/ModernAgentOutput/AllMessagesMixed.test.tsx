@@ -132,6 +132,38 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByLabelText('Sending message')).not.toBeNull();
     });
 
+    it('renders an acked stop marker as a right-aligned consumed status row', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.THOUGHT,
+                    message: 'Searching',
+                    details: {
+                        tool: 'web_search',
+                        tool_status: 'running',
+                        tool_run_id: 'tool-1',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 77_000,
+                    type: AgentMessageType.IDLE,
+                    message: 'Stopped. Waiting for your command...',
+                    details: {
+                        ack: 'stop-1',
+                        status_reason: 'user_stopped',
+                    },
+                }),
+            ],
+            true,
+        );
+
+        expect(screen.getByTestId('summary-stopped-message')).not.toBeNull();
+        expect(screen.getByText('You stopped after 1m 15s')).not.toBeNull();
+        expect(screen.getByLabelText('Message consumed')).not.toBeNull();
+        expect(screen.queryByText('Stopped. Waiting for your command...')).toBeNull();
+    });
+
     it('renders completed tool activity as a collapsed Worked row that expands to tool details', () => {
         renderSummary(
             [

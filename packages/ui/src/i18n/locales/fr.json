@@ -159,6 +159,7 @@
   "agent.rewind.resume": "Reprendre",
   "agent.toggleRightSidebar": "Basculer le panneau latéral",
   "agent.typeNewInstructions": "Saisissez votre message pour donner de nouvelles instructions",
+  "agent.youStoppedAfter": "Vous avez arrêté après {{duration}}",
   "agent.typeYourMessage": "Saisissez votre message...",
   "agent.typeYourResponse": "Saisissez votre réponse...",
   "agent.unableToOpenPrint": "Impossible d'ouvrir l'aperçu d'impression",

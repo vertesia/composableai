@@ -6,6 +6,7 @@ import {
     type ConversationFile,
     type ConversationFileRef,
     type Plan,
+    type StopSignal,
     type UserInputSignal,
 } from '@vertesia/common';
 import { FusionFragmentProvider } from '@vertesia/fusion-ux';
@@ -1667,18 +1668,35 @@ function ModernAgentConversationInner({
     const handleStopWorkflow = useCallback(async () => {
         if (isStopping) return;
 
+        const messageId = `stop-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const optimisticMessage: AgentMessage = {
+            timestamp: Date.now(),
+            workflow_run_id: agentRunId,
+            type: AgentMessageType.IDLE,
+            message: 'Stopped. Waiting for your command...',
+            workstream_id: 'main',
+            details: {
+                _optimistic: true,
+                _messageId: messageId,
+                _deliveryStatus: 'sending',
+                display_role: 'user_stopped',
+                status_reason: 'user_stopped',
+            },
+        };
+
+        addOptimisticMessage(optimisticMessage);
         setIsStopping(true);
         try {
             await client.agents.sendSignal(agentRunId, 'Stop', {
                 message: 'User requested stop',
-            });
+                client_message_id: messageId,
+                metadata: {
+                    id: messageId,
+                    _messageId: messageId,
+                },
+            } as StopSignal);
 
-            toast({
-                status: 'info',
-                title: t('agent.agentInterrupted'),
-                description: t('agent.typeNewInstructions'),
-                duration: 3000,
-            });
+            updateOptimisticMessageStatus(messageId, 'received');
         } catch (err) {
             toast({
                 status: 'error',
@@ -1686,10 +1704,11 @@ function ModernAgentConversationInner({
                 description: err instanceof Error ? err.message : t('agent.unknownError'),
                 duration: 3000,
             });
+            updateOptimisticMessageStatus(messageId, 'failed');
         } finally {
             setIsStopping(false);
         }
-    }, [isStopping, client, agentRunId, toast, t]);
+    }, [isStopping, agentRunId, addOptimisticMessage, client.agents, toast, t, updateOptimisticMessageStatus]);
 
     // Expose stop handler to external callers via ref
     useEffect(() => {

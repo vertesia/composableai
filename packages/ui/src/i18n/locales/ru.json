@@ -161,6 +161,7 @@
   "agent.rewind.resume": "Продолжить",
   "agent.toggleRightSidebar": "Переключить правую панель",
   "agent.typeNewInstructions": "Введите сообщение, чтобы дать новые инструкции",
+  "agent.youStoppedAfter": "Вы остановили через {{duration}}",
   "agent.typeYourMessage": "Введите сообщение...",
   "agent.typeYourResponse": "Введите ваш ответ...",
   "agent.unableToOpenPrint": "Не удалось открыть предпросмотр печати",

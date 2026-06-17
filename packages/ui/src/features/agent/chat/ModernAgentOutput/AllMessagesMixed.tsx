@@ -62,6 +62,7 @@ import {
     groupMessagesWithStreaming,
     isInProgress,
     isToolPreambleMessage,
+    isUserStoppedMessage,
     mergeConsecutiveToolGroups,
     type RenderableGroup,
     type StreamingData,
@@ -1095,6 +1096,16 @@ function getRenderableGroupKey(group: RenderableGroup): string {
     return ['group', group.toolRunId, group.firstTimestamp, firstKey, lastKey].filter(Boolean).join(':');
 }
 
+function getPreviousRenderableGroupTimestamp(groups: RenderableGroup[], index: number): number | string | undefined {
+    for (let previousIndex = index - 1; previousIndex >= 0; previousIndex--) {
+        const group = groups[previousIndex];
+        if (group.type === 'single') return group.message.timestamp;
+        if (group.type === 'tool_group') return group.firstTimestamp;
+        if (group.type === 'streaming') return group.startTimestamp;
+    }
+    return undefined;
+}
+
 function formatToolSectionValue(value: unknown): string {
     const text = stringifyRequestValue(value).trim();
     return text.length > 2400 ? `${text.slice(0, 2400)}\n...` : text;
@@ -1612,6 +1623,33 @@ function SummaryStreamingMessage({
                     {text}
                 </MarkdownRenderer>
             </div>
+        </div>
+    );
+}
+
+function SummaryStoppedMessage({
+    message,
+    startTimestamp,
+    endTimestamp,
+    className,
+}: {
+    message: AgentMessage;
+    startTimestamp?: number | string;
+    endTimestamp?: number | string;
+    className?: string;
+}) {
+    const { t } = useUITranslation();
+    const duration = formatDuration(
+        getDurationSeconds(startTimestamp ?? message.timestamp, endTimestamp ?? message.timestamp),
+    );
+
+    return (
+        <div className={cn('mx-auto w-full max-w-3xl px-1', className)} data-testid="summary-stopped-message">
+            <div className="flex items-center justify-end gap-2 text-lg font-medium text-muted sm:text-xl">
+                <span>{t('agent.youStoppedAfter', { duration })}</span>
+                <MessageDeliveryStatus message={message} className="h-5 w-5" />
+            </div>
+            <div className="mt-5 border-b border-border/70" />
         </div>
     );
 }
@@ -2597,6 +2635,22 @@ function AllMessagesMixedComponent({
                                     // Render single message
                                     const message = group.message;
                                     if (shouldHideRequestInputMessage(message)) return null;
+                                    if (isUserStoppedMessage(message)) {
+                                        return (
+                                            <TimelineEntry key={getAgentMessageRenderKey(message, 'stopped')}>
+                                                <SummaryStoppedMessage
+                                                    message={message}
+                                                    startTimestamp={
+                                                        getPreviousRenderableGroupTimestamp(
+                                                            groupedMessages,
+                                                            groupIndex,
+                                                        ) ?? message.timestamp
+                                                    }
+                                                    endTimestamp={message.timestamp}
+                                                />
+                                            </TimelineEntry>
+                                        );
+                                    }
                                     const isLatestMessage =
                                         !isCompleted && isLastGroup && !DONE_STATES.includes(message.type);
 
@@ -2704,6 +2758,17 @@ function AllMessagesMixedComponent({
                                             details={isThinkingOnlyWork ? undefined : item.messages}
                                             defaultExpanded={item.isActive && !isThinkingOnlyWork}
                                             className={workingIndicatorClassName}
+                                        />
+                                    );
+                                }
+
+                                if (item.type === 'stopped') {
+                                    return (
+                                        <SummaryStoppedMessage
+                                            key={getAgentMessageRenderKey(item.message, 'stopped-summary')}
+                                            message={item.message}
+                                            startTimestamp={item.startTimestamp}
+                                            endTimestamp={item.endTimestamp}
                                         />
                                     );
                                 }

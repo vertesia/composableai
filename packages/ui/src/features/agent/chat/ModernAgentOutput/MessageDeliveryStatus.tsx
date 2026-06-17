@@ -2,6 +2,7 @@ import { type AgentMessage, type AgentMessageDetails, AgentMessageType } from '@
 import { cn, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { AlertCircle, Check, CheckCheck, Clock, type LucideIcon } from 'lucide-react';
+import { isUserStoppedMessage } from './utils';
 
 export type MessageDeliveryStatusValue = NonNullable<AgentMessageDetails['_deliveryStatus']>;
 
@@ -34,7 +35,7 @@ function isDeliveryStatus(value: unknown): value is MessageDeliveryStatusValue {
 }
 
 export function getMessageDeliveryStatus(message: AgentMessage): MessageDeliveryStatusValue | undefined {
-    if (message.type !== AgentMessageType.QUESTION) return undefined;
+    if (message.type !== AgentMessageType.QUESTION && !isUserStoppedMessage(message)) return undefined;
 
     const status = message.details?._deliveryStatus;
     if (isDeliveryStatus(status)) return status;

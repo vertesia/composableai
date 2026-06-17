@@ -186,6 +186,53 @@ describe('useAgentStream', () => {
         });
     });
 
+    it('replaces an ack-matched optimistic stop marker when the workflow consumes Stop', async () => {
+        let onStreamMessage: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+            ) => Promise<unknown>
+        >(async (_id, onMessage) => {
+            onStreamMessage = onMessage;
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(onStreamMessage).toBeDefined();
+        });
+
+        act(() => {
+            result.current.addOptimisticMessage({
+                ...createMessage(AgentMessageType.IDLE, 1_000, 'Stopped. Waiting for your command...'),
+                details: {
+                    _optimistic: true,
+                    _messageId: 'stop-1',
+                    _deliveryStatus: 'received',
+                    status_reason: 'user_stopped',
+                },
+            });
+        });
+
+        act(() => {
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.IDLE, 1_100, 'Stopped. Waiting for your command...'),
+                details: { ack: 'stop-1', status_reason: 'user_stopped' },
+            });
+        });
+
+        await waitFor(() => {
+            expect(result.current.messages).toHaveLength(1);
+            expect(result.current.messages[0]?.timestamp).toBe(1_100);
+            expect(result.current.messages[0]?.details?._deliveryStatus).toBe('consumed');
+        });
+    });
+
     it('keeps non-matching optimistic questions when an acknowledged server question arrives', async () => {
         let onStreamMessage: ((message: AgentMessage) => void) | undefined;
         const streamMessages = vi.fn<
@@ -268,6 +315,121 @@ describe('useAgentStream', () => {
         });
 
         expect(result.current.messages[0]?.details?._deliveryStatus).toBe('received');
+    });
+
+    it('uses workflow-run scoped streaming ids so reused activity ids do not collide', async () => {
+        let onStreamMessage: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+            ) => Promise<unknown>
+        >(async (_id, onMessage) => {
+            onStreamMessage = onMessage;
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(onStreamMessage).toBeDefined();
+        });
+
+        act(() => {
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.STREAMING_CHUNK, 1_000, 'first'),
+                details: {
+                    streaming_id: 'run-a-activity-7',
+                    streaming_id_scope: 'workflow_run',
+                    activity_id: 'activity-7',
+                    is_final: false,
+                },
+            });
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.STREAMING_CHUNK, 1_010, 'second'),
+                details: {
+                    streaming_id: 'run-b-activity-7',
+                    streaming_id_scope: 'workflow_run',
+                    activity_id: 'activity-7',
+                    is_final: false,
+                },
+            });
+        });
+
+        await waitFor(() => {
+            expect([...result.current.streamingMessages.keys()].sort()).toEqual([
+                'run-a-activity-7',
+                'run-b-activity-7',
+            ]);
+        });
+
+        act(() => {
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.ANSWER, 1_100, 'final second'),
+                details: {
+                    streaming_id: 'run-b-activity-7',
+                    streaming_id_scope: 'workflow_run',
+                    activity_id: 'activity-7',
+                },
+            });
+        });
+
+        await waitFor(() => {
+            expect([...result.current.streamingMessages.keys()]).toEqual(['run-a-activity-7']);
+        });
+    });
+
+    it('keeps legacy activity-id cleanup for streaming chunks without scoped streaming ids', async () => {
+        let onStreamMessage: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+            ) => Promise<unknown>
+        >(async (_id, onMessage) => {
+            onStreamMessage = onMessage;
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(onStreamMessage).toBeDefined();
+        });
+
+        act(() => {
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.STREAMING_CHUNK, 1_000, 'legacy'),
+                details: {
+                    streaming_id: 'main',
+                    activity_id: 'legacy-activity',
+                    is_final: false,
+                },
+            });
+        });
+
+        await waitFor(() => {
+            expect([...result.current.streamingMessages.keys()]).toEqual(['legacy-activity']);
+        });
+
+        act(() => {
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.ANSWER, 1_100, 'legacy final'),
+                details: {
+                    activity_id: 'legacy-activity',
+                },
+            });
+        });
+
+        await waitFor(() => {
+            expect(result.current.streamingMessages.size).toBe(0);
+        });
     });
 
     it('replaces file processing status with the latest server snapshot', async () => {

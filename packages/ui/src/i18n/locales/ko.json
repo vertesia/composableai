@@ -157,6 +157,7 @@
   "agent.rewind.resume": "재개",
   "agent.toggleRightSidebar": "오른쪽 사이드바 전환",
   "agent.typeNewInstructions": "새로운 지시사항을 입력하세요",
+  "agent.youStoppedAfter": "{{duration}} 후 중지했습니다",
   "agent.typeYourMessage": "메시지를 입력하세요...",
   "agent.typeYourResponse": "응답을 입력하세요...",
   "agent.unableToOpenPrint": "인쇄 미리보기를 열 수 없습니다",

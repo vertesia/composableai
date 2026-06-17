@@ -221,6 +221,24 @@ describe('CompactMessage converters', () => {
             expect(compact.f).toBeUndefined();
         });
 
+        it('restores run-scoped streaming id from compact streaming chunk details', () => {
+            const compact: CompactMessage = {
+                t: AgentMessageType.STREAMING_CHUNK,
+                m: 'chunk content',
+                i: 'activity-7',
+                d: {
+                    streaming_id: 'run-2-activity-7',
+                    streaming_id_scope: 'workflow_run',
+                },
+            };
+
+            const restored = toAgentMessage(compact, 'workflow-id');
+
+            expect(restored.details?.streaming_id).toBe('run-2-activity-7');
+            expect(restored.details?.streaming_id_scope).toBe('workflow_run');
+            expect(restored.details?.activity_id).toBe('activity-7');
+        });
+
         it('normalizes legacy string type values', () => {
             // Simulate a message from Redis with old string type
             const legacy = {

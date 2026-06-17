@@ -159,6 +159,7 @@
   "agent.rewind.resume": "Reanudar",
   "agent.toggleRightSidebar": "Alternar panel lateral",
   "agent.typeNewInstructions": "Escribe tu mensaje para dar nuevas instrucciones",
+  "agent.youStoppedAfter": "Detuviste después de {{duration}}",
   "agent.typeYourMessage": "Escribe tu mensaje...",
   "agent.typeYourResponse": "Escribe tu respuesta...",
   "agent.unableToOpenPrint": "No se pudo abrir la vista previa de impresión",

@@ -165,6 +165,7 @@
   "agent.rewind.resume": "استئناف",
   "agent.toggleRightSidebar": "تبديل الشريط الجانبي الأيمن",
   "agent.typeNewInstructions": "اكتب رسالتك لإعطاء تعليمات جديدة",
+  "agent.youStoppedAfter": "You stopped after {{duration}}",
   "agent.typeYourMessage": "اكتب رسالتك...",
   "agent.typeYourResponse": "اكتب ردك...",
   "agent.unableToOpenPrint": "تعذر فتح معاينة الطباعة",

@@ -157,6 +157,7 @@
   "agent.rewind.resume": "继续",
   "agent.toggleRightSidebar": "切换右侧边栏",
   "agent.typeNewInstructions": "输入新的指示",
+  "agent.youStoppedAfter": "你在 {{duration}} 后停止了",
   "agent.typeYourMessage": "输入消息...",
   "agent.typeYourResponse": "输入您的回复...",
   "agent.unableToOpenPrint": "无法打开打印预览",
