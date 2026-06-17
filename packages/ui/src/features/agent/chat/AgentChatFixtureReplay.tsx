@@ -45,6 +45,7 @@ export interface AgentChatFixtureReplayProps {
     viewMode?: AgentConversationViewMode;
     className?: string;
     title?: string;
+    showHeader?: boolean;
 }
 
 function streamingFrameToMap(frame?: AgentChatReplayStreamingFrame): Map<string, StreamingData> {
@@ -105,6 +106,7 @@ export function AgentChatFixtureReplay({
     viewMode: controlledViewMode,
     className,
     title,
+    showHeader = true,
 }: AgentChatFixtureReplayProps) {
     const { t } = useUITranslation();
     const messages = fixture.messages;
@@ -196,37 +198,41 @@ export function AgentChatFixtureReplay({
             data-agent-replay-playing={isPlaying || undefined}
             data-agent-replay-loop={completedLoops}
         >
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
-                <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{resolvedTitle}</div>
-                    <div className="text-xs text-muted">
-                        {t('agent.rewind.fixtureMeta', {
-                            messageCount: messages.length,
-                            loops: completedLoops,
-                        })}
+            {showHeader && (
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+                    <div className="min-w-0">
+                        <div className="truncate text-sm font-medium">{resolvedTitle}</div>
+                        <div className="text-xs text-muted">
+                            {t('agent.rewind.fixtureMeta', {
+                                messageCount: messages.length,
+                                loops: completedLoops,
+                            })}
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button type="button" variant="secondary" size="sm" onClick={downloadFixture}>
+                            <DownloadCloudIcon className="size-4" />
+                            <span className="ms-1.5">{t('agent.rewind.exportFixture')}</span>
+                        </Button>
+                        {autoStepMs && autoStepMs > 0 && (
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setIsPlaying((value) => !value)}
+                            >
+                                {isPlaying ? <Pause className="size-4" /> : <Play className="size-4" />}
+                                <span className="ms-1.5">
+                                    {isPlaying ? t('agent.rewind.pause') : t('agent.rewind.resume')}
+                                </span>
+                            </Button>
+                        )}
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button type="button" variant="secondary" size="sm" onClick={downloadFixture}>
-                        <DownloadCloudIcon className="size-4" />
-                        <span className="ms-1.5">{t('agent.rewind.exportFixture')}</span>
-                    </Button>
-                    {autoStepMs && autoStepMs > 0 && (
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setIsPlaying((value) => !value)}
-                        >
-                            {isPlaying ? <Pause className="size-4" /> : <Play className="size-4" />}
-                            <span className="ms-1.5">
-                                {isPlaying ? t('agent.rewind.pause') : t('agent.rewind.resume')}
-                            </span>
-                        </Button>
-                    )}
-                </div>
+            )}
+            <div className="flex flex-shrink-0 justify-end px-2 py-1.5">
+                <AgentChatPlaybackControls cursor={playback.cursor} messages={messages} onChangeCursor={setCursor} />
             </div>
-            <AgentChatPlaybackControls cursor={playback.cursor} messages={messages} onChangeCursor={setCursor} />
             <AllMessagesMixed
                 messages={displayedMessages}
                 isCompleted={isCompleted}

@@ -1241,6 +1241,37 @@ describe('ModernAgentOutput summary conversation items', () => {
         expect(summaryMessages).toEqual([answer]);
     });
 
+    it('does not duplicate completed tool preamble streams once persisted prose replaces them', () => {
+        const preamble = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Got my tools ready. Querying now!',
+            details: {
+                activity_id: 'activity-1',
+                display_role: 'tool_preamble',
+                tools: ['search_documents'],
+                streamed: true,
+            },
+        });
+
+        const summaryMessages = buildSummaryDisplayMessages(
+            [preamble],
+            new Map([
+                [
+                    'activity-1',
+                    {
+                        text: 'Got my tools ready. Querying now!',
+                        startTimestamp: 2000,
+                        activityId: 'activity-1',
+                        isComplete: true,
+                    },
+                ],
+            ]),
+        );
+
+        expect(summaryMessages).toEqual([preamble]);
+    });
+
     it('keeps completed answer streams as assistant prose when a later tool message follows', () => {
         const question = makeMessage({
             timestamp: 1000,
