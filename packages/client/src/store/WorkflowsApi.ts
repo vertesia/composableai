@@ -157,8 +157,8 @@ export class WorkflowsApi extends ApiTopic {
         const response = (await this.get(`/runs/${workflowId}/${runId}/updates`, {
             query,
         })) as WorkflowRunUpdatesResponse;
-        // Convert compact messages to AgentMessage for backward compatibility
-        return response.messages.map((m: CompactMessage) => toAgentMessage(m, runId));
+        // Normalize compact and legacy messages to AgentMessage for backward compatibility.
+        return response.messages.map((m) => toAgentMessage(parseMessage(m), runId));
     }
 
     /**
@@ -375,15 +375,19 @@ export class WorkflowsApi extends ApiTopic {
                 // 1. Fetch historical messages via GET /updates (gzip-compressed if > 3KB)
                 try {
                     const historical = await this.retrieveMessages(workflowId, runId, since);
-                    for (const msg of historical) {
+                    let shouldCloseAfterHistory = false;
+                    for (let index = 0; index < historical.length; index++) {
+                        const msg = historical[index];
                         lastMessageTimestamp = Math.max(lastMessageTimestamp, msg.timestamp || 0);
                         if (onMessage) {
                             onMessage(msg, exit);
                         }
-                        if (shouldCloseAgentRunStream(msg, runId)) {
-                            exit(null);
-                            return;
-                        }
+                        shouldCloseAfterHistory =
+                            index === historical.length - 1 && shouldCloseAgentRunStream(msg, runId);
+                    }
+                    if (shouldCloseAfterHistory) {
+                        exit(null);
+                        return;
                     }
                 } catch (err) {
                     console.warn('Failed to fetch historical messages, continuing with SSE:', err);

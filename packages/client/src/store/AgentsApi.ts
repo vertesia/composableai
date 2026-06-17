@@ -10,7 +10,6 @@ import {
     type AgentRunResponse,
     type AgentRunUpdatesResponse,
     type BindRunWorkflowPayload,
-    type CompactMessage,
     type CreateAgentRunPayload,
     type CreateProcessRunPayload,
     type ErrorAnalyticsResponse,
@@ -54,6 +53,11 @@ import type { VertesiaClient } from '../client.js';
 import { EventSourceProvider } from '../execute.js';
 import { fetchSignedUrl } from './signed-url.js';
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
+
+export interface AgentRunStreamMessagesOptions {
+    onHistoryLoaded?: (messages: AgentMessage[]) => void;
+    onHistoryError?: (error: unknown) => void;
+}
 
 export class AgentsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -278,7 +282,7 @@ export class AgentsApi extends ApiTopic {
     async retrieveMessages(id: string, since?: number): Promise<AgentMessage[]> {
         const query = since ? { since } : undefined;
         const response = (await this.get(`/${id}/updates`, { query })) as AgentRunUpdatesResponse;
-        return response.messages.map((m: CompactMessage) => toAgentMessage(m, id));
+        return response.messages.map((m) => toAgentMessage(parseMessage(m), id));
     }
 
     /**
@@ -303,6 +307,7 @@ export class AgentsApi extends ApiTopic {
         onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
         since?: number,
         signal?: AbortSignal,
+        options?: AgentRunStreamMessagesOptions,
     ): Promise<unknown> {
         let resolveFn: (value: unknown) => void = () => {};
         let rejectFn: (reason?: unknown) => void = () => {};
@@ -374,20 +379,25 @@ export class AgentsApi extends ApiTopic {
         try {
             if (!isClosed) {
                 const historical = await this.retrieveMessages(id, since);
-                for (const msg of historical) {
+                options?.onHistoryLoaded?.(historical);
+                let shouldCloseAfterHistory = false;
+                for (let index = 0; index < historical.length; index++) {
+                    const msg = historical[index];
                     if (isClosed) break;
                     lastMessageTimestamp = Math.max(lastMessageTimestamp, msg.timestamp || 0);
                     if (onMessage) onMessage(msg, exit);
                     if (isClosed) break;
 
-                    if (shouldCloseAgentRunStream(msg, id)) {
-                        exit(null);
-                        return promise;
-                    }
+                    shouldCloseAfterHistory = index === historical.length - 1 && shouldCloseAgentRunStream(msg, id);
+                }
+                if (shouldCloseAfterHistory) {
+                    exit(null);
+                    return promise;
                 }
             }
         } catch (err) {
             if (!isClosed) {
+                options?.onHistoryError?.(err);
                 console.warn('Failed to fetch historical messages, continuing with SSE:', err);
             }
         }

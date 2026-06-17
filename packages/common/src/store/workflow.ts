@@ -1400,6 +1400,7 @@ export interface WorkstreamProgressInfo {
 export interface ActiveWorkstreamEntry {
     launch_id: string;
     workstream_id: string;
+    kind?: 'agent' | 'process';
     interaction: string;
     started_at: number;
     elapsed_ms: number;
@@ -1410,9 +1411,35 @@ export interface ActiveWorkstreamEntry {
     child_workflow_id: string;
     /** Child workflow run ID — use with retrieveMessages / streamMessages */
     child_workflow_run_id?: string;
+    process_run_id?: string;
+    process_workflow_id?: string;
+    process_name?: string;
+    process_run_type?: 'programmatic' | 'supervised';
+}
+
+/** Recently completed workstream entry returned by the ActiveWorkstreams query */
+export interface CompletedWorkstreamEntry {
+    launch_id: string;
+    workstream_id: string;
+    kind?: 'agent' | 'process';
+    status: 'completed' | 'failed' | 'canceled' | 'timeout';
+    summary?: string;
+    error?: string;
+    duration_ms?: number;
+    started_at?: number;
+    interaction?: string;
+    last_progress?: WorkstreamProgressInfo;
+    child_workflow_id?: string;
+    child_workflow_run_id?: string;
+    process_run_id?: string;
+    process_workflow_id?: string;
+    process_name?: string;
 }
 
 /** Result of the ActiveWorkstreams Temporal query */
 export interface ActiveWorkstreamsQueryResult {
     running: ActiveWorkstreamEntry[];
+    completed?: CompletedWorkstreamEntry[];
+    /** True when the workflow could not answer this optional query. */
+    unavailable?: boolean;
 }

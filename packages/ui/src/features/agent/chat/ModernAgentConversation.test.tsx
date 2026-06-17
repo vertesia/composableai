@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
     useAgentPlans: vi.fn(),
     useDocumentPanel: vi.fn(),
     useFileProcessing: vi.fn(),
+    getActiveWorkstreams: vi.fn(),
 }));
 
 vi.mock('@vertesia/ui/session', () => ({
@@ -28,7 +29,7 @@ vi.mock('@vertesia/ui/session', () => ({
             agents: {
                 restart: mocks.restart,
                 sendSignal: mocks.sendSignal,
-                getActiveWorkstreams: vi.fn().mockResolvedValue({ running: [] }),
+                getActiveWorkstreams: mocks.getActiveWorkstreams,
             },
         },
         project: undefined,
@@ -73,17 +74,28 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
     default: ({
         messages,
         streamingMessages,
+        isCompleted,
         bottomRef,
         onSendMessage,
+        showInitialRequest,
         renderRequestInputControls,
     }: {
         messages: AgentMessage[];
         streamingMessages: Map<string, unknown>;
+        isCompleted?: boolean;
         bottomRef: React.RefObject<HTMLDivElement>;
         onSendMessage?: (message: string) => void;
+        showInitialRequest?: boolean;
         renderRequestInputControls?: boolean;
     }) => {
-        mocks.allMessagesMixedProps({ messages, streamingMessages, onSendMessage, renderRequestInputControls });
+        mocks.allMessagesMixedProps({
+            messages,
+            streamingMessages,
+            isCompleted,
+            onSendMessage,
+            showInitialRequest,
+            renderRequestInputControls,
+        });
         return (
             <div>
                 <div data-testid="rendered-message-count">{messages.length}</div>
@@ -133,6 +145,7 @@ function createMessage(type: AgentMessageType, message: string): AgentMessage {
 function mockStreamState(options: {
     messages: AgentMessage[];
     isCompleted?: boolean;
+    initialHistoryStatus?: 'loading' | 'empty' | 'has_messages' | 'error';
     agentRunStatus?: string | null;
     streamingMessages?: Map<string, unknown>;
 }) {
@@ -140,6 +153,7 @@ function mockStreamState(options: {
         messages: options.messages,
         streamingMessages: options.streamingMessages ?? new Map(),
         isCompleted: options.isCompleted ?? true,
+        initialHistoryStatus: options.initialHistoryStatus ?? 'has_messages',
         debugChunkFlash: false,
         addOptimisticMessage: mocks.addOptimisticMessage,
         updateOptimisticMessageStatus: mocks.updateOptimisticMessageStatus,
@@ -164,11 +178,24 @@ function renderConversation(props: Partial<React.ComponentProps<typeof ModernAge
     );
 }
 
+function latestAllMessagesMixedProps() {
+    const calls = mocks.allMessagesMixedProps.mock.calls;
+    return calls[calls.length - 1]?.[0] as
+        | {
+              messages: AgentMessage[];
+              streamingMessages: Map<string, unknown>;
+              isCompleted?: boolean;
+              showInitialRequest?: boolean;
+          }
+        | undefined;
+}
+
 describe('ModernAgentConversation send handling', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.restart.mockResolvedValue({ id: 'agent-run-1' });
         mocks.sendSignal.mockResolvedValue({});
+        mocks.getActiveWorkstreams.mockResolvedValue({ running: [] });
         mocks.useAgentPlans.mockReturnValue({
             plans: [],
             activePlanIndex: 0,
@@ -312,7 +339,7 @@ describe('ModernAgentConversation send handling', () => {
         expect(latestMessageInputProps.isStreaming).toBe(false);
     });
 
-    it('uses message-derived active workstreams for the composer count and right panel fallback', async () => {
+    it('uses message-derived workstreams for panel history while the composer only counts active workstreams', async () => {
         mockStreamState({
             messages: [
                 createMessage(AgentMessageType.QUESTION, 'main request'),
@@ -346,6 +373,7 @@ describe('ModernAgentConversation send handling', () => {
         expect(latestRightPanelProps.activeWorkstreams).toEqual([
             expect.objectContaining({ workstream_id: 'alpha', status: 'running' }),
             expect.objectContaining({ workstream_id: 'beta', status: 'running' }),
+            expect.objectContaining({ workstream_id: 'gamma', status: 'completed' }),
         ]);
         expect(latestRightPanelProps.activeTab).toBe('plan');
         expect(latestMessageInputProps.activeTaskCount).toBe(2);
@@ -355,7 +383,7 @@ describe('ModernAgentConversation send handling', () => {
         ]);
     });
 
-    it('does not count completed workstream lifecycle messages as active in the composer fallback', async () => {
+    it('shows completed workstream lifecycle messages in the panel without counting them as active', async () => {
         mockStreamState({
             messages: [
                 createMessage(AgentMessageType.QUESTION, 'main request'),
@@ -412,11 +440,137 @@ describe('ModernAgentConversation send handling', () => {
 
         expect(latestRightPanelProps.activeWorkstreams).toEqual([
             expect.objectContaining({ workstream_id: 'qa_assignee', status: 'running' }),
+            expect.objectContaining({ workstream_id: 'qa_tasks', status: 'completed' }),
         ]);
         expect(latestMessageInputProps.activeTaskCount).toBe(1);
         expect(latestMessageInputProps.activeWorkstreams).toEqual([
             expect.objectContaining({ workstream_id: 'qa_assignee', status: 'running' }),
         ]);
+    });
+
+    it('keeps message-derived workstream history when the live workstream query fails', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        mocks.getActiveWorkstreams.mockRejectedValueOnce(new Error('workflow no longer queryable'));
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'main request'),
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'Workstream "qa_tasks" launched'),
+                    workstream_id: 'qa_tasks',
+                    details: {
+                        workstream_event: 'launched',
+                        workstream_id: 'qa_tasks',
+                        launch_id: 'launch-qa-tasks',
+                    },
+                },
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'Workstream "qa_tasks" completed'),
+                    workstream_id: 'qa_tasks',
+                    details: {
+                        workstream_event: 'completed',
+                        workstream_id: 'qa_tasks',
+                        launch_id: 'launch-qa-tasks',
+                        status: 'completed',
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        try {
+            renderConversation({
+                hideMessageInput: false,
+                hideWorkstreamTabs: false,
+                showRightPanel: true,
+            });
+
+            await waitFor(() => {
+                expect(mocks.getActiveWorkstreams).toHaveBeenCalled();
+                const latestRightPanelProps = mocks.rightPanelProps.mock.lastCall?.[0] as {
+                    activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
+                };
+                expect(latestRightPanelProps.activeWorkstreams).toEqual([
+                    expect.objectContaining({ workstream_id: 'qa_tasks', status: 'completed' }),
+                ]);
+            });
+
+            const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
+                activeTaskCount?: number;
+                activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
+            };
+            expect(latestMessageInputProps.activeTaskCount).toBe(0);
+            expect(latestMessageInputProps.activeWorkstreams).toEqual([]);
+        } finally {
+            warn.mockRestore();
+        }
+    });
+
+    it('uses the live workstream query to enrich message-derived running workstreams', async () => {
+        mocks.getActiveWorkstreams.mockResolvedValue({
+            running: [
+                {
+                    launch_id: 'launch-alpha',
+                    workstream_id: 'alpha',
+                    interaction: 'sys:AlphaAgent',
+                    started_at: Date.now() - 5000,
+                    elapsed_ms: 5000,
+                    deadline_ms: 30000,
+                    status: 'running',
+                    latest_progress: {
+                        launch_id: 'launch-alpha',
+                        workstream_id: 'alpha',
+                        phase: 'executing_tool',
+                        updated_at: Date.now(),
+                    },
+                    child_workflow_id: 'child-alpha',
+                    child_workflow_run_id: 'child-run-alpha',
+                },
+            ],
+        });
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'main request'),
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'Workstream "alpha" launched'),
+                    workstream_id: 'alpha',
+                    details: {
+                        workstream_event: 'launched',
+                        workstream_id: 'alpha',
+                        launch_id: 'launch-alpha',
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({
+            hideMessageInput: false,
+            hideWorkstreamTabs: false,
+            showRightPanel: true,
+        });
+
+        await waitFor(() => {
+            const latestRightPanelProps = mocks.rightPanelProps.mock.lastCall?.[0] as {
+                activeWorkstreams?: Array<{
+                    workstream_id: string;
+                    status: string;
+                    elapsed_ms?: number;
+                    phase?: string;
+                    child_workflow_run_id?: string;
+                }>;
+            };
+            expect(latestRightPanelProps.activeWorkstreams).toEqual([
+                expect.objectContaining({
+                    workstream_id: 'alpha',
+                    status: 'running',
+                    elapsed_ms: 5000,
+                    phase: 'executing_tool',
+                    child_workflow_run_id: 'child-run-alpha',
+                }),
+            ]);
+        });
     });
 
     it('keeps launched workstreams active when their child transcript emits JSON results', async () => {
@@ -712,6 +866,7 @@ describe('ModernAgentConversation send handling', () => {
 
             expect(screen.getByTestId('rendered-message-count').textContent).toBe('1');
             expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('0');
+            expect(latestAllMessagesMixedProps()?.isCompleted).toBe(false);
             expect(scrollIntoView).not.toHaveBeenCalled();
 
             const playbackPositionInput = screen.getByRole('textbox', { name: 'Playback position' });
@@ -735,6 +890,7 @@ describe('ModernAgentConversation send handling', () => {
 
             expect(screen.getByTestId('rendered-message-count').textContent).toBe('5');
             expect(screen.getByTestId('rendered-streaming-count').textContent).toBe('0');
+            expect(latestAllMessagesMixedProps()?.isCompleted).toBe(true);
             await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
             scrollIntoView.mockClear();
 
@@ -745,6 +901,133 @@ describe('ModernAgentConversation send handling', () => {
             await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
         } finally {
             Element.prototype.scrollIntoView = originalScrollIntoView;
+        }
+    });
+
+    it('only enables the synthetic initial request after empty history while no real messages exist', () => {
+        mockStreamState({
+            messages: [],
+            isCompleted: false,
+            initialHistoryStatus: 'empty',
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({
+            initialRequestData: { task: 'What are the news headlines in France today?' },
+        });
+
+        expect(latestAllMessagesMixedProps()?.showInitialRequest).toBe(true);
+    });
+
+    it('disables the synthetic initial request when real messages arrive after an empty history race', () => {
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'Current French headlines...')],
+            isCompleted: true,
+            initialHistoryStatus: 'empty',
+            agentRunStatus: 'COMPLETED',
+        });
+
+        renderConversation({
+            initialRequestData: { task: 'What are the news headlines in France today?' },
+        });
+
+        expect(latestAllMessagesMixedProps()?.showInitialRequest).toBe(false);
+    });
+
+    it('does not enable the synthetic initial request while history is still loading', () => {
+        mockStreamState({
+            messages: [],
+            isCompleted: false,
+            initialHistoryStatus: 'loading',
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({
+            initialRequestData: { task: 'What are the news headlines in France today?' },
+        });
+
+        expect(latestAllMessagesMixedProps()?.showInitialRequest).toBe(false);
+    });
+
+    it('does not poll live workstreams while initial history is loading', () => {
+        mockStreamState({
+            messages: [],
+            isCompleted: false,
+            initialHistoryStatus: 'loading',
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation();
+
+        expect(mocks.getActiveWorkstreams).not.toHaveBeenCalled();
+    });
+
+    it('stops polling live workstreams when the server marks the query unavailable', async () => {
+        vi.useFakeTimers();
+        mocks.getActiveWorkstreams.mockResolvedValue({ running: [], completed: [], unavailable: true });
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.QUESTION, 'main request')],
+            isCompleted: false,
+            initialHistoryStatus: 'has_messages',
+            agentRunStatus: 'RUNNING',
+        });
+
+        try {
+            renderConversation();
+
+            await act(async () => {
+                await Promise.resolve();
+            });
+            const callCountAfterUnavailable = mocks.getActiveWorkstreams.mock.calls.length;
+            expect(callCountAfterUnavailable).toBeGreaterThan(0);
+
+            await act(async () => {
+                vi.advanceTimersByTime(10_000);
+            });
+            expect(mocks.getActiveWorkstreams).toHaveBeenCalledTimes(callCountAfterUnavailable);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('does not overlap live workstream polls while a previous request is pending', async () => {
+        vi.useFakeTimers();
+        const resolveQueries: Array<(value: { running: [] }) => void> = [];
+        mocks.getActiveWorkstreams.mockImplementation(
+            () =>
+                new Promise<{ running: [] }>((resolve) => {
+                    resolveQueries.push(resolve);
+                }),
+        );
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.QUESTION, 'main request')],
+            isCompleted: false,
+            initialHistoryStatus: 'has_messages',
+            agentRunStatus: 'RUNNING',
+        });
+
+        try {
+            renderConversation();
+
+            const initialCallCount = mocks.getActiveWorkstreams.mock.calls.length;
+            expect(initialCallCount).toBeGreaterThan(0);
+
+            await act(async () => {
+                vi.advanceTimersByTime(10_000);
+            });
+            expect(mocks.getActiveWorkstreams).toHaveBeenCalledTimes(initialCallCount);
+
+            await act(async () => {
+                for (const resolveQuery of resolveQueries) {
+                    resolveQuery({ running: [] });
+                }
+            });
+            await act(async () => {
+                vi.advanceTimersByTime(10_000);
+            });
+            expect(mocks.getActiveWorkstreams.mock.calls.length).toBeGreaterThan(initialCallCount);
+        } finally {
+            vi.useRealTimers();
         }
     });
 

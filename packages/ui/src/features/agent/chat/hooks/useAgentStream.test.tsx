@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { VertesiaClient } from '@vertesia/client';
+import type { AgentRunStreamMessagesOptions, VertesiaClient } from '@vertesia/client';
 import { type AgentMessage, AgentMessageType, FileProcessingStatus } from '@vertesia/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAgentStream } from './useAgentStream';
@@ -11,6 +11,7 @@ type StreamMessagesMock = ReturnType<
             onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
             since?: number,
             signal?: AbortSignal,
+            options?: AgentRunStreamMessagesOptions,
         ) => Promise<unknown>
     >
 >;
@@ -40,6 +41,109 @@ function createClient(streamMessages: StreamMessagesMock): VertesiaClient {
 describe('useAgentStream', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it('marks initial history as empty when the history fetch returns no messages', async () => {
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, _onMessage, _since, _signal, options) => {
+            options?.onHistoryLoaded?.([]);
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(result.current.initialHistoryStatus).toBe('empty');
+        });
+    });
+
+    it('marks initial history as present when the history fetch returns messages', async () => {
+        const historicalMessage = createMessage(AgentMessageType.ANSWER, 1_000, 'from history');
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            options?.onHistoryLoaded?.([historicalMessage]);
+            onMessage?.(historicalMessage);
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(result.current.initialHistoryStatus).toBe('has_messages');
+            expect(result.current.messages.map((message) => message.message)).toEqual(['from history']);
+        });
+    });
+
+    it('seeds messages from loaded history even if the stream callback does not replay them', async () => {
+        const historicalMessages = [
+            createMessage(AgentMessageType.QUESTION, 1_000, 'question from history'),
+            createMessage(AgentMessageType.THOUGHT, 1_100, 'thinking from history'),
+            createMessage(AgentMessageType.ANSWER, 1_200, 'answer from history'),
+            createMessage(AgentMessageType.IDLE, 1_300, 'Waiting for your command...'),
+        ];
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, _onMessage, _since, _signal, options) => {
+            options?.onHistoryLoaded?.(historicalMessages);
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(result.current.initialHistoryStatus).toBe('has_messages');
+            expect(result.current.messages.map((message) => message.message)).toEqual([
+                'question from history',
+                'thinking from history',
+                'answer from history',
+                'Waiting for your command...',
+            ]);
+        });
+    });
+
+    it('marks initial history as errored when the history fetch fails', async () => {
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, _onMessage, _since, _signal, options) => {
+            options?.onHistoryError?.(new Error('history failed'));
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(result.current.initialHistoryStatus).toBe('error');
+        });
     });
 
     it('reconnects the same agent run from the last delivered timestamp without clearing messages', async () => {

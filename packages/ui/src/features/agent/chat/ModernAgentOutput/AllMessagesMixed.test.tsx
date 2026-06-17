@@ -919,6 +919,55 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText(/This should keep the tool work visible/)).not.toBeNull();
     });
 
+    it('does not collapse long tool preambles while the summary work row is active', () => {
+        const longPreamble = [
+            'I will now create a plan to retrieve the latest news headlines from France today.',
+            'To do this, I will first activate the web search skill.',
+            'Then I will search for current French news from multiple sources.',
+            'After that I will retrieve and summarize the results.',
+            'I will compare the current reports before answering.',
+            'I will keep this setup visible while the work is still running.',
+            'Finally I will produce a concise answer when the search completes.',
+        ].join('\n');
+
+        renderSummary([
+            makeMessage({
+                timestamp: Date.now() - 2_000,
+                type: AgentMessageType.QUESTION,
+                message: 'What are the news headlines in France today?',
+            }),
+            makeMessage({
+                timestamp: Date.now() - 1_500,
+                type: AgentMessageType.THOUGHT,
+                message: longPreamble,
+                details: {
+                    display_role: 'tool_preamble',
+                    tools: ['learn_web_search'],
+                    activity_group_id: 'activity-1',
+                },
+            }),
+            makeMessage({
+                timestamp: Date.now() - 1_000,
+                message: 'Creating a step-by-step plan to search for the latest headlines.',
+                details: {
+                    event_class: 'activity',
+                    tool: 'update_plan',
+                    tool_run_id: 'tool-1',
+                    tool_status: 'running',
+                    activity_group_id: 'activity-1',
+                },
+            }),
+        ]);
+
+        expect(screen.getByRole('button', { name: /Working\s*for/ }).getAttribute('aria-expanded')).toBe('true');
+        expect(screen.queryByRole('button', { name: /Show more/ })).toBeNull();
+        expect(screen.queryByRole('button', { name: /Show less/ })).toBeNull();
+        expect(screen.getByText(/Finally I will produce a concise answer/)).not.toBeNull();
+
+        const prose = screen.getByTestId('summary-thought-prose');
+        expect(prose.getAttribute('class') ?? '').not.toContain('[-webkit-line-clamp:6]');
+    });
+
     it('renders completed streaming answers as visible summary prose before later tool activity', () => {
         renderSummary(
             [

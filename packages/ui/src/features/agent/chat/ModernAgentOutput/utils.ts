@@ -2,6 +2,35 @@ import type { VertesiaClient } from '@vertesia/client';
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import dayjs from 'dayjs';
 
+function getAgentChatDebugParam(hash: string): string | null {
+    const queryStart = hash.indexOf('?');
+    if (queryStart === -1) return null;
+    return new URLSearchParams(hash.slice(queryStart + 1)).get('agentChatDebug');
+}
+
+export function isAgentChatDebugEnabled(): boolean {
+    if (typeof window === 'undefined') return false;
+
+    const searchValue = new URLSearchParams(window.location.search).get('agentChatDebug');
+    const hashValue = getAgentChatDebugParam(window.location.hash);
+    const urlValue = searchValue ?? hashValue;
+    if (urlValue !== null) {
+        return urlValue === '1' || urlValue === 'true';
+    }
+
+    try {
+        const stored = window.localStorage.getItem('agentChatDebug');
+        return stored === '1' || stored === 'true';
+    } catch {
+        return false;
+    }
+}
+
+export function debugAgentChat(label: string, details?: Record<string, unknown>) {
+    if (!isAgentChatDebugEnabled()) return;
+    console.debug(`[agent-chat] ${label}`, details ?? {});
+}
+
 export function insertMessageInTimeline(arr: AgentMessage[], m: AgentMessage) {
     const t = typeof m.timestamp === 'number' ? m.timestamp : new Date(m.timestamp).getTime();
     const idx = arr.findIndex((a) => {

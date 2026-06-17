@@ -1539,7 +1539,15 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
     );
 }
 
-function SummaryThoughtProseItem({ item, artifactRunId }: { item: SummaryToolDetailItem; artifactRunId?: string }) {
+function SummaryThoughtProseItem({
+    item,
+    artifactRunId,
+    disableCollapse,
+}: {
+    item: SummaryToolDetailItem;
+    artifactRunId?: string;
+    disableCollapse?: boolean;
+}) {
     const { t } = useUITranslation();
     const text = item.text ?? item.title;
     const normalizedText = text.trim();
@@ -1557,6 +1565,7 @@ function SummaryThoughtProseItem({ item, artifactRunId }: { item: SummaryToolDet
                 className={cn(
                     SUMMARY_PROSE_CLASS,
                     isLong &&
+                        !disableCollapse &&
                         !isExpanded &&
                         '[display:-webkit-box] overflow-hidden [-webkit-box-orient:vertical] [-webkit-line-clamp:6]',
                 )}
@@ -1566,7 +1575,7 @@ function SummaryThoughtProseItem({ item, artifactRunId }: { item: SummaryToolDet
                     {text}
                 </MarkdownRenderer>
             </div>
-            {isLong ? (
+            {isLong && !disableCollapse ? (
                 <div className="mt-1.5 flex justify-end">
                     <button
                         type="button"
@@ -1591,13 +1600,26 @@ function SummaryThoughtProseItem({ item, artifactRunId }: { item: SummaryToolDet
     );
 }
 
-function SummaryToolTimeline({ items, artifactRunId }: { items: SummaryToolDetailItem[]; artifactRunId?: string }) {
+function SummaryToolTimeline({
+    items,
+    artifactRunId,
+    disablePreambleCollapse,
+}: {
+    items: SummaryToolDetailItem[];
+    artifactRunId?: string;
+    disablePreambleCollapse?: boolean;
+}) {
     return (
         <div className="mt-3">
             <div className="space-y-3">
                 {items.map((item) =>
                     item.isPreamble || item.kind === 'think' ? (
-                        <SummaryThoughtProseItem key={item.key} item={item} artifactRunId={artifactRunId} />
+                        <SummaryThoughtProseItem
+                            key={item.key}
+                            item={item}
+                            artifactRunId={artifactRunId}
+                            disableCollapse={disablePreambleCollapse}
+                        />
                     ) : (
                         <SummaryToolTimelineItem key={item.key} item={item} />
                     ),
@@ -1663,6 +1685,7 @@ function SummaryActivityRow({
     details,
     emptyDetailsLabel,
     defaultExpanded = false,
+    disablePreambleCollapse = false,
     className,
     artifactRunId,
 }: {
@@ -1674,6 +1697,7 @@ function SummaryActivityRow({
     details?: AgentMessage[];
     emptyDetailsLabel?: string;
     defaultExpanded?: boolean;
+    disablePreambleCollapse?: boolean;
     className?: string;
     artifactRunId?: string;
 }) {
@@ -1716,7 +1740,11 @@ function SummaryActivityRow({
                 </button>
                 {canExpand && isExpanded ? (
                     detailItems.length > 0 ? (
-                        <SummaryToolTimeline items={detailItems} artifactRunId={artifactRunId} />
+                        <SummaryToolTimeline
+                            items={detailItems}
+                            artifactRunId={artifactRunId}
+                            disablePreambleCollapse={disablePreambleCollapse}
+                        />
                     ) : (
                         <div className="mt-3 flex items-center gap-2 text-sm text-muted">
                             <Terminal className="size-4 opacity-70" aria-hidden="true" />
@@ -1835,6 +1863,8 @@ interface AllMessagesMixedProps {
     initialRequestTitle?: string;
     /** Optional caller-provided renderer for agent-specific request shapes. */
     initialRequestTemplate?: AgentInitialRequestTemplate;
+    /** Whether the synthetic initial request fallback should render when no persisted question is present. */
+    showInitialRequest?: boolean;
     /** Message types to exclude from the conversation view */
     hiddenMessageTypes?: AgentMessageType[];
     /** Test/playback mode: keep the current scroll position while the rendered message slice changes. */
@@ -1870,6 +1900,7 @@ function AllMessagesMixedComponent({
     initialRequestSchema,
     initialRequestTitle,
     initialRequestTemplate,
+    showInitialRequest,
     hiddenMessageTypes,
     disableAutoScroll = false,
     renderRequestInputControls = true,
@@ -2060,11 +2091,13 @@ function AllMessagesMixedComponent({
         Boolean(prependFriendlyMessage?.trim()) ||
         hasInitialRequestValue(initialRequestData) ||
         initialRequestTemplate !== undefined;
+    const canRenderInitialRequest = showInitialRequest ?? true;
+    const hasRenderableInitialRequest = hasInitialRequest && canRenderInitialRequest;
     const hasPersistedUserQuestion = useMemo(
         () => displayMessages.some((message) => message.type === AgentMessageType.QUESTION),
         [displayMessages],
     );
-    const shouldRenderInitialRequest = hasInitialRequest && !hasPersistedUserQuestion;
+    const shouldRenderInitialRequest = hasRenderableInitialRequest && !hasPersistedUserQuestion;
 
     const latestDisplayMessageTimestamp = useMemo(() => {
         return displayMessages.reduce((latest, msg) => Math.max(latest, getTimestampMs(msg.timestamp)), -Infinity);
@@ -2161,7 +2194,10 @@ function AllMessagesMixedComponent({
         ? t('agent.preparing')
         : t('agent.working');
     const showInitialRequestWaitingCard =
-        displayMessages.length === 0 && hasInitialRequest && isAgentWorking && incompleteStreaming.length === 0;
+        displayMessages.length === 0 &&
+        hasRenderableInitialRequest &&
+        isAgentWorking &&
+        incompleteStreaming.length === 0;
     const activityAnchorCandidate = useMemo(
         () =>
             getSummaryActivityAnchorTimestamp(
@@ -2515,7 +2551,9 @@ function AllMessagesMixedComponent({
                 </div>
             )}
 
-            {displayMessages.length === 0 && !hasInitialRequest && !(isSummaryView && showActivityFallback) ? (
+            {displayMessages.length === 0 &&
+            !hasRenderableInitialRequest &&
+            !(isSummaryView && showActivityFallback) ? (
                 activeWorkstream === 'all' && isAgentWorking && incompleteStreaming.length === 0 ? (
                     <div className="flex-1 px-2 py-6 sm:px-4">
                         <InitialRequestWaitingCard
@@ -2757,6 +2795,7 @@ function AllMessagesMixedComponent({
                                             showElapsed
                                             details={isThinkingOnlyWork ? undefined : item.messages}
                                             defaultExpanded={item.isActive && !isThinkingOnlyWork}
+                                            disablePreambleCollapse={item.isActive}
                                             className={workingIndicatorClassName}
                                         />
                                     );
