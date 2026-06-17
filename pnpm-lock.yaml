@@ -25,7 +25,7 @@ overrides:
   hono@<4.12.14: ^4.12.25
   serialize-javascript@<7.0.3: ^7.0.5
   tmp@<0.2.6: ^0.2.7
-  dompurify@<=3.3.3: ^3.4.8
+  dompurify@<=3.3.3: ^3.4.9
   undici@>=6.0.0 <6.21.3: 7.27.2
   vite: ^8.0.16
   is-generator-function: 1.1.2
@@ -1064,8 +1064,8 @@ importers:
         specifier: workspace:*
         version: link:../../libraries/tsconfig
       axe-core:
-        specifier: ^4.12.0
-        version: 4.12.0
+        specifier: ^4.12.1
+        version: 4.12.1
       culori:
         specifier: ^4.0.2
         version: 4.0.2
@@ -4211,6 +4211,10 @@ packages:
 
   axe-core@4.12.0:
     resolution: {integrity: sha512-FTavr/7Ba0IptwGOPxnQvdyW2tAsdLBMTBXz7rKH6xJ2skpyxpBxyHkDdBs4lf69yRqYpkqCdfhnwS8YULGOmg==}
+    engines: {node: '>=4'}
+
+  axe-core@4.12.1:
+    resolution: {integrity: sha512-s7iGf5GaVMxEG0ENN9x+xTr7GFZCb1ZP/1uATUpCEK2X78nDB3RwbtFCo9pGAf9ru+VwoQ464DkaLEeRM08wJA==}
     engines: {node: '>=4'}
 
   bail@2.0.2:
@@ -10018,6 +10022,8 @@ snapshots:
   asynckit@0.4.0: {}
 
   axe-core@4.12.0: {}
+
+  axe-core@4.12.1: {}
 
   bail@2.0.2: {}
 
