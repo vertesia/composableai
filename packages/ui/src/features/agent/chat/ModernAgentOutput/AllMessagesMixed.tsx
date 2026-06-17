@@ -213,7 +213,8 @@ const SUMMARY_PROSE_CLASS = [
 ].join(' ');
 
 const USER_BUBBLE_COLLAPSE_THRESHOLD = 520;
-const SUMMARY_THOUGHT_PREVIEW_LENGTH = 180;
+const SUMMARY_THOUGHT_COLLAPSE_LINES = 6;
+const SUMMARY_THOUGHT_COLLAPSE_THRESHOLD = 520;
 const STORE_LINK_MARKDOWN_RE =
     /\[[^\]]+\]\((?:\/store\/(?:objects|collections)\/|store:|document:|document:\/\/|collection:)[^)]+\)/;
 const DEFAULT_AGENT_MARKDOWN_COMPONENTS: MarkdownRendererProps['components'] = {
@@ -879,6 +880,7 @@ interface SummaryToolDetailItem {
     kind: SummaryToolDetailKind;
     label: string;
     title: string;
+    isPreamble?: boolean;
     command?: string;
     text?: string;
     status?: ToolExecutionStatus;
@@ -1168,6 +1170,7 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
 function buildSummaryToolDetailItem(message: AgentMessage, index: number): SummaryToolDetailItem | undefined {
     const text = getMessageText(message);
     const details = getDetailsRecord(message);
+    const isPreamble = isToolPreambleMessage(message);
     const kind = getToolDetailKind(message);
     const toolNames = getToolNames(details);
     const target = getToolTarget(details);
@@ -1189,6 +1192,7 @@ function buildSummaryToolDetailItem(message: AgentMessage, index: number): Summa
         kind,
         label: getToolDetailLabel(kind),
         title,
+        isPreamble,
         command,
         text: shouldShowText ? normalizedText : undefined,
         status: details.tool_status as ToolExecutionStatus | undefined,
@@ -1524,49 +1528,52 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
     );
 }
 
-function SummaryThoughtTimelineItem({ item, artifactRunId }: { item: SummaryToolDetailItem; artifactRunId?: string }) {
+function SummaryThoughtProseItem({ item, artifactRunId }: { item: SummaryToolDetailItem; artifactRunId?: string }) {
     const { t } = useUITranslation();
     const text = item.text ?? item.title;
+    const normalizedText = text.trim();
     const [isExpanded, setIsExpanded] = useState(false);
-    const preview = compactInlineText(text, SUMMARY_THOUGHT_PREVIEW_LENGTH);
+    const explicitLineCount = normalizedText ? normalizedText.split(/\r?\n/).length : 0;
+    const isLong =
+        normalizedText.length > SUMMARY_THOUGHT_COLLAPSE_THRESHOLD ||
+        explicitLineCount > SUMMARY_THOUGHT_COLLAPSE_LINES;
     const toggleLabel = isExpanded ? t('agent.showLess') : t('agent.showMore');
 
     return (
-        <div className="min-w-0 py-1 text-sm leading-6 text-foreground/85">
-            <button
-                type="button"
-                aria-expanded={isExpanded}
-                aria-label={`${item.label}: ${preview}. ${toggleLabel}`}
+        <div className="min-w-0 py-1">
+            <div
+                data-testid="summary-thought-prose"
                 className={cn(
-                    'grid w-full grid-cols-[1.5rem_1fr_auto] gap-2 text-start outline-none transition-colors',
-                    'focus-visible:text-foreground focus-visible:underline focus-visible:underline-offset-4',
-                    'hover:text-foreground',
-                    isExpanded && 'sticky top-0 z-10 py-1',
+                    SUMMARY_PROSE_CLASS,
+                    isLong &&
+                        !isExpanded &&
+                        '[display:-webkit-box] overflow-hidden [-webkit-box-orient:vertical] [-webkit-line-clamp:6]',
                 )}
-                onClick={() => setIsExpanded((current) => !current)}
+                style={{ overflowWrap: 'anywhere' }}
             >
-                <span className="flex size-5 items-center justify-center pt-0.5 text-muted">
-                    <ToolDetailIcon kind={item.kind} status={item.status} />
-                </span>
-                <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                    <span className="text-sm font-medium text-muted">{item.label}</span>
-                    <span className="min-w-0 break-words text-sm text-muted">{preview}</span>
-                </span>
-                <span className="inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors">
-                    {toggleLabel}
-                    <ChevronDown
-                        className={cn('size-4 transition-transform', !isExpanded && '-rotate-90')}
-                        aria-hidden="true"
-                    />
-                </span>
-            </button>
-            {isExpanded ? (
-                <div className="mt-2 ps-7">
-                    <div className={SUMMARY_PROSE_CLASS} style={{ overflowWrap: 'anywhere' }}>
-                        <MarkdownRenderer artifactRunId={artifactRunId} components={DEFAULT_AGENT_MARKDOWN_COMPONENTS}>
-                            {text}
-                        </MarkdownRenderer>
-                    </div>
+                <MarkdownRenderer artifactRunId={artifactRunId} components={DEFAULT_AGENT_MARKDOWN_COMPONENTS}>
+                    {text}
+                </MarkdownRenderer>
+            </div>
+            {isLong ? (
+                <div className="mt-1.5 flex justify-end">
+                    <button
+                        type="button"
+                        aria-expanded={isExpanded}
+                        className={cn(
+                            'inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors',
+                            '[text-decoration:none] hover:text-foreground hover:[text-decoration:none]',
+                            'focus-visible:text-foreground focus-visible:[text-decoration:none]',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        )}
+                        onClick={() => setIsExpanded((current) => !current)}
+                    >
+                        {toggleLabel}
+                        <ChevronDown
+                            className={cn('size-4 transition-transform', isExpanded && 'rotate-180')}
+                            aria-hidden="true"
+                        />
+                    </button>
                 </div>
             ) : null}
         </div>
@@ -1578,8 +1585,8 @@ function SummaryToolTimeline({ items, artifactRunId }: { items: SummaryToolDetai
         <div className="mt-3">
             <div className="space-y-3">
                 {items.map((item) =>
-                    item.kind === 'think' ? (
-                        <SummaryThoughtTimelineItem key={item.key} item={item} artifactRunId={artifactRunId} />
+                    item.isPreamble || item.kind === 'think' ? (
+                        <SummaryThoughtProseItem key={item.key} item={item} artifactRunId={artifactRunId} />
                     ) : (
                         <SummaryToolTimelineItem key={item.key} item={item} />
                     ),

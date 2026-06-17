@@ -702,10 +702,7 @@ describe('AllMessagesMixed summary view', () => {
         const workedRow = screen.getByRole('button', { name: /Worked\s*for\s*3s/ });
         fireEvent.click(workedRow);
 
-        const thoughtRow = screen.getByRole('button', {
-            name: /Thought: The form source is better than the UI/,
-        });
-        expect(thoughtRow.getAttribute('aria-expanded')).toBe('false');
+        expect(screen.queryByRole('button', { name: /Thought: The form source is better than the UI/ })).toBeNull();
         expect(
             screen.getByText('The form source is better than the UI, so I will inspect the serialization path.'),
         ).not.toBeNull();
@@ -762,20 +759,25 @@ describe('AllMessagesMixed summary view', () => {
         fireEvent.click(screen.getByRole('button', { name: /Worked\s*for/ }));
 
         const showMoreButton = screen.getByRole('button', { name: /Show more/ });
+        const prose = screen.getByTestId('summary-thought-prose');
         expect(showMoreButton.getAttribute('aria-expanded')).toBe('false');
+        expect(prose.getAttribute('class') ?? '').toContain('[-webkit-line-clamp:6]');
+        expect(showMoreButton.getAttribute('class') ?? '').not.toContain('focus-visible:underline');
+        expect(showMoreButton.getAttribute('class') ?? '').not.toContain('underline-offset');
+        expect(Boolean(prose.compareDocumentPosition(showMoreButton) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
         expect(screen.getByText(/Thinking through the best approach/)).not.toBeNull();
-        expect(screen.queryByText(/Feature list approach is more aligned/)).toBeNull();
         expect(screen.getByText('CHANGELOG.md')).not.toBeNull();
 
         fireEvent.click(showMoreButton);
 
         const showLessButton = screen.getByRole('button', { name: /Show less/ });
         expect(showLessButton.getAttribute('aria-expanded')).toBe('true');
-        expect(showLessButton.getAttribute('class') ?? '').toContain('sticky');
+        expect(showLessButton.getAttribute('class') ?? '').not.toContain('sticky');
+        expect(prose.getAttribute('class') ?? '').not.toContain('[-webkit-line-clamp:6]');
         expect(screen.getByText(/Feature list approach is more aligned/)).not.toBeNull();
     });
 
-    it('renders legacy think tool rows as collapsed thought subsections in expanded summary work details', () => {
+    it('renders legacy think tool rows as plain preamble prose in expanded summary work details', () => {
         renderSummary(
             [
                 makeMessage({
@@ -818,10 +820,71 @@ describe('AllMessagesMixed summary view', () => {
 
         expect(screen.getByText('Searching for the latest news headlines from Japan...')).not.toBeNull();
         expect(
-            screen.getByRole('button', { name: /Thought: Searching for the latest news headlines from Japan/ }),
-        ).not.toBeNull();
+            screen.queryByRole('button', { name: /Thought: Searching for the latest news headlines from Japan/ }),
+        ).toBeNull();
         expect(screen.queryByRole('button', { name: /Tool\s+Searching for/ })).toBeNull();
         expect(screen.getByRole('button', { name: /Tool\s*Updating 1 tasks of our plan/ })).not.toBeNull();
+    });
+
+    it('renders long tool preambles as plain prose with show more inside expanded summary work details', () => {
+        const longPreamble = [
+            'I will now activate the web search skill so that I can look up live French news headlines.',
+            'Then I will update the plan and proceed to search for current news headlines in France.',
+            'After that I will compare French and international sources before giving a concise summary.',
+            'This should keep the tool work visible without turning this preamble into a tool row.',
+            'I will also keep the answer scoped to the current date and avoid stale coverage.',
+            'Next I will verify that the sources are current enough for the requested headline summary.',
+            'Finally I will present the findings as regular assistant prose instead of another tool row.',
+        ].join('\n');
+
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'What are the news headlines in France today?',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.THOUGHT,
+                    message: longPreamble,
+                    details: {
+                        display_role: 'tool_preamble',
+                        tools: ['learn_web_search'],
+                        activity_group_id: 'activity-1',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    message: 'Activating the web search tool...',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'learn_web_search',
+                        tool_run_id: 'tool-1',
+                        tool_status: 'completed',
+                        activity_group_id: 'activity-1',
+                    },
+                }),
+            ],
+            true,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /Worked\s*for/ }));
+
+        expect(screen.queryByText('Thought')).toBeNull();
+        expect(screen.queryByRole('button', { name: /Thought:/ })).toBeNull();
+        expect(screen.getByText(/I will now activate the web search skill/)).not.toBeNull();
+
+        const showMoreButton = screen.getByRole('button', { name: /Show more/ });
+        const prose = screen.getByTestId('summary-thought-prose');
+        expect(showMoreButton.getAttribute('aria-expanded')).toBe('false');
+        expect(prose.getAttribute('class') ?? '').toContain('[-webkit-line-clamp:6]');
+        expect(Boolean(prose.compareDocumentPosition(showMoreButton) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+        fireEvent.click(showMoreButton);
+
+        const showLessButton = screen.getByRole('button', { name: /Show less/ });
+        expect(showLessButton.getAttribute('aria-expanded')).toBe('true');
+        expect(screen.getByText(/This should keep the tool work visible/)).not.toBeNull();
     });
 
     it('renders completed streaming answers as visible summary prose before later tool activity', () => {

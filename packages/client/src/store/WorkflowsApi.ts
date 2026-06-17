@@ -180,6 +180,7 @@ export class WorkflowsApi extends ApiTopic {
         return new Promise<unknown>((resolve, reject) => {
             let reconnectAttempts = 0;
             let lastMessageTimestamp = since || 0;
+            const historyFetchStartedAt = Date.now();
             let isClosed = false;
             let currentSse: EventSource | null = null;
             let interval: ReturnType<typeof setInterval> | null = null;
@@ -386,6 +387,13 @@ export class WorkflowsApi extends ApiTopic {
                     }
                 } catch (err) {
                     console.warn('Failed to fetch historical messages, continuing with SSE:', err);
+                }
+                if (!isClosed && lastMessageTimestamp <= 0) {
+                    // The server only replays the GET-to-SSE handoff gap when
+                    // `since > 0`. New runs can have no history at the first
+                    // fetch, so use the GET start time as the cursor to avoid
+                    // dropping messages emitted before the SSE subscription is active.
+                    lastMessageTimestamp = Math.max(1, historyFetchStartedAt - 1);
                 }
 
                 // 2. Connect to SSE

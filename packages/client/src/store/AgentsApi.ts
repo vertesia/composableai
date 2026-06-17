@@ -313,6 +313,7 @@ export class AgentsApi extends ApiTopic {
 
         let reconnectAttempts = 0;
         let lastMessageTimestamp = since || 0;
+        const historyFetchStartedAt = Date.now();
         let isClosed = false;
         let currentSse: EventSource | null = null;
         let interval: ReturnType<typeof setInterval> | null = null;
@@ -389,6 +390,13 @@ export class AgentsApi extends ApiTopic {
             if (!isClosed) {
                 console.warn('Failed to fetch historical messages, continuing with SSE:', err);
             }
+        }
+        if (!isClosed && lastMessageTimestamp <= 0) {
+            // The server only replays the GET-to-SSE handoff gap when `since > 0`.
+            // New runs often have no history yet, so use the GET start time as the
+            // cursor to avoid dropping messages emitted before the SSE subscription
+            // is active.
+            lastMessageTimestamp = Math.max(1, historyFetchStartedAt - 1);
         }
 
         // 2. Connect to SSE for real-time updates
