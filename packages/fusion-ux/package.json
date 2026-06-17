@@ -20,7 +20,7 @@
         "react"
     ],
     "scripts": {
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc -b && pnpm exec rollup -c",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build && pnpm exec rollup -c",
         "lint": "biome lint src",
         "lint:fix": "biome lint --write src",
         "test": "vitest run",
@@ -36,10 +36,10 @@
         "@rollup/plugin-node-resolve": "^16.0.3",
         "@rollup/plugin-replace": "^6.0.3",
         "@rollup/plugin-terser": "^1.0.0",
-        "@types/node": "^24.12.4",
+        "@types/node": "^24.13.1",
         "@types/react": "^19.2.17",
         "@vertesia/tsconfig": "workspace:*",
-        "rollup": "^4.61.0",
+        "rollup": "^4.61.1",
         "typescript": "^6.0.3",
         "vitest": "^4.1.8"
     },
