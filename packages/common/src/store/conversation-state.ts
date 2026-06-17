@@ -196,6 +196,16 @@ export interface ConversationState {
      * to consolidate all artifacts under the parent agent run.
      */
     launch_id?: string;
+
+    /**
+     * The app version this run is pinned to (candidate testing), derived from the `@version` on the
+     * started interaction ref / the `x-vertesia-app-version` header at start. Persisted on the state
+     * so it survives resume, and applied to the activity client (`withAppVersion`) so every app-owned
+     * ref the run resolves — interactions, types, processes, tools — targets this version instead of
+     * the current/promoted one. Undefined → current/promoted. Resolution-time only; never a stored
+     * capability-ref version.
+     */
+    app_version?: string;
 }
 
 /** Skill metadata collected at workflow start for upfront sandbox hydration */
