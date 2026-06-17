@@ -1056,7 +1056,7 @@ function ModernAgentConversationInner({
         isCompleted,
         debugChunkFlash,
         addOptimisticMessage,
-        removeOptimisticMessages,
+        updateOptimisticMessageStatus,
         reconnect: reconnectStream,
         agentRunStatus,
         workflowRunId,
@@ -1547,7 +1547,7 @@ function ModernAgentConversationInner({
                 type: AgentMessageType.QUESTION,
                 message: messageContent,
                 workstream_id: 'main',
-                details: { _optimistic: true, _messageId: messageId },
+                details: { _optimistic: true, _messageId: messageId, _deliveryStatus: 'sending' },
             };
 
             addOptimisticMessage(optimisticMessage);
@@ -1555,14 +1555,21 @@ function ModernAgentConversationInner({
             const metadata = {
                 ...(attachedDocs.length > 0 ? { attached_docs: attachedDocs.map((d) => d.id) } : {}),
                 ...contextMetadata,
+                id: messageId,
                 _messageId: messageId,
             };
 
             const sendUserInput = () =>
                 client.agents.sendSignal(agentRunId, 'UserInput', {
                     message: messageContent,
+                    client_message_id: messageId,
                     metadata,
                 } as UserInputSignal);
+
+            const markReceived = () => {
+                updateOptimisticMessageStatus(messageId, 'received');
+                onAttachmentsSent?.();
+            };
 
             // When the workflow has already completed, restart it first so it resumes
             // from the existing conversation history, then deliver the message. Temporal
@@ -1572,17 +1579,13 @@ function ModernAgentConversationInner({
             const deliver = isWorkflowTerminalRef.current
                 ? client.agents.restart(agentRunId).then(() => {
                       reconnectStream();
-                      return sendUserInput().then(() => {
-                          onAttachmentsSent?.();
-                      });
+                      return sendUserInput().then(markReceived);
                   })
-                : sendUserInput().then(() => {
-                      onAttachmentsSent?.();
-                  });
+                : sendUserInput().then(markReceived);
 
             deliver
                 .catch((err) => {
-                    removeOptimisticMessages((m) => m.details?._messageId === messageId);
+                    updateOptimisticMessageStatus(messageId, 'failed');
                     toast({
                         status: 'error',
                         title: t('agent.failedToSend'),
@@ -1603,7 +1606,7 @@ function ModernAgentConversationInner({
             onAttachmentsSent,
             reconnectStream,
             addOptimisticMessage,
-            removeOptimisticMessages,
+            updateOptimisticMessageStatus,
             t,
         ],
     );

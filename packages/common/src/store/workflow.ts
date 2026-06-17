@@ -736,6 +736,7 @@ export enum AgentMessageType {
 }
 
 export interface AgentMessageDetails extends Record<string, unknown> {
+    ack?: string;
     event_class?: string;
     tool?: string;
     tools?: string[];
@@ -761,6 +762,7 @@ export interface AgentMessageDetails extends Record<string, unknown> {
     is_final?: boolean;
     _optimistic?: boolean;
     _messageId?: string;
+    _deliveryStatus?: 'sending' | 'received' | 'consumed' | 'failed';
 }
 
 // ============================================

@@ -26,6 +26,11 @@ export interface UseAgentStreamResult {
     debugChunkFlash: boolean;
     /** Add an optimistic message (for user input) */
     addOptimisticMessage: (msg: AgentMessage) => void;
+    /** Update optimistic delivery state for a client-generated message id */
+    updateOptimisticMessageStatus: (
+        messageId: string,
+        status: NonNullable<Common.AgentMessageDetails['_deliveryStatus']>,
+    ) => void;
     /** Remove optimistic messages matching a predicate */
     removeOptimisticMessages: (predicate: (msg: AgentMessage) => boolean) => void;
     /**
@@ -40,6 +45,28 @@ export interface UseAgentStreamResult {
     workflowRunId: string | null;
     /** Server-side file processing status updates (from SYSTEM messages) */
     serverFileUpdates: Map<string, ConversationFile>;
+}
+
+function withDeliveryStatus(
+    message: AgentMessage,
+    status: NonNullable<Common.AgentMessageDetails['_deliveryStatus']>,
+): AgentMessage {
+    return {
+        ...message,
+        details: {
+            ...(message.details ?? {}),
+            _deliveryStatus: status,
+        },
+    };
+}
+
+function getClientMessageId(message: AgentMessage): string | undefined {
+    const details = message.details;
+    const messageId = details?._messageId;
+    if (typeof messageId === 'string' && messageId) return messageId;
+
+    const ack = details?.ack;
+    return typeof ack === 'string' && ack ? ack : undefined;
 }
 
 /**
@@ -262,13 +289,37 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
                                 return prev;
                             }
 
-                            // For QUESTION messages from server, replace any optimistic version
+                            // For QUESTION messages from server, replace the matching optimistic version.
                             if (message.type === AgentMessageType.QUESTION && !message.details?._optimistic) {
-                                const withoutOptimistic = prev.filter(
-                                    (m) => !(m.type === AgentMessageType.QUESTION && m.details?._optimistic),
+                                const ack = typeof message.details?.ack === 'string' ? message.details.ack : undefined;
+                                const consumedMessage = ack ? withDeliveryStatus(message, 'consumed') : message;
+
+                                if (ack) {
+                                    const next = prev.filter(
+                                        (m) =>
+                                            !(
+                                                m.type === AgentMessageType.QUESTION &&
+                                                m.details?._optimistic &&
+                                                getClientMessageId(m) === ack
+                                            ),
+                                    );
+                                    insertMessageInTimeline(next, consumedMessage);
+                                    return [...next];
+                                }
+
+                                // Legacy fallback for older workflow echoes that predate `details.ack`.
+                                const matchingOptimistic = prev.filter(
+                                    (m) =>
+                                        m.type === AgentMessageType.QUESTION &&
+                                        m.details?._optimistic &&
+                                        m.message === message.message &&
+                                        (m.workstream_id ?? 'main') === (message.workstream_id ?? 'main'),
                                 );
-                                insertMessageInTimeline(withoutOptimistic, message);
-                                return [...withoutOptimistic];
+                                if (matchingOptimistic.length === 1) {
+                                    const next = prev.filter((m) => m !== matchingOptimistic[0]);
+                                    insertMessageInTimeline(next, message);
+                                    return [...next];
+                                }
                             }
 
                             insertMessageInTimeline(prev, message);
@@ -346,6 +397,24 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
         });
     }, []);
 
+    const updateOptimisticMessageStatus = useCallback(
+        (messageId: string, status: NonNullable<Common.AgentMessageDetails['_deliveryStatus']>) => {
+            setMessages((prev) =>
+                prev.map((message) => {
+                    if (
+                        message.type === AgentMessageType.QUESTION &&
+                        message.details?._optimistic &&
+                        getClientMessageId(message) === messageId
+                    ) {
+                        return withDeliveryStatus(message, status);
+                    }
+                    return message;
+                }),
+            );
+        },
+        [],
+    );
+
     // Remove optimistic messages matching a predicate
     const removeOptimisticMessages = useCallback((predicate: (msg: AgentMessage) => boolean) => {
         setMessages((prev) => prev.filter((m) => !predicate(m)));
@@ -357,6 +426,7 @@ export function useAgentStream(client: VertesiaClient, agentRunId: string): UseA
         isCompleted,
         debugChunkFlash,
         addOptimisticMessage,
+        updateOptimisticMessageStatus,
         removeOptimisticMessages,
         reconnect,
         agentRunStatus,

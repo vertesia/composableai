@@ -1,5 +1,10 @@
 export interface UserInputSignal {
     message: string;
+    /**
+     * Client-generated id used to correlate a UserInput signal with the
+     * persisted QUESTION message emitted by the workflow.
+     */
+    client_message_id?: string;
     metadata?: Record<string, unknown>;
     auth_token?: string;
     /**

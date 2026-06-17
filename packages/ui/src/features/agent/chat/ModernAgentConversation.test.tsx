@@ -7,6 +7,7 @@ import { ModernAgentConversation } from './ModernAgentConversation';
 
 const mocks = vi.hoisted(() => ({
     addOptimisticMessage: vi.fn(),
+    updateOptimisticMessageStatus: vi.fn(),
     removeOptimisticMessages: vi.fn(),
     reconnect: vi.fn(),
     restart: vi.fn(),
@@ -141,6 +142,7 @@ function mockStreamState(options: {
         isCompleted: options.isCompleted ?? true,
         debugChunkFlash: false,
         addOptimisticMessage: mocks.addOptimisticMessage,
+        updateOptimisticMessageStatus: mocks.updateOptimisticMessageStatus,
         removeOptimisticMessages: mocks.removeOptimisticMessages,
         reconnect: mocks.reconnect,
         agentRunStatus: options.agentRunStatus ?? null,
@@ -220,13 +222,16 @@ describe('ModernAgentConversation send handling', () => {
             'UserInput',
             expect.objectContaining({
                 message: 'follow up',
+                client_message_id: expect.any(String),
                 metadata: expect.objectContaining({
+                    id: expect.any(String),
                     _messageId: expect.any(String),
                 }),
             }),
         );
         expect(mocks.restart.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendSignal.mock.invocationCallOrder[0]);
         expect(mocks.reconnect.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendSignal.mock.invocationCallOrder[0]);
+        expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'received');
     });
 
     it('does not restart or send from a terminal run that cannot continue', () => {
@@ -508,7 +513,14 @@ describe('ModernAgentConversation send handling', () => {
         expect(mocks.sendSignal).toHaveBeenCalledWith(
             'agent-run-1',
             'UserInput',
-            expect.objectContaining({ message: 'blue' }),
+            expect.objectContaining({
+                message: 'blue',
+                client_message_id: expect.any(String),
+                metadata: expect.objectContaining({
+                    id: expect.any(String),
+                    _messageId: expect.any(String),
+                }),
+            }),
         );
     });
 
@@ -533,6 +545,59 @@ describe('ModernAgentConversation send handling', () => {
             'UserInput',
             expect.objectContaining({ message: 'follow up' }),
         );
+    });
+
+    it('marks a sent message as sending and then received', async () => {
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ onRestart: vi.fn() });
+
+        fireEvent.click(screen.getByRole('button', { name: 'inline send' }));
+
+        const optimisticMessage = mocks.addOptimisticMessage.mock.calls[0]?.[0] as AgentMessage | undefined;
+        expect(optimisticMessage).toEqual(
+            expect.objectContaining({
+                type: AgentMessageType.QUESTION,
+                message: 'follow up',
+                details: expect.objectContaining({
+                    _optimistic: true,
+                    _messageId: expect.any(String),
+                    _deliveryStatus: 'sending',
+                }),
+            }),
+        );
+
+        await waitFor(() => {
+            expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(
+                optimisticMessage?.details?._messageId,
+                'received',
+            );
+        });
+    });
+
+    it('marks a failed send without removing the optimistic message', async () => {
+        mocks.sendSignal.mockRejectedValueOnce(new Error('signal failed'));
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ onRestart: vi.fn() });
+
+        fireEvent.click(screen.getByRole('button', { name: 'inline send' }));
+
+        const optimisticMessage = mocks.addOptimisticMessage.mock.calls[0]?.[0] as AgentMessage | undefined;
+
+        await waitFor(() => {
+            expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(
+                optimisticMessage?.details?._messageId,
+                'failed',
+            );
+        });
+        expect(mocks.removeOptimisticMessages).not.toHaveBeenCalled();
     });
 
     it('playback controls slice rendered messages and scroll forward without mutating the live stream', async () => {

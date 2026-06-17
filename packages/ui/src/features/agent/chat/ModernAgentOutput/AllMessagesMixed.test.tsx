@@ -100,6 +100,38 @@ describe('AllMessagesMixed summary view', () => {
         vi.useRealTimers();
     });
 
+    it('renders delivery status on user bubbles in summary view', () => {
+        renderSummary([
+            makeMessage({
+                timestamp: 1_000,
+                type: AgentMessageType.QUESTION,
+                message: 'Find Japan news.',
+                details: {
+                    _deliveryStatus: 'consumed',
+                    ack: 'message-1',
+                },
+            }),
+        ]);
+
+        expect(screen.getByLabelText('Message consumed')).not.toBeNull();
+    });
+
+    it('renders delivery status on user messages in stacked view', () => {
+        renderStacked([
+            makeMessage({
+                timestamp: 1_000,
+                type: AgentMessageType.QUESTION,
+                message: 'Find Japan news.',
+                details: {
+                    _deliveryStatus: 'sending',
+                    _messageId: 'message-1',
+                },
+            }),
+        ]);
+
+        expect(screen.getByLabelText('Sending message')).not.toBeNull();
+    });
+
     it('renders completed tool activity as a collapsed Worked row that expands to tool details', () => {
         renderSummary(
             [
@@ -625,7 +657,7 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.queryByRole('button', { name: /Blue/ })).toBeNull();
     });
 
-    it('renders thought prose between tool rows inside expanded work details', () => {
+    it('renders thought prose as a collapsed subsection inside expanded work details', () => {
         renderSummary(
             [
                 makeMessage({
@@ -670,7 +702,10 @@ describe('AllMessagesMixed summary view', () => {
         const workedRow = screen.getByRole('button', { name: /Worked\s*for\s*3s/ });
         fireEvent.click(workedRow);
 
-        expect(screen.queryByText('Thought')).toBeNull();
+        const thoughtRow = screen.getByRole('button', {
+            name: /Thought: The form source is better than the UI/,
+        });
+        expect(thoughtRow.getAttribute('aria-expanded')).toBe('false');
         expect(
             screen.getByText('The form source is better than the UI, so I will inspect the serialization path.'),
         ).not.toBeNull();
@@ -678,7 +713,69 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('allowed_scopes')).not.toBeNull();
     });
 
-    it('renders legacy think tool rows as thought prose in expanded summary work details', () => {
+    it('collapses very long thought prose inside expanded work details', () => {
+        const longThought = [
+            'Thinking through the best approach for this complex multi-repo release note generation problem...',
+            '',
+            'Grant is asking me to help design a prompt strategy for release notes from GitHub repos.',
+            'This is a meta-task, so I need to help him think through the best approach and craft effective prompts.',
+            '',
+            'Key challenges:',
+            '',
+            '1. Multi-repo complexity: 3 repos with a dependency chain.',
+            '2. Filtering logic: exclude chores and infrastructure changes unless user-facing.',
+            '3. Deduplication: fixes and improvements should roll into the relevant feature.',
+            '4. Progressive document building: preserve context without overloading a single step.',
+            '5. Review loop: make sure final release notes are concise and audience-ready.',
+            '',
+            'Daily changelog approach has natural organization by time, but it creates rework.',
+            'Feature list approach is more aligned with release notes, but needs stronger discovery.',
+            'The best option is likely a hybrid: gather structured daily facts, then synthesize by feature.',
+        ].join('\n');
+
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Plan release notes.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.THOUGHT,
+                    message: longThought,
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    message: 'Reading commits',
+                    details: {
+                        tool: 'read_file',
+                        tool_status: 'completed',
+                        tool_run_id: 'tool-1',
+                        path: 'CHANGELOG.md',
+                    },
+                }),
+            ],
+            true,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /Worked\s*for/ }));
+
+        const showMoreButton = screen.getByRole('button', { name: /Show more/ });
+        expect(showMoreButton.getAttribute('aria-expanded')).toBe('false');
+        expect(screen.getByText(/Thinking through the best approach/)).not.toBeNull();
+        expect(screen.queryByText(/Feature list approach is more aligned/)).toBeNull();
+        expect(screen.getByText('CHANGELOG.md')).not.toBeNull();
+
+        fireEvent.click(showMoreButton);
+
+        const showLessButton = screen.getByRole('button', { name: /Show less/ });
+        expect(showLessButton.getAttribute('aria-expanded')).toBe('true');
+        expect(showLessButton.getAttribute('class') ?? '').toContain('sticky');
+        expect(screen.getByText(/Feature list approach is more aligned/)).not.toBeNull();
+    });
+
+    it('renders legacy think tool rows as collapsed thought subsections in expanded summary work details', () => {
         renderSummary(
             [
                 makeMessage({
@@ -720,6 +817,9 @@ describe('AllMessagesMixed summary view', () => {
         fireEvent.click(workedRow);
 
         expect(screen.getByText('Searching for the latest news headlines from Japan...')).not.toBeNull();
+        expect(
+            screen.getByRole('button', { name: /Thought: Searching for the latest news headlines from Japan/ }),
+        ).not.toBeNull();
         expect(screen.queryByRole('button', { name: /Tool\s+Searching for/ })).toBeNull();
         expect(screen.getByRole('button', { name: /Tool\s*Updating 1 tasks of our plan/ })).not.toBeNull();
     });

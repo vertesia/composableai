@@ -154,6 +154,13 @@ function isToolScopedStatusMessage(message: AgentMessage): boolean {
     );
 }
 
+function isLegacyAnalyzeConversationErrorMessage(message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.ERROR || isToolScopedStatusMessage(message)) return false;
+
+    const details = message.details as { error?: unknown } | undefined;
+    return getMessageText(message).startsWith('Error analyzing conversation:') && typeof details?.error === 'string';
+}
+
 function isSummaryPrimaryMessage(message: AgentMessage): boolean {
     if (isWorkstreamInternalResultMessage(message)) return false;
 
@@ -249,7 +256,10 @@ export function buildSummaryConversationItems(
             continue;
         }
 
-        if (isSummaryWorkMessage(message)) {
+        if (
+            isSummaryWorkMessage(message) ||
+            (pendingWork.length > 0 && isLegacyAnalyzeConversationErrorMessage(message))
+        ) {
             if (shouldResumeCompletedWorkForTool(message, pendingWork)) {
                 const previousItem = items[items.length - 1];
                 if (previousItem?.type === 'work' && !previousItem.isActive) {

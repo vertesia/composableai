@@ -133,7 +133,7 @@ describe('useAgentStream', () => {
         });
     });
 
-    it('dedupes re-delivered messages by timestamp and replaces optimistic questions', async () => {
+    it('dedupes re-delivered messages by timestamp and replaces ack-matched optimistic questions', async () => {
         let onStreamMessage: ((message: AgentMessage) => void) | undefined;
         const streamMessages = vi.fn<
             (
@@ -157,7 +157,7 @@ describe('useAgentStream', () => {
         act(() => {
             result.current.addOptimisticMessage({
                 ...createMessage(AgentMessageType.QUESTION, 1_000, 'optimistic'),
-                details: { _optimistic: true, _messageId: 'message-1' },
+                details: { _optimistic: true, _messageId: 'message-1', _deliveryStatus: 'sending' },
             });
         });
 
@@ -166,12 +166,13 @@ describe('useAgentStream', () => {
         act(() => {
             onStreamMessage?.({
                 ...createMessage(AgentMessageType.QUESTION, 1_100, 'server question'),
-                details: { _messageId: 'message-1' },
+                details: { ack: 'message-1' },
             });
         });
 
         await waitFor(() => {
             expect(result.current.messages.map((message) => message.message)).toEqual(['server question']);
+            expect(result.current.messages[0]?.details?._deliveryStatus).toBe('consumed');
         });
 
         const answer = createMessage(AgentMessageType.ANSWER, 1_200, 'answer');
@@ -183,6 +184,90 @@ describe('useAgentStream', () => {
         await waitFor(() => {
             expect(result.current.messages.map((message) => message.message)).toEqual(['server question', 'answer']);
         });
+    });
+
+    it('keeps non-matching optimistic questions when an acknowledged server question arrives', async () => {
+        let onStreamMessage: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+            ) => Promise<unknown>
+        >(async (_id, onMessage) => {
+            onStreamMessage = onMessage;
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(onStreamMessage).toBeDefined();
+        });
+
+        act(() => {
+            result.current.addOptimisticMessage({
+                ...createMessage(AgentMessageType.QUESTION, 1_000, 'first optimistic'),
+                details: { _optimistic: true, _messageId: 'message-1', _deliveryStatus: 'sending' },
+            });
+            result.current.addOptimisticMessage({
+                ...createMessage(AgentMessageType.QUESTION, 1_050, 'second optimistic'),
+                details: { _optimistic: true, _messageId: 'message-2', _deliveryStatus: 'sending' },
+            });
+        });
+
+        act(() => {
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.QUESTION, 1_100, 'server second question'),
+                details: { ack: 'message-2' },
+            });
+        });
+
+        await waitFor(() => {
+            expect(result.current.messages.map((message) => message.message)).toEqual([
+                'first optimistic',
+                'server second question',
+            ]);
+        });
+        expect(result.current.messages[0]?.details?._deliveryStatus).toBe('sending');
+        expect(result.current.messages[1]?.details?._deliveryStatus).toBe('consumed');
+    });
+
+    it('updates optimistic message delivery status', async () => {
+        let onStreamMessage: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+            ) => Promise<unknown>
+        >(async (_id, onMessage) => {
+            onStreamMessage = onMessage;
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(onStreamMessage).toBeDefined();
+        });
+
+        act(() => {
+            result.current.addOptimisticMessage({
+                ...createMessage(AgentMessageType.QUESTION, 1_000, 'optimistic'),
+                details: { _optimistic: true, _messageId: 'message-1', _deliveryStatus: 'sending' },
+            });
+        });
+
+        act(() => {
+            result.current.updateOptimisticMessageStatus('message-1', 'received');
+        });
+
+        expect(result.current.messages[0]?.details?._deliveryStatus).toBe('received');
     });
 
     it('replaces file processing status with the latest server snapshot', async () => {

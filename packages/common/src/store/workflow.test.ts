@@ -160,6 +160,28 @@ describe('CompactMessage converters', () => {
             expect(compact.d).toEqual({ plan: [{ id: 1, goal: 'Step 1' }] });
         });
 
+        it('preserves user message acknowledgement details', () => {
+            const legacy: AgentMessage = {
+                type: AgentMessageType.QUESTION,
+                timestamp: 1234567890,
+                workflow_run_id: 'run-123',
+                message: 'Follow up',
+                details: {
+                    event_class: 'user_content',
+                    ack: 'message-1',
+                    _deliveryStatus: 'consumed',
+                },
+            };
+
+            const compact = toCompactMessage(legacy);
+
+            expect(compact.d).toEqual({
+                event_class: 'user_content',
+                ack: 'message-1',
+                _deliveryStatus: 'consumed',
+            });
+        });
+
         it('handles streaming chunk with is_final flag', () => {
             const legacy: AgentMessage = {
                 type: AgentMessageType.STREAMING_CHUNK,
@@ -280,6 +302,26 @@ describe('CompactMessage converters', () => {
             const legacy = toAgentMessage(compact, 'run-1');
 
             expect(legacy.details).toEqual({ batch_id: 'batch-1', completed: 5, total: 10 });
+        });
+
+        it('restores user message acknowledgement details', () => {
+            const compact: CompactMessage = {
+                t: AgentMessageType.QUESTION,
+                m: 'Follow up',
+                d: {
+                    event_class: 'user_content',
+                    ack: 'message-1',
+                    _deliveryStatus: 'consumed',
+                },
+            };
+
+            const legacy = toAgentMessage(compact, 'run-1');
+
+            expect(legacy.details).toEqual({
+                event_class: 'user_content',
+                ack: 'message-1',
+                _deliveryStatus: 'consumed',
+            });
         });
 
         it('restores streaming chunk details with is_final', () => {

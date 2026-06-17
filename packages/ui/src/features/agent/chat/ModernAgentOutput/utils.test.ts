@@ -498,6 +498,67 @@ describe('ModernAgentOutput summary conversation items', () => {
         });
     });
 
+    it('keeps legacy analyze conversation errors inside the surrounding work block', () => {
+        const analyzeStart = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Running analyze_conversation',
+            details: {
+                activity_group_id: 'activity-10',
+                tool: 'analyze_conversation',
+                tool_run_id: 'analyze-run-1',
+                tool_status: 'running',
+            },
+        });
+        const legacyAnalyzeError = makeMessage({
+            timestamp: 1100,
+            type: AgentMessageType.ERROR,
+            message: 'Error analyzing conversation: Could not find conversation for workflow run ID: run-1',
+            details: {
+                error: 'Could not find conversation for workflow run ID: run-1',
+            },
+        });
+        const answer = makeMessage({
+            timestamp: 1200,
+            type: AgentMessageType.ANSWER,
+            message: 'Here is the analysis.',
+        });
+
+        const items = buildSummaryConversationItems([analyzeStart, legacyAnalyzeError, answer], true);
+
+        expect(items).toHaveLength(2);
+        expect(items[0]).toMatchObject({
+            type: 'work',
+            isActive: false,
+            status: 'error',
+            messages: [analyzeStart, legacyAnalyzeError],
+        });
+        expect(items[1]).toMatchObject({
+            type: 'message',
+            message: answer,
+        });
+    });
+
+    it('keeps legacy analyze conversation errors without surrounding work as primary messages', () => {
+        const legacyAnalyzeError = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.ERROR,
+            message: 'Error analyzing conversation: Could not find conversation for workflow run ID: run-1',
+            details: {
+                error: 'Could not find conversation for workflow run ID: run-1',
+            },
+        });
+
+        const items = buildSummaryConversationItems([legacyAnalyzeError], true);
+
+        expect(items).toEqual([
+            {
+                type: 'message',
+                message: legacyAnalyzeError,
+            },
+        ]);
+    });
+
     it('hides transient thinking once the work segment completes', () => {
         const tool = makeMessage({
             timestamp: 1000,

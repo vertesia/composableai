@@ -37,6 +37,7 @@ import {
 } from '../workstreams.js';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from './BatchProgressPanel';
+import { getMessageDeliveryStatus, MessageDeliveryStatus } from './MessageDeliveryStatus';
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
 import {
     getAnsweredRequestInputKeys,
@@ -212,6 +213,7 @@ const SUMMARY_PROSE_CLASS = [
 ].join(' ');
 
 const USER_BUBBLE_COLLAPSE_THRESHOLD = 520;
+const SUMMARY_THOUGHT_PREVIEW_LENGTH = 180;
 const STORE_LINK_MARKDOWN_RE =
     /\[[^\]]+\]\((?:\/store\/(?:objects|collections)\/|store:|document:|document:\/\/|collection:)[^)]+\)/;
 const DEFAULT_AGENT_MARKDOWN_COMPONENTS: MarkdownRendererProps['components'] = {
@@ -428,12 +430,14 @@ function useRotatingThinkingMessageIndex(enabled = true): number {
 
 function SummaryUserBubble({
     children,
+    message,
     workstreamId,
     className,
     artifactRunId,
     markdownComponents,
 }: {
     children: React.ReactNode;
+    message?: AgentMessage;
     workstreamId?: string;
     className?: string;
     artifactRunId?: string;
@@ -446,6 +450,7 @@ function SummaryUserBubble({
     const isPlainText = typeof children === 'string' || typeof children === 'number';
     const textContent = isPlainText ? String(children) : '';
     const shouldRenderMarkdown = typeof children === 'string' && STORE_LINK_MARKDOWN_RE.test(children);
+    const deliveryStatus = message ? getMessageDeliveryStatus(message) : undefined;
 
     useEffect(() => {
         if (!shouldCollapse && isExpanded) {
@@ -502,6 +507,11 @@ function SummaryUserBubble({
                         />
                     </button>
                 )}
+                {message && deliveryStatus ? (
+                    <div className="mt-1.5 flex justify-end">
+                        <MessageDeliveryStatus message={message} className="h-4 w-4" />
+                    </div>
+                ) : null}
             </div>
         </div>
     );
@@ -597,6 +607,7 @@ function SummaryMessage({
                 )}
                 {questionBody && (
                     <SummaryUserBubble
+                        message={message}
                         workstreamId={workstreamId}
                         artifactRunId={runId}
                         markdownComponents={markdownComponents}
@@ -1514,15 +1525,50 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
 }
 
 function SummaryThoughtTimelineItem({ item, artifactRunId }: { item: SummaryToolDetailItem; artifactRunId?: string }) {
+    const { t } = useUITranslation();
     const text = item.text ?? item.title;
+    const [isExpanded, setIsExpanded] = useState(false);
+    const preview = compactInlineText(text, SUMMARY_THOUGHT_PREVIEW_LENGTH);
+    const toggleLabel = isExpanded ? t('agent.showLess') : t('agent.showMore');
 
     return (
         <div className="min-w-0 py-1 text-sm leading-6 text-foreground/85">
-            <div className={SUMMARY_PROSE_CLASS} style={{ overflowWrap: 'anywhere' }}>
-                <MarkdownRenderer artifactRunId={artifactRunId} components={DEFAULT_AGENT_MARKDOWN_COMPONENTS}>
-                    {text}
-                </MarkdownRenderer>
-            </div>
+            <button
+                type="button"
+                aria-expanded={isExpanded}
+                aria-label={`${item.label}: ${preview}. ${toggleLabel}`}
+                className={cn(
+                    'grid w-full grid-cols-[1.5rem_1fr_auto] gap-2 text-start outline-none transition-colors',
+                    'focus-visible:text-foreground focus-visible:underline focus-visible:underline-offset-4',
+                    'hover:text-foreground',
+                    isExpanded && 'sticky top-0 z-10 py-1',
+                )}
+                onClick={() => setIsExpanded((current) => !current)}
+            >
+                <span className="flex size-5 items-center justify-center pt-0.5 text-muted">
+                    <ToolDetailIcon kind={item.kind} status={item.status} />
+                </span>
+                <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                    <span className="text-sm font-medium text-muted">{item.label}</span>
+                    <span className="min-w-0 break-words text-sm text-muted">{preview}</span>
+                </span>
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors">
+                    {toggleLabel}
+                    <ChevronDown
+                        className={cn('size-4 transition-transform', !isExpanded && '-rotate-90')}
+                        aria-hidden="true"
+                    />
+                </span>
+            </button>
+            {isExpanded ? (
+                <div className="mt-2 ps-7">
+                    <div className={SUMMARY_PROSE_CLASS} style={{ overflowWrap: 'anywhere' }}>
+                        <MarkdownRenderer artifactRunId={artifactRunId} components={DEFAULT_AGENT_MARKDOWN_COMPONENTS}>
+                            {text}
+                        </MarkdownRenderer>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 }
