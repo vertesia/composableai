@@ -326,6 +326,7 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('Workstreams')).not.toBeNull();
         expect(screen.getByText('QA Tasks')).not.toBeNull();
         expect(screen.getByText('Browser Agent')).not.toBeNull();
+        expect(screen.queryByText('Workstream-only result.')).toBeNull();
 
         fireEvent.click(screen.getByRole('button', { name: /QA Tasks/ }));
 
@@ -378,6 +379,7 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('Workstreams')).not.toBeNull();
         expect(screen.getByText('Legacy Browser')).not.toBeNull();
         expect(screen.getByText('Browser Agent')).not.toBeNull();
+        expect(screen.queryByText('Legacy workstream-only result.')).toBeNull();
 
         fireEvent.click(screen.getByRole('button', { name: /Legacy Browser/ }));
 

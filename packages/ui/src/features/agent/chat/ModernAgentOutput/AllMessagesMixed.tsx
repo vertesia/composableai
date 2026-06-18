@@ -966,6 +966,24 @@ function getDetailsRecord(message: AgentMessage): Record<string, unknown> {
     return isRecordValue(message.details) ? message.details : {};
 }
 
+function isMainChatMessage(message: AgentMessage): boolean {
+    if (getWorkstreamId(message) === 'main') return true;
+
+    if (getWorkstreamLaunchDetails(message) || getWorkstreamActivityDetails(message)) return true;
+
+    const details = getDetailsRecord(message);
+    const hasChildWorkflow =
+        typeof details.child_workflow_id === 'string' || typeof details.child_workflow_run_id === 'string';
+    const hasTool = typeof details.tool === 'string' || typeof details.tool_run_id === 'string';
+    const isLegacyPreLaunchFailure =
+        details.event_class === 'activity' &&
+        (message.type === AgentMessageType.ERROR || message.type === AgentMessageType.WARNING) &&
+        !hasChildWorkflow &&
+        !hasTool;
+
+    return isLegacyPreLaunchFailure;
+}
+
 function humanizeIdentifier(value: string): string {
     return value
         .replace(/[_-]+/g, ' ')
@@ -2251,7 +2269,7 @@ function AllMessagesMixedComponent({
     // Filter messages based on active workstream
     const displayMessages = React.useMemo(() => {
         if (activeWorkstream === 'all') {
-            return sortedMessages;
+            return sortedMessages.filter(isMainChatMessage);
         }
         return sortedMessages.filter((message) => {
             const workstreamStartDetails = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
