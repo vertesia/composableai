@@ -17,7 +17,7 @@
         "lint": "biome lint src",
         "test": "vitest run",
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc && chmod +x ./lib/bin/build.js",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build && chmod +x ./lib/bin/build.js",
         "clean": "rm -rf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "exports": {
@@ -33,7 +33,7 @@
     "devDependencies": {
         "@hono/node-server": "^2.0.4",
         "@types/js-yaml": "^4.0.9",
-        "@types/node": "^24.12.4",
+        "@types/node": "^24.13.2",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "^6.0.3",
         "vite": "^8.0.16",
@@ -42,12 +42,12 @@
     "dependencies": {
         "@llumiverse/common": "workspace:*",
         "@vertesia/common": "workspace:*",
-        "esbuild": "^0.28.0",
+        "esbuild": "^0.28.1",
         "js-yaml": "^4.2.0",
         "zod": "^4.4.3"
     },
     "peerDependencies": {
-        "@hono/node-server": "^2.0.0",
+        "@hono/node-server": "^2.0.4",
         "vite": "^8.0.16"
     },
     "peerDependenciesMeta": {

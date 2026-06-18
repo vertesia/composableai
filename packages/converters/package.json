@@ -14,7 +14,7 @@
         "lint": "biome lint src",
         "test": "vitest run",
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build",
         "clean": "rm -rf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "exports": {
