@@ -1279,10 +1279,66 @@ function isPlanLifecycleMessage(message: AgentMessage): boolean {
     return message.type === AgentMessageType.PLAN && Array.isArray(details.plan);
 }
 
+function getActivityGroupIdentity(details: Record<string, unknown>): string | undefined {
+    return typeof details.activity_group_id === 'string' && details.activity_group_id.trim()
+        ? details.activity_group_id.trim()
+        : undefined;
+}
+
+function getToolIdentity(details: Record<string, unknown>): string | undefined {
+    if (typeof details.tool_use_id === 'string' && details.tool_use_id.trim()) return details.tool_use_id.trim();
+    if (typeof details.tool_run_id === 'string' && details.tool_run_id.trim()) return details.tool_run_id.trim();
+    if (typeof details.tool === 'string' && details.tool.trim()) return details.tool.trim();
+    return undefined;
+}
+
+function getSplitActivityGroups(messages: AgentMessage[]): Set<string> {
+    const startedToolIdentities = new Map<string, Set<string>>();
+
+    for (const message of messages) {
+        const details = getDetailsRecord(message);
+        if (details.tool_event !== 'started') continue;
+
+        const activityGroupId = getActivityGroupIdentity(details);
+        const toolIdentity = getToolIdentity(details);
+        if (!activityGroupId || !toolIdentity) continue;
+
+        const identities = startedToolIdentities.get(activityGroupId) ?? new Set<string>();
+        identities.add(toolIdentity);
+        startedToolIdentities.set(activityGroupId, identities);
+    }
+
+    return new Set(
+        Array.from(startedToolIdentities.entries())
+            .filter(([, identities]) => identities.size > 1)
+            .map(([activityGroupId]) => activityGroupId),
+    );
+}
+
+function getSummaryToolGroupId(details: Record<string, unknown>, splitActivityGroups: Set<string>): string | undefined {
+    const activityGroupId = getActivityGroupIdentity(details);
+    const toolIdentity = getToolIdentity(details);
+
+    if (activityGroupId) {
+        if (toolIdentity && splitActivityGroups.has(activityGroupId)) {
+            return `activity:${activityGroupId}:tool:${toolIdentity}`;
+        }
+        return `activity:${activityGroupId}`;
+    }
+
+    if (typeof details.tool_use_id === 'string' && details.tool_use_id.trim()) {
+        return `tool-use:${details.tool_use_id.trim()}`;
+    }
+    if (typeof details.tool_run_id === 'string' && details.tool_run_id.trim())
+        return `run:${details.tool_run_id.trim()}`;
+    return undefined;
+}
+
 function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
     const byGroupId = new Map<string, { index: number; messages: AgentMessage[] }>();
     const ungrouped: Array<{ index: number; message: AgentMessage }> = [];
     let currentPlanGroupId: string | undefined;
+    const splitActivityGroups = getSplitActivityGroups(messages);
 
     messages.forEach((message, index) => {
         const details = getDetailsRecord(message);
@@ -1292,19 +1348,12 @@ function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
             return;
         }
 
-        const activityGroupId =
-            typeof details.activity_group_id === 'string' && details.activity_group_id.trim()
-                ? details.activity_group_id
-                : undefined;
-        const runId =
-            typeof details.tool_run_id === 'string' && details.tool_run_id.trim() ? details.tool_run_id : undefined;
-        const groupId = activityGroupId ? `activity:${activityGroupId}` : runId ? `run:${runId}` : undefined;
+        const groupId = getSummaryToolGroupId(details, splitActivityGroups);
         const legacyPlanGroupId = !groupId && isPlanLifecycleMessage(message) ? currentPlanGroupId : undefined;
         const effectiveGroupId = groupId ?? legacyPlanGroupId;
 
         if (!effectiveGroupId) {
             ungrouped.push({ index, message });
-            currentPlanGroupId = undefined;
             return;
         }
 
@@ -1317,7 +1366,7 @@ function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
 
         if (isPlanToolMessage(message)) {
             currentPlanGroupId = effectiveGroupId;
-        } else if (!isPlanLifecycleMessage(message) || message.type === AgentMessageType.PLAN) {
+        } else if (message.type === AgentMessageType.PLAN) {
             currentPlanGroupId = undefined;
         }
     });

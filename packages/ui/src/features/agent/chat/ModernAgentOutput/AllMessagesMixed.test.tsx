@@ -215,6 +215,98 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('Found 5 results')).not.toBeNull();
     });
 
+    it('keeps same-iteration tool detail panels matched to their own tool identity', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Launch France and Japan news workstreams.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    message:
+                        'Updating the project plan to mark both workstream launches as completed and the monitoring phase as in-progress...',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'update_plan',
+                        tool_run_id: 'update_plan',
+                        tool_use_id: 'update_plan',
+                        tool_iteration: 7,
+                        tool_status: 'running',
+                        tool_event: 'started',
+                        activity_group_id: 'activity-7',
+                        message_to_human:
+                            'Updating the project plan to mark both workstream launches as completed and the monitoring phase as in-progress...',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 2_500,
+                    message: 'Launching the Japan news headline gathering workstream...',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'launch_workstream',
+                        tool_run_id: 'launch_workstream',
+                        tool_use_id: 'launch_workstream',
+                        tool_iteration: 7,
+                        tool_status: 'running',
+                        tool_event: 'started',
+                        activity_group_id: 'activity-7',
+                        message_to_human: 'Launching the Japan news headline gathering workstream...',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    type: AgentMessageType.UPDATE,
+                    message: 'Updating 3 tasks of our plan.',
+                    details: {
+                        updates: [
+                            { task_id: 1, status: 'completed' },
+                            { task_id: 2, status: 'completed' },
+                            { task_id: 3, status: 'in_progress' },
+                        ],
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_001,
+                    type: AgentMessageType.PLAN,
+                    message:
+                        'Both news workstreams (France and Japan) have been successfully launched. We are now entering the monitoring phase.',
+                    details: {
+                        plan: [
+                            { id: 1, status: 'completed', goal: 'Launch France workstream' },
+                            { id: 2, status: 'completed', goal: 'Launch Japan workstream' },
+                            { id: 3, status: 'in_progress', goal: 'Monitor both workstreams' },
+                        ],
+                    },
+                }),
+                makeMessage({
+                    timestamp: 4_000,
+                    type: AgentMessageType.ANSWER,
+                    message: 'Done.',
+                }),
+            ],
+            true,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /Worked\s*for\s*2s/ }));
+
+        const updatePlanRow = screen.getByRole('button', { name: /Updating the project plan/ });
+        expect(screen.queryByRole('button', { name: /Updating 3 tasks/ })).toBeNull();
+        expect(screen.queryByRole('button', { name: /Both news workstreams/ })).toBeNull();
+
+        fireEvent.click(updatePlanRow);
+
+        expect(screen.getByText('update_plan')).not.toBeNull();
+        expect(screen.queryByText('launch_workstream')).toBeNull();
+        expect(screen.getByText(/"updates"/)).not.toBeNull();
+
+        const launchWorkstreamRow = screen.getByRole('button', { name: /Launching the Japan news/ });
+        fireEvent.click(launchWorkstreamRow);
+
+        expect(screen.getByText('launch_workstream')).not.toBeNull();
+    });
+
     it('renders active tool activity as an expanded Working row', () => {
         renderSummary([
             makeMessage({
