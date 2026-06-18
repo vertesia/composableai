@@ -21,7 +21,7 @@
         "@rollup/plugin-commonjs": "^29.0.3",
         "@rollup/plugin-node-resolve": "^16.0.3",
         "@rollup/plugin-terser": "^1.0.0",
-        "@types/node": "^24.13.1",
+        "@types/node": "^24.13.2",
         "@vertesia/tsconfig": "workspace:*",
         "rollup": "^4.61.1",
         "typescript": "^6.0.3",
