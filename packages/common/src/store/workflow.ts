@@ -1,4 +1,4 @@
-import type { HttpTimeoutOptions, ModelOptions } from '@llumiverse/common';
+import type { ExecutionTokenUsage, HttpTimeoutOptions, ModelOptions } from '@llumiverse/common';
 import type {
     ConversationVisibility,
     InteractionExecutionConfiguration,
@@ -753,6 +753,9 @@ export interface AgentMessageDetails extends Record<string, unknown> {
     message_to_human?: string;
     duration_ms?: number;
     observation?: unknown;
+    token_usage?: ExecutionTokenUsage;
+    checkpoint_at?: number;
+    checkpoint_threshold?: number;
     workflow_run_id?: string;
     outputFiles?: string[];
     files?: ConversationFile[] | string[];

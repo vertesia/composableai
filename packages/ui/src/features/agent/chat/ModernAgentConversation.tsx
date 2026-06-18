@@ -47,7 +47,11 @@ import type {
 import AllMessagesMixed from './ModernAgentOutput/AllMessagesMixed';
 import type { BatchProgressPanelClassNames } from './ModernAgentOutput/BatchProgressPanel';
 import Header from './ModernAgentOutput/Header';
-import MessageInput, { type SelectedDocument, type UploadedFile } from './ModernAgentOutput/MessageInput';
+import MessageInput, {
+    type ContextWindowUsage,
+    type SelectedDocument,
+    type UploadedFile,
+} from './ModernAgentOutput/MessageInput';
 import type { MessageItemClassNames } from './ModernAgentOutput/MessageItem';
 import { getPendingRequestInputMessage } from './ModernAgentOutput/requestInputMessages';
 import type { StreamingMessageClassNames } from './ModernAgentOutput/StreamingMessage';
@@ -91,6 +95,57 @@ function isActiveWorkstreamStatus(status: WorkstreamInfo['status']) {
     return status === 'running' || status === 'canceling';
 }
 
+function isTerminalWorkstreamStatus(status: WorkstreamInfo['status']) {
+    return !isActiveWorkstreamStatus(status);
+}
+
+function getNumberDetail(value: unknown): number | undefined {
+    return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function toContextWindowUsage(messages: AgentMessage[]): ContextWindowUsage | undefined {
+    for (let index = messages.length - 1; index >= 0; index--) {
+        const details = messages[index].details;
+        if (!details) continue;
+
+        const tokenUsage = details.token_usage as { total?: unknown } | undefined;
+        const usedTokens = getNumberDetail(tokenUsage?.total);
+        const checkpointTokens =
+            getNumberDetail(details.checkpoint_threshold) ?? getNumberDetail(details.checkpoint_at);
+
+        if (typeof usedTokens !== 'number' || typeof checkpointTokens !== 'number' || checkpointTokens <= 0) {
+            continue;
+        }
+
+        const usedPercent = Math.max(0, Math.min(100, Math.round((usedTokens / checkpointTokens) * 100)));
+        return {
+            usedTokens,
+            checkpointTokens,
+            usedPercent,
+            remainingPercent: Math.max(0, 100 - usedPercent),
+        };
+    }
+
+    return undefined;
+}
+
+function mergePreservingTerminalStatus(existing: WorkstreamInfo, next: WorkstreamInfo): WorkstreamInfo {
+    if (!isTerminalWorkstreamStatus(existing.status) || !isActiveWorkstreamStatus(next.status)) {
+        return { ...existing, ...next };
+    }
+
+    return {
+        ...existing,
+        interaction: existing.interaction ?? next.interaction,
+        elapsed_ms: Math.max(existing.elapsed_ms, next.elapsed_ms),
+        deadline_ms: Math.max(existing.deadline_ms, next.deadline_ms),
+        remaining_ms: 0,
+        phase: existing.phase ?? next.phase,
+        child_workflow_id: existing.child_workflow_id ?? next.child_workflow_id,
+        child_workflow_run_id: existing.child_workflow_run_id ?? next.child_workflow_run_id,
+    };
+}
+
 function getWorkstreamMessageDetails(message: AgentMessage): {
     workstreamId: string;
     launchId?: string;
@@ -123,6 +178,33 @@ function getWorkstreamMessageDetails(message: AgentMessage): {
         childWorkflowRunId:
             typeof details?.child_workflow_run_id === 'string' ? details.child_workflow_run_id : undefined,
     };
+}
+
+function isWorkstreamActivityFailureMessage(message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.ERROR) return false;
+
+    const details = message.details as
+        | {
+              activity_group_id?: unknown;
+              event_class?: unknown;
+              tool?: unknown;
+              tool_event?: unknown;
+              tool_run_id?: unknown;
+              tool_status?: unknown;
+              workstream_event?: unknown;
+          }
+        | undefined;
+
+    if (details?.event_class !== 'activity') return false;
+    if (details.workstream_event) return false;
+
+    return !(
+        details.tool ||
+        details.tool_status ||
+        details.tool_run_id ||
+        details.activity_group_id ||
+        details.tool_event
+    );
 }
 
 function ensureWorkstreamRecord(
@@ -201,7 +283,9 @@ function deriveWorkstreamsFromMessages(messages: AgentMessage[]): WorkstreamInfo
         if (lifecycleStatus) {
             record.status = lifecycleStatus;
         } else if (!isInternalResult) {
-            if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
+            if (isWorkstreamActivityFailureMessage(message)) {
+                record.status = 'failed';
+            } else if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
                 record.status = 'completed';
             }
         }
@@ -261,7 +345,7 @@ function completedWorkstreamEntryToInfo(ws: CompletedWorkstreamEntry): Workstrea
 function mergeWorkstreamInfo(workstreams: WorkstreamInfo[], next: WorkstreamInfo) {
     const existingIndex = workstreams.findIndex((ws) => ws.launch_id === next.launch_id);
     if (existingIndex >= 0) {
-        workstreams[existingIndex] = { ...workstreams[existingIndex], ...next };
+        workstreams[existingIndex] = mergePreservingTerminalStatus(workstreams[existingIndex], next);
         return;
     }
 
@@ -269,7 +353,7 @@ function mergeWorkstreamInfo(workstreams: WorkstreamInfo[], next: WorkstreamInfo
         (ws) => ws.workstream_id === next.workstream_id && ws.launch_id.startsWith('message-derived:'),
     );
     if (fallbackIndex >= 0 && !next.launch_id.startsWith('message-derived:')) {
-        workstreams[fallbackIndex] = { ...workstreams[fallbackIndex], ...next };
+        workstreams[fallbackIndex] = mergePreservingTerminalStatus(workstreams[fallbackIndex], next);
         return;
     }
 
@@ -1258,6 +1342,7 @@ function ModernAgentConversationInner({
     const conversationRef = useRef<HTMLDivElement | null>(null);
     const conversationLayoutRef = useRef<HTMLDivElement | null>(null);
     const [isSending, setIsSending] = useState(false);
+    const [isCompactingContext, setIsCompactingContext] = useState(false);
     const [internalViewMode, setInternalViewMode] = useState<AgentConversationViewMode>('sliding');
     const viewMode = controlledViewMode ?? internalViewMode;
     const handleViewModeChange = useCallback(
@@ -1408,6 +1493,9 @@ function ModernAgentConversationInner({
     const isViewingPlaybackHistory = isPlaybackEnabled && !isPlaybackLive;
     const shouldShowLiveRequestInputOverlay = shouldShowRequestInputOverlay && !isViewingPlaybackHistory;
     const shouldRenderLiveMessageInputArea = shouldRenderMessageInputArea && !isViewingPlaybackHistory;
+    const contextWindowUsage = useMemo(() => toContextWindowUsage(messages), [messages]);
+    const canCompactContext =
+        allowWorkflowControl && !effectiveIsCompleted && isPlaybackLive && Boolean(contextWindowUsage);
 
     useEffect(() => {
         debugAgentChat('conversation render state', {
@@ -1934,6 +2022,26 @@ function ModernAgentConversationInner({
         }
     }, [isStopping, agentRunId, addOptimisticMessage, client.agents, toast, t, updateOptimisticMessageStatus]);
 
+    const handleCompactContext = useCallback(async () => {
+        if (isCompactingContext || effectiveIsCompleted || !isPlaybackLive) return;
+
+        setIsCompactingContext(true);
+        try {
+            await client.agents.sendSignal(agentRunId, 'TriggerCheckpoint', {
+                reason: 'manual user request',
+            });
+        } catch (err) {
+            toast({
+                status: 'error',
+                title: t('agent.failedToCompactContext'),
+                description: err instanceof Error ? err.message : t('agent.unknownError'),
+                duration: 3000,
+            });
+        } finally {
+            setIsCompactingContext(false);
+        }
+    }, [agentRunId, client.agents, effectiveIsCompleted, isCompactingContext, isPlaybackLive, t, toast]);
+
     // Expose stop handler to external callers via ref
     useEffect(() => {
         if (stopRef) stopRef.current = allowWorkflowControl && !effectiveIsCompleted ? handleStopWorkflow : null;
@@ -2223,6 +2331,9 @@ function ModernAgentConversationInner({
                                     isStopping={isStopping}
                                     isStreaming={!effectiveIsCompleted}
                                     isCompleted={effectiveIsCompleted}
+                                    contextWindowUsage={canCompactContext ? contextWindowUsage : undefined}
+                                    onCompactContext={canCompactContext ? handleCompactContext : undefined}
+                                    isCompactingContext={isCompactingContext}
                                     activeTaskCount={activeTaskCount}
                                     activeWorkstreams={composerActiveWorkstreams}
                                     placeholder={placeholder}

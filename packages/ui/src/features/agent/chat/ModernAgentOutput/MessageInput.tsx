@@ -10,6 +10,7 @@ import {
     ModalTitle,
     Spinner,
     Textarea,
+    VTooltip,
 } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import {
@@ -52,6 +53,13 @@ export interface SelectedDocument {
     name: string;
 }
 
+export interface ContextWindowUsage {
+    usedTokens: number;
+    checkpointTokens: number;
+    usedPercent: number;
+    remainingPercent: number;
+}
+
 interface MessageInputProps {
     onSend: (message: string) => void;
     onStop?: () => void;
@@ -60,6 +68,9 @@ interface MessageInputProps {
     isStopping?: boolean;
     isStreaming?: boolean;
     isCompleted?: boolean;
+    contextWindowUsage?: ContextWindowUsage;
+    onCompactContext?: () => void;
+    isCompactingContext?: boolean;
     activeTaskCount?: number;
     activeWorkstreams?: WorkstreamInfo[];
     placeholder?: string;
@@ -118,6 +129,9 @@ export default function MessageInput({
     isStopping = false,
     isStreaming = false,
     isCompleted = false,
+    contextWindowUsage,
+    onCompactContext,
+    isCompactingContext = false,
     activeTaskCount = 0,
     activeWorkstreams = [],
     placeholder,
@@ -162,6 +176,9 @@ export default function MessageInput({
         [activeWorkstreams],
     );
     const activeWorkstreamCount = runningWorkstreams.length || activeTaskCount;
+    const contextUsageLabel = contextWindowUsage
+        ? t('agent.contextUsageCompactLabel', { percent: contextWindowUsage.usedPercent })
+        : undefined;
     const visibleRunningWorkstreams = runningWorkstreams.slice(0, 3);
     const hiddenRunningWorkstreamCount = Math.max(0, runningWorkstreams.length - visibleRunningWorkstreams.length);
     const attachmentItems = useMemo<AttachmentPreviewItem[]>(() => {
@@ -575,6 +592,71 @@ export default function MessageInput({
                                     </MenuItem>
                                 )}
                             </Dropdown>
+                        )}
+                        {contextWindowUsage && (
+                            <VTooltip
+                                asChild
+                                placement="top"
+                                size="md"
+                                description={
+                                    <span className="block max-w-56 text-start text-sm leading-6">
+                                        <span className="block">
+                                            {t('agent.contextRemainingUntilCompact', {
+                                                percent: contextWindowUsage.remainingPercent,
+                                            })}
+                                        </span>
+                                        <span className="mt-1.5 block text-muted">{t('agent.clickToCompactNow')}</span>
+                                    </span>
+                                }
+                            >
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8 rounded-lg text-muted hover:bg-muted disabled:opacity-60"
+                                    aria-label={contextUsageLabel}
+                                    onClick={onCompactContext}
+                                    disabled={!onCompactContext || isCompactingContext}
+                                >
+                                    {isCompactingContext ? (
+                                        <Spinner size="sm" />
+                                    ) : (
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            className={cn(
+                                                'size-5 -rotate-90',
+                                                contextWindowUsage.usedPercent >= 90
+                                                    ? 'text-destructive'
+                                                    : contextWindowUsage.usedPercent >= 70
+                                                      ? 'text-attention'
+                                                      : 'text-info',
+                                            )}
+                                            aria-hidden="true"
+                                        >
+                                            <circle
+                                                cx="12"
+                                                cy="12"
+                                                r="8"
+                                                fill="none"
+                                                strokeWidth="3"
+                                                className="stroke-current text-muted/25"
+                                            />
+                                            <circle
+                                                cx="12"
+                                                cy="12"
+                                                r="8"
+                                                fill="none"
+                                                pathLength={100}
+                                                strokeWidth="3"
+                                                strokeLinecap="round"
+                                                strokeDasharray={100}
+                                                style={{ strokeDashoffset: 100 - contextWindowUsage.usedPercent }}
+                                                className="stroke-current"
+                                            />
+                                        </svg>
+                                    )}
+                                </Button>
+                            </VTooltip>
                         )}
                         {runningWorkstreams.length === 0 && activeWorkstreamCount > 0 && (
                             <output className="flex min-w-0 flex-wrap items-center gap-1.5" aria-live="polite">

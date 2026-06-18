@@ -180,3 +180,45 @@ export function getWorkstreamLaunchDetails(message: AgentMessage): WorkstreamLau
             typeof details.child_workflow_run_id === 'string' ? details.child_workflow_run_id : undefined,
     };
 }
+
+export function getWorkstreamActivityDetails(message: AgentMessage): WorkstreamLaunchDetails | null {
+    const details = message.details as
+        | {
+              event_class?: unknown;
+              workstream_event?: unknown;
+              workstream_id?: unknown;
+              launch_id?: unknown;
+              kind?: unknown;
+              interaction?: unknown;
+              child_workflow_id?: unknown;
+              child_workflow_run_id?: unknown;
+          }
+        | undefined;
+
+    if (details?.event_class !== 'activity') return null;
+    if (details.workstream_event !== undefined) return null;
+    if (message.type === AgentMessageType.ERROR) return null;
+
+    const childWorkflowId = typeof details.child_workflow_id === 'string' ? details.child_workflow_id : undefined;
+    const childWorkflowRunId =
+        typeof details.child_workflow_run_id === 'string' ? details.child_workflow_run_id : undefined;
+    if (!childWorkflowId && !childWorkflowRunId) return null;
+
+    const workstreamId =
+        typeof details.workstream_id === 'string' && details.workstream_id.trim()
+            ? details.workstream_id
+            : typeof message.workstream_id === 'string'
+              ? message.workstream_id
+              : '';
+
+    if (!isNonMainWorkstreamId(workstreamId)) return null;
+
+    return {
+        workstreamId,
+        launchId: typeof details.launch_id === 'string' ? details.launch_id : undefined,
+        kind: typeof details.kind === 'string' ? details.kind : undefined,
+        interaction: typeof details.interaction === 'string' ? details.interaction : undefined,
+        childWorkflowId,
+        childWorkflowRunId,
+    };
+}

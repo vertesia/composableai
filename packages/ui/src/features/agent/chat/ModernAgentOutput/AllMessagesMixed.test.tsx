@@ -308,6 +308,17 @@ describe('AllMessagesMixed summary view', () => {
                         child_workflow_run_id: 'run-qa-tasks',
                     },
                 }),
+                makeMessage({
+                    timestamp: 3_000,
+                    type: AgentMessageType.ANSWER,
+                    message: 'Main agent response.',
+                }),
+                makeMessage({
+                    timestamp: 4_000,
+                    type: AgentMessageType.ANSWER,
+                    message: 'Workstream-only result.',
+                    workstream_id: 'qa_tasks',
+                }),
             ],
             true,
         );
@@ -315,6 +326,104 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('Workstreams')).not.toBeNull();
         expect(screen.getByText('QA Tasks')).not.toBeNull();
         expect(screen.getByText('Browser Agent')).not.toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: /QA Tasks/ }));
+
+        expect(screen.getByRole('button', { name: 'Back to main agent chat' })).not.toBeNull();
+        expect(screen.getByText('Workstream-only result.')).not.toBeNull();
+        expect(screen.queryByText('Main agent response.')).toBeNull();
+        expect(screen.queryByText('Workstreams')).toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Back to main agent chat' }));
+
+        expect(screen.getByText('Main agent response.')).not.toBeNull();
+    });
+
+    it('renders first child workflow activity as a workstream row when the launch event is missing', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Check the app.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.UPDATE,
+                    message: 'Browser agent started.',
+                    workstream_id: 'legacy_browser',
+                    details: {
+                        event_class: 'activity',
+                        workstream_id: 'legacy_browser',
+                        interaction: 'sys:BrowserAgent',
+                        child_workflow_id: 'workstream:legacy_browser',
+                        child_workflow_run_id: 'run-legacy-browser',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    type: AgentMessageType.ANSWER,
+                    message: 'Main agent response.',
+                }),
+                makeMessage({
+                    timestamp: 4_000,
+                    type: AgentMessageType.ANSWER,
+                    message: 'Legacy workstream-only result.',
+                    workstream_id: 'legacy_browser',
+                }),
+            ],
+            true,
+        );
+
+        expect(screen.getByText('Workstreams')).not.toBeNull();
+        expect(screen.getByText('Legacy Browser')).not.toBeNull();
+        expect(screen.getByText('Browser Agent')).not.toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: /Legacy Browser/ }));
+
+        expect(screen.getByRole('button', { name: 'Back to main agent chat' })).not.toBeNull();
+        expect(screen.getByText('Legacy workstream-only result.')).not.toBeNull();
+        expect(screen.queryByText('Main agent response.')).toBeNull();
+        expect(screen.queryByText('Workstreams')).toBeNull();
+    });
+
+    it('does not render a failed pre-launch workstream activity as a clickable workstream row', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Create a bookmark.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.UPDATE,
+                    message: 'Provisioning browser sandbox for "Create Bookmark"...',
+                    workstream_id: 'create_bookmark',
+                    details: {
+                        event_class: 'activity',
+                        workstream_id: 'create_bookmark',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    type: AgentMessageType.ERROR,
+                    message: 'Failed to provision browser sandbox: Request failed with status code 502',
+                    workstream_id: 'create_bookmark',
+                    details: {
+                        event_class: 'activity',
+                        workstream_id: 'create_bookmark',
+                    },
+                }),
+            ],
+            true,
+        );
+
+        expect(screen.queryByText('Workstreams')).toBeNull();
+        expect(screen.queryByText('Create Bookmark')).toBeNull();
+        expect(screen.queryByText('Error')).toBeNull();
+        expect(screen.getByRole('button', { name: /Work needs attention/ })).not.toBeNull();
+        expect(screen.getByText(/Failed to provision browser sandbox/)).not.toBeNull();
     });
 
     it('suppresses JSON-only child workstream results in summary view', () => {

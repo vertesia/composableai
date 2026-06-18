@@ -13,6 +13,7 @@ import { MarkdownRenderer, type MarkdownRendererProps } from '@vertesia/ui/widge
 import type { Element } from 'hast';
 import {
     AlertTriangle,
+    ArrowLeft,
     Bot,
     Brain,
     CheckCircle,
@@ -31,6 +32,7 @@ import { AskUserWidget } from '../AskUserWidget';
 import { ThinkingMessages } from '../WaitingMessages';
 import {
     formatWorkstreamName,
+    getWorkstreamActivityDetails,
     getWorkstreamDisplayName,
     getWorkstreamLaunchDetails,
     type WorkstreamLaunchDetails,
@@ -188,6 +190,7 @@ function getMessageText(message: AgentMessage): string {
 interface SummaryMessageProps {
     message: AgentMessage;
     onSendMessage?: (message: string) => void;
+    onSelectWorkstream?: (workstreamId: string) => void;
     requestInputAnswered?: boolean;
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
     CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
@@ -196,9 +199,11 @@ interface SummaryMessageProps {
 function SummaryWorkstreamLaunchMessage({
     message,
     details,
+    onSelectWorkstream,
 }: {
     message: AgentMessage;
     details: WorkstreamLaunchDetails;
+    onSelectWorkstream?: (workstreamId: string) => void;
 }) {
     const { t } = useUITranslation();
     const workstreamName = getWorkstreamDisplayName(details.workstreamId, details.interaction);
@@ -207,7 +212,15 @@ function SummaryWorkstreamLaunchMessage({
 
     return (
         <div className="mx-auto w-full max-w-3xl px-1" data-workstream-id={details.workstreamId}>
-            <div className="flex items-start gap-3 border-b border-border/70 py-2 text-sm text-muted">
+            <button
+                type="button"
+                className={cn(
+                    'group flex w-full items-start gap-3 border-b border-border/70 py-2 text-start text-sm text-muted',
+                    'transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2',
+                    'focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                )}
+                onClick={() => onSelectWorkstream?.(details.workstreamId)}
+            >
                 <Bot className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden="true" />
                 <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -217,7 +230,8 @@ function SummaryWorkstreamLaunchMessage({
                     {secondaryName && <div className="mt-0.5 truncate text-xs text-muted/75">{secondaryName}</div>}
                     <span className="sr-only">{getMessageText(message)}</span>
                 </div>
-            </div>
+                <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5" />
+            </button>
         </div>
     );
 }
@@ -539,12 +553,13 @@ function SummaryUserBubble({
 function SummaryMessage({
     message,
     onSendMessage,
+    onSelectWorkstream,
     requestInputAnswered = false,
     StoreLinkComponent,
     CollectionLinkComponent,
 }: SummaryMessageProps) {
     const content = getMessageText(message);
-    const workstreamLaunchDetails = getWorkstreamLaunchDetails(message);
+    const workstreamLaunchDetails = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
     const workstreamId = getWorkstreamId(message);
     const runId = (message as { workflow_run_id?: string }).workflow_run_id;
     const parsedQuestion = useMemo(
@@ -603,7 +618,13 @@ function SummaryMessage({
     );
 
     if (workstreamLaunchDetails) {
-        return <SummaryWorkstreamLaunchMessage message={message} details={workstreamLaunchDetails} />;
+        return (
+            <SummaryWorkstreamLaunchMessage
+                message={message}
+                details={workstreamLaunchDetails}
+                onSelectWorkstream={onSelectWorkstream}
+            />
+        );
     }
 
     if (message.type === AgentMessageType.QUESTION) {
@@ -2153,16 +2174,59 @@ function AllMessagesMixedComponent({
         return deduped;
     }, [messages, hiddenMessageTypes]);
 
-    // Get workstreams from messages - only from message.workstream_id
     const workstreams = React.useMemo(() => {
-        // Just get the basic workstreams from the messages
         const extractedWorkstreams = extractWorkstreams(sortedMessages);
 
-        // We'll keep taskLabels - they might be used for display purposes elsewhere
-        // but we won't use them to create new workstream tabs
+        sortedMessages.forEach((message) => {
+            const details = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
+            if (!details) return;
+            extractedWorkstreams.set(
+                details.workstreamId,
+                getWorkstreamDisplayName(details.workstreamId, details.interaction),
+            );
+        });
 
         return extractedWorkstreams;
     }, [sortedMessages]);
+
+    const activeWorkstreamName = React.useMemo(() => {
+        if (activeWorkstream === 'all') return undefined;
+        return workstreams.get(activeWorkstream) ?? formatWorkstreamName(activeWorkstream);
+    }, [activeWorkstream, workstreams]);
+
+    const scrollToTop = useCallback(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        programmaticScrollRef.current = true;
+        if (typeof container.scrollTo === 'function') {
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            container.scrollTop = 0;
+        }
+        requestAnimationFrame(() => {
+            programmaticScrollRef.current = false;
+        });
+    }, []);
+
+    const handleSelectWorkstream = useCallback(
+        (workstreamId: string) => {
+            setActiveWorkstream(workstreamId);
+            requestAnimationFrame(scrollToTop);
+        },
+        [scrollToTop],
+    );
+
+    const handleShowMainAgentChat = useCallback(() => {
+        setActiveWorkstream('all');
+        requestAnimationFrame(scrollToTop);
+    }, [scrollToTop]);
+
+    useEffect(() => {
+        if (activeWorkstream !== 'all' && !workstreams.has(activeWorkstream)) {
+            setActiveWorkstream('all');
+        }
+    }, [activeWorkstream, workstreams]);
 
     // Count messages per workstream
     const workstreamCounts = React.useMemo(() => {
@@ -2189,7 +2253,12 @@ function AllMessagesMixedComponent({
         if (activeWorkstream === 'all') {
             return sortedMessages;
         }
-        return filterMessagesByWorkstream(sortedMessages, activeWorkstream);
+        return sortedMessages.filter((message) => {
+            const workstreamStartDetails = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
+            if (workstreamStartDetails?.workstreamId === activeWorkstream) return false;
+            if (getWorkstreamId(message) === activeWorkstream) return true;
+            return false;
+        });
     }, [sortedMessages, activeWorkstream]);
 
     const answeredRequestInputKeys = React.useMemo(
@@ -2219,7 +2288,8 @@ function AllMessagesMixedComponent({
         () => displayMessages.some((message) => message.type === AgentMessageType.QUESTION),
         [displayMessages],
     );
-    const shouldRenderInitialRequest = hasRenderableInitialRequest && !hasPersistedUserQuestion;
+    const shouldRenderInitialRequest =
+        activeWorkstream === 'all' && hasRenderableInitialRequest && !hasPersistedUserQuestion;
 
     const latestDisplayMessageTimestamp = useMemo(() => {
         return displayMessages.reduce((latest, msg) => Math.max(latest, getTimestampMs(msg.timestamp)), -Infinity);
@@ -2666,7 +2736,7 @@ function AllMessagesMixedComponent({
                     <WorkstreamTabs
                         workstreams={workstreams}
                         activeWorkstream={activeWorkstream}
-                        onSelectWorkstream={setActiveWorkstream}
+                        onSelectWorkstream={handleSelectWorkstream}
                         count={workstreamCounts}
                         completionStatus={workstreamCompletionStatus}
                     />
@@ -2701,6 +2771,29 @@ function AllMessagesMixedComponent({
                         messageListClassName,
                     )}
                 >
+                    {isSummaryView && activeWorkstream !== 'all' && activeWorkstreamName && (
+                        <div className="sticky top-0 z-20 -mx-2 bg-background/95 px-2 pb-2 pt-1 backdrop-blur sm:-mx-4 sm:px-4">
+                            <div className="mx-auto flex w-full max-w-3xl items-center gap-2 border-b border-border/70 pb-3">
+                                <button
+                                    type="button"
+                                    className={cn(
+                                        'inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted',
+                                        'transition-colors hover:text-foreground focus-visible:outline-none',
+                                        'focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2',
+                                        'focus-visible:ring-offset-background',
+                                    )}
+                                    aria-label="Back to main agent chat"
+                                    onClick={handleShowMainAgentChat}
+                                >
+                                    <ArrowLeft className="size-4" aria-hidden="true" />
+                                </button>
+                                <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                                    {activeWorkstreamName}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Friendly message — rendered outside the messages array to avoid memo issues/triggering autoscroll */}
                     {shouldRenderInitialRequest && (
                         <InitialRequestMessage
@@ -2954,6 +3047,7 @@ function AllMessagesMixedComponent({
                                         <SummaryMessage
                                             message={message}
                                             onSendMessage={onSendMessage}
+                                            onSelectWorkstream={handleSelectWorkstream}
                                             requestInputAnswered={isRequestInputAnswered(
                                                 message,
                                                 answeredRequestInputKeys,

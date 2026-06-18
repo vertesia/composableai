@@ -60,6 +60,14 @@ vi.mock('./ModernAgentOutput/MessageInput', () => ({
         activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
         isCompleted?: boolean;
         isStreaming?: boolean;
+        contextWindowUsage?: {
+            usedTokens: number;
+            checkpointTokens: number;
+            usedPercent: number;
+            remainingPercent: number;
+        };
+        onCompactContext?: () => void;
+        isCompactingContext?: boolean;
     }) => {
         mocks.messageInputProps(props);
         return (
@@ -327,6 +335,7 @@ describe('ModernAgentConversation send handling', () => {
             isCompleted: false,
             agentRunStatus: 'RUNNING',
         });
+        mocks.sendSignal.mockReturnValue(new Promise(() => {}));
 
         renderConversation({ hideMessageInput: false });
 
@@ -337,6 +346,55 @@ describe('ModernAgentConversation send handling', () => {
 
         expect(latestMessageInputProps.isCompleted).toBe(true);
         expect(latestMessageInputProps.isStreaming).toBe(false);
+    });
+
+    it('derives context usage from persisted messages and sends manual compact signal', async () => {
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.THOUGHT, 'Planning the next tool call'),
+                    details: {
+                        token_usage: {
+                            prompt: 40_000,
+                            result: 10_000,
+                            total: 50_000,
+                        },
+                        checkpoint_at: 100_000,
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideMessageInput: false });
+
+        expect(mocks.messageInputProps).toHaveBeenCalled();
+
+        const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
+            contextWindowUsage?: {
+                usedTokens: number;
+                checkpointTokens: number;
+                usedPercent: number;
+                remainingPercent: number;
+            };
+            onCompactContext?: () => void | Promise<void>;
+        };
+
+        expect(latestMessageInputProps.contextWindowUsage).toEqual({
+            usedTokens: 50_000,
+            checkpointTokens: 100_000,
+            usedPercent: 50,
+            remainingPercent: 50,
+        });
+
+        act(() => {
+            void latestMessageInputProps.onCompactContext?.();
+        });
+
+        expect(mocks.sendSignal).toHaveBeenCalledWith('agent-run-1', 'TriggerCheckpoint', {
+            reason: 'manual user request',
+        });
     });
 
     it('uses message-derived workstreams for panel history while the composer only counts active workstreams', async () => {
@@ -354,6 +412,7 @@ describe('ModernAgentConversation send handling', () => {
         renderConversation({
             hideMessageInput: false,
             hideWorkstreamTabs: false,
+            onRestart: vi.fn(),
             showRightPanel: true,
         });
 
@@ -504,6 +563,125 @@ describe('ModernAgentConversation send handling', () => {
         } finally {
             warn.mockRestore();
         }
+    });
+
+    it('marks failed pre-launch workstream activities as failed instead of active', async () => {
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'main request'),
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'Provisioning browser sandbox for "Create Bookmark"...'),
+                    workstream_id: 'create_bookmark',
+                    details: {
+                        event_class: 'activity',
+                        workstream_id: 'create_bookmark',
+                    },
+                },
+                {
+                    ...createMessage(
+                        AgentMessageType.ERROR,
+                        'Failed to provision browser sandbox: Request failed with status code 502',
+                    ),
+                    workstream_id: 'create_bookmark',
+                    details: {
+                        event_class: 'activity',
+                        workstream_id: 'create_bookmark',
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({
+            hideMessageInput: false,
+            hideWorkstreamTabs: false,
+            showRightPanel: true,
+        });
+
+        await waitFor(() => {
+            const latestRightPanelProps = mocks.rightPanelProps.mock.lastCall?.[0] as {
+                activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
+            };
+            expect(latestRightPanelProps.activeWorkstreams).toEqual([
+                expect.objectContaining({ workstream_id: 'create_bookmark', status: 'failed' }),
+            ]);
+        });
+
+        const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
+            activeTaskCount?: number;
+            activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
+        };
+        expect(latestMessageInputProps.activeTaskCount).toBe(0);
+        expect(latestMessageInputProps.activeWorkstreams).toEqual([]);
+    });
+
+    it('does not let stale active workstream queries override terminal message-derived state', async () => {
+        mocks.getActiveWorkstreams.mockResolvedValue({
+            running: [
+                {
+                    launch_id: 'launch-create-bookmark',
+                    workstream_id: 'create_bookmark',
+                    interaction: 'sys:BrowserAgent',
+                    started_at: Date.now() - 5000,
+                    elapsed_ms: 5000,
+                    deadline_ms: 30000,
+                    status: 'running',
+                },
+            ],
+        });
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'main request'),
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'Provisioning browser sandbox for "Create Bookmark"...'),
+                    workstream_id: 'create_bookmark',
+                    details: {
+                        event_class: 'activity',
+                        workstream_id: 'create_bookmark',
+                    },
+                },
+                {
+                    ...createMessage(
+                        AgentMessageType.ERROR,
+                        'Failed to provision browser sandbox: Request failed with status code 502',
+                    ),
+                    workstream_id: 'create_bookmark',
+                    details: {
+                        event_class: 'activity',
+                        workstream_id: 'create_bookmark',
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({
+            hideMessageInput: false,
+            hideWorkstreamTabs: false,
+            showRightPanel: true,
+        });
+
+        await waitFor(() => {
+            const latestRightPanelProps = mocks.rightPanelProps.mock.lastCall?.[0] as {
+                activeWorkstreams?: Array<{ workstream_id: string; status: string; interaction?: string }>;
+            };
+            expect(latestRightPanelProps.activeWorkstreams).toEqual([
+                expect.objectContaining({
+                    workstream_id: 'create_bookmark',
+                    status: 'failed',
+                    interaction: 'sys:BrowserAgent',
+                }),
+            ]);
+        });
+
+        const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
+            activeTaskCount?: number;
+            activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
+        };
+        expect(latestMessageInputProps.activeTaskCount).toBe(0);
+        expect(latestMessageInputProps.activeWorkstreams).toEqual([]);
     });
 
     it('uses the live workstream query to enrich message-derived running workstreams', async () => {
