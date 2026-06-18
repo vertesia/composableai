@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
+import type { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../../../i18n/index.js';
 import { AgentChatFixtureReplay, type AgentChatReplayFixture } from './AgentChatFixtureReplay';
@@ -38,10 +39,13 @@ function message(type: AgentMessageType, text: string, timestamp: number): Agent
     };
 }
 
-function renderReplay(fixture: AgentChatReplayFixture) {
+function renderReplay(
+    fixture: AgentChatReplayFixture,
+    props: Omit<ComponentProps<typeof AgentChatFixtureReplay>, 'fixture'> = {},
+) {
     return render(
         <I18nProvider lng="en">
-            <AgentChatFixtureReplay fixture={fixture} />
+            <AgentChatFixtureReplay fixture={fixture} {...props} />
         </I18nProvider>,
     );
 }
@@ -53,6 +57,22 @@ describe('AgentChatFixtureReplay', () => {
         });
 
         expect(screen.getByTestId('all-messages-mixed').getAttribute('data-view-mode')).toBe('sliding');
+    });
+
+    it('can hide the fixture replay header', () => {
+        renderReplay(
+            {
+                messages: [message(AgentMessageType.QUESTION, 'first', 1)],
+                metadata: {
+                    title: 'Fixture title',
+                },
+            },
+            { showHeader: false },
+        );
+
+        expect(screen.queryByText('Fixture title')).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Download Messages' })).toBeNull();
+        expect(screen.getByRole('slider', { name: 'Playback position' })).not.toBeNull();
     });
 
     it('steps through fixture messages without mutating the source fixture', () => {

@@ -132,6 +132,13 @@ export interface ConversationState {
     latest_activity_id?: string;
 
     /**
+     * Stable streaming ID from the latest LLM call.
+     * Unlike Temporal activity IDs, this is scoped to the concrete workflow run
+     * that produced the stream, so it remains safe across continue-as-new.
+     */
+    latest_streaming_id?: string;
+
+    /**
      * Mapping of skill names to their related tools.
      * When a skill is called, its related tools are added to unlocked_tools.
      */

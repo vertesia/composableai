@@ -6,13 +6,14 @@ import {
     type JSONSchema,
     type Plan,
 } from '@vertesia/common';
-import { cn } from '@vertesia/ui/core';
+import { Button, cn, VTooltip } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink } from '@vertesia/ui/router';
 import { MarkdownRenderer, type MarkdownRendererProps } from '@vertesia/ui/widgets';
 import type { Element } from 'hast';
 import {
     AlertTriangle,
+    ArrowLeft,
     Bot,
     Brain,
     CheckCircle,
@@ -31,12 +32,14 @@ import { AskUserWidget } from '../AskUserWidget';
 import { ThinkingMessages } from '../WaitingMessages';
 import {
     formatWorkstreamName,
+    getWorkstreamActivityDetails,
     getWorkstreamDisplayName,
     getWorkstreamLaunchDetails,
     type WorkstreamLaunchDetails,
 } from '../workstreams.js';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from './BatchProgressPanel';
+import { getMessageDeliveryStatus, MessageDeliveryStatus } from './MessageDeliveryStatus';
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
 import {
     getAnsweredRequestInputKeys,
@@ -57,10 +60,12 @@ import {
 import ToolCallGroup, { type ToolCallGroupClassNames } from './ToolCallGroup';
 import {
     DONE_STATES,
+    filterMessagesForActiveWorkstream,
     getWorkstreamId,
     groupMessagesWithStreaming,
     isInProgress,
     isToolPreambleMessage,
+    isUserStoppedMessage,
     mergeConsecutiveToolGroups,
     type RenderableGroup,
     type StreamingData,
@@ -106,6 +111,23 @@ function formatDuration(seconds: number): string {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+}
+
+function parseTimestampMs(timestamp: number | string | undefined): number | undefined {
+    if (timestamp === undefined || timestamp === null || timestamp === '') return undefined;
+    const value = typeof timestamp === 'number' ? timestamp : new Date(timestamp).getTime();
+    return Number.isFinite(value) ? value : undefined;
+}
+
+function formatToolDetailTimestamp(timestamp: number | string | undefined): string | undefined {
+    const value = parseTimestampMs(timestamp);
+    if (value === undefined) return undefined;
+
+    return new Intl.DateTimeFormat(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    }).format(new Date(value));
 }
 
 function getReadableToolLabel(message: AgentMessage): string {
@@ -169,6 +191,7 @@ function getMessageText(message: AgentMessage): string {
 interface SummaryMessageProps {
     message: AgentMessage;
     onSendMessage?: (message: string) => void;
+    onSelectWorkstream?: (workstreamId: string) => void;
     requestInputAnswered?: boolean;
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
     CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
@@ -177,9 +200,11 @@ interface SummaryMessageProps {
 function SummaryWorkstreamLaunchMessage({
     message,
     details,
+    onSelectWorkstream,
 }: {
     message: AgentMessage;
     details: WorkstreamLaunchDetails;
+    onSelectWorkstream?: (workstreamId: string) => void;
 }) {
     const { t } = useUITranslation();
     const workstreamName = getWorkstreamDisplayName(details.workstreamId, details.interaction);
@@ -188,7 +213,15 @@ function SummaryWorkstreamLaunchMessage({
 
     return (
         <div className="mx-auto w-full max-w-3xl px-1" data-workstream-id={details.workstreamId}>
-            <div className="flex items-start gap-3 border-b border-border/70 py-2 text-sm text-muted">
+            <button
+                type="button"
+                className={cn(
+                    'group flex w-full items-start gap-3 border-b border-border/70 py-2 text-start text-sm text-muted',
+                    'transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2',
+                    'focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                )}
+                onClick={() => onSelectWorkstream?.(details.workstreamId)}
+            >
                 <Bot className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden="true" />
                 <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -198,7 +231,8 @@ function SummaryWorkstreamLaunchMessage({
                     {secondaryName && <div className="mt-0.5 truncate text-xs text-muted/75">{secondaryName}</div>}
                     <span className="sr-only">{getMessageText(message)}</span>
                 </div>
-            </div>
+                <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5" />
+            </button>
         </div>
     );
 }
@@ -212,6 +246,8 @@ const SUMMARY_PROSE_CLASS = [
 ].join(' ');
 
 const USER_BUBBLE_COLLAPSE_THRESHOLD = 520;
+const SUMMARY_THOUGHT_COLLAPSE_LINES = 6;
+const SUMMARY_THOUGHT_COLLAPSE_THRESHOLD = 520;
 const STORE_LINK_MARKDOWN_RE =
     /\[[^\]]+\]\((?:\/store\/(?:objects|collections)\/|store:|document:|document:\/\/|collection:)[^)]+\)/;
 const DEFAULT_AGENT_MARKDOWN_COMPONENTS: MarkdownRendererProps['components'] = {
@@ -428,12 +464,14 @@ function useRotatingThinkingMessageIndex(enabled = true): number {
 
 function SummaryUserBubble({
     children,
+    message,
     workstreamId,
     className,
     artifactRunId,
     markdownComponents,
 }: {
     children: React.ReactNode;
+    message?: AgentMessage;
     workstreamId?: string;
     className?: string;
     artifactRunId?: string;
@@ -446,6 +484,7 @@ function SummaryUserBubble({
     const isPlainText = typeof children === 'string' || typeof children === 'number';
     const textContent = isPlainText ? String(children) : '';
     const shouldRenderMarkdown = typeof children === 'string' && STORE_LINK_MARKDOWN_RE.test(children);
+    const deliveryStatus = message ? getMessageDeliveryStatus(message) : undefined;
 
     useEffect(() => {
         if (!shouldCollapse && isExpanded) {
@@ -502,6 +541,11 @@ function SummaryUserBubble({
                         />
                     </button>
                 )}
+                {message && deliveryStatus ? (
+                    <div className="mt-1.5 flex justify-end">
+                        <MessageDeliveryStatus message={message} className="h-4 w-4" />
+                    </div>
+                ) : null}
             </div>
         </div>
     );
@@ -510,12 +554,13 @@ function SummaryUserBubble({
 function SummaryMessage({
     message,
     onSendMessage,
+    onSelectWorkstream,
     requestInputAnswered = false,
     StoreLinkComponent,
     CollectionLinkComponent,
 }: SummaryMessageProps) {
     const content = getMessageText(message);
-    const workstreamLaunchDetails = getWorkstreamLaunchDetails(message);
+    const workstreamLaunchDetails = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
     const workstreamId = getWorkstreamId(message);
     const runId = (message as { workflow_run_id?: string }).workflow_run_id;
     const parsedQuestion = useMemo(
@@ -574,7 +619,13 @@ function SummaryMessage({
     );
 
     if (workstreamLaunchDetails) {
-        return <SummaryWorkstreamLaunchMessage message={message} details={workstreamLaunchDetails} />;
+        return (
+            <SummaryWorkstreamLaunchMessage
+                message={message}
+                details={workstreamLaunchDetails}
+                onSelectWorkstream={onSelectWorkstream}
+            />
+        );
     }
 
     if (message.type === AgentMessageType.QUESTION) {
@@ -597,6 +648,7 @@ function SummaryMessage({
                 )}
                 {questionBody && (
                     <SummaryUserBubble
+                        message={message}
                         workstreamId={workstreamId}
                         artifactRunId={runId}
                         markdownComponents={markdownComponents}
@@ -868,11 +920,18 @@ interface SummaryToolDetailItem {
     kind: SummaryToolDetailKind;
     label: string;
     title: string;
+    isPreamble?: boolean;
     command?: string;
     text?: string;
+    toolName?: string;
+    startedAt?: number | string;
+    finishedAt?: number | string;
     status?: ToolExecutionStatus;
     sections: SummaryToolDetailSection[];
 }
+
+const SUMMARY_TOOL_STARTED_AT_DETAIL_KEY = '_summary_started_at';
+const SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY = '_summary_finished_at';
 
 const TOOL_DETAIL_SYSTEM_KEYS = new Set([
     'account_id',
@@ -899,6 +958,8 @@ const TOOL_DETAIL_SYSTEM_KEYS = new Set([
     'tools',
     'message_to_human',
     'progress_messages',
+    SUMMARY_TOOL_STARTED_AT_DETAIL_KEY,
+    SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY,
     'workflow_run_id',
 ]);
 
@@ -930,6 +991,15 @@ function getToolNames(details: Record<string, unknown>): string[] {
     return names;
 }
 
+function getUniqueToolName(details: Record<string, unknown>): string | undefined {
+    const names = Array.from(new Set(getToolNames(details)));
+    return names.length > 0 ? names.join(', ') : undefined;
+}
+
+function getTimestampDetail(value: unknown): number | string | undefined {
+    return typeof value === 'number' || typeof value === 'string' ? value : undefined;
+}
+
 const TOOL_TARGET_KEYS = [
     'query',
     'path',
@@ -958,15 +1028,13 @@ function getToolDetailKind(message: AgentMessage): SummaryToolDetailKind {
     const details = getDetailsRecord(message);
     const toolNames = getToolNames(details).join(' ').toLowerCase();
     const concreteTool = typeof details.tool === 'string' ? details.tool.toLowerCase() : '';
-    const text = getMessageText(message).toLowerCase();
-    const haystack = `${toolNames} ${text}`;
+    const classifierText = concreteTool || toolNames;
 
     if (isToolPreambleMessage(message)) return 'think';
-    if (concreteTool.startsWith('learn_') || haystack.includes('learn_') || /\bskill\b/.test(text)) return 'skill';
+    if (concreteTool.startsWith('learn_') || toolNames.includes('learn_')) return 'skill';
     if (concreteTool === 'discover_tools') return 'discover';
     if (message.type === AgentMessageType.THOUGHT && !concreteTool) return 'think';
 
-    const classifierText = concreteTool || haystack;
     if (classifierText.includes('search') || classifierText.includes('web') || classifierText.includes('fetch'))
         return 'search';
     if (classifierText.includes('read') || classifierText.includes('document') || classifierText.includes('file'))
@@ -1082,6 +1150,16 @@ function getRenderableGroupKey(group: RenderableGroup): string {
     return ['group', group.toolRunId, group.firstTimestamp, firstKey, lastKey].filter(Boolean).join(':');
 }
 
+function getPreviousRenderableGroupTimestamp(groups: RenderableGroup[], index: number): number | string | undefined {
+    for (let previousIndex = index - 1; previousIndex >= 0; previousIndex--) {
+        const group = groups[previousIndex];
+        if (group.type === 'single') return group.message.timestamp;
+        if (group.type === 'tool_group') return group.firstTimestamp;
+        if (group.type === 'streaming') return group.startTimestamp;
+    }
+    return undefined;
+}
+
 function formatToolSectionValue(value: unknown): string {
     const text = stringifyRequestValue(value).trim();
     return text.length > 2400 ? `${text.slice(0, 2400)}\n...` : text;
@@ -1157,6 +1235,7 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
 function buildSummaryToolDetailItem(message: AgentMessage, index: number): SummaryToolDetailItem | undefined {
     const text = getMessageText(message);
     const details = getDetailsRecord(message);
+    const isPreamble = isToolPreambleMessage(message);
     const kind = getToolDetailKind(message);
     const toolNames = getToolNames(details);
     const target = getToolTarget(details);
@@ -1178,41 +1257,117 @@ function buildSummaryToolDetailItem(message: AgentMessage, index: number): Summa
         kind,
         label: getToolDetailLabel(kind),
         title,
+        isPreamble,
         command,
         text: shouldShowText ? normalizedText : undefined,
+        toolName: getUniqueToolName(details),
+        startedAt: getTimestampDetail(details[SUMMARY_TOOL_STARTED_AT_DETAIL_KEY]) ?? message.timestamp,
+        finishedAt: getTimestampDetail(details[SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY]) ?? message.timestamp,
         status: details.tool_status as ToolExecutionStatus | undefined,
         sections: getToolDetailSections(message),
     };
 }
 
+function isPlanToolMessage(message: AgentMessage): boolean {
+    const details = getDetailsRecord(message);
+    return details.tool === 'plan' || details.tool === 'update_plan';
+}
+
+function isPlanLifecycleMessage(message: AgentMessage): boolean {
+    const details = getDetailsRecord(message);
+    if (message.type === AgentMessageType.UPDATE && Array.isArray(details.updates)) return true;
+    return message.type === AgentMessageType.PLAN && Array.isArray(details.plan);
+}
+
+function getActivityGroupIdentity(details: Record<string, unknown>): string | undefined {
+    return typeof details.activity_group_id === 'string' && details.activity_group_id.trim()
+        ? details.activity_group_id.trim()
+        : undefined;
+}
+
+function getToolIdentity(details: Record<string, unknown>): string | undefined {
+    if (typeof details.tool_use_id === 'string' && details.tool_use_id.trim()) return details.tool_use_id.trim();
+    if (typeof details.tool_run_id === 'string' && details.tool_run_id.trim()) return details.tool_run_id.trim();
+    if (typeof details.tool === 'string' && details.tool.trim()) return details.tool.trim();
+    return undefined;
+}
+
+function getSplitActivityGroups(messages: AgentMessage[]): Set<string> {
+    const startedToolIdentities = new Map<string, Set<string>>();
+
+    for (const message of messages) {
+        const details = getDetailsRecord(message);
+        if (details.tool_event !== 'started') continue;
+
+        const activityGroupId = getActivityGroupIdentity(details);
+        const toolIdentity = getToolIdentity(details);
+        if (!activityGroupId || !toolIdentity) continue;
+
+        const identities = startedToolIdentities.get(activityGroupId) ?? new Set<string>();
+        identities.add(toolIdentity);
+        startedToolIdentities.set(activityGroupId, identities);
+    }
+
+    return new Set(
+        Array.from(startedToolIdentities.entries())
+            .filter(([, identities]) => identities.size > 1)
+            .map(([activityGroupId]) => activityGroupId),
+    );
+}
+
+function getSummaryToolGroupId(details: Record<string, unknown>, splitActivityGroups: Set<string>): string | undefined {
+    const activityGroupId = getActivityGroupIdentity(details);
+    const toolIdentity = getToolIdentity(details);
+
+    if (activityGroupId) {
+        if (toolIdentity && splitActivityGroups.has(activityGroupId)) {
+            return `activity:${activityGroupId}:tool:${toolIdentity}`;
+        }
+        return `activity:${activityGroupId}`;
+    }
+
+    if (typeof details.tool_use_id === 'string' && details.tool_use_id.trim()) {
+        return `tool-use:${details.tool_use_id.trim()}`;
+    }
+    if (typeof details.tool_run_id === 'string' && details.tool_run_id.trim())
+        return `run:${details.tool_run_id.trim()}`;
+    return undefined;
+}
+
 function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
     const byGroupId = new Map<string, { index: number; messages: AgentMessage[] }>();
     const ungrouped: Array<{ index: number; message: AgentMessage }> = [];
+    let currentPlanGroupId: string | undefined;
+    const splitActivityGroups = getSplitActivityGroups(messages);
 
     messages.forEach((message, index) => {
         const details = getDetailsRecord(message);
         if (isToolPreambleMessage(message)) {
             ungrouped.push({ index, message });
+            currentPlanGroupId = undefined;
             return;
         }
 
-        const activityGroupId =
-            typeof details.activity_group_id === 'string' && details.activity_group_id.trim()
-                ? details.activity_group_id
-                : undefined;
-        const runId =
-            typeof details.tool_run_id === 'string' && details.tool_run_id.trim() ? details.tool_run_id : undefined;
-        const groupId = activityGroupId ? `activity:${activityGroupId}` : runId ? `run:${runId}` : undefined;
-        if (!groupId) {
+        const groupId = getSummaryToolGroupId(details, splitActivityGroups);
+        const legacyPlanGroupId = !groupId && isPlanLifecycleMessage(message) ? currentPlanGroupId : undefined;
+        const effectiveGroupId = groupId ?? legacyPlanGroupId;
+
+        if (!effectiveGroupId) {
             ungrouped.push({ index, message });
             return;
         }
 
-        const group = byGroupId.get(groupId);
+        const group = byGroupId.get(effectiveGroupId);
         if (group) {
             group.messages.push(message);
         } else {
-            byGroupId.set(groupId, { index, messages: [message] });
+            byGroupId.set(effectiveGroupId, { index, messages: [message] });
+        }
+
+        if (isPlanToolMessage(message)) {
+            currentPlanGroupId = effectiveGroupId;
+        } else if (message.type === AgentMessageType.PLAN) {
+            currentPlanGroupId = undefined;
         }
     });
 
@@ -1236,9 +1391,19 @@ function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
         if (latestStatusMessage && mergedDetails.error === undefined && mergedDetails.stderr === undefined) {
             mergedDetails.error = getMessageText(latestStatusMessage);
         }
+        if (
+            !latestStatusMessage &&
+            sortedMessages.some(
+                (message) => message.type === AgentMessageType.PLAN && Array.isArray(message.details?.plan),
+            )
+        ) {
+            mergedDetails.tool_status = 'completed';
+        }
         if (commandTextMessage && mergedDetails.command === undefined) {
             mergedDetails.command = getMessageText(commandTextMessage);
         }
+        mergedDetails[SUMMARY_TOOL_STARTED_AT_DETAIL_KEY] = sortedMessages[0]?.timestamp;
+        mergedDetails[SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY] = sortedMessages[sortedMessages.length - 1]?.timestamp;
         const messageToHuman =
             typeof startMessage?.details?.message_to_human === 'string' ? startMessage.details.message_to_human : '';
 
@@ -1294,6 +1459,54 @@ function ToolDetailIcon({ kind, status }: { kind: SummaryToolDetailKind; status?
         default:
             return <Wrench className="size-3.5" />;
     }
+}
+
+interface ToolDetailMetadataEntry {
+    label: string;
+    value: string;
+}
+
+function getToolDetailMetadata(item: SummaryToolDetailItem): ToolDetailMetadataEntry[] {
+    const entries: ToolDetailMetadataEntry[] = [];
+    const startedMs = parseTimestampMs(item.startedAt);
+    const finishedMs = parseTimestampMs(item.finishedAt);
+    const startedAt = formatToolDetailTimestamp(item.startedAt);
+    const finishedAt = formatToolDetailTimestamp(item.finishedAt);
+
+    if (item.toolName) {
+        entries.push({ label: 'Tool', value: item.toolName });
+    }
+
+    if (startedAt && finishedAt && startedMs !== undefined && finishedMs !== undefined && startedMs !== finishedMs) {
+        entries.push({ label: 'Started', value: startedAt });
+        entries.push({ label: 'Ended', value: finishedAt });
+        entries.push({ label: 'Duration', value: formatDuration(getDurationSeconds(item.startedAt, item.finishedAt)) });
+    } else if (startedAt || finishedAt) {
+        entries.push({ label: 'Time', value: startedAt ?? finishedAt ?? '' });
+    }
+
+    return entries;
+}
+
+function ToolDetailMetadata({ hasDetailContent, item }: { hasDetailContent: boolean; item: SummaryToolDetailItem }) {
+    const entries = getToolDetailMetadata(item);
+    if (entries.length === 0) return null;
+
+    return (
+        <dl
+            className={cn(
+                'flex flex-wrap gap-x-4 gap-y-1 text-xs',
+                hasDetailContent && 'mb-3 border-b border-border/60 pb-2',
+            )}
+        >
+            {entries.map((entry) => (
+                <div key={entry.label} className="flex min-w-0 items-baseline gap-1.5">
+                    <dt className="shrink-0 text-muted">{entry.label}</dt>
+                    <dd className="min-w-0 wrap-break-word font-medium text-foreground/80">{entry.value}</dd>
+                </div>
+            ))}
+        </dl>
+    );
 }
 
 function ToolDetailSection({ section }: { section: SummaryToolDetailSection }) {
@@ -1363,6 +1576,8 @@ function formatToolPrimaryText(item: SummaryToolDetailItem): string {
 
 function formatToolDetailCopyText(item: SummaryToolDetailItem): string {
     const parts = [getToolPanelTitle(item), formatToolPrimaryText(item)];
+    const metadata = getToolDetailMetadata(item).map((entry) => `${entry.label}: ${entry.value}`);
+    if (metadata.length > 0) parts.push(metadata.join('\n'));
     if (item.text) parts.push(item.text);
 
     for (const section of item.sections) {
@@ -1404,9 +1619,10 @@ async function copyTextToClipboard(text: string): Promise<boolean> {
 }
 
 function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
-    const copyText = formatToolDetailCopyText(item);
     const commandText = item.kind === 'command' && item.command ? formatToolPrimaryText(item) : undefined;
     const fallbackText = !commandText && item.sections.length === 0 ? item.text : undefined;
+    const hasDetailContent = Boolean(commandText || fallbackText || item.sections.length);
+    const copyText = formatToolDetailCopyText(item);
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
     const copyResetRef = useRef<number | undefined>(undefined);
 
@@ -1426,23 +1642,26 @@ function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
 
     return (
         <div className="relative mt-2 rounded-lg border border-border/70 bg-mixer-muted/10 p-3 shadow-sm">
-            <div className="absolute end-2 top-2">
-                <button
-                    type="button"
-                    className={cn(
-                        'inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted opacity-70 transition',
-                        'hover:bg-mixer-muted/20 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                        copyState === 'copied' && 'text-success opacity-100',
-                        copyState === 'failed' && 'text-destructive opacity-100',
-                    )}
-                    onClick={copyDetails}
-                    aria-label="Copy tool details"
-                    title="Copy tool details"
-                >
-                    {copyState === 'copied' ? <CheckCircle className="size-4" /> : <CopyIcon className="size-4" />}
-                </button>
-            </div>
-            <div className="pe-7">
+            {hasDetailContent ? (
+                <div className="absolute end-2 top-2">
+                    <button
+                        type="button"
+                        className={cn(
+                            'inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted opacity-70 transition',
+                            'hover:bg-mixer-muted/20 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            copyState === 'copied' && 'text-success opacity-100',
+                            copyState === 'failed' && 'text-destructive opacity-100',
+                        )}
+                        onClick={copyDetails}
+                        aria-label="Copy tool details"
+                        title="Copy tool details"
+                    >
+                        {copyState === 'copied' ? <CheckCircle className="size-4" /> : <CopyIcon className="size-4" />}
+                    </button>
+                </div>
+            ) : null}
+            <div className={cn(hasDetailContent && 'pe-7')}>
+                <ToolDetailMetadata item={item} hasDetailContent={hasDetailContent} />
                 {commandText ? (
                     <pre className="mb-3 whitespace-pre-wrap break-words font-mono text-sm leading-6 text-foreground/85">
                         {commandText}
@@ -1459,14 +1678,17 @@ function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
                     </div>
                 ) : null}
             </div>
-            {copyState === 'failed' ? <div className="mt-3 text-xs text-destructive">Copy failed</div> : null}
+            {copyState === 'failed' && hasDetailContent ? (
+                <div className="mt-3 text-xs text-destructive">Copy failed</div>
+            ) : null}
         </div>
     );
 }
 
 function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
     const isAttention = item.status === 'error' || item.status === 'warning';
-    const hasDetails = Boolean(item.command || item.text || item.sections.length);
+    const hasMetadata = getToolDetailMetadata(item).length > 0;
+    const hasDetails = Boolean(item.command || item.text || item.sections.length || hasMetadata);
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
@@ -1490,10 +1712,7 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
                 >
                     <ToolDetailIcon kind={item.kind} status={item.status} />
                 </span>
-                <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                    <span className="text-sm font-medium text-muted">{item.label}</span>
-                    <span className="min-w-0 break-words text-sm text-muted">{item.title}</span>
-                </span>
+                <span className="min-w-0 break-words text-sm text-muted">{item.title}</span>
                 {hasDetails ? (
                     <ChevronDown
                         className={cn(
@@ -1513,27 +1732,87 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
     );
 }
 
-function SummaryThoughtTimelineItem({ item, artifactRunId }: { item: SummaryToolDetailItem; artifactRunId?: string }) {
+function SummaryThoughtProseItem({
+    item,
+    artifactRunId,
+    disableCollapse,
+}: {
+    item: SummaryToolDetailItem;
+    artifactRunId?: string;
+    disableCollapse?: boolean;
+}) {
+    const { t } = useUITranslation();
     const text = item.text ?? item.title;
+    const normalizedText = text.trim();
+    const [isExpanded, setIsExpanded] = useState(false);
+    const explicitLineCount = normalizedText ? normalizedText.split(/\r?\n/).length : 0;
+    const isLong =
+        normalizedText.length > SUMMARY_THOUGHT_COLLAPSE_THRESHOLD ||
+        explicitLineCount > SUMMARY_THOUGHT_COLLAPSE_LINES;
+    const toggleLabel = isExpanded ? t('agent.showLess') : t('agent.showMore');
 
     return (
-        <div className="min-w-0 py-1 text-sm leading-6 text-foreground/85">
-            <div className={SUMMARY_PROSE_CLASS} style={{ overflowWrap: 'anywhere' }}>
+        <div className="min-w-0 py-1">
+            <div
+                data-testid="summary-thought-prose"
+                className={cn(
+                    SUMMARY_PROSE_CLASS,
+                    isLong &&
+                        !disableCollapse &&
+                        !isExpanded &&
+                        '[display:-webkit-box] overflow-hidden [-webkit-box-orient:vertical] [-webkit-line-clamp:6]',
+                )}
+                style={{ overflowWrap: 'anywhere' }}
+            >
                 <MarkdownRenderer artifactRunId={artifactRunId} components={DEFAULT_AGENT_MARKDOWN_COMPONENTS}>
                     {text}
                 </MarkdownRenderer>
             </div>
+            {isLong && !disableCollapse ? (
+                <div className="mt-1.5 flex justify-end">
+                    <button
+                        type="button"
+                        aria-expanded={isExpanded}
+                        className={cn(
+                            'inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors',
+                            '[text-decoration:none] hover:text-foreground hover:[text-decoration:none]',
+                            'focus-visible:text-foreground focus-visible:[text-decoration:none]',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        )}
+                        onClick={() => setIsExpanded((current) => !current)}
+                    >
+                        {toggleLabel}
+                        <ChevronDown
+                            className={cn('size-4 transition-transform', isExpanded && 'rotate-180')}
+                            aria-hidden="true"
+                        />
+                    </button>
+                </div>
+            ) : null}
         </div>
     );
 }
 
-function SummaryToolTimeline({ items, artifactRunId }: { items: SummaryToolDetailItem[]; artifactRunId?: string }) {
+function SummaryToolTimeline({
+    items,
+    artifactRunId,
+    disablePreambleCollapse,
+}: {
+    items: SummaryToolDetailItem[];
+    artifactRunId?: string;
+    disablePreambleCollapse?: boolean;
+}) {
     return (
         <div className="mt-3">
             <div className="space-y-3">
                 {items.map((item) =>
-                    item.kind === 'think' ? (
-                        <SummaryThoughtTimelineItem key={item.key} item={item} artifactRunId={artifactRunId} />
+                    item.isPreamble || item.kind === 'think' ? (
+                        <SummaryThoughtProseItem
+                            key={item.key}
+                            item={item}
+                            artifactRunId={artifactRunId}
+                            disableCollapse={disablePreambleCollapse}
+                        />
                     ) : (
                         <SummaryToolTimelineItem key={item.key} item={item} />
                     ),
@@ -1563,6 +1842,33 @@ function SummaryStreamingMessage({
     );
 }
 
+function SummaryStoppedMessage({
+    message,
+    startTimestamp,
+    endTimestamp,
+    className,
+}: {
+    message: AgentMessage;
+    startTimestamp?: number | string;
+    endTimestamp?: number | string;
+    className?: string;
+}) {
+    const { t } = useUITranslation();
+    const duration = formatDuration(
+        getDurationSeconds(startTimestamp ?? message.timestamp, endTimestamp ?? message.timestamp),
+    );
+
+    return (
+        <div className={cn('mx-auto w-full max-w-3xl px-1', className)} data-testid="summary-stopped-message">
+            <div className="flex items-center justify-end gap-2 text-lg font-medium text-muted sm:text-xl">
+                <span>{t('agent.youStoppedAfter', { duration })}</span>
+                <MessageDeliveryStatus message={message} className="h-5 w-5" />
+            </div>
+            <div className="mt-5 border-b border-border/70" />
+        </div>
+    );
+}
+
 function SummaryActivityRow({
     label,
     status,
@@ -1572,6 +1878,7 @@ function SummaryActivityRow({
     details,
     emptyDetailsLabel,
     defaultExpanded = false,
+    disablePreambleCollapse = false,
     className,
     artifactRunId,
 }: {
@@ -1583,6 +1890,7 @@ function SummaryActivityRow({
     details?: AgentMessage[];
     emptyDetailsLabel?: string;
     defaultExpanded?: boolean;
+    disablePreambleCollapse?: boolean;
     className?: string;
     artifactRunId?: string;
 }) {
@@ -1625,7 +1933,11 @@ function SummaryActivityRow({
                 </button>
                 {canExpand && isExpanded ? (
                     detailItems.length > 0 ? (
-                        <SummaryToolTimeline items={detailItems} artifactRunId={artifactRunId} />
+                        <SummaryToolTimeline
+                            items={detailItems}
+                            artifactRunId={artifactRunId}
+                            disablePreambleCollapse={disablePreambleCollapse}
+                        />
                     ) : (
                         <div className="mt-3 flex items-center gap-2 text-sm text-muted">
                             <Terminal className="size-4 opacity-70" aria-hidden="true" />
@@ -1744,12 +2056,18 @@ interface AllMessagesMixedProps {
     initialRequestTitle?: string;
     /** Optional caller-provided renderer for agent-specific request shapes. */
     initialRequestTemplate?: AgentInitialRequestTemplate;
+    /** Whether the synthetic initial request fallback should render when no persisted question is present. */
+    showInitialRequest?: boolean;
     /** Message types to exclude from the conversation view */
     hiddenMessageTypes?: AgentMessageType[];
     /** Test/playback mode: keep the current scroll position while the rendered message slice changes. */
     disableAutoScroll?: boolean;
     /** Whether REQUEST_INPUT messages render their active controls in the transcript. */
     renderRequestInputControls?: boolean;
+    /** Active workstream selected by the parent conversation shell. */
+    activeWorkstream?: string;
+    /** Called when the user selects a different workstream from the conversation. */
+    onActiveWorkstreamChange?: (workstreamId: string) => void;
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
@@ -1779,9 +2097,12 @@ function AllMessagesMixedComponent({
     initialRequestSchema,
     initialRequestTitle,
     initialRequestTemplate,
+    showInitialRequest,
     hiddenMessageTypes,
     disableAutoScroll = false,
     renderRequestInputControls = true,
+    activeWorkstream: controlledActiveWorkstream,
+    onActiveWorkstreamChange,
 }: AllMessagesMixedProps) {
     if (!artifactRunId) {
         console.warn('[AllMessagesMixed] artifactRunId prop is missing!');
@@ -1789,7 +2110,17 @@ function AllMessagesMixedComponent({
 
     const { t } = useUITranslation();
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const [activeWorkstream, setActiveWorkstream] = useState<string>('all');
+    const [internalActiveWorkstream, setInternalActiveWorkstream] = useState<string>('all');
+    const activeWorkstream = controlledActiveWorkstream ?? internalActiveWorkstream;
+    const setActiveWorkstream = useCallback(
+        (workstreamId: string) => {
+            if (controlledActiveWorkstream === undefined) {
+                setInternalActiveWorkstream(workstreamId);
+            }
+            onActiveWorkstreamChange?.(workstreamId);
+        },
+        [controlledActiveWorkstream, onActiveWorkstreamChange],
+    );
 
     // PERFORMANCE: Throttle auto-scroll to prevent layout thrashing
     // During streaming, scrollIntoView was being called 30+ times/sec
@@ -1909,16 +2240,59 @@ function AllMessagesMixedComponent({
         return deduped;
     }, [messages, hiddenMessageTypes]);
 
-    // Get workstreams from messages - only from message.workstream_id
     const workstreams = React.useMemo(() => {
-        // Just get the basic workstreams from the messages
         const extractedWorkstreams = extractWorkstreams(sortedMessages);
 
-        // We'll keep taskLabels - they might be used for display purposes elsewhere
-        // but we won't use them to create new workstream tabs
+        sortedMessages.forEach((message) => {
+            const details = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
+            if (!details) return;
+            extractedWorkstreams.set(
+                details.workstreamId,
+                getWorkstreamDisplayName(details.workstreamId, details.interaction),
+            );
+        });
 
         return extractedWorkstreams;
     }, [sortedMessages]);
+
+    const activeWorkstreamName = React.useMemo(() => {
+        if (activeWorkstream === 'all') return undefined;
+        return workstreams.get(activeWorkstream) ?? formatWorkstreamName(activeWorkstream);
+    }, [activeWorkstream, workstreams]);
+
+    const scrollToTop = useCallback(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        programmaticScrollRef.current = true;
+        if (typeof container.scrollTo === 'function') {
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            container.scrollTop = 0;
+        }
+        requestAnimationFrame(() => {
+            programmaticScrollRef.current = false;
+        });
+    }, []);
+
+    const handleSelectWorkstream = useCallback(
+        (workstreamId: string) => {
+            setActiveWorkstream(workstreamId);
+            requestAnimationFrame(scrollToTop);
+        },
+        [scrollToTop, setActiveWorkstream],
+    );
+
+    const handleShowMainAgentChat = useCallback(() => {
+        setActiveWorkstream('all');
+        requestAnimationFrame(scrollToTop);
+    }, [scrollToTop, setActiveWorkstream]);
+
+    useEffect(() => {
+        if (activeWorkstream !== 'all' && !workstreams.has(activeWorkstream)) {
+            setActiveWorkstream('all');
+        }
+    }, [activeWorkstream, workstreams, setActiveWorkstream]);
 
     // Count messages per workstream
     const workstreamCounts = React.useMemo(() => {
@@ -1942,10 +2316,7 @@ function AllMessagesMixedComponent({
 
     // Filter messages based on active workstream
     const displayMessages = React.useMemo(() => {
-        if (activeWorkstream === 'all') {
-            return sortedMessages;
-        }
-        return filterMessagesByWorkstream(sortedMessages, activeWorkstream);
+        return filterMessagesForActiveWorkstream(sortedMessages, activeWorkstream);
     }, [sortedMessages, activeWorkstream]);
 
     const answeredRequestInputKeys = React.useMemo(
@@ -1969,11 +2340,14 @@ function AllMessagesMixedComponent({
         Boolean(prependFriendlyMessage?.trim()) ||
         hasInitialRequestValue(initialRequestData) ||
         initialRequestTemplate !== undefined;
+    const canRenderInitialRequest = showInitialRequest ?? true;
+    const hasRenderableInitialRequest = hasInitialRequest && canRenderInitialRequest;
     const hasPersistedUserQuestion = useMemo(
         () => displayMessages.some((message) => message.type === AgentMessageType.QUESTION),
         [displayMessages],
     );
-    const shouldRenderInitialRequest = hasInitialRequest && !hasPersistedUserQuestion;
+    const shouldRenderInitialRequest =
+        activeWorkstream === 'all' && hasRenderableInitialRequest && !hasPersistedUserQuestion;
 
     const latestDisplayMessageTimestamp = useMemo(() => {
         return displayMessages.reduce((latest, msg) => Math.max(latest, getTimestampMs(msg.timestamp)), -Infinity);
@@ -2070,7 +2444,10 @@ function AllMessagesMixedComponent({
         ? t('agent.preparing')
         : t('agent.working');
     const showInitialRequestWaitingCard =
-        displayMessages.length === 0 && hasInitialRequest && isAgentWorking && incompleteStreaming.length === 0;
+        displayMessages.length === 0 &&
+        hasRenderableInitialRequest &&
+        isAgentWorking &&
+        incompleteStreaming.length === 0;
     const activityAnchorCandidate = useMemo(
         () =>
             getSummaryActivityAnchorTimestamp(
@@ -2417,14 +2794,16 @@ function AllMessagesMixedComponent({
                     <WorkstreamTabs
                         workstreams={workstreams}
                         activeWorkstream={activeWorkstream}
-                        onSelectWorkstream={setActiveWorkstream}
+                        onSelectWorkstream={handleSelectWorkstream}
                         count={workstreamCounts}
                         completionStatus={workstreamCompletionStatus}
                     />
                 </div>
             )}
 
-            {displayMessages.length === 0 && !hasInitialRequest && !(isSummaryView && showActivityFallback) ? (
+            {displayMessages.length === 0 &&
+            !hasRenderableInitialRequest &&
+            !(isSummaryView && showActivityFallback) ? (
                 activeWorkstream === 'all' && isAgentWorking && incompleteStreaming.length === 0 ? (
                     <div className="flex-1 px-2 py-6 sm:px-4">
                         <InitialRequestWaitingCard
@@ -2450,6 +2829,28 @@ function AllMessagesMixedComponent({
                         messageListClassName,
                     )}
                 >
+                    {isSummaryView && activeWorkstream !== 'all' && activeWorkstreamName && (
+                        <div className="sticky top-0 z-20 -mx-2 bg-background/95 px-2 pb-2 pt-1 backdrop-blur sm:-mx-4 sm:px-4">
+                            <div className="mx-auto flex w-full max-w-3xl items-center gap-2 border-b border-border/70 pb-3">
+                                <VTooltip description={t('agent.backToMainAgent')} asChild>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-8 shrink-0 text-muted hover:text-foreground"
+                                        aria-label={t('agent.backToMainAgent')}
+                                        onClick={handleShowMainAgentChat}
+                                    >
+                                        <ArrowLeft className="size-4" aria-hidden="true" />
+                                    </Button>
+                                </VTooltip>
+                                <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                                    {activeWorkstreamName}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Friendly message — rendered outside the messages array to avoid memo issues/triggering autoscroll */}
                     {shouldRenderInitialRequest && (
                         <InitialRequestMessage
@@ -2544,6 +2945,22 @@ function AllMessagesMixedComponent({
                                     // Render single message
                                     const message = group.message;
                                     if (shouldHideRequestInputMessage(message)) return null;
+                                    if (isUserStoppedMessage(message)) {
+                                        return (
+                                            <TimelineEntry key={getAgentMessageRenderKey(message, 'stopped')}>
+                                                <SummaryStoppedMessage
+                                                    message={message}
+                                                    startTimestamp={
+                                                        getPreviousRenderableGroupTimestamp(
+                                                            groupedMessages,
+                                                            groupIndex,
+                                                        ) ?? message.timestamp
+                                                    }
+                                                    endTimestamp={message.timestamp}
+                                                />
+                                            </TimelineEntry>
+                                        );
+                                    }
                                     const isLatestMessage =
                                         !isCompleted && isLastGroup && !DONE_STATES.includes(message.type);
 
@@ -2650,7 +3067,19 @@ function AllMessagesMixedComponent({
                                             showElapsed
                                             details={isThinkingOnlyWork ? undefined : item.messages}
                                             defaultExpanded={item.isActive && !isThinkingOnlyWork}
+                                            disablePreambleCollapse={item.isActive}
                                             className={workingIndicatorClassName}
+                                        />
+                                    );
+                                }
+
+                                if (item.type === 'stopped') {
+                                    return (
+                                        <SummaryStoppedMessage
+                                            key={getAgentMessageRenderKey(item.message, 'stopped-summary')}
+                                            message={item.message}
+                                            startTimestamp={item.startTimestamp}
+                                            endTimestamp={item.endTimestamp}
                                         />
                                     );
                                 }
@@ -2675,6 +3104,7 @@ function AllMessagesMixedComponent({
                                         <SummaryMessage
                                             message={message}
                                             onSendMessage={onSendMessage}
+                                            onSelectWorkstream={handleSelectWorkstream}
                                             requestInputAnswered={isRequestInputAnswered(
                                                 message,
                                                 answeredRequestInputKeys,

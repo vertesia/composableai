@@ -1,5 +1,6 @@
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import {
+    getWorkstreamActivityDetails,
     getWorkstreamLaunchDetails,
     isWorkstreamInternalResultMessage,
     isWorkstreamInternalResultText,
@@ -8,12 +9,19 @@ import {
     isStreamReplacedByMessage,
     isToolActivityMessage,
     isToolPreambleMessage,
+    isUserStoppedMessage,
     type StreamingData,
     type ToolExecutionStatus,
 } from './utils';
 
 export type SummaryConversationItem =
     | { type: 'message'; message: AgentMessage }
+    | {
+          type: 'stopped';
+          message: AgentMessage;
+          startTimestamp: number | string;
+          endTimestamp: number | string;
+      }
     | {
           type: 'work';
           id: string;
@@ -154,8 +162,43 @@ function isToolScopedStatusMessage(message: AgentMessage): boolean {
     );
 }
 
+function isLegacyAnalyzeConversationErrorMessage(message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.ERROR || isToolScopedStatusMessage(message)) return false;
+
+    const details = message.details as { error?: unknown } | undefined;
+    return getMessageText(message).startsWith('Error analyzing conversation:') && typeof details?.error === 'string';
+}
+
+function isWorkstreamActivityFailureMessage(message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.ERROR) return false;
+
+    const details = message.details as
+        | {
+              activity_group_id?: unknown;
+              event_class?: unknown;
+              tool?: unknown;
+              tool_event?: unknown;
+              tool_run_id?: unknown;
+              tool_status?: unknown;
+              workstream_event?: unknown;
+          }
+        | undefined;
+
+    if (details?.event_class !== 'activity') return false;
+    if (details.workstream_event) return false;
+
+    return !(
+        details.tool ||
+        details.tool_status ||
+        details.tool_run_id ||
+        details.activity_group_id ||
+        details.tool_event
+    );
+}
+
 function isSummaryPrimaryMessage(message: AgentMessage): boolean {
     if (isWorkstreamInternalResultMessage(message)) return false;
+    if (isWorkstreamActivityFailureMessage(message)) return false;
 
     return (
         message.type === AgentMessageType.QUESTION ||
@@ -200,6 +243,7 @@ function isSummaryWorkMessage(message: AgentMessage): boolean {
     if (isWorkstreamInternalResultMessage(message)) return false;
     if (isSummaryAssistantProseMessage(message)) return false;
     if (getWorkstreamLaunchDetails(message)) return false;
+    if (isWorkstreamActivityFailureMessage(message)) return true;
     if (isTransientWorkStatusMessage(message)) return true;
     if (isToolScopedStatusMessage(message)) return true;
     if (isToolPreambleMessage(message)) return true;
@@ -216,6 +260,7 @@ export function buildSummaryConversationItems(
 ): SummaryConversationItem[] {
     const items: SummaryConversationItem[] = [];
     let pendingWork: AgentMessage[] = [];
+    const seenWorkstreamStartIds = new Set<string>();
 
     const flushWork = (isActive: boolean, endMessage?: AgentMessage) => {
         if (pendingWork.length === 0) return;
@@ -244,12 +289,45 @@ export function buildSummaryConversationItems(
     };
 
     for (const message of messages) {
+        const launchDetails = getWorkstreamLaunchDetails(message);
+        const activityStartDetails = launchDetails ? null : getWorkstreamActivityDetails(message);
+        const workstreamStartDetails = launchDetails ?? activityStartDetails;
+
+        if (workstreamStartDetails) {
+            const hasSeenWorkstream = seenWorkstreamStartIds.has(workstreamStartDetails.workstreamId);
+            seenWorkstreamStartIds.add(workstreamStartDetails.workstreamId);
+
+            if (launchDetails || !hasSeenWorkstream) {
+                flushWork(false, message);
+                items.push({ type: 'message', message });
+                continue;
+            }
+        }
+
         if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
+            if (isUserStoppedMessage(message)) {
+                const pendingWorkStartTimestamp = pendingWork[0]?.timestamp;
+                flushWork(false, message);
+                const previousItem = items[items.length - 1];
+                items.push({
+                    type: 'stopped',
+                    message,
+                    startTimestamp:
+                        pendingWorkStartTimestamp !== undefined && previousItem?.type === 'work'
+                            ? previousItem.startTimestamp
+                            : (pendingWorkStartTimestamp ?? message.timestamp),
+                    endTimestamp: message.timestamp,
+                });
+                continue;
+            }
             flushWork(false, message);
             continue;
         }
 
-        if (isSummaryWorkMessage(message)) {
+        if (
+            isSummaryWorkMessage(message) ||
+            (pendingWork.length > 0 && isLegacyAnalyzeConversationErrorMessage(message))
+        ) {
             if (shouldResumeCompletedWorkForTool(message, pendingWork)) {
                 const previousItem = items[items.length - 1];
                 if (previousItem?.type === 'work' && !previousItem.isActive) {
