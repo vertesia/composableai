@@ -93,6 +93,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         "@biomejs/**"
       ],
@@ -121,6 +124,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         // cloud provider
         "@aws-sdk/**",
@@ -144,6 +150,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         "@codemirror/**",
         "codemirror"
@@ -155,6 +164,9 @@
       "groupName": "eslint dependencies",
       "matchManagers": [
         "npm"
+      ],
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "@eslint/**",
@@ -169,6 +181,9 @@
       "groupName": "UI Component dependencies",
       "matchManagers": [
         "npm"
+      ],
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "chart.js",
@@ -202,6 +217,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         "@next/**",
         "next**",
@@ -220,6 +238,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         "@google-cloud/**",
         "@googleapis/**",
@@ -236,6 +257,9 @@
       "groupName": "tsconfig dependencies",
       "matchManagers": [
         "npm"
+      ],
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "@tsconfig/**"
@@ -277,6 +301,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         "npm",
         "pnpm"
@@ -288,13 +315,16 @@
     {
       "groupName": "Package Overrides",
       "matchManagers": [
-        "npm"
+        "npm",
+        "pnpm"
       ],
       "matchDepTypes": [
         "overrides"
       ],
       "rangeStrategy": "bump",
-      "schedule": "* * * * 4" // Thursday
+      "schedule": "* * * * 4", // Thursday
+      "prCreation": "approval", // Branches still created automatically. This is to hide the group, do not merge.
+      "automerge": false
     },
     // Disable automatic updates for node engines
     {

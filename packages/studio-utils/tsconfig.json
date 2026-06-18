@@ -1,8 +1,18 @@
 {
     "extends": "@vertesia/tsconfig/lib.json",
+    "references": [
+        {
+            "path": "../../libraries/jst"
+        },
+        {
+            "path": "../common"
+        }
+    ],
     "compilerOptions": {
         "rootDir": "./src",
         "outDir": "./lib"
     },
-    "include": ["src"]
+    "include": [
+        "src"
+    ]
 }
