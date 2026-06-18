@@ -56,7 +56,13 @@ import type { MessageItemClassNames } from './ModernAgentOutput/MessageItem';
 import { getPendingRequestInputMessage } from './ModernAgentOutput/requestInputMessages';
 import type { StreamingMessageClassNames } from './ModernAgentOutput/StreamingMessage';
 import type { ToolCallGroupClassNames } from './ModernAgentOutput/ToolCallGroup';
-import { debugAgentChat, getConversationUrl, getWorkstreamId, isInProgress } from './ModernAgentOutput/utils';
+import {
+    debugAgentChat,
+    filterMessagesForActiveWorkstream,
+    getConversationUrl,
+    getWorkstreamId,
+    isInProgress,
+} from './ModernAgentOutput/utils';
 import {
     type AgentChatPlaybackCursor,
     createPlaybackState,
@@ -1357,6 +1363,7 @@ function ModernAgentConversationInner({
     );
     const [isStopping, setIsStopping] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
+    const [activeWorkstream, setActiveWorkstream] = useState('all');
     const [playbackCursor, setPlaybackCursor] = useState<AgentChatPlaybackCursor>('live');
     const [isPlaybackToggleEnabled, setIsPlaybackToggleEnabled] = useState(false);
     const [playbackScrollRequestId, setPlaybackScrollRequestId] = useState(0);
@@ -1473,14 +1480,20 @@ function ModernAgentConversationInner({
 
     const canShowPlaybackToggle = showPlaybackToggle && enablePlayback === undefined && isAgentChatPlaybackAvailable();
     const isPlaybackEnabled = enablePlayback ?? (isAgentChatPlaybackEnabled() || isPlaybackToggleEnabled);
+    const playbackSourceMessages = useMemo(() => {
+        const visibleMessages = hiddenMessageTypes?.length
+            ? messages.filter((message) => !hiddenMessageTypes.includes(message.type))
+            : messages;
+        return filterMessagesForActiveWorkstream(visibleMessages, activeWorkstream);
+    }, [activeWorkstream, hiddenMessageTypes, messages]);
     const playbackState = useMemo(
-        () => createPlaybackState(messages, playbackCursor, isPlaybackEnabled),
-        [isPlaybackEnabled, messages, playbackCursor],
+        () => createPlaybackState(playbackSourceMessages, playbackCursor, isPlaybackEnabled),
+        [isPlaybackEnabled, playbackCursor, playbackSourceMessages],
     );
     const clampedPlaybackCursor = playbackState.cursor;
     const isPlaybackLive = playbackState.isLive;
     const isPlaybackAtLatest =
-        isPlaybackEnabled && !isPlaybackLive && playbackState.cursorIndex === messages.length - 1;
+        isPlaybackEnabled && !isPlaybackLive && playbackState.cursorIndex === playbackSourceMessages.length - 1;
     const displayedMessages = playbackState.displayedMessages;
     const displayedStreamingMessages = isPlaybackLive ? streamingMessages : EMPTY_STREAMING_MESSAGES;
     const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
@@ -1501,6 +1514,7 @@ function ModernAgentConversationInner({
         debugAgentChat('conversation render state', {
             agentRunId,
             messageCount: messages.length,
+            playbackMessageCount: playbackSourceMessages.length,
             displayedMessageCount: displayedMessages.length,
             streamingCount: streamingMessages.size,
             displayedStreamingCount: displayedStreamingMessages.size,
@@ -1515,10 +1529,12 @@ function ModernAgentConversationInner({
             isPlaybackEnabled,
             isPlaybackLive,
             isPlaybackAtLatest,
+            activeWorkstream,
             showInitialRequest: initialHistoryStatus === 'empty' && messages.length === 0,
             pendingStartVisible: messages.length === 0 && !effectiveIsCompleted && Boolean(pendingStartMessage),
         });
     }, [
+        activeWorkstream,
         agentRunId,
         agentRunStatus,
         clampedPlaybackCursor,
@@ -1535,6 +1551,7 @@ function ModernAgentConversationInner({
         isWorkflowTerminal,
         messages.length,
         pendingStartMessage,
+        playbackSourceMessages.length,
         streamingMessages.size,
     ]);
 
@@ -1544,8 +1561,8 @@ function ModernAgentConversationInner({
 
     const handleChangePlaybackCursor = useCallback(
         (nextCursor: AgentChatPlaybackCursor) => {
-            const currentIndex = getPlaybackCursorIndex(clampedPlaybackCursor, messages.length);
-            const nextIndex = getPlaybackCursorIndex(nextCursor, messages.length);
+            const currentIndex = getPlaybackCursorIndex(clampedPlaybackCursor, playbackSourceMessages.length);
+            const nextIndex = getPlaybackCursorIndex(nextCursor, playbackSourceMessages.length);
             const returningToLive = nextCursor === 'live' && clampedPlaybackCursor !== 'live';
             if (isPlaybackEnabled && (nextIndex > currentIndex || returningToLive)) {
                 pendingPlaybackScrollRef.current = true;
@@ -1553,7 +1570,7 @@ function ModernAgentConversationInner({
             }
             setPlaybackCursor(nextCursor);
         },
-        [clampedPlaybackCursor, isPlaybackEnabled, messages.length],
+        [clampedPlaybackCursor, isPlaybackEnabled, playbackSourceMessages.length],
     );
 
     useEffect(() => {
@@ -2235,7 +2252,7 @@ function ModernAgentConversationInner({
                 <div className="flex flex-shrink-0 justify-end px-2 py-1.5">
                     <AgentChatPlaybackControls
                         cursor={clampedPlaybackCursor}
-                        messages={messages}
+                        messages={playbackSourceMessages}
                         onChangeCursor={handleChangePlaybackCursor}
                     />
                 </div>
@@ -2280,6 +2297,8 @@ function ModernAgentConversationInner({
                     hiddenMessageTypes={hiddenMessageTypes}
                     disableAutoScroll={!isPlaybackLive}
                     renderRequestInputControls={isPlaybackLive && !shouldShowLiveRequestInputOverlay}
+                    activeWorkstream={activeWorkstream}
+                    onActiveWorkstreamChange={setActiveWorkstream}
                 />
             )}
 

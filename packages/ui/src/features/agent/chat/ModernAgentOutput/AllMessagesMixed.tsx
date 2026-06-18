@@ -60,6 +60,7 @@ import {
 import ToolCallGroup, { type ToolCallGroupClassNames } from './ToolCallGroup';
 import {
     DONE_STATES,
+    filterMessagesForActiveWorkstream,
     getWorkstreamId,
     groupMessagesWithStreaming,
     isInProgress,
@@ -964,24 +965,6 @@ const TOOL_DETAIL_SYSTEM_KEYS = new Set([
 
 function getDetailsRecord(message: AgentMessage): Record<string, unknown> {
     return isRecordValue(message.details) ? message.details : {};
-}
-
-function isMainChatMessage(message: AgentMessage): boolean {
-    if (getWorkstreamId(message) === 'main') return true;
-
-    if (getWorkstreamLaunchDetails(message) || getWorkstreamActivityDetails(message)) return true;
-
-    const details = getDetailsRecord(message);
-    const hasChildWorkflow =
-        typeof details.child_workflow_id === 'string' || typeof details.child_workflow_run_id === 'string';
-    const hasTool = typeof details.tool === 'string' || typeof details.tool_run_id === 'string';
-    const isLegacyPreLaunchFailure =
-        details.event_class === 'activity' &&
-        (message.type === AgentMessageType.ERROR || message.type === AgentMessageType.WARNING) &&
-        !hasChildWorkflow &&
-        !hasTool;
-
-    return isLegacyPreLaunchFailure;
 }
 
 function humanizeIdentifier(value: string): string {
@@ -2032,6 +2015,10 @@ interface AllMessagesMixedProps {
     disableAutoScroll?: boolean;
     /** Whether REQUEST_INPUT messages render their active controls in the transcript. */
     renderRequestInputControls?: boolean;
+    /** Active workstream selected by the parent conversation shell. */
+    activeWorkstream?: string;
+    /** Called when the user selects a different workstream from the conversation. */
+    onActiveWorkstreamChange?: (workstreamId: string) => void;
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
@@ -2065,6 +2052,8 @@ function AllMessagesMixedComponent({
     hiddenMessageTypes,
     disableAutoScroll = false,
     renderRequestInputControls = true,
+    activeWorkstream: controlledActiveWorkstream,
+    onActiveWorkstreamChange,
 }: AllMessagesMixedProps) {
     if (!artifactRunId) {
         console.warn('[AllMessagesMixed] artifactRunId prop is missing!');
@@ -2072,7 +2061,17 @@ function AllMessagesMixedComponent({
 
     const { t } = useUITranslation();
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const [activeWorkstream, setActiveWorkstream] = useState<string>('all');
+    const [internalActiveWorkstream, setInternalActiveWorkstream] = useState<string>('all');
+    const activeWorkstream = controlledActiveWorkstream ?? internalActiveWorkstream;
+    const setActiveWorkstream = useCallback(
+        (workstreamId: string) => {
+            if (controlledActiveWorkstream === undefined) {
+                setInternalActiveWorkstream(workstreamId);
+            }
+            onActiveWorkstreamChange?.(workstreamId);
+        },
+        [controlledActiveWorkstream, onActiveWorkstreamChange],
+    );
 
     // PERFORMANCE: Throttle auto-scroll to prevent layout thrashing
     // During streaming, scrollIntoView was being called 30+ times/sec
@@ -2232,19 +2231,19 @@ function AllMessagesMixedComponent({
             setActiveWorkstream(workstreamId);
             requestAnimationFrame(scrollToTop);
         },
-        [scrollToTop],
+        [scrollToTop, setActiveWorkstream],
     );
 
     const handleShowMainAgentChat = useCallback(() => {
         setActiveWorkstream('all');
         requestAnimationFrame(scrollToTop);
-    }, [scrollToTop]);
+    }, [scrollToTop, setActiveWorkstream]);
 
     useEffect(() => {
         if (activeWorkstream !== 'all' && !workstreams.has(activeWorkstream)) {
             setActiveWorkstream('all');
         }
-    }, [activeWorkstream, workstreams]);
+    }, [activeWorkstream, workstreams, setActiveWorkstream]);
 
     // Count messages per workstream
     const workstreamCounts = React.useMemo(() => {
@@ -2268,15 +2267,7 @@ function AllMessagesMixedComponent({
 
     // Filter messages based on active workstream
     const displayMessages = React.useMemo(() => {
-        if (activeWorkstream === 'all') {
-            return sortedMessages.filter(isMainChatMessage);
-        }
-        return sortedMessages.filter((message) => {
-            const workstreamStartDetails = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
-            if (workstreamStartDetails?.workstreamId === activeWorkstream) return false;
-            if (getWorkstreamId(message) === activeWorkstream) return true;
-            return false;
-        });
+        return filterMessagesForActiveWorkstream(sortedMessages, activeWorkstream);
     }, [sortedMessages, activeWorkstream]);
 
     const answeredRequestInputKeys = React.useMemo(

@@ -1,6 +1,7 @@
 import type { VertesiaClient } from '@vertesia/client';
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import dayjs from 'dayjs';
+import { getWorkstreamActivityDetails, getWorkstreamLaunchDetails } from '../workstreams.js';
 
 function getAgentChatDebugParam(hash: string): string | null {
     const queryStart = hash.indexOf('?');
@@ -113,6 +114,42 @@ export function getWorkstreamId(message: AgentMessage): string {
 
     // Default to 'main' workstream
     return 'main';
+}
+
+function getDetailsRecord(message: AgentMessage): Record<string, unknown> {
+    const details = message.details;
+    if (!details || typeof details !== 'object' || Array.isArray(details)) return {};
+    return details as Record<string, unknown>;
+}
+
+export function isMainChatTimelineMessage(message: AgentMessage): boolean {
+    if (getWorkstreamId(message) === 'main') return true;
+
+    if (getWorkstreamLaunchDetails(message) || getWorkstreamActivityDetails(message)) return true;
+
+    const details = getDetailsRecord(message);
+    const hasChildWorkflow =
+        typeof details.child_workflow_id === 'string' || typeof details.child_workflow_run_id === 'string';
+    const hasTool = typeof details.tool === 'string' || typeof details.tool_run_id === 'string';
+    const isLegacyPreLaunchFailure =
+        details.event_class === 'activity' &&
+        (message.type === AgentMessageType.ERROR || message.type === AgentMessageType.WARNING) &&
+        !hasChildWorkflow &&
+        !hasTool;
+
+    return isLegacyPreLaunchFailure;
+}
+
+export function filterMessagesForActiveWorkstream(messages: AgentMessage[], activeWorkstream: string): AgentMessage[] {
+    if (activeWorkstream === 'all') {
+        return messages.filter(isMainChatTimelineMessage);
+    }
+
+    return messages.filter((message) => {
+        const workstreamStartDetails = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
+        if (workstreamStartDetails?.workstreamId === activeWorkstream) return false;
+        return getWorkstreamId(message) === activeWorkstream;
+    });
 }
 
 export function isSummaryVisibleToolActivity(message: AgentMessage): boolean {

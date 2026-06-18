@@ -87,6 +87,8 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
         onSendMessage,
         showInitialRequest,
         renderRequestInputControls,
+        activeWorkstream,
+        onActiveWorkstreamChange,
     }: {
         messages: AgentMessage[];
         streamingMessages: Map<string, unknown>;
@@ -95,6 +97,8 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
         onSendMessage?: (message: string) => void;
         showInitialRequest?: boolean;
         renderRequestInputControls?: boolean;
+        activeWorkstream?: string;
+        onActiveWorkstreamChange?: (workstreamId: string) => void;
     }) => {
         mocks.allMessagesMixedProps({
             messages,
@@ -103,6 +107,8 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
             onSendMessage,
             showInitialRequest,
             renderRequestInputControls,
+            activeWorkstream,
+            onActiveWorkstreamChange,
         });
         return (
             <div>
@@ -194,6 +200,8 @@ function latestAllMessagesMixedProps() {
               streamingMessages: Map<string, unknown>;
               isCompleted?: boolean;
               showInitialRequest?: boolean;
+              activeWorkstream?: string;
+              onActiveWorkstreamChange?: (workstreamId: string) => void;
           }
         | undefined;
 }
@@ -1080,6 +1088,70 @@ describe('ModernAgentConversation send handling', () => {
         } finally {
             Element.prototype.scrollIntoView = originalScrollIntoView;
         }
+    });
+
+    it('scopes playback controls to the active workstream', () => {
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'Compare France and Japan news.'),
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'Japan workstream launched.'),
+                    timestamp: 2_000,
+                    workstream_id: 'japan_news',
+                    details: {
+                        event_class: 'activity',
+                        workstream_event: 'launched',
+                        workstream_id: 'japan_news',
+                        interaction: 'sys:AdhocTaskAgent',
+                    },
+                },
+                {
+                    ...createMessage(AgentMessageType.THOUGHT, 'Japan internal search.'),
+                    timestamp: 3_000,
+                    workstream_id: 'japan_news',
+                },
+                {
+                    ...createMessage(AgentMessageType.ANSWER, 'Japan internal answer.'),
+                    timestamp: 4_000,
+                    workstream_id: 'japan_news',
+                },
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'France workstream launched.'),
+                    timestamp: 5_000,
+                    workstream_id: 'france_news',
+                    details: {
+                        event_class: 'activity',
+                        workstream_event: 'launched',
+                        workstream_id: 'france_news',
+                        interaction: 'sys:AdhocTaskAgent',
+                    },
+                },
+                {
+                    ...createMessage(AgentMessageType.THOUGHT, 'France internal search.'),
+                    timestamp: 6_000,
+                    workstream_id: 'france_news',
+                },
+                createMessage(AgentMessageType.ANSWER, 'Main monitoring update.'),
+            ],
+        });
+
+        renderConversation({ enablePlayback: true });
+
+        const controls = screen.getByTestId('agent-test-playback-controls');
+        expect(controls.getAttribute('data-live-message-count')).toBe('4');
+        expect(screen.getByTestId('rendered-message-count').textContent).toBe('4');
+
+        act(() => {
+            latestAllMessagesMixedProps()?.onActiveWorkstreamChange?.('japan_news');
+        });
+
+        expect(screen.getByTestId('agent-test-playback-controls').getAttribute('data-live-message-count')).toBe('2');
+        expect(screen.getByTestId('rendered-message-count').textContent).toBe('2');
+        expect(latestAllMessagesMixedProps()?.activeWorkstream).toBe('japan_news');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Jump to first message' }));
+
+        expect(screen.getByTestId('rendered-message-count').textContent).toBe('1');
     });
 
     it('only enables the synthetic initial request after empty history while no real messages exist', () => {
