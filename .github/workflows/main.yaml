@@ -79,7 +79,7 @@ jobs:
     name: Notify vertesia/studio of new commit
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preview' || startsWith(github.ref, 'refs/heads/repo-dispatch')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preview' || startsWith(github.ref, 'refs/heads/maintenance/') || startsWith(github.ref, 'refs/heads/repo-dispatch'))
     needs:
       - unit-tests
       - template-smoke-test
