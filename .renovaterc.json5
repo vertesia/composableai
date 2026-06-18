@@ -93,8 +93,8 @@
       "matchManagers": [
         "npm"
       ],
-      "excludeDepTypes": [
-        "overrides"
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "@biomejs/**"
@@ -124,8 +124,8 @@
       "matchManagers": [
         "npm"
       ],
-      "excludeDepTypes": [
-        "overrides"
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         // cloud provider
@@ -150,8 +150,8 @@
       "matchManagers": [
         "npm"
       ],
-      "excludeDepTypes": [
-        "overrides"
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "@codemirror/**",
@@ -165,8 +165,8 @@
       "matchManagers": [
         "npm"
       ],
-      "excludeDepTypes": [
-        "overrides"
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "@eslint/**",
@@ -182,8 +182,8 @@
       "matchManagers": [
         "npm"
       ],
-      "excludeDepTypes": [
-        "overrides"
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "chart.js",
@@ -217,8 +217,8 @@
       "matchManagers": [
         "npm"
       ],
-      "excludeDepTypes": [
-        "overrides"
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "@next/**",
@@ -238,8 +238,8 @@
       "matchManagers": [
         "npm"
       ],
-      "excludeDepTypes": [
-        "overrides"
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "@google-cloud/**",
@@ -258,8 +258,8 @@
       "matchManagers": [
         "npm"
       ],
-      "excludeDepTypes": [
-        "overrides"
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "@tsconfig/**"
@@ -301,8 +301,8 @@
       "matchManagers": [
         "npm"
       ],
-      "excludeDepTypes": [
-        "overrides"
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "npm",
