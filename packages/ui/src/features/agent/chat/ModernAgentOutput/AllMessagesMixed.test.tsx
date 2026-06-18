@@ -202,10 +202,10 @@ describe('AllMessagesMixed summary view', () => {
         fireEvent.click(workedRow);
 
         expect(workedRow.getAttribute('aria-expanded')).toBe('true');
-        expect(screen.getByText('Search')).not.toBeNull();
+        expect(screen.queryByText('Search')).toBeNull();
         expect(screen.getByText('Japan news')).not.toBeNull();
 
-        const toolRow = screen.getByRole('button', { name: /Search\s*Japan news/ });
+        const toolRow = screen.getByRole('button', { name: /Japan news/ });
         expect(toolRow.getAttribute('aria-expanded')).toBe('false');
         fireEvent.click(toolRow);
 
@@ -233,11 +233,11 @@ describe('AllMessagesMixed summary view', () => {
 
         const workingRow = screen.getByRole('button', { name: /Working\s*for\s*1s/ });
         expect(workingRow.getAttribute('aria-expanded')).toBe('true');
-        expect(screen.getByText('Bash')).not.toBeNull();
+        expect(screen.queryByText('Bash')).toBeNull();
         expect(screen.getByText('Running build')).not.toBeNull();
         expect(screen.queryByText('$ pnpm run build')).toBeNull();
 
-        const toolRow = screen.getByRole('button', { name: /Bash\s*Running build/ });
+        const toolRow = screen.getByRole('button', { name: /Running build/ });
         fireEvent.click(toolRow);
 
         expect(screen.queryByText('Shell')).toBeNull();
@@ -493,14 +493,74 @@ describe('AllMessagesMixed summary view', () => {
         const workedRow = screen.getByRole('button', { name: /Worked\s*for\s*1s/ });
         fireEvent.click(workedRow);
 
-        expect(screen.getByRole('button', { name: /Bash\s*Running production build preflight/ })).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Running production build preflight/ })).not.toBeNull();
         expect(screen.queryByRole('button', { name: /\$ cd \/home\/daytona\/src/ })).toBeNull();
 
-        fireEvent.click(screen.getByRole('button', { name: /Bash\s*Running production build preflight/ }));
+        fireEvent.click(screen.getByRole('button', { name: /Running production build preflight/ }));
 
         expect(screen.getByText('$ cd /home/daytona/src && pnpm run build completed successfully')).not.toBeNull();
         expect(screen.getByText('Build output')).not.toBeNull();
         expect(screen.queryByText('Success')).toBeNull();
+    });
+
+    it('merges legacy plan update rows with the preceding update_plan tool row', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'What are the news headlines in France today?',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    message: "Updating the plan and performing a Google web search for today's headlines in France.",
+                    details: {
+                        event_class: 'activity',
+                        tool: 'update_plan',
+                        tool_run_id: 'update_plan',
+                        tool_status: 'running',
+                        tool_event: 'started',
+                        activity_group_id: 'activity-4',
+                        message_to_human:
+                            "Updating the plan and performing a Google web search for today's headlines in France.",
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    type: AgentMessageType.UPDATE,
+                    message: 'Updating 2 tasks of our plan.',
+                    details: {
+                        updates: [
+                            { task_id: 1, status: 'completed' },
+                            { task_id: 2, status: 'in_progress' },
+                        ],
+                    },
+                }),
+                makeMessage({
+                    timestamp: 4_000,
+                    type: AgentMessageType.PLAN,
+                    message:
+                        'Task 1 (Learn the web search skill) has been completed successfully. Now commencing Task 2.',
+                    details: {
+                        plan: [
+                            { id: 1, goal: 'Learn the web search skill', status: 'completed' },
+                            { id: 2, goal: "Search for today's headlines in France", status: 'in_progress' },
+                        ],
+                    },
+                }),
+            ],
+            true,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /Worked\s*for/ }));
+
+        expect(
+            screen.getByRole('button', {
+                name: /Updating the plan and performing a Google web search/,
+            }),
+        ).not.toBeNull();
+        expect(screen.queryByRole('button', { name: /Updating 2 tasks of our plan/ })).toBeNull();
+        expect(screen.queryByRole('button', { name: /Task 1 \(Learn the web search skill\)/ })).toBeNull();
     });
 
     it('copies expanded tool details without requiring the parent row click target', () => {
@@ -533,7 +593,7 @@ describe('AllMessagesMixed summary view', () => {
         );
 
         fireEvent.click(screen.getByRole('button', { name: /Worked\s*for/ }));
-        fireEvent.click(screen.getByRole('button', { name: /Search\s*Japan news/ }));
+        fireEvent.click(screen.getByRole('button', { name: /Japan news/ }));
         fireEvent.click(screen.getByRole('button', { name: 'Copy tool details' }));
 
         expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Found 5 results'));
@@ -575,7 +635,7 @@ describe('AllMessagesMixed summary view', () => {
         const workRow = screen.getByRole('button', { name: /Work needs attention\s*for\s*1s/ });
         fireEvent.click(workRow);
 
-        const toolRow = screen.getByRole('button', { name: /Tool\s*Publishing app/ });
+        const toolRow = screen.getByRole('button', { name: /Publishing app/ });
         expect(toolRow.getAttribute('aria-expanded')).toBe('false');
         expect(screen.queryByText('App publish blocked until preview validation passes')).toBeNull();
 
@@ -855,7 +915,7 @@ describe('AllMessagesMixed summary view', () => {
             screen.queryByRole('button', { name: /Thought: Searching for the latest news headlines from Japan/ }),
         ).toBeNull();
         expect(screen.queryByRole('button', { name: /Tool\s+Searching for/ })).toBeNull();
-        expect(screen.getByRole('button', { name: /Tool\s*Updating 1 tasks of our plan/ })).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Updating 1 tasks of our plan/ })).not.toBeNull();
     });
 
     it('renders long tool preambles as plain prose with show more inside expanded summary work details', () => {

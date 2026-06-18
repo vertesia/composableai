@@ -972,15 +972,13 @@ function getToolDetailKind(message: AgentMessage): SummaryToolDetailKind {
     const details = getDetailsRecord(message);
     const toolNames = getToolNames(details).join(' ').toLowerCase();
     const concreteTool = typeof details.tool === 'string' ? details.tool.toLowerCase() : '';
-    const text = getMessageText(message).toLowerCase();
-    const haystack = `${toolNames} ${text}`;
+    const classifierText = concreteTool || toolNames;
 
     if (isToolPreambleMessage(message)) return 'think';
-    if (concreteTool.startsWith('learn_') || haystack.includes('learn_') || /\bskill\b/.test(text)) return 'skill';
+    if (concreteTool.startsWith('learn_') || toolNames.includes('learn_')) return 'skill';
     if (concreteTool === 'discover_tools') return 'discover';
     if (message.type === AgentMessageType.THOUGHT && !concreteTool) return 'think';
 
-    const classifierText = concreteTool || haystack;
     if (classifierText.includes('search') || classifierText.includes('web') || classifierText.includes('fetch'))
         return 'search';
     if (classifierText.includes('read') || classifierText.includes('document') || classifierText.includes('file'))
@@ -1211,14 +1209,27 @@ function buildSummaryToolDetailItem(message: AgentMessage, index: number): Summa
     };
 }
 
+function isPlanToolMessage(message: AgentMessage): boolean {
+    const details = getDetailsRecord(message);
+    return details.tool === 'plan' || details.tool === 'update_plan';
+}
+
+function isPlanLifecycleMessage(message: AgentMessage): boolean {
+    const details = getDetailsRecord(message);
+    if (message.type === AgentMessageType.UPDATE && Array.isArray(details.updates)) return true;
+    return message.type === AgentMessageType.PLAN && Array.isArray(details.plan);
+}
+
 function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
     const byGroupId = new Map<string, { index: number; messages: AgentMessage[] }>();
     const ungrouped: Array<{ index: number; message: AgentMessage }> = [];
+    let currentPlanGroupId: string | undefined;
 
     messages.forEach((message, index) => {
         const details = getDetailsRecord(message);
         if (isToolPreambleMessage(message)) {
             ungrouped.push({ index, message });
+            currentPlanGroupId = undefined;
             return;
         }
 
@@ -1229,16 +1240,26 @@ function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
         const runId =
             typeof details.tool_run_id === 'string' && details.tool_run_id.trim() ? details.tool_run_id : undefined;
         const groupId = activityGroupId ? `activity:${activityGroupId}` : runId ? `run:${runId}` : undefined;
-        if (!groupId) {
+        const legacyPlanGroupId = !groupId && isPlanLifecycleMessage(message) ? currentPlanGroupId : undefined;
+        const effectiveGroupId = groupId ?? legacyPlanGroupId;
+
+        if (!effectiveGroupId) {
             ungrouped.push({ index, message });
+            currentPlanGroupId = undefined;
             return;
         }
 
-        const group = byGroupId.get(groupId);
+        const group = byGroupId.get(effectiveGroupId);
         if (group) {
             group.messages.push(message);
         } else {
-            byGroupId.set(groupId, { index, messages: [message] });
+            byGroupId.set(effectiveGroupId, { index, messages: [message] });
+        }
+
+        if (isPlanToolMessage(message)) {
+            currentPlanGroupId = effectiveGroupId;
+        } else if (!isPlanLifecycleMessage(message) || message.type === AgentMessageType.PLAN) {
+            currentPlanGroupId = undefined;
         }
     });
 
@@ -1261,6 +1282,14 @@ function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
         }
         if (latestStatusMessage && mergedDetails.error === undefined && mergedDetails.stderr === undefined) {
             mergedDetails.error = getMessageText(latestStatusMessage);
+        }
+        if (
+            !latestStatusMessage &&
+            sortedMessages.some(
+                (message) => message.type === AgentMessageType.PLAN && Array.isArray(message.details?.plan),
+            )
+        ) {
+            mergedDetails.tool_status = 'completed';
         }
         if (commandTextMessage && mergedDetails.command === undefined) {
             mergedDetails.command = getMessageText(commandTextMessage);
@@ -1516,10 +1545,7 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
                 >
                     <ToolDetailIcon kind={item.kind} status={item.status} />
                 </span>
-                <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                    <span className="text-sm font-medium text-muted">{item.label}</span>
-                    <span className="min-w-0 break-words text-sm text-muted">{item.title}</span>
-                </span>
+                <span className="min-w-0 break-words text-sm text-muted">{item.title}</span>
                 {hasDetails ? (
                     <ChevronDown
                         className={cn(
