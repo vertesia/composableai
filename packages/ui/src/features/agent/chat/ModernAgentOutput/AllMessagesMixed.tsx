@@ -110,6 +110,23 @@ function formatDuration(seconds: number): string {
     return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
 }
 
+function parseTimestampMs(timestamp: number | string | undefined): number | undefined {
+    if (timestamp === undefined || timestamp === null || timestamp === '') return undefined;
+    const value = typeof timestamp === 'number' ? timestamp : new Date(timestamp).getTime();
+    return Number.isFinite(value) ? value : undefined;
+}
+
+function formatToolDetailTimestamp(timestamp: number | string | undefined): string | undefined {
+    const value = parseTimestampMs(timestamp);
+    if (value === undefined) return undefined;
+
+    return new Intl.DateTimeFormat(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    }).format(new Date(value));
+}
+
 function getReadableToolLabel(message: AgentMessage): string {
     const details = message.details as
         | {
@@ -884,9 +901,15 @@ interface SummaryToolDetailItem {
     isPreamble?: boolean;
     command?: string;
     text?: string;
+    toolName?: string;
+    startedAt?: number | string;
+    finishedAt?: number | string;
     status?: ToolExecutionStatus;
     sections: SummaryToolDetailSection[];
 }
+
+const SUMMARY_TOOL_STARTED_AT_DETAIL_KEY = '_summary_started_at';
+const SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY = '_summary_finished_at';
 
 const TOOL_DETAIL_SYSTEM_KEYS = new Set([
     'account_id',
@@ -913,6 +936,8 @@ const TOOL_DETAIL_SYSTEM_KEYS = new Set([
     'tools',
     'message_to_human',
     'progress_messages',
+    SUMMARY_TOOL_STARTED_AT_DETAIL_KEY,
+    SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY,
     'workflow_run_id',
 ]);
 
@@ -942,6 +967,15 @@ function getToolNames(details: Record<string, unknown>): string[] {
         }
     }
     return names;
+}
+
+function getUniqueToolName(details: Record<string, unknown>): string | undefined {
+    const names = Array.from(new Set(getToolNames(details)));
+    return names.length > 0 ? names.join(', ') : undefined;
+}
+
+function getTimestampDetail(value: unknown): number | string | undefined {
+    return typeof value === 'number' || typeof value === 'string' ? value : undefined;
 }
 
 const TOOL_TARGET_KEYS = [
@@ -1204,6 +1238,9 @@ function buildSummaryToolDetailItem(message: AgentMessage, index: number): Summa
         isPreamble,
         command,
         text: shouldShowText ? normalizedText : undefined,
+        toolName: getUniqueToolName(details),
+        startedAt: getTimestampDetail(details[SUMMARY_TOOL_STARTED_AT_DETAIL_KEY]) ?? message.timestamp,
+        finishedAt: getTimestampDetail(details[SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY]) ?? message.timestamp,
         status: details.tool_status as ToolExecutionStatus | undefined,
         sections: getToolDetailSections(message),
     };
@@ -1294,6 +1331,8 @@ function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
         if (commandTextMessage && mergedDetails.command === undefined) {
             mergedDetails.command = getMessageText(commandTextMessage);
         }
+        mergedDetails[SUMMARY_TOOL_STARTED_AT_DETAIL_KEY] = sortedMessages[0]?.timestamp;
+        mergedDetails[SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY] = sortedMessages[sortedMessages.length - 1]?.timestamp;
         const messageToHuman =
             typeof startMessage?.details?.message_to_human === 'string' ? startMessage.details.message_to_human : '';
 
@@ -1349,6 +1388,54 @@ function ToolDetailIcon({ kind, status }: { kind: SummaryToolDetailKind; status?
         default:
             return <Wrench className="size-3.5" />;
     }
+}
+
+interface ToolDetailMetadataEntry {
+    label: string;
+    value: string;
+}
+
+function getToolDetailMetadata(item: SummaryToolDetailItem): ToolDetailMetadataEntry[] {
+    const entries: ToolDetailMetadataEntry[] = [];
+    const startedMs = parseTimestampMs(item.startedAt);
+    const finishedMs = parseTimestampMs(item.finishedAt);
+    const startedAt = formatToolDetailTimestamp(item.startedAt);
+    const finishedAt = formatToolDetailTimestamp(item.finishedAt);
+
+    if (item.toolName) {
+        entries.push({ label: 'Tool', value: item.toolName });
+    }
+
+    if (startedAt && finishedAt && startedMs !== undefined && finishedMs !== undefined && startedMs !== finishedMs) {
+        entries.push({ label: 'Started', value: startedAt });
+        entries.push({ label: 'Ended', value: finishedAt });
+        entries.push({ label: 'Duration', value: formatDuration(getDurationSeconds(item.startedAt, item.finishedAt)) });
+    } else if (startedAt || finishedAt) {
+        entries.push({ label: 'Time', value: startedAt ?? finishedAt ?? '' });
+    }
+
+    return entries;
+}
+
+function ToolDetailMetadata({ hasDetailContent, item }: { hasDetailContent: boolean; item: SummaryToolDetailItem }) {
+    const entries = getToolDetailMetadata(item);
+    if (entries.length === 0) return null;
+
+    return (
+        <dl
+            className={cn(
+                'flex flex-wrap gap-x-4 gap-y-1 text-xs',
+                hasDetailContent && 'mb-3 border-b border-border/60 pb-2',
+            )}
+        >
+            {entries.map((entry) => (
+                <div key={entry.label} className="flex min-w-0 items-baseline gap-1.5">
+                    <dt className="shrink-0 text-muted">{entry.label}</dt>
+                    <dd className="min-w-0 wrap-break-word font-medium text-foreground/80">{entry.value}</dd>
+                </div>
+            ))}
+        </dl>
+    );
 }
 
 function ToolDetailSection({ section }: { section: SummaryToolDetailSection }) {
@@ -1418,6 +1505,8 @@ function formatToolPrimaryText(item: SummaryToolDetailItem): string {
 
 function formatToolDetailCopyText(item: SummaryToolDetailItem): string {
     const parts = [getToolPanelTitle(item), formatToolPrimaryText(item)];
+    const metadata = getToolDetailMetadata(item).map((entry) => `${entry.label}: ${entry.value}`);
+    if (metadata.length > 0) parts.push(metadata.join('\n'));
     if (item.text) parts.push(item.text);
 
     for (const section of item.sections) {
@@ -1459,9 +1548,10 @@ async function copyTextToClipboard(text: string): Promise<boolean> {
 }
 
 function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
-    const copyText = formatToolDetailCopyText(item);
     const commandText = item.kind === 'command' && item.command ? formatToolPrimaryText(item) : undefined;
     const fallbackText = !commandText && item.sections.length === 0 ? item.text : undefined;
+    const hasDetailContent = Boolean(commandText || fallbackText || item.sections.length);
+    const copyText = formatToolDetailCopyText(item);
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
     const copyResetRef = useRef<number | undefined>(undefined);
 
@@ -1481,23 +1571,26 @@ function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
 
     return (
         <div className="relative mt-2 rounded-lg border border-border/70 bg-mixer-muted/10 p-3 shadow-sm">
-            <div className="absolute end-2 top-2">
-                <button
-                    type="button"
-                    className={cn(
-                        'inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted opacity-70 transition',
-                        'hover:bg-mixer-muted/20 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                        copyState === 'copied' && 'text-success opacity-100',
-                        copyState === 'failed' && 'text-destructive opacity-100',
-                    )}
-                    onClick={copyDetails}
-                    aria-label="Copy tool details"
-                    title="Copy tool details"
-                >
-                    {copyState === 'copied' ? <CheckCircle className="size-4" /> : <CopyIcon className="size-4" />}
-                </button>
-            </div>
-            <div className="pe-7">
+            {hasDetailContent ? (
+                <div className="absolute end-2 top-2">
+                    <button
+                        type="button"
+                        className={cn(
+                            'inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted opacity-70 transition',
+                            'hover:bg-mixer-muted/20 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            copyState === 'copied' && 'text-success opacity-100',
+                            copyState === 'failed' && 'text-destructive opacity-100',
+                        )}
+                        onClick={copyDetails}
+                        aria-label="Copy tool details"
+                        title="Copy tool details"
+                    >
+                        {copyState === 'copied' ? <CheckCircle className="size-4" /> : <CopyIcon className="size-4" />}
+                    </button>
+                </div>
+            ) : null}
+            <div className={cn(hasDetailContent && 'pe-7')}>
+                <ToolDetailMetadata item={item} hasDetailContent={hasDetailContent} />
                 {commandText ? (
                     <pre className="mb-3 whitespace-pre-wrap break-words font-mono text-sm leading-6 text-foreground/85">
                         {commandText}
@@ -1514,14 +1607,17 @@ function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
                     </div>
                 ) : null}
             </div>
-            {copyState === 'failed' ? <div className="mt-3 text-xs text-destructive">Copy failed</div> : null}
+            {copyState === 'failed' && hasDetailContent ? (
+                <div className="mt-3 text-xs text-destructive">Copy failed</div>
+            ) : null}
         </div>
     );
 }
 
 function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
     const isAttention = item.status === 'error' || item.status === 'warning';
-    const hasDetails = Boolean(item.command || item.text || item.sections.length);
+    const hasMetadata = getToolDetailMetadata(item).length > 0;
+    const hasDetails = Boolean(item.command || item.text || item.sections.length || hasMetadata);
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (

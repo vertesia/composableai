@@ -209,6 +209,9 @@ describe('AllMessagesMixed summary view', () => {
         expect(toolRow.getAttribute('aria-expanded')).toBe('false');
         fireEvent.click(toolRow);
 
+        expect(screen.getByText('Tool')).not.toBeNull();
+        expect(screen.getByText('web_search_serper')).not.toBeNull();
+        expect(screen.getByText('Time')).not.toBeNull();
         expect(screen.getByText('Found 5 results')).not.toBeNull();
     });
 
@@ -243,6 +246,42 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.queryByText('Shell')).toBeNull();
         expect(screen.getByText('$ pnpm run build')).not.toBeNull();
         expect(screen.queryByText('Running')).toBeNull();
+    });
+
+    it('expands tool rows that only have metadata', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Warm the cache.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    message: 'Loading cache',
+                    details: {
+                        tool: 'cache_loader',
+                        tool_status: 'completed',
+                        tool_run_id: 'tool-cache',
+                    },
+                }),
+            ],
+            true,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /Worked\s*for/ }));
+
+        const toolRow = screen.getByRole('button', { name: /Loading cache/ });
+        expect(toolRow.getAttribute('aria-expanded')).toBe('false');
+        expect(screen.queryByText('cache_loader')).toBeNull();
+
+        fireEvent.click(toolRow);
+
+        expect(toolRow.getAttribute('aria-expanded')).toBe('true');
+        expect(screen.getByText('Tool')).not.toBeNull();
+        expect(screen.getByText('cache_loader')).not.toBeNull();
+        expect(screen.getByText('Time')).not.toBeNull();
+        expect(screen.queryByRole('button', { name: 'Copy tool details' })).toBeNull();
     });
 
     it('renders workstream launch events as inline workstream rows', () => {
@@ -554,13 +593,19 @@ describe('AllMessagesMixed summary view', () => {
 
         fireEvent.click(screen.getByRole('button', { name: /Worked\s*for/ }));
 
-        expect(
-            screen.getByRole('button', {
-                name: /Updating the plan and performing a Google web search/,
-            }),
-        ).not.toBeNull();
+        const planRow = screen.getByRole('button', {
+            name: /Updating the plan and performing a Google web search/,
+        });
+        expect(planRow).not.toBeNull();
         expect(screen.queryByRole('button', { name: /Updating 2 tasks of our plan/ })).toBeNull();
         expect(screen.queryByRole('button', { name: /Task 1 \(Learn the web search skill\)/ })).toBeNull();
+
+        fireEvent.click(planRow);
+
+        expect(screen.getByText('update_plan')).not.toBeNull();
+        expect(screen.getByText('Started')).not.toBeNull();
+        expect(screen.getByText('Ended')).not.toBeNull();
+        expect(screen.getByText('Duration')).not.toBeNull();
     });
 
     it('copies expanded tool details without requiring the parent row click target', () => {
@@ -596,6 +641,7 @@ describe('AllMessagesMixed summary view', () => {
         fireEvent.click(screen.getByRole('button', { name: /Japan news/ }));
         fireEvent.click(screen.getByRole('button', { name: 'Copy tool details' }));
 
+        expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Tool: web_search_serper'));
         expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Found 5 results'));
     });
 
