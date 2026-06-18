@@ -48,8 +48,8 @@ jobs:
         run: |
           if [[ "${TARGET_COMPOSABLEAI_BRANCH}" != "main" \
                 && "${TARGET_COMPOSABLEAI_BRANCH}" != "preview" \
-                && ! "${TARGET_COMPOSABLEAI_BRANCH}" =~ ^maintenance/[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Invalid branch '${TARGET_COMPOSABLEAI_BRANCH}'. Only 'main', 'preview', and 'maintenance/X.Y' branches are supported."
+                && ! "${TARGET_COMPOSABLEAI_BRANCH}" =~ ^release/[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid branch '${TARGET_COMPOSABLEAI_BRANCH}'. Only 'main', 'preview', and 'release/X.Y' branches are supported."
             exit 1
           fi
           echo "Branch '${TARGET_COMPOSABLEAI_BRANCH}' is valid."
@@ -137,7 +137,7 @@ jobs:
           export MAYBE_LLUMIVERSE_PR="$(echo $TARGET_LLUMIVERSE_MSG | grep -oP '(?<=#)\d+')"
           # Include the (sanitized) target branch so the same child SHA can have
           # distinct temp branches when synced into multiple base branches
-          # (e.g. main and maintenance/1.4).
+          # (e.g. main and release/1.4).
           export TARGET_BRANCH_SLUG="${TARGET_COMPOSABLEAI_BRANCH//\//-}"
           export TEMP_BRANCH="sync-llumiverse-${TARGET_BRANCH_SLUG}-${TARGET_LLUMIVERSE_SHA::7}"
 
@@ -207,7 +207,7 @@ jobs:
           fi
 
           # Ensure the dynamic `branch:<target>` label exists; for a new
-          # maintenance/X.Y line it won't, and `gh pr create --label` errors on
+          # release/X.Y line it won't, and `gh pr create --label` errors on
           # a missing label. `--force` is a no-op if it already exists.
           gh label create "branch:${TARGET_COMPOSABLEAI_BRANCH}" --color ededed --force
 

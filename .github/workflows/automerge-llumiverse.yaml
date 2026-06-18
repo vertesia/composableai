@@ -104,8 +104,8 @@ jobs:
             echo "Skipping PR #$pr_number: head repository owner is $head_owner, not $repo_owner."
             exit 0
           fi
-          if [[ "$base_ref" != "main" && "$base_ref" != "preview" && ! "$base_ref" =~ ^maintenance/[0-9]+\.[0-9]+$ ]]; then
-            echo "Skipping PR #$pr_number: base branch is $base_ref, not main, preview, or maintenance/X.Y."
+          if [[ "$base_ref" != "main" && "$base_ref" != "preview" && ! "$base_ref" =~ ^release/[0-9]+\.[0-9]+$ ]]; then
+            echo "Skipping PR #$pr_number: base branch is $base_ref, not main, preview, or release/X.Y."
             exit 0
           fi
           if [[ "$is_draft" != "false" ]]; then
