@@ -39,6 +39,7 @@ import { useAgentStream } from './hooks/useAgentStream.js';
 import { useDocumentPanel } from './hooks/useDocumentPanel.js';
 import { useFileProcessing } from './hooks/useFileProcessing.js';
 import { ImageLightboxProvider } from './ImageLightbox';
+import { ActiveWorkstreamsSummary } from './ModernAgentOutput/ActiveWorkstreamsSummary';
 import type {
     AgentConversationViewMode,
     AgentInitialRequestTemplate,
@@ -75,6 +76,7 @@ import { ArtifactUrlCacheProvider } from './useArtifactUrlCache.js';
 import { VegaLiteChart } from './VegaLiteChart';
 import { ThinkingMessages } from './WaitingMessages';
 import {
+    getWorkstreamDisplayName,
     getWorkstreamLaunchDetails,
     getWorkstreamLifecycleStatus,
     isWorkstreamInternalResultMessage,
@@ -1478,6 +1480,23 @@ function ModernAgentConversationInner({
         [composerActiveWorkstreams],
     );
 
+    const activeWorkstreamDisplayName = useMemo(() => {
+        if (activeWorkstream === 'all') return undefined;
+        const workstream = panelWorkstreams.find(
+            (ws) => ws.workstream_id === activeWorkstream || ws.launch_id === activeWorkstream,
+        );
+        if (!workstream) return getWorkstreamDisplayName(activeWorkstream);
+        return getWorkstreamDisplayName(workstream.workstream_id, workstream.interaction);
+    }, [activeWorkstream, panelWorkstreams]);
+
+    const composerPlaceholder = useMemo(() => {
+        if (placeholder) return placeholder;
+        if (activeWorkstreamDisplayName) {
+            return t('agent.messageMainAgentWhileViewingWorkstream', { workstream: activeWorkstreamDisplayName });
+        }
+        return undefined;
+    }, [activeWorkstreamDisplayName, placeholder, t]);
+
     const canShowPlaybackToggle = showPlaybackToggle && enablePlayback === undefined && isAgentChatPlaybackAvailable();
     const isPlaybackEnabled = enablePlayback ?? (isAgentChatPlaybackEnabled() || isPlaybackToggleEnabled);
     const playbackSourceMessages = useMemo(() => {
@@ -1496,6 +1515,14 @@ function ModernAgentConversationInner({
         isPlaybackEnabled && !isPlaybackLive && playbackState.cursorIndex === playbackSourceMessages.length - 1;
     const displayedMessages = playbackState.displayedMessages;
     const displayedStreamingMessages = isPlaybackLive ? streamingMessages : EMPTY_STREAMING_MESSAGES;
+    const playbackDerivedWorkstreams = useMemo(
+        () => deriveWorkstreamsFromMessages(displayedMessages),
+        [displayedMessages],
+    );
+    const playbackActiveWorkstreams = useMemo(
+        () => playbackDerivedWorkstreams.filter((ws) => isActiveWorkstreamStatus(ws.status)),
+        [playbackDerivedWorkstreams],
+    );
     const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
     const displayedIsCompleted = isPlaybackLive || isPlaybackAtLatest ? effectiveIsCompleted : false;
     const pendingRequestInputMessage = useMemo(
@@ -2309,6 +2336,10 @@ function ModernAgentConversationInner({
                     disabled={isUploading || !isPlaybackLive}
                     isLoading={isSending || isUploading}
                 />
+            ) : isViewingPlaybackHistory && playbackActiveWorkstreams.length > 0 ? (
+                <div className="flex-shrink-0 pb-safe-area">
+                    <ActiveWorkstreamsSummary activeWorkstreams={playbackActiveWorkstreams} />
+                </div>
             ) : (
                 shouldRenderLiveMessageInputArea && (
                     <div className="flex-shrink-0 pb-safe-area">
@@ -2355,7 +2386,7 @@ function ModernAgentConversationInner({
                                     isCompactingContext={isCompactingContext}
                                     activeTaskCount={activeTaskCount}
                                     activeWorkstreams={composerActiveWorkstreams}
-                                    placeholder={placeholder}
+                                    placeholder={composerPlaceholder}
                                     onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
                                     uploadedFiles={uploadedFiles}
                                     onRemoveFile={onRemoveFile}

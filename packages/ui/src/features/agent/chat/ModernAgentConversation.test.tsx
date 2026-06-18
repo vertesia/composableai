@@ -60,6 +60,7 @@ vi.mock('./ModernAgentOutput/MessageInput', () => ({
         activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
         isCompleted?: boolean;
         isStreaming?: boolean;
+        placeholder?: string;
         contextWindowUsage?: {
             usedTokens: number;
             checkpointTokens: number;
@@ -403,6 +404,60 @@ describe('ModernAgentConversation send handling', () => {
         expect(mocks.sendSignal).toHaveBeenCalledWith('agent-run-1', 'TriggerCheckpoint', {
             reason: 'manual user request',
         });
+    });
+
+    it('makes it explicit that the composer still messages the main agent while viewing a workstream', async () => {
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'main request'),
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'France workstream launched'),
+                    timestamp: 2_000,
+                    workstream_id: 'france_news_agent',
+                    details: {
+                        event_class: 'activity',
+                        workstream_event: 'launched',
+                        workstream_id: 'france_news_agent',
+                        interaction: 'sys:AdhocTaskAgent',
+                    },
+                },
+                {
+                    ...createMessage(AgentMessageType.THOUGHT, 'France internal search'),
+                    timestamp: 3_000,
+                    workstream_id: 'france_news_agent',
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideMessageInput: false });
+
+        act(() => {
+            latestAllMessagesMixedProps()?.onActiveWorkstreamChange?.('france_news_agent');
+        });
+
+        const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
+            placeholder?: string;
+        };
+
+        expect(latestMessageInputProps.placeholder).toBe('Message @Main Agent (viewing France News Agent)...');
+
+        fireEvent.click(screen.getByRole('button', { name: 'composer send' }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith(
+                'agent-run-1',
+                'UserInput',
+                expect.objectContaining({ message: 'follow up' }),
+            );
+        });
+        expect(mocks.addOptimisticMessage).toHaveBeenCalledWith(
+            expect.objectContaining({
+                message: 'follow up',
+                workstream_id: 'main',
+            }),
+        );
     });
 
     it('uses message-derived workstreams for panel history while the composer only counts active workstreams', async () => {
@@ -1302,6 +1357,59 @@ describe('ModernAgentConversation send handling', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Jump to live' }));
 
         expect(screen.getByRole('button', { name: 'composer send' })).not.toBeNull();
+    });
+
+    it('shows active workstreams for the rewound playback cursor', () => {
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'Compare France and Japan news.'),
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'Japan workstream launched.'),
+                    timestamp: 2_000,
+                    workstream_id: 'japan_news',
+                    details: {
+                        event_class: 'activity',
+                        workstream_event: 'launched',
+                        workstream_id: 'japan_news',
+                        interaction: 'sys:AdhocTaskAgent',
+                    },
+                },
+                {
+                    ...createMessage(AgentMessageType.THOUGHT, 'Japan internal search.'),
+                    timestamp: 3_000,
+                    workstream_id: 'japan_news',
+                },
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'France workstream launched.'),
+                    timestamp: 4_000,
+                    workstream_id: 'france_news',
+                    details: {
+                        event_class: 'activity',
+                        workstream_event: 'launched',
+                        workstream_id: 'france_news',
+                        interaction: 'sys:AdhocTaskAgent',
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ enablePlayback: true, hideMessageInput: false });
+
+        expect(document.querySelector('[data-agent-active-workstreams]')).toBeNull();
+
+        const playbackPositionInput = screen.getByRole('textbox', { name: 'Playback position' });
+        fireEvent.change(playbackPositionInput, {
+            target: { value: '2' },
+        });
+        fireEvent.blur(playbackPositionInput, {
+            target: { value: '2' },
+        });
+
+        expect(document.querySelector('[data-agent-active-workstreams]')).not.toBeNull();
+        expect(screen.getByText('Japan News')).not.toBeNull();
+        expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
     });
 
     it('exposes a local header toggle for playback controls', () => {

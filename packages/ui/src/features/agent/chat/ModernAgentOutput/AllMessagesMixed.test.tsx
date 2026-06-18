@@ -330,12 +330,12 @@ describe('AllMessagesMixed summary view', () => {
 
         fireEvent.click(screen.getByRole('button', { name: /QA Tasks/ }));
 
-        expect(screen.getByRole('button', { name: 'Back to main agent chat' })).not.toBeNull();
+        expect(screen.getByRole('button', { name: 'Back to main agent' })).not.toBeNull();
         expect(screen.getByText('Workstream-only result.')).not.toBeNull();
         expect(screen.queryByText('Main agent response.')).toBeNull();
         expect(screen.queryByText('Workstreams')).toBeNull();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Back to main agent chat' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Back to main agent' }));
 
         expect(screen.getByText('Main agent response.')).not.toBeNull();
     });
@@ -383,7 +383,7 @@ describe('AllMessagesMixed summary view', () => {
 
         fireEvent.click(screen.getByRole('button', { name: /Legacy Browser/ }));
 
-        expect(screen.getByRole('button', { name: 'Back to main agent chat' })).not.toBeNull();
+        expect(screen.getByRole('button', { name: 'Back to main agent' })).not.toBeNull();
         expect(screen.getByText('Legacy workstream-only result.')).not.toBeNull();
         expect(screen.queryByText('Main agent response.')).toBeNull();
         expect(screen.queryByText('Workstreams')).toBeNull();
