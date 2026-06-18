@@ -22,7 +22,7 @@ import type {
 } from '../interaction.js';
 import type { AgentEvent } from '../workflow-analytics.js';
 import type { ProcessDefinitionBody, ProcessState } from './process.js';
-import type { UserInputSignal } from './signals.js';
+import type { StopSignal, UserInputSignal } from './signals.js';
 import type { ContentObjectTypeRef } from './store.js';
 import type {
     AgentMessage,
@@ -443,6 +443,7 @@ export interface UpdateAgentRunStatusPayload {
  */
 export type SignalAgentPayload =
     | UserInputSignal
+    | StopSignal
     | ConversationFileRef
     | ConversationFileRemovedRef
     | Record<string, unknown>;

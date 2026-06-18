@@ -33,6 +33,7 @@ import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
 import { ThinkingMessages } from '../WaitingMessages';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
+import { MessageDeliveryStatus } from './MessageDeliveryStatus';
 import { processContentForMarkdown } from './processContentForMarkdown';
 import { getWorkstreamId } from './utils';
 
@@ -592,6 +593,7 @@ function MessageItemComponent({
                         )}
                     </div>
                     <div className="flex items-center gap-1.5 print:hidden">
+                        <MessageDeliveryStatus message={message} />
                         <span className={cn('text-[11px] text-muted/70', resolvedStyle.timestampClassName)}>
                             {dayjs(message.timestamp).format('HH:mm:ss')}
                         </span>
