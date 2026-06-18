@@ -42,7 +42,7 @@
     "dependencies": {
         "@llumiverse/common": "workspace:*",
         "@vertesia/common": "workspace:*",
-        "esbuild": "^0.28.0",
+        "esbuild": "^0.28.1",
         "js-yaml": "^4.2.0",
         "zod": "^4.4.3"
     },
