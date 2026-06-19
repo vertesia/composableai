@@ -395,6 +395,7 @@ function DataPanel({
         pdfUrl: officePdfUrl,
         isConverting: officePdfConverting,
         error: officePdfError,
+        triggerConversion: triggerOfficePdfConversion,
     } = useOfficePdfConversion(object.id, isPreviewableAsPdfDoc);
 
     const officePdfConverters = useMemo<UniversalDocumentConverter[]>(
@@ -520,6 +521,9 @@ function DataPanel({
                                 alt={t('store.viewAsPdf')}
                                 onClick={() => {
                                     setCurrentPanel(PanelView.Pdf);
+                                    if (!pdfRendition && !officePdfUrl && !officePdfConverting) {
+                                        void triggerOfficePdfConversion();
+                                    }
                                 }}
                                 disabled={officePdfConverting}
                             >
