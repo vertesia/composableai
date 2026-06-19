@@ -24,6 +24,8 @@ minimumReleaseAgeExclude:
   - "@llumiverse/*"
   # Renovate security update: dompurify@3.4.11
   - dompurify@3.4.11
+  # Renovate security update: undici@7.28.0
+  - undici@7.28.0
   # Additional excludes, due to CVEs etc.
   # Nothing for now
 overrides:
