@@ -51,11 +51,64 @@ function isSameRevisionChain(existing: OpenDocument, incoming: OpenDocument): bo
     return existing.id === incoming.id;
 }
 
+/** Build an OpenDocument from a document event's details, or null if it isn't one. */
+function describeDocument(details: Record<string, unknown>): OpenDocument | null {
+    // Artifact draft: `document_opened` (and later `document_updated`) carrying an
+    // artifact_path. Keyed by `artifact:<path>` so tab selection/dedupe stay id-based.
+    const artifactPath = toNonEmptyString(details.artifact_path);
+    if (details.source === 'artifact' || artifactPath) {
+        if (!artifactPath) return null;
+        return {
+            id: `artifact:${artifactPath}`,
+            kind: 'artifact',
+            title: toNonEmptyString(details.title) || artifactPath.split('/').pop() || 'Document',
+            artifactPath,
+        };
+    }
+
+    // Persisted store object: `document_created` / `document_updated`.
+    const sourceDocId = toNonEmptyString(details.document_id);
+    const updatedDocId = toNonEmptyString(details.updated_document_id);
+    const docId = updatedDocId || sourceDocId;
+    if (!docId) return null;
+    return {
+        id: docId,
+        kind: 'object',
+        title: toNonEmptyString(details.title) || 'Document',
+        revisionRootId: getRevisionRootId(details, sourceDocId || docId),
+    };
+}
+
+function upsertDocument(prev: OpenDocument[], incoming: OpenDocument): OpenDocument[] {
+    const existingIndex = prev.findIndex((doc) =>
+        incoming.kind === 'artifact' ? doc.id === incoming.id : isSameRevisionChain(doc, incoming),
+    );
+    if (existingIndex < 0) {
+        return [...prev, incoming];
+    }
+    const existing = prev[existingIndex];
+    if (
+        existing.id === incoming.id &&
+        existing.kind === incoming.kind &&
+        existing.title === incoming.title &&
+        existing.revisionRootId === incoming.revisionRootId &&
+        existing.artifactPath === incoming.artifactPath
+    ) {
+        return prev;
+    }
+    const next = [...prev];
+    next[existingIndex] = incoming;
+    return next;
+}
+
 /**
  * Hook that manages the document side panel.
  *
- * Listens for UPDATE messages with `event_class: 'document_created' | 'document_updated'`
- * and manages panel open/close, tab selection, and refresh state.
+ * Listens for UPDATE messages with `event_class: 'document_opened' | 'document_created' |
+ * 'document_updated'` and manages panel open/close, tab selection, and refresh state.
+ * `document_opened`/`document_updated` carrying an `artifact_path` open an editable
+ * run-scoped draft; `document_created`/`document_updated` with a `document_id` open a
+ * persisted store object.
  *
  * Uses incremental processing — only scans new messages.
  */
@@ -87,46 +140,25 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
         for (let i = startIdx; i < messages.length; i++) {
             const message = messages[i];
 
-            if (message.type === AgentMessageType.UPDATE && message.details) {
-                const details = message.details as Record<string, unknown>;
-                if (details.event_class === 'document_created' || details.event_class === 'document_updated') {
-                    const sourceDocId = toNonEmptyString(details.document_id);
-                    const updatedDocId = toNonEmptyString(details.updated_document_id);
-                    const docId = updatedDocId || sourceDocId;
-                    const docTitle = details.title as string;
-                    if (docId) {
-                        const revisionRootId = getRevisionRootId(details, sourceDocId || docId);
-                        const incomingDoc: OpenDocument = {
-                            id: docId,
-                            title: docTitle || 'Document',
-                            revisionRootId,
-                        };
-                        setOpenDocuments((prev) => {
-                            const existingIndex = prev.findIndex((doc) => isSameRevisionChain(doc, incomingDoc));
-                            if (existingIndex < 0) {
-                                return [...prev, incomingDoc];
-                            }
+            if (message.type !== AgentMessageType.UPDATE || !message.details) continue;
+            const details = message.details as Record<string, unknown>;
+            const eventClass = details.event_class;
+            if (
+                eventClass !== 'document_opened' &&
+                eventClass !== 'document_created' &&
+                eventClass !== 'document_updated'
+            ) {
+                continue;
+            }
 
-                            const existing = prev[existingIndex];
-                            if (
-                                existing.id === incomingDoc.id &&
-                                existing.title === incomingDoc.title &&
-                                existing.revisionRootId === incomingDoc.revisionRootId
-                            ) {
-                                return prev;
-                            }
+            const incomingDoc = describeDocument(details);
+            if (!incomingDoc) continue;
 
-                            const next = [...prev];
-                            next[existingIndex] = incomingDoc;
-                            return next;
-                        });
-                        setActiveDocumentId(incomingDoc.id);
-                        setIsDocPanelOpen(true);
-                        if (details.event_class === 'document_updated') {
-                            setDocRefreshKey((k) => k + 1);
-                        }
-                    }
-                }
+            setOpenDocuments((prev) => upsertDocument(prev, incomingDoc));
+            setActiveDocumentId(incomingDoc.id);
+            setIsDocPanelOpen(true);
+            if (eventClass === 'document_updated') {
+                setDocRefreshKey((k) => k + 1);
             }
         }
 
@@ -160,7 +192,7 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
     const openDocInPanel = useCallback((docId: string) => {
         setOpenDocuments((prev) => {
             if (prev.some((d) => d.id === docId)) return prev;
-            return [...prev, { id: docId, title: 'Document', revisionRootId: docId }];
+            return [...prev, { id: docId, kind: 'object', title: 'Document', revisionRootId: docId }];
         });
         setActiveDocumentId(docId);
         setIsDocPanelOpen(true);

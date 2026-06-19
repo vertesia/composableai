@@ -5,6 +5,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
 import { ExternalLinkIcon, FileTextIcon, Loader2Icon, X } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
+import { ArtifactDocumentEditor } from './ArtifactDocumentEditor.js';
 import { DocumentTabBar } from './DocumentTabBar.js';
 import type { OpenDocument } from './types/document.js';
 
@@ -36,6 +37,9 @@ function DocumentPanelComponent({
     const [error, setError] = useState<string | null>(null);
     const [docName, setDocName] = useState<string | null>(null);
 
+    const activeDoc = activeDocumentId ? (documents.find((d) => d.id === activeDocumentId) ?? null) : null;
+    const activeKind = activeDoc?.kind ?? null;
+
     const fetchContent = useCallback(
         async (docId: string) => {
             setIsLoading(true);
@@ -60,17 +64,20 @@ function DocumentPanelComponent({
         [client, onUpdateDocumentTitle, t],
     );
 
-    // Fetch content when active document changes or refreshKey bumps
+    // Object documents are fetched + rendered here; artifact drafts manage their own
+    // load/save inside ArtifactDocumentEditor, so only fetch for object-kind docs.
     useEffect(() => {
         void refreshKey;
-        if (activeDocumentId && isOpen) {
+        if (isOpen && activeDocumentId && activeKind === 'object') {
             void fetchContent(activeDocumentId);
         }
-    }, [activeDocumentId, refreshKey, isOpen, fetchContent]);
+    }, [activeDocumentId, activeKind, refreshKey, isOpen, fetchContent]);
 
     if (!isOpen || documents.length === 0) {
         return null;
     }
+
+    const headerName = activeKind === 'object' ? docName || activeDoc?.title : (activeDoc?.title ?? null);
 
     return (
         <div className="h-full shadow-xl border border-muted/20 overflow-hidden flex flex-col">
@@ -78,11 +85,11 @@ function DocumentPanelComponent({
             <div className="flex items-center justify-between px-3 py-2 border-b border-muted/20 shrink-0">
                 <div className="flex items-center gap-2 min-w-0">
                     <FileTextIcon className="size-4 text-muted shrink-0" />
-                    <h3 className="font-bold text-sm truncate">{docName || t('agent.document')}</h3>
+                    <h3 className="font-bold text-sm truncate">{headerName || t('agent.document')}</h3>
                 </div>
                 <div className="flex items-center gap-1">
                     <DocumentTabBar documents={documents} activeId={activeDocumentId} onSelect={onSelectDocument} />
-                    {activeDocumentId && (
+                    {activeKind === 'object' && activeDocumentId && (
                         <NavLink
                             href={`/store/objects/${activeDocumentId}#overview`}
                             topLevelNav
@@ -106,7 +113,19 @@ function DocumentPanelComponent({
 
             {/* Content area */}
             <div className="flex-1 overflow-y-auto px-4 py-4">
-                {isLoading ? (
+                {activeKind === 'artifact' ? (
+                    runId && activeDoc?.artifactPath ? (
+                        <ArtifactDocumentEditor
+                            runId={runId}
+                            artifactPath={activeDoc.artifactPath}
+                            refreshKey={refreshKey}
+                        />
+                    ) : (
+                        <div className="p-4 rounded-md bg-destructive/10 text-destructive text-sm">
+                            {t('agent.documentRunRequired')}
+                        </div>
+                    )
+                ) : isLoading ? (
                     <div className="flex items-center justify-center py-12">
                         <Loader2Icon className="size-5 animate-spin text-muted" />
                         <span className="ms-2 text-sm text-muted">{t('agent.loadingDocument')}</span>
