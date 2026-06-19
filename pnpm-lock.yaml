@@ -15,7 +15,7 @@ overrides:
   '@types/koa@<3.0.0': ^3.0.3
   vite: ^8.0.16
   diff@>=6.0.0 <8.0.3: ^8.0.3
-  dompurify@<3.4.9: ^3.4.9
+  dompurify@<3.4.9: ^3.4.11
   protobufjs@<=7.6.2: ^7.6.3
   serialize-javascript@<=7.0.2: ^7.0.3
   serialize-javascript@>=5.0.0 <7.0.5: ^7.0.5
@@ -862,7 +862,7 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       dompurify:
-        specifier: ^3.4.10
+        specifier: ^3.4.11
         version: 3.4.11
       fast-xml-parser:
         specifier: ^5.8.0
