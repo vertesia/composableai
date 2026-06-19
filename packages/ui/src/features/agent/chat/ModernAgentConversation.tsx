@@ -1533,7 +1533,6 @@ function ModernAgentConversationInner({
     );
     const shouldShowRequestInputOverlay = Boolean(pendingRequestInputMessage) && !isFailed;
     const isViewingPlaybackHistory = isPlaybackEnabled && !isPlaybackLive;
-    const shouldShowLiveRequestInputOverlay = shouldShowRequestInputOverlay && !isViewingPlaybackHistory;
     const shouldRenderLiveMessageInputArea = shouldRenderMessageInputArea && !isViewingPlaybackHistory;
     const contextWindowUsage = useMemo(() => toContextWindowUsage(messages), [messages]);
     const canCompactContext =
@@ -2383,17 +2382,17 @@ function ModernAgentConversationInner({
                     showInitialRequest={initialHistoryStatus === 'empty' && messages.length === 0}
                     hiddenMessageTypes={hiddenMessageTypes}
                     disableAutoScroll={!isPlaybackLive}
-                    renderRequestInputControls={isPlaybackLive && !shouldShowLiveRequestInputOverlay}
+                    renderRequestInputControls={!shouldShowRequestInputOverlay}
                     activeWorkstream={activeWorkstream}
                     onActiveWorkstreamChange={setActiveWorkstream}
                 />
             )}
 
-            {shouldShowLiveRequestInputOverlay ? (
+            {shouldShowRequestInputOverlay ? (
                 <AgentRequestInputOverlay
                     message={pendingRequestInputMessage}
-                    onSendMessage={handleSendMessage}
-                    onMcpConnected={handleMcpConnected}
+                    onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
+                    onMcpConnected={isPlaybackLive ? handleMcpConnected : undefined}
                     disabled={isUploading || !isPlaybackLive}
                     isLoading={isSending || isUploading}
                 />

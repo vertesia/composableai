@@ -51,7 +51,7 @@ export function RemoteMcpConnectionButton({
     const { client } = useUserSession();
     const { t } = useUITranslation();
     const [status, setStatus] = useState<OAuthStatus | null>(null);
-    const [loading, setLoading] = useState(providedAuthenticated === undefined);
+    const [loading, setLoading] = useState(providedAuthenticated === undefined && !readOnly);
     const [authenticating, setAuthenticating] = useState(false);
     const [disconnecting, setDisconnecting] = useState(false);
 
@@ -60,6 +60,10 @@ export function RemoteMcpConnectionButton({
 
     const loadStatus = useCallback(async () => {
         if (providedAuthenticated !== undefined) {
+            setLoading(false);
+            return;
+        }
+        if (readOnly) {
             setLoading(false);
             return;
         }
@@ -73,7 +77,7 @@ export function RemoteMcpConnectionButton({
         } finally {
             setLoading(false);
         }
-    }, [client, appId, collectionId, providedAuthenticated]);
+    }, [client, appId, collectionId, providedAuthenticated, readOnly]);
 
     useEffect(() => {
         void loadStatus();
@@ -248,7 +252,7 @@ export function RemoteMcpConnectionButton({
     }
 
     return (
-        <Button variant="outline" size="sm" onClick={handleConnect} disabled={authenticating}>
+        <Button variant="outline" size="sm" onClick={handleConnect} disabled={readOnly || authenticating}>
             {authenticating ? (
                 <>
                     <Spinner className="size-4" />
