@@ -8,16 +8,18 @@ const mocks = vi.hoisted(() => ({
     getStatus: vi.fn(),
 }));
 
+const mockClient = {
+    apps: {
+        getInstalledApps: mocks.getInstalledApps,
+    },
+    remoteMcpConnections: {
+        getStatus: mocks.getStatus,
+    },
+};
+
 vi.mock('@vertesia/ui/session', () => ({
     useUserSession: () => ({
-        client: {
-            apps: {
-                getInstalledApps: mocks.getInstalledApps,
-            },
-            remoteMcpConnections: {
-                getStatus: mocks.getStatus,
-            },
-        },
+        client: mockClient,
     }),
 }));
 
@@ -42,9 +44,16 @@ describe('McpConnectionsActionMenu', () => {
                             namespace: 'jira',
                             url: 'https://mcp.example.com',
                         },
+                        {
+                            type: 'mcp',
+                            id: 'github',
+                            name: 'GitHub',
+                            namespace: 'github',
+                            url: 'https://github-mcp.example.com',
+                        },
                     ],
                 },
-                oauth_collection_ids: ['jira'],
+                oauth_collection_ids: ['jira', 'github'],
             },
         ]);
         mocks.getStatus.mockResolvedValue([
@@ -54,11 +63,19 @@ describe('McpConnectionsActionMenu', () => {
                 collection_name: 'Jira',
                 mcp_server_url: 'https://mcp.example.com',
             },
+            {
+                authenticated: false,
+                collection_id: 'github',
+                collection_name: 'GitHub',
+                mcp_server_url: 'https://github-mcp.example.com',
+            },
         ]);
 
         renderWithProviders(<McpConnectionsActionMenu />);
 
         const trigger = await screen.findByRole('button', { name: /settings/i });
+        await waitFor(() => expect(mocks.getStatus).toHaveBeenCalledTimes(1));
+        expect(mocks.getStatus).toHaveBeenCalledWith('app-1');
         expect(trigger.textContent).toBe('/');
 
         fireEvent.pointerDown(trigger);

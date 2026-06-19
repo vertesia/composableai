@@ -36,6 +36,7 @@ void i18nInstance.use(initReactI18next).init({
         'zh-TW': { [NAMESPACE]: zhTW },
     },
     fallbackLng: 'en',
+    returnEmptyString: false,
     ns: [NAMESPACE],
     defaultNS: NAMESPACE,
     interpolation: {

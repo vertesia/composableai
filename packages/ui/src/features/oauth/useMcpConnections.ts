@@ -109,11 +109,17 @@ export function useMcpConnections() {
                 }
             }
 
-            // Fetch OAuth status for each group's representative collection
+            // Fetch OAuth status once per app installation; getStatus(appId) returns all collection statuses.
+            const statusRequestsByApp = new Map<string, Promise<OAuthAuthStatus[]>>();
             const groupsWithStatus = await Promise.all(
                 allGroups.map(async (group) => {
                     try {
-                        const statuses = await client.remoteMcpConnections.getStatus(group.appId);
+                        let statusRequest = statusRequestsByApp.get(group.appId);
+                        if (!statusRequest) {
+                            statusRequest = client.remoteMcpConnections.getStatus(group.appId);
+                            statusRequestsByApp.set(group.appId, statusRequest);
+                        }
+                        const statuses = await statusRequest;
                         const status = statuses.find((s) => s.collection_id === group.representativeId);
                         return { ...group, authStatus: status };
                     } catch {
