@@ -1,10 +1,17 @@
-import { cn } from '@vertesia/ui/core';
+import type { McpConnectUxConfig } from '@vertesia/common';
+import { Button, cn } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { useUserSession } from '@vertesia/ui/session';
+import { XIcon } from 'lucide-react';
+import { RemoteMcpConnectionButton } from '../../oauth/RemoteMcpConnectionButton.js';
 import { AskUserWidget } from './AskUserWidget';
 import { getAgentMessageText, type RequestInputMessageWithUx } from './ModernAgentOutput/requestInputMessages';
 
 export interface AgentRequestInputOverlayProps {
     message?: RequestInputMessageWithUx;
     onSendMessage?: (message: string) => void;
+    /** Called after the user connects the MCP server requested by request_mcp_connection. */
+    onMcpConnected?: (cfg: McpConnectUxConfig) => void;
     isLoading?: boolean;
     disabled?: boolean;
     className?: string;
@@ -13,30 +20,74 @@ export interface AgentRequestInputOverlayProps {
 export function AgentRequestInputOverlay({
     message,
     onSendMessage,
+    onMcpConnected,
     isLoading = false,
     disabled = false,
     className,
 }: AgentRequestInputOverlayProps) {
+    const { client } = useUserSession();
+    const { t } = useUITranslation();
+
     if (!message) return null;
 
     const uxConfig = message.details.ux;
     const options = uxConfig.options ?? [];
+    const mcpConnect = uxConfig.mcp_connect;
     const isDisabled = disabled || isLoading || !onSendMessage;
     const send = (value: string) => {
         if (isDisabled) return;
         onSendMessage?.(value);
     };
 
+    const wrapperClassName = cn(
+        'flex-shrink-0 border-t border-border/70 bg-background/95 backdrop-blur',
+        'fixed bottom-0 end-0 start-0 z-20 lg:sticky lg:start-auto lg:end-auto',
+        'pb-safe-area',
+        className,
+    );
+
+    if (mcpConnect) {
+        return (
+            <div className={wrapperClassName} data-agent-request-input-overlay>
+                <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0 text-sm leading-6 text-foreground/85">{getAgentMessageText(message)}</div>
+                    <div className="flex shrink-0 items-center justify-end gap-2">
+                        <RemoteMcpConnectionButton
+                            appId={mcpConnect.app_install_id}
+                            collectionId={mcpConnect.collection_id}
+                            collectionName={mcpConnect.name}
+                            variant="default"
+                            onAuthChange={() => {
+                                // useOAuthPopup fires onComplete even on cancel/popup-close, so only
+                                // resume the agent once the connection is actually authenticated.
+                                void client.remoteMcpConnections
+                                    .getCollectionStatus(mcpConnect.app_install_id, mcpConnect.collection_id)
+                                    .then((status) => {
+                                        if (status.authenticated) onMcpConnected?.(mcpConnect);
+                                    })
+                                    .catch(() => {
+                                        /* status check failed — do not resume */
+                                    });
+                            }}
+                            readOnly={disabled}
+                        />
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => send(t('agent.mcpDeclinedMessage', { name: mcpConnect.name }))}
+                            disabled={isDisabled}
+                        >
+                            <XIcon className="size-4" />
+                            <span>{t('mcpOAuth.decline')}</span>
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div
-            className={cn(
-                'flex-shrink-0 border-t border-border/70 bg-background/95 backdrop-blur',
-                'fixed bottom-0 end-0 start-0 z-20 lg:sticky lg:start-auto lg:end-auto',
-                'pb-safe-area',
-                className,
-            )}
-            data-agent-request-input-overlay
-        >
+        <div className={wrapperClassName} data-agent-request-input-overlay>
             <div className="mx-auto w-full max-w-3xl px-3 py-3">
                 <AskUserWidget
                     question={getAgentMessageText(message)}

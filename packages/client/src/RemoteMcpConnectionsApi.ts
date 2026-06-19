@@ -7,6 +7,7 @@ import type {
     OAuthAuthorizeResponse,
     OAuthAuthStatus,
     OAuthMetadataResponse,
+    OAuthProviderExchangePayload,
 } from '@vertesia/common';
 
 export default class RemoteMcpConnectionsApi extends ApiTopic {
@@ -28,6 +29,12 @@ export default class RemoteMcpConnectionsApi extends ApiTopic {
 
     authorize(appInstallId: string, collectionId: string): Promise<OAuthAuthorizeResponse> {
         return this.get(`/authorize/${appInstallId}/${collectionId}`);
+    }
+
+    exchange(code: string, state: string): Promise<McpOAuthConnectResponse> {
+        return this.post('/exchange', {
+            payload: { code, state } satisfies OAuthProviderExchangePayload,
+        });
     }
 
     connect(appInstallId: string, collectionId: string): Promise<McpOAuthConnectResponse> {

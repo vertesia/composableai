@@ -54,6 +54,15 @@ describe('MessageInput', () => {
         expect(onFilesSelected).toHaveBeenCalledWith([file]);
     });
 
+    it('renders attachment actions before the MCP slot', () => {
+        renderWithProviders(<MessageInput onSend={vi.fn()} mcpSlot={<button type="button">MCP</button>} isCompleted />);
+
+        const attachmentButton = screen.getByRole('button', { name: /Add attachment/i });
+        const mcpButton = screen.getByRole('button', { name: 'MCP' });
+
+        expect(attachmentButton.compareDocumentPosition(mcpButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
     it('accepts dropped files when upload is enabled', () => {
         const onFilesSelected = vi.fn();
         const { container } = renderWithProviders(<MessageInput onSend={vi.fn()} onFilesSelected={onFilesSelected} />);

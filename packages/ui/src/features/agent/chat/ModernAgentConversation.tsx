@@ -6,6 +6,7 @@ import {
     type CompletedWorkstreamEntry,
     type ConversationFile,
     type ConversationFileRef,
+    type McpConnectUxConfig,
     type Plan,
     type StopSignal,
     type UserInputSignal,
@@ -29,6 +30,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { ArrowUpIcon, Bot, CheckCircle, Cpu, FileTextIcon, UploadIcon, XIcon } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { McpConnectionsActionMenu } from '../../oauth/McpConnectionsButton.js';
 import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
 import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
@@ -1968,6 +1970,64 @@ function ModernAgentConversationInner({
         ],
     );
 
+    // After the user connects an MCP server requested via request_mcp_connection, flag the
+    // conversation for tool re-discovery and resume it with a confirmation message so the agent
+    // continues automatically with the newly-available tools.
+    const handleMcpConnected = useCallback(
+        async (cfg: McpConnectUxConfig) => {
+            // Await the dirty-flag signal BEFORE sending the follow-up message so Temporal records
+            // McpConfigChanged ahead of the UserInput. Otherwise the resume turn could run before
+            // the flag is set and use the stale tool catalog. An omitted disabled list preserves
+            // the user's current deactivation set.
+            try {
+                await client.agents.sendSignal(agentRunId, 'McpConfigChanged', {});
+            } catch (err: unknown) {
+                console.error('Failed to signal MCP config change', err);
+            }
+            handleSendMessage(t('agent.mcpConnectedMessage', { name: cfg.name }));
+        },
+        [client, agentRunId, handleSendMessage, t],
+    );
+
+    // Per-conversation MCP deactivation set, seeded from the run and updated live via the
+    // MCP action menu in the composer toolbar. Changes are pushed to the running workflow
+    // (which re-discovers tools at the next turn).
+    const [mcpDisabled, setMcpDisabled] = useState<string[] | undefined>(undefined);
+    useEffect(() => {
+        let cancelled = false;
+        client.agents
+            .retrieve(agentRunId)
+            .then((run) => {
+                if (!cancelled) setMcpDisabled(run.disabled_mcp_collections);
+            })
+            .catch(() => {
+                /* best-effort: toggles default to all-active */
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [client, agentRunId]);
+
+    const handleMcpDisabledChange = useCallback(
+        (disabled: string[]) => {
+            const next = disabled.length > 0 ? disabled : undefined;
+            setMcpDisabled(next);
+            client.agents
+                .sendSignal(agentRunId, 'McpConfigChanged', { disabled_mcp_collections: disabled })
+                .catch((err: unknown) => console.error('Failed to signal MCP config change', err));
+        },
+        [client, agentRunId],
+    );
+
+    const handleMcpConnectionChange = useCallback(() => {
+        // A connect/disconnect doesn't change the activation set — omit disabled_mcp_collections so
+        // the workflow preserves the current denylist (rather than overwriting it with possibly
+        // stale UI state) and just re-discovers tools.
+        client.agents
+            .sendSignal(agentRunId, 'McpConfigChanged', {})
+            .catch((err: unknown) => console.error('Failed to signal MCP config change', err));
+    }, [client, agentRunId]);
+
     // Drag and drop handlers for full-panel file upload
     const handleDragEnter = useCallback(
         (e: React.DragEvent) => {
@@ -2333,6 +2393,7 @@ function ModernAgentConversationInner({
                 <AgentRequestInputOverlay
                     message={pendingRequestInputMessage}
                     onSendMessage={handleSendMessage}
+                    onMcpConnected={handleMcpConnected}
                     disabled={isUploading || !isPlaybackLive}
                     isLoading={isSending || isUploading}
                 />
@@ -2376,6 +2437,13 @@ function ModernAgentConversationInner({
                                 <MessageInput
                                     onSend={handleSendMessage}
                                     onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
+                                    mcpSlot={
+                                        <McpConnectionsActionMenu
+                                            disabledCollections={mcpDisabled}
+                                            onChange={handleMcpDisabledChange}
+                                            onConnectionChange={handleMcpConnectionChange}
+                                        />
+                                    }
                                     disabled={isUploading || !isPlaybackLive}
                                     isSending={isSending || isUploading}
                                     isStopping={isStopping}
