@@ -1,14 +1,14 @@
 import { createContext, useContext, useEffect } from 'react';
-import { ObjectsActionContext, type ObjectsActionCallback } from './ObjectsActionContextClass';
+import type { ObjectsActionCallback, ObjectsActionContext } from './ObjectsActionContextClass';
 
-export { type ObjectsActionCallback };
+export type { ObjectsActionCallback };
 
-export const ObjectsActionContextReact = createContext<ObjectsActionContext>(undefined as any);
+export const ObjectsActionContextReact = createContext<ObjectsActionContext | undefined>(undefined);
 
 export function useObjectsActionContext() {
     const ctx = useContext(ObjectsActionContextReact);
     if (!ctx) {
-        throw new Error("You cannot use useActionContext outside an ActionProvider");
+        throw new Error('You cannot use useActionContext outside an ActionProvider');
     }
     return ctx;
 }
@@ -27,7 +27,7 @@ export function useStartWorkflowCallback(cb: ObjectsActionCallback) {
         ctx.startWorkflow = cb;
         return () => {
             ctx.startWorkflow = undefined;
-        }
+        };
     }, [cb, ctx]);
     return ctx;
 }

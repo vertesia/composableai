@@ -1,8 +1,8 @@
-import { RemoteActivityDefinition, RemoteActivityExecutionPayload } from "@vertesia/common";
-import { Context, Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
-import { ActivityCollection } from "../ActivityCollection.js";
-import { ToolServerConfig } from "./types.js";
+import type { RemoteActivityDefinition, RemoteActivityExecutionPayload } from '@vertesia/common';
+import { type Context, Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import type { ActivityCollection } from '../ActivityCollection.js';
+import type { ToolServerConfig } from './types.js';
 
 /**
  * Safely parse JSON from a request body. Throws HTTPException(400) on invalid JSON.
@@ -12,9 +12,13 @@ async function safeParseJson(c: Context): Promise<unknown> {
         return await c.req.json();
     } catch {
         throw new HTTPException(400, {
-            message: 'Invalid JSON in request body.'
+            message: 'Invalid JSON in request body.',
         });
     }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return !!value && typeof value === 'object';
 }
 
 /**
@@ -24,19 +28,19 @@ async function safeParseJson(c: Context): Promise<unknown> {
 function parseActivityPayload(body: unknown): RemoteActivityExecutionPayload {
     if (!body || typeof body !== 'object') {
         throw new HTTPException(400, {
-            message: 'Invalid or missing activity execution payload.'
+            message: 'Invalid or missing activity execution payload.',
         });
     }
-    const obj = body as Record<string, any>;
+    const obj = body as Record<string, unknown>;
     if (typeof obj.activity_name !== 'string' || !obj.activity_name) {
         throw new HTTPException(400, {
-            message: 'Missing required field: activity_name'
+            message: 'Missing required field: activity_name',
         });
     }
     return {
         activity_name: obj.activity_name,
-        params: obj.params || {},
-        metadata: obj.metadata || {},
+        params: isRecord(obj.params) ? obj.params : {},
+        metadata: isRecord(obj.metadata) ? obj.metadata : {},
     };
 }
 
@@ -61,7 +65,7 @@ export function createActivitiesRoute(app: Hono, basePath: string, config: ToolS
             title: 'All Activities',
             description: 'All available remote activities across all collections',
             activities: allActivities,
-            collections: activities.map(a => ({
+            collections: activities.map((a) => ({
                 name: a.name,
                 title: a.title,
                 description: a.description,
@@ -77,7 +81,7 @@ export function createActivitiesRoute(app: Hono, basePath: string, config: ToolS
         const collection = activityToCollection.get(payload.activity_name);
         if (!collection) {
             throw new HTTPException(404, {
-                message: `Activity not found: ${payload.activity_name}. Available: ${Array.from(activityToCollection.keys()).join(', ')}`
+                message: `Activity not found: ${payload.activity_name}. Available: ${Array.from(activityToCollection.keys()).join(', ')}`,
             });
         }
 

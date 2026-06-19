@@ -48,11 +48,7 @@ export interface StorageObjectSourceItem extends BaseItem {
     mimeType: string;
 }
 
-export type SourceItem =
-    | ContentObjectSourceItem
-    | CollectionSourceItem
-    | MetadataSourceItem
-    | StorageObjectSourceItem;
+export type SourceItem = ContentObjectSourceItem | CollectionSourceItem | MetadataSourceItem | StorageObjectSourceItem;
 
 export interface SourceItemBatch {
     index: number;

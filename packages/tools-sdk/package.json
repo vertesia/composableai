@@ -1,60 +1,56 @@
 {
-  "name": "@vertesia/tools-sdk",
-  "version": "1.3.0",
-  "description": "Tools SDK - utilities for building remote tools",
-  "type": "module",
-  "types": "./lib/types/index.d.ts",
-  "files": [
-    "lib",
-    "src"
-  ],
-  "license": "Apache-2.0",
-  "scripts": {
-    "test": "vitest run",
-    "build": "pnpm exec tsmod build",
-    "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
-  },
-  "exports": {
-    ".": {
-      "types": "./lib/types/index.d.ts",
-      "import": "./lib/esm/index.js",
-      "require": "./lib/cjs/index.js"
-    }
-  },
-  "bin": {
-    "tools-sdk-copy-assets": "./lib/esm/copy-assets.js"
-  },
-  "devDependencies": {
-    "@types/node": "^24.1.0",
-    "ts-dual-module": "^0.6.3",
-    "typescript": "^6.0.2",
-    "vitest": "^4.0.16"
-  },
-  "ts_dual_module": {
-    "outDir": "lib"
-  },
-  "peerDependencies": {
-    "hono": "^4.12.14"
-  },
-  "dependencies": {
-    "@llumiverse/common": "workspace:*",
-    "@vertesia/client": "workspace:*",
-    "@vertesia/common": "workspace:*",
-    "jose": "^6.0.11",
-    "zod": "^4.3.5"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/vertesia/composableai.git",
-    "directory": "packages/tools-sdk"
-  },
-  "keywords": [
-    "vertesia",
-    "tools",
-    "sdk",
-    "llm",
-    "ai",
-    "agents",
-    "typescript"
-  ]
+    "name": "@vertesia/tools-sdk",
+    "version": "1.3.0",
+    "description": "Tools SDK - utilities for building remote tools",
+    "type": "module",
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
+    "files": [
+        "lib",
+        "src"
+    ],
+    "license": "Apache-2.0",
+    "scripts": {
+        "lint": "biome lint src",
+        "test": "vitest run",
+        "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc",
+        "clean": "rm -rf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+    },
+    "exports": {
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        }
+    },
+    "devDependencies": {
+        "@types/node": "^24.13.2",
+        "@vertesia/tsconfig": "workspace:*",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.8"
+    },
+    "peerDependencies": {
+        "hono": "^4.12.25"
+    },
+    "dependencies": {
+        "@llumiverse/common": "workspace:*",
+        "@vertesia/client": "workspace:*",
+        "@vertesia/common": "workspace:*",
+        "jose": "^6.2.3",
+        "zod": "^4.4.3"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/tools-sdk"
+    },
+    "keywords": [
+        "vertesia",
+        "tools",
+        "sdk",
+        "llm",
+        "ai",
+        "agents",
+        "typescript"
+    ]
 }

@@ -1,7 +1,7 @@
-import { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from "@llumiverse/common";
-import { ConversationStripOptions, ResolvedInteractionExecutionInfo, UserChannel } from "../interaction.js";
-import { ExecutionRunDocRef } from "../runs.js";
-import { Plan, WorkflowAncestor } from "./workflow.js";
+import type { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from '@llumiverse/common';
+import type { ConversationStripOptions, ResolvedInteractionExecutionInfo, UserChannel } from '../interaction.js';
+import type { ExecutionRunDocRef } from '../runs.js';
+import type { Plan, WorkflowAncestor } from './workflow.js';
 
 /**
  * Lightweight tool reference for activity payloads.
@@ -121,7 +121,7 @@ export interface ConversationState {
     /**
      * Tools that have been unlocked by skills during the conversation.
      * These tools were initially hidden (default: false) but became available
-     * when a skill with related_tools was called.
+     * when a skill with tools was called.
      */
     unlocked_tools?: string[];
 
@@ -130,6 +130,13 @@ export interface ConversationState {
      * Set by streamToRedis when completing async activities.
      */
     latest_activity_id?: string;
+
+    /**
+     * Stable streaming ID from the latest LLM call.
+     * Unlike Temporal activity IDs, this is scoped to the concrete workflow run
+     * that produced the stream, so it remains safe across continue-as-new.
+     */
+    latest_streaming_id?: string;
 
     /**
      * Mapping of skill names to their related tools.

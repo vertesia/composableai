@@ -1,18 +1,13 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUserSession } from '@vertesia/ui/session';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    useArtifactUrlCache,
     getArtifactCacheKey,
     getFileCacheKey,
+    isProjectFilePath,
+    useArtifactUrlCache,
 } from '../../features/agent/chat/useArtifactUrlCache';
 
-export type UrlScheme =
-    | 'artifact'
-    | 'image'
-    | 'store'
-    | 'document'
-    | 'collection'
-    | 'standard';
+export type UrlScheme = 'artifact' | 'image' | 'store' | 'document' | 'collection' | 'standard';
 
 export interface ResolvedUrlState {
     /** The resolved URL, or undefined if not yet resolved */
@@ -37,6 +32,14 @@ export interface UseResolvedUrlOptions {
 }
 
 /**
+ * Strip an optional `//` authority (and stray leading slashes) after a scheme colon so
+ * `scheme://path` and `scheme:path` parse identically.
+ */
+function stripSchemePath(raw: string): string {
+    return raw.trim().replace(/^\/+/, '');
+}
+
+/**
  * Parses a URL and returns its scheme and path
  */
 export function parseUrlScheme(rawUrl: string): { scheme: UrlScheme; path: string } {
@@ -47,13 +50,13 @@ export function parseUrlScheme(rawUrl: string): { scheme: UrlScheme; path: strin
         return { scheme: 'image', path: rawUrl.slice(6).trim() };
     }
     if (rawUrl.startsWith('store:')) {
-        return { scheme: 'store', path: rawUrl.slice(6).trim() };
+        return { scheme: 'store', path: stripSchemePath(rawUrl.slice(6)) };
     }
-    if (rawUrl.startsWith('document://')) {
-        return { scheme: 'document', path: rawUrl.slice(11).trim() };
+    if (rawUrl.startsWith('document:')) {
+        return { scheme: 'document', path: stripSchemePath(rawUrl.slice(9)) };
     }
     if (rawUrl.startsWith('collection:')) {
-        return { scheme: 'collection', path: rawUrl.slice(11).trim() };
+        return { scheme: 'collection', path: stripSchemePath(rawUrl.slice(11)) };
     }
     return { scheme: 'standard', path: rawUrl };
 }
@@ -113,7 +116,7 @@ export function useResolvedUrl({
         // For artifact/image schemes, check cache first
         if (urlCache && (scheme === 'artifact' || scheme === 'image')) {
             let cacheKey: string;
-            if (scheme === 'artifact' && artifactRunId && !path.startsWith('agents/')) {
+            if (scheme === 'artifact' && artifactRunId && !isProjectFilePath(path)) {
                 cacheKey = getArtifactCacheKey(artifactRunId, path, disposition);
             } else {
                 cacheKey = getFileCacheKey(path);
@@ -128,8 +131,6 @@ export function useResolvedUrl({
         return { url: undefined, isLoading: true, error: undefined };
     });
 
-    const [retryCount, setRetryCount] = useState(0);
-
     const fetchUrl = useCallback(async () => {
         // Skip if already resolved or standard URL
         if (mappedRoute || scheme === 'standard') {
@@ -142,7 +143,7 @@ export function useResolvedUrl({
             return;
         }
 
-        setState(prev => ({ ...prev, isLoading: true, error: undefined }));
+        setState((prev) => ({ ...prev, isLoading: true, error: undefined }));
 
         const currentClient = clientRef.current;
         const currentUrlCache = urlCacheRef.current;
@@ -151,14 +152,14 @@ export function useResolvedUrl({
             let url: string;
 
             if (scheme === 'artifact') {
-                if (artifactRunId && !path.startsWith('agents/')) {
+                if (artifactRunId && !isProjectFilePath(path)) {
                     const cacheKey = getArtifactCacheKey(artifactRunId, path, disposition);
                     if (currentUrlCache) {
                         url = await currentUrlCache.getOrFetch(cacheKey, async () => {
                             const result = await currentClient.files.getArtifactDownloadUrl(
                                 artifactRunId,
                                 path,
-                                disposition
+                                disposition,
                             );
                             return result.url;
                         });
@@ -166,7 +167,7 @@ export function useResolvedUrl({
                         const result = await currentClient.files.getArtifactDownloadUrl(
                             artifactRunId,
                             path,
-                            disposition
+                            disposition,
                         );
                         url = result.url;
                     }
@@ -217,18 +218,18 @@ export function useResolvedUrl({
         };
 
         if (!cancelled) {
-            doFetch();
+            void doFetch();
         }
 
         return () => {
             cancelled = true;
         };
-    }, [fetchUrl, retryCount, state.url, state.error]);
+    }, [fetchUrl, state.url, state.error]);
 
     const retry = useCallback(() => {
         setState({ url: undefined, isLoading: true, error: undefined });
-        setRetryCount(c => c + 1);
-    }, []);
+        void fetchUrl();
+    }, [fetchUrl]);
 
     return {
         url: state.url,

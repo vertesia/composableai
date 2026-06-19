@@ -1,2 +1,2 @@
-export * from './components/XMLViewer';
 export * from './components/types.js';
+export * from './components/XMLViewer';

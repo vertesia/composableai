@@ -1,17 +1,14 @@
 {
-  "files": [],
-  "references": [
-    {
-      "path": "./tsconfig.ui.json"
-    },
-    {
-      "path": "./tsconfig.tool-server.json"
-    },
-    {
-      "path": "./tsconfig.widgets.json"
-    },
-    {
-      "path": "./tsconfig.node.json"
-    }
-  ]
+    "files": [],
+    "references": [
+        {
+            "path": "./tsconfig.ui.json"
+        },
+        {
+            "path": "./tsconfig.tool-server.json"
+        },
+        {
+            "path": "./tsconfig.node.json"
+        }
+    ]
 }

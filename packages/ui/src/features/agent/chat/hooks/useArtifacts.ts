@@ -1,5 +1,5 @@
+import type { VertesiaClient } from '@vertesia/client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { VertesiaClient } from '@vertesia/client';
 
 // ---------------------------------------------------------------------------
 // Tree node type
@@ -18,11 +18,7 @@ export interface ArtifactTreeNode {
 // Internal files we never show to the user
 // ---------------------------------------------------------------------------
 
-const INTERNAL_FILE_PATTERNS = [
-    /conversation\.json$/,
-    /-conversation\.json$/,
-    /^tools\.json$/,
-];
+const INTERNAL_FILE_PATTERNS = [/conversation\.json$/, /-conversation\.json$/, /^tools\.json$/];
 
 function isInternalFile(relativePath: string): boolean {
     const basename = relativePath.split('/').pop() ?? relativePath;
@@ -99,11 +95,7 @@ export interface UseArtifactsResult {
     refresh: () => void;
 }
 
-export function useArtifacts(
-    client: VertesiaClient,
-    runId: string | undefined,
-    refreshKey = 0,
-): UseArtifactsResult {
+export function useArtifacts(client: VertesiaClient, runId: string | undefined, refreshKey = 0): UseArtifactsResult {
     const [flatFiles, setFlatFiles] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -121,9 +113,7 @@ export function useArtifacts(
             const paths = await client.files.listArtifacts(runId);
             if (fetchId !== fetchIdRef.current) return; // stale
 
-            const relatives = paths
-                .map((p) => stripToRelativePath(p, runId))
-                .filter((p) => p && !isInternalFile(p));
+            const relatives = paths.map((p) => stripToRelativePath(p, runId)).filter((p) => p && !isInternalFile(p));
 
             setFlatFiles(relatives);
         } catch (err) {
@@ -138,7 +128,9 @@ export function useArtifacts(
     }, [client, runId]);
 
     useEffect(() => {
-        fetchArtifacts();
+        void refreshKey;
+        void manualRefreshKey;
+        void fetchArtifacts();
     }, [fetchArtifacts, refreshKey, manualRefreshKey]);
 
     const tree = useMemo(() => buildTree(flatFiles), [flatFiles]);

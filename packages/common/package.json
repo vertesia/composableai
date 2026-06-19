@@ -1,54 +1,52 @@
 {
-  "name": "@vertesia/common",
-  "version": "1.3.0",
-  "license": "Apache-2.0",
-  "type": "module",
-  "types": "./lib/types/index.d.ts",
-  "files": [
-    "lib",
-    "src",
-    "tsconfig.dist.json"
-  ],
-  "scripts": {
-    "test": "vitest run",
-    "build": "pnpm exec tsmod build && pnpm exec rollup -c",
-    "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
-  },
-  "exports": {
-    ".": {
-      "types": "./lib/types/index.d.ts",
-      "import": "./lib/esm/index.js",
-      "require": "./lib/cjs/index.js"
-    }
-  },
-  "devDependencies": {
-    "@rollup/plugin-commonjs": "^28.0.3",
-    "@rollup/plugin-node-resolve": "^16.0.1",
-    "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^12.1.2",
-    "rollup": "^4.59.0",
-    "ts-dual-module": "^0.6.3",
-    "typescript": "^6.0.2",
-    "vitest": "^4.0.16"
-  },
-  "dependencies": {
-    "@llumiverse/common": "workspace:*",
-    "ajv": "^8.17.1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/vertesia/composableai.git",
-    "directory": "packages/common"
-  },
-  "keywords": [
-    "vertesia",
-    "common",
-    "types",
-    "llm",
-    "ai",
-    "typescript"
-  ],
-  "ts_dual_module": {
-    "outDir": "lib"
-  }
+    "name": "@vertesia/common",
+    "version": "1.3.0",
+    "license": "Apache-2.0",
+    "type": "module",
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
+    "files": [
+        "lib",
+        "src",
+        "tsconfig.dist.json"
+    ],
+    "scripts": {
+        "lint": "biome lint src",
+        "test": "vitest run",
+        "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build && pnpm exec rollup -c",
+        "clean": "rm -rf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+    },
+    "exports": {
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        }
+    },
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^29.0.3",
+        "@rollup/plugin-node-resolve": "^16.0.3",
+        "@rollup/plugin-terser": "^1.0.0",
+        "@vertesia/tsconfig": "workspace:*",
+        "rollup": "^4.61.1",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.8"
+    },
+    "dependencies": {
+        "@llumiverse/common": "workspace:*",
+        "ajv": "^8.20.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/common"
+    },
+    "keywords": [
+        "vertesia",
+        "common",
+        "types",
+        "llm",
+        "ai",
+        "typescript"
+    ]
 }

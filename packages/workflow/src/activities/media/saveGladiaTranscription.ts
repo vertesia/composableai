@@ -1,8 +1,16 @@
-import { log } from "@temporalio/activity";
-import { FetchClient } from "@vertesia/api-fetch-client";
-import { AudioMetadata, DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations, TranscriptSegment, VideoMetadata } from "@vertesia/common";
-import { setupActivity } from "../../dsl/setup/ActivityContext.js";
-import { TextExtractionResult, TextExtractionStatus } from "../../result-types.js";
+import { log } from '@temporalio/activity';
+import { FetchClient } from '@vertesia/api-fetch-client';
+import {
+    type AudioMetadata,
+    type DSLActivityExecutionPayload,
+    type DSLActivitySpec,
+    type GladiaConfigurationWithSecrets,
+    SupportedIntegrations,
+    type TranscriptSegment,
+    type VideoMetadata,
+} from '@vertesia/common';
+import { setupActivity } from '../../dsl/setup/ActivityContext.js';
+import { type TextExtractionResult, TextExtractionStatus } from '../../result-types.js';
 
 export interface SaveGladiaTranscriptionParams {
     gladiaTranscriptionId: string;
@@ -13,23 +21,28 @@ export interface SaveGladiaTranscription extends DSLActivitySpec<SaveGladiaTrans
     name: 'SaveGladiaTranscription';
 }
 
-const GLADIA_URL = "https://api.gladia.io/v2";
+const GLADIA_URL = 'https://api.gladia.io/v2';
 
 /**
  * Fetches transcription results from Gladia and saves them to the content object.
  * This activity is called after transcribeMedia completes via webhook callback.
  */
-export async function saveGladiaTranscription(payload: DSLActivityExecutionPayload<SaveGladiaTranscriptionParams>): Promise<TextExtractionResult> {
+export async function saveGladiaTranscription(
+    payload: DSLActivityExecutionPayload<SaveGladiaTranscriptionParams>,
+): Promise<TextExtractionResult> {
     const context = await setupActivity<SaveGladiaTranscriptionParams>(payload);
     const { params, client, inputType } = context;
 
-    const gladiaConfig = await client.projects.integrations.retrieve(payload.project_id, SupportedIntegrations.gladia) as GladiaConfiguration | undefined;
-    if (!gladiaConfig || !gladiaConfig.enabled) {
+    const gladiaConfig = (await client.projects.integrations.retrieve(
+        payload.project_id,
+        SupportedIntegrations.gladia,
+    )) as GladiaConfigurationWithSecrets | undefined;
+    if (!gladiaConfig?.enabled) {
         return {
             hasText: false,
             objectId: inputType === 'objectIds' ? context.objectId : undefined,
             status: TextExtractionStatus.error,
-            error: "Gladia integration not enabled",
+            error: 'Gladia integration not enabled',
         };
     }
     if (!gladiaConfig.api_key) {
@@ -37,16 +50,18 @@ export async function saveGladiaTranscription(payload: DSLActivityExecutionPaylo
             hasText: false,
             objectId: inputType === 'objectIds' ? context.objectId : undefined,
             status: TextExtractionStatus.error,
-            error: "Gladia API key not configured",
+            error: 'Gladia API key not configured',
         };
     }
 
     const gladiaClient = new FetchClient(gladiaConfig.url ?? GLADIA_URL);
-    gladiaClient.withHeaders({ "x-gladia-key": gladiaConfig.api_key });
+    gladiaClient.withHeaders({ 'x-gladia-key': gladiaConfig.api_key });
 
     log.info(`Fetching transcription result from Gladia`, { transcriptionId: params.gladiaTranscriptionId });
 
-    const transcriptionResult = await gladiaClient.get(`/transcription/${params.gladiaTranscriptionId}`) as GladiaTranscriptionResult;
+    const transcriptionResult = (await gladiaClient.get(
+        `/transcription/${params.gladiaTranscriptionId}`,
+    )) as GladiaTranscriptionResult;
 
     // Determine storage identifier based on input type
     const storageId = inputType === 'objectIds' ? context.objectId : params.output_storage_path;
@@ -56,11 +71,14 @@ export async function saveGladiaTranscription(payload: DSLActivityExecutionPaylo
         return {
             hasText: false,
             objectId: inputType === 'objectIds' ? context.objectId : undefined,
-            file: inputType === 'files' ? {
-                source_url: context.file.url,
-            } : undefined,
+            file:
+                inputType === 'files'
+                    ? {
+                          source_url: context.file.url,
+                      }
+                    : undefined,
             status: TextExtractionStatus.error,
-            error: "Gladia transcription failed",
+            error: 'Gladia transcription failed',
         };
     }
 
@@ -80,44 +98,52 @@ export async function saveGladiaTranscription(payload: DSLActivityExecutionPaylo
     if (inputType === 'objectIds') {
         // Object mode: save to object store
         const objectId = context.objectId;
-        const object = await client.objects.retrieve(objectId, "+text");
+        const object = await client.objects.retrieve(objectId, '+text');
 
         await client.objects.update(objectId, {
             text: fullText,
             text_etag: object.content?.etag,
             transcript: {
                 segments,
-                etag: object.content?.etag
+                etag: object.content?.etag,
             },
             metadata: {
                 ...object.metadata,
                 duration: transcriptionResult.result.metadata.audio_duration,
-                languages: transcriptionResult.result.transcription.languages
-            } as AudioMetadata | VideoMetadata
+                languages: transcriptionResult.result.transcription.languages,
+            } as AudioMetadata | VideoMetadata,
         });
 
-        log.info(`Saved transcription for object`, { objectId, textLength: fullText?.length, segmentCount: segments.length });
+        log.info(`Saved transcription for object`, {
+            objectId,
+            textLength: fullText?.length,
+            segmentCount: segments.length,
+        });
     } else {
         // File mode: don't save to object, just log
-        log.info(`Transcription completed (file mode, not saved to object)`, { storageId, textLength: fullText?.length, segmentCount: segments.length });
+        log.info(`Transcription completed (file mode, not saved to object)`, {
+            storageId,
+            textLength: fullText?.length,
+            segmentCount: segments.length,
+        });
     }
 
     return {
         hasText: (fullText?.length ?? 0) > 0,
         objectId: storageId,
         status: TextExtractionStatus.success,
-        message: `Transcription ${inputType === 'objectIds' ? 'saved' : 'completed'} with ${segments.length} segments`
+        message: `Transcription ${inputType === 'objectIds' ? 'saved' : 'completed'} with ${segments.length} segments`,
     };
 }
 
 function processUtterances(utterances: GladiaUtterance[]): TranscriptSegment[] {
-    return utterances.map(u => ({
+    return utterances.map((u) => ({
         start: u.start,
         end: u.end,
         text: u.text,
         speaker: u.speaker,
         confidence: u.confidence,
-        language: u.language
+        language: u.language,
     }));
 }
 

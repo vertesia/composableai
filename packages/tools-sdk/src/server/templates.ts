@@ -1,12 +1,16 @@
 // ================== Template Endpoints ==================
 
-import { RenderingTemplateDefinition, RenderingTemplateDefinitionRef } from "@vertesia/common";
-import { Context, Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
-import { RenderingTemplateCollection } from "../RenderingTemplateCollection.js";
-import { ToolServerConfig } from "./types.js";
+import type { RenderingTemplateDefinition, RenderingTemplateDefinitionRef } from '@vertesia/common';
+import { type Context, Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import type { RenderingTemplateCollection } from '../RenderingTemplateCollection.js';
+import type { ToolServerConfig } from './types.js';
 
-function toRef(basePath: string, collectionName: string, { instructions: _, ...ref }: RenderingTemplateDefinition): RenderingTemplateDefinitionRef {
+function toRef(
+    basePath: string,
+    collectionName: string,
+    { instructions: _, ...ref }: RenderingTemplateDefinition,
+): RenderingTemplateDefinitionRef {
     return { ...ref, path: `${basePath}/${collectionName}/${ref.name}` };
 }
 
@@ -15,15 +19,13 @@ export function createTemplatesRoute(app: Hono, basePath: string, config: ToolSe
 
     // GET /api/templates - Returns all templates from all collections (without instructions)
     app.get(basePath, (c) => {
-        const allTemplates = templates.flatMap(coll =>
-            coll.templates.map(t => toRef(basePath, coll.name, t))
-        );
+        const allTemplates = templates.flatMap((coll) => coll.templates.map((t) => toRef(basePath, coll.name, t)));
 
         return c.json({
             title: 'All Templates',
             description: 'All available templates across all collections',
             templates: allTemplates,
-            collections: templates.map(t => ({
+            collections: templates.map((t) => ({
                 name: t.name,
                 title: t.title,
                 description: t.description,
@@ -42,18 +44,18 @@ export function createTemplatesRoute(app: Hono, basePath: string, config: ToolSe
         const parts = id.split(':');
         if (parts.length !== 2) {
             throw new HTTPException(400, {
-                message: "Invalid template id. Expected format 'collection:name'"
+                message: "Invalid template id. Expected format 'collection:name'",
             });
         }
         const collName = parts[0];
         const templateName = parts[1];
-        const template = templates.find(t => t.name === collName)?.getTemplate(templateName);
+        const template = templates.find((t) => t.name === collName)?.getTemplate(templateName);
         if (template) {
             return c.json(template);
         }
 
         throw new HTTPException(404, {
-            message: "No template found with id: " + id
+            message: `No template found with id: ${id}`,
         });
     });
 }
@@ -62,15 +64,15 @@ function createTemplateEndpoints(basePath: string, coll: RenderingTemplateCollec
     const endpoint = new Hono();
 
     endpoint.get('/', (c: Context) => {
-        return c.json(coll.templates.map(t => toRef(basePath, coll.name, t)));
+        return c.json(coll.templates.map((t) => toRef(basePath, coll.name, t)));
     });
 
     endpoint.get('/:name', (c: Context) => {
         const name = c.req.param('name');
-        const template = coll.templates.find(t => t.name === name);
+        const template = coll.templates.find((t) => t.name === name);
         if (!template) {
             throw new HTTPException(404, {
-                message: "No template found with name: " + name
+                message: `No template found with name: ${name}`,
             });
         }
         return c.json(template);

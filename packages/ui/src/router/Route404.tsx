@@ -1,8 +1,8 @@
-import { RouteMatch, useRouterContext } from "./Router";
+import { type RouteMatch, useRouterContext } from './Router';
 
 export function Route404Component() {
     const ctx = useRouterContext();
-    return <div>Route not found for path {ctx.matchedRoutePath}</div>
+    return <div>Route not found for path {ctx.matchedRoutePath}</div>;
 }
 
 export function createRoute404(): RouteMatch {
@@ -12,7 +12,7 @@ export function createRoute404(): RouteMatch {
         state: null,
         value: {
             path: 'virtual:404',
-            Component: () => <Route404Component />
-        }
-    }
+            Component: () => <Route404Component />,
+        },
+    };
 }

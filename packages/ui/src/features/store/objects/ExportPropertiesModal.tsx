@@ -1,10 +1,11 @@
-import { Button, Modal, ModalBody, ModalTitle, SelectBox, Spinner } from "@vertesia/ui/core";
-import { useState } from "react";
-import { useUITranslation } from '../../../i18n/index.js';
+import { Button, Modal, ModalBody, ModalTitle, SelectBox, Spinner } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { useState } from 'react';
 
 export enum ExportTypes {
-    CSV = "CSV", JSON = "JSON"
-};
+    CSV = 'CSV',
+    JSON = 'JSON',
+}
 
 interface ExportPropertiesModalProps {
     isExporting: boolean;
@@ -12,21 +13,17 @@ interface ExportPropertiesModalProps {
     onClose: (exportType?: string | null | undefined, exportAll?: boolean) => void;
 }
 export function ExportPropertiesModal({ isExporting, isOpen, onClose }: ExportPropertiesModalProps) {
-    const title = "Export Object Properties";
+    const title = 'Export Object Properties';
 
     return (
         <Modal onClose={() => onClose(undefined)} isOpen={isOpen}>
             <ModalTitle>{title}</ModalTitle>
             <ModalBody>
-                {!isExporting &&
-                    <SelectPanel onClose={onClose} />
-                }
-                {isExporting &&
-                    <WaitingPanel />
-                }
+                {!isExporting && <SelectPanel onClose={onClose} />}
+                {isExporting && <WaitingPanel />}
             </ModalBody>
         </Modal>
-    )
+    );
 }
 
 interface SelectPanelProps {
@@ -37,19 +34,19 @@ function SelectPanel({ onClose }: SelectPanelProps) {
     const [exportType, setExportType] = useState<string | undefined>(undefined);
     const [exportAll, setExportAll] = useState<string | undefined>(undefined);
 
-    const selectionOption: string[] = ["Export selected objects", "Export all objects"];
+    const selectionOption: string[] = ['Export selected objects', 'Export all objects'];
 
     const exportAllBoolean = (option: string | undefined) => {
-        return option == selectionOption[1];
-    }
+        return option === selectionOption[1];
+    };
 
     const onSubmit = () => {
         onClose(exportType, exportAllBoolean(exportAll));
-    }
+    };
 
     return (
         <ModalBody className="min-h-[104px] pt-0 flex flex-col gap-y-4">
-            <div className='h-1/3'>
+            <div className="h-1/3">
                 <SelectBox
                     options={selectionOption}
                     value={exportAll}
@@ -60,7 +57,7 @@ function SelectPanel({ onClose }: SelectPanelProps) {
                     isClearable
                 />
             </div>
-            <div className='h-1/2 flex flex-col gap-y-8 content-between'>
+            <div className="h-1/2 flex flex-col gap-y-8 content-between">
                 <SelectBox
                     options={Object.values(ExportTypes)}
                     value={exportType}
@@ -71,24 +68,25 @@ function SelectPanel({ onClose }: SelectPanelProps) {
                     isClearable
                 />
 
-                <Button className="w-full" isDisabled={!exportType || !exportAll} onClick={onSubmit}>{t('store.actions.exportProperties')}</Button>
+                <Button className="w-full" isDisabled={!exportType || !exportAll} onClick={onSubmit}>
+                    {t('store.actions.exportProperties')}
+                </Button>
             </div>
         </ModalBody>
-    )
+    );
 }
 
-interface WaitingPanelProps { }
-function WaitingPanel({ }: WaitingPanelProps) {
+function WaitingPanel() {
     const { t } = useUITranslation();
     return (
         <ModalBody className="min-h-[84px] pt-0">
-            <div className='h-full grid flex-col gap-y-2 content-between justify-items-center'>
+            <div className="h-full grid flex-col gap-y-2 content-between justify-items-center">
                 <div className="text-sm flex flex-col gap-x-2">
                     <p>{t('store.exportInProgress')}</p>
                     <p className="pt-2 grid justify-items-center">{t('store.pleaseWait')}</p>
                 </div>
-                <Spinner size='lg' />
+                <Spinner size="lg" />
             </div>
         </ModalBody>
-    )
+    );
 }

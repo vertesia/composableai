@@ -1,7 +1,6 @@
-import { ToolExecutionContext, ToolExecutionPayload } from "@vertesia/tools-sdk";
-import { type CalculatorParams } from "./schema.js";
-import { ToolResultContent } from "@vertesia/common";
-
+import type { ToolResultContent } from '@vertesia/common';
+import type { ToolExecutionContext, ToolExecutionPayload } from '@vertesia/tools-sdk';
+import type { CalculatorParams } from './schema.js';
 
 /**
  * Safely evaluates a mathematical expression
@@ -22,31 +21,37 @@ function evaluateExpression(expr: string): number {
     // Use Function constructor for safe evaluation (better than eval)
     try {
         const result = new Function(`'use strict'; return (${expr})`)();
-        if (typeof result !== 'number' || !isFinite(result)) {
+        if (typeof result !== 'number' || !Number.isFinite(result)) {
             throw new Error('Result is not a valid number');
         }
         return result;
     } catch (error) {
-        throw new Error(`Failed to evaluate expression: ${error instanceof Error ? error.message : 'Unknown error'}`, { cause: error });
+        throw new Error(`Failed to evaluate expression: ${error instanceof Error ? error.message : 'Unknown error'}`, {
+            cause: error,
+        });
     }
 }
 
 export async function calculate(
     payload: ToolExecutionPayload<CalculatorParams>,
-    _context: ToolExecutionContext
+    _context: ToolExecutionContext,
 ): Promise<ToolResultContent> {
     try {
-        const { expression } = payload.tool_use.tool_input!;
+        const input = payload.tool_use.tool_input;
+        if (!input) {
+            throw new Error('Missing calculator input');
+        }
+        const { expression } = input;
         const result = evaluateExpression(expression);
 
         return {
             is_error: false,
-            content: `Result: ${expression} = ${result}`
+            content: `Result: ${expression} = ${result}`,
         } satisfies ToolResultContent;
     } catch (error) {
         return {
             is_error: true,
-            content: `Calculation error: ${error instanceof Error ? error.message : 'Unknown error'}`
+            content: `Calculation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
         } satisfies ToolResultContent;
     }
 }

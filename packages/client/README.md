@@ -41,8 +41,37 @@ const client = new VertesiaClient({
 
   // Optional session tags
   sessionTags: ["tag1", "tag2"],
+
+  // Optional default per-request HTTP timeout in milliseconds. Applies to every request
+  // made by the client (studio API + content store). Omit for no timeout; pass `false`
+  // or `0` to explicitly disable it. See "Request Timeouts" below.
+  timeout: 60_000,
 });
 ```
+
+### Request Timeouts
+
+By default the client applies no HTTP request timeout. Set a default for every request via the
+`timeout` constructor option (or `client.withTimeout(ms)` at runtime); it propagates to both the
+studio API and the content store, and to all of their sub-topics. The timeout is implemented with
+a browser-standard `AbortSignal`, so it behaves the same in the browser and in Node:
+
+```typescript
+// A 60s default for every request on this client.
+const client = new VertesiaClient({ apikey: "sk-***", timeout: 60_000 });
+
+// Change (or disable) it later.
+client.withTimeout(30_000);
+client.withTimeout(false); // no timeout
+```
+
+**Interaction execution is exempt from a short default.** A synchronous (non-streaming) interaction
+execution blocks on the server until the model finishes — and the LLM (e.g. image generation) can
+legitimately take minutes — so `client.interactions.execute(...)` / `executeByName(...)` use their
+own long per-request timeout (30 minutes by default, overridable via the
+`VERTESIA_INTERACTION_TIMEOUT_MS` env var), which overrides any shorter client default. Streaming
+executions return immediately and stream over a separate channel, so they are never given a
+total-request timeout.
 
 ### Available APIs
 

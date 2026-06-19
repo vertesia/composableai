@@ -1,6 +1,11 @@
 export interface UserInputSignal {
     message: string;
-    metadata?: Record<string, any>;
+    /**
+     * Client-generated id used to correlate a UserInput signal with the
+     * persisted QUESTION message emitted by the workflow.
+     */
+    client_message_id?: string;
+    metadata?: Record<string, unknown>;
     auth_token?: string;
     /**
      * Attachments to be processed as store objects.
@@ -8,6 +13,17 @@ export interface UserInputSignal {
      * before the conversation continues.
      */
     attachments?: Attachment[];
+}
+
+export interface StopSignal {
+    message?: string;
+    /**
+     * Client-generated id used to correlate a Stop signal with the persisted
+     * IDLE marker emitted by the workflow.
+     */
+    client_message_id?: string;
+    metadata?: Record<string, unknown>;
+    auth_token?: string;
 }
 
 /**

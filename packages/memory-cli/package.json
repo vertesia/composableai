@@ -1,49 +1,47 @@
 {
-  "name": "@vertesia/memory-cli",
-  "description": "Vertesia memory builder CLI",
-  "version": "1.3.0",
-  "type": "module",
-  "bin": {
-    "memo": "./bin/memo.js"
-  },
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
-  "files": [
-    "lib",
-    "bin"
-  ],
-  "license": "Apache-2.0",
-  "homepage": "https://docs.vertesiahq.com",
-  "keywords": [
-    "vertesia",
-    "memory",
-    "cli",
-    "llm",
-    "ai",
-    "context",
-    "typescript"
-  ],
-  "scripts": {
-    "lint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
-    "build": "tsc --build",
-    "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build"
-  },
-  "dependencies": {
-    "@vertesia/memory": "workspace:*",
-    "@vertesia/memory-commands": "workspace:*",
-    "commander": "^14.0.2"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^24.1.0",
-    "eslint": "^10.0.2",
-    "typescript": "^6.0.2",
-    "typescript-eslint": "^8.58.1",
-    "vitest": "^4.0.16"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/vertesia/composableai.git",
-    "directory": "packages/memory-cli"
-  }
+    "name": "@vertesia/memory-cli",
+    "description": "Vertesia memory builder CLI",
+    "version": "1.3.0",
+    "type": "module",
+    "bin": {
+        "memo": "./bin/memo.js"
+    },
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
+    "files": [
+        "lib",
+        "bin"
+    ],
+    "license": "Apache-2.0",
+    "homepage": "https://docs.vertesiahq.com",
+    "keywords": [
+        "vertesia",
+        "memory",
+        "cli",
+        "llm",
+        "ai",
+        "context",
+        "typescript"
+    ],
+    "scripts": {
+        "lint": "biome lint src",
+        "build": "tsc --build",
+        "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build"
+    },
+    "dependencies": {
+        "@vertesia/memory": "workspace:*",
+        "@vertesia/memory-commands": "workspace:*",
+        "commander": "^15.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^24.13.2",
+        "@vertesia/tsconfig": "workspace:*",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.8"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/memory-cli"
+    }
 }

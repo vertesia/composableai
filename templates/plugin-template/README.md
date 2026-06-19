@@ -52,8 +52,8 @@ The template generates this file from the project name, which must match the `na
 ## Quick Start
 
 ```bash
-pnpm install
-pnpm dev          # Vite dev server with API middleware
+{{PM}} install
+{{PM_RUN}} dev          # Vite dev server with API middleware
 ```
 
 Open <https://localhost:5173> -- the UI loads with HMR, and the tool server API is available at `/api` on the same port.
@@ -62,14 +62,14 @@ Open <https://localhost:5173> -- the UI loads with HMR, and the tool server API 
 
 | Script              | Runs                           | Description                                                 |
 | ------------------- | ------------------------------ | ----------------------------------------------------------- |
-| `pnpm dev`          | `vite dev --mode app`          | Dev server (HTTPS) with UI HMR + tool server API middleware |
-| `pnpm build`        | `build:server && build:ui`     | Full production build (lint runs as prebuild)               |
-| `pnpm build:server` | `rollup -c`                    | Compile tool server to `lib/`                               |
-| `pnpm build:ui`     | `build:ui:app && build:ui:lib` | Build both UI targets                                       |
-| `pnpm build:ui:app` | `vite build --mode app`        | Standalone app to `dist/app/`                               |
-| `pnpm build:ui:lib` | `vite build --mode lib`        | Plugin library to `dist/lib/plugin.js`                      |
-| `pnpm start`        | `build:server && vite preview` | Preview production build locally                            |
-| `pnpm start:vercel` | `vercel dev`                   | Test Vercel deployment locally                              |
+| `{{PM_RUN}} dev`          | `vite dev --mode app`          | Dev server (HTTPS) with UI HMR + tool server API middleware |
+| `{{PM_RUN}} build`        | `rollup -c && vite build (app + lib)` | Full production build (lint runs as prebuild)        |
+| `{{PM_RUN}} build:server` | `rollup -c`                    | Compile tool server to `lib/`                               |
+| `{{PM_RUN}} build:ui`     | `vite build (app + lib)`       | Build both UI targets                                       |
+| `{{PM_RUN}} build:ui:app` | `vite build --mode app`        | Standalone app to `dist/app/`                               |
+| `{{PM_RUN}} build:ui:lib` | `vite build --mode lib`        | Plugin library to `dist/lib/plugin.js`                      |
+| `{{PM_RUN}} start`        | `rollup -c && vite preview`    | Preview production build locally                            |
+| `{{PM_RUN}} start:vercel` | `vercel dev`                   | Test Vercel deployment locally                              |
 
 ## Project Structure
 
@@ -96,20 +96,18 @@ plugin-template/
 │       └── index.css              # Tailwind CSS 4 entry
 ├── api/
 │   └── index.js                   # Vercel serverless adapter
-├── vite.config.ts                 # UI + dev server config
-├── vite-api-server.ts             # Vite plugin: mounts Hono as middleware
-├── rollup.config.js               # Tool server build config
+├── vite.config.ts                 # UI + dev server config (uses apiServerPlugin from @vertesia/build-tools/vite)
 ├── vercel.json                    # Vercel deployment config
 └── package.json
 ```
 
 ## Architecture
 
-### Dev Mode (`pnpm dev`)
+### Dev Mode (`{{PM_RUN}} dev`)
 
-A single Vite dev server runs at `https://localhost:5173`. The `vite-api-server.ts` plugin mounts the Hono tool server as Connect middleware, so the API is served at `/api` on the same port. Tool server source is loaded via Vite's `ssrLoadModule` with hot reload. Import hooks (`?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates`) are handled by `vertesiaImportPlugin`. HTTPS is required for Firebase authentication.
+A single Vite dev server runs at `https://localhost:5173`. The `apiServerPlugin` from `@vertesia/build-tools/vite` mounts the Hono tool server as Connect middleware, so the API is served at `/api` on the same port. Tool server source is loaded via Vite's `ssrLoadModule` with hot reload. Import hooks (`?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates`) are handled by `vertesiaDevServerPlugin` (also from `@vertesia/build-tools/vite`, included automatically by `apiServerPlugin`). HTTPS is required for Firebase authentication.
 
-### Preview Mode (`pnpm start`)
+### Preview Mode (`{{PM_RUN}} start`)
 
 Builds the tool server first, then runs `vite preview` which loads the compiled server from `lib/` as middleware alongside the built UI. Useful for validating production output locally.
 
@@ -390,6 +388,18 @@ Key files:
 
 The Vertesia Composite App can show sub-items for your plugin in its sidebar. Configure these in `src/tool-server/ui-nav-items.ts` — it maps existing UI routes (from `routes.tsx`) as navigation entries. This file lives in `tool-server/` because the platform discovers UI navigation through the tool server's config endpoint, not from the UI bundle itself.
 
+## Accessibility
+
+The scaffolded plugin targets a **WCAG 2.1 AA baseline** out of the box. The `biome.json.template` inherits the `a11y` rule group (`useButtonType`, `useAltText`, `useSemanticElements`, `useHtmlLang`, etc.) at `error` so violations break `{{PM_RUN}} build` before they ship. A few conventions to keep:
+
+- **Prefer `<Button>` over raw `<button>`.** `Button` from `@vertesia/ui/core` provides consistent focus rings, deprecation-safe ARIA forwarding, and disabled state. Use raw `<button type="button">` only inside primitives that spread hook props onto the DOM (e.g. a downshift-style toggle); add a one-line comment explaining why.
+- **Icon-only buttons require an accessible name.** Pass `aria-label`. Example: `<Button aria-label="Refresh" onClick={…}><RefreshIcon /></Button>`. The included `InlineFilterButton` follows this pattern. Avoid the deprecated `alt` prop — it is forwarded to `aria-label` for one release with a console warning.
+- **Sortable table headers use `<SortableTableHeaderCell>`** from `@vertesia/ui/core`. It renders a real `<button>` inside the `<th>`, sets `aria-sort`, and is keyboard-operable automatically. The bundled `SortableHead` example wraps this primitive.
+- **Form controls go through `<FormItem>`.** Use the `helpText` prop for persistent helper text and the `error` prop for validation messages — both auto-wire `aria-describedby` and `aria-invalid` on a single element child. The `description` prop is hover-only (renders as a tooltip on an Info icon) and is *not* an accessible substitute for `helpText`.
+- **Headers and labels matter for screen readers.** Set the page title in `index.html`, keep `lang="en"` (or your locale) on `<html>`, and make sure every input has a `<label htmlFor>` (or use `FormItem`).
+
+If you need to introduce a pattern the rules flag (a `role="separator"` resize handle, a `<div role="button">` wrapper around a render-prop child, etc.), use a `// biome-ignore lint/a11y/<rule>: <reason>` comment on the line immediately before the JSX element, with a real justification — not a blanket suppression.
+
 ## API Reference
 
 ### `GET /api`
@@ -486,7 +496,7 @@ To test your local tool server with Vertesia agents (e.g. debug tool execution, 
 
 ```bash
 # 1. Start the dev server
-pnpm dev
+{{PM_RUN}} dev
 
 # 2. In a separate terminal, create a tunnel
 npx cloudflared tunnel --url https://localhost:5173 --no-tls-verify
@@ -513,9 +523,9 @@ This lets you set breakpoints, add logging, and iterate on tools/skills while ru
 
 **Import hooks are Rollup-only**: `?skill`, `?skills`, `?prompt`, `?raw`, `?template`, `?templates` only work in tool server code (compiled by Rollup). They are not available in UI code (compiled by Vite).
 
-**HTTPS required for dev**: `pnpm dev` uses HTTPS via `@vitejs/plugin-basic-ssl`. Use `-k` flag with curl to skip certificate verification.
+**HTTPS required for dev**: `{{PM_RUN}} dev` uses HTTPS via `@vitejs/plugin-basic-ssl`. Use `-k` flag with curl to skip certificate verification.
 
-**TypeScript verification**: Run `pnpm exec tsc --noEmit` to check for compilation errors without building.
+**TypeScript verification**: Run `npx tsc --noEmit` to check for compilation errors without building.
 
 ## License
 

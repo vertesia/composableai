@@ -1,4 +1,4 @@
-import type { AuthTokenPayload } from './apikey.js';
+import type { AuthTokenPayload, PrincipalType } from './apikey.js';
 import type { ProjectRef } from './project.js';
 
 export type OAuthClientType = 'public' | 'confidential';
@@ -6,12 +6,25 @@ export type OAuthClientStatus = 'active' | 'disabled';
 export type OAuthRegistrationSource = 'admin' | 'dynamic';
 export type OAuthProjectBindingMode = 'user_select' | 'fixed';
 export type OAuthTokenEndpointAuthMethod = 'none' | 'client_secret_post' | 'client_secret_basic';
-export type OAuthGrantType = 'authorization_code' | 'refresh_token';
+export type OAuthGrantType = 'authorization_code' | 'refresh_token' | 'urn:ietf:params:oauth:grant-type:device_code';
 export type OAuthResponseType = 'code';
 export type OAuthAuthorizationRequestStatus = 'pending' | 'denied' | 'consumed';
 export type OAuthClientRegistrationMode = 'registered' | 'client_id_metadata_document';
+/**
+ * How Vertesia identified itself to a *remote* authorization server when connecting
+ * out as an OAuth client. Distinct from {@link OAuthClientRegistrationMode}, which
+ * describes how inbound clients identified themselves to Vertesia's own AS.
+ */
+export type RemoteOAuthRegistrationMode = 'dynamic_client_registration' | 'client_id_metadata_document';
 export type OAuthGrantStatus = 'active' | 'revoked' | 'expired';
-export type OAuthGrantSortField = 'granted_at' | 'client_name' | 'user_name' | 'resource' | 'last_used_at' | 'expires_at' | 'status';
+export type OAuthGrantSortField =
+    | 'granted_at'
+    | 'client_name'
+    | 'user_name'
+    | 'resource'
+    | 'last_used_at'
+    | 'expires_at'
+    | 'status';
 export type OAuthGrantSortOrder = 'asc' | 'desc';
 
 export interface OAuthClientData {
@@ -22,6 +35,7 @@ export interface OAuthClientData {
     response_types: OAuthResponseType[];
     token_endpoint_auth_method: OAuthTokenEndpointAuthMethod;
     allowed_scopes: string[];
+    default_scopes?: string[];
     registration_source: OAuthRegistrationSource;
     status: OAuthClientStatus;
     project_binding_mode: OAuthProjectBindingMode;
@@ -39,6 +53,10 @@ export interface OAuthClient extends OAuthClientData {
 
 export interface OAuthClientCreateResponse extends OAuthClient {
     client_secret?: string;
+}
+
+export interface OAuthClientScopeMetadata {
+    supported_scopes: string[];
 }
 
 export interface OAuthGrant {
@@ -98,6 +116,7 @@ export interface CreateOAuthClientPayload {
     response_types?: OAuthResponseType[];
     token_endpoint_auth_method?: OAuthTokenEndpointAuthMethod;
     allowed_scopes?: string[];
+    default_scopes?: string[];
     project_binding_mode?: OAuthProjectBindingMode;
     fixed_project_id?: string;
     client_secret?: string;
@@ -111,6 +130,7 @@ export interface UpdateOAuthClientPayload {
     response_types?: OAuthResponseType[];
     token_endpoint_auth_method?: OAuthTokenEndpointAuthMethod;
     allowed_scopes?: string[];
+    default_scopes?: string[];
     status?: OAuthClientStatus;
     project_binding_mode?: OAuthProjectBindingMode;
     fixed_project_id?: string;
@@ -131,6 +151,7 @@ export interface OAuthAuthorizationServerMetadata {
     token_endpoint_auth_methods_supported: string[];
     scopes_supported: string[];
     client_id_metadata_document_supported?: boolean;
+    device_authorization_endpoint?: string;
 }
 
 export interface OAuthClientMetadataDocument {
@@ -178,6 +199,7 @@ export interface OAuthAuthorizationRequest {
     redirect_origin: string;
     resource?: string;
     requested_scopes: string[];
+    optional_scopes?: string[];
     requested_project_id?: string;
     project_binding_mode: OAuthProjectBindingMode;
     fixed_project_id?: string;
@@ -188,10 +210,34 @@ export interface OAuthAuthorizationRequest {
 
 export interface ApproveOAuthAuthorizationRequestPayload {
     project_id?: string;
+    granted_scopes: string[];
+}
+
+export interface OAuthGrantableScopesResponse {
+    project_id: string;
+    requested_permission_scopes: string[];
+    grantable_permission_scopes: string[];
+    unavailable_permission_scopes: string[];
 }
 
 export interface OAuthAuthorizationDecisionResponse {
     redirect_url: string;
+}
+
+export interface OAuthDeviceAuthorizationRequest {
+    client_id: string;
+    resource?: string;
+    scope?: string;
+    project_id?: string;
+}
+
+export interface OAuthDeviceAuthorizationResponse {
+    device_code: string;
+    user_code: string;
+    verification_uri: string;
+    verification_uri_complete: string;
+    expires_in: number;
+    interval: number;
 }
 
 export interface OAuthTokenRequestAuthorizationCode {
@@ -209,10 +255,21 @@ export interface OAuthTokenRequestRefreshToken {
     refresh_token: string;
     client_id: string;
     resource?: string;
+    project_id?: string;
     client_secret?: string;
 }
 
-export type OAuthTokenRequest = OAuthTokenRequestAuthorizationCode | OAuthTokenRequestRefreshToken;
+export interface OAuthTokenRequestDeviceCode {
+    grant_type: 'urn:ietf:params:oauth:grant-type:device_code';
+    device_code: string;
+    client_id: string;
+    client_secret?: string;
+}
+
+export type OAuthTokenRequest =
+    | OAuthTokenRequestAuthorizationCode
+    | OAuthTokenRequestRefreshToken
+    | OAuthTokenRequestDeviceCode;
 
 export interface OAuthTokenResponse {
     access_token: string;
@@ -248,7 +305,7 @@ export interface OAuthConsentRecord {
 }
 
 export interface OAuthAccessTokenPayload extends Omit<AuthTokenPayload, 'type' | 'project'> {
-    type: 'oauth_access';
+    type: PrincipalType.OAuthAccess;
     client_id: string;
     scope: string;
     user_id: string;
@@ -260,13 +317,13 @@ export interface OAuthAccessTokenPayload extends Omit<AuthTokenPayload, 'type' |
 export interface OAuthIdTokenPayload {
     sub: string;
     user_id: string;
-    name: string;
+    name?: string;
     email?: string;
     picture?: string;
     type: 'oauth_id';
     client_id: string;
-    account: AuthTokenPayload['account'];
-    accounts: AuthTokenPayload['accounts'];
+    account?: AuthTokenPayload['account'];
+    accounts?: AuthTokenPayload['accounts'];
     project?: ProjectRef;
     /** User groups */
     groups?: AuthTokenPayload['groups'];

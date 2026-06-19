@@ -1,6 +1,6 @@
-import { InCodeTypeSpec } from "@vertesia/common";
-import { CollectionProperties, ICollection } from "./types.js";
-import { kebabCaseToTitle } from "./utils.js";
+import type { InCodeTypeSpec } from '@vertesia/common';
+import type { CollectionProperties, ICollection } from './types.js';
+import { kebabCaseToTitle } from './utils.js';
 
 export interface ContentTypesCollectionProps extends CollectionProperties {
     types: InCodeTypeSpec[];
@@ -11,9 +11,7 @@ export class ContentTypesCollection implements ICollection<InCodeTypeSpec> {
     title?: string;
     icon?: string;
     description?: string;
-    constructor({
-        name, title, icon, description, types
-    }: ContentTypesCollectionProps) {
+    constructor({ name, title, icon, description, types }: ContentTypesCollectionProps) {
         this.name = name;
         this.title = title || kebabCaseToTitle(name);
         this.icon = icon;
@@ -36,7 +34,7 @@ export class ContentTypesCollection implements ICollection<InCodeTypeSpec> {
                 } else {
                     return { done: true, value: undefined };
                 }
-            }
+            },
         };
     }
 
@@ -45,7 +43,6 @@ export class ContentTypesCollection implements ICollection<InCodeTypeSpec> {
     }
 
     getTypeByName(name: string): InCodeTypeSpec | undefined {
-        return this.types.find(type => type.name === name);
+        return this.types.find((type) => type.name === name);
     }
-
 }

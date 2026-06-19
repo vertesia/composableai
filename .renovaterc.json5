@@ -33,7 +33,46 @@
   ],
   "prConcurrentLimit": 40,
   "labels": ["dependencies"],
+  // Security advisories bypass the release-age cooldown defined below so CVE fixes can
+  // land immediately. See https://docs.renovatebot.com/configuration-options/#vulnerabilityalerts
+  "vulnerabilityAlerts": {
+    "minimumReleaseAge": "0 days"
+  },
   "packageRules": [
+    // 7-day cooldown on all updates to mitigate supply-chain attacks: compromised
+    // package releases (e.g. xz-utils, eslint-config-prettier) are typically detected and
+    // yanked within days, so waiting before adopting any new version blocks the bulk of
+    // these incidents. Also gives the ecosystem time to surface regressions. Applies to
+    // patch, minor, and major; security fixes bypass via the `vulnerabilityAlerts` block
+    // above.
+    {
+      "matchPackageNames": [
+        "*"
+      ],
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      // Mark npm patch/minor updates eligible for scoped bot automerge
+      // (the renovate-automerge.yaml workflow merges them once CI passes).
+      // node/npm/pnpm are excluded so runtime/package-manager bumps stay manual.
+      // @biomejs is excluded because it is a native binary that ships per-arch:
+      // CI runs on amd64 but developers are typically on arm64 (Apple Silicon),
+      // so biome bumps need a manual look before merging.
+      // addLabels is additive, so the later grouping rules below keep this label.
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "addLabels": ["renovate-automerge"],
+      "matchPackageNames": ["!npm", "!pnpm", "!node", "!@biomejs/**"]
+    },
+    {
+      // Mark gh-actions patch/minor/digest updates eligible for scoped bot
+      // automerge. Major action updates are intentionally left unlabeled so they
+      // require a manual merge — Renovate's default separateMajorMinor already
+      // splits majors into their own PR.
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["patch", "minor", "digest"],
+      "addLabels": ["renovate-automerge"]
+    },
     // Catch-all npm dependencies, later groups take precedence
     {
       "groupName": "node dependencies",
@@ -42,6 +81,23 @@
       ],
       "matchPackageNames": [
         "*"
+      ],
+      "rangeStrategy": "bump",
+      "schedule": "* * * * 3" // Wednesday
+    },
+    // Biome is its own group and intentionally not labeled for automerge: it is a
+    // native binary (per-arch builds) that works on CI (amd64) but not on a typical
+    // developer laptop (arm64 / Apple Silicon), so bumps need manual review.
+    {
+      "groupName": "biome",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
+      "matchPackageNames": [
+        "@biomejs/**"
       ],
       "rangeStrategy": "bump",
       "schedule": "* * * * 3" // Wednesday
@@ -68,6 +124,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         // cloud provider
         "@aws-sdk/**",
@@ -80,7 +139,8 @@
         "mongoose",
         // web
         "@koa-stack/**",
-        "koa"
+        "koa",
+        "@types/koa"
       ],
       "rangeStrategy": "bump",
       "schedule": "* * * * 4" // Thursday
@@ -89,6 +149,9 @@
       "groupName": "codemirror dependencies",
       "matchManagers": [
         "npm"
+      ],
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "@codemirror/**",
@@ -101,6 +164,9 @@
       "groupName": "eslint dependencies",
       "matchManagers": [
         "npm"
+      ],
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "@eslint/**",
@@ -115,6 +181,9 @@
       "groupName": "UI Component dependencies",
       "matchManagers": [
         "npm"
+      ],
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "chart.js",
@@ -148,6 +217,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         "@next/**",
         "next**",
@@ -166,6 +238,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         "@google-cloud/**",
         "@googleapis/**",
@@ -183,6 +258,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         "@tsconfig/**"
       ],
@@ -190,9 +268,41 @@
       "schedule": "* * * * 5" // Friday
     },
     {
+      "description": "Keep Node.js-related updates on v24 until the runtime is upgraded deliberately.",
+      "matchManagers": [
+        "npm",
+        "nvm",
+        "nodenv"
+      ],
+      "matchPackageNames": [
+        "node",
+        "@types/node"
+      ],
+      "allowedVersions": "<25",
+      "rangeStrategy": "bump"
+    },
+        {
+      // The undici Agent is passed as a dispatcher to Node's built-in global
+      // fetch (see core/src/http-agent.ts). undici v8 renamed the dispatch
+      // handler interface (onRequestStart), so a v8 Agent is rejected by the
+      // v7 fetch bundled in Node 24 ("invalid onRequestStart method"). Keep
+      // undici aligned with Node's bundled major until the runtime ships v8.
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "undici"
+      ],
+      "allowedVersions": "<8",
+      "rangeStrategy": "bump"
+    },
+    {
       "groupName": "package manager dependencies",
       "matchManagers": [
         "npm"
+      ],
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "npm",
@@ -205,13 +315,16 @@
     {
       "groupName": "Package Overrides",
       "matchManagers": [
-        "npm"
+        "npm",
+        "pnpm"
       ],
       "matchDepTypes": [
         "overrides"
       ],
       "rangeStrategy": "bump",
-      "schedule": "* * * * 4" // Thursday
+      "schedule": "* * * * 4", // Thursday
+      "prCreation": "approval", // Branches still created automatically. This is to hide the group, do not merge.
+      "automerge": false
     },
     // Disable automatic updates for node engines
     {
@@ -219,7 +332,7 @@
         "node"
       ],
       "matchDatasources": [
-        "node"
+        "node-version"
       ],
       "matchDepTypes": [
         "engines"

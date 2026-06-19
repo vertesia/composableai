@@ -1,9 +1,9 @@
 import type { OAuthProviderAuthStatus } from '@vertesia/common';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { CheckCircle2, ExternalLink } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Spinner } from '../../core/index.js';
-import { useUITranslation } from '../../i18n/index.js';
 import { useOAuthPopup } from './useOAuthPopup.js';
 
 interface OAuthProviderConnectButtonProps {
@@ -36,13 +36,13 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
     }, [client, oauthProviderId]);
 
     useEffect(() => {
-        loadStatus();
+        void loadStatus();
     }, [loadStatus]);
 
     const { openOAuthPopup } = useOAuthPopup({
         onComplete: () => {
             setAuthenticating(false);
-            loadStatus();
+            void loadStatus();
             onAuthChange?.();
         },
         onError: (error) => {
@@ -90,12 +90,7 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
                     <CheckCircle2 className="size-4" />
                     <span>{t('oauthProvider.connected')}</span>
                 </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDisconnect}
-                    disabled={disconnecting}
-                >
+                <Button variant="outline" size="sm" onClick={handleDisconnect} disabled={disconnecting}>
                     {disconnecting ? <Spinner className="size-3" /> : t('oauthProvider.disconnect')}
                 </Button>
             </div>
@@ -103,12 +98,7 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
     }
 
     return (
-        <Button
-            variant="outline"
-            size="sm"
-            onClick={handleConnect}
-            disabled={authenticating}
-        >
+        <Button variant="outline" size="sm" onClick={handleConnect} disabled={authenticating}>
             {authenticating ? (
                 <>
                     <Spinner className="size-4" />
@@ -116,7 +106,7 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
                 </>
             ) : (
                 <>
-                    <ExternalLink className="size-4 mr-1" />
+                    <ExternalLink className="size-4 me-1" />
                     <span>{t('oauthProvider.authenticate')}</span>
                 </>
             )}

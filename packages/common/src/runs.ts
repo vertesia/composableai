@@ -1,21 +1,20 @@
-import { FacetResult } from './facets.js';
-import { NamedInteractionExecutionPayload } from './interaction.js';
+import type { FacetResult } from './facets.js';
+import type { NamedInteractionExecutionPayload } from './interaction.js';
 
 /**
  * The run ref is used to identify a run document in the storage
  */
 export interface ExecutionRunDocRef {
-    id: string,
-    account: string,
-    project: string,
+    id: string;
+    account: string;
+    project: string;
 }
 
 /**
  * Interaction execution payload for creating a new run
  * It uses interaction field (from NamedInteractionExecutionPayload) to pass the interaction ID to run
  */
-export interface RunCreatePayload extends NamedInteractionExecutionPayload {
-}
+export interface RunCreatePayload extends NamedInteractionExecutionPayload {}
 
 /**
  * Payload for cloning an existing ExecutionRun.
@@ -36,16 +35,16 @@ export interface RunClonePayload {
  * To be used as a value for a numeric or date filters
  */
 export interface RangeValue {
-    gt?: number | string,
-    gte?: number | string,
-    lt?: number | string,
-    lte?: number | string,
+    gt?: number | string;
+    gte?: number | string;
+    lt?: number | string;
+    lte?: number | string;
 }
 
 export interface RunSearchMetaResponse {
     count: {
-        lower_bound?: number,
-        total?: number,
-    },
-    facet: Record<string, FacetResult>
+        lower_bound?: number;
+        total?: number;
+    };
+    facet: Record<string, FacetResult>;
 }

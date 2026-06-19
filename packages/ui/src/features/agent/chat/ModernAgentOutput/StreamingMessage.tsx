@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Button, cn, useToast } from "@vertesia/ui/core";
-import { MarkdownRenderer } from "@vertesia/ui/widgets";
-import { Bot, CopyIcon } from "lucide-react";
-import dayjs from "dayjs";
-import { useUITranslation } from '../../../../i18n/index.js';
+import { Button, cn, useToast } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { MarkdownRenderer } from '@vertesia/ui/widgets';
+import dayjs from 'dayjs';
+import { Bot, CopyIcon } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // PERFORMANCE: Unicode cursor character - rendered inline with text
 // This avoids expensive DOM manipulation with TreeWalker on every update
 // Using thin pipe for softer visual appearance
-const CURSOR_CHAR = "│";
+const CURSOR_CHAR = '│';
 
 export interface StreamingMessageProps {
     text: string;
@@ -38,9 +38,18 @@ export interface StreamingMessageProps {
 }
 
 /** className overrides for StreamingMessage — subset of StreamingMessageProps containing only className props. */
-export type StreamingMessageClassNames = Partial<Pick<StreamingMessageProps,
-    'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
-    'proseClassName' | 'senderClassName' | 'iconClassName'>>;
+export type StreamingMessageClassNames = Partial<
+    Pick<
+        StreamingMessageProps,
+        | 'className'
+        | 'cardClassName'
+        | 'headerClassName'
+        | 'contentClassName'
+        | 'proseClassName'
+        | 'senderClassName'
+        | 'iconClassName'
+    >
+>;
 
 /**
  * Displays a streaming message with adaptive reveal effect.
@@ -64,7 +73,7 @@ function StreamingMessageComponent({
 }: StreamingMessageProps) {
     const { t } = useUITranslation();
     const [displayedLength, setDisplayedLength] = useState(0);
-    const [throttledText, setThrottledText] = useState("");
+    const [throttledText, setThrottledText] = useState('');
     const animationRef = useRef<number | null>(null);
     const targetLengthRef = useRef(text.length);
     const displayedLengthRef = useRef(0);
@@ -148,15 +157,12 @@ function StreamingMessageComponent({
 
             // Calculate chars to reveal with fractional accumulation for sub-char precision
             // This allows smoother reveal even at low rates
-            const charsFloat = (targetRate * elapsed / 1000) + fractionalCharsRef.current;
+            const charsFloat = (targetRate * elapsed) / 1000 + fractionalCharsRef.current;
             const charsToAdd = Math.floor(charsFloat);
             fractionalCharsRef.current = charsFloat - charsToAdd;
 
             if (charsToAdd > 0) {
-                displayedLengthRef.current = Math.min(
-                    displayedLengthRef.current + charsToAdd,
-                    targetLengthRef.current
-                );
+                displayedLengthRef.current = Math.min(displayedLengthRef.current + charsToAdd, targetLengthRef.current);
                 setDisplayedLength(displayedLengthRef.current);
             }
 
@@ -239,10 +245,7 @@ function StreamingMessageComponent({
     }, [isStreaming]);
 
     const toast = useToast();
-    const formattedTime = useMemo(() =>
-        dayjs(startTime.current).format("HH:mm:ss"),
-        []
-    );
+    const formattedTime = useMemo(() => dayjs(startTime.current).format('HH:mm:ss'), []);
 
     const isTyping = displayedLength < text.length;
 
@@ -258,7 +261,7 @@ function StreamingMessageComponent({
     const copyToClipboard = () => {
         navigator.clipboard.writeText(text).then(() => {
             toast({
-                status: "success",
+                status: 'success',
                 title: t('agent.copiedToClipboard'),
                 duration: 2000,
             });
@@ -266,24 +269,27 @@ function StreamingMessageComponent({
     };
 
     return (
-        <div className={cn("w-full max-w-full", className)}>
+        <div className={cn('w-full max-w-full', className)}>
             {/* Card wrapper matching MessageItem structure */}
             <div
-                className={cn("border-l-4 bg-white dark:bg-gray-900 mb-4 border-l-purple-500 w-full max-w-full overflow-hidden", cardClassName)}
+                className={cn(
+                    'border-s-4 bg-white dark:bg-gray-900 mb-4 border-s-purple-500 w-full max-w-full overflow-hidden',
+                    cardClassName,
+                )}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
-                <div className={cn("flex items-center justify-between px-4 py-1.5", headerClassName)}>
+                <div className={cn('flex items-center justify-between px-4 py-1.5', headerClassName)}>
                     <div className="flex items-center gap-1.5">
-                        <div className={cn("animate-fadeIn", iconClassName)}>
+                        <div className={cn('animate-fadeIn', iconClassName)}>
                             {isTyping ? (
                                 <span className="size-2 rounded-full bg-blue-500 animate-pulse inline-block" />
                             ) : (
                                 <Bot className="size-4 text-purple-600 dark:text-purple-400" />
                             )}
                         </div>
-                        <span className={cn("text-xs font-medium text-muted", senderClassName)}>Agent</span>
-                        {workstreamId && workstreamId !== "main" && (
+                        <span className={cn('text-xs font-medium text-muted', senderClassName)}>Agent</span>
+                        {workstreamId && workstreamId !== 'main' && (
                             <span className="text-xs text-muted">• Task {workstreamId}</span>
                         )}
                     </div>
@@ -302,17 +308,15 @@ function StreamingMessageComponent({
                 </div>
 
                 {/* Content - cursor character is appended directly to text (no DOM manipulation) */}
-                <div
-                    className={cn(
-                        "px-3 pb-2 streaming-content",
-                        isTyping && "streaming-active",
-                        contentClassName
-                    )}
-                >
-                    <div className={cn("vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words", proseClassName)} style={{ overflowWrap: 'anywhere' }}>
-                        <MarkdownRenderer artifactRunId={artifactRunId}>
-                            {displayTextWithCursor}
-                        </MarkdownRenderer>
+                <div className={cn('px-3 pb-2 streaming-content', isTyping && 'streaming-active', contentClassName)}>
+                    <div
+                        className={cn(
+                            'vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words',
+                            proseClassName,
+                        )}
+                        style={{ overflowWrap: 'anywhere' }}
+                    >
+                        <MarkdownRenderer artifactRunId={artifactRunId}>{displayTextWithCursor}</MarkdownRenderer>
                     </div>
                     <style>{`
                         /* Ensure inline elements flow properly */

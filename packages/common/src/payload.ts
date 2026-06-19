@@ -1,5 +1,5 @@
-import { FacetSpec } from "./facets.js";
-import {
+import type { FacetSpec } from './facets.js';
+import type {
     ComplexCollectionSearchQuery,
     ComplexSearchQuery,
     InteractionSearchQuery,
@@ -7,9 +7,9 @@ import {
     ObjectTypeSearchQuery,
     PromptSearchQuery,
     RunSearchQuery,
-    SimpleSearchQuery
-} from "./query.js";
-import { ColumnLayout } from "./store/store.js";
+    SimpleSearchQuery,
+} from './query.js';
+import type { ColumnLayout } from './store/store.js';
 
 export type SortOrder = 'asc' | 'desc';
 
@@ -94,5 +94,5 @@ export interface ExportPropertiesPayload {
 export interface ExportPropertiesResponse {
     type: string;
     name: string;
-    data: Blob;
+    data: string;
 }
