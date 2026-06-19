@@ -97,8 +97,22 @@ export const EXTERNALS = [
     /^pdfjs-dist\/.*/,
 ];
 
-// Put here exceptions - deps that should be inlined
-const INLINED_DEPS = [];
+// Put here exceptions - deps that should be inlined.
+// Tiptap/ProseMirror is bundled into the UI library rather than externalized: ProseMirror
+// requires a single instance of its core packages, which separately-loaded CDN bundles
+// cannot guarantee. Bundling also avoids hand-wiring the auto-generated esm.sh import map
+// and @tiptap/pm subpaths. React stays external, so no React duplication.
+// Follow-up (perf): move the editor to its own lazy-loaded @vertesia/ui sub-path so the
+// broadly-imported `widgets` bundle doesn't ship ProseMirror to pages that never edit.
+const INLINED_DEPS = [
+    '@tiptap/core',
+    '@tiptap/extension-list',
+    '@tiptap/extension-table',
+    '@tiptap/markdown',
+    '@tiptap/pm',
+    '@tiptap/react',
+    '@tiptap/starter-kit',
+];
 
 function resolve(path) {
     return new URL(path, import.meta.url).pathname;

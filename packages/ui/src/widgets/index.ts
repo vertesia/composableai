@@ -4,6 +4,7 @@ export * from './markdown/index.js';
 export * from './monacoEditor/index.js';
 export * from './Progress.js';
 export * from './properties/index.js';
+export * from './richTextEditor/index.js';
 export * from './SvgIcon.js';
 export * from './schema-editor/index.js';
 export * from './upload/index.js';
