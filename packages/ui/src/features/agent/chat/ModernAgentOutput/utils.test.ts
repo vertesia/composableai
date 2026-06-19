@@ -498,6 +498,67 @@ describe('ModernAgentOutput summary conversation items', () => {
         });
     });
 
+    it('keeps legacy analyze conversation errors inside the surrounding work block', () => {
+        const analyzeStart = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Running analyze_conversation',
+            details: {
+                activity_group_id: 'activity-10',
+                tool: 'analyze_conversation',
+                tool_run_id: 'analyze-run-1',
+                tool_status: 'running',
+            },
+        });
+        const legacyAnalyzeError = makeMessage({
+            timestamp: 1100,
+            type: AgentMessageType.ERROR,
+            message: 'Error analyzing conversation: Could not find conversation for workflow run ID: run-1',
+            details: {
+                error: 'Could not find conversation for workflow run ID: run-1',
+            },
+        });
+        const answer = makeMessage({
+            timestamp: 1200,
+            type: AgentMessageType.ANSWER,
+            message: 'Here is the analysis.',
+        });
+
+        const items = buildSummaryConversationItems([analyzeStart, legacyAnalyzeError, answer], true);
+
+        expect(items).toHaveLength(2);
+        expect(items[0]).toMatchObject({
+            type: 'work',
+            isActive: false,
+            status: 'error',
+            messages: [analyzeStart, legacyAnalyzeError],
+        });
+        expect(items[1]).toMatchObject({
+            type: 'message',
+            message: answer,
+        });
+    });
+
+    it('keeps legacy analyze conversation errors without surrounding work as primary messages', () => {
+        const legacyAnalyzeError = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.ERROR,
+            message: 'Error analyzing conversation: Could not find conversation for workflow run ID: run-1',
+            details: {
+                error: 'Could not find conversation for workflow run ID: run-1',
+            },
+        });
+
+        const items = buildSummaryConversationItems([legacyAnalyzeError], true);
+
+        expect(items).toEqual([
+            {
+                type: 'message',
+                message: legacyAnalyzeError,
+            },
+        ]);
+    });
+
     it('hides transient thinking once the work segment completes', () => {
         const tool = makeMessage({
             timestamp: 1000,
@@ -783,6 +844,37 @@ describe('ModernAgentOutput summary conversation items', () => {
         const items = buildSummaryConversationItems([thinking, idle], true);
 
         expect(items).toEqual([]);
+    });
+
+    it('creates a visible stopped item for a consumed user stop idle marker', () => {
+        const thinking = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Thinking...',
+            details: {
+                display_role: 'thinking',
+                activity_group_id: 'activity-1',
+            },
+        });
+        const idle = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.IDLE,
+            message: 'Stopped. Waiting for your command...',
+            details: {
+                ack: 'stop-1',
+                status_reason: 'user_stopped',
+            },
+        });
+
+        const items = buildSummaryConversationItems([thinking, idle], true);
+
+        expect(items).toHaveLength(1);
+        expect(items[0]).toMatchObject({
+            type: 'stopped',
+            message: idle,
+            startTimestamp: 1000,
+            endTimestamp: 2000,
+        });
     });
 
     it('closes pending work when an idle marker arrives even if parent completion lags', () => {
@@ -1180,6 +1272,37 @@ describe('ModernAgentOutput summary conversation items', () => {
         expect(summaryMessages).toEqual([answer]);
     });
 
+    it('does not duplicate completed tool preamble streams once persisted prose replaces them', () => {
+        const preamble = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.THOUGHT,
+            message: 'Got my tools ready. Querying now!',
+            details: {
+                activity_id: 'activity-1',
+                display_role: 'tool_preamble',
+                tools: ['search_documents'],
+                streamed: true,
+            },
+        });
+
+        const summaryMessages = buildSummaryDisplayMessages(
+            [preamble],
+            new Map([
+                [
+                    'activity-1',
+                    {
+                        text: 'Got my tools ready. Querying now!',
+                        startTimestamp: 2000,
+                        activityId: 'activity-1',
+                        isComplete: true,
+                    },
+                ],
+            ]),
+        );
+
+        expect(summaryMessages).toEqual([preamble]);
+    });
+
     it('keeps completed answer streams as assistant prose when a later tool message follows', () => {
         const question = makeMessage({
             timestamp: 1000,
@@ -1285,6 +1408,32 @@ describe('ModernAgentOutput utils - streamed deduplication', () => {
 
         expect(grouped).toHaveLength(1);
         expect(grouped[0].type).toBe('single');
+    });
+
+    it('does not replace a run-scoped stream with a different stream using the same activity id', () => {
+        const answer = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.ANSWER,
+            message: 'Different final text',
+            details: {
+                activity_id: 'activity-1',
+                streaming_id: 'run-b-activity-1',
+                streaming_id_scope: 'workflow_run',
+            },
+        });
+
+        expect(
+            isStreamReplacedByMessage(
+                {
+                    text: 'partial text',
+                    startTimestamp: 1000,
+                    workstreamId: 'main',
+                    activityId: 'activity-1',
+                    streamingId: 'run-a-activity-1',
+                },
+                [answer],
+            ),
+        ).toBe(false);
     });
 
     it('does not treat a tool event with the same activity id as a replacement for streamed prose', () => {

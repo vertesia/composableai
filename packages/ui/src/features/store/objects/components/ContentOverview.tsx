@@ -484,7 +484,7 @@ function DataPanel({
                                 onClick={() => {
                                     setCurrentPanel(PanelView.Pdf);
                                     if (!pdfRendition && !officePdfUrl && !officePdfConverting) {
-                                        triggerOfficePdfConversion();
+                                        void triggerOfficePdfConversion();
                                     }
                                 }}
                                 disabled={officePdfConverting}

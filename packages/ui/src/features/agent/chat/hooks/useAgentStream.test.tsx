@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { VertesiaClient } from '@vertesia/client';
+import type { AgentRunStreamMessagesOptions, VertesiaClient } from '@vertesia/client';
 import { type AgentMessage, AgentMessageType, FileProcessingStatus } from '@vertesia/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAgentStream } from './useAgentStream';
@@ -11,6 +11,7 @@ type StreamMessagesMock = ReturnType<
             onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
             since?: number,
             signal?: AbortSignal,
+            options?: AgentRunStreamMessagesOptions,
         ) => Promise<unknown>
     >
 >;
@@ -40,6 +41,109 @@ function createClient(streamMessages: StreamMessagesMock): VertesiaClient {
 describe('useAgentStream', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it('marks initial history as empty when the history fetch returns no messages', async () => {
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, _onMessage, _since, _signal, options) => {
+            options?.onHistoryLoaded?.([]);
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(result.current.initialHistoryStatus).toBe('empty');
+        });
+    });
+
+    it('marks initial history as present when the history fetch returns messages', async () => {
+        const historicalMessage = createMessage(AgentMessageType.ANSWER, 1_000, 'from history');
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, onMessage, _since, _signal, options) => {
+            options?.onHistoryLoaded?.([historicalMessage]);
+            onMessage?.(historicalMessage);
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(result.current.initialHistoryStatus).toBe('has_messages');
+            expect(result.current.messages.map((message) => message.message)).toEqual(['from history']);
+        });
+    });
+
+    it('seeds messages from loaded history even if the stream callback does not replay them', async () => {
+        const historicalMessages = [
+            createMessage(AgentMessageType.QUESTION, 1_000, 'question from history'),
+            createMessage(AgentMessageType.THOUGHT, 1_100, 'thinking from history'),
+            createMessage(AgentMessageType.ANSWER, 1_200, 'answer from history'),
+            createMessage(AgentMessageType.IDLE, 1_300, 'Waiting for your command...'),
+        ];
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, _onMessage, _since, _signal, options) => {
+            options?.onHistoryLoaded?.(historicalMessages);
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(result.current.initialHistoryStatus).toBe('has_messages');
+            expect(result.current.messages.map((message) => message.message)).toEqual([
+                'question from history',
+                'thinking from history',
+                'answer from history',
+                'Waiting for your command...',
+            ]);
+        });
+    });
+
+    it('marks initial history as errored when the history fetch fails', async () => {
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(async (_id, _onMessage, _since, _signal, options) => {
+            options?.onHistoryError?.(new Error('history failed'));
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(result.current.initialHistoryStatus).toBe('error');
+        });
     });
 
     it('reconnects the same agent run from the last delivered timestamp without clearing messages', async () => {
@@ -133,7 +237,7 @@ describe('useAgentStream', () => {
         });
     });
 
-    it('dedupes re-delivered messages by timestamp and replaces optimistic questions', async () => {
+    it('dedupes re-delivered messages by timestamp and replaces ack-matched optimistic questions', async () => {
         let onStreamMessage: ((message: AgentMessage) => void) | undefined;
         const streamMessages = vi.fn<
             (
@@ -157,7 +261,7 @@ describe('useAgentStream', () => {
         act(() => {
             result.current.addOptimisticMessage({
                 ...createMessage(AgentMessageType.QUESTION, 1_000, 'optimistic'),
-                details: { _optimistic: true, _messageId: 'message-1' },
+                details: { _optimistic: true, _messageId: 'message-1', _deliveryStatus: 'sending' },
             });
         });
 
@@ -166,12 +270,13 @@ describe('useAgentStream', () => {
         act(() => {
             onStreamMessage?.({
                 ...createMessage(AgentMessageType.QUESTION, 1_100, 'server question'),
-                details: { _messageId: 'message-1' },
+                details: { ack: 'message-1' },
             });
         });
 
         await waitFor(() => {
             expect(result.current.messages.map((message) => message.message)).toEqual(['server question']);
+            expect(result.current.messages[0]?.details?._deliveryStatus).toBe('consumed');
         });
 
         const answer = createMessage(AgentMessageType.ANSWER, 1_200, 'answer');
@@ -182,6 +287,252 @@ describe('useAgentStream', () => {
 
         await waitFor(() => {
             expect(result.current.messages.map((message) => message.message)).toEqual(['server question', 'answer']);
+        });
+    });
+
+    it('replaces an ack-matched optimistic stop marker when the workflow consumes Stop', async () => {
+        let onStreamMessage: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+            ) => Promise<unknown>
+        >(async (_id, onMessage) => {
+            onStreamMessage = onMessage;
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(onStreamMessage).toBeDefined();
+        });
+
+        act(() => {
+            result.current.addOptimisticMessage({
+                ...createMessage(AgentMessageType.IDLE, 1_000, 'Stopped. Waiting for your command...'),
+                details: {
+                    _optimistic: true,
+                    _messageId: 'stop-1',
+                    _deliveryStatus: 'received',
+                    status_reason: 'user_stopped',
+                },
+            });
+        });
+
+        act(() => {
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.IDLE, 1_100, 'Stopped. Waiting for your command...'),
+                details: { ack: 'stop-1', status_reason: 'user_stopped' },
+            });
+        });
+
+        await waitFor(() => {
+            expect(result.current.messages).toHaveLength(1);
+            expect(result.current.messages[0]?.timestamp).toBe(1_100);
+            expect(result.current.messages[0]?.details?._deliveryStatus).toBe('consumed');
+        });
+    });
+
+    it('keeps non-matching optimistic questions when an acknowledged server question arrives', async () => {
+        let onStreamMessage: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+            ) => Promise<unknown>
+        >(async (_id, onMessage) => {
+            onStreamMessage = onMessage;
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(onStreamMessage).toBeDefined();
+        });
+
+        act(() => {
+            result.current.addOptimisticMessage({
+                ...createMessage(AgentMessageType.QUESTION, 1_000, 'first optimistic'),
+                details: { _optimistic: true, _messageId: 'message-1', _deliveryStatus: 'sending' },
+            });
+            result.current.addOptimisticMessage({
+                ...createMessage(AgentMessageType.QUESTION, 1_050, 'second optimistic'),
+                details: { _optimistic: true, _messageId: 'message-2', _deliveryStatus: 'sending' },
+            });
+        });
+
+        act(() => {
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.QUESTION, 1_100, 'server second question'),
+                details: { ack: 'message-2' },
+            });
+        });
+
+        await waitFor(() => {
+            expect(result.current.messages.map((message) => message.message)).toEqual([
+                'first optimistic',
+                'server second question',
+            ]);
+        });
+        expect(result.current.messages[0]?.details?._deliveryStatus).toBe('sending');
+        expect(result.current.messages[1]?.details?._deliveryStatus).toBe('consumed');
+    });
+
+    it('updates optimistic message delivery status', async () => {
+        let onStreamMessage: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+            ) => Promise<unknown>
+        >(async (_id, onMessage) => {
+            onStreamMessage = onMessage;
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(onStreamMessage).toBeDefined();
+        });
+
+        act(() => {
+            result.current.addOptimisticMessage({
+                ...createMessage(AgentMessageType.QUESTION, 1_000, 'optimistic'),
+                details: { _optimistic: true, _messageId: 'message-1', _deliveryStatus: 'sending' },
+            });
+        });
+
+        act(() => {
+            result.current.updateOptimisticMessageStatus('message-1', 'received');
+        });
+
+        expect(result.current.messages[0]?.details?._deliveryStatus).toBe('received');
+    });
+
+    it('uses workflow-run scoped streaming ids so reused activity ids do not collide', async () => {
+        let onStreamMessage: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+            ) => Promise<unknown>
+        >(async (_id, onMessage) => {
+            onStreamMessage = onMessage;
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(onStreamMessage).toBeDefined();
+        });
+
+        act(() => {
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.STREAMING_CHUNK, 1_000, 'first'),
+                details: {
+                    streaming_id: 'run-a-activity-7',
+                    streaming_id_scope: 'workflow_run',
+                    activity_id: 'activity-7',
+                    is_final: false,
+                },
+            });
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.STREAMING_CHUNK, 1_010, 'second'),
+                details: {
+                    streaming_id: 'run-b-activity-7',
+                    streaming_id_scope: 'workflow_run',
+                    activity_id: 'activity-7',
+                    is_final: false,
+                },
+            });
+        });
+
+        await waitFor(() => {
+            expect([...result.current.streamingMessages.keys()].sort()).toEqual([
+                'run-a-activity-7',
+                'run-b-activity-7',
+            ]);
+        });
+
+        act(() => {
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.ANSWER, 1_100, 'final second'),
+                details: {
+                    streaming_id: 'run-b-activity-7',
+                    streaming_id_scope: 'workflow_run',
+                    activity_id: 'activity-7',
+                },
+            });
+        });
+
+        await waitFor(() => {
+            expect([...result.current.streamingMessages.keys()]).toEqual(['run-a-activity-7']);
+        });
+    });
+
+    it('keeps legacy activity-id cleanup for streaming chunks without scoped streaming ids', async () => {
+        let onStreamMessage: ((message: AgentMessage) => void) | undefined;
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+            ) => Promise<unknown>
+        >(async (_id, onMessage) => {
+            onStreamMessage = onMessage;
+            return null;
+        });
+        const client = createClient(streamMessages);
+
+        const { result } = renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => {
+            expect(onStreamMessage).toBeDefined();
+        });
+
+        act(() => {
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.STREAMING_CHUNK, 1_000, 'legacy'),
+                details: {
+                    streaming_id: 'main',
+                    activity_id: 'legacy-activity',
+                    is_final: false,
+                },
+            });
+        });
+
+        await waitFor(() => {
+            expect([...result.current.streamingMessages.keys()]).toEqual(['legacy-activity']);
+        });
+
+        act(() => {
+            onStreamMessage?.({
+                ...createMessage(AgentMessageType.ANSWER, 1_100, 'legacy final'),
+                details: {
+                    activity_id: 'legacy-activity',
+                },
+            });
+        });
+
+        await waitFor(() => {
+            expect(result.current.streamingMessages.size).toBe(0);
         });
     });
 

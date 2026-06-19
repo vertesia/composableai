@@ -167,6 +167,28 @@ describe('MessageInput', () => {
         expect(screen.getByText('Ready')).not.toBeNull();
     });
 
+    it('renders context usage and triggers manual compaction', () => {
+        const onCompactContext = vi.fn();
+
+        renderWithProviders(
+            <MessageInput
+                onSend={vi.fn()}
+                contextWindowUsage={{
+                    usedTokens: 50_000,
+                    checkpointTokens: 100_000,
+                    usedPercent: 50,
+                    remainingPercent: 50,
+                }}
+                onCompactContext={onCompactContext}
+                isStreaming
+            />,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /50% context used/i }));
+
+        expect(onCompactContext).toHaveBeenCalledTimes(1);
+    });
+
     it('shows active workstream names above the compact composer', () => {
         renderWithProviders(
             <MessageInput
