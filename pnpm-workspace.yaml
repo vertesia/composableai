@@ -22,7 +22,8 @@ minimumReleaseAgeStrict: true
 minimumReleaseAgeExclude:
   - "@vertesia/*"
   - "@llumiverse/*"
-  
+  # Renovate security update: undici@7.28.0
+  - undici@7.28.0
   # Additional excludes, due to CVEs etc.
   # Nothing for now
 overrides:
@@ -47,7 +48,7 @@ overrides:
 
   # Pin single vite, source is root package.json
   vite: "$vite"
-  
+
   # ============================
   # Standard CVE overrides
   # ============================
