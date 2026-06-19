@@ -1,8 +1,14 @@
+import type { Editor } from '@tiptap/core';
+import type { DocumentCommentAnchor } from '@vertesia/common';
+import { Button, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { RichTextMarkdownEditor } from '@vertesia/ui/widgets';
-import { AlertCircleIcon, CheckIcon, Loader2Icon } from 'lucide-react';
+import { AlertCircleIcon, CheckIcon, Loader2Icon, MessageSquareIcon, MessageSquarePlusIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { captureAnchor } from './comments/anchoring.js';
+import { DocumentCommentsSidebar } from './comments/DocumentCommentsSidebar.js';
+import { useDocumentComments } from './comments/useDocumentComments.js';
 
 const AUTOSAVE_DELAY_MS = 800;
 
@@ -25,8 +31,9 @@ interface ArtifactDocumentEditorProps {
 /**
  * Editable view of a run-scoped markdown artifact. Markdown is the source of truth: the
  * artifact text is loaded into {@link RichTextMarkdownEditor} and changes are autosaved
- * back to the artifact (debounced, flushed on unmount). The editor's own safe-sync
- * contract prevents an in-flight refetch from clobbering unsaved edits.
+ * back to the artifact (debounced, flushed on unmount). Users can attach comments to a
+ * text selection; comments are anchored via a text-quote selector and persisted alongside
+ * the document.
  */
 export function ArtifactDocumentEditor({
     runId,
@@ -36,6 +43,7 @@ export function ArtifactDocumentEditor({
 }: ArtifactDocumentEditorProps) {
     const { client } = useUserSession();
     const { t } = useUITranslation();
+    const toast = useToast();
     const [content, setContent] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -43,6 +51,17 @@ export function ArtifactDocumentEditor({
 
     const pendingRef = useRef<string | null>(null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Comments
+    const { comments, addComment, setCommentStatus, deleteComment, currentAuthor } = useDocumentComments(
+        runId,
+        artifactPath,
+    );
+    const editorRef = useRef<Editor | null>(null);
+    const lastSelectionRef = useRef<{ from: number; to: number } | null>(null);
+    const [hasSelection, setHasSelection] = useState(false);
+    const [showComments, setShowComments] = useState(false);
+    const [pendingAnchor, setPendingAnchor] = useState<DocumentCommentAnchor | null>(null);
 
     useEffect(() => {
         // refreshKey is only a trigger to re-fetch (e.g. after the agent edits the artifact).
@@ -116,6 +135,49 @@ export function ArtifactDocumentEditor({
         };
     }, [flush]);
 
+    const handleEditorReady = useCallback((editor: Editor) => {
+        editorRef.current = editor;
+        editor.on('selectionUpdate', () => {
+            const { from, to } = editor.state.selection;
+            const selecting = from !== to;
+            setHasSelection(selecting);
+            if (selecting) {
+                lastSelectionRef.current = { from, to };
+            }
+        });
+    }, []);
+
+    const startComment = useCallback(() => {
+        const editor = editorRef.current;
+        const selection = lastSelectionRef.current;
+        if (!editor || !selection || selection.from === selection.to) {
+            return;
+        }
+        const anchor = captureAnchor(editor.state.doc, selection.from, selection.to);
+        if (!anchor.quote.trim()) {
+            return;
+        }
+        setPendingAnchor(anchor);
+        setShowComments(true);
+    }, []);
+
+    const notifyFailure = useCallback(
+        (err: unknown) => {
+            console.error('Document comment operation failed:', err);
+            toast({ status: 'error', title: t('agent.documentSaveFailed') });
+        },
+        [toast, t],
+    );
+
+    const submitPending = useCallback(
+        (body: string) => {
+            if (!pendingAnchor) return;
+            void addComment(pendingAnchor, body).catch(notifyFailure);
+            setPendingAnchor(null);
+        },
+        [pendingAnchor, addComment, notifyFailure],
+    );
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-12">
@@ -133,10 +195,45 @@ export function ArtifactDocumentEditor({
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto">
-                <RichTextMarkdownEditor value={content} editable={editable} onChange={handleChange} />
+            <div className="flex items-center gap-1 pb-2 mb-2 border-b border-muted/20 shrink-0">
+                <Button variant="ghost" size="sm" disabled={!hasSelection || !editable} onClick={startComment}>
+                    <MessageSquarePlusIcon className="size-4 me-1" />
+                    {t('agent.addComment')}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowComments((s) => !s)}>
+                    <MessageSquareIcon className="size-4 me-1" />
+                    {t('agent.comments')}
+                    {comments.length > 0 ? ` (${comments.length})` : ''}
+                </Button>
+                <div className="ms-auto">
+                    <SaveIndicator status={saveStatus} editable={editable} />
+                </div>
             </div>
-            <SaveIndicator status={saveStatus} editable={editable} />
+
+            <div className="flex-1 flex min-h-0 gap-2">
+                <div className="flex-1 overflow-y-auto">
+                    <RichTextMarkdownEditor
+                        value={content}
+                        editable={editable}
+                        onChange={handleChange}
+                        onReady={handleEditorReady}
+                    />
+                </div>
+                {showComments && (
+                    <div className="w-64 shrink-0 border-s border-muted/20 overflow-hidden">
+                        <DocumentCommentsSidebar
+                            comments={comments}
+                            currentAuthor={currentAuthor}
+                            editable={editable}
+                            pendingAnchor={pendingAnchor}
+                            onSubmitPending={submitPending}
+                            onCancelPending={() => setPendingAnchor(null)}
+                            onSetStatus={(id, status) => void setCommentStatus(id, status).catch(notifyFailure)}
+                            onDelete={(id) => void deleteComment(id).catch(notifyFailure)}
+                        />
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -144,13 +241,13 @@ export function ArtifactDocumentEditor({
 function SaveIndicator({ status, editable }: { status: SaveStatus; editable: boolean }) {
     const { t } = useUITranslation();
     if (!editable) {
-        return <div className="shrink-0 pt-2 text-xs text-muted">{t('agent.documentReadOnlyWhileAgentWorks')}</div>;
+        return <div className="text-xs text-muted">{t('agent.documentReadOnlyWhileAgentWorks')}</div>;
     }
     if (status === 'idle') {
         return null;
     }
     return (
-        <div className="shrink-0 pt-2 text-xs flex items-center gap-1">
+        <div className="text-xs flex items-center gap-1">
             {status === 'saving' && (
                 <>
                     <Loader2Icon className="size-3 animate-spin text-muted" />
