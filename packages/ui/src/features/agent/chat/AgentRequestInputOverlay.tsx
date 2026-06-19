@@ -17,6 +17,46 @@ export interface AgentRequestInputOverlayProps {
     className?: string;
 }
 
+interface McpRequestInputControlsProps {
+    mcpConnect: McpConnectUxConfig;
+    onMcpConnected?: (cfg: McpConnectUxConfig) => void;
+    onDecline: () => void;
+    disabled: boolean;
+}
+
+function McpRequestInputControls({ mcpConnect, onMcpConnected, onDecline, disabled }: McpRequestInputControlsProps) {
+    const { client } = useUserSession();
+    const { t } = useUITranslation();
+
+    return (
+        <div className="flex shrink-0 items-center justify-end gap-2">
+            <RemoteMcpConnectionButton
+                appId={mcpConnect.app_install_id}
+                collectionId={mcpConnect.collection_id}
+                collectionName={mcpConnect.name}
+                variant="default"
+                onAuthChange={() => {
+                    // useOAuthPopup fires onComplete even on cancel/popup-close, so only
+                    // resume the agent once the connection is actually authenticated.
+                    void client.remoteMcpConnections
+                        .getCollectionStatus(mcpConnect.app_install_id, mcpConnect.collection_id)
+                        .then((status) => {
+                            if (status.authenticated) onMcpConnected?.(mcpConnect);
+                        })
+                        .catch(() => {
+                            /* status check failed — do not resume */
+                        });
+                }}
+                readOnly={disabled}
+            />
+            <Button variant="ghost" size="sm" onClick={onDecline} disabled={disabled}>
+                <XIcon className="size-4" />
+                <span>{t('mcpOAuth.decline')}</span>
+            </Button>
+        </div>
+    );
+}
+
 export function AgentRequestInputOverlay({
     message,
     onSendMessage,
@@ -25,7 +65,6 @@ export function AgentRequestInputOverlay({
     disabled = false,
     className,
 }: AgentRequestInputOverlayProps) {
-    const { client } = useUserSession();
     const { t } = useUITranslation();
 
     if (!message) return null;
@@ -51,36 +90,12 @@ export function AgentRequestInputOverlay({
             <div className={wrapperClassName} data-agent-request-input-overlay>
                 <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0 text-sm leading-6 text-foreground/85">{getAgentMessageText(message)}</div>
-                    <div className="flex shrink-0 items-center justify-end gap-2">
-                        <RemoteMcpConnectionButton
-                            appId={mcpConnect.app_install_id}
-                            collectionId={mcpConnect.collection_id}
-                            collectionName={mcpConnect.name}
-                            variant="default"
-                            onAuthChange={() => {
-                                // useOAuthPopup fires onComplete even on cancel/popup-close, so only
-                                // resume the agent once the connection is actually authenticated.
-                                void client.remoteMcpConnections
-                                    .getCollectionStatus(mcpConnect.app_install_id, mcpConnect.collection_id)
-                                    .then((status) => {
-                                        if (status.authenticated) onMcpConnected?.(mcpConnect);
-                                    })
-                                    .catch(() => {
-                                        /* status check failed — do not resume */
-                                    });
-                            }}
-                            readOnly={disabled}
-                        />
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => send(t('agent.mcpDeclinedMessage', { name: mcpConnect.name }))}
-                            disabled={isDisabled}
-                        >
-                            <XIcon className="size-4" />
-                            <span>{t('mcpOAuth.decline')}</span>
-                        </Button>
-                    </div>
+                    <McpRequestInputControls
+                        mcpConnect={mcpConnect}
+                        onMcpConnected={onMcpConnected}
+                        onDecline={() => send(t('agent.mcpDeclinedMessage', { name: mcpConnect.name }))}
+                        disabled={isDisabled}
+                    />
                 </div>
             </div>
         );
