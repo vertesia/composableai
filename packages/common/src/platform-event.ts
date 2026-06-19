@@ -1,7 +1,13 @@
 import type { AuditMeter } from './audit-trail.js';
 import type { ConversationVisibility, InteractionExecutionConfiguration } from './interaction.js';
 import type { SystemRoles } from './project.js';
-import type { JsonLogicRule, ProcessDefinitionBody, ProcessRunType, WorkflowRuleInputType } from './store/index.js';
+import type {
+    AgentRunStatus,
+    JsonLogicRule,
+    ProcessDefinitionBody,
+    ProcessRunType,
+    WorkflowRuleInputType,
+} from './store/index.js';
 
 export type EventCategory = 'content' | 'workflow' | 'security' | 'billing' | 'system' | 'external';
 
@@ -256,10 +262,63 @@ export interface ProcessEventDeliveryTarget {
     categories?: string[];
 }
 
+/**
+ * Routes a matching event to an *existing* agent run (the event bus otherwise only starts runs) by
+ * sending it a signal — the follow-up path for external work-item threads (GitHub issue comments, ...).
+ *
+ * Correlation is provider-neutral: the run started for the thread is auto-tagged with
+ * `eventThreadTag(event_ref)` and this target recomputes the same tag from its own event to find the
+ * run. No `workflow_id` is involved, so the dispatcher resolves the delivery inline (it bypasses the
+ * workflow-admission capacity gate and the Temporal reconciler).
+ */
+export interface AgentSignalEventDeliveryTarget {
+    type: 'agent_signal';
+    /**
+     * Signal sent to the run. Only `UserInput` is implemented (the payload is UserInput-shaped:
+     * message + metadata); other signal names are rejected by validation.
+     */
+    signal_name?: 'UserInput';
+    /**
+     * Interaction id/ref of the run to signal. Disambiguates when several event-started agents are
+     * active on the same external thread; when omitted, the newest signalable run on the thread is used.
+     */
+    interaction_ref?: string;
+    /** Dot-path into the PlatformEvent for the message body delivered to the run. */
+    message_path: string;
+    /** Dot-path to a stable per-message id, carried on the signal for (future) exactly-once dedupe. */
+    client_message_id_path?: string;
+    /** Run statuses eligible to receive the signal. Defaults to ['running']. */
+    statuses?: AgentRunStatus[];
+    /** If this dot-path resolves to a value, the delivery is skipped (e.g. `details.payload.issue.pull_request`). */
+    skip_if_path_exists?: string;
+    /** Dot-path to the message author (e.g. `details.payload.comment.user.login`), for the loop guard. */
+    author_path?: string;
+    /** Regex patterns matched against the resolved author; a match skips the delivery (loop guard). */
+    ignore_author_patterns?: string[];
+    /** The message must start with one of these prefixes to be delivered (e.g. ['/vertesia']). */
+    require_command_prefixes?: string[];
+    /** ...or contain one of these mentions (e.g. ['@vertesia-bot']). Combined with prefixes as OR. */
+    require_mentions?: string[];
+    /** No correlated run found yet (race between open and follow-up): 'retry' (default) or 'skip'. */
+    missing_thread?: 'retry' | 'skip';
+    /**
+     * Behaviour when only terminal runs match (the live run already ended, e.g. a late follow-up after
+     * the agent finished): `skip` (default) ends the delivery; `restart` re-activates the newest terminal
+     * run (loads its conversation history, status back to running) and then delivers the message to it.
+     */
+    on_terminal?: 'skip' | 'restart';
+    /**
+     * Extra fields merged into the signal's metadata. Values support the same `{{event.*}}` / `$event.x`
+     * templating as `target.data` (e.g. `{ comment_url: '{{event.details.payload.comment.html_url}}' }`).
+     */
+    metadata?: Record<string, unknown>;
+}
+
 export type EventDeliveryTarget =
     | WorkflowEventDeliveryTarget
     | WebhookEventDeliveryTarget
     | AgentEventDeliveryTarget
+    | AgentSignalEventDeliveryTarget
     | ProcessEventDeliveryTarget;
 
 // --- Input (write) target shapes ---
@@ -278,6 +337,7 @@ export type EventDeliveryTargetInput =
     | WorkflowEventDeliveryTargetInput
     | WebhookEventDeliveryTargetInput
     | AgentEventDeliveryTarget
+    | AgentSignalEventDeliveryTarget
     | ProcessEventDeliveryTarget;
 
 export interface MatchedEventSubscriptionSnapshot {
