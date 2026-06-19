@@ -16,8 +16,6 @@ import {
     DataTable,
     DataStoreTableDetail,
     DataStoreTableDropResult,
-    DataStoreMutateRowsPayload,
-    DataStoreMutateRowsResult,
     DataTableSummary,
     ImportDataPayload,
     ImportJob,
@@ -393,20 +391,6 @@ export class DataApi extends ApiTopic {
 
     queryBatch(id: string, queries: QueryPayload[]): Promise<BatchQueryResult> {
         return this.post(`/${id}/query/batch`, { payload: { queries }, headers: this.storeHeaders(id) });
-    }
-
-    /**
-     * Execute a single row mutation statement against the data store.
-     *
-     * Only UPDATE and DELETE statements are accepted. The mutation is versioned
-     * and rolled back automatically if the statement or subsequent persistence fails.
-     *
-     * @param id - Data store ID
-     * @param payload - Mutation SQL and commit message
-     * @returns Resulting version ID and affected table row counts
-     */
-    mutateRows(id: string, payload: DataStoreMutateRowsPayload): Promise<DataStoreMutateRowsResult> {
-        return this.post(`/${id}/mutate`, { payload, headers: this.storeHeaders(id) });
     }
 
     /**

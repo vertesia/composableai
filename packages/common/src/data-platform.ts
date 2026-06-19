@@ -79,8 +79,6 @@ export interface DataColumn {
     default?: string;
     /** Whether this is the primary key */
     primary_key?: boolean;
-    /** Whether this column should use a sequence-backed auto-increment default */
-    auto_increment?: boolean;
     /** Whether values must be unique */
     unique?: boolean;
     /** Semantic type for AI understanding */
@@ -512,32 +510,6 @@ export interface QueryPayload {
 }
 
 /**
- * Payload for mutating data rows with a single SQL statement.
- */
-export interface DataStoreMutateRowsPayload {
-    /** SQL statement. Only UPDATE and DELETE statements are accepted. */
-    sql: string;
-    /** Commit message recorded on the resulting data store version. */
-    message: string;
-    /** Allow UPDATE/DELETE statements without a WHERE clause. Defaults to false. */
-    allow_full_table?: boolean;
-}
-
-/**
- * Result from mutating rows in a data store.
- */
-export interface DataStoreMutateRowsResult {
-    /** Resulting data store version ID */
-    version_id: string;
-    /** Tables affected by the statement */
-    affected_tables: string[];
-    /** Current row counts for affected tables after the mutation */
-    row_counts: Record<string, number>;
-    /** Statement execution time in milliseconds */
-    execution_time_ms: number;
-}
-
-/**
  * Column metadata in query results.
  */
 export interface QueryResultColumn {
@@ -647,8 +619,6 @@ export interface DataColumnForAI {
     nullable: boolean;
     /** Whether primary key */
     primary_key: boolean;
-    /** Whether sequence-backed auto-increment is enabled */
-    auto_increment: boolean;
     /** Example values */
     examples?: string[];
 }
