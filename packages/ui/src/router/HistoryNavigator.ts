@@ -1,5 +1,5 @@
 import { PathWithParams } from './PathWithParams';
-import { joinPath } from './path';
+import { joinPath, withMountBasename } from './path';
 
 const BASE_PATH = Symbol('BASE_PATH');
 
@@ -149,6 +149,9 @@ export class HistoryNavigator {
             to = joinPath(basePath, to);
         }
         to = this.addStickyParams(to);
+        // Keep absolute app routes under the served `<base href>` mount instead of resolving them
+        // against the bare origin (which collapses the URL off the mount). No-op when origin-served.
+        to = withMountBasename(to);
         this._navigate(new URL(to, window.location.href), 'navigate', options);
     }
 

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect } from 'react';
 import { HistoryNavigator, type LocationChangeEvent, type NavigateOptions } from './HistoryNavigator';
 import { type PathMatch, PathMatcher } from './PathMatcher';
-import { isRootPath, joinPath, type PathMatchParams } from './path';
+import { isRootPath, joinPath, type PathMatchParams, stripMountBasename } from './path';
 
 export type RouteComponentProps = PathMatchParams;
 export type LazyRouteModule = { default: React.ComponentType<Record<string, never>> };
@@ -62,7 +62,8 @@ export class Router extends BaseRouter {
             }
             // only process afterChange events
             if (event.name === 'afterChange') {
-                const match = this.match(event.location.pathname);
+                // Match app-relative: strip the served `<base href>` mount prefix (no-op when origin-served).
+                const match = this.match(stripMountBasename(event.location.pathname));
                 if (match?.value) {
                     updateState({
                         ...match,

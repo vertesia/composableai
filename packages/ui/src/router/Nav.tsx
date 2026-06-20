@@ -1,4 +1,5 @@
 import type { SyntheticEvent } from 'react';
+import { withMountBasename } from './path';
 import { useNavigate, useRouterContext } from './Router';
 
 /**
@@ -75,7 +76,12 @@ export function NavLink({
     const isAnchorOrEmpty = !href || href.startsWith('#');
     const isExternal = /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//') || (!!target && target !== '_self');
     const isInternal = !isAnchorOrEmpty && !isExternal;
-    const resolvedHref = !skipStickyParams && isInternal ? router.getTopRouter().navigator.addStickyParams(href) : href;
+    // Keep the rendered href under the served `<base href>` mount (correct middle-click / hover /
+    // open-in-new-tab); the onClick navigates via the router which applies the same rule. No-op when
+    // origin-served (Studio UI). Click handler below passes the raw `href` — navigate() re-bases it.
+    const resolvedHref = isInternal
+        ? withMountBasename(!skipStickyParams ? router.getTopRouter().navigator.addStickyParams(href) : href)
+        : href;
     const _onClick = (ev: SyntheticEvent) => {
         if (ev.defaultPrevented || !isInternal) {
             return;

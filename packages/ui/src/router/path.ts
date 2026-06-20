@@ -19,6 +19,44 @@ export function joinPath(path1: string, path2: string) {
     return path2;
 }
 
+/**
+ * The mount base path from an explicit `<base href>` element, or `''` when there is none.
+ *
+ * Apps served under a deep gateway mount carry `<base href="/tenants/.../app/">`, injected at serve
+ * time. The router otherwise resolves absolute routes against the origin, which collapses the URL
+ * off the mount (and breaks in-app links). This returns the base pathname without a trailing slash
+ * so {@link withMountBasename} can keep navigation under the mount and {@link stripMountBasename}
+ * can match routes app-relative. The Studio UI has no `<base>` element, so this returns `''` and
+ * every caller becomes a no-op there.
+ */
+export function getMountBasename(): string {
+    if (typeof document === 'undefined') return '';
+    const base = document.querySelector('base[href]') as HTMLBaseElement | null;
+    if (!base) return '';
+    try {
+        return new URL(base.href, document.URL).pathname.replace(/\/+$/, '');
+    } catch {
+        return '';
+    }
+}
+
+/** Prepend the mount basename to an absolute app path (no-op when no mount, path is relative, or already prefixed). */
+export function withMountBasename(path: string): string {
+    const base = getMountBasename();
+    if (!base || !path.startsWith('/')) return path;
+    if (path === base || path.startsWith(`${base}/`)) return path;
+    return joinPath(base, path);
+}
+
+/** Strip the mount basename from a browser path so route patterns match app-relative (no-op when no mount). */
+export function stripMountBasename(path: string): string {
+    const base = getMountBasename();
+    if (!base) return path;
+    if (path === base) return '/';
+    if (path.startsWith(`${base}/`)) return path.slice(base.length) || '/';
+    return path;
+}
+
 export function getPathSegments(path: string) {
     if (path === '') {
         return [];
