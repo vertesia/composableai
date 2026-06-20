@@ -1,4 +1,4 @@
-import type { AIModel, ProviderParams, TextFallbackOptions } from '@llumiverse/common';
+import type { AIModel, ProviderParams } from '@llumiverse/common';
 import { ProviderList, Providers } from '@llumiverse/common';
 
 // Virtual providers from studio
@@ -75,6 +75,17 @@ export interface MediatorEnvConfig {
     // and the best response will be picked
     mediators?: VirtualEnvEntry[];
     model_options?: TextFallbackOptions;
+}
+
+export interface TextFallbackOptions {
+    _option_id: 'text-fallback';
+    max_tokens?: number;
+    temperature?: number;
+    top_p?: number;
+    top_k?: number;
+    presence_penalty?: number;
+    frequency_penalty?: number;
+    stop_sequence?: string[];
 }
 
 export interface ExecutionEnvironmentSettings {

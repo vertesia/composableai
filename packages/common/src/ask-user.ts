@@ -14,7 +14,17 @@ export interface AskUserOption {
     description?: string;
 }
 
-/** UX configuration for ask_user messages */
+/** Identifies an MCP server the user is asked to connect to (request_mcp_connection). */
+export interface McpConnectUxConfig {
+    /** The app installation id owning the collection (used for the OAuth flow). */
+    app_install_id: string;
+    /** The MCP tool-collection id. */
+    collection_id: string;
+    /** Human-readable server name shown in the prompt. */
+    name: string;
+}
+
+/** UX configuration for ask_user / request_mcp_connection messages */
 export interface AskUserUxConfig {
     /** Predefined options for the user to select from */
     options?: AskUserOption[];
@@ -22,6 +32,11 @@ export interface AskUserUxConfig {
     variant?: 'default' | 'warning' | 'info' | 'success';
     /** Allow selecting multiple options (renders checkboxes instead of buttons) */
     multiSelect?: boolean;
+    /**
+     * Renders an MCP "Connect" button instead of plain options. Set by the
+     * request_mcp_connection tool when the agent needs the user to connect a server.
+     */
+    mcp_connect?: McpConnectUxConfig;
 }
 
 /** Message details structure for REQUEST_INPUT messages with UX config */

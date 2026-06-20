@@ -657,6 +657,11 @@ export interface WorkflowInteractionVars {
     interactionParamsSchema?: JSONSchema;
     collection_id?: string;
     /**
+     * Denylist of MCP tool-collection ids deactivated for this conversation.
+     * `undefined`/empty ⇒ all installed/connected MCP collections are active.
+     */
+    disabled_mcp_collections?: string[];
+    /**
      * The token threshold in thousands (K) for creating checkpoints.
      * If total tokens exceed this value, a checkpoint will be created.
      * If not specified, default value of 150K tokens will be used.

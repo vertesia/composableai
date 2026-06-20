@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { i18nInstance } from './instance.js';
+import { i18nInstance, NAMESPACE } from './instance.js';
 import { isRTL, RTL_LANGUAGES, resolveLanguage, SUPPORTED_LANGUAGES } from './rtl.js';
 
 describe('isRTL', () => {
@@ -70,5 +70,12 @@ describe('SUPPORTED_LANGUAGES divergence guard', () => {
         const registered = Object.keys(i18nInstance.options.resources ?? {}).sort();
         const supported = [...SUPPORTED_LANGUAGES].sort();
         expect(registered).toEqual(supported);
+    });
+});
+
+describe('empty translation fallback', () => {
+    it('falls back to English for parser-created empty locale entries', () => {
+        const t = i18nInstance.getFixedT('zh', NAMESPACE);
+        expect(t('agent.browserPreview')).toBe('Browser preview');
     });
 });

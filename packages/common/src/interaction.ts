@@ -765,6 +765,14 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     collection_id?: string;
 
     /**
+     * Denylist of MCP tool-collection ids deactivated for this conversation.
+     * `undefined`/empty means all installed/connected MCP collections are active (back-compat,
+     * and new servers stay active by default). Listed collections are excluded even if connected.
+     * Can be updated mid-conversation via the MCP config signal.
+     */
+    disabled_mcp_collections?: string[];
+
+    /**
      * The token threshold in thousands (K) for creating checkpoints.
      * If total tokens exceed this value, a checkpoint will be created.
      * If not specified, the default is computed from the selected model context window (75%).

@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
     useDocumentPanel: vi.fn(),
     useFileProcessing: vi.fn(),
     getActiveWorkstreams: vi.fn(),
+    retrieve: vi.fn(),
 }));
 
 vi.mock('@vertesia/ui/session', () => ({
@@ -30,6 +31,7 @@ vi.mock('@vertesia/ui/session', () => ({
                 restart: mocks.restart,
                 sendSignal: mocks.sendSignal,
                 getActiveWorkstreams: mocks.getActiveWorkstreams,
+                retrieve: mocks.retrieve,
             },
         },
         project: undefined,
@@ -213,6 +215,7 @@ describe('ModernAgentConversation send handling', () => {
         mocks.restart.mockResolvedValue({ id: 'agent-run-1' });
         mocks.sendSignal.mockResolvedValue({});
         mocks.getActiveWorkstreams.mockResolvedValue({ running: [] });
+        mocks.retrieve.mockResolvedValue({ disabled_mcp_collections: undefined });
         mocks.useAgentPlans.mockReturnValue({
             plans: [],
             activePlanIndex: 0,
@@ -1357,6 +1360,48 @@ describe('ModernAgentConversation send handling', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Jump to live' }));
 
         expect(screen.getByRole('button', { name: 'composer send' })).not.toBeNull();
+    });
+
+    it('shows a disabled MCP request overlay while viewing rewound playback history', async () => {
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'Connect to Jira to continue.'),
+                    timestamp: 1_000,
+                    details: {
+                        ux: {
+                            mcp_connect: {
+                                app_install_id: 'app1',
+                                collection_id: 'jira',
+                                name: 'Jira',
+                            },
+                        },
+                    },
+                },
+                {
+                    ...createMessage(AgentMessageType.QUESTION, "I've connected to Jira."),
+                    timestamp: 2_000,
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ enablePlayback: true, hideMessageInput: false });
+
+        expect(screen.getByRole('button', { name: 'composer send' })).not.toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Jump to first message' }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Connect to Jira to continue.')).not.toBeNull();
+        });
+        expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
+        expect((screen.getByRole('button', { name: /connect/i }) as HTMLButtonElement).disabled).toBe(true);
+        expect((screen.getByRole('button', { name: /decline/i }) as HTMLButtonElement).disabled).toBe(true);
+        expect(mocks.allMessagesMixedProps.mock.lastCall?.[0]).toEqual(
+            expect.objectContaining({ renderRequestInputControls: false }),
+        );
     });
 
     it('shows active workstreams for the rewound playback cursor', () => {

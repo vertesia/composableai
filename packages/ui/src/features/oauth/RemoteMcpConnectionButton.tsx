@@ -1,6 +1,6 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { CheckCircle2, ExternalLink, ShieldAlertIcon } from 'lucide-react';
+import { CheckCircle2, Link2, ShieldAlertIcon, Unlink2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Spinner } from '../../core/index.js';
 import { useOAuthPopup } from './useOAuthPopup.js';
@@ -51,15 +51,20 @@ export function RemoteMcpConnectionButton({
     const { client } = useUserSession();
     const { t } = useUITranslation();
     const [status, setStatus] = useState<OAuthStatus | null>(null);
-    const [loading, setLoading] = useState(providedAuthenticated === undefined);
+    const [loading, setLoading] = useState(providedAuthenticated === undefined && !readOnly);
     const [authenticating, setAuthenticating] = useState(false);
     const [disconnecting, setDisconnecting] = useState(false);
 
     const authenticated = providedAuthenticated ?? status?.authenticated ?? false;
     const displayName = collectionName ?? collectionId;
+    const compactActionClassName = 'h-6 w-32 justify-center px-2 text-xs';
 
     const loadStatus = useCallback(async () => {
         if (providedAuthenticated !== undefined) {
+            setLoading(false);
+            return;
+        }
+        if (readOnly) {
             setLoading(false);
             return;
         }
@@ -73,7 +78,7 @@ export function RemoteMcpConnectionButton({
         } finally {
             setLoading(false);
         }
-    }, [client, appId, collectionId, providedAuthenticated]);
+    }, [client, appId, collectionId, providedAuthenticated, readOnly]);
 
     useEffect(() => {
         void loadStatus();
@@ -132,6 +137,21 @@ export function RemoteMcpConnectionButton({
     };
 
     if (loading) {
+        if (variant === 'compact') {
+            return (
+                <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    className={compactActionClassName}
+                    aria-label={t('mcpConnections.checkingStatus')}
+                    title={t('mcpConnections.checkingStatus')}
+                >
+                    <Spinner className="size-3" />
+                </Button>
+            );
+        }
+
         return (
             <div className="flex items-center gap-2 text-sm">
                 <Spinner className="size-4" />
@@ -182,19 +202,22 @@ export function RemoteMcpConnectionButton({
             return (
                 <div className="flex items-center gap-2">
                     {showLabel && <span className="font-medium text-xs text-foreground">{displayName}:</span>}
-                    <div className="flex items-center gap-1 text-success">
-                        <CheckCircle2 className="size-3" />
-                        <span className="text-xs">{t('mcpOAuth.connected')}</span>
-                    </div>
                     {!readOnly && showDisconnect && (
                         <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={handleDisconnect}
                             disabled={disconnecting}
-                            className="h-6 px-2 text-xs"
+                            className={compactActionClassName}
                         >
-                            {disconnecting ? <Spinner className="size-3" /> : t('mcpOAuth.disconnect')}
+                            {disconnecting ? (
+                                <Spinner className="size-3" />
+                            ) : (
+                                <>
+                                    <Unlink2 className="size-3" />
+                                    <span>{t('mcpOAuth.disconnect')}</span>
+                                </>
+                            )}
                         </Button>
                     )}
                 </div>
@@ -229,7 +252,7 @@ export function RemoteMcpConnectionButton({
                     size="sm"
                     onClick={handleConnect}
                     disabled={authenticating}
-                    className="h-6 px-2 text-xs"
+                    className={compactActionClassName}
                 >
                     {authenticating ? (
                         <>
@@ -238,7 +261,7 @@ export function RemoteMcpConnectionButton({
                         </>
                     ) : (
                         <>
-                            <ExternalLink className="size-3 me-1" />
+                            <Link2 className="size-3" />
                             <span>{t('mcpOAuth.connect')}</span>
                         </>
                     )}
@@ -248,7 +271,7 @@ export function RemoteMcpConnectionButton({
     }
 
     return (
-        <Button variant="outline" size="sm" onClick={handleConnect} disabled={authenticating}>
+        <Button variant="outline" size="sm" onClick={handleConnect} disabled={readOnly || authenticating}>
             {authenticating ? (
                 <>
                     <Spinner className="size-4" />
@@ -256,7 +279,7 @@ export function RemoteMcpConnectionButton({
                 </>
             ) : (
                 <>
-                    <ExternalLink className="size-4 me-1" />
+                    <Link2 className="size-4 me-1" />
                     <span>{t('mcpOAuth.connect')}</span>
                 </>
             )}
