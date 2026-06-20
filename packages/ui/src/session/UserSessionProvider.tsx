@@ -2,7 +2,7 @@ import { Env } from '@vertesia/ui/env';
 import { onAuthStateChanged } from 'firebase/auth';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { getComposableToken, STSError, UserNotFoundError } from './auth/composable';
-import { shouldRedirectToCentralAuth } from './auth/domainRouting';
+import { authReturnUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 import { useAuthState } from './auth/useAuthState';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from './UserSession';
@@ -24,8 +24,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
 
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
         const url = new URL(`${CENTRAL_AUTH_REDIRECT}?sts=${Env.endpoints.sts ?? 'https://sts.vertesia.io'}`);
-        const currentUrl = new URL(window.location.href);
-        currentUrl.hash = '';
+        const currentUrl = authReturnUrl();
         if (projectId) currentUrl.searchParams.set('p', projectId);
         if (accountId) currentUrl.searchParams.set('a', accountId);
         url.searchParams.set('redirect_uri', currentUrl.toString());

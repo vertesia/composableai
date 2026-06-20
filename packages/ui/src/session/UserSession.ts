@@ -5,7 +5,7 @@ import { jwtDecode } from 'jwt-decode';
 import { createContext, useContext } from 'react';
 
 import { getComposableToken } from './auth/composable';
-import { shouldRedirectToCentralAuth } from './auth/domainRouting';
+import { authReturnUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
@@ -152,8 +152,7 @@ class UserSession {
             this.client.withAuthCallback(undefined);
 
             const logoutUrl = new URL(CENTRAL_AUTH_REDIRECT);
-            const currentUrl = new URL(window.location.href);
-            currentUrl.hash = '';
+            const currentUrl = authReturnUrl();
             logoutUrl.pathname = '/logout';
             logoutUrl.searchParams.set('redirect_uri', currentUrl.toString());
             location.replace(logoutUrl.toString());
