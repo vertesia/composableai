@@ -1535,8 +1535,13 @@ function ModernAgentConversationInner({
     const shouldShowLiveRequestInputOverlay = shouldShowRequestInputOverlay && !isViewingPlaybackHistory;
     const shouldRenderLiveMessageInputArea = shouldRenderMessageInputArea && !isViewingPlaybackHistory;
     const contextWindowUsage = useMemo(() => toContextWindowUsage(messages), [messages]);
+    // The run is still "alive" while it waits for user input (idle on ask_user), so keep the
+    // context-usage indicator visible then — it's only truly hidden once the run terminates.
     const canCompactContext =
-        allowWorkflowControl && !effectiveIsCompleted && isPlaybackLive && Boolean(contextWindowUsage);
+        allowWorkflowControl &&
+        (!effectiveIsCompleted || shouldShowRequestInputOverlay) &&
+        isPlaybackLive &&
+        Boolean(contextWindowUsage);
 
     useEffect(() => {
         debugAgentChat('conversation render state', {
