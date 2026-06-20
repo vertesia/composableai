@@ -5,7 +5,7 @@ import {
     type OAuthAuthStatus,
 } from '@vertesia/common';
 import { useUserSession } from '@vertesia/ui/session';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * A group of MCP tool collections that share a single OAuth connection.
@@ -37,8 +37,14 @@ export function useMcpConnections() {
     const { client } = useUserSession();
     const [groups, setGroups] = useState<McpConnectionGroup[]>([]);
     const [loading, setLoading] = useState(true);
+    const [statusLoading, setStatusLoading] = useState(false);
+    const reloadIdRef = useRef(0);
 
     const reload = useCallback(async () => {
+        const reloadId = reloadIdRef.current + 1;
+        reloadIdRef.current = reloadId;
+        setLoading(true);
+        setStatusLoading(false);
         try {
             const apps = await client.apps.getInstalledApps('tools');
             const allGroups: McpConnectionGroup[] = [];
@@ -109,6 +115,19 @@ export function useMcpConnections() {
                 }
             }
 
+            if (reloadIdRef.current !== reloadId) {
+                return;
+            }
+
+            setGroups(allGroups);
+            setLoading(false);
+
+            if (allGroups.length === 0) {
+                return;
+            }
+
+            setStatusLoading(true);
+
             // Fetch OAuth status once per app installation; getStatus(appId) returns all collection statuses.
             const statusRequestsByApp = new Map<string, Promise<OAuthAuthStatus[]>>();
             const groupsWithStatus = await Promise.all(
@@ -128,11 +147,21 @@ export function useMcpConnections() {
                 }),
             );
 
+            if (reloadIdRef.current !== reloadId) {
+                return;
+            }
+
             setGroups(groupsWithStatus);
         } catch (error) {
-            console.error('Failed to load MCP tool collections:', error);
+            if (reloadIdRef.current === reloadId) {
+                console.error('Failed to load MCP tool collections:', error);
+                setGroups([]);
+            }
         } finally {
-            setLoading(false);
+            if (reloadIdRef.current === reloadId) {
+                setLoading(false);
+                setStatusLoading(false);
+            }
         }
     }, [client]);
 
@@ -140,7 +169,7 @@ export function useMcpConnections() {
         void reload();
     }, [reload]);
 
-    return { groups, loading, reload };
+    return { groups, loading, statusLoading, reload };
 }
 
 /** True when every collection in the group is present in the disabled set. */
@@ -171,4 +200,11 @@ export function toggleGroupDisabled(
 export function countConnectedActiveGroups(groups: McpConnectionGroup[], disabled?: string[]): number {
     return groups.filter((group) => group.authStatus?.authenticated === true && !isGroupDisabled(group, disabled))
         .length;
+}
+
+/** Names of connected MCP groups that are enabled for the current conversation. */
+export function getConnectedActiveGroupLabels(groups: McpConnectionGroup[], disabled?: string[]): string[] {
+    return groups
+        .filter((group) => group.authStatus?.authenticated === true && !isGroupDisabled(group, disabled))
+        .map((group) => group.label);
 }

@@ -1,17 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
     countConnectedActiveGroups,
+    getConnectedActiveGroupLabels,
     isGroupDisabled,
     type McpConnectionGroup,
     toggleGroupDisabled,
 } from './useMcpConnections.js';
 
-function group(memberIds: string[], authenticated?: boolean): McpConnectionGroup {
+function group(memberIds: string[], authenticated?: boolean, label = 'Server'): McpConnectionGroup {
     return {
         key: `k:${memberIds.join(',')}`,
         appId: 'app1',
         appName: 'App',
-        label: 'Server',
+        label,
         representativeId: memberIds[0],
         memberIds,
         memberNames: memberIds,
@@ -54,6 +55,22 @@ describe('countConnectedActiveGroups', () => {
                 ['connected-disabled'],
             ),
         ).toBe(1);
+    });
+});
+
+describe('getConnectedActiveGroupLabels', () => {
+    it('returns only connected groups that are not disabled', () => {
+        expect(
+            getConnectedActiveGroupLabels(
+                [
+                    group(['jira'], true, 'Jira'),
+                    group(['github'], false, 'GitHub'),
+                    group(['miro'], true, 'Miro'),
+                    group(['linear'], true, 'Linear'),
+                ],
+                ['linear'],
+            ),
+        ).toEqual(['Jira', 'Miro']);
     });
 });
 
