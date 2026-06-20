@@ -4,6 +4,8 @@ import type {
     EventIngestSigningSecretResponse,
     EventWebhookSigningSecretRequest,
     EventWebhookSigningSecretResponse,
+    GithubInstallationTokenRequest,
+    GithubInstallationTokenResponse,
     SignEventWebhookRequest,
     SignEventWebhookResponse,
     VerifyEventIngestSignatureRequest,
@@ -52,5 +54,10 @@ export default class InternalSecretsApi extends ApiTopic {
         payload: VerifyEventIngestSignatureRequest,
     ): Promise<VerifyEventIngestSignatureResponse> {
         return this.post(`/event-ingest-channels/${channelId}/verify`, { payload });
+    }
+
+    /** Mint a short-lived, repository-scoped GitHub App installation token for the project. */
+    mintGithubInstallationToken(payload: GithubInstallationTokenRequest): Promise<GithubInstallationTokenResponse> {
+        return this.post('/github/installation-token', { payload });
     }
 }

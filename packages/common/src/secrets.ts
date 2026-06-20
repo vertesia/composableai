@@ -111,3 +111,19 @@ export interface VerifyEventIngestSignatureRequest extends EventIngestSigningSec
 export interface VerifyEventIngestSignatureResponse {
     valid: boolean;
 }
+
+export interface GithubInstallationTokenRequest {
+    account_id?: string;
+    project_id: string;
+    /** Numeric GitHub App installation id (from the trusted webhook payload, never agent-supplied). */
+    installation_id: string;
+    /** `owner/name` of the repo to scope the token to. Required — tokens are always repository-scoped. */
+    repo: string;
+}
+
+export interface GithubInstallationTokenResponse {
+    /** Short-lived, repository-scoped GitHub App installation token. */
+    token: string;
+    /** ISO-8601 expiry returned by GitHub, when available. */
+    expires_at?: string;
+}
