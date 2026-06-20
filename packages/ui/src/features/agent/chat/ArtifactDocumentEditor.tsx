@@ -51,46 +51,69 @@ export function ArtifactDocumentEditor({
 
     const pendingRef = useRef<string | null>(null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const fetchGenRef = useRef(0);
 
-    // Comments
-    const { comments, addComment, setCommentStatus, deleteComment, currentAuthor } = useDocumentComments(
-        runId,
-        artifactPath,
-    );
-    const editorRef = useRef<Editor | null>(null);
+    const {
+        comments,
+        isReady: commentsReady,
+        isLoading: commentsLoading,
+        addComment,
+        setCommentStatus,
+        deleteComment,
+        currentAuthor,
+    } = useDocumentComments(runId, artifactPath);
+
+    const [editor, setEditor] = useState<Editor | null>(null);
     const lastSelectionRef = useRef<{ from: number; to: number } | null>(null);
     const [hasSelection, setHasSelection] = useState(false);
     const [showComments, setShowComments] = useState(false);
     const [pendingAnchor, setPendingAnchor] = useState<DocumentCommentAnchor | null>(null);
 
-    useEffect(() => {
-        // refreshKey is only a trigger to re-fetch (e.g. after the agent edits the artifact).
-        void refreshKey;
-        let cancelled = false;
+    const fetchContent = useCallback(async () => {
+        const gen = ++fetchGenRef.current;
         setIsLoading(true);
         setError(null);
-        void (async () => {
-            try {
-                const stream = await client.agents.downloadArtifact(runId, artifactPath);
-                const text = await new Response(stream).text();
-                if (!cancelled) {
-                    setContent(text);
-                }
-            } catch (err: unknown) {
-                if (!cancelled) {
-                    setError(err instanceof Error ? err.message : t('agent.failedToLoadDocument'));
-                    setContent(null);
-                }
-            } finally {
-                if (!cancelled) {
-                    setIsLoading(false);
-                }
+        try {
+            const stream = await client.agents.downloadArtifact(runId, artifactPath);
+            const text = await new Response(stream).text();
+            if (gen === fetchGenRef.current) {
+                setContent(text);
             }
-        })();
-        return () => {
-            cancelled = true;
-        };
-    }, [client, runId, artifactPath, refreshKey, t]);
+        } catch (err: unknown) {
+            if (gen === fetchGenRef.current) {
+                setError(err instanceof Error ? err.message : t('agent.failedToLoadDocument'));
+                setContent(null);
+            }
+        } finally {
+            if (gen === fetchGenRef.current) {
+                setIsLoading(false);
+            }
+        }
+    }, [client, runId, artifactPath, t]);
+
+    // Initial load + document switch (a stale in-flight fetch is ignored via the generation counter).
+    useEffect(() => {
+        void fetchContent();
+    }, [fetchContent]);
+
+    // Refresh (e.g. the agent edited the artifact): the remote copy is authoritative, so
+    // discard any stale local pending save before reloading — otherwise the debounced flush
+    // could upload the older user text back over the agent's edit. Guarding on the previous
+    // refreshKey makes this react only to refresh bumps, not to fetchContent identity changes
+    // from a document switch (which the load effect above already handles).
+    const prevRefreshKey = useRef(refreshKey);
+    useEffect(() => {
+        if (prevRefreshKey.current === refreshKey) {
+            return;
+        }
+        prevRefreshKey.current = refreshKey;
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+        pendingRef.current = null;
+        void fetchContent();
+    }, [refreshKey, fetchContent]);
 
     const flush = useCallback(async () => {
         const md = pendingRef.current;
@@ -123,7 +146,8 @@ export function ArtifactDocumentEditor({
         [flush],
     );
 
-    // Flush any pending edit when unmounting (panel closed / doc switched).
+    // Flush any pending edit when unmounting or when the target document changes (flush runs
+    // with the previous document's path because `flush` is in the dependency list).
     useEffect(() => {
         return () => {
             if (timerRef.current) {
@@ -135,20 +159,26 @@ export function ArtifactDocumentEditor({
         };
     }, [flush]);
 
-    const handleEditorReady = useCallback((editor: Editor) => {
-        editorRef.current = editor;
-        editor.on('selectionUpdate', () => {
+    // Track the active text selection — registered with cleanup so listeners aren't duplicated.
+    useEffect(() => {
+        if (!editor) {
+            return;
+        }
+        const update = () => {
             const { from, to } = editor.state.selection;
             const selecting = from !== to;
             setHasSelection(selecting);
             if (selecting) {
                 lastSelectionRef.current = { from, to };
             }
-        });
-    }, []);
+        };
+        editor.on('selectionUpdate', update);
+        return () => {
+            editor.off('selectionUpdate', update);
+        };
+    }, [editor]);
 
     const startComment = useCallback(() => {
-        const editor = editorRef.current;
         const selection = lastSelectionRef.current;
         if (!editor || !selection || selection.from === selection.to) {
             return;
@@ -159,7 +189,7 @@ export function ArtifactDocumentEditor({
         }
         setPendingAnchor(anchor);
         setShowComments(true);
-    }, []);
+    }, [editor]);
 
     const notifyFailure = useCallback(
         (err: unknown) => {
@@ -196,7 +226,12 @@ export function ArtifactDocumentEditor({
     return (
         <div className="flex flex-col h-full">
             <div className="flex items-center gap-1 pb-2 mb-2 border-b border-muted/20 shrink-0">
-                <Button variant="ghost" size="sm" disabled={!hasSelection || !editable} onClick={startComment}>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={!hasSelection || !editable || !commentsReady}
+                    onClick={startComment}
+                >
                     <MessageSquarePlusIcon className="size-4 me-1" />
                     {t('agent.addComment')}
                 </Button>
@@ -216,15 +251,16 @@ export function ArtifactDocumentEditor({
                         value={content}
                         editable={editable}
                         onChange={handleChange}
-                        onReady={handleEditorReady}
+                        onReady={setEditor}
                     />
                 </div>
                 {showComments && (
                     <div className="w-64 shrink-0 border-s border-muted/20 overflow-hidden">
                         <DocumentCommentsSidebar
                             comments={comments}
+                            isLoading={commentsLoading}
                             currentAuthor={currentAuthor}
-                            editable={editable}
+                            editable={editable && commentsReady}
                             pendingAnchor={pendingAnchor}
                             onSubmitPending={submitPending}
                             onCancelPending={() => setPendingAnchor(null)}

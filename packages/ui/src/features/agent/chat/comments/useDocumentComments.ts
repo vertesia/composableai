@@ -9,10 +9,14 @@ import { useUserSession } from '@vertesia/ui/session';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { loadDocumentComments, saveDocumentComments } from './documentCommentsStore.js';
 
+type LoadStatus = 'loading' | 'ready' | 'error';
+
 export interface UseDocumentCommentsResult {
-    /** Comments anchored to the given document, newest last. */
+    /** Comments anchored to the given document, in document order. */
     comments: DocumentComment[];
     isLoading: boolean;
+    /** True once the artifact has loaded successfully and mutations are safe. */
+    isReady: boolean;
     addComment: (anchor: DocumentCommentAnchor, body: string) => Promise<void>;
     setCommentStatus: (id: string, status: DocumentCommentStatus) => Promise<void>;
     deleteComment: (id: string) => Promise<void>;
@@ -21,51 +25,75 @@ export interface UseDocumentCommentsResult {
 }
 
 /**
- * Loads and mutates the run-scoped document comments artifact, scoped to a single document.
- * Writes are optimistic (local state updates immediately) and persisted to the artifact.
+ * Loads and mutates the run-scoped document comments artifact, scoped to one document.
+ *
+ * Safety properties (the comments artifact may be written concurrently by the UI and, in
+ * Phase 3, the agent):
+ *  - Mutations are blocked until the initial load succeeds (`isReady`). A failed load does
+ *    not silently become an empty base that could overwrite existing comments.
+ *  - Each mutation re-loads the latest artifact, applies a targeted change, then saves —
+ *    so a concurrent writer's additions/statuses are merged rather than clobbered.
+ *  - Mutations are serialized so two quick UI actions can't race their own reads/writes.
  */
 export function useDocumentComments(runId: string | undefined, documentPath: string): UseDocumentCommentsResult {
     const { client, authToken } = useUserSession();
     const currentAuthor = authToken?.sub ?? 'user';
     const [artifact, setArtifact] = useState<DocumentCommentsArtifact>(() => emptyDocumentCommentsArtifact(''));
-    const [isLoading, setIsLoading] = useState<boolean>(Boolean(runId));
+    const [status, setStatus] = useState<LoadStatus>(runId ? 'loading' : 'ready');
 
-    // Mirror the latest artifact in a ref so mutations don't need it as a dependency.
-    const artifactRef = useRef(artifact);
-    artifactRef.current = artifact;
+    const statusRef = useRef(status);
+    statusRef.current = status;
+    // Serializes mutations so each reads the result of the previous one.
+    const chainRef = useRef<Promise<void>>(Promise.resolve());
 
     useEffect(() => {
         if (!runId) {
             setArtifact(emptyDocumentCommentsArtifact(''));
-            setIsLoading(false);
+            setStatus('ready');
             return;
         }
         let cancelled = false;
-        setIsLoading(true);
-        void loadDocumentComments(client, runId).then((loaded) => {
-            if (!cancelled) {
-                setArtifact(loaded);
-                setIsLoading(false);
-            }
-        });
+        setStatus('loading');
+        loadDocumentComments(client, runId)
+            .then((loaded) => {
+                if (!cancelled) {
+                    setArtifact(loaded);
+                    setStatus('ready');
+                }
+            })
+            .catch((err) => {
+                if (!cancelled) {
+                    console.error('Failed to load document comments:', err);
+                    setStatus('error');
+                }
+            });
         return () => {
             cancelled = true;
         };
     }, [client, runId]);
 
-    const persist = useCallback(
-        async (next: DocumentCommentsArtifact) => {
-            setArtifact(next);
-            artifactRef.current = next;
-            if (runId) {
-                await saveDocumentComments(client, runId, next, new Date().toISOString());
-            }
+    const mutate = useCallback(
+        (apply: (artifact: DocumentCommentsArtifact) => DocumentCommentsArtifact): Promise<void> => {
+            const run = async () => {
+                if (statusRef.current !== 'ready' || !runId) {
+                    throw new Error('Document comments are not ready');
+                }
+                // Merge-on-save: reload the latest artifact so a concurrent agent/UI write is
+                // merged with this change rather than overwritten by a stale local snapshot.
+                const latest = await loadDocumentComments(client, runId);
+                const merged = apply(latest);
+                await saveDocumentComments(client, runId, merged, new Date().toISOString());
+                setArtifact(merged);
+            };
+            const next = chainRef.current.then(run, run);
+            chainRef.current = next.catch(() => {});
+            return next;
         },
         [client, runId],
     );
 
     const addComment = useCallback(
-        async (anchor: DocumentCommentAnchor, body: string) => {
+        (anchor: DocumentCommentAnchor, body: string) => {
             const now = new Date().toISOString();
             const comment: DocumentComment = {
                 id: crypto.randomUUID(),
@@ -77,32 +105,25 @@ export function useDocumentComments(runId: string | undefined, documentPath: str
                 created_at: now,
                 updated_at: now,
             };
-            await persist({ ...artifactRef.current, comments: [...artifactRef.current.comments, comment] });
+            return mutate((a) => ({ ...a, comments: [...a.comments, comment] }));
         },
-        [documentPath, currentAuthor, persist],
+        [documentPath, currentAuthor, mutate],
     );
 
     const setCommentStatus = useCallback(
-        async (id: string, status: DocumentCommentStatus) => {
+        (id: string, nextStatus: DocumentCommentStatus) => {
             const now = new Date().toISOString();
-            await persist({
-                ...artifactRef.current,
-                comments: artifactRef.current.comments.map((c) =>
-                    c.id === id ? { ...c, status, updated_at: now } : c,
-                ),
-            });
+            return mutate((a) => ({
+                ...a,
+                comments: a.comments.map((c) => (c.id === id ? { ...c, status: nextStatus, updated_at: now } : c)),
+            }));
         },
-        [persist],
+        [mutate],
     );
 
     const deleteComment = useCallback(
-        async (id: string) => {
-            await persist({
-                ...artifactRef.current,
-                comments: artifactRef.current.comments.filter((c) => c.id !== id),
-            });
-        },
-        [persist],
+        (id: string) => mutate((a) => ({ ...a, comments: a.comments.filter((c) => c.id !== id) })),
+        [mutate],
     );
 
     const comments = useMemo(
@@ -110,5 +131,13 @@ export function useDocumentComments(runId: string | undefined, documentPath: str
         [artifact, documentPath],
     );
 
-    return { comments, isLoading, addComment, setCommentStatus, deleteComment, currentAuthor };
+    return {
+        comments,
+        isLoading: status === 'loading',
+        isReady: status === 'ready',
+        addComment,
+        setCommentStatus,
+        deleteComment,
+        currentAuthor,
+    };
 }

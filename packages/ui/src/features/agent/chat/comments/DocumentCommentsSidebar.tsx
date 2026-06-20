@@ -1,11 +1,13 @@
 import type { DocumentComment, DocumentCommentAnchor, DocumentCommentStatus } from '@vertesia/common';
 import { Button, Textarea } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { CheckIcon, Trash2Icon } from 'lucide-react';
+import { CheckIcon, Loader2Icon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 
 interface DocumentCommentsSidebarProps {
     comments: DocumentComment[];
+    /** True while the comments artifact is still loading. */
+    isLoading?: boolean;
     currentAuthor: string;
     editable: boolean;
     /** When set, a composer is shown for a comment about this anchor. */
@@ -18,6 +20,7 @@ interface DocumentCommentsSidebarProps {
 
 export function DocumentCommentsSidebar({
     comments,
+    isLoading = false,
     currentAuthor,
     editable,
     pendingAnchor,
@@ -74,7 +77,13 @@ export function DocumentCommentsSidebar({
 
             <div className="flex-1 overflow-y-auto">
                 {comments.length === 0 && !pendingAnchor ? (
-                    <div className="p-4 text-center text-sm text-muted">{t('agent.noCommentsYet')}</div>
+                    isLoading ? (
+                        <div className="p-4 flex items-center justify-center text-muted">
+                            <Loader2Icon className="size-4 animate-spin" />
+                        </div>
+                    ) : (
+                        <div className="p-4 text-center text-sm text-muted">{t('agent.noCommentsYet')}</div>
+                    )
                 ) : (
                     comments.map((comment) => (
                         <div key={comment.id} className="p-2 border-b border-muted/10">
