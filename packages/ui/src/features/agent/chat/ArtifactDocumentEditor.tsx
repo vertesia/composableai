@@ -1,10 +1,17 @@
 import type { Editor } from '@tiptap/core';
-import type { DocumentCommentAnchor } from '@vertesia/common';
+import { DOCUMENT_COMMENTS_ARTIFACT_PATH, type DocumentCommentAnchor, type UserInputSignal } from '@vertesia/common';
 import { Button, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { RichTextMarkdownEditor } from '@vertesia/ui/widgets';
-import { AlertCircleIcon, CheckIcon, Loader2Icon, MessageSquareIcon, MessageSquarePlusIcon } from 'lucide-react';
+import {
+    AlertCircleIcon,
+    CheckIcon,
+    Loader2Icon,
+    MessageSquareIcon,
+    MessageSquarePlusIcon,
+    SendIcon,
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { captureAnchor } from './comments/anchoring.js';
 import { DocumentCommentsSidebar } from './comments/DocumentCommentsSidebar.js';
@@ -60,6 +67,7 @@ export function ArtifactDocumentEditor({
         addComment,
         setCommentStatus,
         deleteComment,
+        createBatch,
         currentAuthor,
     } = useDocumentComments(runId, artifactPath);
 
@@ -68,6 +76,8 @@ export function ArtifactDocumentEditor({
     const [hasSelection, setHasSelection] = useState(false);
     const [showComments, setShowComments] = useState(false);
     const [pendingAnchor, setPendingAnchor] = useState<DocumentCommentAnchor | null>(null);
+    // After comments are sent, the document is read-only until the agent's edit arrives.
+    const [awaitingAgent, setAwaitingAgent] = useState(false);
 
     const fetchContent = useCallback(async () => {
         const gen = ++fetchGenRef.current;
@@ -112,6 +122,8 @@ export function ArtifactDocumentEditor({
             timerRef.current = null;
         }
         pendingRef.current = null;
+        // The agent's edit has arrived — re-enable editing.
+        setAwaitingAgent(false);
         void fetchContent();
     }, [refreshKey, fetchContent]);
 
@@ -208,6 +220,36 @@ export function ArtifactDocumentEditor({
         [pendingAnchor, addComment, notifyFailure],
     );
 
+    const sendToAgent = useCallback(async () => {
+        if (!runId) return;
+        const open = comments.filter((c) => c.status === 'open');
+        if (open.length === 0) return;
+        try {
+            // Record the batch in the comments artifact, then send a pointer-only signal — the
+            // comment bodies live in the artifact, never in the signal.
+            const batch = await createBatch(open.map((c) => c.id));
+            const message = [
+                `I've left ${open.length} comment${open.length > 1 ? 's' : ''} on the document.`,
+                `They are in the artifact \`${DOCUMENT_COMMENTS_ARTIFACT_PATH}\` (batch \`${batch.id}\`), each with a quoted span and my note.`,
+                `Please read that file, then address each open comment by locating its quoted text in \`${artifactPath}\` and editing the document with edit_artifact.`,
+            ].join(' ');
+            await client.agents.sendSignal(runId, 'UserInput', {
+                message,
+                client_message_id: crypto.randomUUID(),
+                metadata: {
+                    kind: 'document_comments',
+                    comments_artifact_path: DOCUMENT_COMMENTS_ARTIFACT_PATH,
+                    batch_id: batch.id,
+                    document_path: artifactPath,
+                },
+            } as UserInputSignal);
+            setAwaitingAgent(true);
+            toast({ status: 'success', title: t('agent.documentCommentsSent') });
+        } catch (err) {
+            notifyFailure(err);
+        }
+    }, [runId, comments, createBatch, client, artifactPath, toast, t, notifyFailure]);
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-12">
@@ -223,13 +265,16 @@ export function ArtifactDocumentEditor({
         return null;
     }
 
+    const canEdit = editable && !awaitingAgent;
+    const openCommentCount = comments.filter((c) => c.status === 'open').length;
+
     return (
         <div className="flex flex-col h-full">
             <div className="flex items-center gap-1 pb-2 mb-2 border-b border-muted/20 shrink-0">
                 <Button
                     variant="ghost"
                     size="sm"
-                    disabled={!hasSelection || !editable || !commentsReady}
+                    disabled={!hasSelection || !canEdit || !commentsReady}
                     onClick={startComment}
                 >
                     <MessageSquarePlusIcon className="size-4 me-1" />
@@ -240,8 +285,17 @@ export function ArtifactDocumentEditor({
                     {t('agent.comments')}
                     {comments.length > 0 ? ` (${comments.length})` : ''}
                 </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={!canEdit || !commentsReady || openCommentCount === 0}
+                    onClick={() => void sendToAgent()}
+                >
+                    <SendIcon className="size-4 me-1" />
+                    {t('agent.sendToAgent')}
+                </Button>
                 <div className="ms-auto">
-                    <SaveIndicator status={saveStatus} editable={editable} />
+                    <SaveIndicator status={saveStatus} editable={canEdit} />
                 </div>
             </div>
 
@@ -249,7 +303,7 @@ export function ArtifactDocumentEditor({
                 <div className="flex-1 overflow-y-auto">
                     <RichTextMarkdownEditor
                         value={content}
-                        editable={editable}
+                        editable={canEdit}
                         onChange={handleChange}
                         onReady={setEditor}
                     />
@@ -260,7 +314,7 @@ export function ArtifactDocumentEditor({
                             comments={comments}
                             isLoading={commentsLoading}
                             currentAuthor={currentAuthor}
-                            editable={editable && commentsReady}
+                            editable={canEdit && commentsReady}
                             pendingAnchor={pendingAnchor}
                             onSubmitPending={submitPending}
                             onCancelPending={() => setPendingAnchor(null)}

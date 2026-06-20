@@ -1,6 +1,7 @@
 import {
     type DocumentComment,
     type DocumentCommentAnchor,
+    type DocumentCommentBatch,
     type DocumentCommentStatus,
     type DocumentCommentsArtifact,
     emptyDocumentCommentsArtifact,
@@ -20,6 +21,8 @@ export interface UseDocumentCommentsResult {
     addComment: (anchor: DocumentCommentAnchor, body: string) => Promise<void>;
     setCommentStatus: (id: string, status: DocumentCommentStatus) => Promise<void>;
     deleteComment: (id: string) => Promise<void>;
+    /** Record a batch of comments as sent to the agent and return it (sets active_batch_id). */
+    createBatch: (commentIds: string[], instruction?: string) => Promise<DocumentCommentBatch>;
     /** Identifier used as the author of comments created in this session. */
     currentAuthor: string;
 }
@@ -126,6 +129,22 @@ export function useDocumentComments(runId: string | undefined, documentPath: str
         [mutate],
     );
 
+    const createBatch = useCallback(
+        async (commentIds: string[], instruction?: string): Promise<DocumentCommentBatch> => {
+            const batch: DocumentCommentBatch = {
+                id: crypto.randomUUID(),
+                document_path: documentPath,
+                comment_ids: commentIds,
+                instruction,
+                status: 'sent',
+                created_at: new Date().toISOString(),
+            };
+            await mutate((a) => ({ ...a, batches: [...a.batches, batch], active_batch_id: batch.id }));
+            return batch;
+        },
+        [documentPath, mutate],
+    );
+
     const comments = useMemo(
         () => artifact.comments.filter((c) => c.document_path === documentPath),
         [artifact, documentPath],
@@ -138,6 +157,7 @@ export function useDocumentComments(runId: string | undefined, documentPath: str
         addComment,
         setCommentStatus,
         deleteComment,
+        createBatch,
         currentAuthor,
     };
 }
