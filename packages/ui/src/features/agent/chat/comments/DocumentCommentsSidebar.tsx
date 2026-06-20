@@ -1,5 +1,5 @@
 import type { DocumentComment, DocumentCommentAnchor, DocumentCommentStatus } from '@vertesia/common';
-import { Button, Textarea } from '@vertesia/ui/core';
+import { Button, cn, Textarea } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { CheckIcon, Loader2Icon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
@@ -16,6 +16,10 @@ interface DocumentCommentsSidebarProps {
     onCancelPending: () => void;
     onSetStatus: (id: string, status: DocumentCommentStatus) => void;
     onDelete: (id: string) => void;
+    /** Currently focused comment, highlighted in the list. */
+    focusedCommentId?: string | null;
+    /** Called when a comment is clicked, to scroll the editor to its anchored text. */
+    onCommentClick?: (commentId: string) => void;
 }
 
 export function DocumentCommentsSidebar({
@@ -28,6 +32,8 @@ export function DocumentCommentsSidebar({
     onCancelPending,
     onSetStatus,
     onDelete,
+    focusedCommentId,
+    onCommentClick,
 }: DocumentCommentsSidebarProps) {
     const { t } = useUITranslation();
     const [draft, setDraft] = useState('');
@@ -86,11 +92,21 @@ export function DocumentCommentsSidebar({
                     )
                 ) : (
                     comments.map((comment) => (
-                        <div key={comment.id} className="p-2 border-b border-muted/10">
+                        <div
+                            key={comment.id}
+                            className={cn(
+                                'p-2 border-b border-muted/10',
+                                focusedCommentId === comment.id && 'bg-attention/10',
+                            )}
+                        >
                             {comment.anchor.quote && (
-                                <div className="mb-1 text-xs text-muted border-s-2 border-muted/40 ps-2 line-clamp-2">
+                                <button
+                                    type="button"
+                                    onClick={() => onCommentClick?.(comment.id)}
+                                    className="mb-1 block w-full border-s-2 border-muted/40 ps-2 text-start text-xs text-muted line-clamp-2 hover:text-foreground"
+                                >
                                     “{comment.anchor.quote}”
-                                </div>
+                                </button>
                             )}
                             <div
                                 className={

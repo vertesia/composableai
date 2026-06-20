@@ -1,4 +1,4 @@
-import type { Editor } from '@tiptap/core';
+import type { AnyExtension, Editor } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { cn } from '@vertesia/ui/core';
 import { useEffect, useRef } from 'react';
@@ -17,6 +17,8 @@ export interface RichTextMarkdownEditorProps {
     /** Extra classes applied to the editable surface. */
     className?: string;
     'aria-label'?: string;
+    /** Extra Tiptap extensions appended to the shared set (e.g. comment highlights). Memoize it. */
+    extensions?: AnyExtension[];
     /** Called once the Tiptap editor is ready — for selection capture, commands, decorations, etc. */
     onReady?: (editor: Editor) => void;
 }
@@ -33,12 +35,13 @@ export function RichTextMarkdownEditor({
     editable = true,
     className,
     'aria-label': ariaLabel,
+    extensions: extraExtensions,
     onReady,
 }: RichTextMarkdownEditorProps) {
     // Tracks whether the editor holds local edits the parent hasn't acknowledged yet.
     const dirtyRef = useRef(false);
     const editor = useEditor({
-        extensions: richTextExtensions,
+        extensions: extraExtensions ? [...richTextExtensions, ...extraExtensions] : richTextExtensions,
         content: value,
         contentType: 'markdown',
         editable,

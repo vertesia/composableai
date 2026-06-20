@@ -12,8 +12,9 @@ import {
     MessageSquarePlusIcon,
     SendIcon,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { captureAnchor } from './comments/anchoring.js';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { captureAnchor, reanchor } from './comments/anchoring.js';
+import { CommentHighlight } from './comments/CommentHighlight.js';
 import { DocumentCommentsSidebar } from './comments/DocumentCommentsSidebar.js';
 import { useDocumentComments } from './comments/useDocumentComments.js';
 
@@ -76,8 +77,11 @@ export function ArtifactDocumentEditor({
     const [hasSelection, setHasSelection] = useState(false);
     const [showComments, setShowComments] = useState(false);
     const [pendingAnchor, setPendingAnchor] = useState<DocumentCommentAnchor | null>(null);
+    const [focusedCommentId, setFocusedCommentId] = useState<string | null>(null);
     // After comments are sent, the document is read-only until the agent's edit arrives.
     const [awaitingAgent, setAwaitingAgent] = useState(false);
+    // Bumps when the document is (re)loaded from the server, so comment highlights re-anchor.
+    const [docLoadVersion, setDocLoadVersion] = useState(0);
 
     const fetchContent = useCallback(async () => {
         const gen = ++fetchGenRef.current;
@@ -88,6 +92,7 @@ export function ArtifactDocumentEditor({
             const text = await new Response(stream).text();
             if (gen === fetchGenRef.current) {
                 setContent(text);
+                setDocLoadVersion((version) => version + 1);
             }
         } catch (err: unknown) {
             if (gen === fetchGenRef.current) {
@@ -220,6 +225,53 @@ export function ArtifactDocumentEditor({
         [pendingAnchor, addComment, notifyFailure],
     );
 
+    // Clicking a highlighted span in the editor opens the comments and focuses that comment.
+    const handleHighlightClick = useCallback((commentId: string) => {
+        setShowComments(true);
+        setFocusedCommentId(commentId);
+    }, []);
+
+    const editorExtensions = useMemo(
+        () => [CommentHighlight.configure({ onCommentClick: handleHighlightClick })],
+        [handleHighlightClick],
+    );
+
+    // Clicking a comment in the sidebar scrolls the editor to (and selects) its anchored text.
+    const scrollToComment = useCallback(
+        (commentId: string) => {
+            setFocusedCommentId(commentId);
+            const comment = comments.find((c) => c.id === commentId);
+            if (!editor || !comment) return;
+            const located = reanchor(editor.state.doc, comment.anchor);
+            if (located) {
+                editor.chain().setTextSelection(located).scrollIntoView().run();
+            }
+        },
+        [editor, comments],
+    );
+
+    // Re-anchor and render comment highlights whenever comments change or the document is
+    // (re)loaded. The decoration plugin maps highlights across local edits on its own.
+    useEffect(() => {
+        if (!editor) return;
+        // docLoadVersion is a re-anchor trigger: re-run after the document is (re)loaded.
+        void docLoadVersion;
+        const ranges = comments
+            .map((comment) => {
+                const located = reanchor(editor.state.doc, comment.anchor);
+                return located
+                    ? {
+                          from: located.from,
+                          to: located.to,
+                          commentId: comment.id,
+                          resolved: comment.status === 'resolved',
+                      }
+                    : null;
+            })
+            .filter((range): range is NonNullable<typeof range> => range !== null);
+        editor.commands.setCommentDecorations(ranges);
+    }, [editor, comments, docLoadVersion]);
+
     const sendToAgent = useCallback(async () => {
         if (!runId) return;
         const open = comments.filter((c) => c.status === 'open');
@@ -306,6 +358,7 @@ export function ArtifactDocumentEditor({
                         editable={canEdit}
                         onChange={handleChange}
                         onReady={setEditor}
+                        extensions={editorExtensions}
                     />
                 </div>
                 {showComments && (
@@ -316,6 +369,8 @@ export function ArtifactDocumentEditor({
                             currentAuthor={currentAuthor}
                             editable={canEdit && commentsReady}
                             pendingAnchor={pendingAnchor}
+                            focusedCommentId={focusedCommentId}
+                            onCommentClick={scrollToComment}
                             onSubmitPending={submitPending}
                             onCancelPending={() => setPendingAnchor(null)}
                             onSetStatus={(id, status) => void setCommentStatus(id, status).catch(notifyFailure)}
