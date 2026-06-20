@@ -499,6 +499,13 @@ export interface EventIngestTransform {
     resource_id_path?: string;
     /** Dot-path to a deduplication key (same semantics as `idempotency_key`). */
     idempotency_key_path?: string;
+    /**
+     * Request **header** to use as the deduplication key when the body has no stable per-delivery id —
+     * e.g. GitHub App's `x-github-delivery`, unique per delivery for all event types, which is the only
+     * reliable dedup key when one App webhook delivers heterogeneous payloads (issues + comments) to a
+     * single channel. Lower precedence than `idempotency_key_path`.
+     */
+    idempotency_key_header?: string;
     /** Dot-path to an ISO 8601 event timestamp. */
     timestamp_path?: string;
     /** Static fields merged into `event.details`. */

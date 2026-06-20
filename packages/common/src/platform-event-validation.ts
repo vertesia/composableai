@@ -10,10 +10,11 @@ import { SystemRoles } from './project.js';
 import type { AgentRunStatus } from './store/index.js';
 
 /**
- * Statuses an `agent_signal` target may list in `statuses`. Only a live (`running`, possibly idle) run
- * has an active Temporal workflow that can receive a signal — terminal runs are handled by `on_terminal`,
- * and `created` runs have no workflow bound yet. Restricting the set keeps config from silently trying to
- * signal a closed workflow. (Widen this when `on_terminal: 'restart'` is implemented.)
+ * Statuses an `agent_signal` target may list in `statuses` — the run statuses that can be **directly
+ * signalled**. Only a live (`running`, possibly idle) run has an active Temporal workflow that accepts a
+ * signal; `created` runs have no workflow bound yet, and terminal runs are handled separately by
+ * `on_terminal` (`restart` re-activates the newest terminal run, then signals). Restricting the set keeps
+ * config from silently trying to signal a closed workflow.
  */
 const SIGNALABLE_AGENT_RUN_STATUS_VALUES: readonly AgentRunStatus[] = ['running'];
 
