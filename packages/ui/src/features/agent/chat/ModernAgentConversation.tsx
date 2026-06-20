@@ -1738,6 +1738,17 @@ function ModernAgentConversationInner({
 
     const effectiveStoreLinkComponent = StoreLinkComponent ?? internalStoreLinkComponent;
 
+    // Opening an artifact from the Artifacts tab must also switch to the documents tab. When
+    // the artifact is already the active document, openArtifactInPanel is a no-op, so the
+    // state-change auto-switch effect wouldn't fire and the panel would stay on Artifacts.
+    const handleOpenArtifactDocument = useCallback(
+        (path: string, name: string) => {
+            openArtifactInPanel(path, name);
+            setRightPanelTab('documents');
+        },
+        [openArtifactInPanel],
+    );
+
     // ────────────────────────────────────────────
     // Effects
     // ────────────────────────────────────────────
@@ -2537,7 +2548,7 @@ function ModernAgentConversationInner({
                                     // Artifacts
                                     showArtifacts={showArtifacts}
                                     artifactRefreshKey={artifactRefreshKey}
-                                    onOpenDocument={openArtifactInPanel}
+                                    onOpenDocument={handleOpenArtifactDocument}
                                     // Messages (for workstreams tab context)
                                     messages={messages}
                                     // Payload content
