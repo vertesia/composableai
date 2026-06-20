@@ -70,10 +70,15 @@ export function SidebarTooltip({ children, text }: { children: React.ReactNode; 
     );
 }
 
+export interface SidebarItemIconProps {
+    className?: string;
+    'aria-hidden'?: boolean | 'true' | 'false';
+}
+
 export interface SidebarItemProps {
     href: string;
     to?: string;
-    icon?: React.ComponentType<React.HTMLAttributes<Element>>;
+    icon?: React.ComponentType<SidebarItemIconProps>;
     current?: boolean;
     onClick?: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
     children: React.ReactNode | React.ReactNode[];

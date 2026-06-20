@@ -23,7 +23,7 @@ import type {
 import type { EventRef } from '../platform-event.js';
 import type { AgentEvent } from '../workflow-analytics.js';
 import type { ProcessDefinitionBody, ProcessState } from './process.js';
-import type { UserInputSignal } from './signals.js';
+import type { StopSignal, UserInputSignal } from './signals.js';
 import type { ContentObjectTypeRef } from './store.js';
 import type {
     AgentMessage,
@@ -170,6 +170,13 @@ export interface AgentRunBase<TData = Record<string, unknown>, TProperties = Rec
 
     /** Scoped collection (if any) */
     collection_id?: string;
+
+    /**
+     * Denylist of MCP tool-collection ids deactivated for this run.
+     * `undefined`/empty means all installed/connected MCP collections are active (back-compat,
+     * and new servers stay active by default). Listed collections are excluded even if connected.
+     */
+    disabled_mcp_collections?: string[];
 
     /** Content type linked to this run — defines the schema for `properties` */
     content_type?: ContentObjectTypeRef;
@@ -436,6 +443,11 @@ export interface UpdateAgentRunStatusPayload {
     lessons_learned?: string[];
     /** ES-only: conversation content text (not stored in MongoDB) */
     content?: string;
+    /**
+     * MCP collections deactivated for this run. Persisted when the user toggles activation
+     * mid-conversation so a page reload reflects the live state. An empty array clears the denylist.
+     */
+    disabled_mcp_collections?: string[];
     /** Archive state fields (set by the archive workflow) */
     archive_state?: AgentRunArchiveState;
     archived_at?: string;
@@ -450,6 +462,7 @@ export interface UpdateAgentRunStatusPayload {
  */
 export type SignalAgentPayload =
     | UserInputSignal
+    | StopSignal
     | ConversationFileRef
     | ConversationFileRemovedRef
     | Record<string, unknown>;

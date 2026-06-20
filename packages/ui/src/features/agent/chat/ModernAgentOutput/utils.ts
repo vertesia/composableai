@@ -1,6 +1,36 @@
 import type { VertesiaClient } from '@vertesia/client';
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import dayjs from 'dayjs';
+import { getWorkstreamActivityDetails, getWorkstreamLaunchDetails } from '../workstreams.js';
+
+function getAgentChatDebugParam(hash: string): string | null {
+    const queryStart = hash.indexOf('?');
+    if (queryStart === -1) return null;
+    return new URLSearchParams(hash.slice(queryStart + 1)).get('agentChatDebug');
+}
+
+export function isAgentChatDebugEnabled(): boolean {
+    if (typeof window === 'undefined') return false;
+
+    const searchValue = new URLSearchParams(window.location.search).get('agentChatDebug');
+    const hashValue = getAgentChatDebugParam(window.location.hash);
+    const urlValue = searchValue ?? hashValue;
+    if (urlValue !== null) {
+        return urlValue === '1' || urlValue === 'true';
+    }
+
+    try {
+        const stored = window.localStorage.getItem('agentChatDebug');
+        return stored === '1' || stored === 'true';
+    } catch {
+        return false;
+    }
+}
+
+export function debugAgentChat(label: string, details?: Record<string, unknown>) {
+    if (!isAgentChatDebugEnabled()) return;
+    console.debug(`[agent-chat] ${label}`, details ?? {});
+}
 
 export function insertMessageInTimeline(arr: AgentMessage[], m: AgentMessage) {
     const t = typeof m.timestamp === 'number' ? m.timestamp : new Date(m.timestamp).getTime();
@@ -28,19 +58,40 @@ export const DONE_STATES = [
 export function isInProgress(messages: AgentMessage[]) {
     if (!messages.length) return true;
 
+    const isTerminalOptimisticFailure = (message: AgentMessage) =>
+        message.details?._optimistic &&
+        message.details?._deliveryStatus === 'failed' &&
+        DONE_STATES.includes(message.type);
+
+    const progressMessages = messages.filter((m) => !isTerminalOptimisticFailure(m));
+
     // Only the main workstream determines whether the conversation is in progress.
     // Child workstream COMPLETE/IDLE messages must not flip this flag.
-    const mainMessages = messages.filter((m) => getWorkstreamId(m) === 'main');
+    const mainMessages = progressMessages.filter((m) => getWorkstreamId(m) === 'main');
 
     // If there are no main workstream messages yet, check if there's exactly one
     // workstream — treat it as main (handles single-workstream conversations).
     if (mainMessages.length === 0) {
-        const lastMessage = messages[messages.length - 1];
+        const lastMessage = progressMessages[progressMessages.length - 1];
+        if (!lastMessage) return true;
         return !DONE_STATES.includes(lastMessage.type);
     }
 
     const lastMainMessage = mainMessages[mainMessages.length - 1];
     return !DONE_STATES.includes(lastMainMessage.type);
+}
+
+export function isUserStoppedMessage(message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.IDLE) return false;
+
+    const statusReason = message.details?.status_reason;
+    const displayRole = message.details?.display_role;
+    if (statusReason === 'user_stopped' || displayRole === 'user_stopped') return true;
+
+    return String(message.message ?? '')
+        .trim()
+        .toLowerCase()
+        .startsWith('stopped.');
 }
 
 export const formatRelative = (ts: number | string) =>
@@ -63,6 +114,42 @@ export function getWorkstreamId(message: AgentMessage): string {
 
     // Default to 'main' workstream
     return 'main';
+}
+
+function getDetailsRecord(message: AgentMessage): Record<string, unknown> {
+    const details = message.details;
+    if (!details || typeof details !== 'object' || Array.isArray(details)) return {};
+    return details as Record<string, unknown>;
+}
+
+export function isMainChatTimelineMessage(message: AgentMessage): boolean {
+    if (getWorkstreamId(message) === 'main') return true;
+
+    if (getWorkstreamLaunchDetails(message) || getWorkstreamActivityDetails(message)) return true;
+
+    const details = getDetailsRecord(message);
+    const hasChildWorkflow =
+        typeof details.child_workflow_id === 'string' || typeof details.child_workflow_run_id === 'string';
+    const hasTool = typeof details.tool === 'string' || typeof details.tool_run_id === 'string';
+    const isLegacyPreLaunchFailure =
+        details.event_class === 'activity' &&
+        (message.type === AgentMessageType.ERROR || message.type === AgentMessageType.WARNING) &&
+        !hasChildWorkflow &&
+        !hasTool;
+
+    return isLegacyPreLaunchFailure;
+}
+
+export function filterMessagesForActiveWorkstream(messages: AgentMessage[], activeWorkstream: string): AgentMessage[] {
+    if (activeWorkstream === 'all') {
+        return messages.filter(isMainChatTimelineMessage);
+    }
+
+    return messages.filter((message) => {
+        const workstreamStartDetails = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
+        if (workstreamStartDetails?.workstreamId === activeWorkstream) return false;
+        return getWorkstreamId(message) === activeWorkstream;
+    });
 }
 
 export function isSummaryVisibleToolActivity(message: AgentMessage): boolean {
@@ -224,6 +311,7 @@ export interface StreamingData {
     isComplete?: boolean;
     startTimestamp: number;
     activityId?: string;
+    streamingId?: string;
 }
 
 function normalizeComparableText(text: unknown): string | undefined {
@@ -246,6 +334,19 @@ export function isStreamReplacedByMessage(streaming: StreamingData, messages: Ag
         const messageTimestamp = getTimestampMs(message.timestamp);
         if (messageTimestamp < streaming.startTimestamp) return false;
         if (getWorkstreamId(message) !== streamWorkstreamId) return false;
+
+        const messageStreamingId =
+            typeof message.details?.streaming_id === 'string' ? message.details.streaming_id : undefined;
+        if (streaming.streamingId && messageStreamingId) {
+            if (messageStreamingId !== streaming.streamingId) return false;
+            if (message.details?.display_role === 'thinking') {
+                return false;
+            }
+            if (isToolCallMessage(message) || message.details?.tool_status) {
+                return false;
+            }
+            return true;
+        }
 
         if (streaming.activityId && message.details?.activity_id === streaming.activityId) {
             if (message.details?.display_role === 'thinking') {

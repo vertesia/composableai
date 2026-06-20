@@ -3,9 +3,12 @@ import {
     type AgentMessage,
     AgentMessageType,
     type AgentRun,
+    type CompletedWorkstreamEntry,
     type ConversationFile,
     type ConversationFileRef,
+    type McpConnectUxConfig,
     type Plan,
+    type StopSignal,
     type UserInputSignal,
 } from '@vertesia/common';
 import { FusionFragmentProvider } from '@vertesia/fusion-ux';
@@ -27,6 +30,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { ArrowUpIcon, Bot, CheckCircle, Cpu, FileTextIcon, UploadIcon, XIcon } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { McpConnectionsActionMenu } from '../../oauth/McpConnectionsButton.js';
 import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
 import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
@@ -37,6 +41,7 @@ import { useAgentStream } from './hooks/useAgentStream.js';
 import { useDocumentPanel } from './hooks/useDocumentPanel.js';
 import { useFileProcessing } from './hooks/useFileProcessing.js';
 import { ImageLightboxProvider } from './ImageLightbox';
+import { ActiveWorkstreamsSummary } from './ModernAgentOutput/ActiveWorkstreamsSummary';
 import type {
     AgentConversationViewMode,
     AgentInitialRequestTemplate,
@@ -45,12 +50,22 @@ import type {
 import AllMessagesMixed from './ModernAgentOutput/AllMessagesMixed';
 import type { BatchProgressPanelClassNames } from './ModernAgentOutput/BatchProgressPanel';
 import Header from './ModernAgentOutput/Header';
-import MessageInput, { type SelectedDocument, type UploadedFile } from './ModernAgentOutput/MessageInput';
+import MessageInput, {
+    type ContextWindowUsage,
+    type SelectedDocument,
+    type UploadedFile,
+} from './ModernAgentOutput/MessageInput';
 import type { MessageItemClassNames } from './ModernAgentOutput/MessageItem';
 import { getPendingRequestInputMessage } from './ModernAgentOutput/requestInputMessages';
 import type { StreamingMessageClassNames } from './ModernAgentOutput/StreamingMessage';
 import type { ToolCallGroupClassNames } from './ModernAgentOutput/ToolCallGroup';
-import { getConversationUrl, getWorkstreamId, isInProgress } from './ModernAgentOutput/utils';
+import {
+    debugAgentChat,
+    filterMessagesForActiveWorkstream,
+    getConversationUrl,
+    getWorkstreamId,
+    isInProgress,
+} from './ModernAgentOutput/utils';
 import {
     type AgentChatPlaybackCursor,
     createPlaybackState,
@@ -63,10 +78,10 @@ import { ArtifactUrlCacheProvider } from './useArtifactUrlCache.js';
 import { VegaLiteChart } from './VegaLiteChart';
 import { ThinkingMessages } from './WaitingMessages';
 import {
+    getWorkstreamDisplayName,
     getWorkstreamLaunchDetails,
     getWorkstreamLifecycleStatus,
     isWorkstreamInternalResultMessage,
-    isWorkstreamTerminalMessage,
 } from './workstreams.js';
 
 export type StartWorkflowFn = (initialMessage?: string) => Promise<{ agent_run_id: string } | undefined>;
@@ -80,50 +95,279 @@ function getTimestampMs(timestamp: number | string | undefined): number {
     return Number.isFinite(parsed) ? parsed : Date.now();
 }
 
-function deriveActiveWorkstreamsFromMessages(messages: AgentMessage[]): WorkstreamInfo[] {
-    const latestByWorkstream = new Map<string, AgentMessage>();
-    const launchesByWorkstream = new Map<
-        string,
-        { launch_id?: string; interaction?: string; child_workflow_id?: string; child_workflow_run_id?: string }
-    >();
+type DerivedWorkstreamInfo = WorkstreamInfo & {
+    started_at: number;
+    updated_at: number;
+    order: number;
+};
 
-    for (const message of messages) {
-        const launchDetails = getWorkstreamLaunchDetails(message);
-        if (launchDetails) {
-            launchesByWorkstream.set(launchDetails.workstreamId, {
-                launch_id: launchDetails.launchId,
-                interaction: launchDetails.interaction,
-                child_workflow_id: launchDetails.childWorkflowId,
-                child_workflow_run_id: launchDetails.childWorkflowRunId,
-            });
+function isActiveWorkstreamStatus(status: WorkstreamInfo['status']) {
+    return status === 'running' || status === 'canceling';
+}
+
+function isTerminalWorkstreamStatus(status: WorkstreamInfo['status']) {
+    return !isActiveWorkstreamStatus(status);
+}
+
+function getNumberDetail(value: unknown): number | undefined {
+    return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function toContextWindowUsage(messages: AgentMessage[]): ContextWindowUsage | undefined {
+    for (let index = messages.length - 1; index >= 0; index--) {
+        const details = messages[index].details;
+        if (!details) continue;
+
+        const tokenUsage = details.token_usage as { total?: unknown } | undefined;
+        const usedTokens = getNumberDetail(tokenUsage?.total);
+        const checkpointTokens =
+            getNumberDetail(details.checkpoint_threshold) ?? getNumberDetail(details.checkpoint_at);
+
+        if (typeof usedTokens !== 'number' || typeof checkpointTokens !== 'number' || checkpointTokens <= 0) {
+            continue;
         }
 
-        if (isWorkstreamInternalResultMessage(message)) continue;
-
-        const workstreamId = getWorkstreamId(message);
-        if (workstreamId === 'main' || workstreamId === 'all') continue;
-        latestByWorkstream.set(workstreamId, message);
+        const usedPercent = Math.max(0, Math.min(100, Math.round((usedTokens / checkpointTokens) * 100)));
+        return {
+            usedTokens,
+            checkpointTokens,
+            usedPercent,
+            remainingPercent: Math.max(0, 100 - usedPercent),
+        };
     }
 
-    return Array.from(latestByWorkstream.entries())
-        .filter(([, message]) => {
-            if ([AgentMessageType.COMPLETE, AgentMessageType.IDLE].includes(message.type)) return false;
-            return !isWorkstreamTerminalMessage(message);
+    return undefined;
+}
+
+function mergePreservingTerminalStatus(existing: WorkstreamInfo, next: WorkstreamInfo): WorkstreamInfo {
+    if (!isTerminalWorkstreamStatus(existing.status) || !isActiveWorkstreamStatus(next.status)) {
+        return { ...existing, ...next };
+    }
+
+    return {
+        ...existing,
+        interaction: existing.interaction ?? next.interaction,
+        elapsed_ms: Math.max(existing.elapsed_ms, next.elapsed_ms),
+        deadline_ms: Math.max(existing.deadline_ms, next.deadline_ms),
+        remaining_ms: 0,
+        phase: existing.phase ?? next.phase,
+        child_workflow_id: existing.child_workflow_id ?? next.child_workflow_id,
+        child_workflow_run_id: existing.child_workflow_run_id ?? next.child_workflow_run_id,
+    };
+}
+
+function getWorkstreamMessageDetails(message: AgentMessage): {
+    workstreamId: string;
+    launchId?: string;
+    interaction?: string;
+    childWorkflowId?: string;
+    childWorkflowRunId?: string;
+} | null {
+    const details = message.details as
+        | {
+              workstream_id?: unknown;
+              launch_id?: unknown;
+              interaction?: unknown;
+              child_workflow_id?: unknown;
+              child_workflow_run_id?: unknown;
+          }
+        | undefined;
+
+    const workstreamId =
+        typeof details?.workstream_id === 'string' && details.workstream_id.trim()
+            ? details.workstream_id
+            : getWorkstreamId(message);
+
+    if (workstreamId === 'main' || workstreamId === 'all') return null;
+
+    return {
+        workstreamId,
+        launchId: typeof details?.launch_id === 'string' ? details.launch_id : undefined,
+        interaction: typeof details?.interaction === 'string' ? details.interaction : undefined,
+        childWorkflowId: typeof details?.child_workflow_id === 'string' ? details.child_workflow_id : undefined,
+        childWorkflowRunId:
+            typeof details?.child_workflow_run_id === 'string' ? details.child_workflow_run_id : undefined,
+    };
+}
+
+function isWorkstreamActivityFailureMessage(message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.ERROR) return false;
+
+    const details = message.details as
+        | {
+              activity_group_id?: unknown;
+              event_class?: unknown;
+              tool?: unknown;
+              tool_event?: unknown;
+              tool_run_id?: unknown;
+              tool_status?: unknown;
+              workstream_event?: unknown;
+          }
+        | undefined;
+
+    if (details?.event_class !== 'activity') return false;
+    if (details.workstream_event) return false;
+
+    return !(
+        details.tool ||
+        details.tool_status ||
+        details.tool_run_id ||
+        details.activity_group_id ||
+        details.tool_event
+    );
+}
+
+function ensureWorkstreamRecord(
+    records: Map<string, DerivedWorkstreamInfo>,
+    latestKeyByWorkstream: Map<string, string>,
+    workstreamId: string,
+    launchId: string | undefined,
+    timestamp: number,
+    order: number,
+): DerivedWorkstreamInfo {
+    if (launchId) {
+        const previousKey = latestKeyByWorkstream.get(workstreamId);
+        if (previousKey?.startsWith('message-derived:')) {
+            const previous = records.get(previousKey);
+            if (previous) {
+                records.delete(previousKey);
+                records.set(launchId, {
+                    ...previous,
+                    launch_id: launchId,
+                    updated_at: Math.max(previous.updated_at, timestamp),
+                });
+            }
+        }
+        latestKeyByWorkstream.set(workstreamId, launchId);
+    }
+
+    const key = launchId ?? latestKeyByWorkstream.get(workstreamId) ?? `message-derived:${workstreamId}`;
+    const existing = records.get(key);
+    if (existing) return existing;
+
+    const record: DerivedWorkstreamInfo = {
+        workstream_id: workstreamId,
+        launch_id: key,
+        elapsed_ms: 0,
+        deadline_ms: 0,
+        remaining_ms: 0,
+        status: 'running',
+        started_at: timestamp,
+        updated_at: timestamp,
+        order,
+    };
+    records.set(key, record);
+    if (!latestKeyByWorkstream.has(workstreamId)) latestKeyByWorkstream.set(workstreamId, key);
+    return record;
+}
+
+function deriveWorkstreamsFromMessages(messages: AgentMessage[]): WorkstreamInfo[] {
+    const records = new Map<string, DerivedWorkstreamInfo>();
+    const latestKeyByWorkstream = new Map<string, string>();
+
+    messages.forEach((message, order) => {
+        const timestamp = getTimestampMs(message.timestamp);
+        const details = getWorkstreamMessageDetails(message);
+        const launchDetails = getWorkstreamLaunchDetails(message);
+        const workstreamId = launchDetails?.workstreamId ?? details?.workstreamId;
+        if (!workstreamId) return;
+
+        const launchId = launchDetails?.launchId ?? details?.launchId;
+        const isInternalResult = isWorkstreamInternalResultMessage(message);
+        if (!launchDetails && !launchId && isInternalResult && !latestKeyByWorkstream.has(workstreamId)) return;
+
+        const record = ensureWorkstreamRecord(records, latestKeyByWorkstream, workstreamId, launchId, timestamp, order);
+
+        if (launchDetails) {
+            record.interaction = launchDetails.interaction ?? record.interaction;
+            record.child_workflow_id = launchDetails.childWorkflowId ?? record.child_workflow_id;
+            record.child_workflow_run_id = launchDetails.childWorkflowRunId ?? record.child_workflow_run_id;
+            record.status = 'running';
+        } else {
+            record.interaction = details?.interaction ?? record.interaction;
+            record.child_workflow_id = details?.childWorkflowId ?? record.child_workflow_id;
+            record.child_workflow_run_id = details?.childWorkflowRunId ?? record.child_workflow_run_id;
+        }
+
+        const lifecycleStatus = getWorkstreamLifecycleStatus(message);
+        if (lifecycleStatus) {
+            record.status = lifecycleStatus;
+        } else if (!isInternalResult) {
+            if (isWorkstreamActivityFailureMessage(message)) {
+                record.status = 'failed';
+            } else if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
+                record.status = 'completed';
+            }
+        }
+
+        if (isInternalResult) return;
+
+        record.updated_at = Math.max(record.updated_at, timestamp);
+        if (isActiveWorkstreamStatus(record.status)) {
+            record.elapsed_ms = Math.max(record.elapsed_ms, timestamp - record.started_at);
+        } else {
+            record.elapsed_ms = Math.max(record.elapsed_ms, timestamp - record.started_at);
+            record.remaining_ms = 0;
+        }
+    });
+
+    return Array.from(records.values())
+        .sort((a, b) => {
+            const activeDelta =
+                Number(!isActiveWorkstreamStatus(a.status)) - Number(!isActiveWorkstreamStatus(b.status));
+            if (activeDelta !== 0) return activeDelta;
+            if (isActiveWorkstreamStatus(a.status)) return a.order - b.order;
+            return b.updated_at - a.updated_at || a.order - b.order;
         })
-        .map(([workstreamId, message]) => {
-            const launch = launchesByWorkstream.get(workstreamId);
-            return {
-                workstream_id: workstreamId,
-                launch_id: launch?.launch_id ?? `message-derived:${workstreamId}`,
-                interaction: launch?.interaction,
-                elapsed_ms: 0,
-                deadline_ms: 0,
-                remaining_ms: 0,
-                status: getWorkstreamLifecycleStatus(message) ?? 'running',
-                child_workflow_id: launch?.child_workflow_id,
-                child_workflow_run_id: launch?.child_workflow_run_id,
-            };
-        });
+        .map(({ started_at, updated_at, order, ...workstream }) => workstream);
+}
+
+function activeWorkstreamEntryToInfo(ws: ActiveWorkstreamEntry): WorkstreamInfo {
+    return {
+        workstream_id: ws.workstream_id,
+        launch_id: ws.launch_id,
+        interaction: ws.interaction,
+        elapsed_ms: ws.elapsed_ms,
+        deadline_ms: ws.deadline_ms,
+        remaining_ms: Math.max(0, ws.deadline_ms - ws.elapsed_ms),
+        status: ws.status,
+        phase: ws.latest_progress?.phase,
+        child_workflow_id: ws.child_workflow_id,
+        child_workflow_run_id: ws.child_workflow_run_id,
+    };
+}
+
+function completedWorkstreamEntryToInfo(ws: CompletedWorkstreamEntry): WorkstreamInfo {
+    return {
+        workstream_id: ws.workstream_id,
+        launch_id: ws.launch_id,
+        interaction: ws.interaction,
+        elapsed_ms: ws.duration_ms ?? 0,
+        deadline_ms: 0,
+        remaining_ms: 0,
+        status: ws.status,
+        phase: ws.last_progress?.phase,
+        child_workflow_id: ws.child_workflow_id,
+        child_workflow_run_id: ws.child_workflow_run_id,
+    };
+}
+
+function mergeWorkstreamInfo(workstreams: WorkstreamInfo[], next: WorkstreamInfo) {
+    const existingIndex = workstreams.findIndex((ws) => ws.launch_id === next.launch_id);
+    if (existingIndex >= 0) {
+        workstreams[existingIndex] = mergePreservingTerminalStatus(workstreams[existingIndex], next);
+        return;
+    }
+
+    const fallbackIndex = workstreams.findIndex(
+        (ws) => ws.workstream_id === next.workstream_id && ws.launch_id.startsWith('message-derived:'),
+    );
+    if (fallbackIndex >= 0 && !next.launch_id.startsWith('message-derived:')) {
+        workstreams[fallbackIndex] = mergePreservingTerminalStatus(workstreams[fallbackIndex], next);
+        return;
+    }
+
+    workstreams.push(next);
 }
 
 function formatCompactDuration(seconds: number): string {
@@ -1054,9 +1298,10 @@ function ModernAgentConversationInner({
         messages,
         streamingMessages,
         isCompleted,
+        initialHistoryStatus,
         debugChunkFlash,
         addOptimisticMessage,
-        removeOptimisticMessages,
+        updateOptimisticMessageStatus,
         reconnect: reconnectStream,
         agentRunStatus,
         workflowRunId,
@@ -1107,6 +1352,7 @@ function ModernAgentConversationInner({
     const conversationRef = useRef<HTMLDivElement | null>(null);
     const conversationLayoutRef = useRef<HTMLDivElement | null>(null);
     const [isSending, setIsSending] = useState(false);
+    const [isCompactingContext, setIsCompactingContext] = useState(false);
     const [internalViewMode, setInternalViewMode] = useState<AgentConversationViewMode>('sliding');
     const viewMode = controlledViewMode ?? internalViewMode;
     const handleViewModeChange = useCallback(
@@ -1121,13 +1367,13 @@ function ModernAgentConversationInner({
     );
     const [isStopping, setIsStopping] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
+    const [activeWorkstream, setActiveWorkstream] = useState('all');
     const [playbackCursor, setPlaybackCursor] = useState<AgentChatPlaybackCursor>('live');
     const [isPlaybackToggleEnabled, setIsPlaybackToggleEnabled] = useState(false);
     const [playbackScrollRequestId, setPlaybackScrollRequestId] = useState(0);
-    const [activeWorkstreams, setActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
-    const [completedWorkstreams, setCompletedWorkstreams] = useState<
-        Array<{ launch_id: string; workstream_id: string; status: WorkstreamInfo['status'] }>
-    >([]);
+    const [queriedActiveWorkstreams, setQueriedActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
+    const [queriedCompletedWorkstreams, setQueriedCompletedWorkstreams] = useState<CompletedWorkstreamEntry[]>([]);
+    const [isWorkstreamQueryUnavailable, setIsWorkstreamQueryUnavailable] = useState(false);
     const workstreamFetchFailedRef = useRef(false);
     const dragCounterRef = useRef(0);
     const pendingPlaybackScrollRef = useRef(false);
@@ -1205,63 +1451,137 @@ function ModernAgentConversationInner({
         };
     }, [plans, activePlanIndex, workstreamStatusMap]);
 
-    const messageDerivedActiveWorkstreams = useMemo(() => deriveActiveWorkstreamsFromMessages(messages), [messages]);
+    const messageDerivedWorkstreams = useMemo(() => deriveWorkstreamsFromMessages(messages), [messages]);
 
     const panelWorkstreams = useMemo<WorkstreamInfo[]>(() => {
-        const running: WorkstreamInfo[] =
-            activeWorkstreams.length > 0
-                ? activeWorkstreams.map((ws) => ({
-                      workstream_id: ws.workstream_id,
-                      launch_id: ws.launch_id,
-                      interaction: ws.interaction,
-                      elapsed_ms: ws.elapsed_ms,
-                      deadline_ms: ws.deadline_ms,
-                      remaining_ms: Math.max(0, ws.deadline_ms - ws.elapsed_ms),
-                      status: ws.status,
-                      phase: ws.latest_progress?.phase,
-                      child_workflow_id: ws.child_workflow_id,
-                      child_workflow_run_id: ws.child_workflow_run_id,
-                  }))
-                : messageDerivedActiveWorkstreams;
-        const runningWorkstreamIds = new Set(running.map((ws) => ws.workstream_id));
-        const completed: WorkstreamInfo[] = completedWorkstreams
-            .filter((ws) => !runningWorkstreamIds.has(ws.workstream_id))
-            .map((ws) => ({
-                workstream_id: ws.workstream_id,
-                launch_id: ws.launch_id,
-                elapsed_ms: 0,
-                deadline_ms: 0,
-                remaining_ms: 0,
-                status: ws.status,
-            }));
-        return [...running, ...completed];
-    }, [activeWorkstreams, completedWorkstreams, messageDerivedActiveWorkstreams]);
+        const merged = [...messageDerivedWorkstreams];
+        for (const ws of queriedCompletedWorkstreams) {
+            mergeWorkstreamInfo(merged, completedWorkstreamEntryToInfo(ws));
+        }
+        for (const ws of queriedActiveWorkstreams) {
+            mergeWorkstreamInfo(merged, activeWorkstreamEntryToInfo(ws));
+        }
+        return merged
+            .map((workstream, index) => ({ workstream, index }))
+            .sort((a, b) => {
+                const activeDelta =
+                    Number(!isActiveWorkstreamStatus(a.workstream.status)) -
+                    Number(!isActiveWorkstreamStatus(b.workstream.status));
+                return activeDelta || a.index - b.index;
+            })
+            .map(({ workstream }) => workstream);
+    }, [messageDerivedWorkstreams, queriedActiveWorkstreams, queriedCompletedWorkstreams]);
 
-    const activeTaskCount = useMemo(
-        () => panelWorkstreams.filter((ws) => ws.status === 'running').length,
+    const composerActiveWorkstreams = useMemo(
+        () => panelWorkstreams.filter((ws) => isActiveWorkstreamStatus(ws.status)),
         [panelWorkstreams],
     );
 
+    const activeTaskCount = useMemo(
+        () => composerActiveWorkstreams.filter((ws) => ws.status === 'running').length,
+        [composerActiveWorkstreams],
+    );
+
+    const activeWorkstreamDisplayName = useMemo(() => {
+        if (activeWorkstream === 'all') return undefined;
+        const workstream = panelWorkstreams.find(
+            (ws) => ws.workstream_id === activeWorkstream || ws.launch_id === activeWorkstream,
+        );
+        if (!workstream) return getWorkstreamDisplayName(activeWorkstream);
+        return getWorkstreamDisplayName(workstream.workstream_id, workstream.interaction);
+    }, [activeWorkstream, panelWorkstreams]);
+
+    const composerPlaceholder = useMemo(() => {
+        if (placeholder) return placeholder;
+        if (activeWorkstreamDisplayName) {
+            return t('agent.messageMainAgentWhileViewingWorkstream', { workstream: activeWorkstreamDisplayName });
+        }
+        return undefined;
+    }, [activeWorkstreamDisplayName, placeholder, t]);
+
     const canShowPlaybackToggle = showPlaybackToggle && enablePlayback === undefined && isAgentChatPlaybackAvailable();
     const isPlaybackEnabled = enablePlayback ?? (isAgentChatPlaybackEnabled() || isPlaybackToggleEnabled);
+    const playbackSourceMessages = useMemo(() => {
+        const visibleMessages = hiddenMessageTypes?.length
+            ? messages.filter((message) => !hiddenMessageTypes.includes(message.type))
+            : messages;
+        return filterMessagesForActiveWorkstream(visibleMessages, activeWorkstream);
+    }, [activeWorkstream, hiddenMessageTypes, messages]);
     const playbackState = useMemo(
-        () => createPlaybackState(messages, playbackCursor, isPlaybackEnabled),
-        [isPlaybackEnabled, messages, playbackCursor],
+        () => createPlaybackState(playbackSourceMessages, playbackCursor, isPlaybackEnabled),
+        [isPlaybackEnabled, playbackCursor, playbackSourceMessages],
     );
     const clampedPlaybackCursor = playbackState.cursor;
     const isPlaybackLive = playbackState.isLive;
+    const isPlaybackAtLatest =
+        isPlaybackEnabled && !isPlaybackLive && playbackState.cursorIndex === playbackSourceMessages.length - 1;
     const displayedMessages = playbackState.displayedMessages;
     const displayedStreamingMessages = isPlaybackLive ? streamingMessages : EMPTY_STREAMING_MESSAGES;
+    const playbackDerivedWorkstreams = useMemo(
+        () => deriveWorkstreamsFromMessages(displayedMessages),
+        [displayedMessages],
+    );
+    const playbackActiveWorkstreams = useMemo(
+        () => playbackDerivedWorkstreams.filter((ws) => isActiveWorkstreamStatus(ws.status)),
+        [playbackDerivedWorkstreams],
+    );
     const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
-    const displayedIsCompleted = isPlaybackLive ? effectiveIsCompleted : false;
+    const displayedIsCompleted = isPlaybackLive || isPlaybackAtLatest ? effectiveIsCompleted : false;
     const pendingRequestInputMessage = useMemo(
         () => getPendingRequestInputMessage(displayedMessages),
         [displayedMessages],
     );
     const shouldShowRequestInputOverlay = Boolean(pendingRequestInputMessage) && !isFailed;
     const isViewingPlaybackHistory = isPlaybackEnabled && !isPlaybackLive;
-    const shouldShowLiveRequestInputOverlay = shouldShowRequestInputOverlay && !isViewingPlaybackHistory;
     const shouldRenderLiveMessageInputArea = shouldRenderMessageInputArea && !isViewingPlaybackHistory;
+    const contextWindowUsage = useMemo(() => toContextWindowUsage(messages), [messages]);
+    const canCompactContext =
+        allowWorkflowControl && !effectiveIsCompleted && isPlaybackLive && Boolean(contextWindowUsage);
+
+    useEffect(() => {
+        debugAgentChat('conversation render state', {
+            agentRunId,
+            messageCount: messages.length,
+            playbackMessageCount: playbackSourceMessages.length,
+            displayedMessageCount: displayedMessages.length,
+            streamingCount: streamingMessages.size,
+            displayedStreamingCount: displayedStreamingMessages.size,
+            initialHistoryStatus,
+            isCompleted,
+            effectiveIsCompleted,
+            displayedIsCompleted,
+            agentRunStatus,
+            effectiveWorkflowStatus,
+            isWorkflowTerminal,
+            playbackCursor: clampedPlaybackCursor,
+            isPlaybackEnabled,
+            isPlaybackLive,
+            isPlaybackAtLatest,
+            activeWorkstream,
+            showInitialRequest: initialHistoryStatus === 'empty' && messages.length === 0,
+            pendingStartVisible: messages.length === 0 && !effectiveIsCompleted && Boolean(pendingStartMessage),
+        });
+    }, [
+        activeWorkstream,
+        agentRunId,
+        agentRunStatus,
+        clampedPlaybackCursor,
+        displayedIsCompleted,
+        displayedMessages.length,
+        displayedStreamingMessages.size,
+        effectiveIsCompleted,
+        effectiveWorkflowStatus,
+        initialHistoryStatus,
+        isCompleted,
+        isPlaybackAtLatest,
+        isPlaybackEnabled,
+        isPlaybackLive,
+        isWorkflowTerminal,
+        messages.length,
+        pendingStartMessage,
+        playbackSourceMessages.length,
+        streamingMessages.size,
+    ]);
 
     const handleTogglePlayback = useCallback(() => {
         setIsPlaybackToggleEnabled((prev) => !prev);
@@ -1269,8 +1589,8 @@ function ModernAgentConversationInner({
 
     const handleChangePlaybackCursor = useCallback(
         (nextCursor: AgentChatPlaybackCursor) => {
-            const currentIndex = getPlaybackCursorIndex(clampedPlaybackCursor, messages.length);
-            const nextIndex = getPlaybackCursorIndex(nextCursor, messages.length);
+            const currentIndex = getPlaybackCursorIndex(clampedPlaybackCursor, playbackSourceMessages.length);
+            const nextIndex = getPlaybackCursorIndex(nextCursor, playbackSourceMessages.length);
             const returningToLive = nextCursor === 'live' && clampedPlaybackCursor !== 'live';
             if (isPlaybackEnabled && (nextIndex > currentIndex || returningToLive)) {
                 pendingPlaybackScrollRef.current = true;
@@ -1278,7 +1598,7 @@ function ModernAgentConversationInner({
             }
             setPlaybackCursor(nextCursor);
         },
-        [clampedPlaybackCursor, isPlaybackEnabled, messages.length],
+        [clampedPlaybackCursor, isPlaybackEnabled, playbackSourceMessages.length],
     );
 
     useEffect(() => {
@@ -1431,45 +1751,76 @@ function ModernAgentConversationInner({
         onWorkstreamStatusChange?.(workstreamStatusMap);
     }, [workstreamStatusMap, onWorkstreamStatusChange]);
 
-    // Poll active workstreams from backend query for right-panel visibility and details.
     useEffect(() => {
-        const shouldPoll = !effectiveIsCompleted || activeWorkstreams.length > 0;
+        void agentRunId;
+        workstreamFetchFailedRef.current = false;
+        setIsWorkstreamQueryUnavailable(false);
+        setQueriedActiveWorkstreams([]);
+        setQueriedCompletedWorkstreams([]);
+    }, [agentRunId]);
+
+    // Poll the backend query only as live enrichment. Persisted messages remain the
+    // source of truth for the right-panel history once a workflow can no longer be queried.
+    useEffect(() => {
+        const shouldPoll =
+            initialHistoryStatus !== 'loading' &&
+            !effectiveIsCompleted &&
+            !isWorkflowTerminal &&
+            !isWorkstreamQueryUnavailable;
+        debugAgentChat('active workstreams poll state', {
+            agentRunId,
+            shouldPoll,
+            initialHistoryStatus,
+            effectiveIsCompleted,
+            isWorkflowTerminal,
+            isWorkstreamQueryUnavailable,
+        });
         if (!shouldPoll) {
-            setActiveWorkstreams((prev) => (prev.length === 0 ? prev : []));
+            setQueriedActiveWorkstreams((prev) => (prev.length === 0 ? prev : []));
             return;
         }
 
         let isCancelled = false;
+        let isFetchInFlight = false;
 
         const fetchActiveWorkstreams = async () => {
+            if (isFetchInFlight) {
+                debugAgentChat('active workstreams fetch skipped while previous request is pending', { agentRunId });
+                return;
+            }
+
+            isFetchInFlight = true;
             try {
+                debugAgentChat('active workstreams fetch start', { agentRunId });
                 const result = await client.agents.getActiveWorkstreams(agentRunId);
                 if (isCancelled) return;
-                setActiveWorkstreams(result.running ?? []);
-                const completed =
-                    (
-                        result as unknown as {
-                            completed?: Array<{ launch_id: string; workstream_id: string; status: string }>;
-                        }
-                    ).completed ?? [];
-                setCompletedWorkstreams(
-                    completed.map((c) => ({
-                        launch_id: c.launch_id,
-                        workstream_id: c.workstream_id,
-                        status:
-                            c.status === 'canceled' || c.status === 'failed' || c.status === 'timeout'
-                                ? c.status
-                                : 'completed',
-                    })),
-                );
+                debugAgentChat('active workstreams fetch success', {
+                    agentRunId,
+                    runningCount: result.running?.length ?? 0,
+                    completedCount: result.completed?.length ?? 0,
+                    unavailable: result.unavailable === true,
+                });
+                setQueriedActiveWorkstreams(result.running ?? []);
+                setQueriedCompletedWorkstreams(result.completed ?? []);
+                if (result.unavailable) {
+                    setIsWorkstreamQueryUnavailable(true);
+                    return;
+                }
                 workstreamFetchFailedRef.current = false;
             } catch (error) {
                 if (isCancelled) return;
-                setActiveWorkstreams([]);
+                setQueriedActiveWorkstreams((prev) => (prev.length === 0 ? prev : []));
+                setIsWorkstreamQueryUnavailable(true);
+                debugAgentChat('active workstreams fetch failed', {
+                    agentRunId,
+                    error: error instanceof Error ? error.message : String(error),
+                });
                 if (!workstreamFetchFailedRef.current) {
                     console.warn('Failed to fetch active workstreams:', error);
                     workstreamFetchFailedRef.current = true;
                 }
+            } finally {
+                isFetchInFlight = false;
             }
         };
 
@@ -1480,7 +1831,14 @@ function ModernAgentConversationInner({
             isCancelled = true;
             window.clearInterval(pollHandle);
         };
-    }, [client.agents, agentRunId, effectiveIsCompleted, activeWorkstreams.length]);
+    }, [
+        client.agents,
+        agentRunId,
+        effectiveIsCompleted,
+        initialHistoryStatus,
+        isWorkflowTerminal,
+        isWorkstreamQueryUnavailable,
+    ]);
 
     // Notify parent when input availability is determined
     useEffect(() => {
@@ -1547,7 +1905,7 @@ function ModernAgentConversationInner({
                 type: AgentMessageType.QUESTION,
                 message: messageContent,
                 workstream_id: 'main',
-                details: { _optimistic: true, _messageId: messageId },
+                details: { _optimistic: true, _messageId: messageId, _deliveryStatus: 'sending' },
             };
 
             addOptimisticMessage(optimisticMessage);
@@ -1555,14 +1913,21 @@ function ModernAgentConversationInner({
             const metadata = {
                 ...(attachedDocs.length > 0 ? { attached_docs: attachedDocs.map((d) => d.id) } : {}),
                 ...contextMetadata,
+                id: messageId,
                 _messageId: messageId,
             };
 
             const sendUserInput = () =>
                 client.agents.sendSignal(agentRunId, 'UserInput', {
                     message: messageContent,
+                    client_message_id: messageId,
                     metadata,
                 } as UserInputSignal);
+
+            const markReceived = () => {
+                updateOptimisticMessageStatus(messageId, 'received');
+                onAttachmentsSent?.();
+            };
 
             // When the workflow has already completed, restart it first so it resumes
             // from the existing conversation history, then deliver the message. Temporal
@@ -1572,17 +1937,13 @@ function ModernAgentConversationInner({
             const deliver = isWorkflowTerminalRef.current
                 ? client.agents.restart(agentRunId).then(() => {
                       reconnectStream();
-                      return sendUserInput().then(() => {
-                          onAttachmentsSent?.();
-                      });
+                      return sendUserInput().then(markReceived);
                   })
-                : sendUserInput().then(() => {
-                      onAttachmentsSent?.();
-                  });
+                : sendUserInput().then(markReceived);
 
             deliver
                 .catch((err) => {
-                    removeOptimisticMessages((m) => m.details?._messageId === messageId);
+                    updateOptimisticMessageStatus(messageId, 'failed');
                     toast({
                         status: 'error',
                         title: t('agent.failedToSend'),
@@ -1603,10 +1964,68 @@ function ModernAgentConversationInner({
             onAttachmentsSent,
             reconnectStream,
             addOptimisticMessage,
-            removeOptimisticMessages,
+            updateOptimisticMessageStatus,
             t,
         ],
     );
+
+    // After the user connects an MCP server requested via request_mcp_connection, flag the
+    // conversation for tool re-discovery and resume it with a confirmation message so the agent
+    // continues automatically with the newly-available tools.
+    const handleMcpConnected = useCallback(
+        async (cfg: McpConnectUxConfig) => {
+            // Await the dirty-flag signal BEFORE sending the follow-up message so Temporal records
+            // McpConfigChanged ahead of the UserInput. Otherwise the resume turn could run before
+            // the flag is set and use the stale tool catalog. An omitted disabled list preserves
+            // the user's current deactivation set.
+            try {
+                await client.agents.sendSignal(agentRunId, 'McpConfigChanged', {});
+            } catch (err: unknown) {
+                console.error('Failed to signal MCP config change', err);
+            }
+            handleSendMessage(t('agent.mcpConnectedMessage', { name: cfg.name }));
+        },
+        [client, agentRunId, handleSendMessage, t],
+    );
+
+    // Per-conversation MCP deactivation set, seeded from the run and updated live via the
+    // MCP action menu in the composer toolbar. Changes are pushed to the running workflow
+    // (which re-discovers tools at the next turn).
+    const [mcpDisabled, setMcpDisabled] = useState<string[] | undefined>(undefined);
+    useEffect(() => {
+        let cancelled = false;
+        client.agents
+            .retrieve(agentRunId)
+            .then((run) => {
+                if (!cancelled) setMcpDisabled(run.disabled_mcp_collections);
+            })
+            .catch(() => {
+                /* best-effort: toggles default to all-active */
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [client, agentRunId]);
+
+    const handleMcpDisabledChange = useCallback(
+        (disabled: string[]) => {
+            const next = disabled.length > 0 ? disabled : undefined;
+            setMcpDisabled(next);
+            client.agents
+                .sendSignal(agentRunId, 'McpConfigChanged', { disabled_mcp_collections: disabled })
+                .catch((err: unknown) => console.error('Failed to signal MCP config change', err));
+        },
+        [client, agentRunId],
+    );
+
+    const handleMcpConnectionChange = useCallback(() => {
+        // A connect/disconnect doesn't change the activation set — omit disabled_mcp_collections so
+        // the workflow preserves the current denylist (rather than overwriting it with possibly
+        // stale UI state) and just re-discovers tools.
+        client.agents
+            .sendSignal(agentRunId, 'McpConfigChanged', {})
+            .catch((err: unknown) => console.error('Failed to signal MCP config change', err));
+    }, [client, agentRunId]);
 
     // Drag and drop handlers for full-panel file upload
     const handleDragEnter = useCallback(
@@ -1664,18 +2083,35 @@ function ModernAgentConversationInner({
     const handleStopWorkflow = useCallback(async () => {
         if (isStopping) return;
 
+        const messageId = `stop-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const optimisticMessage: AgentMessage = {
+            timestamp: Date.now(),
+            workflow_run_id: agentRunId,
+            type: AgentMessageType.IDLE,
+            message: 'Stopped. Waiting for your command...',
+            workstream_id: 'main',
+            details: {
+                _optimistic: true,
+                _messageId: messageId,
+                _deliveryStatus: 'sending',
+                display_role: 'user_stopped',
+                status_reason: 'user_stopped',
+            },
+        };
+
+        addOptimisticMessage(optimisticMessage);
         setIsStopping(true);
         try {
             await client.agents.sendSignal(agentRunId, 'Stop', {
                 message: 'User requested stop',
-            });
+                client_message_id: messageId,
+                metadata: {
+                    id: messageId,
+                    _messageId: messageId,
+                },
+            } as StopSignal);
 
-            toast({
-                status: 'info',
-                title: t('agent.agentInterrupted'),
-                description: t('agent.typeNewInstructions'),
-                duration: 3000,
-            });
+            updateOptimisticMessageStatus(messageId, 'received');
         } catch (err) {
             toast({
                 status: 'error',
@@ -1683,10 +2119,31 @@ function ModernAgentConversationInner({
                 description: err instanceof Error ? err.message : t('agent.unknownError'),
                 duration: 3000,
             });
+            updateOptimisticMessageStatus(messageId, 'failed');
         } finally {
             setIsStopping(false);
         }
-    }, [isStopping, client, agentRunId, toast, t]);
+    }, [isStopping, agentRunId, addOptimisticMessage, client.agents, toast, t, updateOptimisticMessageStatus]);
+
+    const handleCompactContext = useCallback(async () => {
+        if (isCompactingContext || effectiveIsCompleted || !isPlaybackLive) return;
+
+        setIsCompactingContext(true);
+        try {
+            await client.agents.sendSignal(agentRunId, 'TriggerCheckpoint', {
+                reason: 'manual user request',
+            });
+        } catch (err) {
+            toast({
+                status: 'error',
+                title: t('agent.failedToCompactContext'),
+                description: err instanceof Error ? err.message : t('agent.unknownError'),
+                duration: 3000,
+            });
+        } finally {
+            setIsCompactingContext(false);
+        }
+    }, [agentRunId, client.agents, effectiveIsCompleted, isCompactingContext, isPlaybackLive, t, toast]);
 
     // Expose stop handler to external callers via ref
     useEffect(() => {
@@ -1881,7 +2338,7 @@ function ModernAgentConversationInner({
                 <div className="flex flex-shrink-0 justify-end px-2 py-1.5">
                     <AgentChatPlaybackControls
                         cursor={clampedPlaybackCursor}
-                        messages={messages}
+                        messages={playbackSourceMessages}
                         onChangeCursor={handleChangePlaybackCursor}
                     />
                 </div>
@@ -1922,19 +2379,27 @@ function ModernAgentConversationInner({
                     initialRequestSchema={initialRequestSchema}
                     initialRequestTitle={initialRequestTitle}
                     initialRequestTemplate={initialRequestTemplate}
+                    showInitialRequest={initialHistoryStatus === 'empty' && messages.length === 0}
                     hiddenMessageTypes={hiddenMessageTypes}
                     disableAutoScroll={!isPlaybackLive}
-                    renderRequestInputControls={isPlaybackLive && !shouldShowLiveRequestInputOverlay}
+                    renderRequestInputControls={!shouldShowRequestInputOverlay}
+                    activeWorkstream={activeWorkstream}
+                    onActiveWorkstreamChange={setActiveWorkstream}
                 />
             )}
 
-            {shouldShowLiveRequestInputOverlay ? (
+            {shouldShowRequestInputOverlay ? (
                 <AgentRequestInputOverlay
                     message={pendingRequestInputMessage}
-                    onSendMessage={handleSendMessage}
+                    onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
+                    onMcpConnected={isPlaybackLive ? handleMcpConnected : undefined}
                     disabled={isUploading || !isPlaybackLive}
                     isLoading={isSending || isUploading}
                 />
+            ) : isViewingPlaybackHistory && playbackActiveWorkstreams.length > 0 ? (
+                <div className="flex-shrink-0 pb-safe-area">
+                    <ActiveWorkstreamsSummary activeWorkstreams={playbackActiveWorkstreams} />
+                </div>
             ) : (
                 shouldRenderLiveMessageInputArea && (
                     <div className="flex-shrink-0 pb-safe-area">
@@ -1971,14 +2436,24 @@ function ModernAgentConversationInner({
                                 <MessageInput
                                     onSend={handleSendMessage}
                                     onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
+                                    mcpSlot={
+                                        <McpConnectionsActionMenu
+                                            disabledCollections={mcpDisabled}
+                                            onChange={handleMcpDisabledChange}
+                                            onConnectionChange={handleMcpConnectionChange}
+                                        />
+                                    }
                                     disabled={isUploading || !isPlaybackLive}
                                     isSending={isSending || isUploading}
                                     isStopping={isStopping}
                                     isStreaming={!effectiveIsCompleted}
                                     isCompleted={effectiveIsCompleted}
+                                    contextWindowUsage={canCompactContext ? contextWindowUsage : undefined}
+                                    onCompactContext={canCompactContext ? handleCompactContext : undefined}
+                                    isCompactingContext={isCompactingContext}
                                     activeTaskCount={activeTaskCount}
-                                    activeWorkstreams={panelWorkstreams}
-                                    placeholder={placeholder}
+                                    activeWorkstreams={composerActiveWorkstreams}
+                                    placeholder={composerPlaceholder}
                                     onFilesSelected={canUploadFiles ? handleFileUpload : undefined}
                                     uploadedFiles={uploadedFiles}
                                     onRemoveFile={onRemoveFile}

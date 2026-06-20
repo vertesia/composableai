@@ -93,7 +93,7 @@ export class ActivityContext<ParamsT extends object> {
      */
     get file(): WorkflowInputFile {
         const input = this.payload.input;
-        if (!input || input.inputType !== 'files') {
+        if (input?.inputType !== 'files') {
             throw new WorkflowExecutionError('Activity expects files but received objectIds');
         }
         // TypeScript now knows input is { inputType: 'files', files: WorkflowInputFile[] }
@@ -115,7 +115,7 @@ export class ActivityContext<ParamsT extends object> {
      */
     get files(): WorkflowInputFile[] {
         const input = this.payload.input;
-        if (!input || input.inputType !== 'files') {
+        if (input?.inputType !== 'files') {
             throw new WorkflowExecutionError('Activity expects files but received objectIds');
         }
         // TypeScript now knows input is { inputType: 'files', files: WorkflowInputFile[] }

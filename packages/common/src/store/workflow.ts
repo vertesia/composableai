@@ -1,4 +1,4 @@
-import type { HttpTimeoutOptions, ModelOptions } from '@llumiverse/common';
+import type { ExecutionTokenUsage, HttpTimeoutOptions, ModelOptions } from '@llumiverse/common';
 import type {
     ConversationVisibility,
     InteractionExecutionConfiguration,
@@ -657,6 +657,11 @@ export interface WorkflowInteractionVars {
     interactionParamsSchema?: JSONSchema;
     collection_id?: string;
     /**
+     * Denylist of MCP tool-collection ids deactivated for this conversation.
+     * `undefined`/empty ⇒ all installed/connected MCP collections are active.
+     */
+    disabled_mcp_collections?: string[];
+    /**
      * The token threshold in thousands (K) for creating checkpoints.
      * If total tokens exceed this value, a checkpoint will be created.
      * If not specified, default value of 150K tokens will be used.
@@ -738,6 +743,7 @@ export enum AgentMessageType {
 }
 
 export interface AgentMessageDetails extends Record<string, unknown> {
+    ack?: string;
     event_class?: string;
     tool?: string;
     tools?: string[];
@@ -754,15 +760,20 @@ export interface AgentMessageDetails extends Record<string, unknown> {
     message_to_human?: string;
     duration_ms?: number;
     observation?: unknown;
+    token_usage?: ExecutionTokenUsage;
+    checkpoint_at?: number;
+    checkpoint_threshold?: number;
     workflow_run_id?: string;
     outputFiles?: string[];
     files?: ConversationFile[] | string[];
     plan?: PlanTask[];
     streaming_id?: string;
+    streaming_id_scope?: 'workflow_run' | 'workstream';
     chunk_index?: number;
     is_final?: boolean;
     _optimistic?: boolean;
     _messageId?: string;
+    _deliveryStatus?: 'sending' | 'received' | 'consumed' | 'failed';
 }
 
 // ============================================
@@ -873,7 +884,7 @@ export interface StreamingChunkDetails {
     /** Unique identifier grouping chunks from the same stream */
     streaming_id: string;
     /** Order of this chunk within the stream (0-indexed) */
-    chunk_index: number;
+    chunk_index?: number;
     /** True if this is the final chunk of the stream */
     is_final: boolean;
     /** Activity ID for deduplication with final THOUGHT/ANSWER message */
@@ -1065,14 +1076,18 @@ export function toAgentMessage(compact: CompactMessage, workflowRunId: string = 
 
     if (compact.d !== undefined && compact.d !== null) message.details = compact.d;
 
-    // For streaming chunks, restore is_final and streaming_id in details
-    // (streaming_id removed from wire format, use workstream_id as grouping key)
+    // For streaming chunks, restore is_final and preserve an explicit streaming_id
+    // when present. Older chunks fall back to workstream_id as their grouping key.
     if (compact.t === AgentMessageType.STREAMING_CHUNK) {
+        const details: AgentMessageDetails = typeof compact.d === 'object' && compact.d !== null ? compact.d : {};
+        const streamingId = typeof details.streaming_id === 'string' ? details.streaming_id : compact.w || 'main';
+        const activityId = compact.i ?? (typeof details.activity_id === 'string' ? details.activity_id : undefined);
+
         message.details = {
-            ...(typeof compact.d === 'object' ? compact.d : {}),
-            streaming_id: compact.w || 'main', // Use workstream_id as streaming_id
+            ...details,
+            streaming_id: streamingId,
             is_final: compact.f === 1,
-            activity_id: compact.i, // For deduplication with final THOUGHT/ANSWER
+            ...(activityId ? { activity_id: activityId } : {}),
         };
     }
 
@@ -1395,6 +1410,7 @@ export interface WorkstreamProgressInfo {
 export interface ActiveWorkstreamEntry {
     launch_id: string;
     workstream_id: string;
+    kind?: 'agent' | 'process';
     interaction: string;
     started_at: number;
     elapsed_ms: number;
@@ -1405,9 +1421,35 @@ export interface ActiveWorkstreamEntry {
     child_workflow_id: string;
     /** Child workflow run ID — use with retrieveMessages / streamMessages */
     child_workflow_run_id?: string;
+    process_run_id?: string;
+    process_workflow_id?: string;
+    process_name?: string;
+    process_run_type?: 'programmatic' | 'supervised';
+}
+
+/** Recently completed workstream entry returned by the ActiveWorkstreams query */
+export interface CompletedWorkstreamEntry {
+    launch_id: string;
+    workstream_id: string;
+    kind?: 'agent' | 'process';
+    status: 'completed' | 'failed' | 'canceled' | 'timeout';
+    summary?: string;
+    error?: string;
+    duration_ms?: number;
+    started_at?: number;
+    interaction?: string;
+    last_progress?: WorkstreamProgressInfo;
+    child_workflow_id?: string;
+    child_workflow_run_id?: string;
+    process_run_id?: string;
+    process_workflow_id?: string;
+    process_name?: string;
 }
 
 /** Result of the ActiveWorkstreams Temporal query */
 export interface ActiveWorkstreamsQueryResult {
     running: ActiveWorkstreamEntry[];
+    completed?: CompletedWorkstreamEntry[];
+    /** True when the workflow could not answer this optional query. */
+    unavailable?: boolean;
 }
