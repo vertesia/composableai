@@ -5,6 +5,7 @@ import {
     ChevronDownIcon,
     ChevronRightIcon,
     FileIcon,
+    FileTextIcon,
     FolderIcon,
     FolderOpenIcon,
     Loader2Icon,
@@ -23,15 +24,31 @@ interface TreeNodeProps {
     depth: number;
     runId: string;
     onDownload: (relativePath: string) => void;
+    /** When set, markdown/text files open in the document editor instead of downloading. */
+    onOpenDocument?: (path: string, name: string) => void;
     downloadingPath: string | null;
     forceExpanded?: boolean;
+}
+
+const EDITABLE_DOC_EXTENSIONS = new Set(['md', 'markdown', 'mdx', 'txt']);
+
+function isEditableDocument(name: string): boolean {
+    return EDITABLE_DOC_EXTENSIONS.has(name.split('.').pop()?.toLowerCase() ?? '');
 }
 //** Convert a raw directory segment (e.g. "out_files") into a readable label ("Out Files"). */
 function formatDirectoryLabel(name: string): string {
     return name.replace(/[_-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function TreeNode({ node, depth, runId, onDownload, downloadingPath, forceExpanded = false }: TreeNodeProps) {
+function TreeNode({
+    node,
+    depth,
+    runId,
+    onDownload,
+    onOpenDocument,
+    downloadingPath,
+    forceExpanded = false,
+}: TreeNodeProps) {
     const [expanded, setExpanded] = useState(false);
     const isExpanded = forceExpanded || expanded;
 
@@ -67,6 +84,7 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath, forceExpand
                             depth={depth + 1}
                             runId={runId}
                             onDownload={onDownload}
+                            onOpenDocument={onOpenDocument}
                             downloadingPath={downloadingPath}
                             forceExpanded={forceExpanded}
                         />
@@ -76,6 +94,7 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath, forceExpand
     }
 
     const isDownloading = downloadingPath === node.path;
+    const canOpenInEditor = Boolean(onOpenDocument) && isEditableDocument(node.name);
 
     return (
         <div className="min-w-0">
@@ -83,7 +102,7 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath, forceExpand
                 variant="unstyled"
                 className="flex w-full max-w-full items-center justify-start gap-1.5 rounded px-1 py-1 text-start text-sm hover:bg-muted/30"
                 style={{ paddingInlineStart: `${depth * 14 + 4}px` }}
-                onClick={() => onDownload(node.path)}
+                onClick={() => (canOpenInEditor ? onOpenDocument?.(node.path, node.name) : onDownload(node.path))}
                 disabled={isDownloading}
                 title={node.path}
             >
@@ -92,7 +111,11 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath, forceExpand
                 ) : (
                     <span className="size-3.5 shrink-0" />
                 )}
-                <FileIcon className="size-4 shrink-0 text-muted" />
+                {canOpenInEditor ? (
+                    <FileTextIcon className="size-4 shrink-0 text-info" />
+                ) : (
+                    <FileIcon className="size-4 shrink-0 text-muted" />
+                )}
                 <span className="min-w-0 truncate">{node.name}</span>
             </Button>
         </div>
@@ -149,6 +172,7 @@ function downloadUrl(url: string, filename: string) {
 interface ArtifactsTabProps {
     runId?: string;
     refreshKey?: number;
+    onOpenDocument?: (path: string, name: string) => void;
 }
 
 function ArtifactEmptyState({
@@ -169,7 +193,7 @@ function ArtifactEmptyState({
     );
 }
 
-function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
+function ArtifactsTabComponent({ runId, refreshKey = 0, onOpenDocument }: ArtifactsTabProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const { tree, flatFiles, isLoading, error, refresh } = useArtifacts(client, runId, refreshKey);
@@ -284,6 +308,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
                                 depth={0}
                                 runId={runId}
                                 onDownload={handleDownload}
+                                onOpenDocument={onOpenDocument}
                                 downloadingPath={downloadingPath}
                                 forceExpanded={!!normalizedFilterValue}
                             />

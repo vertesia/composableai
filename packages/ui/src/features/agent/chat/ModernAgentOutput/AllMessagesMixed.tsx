@@ -1860,9 +1860,9 @@ function SummaryStoppedMessage({
 
     return (
         <div className={cn('mx-auto w-full max-w-3xl px-1', className)} data-testid="summary-stopped-message">
-            <div className="flex items-center justify-end gap-2 text-lg font-medium text-muted sm:text-xl">
+            <div className="flex items-center justify-end gap-2 text-sm font-medium text-muted">
                 <span>{t('agent.youStoppedAfter', { duration })}</span>
-                <MessageDeliveryStatus message={message} className="h-5 w-5" />
+                <MessageDeliveryStatus message={message} className="h-4 w-4" />
             </div>
             <div className="mt-5 border-b border-border/70" />
         </div>

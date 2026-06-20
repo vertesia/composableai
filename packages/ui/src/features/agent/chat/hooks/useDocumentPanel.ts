@@ -11,6 +11,8 @@ export interface UseDocumentPanelResult {
     closeDocument: (docId: string) => void;
     selectDocument: (docId: string) => void;
     openDocInPanel: (docId: string) => void;
+    /** Open (or re-open) a run-scoped markdown artifact as an editable document. */
+    openArtifactInPanel: (artifactPath: string, title?: string) => void;
     updateDocumentTitle: (docId: string, title: string) => void;
 }
 
@@ -198,6 +200,24 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
         setIsDocPanelOpen(true);
     }, []);
 
+    const openArtifactInPanel = useCallback((artifactPath: string, title?: string) => {
+        const id = `artifact:${artifactPath}`;
+        setOpenDocuments((prev) => {
+            if (prev.some((d) => d.id === id)) return prev;
+            return [
+                ...prev,
+                {
+                    id,
+                    kind: 'artifact' as const,
+                    title: title || artifactPath.split('/').pop() || 'Document',
+                    artifactPath,
+                },
+            ];
+        });
+        setActiveDocumentId(id);
+        setIsDocPanelOpen(true);
+    }, []);
+
     const updateDocumentTitle = useCallback((docId: string, title: string) => {
         setOpenDocuments((prev) => prev.map((d) => (d.id === docId ? { ...d, title } : d)));
     }, []);
@@ -211,6 +231,7 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
         closeDocument,
         selectDocument,
         openDocInPanel,
+        openArtifactInPanel,
         updateDocumentTitle,
     };
 }

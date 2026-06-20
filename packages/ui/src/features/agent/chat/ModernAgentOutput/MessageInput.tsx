@@ -545,7 +545,7 @@ export default function MessageInput({
                                                 percent: contextWindowUsage.remainingPercent,
                                             })}
                                         </span>
-                                        <span className="mt-1.5 block text-muted">{t('agent.clickToCompactNow')}</span>
+                                        <span className="mt-1.5 block opacity-80">{t('agent.clickToCompactNow')}</span>
                                     </span>
                                 }
                             >
@@ -553,7 +553,7 @@ export default function MessageInput({
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="size-8 rounded-lg text-muted hover:bg-muted disabled:opacity-60"
+                                    className="size-8 rounded-full text-muted hover:bg-muted disabled:opacity-60"
                                     aria-label={contextUsageLabel}
                                     onClick={onCompactContext}
                                     disabled={!onCompactContext || isCompactingContext}

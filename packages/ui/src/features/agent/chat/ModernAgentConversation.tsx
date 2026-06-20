@@ -1325,6 +1325,7 @@ function ModernAgentConversationInner({
         closeDocument: handleCloseDocument,
         selectDocument,
         openDocInPanel,
+        openArtifactInPanel,
         updateDocumentTitle,
     } = useDocumentPanel(messages);
 
@@ -1662,6 +1663,15 @@ function ModernAgentConversationInner({
             setIsRightPanelResizing(false);
         }
     }, [isRightPanelVisible, isRightPanelResizing]);
+
+    // When a document opens (e.g. the agent presents a draft for review), surface it by
+    // switching the right panel to the documents tab — otherwise the panel is visible but
+    // the document stays hidden behind whatever tab was active.
+    useEffect(() => {
+        if (isDocPanelOpen && activeDocumentId) {
+            setRightPanelTab('documents');
+        }
+    }, [isDocPanelOpen, activeDocumentId]);
 
     useEffect(() => {
         if (!isRightPanelResizing) return;
@@ -2522,6 +2532,7 @@ function ModernAgentConversationInner({
                                     // Artifacts
                                     showArtifacts={showArtifacts}
                                     artifactRefreshKey={artifactRefreshKey}
+                                    onOpenDocument={openArtifactInPanel}
                                     // Messages (for workstreams tab context)
                                     messages={messages}
                                     // Payload content

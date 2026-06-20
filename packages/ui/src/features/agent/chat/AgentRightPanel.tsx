@@ -444,6 +444,8 @@ export interface AgentRightPanelProps {
     /** Show the Artifacts tab (opt-in, default false) */
     showArtifacts?: boolean;
     artifactRefreshKey?: number;
+    /** Open a markdown artifact in the document editor (used by the Artifacts tab). */
+    onOpenDocument?: (path: string, name: string) => void;
 
     // Panel control
     onClose: () => void;
@@ -483,6 +485,7 @@ function AgentRightPanelComponent({
     // Artifacts
     showArtifacts = false,
     artifactRefreshKey = 0,
+    onOpenDocument,
 
     // Payload
     payloadContent,
@@ -622,7 +625,7 @@ function AgentRightPanelComponent({
             label: t('agent.artifacts'),
             content: withTabBoundary(
                 t('agent.artifacts'),
-                <ArtifactsTab runId={runId} refreshKey={artifactRefreshKey} />,
+                <ArtifactsTab runId={runId} refreshKey={artifactRefreshKey} onOpenDocument={onOpenDocument} />,
             ),
             is_allowed: showArtifacts,
         },
