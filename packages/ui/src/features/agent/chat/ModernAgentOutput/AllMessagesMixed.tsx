@@ -2449,8 +2449,12 @@ function AllMessagesMixedComponent({
     // Show an activity indicator when the latest visible conversation state is not terminal.
     // Older idle/complete messages from previous turns must not suppress the new turn.
     const isAgentWorking = useMemo(() => {
-        return !isDisplayCompleted;
-    }, [isDisplayCompleted]);
+        // Also treat an open user turn (the latest message is the user's, awaiting the agent's
+        // first output) as "working" — otherwise nothing animates in the gap between sending a
+        // message and the first streamed token, especially after a stop where the run reads as
+        // completed until the agent posts its next message.
+        return !isDisplayCompleted || hasOpenUserTurn(displayMessages);
+    }, [isDisplayCompleted, displayMessages]);
 
     const showActivityFallback = shouldShowSummaryActivityFallback(
         summaryConversationItems,
