@@ -546,6 +546,7 @@ export default function MessageInput({
                                 asChild
                                 placement="top"
                                 size="md"
+                                className="text-foreground shadow-lg"
                                 description={
                                     <span className="block max-w-56 text-start text-sm leading-6">
                                         <span className="block">
@@ -553,7 +554,9 @@ export default function MessageInput({
                                                 percent: contextWindowUsage.remainingPercent,
                                             })}
                                         </span>
-                                        <span className="mt-1.5 block text-muted">{t('agent.clickToCompactNow')}</span>
+                                        <span className="mt-1.5 block text-foreground/80">
+                                            {t('agent.clickToCompactNow')}
+                                        </span>
                                     </span>
                                 }
                             >
@@ -561,7 +564,10 @@ export default function MessageInput({
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="size-8 rounded-lg text-muted hover:bg-muted disabled:opacity-60"
+                                    className={cn(
+                                        'size-8 rounded-lg text-info hover:bg-muted hover:text-info disabled:opacity-60',
+                                        'focus-visible:ring-2 focus-visible:ring-info/40',
+                                    )}
                                     aria-label={contextUsageLabel}
                                     onClick={onCompactContext}
                                     disabled={!onCompactContext || isCompactingContext}
@@ -572,7 +578,7 @@ export default function MessageInput({
                                         <svg
                                             viewBox="0 0 24 24"
                                             className={cn(
-                                                'size-5 -rotate-90',
+                                                'size-8 -rotate-90',
                                                 contextWindowUsage.usedPercent >= 90
                                                     ? 'text-destructive'
                                                     : contextWindowUsage.usedPercent >= 70
@@ -584,18 +590,18 @@ export default function MessageInput({
                                             <circle
                                                 cx="12"
                                                 cy="12"
-                                                r="8"
+                                                r="9.75"
                                                 fill="none"
-                                                strokeWidth="3"
-                                                className="stroke-current text-muted/25"
+                                                strokeWidth="5.5"
+                                                className="stroke-current text-muted/50"
                                             />
                                             <circle
                                                 cx="12"
                                                 cy="12"
-                                                r="8"
+                                                r="9.75"
                                                 fill="none"
                                                 pathLength={100}
-                                                strokeWidth="3"
+                                                strokeWidth="5.5"
                                                 strokeLinecap="round"
                                                 strokeDasharray={100}
                                                 style={{ strokeDashoffset: 100 - contextWindowUsage.usedPercent }}

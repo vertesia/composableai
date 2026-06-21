@@ -1577,10 +1577,7 @@ function ModernAgentConversationInner({
     // The run is still "alive" while it waits for user input (idle on ask_user), so keep the
     // context-usage indicator visible then — it's only truly hidden once the run terminates.
     const canCompactContext =
-        allowWorkflowControl &&
-        (!effectiveIsCompleted || shouldShowRequestInputOverlay) &&
-        isPlaybackLive &&
-        Boolean(contextWindowUsage);
+        allowWorkflowControl && !isWorkflowTerminal && isPlaybackLive && Boolean(contextWindowUsage);
 
     useEffect(() => {
         debugAgentChat('conversation render state', {
@@ -2509,7 +2506,7 @@ function ModernAgentConversationInner({
                                                 mode={toolApprovalMode}
                                                 onChange={handleToolApprovalModeChange}
                                                 disabled={
-                                                    !isPlaybackLive || effectiveIsCompleted || !allowWorkflowControl
+                                                    !isPlaybackLive || isWorkflowTerminal || !allowWorkflowControl
                                                 }
                                             />
                                         ) : undefined

@@ -452,6 +452,57 @@ describe('ModernAgentConversation send handling', () => {
         expect(latestMessageInputProps.isStreaming).toBe(false);
     });
 
+    it('keeps live run controls enabled while the agent is idle waiting for user input', async () => {
+        mocks.retrieve.mockResolvedValue({
+            tool_approval_mode: 'ask',
+            interactive: true,
+            disabled_mcp_collections: undefined,
+        });
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.THOUGHT, 'Planning the next tool call'),
+                    details: {
+                        token_usage: {
+                            total: 50_000,
+                        },
+                        checkpoint_at: 100_000,
+                    },
+                },
+                createMessage(AgentMessageType.IDLE, 'Waiting for your command...'),
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({
+            hideMessageInput: false,
+            interactive: true,
+            allowWorkflowControl: true,
+        });
+
+        const selector = await screen.findByRole('button', { name: 'Agent approval mode' });
+        expect((selector as HTMLButtonElement).disabled).toBe(false);
+
+        const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
+            contextWindowUsage?: {
+                usedTokens: number;
+                checkpointTokens: number;
+                usedPercent: number;
+                remainingPercent: number;
+            };
+            onCompactContext?: () => void | Promise<void>;
+        };
+
+        expect(latestMessageInputProps.contextWindowUsage).toEqual({
+            usedTokens: 50_000,
+            checkpointTokens: 100_000,
+            usedPercent: 50,
+            remainingPercent: 50,
+        });
+        expect(latestMessageInputProps.onCompactContext).toBeTypeOf('function');
+    });
+
     it('derives context usage from persisted messages and sends manual compact signal', async () => {
         mockStreamState({
             messages: [
