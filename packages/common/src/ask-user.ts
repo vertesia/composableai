@@ -24,6 +24,16 @@ export interface McpConnectUxConfig {
     name: string;
 }
 
+/** Optional free-form response rendered alongside predefined options. */
+export interface AskUserFreeResponseConfig {
+    /** Placeholder text for the input. */
+    placeholder?: string;
+    /** Label for the submit button. */
+    submit_label?: string;
+    /** Extra metadata sent with the user input signal when submitted. */
+    metadata?: Record<string, unknown>;
+}
+
 /** UX configuration for ask_user / request_mcp_connection messages */
 export interface AskUserUxConfig {
     /** Predefined options for the user to select from */
@@ -32,6 +42,11 @@ export interface AskUserUxConfig {
     variant?: 'default' | 'warning' | 'info' | 'success';
     /** Allow selecting multiple options (renders checkboxes instead of buttons) */
     multiSelect?: boolean;
+    /**
+     * Render a free-form response input. When options are also present, this is
+     * treated as an alternate response path.
+     */
+    free_response?: AskUserFreeResponseConfig;
     /**
      * Renders an MCP "Connect" button instead of plain options. Set by the
      * request_mcp_connection tool when the agent needs the user to connect a server.

@@ -13,7 +13,7 @@ export interface ToolApprovalGrant {
 
 export interface PendingToolApprovalResults {
     results: ToolResult[];
-    reason: 'denied' | 'timeout' | 'reviewer_denied';
+    reason: 'denied' | 'denied_with_feedback' | 'timeout' | 'reviewer_denied';
     message: string;
     created_at: string;
 }

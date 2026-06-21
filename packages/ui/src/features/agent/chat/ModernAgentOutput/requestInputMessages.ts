@@ -87,7 +87,10 @@ export function getResolvedToolApprovalKeys(messages: AgentMessage[]): Set<strin
 
         if (
             typeof approvalKey === 'string' &&
-            (decision === 'denied' || decision === 'timeout' || decision === 'reviewer_denied')
+            (decision === 'denied' ||
+                decision === 'denied_with_feedback' ||
+                decision === 'timeout' ||
+                decision === 'reviewer_denied')
         ) {
             resolved.add(approvalKey);
         }

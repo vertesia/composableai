@@ -1907,7 +1907,7 @@ function ModernAgentConversationInner({
 
     // Send a message to the agent
     const handleSendMessage = useCallback(
-        (message: string) => {
+        (message: string, inputMetadata?: Record<string, unknown>) => {
             const trimmed = message.trim();
             if (!trimmed || isSendingRef.current) return;
 
@@ -1954,6 +1954,7 @@ function ModernAgentConversationInner({
             const metadata = {
                 ...(attachedDocs.length > 0 ? { attached_docs: attachedDocs.map((d) => d.id) } : {}),
                 ...contextMetadata,
+                ...inputMetadata,
                 id: messageId,
                 _messageId: messageId,
             };

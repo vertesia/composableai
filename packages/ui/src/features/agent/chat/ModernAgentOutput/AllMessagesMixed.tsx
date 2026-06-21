@@ -193,7 +193,7 @@ function getMessageText(message: AgentMessage): string {
 
 interface SummaryMessageProps {
     message: AgentMessage;
-    onSendMessage?: (message: string) => void;
+    onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
     onSelectWorkstream?: (workstreamId: string) => void;
     requestInputAnswered?: boolean;
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
@@ -675,6 +675,10 @@ function SummaryMessage({
                     multiSelect={uxConfig.multiSelect}
                     onSelect={(optionId) => onSendMessage?.(optionId)}
                     onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                    allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
+                    placeholder={uxConfig.free_response?.placeholder}
+                    submitLabel={uxConfig.free_response?.submit_label}
+                    onSubmit={(value) => onSendMessage?.(value, uxConfig.free_response?.metadata)}
                     hideBorder
                     compact
                     answered={requestInputAnswered}
@@ -1105,6 +1109,7 @@ function getToolTarget(details: Record<string, unknown>): string | undefined {
 function getApprovalDecisionLabel(decision: unknown, toolLabel: string): string | undefined {
     switch (decision) {
         case 'denied':
+        case 'denied_with_feedback':
             return `User declined to use ${toolLabel}.`;
         case 'timeout':
             return `Approval timed out for ${toolLabel}.`;
@@ -1120,6 +1125,7 @@ function getApprovalDecisionLabel(decision: unknown, toolLabel: string): string 
 function getApprovalDecisionStatusText(decision: unknown): string | undefined {
     switch (decision) {
         case 'denied':
+        case 'denied_with_feedback':
             return 'Declined by user';
         case 'timeout':
             return 'Approval timed out';
@@ -2186,7 +2192,7 @@ interface AllMessagesMixedProps {
     taskLabels?: Map<string, string>; // Maps task IDs to more descriptive labels
     streamingMessages?: Map<string, StreamingData>; // Real-time streaming chunks
     /** Callback when user sends a message (e.g., from proposal selection) */
-    onSendMessage?: (message: string) => void;
+    onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
     /** Stable index for thinking messages (changes on 4s interval) */
     thinkingMessageIndex?: number;
     /** className overrides passed to every MessageItem */

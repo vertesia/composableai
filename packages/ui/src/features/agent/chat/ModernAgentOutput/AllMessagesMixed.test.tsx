@@ -1281,6 +1281,84 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getAllByText(/Japan News Headlines/).length).toBeGreaterThan(0);
     });
 
+    it('hides a commented approval denial prompt while keeping the user comment visible', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.REQUEST_INPUT,
+                    message: 'Approve Write Artifact: name quotes.md?',
+                    details: {
+                        tool_approval: {
+                            approval_key: 'write_artifact:name:quotes.md',
+                            tool_name: 'write_artifact',
+                            tool_title: 'Write Artifact',
+                            target: 'name:quotes.md',
+                            input: {
+                                name: 'quotes.md',
+                                type: 'file',
+                            },
+                        },
+                        ux: {
+                            options: [
+                                { id: 'allow_once', label: 'Allow once' },
+                                { id: 'allow_for_run', label: 'Allow this action for this run' },
+                                { id: 'deny', label: 'Deny' },
+                            ],
+                            free_response: {
+                                placeholder: 'No, and tell the agent what to do differently',
+                                submit_label: 'Submit',
+                                metadata: {
+                                    tool_approval_response: {
+                                        decision: 'deny_with_feedback',
+                                        approval_key: 'write_artifact:name:quotes.md',
+                                    },
+                                },
+                            },
+                        },
+                    },
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Do not write a file. Put the summary in chat.',
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    type: AgentMessageType.THOUGHT,
+                    message: 'User declined to use Write Artifact.',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'write_artifact',
+                        tool_run_id: 'tool-run-1',
+                        tool_use_id: 'tool-use-1',
+                        tool_status: 'error',
+                        tool_event: 'failed',
+                        activity_group_id: 'activity-1',
+                        observation: 'User declined to use Write Artifact and provided new instructions.',
+                        approval_decision: 'denied_with_feedback',
+                        approval_request: {
+                            approval_key: 'write_artifact:name:quotes.md',
+                            tool_name: 'write_artifact',
+                            tool_title: 'Write Artifact',
+                            target: 'name:quotes.md',
+                        },
+                        input: {
+                            name: 'quotes.md',
+                            type: 'file',
+                        },
+                    },
+                }),
+            ],
+            true,
+        );
+
+        expect(screen.queryByText('Approve Write Artifact: name quotes.md?')).toBeNull();
+        expect(screen.getByText('Do not write a file. Put the summary in chat.')).not.toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: /Worked/ }));
+        expect(screen.getByRole('button', { name: /Write Artifact.*Declined by user/ })).not.toBeNull();
+    });
+
     it('does not duplicate the initial request once the persisted user prompt is present', () => {
         renderSummary(
             [

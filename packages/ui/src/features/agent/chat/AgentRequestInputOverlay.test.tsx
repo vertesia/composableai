@@ -38,6 +38,39 @@ function createMcpRequestMessage(): RequestInputMessageWithUx {
     };
 }
 
+function createToolApprovalRequestMessage(): RequestInputMessageWithUx {
+    return {
+        type: AgentMessageType.REQUEST_INPUT,
+        timestamp: 1,
+        workflow_run_id: 'run-1',
+        workstream_id: 'main',
+        message: 'Approve Write Artifact: name quotes.md?',
+        details: {
+            tool_approval: {
+                tool_name: 'write_artifact',
+                approval_key: 'write_artifact:name:quotes.md',
+            },
+            ux: {
+                options: [
+                    { id: 'allow_once', label: 'Allow once' },
+                    { id: 'allow_for_run', label: 'Allow this action for this run' },
+                    { id: 'deny', label: 'Deny' },
+                ],
+                free_response: {
+                    placeholder: 'No, and tell the agent what to do differently',
+                    submit_label: 'Submit',
+                    metadata: {
+                        tool_approval_response: {
+                            decision: 'deny_with_feedback',
+                            approval_key: 'write_artifact:name:quotes.md',
+                        },
+                    },
+                },
+            },
+        },
+    };
+}
+
 describe('AgentRequestInputOverlay', () => {
     it('lets the user decline an MCP connection request', () => {
         const onSendMessage = vi.fn();
@@ -52,5 +85,26 @@ describe('AgentRequestInputOverlay', () => {
 
         expect(onSendMessage).toHaveBeenCalledTimes(1);
         expect(onSendMessage).toHaveBeenCalledWith("I don't want to connect to Jira. Continue without it.");
+    });
+
+    it('sends a commented tool approval denial with structured metadata', () => {
+        const onSendMessage = vi.fn();
+
+        renderWithProviders(
+            <AgentRequestInputOverlay message={createToolApprovalRequestMessage()} onSendMessage={onSendMessage} />,
+        );
+
+        fireEvent.change(screen.getByPlaceholderText('No, and tell the agent what to do differently'), {
+            target: { value: 'Do not write a file. Put the summary in chat.' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+
+        expect(onSendMessage).toHaveBeenCalledTimes(1);
+        expect(onSendMessage).toHaveBeenCalledWith('Do not write a file. Put the summary in chat.', {
+            tool_approval_response: {
+                decision: 'deny_with_feedback',
+                approval_key: 'write_artifact:name:quotes.md',
+            },
+        });
     });
 });

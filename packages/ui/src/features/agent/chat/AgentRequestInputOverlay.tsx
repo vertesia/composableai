@@ -9,7 +9,7 @@ import { getAgentMessageText, type RequestInputMessageWithUx } from './ModernAge
 
 export interface AgentRequestInputOverlayProps {
     message?: RequestInputMessageWithUx;
-    onSendMessage?: (message: string) => void;
+    onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
     /** Called after the user connects the MCP server requested by request_mcp_connection. */
     onMcpConnected?: (cfg: McpConnectUxConfig) => void;
     isLoading?: boolean;
@@ -72,10 +72,15 @@ export function AgentRequestInputOverlay({
     const uxConfig = message.details.ux;
     const options = uxConfig.options ?? [];
     const mcpConnect = uxConfig.mcp_connect;
+    const freeResponse = uxConfig.free_response;
     const isDisabled = disabled || isLoading || !onSendMessage;
-    const send = (value: string) => {
+    const send = (value: string, metadata?: Record<string, unknown>) => {
         if (isDisabled) return;
-        onSendMessage?.(value);
+        if (metadata) {
+            onSendMessage?.(value, metadata);
+        } else {
+            onSendMessage?.(value);
+        }
     };
 
     const wrapperClassName = cn(
@@ -109,10 +114,12 @@ export function AgentRequestInputOverlay({
                     options={options}
                     variant={uxConfig.variant}
                     multiSelect={uxConfig.multiSelect}
-                    allowFreeResponse={options.length === 0}
+                    allowFreeResponse={options.length === 0 || !!freeResponse}
+                    placeholder={freeResponse?.placeholder}
+                    submitLabel={freeResponse?.submit_label}
                     onSelect={send}
                     onMultiSelect={(optionIds) => send(optionIds.join(', '))}
-                    onSubmit={send}
+                    onSubmit={(value) => send(value, freeResponse?.metadata)}
                     hideBorder
                     compact
                     isLoading={isDisabled}

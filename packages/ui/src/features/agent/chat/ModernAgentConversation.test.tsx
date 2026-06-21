@@ -101,7 +101,7 @@ vi.mock('./ModernAgentOutput/AllMessagesMixed', () => ({
         streamingMessages: Map<string, unknown>;
         isCompleted?: boolean;
         bottomRef: React.RefObject<HTMLDivElement>;
-        onSendMessage?: (message: string) => void;
+        onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
         showInitialRequest?: boolean;
         renderRequestInputControls?: boolean;
         activeWorkstream?: string;
@@ -389,6 +389,37 @@ describe('ModernAgentConversation send handling', () => {
                 mode: 'auto_review',
             });
         });
+    });
+
+    it('switches to full control without a confirmation modal', async () => {
+        mocks.retrieve.mockResolvedValue({
+            tool_approval_mode: 'ask',
+            interactive: true,
+            disabled_mcp_collections: undefined,
+        });
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideMessageInput: false, interactive: true, allowWorkflowControl: true });
+
+        await waitFor(() => {
+            expect(screen.getByText('Ask for approval')).not.toBeNull();
+        });
+        fireEvent.pointerDown(screen.getByRole('button', { name: 'Agent approval mode' }), {
+            button: 0,
+            ctrlKey: false,
+        });
+        fireEvent.click(await screen.findByRole('menuitemradio', { name: /Full control/ }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith('agent-run-1', 'ToolApprovalModeChanged', {
+                mode: 'full_control',
+            });
+        });
+        expect(screen.queryByText('Switch to full control?')).toBeNull();
     });
 
     it('does not show a full-control fallback before active run mode metadata loads', () => {
@@ -1101,6 +1132,67 @@ describe('ModernAgentConversation send handling', () => {
                 message: 'blue',
                 client_message_id: expect.any(String),
                 metadata: expect.objectContaining({
+                    id: expect.any(String),
+                    _messageId: expect.any(String),
+                }),
+            }),
+        );
+    });
+
+    it('passes commented approval denial metadata through the request overlay signal', async () => {
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'Approve Write Artifact: name quotes.md?'),
+                    details: {
+                        tool_approval: {
+                            tool_name: 'write_artifact',
+                            approval_key: 'write_artifact:name:quotes.md',
+                        },
+                        ux: {
+                            options: [
+                                { id: 'allow_once', label: 'Allow once' },
+                                { id: 'allow_for_run', label: 'Allow this action for this run' },
+                                { id: 'deny', label: 'Deny' },
+                            ],
+                            free_response: {
+                                placeholder: 'No, and tell the agent what to do differently',
+                                submit_label: 'Submit',
+                                metadata: {
+                                    tool_approval_response: {
+                                        decision: 'deny_with_feedback',
+                                        approval_key: 'write_artifact:name:quotes.md',
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation();
+
+        fireEvent.change(screen.getByPlaceholderText('No, and tell the agent what to do differently'), {
+            target: { value: 'Do not write a file. Put the summary in chat.' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledTimes(1);
+        });
+        expect(mocks.sendSignal).toHaveBeenCalledWith(
+            'agent-run-1',
+            'UserInput',
+            expect.objectContaining({
+                message: 'Do not write a file. Put the summary in chat.',
+                metadata: expect.objectContaining({
+                    tool_approval_response: {
+                        decision: 'deny_with_feedback',
+                        approval_key: 'write_artifact:name:quotes.md',
+                    },
                     id: expect.any(String),
                     _messageId: expect.any(String),
                 }),
