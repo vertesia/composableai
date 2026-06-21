@@ -33,3 +33,19 @@ export function authReturnUrl(): URL {
     target.hash = '';
     return target;
 }
+
+/**
+ * The app's mount root URL — the served `<base href>` (or the origin root for the Studio UI).
+ *
+ * Used for full-reload navigations that intentionally reset to the app root (logout, account /
+ * project switch). Building these from a bare `/` drops a gateway-mounted app off its mount and
+ * lands on a URL that serves no app; resolving against `document.baseURI` keeps the reload inside
+ * the mount. For the Studio UI (no `<base>` element) `document.baseURI` is the origin root, so the
+ * behavior is unchanged.
+ */
+export function mountRootUrl(): URL {
+    const url = new URL(document.baseURI);
+    url.hash = '';
+    url.search = '';
+    return url;
+}

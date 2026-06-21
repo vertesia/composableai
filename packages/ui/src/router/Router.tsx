@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect } from 'react';
 import { HistoryNavigator, type LocationChangeEvent, type NavigateOptions } from './HistoryNavigator';
 import { type PathMatch, PathMatcher } from './PathMatcher';
-import { isRootPath, joinPath, type PathMatchParams, stripMountBasename } from './path';
+import { getMountBasename, isRootPath, joinPath, type PathMatchParams, stripMountBasename } from './path';
 
 export type RouteComponentProps = PathMatchParams;
 export type LazyRouteModule = { default: React.ComponentType<Record<string, never>> };
@@ -186,8 +186,12 @@ export function useNavigate() {
 }
 
 export function useRouterBasePath() {
-    const { matchedRoutePath, router } = useRouterContext();
-    return router instanceof NestedRouter ? router.basePath : matchedRoutePath;
+    const { router } = useRouterContext();
+    // For a nested router the base is its mount segment within the parent. For a top-level router the
+    // base is the served `<base href>` mount prefix (empty for the origin-served Studio UI) — NOT the
+    // matched route, so apps can build mount-correct sibling links (e.g. `${base}/assistant`) and
+    // compare them against the full `useLocation().pathname`, which carries the mount.
+    return router instanceof NestedRouter ? router.basePath : getMountBasename();
 }
 
 type UseParamsReturn<T> = T extends string ? string : Record<string, string>;
