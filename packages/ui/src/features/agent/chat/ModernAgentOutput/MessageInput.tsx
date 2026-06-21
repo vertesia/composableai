@@ -592,7 +592,7 @@ export default function MessageInput({
                                                 cy="12"
                                                 r="9.75"
                                                 fill="none"
-                                                strokeWidth="5.5"
+                                                strokeWidth="4.5"
                                                 className="stroke-current text-muted/50"
                                             />
                                             <circle
@@ -601,7 +601,7 @@ export default function MessageInput({
                                                 r="9.75"
                                                 fill="none"
                                                 pathLength={100}
-                                                strokeWidth="5.5"
+                                                strokeWidth="4.5"
                                                 strokeLinecap="round"
                                                 strokeDasharray={100}
                                                 style={{ strokeDashoffset: 100 - contextWindowUsage.usedPercent }}
