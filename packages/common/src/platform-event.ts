@@ -326,7 +326,8 @@ export interface CreateEventSubscriptionPayload {
     scope?: 'account' | 'project';
     filter: EventSubscriptionFilter;
     target: EventDeliveryTargetInput;
-    run_as_role?: SystemRoles;
+    /** Identity the delivery runs as. Required at creation so a subscription never silently runs as the originating (possibly deleted) user. Use "automation" for the standard identity. */
+    run_as_role: SystemRoles;
     enabled?: boolean;
     priority?: EventPriority;
 }

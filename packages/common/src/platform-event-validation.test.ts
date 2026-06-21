@@ -5,12 +5,14 @@ import {
     getCreateEventSubscriptionValidationResult,
     getUpdateEventSubscriptionValidationResult,
 } from './platform-event-validation.js';
+import { SystemRoles } from './project.js';
 
 function validCreate(overrides: Partial<CreateEventSubscriptionPayload> = {}): CreateEventSubscriptionPayload {
     return {
         name: 'My automation',
         filter: { event_category: ['content'], action: ['create'] },
         target: { type: 'agent', interaction_ref: 'sys:GeneralAgent' },
+        run_as_role: SystemRoles.automation,
         ...overrides,
     };
 }
@@ -24,6 +26,17 @@ describe('event subscription input validation', () => {
         const result = getCreateEventSubscriptionValidationResult(validCreate({ name: '  ' }));
         expect(result.valid).toBe(false);
         expect(result.errors).toContain('name is required');
+    });
+
+    it('requires a run_as_role on create', () => {
+        const { run_as_role: _omitted, ...withoutRunAsRole } = validCreate();
+        const result = getCreateEventSubscriptionValidationResult(withoutRunAsRole as CreateEventSubscriptionPayload);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('run_as_role is required');
+    });
+
+    it('does not require run_as_role on update', () => {
+        expect(getUpdateEventSubscriptionValidationResult({ enabled: true }).valid).toBe(true);
     });
 
     it('rejects an unknown target type', () => {
