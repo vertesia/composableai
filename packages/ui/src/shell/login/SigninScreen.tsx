@@ -88,7 +88,15 @@ function SigninScreenImpl({
 
     useEffect(() => {
         if (!preservePath) {
-            history.replaceState({}, '', '/');
+            // Reset to the app's mount root, not the bare origin. A gateway-mounted app carries a
+            // served `<base href>` deep mount; collapsing to '/' drops the app off that mount (the
+            // bare origin serves no app) and the address bar can no longer be reloaded. This effect
+            // also flashes briefly for already-authenticated users during the loading transition, so
+            // a bare '/' here loses the URL even on a normal login. Deriving the root from
+            // `document.baseURI` keeps it inside the mount; for the origin-served Studio UI the
+            // pathname is '/', so the behavior is unchanged.
+            const mountRoot = new URL(document.baseURI).pathname || '/';
+            history.replaceState({}, '', mountRoot);
         }
     }, [preservePath]);
 
