@@ -552,6 +552,49 @@ describe('ModernAgentConversation send handling', () => {
         });
     });
 
+    it('derives context usage from approval request messages when no preamble was posted', () => {
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'Approve Create Document?'),
+                    details: {
+                        tool_approval: {
+                            tool_name: 'create_document',
+                            tool_title: 'Create Document',
+                            target: 'name:Budget plan',
+                        },
+                        token_usage: {
+                            total: 82_000,
+                        },
+                        checkpoint_threshold: 100_000,
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideMessageInput: false, interactive: true, allowWorkflowControl: true });
+
+        const latestMessageInputProps = mocks.messageInputProps.mock.lastCall?.[0] as {
+            contextWindowUsage?: {
+                usedTokens: number;
+                checkpointTokens: number;
+                usedPercent: number;
+                remainingPercent: number;
+            };
+            onCompactContext?: () => void | Promise<void>;
+        };
+
+        expect(latestMessageInputProps.contextWindowUsage).toEqual({
+            usedTokens: 82_000,
+            checkpointTokens: 100_000,
+            usedPercent: 82,
+            remainingPercent: 18,
+        });
+        expect(latestMessageInputProps.onCompactContext).toBeTypeOf('function');
+    });
+
     it('makes it explicit that the composer still messages the main agent while viewing a workstream', async () => {
         mockStreamState({
             messages: [

@@ -103,6 +103,10 @@ function getToolApprovalKey(message: AgentMessage): string | undefined {
     return typeof approvalKey === 'string' ? approvalKey : undefined;
 }
 
+function isToolApprovalRequestInput(message: AgentMessage): boolean {
+    return message.type === AgentMessageType.REQUEST_INPUT && getToolApprovalKey(message) !== undefined;
+}
+
 function isToolApprovalResponse(message: AgentMessage): boolean {
     if (message.type !== AgentMessageType.QUESTION) return false;
     const normalized = getAgentMessageText(message).trim().toLowerCase();
@@ -118,14 +122,54 @@ export function isRequestInputResolvedByToolApprovalEvent(
     return approvalKey ? resolvedToolApprovalKeys.has(approvalKey) : false;
 }
 
+export function getAnsweredToolApprovalRequestInputKeys(messages: AgentMessage[]): Set<string> {
+    const answered = new Set<string>();
+
+    messages.forEach((message, index) => {
+        if (!isToolApprovalRequestInput(message)) return;
+
+        const workstreamId = getWorkstreamId(message);
+        for (let nextIndex = index + 1; nextIndex < messages.length; nextIndex += 1) {
+            const nextMessage = messages[nextIndex];
+            if (getWorkstreamId(nextMessage) !== workstreamId) continue;
+            if (nextMessage.type === AgentMessageType.REQUEST_INPUT) break;
+            if (nextMessage.type === AgentMessageType.QUESTION) {
+                if (isToolApprovalResponse(nextMessage)) {
+                    answered.add(getRequestInputMessageKey(message));
+                }
+                break;
+            }
+        }
+    });
+
+    return answered;
+}
+
+export function isToolApprovalRequestInputHidden(
+    message: AgentMessage,
+    answeredToolApprovalRequestInputKeys: Set<string>,
+    resolvedToolApprovalKeys: Set<string>,
+): boolean {
+    return (
+        isToolApprovalRequestInput(message) &&
+        (answeredToolApprovalRequestInputKeys.has(getRequestInputMessageKey(message)) ||
+            isRequestInputResolvedByToolApprovalEvent(message, resolvedToolApprovalKeys))
+    );
+}
+
 export function getHiddenToolApprovalAnswerKeys(
     messages: AgentMessage[],
-    resolvedToolApprovalKeys: Set<string>,
+    resolvedToolApprovalKeys?: Set<string>,
 ): Set<string> {
     const hidden = new Set<string>();
 
     messages.forEach((message, index) => {
-        if (!isRequestInputResolvedByToolApprovalEvent(message, resolvedToolApprovalKeys)) return;
+        if (
+            !isToolApprovalRequestInput(message) ||
+            (resolvedToolApprovalKeys && !isRequestInputResolvedByToolApprovalEvent(message, resolvedToolApprovalKeys))
+        ) {
+            return;
+        }
 
         const workstreamId = getWorkstreamId(message);
         for (let nextIndex = index + 1; nextIndex < messages.length; nextIndex += 1) {
