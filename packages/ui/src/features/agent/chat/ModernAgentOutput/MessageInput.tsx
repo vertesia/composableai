@@ -98,6 +98,8 @@ interface MessageInputProps {
     hideObjectLinking?: boolean;
     // Hide file upload (for apps that don't use it)
     hideFileUpload?: boolean;
+    /** Optional toolbar slot for the agent approval mode selector. */
+    approvalModeSlot?: React.ReactNode;
     /** Optional toolbar slot (e.g. the MCP action menu) rendered next to the attachment actions. */
     mcpSlot?: React.ReactNode;
     /** Disable the local input drop overlay when a parent view owns drag/drop handling */
@@ -113,6 +115,7 @@ interface MessageInputProps {
 export default function MessageInput({
     onSend,
     onStop,
+    approvalModeSlot,
     mcpSlot,
     disabled = false,
     isSending = false,
@@ -536,6 +539,7 @@ export default function MessageInput({
                                 )}
                             </Dropdown>
                         )}
+                        {approvalModeSlot}
                         {mcpSlot}
                         {contextWindowUsage && (
                             <VTooltip

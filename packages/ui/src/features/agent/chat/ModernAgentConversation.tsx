@@ -3,10 +3,12 @@ import {
     type AgentMessage,
     AgentMessageType,
     type AgentRun,
+    type AgentToolApprovalMode,
     type CompletedWorkstreamEntry,
     type ConversationFile,
     type ConversationFileRef,
     type McpConnectUxConfig,
+    normalizeAgentToolApprovalMode,
     type Plan,
     type StopSignal,
     type UserInputSignal,
@@ -31,6 +33,7 @@ import { ArrowUpIcon, Bot, CheckCircle, Cpu, FileTextIcon, UploadIcon, XIcon } f
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { McpConnectionsActionMenu } from '../../oauth/McpConnectionsButton.js';
+import { AgentApprovalModeSelector } from './AgentApprovalModeSelector';
 import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
 import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
@@ -84,7 +87,14 @@ import {
     isWorkstreamInternalResultMessage,
 } from './workstreams.js';
 
-export type StartWorkflowFn = (initialMessage?: string) => Promise<{ agent_run_id: string } | undefined>;
+export interface StartWorkflowOptions {
+    tool_approval_mode?: AgentToolApprovalMode;
+}
+
+export type StartWorkflowFn = (
+    initialMessage?: string,
+    options?: StartWorkflowOptions,
+) => Promise<{ agent_run_id: string } | undefined>;
 
 const EMPTY_STREAMING_MESSAGES = new Map<string, never>();
 
@@ -685,6 +695,8 @@ export interface ModernAgentConversationProps {
     pendingStartMessage?: string;
     /** Timestamp for the internal optimistic first-message waiting state. */
     pendingStartTimestamp?: number;
+    /** Initial approval mode to show while active run metadata loads. */
+    initialToolApprovalMode?: AgentToolApprovalMode;
     /** Force display playback controls on or off. When omitted, local playback can be toggled from the header. */
     enablePlayback?: boolean;
     /** Show a local toggle for display playback controls in the conversation action rail. */
@@ -724,6 +736,7 @@ function EmptyState() {
 // Files can be staged locally before workflow starts, then uploaded when the workflow is created
 function StartWorkflowView({
     initialMessage,
+    interactive = true,
     startWorkflow,
     onClose,
     isModal = false,
@@ -757,6 +770,9 @@ function StartWorkflowView({
     const [startedAgentRunId, setStartedAgentRunId] = useState<string | null>(null);
     const [pendingStartMessage, setPendingStartMessage] = useState<string | null>(null);
     const [pendingStartTimestamp, setPendingStartTimestamp] = useState<number | null>(null);
+    const [toolApprovalMode, setToolApprovalMode] = useState<AgentToolApprovalMode>(() =>
+        normalizeAgentToolApprovalMode(undefined, interactive),
+    );
     const toast = useToast();
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -907,7 +923,7 @@ function StartWorkflowView({
             setPendingStartMessage(messageContent);
             setPendingStartTimestamp(Date.now());
 
-            const newRun = await startWorkflow(messageContent);
+            const newRun = await startWorkflow(messageContent, { tool_approval_mode: toolApprovalMode });
             if (newRun) {
                 const agentId = newRun.agent_run_id;
 
@@ -1029,6 +1045,7 @@ function StartWorkflowView({
                 title={title}
                 pendingStartMessage={pendingStartMessage ?? undefined}
                 pendingStartTimestamp={pendingStartTimestamp ?? undefined}
+                initialToolApprovalMode={toolApprovalMode}
             />
         );
     }
@@ -1171,6 +1188,13 @@ function StartWorkflowView({
                                         <UploadIcon className="size-4" />
                                     </Button>
                                 )}
+                                {interactive && (
+                                    <AgentApprovalModeSelector
+                                        mode={toolApprovalMode}
+                                        onChange={setToolApprovalMode}
+                                        disabled={isSending}
+                                    />
+                                )}
                             </div>
                             <Button
                                 onClick={startWorkflowWithMessage}
@@ -1284,6 +1308,7 @@ function ModernAgentConversationInner({
     conversationTab = false,
     pendingStartMessage,
     pendingStartTimestamp,
+    initialToolApprovalMode,
     enablePlayback,
     showPlaybackToggle = true,
 }: ModernAgentConversationProps & { agentRunId: string }) {
@@ -1374,9 +1399,23 @@ function ModernAgentConversationInner({
     const [queriedActiveWorkstreams, setQueriedActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
     const [queriedCompletedWorkstreams, setQueriedCompletedWorkstreams] = useState<CompletedWorkstreamEntry[]>([]);
     const [isWorkstreamQueryUnavailable, setIsWorkstreamQueryUnavailable] = useState(false);
+    const initialResolvedToolApprovalMode = useMemo<AgentToolApprovalMode | undefined>(
+        () =>
+            initialToolApprovalMode === undefined && interactive
+                ? undefined
+                : normalizeAgentToolApprovalMode(initialToolApprovalMode, interactive),
+        [initialToolApprovalMode, interactive],
+    );
+    const [toolApprovalMode, setToolApprovalMode] = useState<AgentToolApprovalMode | undefined>(
+        initialResolvedToolApprovalMode,
+    );
     const workstreamFetchFailedRef = useRef(false);
     const dragCounterRef = useRef(0);
     const pendingPlaybackScrollRef = useRef(false);
+
+    useEffect(() => {
+        setToolApprovalMode(initialResolvedToolApprovalMode);
+    }, [initialResolvedToolApprovalMode]);
 
     // PERFORMANCE: Refs for values used inside useCallback to avoid re-creating the callback
     const isSendingRef = useRef(isSending);
@@ -1997,7 +2036,12 @@ function ModernAgentConversationInner({
         client.agents
             .retrieve(agentRunId)
             .then((run) => {
-                if (!cancelled) setMcpDisabled(run.disabled_mcp_collections);
+                if (!cancelled) {
+                    setMcpDisabled(run.disabled_mcp_collections);
+                    if (run.tool_approval_mode !== undefined || run.interactive !== undefined) {
+                        setToolApprovalMode(normalizeAgentToolApprovalMode(run.tool_approval_mode, run.interactive));
+                    }
+                }
             })
             .catch(() => {
                 /* best-effort: toggles default to all-active */
@@ -2026,6 +2070,24 @@ function ModernAgentConversationInner({
             .sendSignal(agentRunId, 'McpConfigChanged', {})
             .catch((err: unknown) => console.error('Failed to signal MCP config change', err));
     }, [client, agentRunId]);
+
+    const handleToolApprovalModeChange = useCallback(
+        (mode: AgentToolApprovalMode) => {
+            const nextMode = normalizeAgentToolApprovalMode(mode, interactive);
+            setToolApprovalMode(nextMode);
+            client.agents
+                .sendSignal(agentRunId, 'ToolApprovalModeChanged', { mode: nextMode })
+                .catch((err: unknown) => {
+                    toast({
+                        status: 'error',
+                        title: t('agent.approvalMode.changeFailed'),
+                        description: err instanceof Error ? err.message : t('agent.unknownError'),
+                        duration: 3000,
+                    });
+                });
+        },
+        [agentRunId, client, interactive, t, toast],
+    );
 
     // Drag and drop handlers for full-panel file upload
     const handleDragEnter = useCallback(
@@ -2436,6 +2498,17 @@ function ModernAgentConversationInner({
                                 <MessageInput
                                     onSend={handleSendMessage}
                                     onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
+                                    approvalModeSlot={
+                                        interactive && toolApprovalMode ? (
+                                            <AgentApprovalModeSelector
+                                                mode={toolApprovalMode}
+                                                onChange={handleToolApprovalModeChange}
+                                                disabled={
+                                                    !isPlaybackLive || effectiveIsCompleted || !allowWorkflowControl
+                                                }
+                                            />
+                                        ) : undefined
+                                    }
                                     mcpSlot={
                                         <McpConnectionsActionMenu
                                             disabledCollections={mcpDisabled}

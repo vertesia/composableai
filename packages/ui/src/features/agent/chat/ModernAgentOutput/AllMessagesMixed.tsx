@@ -43,9 +43,13 @@ import { getMessageDeliveryStatus, MessageDeliveryStatus } from './MessageDelive
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
 import {
     getAnsweredRequestInputKeys,
+    getHiddenToolApprovalAnswerKeys,
     getPendingRequestInputMessage,
     getRequestInputMessageKey,
+    getResolvedToolApprovalKeys,
     isRequestInputAnswered,
+    isRequestInputResolvedByToolApprovalEvent,
+    isToolApprovalAnswerHidden,
 } from './requestInputMessages';
 import StreamingMessage, { type StreamingMessageClassNames } from './StreamingMessage';
 import {
@@ -2323,6 +2327,14 @@ function AllMessagesMixedComponent({
         () => getAnsweredRequestInputKeys(displayMessages),
         [displayMessages],
     );
+    const resolvedToolApprovalKeys = React.useMemo(
+        () => getResolvedToolApprovalKeys(displayMessages),
+        [displayMessages],
+    );
+    const hiddenToolApprovalAnswerKeys = React.useMemo(
+        () => getHiddenToolApprovalAnswerKeys(displayMessages, resolvedToolApprovalKeys),
+        [displayMessages, resolvedToolApprovalKeys],
+    );
     const externallyRenderedRequestInputKey = React.useMemo(() => {
         if (renderRequestInputControls) return undefined;
         const pendingRequestInput = getPendingRequestInputMessage(displayMessages);
@@ -2331,8 +2343,13 @@ function AllMessagesMixedComponent({
     const shouldHideRequestInputMessage = React.useCallback(
         (message: AgentMessage) =>
             message.type === AgentMessageType.REQUEST_INPUT &&
-            externallyRenderedRequestInputKey === getRequestInputMessageKey(message),
-        [externallyRenderedRequestInputKey],
+            (externallyRenderedRequestInputKey === getRequestInputMessageKey(message) ||
+                isRequestInputResolvedByToolApprovalEvent(message, resolvedToolApprovalKeys)),
+        [externallyRenderedRequestInputKey, resolvedToolApprovalKeys],
+    );
+    const shouldHideToolApprovalAnswerMessage = React.useCallback(
+        (message: AgentMessage) => isToolApprovalAnswerHidden(message, hiddenToolApprovalAnswerKeys),
+        [hiddenToolApprovalAnswerKeys],
     );
 
     const fallbackWorkingStartedAtRef = useRef(Date.now());
@@ -2945,6 +2962,7 @@ function AllMessagesMixedComponent({
                                     // Render single message
                                     const message = group.message;
                                     if (shouldHideRequestInputMessage(message)) return null;
+                                    if (shouldHideToolApprovalAnswerMessage(message)) return null;
                                     if (isUserStoppedMessage(message)) {
                                         return (
                                             <TimelineEntry key={getAgentMessageRenderKey(message, 'stopped')}>
@@ -3086,6 +3104,7 @@ function AllMessagesMixedComponent({
 
                                 const message = item.message;
                                 if (shouldHideRequestInputMessage(message)) return null;
+                                if (shouldHideToolApprovalAnswerMessage(message)) return null;
                                 if (isBatchProgressMessage(message)) {
                                     return (
                                         <MessageErrorBoundary key={getAgentMessageRenderKey(message, 'batch')}>

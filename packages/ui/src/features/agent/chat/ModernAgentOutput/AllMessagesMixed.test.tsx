@@ -945,6 +945,82 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.queryByRole('button', { name: /Blue/ })).toBeNull();
     });
 
+    it('hides denied tool approval prompts when the stream contains a denied tool event', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.REQUEST_INPUT,
+                    message: 'Approve Write Artifact for japan_news_2026_06_21.md?',
+                    details: {
+                        tool_approval: {
+                            approval_key: 'write_artifact:name:japan_news_2026_06_21.md',
+                            tool_name: 'write_artifact',
+                            tool_title: 'Write Artifact',
+                            target: 'name:japan_news_2026_06_21.md',
+                            input: {
+                                name: 'japan_news_2026_06_21.md',
+                                content_ref: {
+                                    display_ref: 'artifact:tool-inputs/write_artifact/write_artifact.txt',
+                                },
+                            },
+                        },
+                        ux: {
+                            options: [
+                                { id: 'allow_once', label: 'Allow once' },
+                                { id: 'allow_for_run', label: 'Allow this action for this run' },
+                                { id: 'deny', label: 'Deny' },
+                            ],
+                        },
+                    },
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'deny',
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    type: AgentMessageType.THOUGHT,
+                    message: '',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'write_artifact',
+                        tool_run_id: 'tool-run-1',
+                        tool_use_id: 'tool-use-1',
+                        tool_status: 'error',
+                        tool_event: 'failed',
+                        activity_group_id: 'activity-1',
+                        observation: 'User declined to use Write Artifact.',
+                        approval_decision: 'denied',
+                        approval_request: {
+                            approval_key: 'write_artifact:name:japan_news_2026_06_21.md',
+                            tool_name: 'write_artifact',
+                            tool_title: 'Write Artifact',
+                            target: 'name:japan_news_2026_06_21.md',
+                        },
+                        input: {
+                            name: 'japan_news_2026_06_21.md',
+                            content_ref: {
+                                display_ref: 'artifact:tool-inputs/write_artifact/write_artifact.txt',
+                            },
+                        },
+                    },
+                }),
+            ],
+            true,
+        );
+
+        expect(screen.queryByText('Approve Write Artifact for japan_news_2026_06_21.md?')).toBeNull();
+        expect(screen.queryByText('deny')).toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: /Work needs attention/ }));
+        fireEvent.click(screen.getByRole('button', { name: /Write Artifact/ }));
+
+        expect(screen.getByText('User declined to use Write Artifact.')).not.toBeNull();
+        expect(screen.getByText(/japan_news_2026_06_21\.md/)).not.toBeNull();
+    });
+
     it('does not duplicate the initial request once the persisted user prompt is present', () => {
         renderSummary(
             [

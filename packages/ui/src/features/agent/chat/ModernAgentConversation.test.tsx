@@ -71,12 +71,16 @@ vi.mock('./ModernAgentOutput/MessageInput', () => ({
         };
         onCompactContext?: () => void;
         isCompactingContext?: boolean;
+        approvalModeSlot?: React.ReactNode;
     }) => {
         mocks.messageInputProps(props);
         return (
-            <button type="button" onClick={() => props.onSend('follow up')}>
-                composer send
-            </button>
+            <div>
+                {props.approvalModeSlot}
+                <button type="button" onClick={() => props.onSend('follow up')}>
+                    composer send
+                </button>
+            </div>
         );
     },
 }));
@@ -334,6 +338,94 @@ describe('ModernAgentConversation send handling', () => {
         renderConversation({ interactive: false, onRestart: vi.fn() });
 
         expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
+    });
+
+    it('passes the selected approval mode when starting a new interactive run', async () => {
+        const startWorkflow = vi.fn().mockResolvedValue(undefined);
+        renderWithProviders(
+            <ModernAgentConversation startWorkflow={startWorkflow} hideHeader hideFileUpload initialMessage="" />,
+        );
+
+        fireEvent.pointerDown(screen.getByRole('button', { name: 'Agent approval mode' }), {
+            button: 0,
+            ctrlKey: false,
+        });
+        fireEvent.click(await screen.findByRole('menuitemradio', { name: /Approve for me/ }));
+        fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Draft the release notes' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Start Agent' }));
+
+        await waitFor(() => {
+            expect(startWorkflow).toHaveBeenCalledWith('Draft the release notes', {
+                tool_approval_mode: 'auto_review',
+            });
+        });
+    });
+
+    it('signals approval mode changes for an active interactive run', async () => {
+        mocks.retrieve.mockResolvedValue({
+            tool_approval_mode: 'ask',
+            interactive: true,
+            disabled_mcp_collections: undefined,
+        });
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideMessageInput: false, interactive: true, allowWorkflowControl: true });
+
+        await waitFor(() => {
+            expect(screen.getByText('Ask for approval')).not.toBeNull();
+        });
+        fireEvent.pointerDown(screen.getByRole('button', { name: 'Agent approval mode' }), {
+            button: 0,
+            ctrlKey: false,
+        });
+        fireEvent.click(await screen.findByRole('menuitemradio', { name: /Approve for me/ }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith('agent-run-1', 'ToolApprovalModeChanged', {
+                mode: 'auto_review',
+            });
+        });
+    });
+
+    it('does not show a full-control fallback before active run mode metadata loads', () => {
+        mocks.retrieve.mockReturnValue(new Promise(() => {}));
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideMessageInput: false, interactive: true, allowWorkflowControl: true });
+
+        expect(screen.queryByRole('button', { name: 'Agent approval mode' })).toBeNull();
+        expect(screen.queryByText('Full control')).toBeNull();
+    });
+
+    it('disables the active-run approval selector when a run is completed', async () => {
+        mocks.retrieve.mockResolvedValue({
+            tool_approval_mode: 'ask',
+            interactive: true,
+            disabled_mcp_collections: undefined,
+        });
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+            isCompleted: true,
+            agentRunStatus: 'COMPLETED',
+        });
+
+        renderConversation({
+            hideMessageInput: false,
+            interactive: true,
+            allowWorkflowControl: true,
+            onRestart: vi.fn(),
+        });
+
+        const selector = await screen.findByRole('button', { name: 'Agent approval mode' });
+        expect((selector as HTMLButtonElement).disabled).toBe(true);
     });
 
     it('unlocks the composer when an idle marker arrives before the stream completion flag updates', () => {
