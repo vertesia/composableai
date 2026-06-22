@@ -25,6 +25,7 @@ import type {
     TemplateType,
 } from './prompt.js';
 import type { ExecutionRunDocRef } from './runs.js';
+import type { AgentToolApprovalMode } from './store/agent-approval.js';
 import type { ConversationState } from './store/conversation-state.js';
 import type { AccountRef } from './user.js';
 import type { LlmCallType } from './workflow-analytics.js';
@@ -719,6 +720,9 @@ export {
 export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {
     type: 'conversation';
 
+    /** Effective tool approval mode for interactive agent conversations. */
+    tool_approval_mode?: AgentToolApprovalMode;
+
     /**
      * Visibility determine if the conversation should be seen by the user only or by anyone with access to the project
      * If not specified, the default is project
@@ -763,6 +767,14 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * The collection in which this workflow is executing
      */
     collection_id?: string;
+
+    /**
+     * Denylist of MCP tool-collection ids deactivated for this conversation.
+     * `undefined`/empty means all installed/connected MCP collections are active (back-compat,
+     * and new servers stay active by default). Listed collections are excluded even if connected.
+     * Can be updated mid-conversation via the MCP config signal.
+     */
+    disabled_mcp_collections?: string[];
 
     /**
      * The token threshold in thousands (K) for creating checkpoints.

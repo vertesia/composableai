@@ -6,13 +6,14 @@ import {
     type JSONSchema,
     type Plan,
 } from '@vertesia/common';
-import { cn } from '@vertesia/ui/core';
+import { Badge, Button, cn, VTooltip } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink } from '@vertesia/ui/router';
 import { MarkdownRenderer, type MarkdownRendererProps } from '@vertesia/ui/widgets';
 import type { Element } from 'hast';
 import {
     AlertTriangle,
+    ArrowLeft,
     Bot,
     Brain,
     CheckCircle,
@@ -31,18 +32,29 @@ import { AskUserWidget } from '../AskUserWidget';
 import { ThinkingMessages } from '../WaitingMessages';
 import {
     formatWorkstreamName,
+    getWorkstreamActivityDetails,
     getWorkstreamDisplayName,
     getWorkstreamLaunchDetails,
     type WorkstreamLaunchDetails,
 } from '../workstreams.js';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from './BatchProgressPanel';
+import { getMessageDeliveryStatus, MessageDeliveryStatus } from './MessageDeliveryStatus';
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
 import {
     getAnsweredRequestInputKeys,
+    getAnsweredToolApprovalRequestInputKeys,
+    getHiddenToolApprovalAnswerKeys,
     getPendingRequestInputMessage,
+    getRequestInputDisplayText,
     getRequestInputMessageKey,
+    getResolvedToolApprovalKeys,
+    hasRequestInputUx,
     isRequestInputAnswered,
+    isToolApprovalAnswerHidden,
+    isToolApprovalRequestInput,
+    isToolApprovalRequestInputHidden,
+    type RequestInputMessageWithUx,
 } from './requestInputMessages';
 import StreamingMessage, { type StreamingMessageClassNames } from './StreamingMessage';
 import {
@@ -57,10 +69,12 @@ import {
 import ToolCallGroup, { type ToolCallGroupClassNames } from './ToolCallGroup';
 import {
     DONE_STATES,
+    filterMessagesForActiveWorkstream,
     getWorkstreamId,
     groupMessagesWithStreaming,
     isInProgress,
     isToolPreambleMessage,
+    isUserStoppedMessage,
     mergeConsecutiveToolGroups,
     type RenderableGroup,
     type StreamingData,
@@ -108,6 +122,23 @@ function formatDuration(seconds: number): string {
     return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
 }
 
+function parseTimestampMs(timestamp: number | string | undefined): number | undefined {
+    if (timestamp === undefined || timestamp === null || timestamp === '') return undefined;
+    const value = typeof timestamp === 'number' ? timestamp : new Date(timestamp).getTime();
+    return Number.isFinite(value) ? value : undefined;
+}
+
+function formatToolDetailTimestamp(timestamp: number | string | undefined): string | undefined {
+    const value = parseTimestampMs(timestamp);
+    if (value === undefined) return undefined;
+
+    return new Intl.DateTimeFormat(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    }).format(new Date(value));
+}
+
 function getReadableToolLabel(message: AgentMessage): string {
     const details = message.details as
         | {
@@ -140,9 +171,7 @@ function getReadableToolLabel(message: AgentMessage): string {
     return 'Using tool';
 }
 
-function getSummaryWorkLabel(status: ToolExecutionStatus, isActive: boolean): string {
-    if (status === 'error') return 'Work needs attention';
-    if (status === 'warning') return 'Work had warnings';
+function getSummaryWorkLabel(isActive: boolean): string {
     return isActive ? 'Working' : 'Worked';
 }
 
@@ -150,14 +179,98 @@ function isTransientThinkingWork(messages: AgentMessage[]): boolean {
     return messages.length > 0 && messages.every(isTransientWorkStatusMessage);
 }
 
-function getSummaryActivityLabel(status: ToolExecutionStatus, isActive: boolean): string {
-    return getSummaryWorkLabel(status, isActive);
+function getSummaryActivityLabel(isActive: boolean): string {
+    return getSummaryWorkLabel(isActive);
 }
 
 function hasOpenUserTurn(messages: AgentMessage[]): boolean {
     const mainMessages = messages.filter((message) => getWorkstreamId(message) === 'main');
     const latestMessage = mainMessages[mainMessages.length - 1] ?? messages[messages.length - 1];
     return latestMessage?.type === AgentMessageType.QUESTION;
+}
+
+function hasLatestToolApprovalAllowTurn(messages: AgentMessage[], hiddenToolApprovalAnswerKeys: Set<string>): boolean {
+    const mainMessages = messages.filter((message) => getWorkstreamId(message) === 'main');
+    const latestMessage = mainMessages[mainMessages.length - 1] ?? messages[messages.length - 1];
+    if (!latestMessage || !isToolApprovalAnswerHidden(latestMessage, hiddenToolApprovalAnswerKeys)) return false;
+
+    const response = getToolApprovalResponse(latestMessage);
+    return response === 'allow_once' || response === 'allow_for_run';
+}
+
+function getWriteArtifactCompletionPath(message: AgentMessage): string | undefined {
+    if (message.type !== AgentMessageType.UPDATE) return undefined;
+    const details = getDetailsRecord(message);
+    if (details.tool !== undefined || details.activity_group_id !== undefined) return undefined;
+    const path = typeof details.path === 'string' && details.path.trim() ? details.path.trim() : undefined;
+    if (!path) return undefined;
+
+    return getMessageText(message) === `Prepared and saved artifact to ${path}` ? path : undefined;
+}
+
+function findPreviousWriteArtifactToolMessage(messages: AgentMessage[], index: number): AgentMessage | undefined {
+    const workstreamId = getWorkstreamId(messages[index]);
+
+    for (let prevIndex = index - 1; prevIndex >= 0; prevIndex -= 1) {
+        const previous = messages[prevIndex];
+        if (getWorkstreamId(previous) !== workstreamId) continue;
+
+        const details = getDetailsRecord(previous);
+        if (details.tool === 'write_artifact' && typeof details.activity_group_id === 'string') return previous;
+
+        if (previous.type === AgentMessageType.REQUEST_INPUT) continue;
+        if (getToolApprovalResponse(previous)) continue;
+        if (details.display_role === 'thinking') continue;
+
+        if (typeof details.tool === 'string' && details.tool !== 'write_artifact') return undefined;
+        if (
+            previous.type === AgentMessageType.ANSWER ||
+            previous.type === AgentMessageType.COMPLETE ||
+            previous.type === AgentMessageType.IDLE ||
+            previous.type === AgentMessageType.TERMINATED
+        ) {
+            return undefined;
+        }
+    }
+
+    return undefined;
+}
+
+function attachWriteArtifactCompletionMessages(messages: AgentMessage[]): AgentMessage[] {
+    return messages.map((message, index) => {
+        const path = getWriteArtifactCompletionPath(message);
+        if (!path) return message;
+
+        const previousToolMessage = findPreviousWriteArtifactToolMessage(messages, index);
+        const previousDetails = previousToolMessage ? getDetailsRecord(previousToolMessage) : undefined;
+        if (!previousDetails) return message;
+
+        const activityGroupId =
+            typeof previousDetails.activity_group_id === 'string' ? previousDetails.activity_group_id : undefined;
+        const toolRunId = typeof previousDetails.tool_run_id === 'string' ? previousDetails.tool_run_id : undefined;
+        const toolUseId = typeof previousDetails.tool_use_id === 'string' ? previousDetails.tool_use_id : undefined;
+        const toolIteration =
+            typeof previousDetails.tool_iteration === 'number' ? previousDetails.tool_iteration : undefined;
+
+        if (!activityGroupId) return message;
+
+        return {
+            ...message,
+            details: {
+                ...message.details,
+                event_class: 'activity',
+                tool: 'write_artifact',
+                tool_run_id: toolRunId ?? 'write_artifact',
+                tool_use_id: toolUseId ?? toolRunId ?? 'write_artifact',
+                tool_iteration: toolIteration,
+                tool_status: 'completed',
+                tool_event: 'progress',
+                activity_group_id: activityGroupId,
+                output: getMessageText(message),
+                path,
+            },
+        };
+    });
 }
 
 function getMessageText(message: AgentMessage): string {
@@ -168,7 +281,8 @@ function getMessageText(message: AgentMessage): string {
 
 interface SummaryMessageProps {
     message: AgentMessage;
-    onSendMessage?: (message: string) => void;
+    onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+    onSelectWorkstream?: (workstreamId: string) => void;
     requestInputAnswered?: boolean;
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
     CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
@@ -177,9 +291,11 @@ interface SummaryMessageProps {
 function SummaryWorkstreamLaunchMessage({
     message,
     details,
+    onSelectWorkstream,
 }: {
     message: AgentMessage;
     details: WorkstreamLaunchDetails;
+    onSelectWorkstream?: (workstreamId: string) => void;
 }) {
     const { t } = useUITranslation();
     const workstreamName = getWorkstreamDisplayName(details.workstreamId, details.interaction);
@@ -188,7 +304,15 @@ function SummaryWorkstreamLaunchMessage({
 
     return (
         <div className="mx-auto w-full max-w-3xl px-1" data-workstream-id={details.workstreamId}>
-            <div className="flex items-start gap-3 border-b border-border/70 py-2 text-sm text-muted">
+            <button
+                type="button"
+                className={cn(
+                    'group flex w-full items-start gap-3 border-b border-border/70 py-2 text-start text-sm text-muted',
+                    'transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2',
+                    'focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                )}
+                onClick={() => onSelectWorkstream?.(details.workstreamId)}
+            >
                 <Bot className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden="true" />
                 <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -198,7 +322,9 @@ function SummaryWorkstreamLaunchMessage({
                     {secondaryName && <div className="mt-0.5 truncate text-xs text-muted/75">{secondaryName}</div>}
                     <span className="sr-only">{getMessageText(message)}</span>
                 </div>
-            </div>
+                {/* rtl-ok: chevron points and nudges toward inline-end in both directions. */}
+                <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
+            </button>
         </div>
     );
 }
@@ -212,6 +338,8 @@ const SUMMARY_PROSE_CLASS = [
 ].join(' ');
 
 const USER_BUBBLE_COLLAPSE_THRESHOLD = 520;
+const SUMMARY_THOUGHT_COLLAPSE_LINES = 6;
+const SUMMARY_THOUGHT_COLLAPSE_THRESHOLD = 520;
 const STORE_LINK_MARKDOWN_RE =
     /\[[^\]]+\]\((?:\/store\/(?:objects|collections)\/|store:|document:|document:\/\/|collection:)[^)]+\)/;
 const DEFAULT_AGENT_MARKDOWN_COMPONENTS: MarkdownRendererProps['components'] = {
@@ -428,12 +556,14 @@ function useRotatingThinkingMessageIndex(enabled = true): number {
 
 function SummaryUserBubble({
     children,
+    message,
     workstreamId,
     className,
     artifactRunId,
     markdownComponents,
 }: {
     children: React.ReactNode;
+    message?: AgentMessage;
     workstreamId?: string;
     className?: string;
     artifactRunId?: string;
@@ -446,6 +576,7 @@ function SummaryUserBubble({
     const isPlainText = typeof children === 'string' || typeof children === 'number';
     const textContent = isPlainText ? String(children) : '';
     const shouldRenderMarkdown = typeof children === 'string' && STORE_LINK_MARKDOWN_RE.test(children);
+    const deliveryStatus = message ? getMessageDeliveryStatus(message) : undefined;
 
     useEffect(() => {
         if (!shouldCollapse && isExpanded) {
@@ -502,6 +633,11 @@ function SummaryUserBubble({
                         />
                     </button>
                 )}
+                {message && deliveryStatus ? (
+                    <div className="mt-1.5 flex justify-end">
+                        <MessageDeliveryStatus message={message} className="h-4 w-4" />
+                    </div>
+                ) : null}
             </div>
         </div>
     );
@@ -510,12 +646,14 @@ function SummaryUserBubble({
 function SummaryMessage({
     message,
     onSendMessage,
+    onSelectWorkstream,
     requestInputAnswered = false,
     StoreLinkComponent,
     CollectionLinkComponent,
 }: SummaryMessageProps) {
-    const content = getMessageText(message);
-    const workstreamLaunchDetails = getWorkstreamLaunchDetails(message);
+    const content =
+        message.type === AgentMessageType.REQUEST_INPUT ? getRequestInputDisplayText(message) : getMessageText(message);
+    const workstreamLaunchDetails = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
     const workstreamId = getWorkstreamId(message);
     const runId = (message as { workflow_run_id?: string }).workflow_run_id;
     const parsedQuestion = useMemo(
@@ -574,7 +712,13 @@ function SummaryMessage({
     );
 
     if (workstreamLaunchDetails) {
-        return <SummaryWorkstreamLaunchMessage message={message} details={workstreamLaunchDetails} />;
+        return (
+            <SummaryWorkstreamLaunchMessage
+                message={message}
+                details={workstreamLaunchDetails}
+                onSelectWorkstream={onSelectWorkstream}
+            />
+        );
     }
 
     if (message.type === AgentMessageType.QUESTION) {
@@ -597,6 +741,7 @@ function SummaryMessage({
                 )}
                 {questionBody && (
                     <SummaryUserBubble
+                        message={message}
                         workstreamId={workstreamId}
                         artifactRunId={runId}
                         markdownComponents={markdownComponents}
@@ -620,6 +765,10 @@ function SummaryMessage({
                     multiSelect={uxConfig.multiSelect}
                     onSelect={(optionId) => onSendMessage?.(optionId)}
                     onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                    allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
+                    placeholder={uxConfig.free_response?.placeholder}
+                    submitLabel={uxConfig.free_response?.submit_label}
+                    onSubmit={(value) => onSendMessage?.(value, uxConfig.free_response?.metadata)}
                     hideBorder
                     compact
                     answered={requestInputAnswered}
@@ -868,11 +1017,20 @@ interface SummaryToolDetailItem {
     kind: SummaryToolDetailKind;
     label: string;
     title: string;
+    isPreamble?: boolean;
     command?: string;
     text?: string;
+    toolName?: string;
+    startedAt?: number | string;
+    finishedAt?: number | string;
     status?: ToolExecutionStatus;
+    decisionText?: string;
     sections: SummaryToolDetailSection[];
 }
+
+const SUMMARY_TOOL_STARTED_AT_DETAIL_KEY = '_summary_started_at';
+const SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY = '_summary_finished_at';
+const SYNTHETIC_TOOL_APPROVAL_EVENT_SOURCE = 'synthetic_tool_approval_decision';
 
 const TOOL_DETAIL_SYSTEM_KEYS = new Set([
     'account_id',
@@ -899,11 +1057,26 @@ const TOOL_DETAIL_SYSTEM_KEYS = new Set([
     'tools',
     'message_to_human',
     'progress_messages',
+    'source',
+    'token_usage',
+    'checkpoint_at',
+    'checkpoint_threshold',
+    'approval_decision',
+    'approval_request',
+    'cancellation_reason',
+    SUMMARY_TOOL_STARTED_AT_DETAIL_KEY,
+    SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY,
     'workflow_run_id',
 ]);
 
 function getDetailsRecord(message: AgentMessage): Record<string, unknown> {
     return isRecordValue(message.details) ? message.details : {};
+}
+
+function isDocumentPanelEventMessage(message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.UPDATE) return false;
+    const eventClass = getDetailsRecord(message).event_class;
+    return eventClass === 'document_created' || eventClass === 'document_updated';
 }
 
 function humanizeIdentifier(value: string): string {
@@ -928,6 +1101,15 @@ function getToolNames(details: Record<string, unknown>): string[] {
         }
     }
     return names;
+}
+
+function getUniqueToolName(details: Record<string, unknown>): string | undefined {
+    const names = Array.from(new Set(getToolNames(details)));
+    return names.length > 0 ? names.join(', ') : undefined;
+}
+
+function getTimestampDetail(value: unknown): number | string | undefined {
+    return typeof value === 'number' || typeof value === 'string' ? value : undefined;
 }
 
 const TOOL_TARGET_KEYS = [
@@ -958,15 +1140,13 @@ function getToolDetailKind(message: AgentMessage): SummaryToolDetailKind {
     const details = getDetailsRecord(message);
     const toolNames = getToolNames(details).join(' ').toLowerCase();
     const concreteTool = typeof details.tool === 'string' ? details.tool.toLowerCase() : '';
-    const text = getMessageText(message).toLowerCase();
-    const haystack = `${toolNames} ${text}`;
+    const classifierText = concreteTool || toolNames;
 
     if (isToolPreambleMessage(message)) return 'think';
-    if (concreteTool.startsWith('learn_') || haystack.includes('learn_') || /\bskill\b/.test(text)) return 'skill';
+    if (concreteTool.startsWith('learn_') || toolNames.includes('learn_')) return 'skill';
     if (concreteTool === 'discover_tools') return 'discover';
     if (message.type === AgentMessageType.THOUGHT && !concreteTool) return 'think';
 
-    const classifierText = concreteTool || haystack;
     if (classifierText.includes('search') || classifierText.includes('web') || classifierText.includes('fetch'))
         return 'search';
     if (classifierText.includes('read') || classifierText.includes('document') || classifierText.includes('file'))
@@ -1020,6 +1200,135 @@ function getToolTarget(details: Record<string, unknown>): string | undefined {
     }
 
     return undefined;
+}
+
+function getApprovalDecisionLabel(decision: unknown, toolLabel: string): string | undefined {
+    switch (decision) {
+        case 'denied':
+        case 'denied_with_feedback':
+            return `User declined to use ${toolLabel}.`;
+        case 'timeout':
+            return `Approval timed out for ${toolLabel}.`;
+        case 'reviewer_denied':
+            return `Approval reviewer denied ${toolLabel}.`;
+        case 'cancelled_after_denial':
+            return `Cancelled ${toolLabel} after another tool was denied.`;
+        default:
+            return undefined;
+    }
+}
+
+function getApprovalDecisionStatusText(decision: unknown): string | undefined {
+    switch (decision) {
+        case 'denied':
+        case 'denied_with_feedback':
+            return 'Declined by user';
+        case 'timeout':
+            return 'Approval timed out';
+        case 'reviewer_denied':
+            return 'Denied by reviewer';
+        case 'cancelled_after_denial':
+            return 'Cancelled after denial';
+        default:
+            return undefined;
+    }
+}
+
+function getToolApprovalRecord(message: AgentMessage): Record<string, unknown> | undefined {
+    const details = getDetailsRecord(message);
+    const toolApproval = details.tool_approval;
+    return isRecordValue(toolApproval) ? toolApproval : undefined;
+}
+
+function getApprovalKeyFromToolApproval(toolApproval: Record<string, unknown> | undefined): string | undefined {
+    const approvalKey = toolApproval?.approval_key;
+    return typeof approvalKey === 'string' && approvalKey.trim() ? approvalKey.trim() : undefined;
+}
+
+function getToolApprovalResponse(message: AgentMessage): 'allow_once' | 'allow_for_run' | 'deny' | undefined {
+    if (message.type !== AgentMessageType.QUESTION) return undefined;
+    const normalized = getMessageText(message).trim().toLowerCase();
+    if (normalized === 'allow_once' || normalized === 'allow_for_run' || normalized === 'deny') return normalized;
+    return undefined;
+}
+
+function getToolApprovalDisplayName(toolApproval: Record<string, unknown>): string {
+    const title = toolApproval.tool_title;
+    if (typeof title === 'string' && title.trim()) return title.trim();
+    const name = toolApproval.tool_name;
+    if (typeof name === 'string' && name.trim()) return humanizeIdentifier(name.trim());
+    return 'tool action';
+}
+
+function buildSyntheticToolApprovalDecisionMessages(
+    messages: AgentMessage[],
+    resolvedToolApprovalKeys: Set<string>,
+): AgentMessage[] {
+    const syntheticMessages: AgentMessage[] = [];
+
+    messages.forEach((message, index) => {
+        if (message.type !== AgentMessageType.REQUEST_INPUT) return;
+
+        const toolApproval = getToolApprovalRecord(message);
+        const approvalKey = getApprovalKeyFromToolApproval(toolApproval);
+        if (!toolApproval || !approvalKey || resolvedToolApprovalKeys.has(approvalKey)) return;
+
+        const workstreamId = getWorkstreamId(message);
+        let responseMessage: AgentMessage | undefined;
+        for (let nextIndex = index + 1; nextIndex < messages.length; nextIndex += 1) {
+            const nextMessage = messages[nextIndex];
+            if (getWorkstreamId(nextMessage) !== workstreamId) continue;
+            if (nextMessage.type === AgentMessageType.REQUEST_INPUT) break;
+            if (nextMessage.type === AgentMessageType.QUESTION) {
+                responseMessage = nextMessage;
+                break;
+            }
+        }
+
+        if (!responseMessage || getToolApprovalResponse(responseMessage) !== 'deny') return;
+
+        const toolName =
+            typeof toolApproval.tool_name === 'string' && toolApproval.tool_name.trim()
+                ? toolApproval.tool_name.trim()
+                : 'tool_action';
+        const toolLabel = getToolApprovalDisplayName(toolApproval);
+        const target = typeof toolApproval.target === 'string' && toolApproval.target.trim() ? toolApproval.target : '';
+        const approvalRequest = {
+            tool_name: toolName,
+            tool_title: toolApproval.tool_title,
+            action_summary: toolApproval.action_summary,
+            target: toolApproval.target,
+            approval_key: approvalKey,
+        };
+
+        syntheticMessages.push({
+            timestamp: responseMessage.timestamp ?? message.timestamp,
+            workflow_run_id: responseMessage.workflow_run_id || message.workflow_run_id,
+            type: AgentMessageType.THOUGHT,
+            message: getApprovalDecisionLabel('denied', toolLabel) ?? `User declined to use ${toolLabel}.`,
+            workstream_id: workstreamId,
+            details: {
+                event_class: 'activity',
+                tool: toolName,
+                tool_run_id: `approval:${approvalKey}`,
+                tool_use_id: `approval:${approvalKey}`,
+                tool_status: 'error',
+                tool_event: 'failed',
+                activity_group_id: `approval:${approvalKey}`,
+                approval_decision: 'denied',
+                approval_request: approvalRequest,
+                input: toolApproval.input,
+                target,
+                observation: 'The user declined this tool action.',
+                source: SYNTHETIC_TOOL_APPROVAL_EVENT_SOURCE,
+            },
+        });
+    });
+
+    if (syntheticMessages.length === 0) return messages;
+    return [...messages, ...syntheticMessages].sort(
+        (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp),
+    );
 }
 
 function compactInlineText(value: string, maxLength = 160): string {
@@ -1082,6 +1391,16 @@ function getRenderableGroupKey(group: RenderableGroup): string {
     return ['group', group.toolRunId, group.firstTimestamp, firstKey, lastKey].filter(Boolean).join(':');
 }
 
+function getPreviousRenderableGroupTimestamp(groups: RenderableGroup[], index: number): number | string | undefined {
+    for (let previousIndex = index - 1; previousIndex >= 0; previousIndex--) {
+        const group = groups[previousIndex];
+        if (group.type === 'single') return group.message.timestamp;
+        if (group.type === 'tool_group') return group.firstTimestamp;
+        if (group.type === 'streaming') return group.startTimestamp;
+    }
+    return undefined;
+}
+
 function formatToolSectionValue(value: unknown): string {
     const text = stringifyRequestValue(value).trim();
     return text.length > 2400 ? `${text.slice(0, 2400)}\n...` : text;
@@ -1132,16 +1451,11 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
 
     addSection('Query', ['query']);
     addSection('Input', ['input', 'params', 'arguments', 'args']);
-    addSection('Output', [
-        'output',
-        'stdout',
-        'result',
-        'results',
-        'content',
-        'result_summary',
-        'observation',
-        'display_message',
-    ]);
+    addSection(
+        'Output',
+        ['output', 'stdout', 'result', 'results', 'content', 'result_summary', 'observation', 'display_message'],
+        typeof details.approval_decision === 'string' ? 'error' : undefined,
+    );
     addSection('Files', ['files', 'outputFiles']);
     addSection('Error', ['error', 'stderr'], 'error');
     if (targetEntry) consumedKeys.add(targetEntry.key);
@@ -1155,21 +1469,30 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
 }
 
 function buildSummaryToolDetailItem(message: AgentMessage, index: number): SummaryToolDetailItem | undefined {
+    if (message.type === AgentMessageType.REQUEST_INPUT) return undefined;
+
     const text = getMessageText(message);
     const details = getDetailsRecord(message);
+    const isPreamble = isToolPreambleMessage(message);
     const kind = getToolDetailKind(message);
     const toolNames = getToolNames(details);
     const target = getToolTarget(details);
     const command = typeof details.command === 'string' && details.command.trim() ? details.command.trim() : undefined;
     const fallbackTitle = toolNames[0] ? humanizeIdentifier(toolNames[0]) : getReadableToolLabel(message);
+    const approvalDecisionTitle = getApprovalDecisionLabel(details.approval_decision, fallbackTitle);
+    const decisionText = getApprovalDecisionStatusText(details.approval_decision);
+    const messageToHuman =
+        typeof details.message_to_human === 'string' && details.message_to_human.trim()
+            ? details.message_to_human.trim()
+            : undefined;
     const title =
         kind === 'think'
             ? text || fallbackTitle
             : kind === 'command'
-              ? compactInlineText(text || command || fallbackTitle)
-              : compactInlineText(target || text || fallbackTitle);
+              ? compactInlineText(messageToHuman || (!approvalDecisionTitle ? text : '') || command || fallbackTitle)
+              : compactInlineText(messageToHuman || target || (!approvalDecisionTitle ? text : '') || fallbackTitle);
     const normalizedText = text ? (kind === 'think' ? text : compactInlineText(text, 420)) : undefined;
-    const shouldShowText = normalizedText && normalizedText !== title;
+    const shouldShowText = normalizedText && normalizedText !== title && !approvalDecisionTitle;
 
     if (!title && !shouldShowText) return undefined;
 
@@ -1178,41 +1501,130 @@ function buildSummaryToolDetailItem(message: AgentMessage, index: number): Summa
         kind,
         label: getToolDetailLabel(kind),
         title,
+        isPreamble,
         command,
         text: shouldShowText ? normalizedText : undefined,
-        status: details.tool_status as ToolExecutionStatus | undefined,
+        toolName: getUniqueToolName(details),
+        startedAt: getTimestampDetail(details[SUMMARY_TOOL_STARTED_AT_DETAIL_KEY]) ?? message.timestamp,
+        finishedAt: getTimestampDetail(details[SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY]) ?? message.timestamp,
+        status: approvalDecisionTitle ? 'error' : (details.tool_status as ToolExecutionStatus | undefined),
+        decisionText,
         sections: getToolDetailSections(message),
     };
+}
+
+function isPlanToolMessage(message: AgentMessage): boolean {
+    const details = getDetailsRecord(message);
+    return details.tool === 'plan' || details.tool === 'update_plan';
+}
+
+function isPlanLifecycleMessage(message: AgentMessage): boolean {
+    const details = getDetailsRecord(message);
+    if (message.type === AgentMessageType.UPDATE && Array.isArray(details.updates)) return true;
+    return message.type === AgentMessageType.PLAN && Array.isArray(details.plan);
+}
+
+function getActivityGroupIdentity(details: Record<string, unknown>): string | undefined {
+    return typeof details.activity_group_id === 'string' && details.activity_group_id.trim()
+        ? details.activity_group_id.trim()
+        : undefined;
+}
+
+function getToolIdentity(details: Record<string, unknown>): string | undefined {
+    if (typeof details.tool_use_id === 'string' && details.tool_use_id.trim()) return details.tool_use_id.trim();
+    if (typeof details.tool_run_id === 'string' && details.tool_run_id.trim()) return details.tool_run_id.trim();
+    if (typeof details.tool === 'string' && details.tool.trim()) return details.tool.trim();
+    return undefined;
+}
+
+function getSplitActivityGroups(messages: AgentMessage[]): Set<string> {
+    const startedToolIdentities = new Map<string, Set<string>>();
+    const approvalDecisionToolIdentities = new Map<string, Set<string>>();
+
+    const addIdentity = (
+        groups: Map<string, Set<string>>,
+        activityGroupId: string | undefined,
+        toolIdentity: string | undefined,
+    ) => {
+        if (!activityGroupId || !toolIdentity) return;
+        const identities = groups.get(activityGroupId) ?? new Set<string>();
+        identities.add(toolIdentity);
+        groups.set(activityGroupId, identities);
+    };
+
+    for (const message of messages) {
+        const details = getDetailsRecord(message);
+        const activityGroupId = getActivityGroupIdentity(details);
+        const toolIdentity = getToolIdentity(details);
+
+        if (details.tool_event === 'started') {
+            addIdentity(startedToolIdentities, activityGroupId, toolIdentity);
+        }
+        if (typeof details.approval_decision === 'string') {
+            addIdentity(approvalDecisionToolIdentities, activityGroupId, toolIdentity);
+        }
+    }
+
+    return new Set(
+        [...startedToolIdentities.entries(), ...approvalDecisionToolIdentities.entries()]
+            .filter(([, identities]) => identities.size > 1)
+            .map(([activityGroupId]) => activityGroupId),
+    );
+}
+
+function getSummaryToolGroupId(details: Record<string, unknown>, splitActivityGroups: Set<string>): string | undefined {
+    const activityGroupId = getActivityGroupIdentity(details);
+    const toolIdentity = getToolIdentity(details);
+
+    if (activityGroupId) {
+        if (toolIdentity && splitActivityGroups.has(activityGroupId)) {
+            return `activity:${activityGroupId}:tool:${toolIdentity}`;
+        }
+        return `activity:${activityGroupId}`;
+    }
+
+    if (typeof details.tool_use_id === 'string' && details.tool_use_id.trim()) {
+        return `tool-use:${details.tool_use_id.trim()}`;
+    }
+    if (typeof details.tool_run_id === 'string' && details.tool_run_id.trim())
+        return `run:${details.tool_run_id.trim()}`;
+    return undefined;
 }
 
 function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
     const byGroupId = new Map<string, { index: number; messages: AgentMessage[] }>();
     const ungrouped: Array<{ index: number; message: AgentMessage }> = [];
+    let currentPlanGroupId: string | undefined;
+    const splitActivityGroups = getSplitActivityGroups(messages);
 
     messages.forEach((message, index) => {
         const details = getDetailsRecord(message);
         if (isToolPreambleMessage(message)) {
             ungrouped.push({ index, message });
+            currentPlanGroupId = undefined;
             return;
         }
 
-        const activityGroupId =
-            typeof details.activity_group_id === 'string' && details.activity_group_id.trim()
-                ? details.activity_group_id
-                : undefined;
-        const runId =
-            typeof details.tool_run_id === 'string' && details.tool_run_id.trim() ? details.tool_run_id : undefined;
-        const groupId = activityGroupId ? `activity:${activityGroupId}` : runId ? `run:${runId}` : undefined;
-        if (!groupId) {
+        const groupId = getSummaryToolGroupId(details, splitActivityGroups);
+        const legacyPlanGroupId = !groupId && isPlanLifecycleMessage(message) ? currentPlanGroupId : undefined;
+        const effectiveGroupId = groupId ?? legacyPlanGroupId;
+
+        if (!effectiveGroupId) {
             ungrouped.push({ index, message });
             return;
         }
 
-        const group = byGroupId.get(groupId);
+        const group = byGroupId.get(effectiveGroupId);
         if (group) {
             group.messages.push(message);
         } else {
-            byGroupId.set(groupId, { index, messages: [message] });
+            byGroupId.set(effectiveGroupId, { index, messages: [message] });
+        }
+
+        if (isPlanToolMessage(message)) {
+            currentPlanGroupId = effectiveGroupId;
+        } else if (message.type === AgentMessageType.PLAN) {
+            currentPlanGroupId = undefined;
         }
     });
 
@@ -1223,6 +1635,10 @@ function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
         const baseMessage = sortedMessages[sortedMessages.length - 1];
         const startMessage = sortedMessages.find((message) => getDetailsRecord(message).tool_event === 'started');
         const firstTextMessage = sortedMessages.find((message) => getMessageText(message));
+        const latestApprovalDecisionMessage = sortedMessages.findLast((message) => {
+            const details = getDetailsRecord(message);
+            return typeof details.approval_decision === 'string' && Boolean(getMessageText(message));
+        });
         const commandTextMessage = sortedMessages.findLast((message) => getMessageText(message).startsWith('$ '));
         const latestStatusMessage = sortedMessages.findLast(
             (message) =>
@@ -1236,9 +1652,19 @@ function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
         if (latestStatusMessage && mergedDetails.error === undefined && mergedDetails.stderr === undefined) {
             mergedDetails.error = getMessageText(latestStatusMessage);
         }
+        if (
+            !latestStatusMessage &&
+            sortedMessages.some(
+                (message) => message.type === AgentMessageType.PLAN && Array.isArray(message.details?.plan),
+            )
+        ) {
+            mergedDetails.tool_status = 'completed';
+        }
         if (commandTextMessage && mergedDetails.command === undefined) {
             mergedDetails.command = getMessageText(commandTextMessage);
         }
+        mergedDetails[SUMMARY_TOOL_STARTED_AT_DETAIL_KEY] = sortedMessages[0]?.timestamp;
+        mergedDetails[SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY] = sortedMessages[sortedMessages.length - 1]?.timestamp;
         const messageToHuman =
             typeof startMessage?.details?.message_to_human === 'string' ? startMessage.details.message_to_human : '';
 
@@ -1246,7 +1672,10 @@ function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
             index,
             message: {
                 ...baseMessage,
-                message: messageToHuman || (firstTextMessage ? firstTextMessage.message : baseMessage.message),
+                message:
+                    latestApprovalDecisionMessage?.message ||
+                    messageToHuman ||
+                    (firstTextMessage ? firstTextMessage.message : baseMessage.message),
                 details: mergedDetails,
             },
         };
@@ -1294,6 +1723,54 @@ function ToolDetailIcon({ kind, status }: { kind: SummaryToolDetailKind; status?
         default:
             return <Wrench className="size-3.5" />;
     }
+}
+
+interface ToolDetailMetadataEntry {
+    label: string;
+    value: string;
+}
+
+function getToolDetailMetadata(item: SummaryToolDetailItem): ToolDetailMetadataEntry[] {
+    const entries: ToolDetailMetadataEntry[] = [];
+    const startedMs = parseTimestampMs(item.startedAt);
+    const finishedMs = parseTimestampMs(item.finishedAt);
+    const startedAt = formatToolDetailTimestamp(item.startedAt);
+    const finishedAt = formatToolDetailTimestamp(item.finishedAt);
+
+    if (item.toolName) {
+        entries.push({ label: 'Tool', value: item.toolName });
+    }
+
+    if (startedAt && finishedAt && startedMs !== undefined && finishedMs !== undefined && startedMs !== finishedMs) {
+        entries.push({ label: 'Started', value: startedAt });
+        entries.push({ label: 'Ended', value: finishedAt });
+        entries.push({ label: 'Duration', value: formatDuration(getDurationSeconds(item.startedAt, item.finishedAt)) });
+    } else if (startedAt || finishedAt) {
+        entries.push({ label: 'Time', value: startedAt ?? finishedAt ?? '' });
+    }
+
+    return entries;
+}
+
+function ToolDetailMetadata({ hasDetailContent, item }: { hasDetailContent: boolean; item: SummaryToolDetailItem }) {
+    const entries = getToolDetailMetadata(item);
+    if (entries.length === 0) return null;
+
+    return (
+        <dl
+            className={cn(
+                'flex flex-wrap gap-x-4 gap-y-1 text-xs',
+                hasDetailContent && 'mb-3 border-b border-border/60 pb-2',
+            )}
+        >
+            {entries.map((entry) => (
+                <div key={entry.label} className="flex min-w-0 items-baseline gap-1.5">
+                    <dt className="shrink-0 text-muted">{entry.label}</dt>
+                    <dd className="min-w-0 wrap-break-word font-medium text-foreground/80">{entry.value}</dd>
+                </div>
+            ))}
+        </dl>
+    );
 }
 
 function ToolDetailSection({ section }: { section: SummaryToolDetailSection }) {
@@ -1363,6 +1840,8 @@ function formatToolPrimaryText(item: SummaryToolDetailItem): string {
 
 function formatToolDetailCopyText(item: SummaryToolDetailItem): string {
     const parts = [getToolPanelTitle(item), formatToolPrimaryText(item)];
+    const metadata = getToolDetailMetadata(item).map((entry) => `${entry.label}: ${entry.value}`);
+    if (metadata.length > 0) parts.push(metadata.join('\n'));
     if (item.text) parts.push(item.text);
 
     for (const section of item.sections) {
@@ -1404,9 +1883,10 @@ async function copyTextToClipboard(text: string): Promise<boolean> {
 }
 
 function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
-    const copyText = formatToolDetailCopyText(item);
     const commandText = item.kind === 'command' && item.command ? formatToolPrimaryText(item) : undefined;
     const fallbackText = !commandText && item.sections.length === 0 ? item.text : undefined;
+    const hasDetailContent = Boolean(commandText || fallbackText || item.sections.length);
+    const copyText = formatToolDetailCopyText(item);
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
     const copyResetRef = useRef<number | undefined>(undefined);
 
@@ -1426,23 +1906,26 @@ function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
 
     return (
         <div className="relative mt-2 rounded-lg border border-border/70 bg-mixer-muted/10 p-3 shadow-sm">
-            <div className="absolute end-2 top-2">
-                <button
-                    type="button"
-                    className={cn(
-                        'inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted opacity-70 transition',
-                        'hover:bg-mixer-muted/20 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                        copyState === 'copied' && 'text-success opacity-100',
-                        copyState === 'failed' && 'text-destructive opacity-100',
-                    )}
-                    onClick={copyDetails}
-                    aria-label="Copy tool details"
-                    title="Copy tool details"
-                >
-                    {copyState === 'copied' ? <CheckCircle className="size-4" /> : <CopyIcon className="size-4" />}
-                </button>
-            </div>
-            <div className="pe-7">
+            {hasDetailContent ? (
+                <div className="absolute end-2 top-2">
+                    <button
+                        type="button"
+                        className={cn(
+                            'inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted opacity-70 transition',
+                            'hover:bg-mixer-muted/20 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            copyState === 'copied' && 'text-success opacity-100',
+                            copyState === 'failed' && 'text-destructive opacity-100',
+                        )}
+                        onClick={copyDetails}
+                        aria-label="Copy tool details"
+                        title="Copy tool details"
+                    >
+                        {copyState === 'copied' ? <CheckCircle className="size-4" /> : <CopyIcon className="size-4" />}
+                    </button>
+                </div>
+            ) : null}
+            <div className={cn(hasDetailContent && 'pe-7')}>
+                <ToolDetailMetadata item={item} hasDetailContent={hasDetailContent} />
                 {commandText ? (
                     <pre className="mb-3 whitespace-pre-wrap break-words font-mono text-sm leading-6 text-foreground/85">
                         {commandText}
@@ -1459,15 +1942,20 @@ function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
                     </div>
                 ) : null}
             </div>
-            {copyState === 'failed' ? <div className="mt-3 text-xs text-destructive">Copy failed</div> : null}
+            {copyState === 'failed' && hasDetailContent ? (
+                <div className="mt-3 text-xs text-destructive">Copy failed</div>
+            ) : null}
         </div>
     );
 }
 
 function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
-    const isAttention = item.status === 'error' || item.status === 'warning';
-    const hasDetails = Boolean(item.command || item.text || item.sections.length);
+    const isDecision = Boolean(item.decisionText);
+    const isAttention = !isDecision && (item.status === 'error' || item.status === 'warning');
+    const hasMetadata = getToolDetailMetadata(item).length > 0;
+    const hasDetails = Boolean(item.command || item.text || item.sections.length || hasMetadata);
     const [isExpanded, setIsExpanded] = useState(false);
+    const iconStatus = isDecision ? undefined : item.status;
 
     return (
         <div className="min-w-0">
@@ -1488,11 +1976,15 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
                         isAttention ? 'text-attention' : 'text-muted',
                     )}
                 >
-                    <ToolDetailIcon kind={item.kind} status={item.status} />
+                    <ToolDetailIcon kind={item.kind} status={iconStatus} />
                 </span>
-                <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                    <span className="text-sm font-medium text-muted">{item.label}</span>
-                    <span className="min-w-0 break-words text-sm text-muted">{item.title}</span>
+                <span className="min-w-0 text-sm text-muted">
+                    <span className="break-words">{item.title}</span>
+                    {item.decisionText ? (
+                        <Badge variant="destructive" className="ms-2 rounded-full shadow-sm shadow-destructive/10">
+                            {item.decisionText}
+                        </Badge>
+                    ) : null}
                 </span>
                 {hasDetails ? (
                     <ChevronDown
@@ -1513,27 +2005,87 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
     );
 }
 
-function SummaryThoughtTimelineItem({ item, artifactRunId }: { item: SummaryToolDetailItem; artifactRunId?: string }) {
+function SummaryThoughtProseItem({
+    item,
+    artifactRunId,
+    disableCollapse,
+}: {
+    item: SummaryToolDetailItem;
+    artifactRunId?: string;
+    disableCollapse?: boolean;
+}) {
+    const { t } = useUITranslation();
     const text = item.text ?? item.title;
+    const normalizedText = text.trim();
+    const [isExpanded, setIsExpanded] = useState(false);
+    const explicitLineCount = normalizedText ? normalizedText.split(/\r?\n/).length : 0;
+    const isLong =
+        normalizedText.length > SUMMARY_THOUGHT_COLLAPSE_THRESHOLD ||
+        explicitLineCount > SUMMARY_THOUGHT_COLLAPSE_LINES;
+    const toggleLabel = isExpanded ? t('agent.showLess') : t('agent.showMore');
 
     return (
-        <div className="min-w-0 py-1 text-sm leading-6 text-foreground/85">
-            <div className={SUMMARY_PROSE_CLASS} style={{ overflowWrap: 'anywhere' }}>
+        <div className="min-w-0 py-1">
+            <div
+                data-testid="summary-thought-prose"
+                className={cn(
+                    SUMMARY_PROSE_CLASS,
+                    isLong &&
+                        !disableCollapse &&
+                        !isExpanded &&
+                        '[display:-webkit-box] overflow-hidden [-webkit-box-orient:vertical] [-webkit-line-clamp:6]',
+                )}
+                style={{ overflowWrap: 'anywhere' }}
+            >
                 <MarkdownRenderer artifactRunId={artifactRunId} components={DEFAULT_AGENT_MARKDOWN_COMPONENTS}>
                     {text}
                 </MarkdownRenderer>
             </div>
+            {isLong && !disableCollapse ? (
+                <div className="mt-1.5 flex justify-end">
+                    <button
+                        type="button"
+                        aria-expanded={isExpanded}
+                        className={cn(
+                            'inline-flex items-center gap-1 text-sm font-medium text-muted transition-colors',
+                            '[text-decoration:none] hover:text-foreground hover:[text-decoration:none]',
+                            'focus-visible:text-foreground focus-visible:[text-decoration:none]',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        )}
+                        onClick={() => setIsExpanded((current) => !current)}
+                    >
+                        {toggleLabel}
+                        <ChevronDown
+                            className={cn('size-4 transition-transform', isExpanded && 'rotate-180')}
+                            aria-hidden="true"
+                        />
+                    </button>
+                </div>
+            ) : null}
         </div>
     );
 }
 
-function SummaryToolTimeline({ items, artifactRunId }: { items: SummaryToolDetailItem[]; artifactRunId?: string }) {
+function SummaryToolTimeline({
+    items,
+    artifactRunId,
+    disablePreambleCollapse,
+}: {
+    items: SummaryToolDetailItem[];
+    artifactRunId?: string;
+    disablePreambleCollapse?: boolean;
+}) {
     return (
         <div className="mt-3">
             <div className="space-y-3">
                 {items.map((item) =>
-                    item.kind === 'think' ? (
-                        <SummaryThoughtTimelineItem key={item.key} item={item} artifactRunId={artifactRunId} />
+                    item.isPreamble || item.kind === 'think' ? (
+                        <SummaryThoughtProseItem
+                            key={item.key}
+                            item={item}
+                            artifactRunId={artifactRunId}
+                            disableCollapse={disablePreambleCollapse}
+                        />
                     ) : (
                         <SummaryToolTimelineItem key={item.key} item={item} />
                     ),
@@ -1563,17 +2115,47 @@ function SummaryStreamingMessage({
     );
 }
 
+function SummaryStoppedMessage({
+    message,
+    startTimestamp,
+    endTimestamp,
+    className,
+}: {
+    message: AgentMessage;
+    startTimestamp?: number | string;
+    endTimestamp?: number | string;
+    className?: string;
+}) {
+    const { t } = useUITranslation();
+    const duration = formatDuration(
+        getDurationSeconds(startTimestamp ?? message.timestamp, endTimestamp ?? message.timestamp),
+    );
+
+    return (
+        <div className={cn('mx-auto w-full max-w-3xl px-1', className)} data-testid="summary-stopped-message">
+            <div className="flex items-center justify-end gap-2 text-lg font-medium text-muted sm:text-xl">
+                <span>{t('agent.youStoppedAfter', { duration })}</span>
+                <MessageDeliveryStatus message={message} className="h-5 w-5" />
+            </div>
+            <div className="mt-5 border-b border-border/70" />
+        </div>
+    );
+}
+
 function SummaryActivityRow({
     label,
-    status,
     timestamp,
     durationSeconds,
     showElapsed,
     details,
     emptyDetailsLabel,
     defaultExpanded = false,
+    disablePreambleCollapse = false,
     className,
     artifactRunId,
+    onSendMessage,
+    answeredToolApprovalRequestInputKeys,
+    resolvedToolApprovalKeys,
 }: {
     label: string;
     status?: ToolExecutionStatus;
@@ -1583,23 +2165,37 @@ function SummaryActivityRow({
     details?: AgentMessage[];
     emptyDetailsLabel?: string;
     defaultExpanded?: boolean;
+    disablePreambleCollapse?: boolean;
     className?: string;
     artifactRunId?: string;
+    onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+    answeredToolApprovalRequestInputKeys?: Set<string>;
+    resolvedToolApprovalKeys?: Set<string>;
 }) {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
     const isLiveElapsed = showElapsed && durationSeconds === undefined;
     const liveElapsed = useLiveElapsedSeconds(timestamp, isLiveElapsed);
     const elapsed = durationSeconds ?? liveElapsed;
     const shouldShowElapsed = showElapsed && timestamp !== undefined;
-    const isAttention = status === 'error' || status === 'warning';
     const detailItems = useMemo(() => buildSummaryToolDetailItems(details ?? []), [details]);
-    const canExpand = detailItems.length > 0 || Boolean(emptyDetailsLabel);
+    const requestInputMessages = useMemo(
+        () =>
+            (details ?? []).filter(
+                (message): message is RequestInputMessageWithUx =>
+                    hasRequestInputUx(message) &&
+                    !isToolApprovalRequestInputHidden(
+                        message,
+                        answeredToolApprovalRequestInputKeys ?? new Set<string>(),
+                        resolvedToolApprovalKeys ?? new Set<string>(),
+                    ),
+            ),
+        [answeredToolApprovalRequestInputKeys, details, resolvedToolApprovalKeys],
+    );
+    const canExpand = detailItems.length > 0 || requestInputMessages.length > 0 || Boolean(emptyDetailsLabel);
 
     return (
         <div className={cn('mx-auto w-full max-w-3xl px-1', className)}>
-            <div
-                className={cn('border-b border-border/70 pb-3 text-sm', isAttention ? 'text-attention' : 'text-muted')}
-            >
+            <div className="border-b border-border/70 pb-3 text-sm text-muted">
                 <button
                     type="button"
                     className={cn(
@@ -1624,8 +2220,46 @@ function SummaryActivityRow({
                     ) : null}
                 </button>
                 {canExpand && isExpanded ? (
-                    detailItems.length > 0 ? (
-                        <SummaryToolTimeline items={detailItems} artifactRunId={artifactRunId} />
+                    detailItems.length > 0 || requestInputMessages.length > 0 ? (
+                        <>
+                            {detailItems.length > 0 ? (
+                                <SummaryToolTimeline
+                                    items={detailItems}
+                                    artifactRunId={artifactRunId}
+                                    disablePreambleCollapse={disablePreambleCollapse}
+                                />
+                            ) : null}
+                            {requestInputMessages.length > 0 ? (
+                                <div className="mt-3 space-y-3">
+                                    {requestInputMessages.map((message) => {
+                                        const uxConfig = message.details.ux;
+                                        return (
+                                            <AskUserWidget
+                                                key={getAgentMessageRenderKey(message, 'work-request-input')}
+                                                question={getRequestInputDisplayText(message)}
+                                                options={uxConfig.options}
+                                                variant={uxConfig.variant}
+                                                multiSelect={uxConfig.multiSelect}
+                                                onSelect={(optionId) => onSendMessage?.(optionId)}
+                                                onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                                                allowFreeResponse={
+                                                    !uxConfig.options?.length || !!uxConfig.free_response
+                                                }
+                                                placeholder={uxConfig.free_response?.placeholder}
+                                                submitLabel={uxConfig.free_response?.submit_label}
+                                                onSubmit={(value) =>
+                                                    onSendMessage?.(value, uxConfig.free_response?.metadata)
+                                                }
+                                                hideBorder
+                                                compact
+                                                className="my-0"
+                                                cardClassName="bg-background/60 shadow-none"
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            ) : null}
+                        </>
                     ) : (
                         <div className="mt-3 flex items-center gap-2 text-sm text-muted">
                             <Terminal className="size-4 opacity-70" aria-hidden="true" />
@@ -1709,7 +2343,7 @@ interface AllMessagesMixedProps {
     taskLabels?: Map<string, string>; // Maps task IDs to more descriptive labels
     streamingMessages?: Map<string, StreamingData>; // Real-time streaming chunks
     /** Callback when user sends a message (e.g., from proposal selection) */
-    onSendMessage?: (message: string) => void;
+    onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
     /** Stable index for thinking messages (changes on 4s interval) */
     thinkingMessageIndex?: number;
     /** className overrides passed to every MessageItem */
@@ -1744,12 +2378,18 @@ interface AllMessagesMixedProps {
     initialRequestTitle?: string;
     /** Optional caller-provided renderer for agent-specific request shapes. */
     initialRequestTemplate?: AgentInitialRequestTemplate;
+    /** Whether the synthetic initial request fallback should render when no persisted question is present. */
+    showInitialRequest?: boolean;
     /** Message types to exclude from the conversation view */
     hiddenMessageTypes?: AgentMessageType[];
     /** Test/playback mode: keep the current scroll position while the rendered message slice changes. */
     disableAutoScroll?: boolean;
     /** Whether REQUEST_INPUT messages render their active controls in the transcript. */
     renderRequestInputControls?: boolean;
+    /** Active workstream selected by the parent conversation shell. */
+    activeWorkstream?: string;
+    /** Called when the user selects a different workstream from the conversation. */
+    onActiveWorkstreamChange?: (workstreamId: string) => void;
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
@@ -1779,9 +2419,12 @@ function AllMessagesMixedComponent({
     initialRequestSchema,
     initialRequestTitle,
     initialRequestTemplate,
+    showInitialRequest,
     hiddenMessageTypes,
     disableAutoScroll = false,
     renderRequestInputControls = true,
+    activeWorkstream: controlledActiveWorkstream,
+    onActiveWorkstreamChange,
 }: AllMessagesMixedProps) {
     if (!artifactRunId) {
         console.warn('[AllMessagesMixed] artifactRunId prop is missing!');
@@ -1789,7 +2432,17 @@ function AllMessagesMixedComponent({
 
     const { t } = useUITranslation();
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const [activeWorkstream, setActiveWorkstream] = useState<string>('all');
+    const [internalActiveWorkstream, setInternalActiveWorkstream] = useState<string>('all');
+    const activeWorkstream = controlledActiveWorkstream ?? internalActiveWorkstream;
+    const setActiveWorkstream = useCallback(
+        (workstreamId: string) => {
+            if (controlledActiveWorkstream === undefined) {
+                setInternalActiveWorkstream(workstreamId);
+            }
+            onActiveWorkstreamChange?.(workstreamId);
+        },
+        [controlledActiveWorkstream, onActiveWorkstreamChange],
+    );
 
     // PERFORMANCE: Throttle auto-scroll to prevent layout thrashing
     // During streaming, scrollIntoView was being called 30+ times/sec
@@ -1884,9 +2537,9 @@ function AllMessagesMixedComponent({
     // Sort all messages chronologically and dedupe adjacent identical messages
     // Low-signal messages are suppressed at the source (server-side) via shouldSuppressLowSignalMessage
     const sortedMessages = React.useMemo(() => {
-        const filtered = hiddenMessageTypes?.length
-            ? messages.filter((m) => !hiddenMessageTypes.includes(m.type))
-            : messages;
+        const filtered = messages.filter(
+            (message) => !isDocumentPanelEventMessage(message) && !hiddenMessageTypes?.includes(message.type),
+        );
 
         const sorted = [...filtered].sort((a, b) => {
             const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
@@ -1909,16 +2562,59 @@ function AllMessagesMixedComponent({
         return deduped;
     }, [messages, hiddenMessageTypes]);
 
-    // Get workstreams from messages - only from message.workstream_id
     const workstreams = React.useMemo(() => {
-        // Just get the basic workstreams from the messages
         const extractedWorkstreams = extractWorkstreams(sortedMessages);
 
-        // We'll keep taskLabels - they might be used for display purposes elsewhere
-        // but we won't use them to create new workstream tabs
+        sortedMessages.forEach((message) => {
+            const details = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
+            if (!details) return;
+            extractedWorkstreams.set(
+                details.workstreamId,
+                getWorkstreamDisplayName(details.workstreamId, details.interaction),
+            );
+        });
 
         return extractedWorkstreams;
     }, [sortedMessages]);
+
+    const activeWorkstreamName = React.useMemo(() => {
+        if (activeWorkstream === 'all') return undefined;
+        return workstreams.get(activeWorkstream) ?? formatWorkstreamName(activeWorkstream);
+    }, [activeWorkstream, workstreams]);
+
+    const scrollToTop = useCallback(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        programmaticScrollRef.current = true;
+        if (typeof container.scrollTo === 'function') {
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            container.scrollTop = 0;
+        }
+        requestAnimationFrame(() => {
+            programmaticScrollRef.current = false;
+        });
+    }, []);
+
+    const handleSelectWorkstream = useCallback(
+        (workstreamId: string) => {
+            setActiveWorkstream(workstreamId);
+            requestAnimationFrame(scrollToTop);
+        },
+        [scrollToTop, setActiveWorkstream],
+    );
+
+    const handleShowMainAgentChat = useCallback(() => {
+        setActiveWorkstream('all');
+        requestAnimationFrame(scrollToTop);
+    }, [scrollToTop, setActiveWorkstream]);
+
+    useEffect(() => {
+        if (activeWorkstream !== 'all' && !workstreams.has(activeWorkstream)) {
+            setActiveWorkstream('all');
+        }
+    }, [activeWorkstream, workstreams, setActiveWorkstream]);
 
     // Count messages per workstream
     const workstreamCounts = React.useMemo(() => {
@@ -1942,14 +2638,25 @@ function AllMessagesMixedComponent({
 
     // Filter messages based on active workstream
     const displayMessages = React.useMemo(() => {
-        if (activeWorkstream === 'all') {
-            return sortedMessages;
-        }
-        return filterMessagesByWorkstream(sortedMessages, activeWorkstream);
+        return attachWriteArtifactCompletionMessages(
+            filterMessagesForActiveWorkstream(sortedMessages, activeWorkstream),
+        );
     }, [sortedMessages, activeWorkstream]);
 
     const answeredRequestInputKeys = React.useMemo(
         () => getAnsweredRequestInputKeys(displayMessages),
+        [displayMessages],
+    );
+    const resolvedToolApprovalKeys = React.useMemo(
+        () => getResolvedToolApprovalKeys(displayMessages),
+        [displayMessages],
+    );
+    const answeredToolApprovalRequestInputKeys = React.useMemo(
+        () => getAnsweredToolApprovalRequestInputKeys(displayMessages),
+        [displayMessages],
+    );
+    const hiddenToolApprovalAnswerKeys = React.useMemo(
+        () => getHiddenToolApprovalAnswerKeys(displayMessages),
         [displayMessages],
     );
     const externallyRenderedRequestInputKey = React.useMemo(() => {
@@ -1960,8 +2667,21 @@ function AllMessagesMixedComponent({
     const shouldHideRequestInputMessage = React.useCallback(
         (message: AgentMessage) =>
             message.type === AgentMessageType.REQUEST_INPUT &&
-            externallyRenderedRequestInputKey === getRequestInputMessageKey(message),
-        [externallyRenderedRequestInputKey],
+            (externallyRenderedRequestInputKey === getRequestInputMessageKey(message) ||
+                isToolApprovalRequestInputHidden(
+                    message,
+                    answeredToolApprovalRequestInputKeys,
+                    resolvedToolApprovalKeys,
+                )),
+        [answeredToolApprovalRequestInputKeys, externallyRenderedRequestInputKey, resolvedToolApprovalKeys],
+    );
+    const shouldHideToolApprovalAnswerMessage = React.useCallback(
+        (message: AgentMessage) => isToolApprovalAnswerHidden(message, hiddenToolApprovalAnswerKeys),
+        [hiddenToolApprovalAnswerKeys],
+    );
+    const completionDisplayMessages = React.useMemo(
+        () => displayMessages.filter((message) => !shouldHideToolApprovalAnswerMessage(message)),
+        [displayMessages, shouldHideToolApprovalAnswerMessage],
     );
 
     const fallbackWorkingStartedAtRef = useRef(Date.now());
@@ -1969,11 +2689,14 @@ function AllMessagesMixedComponent({
         Boolean(prependFriendlyMessage?.trim()) ||
         hasInitialRequestValue(initialRequestData) ||
         initialRequestTemplate !== undefined;
+    const canRenderInitialRequest = showInitialRequest ?? true;
+    const hasRenderableInitialRequest = hasInitialRequest && canRenderInitialRequest;
     const hasPersistedUserQuestion = useMemo(
         () => displayMessages.some((message) => message.type === AgentMessageType.QUESTION),
         [displayMessages],
     );
-    const shouldRenderInitialRequest = hasInitialRequest && !hasPersistedUserQuestion;
+    const shouldRenderInitialRequest =
+        activeWorkstream === 'all' && hasRenderableInitialRequest && !hasPersistedUserQuestion;
 
     const latestDisplayMessageTimestamp = useMemo(() => {
         return displayMessages.reduce((latest, msg) => Math.max(latest, getTimestampMs(msg.timestamp)), -Infinity);
@@ -1985,11 +2708,30 @@ function AllMessagesMixedComponent({
             return Math.max(latest, getTimestampMs(msg.timestamp));
         }, -Infinity);
     }, [displayMessages]);
+    const hasPendingToolApprovalRequest = useMemo(
+        () =>
+            displayMessages.some(
+                (message) =>
+                    isToolApprovalRequestInput(message) &&
+                    !isToolApprovalRequestInputHidden(
+                        message,
+                        answeredToolApprovalRequestInputKeys,
+                        resolvedToolApprovalKeys,
+                    ),
+            ),
+        [answeredToolApprovalRequestInputKeys, displayMessages, resolvedToolApprovalKeys],
+    );
+    const hasLatestToolApprovalAllow = useMemo(
+        () => hasLatestToolApprovalAllowTurn(displayMessages, hiddenToolApprovalAnswerKeys),
+        [displayMessages, hiddenToolApprovalAnswerKeys],
+    );
 
     const isDisplayCompleted = useMemo(() => {
-        if (hasOpenUserTurn(displayMessages)) return false;
-        return isCompleted || !isInProgress(displayMessages);
-    }, [displayMessages, isCompleted]);
+        if (hasPendingToolApprovalRequest) return false;
+        if (hasLatestToolApprovalAllow) return false;
+        if (hasOpenUserTurn(completionDisplayMessages)) return false;
+        return isCompleted || !isInProgress(completionDisplayMessages);
+    }, [completionDisplayMessages, hasLatestToolApprovalAllow, hasPendingToolApprovalRequest, isCompleted]);
 
     // Split streaming messages:
     // - complete (or stale incomplete) ones are interleaved chronologically
@@ -2024,8 +2766,19 @@ function AllMessagesMixedComponent({
     }, [streamingMessages, activeWorkstream, latestNonTransientDisplayMessageTimestamp]);
 
     const summaryDisplayMessages = React.useMemo(
-        () => buildSummaryDisplayMessages(displayMessages, completeStreaming),
-        [displayMessages, completeStreaming],
+        () =>
+            buildSyntheticToolApprovalDecisionMessages(
+                buildSummaryDisplayMessages(displayMessages, completeStreaming),
+                resolvedToolApprovalKeys,
+            ),
+        [displayMessages, completeStreaming, resolvedToolApprovalKeys],
+    );
+    const visibleSummaryDisplayMessages = React.useMemo(
+        () =>
+            summaryDisplayMessages.filter(
+                (message) => !shouldHideRequestInputMessage(message) && !shouldHideToolApprovalAnswerMessage(message),
+            ),
+        [summaryDisplayMessages, shouldHideRequestInputMessage, shouldHideToolApprovalAnswerMessage],
     );
 
     const latestSummaryObservedTimestamp = useMemo(() => {
@@ -2040,8 +2793,13 @@ function AllMessagesMixedComponent({
     }, [incompleteStreaming, latestDisplayMessageTimestamp]);
 
     const summaryConversationItems = React.useMemo(
-        () => buildSummaryConversationItems(summaryDisplayMessages, isDisplayCompleted, latestSummaryObservedTimestamp),
-        [summaryDisplayMessages, isDisplayCompleted, latestSummaryObservedTimestamp],
+        () =>
+            buildSummaryConversationItems(
+                visibleSummaryDisplayMessages,
+                isDisplayCompleted,
+                latestSummaryObservedTimestamp,
+            ),
+        [visibleSummaryDisplayMessages, isDisplayCompleted, latestSummaryObservedTimestamp],
     );
 
     // Group messages with ONLY complete streaming interleaved for stacked view.
@@ -2058,8 +2816,12 @@ function AllMessagesMixedComponent({
     // Show an activity indicator when the latest visible conversation state is not terminal.
     // Older idle/complete messages from previous turns must not suppress the new turn.
     const isAgentWorking = useMemo(() => {
-        return !isDisplayCompleted;
-    }, [isDisplayCompleted]);
+        // Also treat an open user turn (the latest message is the user's, awaiting the agent's
+        // first output) as "working" — otherwise nothing animates in the gap between sending a
+        // message and the first streamed token, especially after a stop where the run reads as
+        // completed until the agent posts its next message.
+        return !isDisplayCompleted || hasOpenUserTurn(completionDisplayMessages);
+    }, [completionDisplayMessages, isDisplayCompleted]);
 
     const showActivityFallback = shouldShowSummaryActivityFallback(
         summaryConversationItems,
@@ -2070,15 +2832,18 @@ function AllMessagesMixedComponent({
         ? t('agent.preparing')
         : t('agent.working');
     const showInitialRequestWaitingCard =
-        displayMessages.length === 0 && hasInitialRequest && isAgentWorking && incompleteStreaming.length === 0;
+        displayMessages.length === 0 &&
+        hasRenderableInitialRequest &&
+        isAgentWorking &&
+        incompleteStreaming.length === 0;
     const activityAnchorCandidate = useMemo(
         () =>
             getSummaryActivityAnchorTimestamp(
                 summaryConversationItems,
-                summaryDisplayMessages,
+                visibleSummaryDisplayMessages,
                 fallbackWorkingStartedAtRef.current,
             ),
-        [summaryConversationItems, summaryDisplayMessages],
+        [summaryConversationItems, visibleSummaryDisplayMessages],
     );
     const activityStartedTimestampRef = useRef<number | string>(activityAnchorCandidate);
     const wasActivityFallbackVisibleRef = useRef(false);
@@ -2417,14 +3182,16 @@ function AllMessagesMixedComponent({
                     <WorkstreamTabs
                         workstreams={workstreams}
                         activeWorkstream={activeWorkstream}
-                        onSelectWorkstream={setActiveWorkstream}
+                        onSelectWorkstream={handleSelectWorkstream}
                         count={workstreamCounts}
                         completionStatus={workstreamCompletionStatus}
                     />
                 </div>
             )}
 
-            {displayMessages.length === 0 && !hasInitialRequest && !(isSummaryView && showActivityFallback) ? (
+            {displayMessages.length === 0 &&
+            !hasRenderableInitialRequest &&
+            !(isSummaryView && showActivityFallback) ? (
                 activeWorkstream === 'all' && isAgentWorking && incompleteStreaming.length === 0 ? (
                     <div className="flex-1 px-2 py-6 sm:px-4">
                         <InitialRequestWaitingCard
@@ -2450,6 +3217,28 @@ function AllMessagesMixedComponent({
                         messageListClassName,
                     )}
                 >
+                    {isSummaryView && activeWorkstream !== 'all' && activeWorkstreamName && (
+                        <div className="sticky top-0 z-20 -mx-2 bg-background/95 px-2 pb-2 pt-1 backdrop-blur sm:-mx-4 sm:px-4">
+                            <div className="mx-auto flex w-full max-w-3xl items-center gap-2 border-b border-border/70 pb-3">
+                                <VTooltip description={t('agent.backToMainAgent')} asChild>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-8 shrink-0 text-muted hover:text-foreground"
+                                        aria-label={t('agent.backToMainAgent')}
+                                        onClick={handleShowMainAgentChat}
+                                    >
+                                        <ArrowLeft className="size-4" aria-hidden="true" />
+                                    </Button>
+                                </VTooltip>
+                                <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                                    {activeWorkstreamName}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Friendly message — rendered outside the messages array to avoid memo issues/triggering autoscroll */}
                     {shouldRenderInitialRequest && (
                         <InitialRequestMessage
@@ -2544,6 +3333,23 @@ function AllMessagesMixedComponent({
                                     // Render single message
                                     const message = group.message;
                                     if (shouldHideRequestInputMessage(message)) return null;
+                                    if (shouldHideToolApprovalAnswerMessage(message)) return null;
+                                    if (isUserStoppedMessage(message)) {
+                                        return (
+                                            <TimelineEntry key={getAgentMessageRenderKey(message, 'stopped')}>
+                                                <SummaryStoppedMessage
+                                                    message={message}
+                                                    startTimestamp={
+                                                        getPreviousRenderableGroupTimestamp(
+                                                            groupedMessages,
+                                                            groupIndex,
+                                                        ) ?? message.timestamp
+                                                    }
+                                                    endTimestamp={message.timestamp}
+                                                />
+                                            </TimelineEntry>
+                                        );
+                                    }
                                     const isLatestMessage =
                                         !isCompleted && isLastGroup && !DONE_STATES.includes(message.type);
 
@@ -2639,7 +3445,7 @@ function AllMessagesMixedComponent({
                                     return (
                                         <SummaryActivityRow
                                             key={`work-${item.id}-${item.isActive ? 'active' : 'done'}-${item.status}`}
-                                            label={getSummaryActivityLabel(item.status, item.isActive)}
+                                            label={getSummaryActivityLabel(item.isActive)}
                                             status={item.status}
                                             timestamp={item.startTimestamp}
                                             durationSeconds={
@@ -2650,13 +3456,29 @@ function AllMessagesMixedComponent({
                                             showElapsed
                                             details={isThinkingOnlyWork ? undefined : item.messages}
                                             defaultExpanded={item.isActive && !isThinkingOnlyWork}
+                                            disablePreambleCollapse={item.isActive}
                                             className={workingIndicatorClassName}
+                                            onSendMessage={onSendMessage}
+                                            answeredToolApprovalRequestInputKeys={answeredToolApprovalRequestInputKeys}
+                                            resolvedToolApprovalKeys={resolvedToolApprovalKeys}
+                                        />
+                                    );
+                                }
+
+                                if (item.type === 'stopped') {
+                                    return (
+                                        <SummaryStoppedMessage
+                                            key={getAgentMessageRenderKey(item.message, 'stopped-summary')}
+                                            message={item.message}
+                                            startTimestamp={item.startTimestamp}
+                                            endTimestamp={item.endTimestamp}
                                         />
                                     );
                                 }
 
                                 const message = item.message;
                                 if (shouldHideRequestInputMessage(message)) return null;
+                                if (shouldHideToolApprovalAnswerMessage(message)) return null;
                                 if (isBatchProgressMessage(message)) {
                                     return (
                                         <MessageErrorBoundary key={getAgentMessageRenderKey(message, 'batch')}>
@@ -2675,6 +3497,7 @@ function AllMessagesMixedComponent({
                                         <SummaryMessage
                                             message={message}
                                             onSendMessage={onSendMessage}
+                                            onSelectWorkstream={handleSelectWorkstream}
                                             requestInputAnswered={isRequestInputAnswered(
                                                 message,
                                                 answeredRequestInputKeys,

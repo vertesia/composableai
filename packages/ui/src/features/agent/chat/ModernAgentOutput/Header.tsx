@@ -240,8 +240,8 @@ export default function Header({
                     className,
                 )}
             >
-                <div className="flex flex-wrap items-center space-x-2">
-                    <div className="flex items-center space-x-1">
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1">
                         <Bot className="size-5 text-muted" />
                         <span className="font-medium">{title}</span>
                     </div>

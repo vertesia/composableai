@@ -28,16 +28,16 @@
     "scripts": {
         "lint": "biome lint src",
         "test": "vitest run",
-        "build": "pnpm exec tsc && pnpm exec rollup -c",
-        "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && pnpm exec tsc && pnpm exec rollup -c"
+        "build": "pnpm exec tsc --build && pnpm exec rollup -c",
+        "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && pnpm exec tsc --build && pnpm exec rollup -c"
     },
     "devDependencies": {
         "@rollup/plugin-commonjs": "^29.0.3",
         "@rollup/plugin-node-resolve": "^16.0.3",
         "@rollup/plugin-terser": "^1.0.0",
-        "@types/node": "^24.12.4",
+        "@types/node": "^24.13.2",
         "@vertesia/tsconfig": "workspace:*",
-        "rollup": "^4.61.0",
+        "rollup": "^4.61.1",
         "typescript": "^6.0.3",
         "vitest": "^4.1.8"
     },

@@ -1,6 +1,7 @@
 import type { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from '@llumiverse/common';
 import type { ConversationStripOptions, ResolvedInteractionExecutionInfo, UserChannel } from '../interaction.js';
 import type { ExecutionRunDocRef } from '../runs.js';
+import type { AgentToolApprovalMode, PendingToolApprovalResults, ToolApprovalGrant } from './agent-approval.js';
 import type { Plan, WorkflowAncestor } from './workflow.js';
 
 /**
@@ -37,6 +38,18 @@ export interface ConversationState {
      * The tools to call next.
      */
     tool_use?: ToolUse[];
+
+    /** Effective side-effecting tool approval mode for this interactive conversation. */
+    tool_approval_mode?: AgentToolApprovalMode;
+
+    /** Run-scoped, exact-target grants created by "allow this action for this run". */
+    tool_approval_grants?: Record<string, ToolApprovalGrant>;
+
+    /** Buffered tool results held while approval denial pauses until the next user message. */
+    pending_tool_approval_results?: PendingToolApprovalResults;
+
+    /** Compact, redacted latest user intent for reviewer-style system interactions. */
+    latest_user_message?: string;
 
     /**
      * The output of the this conversation step
@@ -132,10 +145,30 @@ export interface ConversationState {
     latest_activity_id?: string;
 
     /**
+     * Stable streaming ID from the latest LLM call.
+     * Unlike Temporal activity IDs, this is scoped to the concrete workflow run
+     * that produced the stream, so it remains safe across continue-as-new.
+     */
+    latest_streaming_id?: string;
+
+    /**
      * Mapping of skill names to their related tools.
      * When a skill is called, its related tools are added to unlocked_tools.
      */
     skill_tool_map?: Record<string, string[]>;
+
+    /**
+     * Denylist of MCP tool-collection ids deactivated for this conversation.
+     * `undefined`/empty means all installed/connected MCP collections are active.
+     * Updated mid-conversation via the MCP config signal; consumed when tools are re-discovered.
+     */
+    disabled_mcp_collections?: string[];
+
+    /**
+     * MCP servers that are active (not disabled) and accessible to the user but not yet
+     * OAuth-connected. Surfaced to the agent (via discover_tools) so it can offer to connect.
+     */
+    pending_mcp_connections?: PendingMcpConnection[];
 
     /**
      * Current activity group ID for internal tool-execution progress messages.
@@ -159,6 +192,24 @@ export interface ConversationState {
      * to consolidate all artifacts under the parent agent run.
      */
     launch_id?: string;
+}
+
+/**
+ * An MCP server the user can connect to but hasn't yet (active + accessible, no OAuth token).
+ * Built at tool-discovery time and stored on the conversation state so the agent can
+ * discover it (by description) and ask the user to connect.
+ */
+export interface PendingMcpConnection {
+    /** The app installation id owning the collection (used for OAuth operations). */
+    app_install_id: string;
+    /** The MCP tool-collection id. */
+    collection_id: string;
+    /** Human-readable label for the server/collection. */
+    name: string;
+    /** Manifest description of what the server provides (used for discovery). */
+    description?: string;
+    /** Tool-name prefix for this collection. */
+    namespace?: string;
 }
 
 /** Skill metadata collected at workflow start for upfront sandbox hydration */
