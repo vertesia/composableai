@@ -461,6 +461,51 @@ export interface ListEventDeliveriesResponse {
     deliveries: EventDeliverySummary[];
 }
 
+export interface EventDeliveryQueueSummaryPayload {
+    subscription_id?: string;
+    target_type?: EventDeliveryTarget['type'][];
+}
+
+export interface EventOutboxQueueSummary {
+    total: number;
+    active: number;
+    failed: number;
+    dropped: number;
+    by_status: Record<string, number>;
+    oldest_active_at?: string;
+}
+
+export interface EventDeliveryQueueFailureSummary {
+    intent_id: string;
+    event_id: string;
+    status: EventDeliveryIntentStatus;
+    attempt_count: number;
+    last_error?: string | null;
+    updated_at: string;
+}
+
+export interface EventDeliveryQueueSubscriptionSummary {
+    subscription_id: string;
+    subscription_name: string;
+    target_type: EventDeliveryTarget['type'];
+    total: number;
+    queued: number;
+    deferred: number;
+    active: number;
+    failed: number;
+    skipped: number;
+    max_attempt_count: number;
+    oldest_queued_at?: string;
+    oldest_deferred_at?: string;
+    latest_failure?: EventDeliveryQueueFailureSummary;
+}
+
+export interface EventDeliveryQueueSummaryResponse {
+    generated_at: string;
+    outbox: EventOutboxQueueSummary;
+    deliveries: EventDeliveryQueueSubscriptionSummary[];
+}
+
 export interface PublishPlatformEventPayload {
     event: PlatformEvent;
     priority?: EventPriority;
