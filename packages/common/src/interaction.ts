@@ -25,6 +25,7 @@ import type {
     TemplateType,
 } from './prompt.js';
 import type { ExecutionRunDocRef } from './runs.js';
+import type { AgentToolApprovalMode } from './store/agent-approval.js';
 import type { ConversationState } from './store/conversation-state.js';
 import type { AccountRef } from './user.js';
 import type { LlmCallType } from './workflow-analytics.js';
@@ -718,6 +719,9 @@ export {
 
 export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {
     type: 'conversation';
+
+    /** Effective tool approval mode for interactive agent conversations. */
+    tool_approval_mode?: AgentToolApprovalMode;
 
     /**
      * Visibility determine if the conversation should be seen by the user only or by anyone with access to the project

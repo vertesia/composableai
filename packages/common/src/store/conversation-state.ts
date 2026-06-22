@@ -1,6 +1,7 @@
 import type { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from '@llumiverse/common';
 import type { ConversationStripOptions, ResolvedInteractionExecutionInfo, UserChannel } from '../interaction.js';
 import type { ExecutionRunDocRef } from '../runs.js';
+import type { AgentToolApprovalMode, PendingToolApprovalResults, ToolApprovalGrant } from './agent-approval.js';
 import type { Plan, WorkflowAncestor } from './workflow.js';
 
 /**
@@ -37,6 +38,18 @@ export interface ConversationState {
      * The tools to call next.
      */
     tool_use?: ToolUse[];
+
+    /** Effective side-effecting tool approval mode for this interactive conversation. */
+    tool_approval_mode?: AgentToolApprovalMode;
+
+    /** Run-scoped, exact-target grants created by "allow this action for this run". */
+    tool_approval_grants?: Record<string, ToolApprovalGrant>;
+
+    /** Buffered tool results held while approval denial pauses until the next user message. */
+    pending_tool_approval_results?: PendingToolApprovalResults;
+
+    /** Compact, redacted latest user intent for reviewer-style system interactions. */
+    latest_user_message?: string;
 
     /**
      * The output of the this conversation step

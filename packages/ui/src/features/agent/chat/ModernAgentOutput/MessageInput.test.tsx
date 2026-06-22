@@ -176,7 +176,7 @@ describe('MessageInput', () => {
         expect(screen.getByText('Ready')).not.toBeNull();
     });
 
-    it('renders context usage and triggers manual compaction', () => {
+    it('renders context usage and triggers manual compaction', async () => {
         const onCompactContext = vi.fn();
 
         renderWithProviders(
@@ -193,7 +193,13 @@ describe('MessageInput', () => {
             />,
         );
 
-        fireEvent.click(screen.getByRole('button', { name: /50% context used/i }));
+        const contextButton = screen.getByRole('button', { name: /50% context used/i });
+
+        fireEvent.pointerMove(contextButton);
+
+        expect((await screen.findAllByText('Context size: 50K / 100K tokens')).length).toBeGreaterThan(0);
+
+        fireEvent.click(contextButton);
 
         expect(onCompactContext).toHaveBeenCalledTimes(1);
     });

@@ -1,4 +1,8 @@
 export {
+    AgentApprovalModeSelector,
+    type AgentApprovalModeSelectorProps,
+} from './AgentApprovalModeSelector';
+export {
     AgentChart,
     type AgentChartSpec,
     isRechartsSpec,
@@ -24,7 +28,12 @@ export {
     type ConfirmationWidgetProps,
 } from './AskUserWidget';
 export * from './JumpingDots';
-export { ModernAgentConversation, type ModernAgentConversationProps } from './ModernAgentConversation';
+export {
+    ModernAgentConversation,
+    type ModernAgentConversationProps,
+    type StartWorkflowFn,
+    type StartWorkflowOptions,
+} from './ModernAgentConversation';
 // AgentConversationViewMode type for external use
 export type {
     AgentConversationViewMode,

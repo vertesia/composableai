@@ -276,7 +276,7 @@ const TabsList: React.ForwardRefExoticComponent<
             <TabsPrimitive.List
                 ref={ref}
                 className={cn(
-                    variant === 'tabs' ? 'border-b -mb-px flex space-x-4' : 'flex space-x-2 p-1 rounded-md',
+                    variant === 'tabs' ? 'border-b -mb-px flex gap-4' : 'flex gap-2 p-1 rounded-md',
                     className,
                 )}
                 {...props}
