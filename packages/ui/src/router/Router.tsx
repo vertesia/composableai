@@ -187,11 +187,20 @@ export function useNavigate() {
 
 export function useRouterBasePath() {
     const { router } = useRouterContext();
-    // For a nested router the base is its mount segment within the parent. For a top-level router the
-    // base is the served `<base href>` mount prefix (empty for the origin-served Studio UI) — NOT the
-    // matched route, so apps can build mount-correct sibling links (e.g. `${base}/assistant`) and
-    // compare them against the full `useLocation().pathname`, which carries the mount.
-    return router instanceof NestedRouter ? router.basePath : getMountBasename();
+    // The base path apps prepend to build absolute in-app links (e.g. `${base}/items/${id}`). It MUST
+    // include the served `<base href>` mount so links stay on the mount and match the full
+    // `useLocation().pathname` (which carries the mount). `getMountBasename()` is '' for the
+    // origin-served Studio UI and the mount (no trailing slash) for gateway-served apps.
+    const mount = getMountBasename();
+    if (router instanceof NestedRouter) {
+        // NestedRouter.basePath is relative to the parent router, which sits at the mount, so it must
+        // be mount-prefixed too. A bare nested base of '/' (an app whose NestedRouterProvider has no
+        // basePath) would otherwise make `${base}/items` resolve to `//items` — a protocol-relative
+        // URL that escapes the app. Origin-served Studio (mount '') keeps the raw nested basePath.
+        if (!mount) return router.basePath;
+        return router.basePath === '/' ? mount : joinPath(mount, router.basePath);
+    }
+    return mount;
 }
 
 type UseParamsReturn<T> = T extends string ? string : Record<string, string>;
