@@ -47,6 +47,12 @@ export interface ContextWindowUsage {
     remainingPercent: number;
 }
 
+function formatTokenCountInK(tokens: number): string {
+    const value = Math.max(0, tokens) / 1000;
+    const maximumFractionDigits = value > 0 && value < 10 && !Number.isInteger(value) ? 1 : 0;
+    return `${new Intl.NumberFormat(undefined, { maximumFractionDigits }).format(value)}K`;
+}
+
 interface MessageInputProps {
     onSend: (message: string) => void;
     onStop?: () => void;
@@ -98,6 +104,10 @@ interface MessageInputProps {
     hideObjectLinking?: boolean;
     // Hide file upload (for apps that don't use it)
     hideFileUpload?: boolean;
+    /** Optional toolbar slot for the agent approval mode selector. */
+    approvalModeSlot?: React.ReactNode;
+    /** Optional toolbar slot (e.g. the MCP action menu) rendered next to the attachment actions. */
+    mcpSlot?: React.ReactNode;
     /** Disable the local input drop overlay when a parent view owns drag/drop handling */
     disableDropZone?: boolean;
 
@@ -111,6 +121,8 @@ interface MessageInputProps {
 export default function MessageInput({
     onSend,
     onStop,
+    approvalModeSlot,
+    mcpSlot,
     disabled = false,
     isSending = false,
     isStopping = false,
@@ -165,6 +177,12 @@ export default function MessageInput({
     const activeWorkstreamCount = runningWorkstreams.length || activeTaskCount;
     const contextUsageLabel = contextWindowUsage
         ? t('agent.contextUsageCompactLabel', { percent: contextWindowUsage.usedPercent })
+        : undefined;
+    const contextTokenUsageLabel = contextWindowUsage
+        ? t('agent.contextTokenUsage', {
+              used: formatTokenCountInK(contextWindowUsage.usedTokens),
+              limit: formatTokenCountInK(contextWindowUsage.checkpointTokens),
+          })
         : undefined;
     const attachmentItems = useMemo<AttachmentPreviewItem[]>(() => {
         const items: AttachmentPreviewItem[] = [];
@@ -533,11 +551,14 @@ export default function MessageInput({
                                 )}
                             </Dropdown>
                         )}
+                        {approvalModeSlot}
+                        {mcpSlot}
                         {contextWindowUsage && (
                             <VTooltip
                                 asChild
                                 placement="top"
                                 size="md"
+                                className="text-foreground shadow-lg"
                                 description={
                                     <span className="block max-w-56 text-start text-sm leading-6">
                                         <span className="block">
@@ -545,7 +566,14 @@ export default function MessageInput({
                                                 percent: contextWindowUsage.remainingPercent,
                                             })}
                                         </span>
-                                        <span className="mt-1.5 block text-muted">{t('agent.clickToCompactNow')}</span>
+                                        {contextTokenUsageLabel && (
+                                            <span className="mt-1 block text-foreground/80">
+                                                {contextTokenUsageLabel}
+                                            </span>
+                                        )}
+                                        <span className="mt-1.5 block text-foreground/80">
+                                            {t('agent.clickToCompactNow')}
+                                        </span>
                                     </span>
                                 }
                             >
@@ -553,7 +581,10 @@ export default function MessageInput({
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="size-8 rounded-lg text-muted hover:bg-muted disabled:opacity-60"
+                                    className={cn(
+                                        'size-8 rounded-lg text-info hover:bg-muted hover:text-info disabled:opacity-60',
+                                        'focus-visible:ring-2 focus-visible:ring-info/40',
+                                    )}
                                     aria-label={contextUsageLabel}
                                     onClick={onCompactContext}
                                     disabled={!onCompactContext || isCompactingContext}
@@ -564,7 +595,7 @@ export default function MessageInput({
                                         <svg
                                             viewBox="0 0 24 24"
                                             className={cn(
-                                                'size-5 -rotate-90',
+                                                'size-8 -rotate-90',
                                                 contextWindowUsage.usedPercent >= 90
                                                     ? 'text-destructive'
                                                     : contextWindowUsage.usedPercent >= 70
@@ -576,18 +607,18 @@ export default function MessageInput({
                                             <circle
                                                 cx="12"
                                                 cy="12"
-                                                r="8"
+                                                r="9.75"
                                                 fill="none"
-                                                strokeWidth="3"
-                                                className="stroke-current text-muted/25"
+                                                strokeWidth="4.5"
+                                                className="stroke-current text-muted/50"
                                             />
                                             <circle
                                                 cx="12"
                                                 cy="12"
-                                                r="8"
+                                                r="9.75"
                                                 fill="none"
                                                 pathLength={100}
-                                                strokeWidth="3"
+                                                strokeWidth="4.5"
                                                 strokeLinecap="round"
                                                 strokeDasharray={100}
                                                 style={{ strokeDashoffset: 100 - contextWindowUsage.usedPercent }}

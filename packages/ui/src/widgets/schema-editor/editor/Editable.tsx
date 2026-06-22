@@ -150,7 +150,7 @@ function EditableDataView<T>({
             })}
         >
             <Viewer value={value} placeholder={placeholder} />
-            <div className="ms-auto flex space-x-2">
+            <div className="ms-auto flex gap-2">
                 {!isReadonly && onDelete && (
                     <Button variant="ghost" size="sm" className={btnStyle} onClick={onDelete}>
                         <Trash2 className="size-4" />

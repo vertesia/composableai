@@ -58,6 +58,7 @@ export class PayloadBuilder {
     _visibility: ConversationVisibility | undefined;
     _user_channels: UserChannel[] | undefined;
     _collection: string | undefined;
+    _disabled_mcp_collections: string[] | undefined;
     _start: boolean = false;
     _preserveRunValues: boolean = false;
     _interaction: InCodeInteraction | undefined;
@@ -110,6 +111,9 @@ export class PayloadBuilder {
         builder._inputValidator = this._inputValidator;
         builder._start = this._start;
         builder._collection = this._collection;
+        builder._disabled_mcp_collections = this._disabled_mcp_collections
+            ? [...this._disabled_mcp_collections]
+            : undefined;
         builder._preserveRunValues = this._preserveRunValues;
         builder._mode = this._mode;
         builder._scheduledWorkflowConfig = this._scheduledWorkflowConfig;
@@ -227,6 +231,15 @@ export class PayloadBuilder {
         }
     }
 
+    get disabled_mcp_collections(): string[] | undefined {
+        return this._disabled_mcp_collections;
+    }
+
+    set disabled_mcp_collections(value: string[] | undefined) {
+        this._disabled_mcp_collections = value && value.length > 0 ? value : undefined;
+        this.onStateChanged();
+    }
+
     get search_scope() {
         return this._collection ? AgentSearchScope.Collection : undefined;
     }
@@ -268,6 +281,7 @@ export class PayloadBuilder {
         this._non_blocking_subagents = context.non_blocking_subagents ?? true;
         this._checkpoint_tokens = context.checkpoint_tokens;
         this._user_channels = context.user_channels;
+        this._disabled_mcp_collections = context.disabled_mcp_collections;
         this._model_options = context.config?.model_options as ModelOptions | undefined;
         this.collection = context.collection_id ?? undefined;
         this._model_options = context.config?.model_options as InCodeInteraction['model_options'] | undefined;
@@ -400,6 +414,9 @@ export class PayloadBuilder {
     setCollection(collection: string | undefined) {
         this.collection = collection;
     }
+    setDisabledMcpCollections(collections: string[] | undefined) {
+        this.disabled_mcp_collections = collections;
+    }
     setInteractive(interactive: boolean) {
         this.interactive = interactive;
     }
@@ -484,6 +501,7 @@ export class PayloadBuilder {
         this._visibility = undefined;
         this._user_channels = undefined;
         this._collection = undefined;
+        this._disabled_mcp_collections = undefined;
         this._preserveRunValues = false;
         this._model = '';
         this._model_options = undefined;

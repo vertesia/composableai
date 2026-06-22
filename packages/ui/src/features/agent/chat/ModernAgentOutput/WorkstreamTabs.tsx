@@ -58,7 +58,7 @@ export default function WorkstreamTabs({
     }
 
     return (
-        <div className="flex overflow-x-auto space-x-1 mb-1 bg-muted border-b border-muted/20 sticky top-0 z-10">
+        <div className="flex overflow-x-auto gap-1 mb-1 bg-muted border-b border-muted/20 sticky top-0 z-10">
             {sortedWorkstreams.map(([id, name]) => (
                 <Button
                     variant="unstyled"
@@ -76,7 +76,7 @@ export default function WorkstreamTabs({
                     {name.length > 20 ? `${name.substring(0, 18)}...` : name}
                     {/* biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here */}
                     {count?.has(id) && count.get(id)! > 0 && (
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center gap-1">
                             <span
                                 className={cn(
                                     'inline-flex items-center justify-center p-1 text-xs rounded-full',

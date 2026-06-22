@@ -6,7 +6,7 @@ import {
     type JSONSchema,
     type Plan,
 } from '@vertesia/common';
-import { Button, cn, VTooltip } from '@vertesia/ui/core';
+import { Badge, Button, cn, VTooltip } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
 import { NavLink } from '@vertesia/ui/router';
 import { MarkdownRenderer, type MarkdownRendererProps } from '@vertesia/ui/widgets';
@@ -43,9 +43,18 @@ import { getMessageDeliveryStatus, MessageDeliveryStatus } from './MessageDelive
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
 import {
     getAnsweredRequestInputKeys,
+    getAnsweredToolApprovalRequestInputKeys,
+    getHiddenToolApprovalAnswerKeys,
     getPendingRequestInputMessage,
+    getRequestInputDisplayText,
     getRequestInputMessageKey,
+    getResolvedToolApprovalKeys,
+    hasRequestInputUx,
     isRequestInputAnswered,
+    isToolApprovalAnswerHidden,
+    isToolApprovalRequestInput,
+    isToolApprovalRequestInputHidden,
+    type RequestInputMessageWithUx,
 } from './requestInputMessages';
 import StreamingMessage, { type StreamingMessageClassNames } from './StreamingMessage';
 import {
@@ -162,9 +171,7 @@ function getReadableToolLabel(message: AgentMessage): string {
     return 'Using tool';
 }
 
-function getSummaryWorkLabel(status: ToolExecutionStatus, isActive: boolean): string {
-    if (status === 'error') return 'Work needs attention';
-    if (status === 'warning') return 'Work had warnings';
+function getSummaryWorkLabel(isActive: boolean): string {
     return isActive ? 'Working' : 'Worked';
 }
 
@@ -172,14 +179,98 @@ function isTransientThinkingWork(messages: AgentMessage[]): boolean {
     return messages.length > 0 && messages.every(isTransientWorkStatusMessage);
 }
 
-function getSummaryActivityLabel(status: ToolExecutionStatus, isActive: boolean): string {
-    return getSummaryWorkLabel(status, isActive);
+function getSummaryActivityLabel(isActive: boolean): string {
+    return getSummaryWorkLabel(isActive);
 }
 
 function hasOpenUserTurn(messages: AgentMessage[]): boolean {
     const mainMessages = messages.filter((message) => getWorkstreamId(message) === 'main');
     const latestMessage = mainMessages[mainMessages.length - 1] ?? messages[messages.length - 1];
     return latestMessage?.type === AgentMessageType.QUESTION;
+}
+
+function hasLatestToolApprovalAllowTurn(messages: AgentMessage[], hiddenToolApprovalAnswerKeys: Set<string>): boolean {
+    const mainMessages = messages.filter((message) => getWorkstreamId(message) === 'main');
+    const latestMessage = mainMessages[mainMessages.length - 1] ?? messages[messages.length - 1];
+    if (!latestMessage || !isToolApprovalAnswerHidden(latestMessage, hiddenToolApprovalAnswerKeys)) return false;
+
+    const response = getToolApprovalResponse(latestMessage);
+    return response === 'allow_once' || response === 'allow_for_run';
+}
+
+function getWriteArtifactCompletionPath(message: AgentMessage): string | undefined {
+    if (message.type !== AgentMessageType.UPDATE) return undefined;
+    const details = getDetailsRecord(message);
+    if (details.tool !== undefined || details.activity_group_id !== undefined) return undefined;
+    const path = typeof details.path === 'string' && details.path.trim() ? details.path.trim() : undefined;
+    if (!path) return undefined;
+
+    return getMessageText(message) === `Prepared and saved artifact to ${path}` ? path : undefined;
+}
+
+function findPreviousWriteArtifactToolMessage(messages: AgentMessage[], index: number): AgentMessage | undefined {
+    const workstreamId = getWorkstreamId(messages[index]);
+
+    for (let prevIndex = index - 1; prevIndex >= 0; prevIndex -= 1) {
+        const previous = messages[prevIndex];
+        if (getWorkstreamId(previous) !== workstreamId) continue;
+
+        const details = getDetailsRecord(previous);
+        if (details.tool === 'write_artifact' && typeof details.activity_group_id === 'string') return previous;
+
+        if (previous.type === AgentMessageType.REQUEST_INPUT) continue;
+        if (getToolApprovalResponse(previous)) continue;
+        if (details.display_role === 'thinking') continue;
+
+        if (typeof details.tool === 'string' && details.tool !== 'write_artifact') return undefined;
+        if (
+            previous.type === AgentMessageType.ANSWER ||
+            previous.type === AgentMessageType.COMPLETE ||
+            previous.type === AgentMessageType.IDLE ||
+            previous.type === AgentMessageType.TERMINATED
+        ) {
+            return undefined;
+        }
+    }
+
+    return undefined;
+}
+
+function attachWriteArtifactCompletionMessages(messages: AgentMessage[]): AgentMessage[] {
+    return messages.map((message, index) => {
+        const path = getWriteArtifactCompletionPath(message);
+        if (!path) return message;
+
+        const previousToolMessage = findPreviousWriteArtifactToolMessage(messages, index);
+        const previousDetails = previousToolMessage ? getDetailsRecord(previousToolMessage) : undefined;
+        if (!previousDetails) return message;
+
+        const activityGroupId =
+            typeof previousDetails.activity_group_id === 'string' ? previousDetails.activity_group_id : undefined;
+        const toolRunId = typeof previousDetails.tool_run_id === 'string' ? previousDetails.tool_run_id : undefined;
+        const toolUseId = typeof previousDetails.tool_use_id === 'string' ? previousDetails.tool_use_id : undefined;
+        const toolIteration =
+            typeof previousDetails.tool_iteration === 'number' ? previousDetails.tool_iteration : undefined;
+
+        if (!activityGroupId) return message;
+
+        return {
+            ...message,
+            details: {
+                ...message.details,
+                event_class: 'activity',
+                tool: 'write_artifact',
+                tool_run_id: toolRunId ?? 'write_artifact',
+                tool_use_id: toolUseId ?? toolRunId ?? 'write_artifact',
+                tool_iteration: toolIteration,
+                tool_status: 'completed',
+                tool_event: 'progress',
+                activity_group_id: activityGroupId,
+                output: getMessageText(message),
+                path,
+            },
+        };
+    });
 }
 
 function getMessageText(message: AgentMessage): string {
@@ -190,7 +281,7 @@ function getMessageText(message: AgentMessage): string {
 
 interface SummaryMessageProps {
     message: AgentMessage;
-    onSendMessage?: (message: string) => void;
+    onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
     onSelectWorkstream?: (workstreamId: string) => void;
     requestInputAnswered?: boolean;
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
@@ -231,7 +322,8 @@ function SummaryWorkstreamLaunchMessage({
                     {secondaryName && <div className="mt-0.5 truncate text-xs text-muted/75">{secondaryName}</div>}
                     <span className="sr-only">{getMessageText(message)}</span>
                 </div>
-                <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5" />
+                {/* rtl-ok: chevron points and nudges toward inline-end in both directions. */}
+                <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
             </button>
         </div>
     );
@@ -559,7 +651,8 @@ function SummaryMessage({
     StoreLinkComponent,
     CollectionLinkComponent,
 }: SummaryMessageProps) {
-    const content = getMessageText(message);
+    const content =
+        message.type === AgentMessageType.REQUEST_INPUT ? getRequestInputDisplayText(message) : getMessageText(message);
     const workstreamLaunchDetails = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
     const workstreamId = getWorkstreamId(message);
     const runId = (message as { workflow_run_id?: string }).workflow_run_id;
@@ -672,6 +765,10 @@ function SummaryMessage({
                     multiSelect={uxConfig.multiSelect}
                     onSelect={(optionId) => onSendMessage?.(optionId)}
                     onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                    allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
+                    placeholder={uxConfig.free_response?.placeholder}
+                    submitLabel={uxConfig.free_response?.submit_label}
+                    onSubmit={(value) => onSendMessage?.(value, uxConfig.free_response?.metadata)}
                     hideBorder
                     compact
                     answered={requestInputAnswered}
@@ -927,11 +1024,13 @@ interface SummaryToolDetailItem {
     startedAt?: number | string;
     finishedAt?: number | string;
     status?: ToolExecutionStatus;
+    decisionText?: string;
     sections: SummaryToolDetailSection[];
 }
 
 const SUMMARY_TOOL_STARTED_AT_DETAIL_KEY = '_summary_started_at';
 const SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY = '_summary_finished_at';
+const SYNTHETIC_TOOL_APPROVAL_EVENT_SOURCE = 'synthetic_tool_approval_decision';
 
 const TOOL_DETAIL_SYSTEM_KEYS = new Set([
     'account_id',
@@ -958,6 +1057,13 @@ const TOOL_DETAIL_SYSTEM_KEYS = new Set([
     'tools',
     'message_to_human',
     'progress_messages',
+    'source',
+    'token_usage',
+    'checkpoint_at',
+    'checkpoint_threshold',
+    'approval_decision',
+    'approval_request',
+    'cancellation_reason',
     SUMMARY_TOOL_STARTED_AT_DETAIL_KEY,
     SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY,
     'workflow_run_id',
@@ -965,6 +1071,12 @@ const TOOL_DETAIL_SYSTEM_KEYS = new Set([
 
 function getDetailsRecord(message: AgentMessage): Record<string, unknown> {
     return isRecordValue(message.details) ? message.details : {};
+}
+
+function isDocumentPanelEventMessage(message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.UPDATE) return false;
+    const eventClass = getDetailsRecord(message).event_class;
+    return eventClass === 'document_created' || eventClass === 'document_updated';
 }
 
 function humanizeIdentifier(value: string): string {
@@ -1090,6 +1202,135 @@ function getToolTarget(details: Record<string, unknown>): string | undefined {
     return undefined;
 }
 
+function getApprovalDecisionLabel(decision: unknown, toolLabel: string): string | undefined {
+    switch (decision) {
+        case 'denied':
+        case 'denied_with_feedback':
+            return `User declined to use ${toolLabel}.`;
+        case 'timeout':
+            return `Approval timed out for ${toolLabel}.`;
+        case 'reviewer_denied':
+            return `Approval reviewer denied ${toolLabel}.`;
+        case 'cancelled_after_denial':
+            return `Cancelled ${toolLabel} after another tool was denied.`;
+        default:
+            return undefined;
+    }
+}
+
+function getApprovalDecisionStatusText(decision: unknown): string | undefined {
+    switch (decision) {
+        case 'denied':
+        case 'denied_with_feedback':
+            return 'Declined by user';
+        case 'timeout':
+            return 'Approval timed out';
+        case 'reviewer_denied':
+            return 'Denied by reviewer';
+        case 'cancelled_after_denial':
+            return 'Cancelled after denial';
+        default:
+            return undefined;
+    }
+}
+
+function getToolApprovalRecord(message: AgentMessage): Record<string, unknown> | undefined {
+    const details = getDetailsRecord(message);
+    const toolApproval = details.tool_approval;
+    return isRecordValue(toolApproval) ? toolApproval : undefined;
+}
+
+function getApprovalKeyFromToolApproval(toolApproval: Record<string, unknown> | undefined): string | undefined {
+    const approvalKey = toolApproval?.approval_key;
+    return typeof approvalKey === 'string' && approvalKey.trim() ? approvalKey.trim() : undefined;
+}
+
+function getToolApprovalResponse(message: AgentMessage): 'allow_once' | 'allow_for_run' | 'deny' | undefined {
+    if (message.type !== AgentMessageType.QUESTION) return undefined;
+    const normalized = getMessageText(message).trim().toLowerCase();
+    if (normalized === 'allow_once' || normalized === 'allow_for_run' || normalized === 'deny') return normalized;
+    return undefined;
+}
+
+function getToolApprovalDisplayName(toolApproval: Record<string, unknown>): string {
+    const title = toolApproval.tool_title;
+    if (typeof title === 'string' && title.trim()) return title.trim();
+    const name = toolApproval.tool_name;
+    if (typeof name === 'string' && name.trim()) return humanizeIdentifier(name.trim());
+    return 'tool action';
+}
+
+function buildSyntheticToolApprovalDecisionMessages(
+    messages: AgentMessage[],
+    resolvedToolApprovalKeys: Set<string>,
+): AgentMessage[] {
+    const syntheticMessages: AgentMessage[] = [];
+
+    messages.forEach((message, index) => {
+        if (message.type !== AgentMessageType.REQUEST_INPUT) return;
+
+        const toolApproval = getToolApprovalRecord(message);
+        const approvalKey = getApprovalKeyFromToolApproval(toolApproval);
+        if (!toolApproval || !approvalKey || resolvedToolApprovalKeys.has(approvalKey)) return;
+
+        const workstreamId = getWorkstreamId(message);
+        let responseMessage: AgentMessage | undefined;
+        for (let nextIndex = index + 1; nextIndex < messages.length; nextIndex += 1) {
+            const nextMessage = messages[nextIndex];
+            if (getWorkstreamId(nextMessage) !== workstreamId) continue;
+            if (nextMessage.type === AgentMessageType.REQUEST_INPUT) break;
+            if (nextMessage.type === AgentMessageType.QUESTION) {
+                responseMessage = nextMessage;
+                break;
+            }
+        }
+
+        if (!responseMessage || getToolApprovalResponse(responseMessage) !== 'deny') return;
+
+        const toolName =
+            typeof toolApproval.tool_name === 'string' && toolApproval.tool_name.trim()
+                ? toolApproval.tool_name.trim()
+                : 'tool_action';
+        const toolLabel = getToolApprovalDisplayName(toolApproval);
+        const target = typeof toolApproval.target === 'string' && toolApproval.target.trim() ? toolApproval.target : '';
+        const approvalRequest = {
+            tool_name: toolName,
+            tool_title: toolApproval.tool_title,
+            action_summary: toolApproval.action_summary,
+            target: toolApproval.target,
+            approval_key: approvalKey,
+        };
+
+        syntheticMessages.push({
+            timestamp: responseMessage.timestamp ?? message.timestamp,
+            workflow_run_id: responseMessage.workflow_run_id || message.workflow_run_id,
+            type: AgentMessageType.THOUGHT,
+            message: getApprovalDecisionLabel('denied', toolLabel) ?? `User declined to use ${toolLabel}.`,
+            workstream_id: workstreamId,
+            details: {
+                event_class: 'activity',
+                tool: toolName,
+                tool_run_id: `approval:${approvalKey}`,
+                tool_use_id: `approval:${approvalKey}`,
+                tool_status: 'error',
+                tool_event: 'failed',
+                activity_group_id: `approval:${approvalKey}`,
+                approval_decision: 'denied',
+                approval_request: approvalRequest,
+                input: toolApproval.input,
+                target,
+                observation: 'The user declined this tool action.',
+                source: SYNTHETIC_TOOL_APPROVAL_EVENT_SOURCE,
+            },
+        });
+    });
+
+    if (syntheticMessages.length === 0) return messages;
+    return [...messages, ...syntheticMessages].sort(
+        (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp),
+    );
+}
+
 function compactInlineText(value: string, maxLength = 160): string {
     const normalized = value.replace(/\s+/g, ' ').trim();
     return normalized.length > maxLength ? `${normalized.slice(0, maxLength - 1)}...` : normalized;
@@ -1210,16 +1451,11 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
 
     addSection('Query', ['query']);
     addSection('Input', ['input', 'params', 'arguments', 'args']);
-    addSection('Output', [
-        'output',
-        'stdout',
-        'result',
-        'results',
-        'content',
-        'result_summary',
-        'observation',
-        'display_message',
-    ]);
+    addSection(
+        'Output',
+        ['output', 'stdout', 'result', 'results', 'content', 'result_summary', 'observation', 'display_message'],
+        typeof details.approval_decision === 'string' ? 'error' : undefined,
+    );
     addSection('Files', ['files', 'outputFiles']);
     addSection('Error', ['error', 'stderr'], 'error');
     if (targetEntry) consumedKeys.add(targetEntry.key);
@@ -1233,6 +1469,8 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
 }
 
 function buildSummaryToolDetailItem(message: AgentMessage, index: number): SummaryToolDetailItem | undefined {
+    if (message.type === AgentMessageType.REQUEST_INPUT) return undefined;
+
     const text = getMessageText(message);
     const details = getDetailsRecord(message);
     const isPreamble = isToolPreambleMessage(message);
@@ -1241,14 +1479,20 @@ function buildSummaryToolDetailItem(message: AgentMessage, index: number): Summa
     const target = getToolTarget(details);
     const command = typeof details.command === 'string' && details.command.trim() ? details.command.trim() : undefined;
     const fallbackTitle = toolNames[0] ? humanizeIdentifier(toolNames[0]) : getReadableToolLabel(message);
+    const approvalDecisionTitle = getApprovalDecisionLabel(details.approval_decision, fallbackTitle);
+    const decisionText = getApprovalDecisionStatusText(details.approval_decision);
+    const messageToHuman =
+        typeof details.message_to_human === 'string' && details.message_to_human.trim()
+            ? details.message_to_human.trim()
+            : undefined;
     const title =
         kind === 'think'
             ? text || fallbackTitle
             : kind === 'command'
-              ? compactInlineText(text || command || fallbackTitle)
-              : compactInlineText(target || text || fallbackTitle);
+              ? compactInlineText(messageToHuman || (!approvalDecisionTitle ? text : '') || command || fallbackTitle)
+              : compactInlineText(messageToHuman || target || (!approvalDecisionTitle ? text : '') || fallbackTitle);
     const normalizedText = text ? (kind === 'think' ? text : compactInlineText(text, 420)) : undefined;
-    const shouldShowText = normalizedText && normalizedText !== title;
+    const shouldShowText = normalizedText && normalizedText !== title && !approvalDecisionTitle;
 
     if (!title && !shouldShowText) return undefined;
 
@@ -1263,7 +1507,8 @@ function buildSummaryToolDetailItem(message: AgentMessage, index: number): Summa
         toolName: getUniqueToolName(details),
         startedAt: getTimestampDetail(details[SUMMARY_TOOL_STARTED_AT_DETAIL_KEY]) ?? message.timestamp,
         finishedAt: getTimestampDetail(details[SUMMARY_TOOL_FINISHED_AT_DETAIL_KEY]) ?? message.timestamp,
-        status: details.tool_status as ToolExecutionStatus | undefined,
+        status: approvalDecisionTitle ? 'error' : (details.tool_status as ToolExecutionStatus | undefined),
+        decisionText,
         sections: getToolDetailSections(message),
     };
 }
@@ -1294,22 +1539,34 @@ function getToolIdentity(details: Record<string, unknown>): string | undefined {
 
 function getSplitActivityGroups(messages: AgentMessage[]): Set<string> {
     const startedToolIdentities = new Map<string, Set<string>>();
+    const approvalDecisionToolIdentities = new Map<string, Set<string>>();
+
+    const addIdentity = (
+        groups: Map<string, Set<string>>,
+        activityGroupId: string | undefined,
+        toolIdentity: string | undefined,
+    ) => {
+        if (!activityGroupId || !toolIdentity) return;
+        const identities = groups.get(activityGroupId) ?? new Set<string>();
+        identities.add(toolIdentity);
+        groups.set(activityGroupId, identities);
+    };
 
     for (const message of messages) {
         const details = getDetailsRecord(message);
-        if (details.tool_event !== 'started') continue;
-
         const activityGroupId = getActivityGroupIdentity(details);
         const toolIdentity = getToolIdentity(details);
-        if (!activityGroupId || !toolIdentity) continue;
 
-        const identities = startedToolIdentities.get(activityGroupId) ?? new Set<string>();
-        identities.add(toolIdentity);
-        startedToolIdentities.set(activityGroupId, identities);
+        if (details.tool_event === 'started') {
+            addIdentity(startedToolIdentities, activityGroupId, toolIdentity);
+        }
+        if (typeof details.approval_decision === 'string') {
+            addIdentity(approvalDecisionToolIdentities, activityGroupId, toolIdentity);
+        }
     }
 
     return new Set(
-        Array.from(startedToolIdentities.entries())
+        [...startedToolIdentities.entries(), ...approvalDecisionToolIdentities.entries()]
             .filter(([, identities]) => identities.size > 1)
             .map(([activityGroupId]) => activityGroupId),
     );
@@ -1378,6 +1635,10 @@ function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
         const baseMessage = sortedMessages[sortedMessages.length - 1];
         const startMessage = sortedMessages.find((message) => getDetailsRecord(message).tool_event === 'started');
         const firstTextMessage = sortedMessages.find((message) => getMessageText(message));
+        const latestApprovalDecisionMessage = sortedMessages.findLast((message) => {
+            const details = getDetailsRecord(message);
+            return typeof details.approval_decision === 'string' && Boolean(getMessageText(message));
+        });
         const commandTextMessage = sortedMessages.findLast((message) => getMessageText(message).startsWith('$ '));
         const latestStatusMessage = sortedMessages.findLast(
             (message) =>
@@ -1411,7 +1672,10 @@ function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
             index,
             message: {
                 ...baseMessage,
-                message: messageToHuman || (firstTextMessage ? firstTextMessage.message : baseMessage.message),
+                message:
+                    latestApprovalDecisionMessage?.message ||
+                    messageToHuman ||
+                    (firstTextMessage ? firstTextMessage.message : baseMessage.message),
                 details: mergedDetails,
             },
         };
@@ -1686,10 +1950,12 @@ function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
 }
 
 function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
-    const isAttention = item.status === 'error' || item.status === 'warning';
+    const isDecision = Boolean(item.decisionText);
+    const isAttention = !isDecision && (item.status === 'error' || item.status === 'warning');
     const hasMetadata = getToolDetailMetadata(item).length > 0;
     const hasDetails = Boolean(item.command || item.text || item.sections.length || hasMetadata);
     const [isExpanded, setIsExpanded] = useState(false);
+    const iconStatus = isDecision ? undefined : item.status;
 
     return (
         <div className="min-w-0">
@@ -1710,9 +1976,16 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
                         isAttention ? 'text-attention' : 'text-muted',
                     )}
                 >
-                    <ToolDetailIcon kind={item.kind} status={item.status} />
+                    <ToolDetailIcon kind={item.kind} status={iconStatus} />
                 </span>
-                <span className="min-w-0 break-words text-sm text-muted">{item.title}</span>
+                <span className="min-w-0 text-sm text-muted">
+                    <span className="break-words">{item.title}</span>
+                    {item.decisionText ? (
+                        <Badge variant="destructive" className="ms-2 rounded-full shadow-sm shadow-destructive/10">
+                            {item.decisionText}
+                        </Badge>
+                    ) : null}
+                </span>
                 {hasDetails ? (
                     <ChevronDown
                         className={cn(
@@ -1871,7 +2144,6 @@ function SummaryStoppedMessage({
 
 function SummaryActivityRow({
     label,
-    status,
     timestamp,
     durationSeconds,
     showElapsed,
@@ -1881,6 +2153,9 @@ function SummaryActivityRow({
     disablePreambleCollapse = false,
     className,
     artifactRunId,
+    onSendMessage,
+    answeredToolApprovalRequestInputKeys,
+    resolvedToolApprovalKeys,
 }: {
     label: string;
     status?: ToolExecutionStatus;
@@ -1893,21 +2168,34 @@ function SummaryActivityRow({
     disablePreambleCollapse?: boolean;
     className?: string;
     artifactRunId?: string;
+    onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+    answeredToolApprovalRequestInputKeys?: Set<string>;
+    resolvedToolApprovalKeys?: Set<string>;
 }) {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
     const isLiveElapsed = showElapsed && durationSeconds === undefined;
     const liveElapsed = useLiveElapsedSeconds(timestamp, isLiveElapsed);
     const elapsed = durationSeconds ?? liveElapsed;
     const shouldShowElapsed = showElapsed && timestamp !== undefined;
-    const isAttention = status === 'error' || status === 'warning';
     const detailItems = useMemo(() => buildSummaryToolDetailItems(details ?? []), [details]);
-    const canExpand = detailItems.length > 0 || Boolean(emptyDetailsLabel);
+    const requestInputMessages = useMemo(
+        () =>
+            (details ?? []).filter(
+                (message): message is RequestInputMessageWithUx =>
+                    hasRequestInputUx(message) &&
+                    !isToolApprovalRequestInputHidden(
+                        message,
+                        answeredToolApprovalRequestInputKeys ?? new Set<string>(),
+                        resolvedToolApprovalKeys ?? new Set<string>(),
+                    ),
+            ),
+        [answeredToolApprovalRequestInputKeys, details, resolvedToolApprovalKeys],
+    );
+    const canExpand = detailItems.length > 0 || requestInputMessages.length > 0 || Boolean(emptyDetailsLabel);
 
     return (
         <div className={cn('mx-auto w-full max-w-3xl px-1', className)}>
-            <div
-                className={cn('border-b border-border/70 pb-3 text-sm', isAttention ? 'text-attention' : 'text-muted')}
-            >
+            <div className="border-b border-border/70 pb-3 text-sm text-muted">
                 <button
                     type="button"
                     className={cn(
@@ -1932,12 +2220,46 @@ function SummaryActivityRow({
                     ) : null}
                 </button>
                 {canExpand && isExpanded ? (
-                    detailItems.length > 0 ? (
-                        <SummaryToolTimeline
-                            items={detailItems}
-                            artifactRunId={artifactRunId}
-                            disablePreambleCollapse={disablePreambleCollapse}
-                        />
+                    detailItems.length > 0 || requestInputMessages.length > 0 ? (
+                        <>
+                            {detailItems.length > 0 ? (
+                                <SummaryToolTimeline
+                                    items={detailItems}
+                                    artifactRunId={artifactRunId}
+                                    disablePreambleCollapse={disablePreambleCollapse}
+                                />
+                            ) : null}
+                            {requestInputMessages.length > 0 ? (
+                                <div className="mt-3 space-y-3">
+                                    {requestInputMessages.map((message) => {
+                                        const uxConfig = message.details.ux;
+                                        return (
+                                            <AskUserWidget
+                                                key={getAgentMessageRenderKey(message, 'work-request-input')}
+                                                question={getRequestInputDisplayText(message)}
+                                                options={uxConfig.options}
+                                                variant={uxConfig.variant}
+                                                multiSelect={uxConfig.multiSelect}
+                                                onSelect={(optionId) => onSendMessage?.(optionId)}
+                                                onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                                                allowFreeResponse={
+                                                    !uxConfig.options?.length || !!uxConfig.free_response
+                                                }
+                                                placeholder={uxConfig.free_response?.placeholder}
+                                                submitLabel={uxConfig.free_response?.submit_label}
+                                                onSubmit={(value) =>
+                                                    onSendMessage?.(value, uxConfig.free_response?.metadata)
+                                                }
+                                                hideBorder
+                                                compact
+                                                className="my-0"
+                                                cardClassName="bg-background/60 shadow-none"
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            ) : null}
+                        </>
                     ) : (
                         <div className="mt-3 flex items-center gap-2 text-sm text-muted">
                             <Terminal className="size-4 opacity-70" aria-hidden="true" />
@@ -2021,7 +2343,7 @@ interface AllMessagesMixedProps {
     taskLabels?: Map<string, string>; // Maps task IDs to more descriptive labels
     streamingMessages?: Map<string, StreamingData>; // Real-time streaming chunks
     /** Callback when user sends a message (e.g., from proposal selection) */
-    onSendMessage?: (message: string) => void;
+    onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
     /** Stable index for thinking messages (changes on 4s interval) */
     thinkingMessageIndex?: number;
     /** className overrides passed to every MessageItem */
@@ -2215,9 +2537,9 @@ function AllMessagesMixedComponent({
     // Sort all messages chronologically and dedupe adjacent identical messages
     // Low-signal messages are suppressed at the source (server-side) via shouldSuppressLowSignalMessage
     const sortedMessages = React.useMemo(() => {
-        const filtered = hiddenMessageTypes?.length
-            ? messages.filter((m) => !hiddenMessageTypes.includes(m.type))
-            : messages;
+        const filtered = messages.filter(
+            (message) => !isDocumentPanelEventMessage(message) && !hiddenMessageTypes?.includes(message.type),
+        );
 
         const sorted = [...filtered].sort((a, b) => {
             const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
@@ -2316,11 +2638,25 @@ function AllMessagesMixedComponent({
 
     // Filter messages based on active workstream
     const displayMessages = React.useMemo(() => {
-        return filterMessagesForActiveWorkstream(sortedMessages, activeWorkstream);
+        return attachWriteArtifactCompletionMessages(
+            filterMessagesForActiveWorkstream(sortedMessages, activeWorkstream),
+        );
     }, [sortedMessages, activeWorkstream]);
 
     const answeredRequestInputKeys = React.useMemo(
         () => getAnsweredRequestInputKeys(displayMessages),
+        [displayMessages],
+    );
+    const resolvedToolApprovalKeys = React.useMemo(
+        () => getResolvedToolApprovalKeys(displayMessages),
+        [displayMessages],
+    );
+    const answeredToolApprovalRequestInputKeys = React.useMemo(
+        () => getAnsweredToolApprovalRequestInputKeys(displayMessages),
+        [displayMessages],
+    );
+    const hiddenToolApprovalAnswerKeys = React.useMemo(
+        () => getHiddenToolApprovalAnswerKeys(displayMessages),
         [displayMessages],
     );
     const externallyRenderedRequestInputKey = React.useMemo(() => {
@@ -2331,8 +2667,21 @@ function AllMessagesMixedComponent({
     const shouldHideRequestInputMessage = React.useCallback(
         (message: AgentMessage) =>
             message.type === AgentMessageType.REQUEST_INPUT &&
-            externallyRenderedRequestInputKey === getRequestInputMessageKey(message),
-        [externallyRenderedRequestInputKey],
+            (externallyRenderedRequestInputKey === getRequestInputMessageKey(message) ||
+                isToolApprovalRequestInputHidden(
+                    message,
+                    answeredToolApprovalRequestInputKeys,
+                    resolvedToolApprovalKeys,
+                )),
+        [answeredToolApprovalRequestInputKeys, externallyRenderedRequestInputKey, resolvedToolApprovalKeys],
+    );
+    const shouldHideToolApprovalAnswerMessage = React.useCallback(
+        (message: AgentMessage) => isToolApprovalAnswerHidden(message, hiddenToolApprovalAnswerKeys),
+        [hiddenToolApprovalAnswerKeys],
+    );
+    const completionDisplayMessages = React.useMemo(
+        () => displayMessages.filter((message) => !shouldHideToolApprovalAnswerMessage(message)),
+        [displayMessages, shouldHideToolApprovalAnswerMessage],
     );
 
     const fallbackWorkingStartedAtRef = useRef(Date.now());
@@ -2359,11 +2708,30 @@ function AllMessagesMixedComponent({
             return Math.max(latest, getTimestampMs(msg.timestamp));
         }, -Infinity);
     }, [displayMessages]);
+    const hasPendingToolApprovalRequest = useMemo(
+        () =>
+            displayMessages.some(
+                (message) =>
+                    isToolApprovalRequestInput(message) &&
+                    !isToolApprovalRequestInputHidden(
+                        message,
+                        answeredToolApprovalRequestInputKeys,
+                        resolvedToolApprovalKeys,
+                    ),
+            ),
+        [answeredToolApprovalRequestInputKeys, displayMessages, resolvedToolApprovalKeys],
+    );
+    const hasLatestToolApprovalAllow = useMemo(
+        () => hasLatestToolApprovalAllowTurn(displayMessages, hiddenToolApprovalAnswerKeys),
+        [displayMessages, hiddenToolApprovalAnswerKeys],
+    );
 
     const isDisplayCompleted = useMemo(() => {
-        if (hasOpenUserTurn(displayMessages)) return false;
-        return isCompleted || !isInProgress(displayMessages);
-    }, [displayMessages, isCompleted]);
+        if (hasPendingToolApprovalRequest) return false;
+        if (hasLatestToolApprovalAllow) return false;
+        if (hasOpenUserTurn(completionDisplayMessages)) return false;
+        return isCompleted || !isInProgress(completionDisplayMessages);
+    }, [completionDisplayMessages, hasLatestToolApprovalAllow, hasPendingToolApprovalRequest, isCompleted]);
 
     // Split streaming messages:
     // - complete (or stale incomplete) ones are interleaved chronologically
@@ -2398,8 +2766,19 @@ function AllMessagesMixedComponent({
     }, [streamingMessages, activeWorkstream, latestNonTransientDisplayMessageTimestamp]);
 
     const summaryDisplayMessages = React.useMemo(
-        () => buildSummaryDisplayMessages(displayMessages, completeStreaming),
-        [displayMessages, completeStreaming],
+        () =>
+            buildSyntheticToolApprovalDecisionMessages(
+                buildSummaryDisplayMessages(displayMessages, completeStreaming),
+                resolvedToolApprovalKeys,
+            ),
+        [displayMessages, completeStreaming, resolvedToolApprovalKeys],
+    );
+    const visibleSummaryDisplayMessages = React.useMemo(
+        () =>
+            summaryDisplayMessages.filter(
+                (message) => !shouldHideRequestInputMessage(message) && !shouldHideToolApprovalAnswerMessage(message),
+            ),
+        [summaryDisplayMessages, shouldHideRequestInputMessage, shouldHideToolApprovalAnswerMessage],
     );
 
     const latestSummaryObservedTimestamp = useMemo(() => {
@@ -2414,8 +2793,13 @@ function AllMessagesMixedComponent({
     }, [incompleteStreaming, latestDisplayMessageTimestamp]);
 
     const summaryConversationItems = React.useMemo(
-        () => buildSummaryConversationItems(summaryDisplayMessages, isDisplayCompleted, latestSummaryObservedTimestamp),
-        [summaryDisplayMessages, isDisplayCompleted, latestSummaryObservedTimestamp],
+        () =>
+            buildSummaryConversationItems(
+                visibleSummaryDisplayMessages,
+                isDisplayCompleted,
+                latestSummaryObservedTimestamp,
+            ),
+        [visibleSummaryDisplayMessages, isDisplayCompleted, latestSummaryObservedTimestamp],
     );
 
     // Group messages with ONLY complete streaming interleaved for stacked view.
@@ -2432,8 +2816,12 @@ function AllMessagesMixedComponent({
     // Show an activity indicator when the latest visible conversation state is not terminal.
     // Older idle/complete messages from previous turns must not suppress the new turn.
     const isAgentWorking = useMemo(() => {
-        return !isDisplayCompleted;
-    }, [isDisplayCompleted]);
+        // Also treat an open user turn (the latest message is the user's, awaiting the agent's
+        // first output) as "working" — otherwise nothing animates in the gap between sending a
+        // message and the first streamed token, especially after a stop where the run reads as
+        // completed until the agent posts its next message.
+        return !isDisplayCompleted || hasOpenUserTurn(completionDisplayMessages);
+    }, [completionDisplayMessages, isDisplayCompleted]);
 
     const showActivityFallback = shouldShowSummaryActivityFallback(
         summaryConversationItems,
@@ -2452,10 +2840,10 @@ function AllMessagesMixedComponent({
         () =>
             getSummaryActivityAnchorTimestamp(
                 summaryConversationItems,
-                summaryDisplayMessages,
+                visibleSummaryDisplayMessages,
                 fallbackWorkingStartedAtRef.current,
             ),
-        [summaryConversationItems, summaryDisplayMessages],
+        [summaryConversationItems, visibleSummaryDisplayMessages],
     );
     const activityStartedTimestampRef = useRef<number | string>(activityAnchorCandidate);
     const wasActivityFallbackVisibleRef = useRef(false);
@@ -2945,6 +3333,7 @@ function AllMessagesMixedComponent({
                                     // Render single message
                                     const message = group.message;
                                     if (shouldHideRequestInputMessage(message)) return null;
+                                    if (shouldHideToolApprovalAnswerMessage(message)) return null;
                                     if (isUserStoppedMessage(message)) {
                                         return (
                                             <TimelineEntry key={getAgentMessageRenderKey(message, 'stopped')}>
@@ -3056,7 +3445,7 @@ function AllMessagesMixedComponent({
                                     return (
                                         <SummaryActivityRow
                                             key={`work-${item.id}-${item.isActive ? 'active' : 'done'}-${item.status}`}
-                                            label={getSummaryActivityLabel(item.status, item.isActive)}
+                                            label={getSummaryActivityLabel(item.isActive)}
                                             status={item.status}
                                             timestamp={item.startTimestamp}
                                             durationSeconds={
@@ -3069,6 +3458,9 @@ function AllMessagesMixedComponent({
                                             defaultExpanded={item.isActive && !isThinkingOnlyWork}
                                             disablePreambleCollapse={item.isActive}
                                             className={workingIndicatorClassName}
+                                            onSendMessage={onSendMessage}
+                                            answeredToolApprovalRequestInputKeys={answeredToolApprovalRequestInputKeys}
+                                            resolvedToolApprovalKeys={resolvedToolApprovalKeys}
                                         />
                                     );
                                 }
@@ -3086,6 +3478,7 @@ function AllMessagesMixedComponent({
 
                                 const message = item.message;
                                 if (shouldHideRequestInputMessage(message)) return null;
+                                if (shouldHideToolApprovalAnswerMessage(message)) return null;
                                 if (isBatchProgressMessage(message)) {
                                     return (
                                         <MessageErrorBoundary key={getAgentMessageRenderKey(message, 'batch')}>

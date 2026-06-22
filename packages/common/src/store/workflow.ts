@@ -7,6 +7,7 @@ import type {
 } from '../interaction.js';
 import type { JSONObject, JSONValue } from '../json.js';
 import type { JSONSchema } from '../json-schema.js';
+import type { AgentToolApprovalMode } from './agent-approval.js';
 import type { WorkflowInput } from './dsl-workflow.js';
 
 export enum ContentEventName {
@@ -638,6 +639,7 @@ export interface WorkflowInteractionVars {
     type: string;
     interaction: string;
     interactive: boolean;
+    tool_approval_mode?: AgentToolApprovalMode;
     debug_mode?: boolean;
     non_blocking_subagents?: boolean;
     /**
@@ -654,6 +656,11 @@ export interface WorkflowInteractionVars {
     };
     interactionParamsSchema?: JSONSchema;
     collection_id?: string;
+    /**
+     * Denylist of MCP tool-collection ids deactivated for this conversation.
+     * `undefined`/empty ⇒ all installed/connected MCP collections are active.
+     */
+    disabled_mcp_collections?: string[];
     /**
      * The token threshold in thousands (K) for creating checkpoints.
      * If total tokens exceed this value, a checkpoint will be created.

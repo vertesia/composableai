@@ -1,5 +1,6 @@
+import i18next from 'i18next';
 import { describe, expect, it } from 'vitest';
-import { i18nInstance } from './instance.js';
+import { i18nInstance, NAMESPACE } from './instance.js';
 import { isRTL, RTL_LANGUAGES, resolveLanguage, SUPPORTED_LANGUAGES } from './rtl.js';
 
 describe('isRTL', () => {
@@ -70,5 +71,60 @@ describe('SUPPORTED_LANGUAGES divergence guard', () => {
         const registered = Object.keys(i18nInstance.options.resources ?? {}).sort();
         const supported = [...SUPPORTED_LANGUAGES].sort();
         expect(registered).toEqual(supported);
+    });
+});
+
+describe('empty translation fallback', () => {
+    it('falls back to English for empty translation values', async () => {
+        const testI18n = i18next.createInstance();
+        await testI18n.init({
+            resources: {
+                en: { [NAMESPACE]: { 'test.emptyTranslationFallback': 'English fallback' } },
+                zh: { [NAMESPACE]: { 'test.emptyTranslationFallback': '' } },
+            },
+            fallbackLng: 'en',
+            returnEmptyString: false,
+            ns: [NAMESPACE],
+            defaultNS: NAMESPACE,
+            interpolation: {
+                escapeValue: false,
+            },
+        });
+
+        const t = testI18n.getFixedT('zh', NAMESPACE);
+        expect(t('test.emptyTranslationFallback')).toBe('English fallback');
+    });
+
+    it('does not ship parser-created empty locale entries', () => {
+        const resources = i18nInstance.options.resources ?? {};
+        const emptyEntries: string[] = [];
+
+        const collectEmptyEntries = (value: unknown, path: string[]) => {
+            if (typeof value === 'string') {
+                if (value.trim() === '') {
+                    emptyEntries.push(path.join('.'));
+                }
+                return;
+            }
+
+            if (Array.isArray(value)) {
+                for (const [index, item] of value.entries()) {
+                    collectEmptyEntries(item, [...path, String(index)]);
+                }
+                return;
+            }
+
+            if (value && typeof value === 'object') {
+                for (const [key, child] of Object.entries(value)) {
+                    collectEmptyEntries(child, [...path, key]);
+                }
+            }
+        };
+
+        for (const [locale, resource] of Object.entries(resources)) {
+            collectEmptyEntries(resource, [locale]);
+        }
+
+        expect(emptyEntries).toEqual([]);
     });
 });
