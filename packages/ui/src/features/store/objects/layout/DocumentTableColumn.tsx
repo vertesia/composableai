@@ -1,6 +1,7 @@
 import type { ColumnLayout, ContentObjectItem } from '@vertesia/common';
 import type React from 'react';
 
+import { DocumentCellActions } from '../DocumentQuickFilter';
 import renderers from './renderers';
 
 const defaultRenderer = renderers.string();
@@ -43,7 +44,7 @@ export interface ExtendedColumnLayout extends Omit<ColumnLayout, 'field'> {
 }
 
 export class DocumentTableColumn {
-    renderer: (value: unknown, index: number) => React.ReactNode = defaultRenderer;
+    renderer: (value: unknown, index: number, actions?: React.ReactNode) => React.ReactNode = defaultRenderer;
     path: string[];
     fallbackPath?: string[];
     previewObject?: (objectId: string) => void;
@@ -91,7 +92,7 @@ export class DocumentTableColumn {
         // If there's a custom render function, wrap its result in a td
         if (this.layout.render) {
             return (
-                <td key={index} className="whitespace-nowrap px-3 py-4 text-sm">
+                <td key={index} className="whitespace-nowrap px-3 py-4 text-sm group">
                     {this.layout.render(object)}
                 </td>
             );
@@ -99,6 +100,7 @@ export class DocumentTableColumn {
 
         const type = this.layout.type || 'string';
         const baseType = type.indexOf('?') > 0 ? type.substring(0, type.indexOf('?')) : type;
+        const actions = this.buildActions(object, baseType);
 
         if ((baseType === 'objectId' || baseType === 'objectLink') && this.previewObject) {
             const i = type.indexOf('?');
@@ -106,10 +108,33 @@ export class DocumentTableColumn {
             const renderer = renderers[baseType](params, (_id: string) => {
                 this.previewObject?.(object.id);
             });
-            return renderer(object, index);
+            return renderer(object, index, actions);
         }
 
         // Otherwise use the type-based renderer with the resolved value
-        return this.renderer(this.resolveValue(object), index);
+        return this.renderer(this.resolveValue(object), index, actions);
+    }
+
+    /**
+     * Per-cell quick-filter/copy actions, derived from the column's field/type. Returns undefined for
+     * columns that aren't backed by a filterable facet field. The filter handler itself is read from
+     * {@link DocumentQuickFilterProvider} context by {@link DocumentCellActions}.
+     */
+    private buildActions(object: ContentObjectItem, baseType: string): React.ReactNode {
+        const field = this.layout.field;
+        if (baseType === 'objectId' || baseType === 'objectLink' || field === 'id') {
+            return <DocumentCellActions field="id" value={object.id} label={object.id} copyContent={object.id} />;
+        }
+        if (baseType === 'objectName' || field === 'name') {
+            return <DocumentCellActions field="name" value={object.name} label={object.name ?? object.id} />;
+        }
+        if (baseType === 'typeLink' || field === 'type.name' || field === 'type') {
+            const typeId = object.type?.id;
+            return <DocumentCellActions field="type" value={typeId} label={object.type?.name ?? typeId ?? 'type'} />;
+        }
+        if (field === 'status') {
+            return <DocumentCellActions field="status" value={object.status} label={object.status} />;
+        }
+        return undefined;
     }
 }
