@@ -145,7 +145,7 @@ export function PulsingMessageLoader({ message, className, color = 'blue' }: Pul
 
     return (
         <div className={cn('flex items-center gap-2 py-1', className)}>
-            <div className="flex space-x-1">
+            <div className="flex gap-1">
                 <div className={`w-1.5 h-1.5 ${colorClasses[color].dot} rounded-full animate-bounce`} />
                 <div
                     className={`w-1.5 h-1.5 ${colorClasses[color].dot} rounded-full animate-bounce`}

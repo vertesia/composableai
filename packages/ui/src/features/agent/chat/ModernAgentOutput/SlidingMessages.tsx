@@ -82,7 +82,7 @@ export default function SlidingMessages({ messages, isCompleted }: SlidingMessag
             {/* If no messages and not completed, show a placeholder thinking message */}
             {messages.length === 0 && !isCompleted && (
                 <div className="flex items-center justify-center flex-1 text-center py-8">
-                    <div className="flex items-center space-x-3 bg-blue-50 rounded-lg border border-blue-100 px-4 py-3">
+                    <div className="flex items-center gap-3 bg-blue-50 rounded-lg border border-blue-100 px-4 py-3">
                         <div className="text-sm text-blue-700 font-medium">
                             {ThinkingMessages[thinkingMessageIndex]}
                         </div>

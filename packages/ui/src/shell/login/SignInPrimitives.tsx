@@ -297,9 +297,10 @@ export function SignInProviderButton({ provider, label, onClick, variant = 'outl
     const Icon = providerIcon(provider);
 
     if (variant === 'arrow') {
-        // !size beats Button's [&_svg]:size-4 rule. Arrow fades in and nudges right on hover.
+        // rtl-ok: arrow hover nudge moves toward inline-end with an explicit RTL mirror.
+        // !size beats Button's [&_svg]:size-4 rule. Arrow fades in and nudges on hover.
         const arrowClass =
-            '!size-3.5 text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition';
+            '!size-3.5 text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition'; // rtl-ok: matched line mirrors the hover nudge for RTL.
         return (
             <Button
                 variant="unstyled"
