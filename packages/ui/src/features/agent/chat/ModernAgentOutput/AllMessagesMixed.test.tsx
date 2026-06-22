@@ -402,6 +402,66 @@ describe('AllMessagesMixed summary view', () => {
         expect(onSendMessage).toHaveBeenCalledWith('allow_once');
     });
 
+    it('keeps an approved tool approval continuation in the same active work row', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Create a news report.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    message: 'Creating the permanent news report document in the project repository...',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'create_document',
+                        tool_run_id: 'create_document',
+                        tool_use_id: 'create_document',
+                        tool_status: 'running',
+                        tool_event: 'started',
+                        activity_group_id: 'activity-approval',
+                        message_to_human: 'Creating the permanent news report document in the project repository...',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    type: AgentMessageType.REQUEST_INPUT,
+                    message: 'Approve Create Document: Japan Daily News Report - June 22, 2026?',
+                    details: {
+                        tool_approval: {
+                            approval_key: 'create_document:name:Japan Daily News Report - June 22, 2026',
+                            tool_name: 'create_document',
+                            tool_title: 'Create Document',
+                            target: 'name:Japan Daily News Report - June 22, 2026',
+                        },
+                        ux: {
+                            options: [
+                                { id: 'allow_once', label: 'Allow once' },
+                                { id: 'allow_for_run', label: 'Allow this action for this run' },
+                                { id: 'deny', label: 'Deny' },
+                            ],
+                        },
+                    },
+                }),
+                makeMessage({
+                    timestamp: 4_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'allow_for_run',
+                }),
+            ],
+            false,
+        );
+
+        expect(screen.queryByRole('button', { name: /Worked\s*for/ })).toBeNull();
+        expect(screen.getAllByRole('button', { name: /Working\s*for/ })).toHaveLength(1);
+        expect(
+            screen.getByText('Creating the permanent news report document in the project repository...'),
+        ).not.toBeNull();
+        expect(screen.queryByText('Approve Create Document: Japan Daily News Report - June 22, 2026?')).toBeNull();
+        expect(screen.queryByText('allow_for_run')).toBeNull();
+    });
+
     it('expands tool rows that only have metadata', () => {
         renderSummary(
             [

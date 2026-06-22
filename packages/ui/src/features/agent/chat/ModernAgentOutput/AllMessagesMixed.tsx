@@ -189,6 +189,15 @@ function hasOpenUserTurn(messages: AgentMessage[]): boolean {
     return latestMessage?.type === AgentMessageType.QUESTION;
 }
 
+function hasLatestToolApprovalAllowTurn(messages: AgentMessage[], hiddenToolApprovalAnswerKeys: Set<string>): boolean {
+    const mainMessages = messages.filter((message) => getWorkstreamId(message) === 'main');
+    const latestMessage = mainMessages[mainMessages.length - 1] ?? messages[messages.length - 1];
+    if (!latestMessage || !isToolApprovalAnswerHidden(latestMessage, hiddenToolApprovalAnswerKeys)) return false;
+
+    const response = getToolApprovalResponse(latestMessage);
+    return response === 'allow_once' || response === 'allow_for_run';
+}
+
 function getMessageText(message: AgentMessage): string {
     if (!message.message) return '';
     if (typeof message.message === 'object') return JSON.stringify(message.message, null, 2);
@@ -2634,12 +2643,17 @@ function AllMessagesMixedComponent({
             ),
         [answeredToolApprovalRequestInputKeys, displayMessages, resolvedToolApprovalKeys],
     );
+    const hasLatestToolApprovalAllow = useMemo(
+        () => hasLatestToolApprovalAllowTurn(displayMessages, hiddenToolApprovalAnswerKeys),
+        [displayMessages, hiddenToolApprovalAnswerKeys],
+    );
 
     const isDisplayCompleted = useMemo(() => {
         if (hasPendingToolApprovalRequest) return false;
+        if (hasLatestToolApprovalAllow) return false;
         if (hasOpenUserTurn(completionDisplayMessages)) return false;
         return isCompleted || !isInProgress(completionDisplayMessages);
-    }, [completionDisplayMessages, hasPendingToolApprovalRequest, isCompleted]);
+    }, [completionDisplayMessages, hasLatestToolApprovalAllow, hasPendingToolApprovalRequest, isCompleted]);
 
     // Split streaming messages:
     // - complete (or stale incomplete) ones are interleaved chronologically
@@ -2728,8 +2742,8 @@ function AllMessagesMixedComponent({
         // first output) as "working" — otherwise nothing animates in the gap between sending a
         // message and the first streamed token, especially after a stop where the run reads as
         // completed until the agent posts its next message.
-        return !isDisplayCompleted || hasOpenUserTurn(displayMessages);
-    }, [isDisplayCompleted, displayMessages]);
+        return !isDisplayCompleted || hasOpenUserTurn(completionDisplayMessages);
+    }, [completionDisplayMessages, isDisplayCompleted]);
 
     const showActivityFallback = shouldShowSummaryActivityFallback(
         summaryConversationItems,
