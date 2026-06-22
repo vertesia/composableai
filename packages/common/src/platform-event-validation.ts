@@ -308,6 +308,12 @@ export function getCreateEventSubscriptionValidationResult(
     } else {
         validateTarget(payload.target, errors);
     }
+    // run_as_role is required at creation: every subscription must declare an explicit run-as
+    // identity so its delivery never falls back to running as the originating (possibly deleted)
+    // user. validateCommonFields validates the value when present; this enforces presence.
+    if (payload?.run_as_role === undefined) {
+        errors.push('run_as_role is required');
+    }
     validateCommonFields(payload ?? {}, errors);
     return { valid: errors.length === 0, errors };
 }

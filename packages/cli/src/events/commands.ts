@@ -51,17 +51,15 @@ function toCreatePayload(value: Record<string, unknown>): CreateEventSubscriptio
         ...(value.scope === 'account' || value.scope === 'project' ? { scope: value.scope } : {}),
         filter: value.filter as CreateEventSubscriptionPayload['filter'],
         target: value.target as CreateEventSubscriptionPayload['target'],
-        ...(typeof value.run_as_role === 'string'
-            ? { run_as_role: value.run_as_role as CreateEventSubscriptionPayload['run_as_role'] }
-            : {}),
+        run_as_role: value.run_as_role as CreateEventSubscriptionPayload['run_as_role'],
         ...(typeof value.enabled === 'boolean' ? { enabled: value.enabled } : {}),
         ...(value.priority === 'high' || value.priority === 'normal' || value.priority === 'low'
             ? { priority: value.priority }
             : {}),
     };
 
-    if (!payload.name || !payload.filter || !payload.target) {
-        console.error('Event subscription JSON must include name, filter, and target.');
+    if (!payload.name || !payload.filter || !payload.target || !payload.run_as_role) {
+        console.error('Event subscription JSON must include name, filter, target, and run_as_role.');
         process.exit(1);
     }
 
