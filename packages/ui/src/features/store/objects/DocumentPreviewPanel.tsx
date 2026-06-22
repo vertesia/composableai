@@ -123,9 +123,11 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
 
     if (!isOpen) return null;
 
+    const panelTranslateClass = isOpen ? 'translate-x-0' : 'translate-x-full rtl:-translate-x-full'; // rtl-ok: mirrored inline-end transform
+
     return (
         <div
-            className={`fixed inset-y-0 end-0 w-2/5 dark:bg-slate-900 shadow-xl z-50 flex flex-col transition-transform duration-300 transform ${isOpen ? 'translate-x-0' : 'translate-x-full rtl:-translate-x-full'}`}
+            className={`fixed inset-y-0 end-0 w-2/5 dark:bg-slate-900 shadow-xl z-50 flex flex-col transition-transform duration-300 transform ${panelTranslateClass}`}
         >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-gray-50 dark:from-gray-800 dark:to-gray-900">
@@ -135,7 +137,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                         {isLoading ? t('store.loadingDocument') : object?.name || t('store.documentPreview')}
                     </h2>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                     <Button
                         variant="ghost"
                         size="sm"

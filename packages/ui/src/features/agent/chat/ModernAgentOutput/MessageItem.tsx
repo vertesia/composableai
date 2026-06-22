@@ -33,6 +33,7 @@ import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
 import { ThinkingMessages } from '../WaitingMessages';
 import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
+import { MessageDeliveryStatus } from './MessageDeliveryStatus';
 import { processContentForMarkdown } from './processContentForMarkdown';
 import { getWorkstreamId } from './utils';
 
@@ -105,7 +106,7 @@ export interface MessageItemProps extends MessageItemClassNames {
     message: AgentMessage;
     showPulsatingCircle?: boolean;
     /** Callback when user sends a message (e.g., from proposal selection) */
-    onSendMessage?: (message: string) => void;
+    onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
     /** Whether a REQUEST_INPUT message has already been answered by a later user message */
     requestInputAnswered?: boolean;
     /** Sparse per-type overrides for MESSAGE_STYLES (deep-merged with defaults) */
@@ -592,6 +593,7 @@ function MessageItemComponent({
                         )}
                     </div>
                     <div className="flex items-center gap-1.5 print:hidden">
+                        <MessageDeliveryStatus message={message} />
                         <span className={cn('text-[11px] text-muted/70', resolvedStyle.timestampClassName)}>
                             {dayjs(message.timestamp).format('HH:mm:ss')}
                         </span>
@@ -649,6 +651,10 @@ function MessageItemComponent({
                                       multiSelect={uxConfig.multiSelect}
                                       onSelect={(optionId) => onSendMessage?.(optionId)}
                                       onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                                      allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
+                                      placeholder={uxConfig.free_response?.placeholder}
+                                      submitLabel={uxConfig.free_response?.submit_label}
+                                      onSubmit={(value) => onSendMessage?.(value, uxConfig.free_response?.metadata)}
                                       hideBorder
                                       compact
                                       answered={requestInputAnswered}
