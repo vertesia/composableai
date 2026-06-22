@@ -32,6 +32,8 @@ export interface AskUserWidgetProps {
     multiSelect?: boolean;
     /** Placeholder for free-form input */
     placeholder?: string;
+    /** Label for the free-form submit button */
+    submitLabel?: string;
     /** Whether the widget is in a loading/processing state */
     isLoading?: boolean;
     /** Custom icon to display */
@@ -118,6 +120,7 @@ export function AskUserWidget({
     allowFreeResponse = false,
     multiSelect = false,
     placeholder,
+    submitLabel,
     isLoading = false,
     icon,
     variant = 'default',
@@ -140,6 +143,7 @@ export function AskUserWidget({
 }: AskUserWidgetProps) {
     const { t } = useUITranslation();
     const resolvedPlaceholder = placeholder ?? t('agent.typeYourResponse');
+    const resolvedSubmitLabel = submitLabel ?? t('agent.send');
     const [inputValue, setInputValue] = React.useState('');
     const [selectedOptions, setSelectedOptions] = React.useState<Set<string>>(new Set());
     const inputRef = React.useRef<HTMLInputElement>(null);
@@ -330,7 +334,7 @@ export function AskUserWidget({
                                     disabled={isLoading || !inputValue.trim()}
                                     className={submitButtonClassName}
                                 >
-                                    {isLoading ? '...' : t('agent.send')}
+                                    {isLoading ? '...' : resolvedSubmitLabel}
                                 </Button>
                             </div>
                         </div>
@@ -480,7 +484,7 @@ export function AskUserWidget({
                                 disabled={isLoading || !inputValue.trim()}
                                 className={submitButtonClassName}
                             >
-                                {isLoading ? '...' : t('agent.send')}
+                                {isLoading ? '...' : resolvedSubmitLabel}
                             </Button>
                         </div>
                     </div>

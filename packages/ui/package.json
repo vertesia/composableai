@@ -21,9 +21,10 @@
         "hooks"
     ],
     "scripts": {
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build && pnpm exec rollup -c",
+        "build": "pnpm run check:locales && rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build && pnpm exec rollup -c",
         "lint": "biome lint src && pnpm run check:rtl-classes",
         "lint:fix": "biome lint --write src",
+        "check:locales": "node scripts/check-locales.mjs",
         "check:rtl-classes": "node scripts/check-rtl-classes.mjs --mode=strict",
         "test": "vitest run",
         "test:watch": "vitest",

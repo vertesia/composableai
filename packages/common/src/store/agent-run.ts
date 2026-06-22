@@ -22,6 +22,7 @@ import type {
 } from '../interaction.js';
 import type { EventRef } from '../platform-event.js';
 import type { AgentEvent } from '../workflow-analytics.js';
+import type { AgentToolApprovalMode } from './agent-approval.js';
 import type { ProcessDefinitionBody, ProcessState } from './process.js';
 import type { StopSignal, UserInputSignal } from './signals.js';
 import type { ContentObjectTypeRef } from './store.js';
@@ -164,6 +165,9 @@ export interface AgentRunBase<TData = Record<string, unknown>, TProperties = Rec
 
     /** Whether the agent accepts user input */
     interactive?: boolean;
+
+    /** How side-effecting tool actions are approved for interactive runs. */
+    tool_approval_mode?: AgentToolApprovalMode;
 
     /** Tools configured for this run (+/- syntax supported) */
     tool_names?: string[];
@@ -448,6 +452,8 @@ export interface UpdateAgentRunStatusPayload {
      * mid-conversation so a page reload reflects the live state. An empty array clears the denylist.
      */
     disabled_mcp_collections?: string[];
+    /** Tool approval mode persisted for interactive agent runs. */
+    tool_approval_mode?: AgentToolApprovalMode;
     /** Archive state fields (set by the archive workflow) */
     archive_state?: AgentRunArchiveState;
     archived_at?: string;
