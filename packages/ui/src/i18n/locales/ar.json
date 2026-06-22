@@ -42,6 +42,7 @@
   "agent.closeFullscreen": "إغلاق ملء الشاشة",
   "agent.completed": "مكتمل",
   "agent.contextRemainingUntilCompact": "يتبقى {{percent}}% من السياق قبل الضغط التلقائي.",
+  "agent.contextTokenUsage": "حجم السياق: {{used}} / {{limit}} رمز",
   "agent.contextUsageCompactLabel": "تم استخدام {{percent}}% من السياق - انقر للضغط",
   "agent.conversationCloned": "تم استنساخ المحادثة",
   "agent.copied": "تم النسخ",

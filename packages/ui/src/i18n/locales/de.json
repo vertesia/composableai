@@ -38,6 +38,7 @@
   "agent.closeFullscreen": "Vollbild schließen",
   "agent.completed": "Abgeschlossen",
   "agent.contextRemainingUntilCompact": "{{percent}} % Kontext verbleiben bis zur automatischen Komprimierung.",
+  "agent.contextTokenUsage": "Kontextgröße: {{used}} / {{limit}} Token",
   "agent.contextUsageCompactLabel": "{{percent}} % Kontext verwendet - zum Komprimieren klicken",
   "agent.conversationCloned": "Konversation geklont",
   "agent.copied": "Kopiert",

@@ -47,6 +47,12 @@ export interface ContextWindowUsage {
     remainingPercent: number;
 }
 
+function formatTokenCountInK(tokens: number): string {
+    const value = Math.max(0, tokens) / 1000;
+    const maximumFractionDigits = value > 0 && value < 10 && !Number.isInteger(value) ? 1 : 0;
+    return `${new Intl.NumberFormat(undefined, { maximumFractionDigits }).format(value)}K`;
+}
+
 interface MessageInputProps {
     onSend: (message: string) => void;
     onStop?: () => void;
@@ -171,6 +177,12 @@ export default function MessageInput({
     const activeWorkstreamCount = runningWorkstreams.length || activeTaskCount;
     const contextUsageLabel = contextWindowUsage
         ? t('agent.contextUsageCompactLabel', { percent: contextWindowUsage.usedPercent })
+        : undefined;
+    const contextTokenUsageLabel = contextWindowUsage
+        ? t('agent.contextTokenUsage', {
+              used: formatTokenCountInK(contextWindowUsage.usedTokens),
+              limit: formatTokenCountInK(contextWindowUsage.checkpointTokens),
+          })
         : undefined;
     const attachmentItems = useMemo<AttachmentPreviewItem[]>(() => {
         const items: AttachmentPreviewItem[] = [];
@@ -554,6 +566,11 @@ export default function MessageInput({
                                                 percent: contextWindowUsage.remainingPercent,
                                             })}
                                         </span>
+                                        {contextTokenUsageLabel && (
+                                            <span className="mt-1 block text-foreground/80">
+                                                {contextTokenUsageLabel}
+                                            </span>
+                                        )}
                                         <span className="mt-1.5 block text-foreground/80">
                                             {t('agent.clickToCompactNow')}
                                         </span>

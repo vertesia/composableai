@@ -2188,4 +2188,53 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getAllByRole('button', { name: /Japan News Headlines Today/ })).toHaveLength(1);
         expect(screen.queryByText('Created document "Japan News Headlines Today"')).toBeNull();
     });
+
+    it('groups artifact completion updates into the write artifact tool row', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Write the report to an artifact.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.THOUGHT,
+                    message: 'Writing the compiled news report to the temporary workspace artifact...',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'write_artifact',
+                        tool_run_id: 'write_artifact',
+                        tool_use_id: 'write_artifact',
+                        tool_status: 'running',
+                        tool_event: 'started',
+                        activity_group_id: 'activity-write',
+                        message_to_human: 'Writing the compiled news report to the temporary workspace artifact...',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    type: AgentMessageType.UPDATE,
+                    message: 'Prepared and saved artifact to files/US_News_Report_2026-06-22.md',
+                    details: {
+                        path: 'files/US_News_Report_2026-06-22.md',
+                        size: 4426,
+                    },
+                }),
+            ],
+            true,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /Worked\s*for/ }));
+
+        const writeRow = screen.getByRole('button', {
+            name: /Writing the compiled news report to the temporary workspace artifact/,
+        });
+        expect(writeRow).not.toBeNull();
+        expect(screen.queryByRole('button', { name: /files\/US_News_Report_2026-06-22\.md/ })).toBeNull();
+
+        fireEvent.click(writeRow);
+
+        expect(screen.getByText('Prepared and saved artifact to files/US_News_Report_2026-06-22.md')).not.toBeNull();
+    });
 });

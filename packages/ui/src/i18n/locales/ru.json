@@ -40,6 +40,7 @@
   "agent.closeFullscreen": "Закрыть полноэкранный режим",
   "agent.completed": "Завершено",
   "agent.contextRemainingUntilCompact": "До автоматического сжатия осталось {{percent}}% контекста.",
+  "agent.contextTokenUsage": "Размер контекста: {{used}} / {{limit}} токенов",
   "agent.contextUsageCompactLabel": "Использовано {{percent}}% контекста - нажмите, чтобы сжать",
   "agent.conversationCloned": "Разговор клонирован",
   "agent.copied": "Скопировано",

@@ -38,6 +38,7 @@
   "agent.closeFullscreen": "Tam ekranı kapat",
   "agent.completed": "Tamamlandı",
   "agent.contextRemainingUntilCompact": "Otomatik sıkıştırmaya kadar bağlamın %{{percent}} kadarı kaldı.",
+  "agent.contextTokenUsage": "Bağlam boyutu: {{used}} / {{limit}} token",
   "agent.contextUsageCompactLabel": "Bağlamın %{{percent}} kadarı kullanıldı - sıkıştırmak için tıkla",
   "agent.conversationCloned": "Konuşma klonlandı",
   "agent.copied": "Kopyalandı",

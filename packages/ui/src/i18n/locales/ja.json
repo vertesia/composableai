@@ -38,6 +38,7 @@
   "agent.closeFullscreen": "フルスクリーンを閉じる",
   "agent.completed": "完了",
   "agent.contextRemainingUntilCompact": "自動圧縮まで残りコンテキスト {{percent}}%。",
+  "agent.contextTokenUsage": "コンテキストサイズ: {{used}} / {{limit}} トークン",
   "agent.contextUsageCompactLabel": "コンテキスト使用率 {{percent}}% - クリックして圧縮",
   "agent.conversationCloned": "会話が複製されました",
   "agent.copied": "コピー済み",

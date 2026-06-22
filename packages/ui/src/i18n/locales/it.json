@@ -39,6 +39,7 @@
   "agent.closeFullscreen": "Chiudi schermo intero",
   "agent.completed": "Completato",
   "agent.contextRemainingUntilCompact": "{{percent}}% di contesto rimanente prima del compattamento automatico.",
+  "agent.contextTokenUsage": "Dimensione del contesto: {{used}} / {{limit}} token",
   "agent.contextUsageCompactLabel": "{{percent}}% di contesto usato - clicca per compattare",
   "agent.conversationCloned": "Conversazione clonata",
   "agent.copied": "Copiato",

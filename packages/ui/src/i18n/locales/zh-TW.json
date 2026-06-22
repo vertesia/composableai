@@ -38,6 +38,7 @@
   "agent.closeFullscreen": "關閉全螢幕",
   "agent.completed": "已完成",
   "agent.contextRemainingUntilCompact": "距離自動壓縮還剩 {{percent}}% 內容脈絡。",
+  "agent.contextTokenUsage": "內容脈絡大小：{{used}} / {{limit}} tokens",
   "agent.contextUsageCompactLabel": "已使用 {{percent}}% 內容脈絡 - 點擊壓縮",
   "agent.conversationCloned": "對話已複製",
   "agent.copied": "已複製",

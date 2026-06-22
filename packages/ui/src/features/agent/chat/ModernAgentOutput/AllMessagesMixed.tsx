@@ -198,6 +198,81 @@ function hasLatestToolApprovalAllowTurn(messages: AgentMessage[], hiddenToolAppr
     return response === 'allow_once' || response === 'allow_for_run';
 }
 
+function getWriteArtifactCompletionPath(message: AgentMessage): string | undefined {
+    if (message.type !== AgentMessageType.UPDATE) return undefined;
+    const details = getDetailsRecord(message);
+    if (details.tool !== undefined || details.activity_group_id !== undefined) return undefined;
+    const path = typeof details.path === 'string' && details.path.trim() ? details.path.trim() : undefined;
+    if (!path) return undefined;
+
+    return getMessageText(message) === `Prepared and saved artifact to ${path}` ? path : undefined;
+}
+
+function findPreviousWriteArtifactToolMessage(messages: AgentMessage[], index: number): AgentMessage | undefined {
+    const workstreamId = getWorkstreamId(messages[index]);
+
+    for (let prevIndex = index - 1; prevIndex >= 0; prevIndex -= 1) {
+        const previous = messages[prevIndex];
+        if (getWorkstreamId(previous) !== workstreamId) continue;
+
+        const details = getDetailsRecord(previous);
+        if (details.tool === 'write_artifact' && typeof details.activity_group_id === 'string') return previous;
+
+        if (previous.type === AgentMessageType.REQUEST_INPUT) continue;
+        if (getToolApprovalResponse(previous)) continue;
+        if (details.display_role === 'thinking') continue;
+
+        if (typeof details.tool === 'string' && details.tool !== 'write_artifact') return undefined;
+        if (
+            previous.type === AgentMessageType.ANSWER ||
+            previous.type === AgentMessageType.COMPLETE ||
+            previous.type === AgentMessageType.IDLE ||
+            previous.type === AgentMessageType.TERMINATED
+        ) {
+            return undefined;
+        }
+    }
+
+    return undefined;
+}
+
+function attachWriteArtifactCompletionMessages(messages: AgentMessage[]): AgentMessage[] {
+    return messages.map((message, index) => {
+        const path = getWriteArtifactCompletionPath(message);
+        if (!path) return message;
+
+        const previousToolMessage = findPreviousWriteArtifactToolMessage(messages, index);
+        const previousDetails = previousToolMessage ? getDetailsRecord(previousToolMessage) : undefined;
+        if (!previousDetails) return message;
+
+        const activityGroupId =
+            typeof previousDetails.activity_group_id === 'string' ? previousDetails.activity_group_id : undefined;
+        const toolRunId = typeof previousDetails.tool_run_id === 'string' ? previousDetails.tool_run_id : undefined;
+        const toolUseId = typeof previousDetails.tool_use_id === 'string' ? previousDetails.tool_use_id : undefined;
+        const toolIteration =
+            typeof previousDetails.tool_iteration === 'number' ? previousDetails.tool_iteration : undefined;
+
+        if (!activityGroupId) return message;
+
+        return {
+            ...message,
+            details: {
+                ...message.details,
+                event_class: 'activity',
+                tool: 'write_artifact',
+                tool_run_id: toolRunId ?? 'write_artifact',
+                tool_use_id: toolUseId ?? toolRunId ?? 'write_artifact',
+                tool_iteration: toolIteration,
+                tool_status: 'completed',
+                tool_event: 'progress',
+                activity_group_id: activityGroupId,
+                output: getMessageText(message),
+                path,
+            },
+        };
+    });
+}
+
 function getMessageText(message: AgentMessage): string {
     if (!message.message) return '';
     if (typeof message.message === 'object') return JSON.stringify(message.message, null, 2);
@@ -2562,7 +2637,9 @@ function AllMessagesMixedComponent({
 
     // Filter messages based on active workstream
     const displayMessages = React.useMemo(() => {
-        return filterMessagesForActiveWorkstream(sortedMessages, activeWorkstream);
+        return attachWriteArtifactCompletionMessages(
+            filterMessagesForActiveWorkstream(sortedMessages, activeWorkstream),
+        );
     }, [sortedMessages, activeWorkstream]);
 
     const answeredRequestInputKeys = React.useMemo(

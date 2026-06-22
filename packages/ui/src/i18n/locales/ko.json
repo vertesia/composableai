@@ -38,6 +38,7 @@
   "agent.closeFullscreen": "전체 화면 닫기",
   "agent.completed": "완료",
   "agent.contextRemainingUntilCompact": "자동 압축까지 컨텍스트 {{percent}}% 남음.",
+  "agent.contextTokenUsage": "컨텍스트 크기: {{used}} / {{limit}} 토큰",
   "agent.contextUsageCompactLabel": "컨텍스트 {{percent}}% 사용됨 - 클릭하여 압축",
   "agent.conversationCloned": "대화가 복제되었습니다",
   "agent.copied": "복사됨",

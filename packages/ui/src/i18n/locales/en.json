@@ -38,6 +38,7 @@
   "agent.closeFullscreen": "Close fullscreen",
   "agent.completed": "Completed",
   "agent.contextRemainingUntilCompact": "{{percent}}% of context remaining until auto-compact.",
+  "agent.contextTokenUsage": "Context size: {{used}} / {{limit}} tokens",
   "agent.contextUsageCompactLabel": "{{percent}}% context used - click to compact",
   "agent.conversationCloned": "Conversation cloned",
   "agent.copied": "Copied",

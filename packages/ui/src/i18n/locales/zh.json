@@ -38,6 +38,7 @@
   "agent.closeFullscreen": "关闭全屏",
   "agent.completed": "已完成",
   "agent.contextRemainingUntilCompact": "距离自动压缩还剩 {{percent}}% 上下文。",
+  "agent.contextTokenUsage": "上下文大小：{{used}} / {{limit}} tokens",
   "agent.contextUsageCompactLabel": "已使用 {{percent}}% 上下文 - 点击压缩",
   "agent.conversationCloned": "对话已克隆",
   "agent.copied": "已复制",

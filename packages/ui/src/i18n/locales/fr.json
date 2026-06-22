@@ -39,6 +39,7 @@
   "agent.closeFullscreen": "Fermer le plein écran",
   "agent.completed": "Terminé",
   "agent.contextRemainingUntilCompact": "{{percent}} % du contexte restant avant le compactage automatique.",
+  "agent.contextTokenUsage": "Taille du contexte : {{used}} / {{limit}} jetons",
   "agent.contextUsageCompactLabel": "{{percent}} % du contexte utilisé - cliquer pour compacter",
   "agent.conversationCloned": "Conversation clonée",
   "agent.copied": "Copié",
