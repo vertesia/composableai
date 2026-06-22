@@ -26,7 +26,7 @@
     "devDependencies": {
         "@types/tmp": "^0.2.6",
         "@vertesia/tsconfig": "workspace:*",
-        "typescript": "^6.0.3",
+        "typescript": "rc",
         "vitest": "^4.1.8"
     },
     "dependencies": {

@@ -24,7 +24,7 @@
         "@types/node": "^24.13.2",
         "@vertesia/tsconfig": "workspace:*",
         "rollup": "^4.61.1",
-        "typescript": "^6.0.3",
+        "typescript": "rc",
         "vitest": "^4.1.8"
     },
     "dependencies": {

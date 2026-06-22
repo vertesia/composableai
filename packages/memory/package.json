@@ -21,7 +21,7 @@
         "@types/node": "^24.13.2",
         "@types/tar-stream": "^3.1.4",
         "@vertesia/tsconfig": "workspace:*",
-        "typescript": "^6.0.3",
+        "typescript": "rc",
         "vitest": "^4.1.8"
     },
     "dependencies": {

@@ -26,7 +26,7 @@
     "devDependencies": {
         "@types/node": "^24.13.2",
         "@vertesia/tsconfig": "workspace:*",
-        "typescript": "^6.0.3",
+        "typescript": "rc",
         "vitest": "^4.1.8"
     },
     "peerDependencies": {
