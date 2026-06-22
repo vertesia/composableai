@@ -5,7 +5,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { XIcon } from 'lucide-react';
 import { RemoteMcpConnectionButton } from '../../oauth/RemoteMcpConnectionButton.js';
 import { AskUserWidget } from './AskUserWidget';
-import { getAgentMessageText, type RequestInputMessageWithUx } from './ModernAgentOutput/requestInputMessages';
+import { getRequestInputDisplayText, type RequestInputMessageWithUx } from './ModernAgentOutput/requestInputMessages';
 
 export interface AgentRequestInputOverlayProps {
     message?: RequestInputMessageWithUx;
@@ -74,6 +74,7 @@ export function AgentRequestInputOverlay({
     const mcpConnect = uxConfig.mcp_connect;
     const freeResponse = uxConfig.free_response;
     const isDisabled = disabled || isLoading || !onSendMessage;
+    const displayText = getRequestInputDisplayText(message);
     const send = (value: string, metadata?: Record<string, unknown>) => {
         if (isDisabled) return;
         if (metadata) {
@@ -94,7 +95,7 @@ export function AgentRequestInputOverlay({
         return (
             <div className={wrapperClassName} data-agent-request-input-overlay>
                 <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0 text-sm leading-6 text-foreground/85">{getAgentMessageText(message)}</div>
+                    <div className="min-w-0 text-sm leading-6 text-foreground/85">{displayText}</div>
                     <McpRequestInputControls
                         mcpConnect={mcpConnect}
                         onMcpConnected={onMcpConnected}
@@ -110,7 +111,7 @@ export function AgentRequestInputOverlay({
         <div className={wrapperClassName} data-agent-request-input-overlay>
             <div className="mx-auto w-full max-w-3xl px-3 py-3">
                 <AskUserWidget
-                    question={getAgentMessageText(message)}
+                    question={displayText}
                     options={options}
                     variant={uxConfig.variant}
                     multiSelect={uxConfig.multiSelect}

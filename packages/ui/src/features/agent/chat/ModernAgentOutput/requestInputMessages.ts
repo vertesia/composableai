@@ -11,8 +11,66 @@ export function getAgentMessageText(message: AgentMessage): string {
     return String(message.message).trim();
 }
 
+export function getRequestInputDisplayText(message: AgentMessage): string {
+    const toolApproval = getRecord((message.details as Record<string, unknown> | undefined)?.tool_approval);
+    if (!toolApproval) return getAgentMessageText(message);
+
+    const title = getString(toolApproval.tool_title) ?? getString(toolApproval.tool_name);
+    const target = formatToolApprovalTargetForDisplay(getString(toolApproval.target));
+    if (title && target) return `Approve ${title}: ${target}?`;
+
+    const actionSummary = getString(toolApproval.action_summary);
+    if (actionSummary) return `Approve ${formatToolApprovalActionSummaryForDisplay(actionSummary)}?`;
+
+    return getAgentMessageText(message);
+}
+
 function getRecord(value: unknown): Record<string, unknown> | undefined {
     return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
+}
+
+function getString(value: unknown): string | undefined {
+    return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function formatToolApprovalActionSummaryForDisplay(actionSummary: string): string {
+    return actionSummary.replace(/:\s*name(?::|\s+)/i, ': ');
+}
+
+function formatToolApprovalTargetForDisplay(target: string | undefined): string | undefined {
+    if (!target) return undefined;
+
+    const separatorIndex = target.indexOf(':');
+    if (separatorIndex < 0) return target;
+
+    const key = target.slice(0, separatorIndex);
+    const value = target.slice(separatorIndex + 1).trim();
+    if (!value) return target;
+
+    switch (key) {
+        case 'document_id':
+            return `document ${value}`;
+        case 'object_id':
+            return `object ${value}`;
+        case 'collection_id':
+            return `collection ${value}`;
+        case 'process_id':
+            return `process ${value}`;
+        case 'process_definition_id':
+            return `process definition ${value}`;
+        case 'interaction_id':
+            return `interaction ${value}`;
+        case 'prompt_id':
+            return `prompt ${value}`;
+        case 'dashboard_id':
+            return `dashboard ${value}`;
+        case 'database_id':
+            return `database ${value}`;
+        case 'table_id':
+            return `table ${value}`;
+        default:
+            return value;
+    }
 }
 
 export function hasRequestInputUx(message: AgentMessage): message is RequestInputMessageWithUx {
@@ -90,7 +148,8 @@ export function getResolvedToolApprovalKeys(messages: AgentMessage[]): Set<strin
             (decision === 'denied' ||
                 decision === 'denied_with_feedback' ||
                 decision === 'timeout' ||
-                decision === 'reviewer_denied')
+                decision === 'reviewer_denied' ||
+                decision === 'cancelled_after_denial')
         ) {
             resolved.add(approvalKey);
         }
@@ -106,14 +165,27 @@ function getToolApprovalKey(message: AgentMessage): string | undefined {
     return typeof approvalKey === 'string' ? approvalKey : undefined;
 }
 
-function isToolApprovalRequestInput(message: AgentMessage): boolean {
+export function isToolApprovalRequestInput(message: AgentMessage): boolean {
     return message.type === AgentMessageType.REQUEST_INPUT && getToolApprovalKey(message) !== undefined;
 }
 
-function isToolApprovalResponse(message: AgentMessage): boolean {
+function isToolApprovalOptionResponse(message: AgentMessage): boolean {
     if (message.type !== AgentMessageType.QUESTION) return false;
     const normalized = getAgentMessageText(message).trim().toLowerCase();
     return normalized === 'allow_once' || normalized === 'allow_for_run' || normalized === 'deny';
+}
+
+function isToolApprovalMetadataResponse(message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.QUESTION) return false;
+    const details = getRecord(message.details);
+    const metadata = getRecord(details?.metadata);
+    const toolApprovalResponse =
+        getRecord(details?.tool_approval_response) ?? getRecord(metadata?.tool_approval_response);
+    return toolApprovalResponse?.decision === 'deny_with_feedback';
+}
+
+function isToolApprovalResponse(message: AgentMessage): boolean {
+    return isToolApprovalOptionResponse(message) || isToolApprovalMetadataResponse(message);
 }
 
 export function isRequestInputResolvedByToolApprovalEvent(
@@ -180,7 +252,7 @@ export function getHiddenToolApprovalAnswerKeys(
             if (getWorkstreamId(nextMessage) !== workstreamId) continue;
             if (nextMessage.type === AgentMessageType.REQUEST_INPUT) break;
             if (nextMessage.type === AgentMessageType.QUESTION) {
-                if (isToolApprovalResponse(nextMessage)) {
+                if (isToolApprovalOptionResponse(nextMessage)) {
                     hidden.add(getRequestInputAnswerMessageKey(nextMessage));
                 }
                 break;

@@ -46,11 +46,15 @@ import {
     getAnsweredToolApprovalRequestInputKeys,
     getHiddenToolApprovalAnswerKeys,
     getPendingRequestInputMessage,
+    getRequestInputDisplayText,
     getRequestInputMessageKey,
     getResolvedToolApprovalKeys,
+    hasRequestInputUx,
     isRequestInputAnswered,
     isToolApprovalAnswerHidden,
+    isToolApprovalRequestInput,
     isToolApprovalRequestInputHidden,
+    type RequestInputMessageWithUx,
 } from './requestInputMessages';
 import StreamingMessage, { type StreamingMessageClassNames } from './StreamingMessage';
 import {
@@ -562,7 +566,8 @@ function SummaryMessage({
     StoreLinkComponent,
     CollectionLinkComponent,
 }: SummaryMessageProps) {
-    const content = getMessageText(message);
+    const content =
+        message.type === AgentMessageType.REQUEST_INPUT ? getRequestInputDisplayText(message) : getMessageText(message);
     const workstreamLaunchDetails = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
     const workstreamId = getWorkstreamId(message);
     const runId = (message as { workflow_run_id?: string }).workflow_run_id;
@@ -983,6 +988,12 @@ function getDetailsRecord(message: AgentMessage): Record<string, unknown> {
     return isRecordValue(message.details) ? message.details : {};
 }
 
+function isDocumentPanelEventMessage(message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.UPDATE) return false;
+    const eventClass = getDetailsRecord(message).event_class;
+    return eventClass === 'document_created' || eventClass === 'document_updated';
+}
+
 function humanizeIdentifier(value: string): string {
     return value
         .replace(/[_-]+/g, ' ')
@@ -1373,6 +1384,8 @@ function getToolDetailSections(message: AgentMessage): SummaryToolDetailSection[
 }
 
 function buildSummaryToolDetailItem(message: AgentMessage, index: number): SummaryToolDetailItem | undefined {
+    if (message.type === AgentMessageType.REQUEST_INPUT) return undefined;
+
     const text = getMessageText(message);
     const details = getDetailsRecord(message);
     const isPreamble = isToolPreambleMessage(message);
@@ -2055,6 +2068,9 @@ function SummaryActivityRow({
     disablePreambleCollapse = false,
     className,
     artifactRunId,
+    onSendMessage,
+    answeredToolApprovalRequestInputKeys,
+    resolvedToolApprovalKeys,
 }: {
     label: string;
     status?: ToolExecutionStatus;
@@ -2067,6 +2083,9 @@ function SummaryActivityRow({
     disablePreambleCollapse?: boolean;
     className?: string;
     artifactRunId?: string;
+    onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+    answeredToolApprovalRequestInputKeys?: Set<string>;
+    resolvedToolApprovalKeys?: Set<string>;
 }) {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
     const isLiveElapsed = showElapsed && durationSeconds === undefined;
@@ -2074,7 +2093,20 @@ function SummaryActivityRow({
     const elapsed = durationSeconds ?? liveElapsed;
     const shouldShowElapsed = showElapsed && timestamp !== undefined;
     const detailItems = useMemo(() => buildSummaryToolDetailItems(details ?? []), [details]);
-    const canExpand = detailItems.length > 0 || Boolean(emptyDetailsLabel);
+    const requestInputMessages = useMemo(
+        () =>
+            (details ?? []).filter(
+                (message): message is RequestInputMessageWithUx =>
+                    hasRequestInputUx(message) &&
+                    !isToolApprovalRequestInputHidden(
+                        message,
+                        answeredToolApprovalRequestInputKeys ?? new Set<string>(),
+                        resolvedToolApprovalKeys ?? new Set<string>(),
+                    ),
+            ),
+        [answeredToolApprovalRequestInputKeys, details, resolvedToolApprovalKeys],
+    );
+    const canExpand = detailItems.length > 0 || requestInputMessages.length > 0 || Boolean(emptyDetailsLabel);
 
     return (
         <div className={cn('mx-auto w-full max-w-3xl px-1', className)}>
@@ -2103,12 +2135,46 @@ function SummaryActivityRow({
                     ) : null}
                 </button>
                 {canExpand && isExpanded ? (
-                    detailItems.length > 0 ? (
-                        <SummaryToolTimeline
-                            items={detailItems}
-                            artifactRunId={artifactRunId}
-                            disablePreambleCollapse={disablePreambleCollapse}
-                        />
+                    detailItems.length > 0 || requestInputMessages.length > 0 ? (
+                        <>
+                            {detailItems.length > 0 ? (
+                                <SummaryToolTimeline
+                                    items={detailItems}
+                                    artifactRunId={artifactRunId}
+                                    disablePreambleCollapse={disablePreambleCollapse}
+                                />
+                            ) : null}
+                            {requestInputMessages.length > 0 ? (
+                                <div className="mt-3 space-y-3">
+                                    {requestInputMessages.map((message) => {
+                                        const uxConfig = message.details.ux;
+                                        return (
+                                            <AskUserWidget
+                                                key={getAgentMessageRenderKey(message, 'work-request-input')}
+                                                question={getRequestInputDisplayText(message)}
+                                                options={uxConfig.options}
+                                                variant={uxConfig.variant}
+                                                multiSelect={uxConfig.multiSelect}
+                                                onSelect={(optionId) => onSendMessage?.(optionId)}
+                                                onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                                                allowFreeResponse={
+                                                    !uxConfig.options?.length || !!uxConfig.free_response
+                                                }
+                                                placeholder={uxConfig.free_response?.placeholder}
+                                                submitLabel={uxConfig.free_response?.submit_label}
+                                                onSubmit={(value) =>
+                                                    onSendMessage?.(value, uxConfig.free_response?.metadata)
+                                                }
+                                                hideBorder
+                                                compact
+                                                className="my-0"
+                                                cardClassName="bg-background/60 shadow-none"
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            ) : null}
+                        </>
                     ) : (
                         <div className="mt-3 flex items-center gap-2 text-sm text-muted">
                             <Terminal className="size-4 opacity-70" aria-hidden="true" />
@@ -2386,9 +2452,9 @@ function AllMessagesMixedComponent({
     // Sort all messages chronologically and dedupe adjacent identical messages
     // Low-signal messages are suppressed at the source (server-side) via shouldSuppressLowSignalMessage
     const sortedMessages = React.useMemo(() => {
-        const filtered = hiddenMessageTypes?.length
-            ? messages.filter((m) => !hiddenMessageTypes.includes(m.type))
-            : messages;
+        const filtered = messages.filter(
+            (message) => !isDocumentPanelEventMessage(message) && !hiddenMessageTypes?.includes(message.type),
+        );
 
         const sorted = [...filtered].sort((a, b) => {
             const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
@@ -2555,11 +2621,25 @@ function AllMessagesMixedComponent({
             return Math.max(latest, getTimestampMs(msg.timestamp));
         }, -Infinity);
     }, [displayMessages]);
+    const hasPendingToolApprovalRequest = useMemo(
+        () =>
+            displayMessages.some(
+                (message) =>
+                    isToolApprovalRequestInput(message) &&
+                    !isToolApprovalRequestInputHidden(
+                        message,
+                        answeredToolApprovalRequestInputKeys,
+                        resolvedToolApprovalKeys,
+                    ),
+            ),
+        [answeredToolApprovalRequestInputKeys, displayMessages, resolvedToolApprovalKeys],
+    );
 
     const isDisplayCompleted = useMemo(() => {
+        if (hasPendingToolApprovalRequest) return false;
         if (hasOpenUserTurn(completionDisplayMessages)) return false;
         return isCompleted || !isInProgress(completionDisplayMessages);
-    }, [completionDisplayMessages, isCompleted]);
+    }, [completionDisplayMessages, hasPendingToolApprovalRequest, isCompleted]);
 
     // Split streaming messages:
     // - complete (or stale incomplete) ones are interleaved chronologically
@@ -3286,6 +3366,9 @@ function AllMessagesMixedComponent({
                                             defaultExpanded={item.isActive && !isThinkingOnlyWork}
                                             disablePreambleCollapse={item.isActive}
                                             className={workingIndicatorClassName}
+                                            onSendMessage={onSendMessage}
+                                            answeredToolApprovalRequestInputKeys={answeredToolApprovalRequestInputKeys}
+                                            resolvedToolApprovalKeys={resolvedToolApprovalKeys}
                                         />
                                     );
                                 }

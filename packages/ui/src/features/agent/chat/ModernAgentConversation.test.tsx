@@ -346,7 +346,10 @@ describe('ModernAgentConversation send handling', () => {
             <ModernAgentConversation startWorkflow={startWorkflow} hideHeader hideFileUpload initialMessage="" />,
         );
 
-        fireEvent.pointerDown(screen.getByRole('button', { name: 'Agent approval mode' }), {
+        const selector = screen.getByRole('button', { name: 'Agent approval mode' });
+        expect(selector.getAttribute('title')).toBeNull();
+
+        fireEvent.pointerDown(selector, {
             button: 0,
             ctrlKey: false,
         });
@@ -1143,7 +1146,7 @@ describe('ModernAgentConversation send handling', () => {
         mockStreamState({
             messages: [
                 {
-                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'Approve Write Artifact: name quotes.md?'),
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'Approve Write Artifact: quotes.md?'),
                     details: {
                         tool_approval: {
                             tool_name: 'write_artifact',

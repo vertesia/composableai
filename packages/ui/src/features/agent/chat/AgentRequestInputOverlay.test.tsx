@@ -44,10 +44,12 @@ function createToolApprovalRequestMessage(): RequestInputMessageWithUx {
         timestamp: 1,
         workflow_run_id: 'run-1',
         workstream_id: 'main',
-        message: 'Approve Write Artifact: name quotes.md?',
+        message: 'Approve Write Artifact: quotes.md?',
         details: {
             tool_approval: {
                 tool_name: 'write_artifact',
+                tool_title: 'Write Artifact',
+                target: 'name:quotes.md',
                 approval_key: 'write_artifact:name:quotes.md',
             },
             ux: {
@@ -106,5 +108,15 @@ describe('AgentRequestInputOverlay', () => {
                 approval_key: 'write_artifact:name:quotes.md',
             },
         });
+    });
+
+    it('renders legacy field-prefixed tool approval prompts with a friendly target', () => {
+        const message = createToolApprovalRequestMessage();
+        message.message = 'Approve Write Artifact: name quotes.md?';
+
+        renderWithProviders(<AgentRequestInputOverlay message={message} onSendMessage={vi.fn()} />);
+
+        expect(screen.getByText('Approve Write Artifact: quotes.md?')).not.toBeNull();
+        expect(screen.queryByText('Approve Write Artifact: name quotes.md?')).toBeNull();
     });
 });

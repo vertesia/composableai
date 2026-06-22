@@ -340,6 +340,68 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.queryByText('Running')).toBeNull();
     });
 
+    it('keeps a pending tool approval prompt inside the active work row', () => {
+        const onSendMessage = vi.fn();
+
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: Date.now() - 4_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Create a news report.',
+                }),
+                makeMessage({
+                    timestamp: Date.now() - 3_000,
+                    message: 'Creating document from artifact...',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'create_document',
+                        tool_run_id: 'create_document',
+                        tool_use_id: 'create_document',
+                        tool_status: 'running',
+                        tool_event: 'started',
+                        activity_group_id: 'activity-approval',
+                        message_to_human: 'Creating document from artifact...',
+                    },
+                }),
+                makeMessage({
+                    timestamp: Date.now() - 1_000,
+                    type: AgentMessageType.REQUEST_INPUT,
+                    message: 'Approve Create Document: name News Headlines Today?',
+                    details: {
+                        tool_approval: {
+                            approval_key: 'create_document:name:News Headlines Today',
+                            tool_name: 'create_document',
+                            tool_title: 'Create Document',
+                            target: 'name:News Headlines Today',
+                        },
+                        ux: {
+                            options: [
+                                { id: 'allow_once', label: 'Allow once' },
+                                { id: 'allow_for_run', label: 'Allow this action for this run' },
+                                { id: 'deny', label: 'Deny' },
+                            ],
+                        },
+                    },
+                }),
+            ],
+            false,
+            new Map(),
+            { onSendMessage },
+        );
+
+        expect(screen.queryByRole('button', { name: /Worked\s*for/ })).toBeNull();
+        const workingRow = screen.getByRole('button', { name: /Working\s*for/ });
+        expect(workingRow.getAttribute('aria-expanded')).toBe('true');
+        expect(screen.getByText('Creating document from artifact...')).not.toBeNull();
+        expect(screen.getByText('Approve Create Document: News Headlines Today?')).not.toBeNull();
+        expect(screen.queryByText('Approve Create Document: name News Headlines Today?')).toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: /Allow once/ }));
+
+        expect(onSendMessage).toHaveBeenCalledWith('allow_once');
+    });
+
     it('expands tool rows that only have metadata', () => {
         renderSummary(
             [
@@ -988,12 +1050,12 @@ describe('AllMessagesMixed summary view', () => {
                 makeMessage({
                     timestamp: 3_000,
                     type: AgentMessageType.REQUEST_INPUT,
-                    message: 'Approve Write Artifact: name quotes.md?',
+                    message: 'Approve Write Artifact: quotes.md?',
                     details: {
                         tool_approval: {
                             tool_name: 'write_artifact',
                             tool_title: 'Write Artifact',
-                            action_summary: 'Write Artifact: name quotes.md',
+                            action_summary: 'Write Artifact: quotes.md',
                             target: 'name:quotes.md',
                             approval_key: 'write_artifact:name:quotes.md',
                             input: {
@@ -1044,7 +1106,7 @@ describe('AllMessagesMixed summary view', () => {
             true,
         );
 
-        expect(screen.queryByText('Approve Write Artifact: name quotes.md?')).toBeNull();
+        expect(screen.queryByText('Approve Write Artifact: quotes.md?')).toBeNull();
         expect(screen.queryByText('deny')).toBeNull();
         expect(screen.queryByRole('button', { name: /Work needs attention\s*for/ })).toBeNull();
 
@@ -1079,12 +1141,12 @@ describe('AllMessagesMixed summary view', () => {
                 makeMessage({
                     timestamp: 3_000,
                     type: AgentMessageType.REQUEST_INPUT,
-                    message: 'Approve Write Artifact: name quotes.md?',
+                    message: 'Approve Write Artifact: quotes.md?',
                     details: {
                         tool_approval: {
                             tool_name: 'write_artifact',
                             tool_title: 'Write Artifact',
-                            action_summary: 'Write Artifact: name quotes.md',
+                            action_summary: 'Write Artifact: quotes.md',
                             target: 'name:quotes.md',
                             approval_key: 'write_artifact:name:quotes.md',
                             input: {
@@ -1110,7 +1172,7 @@ describe('AllMessagesMixed summary view', () => {
             true,
         );
 
-        expect(screen.queryByText('Approve Write Artifact: name quotes.md?')).toBeNull();
+        expect(screen.queryByText('Approve Write Artifact: quotes.md?')).toBeNull();
         expect(screen.queryByText('deny')).toBeNull();
 
         fireEvent.click(screen.getByRole('button', { name: /Worked\s*for/ }));
@@ -1142,6 +1204,34 @@ describe('AllMessagesMixed summary view', () => {
 
         expect(screen.getByText('What is your favorite color?')).not.toBeNull();
         expect(screen.getByRole('button', { name: /Blue\s*The color of the sky and ocean/ })).not.toBeNull();
+    });
+
+    it('renders legacy field-prefixed tool approval prompts with a friendly target in summary view', () => {
+        renderSummary([
+            makeMessage({
+                timestamp: 1_000,
+                type: AgentMessageType.REQUEST_INPUT,
+                message: 'Approve Create Document: name News Headlines Today?',
+                details: {
+                    tool_approval: {
+                        approval_key: 'create_document:name:News Headlines Today',
+                        tool_name: 'create_document',
+                        tool_title: 'Create Document',
+                        target: 'name:News Headlines Today',
+                    },
+                    ux: {
+                        options: [
+                            { id: 'allow_once', label: 'Allow once' },
+                            { id: 'allow_for_run', label: 'Allow this action for this run' },
+                            { id: 'deny', label: 'Deny' },
+                        ],
+                    },
+                },
+            }),
+        ]);
+
+        expect(screen.getByText('Approve Create Document: News Headlines Today?')).not.toBeNull();
+        expect(screen.queryByText('Approve Create Document: name News Headlines Today?')).toBeNull();
     });
 
     it('keeps only the ask question after the user answers in summary view', () => {
@@ -1238,6 +1328,30 @@ describe('AllMessagesMixed summary view', () => {
                     },
                 }),
                 makeMessage({
+                    timestamp: 3_500,
+                    type: AgentMessageType.REQUEST_INPUT,
+                    message: 'Approve Create Document: Japan News Headlines?',
+                    details: {
+                        tool_approval: {
+                            approval_key: 'create_document:name:Japan News Headlines',
+                            tool_name: 'create_document',
+                            tool_title: 'Create Document',
+                            target: 'name:Japan News Headlines',
+                            input: {
+                                name: 'Japan News Headlines',
+                                source: 'artifact:files/japan_news_2026_06_21.md',
+                            },
+                        },
+                        ux: {
+                            options: [
+                                { id: 'allow_once', label: 'Allow once' },
+                                { id: 'allow_for_run', label: 'Allow this action for this run' },
+                                { id: 'deny', label: 'Deny' },
+                            ],
+                        },
+                    },
+                }),
+                makeMessage({
                     timestamp: 4_000,
                     type: AgentMessageType.THOUGHT,
                     message: 'Cancelled Create Document after denial.',
@@ -1268,6 +1382,7 @@ describe('AllMessagesMixed summary view', () => {
         );
 
         expect(screen.queryByText('Approve Write Artifact for japan_news_2026_06_21.md?')).toBeNull();
+        expect(screen.queryByText('Approve Create Document: Japan News Headlines?')).toBeNull();
         expect(screen.queryByText('deny')).toBeNull();
 
         expect(screen.queryByRole('button', { name: /Work needs attention/ })).toBeNull();
@@ -1287,7 +1402,7 @@ describe('AllMessagesMixed summary view', () => {
                 makeMessage({
                     timestamp: 1_000,
                     type: AgentMessageType.REQUEST_INPUT,
-                    message: 'Approve Write Artifact: name quotes.md?',
+                    message: 'Approve Write Artifact: quotes.md?',
                     details: {
                         tool_approval: {
                             approval_key: 'write_artifact:name:quotes.md',
@@ -1353,10 +1468,52 @@ describe('AllMessagesMixed summary view', () => {
             true,
         );
 
-        expect(screen.queryByText('Approve Write Artifact: name quotes.md?')).toBeNull();
+        expect(screen.queryByText('Approve Write Artifact: quotes.md?')).toBeNull();
         expect(screen.getByText('Do not write a file. Put the summary in chat.')).not.toBeNull();
         fireEvent.click(screen.getByRole('button', { name: /Worked/ }));
         expect(screen.getByRole('button', { name: /Write Artifact.*Declined by user/ })).not.toBeNull();
+    });
+
+    it('hides a commented approval denial prompt immediately from response metadata', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.REQUEST_INPUT,
+                    message: 'Approve Write Artifact: quotes.md?',
+                    details: {
+                        tool_approval: {
+                            approval_key: 'write_artifact:name:quotes.md',
+                            tool_name: 'write_artifact',
+                            tool_title: 'Write Artifact',
+                            target: 'name:quotes.md',
+                        },
+                        ux: {
+                            options: [
+                                { id: 'allow_once', label: 'Allow once' },
+                                { id: 'allow_for_run', label: 'Allow this action for this run' },
+                                { id: 'deny', label: 'Deny' },
+                            ],
+                        },
+                    },
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Do not write a file. Put the summary in chat.',
+                    details: {
+                        tool_approval_response: {
+                            decision: 'deny_with_feedback',
+                            approval_key: 'write_artifact:name:quotes.md',
+                        },
+                    },
+                }),
+            ],
+            false,
+        );
+
+        expect(screen.queryByText('Approve Write Artifact: quotes.md?')).toBeNull();
+        expect(screen.getByText('Do not write a file. Put the summary in chat.')).not.toBeNull();
     });
 
     it('does not duplicate the initial request once the persisted user prompt is present', () => {
@@ -1909,5 +2066,66 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('3 docs matched')).not.toBeNull();
         expect(screen.getByText('Found 3 relevant docs.')).not.toBeNull();
         expect(screen.getByText('completed')).not.toBeNull();
+    });
+
+    it('does not render document panel events as duplicate create document tool rows', () => {
+        renderSummary(
+            [
+                makeMessage({
+                    timestamp: 1_000,
+                    type: AgentMessageType.QUESTION,
+                    message: 'Create a Japan news report.',
+                }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.THOUGHT,
+                    message: 'Creating document from artifact:files/japan_news_report.md...',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'create_document',
+                        tool_run_id: 'create_document',
+                        tool_status: 'running',
+                        activity_group_id: 'activity-5',
+                        source: 'artifact:files/japan_news_report.md',
+                        name: 'Japan News Headlines Today',
+                        tool_event: 'progress',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 2_600,
+                    type: AgentMessageType.THOUGHT,
+                    message: 'Document [Japan News Headlines Today](store:doc-1) has been successfully created',
+                    details: {
+                        event_class: 'activity',
+                        tool: 'create_document',
+                        tool_run_id: 'create_document',
+                        tool_status: 'completed',
+                        activity_group_id: 'activity-5',
+                        tool_event: 'progress',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 2_650,
+                    type: AgentMessageType.UPDATE,
+                    message: 'Created document "Japan News Headlines Today"',
+                    details: {
+                        event_class: 'document_created',
+                        document_id: 'doc-1',
+                        title: 'Japan News Headlines Today',
+                    },
+                }),
+                makeMessage({
+                    timestamp: 4_000,
+                    type: AgentMessageType.ANSWER,
+                    message: 'The report has been created.',
+                }),
+            ],
+            true,
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /Worked\s*for/ }));
+
+        expect(screen.getAllByRole('button', { name: /Japan News Headlines Today/ })).toHaveLength(1);
+        expect(screen.queryByText('Created document "Japan News Headlines Today"')).toBeNull();
     });
 });
