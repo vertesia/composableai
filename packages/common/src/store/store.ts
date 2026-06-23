@@ -70,6 +70,103 @@ export interface Embedding {
 }
 
 /**
+ * Optional object context to include in content object export rows.
+ */
+export interface ExportContentObjectsIncludeOptions {
+    /**
+     * Include stored embeddings. Disabled by default for generic object exports.
+     */
+    embeddings?: boolean;
+    /**
+     * Include object properties. Disabled by default because properties may be large or sensitive.
+     */
+    properties?: boolean;
+    /**
+     * Include technical object metadata. Disabled by default because metadata may be large.
+     */
+    metadata?: boolean;
+    /**
+     * Include object revision details. Enabled by default.
+     */
+    revision?: boolean;
+}
+
+/**
+ * Bounded filters supported by the bulk content object export API.
+ */
+export interface ExportContentObjectsFilter {
+    type?: string;
+    types?: string[];
+    created_from?: string;
+    created_to?: string;
+    updated_from?: string;
+    updated_to?: string;
+}
+
+/**
+ * Request one page of content objects for export.
+ */
+export interface ExportContentObjectsPageRequest {
+    /**
+     * Embedding types to export when include.embeddings is true. Defaults to all supported embedding types.
+     */
+    embedding_types?: SupportedEmbeddingTypes[];
+    /**
+     * Opaque cursor returned by the previous page.
+     */
+    cursor?: string;
+    /**
+     * Explicit export filters. This intentionally does not accept the search API's full Mongo/search DSL.
+     */
+    filter?: ExportContentObjectsFilter;
+    /**
+     * Include all revisions. Defaults to false, exporting only head revisions.
+     */
+    all_revisions?: boolean;
+    /**
+     * Optional object context selectors.
+     */
+    include?: ExportContentObjectsIncludeOptions;
+}
+
+/**
+ * Exported object identity and context for a single content object row.
+ */
+export interface ExportedContentObjectRecord {
+    id: string;
+    name: string;
+    external_id?: string;
+    type?: {
+        id?: string;
+        code?: string;
+        name?: string;
+    };
+    location: string;
+    content?: {
+        source?: string;
+        type?: string;
+        name?: string;
+        etag?: string;
+    };
+    created_at: string;
+    updated_at: string;
+    revision?: RevisionInfo;
+    properties?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+    embeddings?: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
+}
+
+/**
+ * One cursor page of exported content object records.
+ */
+export interface ExportContentObjectsPageResponse {
+    items: ExportedContentObjectRecord[];
+    has_more: boolean;
+    next_cursor?: string;
+    exported_count: number;
+}
+
+/**
  * Metadata about a single inherited property.
  */
 export interface InheritedPropertyMetadata {

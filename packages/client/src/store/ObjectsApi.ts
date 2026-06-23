@@ -17,6 +17,8 @@ import {
     canGenerateRendition,
     type DeleteContentObjectResult,
     type Embedding,
+    type ExportContentObjectsPageRequest,
+    type ExportContentObjectsPageResponse,
     type ExportPropertiesPayload,
     type ExportPropertiesResponse,
     type FindPayload,
@@ -104,6 +106,10 @@ export class ObjectsApi extends ApiTopic {
         return this.post('/facets', {
             payload: query,
         });
+    }
+
+    exportPage(payload: ExportContentObjectsPageRequest = {}): Promise<ExportContentObjectsPageResponse> {
+        return this.post('/export/page', { payload });
     }
 
     listFolders(_path: string = '/') {

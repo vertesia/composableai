@@ -1,8 +1,6 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     EmbeddingsStatusResponse,
-    ExportEmbeddingsPageRequest,
-    ExportEmbeddingsPageResponse,
     GenericCommandResponse,
     ProjectConfigurationEmbeddingEnablePayload,
     SupportedEmbeddingTypes,
@@ -37,9 +35,5 @@ export class EmbeddingsApi extends ApiTopic {
 
     async recalculate(type: SupportedEmbeddingTypes): Promise<GenericCommandResponse> {
         return this.post(`${type}/recalculate`);
-    }
-
-    async exportPage(payload: ExportEmbeddingsPageRequest = {}): Promise<ExportEmbeddingsPageResponse> {
-        return this.post('export/page', { payload });
     }
 }

@@ -38,6 +38,13 @@ export * from './runs.js';
 export * from './secrets.js';
 export * from './skill.js';
 export * from './store/index.js';
+export type {
+    ExportContentObjectsFilter,
+    ExportContentObjectsIncludeOptions,
+    ExportContentObjectsPageRequest,
+    ExportContentObjectsPageResponse,
+    ExportedContentObjectRecord,
+} from './store/store.js';
 export * from './sts-token-types.js';
 export * from './tenant.js';
 export * from './tool-execution.js';
