@@ -233,7 +233,7 @@ importers:
   llumiverse/common:
     devDependencies:
       '@types/node':
-        specifier: ^24.13.2
+        specifier: ^24.13.1
         version: 24.13.2
       rimraf:
         specifier: ^6.1.3
