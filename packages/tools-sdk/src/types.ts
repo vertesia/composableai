@@ -99,6 +99,16 @@ export type ToolFn<ParamsT extends object = object> = (
     context: ToolExecutionContext,
 ) => Promise<ToolExecutionResult>;
 
+/**
+ * Approval behavior class for a tool.
+ *
+ * - `read_only`: reads or inspects state without changing Vertesia, external systems, or user-visible artifacts.
+ * - `side_effecting`: can create, update, delete, send, execute, schedule, or otherwise change state.
+ * - `control`: affects agent control flow or tool availability, not user data or external systems.
+ * - `requires_confirmation`: high-impact action that must ask the user even in interactive full-control mode.
+ */
+export type ToolApprovalClassification = 'read_only' | 'side_effecting' | 'control' | 'requires_confirmation';
+
 export interface ToolUseContext {
     project_id?: string;
     account_id?: string;
@@ -124,12 +134,11 @@ export interface Tool<ParamsT extends object = object> extends ToolDefinition {
     annotations?: MCPToolAnnotations;
 
     /**
-     * When true, agents must obtain explicit user confirmation via `ask_user`
-     * (Yes/No) before invoking this tool. If the user answers No, the tool
-     * must not run. Stronger than `annotations.destructiveHint` — this is a
-     * hard contract.
+     * Internal approval classification used by interactive agent approval modes.
+     * Use `requires_confirmation` for actions that must prompt even in full-control mode.
+     * Remote/MCP tools can omit this and rely on annotations.
      */
-    requires_user_confirmation?: boolean;
+    approval_class?: ToolApprovalClassification;
 
     /**
      * Optional filter to check if the tool is enabled for the given project configuration.

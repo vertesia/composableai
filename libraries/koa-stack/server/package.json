@@ -1,0 +1,40 @@
+{
+    "name": "@koa-stack/server",
+    "version": "0.24.0",
+    "description": " A web server based on koa with advanced routing, lazy body and flexbile error handling",
+    "type": "module",
+    "scripts": {
+        "build": "tsc --build",
+        "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo",
+        "test": "echo \"Error: no test specified\""
+    },
+    "files": [
+        "lib",
+        "src"
+    ],
+    "keywords": [
+        "web",
+        "server",
+        "koa"
+    ],
+    "author": "stefanescu.bogdan@gmail.com",
+    "license": "MIT",
+    "dependencies": {
+        "@koa-stack/body": "workspace:*",
+        "@koa-stack/router": "workspace:*",
+        "koa": "^3.2.1"
+    },
+    "devDependencies": {
+        "@types/koa": "^3.0.3",
+        "@vertesia/tsconfig": "workspace:*",
+        "typescript": "^6.0.3"
+    },
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        }
+    }
+}

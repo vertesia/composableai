@@ -30,6 +30,8 @@ export default function SlideInPanel({ isOpen, onClose, title, children, width =
         return null;
     }
 
+    const panelTranslateClass = isOpen ? 'translate-x-0' : 'translate-x-full rtl:-translate-x-full'; // rtl-ok: mirrored inline-end transform
+
     return (
         <>
             {/* Backdrop overlay */}
@@ -46,9 +48,7 @@ export default function SlideInPanel({ isOpen, onClose, title, children, width =
 
             {/* Slide-in panel */}
             <div
-                className={`fixed top-0 end-0 bottom-0 z-50 bg-white dark:bg-gray-900 shadow-lg border-s border-gray-200 dark:border-gray-800 transition-transform duration-300 ease-in-out ${
-                    isOpen ? 'translate-x-0' : 'translate-x-full rtl:-translate-x-full'
-                }`}
+                className={`fixed top-0 end-0 bottom-0 z-50 bg-white dark:bg-gray-900 shadow-lg border-s border-gray-200 dark:border-gray-800 transition-transform duration-300 ease-in-out ${panelTranslateClass}`}
                 style={{ width }}
             >
                 {/* Header */}

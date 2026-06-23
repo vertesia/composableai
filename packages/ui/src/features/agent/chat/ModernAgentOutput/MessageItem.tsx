@@ -6,7 +6,7 @@ import {
 } from '@vertesia/common';
 import { Badge, Button, cn, Dropdown, MenuItem, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { NavLink } from '@vertesia/ui/router';
+import { NavLink, useRouterContext } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
 import dayjs from 'dayjs';
@@ -32,63 +32,10 @@ import { AskUserWidget } from '../AskUserWidget';
 import { useImageLightbox } from '../ImageLightbox';
 import { getArtifactCacheKey, useArtifactUrlCache } from '../useArtifactUrlCache.js';
 import { ThinkingMessages } from '../WaitingMessages';
+import { AttachmentPreviewList, parseUserMessageAttachments } from './AttachmentPreview';
+import { MessageDeliveryStatus } from './MessageDeliveryStatus';
+import { processContentForMarkdown } from './processContentForMarkdown';
 import { getWorkstreamId } from './utils';
-
-// PERFORMANCE: Move pure function outside component to avoid recreation on every render
-// Process content to enhance markdown detection for lists and thinking messages
-function processContentForMarkdown(
-    content: string | object,
-    messageType: AgentMessageType,
-    originalMessage?: string,
-): string | object {
-    // If content is not a string, return it as is
-    if (typeof content !== 'string') {
-        return content;
-    }
-
-    // Special handling for thought messages to ensure proper markdown formatting
-    if (
-        messageType === AgentMessageType.THOUGHT ||
-        (typeof originalMessage === 'string' &&
-            (originalMessage.toLowerCase().includes('thinking about') ||
-                originalMessage.toLowerCase().includes("i'm thinking") ||
-                originalMessage.toLowerCase().includes('💭')))
-    ) {
-        let formattedContent = content;
-
-        // Check for numbering patterns like "1. First item 2. Second item"
-        if (/\d+\.\s+.+/.test(formattedContent)) {
-            // Format numbered lists by adding newlines between items
-            formattedContent = formattedContent.replace(/(\d+\.\s+.+?)(?=\s+\d+\.\s+|$)/g, '$1\n\n');
-
-            // Make sure nested content under numbered items is properly indented
-            formattedContent = formattedContent.replace(/(\d+\.\s+.+\n)([^\d\n][^:])/g, '$1  $2');
-        }
-
-        // Handle colon-prefixed items that should be on separate lines
-        if (formattedContent.includes(':') && !formattedContent.includes('\n\n')) {
-            formattedContent = formattedContent.replace(
-                /\b(First|Next|Then|Finally|Lastly|Additionally|Step \d+):\s+/gi,
-                '\n\n$&',
-            );
-        }
-
-        // Handle thinking points or list-like structures even without numbers
-        if (formattedContent.includes(' - ')) {
-            formattedContent = formattedContent.replace(/\s+-\s+/g, '\n- ');
-        }
-
-        return formattedContent;
-    }
-
-    // Normal processing for non-thinking messages
-    if (/\d+\.\s+.+/.test(content) && !content.includes('\n\n')) {
-        // Add proper line breaks for numbered lists that aren't already properly formatted
-        return content.replace(/(\d+\.\s+.+?)(?=\s+\d+\.\s+|$)/g, '$1\n\n');
-    }
-
-    return content;
-}
 
 /** className overrides for MessageItem — single source of truth for all className overrides. */
 export interface MessageItemClassNames {
@@ -159,7 +106,9 @@ export interface MessageItemProps extends MessageItemClassNames {
     message: AgentMessage;
     showPulsatingCircle?: boolean;
     /** Callback when user sends a message (e.g., from proposal selection) */
-    onSendMessage?: (message: string) => void;
+    onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
+    /** Whether a REQUEST_INPUT message has already been answered by a later user message */
+    requestInputAnswered?: boolean;
     /** Sparse per-type overrides for MESSAGE_STYLES (deep-merged with defaults) */
     messageStyleOverrides?: Partial<Record<AgentMessageType | 'default', Partial<MessageStyleConfig>>>;
     /** Custom component to render store/document links instead of default NavLink navigation */
@@ -247,6 +196,7 @@ function MessageItemComponent({
     message,
     showPulsatingCircle = false,
     onSendMessage,
+    requestInputAnswered = false,
     className,
     cardClassName,
     headerClassName,
@@ -267,6 +217,7 @@ function MessageItemComponent({
     const toast = useToast();
     const urlCache = useArtifactUrlCache();
     const { openImage } = useImageLightbox();
+    const { router } = useRouterContext();
     // Use refs to avoid triggering effect re-runs when these stable values are accessed
     const clientRef = useRef(client);
     clientRef.current = client;
@@ -345,15 +296,23 @@ function MessageItemComponent({
         return content;
     }, [message.message]);
 
+    const parsedUserAttachments = useMemo(
+        () => (message.type === AgentMessageType.QUESTION ? parseUserMessageAttachments(messageContent) : null),
+        [messageContent, message.type],
+    );
+
+    const visibleMessageContent = parsedUserAttachments?.body ?? messageContent;
+    const messageAttachments = parsedUserAttachments?.attachments ?? [];
+
     // PERFORMANCE: Memoize processed content - expensive regex operations only run when messageContent changes
     const processedContent = useMemo(() => {
-        if (!messageContent) return '';
+        if (!visibleMessageContent) return '';
         return processContentForMarkdown(
-            messageContent,
+            visibleMessageContent,
             message.type,
             typeof message.message === 'string' ? message.message : undefined,
         );
-    }, [messageContent, message.type, message.message]);
+    }, [visibleMessageContent, message.type, message.message]);
 
     // Copy message content to clipboard
     const copyToClipboard = () => {
@@ -414,17 +373,20 @@ function MessageItemComponent({
                 children?: React.ReactNode;
             }) => {
                 const href = props.href || '';
+                // Carry the active account (`a`) & project (`p`) params on internal routes so
+                // copy-link / open-in-new-tab preserve the current tenant.
+                const withParams = href.startsWith('/') ? router.getTopRouter().navigator.addStickyParams(href) : href;
                 if (href.includes('/store/objects')) {
                     if (StoreLinkComponent) {
                         const documentId = href.split('/store/objects/')[1] || '';
                         return (
-                            <StoreLinkComponent href={href} documentId={documentId}>
+                            <StoreLinkComponent href={withParams} documentId={documentId}>
                                 {props.children}
                             </StoreLinkComponent>
                         );
                     }
                     return (
-                        <NavLink href={href} topLevelNav>
+                        <NavLink href={withParams} topLevelNav>
                             {props.children}
                         </NavLink>
                     );
@@ -433,13 +395,13 @@ function MessageItemComponent({
                     if (CollectionLinkComponent) {
                         const collectionId = href.split('/store/collections/')[1] || '';
                         return (
-                            <CollectionLinkComponent href={href} collectionId={collectionId}>
+                            <CollectionLinkComponent href={withParams} collectionId={collectionId}>
                                 {props.children}
                             </CollectionLinkComponent>
                         );
                     }
                     return (
-                        <NavLink href={href} topLevelNav>
+                        <NavLink href={withParams} topLevelNav>
                             {props.children}
                         </NavLink>
                     );
@@ -464,7 +426,7 @@ function MessageItemComponent({
                 );
             },
         }),
-        [openImage, StoreLinkComponent, CollectionLinkComponent],
+        [openImage, StoreLinkComponent, CollectionLinkComponent, router],
     );
 
     // Render content with markdown support - all messages now rendered as markdown
@@ -631,6 +593,7 @@ function MessageItemComponent({
                         )}
                     </div>
                     <div className="flex items-center gap-1.5 print:hidden">
+                        <MessageDeliveryStatus message={message} />
                         <span className={cn('text-[11px] text-muted/70', resolvedStyle.timestampClassName)}>
                             {dayjs(message.timestamp).format('HH:mm:ss')}
                         </span>
@@ -688,18 +651,35 @@ function MessageItemComponent({
                                       multiSelect={uxConfig.multiSelect}
                                       onSelect={(optionId) => onSendMessage?.(optionId)}
                                       onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                                      allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
+                                      placeholder={uxConfig.free_response?.placeholder}
+                                      submitLabel={uxConfig.free_response?.submit_label}
+                                      onSubmit={(value) => onSendMessage?.(value, uxConfig.free_response?.metadata)}
                                       hideBorder
+                                      compact
+                                      answered={requestInputAnswered}
                                   />
                               );
                           })()
-                        : messageContent && (
+                        : visibleMessageContent && (
                               <div
                                   className="message-content break-words w-full"
                                   style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
                               >
-                                  {renderContent(processedContent || messageContent)}
+                                  {renderContent(processedContent || visibleMessageContent)}
                               </div>
                           )}
+
+                    {messageAttachments.length > 0 && (
+                        <AttachmentPreviewList
+                            items={messageAttachments}
+                            artifactRunId={runId}
+                            variant="message"
+                            className={cn(visibleMessageContent && 'mt-3')}
+                            StoreLinkComponent={StoreLinkComponent}
+                            CollectionLinkComponent={CollectionLinkComponent}
+                        />
+                    )}
 
                     {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
                     {artifactLinks.length > 0 && (
@@ -795,13 +775,19 @@ function MessageItemComponent({
     );
 }
 
-// Memoize the component to prevent unnecessary re-renders
-// Only re-render when message timestamp, showPulsatingCircle, or className props change
+// Memoize the component to prevent unnecessary re-renders, while still allowing
+// same-timestamp message/detail updates from streaming reconciliation to render.
 const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
     return (
         prevProps.message.timestamp === nextProps.message.timestamp &&
+        prevProps.message.type === nextProps.message.type &&
+        prevProps.message.message === nextProps.message.message &&
+        prevProps.message.details === nextProps.message.details &&
+        prevProps.message.workstream_id === nextProps.message.workstream_id &&
+        prevProps.message.workflow_run_id === nextProps.message.workflow_run_id &&
         prevProps.showPulsatingCircle === nextProps.showPulsatingCircle &&
         prevProps.onSendMessage === nextProps.onSendMessage &&
+        prevProps.requestInputAnswered === nextProps.requestInputAnswered &&
         prevProps.messageStyleOverrides === nextProps.messageStyleOverrides &&
         MESSAGE_ITEM_CLASS_NAME_KEYS.every((key) => prevProps[key] === nextProps[key])
     );

@@ -1,0 +1,135 @@
+name: (publish) NPM koa-stack packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Release Type
+        required: true
+        type: choice
+        options:
+          - snapshot
+          - release
+        default: snapshot
+      bump_type:
+        description: Version Bump
+        required: true
+        type: choice
+        options:
+          - keep
+          - patch
+          - minor
+        default: keep
+      dry_run:
+        description: Dry Run
+        required: true
+        type: boolean
+        default: true
+
+# Serialize publish runs so two concurrent dispatches don't race on the
+# shared npm registry or push competing version bumps.
+concurrency:
+  group: publish-npm-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish all packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Scopes DEPLOY_KEY (used to push version bumps past branch protection)
+    # to a dedicated environment.
+    environment: build
+    permissions:
+      id-token: write # required for OIDC between GitHub and NPM
+      contents: write # required to push version-bump commits for preview
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.DEPLOY_KEY }} # Use deploy key to bypass branch protection rules
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - name: Install Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+          registry-url: "https://registry.npmjs.org"
+          cache: "pnpm"
+
+      # Ensure npm 11.5.1 or later is installed
+      - name: Update npm
+        run: npm install -g npm@latest
+      - name: Verify npm version
+        run: npm --version
+
+      - name: Install workspace dependencies
+        timeout-minutes: 5
+        run: pnpm install
+
+      - name: Publish all packages
+        timeout-minutes: 15
+        env:
+          RELEASE_TYPE: ${{ inputs.release_type }}
+          BUMP_TYPE: ${{ inputs.bump_type }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          ./.github/bin/publish-all-packages.sh \
+              --ref "${GITHUB_REF_NAME}" \
+              --release-type "${RELEASE_TYPE}" \
+              --bump-type "${BUMP_TYPE}" \
+              --dry-run "${DRY_RUN}"
+
+      # Template integration tests using local verdaccio registry (dry-run only)
+      - name: Template integration test - Plugin
+        if: inputs.dry_run == true
+        timeout-minutes: 10
+        env:
+          RELEASE_TYPE: ${{ inputs.release_type }}
+        run: ./.github/bin/test-template-integration.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Plugin"
+      - name: Template integration test - Tool Server (deprecated)
+        if: inputs.dry_run == true
+        timeout-minutes: 10
+        env:
+          RELEASE_TYPE: ${{ inputs.release_type }}
+        run: ./.github/bin/test-template-integration.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Tool Server (deprecated)"
+
+  # ============================================================
+  # Integration test after real publish (non-dry-run only)
+  # Verifies published packages work by bootstrapping a template.
+  # ============================================================
+
+  integration-test:
+    name: Integration test (published packages)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: publish
+    if: inputs.dry_run == false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Install pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - name: Install Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+
+      - name: Smoke test - Plugin
+        timeout-minutes: 10
+        env:
+          RELEASE_TYPE: ${{ inputs.release_type }}
+        run: ./.github/bin/test-template-smoke.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Plugin" --branch "${GITHUB_REF_NAME}" --wait
+      - name: Smoke test - Tool Server (deprecated)
+        timeout-minutes: 10
+        env:
+          RELEASE_TYPE: ${{ inputs.release_type }}
+        run: ./.github/bin/test-template-smoke.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Tool Server (deprecated)" --branch "${GITHUB_REF_NAME}" --wait

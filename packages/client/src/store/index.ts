@@ -13,6 +13,7 @@ export * from './ProcessApi.js';
 export * from './QueryApi.js';
 export * from './RenderingApi.js';
 export * from './SchedulesApi.js';
+export * from './signed-url.js';
 export * from './TaskApi.js';
 export * from './TypeCatalogApi.js';
 export * from './TypesApi.js';

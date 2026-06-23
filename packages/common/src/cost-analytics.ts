@@ -47,10 +47,8 @@ export interface CostAnalyticsQuery {
     run_id?: string;
     /** Filter by agent run ID */
     agent_run_id?: string;
-    /** Filter by saved-interaction ObjectId */
+    /** Filter by interaction id: stored ObjectId or namespaced in-code id */
     interaction_id?: string;
-    /** Filter by in-code interaction code (e.g. "@sys:chat") */
-    interaction_code?: string;
     /** Filter by principal (bare user or API key id; matched against the suffix of principal_id) */
     principal_id?: string;
     /** Filter by account ID (set automatically by server) */

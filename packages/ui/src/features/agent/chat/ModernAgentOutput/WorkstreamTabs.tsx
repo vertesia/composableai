@@ -58,7 +58,7 @@ export default function WorkstreamTabs({
     }
 
     return (
-        <div className="flex overflow-x-auto space-x-1 mb-1 bg-muted border-b border-muted/20 sticky top-0 z-10">
+        <div className="flex overflow-x-auto gap-1 mb-1 bg-muted border-b border-muted/20 sticky top-0 z-10">
             {sortedWorkstreams.map(([id, name]) => (
                 <Button
                     variant="unstyled"
@@ -76,7 +76,7 @@ export default function WorkstreamTabs({
                     {name.length > 20 ? `${name.substring(0, 18)}...` : name}
                     {/* biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here */}
                     {count?.has(id) && count.get(id)! > 0 && (
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center gap-1">
                             <span
                                 className={cn(
                                     'inline-flex items-center justify-center p-1 text-xs rounded-full',
@@ -122,17 +122,8 @@ export function extractWorkstreams(messages: AgentMessage[]): Map<string, string
         ) {
             // Use the workstream_id as both the ID and the display name
             workstreams.set(message.workstream_id, message.workstream_id);
-            console.log(`Found workstream: ${message.workstream_id}`);
         }
     });
-
-    // Special case: if there's only the 'main' workstream, we want to explicitly make sure it exists
-    // This ensures that both 'all' and 'main' are added if no additional workstreams are found
-    if (workstreams.size <= 2 && !workstreams.has('main')) {
-        workstreams.set('main', t('agent.main'));
-    }
-
-    console.log('Final workstreams map:', workstreams);
 
     return workstreams;
 }

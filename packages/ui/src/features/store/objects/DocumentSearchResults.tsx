@@ -26,6 +26,7 @@ import { ContentDispositionButton } from './components/ContentDispositionButton'
 import { ContentOverview } from './components/ContentOverview';
 import { useDownloadFile } from './components/useDownloadFile';
 import { VectorSearchWidget } from './components/VectorSearchWidget';
+import { DocumentQuickFilterProvider } from './DocumentQuickFilter';
 import { DocumentTable } from './DocumentTable';
 import type { ExtendedColumnLayout } from './layout/DocumentTableColumn';
 import {
@@ -278,6 +279,22 @@ export function DocumentSearchResults({
         handleFilterLogic(newFilters);
     };
 
+    // Per-row quick filters from the table cells: merge into the same filter list (so a chip shows in
+    // the bar) and re-run the search via handleFilterChange.
+    const addQuickFilter = (name: string, value: string | string[]) => {
+        const group = filterGroups.find((g) => g.name === name);
+        const base = { name, type: group?.type, placeholder: group?.placeholder, multiple: group?.multiple };
+        handleFilterChange((prev) => {
+            const others = prev.filter((f) => f.name !== name);
+            if (group?.type === 'stringList' || Array.isArray(value)) {
+                const incoming = Array.isArray(value) ? value : [value];
+                const current = (prev.find((f) => f.name === name)?.value as string[] | undefined) ?? [];
+                return [...others, { ...base, value: Array.from(new Set([...current, ...incoming])) }];
+            }
+            return [...others, { ...base, value: [{ value, label: value }] }];
+        });
+    };
+
     const url = new URL(window.location.href);
     const filtersParam = url.searchParams.get('filters');
 
@@ -332,17 +349,19 @@ export function DocumentSearchResults({
             />
             <div className="flex flex-col w-full flex-1 min-h-0 border rounded-md mb-2">
                 <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
-                    <DocumentTable
-                        objects={objects}
-                        isLoading={!objects.length && isLoading}
-                        layout={actualLayout}
-                        onRowClick={onRowClick}
-                        previewObject={previewObject}
-                        selectedObject={selectedObject}
-                        onUpload={onUpload}
-                        isGridView={isGridView}
-                        collectionId={searchContext.collectionId}
-                    />
+                    <DocumentQuickFilterProvider onFilter={addQuickFilter}>
+                        <DocumentTable
+                            objects={objects}
+                            isLoading={!objects.length && isLoading}
+                            layout={actualLayout}
+                            onRowClick={onRowClick}
+                            previewObject={previewObject}
+                            selectedObject={selectedObject}
+                            onUpload={onUpload}
+                            isGridView={isGridView}
+                            collectionId={searchContext.collectionId}
+                        />
+                    </DocumentQuickFilterProvider>
                     {hasMore ? (
                         <div ref={loadMoreRef} className="w-full flex justify-center">
                             <Spinner size="xl" />

@@ -1,4 +1,4 @@
-import { Button } from '@vertesia/ui/core';
+import { Button, cn } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { AlertCircle, CheckCircle, HelpCircle, MessageSquare, Send, XCircle } from 'lucide-react';
 import React from 'react';
@@ -32,6 +32,8 @@ export interface AskUserWidgetProps {
     multiSelect?: boolean;
     /** Placeholder for free-form input */
     placeholder?: string;
+    /** Label for the free-form submit button */
+    submitLabel?: string;
     /** Whether the widget is in a loading/processing state */
     isLoading?: boolean;
     /** Custom icon to display */
@@ -42,6 +44,10 @@ export interface AskUserWidgetProps {
     hideIcon?: boolean;
     /** Hide the border */
     hideBorder?: boolean;
+    /** Use the compact chat transcript layout */
+    compact?: boolean;
+    /** Render as a resolved transcript prompt, without pending controls */
+    answered?: boolean;
 
     // Styling props for full customization
     /** Additional className for the outer container */
@@ -114,11 +120,14 @@ export function AskUserWidget({
     allowFreeResponse = false,
     multiSelect = false,
     placeholder,
+    submitLabel,
     isLoading = false,
     icon,
     variant = 'default',
     hideIcon = false,
     hideBorder = false,
+    compact = false,
+    answered = false,
     // Styling props
     className,
     cardClassName,
@@ -134,6 +143,7 @@ export function AskUserWidget({
 }: AskUserWidgetProps) {
     const { t } = useUITranslation();
     const resolvedPlaceholder = placeholder ?? t('agent.typeYourResponse');
+    const resolvedSubmitLabel = submitLabel ?? t('agent.send');
     const [inputValue, setInputValue] = React.useState('');
     const [selectedOptions, setSelectedOptions] = React.useState<Set<string>>(new Set());
     const inputRef = React.useRef<HTMLInputElement>(null);
@@ -175,6 +185,164 @@ export function AskUserWidget({
     };
 
     const borderClass = hideBorder ? '' : `border-s-4 ${styles.border}`;
+
+    if (compact) {
+        const iconNode = icon || <DefaultIcon className="size-4" />;
+        const compactQuestion = (
+            <div className={cn('agent-ask-question text-sm leading-6 text-foreground/85', questionClassName)}>
+                <MarkdownRenderer>{question}</MarkdownRenderer>
+            </div>
+        );
+
+        if (answered) {
+            return (
+                <div className={cn('my-1.5 font-sans', className)}>
+                    {compactQuestion}
+                    {description && (
+                        <p className={cn('mt-1 text-xs leading-5 text-muted', descriptionClassName)}>{description}</p>
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <div className={cn('my-2 font-sans', className)}>
+                <div className={cn('rounded-lg border border-border bg-background/60 shadow-none', cardClassName)}>
+                    <div className={cn('px-3 py-2', headerClassName)}>
+                        <div className="flex items-start gap-2.5">
+                            {!hideIcon && (
+                                <div className={cn('mt-1 flex-shrink-0 text-attention', iconClassName)}>{iconNode}</div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                                {compactQuestion}
+                                {description && (
+                                    <p className={cn('mt-1 text-xs leading-5 text-muted', descriptionClassName)}>
+                                        {description}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {options && options.length > 0 && (
+                        <div className={cn('flex flex-col gap-1.5 px-3 pb-3 pt-0', optionsClassName)}>
+                            {multiSelect ? (
+                                <>
+                                    {options.map((option) => {
+                                        const selected = selectedOptions.has(option.id);
+                                        return (
+                                            <label
+                                                key={option.id}
+                                                className={cn(
+                                                    'flex cursor-pointer items-start gap-2.5 rounded-md border px-3 py-2 text-start transition-colors',
+                                                    selected
+                                                        ? 'border-info/60 bg-info/10'
+                                                        : 'border-border bg-background/70 hover:bg-mixer-muted/15',
+                                                    isLoading && 'cursor-not-allowed opacity-50',
+                                                    buttonClassName,
+                                                )}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selected}
+                                                    onChange={() => toggleOption(option.id)}
+                                                    disabled={isLoading}
+                                                    className="mt-1 size-4 rounded border-border bg-background text-info focus:ring-info"
+                                                />
+                                                <span className="min-w-0 flex-1">
+                                                    <span className="flex items-center gap-2 text-sm font-medium leading-5 text-foreground">
+                                                        {option.icon}
+                                                        <span className="break-words">{option.label}</span>
+                                                    </span>
+                                                    {option.description && (
+                                                        <span className="mt-0.5 block break-words text-xs leading-5 text-muted">
+                                                            {option.description}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            </label>
+                                        );
+                                    })}
+                                    <div className="pt-1">
+                                        <Button
+                                            size="sm"
+                                            onClick={handleMultiSubmit}
+                                            disabled={isLoading || selectedOptions.size === 0}
+                                            className="inline-flex items-center gap-2"
+                                        >
+                                            <Send className="size-4" />
+                                            {selectedOptions.size > 0
+                                                ? t('agent.submitSelectionCount', { count: selectedOptions.size })
+                                                : t('agent.submitSelection')}
+                                        </Button>
+                                    </div>
+                                </>
+                            ) : (
+                                options.map((option) => (
+                                    <button
+                                        type="button"
+                                        key={option.id}
+                                        onClick={() => onSelect?.(option.id)}
+                                        disabled={isLoading}
+                                        className={cn(
+                                            'flex w-full cursor-pointer items-start gap-2.5 rounded-md border border-border bg-background/70 px-3 py-2 text-start transition-colors',
+                                            'hover:bg-mixer-muted/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                            isLoading && 'cursor-not-allowed opacity-50',
+                                            buttonClassName,
+                                        )}
+                                    >
+                                        <span
+                                            className="mt-1 size-4 flex-shrink-0 rounded-full border border-border"
+                                            aria-hidden="true"
+                                        />
+                                        <span className="min-w-0 flex-1">
+                                            <span className="flex items-center gap-2 text-sm font-medium leading-5 text-foreground">
+                                                {option.icon}
+                                                <span className="break-words">{option.label}</span>
+                                            </span>
+                                            {option.description && (
+                                                <span className="mt-0.5 block break-words text-xs leading-5 text-muted">
+                                                    {option.description}
+                                                </span>
+                                            )}
+                                        </span>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    )}
+
+                    {allowFreeResponse && (
+                        <div className={cn('px-3 pb-3 pt-0', inputContainerClassName)}>
+                            <div className="flex gap-2">
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder={resolvedPlaceholder}
+                                    disabled={isLoading}
+                                    className={cn(
+                                        'min-w-0 flex-1 rounded-md border border-border bg-background/70 px-3 py-2 text-sm text-foreground focus:border-transparent focus:ring-2 focus:ring-ring',
+                                        inputClassName,
+                                    )}
+                                />
+                                <Button
+                                    size="sm"
+                                    onClick={handleSubmit}
+                                    disabled={isLoading || !inputValue.trim()}
+                                    className={submitButtonClassName}
+                                >
+                                    {isLoading ? '...' : resolvedSubmitLabel}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={`my-4 font-sans ${className || ''}`}>
@@ -316,7 +484,7 @@ export function AskUserWidget({
                                 disabled={isLoading || !inputValue.trim()}
                                 className={submitButtonClassName}
                             >
-                                {isLoading ? '...' : t('agent.send')}
+                                {isLoading ? '...' : resolvedSubmitLabel}
                             </Button>
                         </div>
                     </div>

@@ -1,4 +1,4 @@
-import type { ProjectRef, ProjectRoles } from './project.js';
+import type { ProjectRef, SystemRoles } from './project.js';
 import type { AccountRef, UserRef } from './user.js';
 
 export enum TransientTokenType {
@@ -20,7 +20,7 @@ export interface CreateOrUpdateTransientTokenPayload<T> extends Partial<Transien
 
 export interface UserInviteTokenData {
     email: string;
-    role: ProjectRoles;
+    role: SystemRoles;
     account: AccountRef;
     project?: ProjectRef;
     invited_by: UserRef;

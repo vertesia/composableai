@@ -67,8 +67,11 @@ export default function SlidingMessages({ messages, isCompleted }: SlidingMessag
     return (
         <div className="flex flex-col space-y-6 overflow-y-auto py-4">
             {/* Display permanent messages */}
-            {sortedPermanentMessages.map((message, index) => (
-                <MessageItem key={`${message.timestamp}-${index}`} message={message} />
+            {sortedPermanentMessages.map((message) => (
+                <MessageItem
+                    key={`${message.workstream_id ?? 'main'}-${message.timestamp}-${message.type}`}
+                    message={message}
+                />
             ))}
 
             {/* Only show the latest thinking message when not completed */}
@@ -79,7 +82,7 @@ export default function SlidingMessages({ messages, isCompleted }: SlidingMessag
             {/* If no messages and not completed, show a placeholder thinking message */}
             {messages.length === 0 && !isCompleted && (
                 <div className="flex items-center justify-center flex-1 text-center py-8">
-                    <div className="flex items-center space-x-3 bg-blue-50 rounded-lg border border-blue-100 px-4 py-3">
+                    <div className="flex items-center gap-3 bg-blue-50 rounded-lg border border-blue-100 px-4 py-3">
                         <div className="text-sm text-blue-700 font-medium">
                             {ThinkingMessages[thinkingMessageIndex]}
                         </div>

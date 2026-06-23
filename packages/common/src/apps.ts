@@ -303,6 +303,16 @@ export interface MCPToolAnnotations {
 }
 
 /**
+ * Approval behavior class for a tool exposed to agents.
+ *
+ * - `read_only`: reads or inspects state without changing Vertesia, external systems, or user-visible artifacts.
+ * - `side_effecting`: can create, update, delete, send, execute, schedule, or otherwise change state.
+ * - `control`: affects agent control flow or tool availability, not user data or external systems.
+ * - `requires_confirmation`: high-impact action that must ask the user even in interactive full-control mode.
+ */
+export type AgentToolApprovalClass = 'read_only' | 'side_effecting' | 'control' | 'requires_confirmation';
+
+/**
  * Tool definition with optional activation control for agent exposure.
  */
 export interface AgentToolDefinition extends ToolDefinition {
@@ -333,15 +343,10 @@ export interface AgentToolDefinition extends ToolDefinition {
      */
     annotations?: MCPToolAnnotations;
     /**
-     * When true, agents must obtain explicit user confirmation via `ask_user`
-     * (Yes/No) before invoking this tool. If the user answers No, the tool
-     * must not run and should return an error indicating the user declined.
-     *
-     * Stronger than `annotations.destructiveHint` (which is only a hint) —
-     * this is a hard contract the agent is expected to honor. Set on tools
-     * that perform irreversible or destructive actions (e.g. delete_*).
+     * Approval classification used by interactive agent approval modes.
+     * Use `requires_confirmation` for actions that must prompt even in full-control mode.
      */
-    requires_user_confirmation?: boolean;
+    approval_class?: AgentToolApprovalClass;
 }
 
 /**
@@ -1126,7 +1131,7 @@ export interface CompositeAppNavItemPermissions {
     groupsAllowed?: string[];
     /** User IDs who can see this item. */
     usersAllowed?: string[];
-    /** ProjectRoles values (e.g. "developer", "manager") whose holders can see this item. */
+    /** SystemRoles values (e.g. "developer", "manager") whose holders can see this item. */
     rolesAllowed?: string[];
 }
 

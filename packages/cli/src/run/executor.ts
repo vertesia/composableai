@@ -1,10 +1,10 @@
-import type { TextFallbackOptions } from '@llumiverse/common';
 import type { VertesiaClient } from '@vertesia/client';
 import {
     ConfigModes,
     type InteractionExecutionPayload,
     type InteractionExecutionResult,
     RunDataStorageLevel,
+    type TextFallbackOptions,
 } from '@vertesia/common';
 import { type CliOptions, getStringOption } from '../utils/options.js';
 

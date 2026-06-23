@@ -54,7 +54,8 @@ export type VertesiaClientProps = {
         | 'api-preview.eu1.vertesia.io'
         | 'api.jp1.vertesia.io'
         | 'api-preview.jp1.vertesia.io'
-        | 'api.dev1.vertesia.io';
+        | 'api.dev1.vertesia.io'
+        | 'api-preview.dev1.vertesia.io';
     serverUrl?: string;
     storeUrl?: string;
     tokenServerUrl?: string;
@@ -64,6 +65,12 @@ export type VertesiaClientProps = {
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
     retryPolicy?: IRequestRetryPolicy;
+    /**
+     * Default request timeout in ms applied to every request (studio + store) unless overridden
+     * per-request via `timeoutMs`. `false`/`null`/`0` disables it. Aborts the whole request
+     * (connection + headers + body) via AbortSignal — browser + Node safe.
+     */
+    timeout?: number | false | null;
     fetch?: FETCH_FN | Promise<FETCH_FN>;
 };
 
@@ -151,14 +158,17 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         if (opts.tokenServerUrl) {
             this.tokenServerUrl = opts.tokenServerUrl;
         } else if (opts.site) {
-            // Strip -preview (preview uses the same STS as production for the same region),
-            // then replace api prefix with sts.
+            // Replace the leading api prefix with sts, preserving the env segment so each
+            // environment hits its own STS. preview/preprod run a separately versioned STS
+            // (sts-preview / sts-preprod); collapsing them onto the production sts.<region>
+            // can route to an older STS that rejects scopes the env-matched STS supports
+            // (e.g. `offline_access`).
             // Examples:
-            //   api.vertesia.io          -> sts.vertesia.io
-            //   api-preview.vertesia.io  -> sts.vertesia.io
-            //   api.us1.vertesia.io      -> sts.us1.vertesia.io
-            //   api-preview.eu1.vertesia.io -> sts.eu1.vertesia.io
-            const stsHost = opts.site.replace('api-preview.', 'api.').replace(/^api/, 'sts');
+            //   api.vertesia.io             -> sts.vertesia.io
+            //   api-preview.vertesia.io     -> sts-preview.vertesia.io
+            //   api.us1.vertesia.io         -> sts.us1.vertesia.io
+            //   api-preview.eu1.vertesia.io -> sts-preview.eu1.vertesia.io
+            const stsHost = opts.site.replace(/^api/, 'sts');
             this.tokenServerUrl = `https://${stsHost}`;
         } else if (opts.serverUrl || opts.storeUrl) {
             // Determine STS URL based on environment in serverUrl or storeUrl
@@ -166,11 +176,12 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             try {
                 const url = new URL(urlToCheck);
                 if (url.hostname.startsWith('api')) {
-                    // Strip -preview and replace api with sts.
+                    // Replace the leading api prefix with sts, preserving the env segment so
+                    // preview/preprod hit their own STS rather than production's.
                     // api.us1.vertesia.io         -> sts.us1.vertesia.io
-                    // api-preview.us1.vertesia.io -> sts.us1.vertesia.io
+                    // api-preview.us1.vertesia.io -> sts-preview.us1.vertesia.io
                     // api.vertesia.io             -> sts.vertesia.io
-                    const stsHost = url.hostname.replace('api-preview.', 'api.').replace(/^api/, 'sts');
+                    const stsHost = url.hostname.replace(/^api/, 'sts');
                     this.tokenServerUrl = `https://${stsHost}`;
                 } else {
                     this.tokenServerUrl = 'https://sts.dev1.vertesia.io';
@@ -189,11 +200,16 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             onRequest: opts.onRequest,
             onResponse: opts.onResponse,
             retryPolicy: opts.retryPolicy,
+            timeout: opts.timeout,
             fetch: opts.fetch,
         });
 
         if (opts.retryPolicy) {
             this.withRetryPolicy(opts.retryPolicy);
+        }
+
+        if (opts.timeout !== undefined) {
+            this.withTimeout(opts.timeout);
         }
 
         if (opts.apikey) {
@@ -233,6 +249,11 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     withRetryPolicy(policy?: IRequestRetryPolicy | null) {
         this.store.withRetryPolicy(policy);
         return super.withRetryPolicy(policy);
+    }
+
+    withTimeout(timeoutMs?: number | false | null) {
+        this.store.withTimeout(timeoutMs);
+        return super.withTimeout(timeoutMs);
     }
 
     async withApiKey(apiKey: string | null) {
@@ -337,19 +358,23 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      * @returns AuthTokenResponse
      */
     async getAuthToken(token?: string): Promise<AuthTokenResponse> {
-        return fetch(`${this.tokenServerUrl}/token/issue`, {
-            method: 'POST',
+        // Route through the base client (absolute URL) so the call benefits from the
+        // retry policy. The default retry methods exclude POST as non-idempotent, but
+        // /token/issue is safe to retry, so we opt POST in explicitly for this request.
+        return this.post<AuthTokenResponse>(`${this.tokenServerUrl}/token/issue`, {
             headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
+                'content-type': 'application/json',
+                authorization: `Bearer ${token}`,
             },
-        })
-            .then((response) => response.json())
-            .then((data) => data as AuthTokenResponse)
-            .catch((error) => {
-                console.error(`Error fetching token from ${this.tokenServerUrl}:`, { error });
-                throw error;
-            });
+            retryPolicy: {
+                attempts: 4,
+                methods: ['POST'],
+                statuses: [429, 500, 502, 503, 504],
+            },
+        }).catch((error) => {
+            console.error(`Error fetching token from ${this.tokenServerUrl}:`, { error });
+            throw error;
+        });
     }
 
     get initialHeaders() {

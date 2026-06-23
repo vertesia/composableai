@@ -55,11 +55,14 @@
       // Mark npm patch/minor updates eligible for scoped bot automerge
       // (the renovate-automerge.yaml workflow merges them once CI passes).
       // node/npm/pnpm are excluded so runtime/package-manager bumps stay manual.
+      // @biomejs is excluded because it is a native binary that ships per-arch:
+      // CI runs on amd64 but developers are typically on arm64 (Apple Silicon),
+      // so biome bumps need a manual look before merging.
       // addLabels is additive, so the later grouping rules below keep this label.
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["patch", "minor"],
       "addLabels": ["renovate-automerge"],
-      "matchPackageNames": ["!npm", "!pnpm", "!node"]
+      "matchPackageNames": ["!npm", "!pnpm", "!node", "!@biomejs/**"]
     },
     {
       // Mark gh-actions patch/minor/digest updates eligible for scoped bot
@@ -78,6 +81,23 @@
       ],
       "matchPackageNames": [
         "*"
+      ],
+      "rangeStrategy": "bump",
+      "schedule": "* * * * 3" // Wednesday
+    },
+    // Biome is its own group and intentionally not labeled for automerge: it is a
+    // native binary (per-arch builds) that works on CI (amd64) but not on a typical
+    // developer laptop (arm64 / Apple Silicon), so bumps need manual review.
+    {
+      "groupName": "biome",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
+      "matchPackageNames": [
+        "@biomejs/**"
       ],
       "rangeStrategy": "bump",
       "schedule": "* * * * 3" // Wednesday
@@ -104,6 +124,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         // cloud provider
         "@aws-sdk/**",
@@ -127,6 +150,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         "@codemirror/**",
         "codemirror"
@@ -138,6 +164,9 @@
       "groupName": "eslint dependencies",
       "matchManagers": [
         "npm"
+      ],
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "@eslint/**",
@@ -152,6 +181,9 @@
       "groupName": "UI Component dependencies",
       "matchManagers": [
         "npm"
+      ],
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "chart.js",
@@ -185,6 +217,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         "@next/**",
         "next**",
@@ -203,6 +238,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         "@google-cloud/**",
         "@googleapis/**",
@@ -219,6 +257,9 @@
       "groupName": "tsconfig dependencies",
       "matchManagers": [
         "npm"
+      ],
+      "matchDepTypes": [
+        "!overrides"
       ],
       "matchPackageNames": [
         "@tsconfig/**"
@@ -260,6 +301,9 @@
       "matchManagers": [
         "npm"
       ],
+      "matchDepTypes": [
+        "!overrides"
+      ],
       "matchPackageNames": [
         "npm",
         "pnpm"
@@ -271,13 +315,16 @@
     {
       "groupName": "Package Overrides",
       "matchManagers": [
-        "npm"
+        "npm",
+        "pnpm"
       ],
       "matchDepTypes": [
         "overrides"
       ],
       "rangeStrategy": "bump",
-      "schedule": "* * * * 4" // Thursday
+      "schedule": "* * * * 4", // Thursday
+      "prCreation": "approval", // Branches still created automatically. This is to hide the group, do not merge.
+      "automerge": false
     },
     // Disable automatic updates for node engines
     {

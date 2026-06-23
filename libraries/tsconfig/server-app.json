@@ -1,0 +1,18 @@
+// For Node-only server apps that build to `dist/` (or `lib/`) and run via
+// `node`. Apps emit JS but don't ship declarations (nothing imports them as a
+// library) and aren't referenced by other workspace projects.
+//
+// Intended consumers: apps/studio-server, apps/zeno-server, apps/zeno-worker,
+// apps/token-server, apps/slackbot, apps/mcp-server, and other terminal Node
+// processes.
+//
+// UI/Vite apps should use `app.json` instead.
+{
+    "extends": "./lib.json",
+    "compilerOptions": {
+        "composite": false,
+        "declaration": false,
+        "declarationMap": false,
+        "inlineSources": true
+    }
+}

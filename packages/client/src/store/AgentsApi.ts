@@ -10,7 +10,6 @@ import {
     type AgentRunResponse,
     type AgentRunUpdatesResponse,
     type BindRunWorkflowPayload,
-    type CompactMessage,
     type CreateAgentRunPayload,
     type CreateProcessRunPayload,
     type ErrorAnalyticsResponse,
@@ -52,7 +51,13 @@ import {
 } from '@vertesia/common';
 import type { VertesiaClient } from '../client.js';
 import { EventSourceProvider } from '../execute.js';
+import { fetchSignedUrl } from './signed-url.js';
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
+
+export interface AgentRunStreamMessagesOptions {
+    onHistoryLoaded?: (messages: AgentMessage[]) => void;
+    onHistoryError?: (error: unknown) => void;
+}
 
 export class AgentsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -245,7 +250,7 @@ export class AgentsApi extends ApiTopic {
 
     /**
      * Send a signal to a running agent.
-     * Signals: "UserInput", "Stop", "FileUploaded"
+     * Signals: "UserInput", "Stop", "FileUploaded", "FileRemoved"
      */
     sendSignal(id: string, signalName: string, payload?: SignalAgentPayload): Promise<SignalAgentResponse> {
         return this.post(`/${id}/signal/${signalName}`, { payload });
@@ -277,7 +282,7 @@ export class AgentsApi extends ApiTopic {
     async retrieveMessages(id: string, since?: number): Promise<AgentMessage[]> {
         const query = since ? { since } : undefined;
         const response = (await this.get(`/${id}/updates`, { query })) as AgentRunUpdatesResponse;
-        return response.messages.map((m: CompactMessage) => toAgentMessage(m, id));
+        return response.messages.map((m) => toAgentMessage(parseMessage(m), id));
     }
 
     /**
@@ -302,6 +307,7 @@ export class AgentsApi extends ApiTopic {
         onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
         since?: number,
         signal?: AbortSignal,
+        options?: AgentRunStreamMessagesOptions,
     ): Promise<unknown> {
         let resolveFn: (value: unknown) => void = () => {};
         let rejectFn: (reason?: unknown) => void = () => {};
@@ -312,6 +318,7 @@ export class AgentsApi extends ApiTopic {
 
         let reconnectAttempts = 0;
         let lastMessageTimestamp = since || 0;
+        const historyFetchStartedAt = Date.now();
         let isClosed = false;
         let currentSse: EventSource | null = null;
         let interval: ReturnType<typeof setInterval> | null = null;
@@ -372,22 +379,34 @@ export class AgentsApi extends ApiTopic {
         try {
             if (!isClosed) {
                 const historical = await this.retrieveMessages(id, since);
-                for (const msg of historical) {
+                options?.onHistoryLoaded?.(historical);
+                let shouldCloseAfterHistory = false;
+                for (let index = 0; index < historical.length; index++) {
+                    const msg = historical[index];
                     if (isClosed) break;
                     lastMessageTimestamp = Math.max(lastMessageTimestamp, msg.timestamp || 0);
                     if (onMessage) onMessage(msg, exit);
                     if (isClosed) break;
 
-                    if (shouldCloseAgentRunStream(msg, id)) {
-                        exit(null);
-                        return promise;
-                    }
+                    shouldCloseAfterHistory = index === historical.length - 1 && shouldCloseAgentRunStream(msg, id);
+                }
+                if (shouldCloseAfterHistory) {
+                    exit(null);
+                    return promise;
                 }
             }
         } catch (err) {
             if (!isClosed) {
+                options?.onHistoryError?.(err);
                 console.warn('Failed to fetch historical messages, continuing with SSE:', err);
             }
+        }
+        if (!isClosed && lastMessageTimestamp <= 0) {
+            // The server only replays the GET-to-SSE handoff gap when `since > 0`.
+            // New runs often have no history yet, so use the GET start time as the
+            // cursor to avoid dropping messages emitted before the SSE subscription
+            // is active.
+            lastMessageTimestamp = Math.max(1, historyFetchStartedAt - 1);
         }
 
         // 2. Connect to SSE for real-time updates
@@ -702,7 +721,7 @@ export class AgentsApi extends ApiTopic {
         })) as AgentArtifactUrlResponse;
 
         // 2. Upload directly to cloud storage
-        const res = await fetch(result.url, {
+        const res = await fetchSignedUrl(result.url, {
             method: 'PUT',
             body: content,
             headers: { 'Content-Type': mimeType },
@@ -720,7 +739,7 @@ export class AgentsApi extends ApiTopic {
      */
     async downloadArtifact(id: string, path: string): Promise<ReadableStream<Uint8Array>> {
         const { url } = await this.getArtifactUrl(id, path, 'attachment');
-        const res = await fetch(url);
+        const res = await fetchSignedUrl(url);
         if (!res.ok) {
             throw new Error(`Failed to download artifact: ${res.statusText}`);
         }

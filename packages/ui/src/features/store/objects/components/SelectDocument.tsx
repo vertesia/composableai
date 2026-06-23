@@ -1,7 +1,6 @@
 import type { ColumnLayout, ContentObjectItem } from '@vertesia/common';
-import { Button, ErrorBox, Spinner, useIntersectionObserver } from '@vertesia/ui/core';
+import { Button, ErrorBox, useIntersectionObserver } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { clsx } from 'clsx';
 import { RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DocumentsFacetsNav } from '../../../facets';
@@ -90,17 +89,17 @@ function SelectDocumentImpl({ onRowClick, selectedIds }: Readonly<SelectDocument
             <div className="flex justify-between items-center flex-shrink-0">
                 <DocumentsFacetsNav facets={facets} search={facetSearch} />
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={handleRefetch} alt="Refresh">
+                    <Button variant="outline" onClick={handleRefetch} aria-label="Refresh">
                         <RefreshCw size={16} />
                     </Button>
                     <ContentDispositionButton onUpdate={setIsGridView} />
                 </div>
             </div>
-            <div className="@container flex-1 overflow-y-auto">
+            <div className="@container relative flex-1 overflow-y-auto">
                 {/* Documents Display Grid or Table */}
                 <DocumentTable
                     objects={objects || []}
-                    isLoading={false}
+                    isLoading={!objects.length && isLoading}
                     layout={layout}
                     onRowClick={onRowClick}
                     highlightRow={selectedIds?.size ? highlightRow : undefined}
@@ -109,16 +108,6 @@ function SelectDocumentImpl({ onRowClick, selectedIds }: Readonly<SelectDocument
 
                 {/* Intersection observer target */}
                 <div ref={loadMoreRef} className="h-4 w-full" />
-
-                {/* Loading spinner */}
-                <div
-                    className={clsx(
-                        'bg-white dark:bg-gray-800 opacity-80 absolute inset-0 z-50 flex justify-center items-center rounded',
-                        isLoading ? 'block' : 'hidden',
-                    )}
-                >
-                    <Spinner size="xl" />
-                </div>
             </div>
         </div>
     );

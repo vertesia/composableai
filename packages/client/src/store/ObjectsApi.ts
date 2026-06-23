@@ -40,6 +40,7 @@ export { canGenerateRendition };
 import { StreamSource } from '../StreamSource.js';
 import { AnalyzeDocApi } from './AnalyzeDocApi.js';
 import type { ZenoClient } from './client.js';
+import { fetchSignedUrl } from './signed-url.js';
 
 type ContentObjectWritePayload = Omit<CreateContentObjectPayload, 'content'> & {
     content?: ContentSource | File | StreamSource;
@@ -153,42 +154,18 @@ export class ObjectsApi extends ApiTopic {
         const sourceMimeType = source.type || mime_type;
 
         // upload the file content to the signed URL
-        /*const res = await this.fetch(url, {
-            method: 'PUT',
-            //@ts-expect-error: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
-            duplex: isStream ? "half" : undefined,
-            body: isStream ? source.stream : source,
-            headers: {
-                'Content-Type': mime_type || 'application/octet-stream'
-            }
-        }).then((res: Response) => {
-            if (res.ok) {
-                return res;
-            } else {
-                console.log(res);
-                throw new Error(`Failed to upload file: ${res.statusText}`);
-            }
-        });*/
-
-        const res = await fetch(url, {
+        const res = await fetchSignedUrl(url, {
             method: 'PUT',
             body: isStream ? source.stream : source,
-            //@ts-expect-error: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
-            duplex: isStream ? 'half' : undefined,
             headers: sourceMimeType ? { 'Content-Type': sourceMimeType } : undefined,
-        })
-            .then((res: Response) => {
-                if (res.ok) {
-                    return res;
-                } else {
-                    console.log(res);
-                    throw new Error(`Failed to upload file: ${res.statusText}`);
-                }
-            })
-            .catch((err) => {
-                console.error('Failed to upload file', err);
-                throw err;
-            });
+        }).catch((err) => {
+            console.error('Failed to upload file', err);
+            throw err;
+        });
+        if (!res.ok) {
+            console.error('Failed to upload file', { status: res.status, statusText: res.statusText, url });
+            throw new Error(`Failed to upload file: ${res.statusText}`);
+        }
 
         //Etag need to be unquoted
         //When a server returns an ETag header, it includes the quotes around the actual hash value.
@@ -383,6 +360,7 @@ export class ObjectsApi extends ApiTopic {
         options?: {
             collection_id?: string;
             skip_workflows?: boolean;
+            processing_priority?: ContentObjectProcessingPriority;
         },
     ): Promise<BulkObjectCreateResult> {
         return this.client.runOperation({

@@ -3,25 +3,24 @@
     "version": "1.3.0",
     "description": "HTTP client which wraps a fetch implementation and simplify the creation of REST API clients. Works both in browser and in node.",
     "type": "module",
-    "types": "./lib/types/index.d.ts",
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
     "files": [
         "lib",
         "src"
     ],
-    "ts_dual_module": {
-        "outDir": "lib"
-    },
     "exports": {
-        "types": "./lib/types/index.d.ts",
-        "import": "./lib/esm/index.js",
-        "require": "./lib/cjs/index.js"
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        }
     },
     "scripts": {
         "test": "ESBK_TSCONFIG_PATH=./test/tsconfig.json pnpm exec mocha -r tsx --exit ./test/**/*.ts",
         "lint": "biome lint src",
         "typecheck:test": "tsc -p test/tsconfig.json --noEmit",
-        "build": "pnpm exec rimraf ./lib ./tsconfig.tsbuildinfo && pnpm exec tsmod build",
-        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build",
+        "clean": "rm -rf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "repository": {
         "type": "git",
@@ -46,20 +45,18 @@
     },
     "homepage": "https://github.com/vertesia/composableai/tree/main/packages/api-fetch-client#readme",
     "devDependencies": {
-        "@koa-stack/router": "^0.24.0",
-        "@koa-stack/server": "^0.24.0",
-        "@types/koa": "^2.15.2",
+        "@koa-stack/router": "workspace:*",
+        "@koa-stack/server": "workspace:*",
+        "@types/koa": "^3.0.3",
         "@types/mocha": "^10.0.10",
-        "@types/node": "^24.12.4",
-        "koa": "^2.16.4",
+        "@types/node": "^24.13.2",
+        "@vertesia/tsconfig": "workspace:*",
+        "koa": "^3.2.1",
         "mocha": "^11.7.6",
-        "ts-dual-module": "^0.6.3",
-        "ts-node": "^10.9.2",
-        "tsx": "^4.22.3",
-        "typescript": "^6.0.3",
-        "vitest": "^4.0.16"
+        "tsx": "^4.22.4",
+        "typescript": "^6.0.3"
     },
     "dependencies": {
-        "eventsource-parser": "^3.0.8"
+        "eventsource-parser": "^3.1.0"
     }
 }

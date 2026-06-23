@@ -1,5 +1,5 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@vertesia/ui/core';
-import { Nav } from '@vertesia/ui/router';
+import { Nav, useRouterContext } from '@vertesia/ui/router';
 import clsx from 'clsx';
 import { Dot } from 'lucide-react';
 import { useSidebarToggle } from './SidebarContext';
@@ -82,6 +82,7 @@ export interface SidebarItemProps {
     id?: string; //HTML ID of the element
     external?: boolean; //If true, the link will open in a new tab
     replace?: boolean; //If true, navigation replaces the current history entry instead of pushing
+    skipStickyParams?: boolean; //If true, do not append the account (a) & project (p) sticky params to the href
 }
 export function SidebarItem({
     external,
@@ -94,8 +95,15 @@ export function SidebarItem({
     current,
     onClick,
     replace,
+    skipStickyParams,
 }: SidebarItemProps) {
     const { toggleMobile } = useSidebarToggle();
+    const { router } = useRouterContext();
+    // Append the active tenant sticky params (account `a` + project `p`) the router holds to internal
+    // hrefs, so opening a nav item in a new tab or copying its address preserves the current
+    // account/project.
+    const resolvedHref =
+        !skipStickyParams && href.startsWith('/') ? router.getTopRouter().navigator.addStickyParams(href) : href;
     const _closeSideBar = () => {
         setTimeout(() => {
             toggleMobile(false);
@@ -103,7 +111,7 @@ export function SidebarItem({
     };
     const onClickWrapper = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
         if (external) {
-            window.open(href, '_blank');
+            window.open(resolvedHref, '_blank');
             event.preventDefault(); // Prevent default link behavior
             event.stopPropagation(); // Stop the event from propagating
         } else if (onClick) {
@@ -115,7 +123,7 @@ export function SidebarItem({
             <Nav to={to} onClick={_closeSideBar} replace={replace}>
                 <SidebarTooltip text={children as string}>
                     <a
-                        href={href}
+                        href={resolvedHref}
                         onClick={onClickWrapper}
                         className={clsx(
                             current

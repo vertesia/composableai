@@ -1,8 +1,9 @@
-import { Button } from '@vertesia/ui/core';
+import { Button, VTooltip } from '@vertesia/ui/core';
 import dayjs from 'dayjs';
 import LocalizedFormat from 'dayjs/plugin/localizedFormat';
 import RelativeTime from 'dayjs/plugin/relativeTime';
 import { ExternalLink, Eye } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { shortId } from '../../../utils';
 
 dayjs.extend(RelativeTime);
@@ -32,7 +33,10 @@ function renderableValue(value: unknown): React.ReactNode {
 
 const renderers: Record<
     string,
-    (params?: URLSearchParams, onClick?: (id: string) => void) => (value: unknown, index: number) => React.ReactNode
+    (
+        params?: URLSearchParams,
+        onClick?: (id: string) => void,
+    ) => (value: unknown, index: number, actions?: ReactNode) => React.ReactNode
 > = {
     string(params?: URLSearchParams, _onClick?: (id: string) => void) {
         const transforms: ((value: string) => string)[] = [];
@@ -58,7 +62,7 @@ const renderers: Record<
                 transforms.push((value: string) => `${value}...`);
             }
         }
-        return (value: unknown, index: number) => {
+        return (value: unknown, index: number, actions?: ReactNode) => {
             let v: string;
             if (value) {
                 v = String(value);
@@ -71,7 +75,18 @@ const renderers: Record<
                 v = '';
             }
 
-            return <td key={index}>{v}</td>;
+            return (
+                <td key={index} className="group/field">
+                    {actions ? (
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="truncate">{v}</span>
+                            {actions}
+                        </div>
+                    ) : (
+                        v
+                    )}
+                </td>
+            );
         };
     },
 
@@ -92,7 +107,11 @@ const renderers: Record<
                     fileSize = String(value);
                 }
             }
-            return <td key={index}>{fileSize}</td>;
+            return (
+                <td key={index} className="group/field">
+                    {fileSize}
+                </td>
+            );
         };
     },
 
@@ -113,7 +132,11 @@ const renderers: Record<
                 currency,
                 maximumFractionDigits: digits,
             }).format(Number.isFinite(numberValue) ? numberValue : 0);
-            return <td key={index}>{v}</td>;
+            return (
+                <td key={index} className="group/field">
+                    {v}
+                </td>
+            );
         };
     },
     objectId(params?: URLSearchParams, onClick?: (id: string) => void) {
@@ -126,16 +149,15 @@ const renderers: Record<
                 transforms.push((value) => value.slice(parseInt(slice, 10)));
             }
         }
-        return (value: unknown, index: number) => {
+        return (value: unknown, index: number, actions?: ReactNode) => {
             const objectId = getObjectId(value);
             const displayValue = transforms.reduce((v, t) => t(v), objectId);
             return (
-                <td key={index} className="flex justify-between items-center gap-2">
-                    {hasSlice ? '~' : ''}
-                    {displayValue}
+                <td key={index} className="flex justify-start items-center gap-2 group/field">
                     <Button
                         variant="ghost"
-                        alt="Preview Object"
+                        aria-label="Preview Object"
+                        title="Preview Object"
                         onClick={(e) => {
                             e.stopPropagation();
                             onClick?.(objectId);
@@ -143,6 +165,9 @@ const renderers: Record<
                     >
                         <Eye className="size-4" />
                     </Button>
+                    {hasSlice ? '~' : ''}
+                    {displayValue}
+                    {actions}
                 </td>
             );
         };
@@ -152,13 +177,25 @@ const renderers: Record<
         if (params) {
             title = params.get('title') || 'title';
         }
-        return (value: unknown, index: number) => {
+        return (value: unknown, index: number, actions?: ReactNode) => {
             const properties = isRecord(value) && isRecord(value.properties) ? value.properties : undefined;
             const titleValue = properties?.[title];
             const titleText = renderableValue(titleValue);
             const name = getStringProperty(value, 'name');
             const id = getStringProperty(value, 'id');
-            return <td key={index}>{titleText || name || (id ? shortId(id) : '')}</td>;
+            const content = titleText || name || (id ? shortId(id) : '');
+            return (
+                <td key={index} className="group/field">
+                    {actions ? (
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="truncate">{content}</span>
+                            {actions}
+                        </div>
+                    ) : (
+                        content
+                    )}
+                </td>
+            );
         };
     },
     // objectLink - same implementation as objectId but defaults to slice=-7
@@ -171,7 +208,7 @@ const renderers: Record<
             const objectId = getObjectId(value);
             const displayValue = transforms.reduce((v, t) => t(v), objectId);
             return (
-                <td key={index} className="flex justify-between items-center gap-2 max-w-48">
+                <td key={index} className="flex justify-between items-center gap-2 max-w-48 group/field">
                     {hasSlice ? '~' : ''}
                     {displayValue}
                     <Button
@@ -189,8 +226,20 @@ const renderers: Record<
         };
     },
     typeLink(_params?: URLSearchParams, _onClick?: (id: string) => void) {
-        return (value: unknown, index: number) => {
-            return <td key={index}>{getStringProperty(value, 'name') || 'n/a'}</td>;
+        return (value: unknown, index: number, actions?: ReactNode) => {
+            const content = getStringProperty(value, 'name') || 'n/a';
+            return (
+                <td key={index} className="group/field">
+                    {actions ? (
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="truncate">{content}</span>
+                            {actions}
+                        </div>
+                    ) : (
+                        content
+                    )}
+                </td>
+            );
         };
     },
     revision(_params?: URLSearchParams, _onClick?: (id: string) => void) {
@@ -200,7 +249,7 @@ const renderers: Record<
             const root = getStringProperty(rev, 'root');
             const label = getStringProperty(rev, 'label');
             return (
-                <td key={index}>
+                <td key={index} className="group/field">
                     <div className="flex flex-col gap-0.5">
                         {root && (
                             <div className="flex items-center gap-1">
@@ -217,26 +266,38 @@ const renderers: Record<
         };
     },
     date(params?: URLSearchParams, _onClick?: (id: string) => void) {
-        let method = 'format';
-        let arg: string | undefined = 'LLL';
+        // Default: relative time ("3 hours ago") with an absolute-timestamp tooltip (DisplayDate style).
+        // `localized=<fmt>` keeps an absolute formatted value; `relative=fromNow|toNow` is still honored.
+        let method = 'fromNow';
+        let arg: string | undefined;
         if (params) {
             const localized = params.get('localized');
             if (localized) {
+                method = 'format';
                 arg = localized;
             } else {
                 const relative = params.get('relative');
                 if (relative) {
                     method = relative; // fromNow or toNow
-                    arg = undefined;
                 }
             }
         }
-        return (value: unknown, index: number) => {
+        return (value: unknown, index: number, actions?: ReactNode) => {
             const dateValue =
                 typeof value === 'string' || typeof value === 'number' || value instanceof Date ? value : undefined;
+            if (dateValue === undefined) {
+                return <td key={index}>{actions}</td>;
+            }
             const date = dayjs(dateValue);
-            const text = method === 'fromNow' ? date.fromNow() : method === 'toNow' ? date.toNow() : date.format(arg);
-            return <td key={index}>{text}</td>;
+            const text = method === 'format' ? date.format(arg) : method === 'toNow' ? date.toNow() : date.fromNow();
+            return (
+                <td key={index} className="group/field">
+                    <div className="flex items-center gap-2">
+                        <VTooltip description={date.format('LLL')}>{text}</VTooltip>
+                        {actions}
+                    </div>
+                </td>
+            );
         };
     },
 };

@@ -1,0 +1,51 @@
+{
+    "name": "@koa-stack/router",
+    "version": "0.24.0",
+    "description": "A powerfull koa router using typescript decorations",
+    "type": "module",
+    "scripts": {
+        "build": "tsc",
+        "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo",
+        "test": "vitest run"
+    },
+    "files": [
+        "lib",
+        "src"
+    ],
+    "keywords": [
+        "koa",
+        "router",
+        "typescript",
+        "decorations"
+    ],
+    "author": "stefanescu.bogdan@gmail.com",
+    "license": "MIT",
+    "dependencies": {
+        "koa": "^3.2.1",
+        "koa-compose": "^4.1.0",
+        "koa-send": "^5.0.1",
+        "path-to-regexp": "^8.4.2",
+        "statuses": "^2.0.2"
+    },
+    "devDependencies": {
+        "@types/koa": "^3.0.3",
+        "@types/koa-compose": "^3.2.9",
+        "@types/koa-send": "^4.1.6",
+        "@types/statuses": "^2.0.6",
+        "@vertesia/tsconfig": "workspace:*",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.9"
+    },
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        },
+        "./errors": {
+            "types": "./lib/errors.d.ts",
+            "default": "./lib/errors.js"
+        }
+    }
+}

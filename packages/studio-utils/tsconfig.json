@@ -1,36 +1,18 @@
 {
+    "extends": "@vertesia/tsconfig/lib.json",
+    "references": [
+        {
+            "path": "../../libraries/jst"
+        },
+        {
+            "path": "../common"
+        }
+    ],
     "compilerOptions": {
-        "composite": false,
         "rootDir": "./src",
-        "sourceMap": true,
-        "outDir": "./lib",
-        "forceConsistentCasingInFileNames": true,
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "target": "ES2024",
-        "useDefineForClassFields": true,
-        "lib": [
-            "ES2024"
-        ],
-        "module": "NodeNext",
-        "moduleResolution": "NodeNext",
-        "declaration": true,
-        "declarationMap": true,
-        "skipLibCheck": true,
-        "resolveJsonModule": true,
-        "isolatedModules": true,
-        "strict": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "noFallthroughCasesInSwitch": true
+        "outDir": "./lib"
     },
     "include": [
         "src"
-    ],
-    "exclude": [
-        "node_modules",
-        "**/*.test.ts",
-        "lib"
-    ],
-    "references": []
+    ]
 }

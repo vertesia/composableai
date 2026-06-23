@@ -2,7 +2,7 @@ import type { JSONSchemaObject } from '@vertesia/common';
 import { Button, FormItem } from '@vertesia/ui/core';
 import clsx from 'clsx';
 import { Plus, Trash2 } from 'lucide-react';
-import { type ComponentType, type ReactNode, type SyntheticEvent, useState } from 'react';
+import { type ComponentType, type ReactNode, type SyntheticEvent, useRef, useState } from 'react';
 import {
     FormContext,
     FormContextProvider,
@@ -131,28 +131,32 @@ interface ListFieldProps {
     object: ManagedListProperty;
 }
 function ListField({ object }: ListFieldProps) {
-    const [value, setValue] = useState<unknown[]>(object.value || []);
     const { disabled } = useForm();
+    // Assign each row a stable id on creation so React keys survive add/remove
+    // without relying on the array index (which breaks input focus/state on edit).
+    const nextRowId = useRef((object.value ?? []).length);
+    const [rowIds, setRowIds] = useState<number[]>(() => (object.value ?? []).map((_, i) => i));
 
     const addItem = () => {
         if (disabled) return;
         object.add();
-        setValue([...object.value]);
+        setRowIds((ids) => [...ids, nextRowId.current++]);
     };
 
     const deleteItem = (index: number) => {
         if (disabled) return;
         object.remove(index);
-        setValue([...object.value]);
+        setRowIds((ids) => ids.filter((_, i) => i !== index));
     };
 
     return (
         <div className="flex flex-col gap-4 my-4 py-2 ps-4 border-s-4 border-s-solid border-s-slate-100 darK:border-s-slate-600">
             {!object.isListItem && <div className="text-gray-900 dark:text-gray-200 font-semibold">{object.title}</div>}
             {object.items.map((item, index) => {
+                const rowId = rowIds[index];
                 return (
                     <ListItem
-                        key={`${index}-${String(value[index] ?? '')}`}
+                        key={rowId}
                         object={item}
                         list={object}
                         onDelete={() => deleteItem(index)}

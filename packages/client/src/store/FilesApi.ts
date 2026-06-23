@@ -16,6 +16,7 @@ import type {
     SetFileMetadataPayload,
 } from '@vertesia/common';
 import { StreamSource } from '../StreamSource.js';
+import { fetchSignedUrl } from './signed-url.js';
 
 export const MEMORIES_PREFIX = 'memories';
 export const ARTIFACTS_PREFIX = 'agents';
@@ -147,11 +148,9 @@ export class FilesApi extends ApiTopic {
                     const isStream = source instanceof StreamSource;
                     const sourceMimeType = source.type || mime_type;
 
-                    const res = await fetch(url, {
+                    const res = await fetchSignedUrl(url, {
                         method: 'PUT',
                         body: isStream ? source.stream : source,
-                        //@ts-expect-error: duplex is not in the types
-                        duplex: isStream ? 'half' : undefined,
                         headers: sourceMimeType ? { 'Content-Type': sourceMimeType } : undefined,
                     });
 
@@ -169,37 +168,42 @@ export class FilesApi extends ApiTopic {
     }
 
     /**
-     * Upload content to a file and return the full path (including bucket name) of the uploaded file
+     * Upload content to a file and return the file id.
      * @param source
-     * @returns
+     * @returns the uploaded file id
      */
     async uploadFile(source: StreamSource | File): Promise<string> {
+        return (await this.uploadFileWithPath(source)).id;
+    }
+
+    /**
+     * Upload content to a file and return both the file id and its storage path
+     * (e.g. "bucket-name/path/to/file"). Prefer this over {@link uploadFile} when the
+     * caller needs an importable reference (the path can be turned into a "gs://…" URL),
+     * not just the opaque id.
+     * @param source
+     * @returns the uploaded file id and storage path
+     */
+    async uploadFileWithPath(source: StreamSource | File): Promise<{ id: string; path: string }> {
         const isStream = source instanceof StreamSource;
         const { url, id, path } = await this.getUploadUrl(source);
 
-        await fetch(url, {
+        const res = await fetchSignedUrl(url, {
             method: 'PUT',
             body: isStream ? source.stream : source,
-            //@ts-expect-error: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
-            duplex: isStream ? 'half' : undefined,
             headers: {
                 'Content-Type': source.type || 'application/gzip',
             },
-        })
-            .then((res: Response) => {
-                if (res.ok) {
-                    return res;
-                } else {
-                    console.log(res);
-                    throw new Error(`Failed to upload file: ${res.statusText}`);
-                }
-            })
-            .catch((err) => {
-                console.error('Failed to upload file', { err, url, id, path });
-                throw err;
-            });
+        }).catch((err) => {
+            console.error('Failed to upload file', { err, url, id, path });
+            throw err;
+        });
+        if (!res.ok) {
+            console.log(res);
+            throw new Error(`Failed to upload file: ${res.statusText}`);
+        }
 
-        return id;
+        return { id, path };
     }
 
     /**
@@ -212,7 +216,7 @@ export class FilesApi extends ApiTopic {
         const needSign = !location.startsWith('https:');
         const { url } = needSign ? await this.getDownloadUrl(location) : { url: location };
 
-        const res = await fetch(url, {
+        const res = await fetchSignedUrl(url, {
             method: 'GET',
         })
             .then((res: Response) => {

@@ -1,6 +1,36 @@
 import type { VertesiaClient } from '@vertesia/client';
 import { type AgentMessage, AgentMessageType } from '@vertesia/common';
 import dayjs from 'dayjs';
+import { getWorkstreamActivityDetails, getWorkstreamLaunchDetails } from '../workstreams.js';
+
+function getAgentChatDebugParam(hash: string): string | null {
+    const queryStart = hash.indexOf('?');
+    if (queryStart === -1) return null;
+    return new URLSearchParams(hash.slice(queryStart + 1)).get('agentChatDebug');
+}
+
+export function isAgentChatDebugEnabled(): boolean {
+    if (typeof window === 'undefined') return false;
+
+    const searchValue = new URLSearchParams(window.location.search).get('agentChatDebug');
+    const hashValue = getAgentChatDebugParam(window.location.hash);
+    const urlValue = searchValue ?? hashValue;
+    if (urlValue !== null) {
+        return urlValue === '1' || urlValue === 'true';
+    }
+
+    try {
+        const stored = window.localStorage.getItem('agentChatDebug');
+        return stored === '1' || stored === 'true';
+    } catch {
+        return false;
+    }
+}
+
+export function debugAgentChat(label: string, details?: Record<string, unknown>) {
+    if (!isAgentChatDebugEnabled()) return;
+    console.debug(`[agent-chat] ${label}`, details ?? {});
+}
 
 export function insertMessageInTimeline(arr: AgentMessage[], m: AgentMessage) {
     const t = typeof m.timestamp === 'number' ? m.timestamp : new Date(m.timestamp).getTime();
@@ -28,19 +58,40 @@ export const DONE_STATES = [
 export function isInProgress(messages: AgentMessage[]) {
     if (!messages.length) return true;
 
+    const isTerminalOptimisticFailure = (message: AgentMessage) =>
+        message.details?._optimistic &&
+        message.details?._deliveryStatus === 'failed' &&
+        DONE_STATES.includes(message.type);
+
+    const progressMessages = messages.filter((m) => !isTerminalOptimisticFailure(m));
+
     // Only the main workstream determines whether the conversation is in progress.
     // Child workstream COMPLETE/IDLE messages must not flip this flag.
-    const mainMessages = messages.filter((m) => getWorkstreamId(m) === 'main');
+    const mainMessages = progressMessages.filter((m) => getWorkstreamId(m) === 'main');
 
     // If there are no main workstream messages yet, check if there's exactly one
     // workstream — treat it as main (handles single-workstream conversations).
     if (mainMessages.length === 0) {
-        const lastMessage = messages[messages.length - 1];
+        const lastMessage = progressMessages[progressMessages.length - 1];
+        if (!lastMessage) return true;
         return !DONE_STATES.includes(lastMessage.type);
     }
 
     const lastMainMessage = mainMessages[mainMessages.length - 1];
     return !DONE_STATES.includes(lastMainMessage.type);
+}
+
+export function isUserStoppedMessage(message: AgentMessage): boolean {
+    if (message.type !== AgentMessageType.IDLE) return false;
+
+    const statusReason = message.details?.status_reason;
+    const displayRole = message.details?.display_role;
+    if (statusReason === 'user_stopped' || displayRole === 'user_stopped') return true;
+
+    return String(message.message ?? '')
+        .trim()
+        .toLowerCase()
+        .startsWith('stopped.');
 }
 
 export const formatRelative = (ts: number | string) =>
@@ -58,20 +109,54 @@ function getTimestampMs(timestamp: number | string): number {
 export function getWorkstreamId(message: AgentMessage): string {
     // Only use the direct workstream_id property on the message
     if (message.workstream_id) {
-        // For debugging COMPLETE messages
-        if (message.type === AgentMessageType.COMPLETE) {
-            console.log('[getWorkstreamId] COMPLETE message with workstream_id:', message.workstream_id);
-        }
         return message.workstream_id;
-    }
-
-    // For debugging COMPLETE messages without workstream_id
-    if (message.type === AgentMessageType.COMPLETE) {
-        console.log("[getWorkstreamId] COMPLETE message without workstream_id, defaulting to 'main'");
     }
 
     // Default to 'main' workstream
     return 'main';
+}
+
+function getDetailsRecord(message: AgentMessage): Record<string, unknown> {
+    const details = message.details;
+    if (!details || typeof details !== 'object' || Array.isArray(details)) return {};
+    return details as Record<string, unknown>;
+}
+
+export function isMainChatTimelineMessage(message: AgentMessage): boolean {
+    if (getWorkstreamId(message) === 'main') return true;
+
+    if (getWorkstreamLaunchDetails(message) || getWorkstreamActivityDetails(message)) return true;
+
+    const details = getDetailsRecord(message);
+    const hasChildWorkflow =
+        typeof details.child_workflow_id === 'string' || typeof details.child_workflow_run_id === 'string';
+    const hasTool = typeof details.tool === 'string' || typeof details.tool_run_id === 'string';
+    const isLegacyPreLaunchFailure =
+        details.event_class === 'activity' &&
+        (message.type === AgentMessageType.ERROR || message.type === AgentMessageType.WARNING) &&
+        !hasChildWorkflow &&
+        !hasTool;
+
+    return isLegacyPreLaunchFailure;
+}
+
+export function filterMessagesForActiveWorkstream(messages: AgentMessage[], activeWorkstream: string): AgentMessage[] {
+    if (activeWorkstream === 'all') {
+        return messages.filter(isMainChatTimelineMessage);
+    }
+
+    return messages.filter((message) => {
+        const workstreamStartDetails = getWorkstreamLaunchDetails(message) ?? getWorkstreamActivityDetails(message);
+        if (workstreamStartDetails?.workstreamId === activeWorkstream) return false;
+        return getWorkstreamId(message) === activeWorkstream;
+    });
+}
+
+export function isSummaryVisibleToolActivity(message: AgentMessage): boolean {
+    if (!isToolActivityMessage(message)) return false;
+
+    const status = getToolStatus(message);
+    return status === 'running' || status === 'error' || status === 'warning';
 }
 
 /**
@@ -83,26 +168,43 @@ export function getSlidingViewMessageBuckets(
     isCompleted: boolean,
     hasStreaming: boolean,
 ): { importantMessages: AgentMessage[]; recentThinking: AgentMessage[] } {
+    const isPrimarySummaryMessage = (msg: AgentMessage): boolean =>
+        msg.type === AgentMessageType.ANSWER ||
+        msg.type === AgentMessageType.QUESTION ||
+        msg.type === AgentMessageType.REQUEST_INPUT ||
+        msg.type === AgentMessageType.TERMINATED ||
+        msg.type === AgentMessageType.ERROR ||
+        msg.type === AgentMessageType.WARNING ||
+        (msg.type === AgentMessageType.THOUGHT && !!msg.details?.streamed);
+
     const latestUserQuestionTimestamp = messages.reduce((max, msg) => {
         if (msg.type !== AgentMessageType.QUESTION) return max;
         return Math.max(max, getTimestampMs(msg.timestamp));
     }, -Infinity);
 
-    const importantMessages = messages.filter(
-        (msg) =>
-            msg.type === AgentMessageType.ANSWER ||
-            msg.type === AgentMessageType.QUESTION ||
-            msg.type === AgentMessageType.COMPLETE ||
-            msg.type === AgentMessageType.IDLE ||
-            msg.type === AgentMessageType.REQUEST_INPUT ||
-            msg.type === AgentMessageType.TERMINATED ||
-            msg.type === AgentMessageType.ERROR ||
-            (msg.type === AgentMessageType.THOUGHT &&
-                (msg.details?.tool ||
-                    msg.details?.tools ||
-                    msg.details?.streamed ||
-                    msg.details?.display_role === 'tool_preamble')),
-    );
+    const latestPrimarySummaryTimestamp = messages.reduce((max, msg) => {
+        if (!isPrimarySummaryMessage(msg)) return max;
+        return Math.max(max, getTimestampMs(msg.timestamp));
+    }, -Infinity);
+
+    const latestPrimarySummaryIndex = messages.reduce((latestIndex, msg, index) => {
+        if (!isPrimarySummaryMessage(msg)) return latestIndex;
+        return index;
+    }, -1);
+
+    const importantMessages = messages.filter((msg, index) => {
+        if (isPrimarySummaryMessage(msg)) return true;
+        if (!isSummaryVisibleToolActivity(msg)) return false;
+
+        const status = getToolStatus(msg);
+        if (status === 'error' || status === 'warning') return true;
+
+        const timestamp = getTimestampMs(msg.timestamp);
+        return (
+            (latestPrimarySummaryIndex < 0 || index > latestPrimarySummaryIndex) &&
+            (!Number.isFinite(latestPrimarySummaryTimestamp) || timestamp >= latestPrimarySummaryTimestamp)
+        );
+    });
 
     const latestImportantTimestamp = importantMessages.reduce((max, msg) => {
         return Math.max(max, getTimestampMs(msg.timestamp));
@@ -134,7 +236,6 @@ export function getSlidingViewMessageBuckets(
 
                       return true;
                   })
-                  .slice(-1)
             : [];
 
     return { importantMessages, recentThinking };
@@ -161,9 +262,6 @@ export function getWorkstreamStatusMap(messages: AgentMessage[]): Map<string, 'p
         wsMessages?.push(message);
     });
 
-    // Log all workstreams found
-    console.log('[getWorkstreamStatusMap] Found workstreams:', Array.from(workstreamMessages.keys()));
-
     // Determine status based on last message type
     for (const [workstreamId, msgs] of workstreamMessages.entries()) {
         if (msgs.length > 0) {
@@ -181,21 +279,12 @@ export function getWorkstreamStatusMap(messages: AgentMessage[]): Map<string, 'p
             );
 
             if (hasCompleteMessage || DONE_STATES.includes(lastMessage.type)) {
-                console.log(`[getWorkstreamStatusMap] Marking workstream ${workstreamId} as completed`);
                 statusMap.set(workstreamId, 'completed');
             } else {
-                console.log(`[getWorkstreamStatusMap] Workstream ${workstreamId} is in_progress`);
+                statusMap.set(workstreamId, 'in_progress');
             }
         }
     }
-
-    // Log final status map for debugging
-    console.log(
-        '[getWorkstreamStatusMap] Final status map:',
-        Array.from(statusMap.entries())
-            .map(([id, status]) => `${id}: ${status}`)
-            .join(', '),
-    );
 
     return statusMap;
 }
@@ -222,6 +311,7 @@ export interface StreamingData {
     isComplete?: boolean;
     startTimestamp: number;
     activityId?: string;
+    streamingId?: string;
 }
 
 function normalizeComparableText(text: unknown): string | undefined {
@@ -234,7 +324,7 @@ function getMessageComparableText(message: AgentMessage): string | undefined {
     return normalizeComparableText(message.message);
 }
 
-function isStreamReplacedByMessage(streaming: StreamingData, messages: AgentMessage[]): boolean {
+export function isStreamReplacedByMessage(streaming: StreamingData, messages: AgentMessage[]): boolean {
     const streamingText = normalizeComparableText(streaming.text);
     if (!streamingText) return false;
 
@@ -245,7 +335,26 @@ function isStreamReplacedByMessage(streaming: StreamingData, messages: AgentMess
         if (messageTimestamp < streaming.startTimestamp) return false;
         if (getWorkstreamId(message) !== streamWorkstreamId) return false;
 
+        const messageStreamingId =
+            typeof message.details?.streaming_id === 'string' ? message.details.streaming_id : undefined;
+        if (streaming.streamingId && messageStreamingId) {
+            if (messageStreamingId !== streaming.streamingId) return false;
+            if (message.details?.display_role === 'thinking') {
+                return false;
+            }
+            if (isToolCallMessage(message) || message.details?.tool_status) {
+                return false;
+            }
+            return true;
+        }
+
         if (streaming.activityId && message.details?.activity_id === streaming.activityId) {
+            if (message.details?.display_role === 'thinking') {
+                return false;
+            }
+            if (isToolCallMessage(message) || message.details?.tool_status) {
+                return false;
+            }
             return true;
         }
 
@@ -322,6 +431,8 @@ export type RenderableGroup =
           firstTimestamp: number;
           toolRunId?: string;
           toolStatus?: ToolExecutionStatus;
+          preambleText?: string;
+          preambleMessage?: AgentMessage;
       }
     | {
           type: 'streaming';
@@ -339,21 +450,25 @@ export function isToolCallMessage(message: AgentMessage): boolean {
     return message.type === AgentMessageType.THOUGHT && !!message.details?.tool;
 }
 
-function isToolPreambleMessage(message: AgentMessage): boolean {
-    const details = message.details as { display_role?: string } | undefined;
-    return message.type === AgentMessageType.THOUGHT && details?.display_role === 'tool_preamble';
+export function isToolPreambleMessage(message: AgentMessage): boolean {
+    const details = message.details as { display_role?: string; tool?: string } | undefined;
+    return (
+        message.type === AgentMessageType.THOUGHT &&
+        (details?.display_role === 'tool_preamble' || details?.tool === 'think')
+    );
 }
 
 /**
  * Check if a message should be rendered as part of tool activity.
- * Includes concrete tool calls plus tool preambles emitted before tool_use.
+ * Includes concrete tool calls. Explicit tool preambles are turn prose and
+ * render as standalone thought content.
  */
 export function isToolActivityMessage(message: AgentMessage): boolean {
+    if (isToolPreambleMessage(message)) return false;
     if (isToolCallMessage(message)) return true;
     if (message.type !== AgentMessageType.THOUGHT) return false;
 
     const details = message.details as { display_role?: string; tools?: unknown } | undefined;
-    if (isToolPreambleMessage(message)) return true;
     if (Array.isArray(details?.tools) && details.tools.length > 0) return true;
 
     return false;
@@ -488,6 +603,8 @@ export function groupMessagesWithStreaming(
         // REQUEST_INPUT, BatchProgressPanel for BATCH_PROGRESS) and must stay
         // standalone so MessageItem / AllMessagesMixed can route them correctly.
         if (message.type === AgentMessageType.REQUEST_INPUT || message.type === AgentMessageType.BATCH_PROGRESS) {
+            standaloneMessages.push(message);
+        } else if (isToolPreambleMessage(message)) {
             standaloneMessages.push(message);
         } else if (activityGroupId) {
             if (!activityGroups.has(activityGroupId)) {
@@ -738,6 +855,8 @@ export function mergeConsecutiveToolGroups(groups: RenderableGroup[]): Renderabl
         firstTimestamp: number;
         toolRunId?: string;
         toolStatus?: ToolExecutionStatus;
+        preambleText?: string;
+        preambleMessage?: AgentMessage;
     } | null = null;
 
     const flushPending = () => {
@@ -748,6 +867,8 @@ export function mergeConsecutiveToolGroups(groups: RenderableGroup[]): Renderabl
                 firstTimestamp: pendingToolGroup.firstTimestamp,
                 toolRunId: pendingToolGroup.toolRunId,
                 toolStatus: pendingToolGroup.toolStatus,
+                preambleText: pendingToolGroup.preambleText,
+                preambleMessage: pendingToolGroup.preambleMessage,
             });
             pendingToolGroup = null;
         }
@@ -763,12 +884,18 @@ export function mergeConsecutiveToolGroups(groups: RenderableGroup[]): Renderabl
                 if (!pendingToolGroup.toolRunId && group.toolRunId) {
                     pendingToolGroup.toolRunId = group.toolRunId;
                 }
+                if (!pendingToolGroup.preambleMessage && group.preambleMessage) {
+                    pendingToolGroup.preambleMessage = group.preambleMessage;
+                    pendingToolGroup.preambleText = group.preambleText;
+                }
             } else {
                 pendingToolGroup = {
                     messages: [...group.messages],
                     firstTimestamp: group.firstTimestamp,
                     toolRunId: group.toolRunId,
                     toolStatus: group.toolStatus,
+                    preambleText: group.preambleText,
+                    preambleMessage: group.preambleMessage,
                 };
             }
         } else {

@@ -81,9 +81,10 @@ interface BrowserUseWidgetProps {
     state: BrowserUseWidgetState;
     runId?: string;
     className?: string;
+    compact?: boolean;
 }
 
-export function BrowserUseWidget({ state, runId, className }: BrowserUseWidgetProps) {
+export function BrowserUseWidget({ state, runId, className, compact }: BrowserUseWidgetProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const urlCache = useArtifactUrlCache();
@@ -136,6 +137,60 @@ export function BrowserUseWidget({ state, runId, className }: BrowserUseWidgetPr
             cancelled = true;
         };
     }, [client, runId, screenshotRef, urlCache]);
+
+    if (compact) {
+        return (
+            <div className={cn('overflow-hidden rounded-md border border-border/70 bg-transparent', className)}>
+                <div className="flex items-center gap-2 px-2 py-1.5">
+                    <MonitorIcon className="size-3.5 shrink-0 text-info" />
+                    <div className="min-w-0 flex-1">
+                        <div className="flex min-w-0 items-center gap-1">
+                            <span className="text-xs font-medium text-foreground">{t('agent.browserPreview')}</span>
+                            {state.phase && (
+                                <span className="truncate text-[11px] capitalize text-muted">
+                                    · {phaseLabel(state.phase)}
+                                </span>
+                            )}
+                        </div>
+                        <div className="truncate text-[11px] text-muted" title={title}>
+                            {title}
+                        </div>
+                    </div>
+                    {state.url && (
+                        <a
+                            href={state.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={t('agent.openInNewTab')}
+                            className={cn(
+                                'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md',
+                                'text-muted hover:bg-muted hover:text-foreground',
+                            )}
+                        >
+                            <ExternalLinkIcon className="size-3" />
+                        </a>
+                    )}
+                </div>
+
+                {screenshotRef &&
+                    (imageUrl ? (
+                        <button
+                            type="button"
+                            className="block w-full bg-mixer-muted/20 text-start"
+                            onClick={() => openImage(imageUrl, imageName)}
+                            title={t('agent.clickToEnlarge')}
+                        >
+                            <img src={imageUrl} alt={imageName} className="block max-h-32 w-full object-contain" />
+                        </button>
+                    ) : (
+                        <div className="flex min-h-16 items-center justify-center gap-2 bg-mixer-muted/20 px-3 py-4 text-xs text-muted">
+                            <ImageIcon className="size-4" />
+                            <span>{t('agent.browserScreenshotPending')}</span>
+                        </div>
+                    ))}
+            </div>
+        );
+    }
 
     return (
         <div className={cn('overflow-hidden rounded-md border border-muted bg-mixer-muted/10', className)}>
