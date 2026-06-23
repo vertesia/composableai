@@ -10,6 +10,6 @@
         { "path": "../client" },
         { "path": "../../llumiverse/common" },
         { "path": "../workflow" },
-        { "path": "../embeddings-export/tsconfig.json" }
+        { "path": "../content-export/tsconfig.json" }
     ]
 }

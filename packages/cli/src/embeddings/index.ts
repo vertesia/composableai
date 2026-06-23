@@ -9,16 +9,15 @@ export function registerEmbeddingsCommand(program: Command) {
         .description('Export stored project embeddings as paged JSONL or JSONL.GZ')
         .option(
             '-o, --output [path]',
-            'Output file path. Defaults to embed-export-<projectid>-<projectname>-<timestamp>.jsonl.gz',
+            'Output file path. Defaults to content-export-<projectid>-<projectname>-<timestamp>.jsonl.gz',
         )
         .option('--compression [compression]', 'Compression: gzip or none', 'gzip')
         .option('--embedding-types [types]', 'Comma-separated embedding types: text,image,properties')
-        .option('-l, --limit [limit]', 'Records to fetch per API page', '500')
-        .option('--query [json]', 'Additional content object query as JSON')
         .option('--object-type [type]', 'Filter by content object type id or in-code type')
-        .option('--status [status]', 'Filter by content object status')
-        .option('--path [path]', 'Filter by content object location/path')
-        .option('--name [name]', 'Filter by content object name')
+        .option('--created-from [date]', 'Filter by created_at lower bound')
+        .option('--created-to [date]', 'Filter by created_at upper bound')
+        .option('--updated-from [date]', 'Filter by updated_at lower bound')
+        .option('--updated-to [date]', 'Filter by updated_at upper bound')
         .option('--all-revisions', 'Export all revisions instead of only head revisions')
         .option('--include-properties', 'Include content object properties')
         .option('--include-metadata', 'Include content object metadata')

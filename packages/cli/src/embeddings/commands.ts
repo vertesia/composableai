@@ -2,12 +2,16 @@ import { createWriteStream } from 'node:fs';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { createGzip } from 'node:zlib';
-import { type ComplexSearchQuery, type ExportEmbeddingsPageRequest, SupportedEmbeddingTypes } from '@vertesia/common';
 import {
-    createEmbeddingsExportFilename,
-    type EmbeddingsExportProgress,
-    iterateEmbeddingExportRecords,
-} from '@vertesia/embeddings-export';
+    type ExportContentObjectsFilter,
+    type ExportContentObjectsPageRequest,
+    SupportedEmbeddingTypes,
+} from '@vertesia/common';
+import {
+    type ContentExportProgress,
+    createContentExportFilename,
+    iterateContentExportRecords,
+} from '@vertesia/content-export';
 import type { Command } from 'commander';
 import { getClient } from '../client.js';
 import { config } from '../profiles/index.js';
@@ -17,12 +21,11 @@ type ExportEmbeddingsOptions = CliOptions<{
     output?: string;
     compression?: string;
     embeddingTypes?: string;
-    limit?: string;
-    query?: string;
     objectType?: string;
-    status?: string;
-    path?: string;
-    name?: string;
+    createdFrom?: string;
+    createdTo?: string;
+    updatedFrom?: string;
+    updatedTo?: string;
     allRevisions?: boolean;
     includeProperties?: boolean;
     includeMetadata?: boolean;
@@ -53,66 +56,52 @@ export async function exportEmbeddings(program: Command, options: ExportEmbeddin
 
 async function* createJsonlBuffers(
     client: Awaited<ReturnType<typeof getClient>>['store'],
-    request: ExportEmbeddingsPageRequest,
-    onProgress: (progress: EmbeddingsExportProgress) => void,
+    request: ExportContentObjectsPageRequest,
+    onProgress: (progress: ContentExportProgress) => void,
 ): AsyncGenerator<Buffer> {
-    for await (const record of iterateEmbeddingExportRecords(client, request, { onProgress })) {
+    for await (const record of iterateContentExportRecords(client, request, { onProgress })) {
         yield Buffer.from(`${JSON.stringify(record)}\n`, 'utf8');
     }
 }
 
-function buildExportRequest(options: ExportEmbeddingsOptions): ExportEmbeddingsPageRequest {
+function buildExportRequest(options: ExportEmbeddingsOptions): ExportContentObjectsPageRequest {
     return {
         embedding_types: parseEmbeddingTypes(options.embeddingTypes),
-        limit: parseLimit(options.limit),
-        query: buildQuery(options),
+        filter: buildFilter(options),
         all_revisions: getBooleanOption(options.allRevisions),
         include: {
+            embeddings: true,
             properties: getBooleanOption(options.includeProperties),
             metadata: getBooleanOption(options.includeMetadata),
         },
     };
 }
 
-function buildQuery(options: ExportEmbeddingsOptions): ComplexSearchQuery | undefined {
-    const query = parseQuery(options.query);
+function buildFilter(options: ExportEmbeddingsOptions): ExportContentObjectsFilter | undefined {
+    const filter: ExportContentObjectsFilter = {};
     const objectType = getStringOption(options.objectType);
-    const status = getStringOption(options.status);
-    const path = getStringOption(options.path);
-    const name = getStringOption(options.name);
+    const createdFrom = getStringOption(options.createdFrom);
+    const createdTo = getStringOption(options.createdTo);
+    const updatedFrom = getStringOption(options.updatedFrom);
+    const updatedTo = getStringOption(options.updatedTo);
 
     if (objectType) {
-        query.type = objectType;
+        filter.type = objectType;
     }
-    if (status) {
-        query.status = status;
+    if (createdFrom) {
+        filter.created_from = createdFrom;
     }
-    if (path) {
-        query.location = path;
+    if (createdTo) {
+        filter.created_to = createdTo;
     }
-    if (name) {
-        query.name = name;
+    if (updatedFrom) {
+        filter.updated_from = updatedFrom;
+    }
+    if (updatedTo) {
+        filter.updated_to = updatedTo;
     }
 
-    return Object.keys(query).length > 0 ? query : undefined;
-}
-
-function parseQuery(rawQuery: unknown): ComplexSearchQuery {
-    const queryText = getStringOption(rawQuery);
-    if (!queryText) {
-        return {};
-    }
-    try {
-        const parsed = JSON.parse(queryText) as unknown;
-        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-            throw new Error('query must be a JSON object');
-        }
-        return parsed as ComplexSearchQuery;
-    } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.error(`Error: Invalid --query JSON: ${message}`);
-        process.exit(1);
-    }
+    return Object.keys(filter).length > 0 ? filter : undefined;
 }
 
 function parseEmbeddingTypes(rawTypes: unknown): SupportedEmbeddingTypes[] | undefined {
@@ -133,19 +122,6 @@ function parseEmbeddingTypes(rawTypes: unknown): SupportedEmbeddingTypes[] | und
     return types as SupportedEmbeddingTypes[];
 }
 
-function parseLimit(rawLimit: unknown): number | undefined {
-    const limitText = getStringOption(rawLimit);
-    if (!limitText) {
-        return undefined;
-    }
-    const limit = Number.parseInt(limitText, 10);
-    if (!Number.isInteger(limit) || limit < 1) {
-        console.error(`Error: Invalid --limit '${limitText}'. Expected a positive integer.`);
-        process.exit(1);
-    }
-    return limit;
-}
-
 function normalizeCompression(rawCompression: unknown): ExportCompression {
     const compression = (getStringOption(rawCompression) ?? 'gzip').toLowerCase();
     if (compression === 'gzip' || compression === 'none') {
@@ -155,7 +131,7 @@ function normalizeCompression(rawCompression: unknown): ExportCompression {
     process.exit(1);
 }
 
-function createProgressReporter(options: ExportEmbeddingsOptions): (progress: EmbeddingsExportProgress) => void {
+function createProgressReporter(options: ExportEmbeddingsOptions): (progress: ContentExportProgress) => void {
     if (getBooleanOption(options.quiet)) {
         return () => {};
     }
@@ -172,5 +148,5 @@ async function defaultOutputPath(
     const projectId =
         process.env.VERTESIA_PROJECT_ID || process.env.COMPOSABLE_PROMPTS_PROJECT_ID || config.current?.project;
     const project = projectId ? await client.projects.retrieve(projectId) : undefined;
-    return `${createEmbeddingsExportFilename({ id: projectId, name: project?.name })}.${suffix}`;
+    return `${createContentExportFilename({ id: projectId, name: project?.name })}.${suffix}`;
 }
