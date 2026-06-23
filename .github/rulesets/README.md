@@ -1,0 +1,36 @@
+# RuleSets
+
+These JSON files mirror rulesets defined in this repository's settings. Import them
+at <https://github.com/vertesia/composableai/settings/rules>. Note that editing
+these files does **not** apply to GitHub automatically — it requires a manual
+import by someone with an administrator role on the repo (or `gh api
+repos/vertesia/composableai/rulesets --input <file>`, dropping the export-only
+`source`/`source_type` fields). Reach out to the `#dev` Slack channel if needed.
+
+## `release.json`
+
+Protects the `release/X.Y` release lines coordinated by the studio release process
+(see `docs/release-process.md` in `vertesia/studio`). It mirrors this repo's `main`
+ruleset (PR + 1 approval, no deletion / non-fast-forward, CodeQL code scanning) but
+targets `refs/heads/release/**` instead of the default branch.
+
+Note: this is distinct from the existing `maintenance` ruleset, which targets bare
+`X.Y` branches (the older scheme); the coordinated release lines use the
+`release/X.Y` prefix.
+
+When importing, an admin must configure the **bypass actors** (left empty in the
+committed JSON, as for `main`) so the release automation can operate on `release/*`:
+
+- the submodule-sync automerge app (so `(sync) Update Git submodule` PRs auto-merge
+  into `release/X.Y`), and
+- the actor used by studio's `release-cut.yaml` for `bump_via=push` to push the
+  version-bump commits past protection (the GitHub App that mints the cross-repo
+  token, or the same deploy-key/automation actor used on `main`). The `bump_via=pr`
+  fallback opens PRs instead and needs no push bypass — use it until the bypass is
+  configured.
+
+`release.json` keeps `main`'s CodeQL `code_scanning` rule because `release/X.Y` is
+the production line and must be CodeQL-gated. This repo uses CodeQL **default
+setup**, which scans pull requests targeting the default branch *or any protected
+branch* — so protecting `release/**` (this ruleset) makes those scans run
+automatically, with no advanced-setup workflow required.
