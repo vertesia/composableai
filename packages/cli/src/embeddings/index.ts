@@ -19,7 +19,9 @@ export function registerEmbeddingsCommand(program: Command) {
         .option('--updated-from [date]', 'Filter by updated_at lower bound')
         .option('--updated-to [date]', 'Filter by updated_at upper bound')
         .option('--all-revisions', 'Export all revisions instead of only head revisions')
-        .option('--include-properties', 'Include content object properties')
+        .option('--no-content', 'Exclude content source metadata')
+        .option('--no-status', 'Exclude content object status')
+        .option('--no-properties', 'Exclude content object properties')
         .option('--include-metadata', 'Include content object metadata')
         .option('--quiet', 'Suppress progress output')
         .action(async (options: Record<string, unknown>) => {

@@ -27,7 +27,9 @@ type ExportEmbeddingsOptions = CliOptions<{
     updatedFrom?: string;
     updatedTo?: string;
     allRevisions?: boolean;
-    includeProperties?: boolean;
+    content?: boolean;
+    status?: boolean;
+    properties?: boolean;
     includeMetadata?: boolean;
     quiet?: boolean;
 }>;
@@ -71,7 +73,9 @@ function buildExportRequest(options: ExportEmbeddingsOptions): ExportContentObje
         all_revisions: getBooleanOption(options.allRevisions),
         include: {
             embeddings: true,
-            properties: getBooleanOption(options.includeProperties),
+            content: options.content !== false,
+            status: options.status !== false,
+            properties: options.properties !== false,
             metadata: getBooleanOption(options.includeMetadata),
         },
     };

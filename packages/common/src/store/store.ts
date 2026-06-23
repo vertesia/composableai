@@ -78,7 +78,15 @@ export interface ExportContentObjectsIncludeOptions {
      */
     embeddings?: boolean;
     /**
-     * Include object properties. Disabled by default because properties may be large or sensitive.
+     * Include content source metadata. Enabled by default.
+     */
+    content?: boolean;
+    /**
+     * Include object lifecycle status. Enabled by default.
+     */
+    status?: boolean;
+    /**
+     * Include object properties. Enabled by default.
      */
     properties?: boolean;
     /**
@@ -141,7 +149,7 @@ export interface ExportedContentObjectRecord {
         code?: string;
         name?: string;
     };
-    location: string;
+    status?: ContentObjectStatus;
     content?: {
         source?: string;
         type?: string;

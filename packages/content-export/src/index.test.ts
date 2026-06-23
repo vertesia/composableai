@@ -15,7 +15,6 @@ describe('content export helpers', () => {
                     {
                         id: 'object-1',
                         name: 'Object 1',
-                        location: '/',
                         created_at: '2026-01-01T00:00:00.000Z',
                         updated_at: '2026-01-01T00:00:00.000Z',
                         embeddings: {
@@ -35,7 +34,6 @@ describe('content export helpers', () => {
                     {
                         id: 'object-2',
                         name: 'Object 2',
-                        location: '/',
                         created_at: '2026-01-01T00:00:00.000Z',
                         updated_at: '2026-01-01T00:00:00.000Z',
                         embeddings: {
@@ -75,7 +73,6 @@ describe('content export helpers', () => {
                         {
                             id: 'object-1',
                             name: 'Object 1',
-                            location: '/',
                             created_at: '2026-01-01T00:00:00.000Z',
                             updated_at: '2026-01-01T00:00:00.000Z',
                             embeddings: {
@@ -102,7 +99,7 @@ describe('content export helpers', () => {
         expect(result.filename).toBe('embeddings.jsonl');
         expect(result.content_type).toBe('application/x-ndjson');
         expect(output.trim()).toBe(
-            '{"id":"object-1","name":"Object 1","location":"/","created_at":"2026-01-01T00:00:00.000Z","updated_at":"2026-01-01T00:00:00.000Z","embeddings":{"text":{"model":"text-model","values":[1,2,3]}}}',
+            '{"id":"object-1","name":"Object 1","created_at":"2026-01-01T00:00:00.000Z","updated_at":"2026-01-01T00:00:00.000Z","embeddings":{"text":{"model":"text-model","values":[1,2,3]}}}',
         );
     });
 
