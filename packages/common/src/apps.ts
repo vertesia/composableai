@@ -986,6 +986,58 @@ export function resolveManifestUrls(
     }
 }
 
+/**
+ * Parse a gateway app endpoint into its parts. Accepts BOTH the canonical apps mount
+ * (`…/tenants/<t>/apps/<app>`, what publish now stores) AND the legacy package mount
+ * (`…/tenants/<t>/package/<app>`, what older published apps stored). Returns undefined for any
+ * non-gateway endpoint (e.g. a studio-hosted `{{studio}}/api/package` app or an external app),
+ * so callers fall back to using the endpoint as-is.
+ */
+export function parseGatewayAppEndpoint(
+    endpoint: string,
+): { origin: string; tenant: string; appId: string } | undefined {
+    const m = /^(.*)\/tenants\/([^/]+)\/(?:package|apps)\/([^/]+)\/?$/.exec(endpoint);
+    if (!m) return undefined;
+    const [, origin, tenant, appId] = m;
+    return { origin, tenant, appId };
+}
+
+/**
+ * The runtime service-API base for a gateway app endpoint:
+ * `…/tenants/<t>/apps/<app>[/versions/<v>]/api`. The runtime serves `/api/*` at the apps mount as a
+ * sibling of `/app/`, so an app's tool/resource URLs resolve against this base. Tenant/app segments
+ * are reused verbatim (already URL-encoded in the stored endpoint); only `version` is encoded.
+ * Returns undefined for non-gateway endpoints so those fall back to legacy joining.
+ */
+export function resolveAppServiceApiBase(endpoint: string, version?: string): string | undefined {
+    const parsed = parseGatewayAppEndpoint(endpoint);
+    if (!parsed) return undefined;
+    const { origin, tenant, appId } = parsed;
+    const versionSeg = version ? `/versions/${encodeURIComponent(version)}` : '';
+    return `${origin}/tenants/${tenant}/apps/${appId}${versionSeg}/api`;
+}
+
+/**
+ * The aggregate package descriptor URL for a gateway app endpoint:
+ * - current/promoted: `…/tenants/<t>/package/<app>` (public descriptor mount)
+ * - version-pinned: `…/tenants/<t>/apps/<app>/versions/<v>/api/package` (authenticated runtime mount)
+ *
+ * The canonical apps endpoint (`…/apps/<app>`) is the UI/current service mount, not a public package
+ * descriptor: fetching `…/apps/<app>?scope=…` returns the app's SPA index.html (HTML), not JSON.
+ * Current descriptor fetches must therefore use the package mount even when Studio stores the
+ * canonical apps endpoint; version-pinned fetches use the apps runtime route (the legacy package
+ * mount has no version segment). Falls back to the endpoint unchanged for non-gateway apps.
+ */
+export function resolvePackageDescriptorUrl(endpoint: string, version?: string): string {
+    const parsed = parseGatewayAppEndpoint(endpoint);
+    if (!parsed) return endpoint;
+    const { origin, tenant, appId } = parsed;
+    if (version) {
+        return `${origin}/tenants/${tenant}/apps/${appId}/versions/${encodeURIComponent(version)}/api/package`;
+    }
+    return `${origin}/tenants/${tenant}/package/${appId}`;
+}
+
 export type AppPackageScope =
     | 'ui'
     | 'tools'
