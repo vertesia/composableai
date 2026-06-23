@@ -2,7 +2,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
 
-const TARGET_FILE = 'lib/vertesia-embeddings-export.js';
+const TARGET_FILE = 'lib/vertesia-content-export.js';
 
 export default {
     input: 'lib/index.js',

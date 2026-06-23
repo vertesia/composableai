@@ -1,26 +1,23 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     compactTimestamp,
-    createEmbeddingsExportFilename,
-    createEmbeddingsExportStream,
-    iterateEmbeddingExportRecords,
+    createContentExportFilename,
+    createContentExportStream,
+    iterateContentExportRecords,
 } from './index.js';
 
-describe('embeddings export helpers', () => {
+describe('content export helpers', () => {
     it('iterates paged export records', async () => {
         const exportPage = vi
             .fn()
             .mockResolvedValueOnce({
-                schema_version: 1,
                 items: [
                     {
-                        object: {
-                            id: 'object-1',
-                            name: 'Object 1',
-                            location: '/',
-                            created_at: '2026-01-01T00:00:00.000Z',
-                            updated_at: '2026-01-01T00:00:00.000Z',
-                        },
+                        id: 'object-1',
+                        name: 'Object 1',
+                        location: '/',
+                        created_at: '2026-01-01T00:00:00.000Z',
+                        updated_at: '2026-01-01T00:00:00.000Z',
                         embeddings: {
                             text: {
                                 model: 'text-model',
@@ -34,16 +31,13 @@ describe('embeddings export helpers', () => {
                 exported_count: 1,
             })
             .mockResolvedValueOnce({
-                schema_version: 1,
                 items: [
                     {
-                        object: {
-                            id: 'object-2',
-                            name: 'Object 2',
-                            location: '/',
-                            created_at: '2026-01-01T00:00:00.000Z',
-                            updated_at: '2026-01-01T00:00:00.000Z',
-                        },
+                        id: 'object-2',
+                        name: 'Object 2',
+                        location: '/',
+                        created_at: '2026-01-01T00:00:00.000Z',
+                        updated_at: '2026-01-01T00:00:00.000Z',
                         embeddings: {
                             image: {
                                 model: 'image-model',
@@ -55,32 +49,35 @@ describe('embeddings export helpers', () => {
                 has_more: false,
                 exported_count: 1,
             });
-        const client = { embeddings: { exportPage } };
+        const client = { objects: { exportPage } };
 
         const records = [];
-        for await (const record of iterateEmbeddingExportRecords(client, { limit: 1 })) {
+        for await (const record of iterateContentExportRecords(client, { include: { embeddings: true } })) {
             records.push(record);
         }
 
-        expect(records.map((record) => record.object.id)).toEqual(['object-1', 'object-2']);
-        expect(exportPage).toHaveBeenNthCalledWith(1, { limit: 1, cursor: undefined });
-        expect(exportPage).toHaveBeenNthCalledWith(2, { limit: 1, cursor: 'cursor-2' });
+        expect(records.map((record) => record.id)).toEqual(['object-1', 'object-2']);
+        expect(exportPage).toHaveBeenNthCalledWith(1, {
+            include: { embeddings: true },
+            cursor: undefined,
+        });
+        expect(exportPage).toHaveBeenNthCalledWith(2, {
+            include: { embeddings: true },
+            cursor: 'cursor-2',
+        });
     });
 
     it('creates an uncompressed JSONL stream', async () => {
         const client = {
-            embeddings: {
+            objects: {
                 exportPage: vi.fn().mockResolvedValue({
-                    schema_version: 1,
                     items: [
                         {
-                            object: {
-                                id: 'object-1',
-                                name: 'Object 1',
-                                location: '/',
-                                created_at: '2026-01-01T00:00:00.000Z',
-                                updated_at: '2026-01-01T00:00:00.000Z',
-                            },
+                            id: 'object-1',
+                            name: 'Object 1',
+                            location: '/',
+                            created_at: '2026-01-01T00:00:00.000Z',
+                            updated_at: '2026-01-01T00:00:00.000Z',
                             embeddings: {
                                 text: {
                                     model: 'text-model',
@@ -95,16 +92,17 @@ describe('embeddings export helpers', () => {
             },
         };
 
-        const result = createEmbeddingsExportStream(client, {
+        const result = createContentExportStream(client, {
             compression: 'none',
             filename: 'embeddings',
+            include: { embeddings: true },
         });
         const output = await readStream(result.stream);
 
         expect(result.filename).toBe('embeddings.jsonl');
         expect(result.content_type).toBe('application/x-ndjson');
         expect(output.trim()).toBe(
-            '{"object":{"id":"object-1","name":"Object 1","location":"/","created_at":"2026-01-01T00:00:00.000Z","updated_at":"2026-01-01T00:00:00.000Z"},"embeddings":{"text":{"model":"text-model","values":[1,2,3]}}}',
+            '{"id":"object-1","name":"Object 1","location":"/","created_at":"2026-01-01T00:00:00.000Z","updated_at":"2026-01-01T00:00:00.000Z","embeddings":{"text":{"model":"text-model","values":[1,2,3]}}}',
         );
     });
 
@@ -113,19 +111,19 @@ describe('embeddings export helpers', () => {
 
         expect(compactTimestamp(date)).toBe('20260506185422');
         expect(
-            createEmbeddingsExportFilename(
+            createContentExportFilename(
                 {
                     id: '670f9ec8f036f3d24a4ca5e5',
                     name: 'LR Testing / Local',
                 },
                 date,
             ),
-        ).toBe('embed-export-670f9ec8f036f3d24a4ca5e5-LR-Testing-Local-20260506185422');
+        ).toBe('content-export-670f9ec8f036f3d24a4ca5e5-LR-Testing-Local-20260506185422');
     });
 
     it('caps long project names in export filenames', () => {
         const date = new Date(2026, 4, 6, 18, 54, 22);
-        const filename = createEmbeddingsExportFilename(
+        const filename = createContentExportFilename(
             {
                 id: 'project-id',
                 name: `${'a'.repeat(120)} tail`,
@@ -133,25 +131,26 @@ describe('embeddings export helpers', () => {
             date,
         );
 
-        expect(filename).toBe(`embed-export-project-id-${'a'.repeat(80)}-20260506185422`);
+        expect(filename).toBe(`content-export-project-id-${'a'.repeat(80)}-20260506185422`);
     });
 
     it('uses project metadata in default stream filenames', () => {
         const client = {
-            embeddings: {
+            objects: {
                 exportPage: vi.fn(),
             },
         };
 
-        const result = createEmbeddingsExportStream(client, {
+        const result = createContentExportStream(client, {
             compression: 'gzip',
+            include: { embeddings: true },
             project: {
                 id: 'project-id',
                 name: 'Project Name',
             },
         });
 
-        expect(result.filename).toMatch(/^embed-export-project-id-Project-Name-\d{14}\.jsonl\.gz$/);
+        expect(result.filename).toMatch(/^content-export-project-id-Project-Name-\d{14}\.jsonl\.gz$/);
     });
 });
 

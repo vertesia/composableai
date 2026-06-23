@@ -1,8 +1,8 @@
 {
-    "name": "@vertesia/embeddings-export",
+    "name": "@vertesia/content-export",
     "version": "1.3.0",
     "type": "module",
-    "description": "Streaming client helpers for exporting Vertesia project embeddings.",
+    "description": "Streaming client helpers for exporting Vertesia content objects.",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
     "license": "Apache-2.0",
@@ -14,11 +14,11 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/vertesia/composableai.git",
-        "directory": "packages/embeddings-export"
+        "directory": "packages/content-export"
     },
     "keywords": [
         "vertesia",
-        "embeddings",
+        "content",
         "export",
         "streaming"
     ],

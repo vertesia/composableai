@@ -1,24 +1,24 @@
 import type { ZenoClient } from '@vertesia/client';
 import type {
-    ExportEmbeddingsPageRequest,
-    ExportEmbeddingsPageResponse,
-    ExportedEmbeddingRecord,
+    ExportContentObjectsPageRequest,
+    ExportContentObjectsPageResponse,
+    ExportedContentObjectRecord,
 } from '@vertesia/common';
 
-export type EmbeddingsExportCompression = 'gzip' | 'none';
+export type ContentExportCompression = 'gzip' | 'none';
 
-export interface EmbeddingsExportProgress {
+export interface ContentExportProgress {
     pages: number;
     records: number;
     cursor?: string;
     done: boolean;
 }
 
-export interface EmbeddingsExportStreamOptions extends ExportEmbeddingsPageRequest {
+export interface ContentExportStreamOptions extends ExportContentObjectsPageRequest {
     /**
      * Compress the JSONL stream with gzip. Defaults to gzip.
      */
-    compression?: EmbeddingsExportCompression;
+    compression?: ContentExportCompression;
     /**
      * Suggested filename base. The helper appends .jsonl or .jsonl.gz.
      */
@@ -26,44 +26,44 @@ export interface EmbeddingsExportStreamOptions extends ExportEmbeddingsPageReque
     /**
      * Project id/name used by the default filename when filename is omitted.
      */
-    project?: EmbeddingsExportFilenameProject;
+    project?: ContentExportFilenameProject;
     /**
      * Called after each fetched page and once at completion.
      */
-    onProgress?: (progress: EmbeddingsExportProgress) => void;
+    onProgress?: (progress: ContentExportProgress) => void;
     /**
      * Stops page fetching before the next request.
      */
     signal?: AbortSignal;
 }
 
-export interface EmbeddingsExportStreamResult {
+export interface ContentExportStreamResult {
     stream: ReadableStream<Uint8Array>;
     filename: string;
     content_type: string;
-    compression: EmbeddingsExportCompression;
+    compression: ContentExportCompression;
 }
 
-export interface EmbeddingsExportFilenameProject {
+export interface ContentExportFilenameProject {
     id?: string;
     name?: string;
 }
 
-type EmbeddingsExportClient = Pick<ZenoClient, 'embeddings'>;
+type ContentExportClient = Pick<ZenoClient, 'objects'>;
 const MAX_PROJECT_NAME_FILENAME_LENGTH = 80;
 
-export async function* iterateEmbeddingExportPages(
-    client: EmbeddingsExportClient,
-    request: ExportEmbeddingsPageRequest = {},
-    options: { signal?: AbortSignal; onProgress?: (progress: EmbeddingsExportProgress) => void } = {},
-): AsyncGenerator<ExportEmbeddingsPageResponse> {
+export async function* iterateContentExportPages(
+    client: ContentExportClient,
+    request: ExportContentObjectsPageRequest = {},
+    options: { signal?: AbortSignal; onProgress?: (progress: ContentExportProgress) => void } = {},
+): AsyncGenerator<ExportContentObjectsPageResponse> {
     let cursor = request.cursor;
     let pages = 0;
     let records = 0;
 
     while (true) {
         throwIfAborted(options.signal);
-        const page = await client.embeddings.exportPage({
+        const page = await client.objects.exportPage({
             ...request,
             cursor,
         });
@@ -83,25 +83,25 @@ export async function* iterateEmbeddingExportPages(
     }
 }
 
-export async function* iterateEmbeddingExportRecords(
-    client: EmbeddingsExportClient,
-    request: ExportEmbeddingsPageRequest = {},
-    options: { signal?: AbortSignal; onProgress?: (progress: EmbeddingsExportProgress) => void } = {},
-): AsyncGenerator<ExportedEmbeddingRecord> {
-    for await (const page of iterateEmbeddingExportPages(client, request, options)) {
+export async function* iterateContentExportRecords(
+    client: ContentExportClient,
+    request: ExportContentObjectsPageRequest = {},
+    options: { signal?: AbortSignal; onProgress?: (progress: ContentExportProgress) => void } = {},
+): AsyncGenerator<ExportedContentObjectRecord> {
+    for await (const page of iterateContentExportPages(client, request, options)) {
         for (const item of page.items) {
             yield item;
         }
     }
 }
 
-export function createEmbeddingsExportStream(
-    client: EmbeddingsExportClient,
-    options: EmbeddingsExportStreamOptions = {},
-): EmbeddingsExportStreamResult {
+export function createContentExportStream(
+    client: ContentExportClient,
+    options: ContentExportStreamOptions = {},
+): ContentExportStreamResult {
     const {
         compression = 'gzip',
-        filename = createEmbeddingsExportFilename(options.project),
+        filename = createContentExportFilename(options.project),
         onProgress,
         signal,
         project: _project,
@@ -120,12 +120,12 @@ export function createEmbeddingsExportStream(
 }
 
 function createJsonlStream(
-    client: EmbeddingsExportClient,
-    request: ExportEmbeddingsPageRequest,
-    options: { signal?: AbortSignal; onProgress?: (progress: EmbeddingsExportProgress) => void },
+    client: ContentExportClient,
+    request: ExportContentObjectsPageRequest,
+    options: { signal?: AbortSignal; onProgress?: (progress: ContentExportProgress) => void },
 ): ReadableStream<Uint8Array> {
     const encoder = new TextEncoder();
-    const iterator = iterateEmbeddingExportRecords(client, request, options);
+    const iterator = iterateContentExportRecords(client, request, options);
 
     return new ReadableStream<Uint8Array>({
         async pull(controller) {
@@ -153,13 +153,13 @@ function gzipStream(stream: ReadableStream<Uint8Array>): ReadableStream<Uint8Arr
 
 function throwIfAborted(signal: AbortSignal | undefined): void {
     if (signal?.aborted) {
-        throw signal.reason instanceof Error ? signal.reason : new Error('Embeddings export was aborted');
+        throw signal.reason instanceof Error ? signal.reason : new Error('Content export was aborted');
     }
 }
 
-export function createEmbeddingsExportFilename(project?: EmbeddingsExportFilenameProject, date = new Date()): string {
+export function createContentExportFilename(project?: ContentExportFilenameProject, date = new Date()): string {
     const parts = [
-        'embed-export',
+        'content-export',
         sanitizeFilenamePart(project?.id),
         sanitizeFilenamePart(project?.name, MAX_PROJECT_NAME_FILENAME_LENGTH),
         compactTimestamp(date),
