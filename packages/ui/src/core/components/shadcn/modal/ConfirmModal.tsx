@@ -1,8 +1,10 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { TriangleAlert } from 'lucide-react';
 import type React from 'react';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { FormItem } from '../../FormItem';
 import { Button } from '../button';
+import { Input } from '../input';
 import { Modal, ModalFooter, ModalTitle } from './dialog';
 
 interface ConfirmModalProps {
@@ -12,11 +14,53 @@ interface ConfirmModalProps {
     onCancel: () => void;
     isOpen: boolean;
     isLoading?: boolean;
+    /**
+     * When set, the user must type this exact value into a confirmation input
+     * before the Confirm button is enabled. Use for destructive, irreversible
+     * actions (e.g. typing a principal's email before deleting their access).
+     * Matching ignores leading/trailing whitespace but is case-sensitive.
+     */
+    confirmationValue?: string;
+    /**
+     * Label rendered above the confirmation input. Recommended whenever
+     * `confirmationValue` is set so the user knows what to type. Ignored when
+     * `confirmationValue` is not set.
+     */
+    confirmationLabel?: React.ReactNode;
+    /** Placeholder for the confirmation input. Ignored when `confirmationValue` is not set. */
+    confirmationPlaceholder?: string;
 }
 
-export function ConfirmModal({ title, content, onConfirm, onCancel, isOpen, isLoading }: ConfirmModalProps) {
+export function ConfirmModal({
+    title,
+    content,
+    onConfirm,
+    onCancel,
+    isOpen,
+    isLoading,
+    confirmationValue,
+    confirmationLabel,
+    confirmationPlaceholder,
+}: ConfirmModalProps) {
     const { t } = useUITranslation();
     const cancelButtonRef = useRef(null);
+    const [typedValue, setTypedValue] = useState('');
+
+    // Clear the typed confirmation when the modal closes so a stale (possibly
+    // matching) value can never carry into the next time it is opened.
+    useEffect(() => {
+        if (!isOpen) {
+            setTypedValue('');
+        }
+    }, [isOpen]);
+
+    const requiresConfirmation = !!confirmationValue;
+    const isConfirmed = !confirmationValue || typedValue.trim() === confirmationValue.trim();
+
+    const handleConfirm = () => {
+        if (!isConfirmed || isLoading) return;
+        onConfirm();
+    };
 
     return (
         <Modal isOpen={isOpen} onClose={onCancel} description="Confirm Modal">
@@ -33,8 +77,26 @@ export function ConfirmModal({ title, content, onConfirm, onCancel, isOpen, isLo
                     </div>
                 </div>
             </div>
+            {requiresConfirmation && (
+                <div className="px-2 pb-2 text-start">
+                    <FormItem label={confirmationLabel ?? confirmationPlaceholder}>
+                        <Input
+                            autoFocus
+                            value={typedValue}
+                            onChange={setTypedValue}
+                            placeholder={confirmationPlaceholder}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleConfirm();
+                                }
+                            }}
+                        />
+                    </FormItem>
+                </div>
+            )}
             <ModalFooter align="right">
-                <Button variant="destructive" onClick={onConfirm} isLoading={isLoading}>
+                <Button variant="destructive" onClick={handleConfirm} isLoading={isLoading} disabled={!isConfirmed}>
                     {t('modal.confirm')}
                 </Button>
                 <Button variant="outline" onClick={onCancel} ref={cancelButtonRef}>
