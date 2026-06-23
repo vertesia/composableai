@@ -29,6 +29,8 @@ committed JSON, as for `main`) so the release automation can operate on `release
   fallback opens PRs instead and needs no push bypass — use it until the bypass is
   configured.
 
-Because `release.json` mirrors `main`'s CodeQL `code_scanning` rule, the CodeQL
-workflow must also run on `release/**` for PRs into a release line to be mergeable —
-verify its trigger covers those branches before enabling enforcement.
+`release.json` keeps `main`'s CodeQL `code_scanning` rule because `release/X.Y` is
+the production line and must be CodeQL-gated. This repo uses CodeQL **default
+setup**, which scans pull requests targeting the default branch *or any protected
+branch* — so protecting `release/**` (this ruleset) makes those scans run
+automatically, with no advanced-setup workflow required.
