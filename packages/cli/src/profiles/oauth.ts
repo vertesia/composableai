@@ -3,7 +3,13 @@ import type {
     OAuthDeviceAuthorizationResponse,
     OAuthTokenResponse,
 } from '@vertesia/common';
-import { OAUTH_SCOPE_OFFLINE_ACCESS, OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, Permission } from '@vertesia/common';
+import {
+    OAUTH_SCOPE_OFFLINE_ACCESS,
+    OAUTH_SCOPE_OPENID,
+    OAUTH_SCOPE_PROFILE,
+    OAUTH_SCOPE_PROJECT_SWITCH,
+    Permission,
+} from '@vertesia/common';
 import jwt from 'jsonwebtoken';
 import open from 'open';
 import type { Profile } from './index.js';
@@ -12,8 +18,13 @@ import type { ConfigResult } from './server/index.js';
 
 const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server';
 const OAUTH_CLIENT_METADATA_PATH = '/.well-known/oauth-client/vertesia-cli';
-// Base OIDC scopes that are not platform permissions.
-const BASE_OIDC_SCOPES = [OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, OAUTH_SCOPE_OFFLINE_ACCESS];
+// Base CLI scopes that are not platform API permissions.
+const BASE_CLI_SCOPES = [
+    OAUTH_SCOPE_OPENID,
+    OAUTH_SCOPE_PROFILE,
+    OAUTH_SCOPE_OFFLINE_ACCESS,
+    OAUTH_SCOPE_PROJECT_SWITCH,
+];
 
 // The full set of platform permission scopes. The CLI requests ALL of them and
 // never curates a subset: dropping admin scopes here (e.g. content:admin,
@@ -166,7 +177,7 @@ function getDefaultOAuthScope(metadata: Partial<Pick<OAuthAuthorizationServerMet
         Array.isArray(metadata.scopes_supported) && metadata.scopes_supported.length > 0
             ? metadata.scopes_supported
             : ALL_PERMISSION_SCOPES;
-    return Array.from(new Set([...BASE_OIDC_SCOPES, ...requested])).join(' ');
+    return Array.from(new Set([...BASE_CLI_SCOPES, ...requested])).join(' ');
 }
 
 function applyProfileAuthorizationEndpoint(
