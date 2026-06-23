@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/tools-sdk",
-    "version": "1.3.0",
+    "version": "1.4.0-dev",
     "description": "Tools SDK - utilities for building remote tools",
     "type": "module",
     "main": "./lib/index.js",
