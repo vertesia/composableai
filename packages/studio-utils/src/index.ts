@@ -1,3 +1,4 @@
+export { matchConditions, matchLike, resolvePath } from './conditions/match.js';
 export { extractHandlebarsVariables } from './prompts/extract-vars.js';
 export { generateMockData } from './prompts/mock-data.js';
 export {
