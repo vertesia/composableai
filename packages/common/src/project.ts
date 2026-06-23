@@ -414,6 +414,13 @@ export interface StartProjectReindexPayload {
     concurrency?: number;
     bulk_size_bytes?: number;
     bulk_concurrency?: number;
+    /**
+     * When set, reindex only documents whose `updated_at` is >= this ISO-8601
+     * datetime. Writes in-place into the live alias's current index (no new
+     * versioned target, no alias swap). Omit for a full reindex into a fresh
+     * versioned target. Matches the `modified_since` workflow param.
+     */
+    modified_since?: string;
 }
 
 /**
