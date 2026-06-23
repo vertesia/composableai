@@ -27,7 +27,7 @@
         "@types/node": "^24.13.2",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "^6.0.3",
-        "vitest": "^4.1.8"
+        "vitest": "^4.1.9"
     },
     "peerDependencies": {
         "hono": "^4.12.25"

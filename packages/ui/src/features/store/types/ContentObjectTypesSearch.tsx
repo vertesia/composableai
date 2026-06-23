@@ -130,7 +130,13 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
                         </EmptyCollection>
                     ) : (
                         <>
-                            <ContentObjectTypesTable objects={objects} isLoading={isLoading} />
+                            <ContentObjectTypesTable
+                                objects={objects}
+                                isLoading={isLoading}
+                                onFilter={(field, value) => {
+                                    if (field === 'name') setSearchTerm(value);
+                                }}
+                            />
                             <div ref={loadMoreRef} className="h-4 w-full" />
                         </>
                     )}
