@@ -30,7 +30,7 @@
         "vitest": "^4.1.9"
     },
     "dependencies": {
-        "sharp": "^0.34.5",
+        "sharp": "^0.35.1",
         "tmp": "^0.2.7"
     },
     "repository": {
