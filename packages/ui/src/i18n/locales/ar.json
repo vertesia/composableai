@@ -158,6 +158,7 @@
   "agent.searchDocuments": "البحث في المستندات",
   "agent.selectInteraction": "اختر تفاعلاً وانقر ابدأ لتشغيل الوكيل",
   "agent.selectRightPanelSection": "حدد قسم اللوحة اليمنى",
+  "agent.selectOption": "حدد خيارًا",
   "agent.send": "إرسال",
   "agent.sendTooltip": "انقر أو Enter للإرسال",
   "agent.showAllMessages": "عرض جميع الرسائل",
