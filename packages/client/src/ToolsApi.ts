@@ -13,9 +13,7 @@ import type {
  *  - `GET  /api/v1/tools`         — list every tool visible to the current principal across all sources
  *  - `POST /api/v1/tools/validate` — resolve a list of names against the same registry
  *
- * Note: this is distinct from `client.store.tools` (the static builtin catalog exposed by zeno-server)
- * — that one is global and source-incomplete (no app/interaction tools). Use this client for anything
- * project-aware.
+ * This is the canonical client for tool discovery and validation.
  */
 export default class ToolsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -40,6 +38,13 @@ export default class ToolsApi extends ApiTopic {
         if (query?.sources?.length) params.sources = query.sources.join(',');
         if (query?.exclude?.length) params.exclude = query.exclude.join(',');
         return this.get('/', { query: Object.keys(params).length > 0 ? params : undefined });
+    }
+
+    /**
+     * List only Vertesia-provided builtin tools and system skills.
+     */
+    listBuiltins(): Promise<AggregatedTool[]> {
+        return this.list({ sources: ['builtin'] });
     }
 
     /**
