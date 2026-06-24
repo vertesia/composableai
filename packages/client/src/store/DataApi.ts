@@ -255,7 +255,7 @@ export class DataApi extends ApiTopic {
      *
      * @example
      * ```typescript
-     * const job = await client.data.importData(storeId, {
+     * const job = await client.data.import(storeId, {
      *   mode: 'append',
      *   message: 'Monthly data import',
      *   tables: {
@@ -272,11 +272,7 @@ export class DataApi extends ApiTopic {
      * });
      * ```
      */
-    // NOTE: named `importData`, not `import` — a method literally named `import` bundles to
-    // `import(id, payload) {` in the dep output, which dev bundlers/loaders (Vite pre-bundle, the
-    // appgen preview) misparse as a dynamic-import expression -> `Unexpected token '('`. Keep it
-    // non-reserved so the SDK never produces that token.
-    importData(id: string, payload: ImportDataPayload): Promise<ImportJob> {
+    import(id: string, payload: ImportDataPayload): Promise<ImportJob> {
         return this.post(`/${id}/import`, { payload, headers: this.storeHeaders(id) });
     }
 
