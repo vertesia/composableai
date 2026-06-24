@@ -137,6 +137,17 @@ export default class AppsApi extends ApiTopic {
     }
 
     /**
+     * Get the published package an app exposes, filtered by scope. App-owned (in-code) artifacts are
+     * package-resolved (no per-id route), so this is how a client reads the full definition — type
+     * schema, interaction prompt, process definition, dashboard spec — to visualize an exposed id.
+     */
+    getAppPackage(appIdOrName: string, scope: AppPackageScope | AppPackageScope[] = 'all'): Promise<AppPackage> {
+        return this.get(`/${encodeURIComponent(appIdOrName)}/package`, {
+            query: { scope: Array.isArray(scope) ? scope.join(',') : scope },
+        });
+    }
+
+    /**
      * Get package capabilities exposed by an app installation.
      */
     getAppInstallationPackage(
