@@ -1,9 +1,5 @@
 import type { PropertyConditions } from '@vertesia/common';
-
-// studio-utils' tsconfig deliberately excludes DOM/Node lib globals so
-// browser and Node consumers stay symmetric. Declare the minimal console
-// surface we use for misconfiguration warnings.
-declare const console: { warn(...args: unknown[]): void };
+import { getStudioUtilsLogger } from '../logger.js';
 
 /**
  * Resolve a property path against a context object.
@@ -81,8 +77,8 @@ function compareOrdered(value: unknown, expected: unknown, op: '$gt' | '$gte' | 
  * the ES-side filter built by `conditionsToEsQuery`. Use this when conditions need to be
  * evaluated against a single hydrated document instead of pushed down as a query.
  *
- * Unknown operators emit a `console.warn` and return false — surfacing misconfiguration
- * loudly without breaking the surrounding token mint or permission check.
+ * Unknown operators emit a warning via the studio-utils logger and return false — surfacing
+ * misconfiguration loudly without breaking the surrounding token mint or permission check.
  *
  * `$principal.X` substitutions in conditions are expected to have already been resolved at
  * JWT-mint time by `resolveConditions` in token-server; values reaching this function are
@@ -140,7 +136,7 @@ export function matchConditions(conditions: PropertyConditions, properties: Reco
                         if (typeof expected !== 'string' || !matchLike(value, expected)) return false;
                         break;
                     default:
-                        console.warn(`[matchConditions] Unknown operator "${op}" on key "${key}"`);
+                        getStudioUtilsLogger().warn({ op, key }, 'Unknown operator in PropertyConditions');
                         return false;
                 }
             }

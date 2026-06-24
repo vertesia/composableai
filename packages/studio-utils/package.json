@@ -5,6 +5,22 @@
     "description": "Shared utilities for Vertesia studio: prompt template rendering, schema-based mock data generation, prompt and interaction validation helpers.",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        },
+        "./conditions": {
+            "types": "./lib/conditions/index.d.ts",
+            "default": "./lib/conditions/index.js"
+        },
+        "./logger": {
+            "types": "./lib/logger.d.ts",
+            "default": "./lib/logger.js"
+        },
+        "./lib/*": "./lib/*",
+        "./src/*": "./src/*"
+    },
     "license": "Apache-2.0",
     "homepage": "https://docs.vertesiahq.com",
     "files": [
