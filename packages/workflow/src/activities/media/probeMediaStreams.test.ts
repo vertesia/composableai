@@ -1,8 +1,8 @@
 import { MockActivityEnvironment } from '@temporalio/testing';
 import type { VertesiaClient } from '@vertesia/client';
 import { ContentEventName, type DSLActivityExecutionPayload } from '@vertesia/common';
-import type { ActivityContext } from '@vertesia/workflow';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ActivityContext } from '../../dsl/setup/ActivityContext.js';
 import { type ProbeMediaStreamsParams, type ProbeMediaStreamsResult, probeMediaStreams } from './probeMediaStreams.js';
 
 vi.mock('../../dsl/setup/ActivityContext.js', async (importOriginal) => {
