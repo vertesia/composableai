@@ -13,6 +13,8 @@ import type {
     AppManifestData,
     AppPackage,
     AppPackageScope,
+    AppRepoFile,
+    AppRepoTree,
     AppToolCollection,
     AppVersionListQuery,
     AppVersionRecord,
@@ -111,6 +113,27 @@ export default class AppsApi extends ApiTopic {
      */
     inspect(appIdOrName: string): Promise<AppInspectionResult> {
         return this.get(`/${appIdOrName}/inspect`);
+    }
+
+    /**
+     * List files/directories under a prefix in the app's git repository (default
+     * branch unless `ref` is given). Read-only; reads live from the git server
+     * without a clone. Used by the Build > Design view to surface generated `docs/`.
+     */
+    getRepoTree(appIdOrName: string, options?: { prefix?: string; ref?: string }): Promise<AppRepoTree> {
+        return this.get(`/${encodeURIComponent(appIdOrName)}/repo/tree`, {
+            query: { prefix: options?.prefix, ref: options?.ref },
+        });
+    }
+
+    /**
+     * Read the UTF-8 content of a single file in the app's git repository (default
+     * branch unless `ref` is given). Read-only; reads live from the git server.
+     */
+    getRepoFile(appIdOrName: string, path: string, options?: { ref?: string }): Promise<AppRepoFile> {
+        return this.get(`/${encodeURIComponent(appIdOrName)}/repo/file`, {
+            query: { path, ref: options?.ref },
+        });
     }
 
     /**

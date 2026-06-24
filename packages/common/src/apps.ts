@@ -1038,6 +1038,35 @@ export function resolvePackageDescriptorUrl(endpoint: string, version?: string):
     return `${origin}/tenants/${tenant}/package/${appId}`;
 }
 
+/** One entry in an app git-repo directory listing (see {@link AppRepoTree}). */
+export interface AppRepoTreeEntry {
+    /** File or directory name (last path segment). */
+    name: string;
+    /** Path relative to the repo root. */
+    path: string;
+    /** Whether the entry is a file (`blob`) or a directory (`tree`). */
+    type: 'blob' | 'tree';
+}
+
+/** A non-recursive listing of an app git repo directory at a given ref. */
+export interface AppRepoTree {
+    /** The ref the listing was read at (empty/undefined = default branch / HEAD). */
+    ref?: string;
+    /** The directory prefix that was listed (empty = repo root). */
+    prefix?: string;
+    entries: AppRepoTreeEntry[];
+}
+
+/** The content of a single file read from an app git repo at a given ref. */
+export interface AppRepoFile {
+    /** Path relative to the repo root. */
+    path: string;
+    /** The ref the file was read at (empty/undefined = default branch / HEAD). */
+    ref?: string;
+    /** UTF-8 file content. */
+    content: string;
+}
+
 export type AppPackageScope =
     | 'ui'
     | 'tools'
