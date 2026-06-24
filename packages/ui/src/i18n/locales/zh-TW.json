@@ -154,6 +154,7 @@
   "agent.searchDocuments": "搜尋文件",
   "agent.selectInteraction": "選擇一個互動並點擊開始以啟動代理",
   "agent.selectRightPanelSection": "選擇右側面板區段",
+  "agent.selectOption": "選擇選項",
   "agent.send": "傳送",
   "agent.sendTooltip": "點擊或Enter傳送",
   "agent.showAllMessages": "顯示所有訊息",

@@ -154,6 +154,7 @@
   "agent.searchDocuments": "ドキュメントを検索",
   "agent.selectInteraction": "インタラクションを選択して開始をクリックしてエージェントを起動",
   "agent.selectRightPanelSection": "右パネルのセクションを選択",
+  "agent.selectOption": "オプションを選択",
   "agent.send": "送信",
   "agent.sendTooltip": "クリックまたはEnterで送信",
   "agent.showAllMessages": "すべてのメッセージを表示",
