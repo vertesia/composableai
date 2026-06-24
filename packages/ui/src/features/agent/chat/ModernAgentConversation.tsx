@@ -695,7 +695,10 @@ export interface ModernAgentConversationProps {
     pendingStartMessage?: string;
     /** Timestamp for the internal optimistic first-message waiting state. */
     pendingStartTimestamp?: number;
-    /** Initial approval mode to show while active run metadata loads. */
+    /**
+     * Initial approval mode: seeds the start screen for a new interactive run, and is shown
+     * while an existing run's metadata loads. Defaults to `full_control`.
+     */
     initialToolApprovalMode?: AgentToolApprovalMode;
     /** Force display playback controls on or off. When omitted, local playback can be toggled from the header. */
     enablePlayback?: boolean;
@@ -758,6 +761,7 @@ function StartWorkflowView({
     inputClassName,
     className,
     allowWorkflowControl,
+    initialToolApprovalMode,
 }: ModernAgentConversationProps) {
     const { t } = useUITranslation();
     const canStageFiles = !hideFileUpload;
@@ -771,7 +775,7 @@ function StartWorkflowView({
     const [pendingStartMessage, setPendingStartMessage] = useState<string | null>(null);
     const [pendingStartTimestamp, setPendingStartTimestamp] = useState<number | null>(null);
     const [toolApprovalMode, setToolApprovalMode] = useState<AgentToolApprovalMode>(() =>
-        normalizeAgentToolApprovalMode(undefined, interactive),
+        normalizeAgentToolApprovalMode(initialToolApprovalMode, interactive),
     );
     const toast = useToast();
     const inputRef = useRef<HTMLTextAreaElement>(null);
