@@ -35,6 +35,14 @@ export async function useProject(program: Command, projectId?: string) {
         console.error('No profile is selected. Run `vertesia profiles use <name>` to select a profile');
         process.exit(1);
     }
+    const envCredential = readEnvCredentialName();
+    if (envCredential) {
+        console.error(
+            `Cannot switch the current profile project while ${envCredential} is set. ` +
+                'Unset it or use profile-backed authentication.',
+        );
+        process.exit(1);
+    }
 
     const client = await getClient(program);
     const projects = await client.projects.list();
@@ -78,4 +86,17 @@ async function selectProject(projects: ProjectChoice[]): Promise<string> {
         process.exit(1);
     }
     return response.project;
+}
+
+function readEnvCredentialName(): string | undefined {
+    if (process.env.VERTESIA_TOKEN) {
+        return 'VERTESIA_TOKEN';
+    }
+    if (process.env.VERTESIA_APIKEY) {
+        return 'VERTESIA_APIKEY';
+    }
+    if (process.env.COMPOSABLE_PROMPTS_APIKEY) {
+        return 'COMPOSABLE_PROMPTS_APIKEY';
+    }
+    return undefined;
 }
