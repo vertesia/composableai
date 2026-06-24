@@ -1,12 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import sharp from 'sharp';
+import sharp, { type FormatEnum } from 'sharp';
 import { expect, test } from 'vitest';
 import { createImageTransformer } from './image.js';
 
 test('should resize an image to a maximum height or width', async () => {
     const max_hw = 1596;
-    const format: keyof sharp.FormatEnum = 'jpeg';
+    const format: keyof FormatEnum = 'jpeg';
     const imageFile = fs.readFileSync(path.join(__dirname, '../fixtures', 'cat-picture.jpg'));
 
     const sh = createImageTransformer(imageFile, { max_hw, format });
