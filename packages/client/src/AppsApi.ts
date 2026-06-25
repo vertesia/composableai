@@ -14,6 +14,7 @@ import type {
     AppPackage,
     AppPackageScope,
     AppRepoFile,
+    AppRepoRefs,
     AppRepoTree,
     AppToolCollection,
     AppVersionListQuery,
@@ -134,6 +135,15 @@ export default class AppsApi extends ApiTopic {
         return this.get(`/${encodeURIComponent(appIdOrName)}/repo/file`, {
             query: { path, ref: options?.ref },
         });
+    }
+
+    /**
+     * List the branches and tags of the app's git repository, each resolved to its latest commit.
+     * Read-only; reads live from the git server without a clone. Used by the Source view to let a
+     * user pick a ref to build from.
+     */
+    getRepoRefs(appIdOrName: string): Promise<AppRepoRefs> {
+        return this.get(`/${encodeURIComponent(appIdOrName)}/repo/refs`);
     }
 
     /**

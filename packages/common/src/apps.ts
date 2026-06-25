@@ -1067,6 +1067,28 @@ export interface AppRepoFile {
     content: string;
 }
 
+/** A branch or tag in an app git repo, resolved to its latest commit. */
+export interface AppRepoRef {
+    /** Short ref name (e.g. `main`, `v1.0.0`). */
+    name: string;
+    /** Commit hash the ref points at (annotated tags are peeled to their commit). */
+    commit: string;
+    /** First line of the commit message, when available. */
+    commit_subject?: string;
+    /** Commit date as an ISO-8601 string, when available. */
+    commit_date?: string;
+    /** Commit author name, when available. */
+    commit_author?: string;
+}
+
+/** The branches and tags of an app git repo (see {@link AppRepoRef}). */
+export interface AppRepoRefs {
+    /** The repository's default branch (HEAD target), when resolvable. */
+    default_branch?: string;
+    branches: AppRepoRef[];
+    tags: AppRepoRef[];
+}
+
 export type AppPackageScope =
     | 'ui'
     | 'tools'
