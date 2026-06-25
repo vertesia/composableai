@@ -895,6 +895,8 @@ export interface ResultStorageOptions {
     // - Otherwise → text/markdown or text/plain
 }
 
+export type AsyncCompletionMode = 'conversation_state' | 'text';
+
 /**
  * Streaming-specific options (only needed when stream=true)
  */
@@ -950,6 +952,13 @@ export interface AsyncCompletionOptions {
      * after inference completes (before completing the Temporal activity).
      */
     result_storage?: ResultStorageOptions;
+    /**
+     * Controls the value used to complete the Temporal activity.
+     * Defaults to `conversation_state` for agent resume/continuation calls.
+     * Use `text` for one-shot helper calls, such as checkpoint summaries,
+     * that need the model's text result instead of merged conversation state.
+     */
+    completion_mode?: AsyncCompletionMode;
 }
 
 interface ResumeConversationPayload {
