@@ -9,7 +9,6 @@
         { "path": "../common" },
         { "path": "../client" },
         { "path": "../../llumiverse/common" },
-        { "path": "../workflow" },
-        { "path": "../content-export/tsconfig.json" }
+        { "path": "../workflow" }
     ]
 }
