@@ -53,7 +53,7 @@ export function DocumentTableView({
                     return (
                         <tr
                             key={obj.id}
-                            className={`cursor-pointer hover:bg-muted group ${selectedObject?.id === obj.id ? 'bg-muted' : ''} ${isHighlighted ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                            className={`group cursor-pointer hover:bg-muted ${selectedObject?.id === obj.id ? 'bg-muted' : ''} ${isHighlighted ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
                             onClick={() => {
                                 onRowClick?.(obj);
                             }}

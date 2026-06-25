@@ -5,6 +5,7 @@ import {
     isWorkstreamInternalResultMessage,
     isWorkstreamInternalResultText,
 } from '../workstreams.js';
+import { isToolApprovalRequestInput } from './requestInputMessages';
 import {
     isStreamReplacedByMessage,
     isToolActivityMessage,
@@ -204,7 +205,7 @@ function isSummaryPrimaryMessage(message: AgentMessage): boolean {
         message.type === AgentMessageType.QUESTION ||
         Boolean(getWorkstreamLaunchDetails(message)) ||
         isSummaryAssistantProseMessage(message) ||
-        message.type === AgentMessageType.REQUEST_INPUT ||
+        (message.type === AgentMessageType.REQUEST_INPUT && !isToolApprovalRequestInput(message)) ||
         message.type === AgentMessageType.TERMINATED ||
         ((message.type === AgentMessageType.ERROR || message.type === AgentMessageType.WARNING) &&
             !isToolScopedStatusMessage(message) &&
@@ -245,6 +246,7 @@ function isSummaryWorkMessage(message: AgentMessage): boolean {
     if (getWorkstreamLaunchDetails(message)) return false;
     if (isWorkstreamActivityFailureMessage(message)) return true;
     if (isTransientWorkStatusMessage(message)) return true;
+    if (isToolApprovalRequestInput(message)) return true;
     if (isToolScopedStatusMessage(message)) return true;
     if (isToolPreambleMessage(message)) return true;
     if (isToolActivityMessage(message)) return true;

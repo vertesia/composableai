@@ -28,7 +28,7 @@ export class ToolRegistry {
             category: this.category,
             default: tool.default,
             ...(tool.annotations ? { annotations: tool.annotations } : {}),
-            ...(tool.requires_user_confirmation ? { requires_user_confirmation: true } : {}),
+            ...(tool.approval_class ? { approval_class: tool.approval_class } : {}),
         });
         let tools = Object.values(this.registry);
         if (context) {
