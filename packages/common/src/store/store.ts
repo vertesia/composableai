@@ -202,6 +202,7 @@ export interface StartContentObjectExportRequest {
 export interface StartContentObjectExportResponse {
     workflow_id: string;
     run_id: string;
+    export_id: string;
 }
 
 export interface ZenoBulkContentObjectExportRequest extends StartContentObjectExportRequest {
@@ -242,6 +243,26 @@ export interface ContentObjectExportStatusResponse {
     progress?: ContentObjectExportProgress;
     result?: ContentObjectExportResult;
     error?: string;
+}
+
+export interface ContentObjectExportArtifact {
+    export_id: string;
+    path: string;
+    filename: string;
+    content_type: string;
+    bytes: number;
+    created_at?: string;
+}
+
+export interface ListContentObjectExportsResponse {
+    items: ContentObjectExportArtifact[];
+    limit: number;
+}
+
+export interface DeleteContentObjectExportResponse {
+    success: boolean;
+    export_id: string;
+    path: string;
 }
 
 /**

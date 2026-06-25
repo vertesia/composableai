@@ -17,6 +17,7 @@ import {
     type ContentSource,
     type CreateContentObjectPayload,
     canGenerateRendition,
+    type DeleteContentObjectExportResponse,
     type DeleteContentObjectResult,
     type Embedding,
     type ExportContentObjectsPageRequest,
@@ -29,6 +30,7 @@ import {
     type GetRenditionParams,
     type GetRenditionResponse,
     type GetUploadUrlPayload,
+    type ListContentObjectExportsResponse,
     type ListWorkflowRunsResponse,
     type ObjectSearchPayload,
     type ObjectSearchQuery,
@@ -119,6 +121,14 @@ export class ObjectsApi extends ApiTopic {
 
     startExport(payload: StartContentObjectExportRequest = {}): Promise<StartContentObjectExportResponse> {
         return this.post('/export', { payload });
+    }
+
+    listExports(): Promise<ListContentObjectExportsResponse> {
+        return this.get('/export/artifacts');
+    }
+
+    deleteExport(exportId: string): Promise<DeleteContentObjectExportResponse> {
+        return this.del(`/export/artifacts/${encodeURIComponent(exportId)}`);
     }
 
     getExportStatus(workflowId: string, runId: string): Promise<ContentObjectExportStatusResponse> {

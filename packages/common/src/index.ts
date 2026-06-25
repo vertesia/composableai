@@ -39,15 +39,18 @@ export * from './secrets.js';
 export * from './skill.js';
 export * from './store/index.js';
 export type {
+    ContentObjectExportArtifact,
     ContentObjectExportCompression,
     ContentObjectExportProgress,
     ContentObjectExportResult,
     ContentObjectExportStatusResponse,
+    DeleteContentObjectExportResponse,
     ExportContentObjectsFilter,
     ExportContentObjectsIncludeOptions,
     ExportContentObjectsPageRequest,
     ExportContentObjectsPageResponse,
     ExportedContentObjectRecord,
+    ListContentObjectExportsResponse,
     StartContentObjectExportRequest,
     StartContentObjectExportResponse,
     ZenoBulkContentObjectExportRequest,
