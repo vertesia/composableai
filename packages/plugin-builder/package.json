@@ -23,8 +23,8 @@
     ],
     "scripts": {
         "lint": "biome lint src",
-        "build": "tsc",
-        "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc"
+        "build": "tsc -p tsconfig.json",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "devDependencies": {
         "@vertesia/tsconfig": "workspace:*",
