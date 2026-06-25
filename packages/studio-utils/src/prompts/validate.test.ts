@@ -115,6 +115,18 @@ describe('validatePrompt — handlebars', () => {
             expect(findIssue(r.issues, 'handlebars_render_error')).toBeDefined();
             expect(r.error_count).toBeGreaterThanOrEqual(1);
         });
+
+        it('flags an unregistered helper call', () => {
+            const r = validatePrompt({
+                content: 'Tactics: {{join mitre_tactics ", "}}',
+                contentType: TemplateType.handlebars,
+                inputSchema: schema({ mitre_tactics: { type: 'array', items: { type: 'string' } } }),
+            });
+
+            const issue = findIssue(r.issues, 'handlebars_render_error');
+            expect(issue).toBeDefined();
+            expect(issue?.message).toContain('Missing helper: "join"');
+        });
     });
 
     describe('happy path', () => {

@@ -47,6 +47,7 @@
         "@rollup/plugin-terser": "^0.4.4",
         "@rollup/plugin-typescript": "^12.1.2",
         "@vertesia/common": "workspace:*",
+        "@vertesia/studio-utils": "workspace:*",
         "esbuild": "^0.28.1",
         "js-yaml": "^4.2.0",
         "zod": "^4.4.3"
