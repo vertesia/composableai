@@ -25,8 +25,8 @@
     "scripts": {
         "lint": "biome lint src",
         "test": "vitest run",
-        "build": "tsc --build && pnpm exec rollup -c",
-        "clean": "rm -rf ./lib tsconfig.tsbuildinfo",
+        "build": "tsc -p tsconfig.json && pnpm exec rollup -c",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
         "typecheck": "tsc --noEmit",
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
     },
