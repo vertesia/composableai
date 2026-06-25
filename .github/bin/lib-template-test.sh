@@ -9,6 +9,7 @@
 # Variables set by this library:
 #   NPM_TAG        - "dev" (snapshot) or "latest" (release)
 #   TEMPLATE_REF   - "main" (snapshot) or "" (release — CLI resolves tag automatically)
+#   CREATE_ARGS    - Extra create-plugin args derived from release type
 #   TEST_PROJECT_DIR - Path to bootstrapped project (set by bootstrap_template)
 
 # =============================================================================
@@ -33,9 +34,13 @@ derive_tag_and_branch() {
     NPM_TAG="dev"
     # Use caller-supplied TEMPLATE_BRANCH so packages and template come from the same branch.
     TEMPLATE_REF="${TEMPLATE_BRANCH:-main}"
+    # Snapshot packages are published under the dev tag. Tell create-plugin to resolve
+    # internal workspace dependencies to that tag instead of its release templateVersions map.
+    CREATE_ARGS="--dev"
   else
     NPM_TAG="latest"
     TEMPLATE_REF=""
+    CREATE_ARGS=""
   fi
 }
 
@@ -56,6 +61,7 @@ bootstrap_template() {
   echo "  Template: ${TEMPLATE_NAME}"
   echo "  Ref: ${TEMPLATE_REF:-<auto>}"
   echo "  Tag: ${NPM_TAG}"
+  [ -n "$CREATE_ARGS" ] && echo "  Create args: ${CREATE_ARGS}"
   [ -n "$pkg_manager" ] && echo "  Package manager: ${pkg_manager}"
 
   # Create project in /tmp to avoid interference from composableai's pnpm-workspace.yaml
@@ -84,7 +90,7 @@ bootstrap_template() {
     npm_config_registry="${npm_config_registry:-}" \
     npm_config_package_lock="false" \
     npm_config_cache="${npm_cache_dir}" \
-    npm exec --yes -- "@vertesia/create-plugin@${NPM_TAG}" "$project_name" -t "${TEMPLATE_NAME}" --yes ${branch_args} ${pm_args} ${EXTRA_CREATE_ARGS:-})
+    npm exec --yes -- "@vertesia/create-plugin@${NPM_TAG}" "$project_name" -t "${TEMPLATE_NAME}" --yes ${CREATE_ARGS} ${branch_args} ${pm_args} ${EXTRA_CREATE_ARGS:-})
   rm -rf "${npm_cache_dir}"
 }
 

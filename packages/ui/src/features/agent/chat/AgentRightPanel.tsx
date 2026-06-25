@@ -5,10 +5,7 @@ import {
     Button,
     Center,
     cn,
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+    SelectBox,
     type Tab as TabDefinition,
     Tabs,
     TabsPanel,
@@ -18,8 +15,6 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     CheckCircleIcon,
-    CheckIcon,
-    ChevronsUpDownIcon,
     ClipboardCopyIcon,
     DownloadCloudIcon,
     FileTextIcon,
@@ -355,61 +350,6 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
 
 type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'payload' | 'conversation';
 
-function RightPanelTabSelect({
-    tabs,
-    activeTab,
-    onChange,
-    ariaLabel,
-}: {
-    tabs: TabDefinition[];
-    activeTab: RightPanelTab;
-    onChange: (tab: RightPanelTab) => void;
-    ariaLabel: string;
-}) {
-    const [open, setOpen] = useState(false);
-    const currentTab = tabs.find((tab) => tab.name === activeTab) ?? tabs[0];
-
-    return (
-        <DropdownMenu open={open} onOpenChange={setOpen}>
-            <DropdownMenuTrigger asChild>
-                <button
-                    type="button"
-                    aria-label={ariaLabel}
-                    aria-haspopup="menu"
-                    aria-expanded={open}
-                    className={cn(
-                        'inline-flex min-w-40 max-w-56 flex-row items-center justify-between gap-2 rounded-md border border-border bg-transparent px-2.5 py-2 text-start text-inherit',
-                        'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                        'hover:bg-muted',
-                    )}
-                >
-                    <span className="min-w-0 flex-1 overflow-hidden text-sm">{currentTab?.label}</span>
-                    <ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" aria-hidden="true" />
-                </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="z-[1000000] min-w-56 max-w-[min(24rem,calc(100vw-1rem))]">
-                {tabs.map((tab) => {
-                    const isSelected = tab.name === activeTab;
-
-                    return (
-                        <DropdownMenuItem
-                            key={tab.name}
-                            className="min-h-9 justify-between gap-3 px-2 py-1.5 text-sm"
-                            onSelect={() => {
-                                onChange(tab.name as RightPanelTab);
-                                setOpen(false);
-                            }}
-                        >
-                            <span className="min-w-0 flex-1 overflow-hidden">{tab.label}</span>
-                            {isSelected && <CheckIcon className="size-4 shrink-0" aria-hidden="true" />}
-                        </DropdownMenuItem>
-                    );
-                })}
-            </DropdownMenuContent>
-        </DropdownMenu>
-    );
-}
-
 export interface AgentRightPanelProps {
     /** Optional payload content to show as a "Payload" tab */
     payloadContent?: React.ReactNode;
@@ -640,12 +580,13 @@ function AgentRightPanelComponent({
     return (
         <Tabs tabs={tabs} current={activeTab} onTabChange={handleTabChange} fullHeight className="px-0">
             <div className="flex items-center justify-between shrink-0 px-1 py-1 gap-1">
-                <div className="min-w-0">
-                    <RightPanelTabSelect
-                        ariaLabel={t('agent.selectRightPanelSection')}
-                        tabs={visibleTabs}
-                        activeTab={activeTab}
+                <div className="w-full">
+                    <SelectBox
+                        label={t('agent.selectRightPanelSection')}
+                        className="w-full"
+                        value={activeTab}
                         onChange={handleTabChange}
+                        options={visibleTabs.map((tab) => tab.name)}
                     />
                 </div>
                 {!conversationContent && (
