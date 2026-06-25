@@ -39,11 +39,18 @@ export * from './secrets.js';
 export * from './skill.js';
 export * from './store/index.js';
 export type {
+    ContentObjectExportCompression,
+    ContentObjectExportProgress,
+    ContentObjectExportResult,
+    ContentObjectExportStatusResponse,
     ExportContentObjectsFilter,
     ExportContentObjectsIncludeOptions,
     ExportContentObjectsPageRequest,
     ExportContentObjectsPageResponse,
     ExportedContentObjectRecord,
+    StartContentObjectExportRequest,
+    StartContentObjectExportResponse,
+    ZenoBulkContentObjectExportRequest,
 } from './store/store.js';
 export * from './sts-token-types.js';
 export * from './tenant.js';

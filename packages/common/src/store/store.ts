@@ -174,6 +174,76 @@ export interface ExportContentObjectsPageResponse {
     exported_count: number;
 }
 
+export type ContentObjectExportCompression = 'gzip' | 'none';
+
+export interface StartContentObjectExportRequest {
+    /**
+     * Embedding types to export when include.embeddings is true. Defaults to all supported embedding types.
+     */
+    embedding_types?: SupportedEmbeddingTypes[];
+    /**
+     * Explicit export filters. This intentionally does not accept the search API's full Mongo/search DSL.
+     */
+    filter?: ExportContentObjectsFilter;
+    /**
+     * Include all revisions. Defaults to false, exporting only head revisions.
+     */
+    all_revisions?: boolean;
+    /**
+     * Optional object context selectors.
+     */
+    include?: ExportContentObjectsIncludeOptions;
+    /**
+     * Final artifact compression. Defaults to gzip.
+     */
+    compression?: ContentObjectExportCompression;
+}
+
+export interface StartContentObjectExportResponse {
+    workflow_id: string;
+    run_id: string;
+}
+
+export interface ZenoBulkContentObjectExportRequest extends StartContentObjectExportRequest {
+    tenant_id: string;
+    project_id: string;
+    output_path: string;
+    filename: string;
+}
+
+export interface ContentObjectExportResult {
+    status: 'completed';
+    path: string;
+    filename: string;
+    content_type: string;
+    records: number;
+    bytes: number;
+    started_at: string;
+    completed_at: string;
+    duration_ms: number;
+}
+
+export interface ContentObjectExportProgress {
+    status: 'queued' | 'exporting' | 'completed' | 'failed';
+    records: number;
+    bytes: number;
+    path?: string;
+    filename?: string;
+    started_at?: string;
+    completed_at?: string;
+    error?: string;
+}
+
+export interface ContentObjectExportStatusResponse {
+    workflow_id: string;
+    run_id: string;
+    status: 'queued' | 'running' | 'completed' | 'failed' | 'canceled' | 'terminated' | 'timed_out' | 'unknown';
+    done: boolean;
+    progress?: ContentObjectExportProgress;
+    result?: ContentObjectExportResult;
+    error?: string;
+}
+
 /**
  * Metadata about a single inherited property.
  */

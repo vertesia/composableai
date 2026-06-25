@@ -9,6 +9,8 @@ import {
     type ComputeObjectFacetPayload,
     type ContentObject,
     ContentObjectApiHeaders,
+    type ContentObjectExportResult,
+    type ContentObjectExportStatusResponse,
     type ContentObjectItem,
     type ContentObjectProcessingPriority,
     type ContentObjectTextResponse,
@@ -32,7 +34,10 @@ import {
     type ObjectSearchQuery,
     type ObjectSearchResponse,
     type SetObjectEmbeddingsResponse,
+    type StartContentObjectExportRequest,
+    type StartContentObjectExportResponse,
     type SupportedEmbeddingTypes,
+    type ZenoBulkContentObjectExportRequest,
 } from '@vertesia/common';
 
 export { getSupportedRenditionFormats, supportsVisualRendition } from '@vertesia/common';
@@ -110,6 +115,41 @@ export class ObjectsApi extends ApiTopic {
 
     exportPage(payload: ExportContentObjectsPageRequest = {}): Promise<ExportContentObjectsPageResponse> {
         return this.post('/export/page', { payload });
+    }
+
+    startExport(payload: StartContentObjectExportRequest = {}): Promise<StartContentObjectExportResponse> {
+        return this.post('/export', { payload });
+    }
+
+    getExportStatus(workflowId: string, runId: string): Promise<ContentObjectExportStatusResponse> {
+        return this.get(`/export/${encodeURIComponent(workflowId)}/${encodeURIComponent(runId)}`);
+    }
+
+    exportToBucketViaBulk(
+        payload: ZenoBulkContentObjectExportRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ContentObjectExportResult> {
+        return this.zenoBulkPost('/export', payload, timeoutMs);
+    }
+
+    /**
+     * Get the zeno-bulk base URL.
+     * Dev branches: store URL contains "zeno-server" -> replace with "zeno-bulk".
+     * Production/preview: same domain, LB routes /export to zeno-bulk.
+     */
+    private get zenoBulkBaseUrl(): string {
+        const storeBaseUrl = this.client.baseUrl;
+        if (storeBaseUrl.includes('localhost:') || storeBaseUrl.includes('127.0.0.1:')) {
+            return 'https://zeno-bulk-dev-main.api.dev1.vertesia.io';
+        }
+        if (storeBaseUrl.includes('zeno-server')) {
+            return storeBaseUrl.replace(/zeno-server/, 'zeno-bulk');
+        }
+        return storeBaseUrl;
+    }
+
+    private zenoBulkPost<T>(path: string, body: object, timeoutMs?: number | false | null): Promise<T> {
+        return this.client.post(this.zenoBulkBaseUrl + path, { payload: body, timeoutMs });
     }
 
     listFolders(_path: string = '/') {
