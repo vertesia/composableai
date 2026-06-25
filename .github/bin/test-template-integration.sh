@@ -164,10 +164,11 @@ workspace_package_dirs() {
   repo_root="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
   # Use pnpm workspace filtering so pnpm-workspace.yaml exclusions are authoritative.
-  # Publish llumiverse/common first because several @vertesia packages depend on it.
-  pnpm -r --filter "./llumiverse/common" --filter "./packages/**" exec pwd | while IFS= read -r pkg_dir; do
+  # Keep this in sync with publish-all-packages.sh so Verdaccio tests expose the
+  # same package graph as a snapshot publish.
+  pnpm -r --filter "./llumiverse/common" --filter "./libraries/jst" --filter "./packages/**" exec pwd | while IFS= read -r pkg_dir; do
     case "$pkg_dir" in
-      "${repo_root}"/llumiverse/common|"${repo_root}"/packages/*)
+      "${repo_root}"/llumiverse/common|"${repo_root}"/libraries/jst|"${repo_root}"/packages/*)
         [ -f "${pkg_dir}/package.json" ] && printf '%s\n' "$pkg_dir"
         ;;
     esac
