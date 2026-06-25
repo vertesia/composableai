@@ -305,6 +305,9 @@ importers:
       '@vertesia/common':
         specifier: workspace:*
         version: link:../common
+      '@vertesia/studio-utils':
+        specifier: workspace:*
+        version: link:../studio-utils
       esbuild:
         specifier: ^0.28.1
         version: 0.28.1
