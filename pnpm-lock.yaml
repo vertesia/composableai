@@ -496,19 +496,19 @@ importers:
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^29.0.2
-        version: 29.0.3(rollup@4.61.1)
+        version: 29.0.3(rollup@4.62.2)
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.3
-        version: 16.0.3(rollup@4.61.1)
+        version: 16.0.3(rollup@4.62.2)
       '@rollup/plugin-terser':
         specifier: ^1.0.0
-        version: 1.0.0(rollup@4.61.1)
+        version: 1.0.0(rollup@4.62.2)
       '@types/node':
         specifier: ^24.12.4
         version: 24.13.2
       rollup:
         specifier: ^4.60.4
-        version: 4.61.1
+        version: 4.62.2
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
