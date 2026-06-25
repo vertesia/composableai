@@ -4,8 +4,8 @@
     "description": "Expose the request body as a promise in koa Context.body",
     "type": "module",
     "scripts": {
-        "build": "tsc",
-        "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo",
+        "build": "tsc -p tsconfig.json",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
         "test": "echo \"Error: no test specified\""
     },
     "files": [

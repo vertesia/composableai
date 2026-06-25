@@ -19,8 +19,9 @@
         "test": "ESBK_TSCONFIG_PATH=./test/tsconfig.json pnpm exec mocha -r tsx --exit ./test/**/*.ts",
         "lint": "biome lint src",
         "typecheck:test": "tsc -p test/tsconfig.json --noEmit",
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build",
-        "clean": "rm -rf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+        "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
+        "build": "pnpm run clean:lib && tsc -p tsconfig.json",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "repository": {
         "type": "git",
