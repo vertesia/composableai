@@ -163,6 +163,7 @@
   "agent.searchDocuments": "Belgeleri ara",
   "agent.selectInteraction": "Bir etkileşim seçin ve ajanı başlatmak için Başlat'a tıklayın",
   "agent.selectRightPanelSection": "Sağ panel bölümünü seç",
+  "agent.selectOption": "Seçenek seç",
   "agent.send": "Gönder",
   "agent.sendTooltip": "Göndermek için tıkla veya Enter",
   "agent.showAllMessages": "Tüm mesajları göster",

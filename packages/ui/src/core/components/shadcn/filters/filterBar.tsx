@@ -99,7 +99,11 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children, inModal }
             const newFilters: Filter[] = [];
 
             for (const pair of filterPairs) {
-                const [encodedName, valuesString] = pair.split(':');
+                const separatorIndex = pair.indexOf(':');
+                if (separatorIndex === -1) continue;
+
+                const encodedName = pair.slice(0, separatorIndex);
+                const valuesString = pair.slice(separatorIndex + 1);
                 const name = decodeURIComponent(encodedName);
 
                 if (processedUrlFilters.current.has(name)) continue;
@@ -161,7 +165,10 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children, inModal }
             }
 
             if (newFilters.length > 0) {
-                setFilters((prev) => [...prev, ...newFilters]);
+                setFilters((prev) => {
+                    const restoredNames = new Set(newFilters.map((filter) => filter.name));
+                    return [...prev.filter((filter) => !restoredNames.has(filter.name)), ...newFilters];
+                });
             }
 
             hasRestoredFromUrl.current = true;

@@ -164,6 +164,7 @@
   "agent.searchDocuments": "Rechercher des documents",
   "agent.selectInteraction": "Sélectionnez une interaction et cliquez sur Démarrer pour lancer un agent",
   "agent.selectRightPanelSection": "Sélectionner la section du panneau droit",
+  "agent.selectOption": "Sélectionner une option",
   "agent.send": "Envoyer",
   "agent.sendTooltip": "Cliquer ou Entrée pour envoyer",
   "agent.showAllMessages": "Afficher tous les messages",

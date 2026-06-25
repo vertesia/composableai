@@ -165,6 +165,7 @@
   "agent.searchDocuments": "Поиск документов",
   "agent.selectInteraction": "Выберите взаимодействие и нажмите Запустить, чтобы запустить агента",
   "agent.selectRightPanelSection": "Выбрать раздел правой панели",
+  "agent.selectOption": "Выбрать вариант",
   "agent.send": "Отправить",
   "agent.sendTooltip": "Нажмите или Enter для отправки",
   "agent.showAllMessages": "Показать все сообщения",

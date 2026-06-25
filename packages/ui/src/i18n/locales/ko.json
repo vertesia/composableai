@@ -163,6 +163,7 @@
   "agent.searchDocuments": "문서 검색",
   "agent.selectInteraction": "인터랙션을 선택하고 시작을 클릭하여 에이전트를 시작하세요",
   "agent.selectRightPanelSection": "오른쪽 패널 섹션 선택",
+  "agent.selectOption": "옵션 선택",
   "agent.send": "보내기",
   "agent.sendTooltip": "클릭하거나 Enter로 전송",
   "agent.showAllMessages": "모든 메시지 표시",

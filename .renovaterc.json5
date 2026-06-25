@@ -36,6 +36,7 @@
   // Security advisories bypass the release-age cooldown defined below so CVE fixes can
   // land immediately. See https://docs.renovatebot.com/configuration-options/#vulnerabilityalerts
   "vulnerabilityAlerts": {
+    "enabled": true,
     "minimumReleaseAge": "0 days"
   },
   "packageRules": [
@@ -311,20 +312,18 @@
       "rangeStrategy": "bump",
       "schedule": "* * * * 2" // Tuesday
     },
-    // Overrides go at the bottom, highest precedence
     {
-      "groupName": "Package Overrides",
-      "matchManagers": [
-        "npm",
-        "pnpm"
+      // Security-floor overrides (`pkg@<v: patchedVersion`) bump OLD, vulnerable transitive
+      // copies up to a patched release; they are not meant to track routine dependency updates.
+      // matchFileNames is the reliable matcher: pnpm-workspace.yaml entries get depType values
+      // such as "pnpm.overrides" or "pnpm-workspace.overrides", which matchDepTypes:["overrides"]
+      // does not catch. Disable normal Renovate PRs for these entries; vulnerabilityAlerts remains
+      // enabled above so advisory remediation can still run through Renovate's security flow.
+      "description": "Disable routine pnpm-workspace.yaml override updates; keep vulnerability alerts enabled",
+      "matchFileNames": [
+        "pnpm-workspace.yaml"
       ],
-      "matchDepTypes": [
-        "overrides"
-      ],
-      "rangeStrategy": "bump",
-      "schedule": "* * * * 4", // Thursday
-      "prCreation": "approval", // Branches still created automatically. This is to hide the group, do not merge.
-      "automerge": false
+      "enabled": false
     },
     // Disable automatic updates for node engines
     {
