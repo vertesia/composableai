@@ -21,8 +21,9 @@
     ],
     "scripts": {
         "lint": "biome lint src",
-        "build": "tsc --build",
-        "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build"
+        "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
+        "build": "pnpm run clean:lib && tsc -p tsconfig.json",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "devDependencies": {
         "@types/react": "^19.2.17",

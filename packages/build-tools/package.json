@@ -17,8 +17,9 @@
         "lint": "biome lint src",
         "test": "vitest run",
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build && chmod +x ./lib/bin/build.js",
-        "clean": "rm -rf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+        "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
+        "build": "pnpm run clean:lib && tsc -p tsconfig.json && chmod +x ./lib/bin/build.js",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "exports": {
         ".": {
