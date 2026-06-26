@@ -100,6 +100,7 @@
   "agent.messageReceived": "Message received",
   "agent.messageSending": "Sending message",
   "agent.moreActions": "More actions",
+  "agent.moreTabs": "More",
   "agent.newerPlan": "Next revision",
   "agent.no": "No",
   "agent.noActiveParallelTasks": "No active parallel tasks",
