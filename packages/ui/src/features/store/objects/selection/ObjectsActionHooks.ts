@@ -20,14 +20,3 @@ export function useObjectsActionCallback(name: string, cb: ObjectsActionCallback
     }, [ctx, name, cb]);
     return ctx;
 }
-
-export function useStartWorkflowCallback(cb: ObjectsActionCallback) {
-    const ctx = useObjectsActionContext();
-    useEffect(() => {
-        ctx.startWorkflow = cb;
-        return () => {
-            ctx.startWorkflow = undefined;
-        };
-    }, [cb, ctx]);
-    return ctx;
-}

@@ -258,11 +258,14 @@ export async function prepareAudio(
         }
 
         // Step 4: Update content object with metadata and renditions
+        const generationRuns = Array.isArray(inputObject.metadata?.generation_runs)
+            ? inputObject.metadata.generation_runs
+            : [];
         const audioMetadata: AudioMetadata = {
             type: ContentNature.Audio,
             duration: metadata.duration,
             renditions,
-            generation_runs: inputObject.metadata?.generation_runs || [],
+            generation_runs: generationRuns,
         };
 
         await client.objects.update(objectId, {

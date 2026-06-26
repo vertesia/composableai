@@ -48,21 +48,33 @@ export interface GenerateEmbeddings extends DSLActivitySpec<GenerateEmbeddingsPa
     name: 'generateEmbeddings';
 }
 
+/**
+ * True when an error indicates the embedding environment is missing/unavailable (e.g. the
+ * configured environment id no longer exists). Treated as "not configured" so intake skips
+ * embeddings gracefully instead of failing.
+ */
+function isEnvironmentNotFound(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /environment not found/i.test(message);
+}
+
 export async function generateEmbeddings(payload: DSLActivityExecutionPayload<GenerateEmbeddingsParams>) {
     const { params, client, objectId, fetchProject } = await setupActivity<GenerateEmbeddingsParams>(payload);
     const { force, type } = params;
+
+    const skipped = (message: string) => {
+        log.info(`Skipping ${type} embeddings for ${objectId}: ${message}`);
+        return { id: objectId, status: 'skipped' as const, message };
+    };
 
     const projectData = await fetchProject();
     const config = projectData?.configuration.embeddings[type];
     if (!projectData) {
         throw new DocumentNotFoundError('Project not found', [payload.project_id]);
     }
+    // Embeddings not configured for this type -> skip rather than fail intake.
     if (!config) {
-        throw new DocumentNotFoundError('Embeddings configuration not found', [objectId]);
-    }
-
-    if (!projectData) {
-        throw new DocumentNotFoundError('Project not found', [payload.project_id]);
+        return skipped(`embeddings not configured for type ${type}`);
     }
 
     if (!projectData?.configuration.embeddings[type]?.enabled) {
@@ -82,10 +94,9 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
         config,
     });
 
+    // No embedding environment configured for this type -> skip rather than fail intake.
     if (!config.environment) {
-        throw new Error(
-            'No environment found in project configuration. Set environment in project configuration to generate embeddings.',
-        );
+        return skipped(`no embedding environment configured for type ${type}`);
     }
 
     let document: Awaited<ReturnType<typeof client.objects.retrieve>>;
@@ -111,40 +122,31 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
         | Awaited<ReturnType<typeof generateImageEmbeddings>>
         | { id: string; status: string; message: string };
 
-    switch (type) {
-        case SupportedEmbeddingTypes.text:
-            res = await generateTextEmbeddings({
-                client,
-                config,
-                document,
-                type,
-                force,
-            });
-            break;
-        case SupportedEmbeddingTypes.properties:
-            res = await generateTextEmbeddings({
-                client,
-                config,
-                document,
-                type,
-                force,
-            });
-            break;
-        case SupportedEmbeddingTypes.image:
-            res = await generateImageEmbeddings({
-                client,
-                config,
-                document,
-                type,
-                force,
-            });
-            break;
-        default:
-            res = {
-                id: objectId,
-                status: 'failed',
-                message: `unsupported embedding type: ${type}`,
-            };
+    try {
+        switch (type) {
+            case SupportedEmbeddingTypes.text:
+                res = await generateTextEmbeddings({ client, config, document, type, force });
+                break;
+            case SupportedEmbeddingTypes.properties:
+                res = await generateTextEmbeddings({ client, config, document, type, force });
+                break;
+            case SupportedEmbeddingTypes.image:
+                res = await generateImageEmbeddings({ client, config, document, type, force });
+                break;
+            default:
+                res = {
+                    id: objectId,
+                    status: 'failed',
+                    message: `unsupported embedding type: ${type}`,
+                };
+        }
+    } catch (error) {
+        // Configured environment is missing/unavailable -> skip rather than fail the whole intake
+        // (and avoid the long LLM-activity retry storm a throw would trigger).
+        if (isEnvironmentNotFound(error)) {
+            return skipped(`embedding environment unavailable for type ${type}`);
+        }
+        throw error;
     }
 
     return res;

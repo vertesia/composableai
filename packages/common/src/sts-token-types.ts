@@ -83,6 +83,7 @@ export interface ServiceAccountTokenRequest extends BaseTokenRequest {
     project_id: string; // Will verify it belongs to account
     roles?: SystemRoles[]; // Optional - roles for the service account token
     name?: string;
+    email?: string;
 }
 
 /**

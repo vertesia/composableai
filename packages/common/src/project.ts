@@ -269,6 +269,39 @@ export const BrowserUseProjectConfigurationSchema: JSONSchemaType<BrowserUseProj
 export type ProjectSearchTier = 'standard' | 'performance';
 export type ElasticsearchBackend = 'serverless' | 'hosted';
 
+export interface ProjectIntakeConfiguration {
+    /**
+     * Generate table-of-content sections during standard document intake.
+     * Defaults to false.
+     */
+    generate_toc?: boolean;
+
+    /**
+     * Skip table-of-content generation when the document text exceeds this many characters.
+     * Avoids sending very large documents through the TOC interactions. Unset means no limit.
+     */
+    generate_toc_max_size?: number;
+
+    /**
+     * Select or assign a content type during standard intake.
+     * Defaults to true.
+     */
+    generate_content_type?: boolean;
+
+    /**
+     * Extract document properties after content type assignment.
+     * Defaults to true.
+     */
+    generate_properties?: boolean;
+
+    /**
+     * Default content type assigned during intake when type selection finds no matching type.
+     * A type id resolvable in this project (a stored `oid:` type, an `app:` type, or a `sys:` type).
+     * Defaults to the platform `sys:GenericDocument` when unset.
+     */
+    default_content_type?: string;
+}
+
 export interface ProjectConfiguration {
     human_context?: string;
 
@@ -320,6 +353,11 @@ export interface ProjectConfiguration {
          */
         backend?: ElasticsearchBackend;
     };
+
+    /**
+     * Standard content intake behavior.
+     */
+    intake?: ProjectIntakeConfiguration;
 
     /**
      * Primary language for full-text search analysis.

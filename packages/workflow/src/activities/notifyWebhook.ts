@@ -1,4 +1,4 @@
-import { log } from '@temporalio/activity';
+import { ApplicationFailure, log } from '@temporalio/activity';
 import { VertesiaClient } from '@vertesia/client';
 import {
     ApiVersions,
@@ -9,6 +9,7 @@ import {
 } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { WorkflowParamNotFoundError } from '../errors.js';
+import { safeFetch, URLValidationError } from '../security/ssrf.js';
 import { getVertesiaClientOptions } from '../utils/client.js';
 
 export interface NotifyWebhookParams {
@@ -18,9 +19,11 @@ export interface NotifyWebhookParams {
     workflow_run_id: string; //The ID of the specific workflow run sending the notification
     event_name: string; //The event that triggered the notification (e.g. "completed", "failed", etc.)
     detail?: Record<string, unknown>; // additional data about the event if any. It will be send to the webhook when using POST
+    body?: string; // raw request body. When set, it bypasses workflow notification payload formatting.
     //target_url: string; //URL to send the notification to
     method: 'GET' | 'POST'; //HTTP method to use
     headers?: Record<string, string>; // additional headers to send
+    timeout_ms?: number;
 }
 
 export interface WebhookNotificationPayload {
@@ -41,10 +44,28 @@ export interface NotifyWebhookResult {
     url: string;
 }
 
+function validationStatusCode(error: unknown): number | undefined {
+    if (typeof error !== 'object' || error === null) {
+        return undefined;
+    }
+    const record = error as { statusCode?: unknown; status?: unknown; code?: unknown };
+    const status = record.statusCode ?? record.status ?? record.code;
+    return typeof status === 'number' ? status : undefined;
+}
+
+function isNonRetryableUrlValidationError(error: unknown): boolean {
+    const status = validationStatusCode(error);
+    if (status !== undefined) {
+        return status >= 400 && status < 500;
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    return /blocked|not allowed|forbidden|invalid url|internal hosts|private network|metadata/i.test(message);
+}
+
 export async function notifyWebhook(
     payload: DSLActivityExecutionPayload<NotifyWebhookParams>,
 ): Promise<NotifyWebhookResult> {
-    const { params } = await setupActivity<NotifyWebhookParams>(payload);
+    const { params, client } = await setupActivity<NotifyWebhookParams>(payload);
     const { webhook, method, headers: defaultHeaders } = params;
     // resolve the url and the api version of the webhook
     let target_url: string, version: number | undefined;
@@ -57,25 +78,73 @@ export async function notifyWebhook(
 
     if (!target_url) throw new WorkflowParamNotFoundError('target_url');
 
+    try {
+        await client.apps.validateUrl(target_url);
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (!isNonRetryableUrlValidationError(err)) {
+            log.warn('URL validation preflight failed; retrying webhook notification', {
+                url: target_url,
+                workflow_id: params.workflow_id,
+                workflow_run_id: params.workflow_run_id,
+                error: message,
+            });
+            throw err;
+        }
+        log.warn('URL validation blocked webhook endpoint', {
+            url: target_url,
+            workflow_id: params.workflow_id,
+            workflow_run_id: params.workflow_run_id,
+            error: message,
+        });
+        throw ApplicationFailure.create({
+            message: `Webhook endpoint blocked: ${message}`,
+            nonRetryable: true,
+        });
+    }
+
     const hasBody = method === 'POST'; //body is sent only for POST, always includes workflow info
 
     const headers = {
         ...defaultHeaders,
     };
-    if (hasBody) {
+    if (hasBody && !hasHeader(headers, 'content-type')) {
         headers['Content-Type'] = 'application/json';
     }
-    const body = hasBody ? await createRequestBody(payload, params, version) : undefined;
+    const body = params.body ?? (hasBody ? await createRequestBody(payload, params, version) : undefined);
 
     log.info(`Notifying webhook at ${target_url}`);
-    const res = await fetch(target_url, {
-        method,
-        body,
-        headers,
-    }).catch((err) => {
-        log.error(`An error occurred while notifying webhook at ${target_url}`, { err });
-        throw err;
-    });
+    const timeoutMs = typeof params.timeout_ms === 'number' && params.timeout_ms > 0 ? params.timeout_ms : undefined;
+    const controller = timeoutMs ? new AbortController() : undefined;
+    const timeout = timeoutMs ? setTimeout(() => controller?.abort(), timeoutMs) : undefined;
+    let res: Response;
+    try {
+        res = await safeFetch(target_url, {
+            method,
+            body,
+            headers,
+            ...(controller ? { signal: controller.signal } : {}),
+        }).catch((err: unknown) => {
+            if (err instanceof URLValidationError) {
+                log.warn('Redirect blocked on webhook endpoint', {
+                    url: target_url,
+                    workflow_id: params.workflow_id,
+                    workflow_run_id: params.workflow_run_id,
+                    error: err.message,
+                });
+                throw ApplicationFailure.create({
+                    message: `Webhook endpoint blocked: ${err.message}`,
+                    nonRetryable: true,
+                });
+            }
+            log.error(`An error occurred while notifying webhook at ${target_url}`, { err });
+            throw err;
+        });
+    } finally {
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+    }
 
     if (!res.ok) {
         log.warn(`Webhook endpoint ${target_url} returned an error - ${res.status} ${res.statusText}`, {
@@ -98,6 +167,11 @@ export async function notifyWebhook(
     }
 
     return { status: res.status, message: res.statusText, url: res.url };
+}
+
+function hasHeader(headers: Record<string, string>, name: string): boolean {
+    const lowerName = name.toLowerCase();
+    return Object.keys(headers).some((header) => header.toLowerCase() === lowerName);
 }
 
 // --------------------------------------
