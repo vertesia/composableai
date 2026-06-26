@@ -6,7 +6,7 @@ export function registerExportCommand(program: Command) {
         .command('export')
         .description('Export project content objects as JSONL or JSONL.GZ')
         .option('-o, --output [path]', 'Output file path. Defaults to the generated export filename. Use - for stdout.')
-        .option('--compression [compression]', 'Compression: gzip or none', 'gzip')
+        .option('--no-compress', 'Write uncompressed JSONL instead of JSONL.GZ')
         .option('--include-embeddings', 'Include stored embeddings')
         .option('--embedding-types [types]', 'Comma-separated embedding types: text,image,properties')
         .option('--type [type]', 'Filter by content object type id or in-code type')

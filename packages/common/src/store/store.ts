@@ -196,17 +196,9 @@ export interface StartContentObjectExportRequest {
      */
     include?: ExportContentObjectsIncludeOptions;
     /**
-     * Final artifact compression. Defaults to gzip.
+     * Compress the export with gzip. Defaults to true.
      */
-    compression?: ContentObjectExportCompression;
-    /**
-     * Gzip compression level from 1 (fastest) to 9 (smallest). Defaults to 2 when compression is gzip.
-     */
-    gzip_level?: number;
-    /**
-     * Temporary load-test multiplier. Repeats the same export scan this many times. Defaults to 1.
-     */
-    amplify_factor?: number;
+    compression?: boolean;
 }
 
 export interface StartContentObjectExportResponse {
@@ -215,7 +207,7 @@ export interface StartContentObjectExportResponse {
     export_id: string;
 }
 
-export interface ZenoBulkContentObjectExportRequest extends StartContentObjectExportRequest {
+export interface ZenoBulkContentObjectExportRequest extends Omit<StartContentObjectExportRequest, 'compression'> {
     tenant_id: string;
     project_id: string;
     export_id: string;
@@ -223,6 +215,7 @@ export interface ZenoBulkContentObjectExportRequest extends StartContentObjectEx
     filename: string;
     manifest_path: string;
     manifest_filename: string;
+    compression: ContentObjectExportCompression;
 }
 
 export interface ZenoBulkContentObjectExportShardRange {

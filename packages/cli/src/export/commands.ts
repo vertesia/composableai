@@ -10,7 +10,7 @@ import { type CliOptions, getBooleanOption, getStringOption } from '../utils/opt
 
 type ExportContentOptions = CliOptions<{
     output?: string;
-    compression?: string;
+    compress?: boolean;
     embeddingTypes?: string;
     type?: string;
     createdFrom?: string;
@@ -28,18 +28,15 @@ type ExportContentOptions = CliOptions<{
     json?: boolean;
 }>;
 
-type ExportCompression = 'gzip' | 'none';
-
 const DEFAULT_POLL_INTERVAL_MS = 2000;
 
 export async function exportContentObjects(program: Command, options: ExportContentOptions) {
     const client = await getClient(program);
-    const compression = normalizeCompression(options.compression);
     const quiet = getBooleanOption(options.quiet);
     const jsonOutput = getBooleanOption(options.json);
 
     const job = await client.objects.startExport({
-        compression,
+        compression: options.compress !== false,
         embedding_types: parseEmbeddingTypes(options.embeddingTypes),
         filter: buildFilter(options),
         all_revisions: getBooleanOption(options.allRevisions),
@@ -173,14 +170,6 @@ function parseEmbeddingTypes(rawTypes: unknown): SupportedEmbeddingTypes[] | und
         }
     }
     return types as SupportedEmbeddingTypes[];
-}
-
-function normalizeCompression(rawCompression: unknown): ExportCompression {
-    const compression = (getStringOption(rawCompression) ?? 'gzip').toLowerCase();
-    if (compression === 'gzip' || compression === 'none') {
-        return compression;
-    }
-    throw new Error(`Invalid compression '${compression}'. Expected gzip or none.`);
 }
 
 function manifestPathForOutput(outputPath: string) {
