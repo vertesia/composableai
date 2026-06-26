@@ -469,7 +469,10 @@ function OverflowTabsBar({ tabs, current, onTabChange, className }: OverflowTabs
     const containerRef = useRef<HTMLDivElement | null>(null);
     const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
     const moreRef = useRef<HTMLButtonElement | null>(null);
-    const [visibleCount, setVisibleCount] = useState(tabs.length);
+    // `count` is the number of leading tabs shown. When `promote` is set, the active
+    // tab is pulled into the last visible slot (before More) and `count` is the number
+    // of leading tabs shown *before* it.
+    const [layout, setLayout] = useState<{ count: number; promote: boolean }>({ count: tabs.length, promote: false });
 
     const recompute = () => {
         const container = containerRef.current;
@@ -478,23 +481,37 @@ function OverflowTabsBar({ tabs, current, onTabChange, className }: OverflowTabs
         const widths = tabs.map((_, i) => itemRefs.current[i]?.offsetWidth ?? 0);
         const totalAll = widths.reduce((sum, w) => sum + w, 0) + TAB_GAP_PX * Math.max(0, tabs.length - 1);
 
-        let nextCount: number;
-        if (totalAll <= containerWidth) {
-            nextCount = tabs.length;
-        } else {
-            // Reserve room for the "More" button, then fit as many tabs as possible.
-            const available = containerWidth - (moreRef.current?.offsetWidth ?? 0) - TAB_GAP_PX;
+        // How many tabs (in order, optionally skipping one) fit within `available`.
+        const fitCount = (available: number, skipIndex: number) => {
             let used = 0;
             let count = 0;
             for (let i = 0; i < tabs.length; i++) {
-                const next = used + (count > 0 ? TAB_GAP_PX : 0) + widths[i];
-                if (next > available) break;
-                used = next;
+                if (i === skipIndex) continue;
+                const cand = used + (count > 0 ? TAB_GAP_PX : 0) + widths[i];
+                if (cand > available) break;
+                used = cand;
                 count += 1;
             }
-            nextCount = Math.max(1, count);
+            return count;
+        };
+
+        let next: { count: number; promote: boolean };
+        if (totalAll <= containerWidth) {
+            next = { count: tabs.length, promote: false };
+        } else {
+            const moreWidth = moreRef.current?.offsetWidth ?? 0;
+            const naturalCount = Math.max(1, fitCount(containerWidth - moreWidth - TAB_GAP_PX, -1));
+            const activeIndex = tabs.findIndex((tab) => tab.name === current);
+            if (activeIndex < 0 || activeIndex < naturalCount) {
+                next = { count: naturalCount, promote: false };
+            } else {
+                // Active tab is overflowed: reserve its slot at the end (before More) and
+                // fit as many leading tabs as possible around it.
+                const leadAvailable = containerWidth - moreWidth - widths[activeIndex] - TAB_GAP_PX * 2;
+                next = { count: fitCount(leadAvailable, activeIndex), promote: true };
+            }
         }
-        setVisibleCount((prev) => (prev === nextCount ? prev : nextCount));
+        setLayout((prev) => (prev.count === next.count && prev.promote === next.promote ? prev : next));
     };
 
     // Re-measure after every render (catches tab additions/removals and label
@@ -512,8 +529,18 @@ function OverflowTabsBar({ tabs, current, onTabChange, className }: OverflowTabs
         return () => observer.disconnect();
     }, []);
 
-    const visible = tabs.slice(0, visibleCount);
-    const overflow = tabs.slice(visibleCount);
+    const activeIndex = tabs.findIndex((tab) => tab.name === current);
+    let visible: TabDefinition[];
+    let overflow: TabDefinition[];
+    if (layout.promote && activeIndex >= 0) {
+        // Pull the active tab into the last visible slot; the tab it displaces overflows.
+        const others = tabs.filter((_, i) => i !== activeIndex);
+        visible = [...others.slice(0, layout.count), tabs[activeIndex]];
+        overflow = others.slice(layout.count);
+    } else {
+        visible = tabs.slice(0, layout.count);
+        overflow = tabs.slice(layout.count);
+    }
     const activeInOverflow = overflow.some((tab) => tab.name === current);
     const moreLabel = t('agent.moreTabs');
 
