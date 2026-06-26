@@ -36,7 +36,7 @@ export async function exportContentObjects(program: Command, options: ExportCont
     const jsonOutput = getBooleanOption(options.json);
 
     const job = await client.objects.startExport({
-        compression: options.compress !== false,
+        ...(options.compress === false ? { compression: false } : {}),
         embedding_types: parseEmbeddingTypes(options.embeddingTypes),
         filter: buildFilter(options),
         all_revisions: getBooleanOption(options.allRevisions),

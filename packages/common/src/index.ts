@@ -43,7 +43,6 @@ export * from './store/index.js';
 export type {
     ContentObjectExportArtifact,
     ContentObjectExportArtifactFile,
-    ContentObjectExportCompression,
     ContentObjectExportProgress,
     ContentObjectExportResult,
     ContentObjectExportStatusResponse,

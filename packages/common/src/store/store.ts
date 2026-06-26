@@ -181,8 +181,6 @@ export interface ExportContentObjectsPageResponse {
     exported_count: number;
 }
 
-export type ContentObjectExportCompression = 'gzip' | 'none';
-
 export interface StartContentObjectExportRequest {
     /**
      * Embedding types to export when include.embeddings is true. Defaults to all supported embedding types.
@@ -220,7 +218,7 @@ export interface ZenoBulkContentObjectExportRequest extends Omit<StartContentObj
     filename: string;
     manifest_path: string;
     manifest_filename: string;
-    compression: ContentObjectExportCompression;
+    compression: boolean;
 }
 
 export interface ZenoBulkContentObjectExportShardRange {
