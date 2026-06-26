@@ -60,6 +60,8 @@ export type {
     ZenoBulkContentObjectExportShardRange,
     ZenoBulkContentObjectExportShardRequest,
     ZenoBulkContentObjectExportShardResult,
+    ZenoBulkContentObjectExportSplitShardRequest,
+    ZenoBulkContentObjectExportSplitShardResponse,
 } from './store/store.js';
 export * from './sts-token-types.js';
 export * from './tenant.js';

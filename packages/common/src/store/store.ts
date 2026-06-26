@@ -240,6 +240,17 @@ export interface ZenoBulkContentObjectExportShardRequest extends ZenoBulkContent
     shard: ZenoBulkContentObjectExportShardRange;
 }
 
+export interface ZenoBulkContentObjectExportSplitShardRequest extends ZenoBulkContentObjectExportRequest {
+    shard: ZenoBulkContentObjectExportShardRange;
+    min_split_records?: number;
+}
+
+export interface ZenoBulkContentObjectExportSplitShardResponse {
+    shards: ZenoBulkContentObjectExportShardRange[];
+    splittable: boolean;
+    records: number;
+}
+
 export interface ZenoBulkContentObjectExportShardResult {
     status: 'completed';
     shard_index: number;

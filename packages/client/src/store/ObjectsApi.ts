@@ -45,6 +45,8 @@ import {
     type ZenoBulkContentObjectExportRequest,
     type ZenoBulkContentObjectExportShardRequest,
     type ZenoBulkContentObjectExportShardResult,
+    type ZenoBulkContentObjectExportSplitShardRequest,
+    type ZenoBulkContentObjectExportSplitShardResponse,
 } from '@vertesia/common';
 
 export { getSupportedRenditionFormats, supportsVisualRendition } from '@vertesia/common';
@@ -159,6 +161,13 @@ export class ObjectsApi extends ApiTopic {
         timeoutMs: number | false | null = false,
     ): Promise<ZenoBulkContentObjectExportShardResult> {
         return this.zenoBulkPost('/export/shard', payload, timeoutMs);
+    }
+
+    splitContentObjectExportShardViaBulk(
+        payload: ZenoBulkContentObjectExportSplitShardRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ZenoBulkContentObjectExportSplitShardResponse> {
+        return this.zenoBulkPost('/export/shard/split', payload, timeoutMs);
     }
 
     composeContentObjectExportViaBulk(
