@@ -158,6 +158,18 @@ export interface ConversationState {
     skill_tool_map?: Record<string, string[]>;
 
     /**
+     * Names of skills whose full instructions are already present in the live conversation
+     * history (i.e. were delivered by a prior `learn_<skill>` call). Used to make skill
+     * re-activation idempotent: a repeat call returns a short "already active" acknowledgement
+     * instead of re-dumping the instructions.
+     *
+     * Unlike `unlocked_tools`/`skill_tool_map` (which must survive a checkpoint so tools stay
+     * unlocked), this list is reset when a checkpoint compacts the conversation, because the
+     * summary no longer carries the skill instructions and the next call must re-deliver them.
+     */
+    skill_instructions_delivered?: string[];
+
+    /**
      * Denylist of MCP tool-collection ids deactivated for this conversation.
      * `undefined`/empty means all installed/connected MCP collections are active.
      * Updated mid-conversation via the MCP config signal; consumed when tools are re-discovered.

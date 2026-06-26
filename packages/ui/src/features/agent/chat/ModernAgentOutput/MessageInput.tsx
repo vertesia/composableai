@@ -571,9 +571,6 @@ export default function MessageInput({
                                                 {contextTokenUsageLabel}
                                             </span>
                                         )}
-                                        <span className="mt-1.5 block text-foreground/80">
-                                            {t('agent.clickToCompactNow')}
-                                        </span>
                                     </span>
                                 }
                             >
