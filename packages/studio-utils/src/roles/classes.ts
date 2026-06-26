@@ -49,7 +49,7 @@ export class SystemRole extends Role<Permission> {
 }
 
 /**
- * A role usable in ContentSet ACEs. Adds `applicableScopes` — the kinds of
+ * A role usable in ResourceSet ACEs. Adds `applicableScopes` — the kinds of
  * objects the role can be applied to at the ABAC scope level. Inherits
  * `Role<string>` because ABAC verbs aren't constrained to the central
  * `Permission` enum.

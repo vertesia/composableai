@@ -1,4 +1,13 @@
 {
+  "abac_perms.collection.content_manager": "Sammlungsverwalter",
+  "abac_perms.collection.content_reader": "Sammlungsleser",
+  "abac_perms.collection.content_writer": "Sammlungsbearbeiter",
+  "abac_perms.document.content_manager": "Inhaltsverwalter",
+  "abac_perms.document.content_reader": "Inhaltsleser",
+  "abac_perms.document.content_writer": "Inhaltsbearbeiter",
+  "abac_perms.scope.collection": "Sammlung",
+  "abac_perms.scope.document": "Dokument",
+  "abac_perms.scope.task": "Aufgabe",
   "agent.activeWorkstreams_one": "Agent hat {{count}} aktiven Arbeitsablauf",
   "agent.activeWorkstreams_other": "Agent hat {{count}} aktive Arbeitsabläufe",
   "agent.addAttachment": "Anhang hinzufügen",

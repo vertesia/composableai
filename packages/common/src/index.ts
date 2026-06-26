@@ -27,6 +27,8 @@ export * from './oauth-server.js';
 export * from './Progress.js';
 export * from './payload.js';
 export * from './pending-asks.js';
+export * from './platform-event.js';
+export * from './platform-event-validation.js';
 export * from './principal-context.js';
 export * from './project.js';
 export * from './prompt.js';

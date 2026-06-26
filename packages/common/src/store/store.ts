@@ -10,7 +10,9 @@ export enum ContentObjectApiHeaders {
     PROCESSING_PRIORITY = 'x-processing-priority',
     CREATE_REVISION = 'x-create-revision',
     REVISION_LABEL = 'x-revision-label',
-    /** When set to 'true', prevents this update from triggering workflow rules */
+    /**
+     * @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire.
+     */
     SUPPRESS_WORKFLOWS = 'x-suppress-workflows',
 }
 
@@ -35,6 +37,9 @@ export interface UpdateContentObjectHeaders {
     'x-create-revision'?: boolean;
     'x-revision-label'?: string;
     'x-processing-priority'?: ContentObjectProcessingPriority;
+    /**
+     * @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire.
+     */
     'x-suppress-workflows'?: boolean;
 }
 
@@ -383,12 +388,12 @@ export interface ContentObjectItemApiResponse extends BaseObject {
     type?: ContentObjectApiTypeRef;
     content?: ContentSource;
     external_id?: string;
-    properties: Record<string, unknown>;
+    properties: JSONObject;
     metadata?: Record<string, unknown>;
     tokens?: {
-        count: number;
-        encoding: string;
-        etag: string;
+        count?: number;
+        encoding?: string;
+        etag?: string;
     };
     revision: ContentObjectApiRevision;
     is_deleted?: boolean;
@@ -623,13 +628,19 @@ export interface ContentObjectItem<T = JSONObject> extends BaseObject {
     properties: T; // a JSON object that describes the object
 
     /** Technical metadata of the object */
-    metadata?: VideoMetadata | AudioMetadata | ImageMetadata | DocumentMetadata | ContentMetadata;
+    metadata?:
+        | VideoMetadata
+        | AudioMetadata
+        | ImageMetadata
+        | DocumentMetadata
+        | ContentMetadata
+        | Record<string, unknown>;
 
     /** Token information  */
     tokens?: {
-        count: number; // the number of tokens in the text
-        encoding: string; // the encoding used to calculate the tokens
-        etag: string; //the etag of the text used for the token count
+        count?: number; // the number of tokens in the text
+        encoding?: string; // the encoding used to calculate the tokens
+        etag?: string; //the etag of the text used for the token count
     };
 
     /**
@@ -829,6 +840,16 @@ export interface WorkflowRule extends WorkflowRuleItem {
      * Optional task queue name to use when starting workflows for this rule
      */
     task_queue?: string;
+
+    /**
+     * Event subscription migration status for legacy workflow-rule cutover.
+     */
+    event_subscription_migration_status?: 'migrated' | 'unsupported_match' | 'failed';
+
+    /**
+     * Migration failure or unsupported-match reason, when applicable.
+     */
+    event_subscription_migration_error?: string;
 }
 
 export interface CreateWorkflowRulePayload extends UploadWorkflowRulePayload {
@@ -864,7 +885,7 @@ export interface GetRenditionResponse {
 }
 
 export interface ObjectSearchResponse {
-    results: ContentObjectItem[];
+    results: ContentObjectItemApiResponse[];
     facets: ComputedFacetResponse;
     aggregations?: Record<string, unknown>;
 }

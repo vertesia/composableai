@@ -4,6 +4,7 @@ import { registerAppsCommand } from './apps/index.js';
 import { registerArtifactsCommand } from './artifacts/index.js';
 import { registerDataCommand } from './data/index.js';
 import { listEnvironments } from './envs/index.js';
+import { registerEventsCommand } from './events/index.js';
 import { registerExportCommand } from './export/index.js';
 import { registerIamCommand } from './iam/index.js';
 import { listInteractions } from './interactions/index.js';
@@ -27,6 +28,7 @@ import {
 } from './profiles/commands.js';
 import { AVAILABLE_REGIONS, DEFAULT_REGION, getConfigFile } from './profiles/index.js';
 import { listProjects, useProject } from './projects/index.js';
+import { registerQuotaCommand } from './quota/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
 import { getBooleanOption, hasStatus } from './utils/options.js';
@@ -176,6 +178,7 @@ registerAppsCommand(program);
 registerAgentsCommand(program);
 registerArtifactsCommand(program);
 registerDataCommand(program);
+registerEventsCommand(program);
 registerExportCommand(program);
 registerIamCommand(program);
 
@@ -251,6 +254,7 @@ profilesRoot
 
 registerObjectsCommand(program);
 registerWorkflowsCommand(program);
+registerQuotaCommand(program);
 
 program.parseAsync(process.argv).catch((err) => {
     console.error(err);

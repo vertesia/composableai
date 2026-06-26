@@ -1,4 +1,13 @@
 {
+  "abac_perms.collection.content_manager": "集合管理員",
+  "abac_perms.collection.content_reader": "集合檢視者",
+  "abac_perms.collection.content_writer": "集合編輯者",
+  "abac_perms.document.content_manager": "內容管理員",
+  "abac_perms.document.content_reader": "內容檢視者",
+  "abac_perms.document.content_writer": "內容編輯者",
+  "abac_perms.scope.collection": "集合",
+  "abac_perms.scope.document": "文件",
+  "abac_perms.scope.task": "任務",
   "agent.activeWorkstreams_one": "代理有{{count}}個活躍的工作流正在運行",
   "agent.activeWorkstreams_other": "代理有{{count}}個活躍的工作流正在運行",
   "agent.addAttachment": "新增附件",

@@ -54,6 +54,43 @@ type NormalizedRetryPolicy = {
     jitter: boolean;
 };
 
+/**
+ * Auto-retry for rate-limiter pacing responses (server contract: a 429 with
+ * `x-ratelimit-reason: pacing` and a precise `x-ratelimit-retry-ms`). A pacing 429 is emitted by
+ * the rate limiter BEFORE any handler runs, so replaying is safe for every method, POST included.
+ * Quota rejections (`x-ratelimit-reason: quota`) are never auto-retried.
+ *
+ * Enabled by default; independent from the opt-in IRequestRetryPolicy (pacing retries do not
+ * consume policy attempts).
+ */
+export interface IPacingRetryPolicy {
+    /** Defaults to true. */
+    enabled?: boolean;
+    /** Hints above this are not auto-waited (the caller sees the 429). Defaults to 3000. */
+    maxWaitMs?: number;
+    /** Maximum pacing retries per request. Defaults to 2. */
+    attempts?: number;
+}
+
+type NormalizedPacingPolicy = { maxWaitMs: number; attempts: number };
+
+const DEFAULT_PACING_MAX_WAIT_MS = 3000;
+const DEFAULT_PACING_ATTEMPTS = 2;
+const RATELIMIT_REASON_HEADER = 'x-ratelimit-reason';
+const RATELIMIT_RETRY_MS_HEADER = 'x-ratelimit-retry-ms';
+
+function normalizePacingPolicy(
+    policy: IPacingRetryPolicy | false | null | undefined,
+): NormalizedPacingPolicy | undefined {
+    if (policy === false || policy === null || policy?.enabled === false) {
+        return undefined;
+    }
+    return {
+        maxWaitMs: Math.max(0, policy?.maxWaitMs ?? DEFAULT_PACING_MAX_WAIT_MS),
+        attempts: Math.max(0, Math.floor(policy?.attempts ?? DEFAULT_PACING_ATTEMPTS)),
+    };
+}
+
 const DEFAULT_RETRY_METHODS = ['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE'];
 const DEFAULT_RETRY_STATUSES = [502, 503, 504];
 const DEFAULT_RETRY_ATTEMPTS = 3;
@@ -99,6 +136,11 @@ export interface IRequestParams {
      * Caller-supplied AbortSignal. Merged with the timeout signal — whichever aborts first wins.
      */
     signal?: AbortSignal;
+    /**
+     * Per-request override for pacing auto-retry (enabled by default at the client level).
+     * Set to false to surface pacing 429s to the caller.
+     */
+    pacingRetry?: IPacingRetryPolicy | false | null;
 }
 
 export interface IRequestParamsWithPayload extends IRequestParams {
@@ -170,6 +212,25 @@ function retryAfterDelayMs(res: Response): number | undefined {
         return Math.max(0, retryAt - Date.now());
     }
     return undefined;
+}
+
+function pacingDelayMs(res: Response, pacing: NormalizedPacingPolicy): number | undefined {
+    if (res.status !== 429 || res.headers.get(RATELIMIT_REASON_HEADER) !== 'pacing') {
+        return undefined;
+    }
+    // Treat an absent/empty header as "no hint" — Number(null) and Number('') are 0, which
+    // would otherwise turn a pacing 429 carrying only Retry-After into an immediate retry.
+    const rawRetryMs = res.headers.get(RATELIMIT_RETRY_MS_HEADER);
+    const retryMs = rawRetryMs ? Number(rawRetryMs) : Number.NaN;
+    const delay = Number.isFinite(retryMs) && retryMs >= 0 ? retryMs : retryAfterDelayMs(res);
+    if (delay === undefined || delay > pacing.maxWaitMs) {
+        return undefined;
+    }
+    return delay;
+}
+
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function retryDelayMs(policy: NormalizedRetryPolicy, attempt: number, res?: Response): number {
@@ -250,6 +311,7 @@ export abstract class ClientBase {
     errorFactory: (err: RequestError) => Error = (err) => err;
     verboseErrors = true;
     retryPolicy?: IRequestRetryPolicy;
+    pacingRetry?: IPacingRetryPolicy | false;
     defaultTimeoutMs?: number;
 
     abstract get headers(): Record<string, string>;
@@ -265,6 +327,11 @@ export abstract class ClientBase {
      */
     throwError(err: RequestError): never {
         throw this.errorFactory(err);
+    }
+
+    withPacingRetry(policy?: IPacingRetryPolicy | false | null): this {
+        this.pacingRetry = policy === null ? undefined : policy;
+        return this;
     }
 
     withRetryPolicy(policy?: IRequestRetryPolicy | null): this {
@@ -489,42 +556,53 @@ export abstract class ClientBase {
             return init;
         };
         const retryPolicy = this.resolveRetryPolicy(params);
+        const pacing =
+            params?.reader === 'sse' ? undefined : normalizePacingPolicy(params?.pacingRetry ?? this.pacingRetry);
         const fetch = await this._fetch;
-
-        if (!retryPolicy) {
-            const req = await this.createRequest(url, createRequestInit());
-            let res: Response;
-            try {
-                res = await fetch(req);
-            } catch (err: unknown) {
-                console.error(`Failed to connect to ${url}`, err);
-                this.throwError(new ConnectionError(req, toError(err)));
-            }
-            this.handleFetchResponse(req, res);
-            return this.handleResponse<T>(req, res, params);
-        }
-
         const replayableBody = isReplayableBody(body);
+
+        // Unified loop: `attempt` budgets the opt-in retry policy; pacing auto-retries (server
+        // says "come back in N ms" via a pacing 429 emitted before any handler ran) have their
+        // own independent budget and exact server-provided wait.
+        let attempt = 0;
+        let pacingAttemptsUsed = 0;
         let lastReq: Request | undefined;
-        for (let attempt = 0; attempt < retryPolicy.attempts; attempt++) {
+        while (true) {
             const req = await this.createRequest(url, createRequestInit());
             lastReq = req;
             let res: Response;
             try {
                 res = await fetch(req);
             } catch (err: unknown) {
-                if (!this.shouldRetryConnectionError(retryPolicy, normalizedMethod, attempt, replayableBody)) {
+                if (
+                    !retryPolicy ||
+                    !this.shouldRetryConnectionError(retryPolicy, normalizedMethod, attempt, replayableBody)
+                ) {
                     console.error(`Failed to connect to ${url}`, err);
                     this.throwError(new ConnectionError(req, toError(err)));
                 }
                 await this.waitBeforeRetry(retryPolicy, attempt);
+                attempt++;
                 continue;
             }
             this.handleFetchResponse(req, res);
-            if (this.shouldRetryResponse(retryPolicy, normalizedMethod, attempt, replayableBody, res)) {
+            if (pacing && pacingAttemptsUsed < pacing.attempts && replayableBody) {
+                const delay = pacingDelayMs(res, pacing);
+                if (delay !== undefined) {
+                    await discardBody(res);
+                    await sleep(delay);
+                    pacingAttemptsUsed++;
+                    continue;
+                }
+            }
+            if (retryPolicy && this.shouldRetryResponse(retryPolicy, normalizedMethod, attempt, replayableBody, res)) {
                 await discardBody(res);
                 await this.waitBeforeRetry(retryPolicy, attempt, res);
+                attempt++;
                 continue;
+            }
+            if (retryPolicy && attempt >= retryPolicy.attempts) {
+                break;
             }
             return this.handleResponse<T>(req, res, params);
         }

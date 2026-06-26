@@ -1,4 +1,13 @@
 {
+  "abac_perms.collection.content_manager": "مدير المجموعات",
+  "abac_perms.collection.content_reader": "قارئ المجموعات",
+  "abac_perms.collection.content_writer": "محرر المجموعات",
+  "abac_perms.document.content_manager": "مدير المحتوى",
+  "abac_perms.document.content_reader": "قارئ المحتوى",
+  "abac_perms.document.content_writer": "محرر المحتوى",
+  "abac_perms.scope.collection": "مجموعة",
+  "abac_perms.scope.document": "مستند",
+  "abac_perms.scope.task": "مهمة",
   "agent.activeWorkstreams_zero": "لا يوجد لدى الوكيل مسارات عمل نشطة",
   "agent.activeWorkstreams_one": "لدى الوكيل مسار عمل نشط واحد قيد التشغيل",
   "agent.activeWorkstreams_two": "لدى الوكيل مساران نشطان قيد التشغيل",

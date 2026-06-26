@@ -1,76 +1,16 @@
 import type { Command } from 'commander';
 import {
     createOrUpdateWorkflowDefinition,
-    createOrUpdateWorkflowRule,
-    createWorkflowRule,
     deleteWorkflowDefinition,
-    deleteWorkflowRule,
     executeWorkflowByName,
-    executeWorkflowRule,
     getWorkflowDefinition,
-    getWorkflowRule,
     listWorkflowsDefinition,
-    listWorkflowsRule,
     transpileWorkflow,
 } from './commands.js';
 import { streamRun } from './streams.js';
 
 export function registerWorkflowsCommand(program: Command) {
     const workflows = program.command('workflows');
-    const rules = workflows.command('rules');
-
-    rules
-        .command('create')
-        .description('Create a new workflow rule.')
-        .option('--name [name]', 'The name of the workflow rule to create.')
-        .option(
-            '--on [event]',
-            'The event which trigger this rule. Format: "eventName[:objectType]" where objectType is optional.',
-        )
-        .option('--run [endpoint]', 'The workflow to run.')
-        .action(async (options: Record<string, unknown>) => {
-            await createWorkflowRule(program, options);
-        });
-
-    rules
-        .command('get <ruleId>')
-        .description('Get a workflow rule by ID')
-        .option('-f, --file [file]', 'The file to save the workflow rule to.')
-        .action(async (ruleId: string, options: Record<string, unknown>) => {
-            await getWorkflowRule(program, ruleId, options);
-        });
-
-    rules
-        .command('apply')
-        .description('Create or update a workflow rule using a file')
-        .option('-f, --file <file>', 'The file containing the workflow rule to apply.')
-        .action(async (options: Record<string, unknown>) => {
-            await createOrUpdateWorkflowRule(program, options);
-        });
-
-    rules
-        .command('list')
-        .description('List all workflow rules')
-        .action(async (options: Record<string, unknown>) => {
-            await listWorkflowsRule(program, options);
-        });
-
-    rules
-        .command('execute <ruleId>')
-        .description('Execute a workflow rule')
-        .option('-o, --objectId [objectIds...]', 'The object to execute the rule on.')
-        .option('--vars [vars]', 'workflow vars as an inlined JSON string.')
-        .option('-f, --file [file]', 'The file containing workflow execution payload.')
-        .action(async (workflowId: string, options: Record<string, unknown>) => {
-            await executeWorkflowRule(program, workflowId, options);
-        });
-
-    rules
-        .command('delete <ruleId>')
-        .description('Delete a workflow rule given its ID')
-        .action(async (ruleId: string, options: Record<string, unknown>) => {
-            await deleteWorkflowRule(program, ruleId, options);
-        });
 
     workflows
         .command('execute <workflowName>')

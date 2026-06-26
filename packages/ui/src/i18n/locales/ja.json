@@ -1,4 +1,13 @@
 {
+  "abac_perms.collection.content_manager": "コレクション管理者",
+  "abac_perms.collection.content_reader": "コレクション閲覧者",
+  "abac_perms.collection.content_writer": "コレクション編集者",
+  "abac_perms.document.content_manager": "コンテンツ管理者",
+  "abac_perms.document.content_reader": "コンテンツ閲覧者",
+  "abac_perms.document.content_writer": "コンテンツ編集者",
+  "abac_perms.scope.collection": "コレクション",
+  "abac_perms.scope.document": "ドキュメント",
+  "abac_perms.scope.task": "タスク",
   "agent.activeWorkstreams_one": "エージェントは{{count}}つのアクティブなワークストリームを実行中",
   "agent.activeWorkstreams_other": "エージェントは{{count}}つのアクティブなワークストリームを実行中",
   "agent.addAttachment": "添付ファイルを追加",

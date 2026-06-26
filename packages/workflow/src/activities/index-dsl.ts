@@ -5,6 +5,7 @@ export { createOrUpdateDocumentFromInteractionRun } from './advanced/createOrUpd
 export { updateDocumentFromInteractionRun } from './advanced/updateDocumentFromInteractionRun.js';
 export { chunkDocument } from './chunkDocument.js';
 export { createPdfDocumentFromSource } from './createDocumentFromOther.js';
+export { detectDocumentLanguage } from './detectDocumentLanguage.js';
 export { executeInteraction } from './executeInteraction.js';
 export { executeRemoteActivity } from './executeRemoteActivity.js';
 export { extractDocumentText } from './extractDocumentText.js';
