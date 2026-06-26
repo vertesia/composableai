@@ -103,9 +103,19 @@ export async function setFirebaseTenant(tenantEmail?: string) {
 
                 if (data?.firebaseTenantId) {
                     const auth = getFirebaseAuth();
-                    auth.tenantId = data.firebaseTenantId;
-                    Env.firebase.providerType = data.provider ?? 'oidc';
-                    console.log(`Tenant ID set to ${auth.tenantId}`);
+                    const provider = data.provider ?? 'oidc';
+                    // Firebase tenant scoping is only required for OIDC SSO. For other
+                    // providers (microsoft, google, github) we sign in against the
+                    // top-level project, so clear any tenant routing left over from a
+                    // prior attempt rather than scoping to this tenant.
+                    if (provider === 'oidc') {
+                        auth.tenantId = data.firebaseTenantId;
+                        console.log(`Tenant ID set to ${auth.tenantId}`);
+                    } else {
+                        if (auth.tenantId) auth.tenantId = null;
+                        console.log(`Provider "${provider}" is not OIDC; signing in without tenant scoping`);
+                    }
+                    Env.firebase.providerType = provider;
                     return data;
                 } else {
                     console.error(`Invalid response format, missing tenantId for ${tenantEmail}`);
