@@ -197,6 +197,10 @@ export interface StartContentObjectExportRequest {
      * Final artifact compression. Defaults to gzip.
      */
     compression?: ContentObjectExportCompression;
+    /**
+     * Gzip compression level from 1 (fastest) to 9 (smallest). Defaults to 6 when compression is gzip.
+     */
+    gzip_level?: number;
 }
 
 export interface StartContentObjectExportResponse {
