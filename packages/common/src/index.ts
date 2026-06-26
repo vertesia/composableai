@@ -40,6 +40,7 @@ export * from './skill.js';
 export * from './store/index.js';
 export type {
     ContentObjectExportArtifact,
+    ContentObjectExportArtifactFile,
     ContentObjectExportCompression,
     ContentObjectExportProgress,
     ContentObjectExportResult,

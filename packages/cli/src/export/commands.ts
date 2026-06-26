@@ -1,4 +1,5 @@
 import { createWriteStream } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
@@ -62,24 +63,42 @@ export async function exportContentObjects(program: Command, options: ExportCont
         throw new Error(message);
     }
 
-    const outputPath = getStringOption(options.output) ?? status.result.filename;
+    const explicitOutputPath = getStringOption(options.output);
+    const outputPath = explicitOutputPath ?? status.result.filename;
     const stream = await client.files.downloadFile(status.result.path);
     await pipeline(
         Readable.fromWeb(stream as NodeReadableStream<Uint8Array>),
         outputPath === '-' ? process.stdout : createWriteStream(outputPath),
     );
+    const manifestOutputPath =
+        outputPath === '-' || !status.result.manifest_path
+            ? undefined
+            : explicitOutputPath
+              ? manifestPathForOutput(outputPath)
+              : status.result.manifest_filename;
+    if (manifestOutputPath && status.result.manifest_path) {
+        const manifestStream = await client.files.downloadFile(status.result.manifest_path);
+        await pipeline(
+            Readable.fromWeb(manifestStream as NodeReadableStream<Uint8Array>),
+            createWriteStream(manifestOutputPath),
+        );
+    }
 
     if (jsonOutput) {
         console.log(
             JSON.stringify({
                 ...status,
                 output: outputPath,
+                manifest_output: manifestOutputPath,
             }),
         );
     } else if (!quiet) {
         process.stderr.write(
             `Exported ${status.result.records.toLocaleString()} content objects to ${outputPath} (${formatBytes(status.result.bytes)})\n`,
         );
+        if (manifestOutputPath) {
+            process.stderr.write(`Export manifest written to ${manifestOutputPath}\n`);
+        }
     }
 }
 
@@ -162,6 +181,12 @@ function normalizeCompression(rawCompression: unknown): ExportCompression {
         return compression;
     }
     throw new Error(`Invalid compression '${compression}'. Expected gzip or none.`);
+}
+
+function manifestPathForOutput(outputPath: string) {
+    const directory = dirname(outputPath);
+    const filename = basename(outputPath).replace(/\.jsonl(?:\.gz)?$/, '');
+    return join(directory, `${filename}.manifest.json`);
 }
 
 function formatBytes(bytes: number) {

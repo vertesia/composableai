@@ -143,8 +143,10 @@ export interface ExportContentObjectsPageRequest {
 export interface ExportedContentObjectRecord {
     id: string;
     name: string;
+    location: string;
     external_id?: string;
     type?: {
+        ref_type?: 'stored' | 'incode';
         id?: string;
         code?: string;
         name?: string;
@@ -216,8 +218,11 @@ export interface StartContentObjectExportResponse {
 export interface ZenoBulkContentObjectExportRequest extends StartContentObjectExportRequest {
     tenant_id: string;
     project_id: string;
+    export_id: string;
     output_path: string;
     filename: string;
+    manifest_path: string;
+    manifest_filename: string;
 }
 
 export interface ZenoBulkContentObjectExportShardRange {
@@ -275,6 +280,10 @@ export interface ContentObjectExportResult {
     path: string;
     filename: string;
     content_type: string;
+    manifest_path?: string;
+    manifest_filename?: string;
+    manifest_content_type?: string;
+    manifest_bytes?: number;
     records: number;
     bytes: number;
     started_at: string;
@@ -312,6 +321,15 @@ export interface ContentObjectExportArtifact {
     content_type: string;
     bytes: number;
     created_at?: string;
+    files?: ContentObjectExportArtifactFile[];
+}
+
+export interface ContentObjectExportArtifactFile {
+    role: 'data' | 'manifest';
+    path: string;
+    filename: string;
+    content_type: string;
+    bytes: number;
 }
 
 export interface ListContentObjectExportsResponse {
