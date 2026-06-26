@@ -23,7 +23,6 @@ import { QueryApi } from './QueryApi.js';
 import { RenderingApi } from './RenderingApi.js';
 import { SchedulesApi } from './SchedulesApi.js';
 import { TaskApi } from './TaskApi.js';
-import { ToolsApi } from './ToolsApi.js';
 import { TypesApi } from './TypesApi.js';
 import { VERSION, VERSION_HEADER } from './version.js';
 import { WorkflowsApi } from './WorkflowsApi.js';
@@ -112,7 +111,6 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     eventSubscriptions = this.events.subscriptions;
     pendingAsks = new PendingAsksApi(this);
     data = new DataApi(this);
-    tools = new ToolsApi(this);
     indexing = new IndexingApi(this);
     query = new QueryApi(this);
     hiveMemory = new HiveMemoryApi(this);
