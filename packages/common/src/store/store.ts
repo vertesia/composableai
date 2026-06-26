@@ -151,7 +151,7 @@ export interface ExportedContentObjectRecord {
     location: string;
     external_id?: string;
     type?: {
-        ref_type?: 'stored' | 'incode';
+        ref_type?: 'stored' | 'incode' | 'untyped';
         id?: string;
         code?: string;
         name?: string;

@@ -34,6 +34,10 @@ export async function exportContentObjects(program: Command, options: ExportCont
     const client = await getClient(program);
     const quiet = getBooleanOption(options.quiet);
     const jsonOutput = getBooleanOption(options.json);
+    const explicitOutputPath = getStringOption(options.output);
+    if (jsonOutput && explicitOutputPath === '-') {
+        throw new Error('--json cannot be used with --output - because stdout is reserved for export data.');
+    }
 
     const job = await client.objects.startExport({
         ...(options.compress === false ? { compression: false } : {}),
@@ -60,9 +64,8 @@ export async function exportContentObjects(program: Command, options: ExportCont
         throw new Error(message);
     }
 
-    const explicitOutputPath = getStringOption(options.output);
     const outputPath = explicitOutputPath ?? status.result.filename;
-    const stream = await client.files.downloadFile(status.result.path);
+    const stream = await client.objects.downloadExportFile(job.export_id, 'data');
     await pipeline(
         Readable.fromWeb(stream as NodeReadableStream<Uint8Array>),
         outputPath === '-' ? process.stdout : createWriteStream(outputPath),
@@ -74,7 +77,7 @@ export async function exportContentObjects(program: Command, options: ExportCont
               ? manifestPathForOutput(outputPath)
               : status.result.manifest_filename;
     if (manifestOutputPath && status.result.manifest_path) {
-        const manifestStream = await client.files.downloadFile(status.result.manifest_path);
+        const manifestStream = await client.objects.downloadExportFile(job.export_id, 'manifest');
         await pipeline(
             Readable.fromWeb(manifestStream as NodeReadableStream<Uint8Array>),
             createWriteStream(manifestOutputPath),

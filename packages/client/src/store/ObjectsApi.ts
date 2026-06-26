@@ -9,6 +9,7 @@ import {
     type ComputeObjectFacetPayload,
     type ContentObject,
     ContentObjectApiHeaders,
+    type ContentObjectExportArtifactFile,
     type ContentObjectExportResult,
     type ContentObjectExportStatusResponse,
     type ContentObjectItem,
@@ -127,19 +128,43 @@ export class ObjectsApi extends ApiTopic {
     }
 
     startExport(payload: StartContentObjectExportRequest = {}): Promise<StartContentObjectExportResponse> {
-        return this.post('/export', { payload });
+        return this.post('/export/bulk', { payload });
     }
 
     listExports(): Promise<ListContentObjectExportsResponse> {
-        return this.get('/export/artifacts');
+        return this.get('/export/bulk/artifacts');
     }
 
     deleteExport(exportId: string): Promise<DeleteContentObjectExportResponse> {
-        return this.del(`/export/artifacts/${encodeURIComponent(exportId)}`);
+        return this.del(`/export/bulk/artifacts/${encodeURIComponent(exportId)}`);
     }
 
     getExportStatus(workflowId: string, runId: string): Promise<ContentObjectExportStatusResponse> {
-        return this.get(`/export/${encodeURIComponent(workflowId)}/${encodeURIComponent(runId)}`);
+        return this.get(`/export/bulk/${encodeURIComponent(workflowId)}/${encodeURIComponent(runId)}`);
+    }
+
+    getExportDownloadUrl(exportId: string, role: ContentObjectExportArtifactFile['role']): Promise<GetFileUrlResponse> {
+        return this.get(`/export/bulk/artifacts/${encodeURIComponent(exportId)}/${role}/download-url`);
+    }
+
+    async downloadExportFile(
+        exportId: string,
+        role: ContentObjectExportArtifactFile['role'],
+    ): Promise<ReadableStream<Uint8Array<ArrayBuffer>>> {
+        const { url } = await this.getExportDownloadUrl(exportId, role);
+        const res = await fetchSignedUrl(url, {
+            method: 'GET',
+        }).then((res: Response) => {
+            if (!res.ok) {
+                throw new Error(`Failed to download export file: ${res.status} ${res.statusText}`);
+            }
+            return res;
+        });
+
+        if (!res.body) {
+            throw new Error('No response body received when downloading export file');
+        }
+        return res.body as ReadableStream<Uint8Array<ArrayBuffer>>;
     }
 
     exportToBucketViaBulk(
