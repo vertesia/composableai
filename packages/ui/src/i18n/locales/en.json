@@ -154,7 +154,6 @@
   "agent.running": "Running",
   "agent.searchDocuments": "Attach Documents",
   "agent.selectInteraction": "Select an interaction and click Start to start an agent",
-  "agent.selectRightPanelSection": "Select right panel section",
   "agent.selectOption": "Select Option",
   "agent.send": "Send",
   "agent.sendTooltip": "Click or Enter to send",
