@@ -377,6 +377,7 @@ interface OverflowMoreMenuProps {
 function OverflowMoreMenu({ tabs, current, onTabChange, label, active }: OverflowMoreMenuProps) {
     const [open, setOpen] = useState(false);
     const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const openedByHover = useRef(false);
 
     const cancelClose = () => {
         if (closeTimer.current) {
@@ -386,6 +387,7 @@ function OverflowMoreMenu({ tabs, current, onTabChange, label, active }: Overflo
     };
     const openOnHover = () => {
         cancelClose();
+        openedByHover.current = true;
         setOpen(true);
     };
     // Delay the close so the pointer can travel across the gap onto the menu.
@@ -398,11 +400,16 @@ function OverflowMoreMenu({ tabs, current, onTabChange, label, active }: Overflo
     useEffect(() => () => clearTimeout(closeTimer.current ?? undefined), []);
 
     return (
+        // modal=false: a modal menu sets `pointer-events: none` on the body while open, which
+        // makes the trigger under a stationary cursor fire mouseleave -> the hover open/close
+        // would flap. Non-modal keeps hover steady and still closes on outside click / Escape.
         <DropdownMenu
+            modal={false}
             open={open}
             onOpenChange={(next) => {
-                // Fired by click / keyboard / dismiss; keep our state in sync.
+                // Fired by click / keyboard / dismiss (not by hover); keep our state in sync.
                 cancelClose();
+                if (next) openedByHover.current = false;
                 setOpen(next);
             }}
         >
@@ -423,6 +430,11 @@ function OverflowMoreMenu({ tabs, current, onTabChange, label, active }: Overflo
                 className="w-max"
                 onMouseEnter={cancelClose}
                 onMouseLeave={closeAfterDelay}
+                onCloseAutoFocus={(e) => {
+                    // Don't pull the focus ring back onto the trigger when the menu was opened
+                    // by hover; keyboard/click opens still return focus for accessibility.
+                    if (openedByHover.current) e.preventDefault();
+                }}
             >
                 {tabs.map((tab) => (
                     <DropdownMenuItem
