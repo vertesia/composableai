@@ -5,6 +5,7 @@ import { registerArtifactsCommand } from './artifacts/index.js';
 import { registerDataCommand } from './data/index.js';
 import { listEnvironments } from './envs/index.js';
 import { registerEventsCommand } from './events/index.js';
+import { registerExportCommand } from './export/index.js';
 import { registerIamCommand } from './iam/index.js';
 import { listInteractions } from './interactions/index.js';
 import { registerObjectsCommand } from './objects/index.js';
@@ -178,6 +179,7 @@ registerAgentsCommand(program);
 registerArtifactsCommand(program);
 registerDataCommand(program);
 registerEventsCommand(program);
+registerExportCommand(program);
 registerIamCommand(program);
 
 const profilesRoot = program
