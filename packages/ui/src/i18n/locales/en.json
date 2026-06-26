@@ -1,4 +1,13 @@
 {
+  "abac_perms.scope.collection": "Collection",
+  "abac_perms.scope.document": "Document",
+  "abac_perms.scope.task": "Task",
+  "abac_perms.collection.content_manager": "Collection Manager",
+  "abac_perms.collection.content_reader": "Collection Reader",
+  "abac_perms.collection.content_writer": "Collection Writer",
+  "abac_perms.document.content_manager": "Content Manager",
+  "abac_perms.document.content_reader": "Content Reader",
+  "abac_perms.document.content_writer": "Content Writer",
   "agent.activeWorkstreams_one": "Agent has {{count}} active workstream running",
   "agent.activeWorkstreams_other": "Agent has {{count}} active workstreams running",
   "agent.addAttachment": "Add attachment",

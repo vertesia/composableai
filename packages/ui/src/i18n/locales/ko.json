@@ -1,4 +1,13 @@
 {
+  "abac_perms.collection.content_manager": "컬렉션 관리자",
+  "abac_perms.collection.content_reader": "컬렉션 열람자",
+  "abac_perms.collection.content_writer": "컬렉션 편집자",
+  "abac_perms.document.content_manager": "콘텐츠 관리자",
+  "abac_perms.document.content_reader": "콘텐츠 열람자",
+  "abac_perms.document.content_writer": "콘텐츠 편집자",
+  "abac_perms.scope.collection": "컬렉션",
+  "abac_perms.scope.document": "문서",
+  "abac_perms.scope.task": "작업",
   "agent.activeWorkstreams_one": "에이전트가 {{count}}개의 활성 워크스트림을 실행 중",
   "agent.activeWorkstreams_other": "에이전트가 {{count}}개의 활성 워크스트림을 실행 중",
   "agent.addAttachment": "첨부 파일 추가",
