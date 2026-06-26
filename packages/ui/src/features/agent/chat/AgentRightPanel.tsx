@@ -359,6 +359,86 @@ const TAB_ITEM_INACTIVE = 'border-transparent text-muted-foreground hover:border
 const TAB_ITEM_ACTIVE = 'border-primary text-primary';
 const TAB_GAP_PX = 4; // matches the `gap-1` between tab items
 
+interface OverflowMoreMenuProps {
+    /** The overflowed tabs to list inside the menu. */
+    tabs: TabDefinition[];
+    current: string;
+    onTabChange: (name: string) => void;
+    label: string;
+    /** Whether the active tab is one of the overflowed tabs. */
+    active: boolean;
+}
+
+/**
+ * Trailing "More" dropdown holding the overflowed tabs. Opens on hover (with a
+ * small close delay so the pointer can travel onto the menu) while still
+ * supporting click and keyboard activation through the underlying Radix menu.
+ */
+function OverflowMoreMenu({ tabs, current, onTabChange, label, active }: OverflowMoreMenuProps) {
+    const [open, setOpen] = useState(false);
+    const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const cancelClose = () => {
+        if (closeTimer.current) {
+            clearTimeout(closeTimer.current);
+            closeTimer.current = null;
+        }
+    };
+    const openOnHover = () => {
+        cancelClose();
+        setOpen(true);
+    };
+    // Delay the close so the pointer can travel across the gap onto the menu.
+    const closeAfterDelay = () => {
+        cancelClose();
+        closeTimer.current = setTimeout(() => setOpen(false), 150);
+    };
+
+    // Clear any pending close timer on unmount (closeTimer is a stable ref).
+    useEffect(() => () => clearTimeout(closeTimer.current ?? undefined), []);
+
+    return (
+        <DropdownMenu
+            open={open}
+            onOpenChange={(next) => {
+                // Fired by click / keyboard / dismiss; keep our state in sync.
+                cancelClose();
+                setOpen(next);
+            }}
+        >
+            <DropdownMenuTrigger asChild>
+                {/* Tab-bar primitive: raw button is the menu trigger (asChild). */}
+                <button
+                    type="button"
+                    onMouseEnter={openOnHover}
+                    onMouseLeave={closeAfterDelay}
+                    className={cn(TAB_ITEM_BASE, active ? TAB_ITEM_ACTIVE : TAB_ITEM_INACTIVE)}
+                >
+                    {label}
+                    <ChevronDownIcon className="ms-1 size-4" />
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                align="end"
+                className="w-max"
+                onMouseEnter={cancelClose}
+                onMouseLeave={closeAfterDelay}
+            >
+                {tabs.map((tab) => (
+                    <DropdownMenuItem
+                        key={tab.name}
+                        disabled={tab.disabled}
+                        onClick={() => onTabChange(tab.name)}
+                        className={cn(tab.name === current && 'text-primary')}
+                    >
+                        {tab.label}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
 interface OverflowTabsBarProps {
     tabs: TabDefinition[];
     current: string;
@@ -474,30 +554,13 @@ function OverflowTabsBar({ tabs, current, onTabChange, className }: OverflowTabs
                 })}
 
                 {overflow.length > 0 && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            {/* Tab-bar primitive: raw button is the menu trigger (asChild). */}
-                            <button
-                                type="button"
-                                className={cn(TAB_ITEM_BASE, activeInOverflow ? TAB_ITEM_ACTIVE : TAB_ITEM_INACTIVE)}
-                            >
-                                {moreLabel}
-                                <ChevronDownIcon className="ms-1 size-4" />
-                            </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-max">
-                            {overflow.map((tab) => (
-                                <DropdownMenuItem
-                                    key={tab.name}
-                                    disabled={tab.disabled}
-                                    onClick={() => onTabChange(tab.name)}
-                                    className={cn(tab.name === current && 'text-primary')}
-                                >
-                                    {tab.label}
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <OverflowMoreMenu
+                        tabs={overflow}
+                        current={current}
+                        onTabChange={onTabChange}
+                        label={moreLabel}
+                        active={activeInOverflow}
+                    />
                 )}
             </div>
         </div>
