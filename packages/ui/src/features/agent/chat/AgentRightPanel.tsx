@@ -349,10 +349,10 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Overflow tab bar (GitHub-style)
+// Overflow tab bar
 // ---------------------------------------------------------------------------
 
-// Shared tab-item styling, mirroring the underline tabs in core's TabsTrigger.
+// Tab-item styling, matching core's TabsTrigger underline tabs.
 const TAB_ITEM_BASE =
     'flex items-center border-b-2 px-2 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer shrink-0';
 const TAB_ITEM_INACTIVE = 'border-transparent text-muted-foreground hover:border-border hover:text-foreground';
@@ -369,11 +369,7 @@ interface OverflowMoreMenuProps {
     active: boolean;
 }
 
-/**
- * Trailing "More" dropdown holding the overflowed tabs. Opens on hover (with a
- * small close delay so the pointer can travel onto the menu) while still
- * supporting click and keyboard activation through the underlying Radix menu.
- */
+/** Trailing "More" dropdown of overflowed tabs; opens on hover, click, or keyboard. */
 function OverflowMoreMenu({ tabs, current, onTabChange, label, active }: OverflowMoreMenuProps) {
     const [open, setOpen] = useState(false);
     const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -396,13 +392,12 @@ function OverflowMoreMenu({ tabs, current, onTabChange, label, active }: Overflo
         closeTimer.current = setTimeout(() => setOpen(false), 150);
     };
 
-    // Clear any pending close timer on unmount (closeTimer is a stable ref).
+    // Clear any pending close timer on unmount.
     useEffect(() => () => clearTimeout(closeTimer.current ?? undefined), []);
 
     return (
-        // modal=false: a modal menu sets `pointer-events: none` on the body while open, which
-        // makes the trigger under a stationary cursor fire mouseleave -> the hover open/close
-        // would flap. Non-modal keeps hover steady and still closes on outside click / Escape.
+        // Non-modal: a modal menu sets body `pointer-events: none` while open, which makes
+        // the hover open/close flap. It still closes on outside-click / Escape.
         <DropdownMenu
             modal={false}
             open={open}
@@ -431,8 +426,7 @@ function OverflowMoreMenu({ tabs, current, onTabChange, label, active }: Overflo
                 onMouseEnter={cancelClose}
                 onMouseLeave={closeAfterDelay}
                 onCloseAutoFocus={(e) => {
-                    // Don't pull the focus ring back onto the trigger when the menu was opened
-                    // by hover; keyboard/click opens still return focus for accessibility.
+                    // Keep hover-opens from returning the focus ring to the trigger.
                     if (openedByHover.current) e.preventDefault();
                 }}
             >
@@ -459,19 +453,16 @@ interface OverflowTabsBarProps {
 }
 
 /**
- * Renders the tabs as a horizontal row. Any tabs that don't fit the available
- * width collapse into a trailing "More" dropdown (GitHub-style overflow). The
- * set of visible tabs is recomputed from a hidden, full-width measurement row
- * whenever the tabs or the container width change.
+ * Tabs as a horizontal row; any that don't fit collapse into a trailing "More"
+ * dropdown. The visible/overflow split is measured from a hidden full-width row.
  */
 function OverflowTabsBar({ tabs, current, onTabChange, className }: OverflowTabsBarProps) {
     const { t } = useUITranslation();
     const containerRef = useRef<HTMLDivElement | null>(null);
     const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
     const moreRef = useRef<HTMLButtonElement | null>(null);
-    // `count` is the number of leading tabs shown. When `promote` is set, the active
-    // tab is pulled into the last visible slot (before More) and `count` is the number
-    // of leading tabs shown *before* it.
+    // `count` leading tabs are shown. When `promote` is set, the active tab is pulled
+    // into the last slot (before More) and `count` counts the tabs shown before it.
     const [layout, setLayout] = useState<{ count: number; promote: boolean }>({ count: tabs.length, promote: false });
 
     const recompute = () => {
@@ -505,8 +496,7 @@ function OverflowTabsBar({ tabs, current, onTabChange, className }: OverflowTabs
             if (activeIndex < 0 || activeIndex < naturalCount) {
                 next = { count: naturalCount, promote: false };
             } else {
-                // Active tab is overflowed: reserve its slot at the end (before More) and
-                // fit as many leading tabs as possible around it.
+                // Active tab overflowed: reserve its slot at the end, fit leading tabs before it.
                 const leadAvailable = containerWidth - moreWidth - widths[activeIndex] - TAB_GAP_PX * 2;
                 next = { count: fitCount(leadAvailable, activeIndex), promote: true };
             }
@@ -514,8 +504,7 @@ function OverflowTabsBar({ tabs, current, onTabChange, className }: OverflowTabs
         setLayout((prev) => (prev.count === next.count && prev.promote === next.promote ? prev : next));
     };
 
-    // Re-measure after every render (catches tab additions/removals and label
-    // changes such as badge counts) and whenever the container resizes.
+    // Re-measure after every render (tab/label changes) and on container resize.
     const recomputeRef = useRef(recompute);
     recomputeRef.current = recompute;
     useLayoutEffect(() => {
@@ -546,9 +535,8 @@ function OverflowTabsBar({ tabs, current, onTabChange, className }: OverflowTabs
 
     return (
         <div ref={containerRef} className={cn('relative', className)}>
-            {/* Hidden measurement row: every tab + the More button at natural width.
-                Kept separate from the visible row so measuring never feeds back into
-                the layout it depends on. */}
+            {/* Hidden measurement row: all tabs + More at natural width, kept separate
+                from the visible row so measuring can't feed back into the layout. */}
             <div aria-hidden className="pointer-events-none invisible absolute left-0 top-0 flex w-max gap-1">
                 {tabs.map((tab, i) => (
                     <button
