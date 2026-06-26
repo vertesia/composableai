@@ -198,9 +198,13 @@ export interface StartContentObjectExportRequest {
      */
     compression?: ContentObjectExportCompression;
     /**
-     * Gzip compression level from 1 (fastest) to 9 (smallest). Defaults to 6 when compression is gzip.
+     * Gzip compression level from 1 (fastest) to 9 (smallest). Defaults to 2 when compression is gzip.
      */
     gzip_level?: number;
+    /**
+     * Temporary load-test multiplier. Repeats the same export scan this many times. Defaults to 1.
+     */
+    amplify_factor?: number;
 }
 
 export interface StartContentObjectExportResponse {
@@ -216,6 +220,45 @@ export interface ZenoBulkContentObjectExportRequest extends StartContentObjectEx
     filename: string;
 }
 
+export interface ZenoBulkContentObjectExportShardRange {
+    min_id?: string;
+    max_id?: string;
+}
+
+export interface ZenoBulkContentObjectExportPlanRequest extends ZenoBulkContentObjectExportRequest {
+    target_shard_records?: number;
+    max_shards?: number;
+}
+
+export interface ZenoBulkContentObjectExportPlanResponse {
+    shards: ZenoBulkContentObjectExportShardRange[];
+}
+
+export interface ZenoBulkContentObjectExportShardRequest extends ZenoBulkContentObjectExportRequest {
+    shard_index: number;
+    shard_count: number;
+    shard: ZenoBulkContentObjectExportShardRange;
+}
+
+export interface ZenoBulkContentObjectExportShardResult {
+    status: 'completed';
+    shard_index: number;
+    shard_count: number;
+    path: string;
+    filename: string;
+    content_type: string;
+    records: number;
+    bytes: number;
+    started_at: string;
+    completed_at: string;
+    duration_ms: number;
+}
+
+export interface ZenoBulkContentObjectExportComposeRequest extends ZenoBulkContentObjectExportRequest {
+    parts: string[];
+    records?: number;
+}
+
 export interface ContentObjectExportResult {
     status: 'completed';
     path: string;
@@ -229,11 +272,13 @@ export interface ContentObjectExportResult {
 }
 
 export interface ContentObjectExportProgress {
-    status: 'queued' | 'exporting' | 'completed' | 'failed';
+    status: 'queued' | 'planning' | 'exporting' | 'composing' | 'completed' | 'failed';
     records: number;
     bytes: number;
     path?: string;
     filename?: string;
+    completed_shards?: number;
+    total_shards?: number;
     started_at?: string;
     completed_at?: string;
     error?: string;

@@ -39,7 +39,12 @@ import {
     type StartContentObjectExportRequest,
     type StartContentObjectExportResponse,
     type SupportedEmbeddingTypes,
+    type ZenoBulkContentObjectExportComposeRequest,
+    type ZenoBulkContentObjectExportPlanRequest,
+    type ZenoBulkContentObjectExportPlanResponse,
     type ZenoBulkContentObjectExportRequest,
+    type ZenoBulkContentObjectExportShardRequest,
+    type ZenoBulkContentObjectExportShardResult,
 } from '@vertesia/common';
 
 export { getSupportedRenditionFormats, supportsVisualRendition } from '@vertesia/common';
@@ -140,6 +145,27 @@ export class ObjectsApi extends ApiTopic {
         timeoutMs: number | false | null = false,
     ): Promise<ContentObjectExportResult> {
         return this.zenoBulkPost('/export', payload, timeoutMs);
+    }
+
+    planContentObjectExportViaBulk(
+        payload: ZenoBulkContentObjectExportPlanRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ZenoBulkContentObjectExportPlanResponse> {
+        return this.zenoBulkPost('/export/plan', payload, timeoutMs);
+    }
+
+    exportContentObjectShardViaBulk(
+        payload: ZenoBulkContentObjectExportShardRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ZenoBulkContentObjectExportShardResult> {
+        return this.zenoBulkPost('/export/shard', payload, timeoutMs);
+    }
+
+    composeContentObjectExportViaBulk(
+        payload: ZenoBulkContentObjectExportComposeRequest,
+        timeoutMs: number | false | null = false,
+    ): Promise<ContentObjectExportResult> {
+        return this.zenoBulkPost('/export/compose', payload, timeoutMs);
     }
 
     /**

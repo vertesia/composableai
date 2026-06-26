@@ -53,7 +53,13 @@ export type {
     ListContentObjectExportsResponse,
     StartContentObjectExportRequest,
     StartContentObjectExportResponse,
+    ZenoBulkContentObjectExportComposeRequest,
+    ZenoBulkContentObjectExportPlanRequest,
+    ZenoBulkContentObjectExportPlanResponse,
     ZenoBulkContentObjectExportRequest,
+    ZenoBulkContentObjectExportShardRange,
+    ZenoBulkContentObjectExportShardRequest,
+    ZenoBulkContentObjectExportShardResult,
 } from './store/store.js';
 export * from './sts-token-types.js';
 export * from './tenant.js';
