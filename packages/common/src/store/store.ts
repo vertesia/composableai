@@ -108,38 +108,11 @@ export interface ExportContentObjectsIncludeOptions {
  * Bounded filters supported by the bulk content object export API.
  */
 export interface ExportContentObjectsFilter {
-    type?: string;
     types?: string[];
     created_from?: string;
     created_to?: string;
     updated_from?: string;
     updated_to?: string;
-}
-
-/**
- * Request one page of content objects for export.
- */
-export interface ExportContentObjectsPageRequest {
-    /**
-     * Embedding types to export when include.embeddings is true. Defaults to all supported embedding types.
-     */
-    embedding_types?: SupportedEmbeddingTypes[];
-    /**
-     * Opaque cursor returned by the previous page.
-     */
-    cursor?: string;
-    /**
-     * Explicit export filters. This intentionally does not accept the search API's full Mongo/search DSL.
-     */
-    filter?: ExportContentObjectsFilter;
-    /**
-     * Include all revisions. Defaults to false, exporting only head revisions.
-     */
-    all_revisions?: boolean;
-    /**
-     * Optional object context selectors.
-     */
-    include?: ExportContentObjectsIncludeOptions;
 }
 
 /**
@@ -169,16 +142,6 @@ export interface ExportedContentObjectRecord {
     properties?: Record<string, unknown>;
     metadata?: Record<string, unknown>;
     embeddings?: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
-}
-
-/**
- * One cursor page of exported content object records.
- */
-export interface ExportContentObjectsPageResponse {
-    items: ExportedContentObjectRecord[];
-    has_more: boolean;
-    next_cursor?: string;
-    exported_count: number;
 }
 
 export interface StartContentObjectExportRequest {
@@ -269,6 +232,10 @@ export interface ZenoBulkContentObjectExportShardResult {
 export interface ZenoBulkContentObjectExportComposeRequest extends ZenoBulkContentObjectExportRequest {
     parts: string[];
     records?: number;
+    /**
+     * Export workflow start timestamp. Used to report end-to-end duration after final compose.
+     */
+    started_at?: string;
 }
 
 export interface ContentObjectExportResult {

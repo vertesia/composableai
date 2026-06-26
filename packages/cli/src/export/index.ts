@@ -9,7 +9,7 @@ export function registerExportCommand(program: Command) {
         .option('--no-compress', 'Write uncompressed JSONL instead of JSONL.GZ')
         .option('--include-embeddings', 'Include stored embeddings')
         .option('--embedding-types [types]', 'Comma-separated embedding types: text,image,properties')
-        .option('--type [type]', 'Filter by content object type id or in-code type')
+        .option('--types [types]', 'Comma-separated content object type ids or in-code types')
         .option('--created-from [date]', 'Filter by created_at lower bound')
         .option('--created-to [date]', 'Filter by created_at upper bound')
         .option('--updated-from [date]', 'Filter by updated_at lower bound')

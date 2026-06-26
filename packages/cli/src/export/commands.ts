@@ -6,13 +6,13 @@ import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { type ExportContentObjectsFilter, SupportedEmbeddingTypes } from '@vertesia/common';
 import type { Command } from 'commander';
 import { getClient } from '../client.js';
-import { type CliOptions, getBooleanOption, getStringOption } from '../utils/options.js';
+import { type CliOptions, errorMessage, getBooleanOption, getStringOption, hasStatus } from '../utils/options.js';
 
 type ExportContentOptions = CliOptions<{
     output?: string;
     compress?: boolean;
     embeddingTypes?: string;
-    type?: string;
+    types?: string;
     createdFrom?: string;
     createdTo?: string;
     updatedFrom?: string;
@@ -39,20 +39,32 @@ export async function exportContentObjects(program: Command, options: ExportCont
         throw new Error('--json cannot be used with --output - because stdout is reserved for export data.');
     }
 
-    const job = await client.objects.startExport({
-        ...(options.compress === false ? { compression: false } : {}),
-        embedding_types: parseEmbeddingTypes(options.embeddingTypes),
-        filter: buildFilter(options),
-        all_revisions: getBooleanOption(options.allRevisions),
-        include: {
-            embeddings: getBooleanOption(options.includeEmbeddings),
-            content: options.content !== false,
-            status: options.status !== false,
-            properties: options.properties !== false,
-            metadata: getBooleanOption(options.metadata),
-            revision: options.revision !== false,
-        },
-    });
+    const job = await client.objects
+        .startExport({
+            ...(options.compress === false ? { compression: false } : {}),
+            embedding_types: parseEmbeddingTypes(options.embeddingTypes),
+            filter: buildFilter(options),
+            all_revisions: getBooleanOption(options.allRevisions),
+            include: {
+                embeddings: getBooleanOption(options.includeEmbeddings),
+                content: options.content !== false,
+                status: options.status !== false,
+                properties: options.properties !== false,
+                metadata: getBooleanOption(options.metadata),
+                revision: options.revision !== false,
+            },
+        })
+        .catch((error: unknown) => {
+            if (hasStatus(error, 429)) {
+                process.stderr.write(`Cannot start content object export: ${errorMessage(error)}\n`);
+                process.exitCode = 1;
+                return undefined;
+            }
+            throw error;
+        });
+    if (!job) {
+        return;
+    }
 
     if (!quiet && !jsonOutput) {
         process.stderr.write(`Started export workflow ${job.workflow_id} (${job.run_id})\n`);
@@ -133,14 +145,14 @@ async function waitForExport(
 
 function buildFilter(options: ExportContentOptions): ExportContentObjectsFilter | undefined {
     const filter: ExportContentObjectsFilter = {};
-    const type = getStringOption(options.type);
+    const types = parseCommaSeparatedOption(options.types);
     const createdFrom = getStringOption(options.createdFrom);
     const createdTo = getStringOption(options.createdTo);
     const updatedFrom = getStringOption(options.updatedFrom);
     const updatedTo = getStringOption(options.updatedTo);
 
-    if (type) {
-        filter.type = type;
+    if (types) {
+        filter.types = types;
     }
     if (createdFrom) {
         filter.created_from = createdFrom;
@@ -159,20 +171,28 @@ function buildFilter(options: ExportContentOptions): ExportContentObjectsFilter 
 }
 
 function parseEmbeddingTypes(rawTypes: unknown): SupportedEmbeddingTypes[] | undefined {
-    const typesText = getStringOption(rawTypes);
-    if (!typesText) {
+    const types = parseCommaSeparatedOption(rawTypes);
+    if (!types) {
         return undefined;
     }
-    const types = typesText
-        .split(',')
-        .map((type) => type.trim())
-        .filter(Boolean);
     for (const type of types) {
         if (!Object.values(SupportedEmbeddingTypes).includes(type as SupportedEmbeddingTypes)) {
             throw new Error(`Invalid embedding type '${type}'. Expected text, image, or properties.`);
         }
     }
     return types as SupportedEmbeddingTypes[];
+}
+
+function parseCommaSeparatedOption(value: unknown): string[] | undefined {
+    const text = getStringOption(value);
+    if (!text) {
+        return undefined;
+    }
+    const values = text
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    return values.length ? values : undefined;
 }
 
 function manifestPathForOutput(outputPath: string) {

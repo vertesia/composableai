@@ -49,8 +49,6 @@ export type {
     DeleteContentObjectExportResponse,
     ExportContentObjectsFilter,
     ExportContentObjectsIncludeOptions,
-    ExportContentObjectsPageRequest,
-    ExportContentObjectsPageResponse,
     ExportedContentObjectRecord,
     ListContentObjectExportsResponse,
     StartContentObjectExportRequest,
