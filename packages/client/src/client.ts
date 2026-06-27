@@ -10,12 +10,14 @@ import CommandsApi from './CommandsApi.js';
 import EnvironmentsApi from './EnvironmentsApi.js';
 import { IamApi } from './IamApi.js';
 import InteractionsApi from './InteractionsApi.js';
+import InternalSecretsApi from './InternalSecretsApi.js';
 import OAuthClientsApi from './OAuthClientsApi.js';
 import OAuthGrantsApi from './OAuthGrantsApi.js';
 import OAuthProvidersApi from './OAuthProvidersApi.js';
 import OAuthServerApi from './OAuthServerApi.js';
 import ProjectsApi from './ProjectsApi.js';
 import PromptsApi from './PromptsApi.js';
+import QuotaApi from './QuotaApi.js';
 import { RefsApi } from './RefsApi.js';
 import RemoteMcpConnectionsApi from './RemoteMcpConnectionsApi.js';
 import { RunsApi } from './RunsApi.js';
@@ -101,6 +103,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     oauthProviders: OAuthProvidersApi;
     remoteMcpConnections: RemoteMcpConnectionsApi;
     secrets: SecretsApi;
+    internalSecrets: InternalSecretsApi;
 
     /**
      * Create a client from the given token.
@@ -225,6 +228,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.oauthProviders = new OAuthProvidersApi(this);
         this.remoteMcpConnections = new RemoteMcpConnectionsApi(this);
         this.secrets = new SecretsApi(this);
+        this.internalSecrets = new InternalSecretsApi(this);
     }
 
     withApiVersion(version: string | number | null) {
@@ -361,6 +365,10 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.data;
     }
 
+    get events() {
+        return this.store.events;
+    }
+
     get storeUrl() {
         return this.store.baseUrl;
     }
@@ -416,6 +424,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     commands = new CommandsApi(this);
     apps = new AppsApi(this);
     tools = new ToolsApi(this);
+    quota = new QuotaApi(this);
 }
 
 function isApiKey(apiKey: string) {

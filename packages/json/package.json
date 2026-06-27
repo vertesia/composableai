@@ -14,8 +14,9 @@
         "lint": "biome lint src",
         "test": "vitest run",
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build && pnpm exec rollup -c",
-        "clean": "rm -rf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+        "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
+        "build": "pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rollup -c",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "exports": {
         ".": {
@@ -28,7 +29,7 @@
         "@rollup/plugin-node-resolve": "^16.0.3",
         "@rollup/plugin-terser": "^1.0.0",
         "@vertesia/tsconfig": "workspace:*",
-        "rollup": "^4.62.0",
+        "rollup": "^4.62.2",
         "typescript": "^6.0.3",
         "vitest": "^4.1.9"
     },

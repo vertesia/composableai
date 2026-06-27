@@ -1271,8 +1271,19 @@ export interface AppManifest extends AppManifestData {
     id: string;
     /** The owning account. Undefined for apps imported from a master region. */
     account?: string;
+    /** Source metadata for generated or synced app manifests. */
+    source?: AppManifestSource;
     created_at: string;
     updated_at: string;
+}
+
+export interface AppManifestSource {
+    kind: 'git';
+    git: {
+        url: string;
+        default_branch?: string;
+        development_branch?: string;
+    };
 }
 
 /**

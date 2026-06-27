@@ -16,8 +16,9 @@
         "lint": "biome lint src",
         "test": "vitest run",
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
-        "clean": "rm -rf ./lib tsconfig.tsbuildinfo"
+        "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
+        "build": "pnpm run clean:lib && tsc -p tsconfig.json && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "license": "Apache-2.0",
     "devDependencies": {
@@ -34,9 +35,9 @@
         "vitest": "^4.1.9"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.1068.0",
-        "@aws-sdk/client-textract": "^3.1068.0",
-        "@aws-sdk/credential-providers": "^3.1068.0",
+        "@aws-sdk/client-s3": "^3.1073.0",
+        "@aws-sdk/client-textract": "^3.1073.0",
+        "@aws-sdk/credential-providers": "^3.1073.0",
         "@llumiverse/common": "workspace:*",
         "@temporalio/activity": "^1.18.1",
         "@temporalio/workflow": "^1.18.1",
@@ -51,7 +52,7 @@
         "p-limit": "^7.3.0",
         "papaparse": "^5.5.3",
         "seedrandom": "^3.0.5",
-        "sharp": "^0.35.1",
+        "sharp": "^0.35.2",
         "tiktoken": "^1.0.22",
         "tmp": "^0.2.7",
         "tmp-promise": "^3.0.3",

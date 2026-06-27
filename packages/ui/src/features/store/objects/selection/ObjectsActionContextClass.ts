@@ -4,9 +4,7 @@ export type ObjectsActionCallback = (params: ObjectsActionParams) => Promise<unk
 
 export class ObjectsActionContext {
     allActions: ObjectsActionSpec[] = [];
-    wfRules: ObjectsActionSpec[] = [];
     callbacks: Record<string, ObjectsActionCallback> = {};
-    startWorkflow?: ObjectsActionCallback;
 
     constructor(public params: Omit<ObjectsActionParams, 'action'>) {}
 
@@ -34,11 +32,7 @@ export class ObjectsActionContext {
     }
 
     findAction(actionId: string) {
-        let action = this.allActions.find((a) => a.id === actionId);
-        if (!action) {
-            action = this.wfRules.find((a) => a.id === actionId);
-        }
-        return action;
+        return this.allActions.find((a) => a.id === actionId);
     }
 
     async run(actionId: string): Promise<unknown> {

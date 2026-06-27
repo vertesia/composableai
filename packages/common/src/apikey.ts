@@ -4,14 +4,28 @@ import type { ProjectRef, SystemRoles } from './project.js';
 import type { AccountRef } from './user.js';
 
 /**
- * Content security conditions in the JWT, keyed by permission type.
- * Each key maps to an array of condition sets — at query time, any matching set grants access ($or).
- * Presence of this object in the JWT switches content access from allow-all to restrict mode.
+ * Per-scope, per-verb property-condition arrays that narrow content visibility
+ * at query time. Each value array uses $or semantics — any matching condition
+ * set grants access. Presence of this object switches content access from
+ * allow-all to restrict mode.
+ *
+ * The bare keys `read`/`write`/`delete` apply to the default `'document'`
+ * scope. They also receive entries emitted by system-role ABAC ACEs (which
+ * predate the scope concept).
+ *
+ * Non-default scopes appear as prefixed keys: `'collection:read'`,
+ * `'collection:write'`, `'task:read'`, etc. — the prefix is the
+ * `AceConditions.scope` value, the suffix is the verb derived from the
+ * ABAC role's permission set.
+ *
+ * Consumers that aren't scope-aware can keep reading only the bare keys.
  */
 export interface ContentSecurity {
     read?: PropertyConditions[];
     write?: PropertyConditions[];
     delete?: PropertyConditions[];
+    /** Scope-prefixed entries: `'collection:read'`, `'task:write'`, etc. */
+    [scopedKey: string]: PropertyConditions[] | undefined;
 }
 
 export enum ApiKeyTypes {
@@ -107,8 +121,18 @@ export interface AuthTokenPayload {
     groups?: UserGroupRef[]; //group ids
 
     /** Content security conditions keyed by permission (read/write/delete).
-     *  Presence triggers restrict mode: project:* is dropped from security filters. */
+     *  Presence triggers restrict mode: project:* is dropped from security filters.
+     *
+     *  Transitional: this field is being renamed to `abac` (see [[pending-migrations]]).
+     *  Both fields are typed so consumers can dual-read during the transition.
+     *  Only one will ever be populated in a given token. */
     content_security?: ContentSecurity;
+    /**
+     * New name for `content_security`. Consumers should prefer this field and
+     * fall back to `content_security`. Sts will be flipped to emit this field
+     * once all consumers have shipped their dual-read.
+     */
+    abac?: ContentSecurity;
 
     /**
      * API endpoints information to be used with this token.

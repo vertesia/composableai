@@ -13,6 +13,12 @@ import { executeInteractionFromActivity, type InteractionExecutionParams } from 
 const INT_SELECT_DOCUMENT_TYPE = 'sys:SelectDocumentType';
 const INT_GENERATE_METADATA_MODEL = 'sys:GenerateMetadataModel';
 
+// Always-present system fallback type (registered in zeno's SystemContentTypeRegistry). When type
+// selection finds no existing match and new-type generation is disabled, documents are assigned
+// this generic type so they still get a minimal property set + a processing hint for later typing.
+const GENERIC_DOCUMENT_TYPE_ID = 'sys:GenericDocument';
+const GENERIC_DOCUMENT_TYPE_NAME = 'GenericDocument';
+
 interface RetryableError extends Error {
     retryable?: boolean;
 }
@@ -51,6 +57,18 @@ export interface GenerateOrAssignContentTypeParams extends InteractionExecutionP
         selectDocumentType?: string;
         generateMetadataModel?: string;
     };
+
+    /**
+     * Whether the activity may create a brand-new content type when no existing type matches.
+     * Defaults to true for backward compatibility.
+     */
+    allowNewContentTypes?: boolean;
+
+    /**
+     * Type id to assign when no existing type matches and generation is disabled. Resolved in this
+     * project; falls back to sys:GenericDocument if unset or unresolvable.
+     */
+    fallbackTypeId?: string;
 }
 
 export interface GenerateOrAssignContentType extends DSLActivitySpec<GenerateOrAssignContentTypeParams> {
@@ -167,9 +185,16 @@ export async function generateOrAssignContentType(
     selectedType = types.find((t) => t.name === jsonResult.document_type);
 
     if (!selectedType) {
-        log.warn('Document type not identified: starting type generation');
-        const newType = await generateNewType(context, existing_types, content, fileRef);
-        selectedType = { id: newType.id, name: newType.name };
+        if (params.allowNewContentTypes === false) {
+            // Type generation is disabled (handled separately, e.g. via the Studio Assistant), so
+            // fall back to the project's default type (or sys:GenericDocument) rather than leaving
+            // the document untyped.
+            selectedType = await resolveFallbackType(context, params.fallbackTypeId, jsonResult.document_type);
+        } else {
+            log.warn('Document type not identified: starting type generation');
+            const newType = await generateNewType(context, existing_types, content, fileRef);
+            selectedType = { id: newType.id, name: newType.name };
+        }
     }
 
     if (!selectedType) {
@@ -187,6 +212,34 @@ export async function generateOrAssignContentType(
         name: selectedType.name,
         isNew: !types.find((t) => t.name === selectedType.name),
     };
+}
+
+/**
+ * Resolve the fallback type to assign when selection finds no match: the project's configured
+ * default content type if set and resolvable, otherwise the platform sys:GenericDocument.
+ */
+async function resolveFallbackType(
+    context: ActivityContext<GenerateOrAssignContentTypeParams>,
+    fallbackTypeId: string | undefined,
+    selectedDocumentType: unknown,
+): Promise<{ id: string; name: string }> {
+    if (fallbackTypeId && fallbackTypeId !== GENERIC_DOCUMENT_TYPE_ID) {
+        try {
+            const resolved = await context.client.types.catalog.resolve(fallbackTypeId);
+            log.info('Document type not identified; assigning project default content type', {
+                fallbackTypeId,
+                selectedDocumentType,
+            });
+            return { id: resolved.id ?? fallbackTypeId, name: resolved.name ?? fallbackTypeId };
+        } catch (error) {
+            log.warn('Configured default content type not resolvable; using GenericDocument', {
+                fallbackTypeId,
+                error: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+    log.info('Document type not identified; assigning GenericDocument fallback', { selectedDocumentType });
+    return { id: GENERIC_DOCUMENT_TYPE_ID, name: GENERIC_DOCUMENT_TYPE_NAME };
 }
 
 async function generateNewType(

@@ -7,7 +7,6 @@ import { useState } from 'react';
 import { type DocumentSelection, useDocumentSelection } from '../DocumentSelectionProvider.js';
 import { DocumentUploadModal } from '../upload/DocumentUploadModal.js';
 import { ExportPropertiesAction } from './actions/ExportPropertiesAction';
-import { StartWorkflowAction } from './actions/StartWorkflowComponent';
 import { ObjectsActionContextProvider } from './ObjectsActionContext';
 import { useObjectsActionContext } from './ObjectsActionHooks';
 import type { ObjectsActionSpec } from './ObjectsActionSpec';
@@ -16,14 +15,8 @@ interface SelectionActionsProps {
     type?: ContentObjectTypeItem;
     allowMutations?: boolean;
     allowDelete?: boolean;
-    allowWorkflowRun?: boolean;
 }
-export function SelectionActions({
-    type,
-    allowMutations = true,
-    allowDelete = true,
-    allowWorkflowRun = true,
-}: SelectionActionsProps) {
+export function SelectionActions({ type, allowMutations = true, allowDelete = true }: SelectionActionsProps) {
     const selection = useDocumentSelection();
     const size = selection.size();
     const plural = size > 1 ? 's' : '';
@@ -52,7 +45,6 @@ export function SelectionActions({
                     selection={selection}
                     allowMutations={allowMutations}
                     allowDelete={allowDelete}
-                    allowWorkflowRun={allowWorkflowRun}
                 >
                     {(actions) =>
                         actions.length > 0 ? (
@@ -62,19 +54,9 @@ export function SelectionActions({
                         ) : null
                     }
                 </SelectionActionsPopover>
-                {/* StartWorkflowButton must be inside the context */}
-                {hasSelection && allowWorkflowRun && <ActionsWrapper selection={selection} />}
             </div>
         </ObjectsActionContextProvider>
     );
-}
-
-// Wrapper component that accesses the context
-interface ActionsWrapperProps {
-    selection: DocumentSelection;
-}
-function ActionsWrapper(_props: ActionsWrapperProps) {
-    return <StartWorkflowButton />;
 }
 
 export function UploadObjectsButton({
@@ -113,19 +95,6 @@ export function UploadObjectsButton({
     );
 }
 
-function StartWorkflowButton() {
-    const ctx = useObjectsActionContext();
-    const { t } = useUITranslation();
-
-    const selection = ctx.params.selection;
-    const hasSelection = selection.hasSelection();
-
-    return (
-        hasSelection && (
-            <Button onClick={() => ctx.run(StartWorkflowAction.id)}>{t('store.actions.startWorkflow')}</Button>
-        )
-    );
-}
 function optionLayout(option: ObjectsActionSpec) {
     return {
         label: option.name,
@@ -142,9 +111,7 @@ function SelectionActionsPopover({
     children,
     allowMutations = true,
     allowDelete = true,
-    allowWorkflowRun = true,
-}: SelectionActionsPopoverProps &
-    Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete' | 'allowWorkflowRun'>>) {
+}: SelectionActionsPopoverProps & Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete'>>) {
     const context = useObjectsActionContext();
     const executeAction = (action: ObjectsActionSpec) => {
         context.run(action.id);
@@ -152,7 +119,6 @@ function SelectionActionsPopover({
     const actions = getAvailableActions(context.actions, selection, {
         allowMutations,
         allowDelete,
-        allowWorkflowRun,
     });
     const trigger = children(actions);
 
@@ -191,7 +157,7 @@ function PopoverBody({ executeAction, actions }: PopoverBodyProps) {
 function getAvailableActions(
     actions: ObjectsActionSpec[],
     selection: DocumentSelection,
-    permissions: Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete' | 'allowWorkflowRun'>>,
+    permissions: Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete'>>,
 ): ObjectsActionSpec[] {
     if (!selection?.hasSelection()) {
         return [ExportPropertiesAction];
@@ -200,9 +166,6 @@ function getAvailableActions(
     return actions.filter((action: ObjectsActionSpec) => {
         if (action.hideInList) {
             return false;
-        }
-        if (action.id === 'startWorkflow') {
-            return permissions.allowWorkflowRun;
         }
         if (action.id === 'delete' || action.id === 'deleteFromCollections') {
             return permissions.allowDelete;

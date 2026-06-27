@@ -534,6 +534,9 @@ export async function prepareVideo(
         }
 
         // Step 7: Update content object with metadata and renditions
+        const generationRuns = Array.isArray(inputObject.metadata?.generation_runs)
+            ? inputObject.metadata.generation_runs
+            : [];
         const videoMetadata: VideoMetadata = {
             type: ContentNature.Video,
             duration: metadata.duration,
@@ -543,7 +546,7 @@ export async function prepareVideo(
             },
             renditions,
             hasAudio: metadata.hasAudio,
-            generation_runs: inputObject.metadata?.generation_runs || [],
+            generation_runs: generationRuns,
         };
 
         await client.objects.update(objectId, {
