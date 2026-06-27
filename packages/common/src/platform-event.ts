@@ -402,6 +402,59 @@ export interface ListEventDeliveriesResponse {
     deliveries: EventDeliverySummary[];
 }
 
+export interface StreamEventDeliveriesQuery {
+    limit?: number;
+    event_id?: string;
+    resource_id?: string;
+    resource_type?: string[];
+    event_category?: EventCategory[];
+    action?: string[];
+    outbox_status?: EventOutboxStatus[];
+    since_event_id?: string;
+    since_created_at?: string;
+    include_event?: boolean;
+    poll_interval_ms?: number;
+}
+
+export interface EventDeliveryStreamItem {
+    cursor: string;
+    delivery: EventDeliverySummary;
+    event?: PlatformEvent;
+}
+
+export interface EventDeliveryStreamSnapshot {
+    type: 'snapshot';
+    emitted_at: string;
+    cursor?: string;
+    deliveries: EventDeliveryStreamItem[];
+}
+
+export interface EventDeliveryStreamUpdate {
+    type: 'event';
+    emitted_at: string;
+    cursor: string;
+    item: EventDeliveryStreamItem;
+}
+
+export interface EventDeliveryStreamHeartbeat {
+    type: 'heartbeat';
+    emitted_at: string;
+    cursor?: string;
+}
+
+export interface EventDeliveryStreamError {
+    type: 'error';
+    emitted_at: string;
+    cursor?: string;
+    error: string;
+}
+
+export type EventDeliveryStreamEnvelope =
+    | EventDeliveryStreamSnapshot
+    | EventDeliveryStreamUpdate
+    | EventDeliveryStreamHeartbeat
+    | EventDeliveryStreamError;
+
 export interface PublishPlatformEventPayload {
     event: PlatformEvent;
     priority?: EventPriority;
