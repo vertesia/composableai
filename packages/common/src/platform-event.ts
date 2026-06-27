@@ -449,6 +449,8 @@ export interface EventDeliverySummary {
     intents: EventDeliveryIntentSummary[];
 }
 
+export type EventDeliverySortField = 'created_at' | 'status' | 'resource_type' | 'event_category' | 'action';
+
 export interface ListEventDeliveriesPayload {
     limit?: number;
     event_id?: string;
@@ -456,15 +458,48 @@ export interface ListEventDeliveriesPayload {
     subscription_id?: string;
     status?: EventDeliveryIntentStatus[];
     outbox_status?: EventOutboxStatus[];
+    /** Filter by outbox event category (e.g. external, content). */
+    event_category?: string[];
+    /** Filter by outbox action (e.g. opened, created). */
+    action?: string[];
+    /** Filter by outbox resource type (e.g. github_issue, content_object). */
+    resource_type?: string[];
+    /** Sort field (default created_at). */
+    sort_by?: EventDeliverySortField;
+    /** Sort order (default desc). */
+    sort_order?: 'asc' | 'desc';
 }
 
 export interface ListEventDeliveriesResponse {
     deliveries: EventDeliverySummary[];
 }
 
+export type EventSubscriptionSortField = 'name' | 'scope' | 'target_type' | 'enabled' | 'updated_at';
+
+export interface ListEventSubscriptionsQuery {
+    enabled?: boolean;
+    target_type?: EventDeliveryTarget['type'][];
+    scope?: ('account' | 'project')[];
+    sort_by?: EventSubscriptionSortField;
+    sort_order?: 'asc' | 'desc';
+}
+
+export type EventIngestChannelSortField = 'name' | 'source' | 'enabled' | 'updated_at';
+
+export interface ListEventIngestChannelsQuery {
+    enabled?: boolean;
+    source?: string[];
+    sort_by?: EventIngestChannelSortField;
+    sort_order?: 'asc' | 'desc';
+}
+
+export type EventDeliveryQueueSortField = 'subscription_name' | 'queued' | 'active' | 'failed' | 'oldest';
+
 export interface EventDeliveryQueueSummaryPayload {
     subscription_id?: string;
     target_type?: EventDeliveryTarget['type'][];
+    sort_by?: EventDeliveryQueueSortField;
+    sort_order?: 'asc' | 'desc';
 }
 
 export interface EventOutboxQueueSummary {
