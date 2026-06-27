@@ -1282,6 +1282,7 @@ export interface AppManifestSource {
     git: {
         url: string;
         default_branch?: string;
+        production_branch?: string;
         development_branch?: string;
     };
 }
