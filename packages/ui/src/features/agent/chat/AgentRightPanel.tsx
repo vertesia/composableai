@@ -5,7 +5,10 @@ import {
     Button,
     Center,
     cn,
-    SelectBox,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
     type Tab as TabDefinition,
     Tabs,
     TabsPanel,
@@ -15,6 +18,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     CheckCircleIcon,
+    ChevronDownIcon,
     ClipboardCopyIcon,
     DownloadCloudIcon,
     FileTextIcon,
@@ -23,7 +27,7 @@ import {
     XCircleIcon,
     XIcon,
 } from 'lucide-react';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ArtifactsTab } from './ArtifactsTab.js';
 import { BrowserUseWidget, getLatestBrowserUseByWorkstream } from './BrowserUseWidget.js';
 import { DocumentPanel } from './DocumentPanel.js';
@@ -345,6 +349,252 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
 }
 
 // ---------------------------------------------------------------------------
+// Overflow tab bar
+// ---------------------------------------------------------------------------
+
+// Tab-item styling, matching core's TabsTrigger underline tabs.
+const TAB_ITEM_BASE =
+    'flex items-center border-b-2 px-2 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer shrink-0';
+const TAB_ITEM_INACTIVE = 'border-transparent text-muted-foreground hover:border-border hover:text-foreground';
+const TAB_ITEM_ACTIVE = 'border-primary text-primary';
+const TAB_GAP_PX = 4; // matches the `gap-1` between tab items
+
+interface OverflowMoreMenuProps {
+    /** The overflowed tabs to list inside the menu. */
+    tabs: TabDefinition[];
+    current: string;
+    onTabChange: (name: string) => void;
+    label: string;
+    /** Whether the active tab is one of the overflowed tabs. */
+    active: boolean;
+}
+
+/** Trailing "More" dropdown of overflowed tabs; opens on hover, click, or keyboard. */
+function OverflowMoreMenu({ tabs, current, onTabChange, label, active }: OverflowMoreMenuProps) {
+    const [open, setOpen] = useState(false);
+    const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const openedByHover = useRef(false);
+
+    const cancelClose = () => {
+        if (closeTimer.current) {
+            clearTimeout(closeTimer.current);
+            closeTimer.current = null;
+        }
+    };
+    const openOnHover = () => {
+        cancelClose();
+        openedByHover.current = true;
+        setOpen(true);
+    };
+    // Delay the close so the pointer can travel across the gap onto the menu.
+    const closeAfterDelay = () => {
+        cancelClose();
+        closeTimer.current = setTimeout(() => setOpen(false), 150);
+    };
+
+    // Clear any pending close timer on unmount.
+    useEffect(() => () => clearTimeout(closeTimer.current ?? undefined), []);
+
+    return (
+        // Non-modal: a modal menu sets body `pointer-events: none` while open, which makes
+        // the hover open/close flap. It still closes on outside-click / Escape.
+        <DropdownMenu
+            modal={false}
+            open={open}
+            onOpenChange={(next) => {
+                // Fired by click / keyboard / dismiss (not by hover); keep our state in sync.
+                cancelClose();
+                if (next) openedByHover.current = false;
+                setOpen(next);
+            }}
+        >
+            <DropdownMenuTrigger asChild>
+                {/* Tab-bar primitive: raw button is the menu trigger (asChild). */}
+                <button
+                    type="button"
+                    onMouseEnter={openOnHover}
+                    onMouseLeave={closeAfterDelay}
+                    className={cn(TAB_ITEM_BASE, active ? TAB_ITEM_ACTIVE : TAB_ITEM_INACTIVE)}
+                >
+                    {label}
+                    <ChevronDownIcon className="ms-1 size-4" />
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                align="end"
+                className="w-max"
+                onMouseEnter={cancelClose}
+                onMouseLeave={closeAfterDelay}
+                onCloseAutoFocus={(e) => {
+                    // Keep hover-opens from returning the focus ring to the trigger.
+                    if (openedByHover.current) e.preventDefault();
+                }}
+            >
+                {tabs.map((tab) => (
+                    <DropdownMenuItem
+                        key={tab.name}
+                        disabled={tab.disabled}
+                        onClick={() => onTabChange(tab.name)}
+                        className={cn(tab.name === current && 'text-primary')}
+                    >
+                        {tab.label}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+interface OverflowTabsBarProps {
+    tabs: TabDefinition[];
+    current: string;
+    onTabChange: (name: string) => void;
+    className?: string;
+}
+
+/**
+ * Tabs as a horizontal row; any that don't fit collapse into a trailing "More"
+ * dropdown. The visible/overflow split is measured from a hidden full-width row.
+ */
+function OverflowTabsBar({ tabs, current, onTabChange, className }: OverflowTabsBarProps) {
+    const { t } = useUITranslation();
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+    const moreRef = useRef<HTMLButtonElement | null>(null);
+    // `count` leading tabs are shown. When `promote` is set, the active tab is pulled
+    // into the last slot (before More) and `count` counts the tabs shown before it.
+    const [layout, setLayout] = useState<{ count: number; promote: boolean }>({ count: tabs.length, promote: false });
+
+    const recompute = () => {
+        const container = containerRef.current;
+        if (!container) return;
+        const containerWidth = container.clientWidth;
+        const widths = tabs.map((_, i) => itemRefs.current[i]?.offsetWidth ?? 0);
+        const totalAll = widths.reduce((sum, w) => sum + w, 0) + TAB_GAP_PX * Math.max(0, tabs.length - 1);
+
+        // How many tabs (in order, optionally skipping one) fit within `available`.
+        const fitCount = (available: number, skipIndex: number) => {
+            let used = 0;
+            let count = 0;
+            for (let i = 0; i < tabs.length; i++) {
+                if (i === skipIndex) continue;
+                const cand = used + (count > 0 ? TAB_GAP_PX : 0) + widths[i];
+                if (cand > available) break;
+                used = cand;
+                count += 1;
+            }
+            return count;
+        };
+
+        let next: { count: number; promote: boolean };
+        if (totalAll <= containerWidth) {
+            next = { count: tabs.length, promote: false };
+        } else {
+            const moreWidth = moreRef.current?.offsetWidth ?? 0;
+            const naturalCount = Math.max(1, fitCount(containerWidth - moreWidth - TAB_GAP_PX, -1));
+            const activeIndex = tabs.findIndex((tab) => tab.name === current);
+            if (activeIndex < 0 || activeIndex < naturalCount) {
+                next = { count: naturalCount, promote: false };
+            } else {
+                // Active tab overflowed: reserve its slot at the end, fit leading tabs before it.
+                const leadAvailable = containerWidth - moreWidth - widths[activeIndex] - TAB_GAP_PX * 2;
+                next = { count: fitCount(leadAvailable, activeIndex), promote: true };
+            }
+        }
+        setLayout((prev) => (prev.count === next.count && prev.promote === next.promote ? prev : next));
+    };
+
+    // Re-measure after every render (tab/label changes) and on container resize.
+    const recomputeRef = useRef(recompute);
+    recomputeRef.current = recompute;
+    useLayoutEffect(() => {
+        recomputeRef.current();
+    });
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container || typeof ResizeObserver === 'undefined') return;
+        const observer = new ResizeObserver(() => recomputeRef.current());
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, []);
+
+    const activeIndex = tabs.findIndex((tab) => tab.name === current);
+    let visible: TabDefinition[];
+    let overflow: TabDefinition[];
+    if (layout.promote && activeIndex >= 0) {
+        // Pull the active tab into the last visible slot; the tab it displaces overflows.
+        const others = tabs.filter((_, i) => i !== activeIndex);
+        visible = [...others.slice(0, layout.count), tabs[activeIndex]];
+        overflow = others.slice(layout.count);
+    } else {
+        visible = tabs.slice(0, layout.count);
+        overflow = tabs.slice(layout.count);
+    }
+    const activeInOverflow = overflow.some((tab) => tab.name === current);
+    const moreLabel = t('agent.moreTabs');
+
+    return (
+        <div ref={containerRef} className={cn('relative', className)}>
+            {/* Hidden measurement row: all tabs + More at natural width, kept separate
+                from the visible row so measuring can't feed back into the layout. */}
+            <div aria-hidden className="pointer-events-none invisible absolute left-0 top-0 flex w-max gap-1">
+                {tabs.map((tab, i) => (
+                    <button
+                        type="button"
+                        key={tab.name}
+                        tabIndex={-1}
+                        ref={(el) => {
+                            itemRefs.current[i] = el;
+                        }}
+                        className={cn(TAB_ITEM_BASE, TAB_ITEM_INACTIVE)}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+                <button type="button" tabIndex={-1} ref={moreRef} className={cn(TAB_ITEM_BASE, TAB_ITEM_INACTIVE)}>
+                    {moreLabel}
+                    <ChevronDownIcon className="ms-1 size-4" />
+                </button>
+            </div>
+
+            {/* Visible row */}
+            <div className="-mb-px flex gap-1 overflow-hidden border-b">
+                {visible.map((tab) => {
+                    const isActive = tab.name === current;
+                    return (
+                        // Tab-bar primitive: raw button mirrors core TabsTrigger underline styling.
+                        <button
+                            type="button"
+                            key={tab.name}
+                            aria-current={isActive ? 'page' : undefined}
+                            disabled={tab.disabled}
+                            onClick={() => onTabChange(tab.name)}
+                            className={cn(
+                                TAB_ITEM_BASE,
+                                isActive ? TAB_ITEM_ACTIVE : TAB_ITEM_INACTIVE,
+                                'disabled:pointer-events-none disabled:opacity-50',
+                            )}
+                        >
+                            {tab.label}
+                        </button>
+                    );
+                })}
+
+                {overflow.length > 0 && (
+                    <OverflowMoreMenu
+                        tabs={overflow}
+                        current={current}
+                        onTabChange={onTabChange}
+                        label={moreLabel}
+                        active={activeInOverflow}
+                    />
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
 // Right panel tabs
 // ---------------------------------------------------------------------------
 
@@ -579,16 +829,13 @@ function AgentRightPanelComponent({
     const visibleTabs = tabs.filter((tab) => tab.is_allowed === undefined || tab.is_allowed === true);
     return (
         <Tabs tabs={tabs} current={activeTab} onTabChange={handleTabChange} fullHeight className="px-0">
-            <div className="flex items-center justify-between shrink-0 px-1 py-1 gap-1">
-                <div className="w-full">
-                    <SelectBox
-                        label={t('agent.selectRightPanelSection')}
-                        className="w-full"
-                        value={activeTab}
-                        onChange={handleTabChange}
-                        options={visibleTabs.map((tab) => tab.name)}
-                    />
-                </div>
+            <div className="flex items-end justify-between shrink-0 px-1 py-1 gap-1">
+                <OverflowTabsBar
+                    tabs={visibleTabs}
+                    current={activeTab}
+                    onTabChange={handleTabChange}
+                    className="min-w-0 flex-1"
+                />
                 {!conversationContent && (
                     <Button
                         variant="ghost"
