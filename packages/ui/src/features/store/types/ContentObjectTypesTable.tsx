@@ -96,7 +96,31 @@ export function ContentObjectTypesTable({
                             </div>
                         </td>
                         <td>{obj.strict_mode ? 'Yes' : 'No'}</td>
-                        <td>{obj.is_chunkable ? 'Yes' : 'No'}</td>
+                        <td className="group/field">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <span>{obj.is_chunkable ? 'Yes' : 'No'}</span>
+                                {onFilter && (
+                                    <VTooltip
+                                        description={`Filter by ${obj.is_chunkable ? 'chunkable' : 'not chunkable'}`}
+                                        asChild
+                                        size="xs"
+                                    >
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            aria-label="Filter by semantic chunking"
+                                            className={ACTION_BTN_CLASS}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onFilter('chunkable', obj.is_chunkable ? 'true' : 'false');
+                                            }}
+                                        >
+                                            <Filter className="size-3" />
+                                        </Button>
+                                    </VTooltip>
+                                )}
+                            </div>
+                        </td>
                         <td>
                             <VTooltip description={dayjs(obj.updated_at).format('YYYY-MM-DD HH:mm:ss')}>
                                 {dayjs(obj.updated_at).fromNow()}

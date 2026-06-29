@@ -1,11 +1,14 @@
 import {
+    type Filter as BaseFilter,
     Button,
     ConfirmModal,
     EmptyCollection,
     ErrorBox,
-    Input,
-    SelectBox,
-    useDebounce,
+    FilterBar,
+    FilterBtn,
+    FilterClear,
+    type FilterGroup,
+    FilterProvider,
     useIntersectionObserver,
     useToast,
     VTooltip,
@@ -14,15 +17,11 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { RefreshCw, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { filterValueToQueryValue } from '../../facets/utils/SearchInterface';
 import { ContentObjectTypesTable } from './ContentObjectTypesTable';
 import { CreateOrUpdateTypeModal, type CreateOrUpdateTypePayload } from './CreateOrUpdateTypeModal';
 import { useWatchSearchResult } from './search/ObjectTypeSearchContext';
 import { useTypeRegistry } from './TypeRegistryProvider.js';
-
-enum ChunkableOptions {
-    true = 'Yes',
-    false = 'No',
-}
 
 interface ContentObjectTypesSearchProps {
     isDirty?: boolean;
@@ -36,9 +35,6 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
 
     const [isReady, setIsReady] = useState(false);
     const { search, isLoading, error, objects } = useWatchSearchResult();
-
-    const [searchTerm, setSearchTerm] = useState<string>('');
-    const debounceValue = useDebounce(searchTerm, 500);
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
     useIntersectionObserver(
@@ -54,25 +50,65 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
     }, [search]);
 
     useEffect(() => {
-        search.query.name = debounceValue;
-        search.search().then(() => setIsReady(true));
-    }, [debounceValue, search]);
-
-    const [chunkable, setChunkable] = useState<string | undefined>(undefined);
-    const onChunkableChange = (data: string | undefined) => {
-        setChunkable(data);
-    };
-
-    useEffect(() => {
-        search.query.chunkable = chunkable ? chunkable === 'Yes' : undefined;
-        search.search().then(() => setIsReady(true));
-    }, [chunkable, search]);
-
-    useEffect(() => {
         if (isDirty && isReady) {
             search.search().then(() => setIsReady(true));
         }
     }, [isDirty, isReady, search]);
+
+    // Facet-nav filter state. `handleFilterChange` is the single source of truth: it updates the
+    // chip list and translates it into the type search query (name text + chunkable yes/no).
+    const filterGroups: FilterGroup[] = [
+        { name: 'name', placeholder: t('store.name'), type: 'text' as const, multiple: false },
+        {
+            name: 'chunkable',
+            placeholder: t('store.isChunkable'),
+            type: 'select' as const,
+            multiple: false,
+            options: [
+                { label: 'Yes', value: 'true' },
+                { label: 'No', value: 'false' },
+            ],
+        },
+    ];
+
+    const [filters, setFilters] = useState<BaseFilter[]>([]);
+    const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
+        const next = typeof value === 'function' ? value(filters) : value;
+        setFilters(next);
+
+        search.query.name = undefined;
+        search.query.chunkable = undefined;
+        for (const filter of next) {
+            if (!filter.value || filter.value.length === 0) continue;
+            const queryValue = filterValueToQueryValue(filter);
+            if (filter.name === 'name' && typeof queryValue === 'string') {
+                search.query.name = queryValue;
+            } else if (filter.name === 'chunkable') {
+                search.query.chunkable = queryValue === 'true' ? true : queryValue === 'false' ? false : undefined;
+            }
+        }
+
+        setIsReady(false);
+        search.search().then(() => setIsReady(true));
+    };
+
+    // Per-row quick filter: add (or replace) a chip for the given filter group, using its option
+    // label for select groups so the chip reads "Yes"/"No" rather than "true"/"false".
+    const addQuickFilter = (field: string, value: string) => {
+        const group = filterGroups.find((g) => g.name === field);
+        if (!group) return;
+        const label = group.type === 'select' ? (group.options?.find((o) => o.value === value)?.label ?? value) : value;
+        handleFilterChange((prev) => [
+            ...prev.filter((f) => f.name !== field),
+            {
+                name: field,
+                type: group.type,
+                placeholder: group.placeholder,
+                multiple: group.multiple,
+                value: [{ value, label }],
+            },
+        ]);
+    };
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const onOpenCreateModal = () => {
@@ -149,42 +185,40 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
 
     return (
         <div className="flex flex-col flex-1 min-h-0">
-            <div className="flex flex-shrink-0 gap-4">
-                <Input placeholder={t('store.filterByName')} value={searchTerm} onChange={setSearchTerm} />
-                <SelectBox
-                    className="w-60"
-                    isClearable
-                    options={Object.values(ChunkableOptions)}
-                    value={chunkable}
-                    onChange={onChunkableChange}
-                    placeholder={t('store.isChunkable')}
-                />
-            </div>
-            <div className="flex flex-shrink-0 justify-end items-center gap-2 mt-2">
-                {selectedCount > 0 ? (
-                    <>
-                        <span className="text-sm font-medium">
-                            {selectedCount} type{selectedCount === 1 ? '' : 's'} selected
-                        </span>
-                        <VTooltip description="Clear selection" asChild>
-                            <Button variant="ghost" aria-label="Clear selection" onClick={() => setSelectedIds([])}>
-                                <X className="size-4" />
+            <div className="flex flex-shrink-0 justify-between items-center gap-2">
+                <FilterProvider filterGroups={filterGroups} filters={filters} setFilters={handleFilterChange}>
+                    <div className="flex gap-2 items-center">
+                        <FilterBtn />
+                        <FilterBar />
+                        <FilterClear />
+                    </div>
+                </FilterProvider>
+                <div className="flex items-center gap-2">
+                    {selectedCount > 0 ? (
+                        <>
+                            <span className="text-sm font-medium">
+                                {selectedCount} type{selectedCount === 1 ? '' : 's'} selected
+                            </span>
+                            <VTooltip description="Clear selection" asChild>
+                                <Button variant="ghost" aria-label="Clear selection" onClick={() => setSelectedIds([])}>
+                                    <X className="size-4" />
+                                </Button>
+                            </VTooltip>
+                            <Button variant="destructive" isDisabled={isDeleting} onClick={() => setShowDelete(true)}>
+                                {isDeleting ? 'Deleting...' : 'Delete selected'}
                             </Button>
-                        </VTooltip>
-                        <Button variant="destructive" isDisabled={isDeleting} onClick={() => setShowDelete(true)}>
-                            {isDeleting ? 'Deleting...' : 'Delete selected'}
+                        </>
+                    ) : (
+                        <span className="text-sm text-muted">
+                            {objects?.length ?? 0} type{objects?.length === 1 ? '' : 's'}
+                        </span>
+                    )}
+                    <VTooltip description={t('store.refresh')} asChild>
+                        <Button variant="outline" aria-label={t('store.refresh')} onClick={handleRefresh}>
+                            <RefreshCw className="size-4" />
                         </Button>
-                    </>
-                ) : (
-                    <span className="text-sm text-muted">
-                        {objects?.length ?? 0} type{objects?.length === 1 ? '' : 's'}
-                    </span>
-                )}
-                <VTooltip description={t('store.refresh')} asChild>
-                    <Button variant="outline" aria-label={t('store.refresh')} onClick={handleRefresh}>
-                        <RefreshCw className="size-4" />
-                    </Button>
-                </VTooltip>
+                    </VTooltip>
+                </div>
             </div>
             <div className="flex flex-col w-full flex-1 min-h-0 border rounded-md my-2">
                 <div className="flex-1 min-h-0 overflow-y-auto">
@@ -201,9 +235,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
                             <ContentObjectTypesTable
                                 objects={objects}
                                 isLoading={isLoading}
-                                onFilter={(field, value) => {
-                                    if (field === 'name') setSearchTerm(value);
-                                }}
+                                onFilter={addQuickFilter}
                                 hasCheckbox
                                 selectedIds={selectedIds}
                                 onToggle={(id, checked) =>
