@@ -40,6 +40,29 @@ export * from './runs.js';
 export * from './secrets.js';
 export * from './skill.js';
 export * from './store/index.js';
+export type {
+    ContentObjectExportArtifact,
+    ContentObjectExportArtifactFile,
+    ContentObjectExportProgress,
+    ContentObjectExportResult,
+    ContentObjectExportStatusResponse,
+    DeleteContentObjectExportResponse,
+    ExportContentObjectsFilter,
+    ExportContentObjectsIncludeOptions,
+    ExportedContentObjectRecord,
+    ListContentObjectExportsResponse,
+    StartContentObjectExportRequest,
+    StartContentObjectExportResponse,
+    ZenoBulkContentObjectExportComposeRequest,
+    ZenoBulkContentObjectExportPlanRequest,
+    ZenoBulkContentObjectExportPlanResponse,
+    ZenoBulkContentObjectExportRequest,
+    ZenoBulkContentObjectExportShardRange,
+    ZenoBulkContentObjectExportShardRequest,
+    ZenoBulkContentObjectExportShardResult,
+    ZenoBulkContentObjectExportSplitShardRequest,
+    ZenoBulkContentObjectExportSplitShardResponse,
+} from './store/store.js';
 export * from './sts-token-types.js';
 export * from './tenant.js';
 export * from './tool-execution.js';
