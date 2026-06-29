@@ -93,12 +93,6 @@ jobs:
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
         run: ./.github/bin/test-template-integration.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Plugin"
-      - name: Template integration test - Tool Server (deprecated)
-        if: inputs.dry_run == true
-        timeout-minutes: 10
-        env:
-          RELEASE_TYPE: ${{ inputs.release_type }}
-        run: ./.github/bin/test-template-integration.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Tool Server (deprecated)"
 
   # ============================================================
   # Integration test after real publish (non-dry-run only)
@@ -128,8 +122,3 @@ jobs:
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
         run: ./.github/bin/test-template-smoke.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Plugin" --branch "${GITHUB_REF_NAME}" --wait
-      - name: Smoke test - Tool Server (deprecated)
-        timeout-minutes: 10
-        env:
-          RELEASE_TYPE: ${{ inputs.release_type }}
-        run: ./.github/bin/test-template-smoke.sh --release-type "${RELEASE_TYPE}" --template "Vertesia Tool Server (deprecated)" --branch "${GITHUB_REF_NAME}" --wait
