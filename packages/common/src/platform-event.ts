@@ -112,6 +112,34 @@ export interface PublishWorkflowLifecycleEventRequest {
     caused_by?: EventRef;
 }
 
+/**
+ * A provider-neutral external work-item thread identity. The pair `(resource_type, resource_id)`
+ * derives a stable `eventThreadTag` (see `@dglabs/event-bus`), so all events of the same thread
+ * correlate to one agent run.
+ */
+export interface EventThreadRef {
+    resource_type: string;
+    resource_id: string;
+}
+
+/**
+ * Body of the internal, workload-identity-gated run-threads endpoint. Sent by a Temporal worker so an
+ * agent run can register additional external-thread identities on **itself** mid-run, so later events on
+ * those threads route to the same run. The server computes the thread tags from `(account, project,
+ * resource_type, resource_id)` and idempotently appends them to the run; the worker never supplies a raw
+ * tag.
+ */
+export interface AppendAgentRunThreadsRequest {
+    account_id: string;
+    project_id: string;
+    threads: EventThreadRef[];
+}
+
+export interface AppendAgentRunThreadsResponse {
+    /** The thread tags that are now present on the run (the full event-thread tag set). */
+    thread_tags: string[];
+}
+
 export interface EventSubscriptionFilter {
     event_category?: (EventCategory | '*')[];
     exclude_event_category?: EventCategory[];
@@ -229,11 +257,27 @@ export interface WebhookEventDeliveryTarget {
 
 export const DEFAULT_EVENT_AGENT_INTERACTION_REF = 'sys:GeneralAgent';
 
+/**
+ * How a matching event is applied to the external work-item thread's agent run:
+ * - `start` (default): always start a new run. Gating is done by the subscription filter; no
+ *   `message_path` is needed.
+ * - `signal`: deliver only to an *existing* run on the thread (never start) — the follow-up path.
+ *   `missing_thread` governs the no-run case.
+ * - `ensure`: deliver to the run on the thread, **starting one if none exists**.
+ *
+ * For `signal`/`ensure` the message is delivered **exactly once**: as the run's initial instruction
+ * when starting, or as a signal to an existing/restarted run. Correlation is the provider-neutral
+ * `eventThreadTag(event_ref)` — the started run is auto-tagged with it and follow-ups recompute the
+ * same tag to find the run.
+ */
+export type AgentDeliveryMatchMode = 'start' | 'signal' | 'ensure';
+
 export interface AgentEventDeliveryTarget {
     type: 'agent';
-    /**
-     * Interaction ID, app ref, or system ref. Defaults to the general-purpose system agent.
-     */
+    /** Behavior when an event matches. Defaults to `start`. */
+    on_match?: AgentDeliveryMatchMode;
+    // --- Start payload (used when starting a run: `start`, or `ensure` with no existing run) ---
+    /** Interaction ID, app ref, or system ref. Defaults to the general-purpose system agent. */
     interaction_ref?: string;
     data?: Record<string, unknown>;
     config?: InteractionExecutionConfiguration;
@@ -244,6 +288,31 @@ export interface AgentEventDeliveryTarget {
     tool_names?: string[];
     max_iterations?: number;
     debug_mode?: boolean;
+    // --- Gate + signal config (used by `signal` and `ensure`) ---
+    /** Signal sent to an existing/restarted run. Only `UserInput` is implemented. */
+    signal_name?: 'UserInput';
+    /** Dot-path to the message (initial instruction when starting, else the signal). Required for signal/ensure. */
+    message_path?: string;
+    /** Dot-path to a stable per-message id, carried on the signal for (future) exactly-once dedupe. */
+    client_message_id_path?: string;
+    /** Run statuses eligible to receive the signal when a run exists. Defaults to ['running']. */
+    statuses?: AgentRunStatus[];
+    /** If this dot-path resolves to a value, the delivery is skipped. */
+    skip_if_path_exists?: string;
+    /** Dot-path to the message author, for the loop guard. */
+    author_path?: string;
+    /** Regex patterns matched against the resolved author; a match skips the delivery (loop guard). */
+    ignore_author_patterns?: string[];
+    /** The message must start with one of these prefixes to be delivered. */
+    require_command_prefixes?: string[];
+    /** ...or contain one of these mentions. Combined with prefixes as OR. */
+    require_mentions?: string[];
+    /** `signal` mode only — no run yet (open/follow-up race): 'retry' (default) or 'skip'. Ignored for `ensure`. */
+    missing_thread?: 'retry' | 'skip';
+    /** Behaviour when only terminal runs match: `skip` (default) or `restart` then signal. */
+    on_terminal?: 'skip' | 'restart';
+    /** Extra fields merged into the signal's metadata; same `{{event.*}}` / `$event.x` templating as `data`. */
+    metadata?: Record<string, unknown>;
 }
 
 export interface ProcessEventDeliveryTarget {
@@ -262,63 +331,10 @@ export interface ProcessEventDeliveryTarget {
     categories?: string[];
 }
 
-/**
- * Routes a matching event to an *existing* agent run (the event bus otherwise only starts runs) by
- * sending it a signal — the follow-up path for external work-item threads (GitHub issue comments, ...).
- *
- * Correlation is provider-neutral: the run started for the thread is auto-tagged with
- * `eventThreadTag(event_ref)` and this target recomputes the same tag from its own event to find the
- * run. No `workflow_id` is involved, so the dispatcher resolves the delivery inline (it bypasses the
- * workflow-admission capacity gate and the Temporal reconciler).
- */
-export interface AgentSignalEventDeliveryTarget {
-    type: 'agent_signal';
-    /**
-     * Signal sent to the run. Only `UserInput` is implemented (the payload is UserInput-shaped:
-     * message + metadata); other signal names are rejected by validation.
-     */
-    signal_name?: 'UserInput';
-    /**
-     * Interaction id/ref of the run to signal. Disambiguates when several event-started agents are
-     * active on the same external thread; when omitted, the newest signalable run on the thread is used.
-     */
-    interaction_ref?: string;
-    /** Dot-path into the PlatformEvent for the message body delivered to the run. */
-    message_path: string;
-    /** Dot-path to a stable per-message id, carried on the signal for (future) exactly-once dedupe. */
-    client_message_id_path?: string;
-    /** Run statuses eligible to receive the signal. Defaults to ['running']. */
-    statuses?: AgentRunStatus[];
-    /** If this dot-path resolves to a value, the delivery is skipped (e.g. `details.payload.issue.pull_request`). */
-    skip_if_path_exists?: string;
-    /** Dot-path to the message author (e.g. `details.payload.comment.user.login`), for the loop guard. */
-    author_path?: string;
-    /** Regex patterns matched against the resolved author; a match skips the delivery (loop guard). */
-    ignore_author_patterns?: string[];
-    /** The message must start with one of these prefixes to be delivered (e.g. ['/vertesia']). */
-    require_command_prefixes?: string[];
-    /** ...or contain one of these mentions (e.g. ['@vertesia-bot']). Combined with prefixes as OR. */
-    require_mentions?: string[];
-    /** No correlated run found yet (race between open and follow-up): 'retry' (default) or 'skip'. */
-    missing_thread?: 'retry' | 'skip';
-    /**
-     * Behaviour when only terminal runs match (the live run already ended, e.g. a late follow-up after
-     * the agent finished): `skip` (default) ends the delivery; `restart` re-activates the newest terminal
-     * run (loads its conversation history, status back to running) and then delivers the message to it.
-     */
-    on_terminal?: 'skip' | 'restart';
-    /**
-     * Extra fields merged into the signal's metadata. Values support the same `{{event.*}}` / `$event.x`
-     * templating as `target.data` (e.g. `{ comment_url: '{{event.details.payload.comment.html_url}}' }`).
-     */
-    metadata?: Record<string, unknown>;
-}
-
 export type EventDeliveryTarget =
     | WorkflowEventDeliveryTarget
     | WebhookEventDeliveryTarget
     | AgentEventDeliveryTarget
-    | AgentSignalEventDeliveryTarget
     | ProcessEventDeliveryTarget;
 
 // --- Input (write) target shapes ---
@@ -337,7 +353,6 @@ export type EventDeliveryTargetInput =
     | WorkflowEventDeliveryTargetInput
     | WebhookEventDeliveryTargetInput
     | AgentEventDeliveryTarget
-    | AgentSignalEventDeliveryTarget
     | ProcessEventDeliveryTarget;
 
 export interface MatchedEventSubscriptionSnapshot {

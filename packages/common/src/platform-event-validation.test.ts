@@ -81,7 +81,8 @@ describe('event subscription input validation', () => {
         const result = getCreateEventSubscriptionValidationResult(
             validCreate({
                 target: {
-                    type: 'agent_signal',
+                    type: 'agent',
+                    on_match: 'signal',
                     message_path: 'details.payload.comment.body',
                     client_message_id_path: 'details.payload.comment.node_id',
                     require_command_prefixes: ['/vertesia'],
@@ -95,7 +96,7 @@ describe('event subscription input validation', () => {
 
     it('requires message_path for agent_signal targets', () => {
         const result = getCreateEventSubscriptionValidationResult(
-            validCreate({ target: { type: 'agent_signal' } as never }),
+            validCreate({ target: { type: 'agent', on_match: 'signal' } as never }),
         );
         expect(result.valid).toBe(false);
         expect(result.errors.join(' ')).toContain('message_path');
@@ -103,7 +104,7 @@ describe('event subscription input validation', () => {
 
     it('rejects a non-string agent_signal message_path', () => {
         const result = getCreateEventSubscriptionValidationResult(
-            validCreate({ target: { type: 'agent_signal', message_path: 123 } as never }),
+            validCreate({ target: { type: 'agent', on_match: 'signal', message_path: 123 } as never }),
         );
         expect(result.valid).toBe(false);
         expect(result.errors.join(' ')).toContain('message_path');
@@ -112,7 +113,7 @@ describe('event subscription input validation', () => {
     it('rejects an invalid agent_signal missing_thread', () => {
         const result = getCreateEventSubscriptionValidationResult(
             validCreate({
-                target: { type: 'agent_signal', message_path: 'm', missing_thread: 'nope' } as never,
+                target: { type: 'agent', on_match: 'signal', message_path: 'm', missing_thread: 'nope' } as never,
             }),
         );
         expect(result.valid).toBe(false);
@@ -121,14 +122,16 @@ describe('event subscription input validation', () => {
 
     it('accepts agent_signal on_terminal:restart', () => {
         const result = getCreateEventSubscriptionValidationResult(
-            validCreate({ target: { type: 'agent_signal', message_path: 'm', on_terminal: 'restart' } }),
+            validCreate({ target: { type: 'agent', on_match: 'signal', message_path: 'm', on_terminal: 'restart' } }),
         );
         expect(result.valid).toBe(true);
     });
 
     it('rejects an invalid agent_signal on_terminal value', () => {
         const result = getCreateEventSubscriptionValidationResult(
-            validCreate({ target: { type: 'agent_signal', message_path: 'm', on_terminal: 'nope' } as never }),
+            validCreate({
+                target: { type: 'agent', on_match: 'signal', message_path: 'm', on_terminal: 'nope' } as never,
+            }),
         );
         expect(result.valid).toBe(false);
         expect(result.errors.join(' ')).toContain('on_terminal');
@@ -136,7 +139,9 @@ describe('event subscription input validation', () => {
 
     it('rejects an agent_signal signal_name other than UserInput', () => {
         const result = getCreateEventSubscriptionValidationResult(
-            validCreate({ target: { type: 'agent_signal', message_path: 'm', signal_name: 'Stop' } as never }),
+            validCreate({
+                target: { type: 'agent', on_match: 'signal', message_path: 'm', signal_name: 'Stop' } as never,
+            }),
         );
         expect(result.valid).toBe(false);
         expect(result.errors.join(' ')).toContain('signal_name');
@@ -145,7 +150,12 @@ describe('event subscription input validation', () => {
     it('rejects agent_signal statuses that are not valid run statuses', () => {
         const result = getCreateEventSubscriptionValidationResult(
             validCreate({
-                target: { type: 'agent_signal', message_path: 'm', statuses: ['running', 'bogus'] } as never,
+                target: {
+                    type: 'agent',
+                    on_match: 'signal',
+                    message_path: 'm',
+                    statuses: ['running', 'bogus'],
+                } as never,
             }),
         );
         expect(result.valid).toBe(false);
@@ -155,7 +165,9 @@ describe('event subscription input validation', () => {
 
     it('rejects agent_signal statuses that are terminal (not signalable)', () => {
         const result = getCreateEventSubscriptionValidationResult(
-            validCreate({ target: { type: 'agent_signal', message_path: 'm', statuses: ['completed'] } as never }),
+            validCreate({
+                target: { type: 'agent', on_match: 'signal', message_path: 'm', statuses: ['completed'] } as never,
+            }),
         );
         expect(result.valid).toBe(false);
         expect(result.errors.join(' ')).toContain('statuses');
@@ -164,7 +176,9 @@ describe('event subscription input validation', () => {
 
     it('rejects non-string agent_signal optional path fields', () => {
         const result = getCreateEventSubscriptionValidationResult(
-            validCreate({ target: { type: 'agent_signal', message_path: 'm', author_path: 123 } as never }),
+            validCreate({
+                target: { type: 'agent', on_match: 'signal', message_path: 'm', author_path: 123 } as never,
+            }),
         );
         expect(result.valid).toBe(false);
         expect(result.errors.join(' ')).toContain('author_path');
@@ -174,7 +188,8 @@ describe('event subscription input validation', () => {
         const result = getCreateEventSubscriptionValidationResult(
             validCreate({
                 target: {
-                    type: 'agent_signal',
+                    type: 'agent',
+                    on_match: 'signal',
                     message_path: 'details.payload.comment.body',
                     interaction_ref: 'sys:SoftwareEngineeringAgent',
                     statuses: ['running'],
