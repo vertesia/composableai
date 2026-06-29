@@ -1,6 +1,6 @@
 {
     "name": "@koa-stack/body",
-    "version": "0.25.0-dev.20260629.114133Z",
+    "version": "0.25.0-dev.20260629.122506Z",
     "description": "Expose the request body as a promise in koa Context.body",
     "type": "module",
     "scripts": {
