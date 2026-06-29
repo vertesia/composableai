@@ -14,6 +14,7 @@ const badgeVariants = cva('inline-flex items-center rounded-md px-2 py-1 text-xs
             success: 'bg-success text-success',
             info: 'bg-info text-info',
             done: 'bg-done text-done',
+            outline: 'bg-transparent border border-border text-foreground',
         },
     },
     defaultVariants: {
@@ -49,6 +50,7 @@ const dotBadgeVariants = cva(
                 attention: '',
                 done: '',
                 info: '',
+                outline: '',
             },
         },
         defaultVariants: {
@@ -67,6 +69,7 @@ const dotVariants = cva('h-1.5 w-1.5', {
             attention: 'fill-attention',
             done: 'fill-done',
             info: 'fill-info',
+            outline: 'fill-foreground',
         },
     },
     defaultVariants: {
