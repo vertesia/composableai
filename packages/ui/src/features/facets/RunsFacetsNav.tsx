@@ -230,7 +230,7 @@ export function RunsFacetsNav({
                         {!selectionCount && (
                             <div className="flex items-center justify-between px-2 py-1">
                                 <div className="text-sm text-muted">
-                                    {search.initialized ? `${search.totalCount} calls` : 'Loading calls...'}
+                                    {search.initialized ? `${search.totalCount ?? 0} calls` : 'Loading calls...'}
                                 </div>
                             </div>
                         )}

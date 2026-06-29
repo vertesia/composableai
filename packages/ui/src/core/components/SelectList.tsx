@@ -102,7 +102,7 @@ function SelectListOption<T>({ option, onSelect, layout, noCheck }: SelectListOp
             variant="unstyled"
             size="none"
             className={clsx(
-                'group !flex w-full items-center cursor-pointer gap-x-2 hover:bg-muted',
+                'group !flex w-full items-center text-start cursor-pointer gap-x-2 hover:bg-muted',
                 layout.reverse && 'flex-row-reverse',
                 layout.className,
             )}

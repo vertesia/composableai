@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { type DocumentSelection, useDocumentSelection } from '../DocumentSelectionProvider.js';
 import { DocumentUploadModal } from '../upload/DocumentUploadModal.js';
 import { ExportPropertiesAction } from './actions/ExportPropertiesAction';
+import { StartWorkflowButton } from './actions/StartWorkflowButton';
 import { ObjectsActionContextProvider } from './ObjectsActionContext';
 import { useObjectsActionContext } from './ObjectsActionHooks';
 import type { ObjectsActionSpec } from './ObjectsActionSpec';
@@ -15,8 +16,14 @@ interface SelectionActionsProps {
     type?: ContentObjectTypeItem;
     allowMutations?: boolean;
     allowDelete?: boolean;
+    allowWorkflowRun?: boolean;
 }
-export function SelectionActions({ type, allowMutations = true, allowDelete = true }: SelectionActionsProps) {
+export function SelectionActions({
+    type,
+    allowMutations = true,
+    allowDelete = true,
+    allowWorkflowRun = true,
+}: SelectionActionsProps) {
     const selection = useDocumentSelection();
     const size = selection.size();
     const plural = size > 1 ? 's' : '';
@@ -41,6 +48,7 @@ export function SelectionActions({ type, allowMutations = true, allowDelete = tr
                         </Button>
                     </div>
                 )}
+                {allowWorkflowRun && <StartWorkflowButton />}
                 <SelectionActionsPopover
                     selection={selection}
                     allowMutations={allowMutations}
