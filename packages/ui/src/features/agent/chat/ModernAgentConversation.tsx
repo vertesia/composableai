@@ -924,64 +924,68 @@ function StartWorkflowView({
                 ].join('\n');
             }
 
+            const newRun = await startWorkflow(messageContent, { tool_approval_mode: toolApprovalMode });
+            if (!newRun) {
+                setPendingStartMessage(null);
+                setPendingStartTimestamp(null);
+                return;
+            }
+
             setPendingStartMessage(messageContent);
             setPendingStartTimestamp(Date.now());
 
-            const newRun = await startWorkflow(messageContent, { tool_approval_mode: toolApprovalMode });
-            if (newRun) {
-                const agentId = newRun.agent_run_id;
+            const agentId = newRun.agent_run_id;
 
-                // Upload staged files to the new run's artifact space and signal agent
-                const uploadedFiles: string[] = [];
-                if (canStageFiles && stagedFiles.length > 0) {
-                    for (const file of stagedFiles) {
-                        try {
-                            const artifactPath = `files/${file.name}`;
-                            await client.agents.uploadArtifact(agentId, artifactPath, file);
+            // Upload staged files to the new run's artifact space and signal agent
+            const uploadedFiles: string[] = [];
+            if (canStageFiles && stagedFiles.length > 0) {
+                for (const file of stagedFiles) {
+                    try {
+                        const artifactPath = `files/${file.name}`;
+                        await client.agents.uploadArtifact(agentId, artifactPath, file);
 
-                            // Signal agent that file was uploaded
-                            await client.agents.sendSignal(agentId, 'FileUploaded', {
-                                id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                                name: file.name,
-                                content_type: file.type || 'application/octet-stream',
-                                reference: `artifact:${artifactPath}`,
-                                artifact_path: artifactPath,
-                            } as ConversationFileRef);
-                            uploadedFiles.push(file.name);
-                        } catch (uploadErr) {
-                            console.error(`Failed to upload staged file ${file.name}:`, uploadErr);
-                            // Continue with other files
-                        }
+                        // Signal agent that file was uploaded
+                        await client.agents.sendSignal(agentId, 'FileUploaded', {
+                            id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                            name: file.name,
+                            content_type: file.type || 'application/octet-stream',
+                            reference: `artifact:${artifactPath}`,
+                            artifact_path: artifactPath,
+                        } as ConversationFileRef);
+                        uploadedFiles.push(file.name);
+                    } catch (uploadErr) {
+                        console.error(`Failed to upload staged file ${file.name}:`, uploadErr);
+                        // Continue with other files
                     }
-
-                    // Send a follow-up message to notify the agent that all files are ready
-                    if (uploadedFiles.length > 0) {
-                        try {
-                            await client.agents.sendSignal(agentId, 'UserInput', {
-                                message: `[Files Ready] All ${uploadedFiles.length} file(s) have been uploaded and are now available: ${uploadedFiles.join(', ')}. You can now process them.`,
-                                metadata: {
-                                    type: 'files_ready',
-                                    files: uploadedFiles,
-                                },
-                            } as UserInputSignal);
-                        } catch (signalErr) {
-                            console.error('Failed to send files ready signal:', signalErr);
-                        }
-                    }
-
-                    setStagedFiles([]);
                 }
 
-                // Clear attachments after successful start
-                onAttachmentsSent?.();
-                setStartedAgentRunId(agentId);
-                setInputValue('');
-                toast({
-                    title: t('agent.agentStarted'),
-                    status: 'success',
-                    duration: 3000,
-                });
+                // Send a follow-up message to notify the agent that all files are ready
+                if (uploadedFiles.length > 0) {
+                    try {
+                        await client.agents.sendSignal(agentId, 'UserInput', {
+                            message: `[Files Ready] All ${uploadedFiles.length} file(s) have been uploaded and are now available: ${uploadedFiles.join(', ')}. You can now process them.`,
+                            metadata: {
+                                type: 'files_ready',
+                                files: uploadedFiles,
+                            },
+                        } as UserInputSignal);
+                    } catch (signalErr) {
+                        console.error('Failed to send files ready signal:', signalErr);
+                    }
+                }
+
+                setStagedFiles([]);
             }
+
+            // Clear attachments after successful start
+            onAttachmentsSent?.();
+            setStartedAgentRunId(agentId);
+            setInputValue('');
+            toast({
+                title: t('agent.agentStarted'),
+                status: 'success',
+                duration: 3000,
+            });
         } catch (err: unknown) {
             setPendingStartMessage(null);
             setPendingStartTimestamp(null);
