@@ -581,6 +581,31 @@ export interface WorkflowEventInput<T = Record<string, unknown>> {
 // source 'external:<source>', and match event subscriptions like any other platform event.
 
 /**
+ * A conditional rule for deriving `resource_type` + `resource_id` from the body, evaluated in order
+ * (first match wins) when a single dot-path can't serve every payload shape a channel receives. A
+ * sender whose one webhook delivers heterogeneous events (e.g. a GitHub App: issues, issue comments,
+ * PR reviews) needs different thread identities per event family; these rules express that without
+ * baking provider knowledge into the server.
+ */
+export interface EventIngestResourceRule {
+    /** Match when the captured `event_type` (see `event_type_header`) is one of these. */
+    event_type?: string[];
+    /** Match only when this dot-path resolves to a defined, non-null value (e.g. `issue.pull_request`). */
+    when_path_exists?: string;
+    /** Match only when this dot-path is undefined/null. */
+    when_path_absent?: string;
+    /** `resource_type` to set when this rule matches. */
+    resource_type?: string;
+    /** `resource_id` from a single dot-path. */
+    resource_id_path?: string;
+    /**
+     * ...or a composed `resource_id` from a `{{dot.path}}` template against the body, e.g.
+     * `{{repository.full_name}}#{{pull_request.number}}`. Takes precedence over `resource_id_path`.
+     */
+    resource_id_template?: string;
+}
+
+/**
  * Declarative mapping from a raw third-party webhook body to platform event fields, for senders that
  * cannot shape their payload (GitHub, Slack, DocuSign, Salesforce, ...). Each `*_path` is a dot-path
  * into the JSON body (array indices supported, e.g. `commits.0.id`). Extracted values override the
@@ -593,6 +618,19 @@ export interface EventIngestTransform {
     resource_type_path?: string;
     /** Dot-path to the value used as `event.resource_id`. */
     resource_id_path?: string;
+    /**
+     * Request **header** carrying the event family (e.g. GitHub's `x-github-event`), captured into
+     * `event.details.event_type`. Lets subscriptions and `resource_rules` discriminate event shapes when
+     * one channel receives heterogeneous payloads whose `action` alone is ambiguous (e.g. `created` for
+     * both an issue comment and a PR review comment).
+     */
+    event_type_header?: string;
+    /**
+     * Ordered conditional rules for `resource_type` + `resource_id` (first match wins). Used when a single
+     * `resource_id_path` can't serve every payload shape. Falls back to `resource_type_path` /
+     * `resource_id_path` / channel defaults when no rule matches.
+     */
+    resource_rules?: EventIngestResourceRule[];
     /** Dot-path to a deduplication key (same semantics as `idempotency_key`). */
     idempotency_key_path?: string;
     /**
