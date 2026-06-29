@@ -20,6 +20,11 @@
     ],
     "author": "stefanescu.bogdan@gmail.com",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "libraries/koa-stack/router"
+    },
     "dependencies": {
         "koa": "^3.2.1",
         "koa-compose": "^4.1.0",
