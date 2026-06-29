@@ -46,6 +46,7 @@ export interface PromptTemplateRef {
     version: number;
     status: PromptStatus;
     content_type?: TemplateType;
+    tags?: string[];
     created_at: Date;
     updated_at: Date;
 }

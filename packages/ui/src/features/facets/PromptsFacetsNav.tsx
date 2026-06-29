@@ -30,7 +30,6 @@ interface PromptsFacetsNavProps {
 
 // Hook to create filter groups for prompts
 export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']): FilterGroup[] {
-    void facets;
     const customFilterGroups: FilterGroup[] = [];
 
     // Add name filter as text type
@@ -56,6 +55,19 @@ export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']):
         };
         customFilterGroups.push(rolesFilterGroup);
     }
+
+    // Add tags filter as stringList type (suggestions from facets, allows custom input)
+    const tagsFilterGroup = {
+        name: 'tags',
+        placeholder: 'Tags',
+        type: 'stringList' as const,
+        multiple: true,
+        options: (facets.tags ?? []).map((facet) => ({
+            label: facet._id,
+            value: facet._id,
+        })),
+    };
+    customFilterGroups.push(tagsFilterGroup);
 
     return customFilterGroups;
 }
