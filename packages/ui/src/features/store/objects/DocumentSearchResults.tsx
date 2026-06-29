@@ -414,7 +414,7 @@ function Toolsbar(props: ToolsbarProps) {
     } = props;
 
     return (
-        <div className="sticky top-0 z-10 bg-background py-2 flex justify-between items-center">
+        <div className="sticky top-0 z-10 bg-background py-2 flex justify-between items-end">
             {allowFilter ? (
                 <FilterProvider filterGroups={filterGroups} filters={filters} setFilters={handleFilterChange}>
                     <div>
