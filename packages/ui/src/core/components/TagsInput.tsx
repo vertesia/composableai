@@ -105,6 +105,43 @@ function TagsInputContent({
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+
+        const isInsideTagsInput = (target: EventTarget | null) => {
+            return (
+                target instanceof Node &&
+                (triggerRef.current?.contains(target) === true || dropdownRef.current?.contains(target) === true)
+            );
+        };
+        const closeOnOutsidePointer = (event: PointerEvent) => {
+            if (!isInsideTagsInput(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        const closeOnOutsideFocus = (event: FocusEvent) => {
+            if (!isInsideTagsInput(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        const closeOnWindowBlur = () => {
+            setIsOpen(false);
+        };
+
+        document.addEventListener('pointerdown', closeOnOutsidePointer, true);
+        document.addEventListener('focusin', closeOnOutsideFocus, true);
+        window.addEventListener('blur', closeOnWindowBlur);
+        document.addEventListener('visibilitychange', closeOnWindowBlur);
+        return () => {
+            document.removeEventListener('pointerdown', closeOnOutsidePointer, true);
+            document.removeEventListener('focusin', closeOnOutsideFocus, true);
+            window.removeEventListener('blur', closeOnWindowBlur);
+            document.removeEventListener('visibilitychange', closeOnWindowBlur);
+        };
+    }, [isOpen, setIsOpen]);
+
     const handleSelect = (option: string) => {
         onChange([...value, option]);
         setSearchTerm('');
