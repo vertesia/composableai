@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/packages",
-    "version": "1.4.0-dev",
+    "version": "1.4.0-dev.20260629.130134Z",
     "license": "Apache-2.0",
     "private": true,
     "type": "module",
