@@ -2,11 +2,15 @@
 set -e
 
 # Script to publish all composableai packages to NPM
-# Usage: publish-all-packages.sh --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]]
+# Usage: publish-all-packages.sh --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]] [--scope <vertesia|koa-stack>]
 #   --ref: Git reference (main for dev builds, preview for releases)
 #   --release-type: Release type (release, snapshot). Release creates stable versions, snapshot creates dev versions.
 #   --bump-type: Bump type (minor, patch, keep). How to change the version.
 #   --dry-run: Optional flag for dry run mode (value can be true, false, or omitted which means true)
+#   --scope: Optional publish scope (default: vertesia).
+#     - vertesia:  @vertesia/* packages (packages/** + libraries/jst), versioned off the root package.json.
+#     - koa-stack: @koa-stack/* packages (libraries/koa-stack/*), versioned independently off libraries/koa-stack/router.
+#     Both scopes share this script but have a different release cadence and version line.
 
 # =============================================================================
 # Functions
@@ -17,14 +21,36 @@ workspace_package_dirs() {
   repo_root="$(git rev-parse --show-toplevel)"
 
   # Use pnpm workspace filtering so pnpm-workspace.yaml exclusions are authoritative.
-  # Published scope: all packages/* + libraries/jst. Libraries/koa-stack/* are
-  # published by a separate workflow (different release cadence).
-  pnpm -r --filter "./packages/**" --filter "./libraries/jst" exec pwd | while IFS= read -r pkg_dir; do
-    case "$pkg_dir" in
-      "${repo_root}"/packages/*|"${repo_root}"/libraries/jst)
-        [ -f "${pkg_dir}/package.json" ] && printf '%s\n' "$pkg_dir"
+  # The filter and the allowed-path guard are scope-specific (see configure_scope):
+  #   - vertesia:  packages/* + libraries/jst
+  #   - koa-stack: libraries/koa-stack/* (independent release cadence)
+  pnpm -r "${PKG_FILTERS[@]}" exec pwd | while IFS= read -r pkg_dir; do
+    [ -f "${pkg_dir}/package.json" ] || continue
+
+    # Belt-and-suspenders: only keep dirs under the scope's expected subtree, so a
+    # stray workspace match can never be published under the wrong release line.
+    case "$SCOPE" in
+      vertesia)
+        case "$pkg_dir" in
+          "${repo_root}"/packages/*|"${repo_root}"/libraries/jst) ;;
+          *) continue ;;
+        esac
+        ;;
+      koa-stack)
+        case "$pkg_dir" in
+          "${repo_root}"/libraries/koa-stack/*) ;;
+          *) continue ;;
+        esac
         ;;
     esac
+
+    # Never publish private packages (e.g. @koa-stack/tests). `npm pkg get private`
+    # prints `{}` when the field is absent, so only an explicit `true` is skipped.
+    if [ "$(cd "$pkg_dir" && npm pkg get private | tr -d '"')" = "true" ]; then
+      continue
+    fi
+
+    printf '%s\n' "$pkg_dir"
   done
 }
 
@@ -38,8 +64,9 @@ update_package_versions() {
     npm_tag="latest"
   fi
 
-  # Get current version and strip any existing -dev* suffix to get base version
-  current_version=$(npm pkg get version | tr -d '"')
+  # Get current version (from the scope's version source) and strip any existing
+  # -dev* suffix to get the base version.
+  current_version=$( (cd "$VERSION_SOURCE_DIR" && npm pkg get version) | tr -d '"')
   base_version=$(echo "$current_version" | sed 's/-dev.*//')
 
   # Apply bump if needed (for both snapshot and release)
@@ -67,11 +94,14 @@ update_package_versions() {
     echo "Updating to release version ${new_version}"
   fi
 
-  # Update root package.json
-  npm version "${new_version}" --no-git-tag-version --workspaces=false
+  # Update root package.json (only for the vertesia scope — the root version is
+  # @vertesia's source of truth; koa-stack versions live in their own packages).
+  if [ "$UPDATE_ROOT_VERSION" = "true" ]; then
+    npm version "${new_version}" --no-git-tag-version --workspaces=false
+  fi
 
-  # Update all workspace packages (excluding llumiverse and libraries/koa-stack/*)
-  pnpm -r --filter "./packages/**" --filter "./libraries/jst" exec npm version "${new_version}" --no-git-tag-version
+  # Update every package in the scope's publish set.
+  pnpm -r "${PKG_FILTERS[@]}" exec npm version "${new_version}" --no-git-tag-version
 }
 
 publish_packages() {
@@ -89,7 +119,7 @@ publish_packages() {
       exit 1
     fi
 
-    echo "Publishing @vertesia/${pkg_name}@${pkg_version} with tag ${npm_tag}"
+    echo "Publishing ${NPM_SCOPE}/${pkg_name}@${pkg_version} with tag ${npm_tag}"
 
     # Publish
     if [ -n "$DRY_RUN_FLAG" ]; then
@@ -108,10 +138,10 @@ write_package_summary_rows() {
   while IFS= read -r pkg_dir; do
     pkg_name=$(basename "$pkg_dir")
     if [ "$DRY_RUN" = "true" ]; then
-      echo "| \`@vertesia/${pkg_name}\` | ${version} |" >> "$GITHUB_STEP_SUMMARY"
+      echo "| \`${NPM_SCOPE}/${pkg_name}\` | ${version} |" >> "$GITHUB_STEP_SUMMARY"
     else
-      pkg_url="https://www.npmjs.com/package/@vertesia/${pkg_name}?activeTab=versions"
-      echo "| \`@vertesia/${pkg_name}\` | [${version}](${pkg_url}) |" >> "$GITHUB_STEP_SUMMARY"
+      pkg_url="https://www.npmjs.com/package/${NPM_SCOPE}/${pkg_name}?activeTab=versions"
+      echo "| \`${NPM_SCOPE}/${pkg_name}\` | [${version}](${pkg_url}) |" >> "$GITHUB_STEP_SUMMARY"
     fi
   done < <(workspace_package_dirs)
 }
@@ -155,27 +185,36 @@ update_template_versions() {
 commit_and_push() {
   echo "=== Committing version changes ==="
 
-  # Get the version from root package.json
-  version=$(npm pkg get version | tr -d '"')
+  # Get the version from the scope's version source.
+  version=$( (cd "$VERSION_SOURCE_DIR" && npm pkg get version) | tr -d '"')
 
   git config user.email "github-actions[bot]@users.noreply.github.com"
   git config user.name "github-actions[bot]"
   git add .
 
+  # Tag the scope in non-default commit messages so koa-stack and @vertesia
+  # version bumps stay distinguishable in the shared branch history.
+  local scope_label=""
+  [ "$SCOPE" != "vertesia" ] && scope_label="${NPM_SCOPE} "
+
   if [ "$RELEASE_TYPE" = "release" ]; then
-    git commit -m "chore: release ${version}"
+    git commit -m "chore: release ${scope_label}${version}"
   else
-    git commit -m "chore: snapshot ${version}"
+    git commit -m "chore: snapshot ${scope_label}${version}"
   fi
 
   git push origin "$REF"
 
-  # Create git tag for template stability on releases
+  # Create git tag(s) for release stability. vertesia publishes both the legacy
+  # `v${version}` (for backward compatibility) and the namespaced
+  # `vertesia/v${version}`; koa-stack uses its own `koa-stack/v${version}` line.
   if [ "$RELEASE_TYPE" = "release" ]; then
-    tag_name="v${version}"
-    git tag "$tag_name"
-    git push origin "$tag_name"
-    echo "Created and pushed tag: ${tag_name}"
+    for tag_prefix in "${TAG_PREFIXES[@]}"; do
+      tag_name="${tag_prefix}${version}"
+      git tag "$tag_name"
+      git push origin "$tag_name"
+      echo "Created and pushed tag: ${tag_name}"
+    done
   fi
 
   echo "Version changes pushed to ${REF}"
@@ -190,8 +229,8 @@ write_github_summary() {
 
   echo "=== Writing GitHub Summary ==="
 
-  # Get the version from root package.json
-  version=$(npm pkg get version | tr -d '"')
+  # Get the version from the scope's version source.
+  version=$( (cd "$VERSION_SOURCE_DIR" && npm pkg get version) | tr -d '"')
 
   # Determine title based on dry run mode
   if [ "$DRY_RUN" = "true" ]; then
@@ -228,6 +267,7 @@ REF=""
 DRY_RUN=false
 RELEASE_TYPE=""
 BUMP_TYPE=""
+SCOPE="vertesia"
 
 # Parse named arguments
 while [[ $# -gt 0 ]]; do
@@ -262,9 +302,13 @@ while [[ $# -gt 0 ]]; do
       BUMP_TYPE="$2"
       shift 2
       ;;
+    --scope)
+      SCOPE="$2"
+      shift 2
+      ;;
     *)
       echo "Error: Unknown argument '$1'"
-      echo "Usage: $0 --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]]"
+      echo "Usage: $0 --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]] [--scope <vertesia|koa-stack>]"
       exit 1
       ;;
   esac
@@ -301,6 +345,46 @@ if [[ ! "$BUMP_TYPE" =~ ^(minor|patch|keep)$ ]]; then
   exit 1
 fi
 
+# Validate scope
+if [[ ! "$SCOPE" =~ ^(vertesia|koa-stack)$ ]]; then
+  echo "Error: Invalid scope '$SCOPE'. Must be 'vertesia' or 'koa-stack'."
+  exit 1
+fi
+
+# =============================================================================
+# Scope profile
+# =============================================================================
+# Each scope publishes a disjoint set of packages on its own version line. These
+# variables drive every scope-specific decision in the functions above.
+#   PKG_FILTERS         pnpm -r filters selecting the publish set
+#   NPM_SCOPE           npm scope used in logs / GitHub summary links
+#   VERSION_SOURCE_DIR  dir whose package.json holds the canonical base version
+#   UPDATE_ROOT_VERSION whether to bump the repo-root package.json
+#   UPDATE_TEMPLATES    whether to refresh create-plugin templateVersions
+#   TAG_PREFIXES        git tag prefix(es) created on releases (one tag per prefix)
+case "$SCOPE" in
+  vertesia)
+    PKG_FILTERS=(--filter "./packages/**" --filter "./libraries/jst")
+    NPM_SCOPE="@vertesia"
+    VERSION_SOURCE_DIR="."
+    UPDATE_ROOT_VERSION=true
+    UPDATE_TEMPLATES=true
+    # Keep the legacy `v${version}` tag (create-plugin's template resolver and
+    # other scripts rely on it) and add the namespaced `vertesia/v${version}`.
+    TAG_PREFIXES=("v" "vertesia/v")
+    ;;
+  koa-stack)
+    PKG_FILTERS=(--filter "./libraries/koa-stack/*")
+    NPM_SCOPE="@koa-stack"
+    VERSION_SOURCE_DIR="libraries/koa-stack/router"
+    UPDATE_ROOT_VERSION=false
+    UPDATE_TEMPLATES=false
+    TAG_PREFIXES=("koa-stack/v")
+    ;;
+esac
+
+echo "=== Publishing scope: ${SCOPE} (${NPM_SCOPE}/*) ==="
+
 # Validate that releases can only be published from 'preview' or maintenance branches (skip in dry-run)
 if [ "$RELEASE_TYPE" = "release" ] && [ "$DRY_RUN" != "true" ] && [ "$REF" != "preview" ] && [[ ! "$REF" =~ ^[0-9]+\.[0-9]+$ ]]; then
   echo "Error: Release versions can only be published from 'preview' or maintenance branches."
@@ -322,7 +406,10 @@ fi
 
 update_package_versions
 
-update_template_versions
+# create-plugin templates embed @vertesia versions only; koa-stack has no templates.
+if [ "$UPDATE_TEMPLATES" = "true" ]; then
+  update_template_versions
+fi
 
 echo "=== Building all packages ==="
 pnpm build

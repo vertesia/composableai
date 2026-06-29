@@ -26,10 +26,12 @@ on:
         type: boolean
         default: true
 
-# Serialize publish runs so two concurrent dispatches don't race on the
-# shared npm registry or push competing version bumps.
+# Serialize publish runs so two concurrent dispatches don't race on the shared
+# npm registry or push competing version bumps. The group is shared with
+# publish-koa.yaml (same string) because both workflows commit and push version
+# bumps to the same ref — serializing them keeps git pushes fast-forward.
 concurrency:
-  group: publish-npm-${{ github.ref }}
+  group: publish-packages-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -81,6 +83,7 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
           ./.github/bin/publish-all-packages.sh \
+              --scope vertesia \
               --ref "${GITHUB_REF_NAME}" \
               --release-type "${RELEASE_TYPE}" \
               --bump-type "${BUMP_TYPE}" \
