@@ -6,8 +6,11 @@ The file `publish-all-packages.sh` contains logic for publishing vertesia packag
 
 The `publish-all-packages.sh` script handles publishing packages with appropriate versioning based on the git branch:
 
-- **`@vertesia/*` packages**: Publish on both `main` and `preview` branches
+- **`@vertesia/*` packages** (`--scope vertesia`, the default): Publish on both `main` and `preview` branches. Versioned off the repository-root `package.json`. Driven by `publish-npm.yaml`.
+- **`@koa-stack/*` packages** (`--scope koa-stack`): the koa-stack libraries in `libraries/koa-stack/*`. They are published on an independent version line (versioned off `libraries/koa-stack/router/package.json`, not the root) by the separate `publish-koa.yaml` workflow. The private `@koa-stack/tests` package is never published.
 - **`@llumiverse/*` packages**: out of scope. They are handled by another GitHub Actions workflow, defined in their GitHub repository "vertesia/llumiverse".
+
+Both scopes share this single script: the `--scope` flag selects which package set, version source, npm scope label, git-tag prefix, and template-update behavior to use. `@vertesia`-only steps (root `package.json` bump, `create-plugin` template version sync) are skipped for `koa-stack`.
 
 ## Usage
 
@@ -30,6 +33,7 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
   - `patch` increases the patch version in the package version
   - `keep` keeps using the current base version.
 - `--dry-run` (optional): Flag to enable dry run mode. The value can be `true`, `false` or no value (which means `true`). If not specified, it means that it is not a dry-run.
+- `--scope` (optional): The publish scope, `vertesia` (default) or `koa-stack`. Selects the package set and version line (see the Overview). Omit it for `@vertesia` publishing.
 
 ### Examples
 
@@ -213,16 +217,23 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 
 ## GitHub Actions Workflow
 
-The script is designed to be run from the `publish-npm.yaml` GitHub Actions workflow:
+The script is run from two GitHub Actions workflows that share the same inputs and concurrency group, differing only by `--scope`:
+
+- `publish-npm.yaml` → `--scope vertesia` (the `@vertesia/*` packages)
+- `publish-koa.yaml` → `--scope koa-stack` (the `@koa-stack/*` packages)
 
 ```yaml
+# publish-npm.yaml
 - name: Publish all packages
   run: |
     ./.github/bin/publish-all-packages.sh \
+        --scope vertesia \
         --ref "${{ inputs.ref }}" \
         --release-type "${{ inputs.release_type }}" \
         --bump-type "${{ inputs.bump_type }}" \
         --dry-run "${{ inputs.dry_run }}"
+
+# publish-koa.yaml — identical, with --scope koa-stack
 ```
 
 ### Workflow Inputs
