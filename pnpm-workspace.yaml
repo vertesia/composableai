@@ -1,9 +1,6 @@
 packages:
   - llumiverse/common
   - packages/*
-  - "!packages/memory"
-  - "!packages/memory-cli"
-  - "!packages/memory-commands"
   - libraries/*
   - libraries/koa-stack/*
   - templates/*
