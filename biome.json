@@ -113,7 +113,6 @@
         {
             "includes": [
                 "packages/fusion-ux/src/**/*.{js,jsx,ts,tsx}",
-                "packages/react/src/**/*.{js,jsx,ts,tsx}",
                 "packages/ui/src/**/*.{js,jsx,ts,tsx}",
                 "templates/plugin-template/src/**/*.{js,jsx,ts,tsx}",
                 "templates/ui-plugin-template/src/**/*.{js,jsx,ts,tsx}"
