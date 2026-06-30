@@ -32,22 +32,54 @@ describe('getComposableToken', () => {
         vi.unstubAllGlobals();
     });
 
-    it('uses an STS-issued Vertesia token directly instead of exchanging it', async () => {
+    it('uses an authorization-bearing STS-issued Vertesia token directly instead of exchanging it', async () => {
         const token = makeJwt({
             iss: 'https://sts.dev1.vertesia.io',
             exp: Math.floor(Date.now() / 1000) + 3600,
             account: { id: 'account-id', name: 'Account' },
+            account_roles: [],
             project: { id: 'project-id', name: 'Project', account: 'account-id' },
+            project_roles: ['developer'],
         });
         const fetchMock = vi.fn();
         vi.stubGlobal('fetch', fetchMock);
 
         const { getComposableToken } = await importComposableAuth();
-        const result = await getComposableToken(undefined, undefined, token, false, true);
+        const result = await getComposableToken('account-id', 'project-id', token, false, true);
 
         expect(result.rawToken).toBe(token);
         expect(result.token.iss).toBe('https://sts.dev1.vertesia.io');
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('exchanges a bare STS-issued Vertesia token so roles can be hydrated', async () => {
+        const sourceToken = makeJwt({
+            iss: 'https://sts.dev1.vertesia.io',
+            exp: Math.floor(Date.now() / 1000) + 3600,
+            account: { id: 'account-id', name: 'Account' },
+            project: { id: 'project-id', name: 'Project', account: 'account-id' },
+        });
+        const exchangedToken = makeJwt({
+            iss: 'https://sts.dev1.vertesia.io',
+            exp: Math.floor(Date.now() / 1000) + 3600,
+            account: { id: 'account-id', name: 'Account' },
+            account_roles: [],
+            project: { id: 'project-id', name: 'Project', account: 'account-id' },
+            project_roles: ['admin'],
+        });
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({ token: exchangedToken }),
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        const { getComposableToken } = await importComposableAuth();
+        const result = await getComposableToken('account-id', 'project-id', sourceToken, false, true);
+
+        expect(result.rawToken).toBe(exchangedToken);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(fetchMock.mock.calls[0]?.[0]?.toString()).toBe('https://sts.dev1.vertesia.io/token/issue');
     });
 
     it('still exchanges a non-STS source token', async () => {

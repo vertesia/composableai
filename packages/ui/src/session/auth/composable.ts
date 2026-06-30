@@ -35,6 +35,26 @@ function isVertesiaIssuedToken(token: string | undefined): token is string {
     }
 }
 
+function canUseVertesiaTokenDirectly(token: string, accountId?: string, projectId?: string): boolean {
+    const decoded = decodeToken(token);
+    const hasAuthorizationClaims = Boolean(
+        decoded.permissions?.length ||
+            decoded.account_roles?.length ||
+            decoded.project_roles?.length ||
+            decoded.apps?.length,
+    );
+    if (!hasAuthorizationClaims) {
+        return false;
+    }
+    if (accountId && decoded.account?.id !== accountId) {
+        return false;
+    }
+    if (projectId && decoded.project?.id !== projectId) {
+        return false;
+    }
+    return true;
+}
+
 export async function fetchComposableToken(
     getIdToken: () => Promise<string | null | undefined>,
     accountId?: string,
@@ -320,7 +340,11 @@ export async function getComposableToken(
         return { rawToken: AUTH_TOKEN_RAW, token: AUTH_TOKEN, error: false };
     }
 
-    if (!forceRefresh && isVertesiaIssuedToken(suppliedToken)) {
+    if (
+        !forceRefresh &&
+        isVertesiaIssuedToken(suppliedToken) &&
+        canUseVertesiaTokenDirectly(suppliedToken, selectedAccount, selectedProject)
+    ) {
         AUTH_TOKEN_RAW = suppliedToken;
         AUTH_TOKEN = decodeToken(AUTH_TOKEN_RAW);
         if (!AUTH_TOKEN.exp) {
