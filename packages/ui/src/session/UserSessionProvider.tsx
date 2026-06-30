@@ -9,6 +9,12 @@ import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, User
 
 const CENTRAL_AUTH_REDIRECT = 'https://internal-auth.vertesia.app/';
 
+function clearAuthHash() {
+    const url = new URL(window.location.href);
+    url.hash = '';
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}`);
+}
+
 interface UserSessionProviderProps {
     children: ReactNode | ReactNode[];
     loadOnboardingStatus?: boolean;
@@ -98,8 +104,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                 .then((res) => {
                     session.login(res.rawToken, { loadOnboardingStatus }).then(() => {
                         setSession(session.clone());
-                        //cleanup the hash
-                        window.location.hash = '';
+                        clearAuthHash();
                     });
                 })
                 .catch((err) => {
@@ -127,7 +132,7 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         );
                         session.logout();
                         setSession(session.clone());
-                        window.location.hash = '';
+                        clearAuthHash();
                         return;
                     }
 
