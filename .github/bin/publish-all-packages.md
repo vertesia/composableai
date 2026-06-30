@@ -6,7 +6,12 @@ The file `publish-all-packages.sh` contains logic for publishing vertesia packag
 
 The `publish-all-packages.sh` script handles publishing packages with appropriate versioning based on the git branch:
 
+<<<<<<< HEAD
 - **`@vertesia/*` packages**: Publish on both `main` and `preview` branches
+=======
+- **`@vertesia/*` packages** (`--scope vertesia`, the default): Publish dev snapshots from `main` and releases from `release/X.Y` branches (e.g. `release/1.4`). Versioned off the repository-root `package.json`. Driven by `publish-npm.yaml`.
+- **`@koa-stack/*` packages** (`--scope koa-stack`): the koa-stack libraries in `libraries/koa-stack/*`. They are published on an independent version line (versioned off `libraries/koa-stack/router/package.json`, not the root) by the separate `publish-koa.yaml` workflow. The private `@koa-stack/tests` package is never published.
+>>>>>>> 5392ebe7 (fix: allow npm release from release/* branches (#1615))
 - **`@llumiverse/*` packages**: out of scope. They are handled by another GitHub Actions workflow, defined in their GitHub repository "vertesia/llumiverse".
 
 ## Usage
@@ -21,9 +26,9 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 
 ### Parameters
 
-- `--ref` (required): Git reference - `main` for dev builds, `preview` for releases. Publishing releases outside of `preview` branch is forbidden.
+- `--ref` (required): Git reference - `main` for dev builds, a `release/X.Y` branch (e.g. `release/1.4`) for releases. Publishing releases outside of a `release/*` branch is forbidden.
 - `--release-type` (required): The type of the version, either "release" or "snapshot". A "release" means this is a stable version. A "snapshot" means this is a development version.
-  - "release" creates a stable version respecting semantic versioning, such as `1.0.0`. Release can only be performed from the `preview` branch.
+  - "release" creates a stable version respecting semantic versioning, such as `1.0.0`. Release can only be performed from a `release/*` branch (e.g. `release/1.4`).
   - "snapshot" creates a new development version in format `{base}-dev.{date}.{time}`, such as `1.0.0-dev.20260128.144200Z`. Note that the time part contains 'Z', which means that the time is in UTC; it also allows NPM to use leading zeros, as it turns the segment into alphanumeric.
 - `--bump-type` (required): The strategy for changing the version (`minor`, `patch`, `keep`)
   - `minor` increases the minor version in the package version
@@ -48,19 +53,19 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
     --release-type snapshot \
     --bump-type keep
 
-# Publish release with 'patch' bump from preview
+# Publish release with 'patch' bump from a release branch
 # (ex: 0.24.0-dev.20260203.164053Z -> 0.24.1)
 # (ex: 0.24.0 -> 0.24.1)
 ./publish-all-packages.sh \
-    --ref preview \
+    --ref release/1.4 \
     --release-type release \
     --bump-type patch
 
-# Publish release with minor bump from preview
+# Publish release with minor bump from a release branch
 # (ex: 0.24.0-dev.20260203.164053Z -> 0.25.0)
 # (ex: 0.24.0 -> 0.25.0)
 ./publish-all-packages.sh \
-    --ref preview \
+    --ref release/1.4 \
     --release-type release \
     --bump-type minor
 ```
@@ -131,14 +136,14 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 
 ### Scenario 2: Publishing official releases
 
-**Purpose**: Publish official releases from `preview`
+**Purpose**: Publish official releases from a `release/*` branch (e.g. `release/1.4`)
 
 **Steps**:
 1. Bumps root `package.json` version and all composableai package versions using semantic versioning
    - Bump type: specified by `bump-type` parameter (patch/minor/keep)
    - Verify that the release type is "release" and is not "snapshot".
    - Version format: standard semver (e.g., `1.2.0` → `1.2.1` for patch)
-2. **Commits and pushes** version changes back to the `preview` branch (only if dry-run is false)
+2. **Commits and pushes** version changes back to the release branch (only if dry-run is false)
 3. Publishes all composableai packages
    - NPM tag: `latest`
 
@@ -153,7 +158,7 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 # ==========
 # Example 1: we had a snapshot version
 # -----
-# params: ref=preview, release_type=release, bump_type=keep
+# params: ref=release/1.4, release_type=release, bump_type=keep
 # ==========
 
 # Before (package.json):
@@ -169,7 +174,7 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 # ==========
 # Example 2: we had a release version
 # -----
-# params: ref=preview, release_type=release, bump_type=patch
+# params: ref=release/1.4, release_type=release, bump_type=patch
 # ==========
 
 # Before (package.json):
@@ -199,10 +204,10 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 # Test publishing logic on main
 ./publish-all-packages.sh --ref main --dry-run --release-type snapshot --bump-type keep
 
-# Test publishing logic on preview
-./publish-all-packages.sh --ref preview --dry-run --release-type release --bump-type minor
-./publish-all-packages.sh --ref preview --dry-run --release-type release --bump-type patch
-./publish-all-packages.sh --ref preview --dry-run --release-type snapshot --bump-type keep
+# Test publishing logic on a release branch
+./publish-all-packages.sh --ref release/1.4 --dry-run --release-type release --bump-type minor
+./publish-all-packages.sh --ref release/1.4 --dry-run --release-type release --bump-type patch
+./publish-all-packages.sh --ref release/1.4 --dry-run --release-type snapshot --bump-type keep
 ```
 
 **Result**:
@@ -254,7 +259,7 @@ In dry run mode, the script:
 - Dry run enabled by default in GitHub Actions
 - All version updates happen before any publishing
 - Changes push to GitHub before publishing to prevent Git conflicts
-- Restrict publishing from the `preview` branch
+- Restrict publishing to `release/*` branches
 - Portable shell syntax (works on macOS and Linux)
 
 ### Requirements

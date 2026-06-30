@@ -2,8 +2,13 @@
 set -e
 
 # Script to publish all composableai packages to NPM
+<<<<<<< HEAD
 # Usage: publish-all-packages.sh --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]]
 #   --ref: Git reference (main for dev builds, preview for releases)
+=======
+# Usage: publish-all-packages.sh --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]] [--scope <vertesia|koa-stack>]
+#   --ref: Git reference (main for dev builds, release/X.Y for releases, e.g. release/1.4)
+>>>>>>> 5392ebe7 (fix: allow npm release from release/* branches (#1615))
 #   --release-type: Release type (release, snapshot). Release creates stable versions, snapshot creates dev versions.
 #   --bump-type: Bump type (minor, patch, keep). How to change the version.
 #   --dry-run: Optional flag for dry run mode (value can be true, false, or omitted which means true)
@@ -301,9 +306,56 @@ if [[ ! "$BUMP_TYPE" =~ ^(minor|patch|keep)$ ]]; then
   exit 1
 fi
 
+<<<<<<< HEAD
 # Validate that releases can only be published from 'preview' or maintenance branches (skip in dry-run)
 if [ "$RELEASE_TYPE" = "release" ] && [ "$DRY_RUN" != "true" ] && [ "$REF" != "preview" ] && [[ ! "$REF" =~ ^[0-9]+\.[0-9]+$ ]]; then
   echo "Error: Release versions can only be published from 'preview' or maintenance branches."
+=======
+# Validate scope
+if [[ ! "$SCOPE" =~ ^(vertesia|koa-stack)$ ]]; then
+  echo "Error: Invalid scope '$SCOPE'. Must be 'vertesia' or 'koa-stack'."
+  exit 1
+fi
+
+# =============================================================================
+# Scope profile
+# =============================================================================
+# Each scope publishes a disjoint set of packages on its own version line. These
+# variables drive every scope-specific decision in the functions above.
+#   PKG_FILTERS         pnpm -r filters selecting the publish set
+#   NPM_SCOPE           npm scope used in logs / GitHub summary links
+#   VERSION_SOURCE_DIR  dir whose package.json holds the canonical base version
+#   UPDATE_ROOT_VERSION whether to bump the repo-root package.json
+#   UPDATE_TEMPLATES    whether to refresh create-plugin templateVersions
+#   TAG_PREFIXES        git tag prefix(es) created on releases (one tag per prefix)
+case "$SCOPE" in
+  vertesia)
+    PKG_FILTERS=(--filter "./packages/**" --filter "./libraries/jst")
+    NPM_SCOPE="@vertesia"
+    VERSION_SOURCE_DIR="."
+    UPDATE_ROOT_VERSION=true
+    UPDATE_TEMPLATES=true
+    # Keep the legacy `v${version}` tag (create-plugin's template resolver and
+    # other scripts rely on it) and add the namespaced `vertesia/v${version}`.
+    TAG_PREFIXES=("v" "vertesia/v")
+    ;;
+  koa-stack)
+    PKG_FILTERS=(--filter "./libraries/koa-stack/*")
+    NPM_SCOPE="@koa-stack"
+    VERSION_SOURCE_DIR="libraries/koa-stack/router"
+    UPDATE_ROOT_VERSION=false
+    UPDATE_TEMPLATES=false
+    TAG_PREFIXES=("koa-stack/v")
+    ;;
+esac
+
+echo "=== Publishing scope: ${SCOPE} (${NPM_SCOPE}/*) ==="
+
+# Validate that releases can only be published from a release branch (release/X.Y, e.g. release/1.4)
+# or a legacy bare-numeric maintenance branch (skip in dry-run)
+if [ "$RELEASE_TYPE" = "release" ] && [ "$DRY_RUN" != "true" ] && [[ ! "$REF" =~ ^release/[0-9]+\.[0-9]+$ ]] && [[ ! "$REF" =~ ^[0-9]+\.[0-9]+$ ]]; then
+  echo "Error: Release versions can only be published from a 'release/X.Y' branch (e.g. release/1.4) or a maintenance branch."
+>>>>>>> 5392ebe7 (fix: allow npm release from release/* branches (#1615))
   echo "Current branch: $REF"
   exit 1
 fi
