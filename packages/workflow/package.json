@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/workflow",
-    "version": "1.4.0-dev.20260629.130134Z",
+    "version": "1.4.0",
     "type": "module",
     "description": "Vertesia workflow DSL",
     "main": "./lib/index.js",
