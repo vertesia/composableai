@@ -21,32 +21,38 @@ minimumReleaseAgeExclude:
   - "@llumiverse/*"
   # Additional excludes, due to CVEs etc.
   # Nothing for now
+catalog:
+  react: "19.2.7"
+  react-dom: "19.2.7"
+  "@types/node": "^24.13.2"
+  "@types/react": "19.2.17"
+  "@types/react-dom": "19.2.3"
+  vite: "8.0.16"
 overrides:
   # ============================
   # Special Overrides
   # ============================
   # We have these for more than simple CVE fixes, but may also do that. Or have complex requirements to track.
   # There must only be 1 react
-  react: "19.2.7"
-  react-dom: "19.2.7"
-  "@types/react": "19.2.17"
-  "@types/react-dom": "19.2.3"
+  react: "catalog:"
+  react-dom: "catalog:"
+  "@types/node": "catalog:"
+  "@types/react": "catalog:"
+  "@types/react-dom": "catalog:"
 
-  # TODO: review if these are special cases
-  "cross-spawn@<6.0.6": "^7.0.6"
-  is-generator-function: "1.1.2"
 
   # Safety net: if a transitive dep ever pulls in koa 2, force it to 3.
   # Packages directly declare koa@^3.2.0 — this guards against regressions.
   "koa@<3.2.1": "^3.2.1"
   "@types/koa@<3.0.3": "^3.0.3"
 
-  # Pin single vite, source is root package.json
-  vite: "$vite"
+  # Pin single vite
+  vite: "catalog:"
 
   # ============================
   # Standard CVE overrides
   # ============================
+  "@ungap/structured-clone@<=1.3.0": ^1.3.1 #CWE-502 and package deprecation, won't show as CVE.
   diff@>=6.0.0 <8.0.3: ^8.0.3
   dompurify@<=3.4.10: ^3.4.11
   protobufjs@<=7.6.2: ^7.6.3
