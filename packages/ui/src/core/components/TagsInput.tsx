@@ -278,7 +278,7 @@ function TagsInputContent({
                                 <span
                                     key={item}
                                     className={clsx(
-                                        'inline-flex items-center justify-between gap-2 px-2 py-1 text-sm bg-primary/10 text-primary rounded-md w-full transition-all',
+                                        'inline-flex items-center justify-between gap-2 px-2 py-1 text-sm bg-primary/20 text-foreground ring-1 ring-primary/30 rounded-md w-full transition-all',
                                         pendingDeleteIndex === index &&
                                             'ring-2 ring-red-300 shadow-[0_0_8px_rgba(252,165,165,0.5)]',
                                     )}
@@ -288,7 +288,7 @@ function TagsInputContent({
                                         type="button"
                                         onClick={(e) => handleRemove(item, e)}
                                         disabled={disabled}
-                                        className="hover:bg-primary/20 rounded-sm transition-colors flex-shrink-0"
+                                        className="hover:bg-primary/30 rounded-sm transition-colors flex-shrink-0"
                                     >
                                         <X className="h-3 w-3" />
                                     </button>
@@ -303,7 +303,7 @@ function TagsInputContent({
                             <span
                                 key={item}
                                 className={clsx(
-                                    'inline-flex items-center gap-1 px-2 py-1 text-sm bg-primary/10 text-primary rounded-md transition-all',
+                                    'inline-flex items-center gap-1 px-2 py-1 text-sm bg-primary/20 text-foreground ring-1 ring-primary/30 rounded-md transition-all',
                                     pendingDeleteIndex === index &&
                                         'ring-2 ring-red-300 shadow-[0_0_8px_rgba(252,165,165,0.5)]',
                                 )}
@@ -313,7 +313,7 @@ function TagsInputContent({
                                     type="button"
                                     onClick={(e) => handleRemove(item, e)}
                                     disabled={disabled}
-                                    className="hover:bg-primary/20 rounded-sm transition-colors"
+                                    className="hover:bg-primary/30 rounded-sm transition-colors"
                                 >
                                     <X className="h-3 w-3" />
                                 </button>
