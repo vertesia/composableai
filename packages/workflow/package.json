@@ -27,7 +27,7 @@
         "@temporalio/testing": "^1.18.1",
         "@temporalio/worker": "^1.18.1",
         "@types/jsonwebtoken": "^9.0.10",
-        "@types/node": "^24.13.2",
+        "@types/node": "catalog:",
         "@types/papaparse": "^5.5.2",
         "@types/tmp": "^0.2.6",
         "@vertesia/tsconfig": "workspace:*",
