@@ -1,4 +1,5 @@
 import assert from 'node:assert';
+import { KoaServer } from '@koa-stack/server';
 import request from 'supertest';
 import { describe, test } from 'vitest';
 
@@ -21,6 +22,47 @@ describe('Test body parsing', () => {
     test('ctx.payload works with null body', async () => {
         const res = await request(server).post('/api/null-body').set('Content-Type', 'application/json').expect(200);
         assert.equal(res.text, 'null body');
+    });
+});
+
+describe('Test server shutdown', () => {
+    test('stop waits for async onStop cleanup', async () => {
+        let releaseOnStop: (() => void) | undefined;
+        let resolveOnStopStarted: (() => void) | undefined;
+        const onStopStarted = new Promise<void>((resolve) => {
+            resolveOnStopStarted = resolve;
+        });
+        const onStopReleased = new Promise<void>((resolve) => {
+            releaseOnStop = resolve;
+        });
+        let stopped = false;
+
+        class TestServer extends KoaServer {
+            override async onStop() {
+                resolveOnStopStarted?.();
+                await onStopReleased;
+                stopped = true;
+            }
+        }
+
+        const testServer = await new TestServer().start(0);
+        const stopPromise = testServer.stop();
+        let stopSettled = false;
+        const observedStop = stopPromise.then(() => {
+            stopSettled = true;
+        });
+
+        await onStopStarted;
+        await Promise.resolve();
+        assert.equal(stopSettled, false);
+        assert.equal(stopped, false);
+
+        releaseOnStop?.();
+        await observedStop;
+
+        assert.equal(stopSettled, true);
+        assert.equal(stopped, true);
+        assert.equal(testServer.server, undefined);
     });
 });
 

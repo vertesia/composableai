@@ -90,18 +90,26 @@ export abstract class AbstractKoaServer<T extends AbstractKoaServer<T>> extends 
         });
     }
 
-    stop() {
-        return new Promise((resolve) => {
-            if (this.server) {
-                this.server.close(async () => {
-                    if (this.onStop) {
-                        await this.onStop();
-                    }
-                    this.server = undefined;
-                });
-                resolve(null);
-            }
+    async stop() {
+        const server = this.server;
+        if (!server) {
+            return;
+        }
+
+        await new Promise<void>((resolve, reject) => {
+            server.close((err?: Error) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve();
+            });
         });
+
+        if (this.onStop) {
+            await this.onStop();
+        }
+        this.server = undefined;
     }
 }
 
