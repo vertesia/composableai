@@ -3,8 +3,9 @@ import { registerAgentsCommand } from './agents/index.js';
 import { registerAppsCommand } from './apps/index.js';
 import { registerArtifactsCommand } from './artifacts/index.js';
 import { registerDataCommand } from './data/index.js';
-import { listEnvironments } from './envs/index.js';
+import { registerEnvsCommand } from './envs/index.js';
 import { registerEventsCommand } from './events/index.js';
+import { registerExportCommand } from './export/index.js';
 import { registerIamCommand } from './iam/index.js';
 import { listInteractions } from './interactions/index.js';
 import { registerObjectsCommand } from './objects/index.js';
@@ -105,10 +106,7 @@ authRoot
     .option('-p, --project <project>', 'Refresh the current profile token for the given project ID')
     .action((options: { project?: string }) => updateCurrentProfile(undefined, undefined, options));
 
-program
-    .command('envs [envId]')
-    .description('List the environments you have access to')
-    .action((envId: string | undefined, options: Record<string, unknown>) => listEnvironments(program, envId, options));
+registerEnvsCommand(program);
 program
     .command('interactions [interaction]')
     .description('List the interactions available in the current project')
@@ -178,6 +176,7 @@ registerAgentsCommand(program);
 registerArtifactsCommand(program);
 registerDataCommand(program);
 registerEventsCommand(program);
+registerExportCommand(program);
 registerIamCommand(program);
 
 const profilesRoot = program

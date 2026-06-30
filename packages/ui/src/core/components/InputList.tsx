@@ -3,7 +3,6 @@ import type React from 'react';
 import { useState } from 'react';
 
 import { Badge } from './shadcn/badge';
-import { Input } from './shadcn/input';
 import { VTooltip } from './shadcn/tooltip';
 
 interface InputListProps {
@@ -120,17 +119,16 @@ export function InputList({
                         </Badge>
                     </VTooltip>
                 ))}
-            <Input
-                clearable={false}
-                className="placeholder:text-muted px-1 flex-1 min-w-[120px]"
-                variant="unstyled"
+            <input
+                className="flex-1 min-w-[80px] m-0 p-0 px-1 border-0 bg-transparent text-sm placeholder:text-muted focus:outline-none focus:ring-0 disabled:cursor-not-allowed"
                 type="text"
                 value={text}
                 onBlur={onBlur}
                 onKeyDown={onKeyDown}
                 onPaste={onPaste}
-                onChange={setText}
+                onChange={(ev) => setText(ev.currentTarget.value)}
                 placeholder={!value || value.length === 0 ? placeholder : ''}
+                // biome-ignore lint/a11y/noAutofocus: opt-in via the autoFocus prop, controlled by the caller
                 autoFocus={autoFocus}
                 disabled={disabled}
             />
