@@ -6,12 +6,7 @@ The file `publish-all-packages.sh` contains logic for publishing vertesia packag
 
 The `publish-all-packages.sh` script handles publishing packages with appropriate versioning based on the git branch:
 
-<<<<<<< HEAD
-- **`@vertesia/*` packages**: Publish on both `main` and `preview` branches
-=======
-- **`@vertesia/*` packages** (`--scope vertesia`, the default): Publish dev snapshots from `main` and releases from `release/X.Y` branches (e.g. `release/1.4`). Versioned off the repository-root `package.json`. Driven by `publish-npm.yaml`.
-- **`@koa-stack/*` packages** (`--scope koa-stack`): the koa-stack libraries in `libraries/koa-stack/*`. They are published on an independent version line (versioned off `libraries/koa-stack/router/package.json`, not the root) by the separate `publish-koa.yaml` workflow. The private `@koa-stack/tests` package is never published.
->>>>>>> 5392ebe7 (fix: allow npm release from release/* branches (#1615))
+- **`@vertesia/*` packages**: Publish dev snapshots from `main` and releases from `release/X.Y` branches (e.g. `release/1.4`)
 - **`@llumiverse/*` packages**: out of scope. They are handled by another GitHub Actions workflow, defined in their GitHub repository "vertesia/llumiverse".
 
 ## Usage
