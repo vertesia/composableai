@@ -50,7 +50,7 @@
         "ms": "3.0.0-canary.202508261828",
         "node-web-stream-adapters": "^0.2.1",
         "p-limit": "^7.3.0",
-        "papaparse": "^5.5.3",
+        "papaparse": "^5.5.4",
         "seedrandom": "^3.0.5",
         "sharp": "^0.35.2",
         "tiktoken": "^1.0.22",
