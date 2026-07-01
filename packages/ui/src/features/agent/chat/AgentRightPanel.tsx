@@ -537,7 +537,7 @@ function OverflowTabsBar({ tabs, current, onTabChange, className }: OverflowTabs
         <div ref={containerRef} className={cn('relative', className)}>
             {/* Hidden measurement row: all tabs + More at natural width, kept separate
                 from the visible row so measuring can't feed back into the layout. */}
-            <div aria-hidden className="pointer-events-none invisible absolute left-0 top-0 flex w-max gap-1">
+            <div aria-hidden className="pointer-events-none invisible absolute start-0 top-0 flex w-max gap-1">
                 {tabs.map((tab, i) => (
                     <button
                         type="button"

@@ -7,6 +7,16 @@ import type {
     UpdateEventSubscriptionPayload,
 } from './platform-event.js';
 import { SystemRoles } from './project.js';
+import type { AgentRunStatus } from './store/index.js';
+
+/**
+ * Statuses an `agent_signal` target may list in `statuses` — the run statuses that can be **directly
+ * signalled**. Only a live (`running`, possibly idle) run has an active Temporal workflow that accepts a
+ * signal; `created` runs have no workflow bound yet, and terminal runs are handled separately by
+ * `on_terminal` (`restart` re-activates the newest terminal run, then signals). Restricting the set keeps
+ * config from silently trying to signal a closed workflow.
+ */
+const SIGNALABLE_AGENT_RUN_STATUS_VALUES: readonly AgentRunStatus[] = ['running'];
 
 export const DEFAULT_WEBHOOK_TIMEOUT_MS = 30_000;
 export const MAX_WEBHOOK_TIMEOUT_MS = 50_000;
@@ -199,9 +209,73 @@ function validateTarget(target: unknown, errors: string[]): void {
                 errors.push('process target requires "process_ref" or an inline "process_definition"');
             }
             break;
-        case 'agent':
-            // interaction_ref is optional (defaults to the general system agent); nothing required.
+        case 'agent': {
+            // One target with three behaviors selected by `on_match` (default `start`): start a run,
+            // signal an existing run, or ensure (signal-or-start). `signal`/`ensure` need `message_path`
+            // and use the gate/signal fields; `missing_thread` is only meaningful for `signal`.
+            const onMatch = t.on_match ?? 'start';
+            if (onMatch !== 'start' && onMatch !== 'signal' && onMatch !== 'ensure') {
+                errors.push('agent target.on_match must be "start", "signal", or "ensure"');
+            }
+            const needsMessage = onMatch === 'signal' || onMatch === 'ensure';
+            if (needsMessage && (typeof t.message_path !== 'string' || t.message_path.length === 0)) {
+                errors.push(`agent target.message_path is required when on_match is "${onMatch}"`);
+            }
+            // Only the UserInput signal is implemented (the dispatcher always sends a UserInput-shaped
+            // payload), so reject other names rather than silently mis-deliver.
+            if (t.signal_name !== undefined && t.signal_name !== 'UserInput') {
+                errors.push('agent target.signal_name must be "UserInput"');
+            }
+            // Optional dot-path / ref fields are read dynamically at runtime — reject non-strings early.
+            for (const field of [
+                'interaction_ref',
+                'message_path',
+                'client_message_id_path',
+                'skip_if_path_exists',
+                'author_path',
+            ]) {
+                const value = (t as unknown as Record<string, unknown>)[field];
+                if (value !== undefined && typeof value !== 'string') {
+                    errors.push(`agent target.${field} must be a string`);
+                }
+            }
+            if (t.metadata !== undefined && !isRecord(t.metadata)) {
+                errors.push('agent target.metadata must be an object');
+            }
+            if (t.statuses !== undefined) {
+                if (!isStringArray(t.statuses)) {
+                    errors.push('agent target.statuses must be an array of strings');
+                } else {
+                    const invalid = t.statuses.filter(
+                        (s) => !SIGNALABLE_AGENT_RUN_STATUS_VALUES.includes(s as AgentRunStatus),
+                    );
+                    if (invalid.length > 0) {
+                        errors.push(
+                            `agent target.statuses may only contain signalable statuses: ${invalid.join(', ')} ` +
+                                `not allowed. Allowed: ${SIGNALABLE_AGENT_RUN_STATUS_VALUES.join(', ')} ` +
+                                `(terminal runs are handled by on_terminal).`,
+                        );
+                    }
+                }
+            }
+            for (const field of ['ignore_author_patterns', 'require_command_prefixes', 'require_mentions']) {
+                const value = (t as unknown as Record<string, unknown>)[field];
+                if (value !== undefined && !isStringArray(value)) {
+                    errors.push(`agent target.${field} must be an array of strings`);
+                }
+            }
+            if (t.missing_thread !== undefined) {
+                if (onMatch !== 'signal') {
+                    errors.push('agent target.missing_thread is only valid when on_match is "signal"');
+                } else if (t.missing_thread !== 'retry' && t.missing_thread !== 'skip') {
+                    errors.push('agent target.missing_thread must be "retry" or "skip"');
+                }
+            }
+            if (t.on_terminal !== undefined && t.on_terminal !== 'skip' && t.on_terminal !== 'restart') {
+                errors.push('agent target.on_terminal must be "skip" or "restart"');
+            }
             break;
+        }
     }
 }
 
