@@ -31,15 +31,15 @@
     "dependencies": {
         "@vertesia/common": "workspace:*",
         "ajv": "^8.20.0",
-        "react": "19.2.7"
+        "react": "catalog:"
     },
     "devDependencies": {
         "@rollup/plugin-commonjs": "^29.0.3",
         "@rollup/plugin-node-resolve": "^16.0.3",
         "@rollup/plugin-replace": "^6.0.3",
         "@rollup/plugin-terser": "^1.0.0",
-        "@types/node": "^24.13.2",
-        "@types/react": "19.2.17",
+        "@types/node": "catalog:",
+        "@types/react": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
         "rollup": "^4.62.2",
         "typescript": "^6.0.3",
