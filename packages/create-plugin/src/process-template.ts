@@ -48,15 +48,6 @@ function resolveInternalVersion(
     return latest ? { version: latest, pinned: false } : null;
 }
 
-const DEFAULT_CATALOG_VERSIONS: Record<string, string> = {
-    react: '19.2.7',
-    'react-dom': '19.2.7',
-    '@types/node': '^24.13.2',
-    '@types/react': '19.2.17',
-    '@types/react-dom': '19.2.3',
-    vite: '8.0.16',
-};
-
 /**
  * Escape special regex characters
  */
@@ -211,27 +202,7 @@ export function adjustPackageJson(
             console.log(chalk.gray(`   ✓ Set packageManager to "${packageJson.packageManager}"`));
         }
 
-        // 2. Replace catalog: specs with concrete versions. Generated projects must install
-        // outside this monorepo, and npm does not understand pnpm catalog specs.
-        let catalogReplacements = 0;
-
-        ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'].forEach((depType) => {
-            if (packageJson[depType]) {
-                Object.keys(packageJson[depType]).forEach((pkgName) => {
-                    const version = DEFAULT_CATALOG_VERSIONS[pkgName];
-                    if (version && packageJson[depType][pkgName] === 'catalog:') {
-                        packageJson[depType][pkgName] = version;
-                        catalogReplacements++;
-                    }
-                });
-            }
-        });
-
-        if (catalogReplacements > 0) {
-            console.log(chalk.gray(`   ✓ Resolved ${catalogReplacements} catalog: dependencies to pinned versions`));
-        }
-
-        // 3. Replace workspace:* with pinned versions
+        // 2. Replace workspace:* with pinned versions
         const internalScopes = ['@vertesia/', '@llumiverse/', '@dglabs/'];
         const versionMap = isDev ? undefined : getTemplateVersions();
         let workspaceReplacements = 0;

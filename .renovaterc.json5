@@ -33,6 +33,15 @@
   ],
   "prConcurrentLimit": 40,
   "labels": ["dependencies"],
+  "npm": {
+    // Extend Renovate's default npm manager configuration to include .template files.
+    "fileMatch": [
+      "/(^|/)package\\.json$/",
+      "/(^|/)pnpm-workspace\\.yaml$/",
+      "/(^|/)pnpm-workspace\\.yaml\\.template$/",
+      "/(^|/)\\.yarnrc\\.yml$/"
+    ]
+  },
   // Security advisories bypass the release-age cooldown defined below so CVE fixes can
   // land immediately. See https://docs.renovatebot.com/configuration-options/#vulnerabilityalerts
   "vulnerabilityAlerts": {
