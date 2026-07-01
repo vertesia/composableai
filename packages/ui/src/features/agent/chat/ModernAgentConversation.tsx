@@ -1416,6 +1416,7 @@ function ModernAgentConversationInner({
     const workstreamFetchFailedRef = useRef(false);
     const dragCounterRef = useRef(0);
     const pendingPlaybackScrollRef = useRef(false);
+    const toolApprovalModeChangeVersionRef = useRef(0);
 
     useEffect(() => {
         setToolApprovalMode(initialResolvedToolApprovalMode);
@@ -2040,12 +2041,16 @@ function ModernAgentConversationInner({
     const [mcpDisabled, setMcpDisabled] = useState<string[] | undefined>(undefined);
     useEffect(() => {
         let cancelled = false;
+        const requestVersion = toolApprovalModeChangeVersionRef.current;
         client.agents
             .retrieve(agentRunId)
             .then((run) => {
                 if (!cancelled) {
                     setMcpDisabled(run.disabled_mcp_collections);
-                    if (run.tool_approval_mode !== undefined || run.interactive !== undefined) {
+                    if (
+                        toolApprovalModeChangeVersionRef.current === requestVersion &&
+                        (run.tool_approval_mode !== undefined || run.interactive !== undefined)
+                    ) {
                         setToolApprovalMode(normalizeAgentToolApprovalMode(run.tool_approval_mode, run.interactive));
                     }
                 }
@@ -2081,10 +2086,13 @@ function ModernAgentConversationInner({
     const handleToolApprovalModeChange = useCallback(
         (mode: AgentToolApprovalMode) => {
             const nextMode = normalizeAgentToolApprovalMode(mode, interactive);
+            const previousMode = toolApprovalMode;
+            toolApprovalModeChangeVersionRef.current += 1;
             setToolApprovalMode(nextMode);
             client.agents
                 .sendSignal(agentRunId, 'ToolApprovalModeChanged', { mode: nextMode })
                 .catch((err: unknown) => {
+                    setToolApprovalMode((currentMode) => (currentMode === nextMode ? previousMode : currentMode));
                     toast({
                         status: 'error',
                         title: t('agent.approvalMode.changeFailed'),
@@ -2093,7 +2101,7 @@ function ModernAgentConversationInner({
                     });
                 });
         },
-        [agentRunId, client, interactive, t, toast],
+        [agentRunId, client, interactive, t, toast, toolApprovalMode],
     );
 
     // Drag and drop handlers for full-panel file upload
