@@ -75,6 +75,238 @@ export interface Embedding {
 }
 
 /**
+ * Optional object context to include in content object export rows.
+ */
+export interface ExportContentObjectsIncludeOptions {
+    /**
+     * Include stored embeddings. Disabled by default for generic object exports.
+     */
+    embeddings?: boolean;
+    /**
+     * Include content source metadata. Enabled by default.
+     */
+    content?: boolean;
+    /**
+     * Include object lifecycle status. Enabled by default.
+     */
+    status?: boolean;
+    /**
+     * Include object properties. Enabled by default.
+     */
+    properties?: boolean;
+    /**
+     * Include technical object metadata. Disabled by default because metadata may be large.
+     */
+    metadata?: boolean;
+    /**
+     * Include object revision details. Enabled by default.
+     */
+    revision?: boolean;
+}
+
+/**
+ * Bounded filters supported by the bulk content object export API.
+ */
+export interface ExportContentObjectsFilter {
+    types?: string[];
+    created_from?: string;
+    created_to?: string;
+    updated_from?: string;
+    updated_to?: string;
+}
+
+/**
+ * Exported object identity and context for a single content object row.
+ */
+export interface ExportedContentObjectRecord {
+    id: string;
+    name: string;
+    location: string;
+    external_id?: string;
+    type?: {
+        ref_type?: 'stored' | 'incode' | 'untyped';
+        id?: string;
+        code?: string;
+        name?: string;
+    };
+    status?: ContentObjectStatus;
+    content?: {
+        source?: string;
+        type?: string;
+        name?: string;
+        etag?: string;
+    };
+    created_at: string;
+    updated_at: string;
+    revision?: RevisionInfo;
+    properties?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+    embeddings?: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
+}
+
+export interface StartContentObjectExportRequest {
+    /**
+     * Embedding types to export when include.embeddings is true. Defaults to all supported embedding types.
+     */
+    embedding_types?: SupportedEmbeddingTypes[];
+    /**
+     * Explicit export filters. This intentionally does not accept the search API's full Mongo/search DSL.
+     */
+    filter?: ExportContentObjectsFilter;
+    /**
+     * Include all revisions. Defaults to false, exporting only head revisions.
+     */
+    all_revisions?: boolean;
+    /**
+     * Optional object context selectors.
+     */
+    include?: ExportContentObjectsIncludeOptions;
+    /**
+     * Compress the export with gzip. Defaults to true.
+     */
+    compression?: boolean;
+}
+
+export interface StartContentObjectExportResponse {
+    workflow_id: string;
+    run_id: string;
+    export_id: string;
+}
+
+export interface ZenoBulkContentObjectExportRequest extends Omit<StartContentObjectExportRequest, 'compression'> {
+    tenant_id: string;
+    project_id: string;
+    export_id: string;
+    output_path: string;
+    filename: string;
+    manifest_path: string;
+    manifest_filename: string;
+    compression: boolean;
+}
+
+export interface ZenoBulkContentObjectExportShardRange {
+    min_id?: string;
+    max_id?: string;
+}
+
+export interface ZenoBulkContentObjectExportPlanRequest extends ZenoBulkContentObjectExportRequest {
+    target_shard_records?: number;
+    max_shards?: number;
+}
+
+export interface ZenoBulkContentObjectExportPlanResponse {
+    shards: ZenoBulkContentObjectExportShardRange[];
+}
+
+export interface ZenoBulkContentObjectExportShardRequest extends ZenoBulkContentObjectExportRequest {
+    shard_index: number;
+    shard_count: number;
+    shard: ZenoBulkContentObjectExportShardRange;
+}
+
+export interface ZenoBulkContentObjectExportSplitShardRequest extends ZenoBulkContentObjectExportRequest {
+    shard: ZenoBulkContentObjectExportShardRange;
+    min_split_records?: number;
+}
+
+export interface ZenoBulkContentObjectExportSplitShardResponse {
+    shards: ZenoBulkContentObjectExportShardRange[];
+    splittable: boolean;
+    records: number;
+}
+
+export interface ZenoBulkContentObjectExportShardResult {
+    status: 'completed';
+    shard_index: number;
+    shard_count: number;
+    path: string;
+    filename: string;
+    content_type: string;
+    records: number;
+    bytes: number;
+    started_at: string;
+    completed_at: string;
+    duration_ms: number;
+}
+
+export interface ZenoBulkContentObjectExportComposeRequest extends ZenoBulkContentObjectExportRequest {
+    parts: string[];
+    records?: number;
+    /**
+     * Export workflow start timestamp. Used to report end-to-end duration after final compose.
+     */
+    started_at?: string;
+}
+
+export interface ContentObjectExportResult {
+    status: 'completed';
+    path: string;
+    filename: string;
+    content_type: string;
+    manifest_path?: string;
+    manifest_filename?: string;
+    manifest_content_type?: string;
+    manifest_bytes?: number;
+    records: number;
+    bytes: number;
+    started_at: string;
+    completed_at: string;
+    duration_ms: number;
+}
+
+export interface ContentObjectExportProgress {
+    status: 'queued' | 'planning' | 'exporting' | 'composing' | 'completed' | 'failed';
+    records: number;
+    bytes: number;
+    path?: string;
+    filename?: string;
+    completed_shards?: number;
+    total_shards?: number;
+    started_at?: string;
+    completed_at?: string;
+    error?: string;
+}
+
+export interface ContentObjectExportStatusResponse {
+    workflow_id: string;
+    run_id: string;
+    status: 'queued' | 'running' | 'completed' | 'failed' | 'canceled' | 'terminated' | 'timed_out' | 'unknown';
+    done: boolean;
+    progress?: ContentObjectExportProgress;
+    result?: ContentObjectExportResult;
+    error?: string;
+}
+
+export interface ContentObjectExportArtifact {
+    export_id: string;
+    path: string;
+    filename: string;
+    content_type: string;
+    bytes: number;
+    created_at?: string;
+    files?: ContentObjectExportArtifactFile[];
+}
+
+export interface ContentObjectExportArtifactFile {
+    role: 'data' | 'manifest';
+    path: string;
+    filename: string;
+    content_type: string;
+    bytes: number;
+}
+
+export interface ListContentObjectExportsResponse {
+    items: ContentObjectExportArtifact[];
+    limit: number;
+}
+
+export interface DeleteContentObjectExportResponse {
+    success: boolean;
+    export_id: string;
+    path: string;
+}
+
+/**
  * Metadata about a single inherited property.
  */
 export interface InheritedPropertyMetadata {

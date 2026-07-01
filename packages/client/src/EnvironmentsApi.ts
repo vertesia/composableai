@@ -3,6 +3,7 @@ import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     EmbeddingsApiRequest,
     EmbeddingsApiResult,
+    EnableEnvironmentModelPayload,
     ExecutionEnvironment,
     ExecutionEnvironmentCreatePayload,
     ExecutionEnvironmentRef,
@@ -69,6 +70,16 @@ export default class EnvironmentsApi extends ApiTopic {
         return this.get(`/${id}/models`, {
             query: payload ? { ...payload } : undefined,
         });
+    }
+
+    enableModel(id: string, payload: EnableEnvironmentModelPayload): Promise<ExecutionEnvironment> {
+        return this.post(`/${id}/models/enabled`, {
+            payload,
+        });
+    }
+
+    disableModel(id: string, modelId: string): Promise<ExecutionEnvironment> {
+        return this.del(`/${id}/models/enabled/${encodeURIComponent(modelId)}`);
     }
 
     listTrainableModels(id: string): Promise<AIModel[]> {
