@@ -130,6 +130,11 @@ program
     .option('--frequency-penalty [frequency-penalty]', 'The frequency penalty value to use')
     .option('--stop-sequence [stop-sequence]', 'A comma separated list of sequences to stop the generation')
     .option(
+        '--result-schema <json>',
+        'Inline JSON schema override for this run. Pass null to explicitly disable the interaction schema.',
+    )
+    .option('--result-schema-file <file>', 'Read the JSON schema override for this run from a file.')
+    .option(
         '--config-mode [config-mode]',
         'The configuration mode to use.Possible values are: "run_and_interaction_config", "run_config_only", "interaction_config_only". Optional. If not specified, "run_and_interaction_config" is used.',
     )
