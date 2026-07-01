@@ -64,7 +64,7 @@ interface StartWorkflowModalProps {
 function StartWorkflowModal({ isOpen, onClose }: StartWorkflowModalProps) {
     const { t } = useUITranslation();
     return (
-        <Modal onClose={() => onClose(undefined)} isOpen={isOpen} className="">
+        <Modal onClose={() => onClose(undefined)} isOpen={isOpen} size="lg">
             <ModalTitle>{t('store.actions.startWorkflowByRule')}</ModalTitle>
             <StartWorkflowBody onClose={onClose} />
         </Modal>
@@ -75,8 +75,8 @@ function optionLayout(option: ObjectsActionSpec) {
     return {
         label: (
             <div>
-                <div>{option.name}</div>
-                <div className="text-sm text-muted">{option.description}</div>
+                <div className="text-start">{option.name}</div>
+                <div className="text-sm text-muted text-wrap text-start">{option.description}</div>
             </div>
         ),
         reverse: true,
@@ -102,11 +102,12 @@ function StartWorkflowBody({ onClose }: StartWorkflowBodyProps) {
     };
 
     return (
-        <div>
+        <>
             <ModalBody>
                 <div className="pb-2">{t('store.actions.chooseWorkflowRule')}</div>
                 <div className="max-h-[420px] overflow-y-scroll border-border border rounded-md">
                     <SelectList
+                        className="w-full"
                         options={context.wfRules}
                         optionLayout={optionLayout}
                         onChange={onSelect}
@@ -122,6 +123,6 @@ function StartWorkflowBody({ onClose }: StartWorkflowBodyProps) {
                     Start
                 </Button>
             </ModalFooter>
-        </div>
+        </>
     );
 }
