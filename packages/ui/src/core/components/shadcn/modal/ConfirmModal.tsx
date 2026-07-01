@@ -1,9 +1,10 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { TriangleAlert } from 'lucide-react';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { FormItem } from '../../FormItem';
 import { Button } from '../button';
+import { Checkbox } from '../checkbox';
 import { Input } from '../input';
 import { Modal, ModalFooter, ModalTitle } from './dialog';
 
@@ -29,6 +30,13 @@ interface ConfirmModalProps {
     confirmationLabel?: React.ReactNode;
     /** Placeholder for the confirmation input. Ignored when `confirmationValue` is not set. */
     confirmationPlaceholder?: string;
+    /**
+     * When true, the user must tick an acknowledgment checkbox before the Confirm button is enabled.
+     * Use for destructive, irreversible actions (e.g. bulk deletes).
+     */
+    requireAcknowledge?: boolean;
+    /** Label rendered next to the acknowledgment checkbox. Ignored when `requireAcknowledge` is not set. */
+    acknowledgeLabel?: React.ReactNode;
 }
 
 export function ConfirmModal({
@@ -41,21 +49,27 @@ export function ConfirmModal({
     confirmationValue,
     confirmationLabel,
     confirmationPlaceholder,
+    requireAcknowledge,
+    acknowledgeLabel,
 }: ConfirmModalProps) {
     const { t } = useUITranslation();
     const cancelButtonRef = useRef(null);
+    const acknowledgeId = useId();
     const [typedValue, setTypedValue] = useState('');
+    const [acknowledged, setAcknowledged] = useState(false);
 
-    // Clear the typed confirmation when the modal closes so a stale (possibly
+    // Clear the typed confirmation / acknowledgment when the modal closes so a stale (possibly
     // matching) value can never carry into the next time it is opened.
     useEffect(() => {
         if (!isOpen) {
             setTypedValue('');
+            setAcknowledged(false);
         }
     }, [isOpen]);
 
     const requiresConfirmation = !!confirmationValue;
-    const isConfirmed = !confirmationValue || typedValue.trim() === confirmationValue.trim();
+    const typedMatches = !confirmationValue || typedValue.trim() === confirmationValue.trim();
+    const isConfirmed = typedMatches && (!requireAcknowledge || acknowledged);
 
     const handleConfirm = () => {
         if (!isConfirmed || isLoading) return;
@@ -93,6 +107,18 @@ export function ConfirmModal({
                             }}
                         />
                     </FormItem>
+                </div>
+            )}
+            {requireAcknowledge && (
+                <div className="px-2 pb-2 text-start">
+                    <label htmlFor={acknowledgeId} className="flex items-start gap-2 cursor-pointer text-sm">
+                        <Checkbox
+                            id={acknowledgeId}
+                            checked={acknowledged}
+                            onCheckedChange={(value) => setAcknowledged(value === true)}
+                        />
+                        <span>{acknowledgeLabel ?? 'I understand and confirm to continue.'}</span>
+                    </label>
                 </div>
             )}
             <ModalFooter align="right">

@@ -265,6 +265,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
                     content={`Delete ${selectedCount} selected type${selectedCount === 1 ? '' : 's'}? This action cannot be undone.`}
                     onConfirm={handleBulkDelete}
                     onCancel={() => setShowDelete(false)}
+                    requireAcknowledge
                 />
             )}
         </div>
