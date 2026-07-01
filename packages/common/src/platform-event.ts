@@ -474,7 +474,7 @@ export interface ListEventDeliveriesPayload {
     status?: EventDeliveryIntentStatus[];
     outbox_status?: EventOutboxStatus[];
     /** Filter by outbox event category (e.g. external, content). */
-    event_category?: string[];
+    event_category?: EventCategory[];
     /** Filter by outbox action (e.g. opened, created). */
     action?: string[];
     /** Filter by outbox resource type (e.g. github_issue, content_object). */

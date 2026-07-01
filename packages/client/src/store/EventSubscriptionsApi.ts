@@ -13,7 +13,12 @@ function toQueryRecord(query?: ListEventSubscriptionsQuery): Record<string, stri
     const out: Record<string, string> = {};
     for (const [key, value] of Object.entries(query)) {
         if (value === undefined || value === null) continue;
-        out[key] = Array.isArray(value) ? value.join(',') : String(value);
+        if (Array.isArray(value)) {
+            if (value.length === 0) continue;
+            out[key] = value.join(',');
+        } else {
+            out[key] = String(value);
+        }
     }
     return Object.keys(out).length ? out : undefined;
 }
