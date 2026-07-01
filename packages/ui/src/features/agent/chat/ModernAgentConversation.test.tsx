@@ -474,12 +474,17 @@ describe('ModernAgentConversation send handling', () => {
     });
 
     it('reverts the local approval mode when the change signal fails', async () => {
+        let rejectSignal: (error: Error) => void = () => {};
         mocks.retrieve.mockResolvedValue({
             tool_approval_mode: 'ask',
             interactive: true,
             disabled_mcp_collections: undefined,
         });
-        mocks.sendSignal.mockRejectedValueOnce(new Error('Signal failed'));
+        mocks.sendSignal.mockReturnValueOnce(
+            new Promise((_resolve, reject) => {
+                rejectSignal = reject;
+            }),
+        );
         mockStreamState({
             messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
             isCompleted: false,
@@ -488,15 +493,25 @@ describe('ModernAgentConversation send handling', () => {
 
         renderConversation({ hideMessageInput: false, interactive: true, allowWorkflowControl: true });
 
-        expect(await screen.findByText('Ask for approval')).not.toBeNull();
-        fireEvent.pointerDown(screen.getByRole('button', { name: 'Agent approval mode' }), {
+        const selector = await screen.findByRole('button', { name: 'Agent approval mode' });
+        expect(selector.textContent).toContain('Ask for approval');
+        fireEvent.pointerDown(selector, {
             button: 0,
             ctrlKey: false,
         });
         fireEvent.click(await screen.findByRole('menuitemradio', { name: /Full control/ }));
 
         await waitFor(() => {
-            expect(screen.getByText('Ask for approval')).not.toBeNull();
+            expect(mocks.sendSignal).toHaveBeenCalledWith('agent-run-1', 'ToolApprovalModeChanged', {
+                mode: 'full_control',
+            });
+            expect(selector.textContent).toContain('Full control');
+        });
+
+        rejectSignal(new Error('Signal failed'));
+
+        await waitFor(() => {
+            expect(selector.textContent).toContain('Ask for approval');
         });
     });
 
