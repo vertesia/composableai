@@ -235,10 +235,22 @@ function createResponse(
     return {
         status,
         message,
-        tokens: doc.tokens,
+        tokens: getCompleteTokens(doc),
         len: text.length,
         objectId: doc.id,
         hasText: !!text,
+    };
+}
+
+function getCompleteTokens(doc: ContentObject): TextExtractionResult['tokens'] {
+    const tokens = doc.tokens;
+    if (tokens?.count === undefined || tokens.encoding === undefined || tokens.etag === undefined) {
+        return undefined;
+    }
+    return {
+        count: tokens.count,
+        encoding: tokens.encoding,
+        etag: tokens.etag,
     };
 }
 

@@ -1,12 +1,13 @@
-import type { TextFallbackOptions } from '@llumiverse/common';
 import type { VertesiaClient } from '@vertesia/client';
 import {
     ConfigModes,
     type InteractionExecutionPayload,
     type InteractionExecutionResult,
     RunDataStorageLevel,
+    type TextFallbackOptions,
 } from '@vertesia/common';
-import { type CliOptions, getStringOption } from '../utils/options.js';
+import { type CliOptions, errorMessage, getStringOption, isRecord } from '../utils/options.js';
+import { readFile } from '../utils/stdio.js';
 
 export type CliExecutionResult = InteractionExecutionResult & {
     runNumber?: number;
@@ -139,6 +140,15 @@ export class ExecutionRequest {
             run_data: convertRunData(options.runData),
         };
         const tags = getStringOption(options.tags)?.split(/\s,*\s*/);
+        const payload: InteractionExecutionPayload = {
+            data: readInteractionData(this.data),
+            config,
+            tags,
+        };
+        const resultSchema = readResultSchema(options);
+        if (resultSchema !== undefined) {
+            payload.result_schema = resultSchema;
+        }
 
         // Create a wrapper for the onChunk callback that checks for abort
         const abortAwareChunkHandler = onChunk
@@ -151,23 +161,11 @@ export class ExecutionRequest {
         let run: CliExecutionResult;
         try {
             if (this.options.byId) {
-                run = await this.client.interactions.execute(
-                    this.interactionSpec,
-                    {
-                        data: readInteractionData(this.data),
-                        config,
-                        tags,
-                    },
-                    abortAwareChunkHandler,
-                );
+                run = await this.client.interactions.execute(this.interactionSpec, payload, abortAwareChunkHandler);
             } else {
                 run = await this.client.interactions.executeByName(
                     this.interactionSpec,
-                    {
-                        data: readInteractionData(this.data),
-                        config,
-                        tags,
-                    },
+                    payload,
                     abortAwareChunkHandler,
                 );
             }
@@ -195,4 +193,31 @@ export class ExecutionRequest {
 
 function readInteractionData(data: unknown): InteractionExecutionPayload['data'] {
     return data as InteractionExecutionPayload['data'];
+}
+
+function readResultSchema(options: CliOptions): InteractionExecutionPayload['result_schema'] | undefined {
+    const inlineSchema = getStringOption(options.resultSchema);
+    const schemaFile = getStringOption(options.resultSchemaFile);
+
+    if (inlineSchema && schemaFile) {
+        throw new Error('Use either --result-schema or --result-schema-file, not both.');
+    }
+    if (!inlineSchema && !schemaFile) {
+        return undefined;
+    }
+
+    const source = inlineSchema ? '--result-schema' : '--result-schema-file';
+    const rawSchema = inlineSchema ?? readFile(schemaFile as string);
+    let schema: unknown;
+    try {
+        schema = JSON.parse(rawSchema);
+    } catch (err: unknown) {
+        throw new Error(`Invalid JSON in ${source}: ${errorMessage(err)}`);
+    }
+
+    if (schema !== null && !isRecord(schema)) {
+        throw new Error(`${source} must be a JSON object or null.`);
+    }
+
+    return schema as InteractionExecutionPayload['result_schema'];
 }

@@ -1,8 +1,9 @@
 import { MockActivityEnvironment } from '@temporalio/testing';
 import type { VertesiaClient } from '@vertesia/client';
 import { ContentEventName, type DSLActivityExecutionPayload } from '@vertesia/common';
-import type { ActivityContext, TextExtractionResult } from '@vertesia/workflow';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ActivityContext } from '../../dsl/setup/ActivityContext.js';
+import type { TextExtractionResult } from '../../result-types.js';
 import { TextExtractionStatus } from '../../result-types.js';
 import { type SaveGladiaTranscriptionParams, saveGladiaTranscription } from './saveGladiaTranscription.js';
 

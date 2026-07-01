@@ -72,6 +72,34 @@ export interface AccountBilling {
     stripe_customer_id?: string;
 }
 
+/**
+ * Quota/rate-limit tier assigned to an account. Code-defined tiers live in `@dglabs/quota`
+ * (`QUOTA_TIERS`); these names must match its keys.
+ * - `standard` — protective baseline limits (the default for most accounts).
+ * - `enterprise` — high limits for contracted customers / internal / partners.
+ *
+ * An account with no explicit `quota_tier` derives its tier from its `account_type`.
+ */
+export enum QuotaTier {
+    standard = 'standard',
+    enterprise = 'enterprise',
+}
+
+/**
+ * Default tier for an account that has no explicit `quota_tier`, derived from its `account_type`:
+ * contracted customers and internal Vertesia accounts get `enterprise`; everyone else (partner,
+ * free, prospect, unknown) gets the protective `standard` baseline.
+ */
+export function quotaTierForAccountType(accountType: AccountType | undefined | null): QuotaTier {
+    switch (accountType) {
+        case AccountType.customer:
+        case AccountType.vertesia:
+            return QuotaTier.enterprise;
+        default:
+            return QuotaTier.standard;
+    }
+}
+
 export interface Account {
     id: string;
     name: string;
@@ -89,6 +117,9 @@ export interface Account {
 
     billing: AccountBilling;
 
+    /** Quota/rate-limit tier. Unset → the deployment default tier (env `QUOTA_BASE_TIER`). */
+    quota_tier?: QuotaTier;
+
     created_by: string;
     updated_by: string;
     created_at: string;
@@ -99,6 +130,7 @@ export interface UpdateAccountPayload {
     name?: string;
     email_domains?: string[];
     billing?: AccountBilling;
+    quota_tier?: QuotaTier;
 }
 
 export interface AccountRef {

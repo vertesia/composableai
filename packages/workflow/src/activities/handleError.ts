@@ -10,6 +10,7 @@ export async function handleDslError(payload: DSLActivityExecutionPayload<Handle
     const { client, params, objectId } = await setupActivity<HandleDslErrorParams>(payload);
 
     const isIntake = [
+        'StandardIntake',
         'StandardDocumentIntake',
         'StandardImageIntake',
         'StandardMediaContainerIntake',

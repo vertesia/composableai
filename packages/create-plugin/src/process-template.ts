@@ -48,6 +48,52 @@ function resolveInternalVersion(
     return latest ? { version: latest, pinned: false } : null;
 }
 
+function stripYamlQuotes(value: string): string {
+    const trimmed = value.trim();
+    if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+        return trimmed.slice(1, -1);
+    }
+    return trimmed;
+}
+
+function readTemplateCatalog(projectName: string): Record<string, string> {
+    const workspacePath =
+        ['pnpm-workspace.yaml.template', 'pnpm-workspace.yaml']
+            .map((fileName) => path.join(projectName, fileName))
+            .find((filePath) => fs.existsSync(filePath)) ?? '';
+
+    if (!workspacePath) {
+        return {};
+    }
+
+    const catalog: Record<string, string> = {};
+    let inCatalog = false;
+
+    for (const line of fs.readFileSync(workspacePath, 'utf8').split(/\r?\n/)) {
+        if (!inCatalog) {
+            if (line.trim() === 'catalog:') {
+                inCatalog = true;
+            }
+            continue;
+        }
+
+        if (line.trim() === '' || line.trimStart().startsWith('#')) {
+            continue;
+        }
+
+        if (!line.startsWith(' ') && !line.startsWith('\t')) {
+            break;
+        }
+
+        const match = line.match(/^\s+("?[^":]+"?|[^:]+):\s*(.+?)\s*(?:#.*)?$/);
+        if (match) {
+            catalog[stripYamlQuotes(match[1])] = stripYamlQuotes(match[2]);
+        }
+    }
+
+    return catalog;
+}
+
 /**
  * Escape special regex characters
  */
@@ -202,7 +248,29 @@ export function adjustPackageJson(
             console.log(chalk.gray(`   ✓ Set packageManager to "${packageJson.packageManager}"`));
         }
 
-        // 2. Replace workspace:* with pinned versions
+        // 2. Replace catalog: specs with concrete versions for package managers that do not support pnpm catalogs.
+        let catalogReplacements = 0;
+
+        if (packageManager !== 'pnpm') {
+            const catalog = readTemplateCatalog(projectName);
+
+            ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'].forEach((depType) => {
+                if (packageJson[depType]) {
+                    Object.keys(packageJson[depType]).forEach((pkgName) => {
+                        if (packageJson[depType][pkgName] === 'catalog:' && catalog[pkgName]) {
+                            packageJson[depType][pkgName] = catalog[pkgName];
+                            catalogReplacements++;
+                        }
+                    });
+                }
+            });
+        }
+
+        if (catalogReplacements > 0) {
+            console.log(chalk.gray(`   ✓ Resolved ${catalogReplacements} catalog: dependencies from template catalog`));
+        }
+
+        // 3. Replace workspace:* with pinned versions
         const internalScopes = ['@vertesia/', '@llumiverse/', '@dglabs/'];
         const versionMap = isDev ? undefined : getTemplateVersions();
         let workspaceReplacements = 0;

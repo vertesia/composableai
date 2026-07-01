@@ -93,6 +93,7 @@ export interface BulkImportParams {
     partitionSize?: number;
     dryRun?: boolean;
     updateByContentSource?: boolean;
+    /** @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire. */
     skipWorkflows?: boolean;
     /**
      * Processing priority for the document-processing workflows triggered by created objects.

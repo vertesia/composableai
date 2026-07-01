@@ -3,7 +3,7 @@ set -e
 
 # Script to publish all composableai packages to NPM
 # Usage: publish-all-packages.sh --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]]
-#   --ref: Git reference (main for dev builds, preview for releases)
+#   --ref: Git reference (main for dev builds, release/X.Y for releases, e.g. release/1.4)
 #   --release-type: Release type (release, snapshot). Release creates stable versions, snapshot creates dev versions.
 #   --bump-type: Bump type (minor, patch, keep). How to change the version.
 #   --dry-run: Optional flag for dry run mode (value can be true, false, or omitted which means true)
@@ -301,9 +301,10 @@ if [[ ! "$BUMP_TYPE" =~ ^(minor|patch|keep)$ ]]; then
   exit 1
 fi
 
-# Validate that releases can only be published from 'preview' or maintenance branches (skip in dry-run)
-if [ "$RELEASE_TYPE" = "release" ] && [ "$DRY_RUN" != "true" ] && [ "$REF" != "preview" ] && [[ ! "$REF" =~ ^[0-9]+\.[0-9]+$ ]]; then
-  echo "Error: Release versions can only be published from 'preview' or maintenance branches."
+# Validate that releases can only be published from a release branch (release/X.Y, e.g. release/1.4)
+# or a legacy bare-numeric maintenance branch (skip in dry-run)
+if [ "$RELEASE_TYPE" = "release" ] && [ "$DRY_RUN" != "true" ] && [[ ! "$REF" =~ ^release/[0-9]+\.[0-9]+$ ]] && [[ ! "$REF" =~ ^[0-9]+\.[0-9]+$ ]]; then
+  echo "Error: Release versions can only be published from a 'release/X.Y' branch (e.g. release/1.4) or a maintenance branch."
   echo "Current branch: $REF"
   exit 1
 fi

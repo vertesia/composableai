@@ -16,6 +16,7 @@ import OAuthProvidersApi from './OAuthProvidersApi.js';
 import OAuthServerApi from './OAuthServerApi.js';
 import ProjectsApi from './ProjectsApi.js';
 import PromptsApi from './PromptsApi.js';
+import QuotaApi from './QuotaApi.js';
 import { RefsApi } from './RefsApi.js';
 import RemoteMcpConnectionsApi from './RemoteMcpConnectionsApi.js';
 import { RunsApi } from './RunsApi.js';
@@ -158,14 +159,17 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         if (opts.tokenServerUrl) {
             this.tokenServerUrl = opts.tokenServerUrl;
         } else if (opts.site) {
-            // Strip -preview (preview uses the same STS as production for the same region),
-            // then replace api prefix with sts.
+            // Replace the leading api prefix with sts, preserving the env segment so each
+            // environment hits its own STS. preview/preprod run a separately versioned STS
+            // (sts-preview / sts-preprod); collapsing them onto the production sts.<region>
+            // can route to an older STS that rejects scopes the env-matched STS supports
+            // (e.g. `offline_access`).
             // Examples:
-            //   api.vertesia.io          -> sts.vertesia.io
-            //   api-preview.vertesia.io  -> sts.vertesia.io
-            //   api.us1.vertesia.io      -> sts.us1.vertesia.io
-            //   api-preview.eu1.vertesia.io -> sts.eu1.vertesia.io
-            const stsHost = opts.site.replace('api-preview.', 'api.').replace(/^api/, 'sts');
+            //   api.vertesia.io             -> sts.vertesia.io
+            //   api-preview.vertesia.io     -> sts-preview.vertesia.io
+            //   api.us1.vertesia.io         -> sts.us1.vertesia.io
+            //   api-preview.eu1.vertesia.io -> sts-preview.eu1.vertesia.io
+            const stsHost = opts.site.replace(/^api/, 'sts');
             this.tokenServerUrl = `https://${stsHost}`;
         } else if (opts.serverUrl || opts.storeUrl) {
             // Determine STS URL based on environment in serverUrl or storeUrl
@@ -173,11 +177,12 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             try {
                 const url = new URL(urlToCheck);
                 if (url.hostname.startsWith('api')) {
-                    // Strip -preview and replace api with sts.
+                    // Replace the leading api prefix with sts, preserving the env segment so
+                    // preview/preprod hit their own STS rather than production's.
                     // api.us1.vertesia.io         -> sts.us1.vertesia.io
-                    // api-preview.us1.vertesia.io -> sts.us1.vertesia.io
+                    // api-preview.us1.vertesia.io -> sts-preview.us1.vertesia.io
                     // api.vertesia.io             -> sts.vertesia.io
-                    const stsHost = url.hostname.replace('api-preview.', 'api.').replace(/^api/, 'sts');
+                    const stsHost = url.hostname.replace(/^api/, 'sts');
                     this.tokenServerUrl = `https://${stsHost}`;
                 } else {
                     this.tokenServerUrl = 'https://sts.dev1.vertesia.io';
@@ -343,6 +348,10 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.data;
     }
 
+    get events() {
+        return this.store.events;
+    }
+
     get storeUrl() {
         return this.store.baseUrl;
     }
@@ -398,6 +407,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     commands = new CommandsApi(this);
     apps = new AppsApi(this);
     tools = new ToolsApi(this);
+    quota = new QuotaApi(this);
 }
 
 function isApiKey(apiKey: string) {

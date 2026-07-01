@@ -10,7 +10,9 @@ export enum ContentObjectApiHeaders {
     PROCESSING_PRIORITY = 'x-processing-priority',
     CREATE_REVISION = 'x-create-revision',
     REVISION_LABEL = 'x-revision-label',
-    /** When set to 'true', prevents this update from triggering workflow rules */
+    /**
+     * @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire.
+     */
     SUPPRESS_WORKFLOWS = 'x-suppress-workflows',
 }
 
@@ -35,6 +37,9 @@ export interface UpdateContentObjectHeaders {
     'x-create-revision'?: boolean;
     'x-revision-label'?: string;
     'x-processing-priority'?: ContentObjectProcessingPriority;
+    /**
+     * @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire.
+     */
     'x-suppress-workflows'?: boolean;
 }
 
@@ -67,6 +72,238 @@ export interface Embedding {
     model: string; //the model used to generate this embedding
     values: number[];
     etag?: string; // the etag of the text used for the embedding
+}
+
+/**
+ * Optional object context to include in content object export rows.
+ */
+export interface ExportContentObjectsIncludeOptions {
+    /**
+     * Include stored embeddings. Disabled by default for generic object exports.
+     */
+    embeddings?: boolean;
+    /**
+     * Include content source metadata. Enabled by default.
+     */
+    content?: boolean;
+    /**
+     * Include object lifecycle status. Enabled by default.
+     */
+    status?: boolean;
+    /**
+     * Include object properties. Enabled by default.
+     */
+    properties?: boolean;
+    /**
+     * Include technical object metadata. Disabled by default because metadata may be large.
+     */
+    metadata?: boolean;
+    /**
+     * Include object revision details. Enabled by default.
+     */
+    revision?: boolean;
+}
+
+/**
+ * Bounded filters supported by the bulk content object export API.
+ */
+export interface ExportContentObjectsFilter {
+    types?: string[];
+    created_from?: string;
+    created_to?: string;
+    updated_from?: string;
+    updated_to?: string;
+}
+
+/**
+ * Exported object identity and context for a single content object row.
+ */
+export interface ExportedContentObjectRecord {
+    id: string;
+    name: string;
+    location: string;
+    external_id?: string;
+    type?: {
+        ref_type?: 'stored' | 'incode' | 'untyped';
+        id?: string;
+        code?: string;
+        name?: string;
+    };
+    status?: ContentObjectStatus;
+    content?: {
+        source?: string;
+        type?: string;
+        name?: string;
+        etag?: string;
+    };
+    created_at: string;
+    updated_at: string;
+    revision?: RevisionInfo;
+    properties?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+    embeddings?: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
+}
+
+export interface StartContentObjectExportRequest {
+    /**
+     * Embedding types to export when include.embeddings is true. Defaults to all supported embedding types.
+     */
+    embedding_types?: SupportedEmbeddingTypes[];
+    /**
+     * Explicit export filters. This intentionally does not accept the search API's full Mongo/search DSL.
+     */
+    filter?: ExportContentObjectsFilter;
+    /**
+     * Include all revisions. Defaults to false, exporting only head revisions.
+     */
+    all_revisions?: boolean;
+    /**
+     * Optional object context selectors.
+     */
+    include?: ExportContentObjectsIncludeOptions;
+    /**
+     * Compress the export with gzip. Defaults to true.
+     */
+    compression?: boolean;
+}
+
+export interface StartContentObjectExportResponse {
+    workflow_id: string;
+    run_id: string;
+    export_id: string;
+}
+
+export interface ZenoBulkContentObjectExportRequest extends Omit<StartContentObjectExportRequest, 'compression'> {
+    tenant_id: string;
+    project_id: string;
+    export_id: string;
+    output_path: string;
+    filename: string;
+    manifest_path: string;
+    manifest_filename: string;
+    compression: boolean;
+}
+
+export interface ZenoBulkContentObjectExportShardRange {
+    min_id?: string;
+    max_id?: string;
+}
+
+export interface ZenoBulkContentObjectExportPlanRequest extends ZenoBulkContentObjectExportRequest {
+    target_shard_records?: number;
+    max_shards?: number;
+}
+
+export interface ZenoBulkContentObjectExportPlanResponse {
+    shards: ZenoBulkContentObjectExportShardRange[];
+}
+
+export interface ZenoBulkContentObjectExportShardRequest extends ZenoBulkContentObjectExportRequest {
+    shard_index: number;
+    shard_count: number;
+    shard: ZenoBulkContentObjectExportShardRange;
+}
+
+export interface ZenoBulkContentObjectExportSplitShardRequest extends ZenoBulkContentObjectExportRequest {
+    shard: ZenoBulkContentObjectExportShardRange;
+    min_split_records?: number;
+}
+
+export interface ZenoBulkContentObjectExportSplitShardResponse {
+    shards: ZenoBulkContentObjectExportShardRange[];
+    splittable: boolean;
+    records: number;
+}
+
+export interface ZenoBulkContentObjectExportShardResult {
+    status: 'completed';
+    shard_index: number;
+    shard_count: number;
+    path: string;
+    filename: string;
+    content_type: string;
+    records: number;
+    bytes: number;
+    started_at: string;
+    completed_at: string;
+    duration_ms: number;
+}
+
+export interface ZenoBulkContentObjectExportComposeRequest extends ZenoBulkContentObjectExportRequest {
+    parts: string[];
+    records?: number;
+    /**
+     * Export workflow start timestamp. Used to report end-to-end duration after final compose.
+     */
+    started_at?: string;
+}
+
+export interface ContentObjectExportResult {
+    status: 'completed';
+    path: string;
+    filename: string;
+    content_type: string;
+    manifest_path?: string;
+    manifest_filename?: string;
+    manifest_content_type?: string;
+    manifest_bytes?: number;
+    records: number;
+    bytes: number;
+    started_at: string;
+    completed_at: string;
+    duration_ms: number;
+}
+
+export interface ContentObjectExportProgress {
+    status: 'queued' | 'planning' | 'exporting' | 'composing' | 'completed' | 'failed';
+    records: number;
+    bytes: number;
+    path?: string;
+    filename?: string;
+    completed_shards?: number;
+    total_shards?: number;
+    started_at?: string;
+    completed_at?: string;
+    error?: string;
+}
+
+export interface ContentObjectExportStatusResponse {
+    workflow_id: string;
+    run_id: string;
+    status: 'queued' | 'running' | 'completed' | 'failed' | 'canceled' | 'terminated' | 'timed_out' | 'unknown';
+    done: boolean;
+    progress?: ContentObjectExportProgress;
+    result?: ContentObjectExportResult;
+    error?: string;
+}
+
+export interface ContentObjectExportArtifact {
+    export_id: string;
+    path: string;
+    filename: string;
+    content_type: string;
+    bytes: number;
+    created_at?: string;
+    files?: ContentObjectExportArtifactFile[];
+}
+
+export interface ContentObjectExportArtifactFile {
+    role: 'data' | 'manifest';
+    path: string;
+    filename: string;
+    content_type: string;
+    bytes: number;
+}
+
+export interface ListContentObjectExportsResponse {
+    items: ContentObjectExportArtifact[];
+    limit: number;
+}
+
+export interface DeleteContentObjectExportResponse {
+    success: boolean;
+    export_id: string;
+    path: string;
 }
 
 /**
@@ -116,12 +353,12 @@ export interface ContentObjectItemApiResponse extends BaseObject {
     type?: ContentObjectApiTypeRef;
     content?: ContentSource;
     external_id?: string;
-    properties: Record<string, unknown>;
+    properties: JSONObject;
     metadata?: Record<string, unknown>;
     tokens?: {
-        count: number;
-        encoding: string;
-        etag: string;
+        count?: number;
+        encoding?: string;
+        etag?: string;
     };
     revision: ContentObjectApiRevision;
     is_deleted?: boolean;
@@ -356,13 +593,19 @@ export interface ContentObjectItem<T = JSONObject> extends BaseObject {
     properties: T; // a JSON object that describes the object
 
     /** Technical metadata of the object */
-    metadata?: VideoMetadata | AudioMetadata | ImageMetadata | DocumentMetadata | ContentMetadata;
+    metadata?:
+        | VideoMetadata
+        | AudioMetadata
+        | ImageMetadata
+        | DocumentMetadata
+        | ContentMetadata
+        | Record<string, unknown>;
 
     /** Token information  */
     tokens?: {
-        count: number; // the number of tokens in the text
-        encoding: string; // the encoding used to calculate the tokens
-        etag: string; //the etag of the text used for the token count
+        count?: number; // the number of tokens in the text
+        encoding?: string; // the encoding used to calculate the tokens
+        etag?: string; //the etag of the text used for the token count
     };
 
     /**
@@ -562,6 +805,16 @@ export interface WorkflowRule extends WorkflowRuleItem {
      * Optional task queue name to use when starting workflows for this rule
      */
     task_queue?: string;
+
+    /**
+     * Event subscription migration status for legacy workflow-rule cutover.
+     */
+    event_subscription_migration_status?: 'migrated' | 'unsupported_match' | 'failed';
+
+    /**
+     * Migration failure or unsupported-match reason, when applicable.
+     */
+    event_subscription_migration_error?: string;
 }
 
 export interface CreateWorkflowRulePayload extends UploadWorkflowRulePayload {
@@ -597,7 +850,7 @@ export interface GetRenditionResponse {
 }
 
 export interface ObjectSearchResponse {
-    results: ContentObjectItem[];
+    results: ContentObjectItemApiResponse[];
     facets: ComputedFacetResponse;
     aggregations?: Record<string, unknown>;
 }

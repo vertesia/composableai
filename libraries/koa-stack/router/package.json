@@ -1,11 +1,11 @@
 {
     "name": "@koa-stack/router",
-    "version": "0.24.0",
+    "version": "0.26.0-dev",
     "description": "A powerfull koa router using typescript decorations",
     "type": "module",
     "scripts": {
-        "build": "tsc",
-        "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo",
+        "build": "tsc -p tsconfig.json",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
         "test": "vitest run"
     },
     "files": [
@@ -20,6 +20,11 @@
     ],
     "author": "stefanescu.bogdan@gmail.com",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "libraries/koa-stack/router"
+    },
     "dependencies": {
         "koa": "^3.2.1",
         "koa-compose": "^4.1.0",
@@ -34,7 +39,7 @@
         "@types/statuses": "^2.0.6",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "^6.0.3",
-        "vitest": "^4.1.8"
+        "vitest": "^4.1.9"
     },
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",

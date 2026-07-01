@@ -54,6 +54,15 @@ describe('MessageInput', () => {
         expect(onFilesSelected).toHaveBeenCalledWith([file]);
     });
 
+    it('renders attachment actions before the MCP slot', () => {
+        renderWithProviders(<MessageInput onSend={vi.fn()} mcpSlot={<button type="button">MCP</button>} isCompleted />);
+
+        const attachmentButton = screen.getByRole('button', { name: /Add attachment/i });
+        const mcpButton = screen.getByRole('button', { name: 'MCP' });
+
+        expect(attachmentButton.compareDocumentPosition(mcpButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
     it('accepts dropped files when upload is enabled', () => {
         const onFilesSelected = vi.fn();
         const { container } = renderWithProviders(<MessageInput onSend={vi.fn()} onFilesSelected={onFilesSelected} />);
@@ -167,7 +176,7 @@ describe('MessageInput', () => {
         expect(screen.getByText('Ready')).not.toBeNull();
     });
 
-    it('renders context usage and triggers manual compaction', () => {
+    it('renders context usage and triggers manual compaction', async () => {
         const onCompactContext = vi.fn();
 
         renderWithProviders(
@@ -184,7 +193,13 @@ describe('MessageInput', () => {
             />,
         );
 
-        fireEvent.click(screen.getByRole('button', { name: /50% context used/i }));
+        const contextButton = screen.getByRole('button', { name: /50% context used/i });
+
+        fireEvent.pointerMove(contextButton);
+
+        expect((await screen.findAllByText('Context size: 50K / 100K tokens')).length).toBeGreaterThan(0);
+
+        fireEvent.click(contextButton);
 
         expect(onCompactContext).toHaveBeenCalledTimes(1);
     });

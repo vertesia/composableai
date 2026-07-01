@@ -4,7 +4,7 @@ import type {
     ComplexSearchQuery,
     ComputedFacetResponse,
     ComputeObjectFacetPayload,
-    ContentObjectItem,
+    ContentObjectItemApiResponse,
     FacetBucket,
     FacetSpec,
     ObjectSearchQuery,
@@ -14,7 +14,7 @@ import type { SearchInterface } from '@vertesia/ui/features';
 import { createContext, useContext } from 'react';
 
 interface DocumentSearchResult {
-    objects: ContentObjectItem[];
+    objects: ContentObjectItemApiResponse[];
     error?: Error;
     isLoading: boolean;
     hasMore?: boolean;
