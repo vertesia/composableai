@@ -35,7 +35,7 @@
   "labels": ["dependencies"],
   "npm": {
     // Extend Renovate's default npm manager configuration to include .template files.
-    "fileMatch": [
+    "managerFilePatterns": [
       "/(^|/)package\\.json$/",
       "/(^|/)pnpm-workspace\\.yaml$/",
       "/(^|/)pnpm-workspace\\.yaml\\.template$/",
