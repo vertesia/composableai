@@ -425,6 +425,81 @@ describe('ModernAgentConversation send handling', () => {
         expect(screen.queryByText('Switch to full control?')).toBeNull();
     });
 
+    it('keeps a local approval mode change when stale run metadata loads later', async () => {
+        let resolveRetrieve: (run: {
+            tool_approval_mode: 'ask';
+            interactive: true;
+            disabled_mcp_collections: undefined;
+        }) => void = () => {};
+        mocks.retrieve.mockReturnValue(
+            new Promise((resolve) => {
+                resolveRetrieve = resolve;
+            }),
+        );
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({
+            hideMessageInput: false,
+            interactive: true,
+            allowWorkflowControl: true,
+            initialToolApprovalMode: 'ask',
+        });
+
+        expect(await screen.findByText('Ask for approval')).not.toBeNull();
+        fireEvent.pointerDown(screen.getByRole('button', { name: 'Agent approval mode' }), {
+            button: 0,
+            ctrlKey: false,
+        });
+        fireEvent.click(await screen.findByRole('menuitemradio', { name: /Full control/ }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith('agent-run-1', 'ToolApprovalModeChanged', {
+                mode: 'full_control',
+            });
+        });
+
+        resolveRetrieve({
+            tool_approval_mode: 'ask',
+            interactive: true,
+            disabled_mcp_collections: undefined,
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('Full control')).not.toBeNull();
+        });
+    });
+
+    it('reverts the local approval mode when the change signal fails', async () => {
+        mocks.retrieve.mockResolvedValue({
+            tool_approval_mode: 'ask',
+            interactive: true,
+            disabled_mcp_collections: undefined,
+        });
+        mocks.sendSignal.mockRejectedValueOnce(new Error('Signal failed'));
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+
+        renderConversation({ hideMessageInput: false, interactive: true, allowWorkflowControl: true });
+
+        expect(await screen.findByText('Ask for approval')).not.toBeNull();
+        fireEvent.pointerDown(screen.getByRole('button', { name: 'Agent approval mode' }), {
+            button: 0,
+            ctrlKey: false,
+        });
+        fireEvent.click(await screen.findByRole('menuitemradio', { name: /Full control/ }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Ask for approval')).not.toBeNull();
+        });
+    });
+
     it('does not show a full-control fallback before active run mode metadata loads', () => {
         mocks.retrieve.mockReturnValue(new Promise(() => {}));
         mockStreamState({
