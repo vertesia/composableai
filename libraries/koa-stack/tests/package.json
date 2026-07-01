@@ -1,6 +1,6 @@
 {
     "name": "@koa-stack/tests",
-    "version": "0.24.0",
+    "version": "0.26.0-dev",
     "private": true,
     "description": "Tests",
     "type": "module",
