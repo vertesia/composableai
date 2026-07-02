@@ -24,7 +24,11 @@
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
         "build": "pnpm run check:locales && pnpm run check:rtl-classes && pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rollup -c",
+<<<<<<< HEAD
         "lint": "biome lint src",
+=======
+        "lint": "biome lint src && pnpm run check:rtl-classes",
+>>>>>>> a2f7a6d5 (Fix ask-user prompt overflow (#1629))
         "lint:fix": "biome lint --write src",
         "check:locales": "node scripts/check-locales.mjs",
         "check:rtl-classes": "node scripts/check-rtl-classes.mjs --mode=strict",
