@@ -23,7 +23,7 @@
     "scripts": {
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run check:locales && pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rollup -c",
+        "build": "pnpm run check:locales && pnpm run check:rtl-classes && pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rollup -c",
         "lint": "biome lint src && pnpm run check:rtl-classes",
         "lint:fix": "biome lint --write src",
         "check:locales": "node scripts/check-locales.mjs",
