@@ -101,5 +101,5 @@ export interface QuotaStandingResponse {
  * account tier cannot be resolved.
  */
 export interface QuotaTierResponse {
-    tier: string;
+    tier: QuotaStandingResponse['effective_tier'];
 }
