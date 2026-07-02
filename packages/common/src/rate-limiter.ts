@@ -62,6 +62,13 @@ export interface QuotaStandingAdmissionClass {
     tenant_active: number;
 }
 
+/**
+ * Effective quota tier name after account-level overrides and account-type derivation.
+ * Code-defined tier names are currently `QuotaTier`, but this remains a string because deployments
+ * can introduce quota tiers through configuration.
+ */
+export type QuotaEffectiveTier = string;
+
 export interface QuotaStandingResponse {
     tenant_id: string;
     /**
@@ -75,7 +82,7 @@ export interface QuotaStandingResponse {
      * Tier used to compute the API limits below: explicit account `quota_tier`, else account_type
      * derived tier, else `base_tier` when the account tier could not be resolved.
      */
-    effective_tier: string;
+    effective_tier: QuotaEffectiveTier;
     /** Per-resource API rate-limit standing (effective limits + current usage). */
     api: QuotaStandingResource[];
     /**
@@ -101,5 +108,5 @@ export interface QuotaStandingResponse {
  * account tier cannot be resolved.
  */
 export interface QuotaTierResponse {
-    tier: QuotaStandingResponse['effective_tier'];
+    tier: QuotaEffectiveTier;
 }
