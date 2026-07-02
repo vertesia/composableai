@@ -91,3 +91,15 @@ export interface QuotaStandingResponse {
         note: string;
     };
 }
+
+/**
+ * Lightweight per-account quota tier for the calling account — served by `GET /api/v1/quota/tier`.
+ * A cheap, cacheable read that lets another service (e.g. zeno-server's API rate limiter) resolve
+ * the caller's tier through studio-server instead of reaching into the account store directly.
+ * `tier` is the SAME value {@link QuotaStandingResponse.effective_tier} reports: the account's
+ * explicit `quota_tier`, else its account_type-derived tier, else the deployment base tier when the
+ * account tier cannot be resolved.
+ */
+export interface QuotaTierResponse {
+    tier: string;
+}
