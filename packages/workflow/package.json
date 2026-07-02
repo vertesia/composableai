@@ -35,9 +35,9 @@
         "vitest": "^4.1.9"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.1073.0",
-        "@aws-sdk/client-textract": "^3.1073.0",
-        "@aws-sdk/credential-providers": "^3.1073.0",
+        "@aws-sdk/client-s3": "^3.1075.0",
+        "@aws-sdk/client-textract": "^3.1075.0",
+        "@aws-sdk/credential-providers": "^3.1075.0",
         "@llumiverse/common": "workspace:*",
         "@temporalio/activity": "^1.18.1",
         "@temporalio/workflow": "^1.18.1",
