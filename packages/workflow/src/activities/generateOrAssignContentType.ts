@@ -1,10 +1,13 @@
 import { ApplicationFailure, log } from '@temporalio/activity';
 import {
     type ContentObjectTypeItem,
+    type ContentSource,
     type CreateContentObjectTypePayload,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
     ImageRenditionFormat,
+    PDF_RENDITION_NAME,
+    type Rendition,
 } from '@vertesia/common';
 import { type ActivityContext, setupActivity } from '../dsl/setup/ActivityContext.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
@@ -75,9 +78,39 @@ export interface GenerateOrAssignContentType extends DSLActivitySpec<GenerateOrA
     name: 'generateOrAssignContentType';
 }
 
+export type GenerateOrAssignContentTypeResult =
+    | {
+          status: 'skipped';
+          message: string;
+      }
+    | {
+          status: 'failed';
+          error: 'no-text';
+      }
+    | {
+          id: string;
+          name: string;
+          isNew: boolean;
+      };
+
+function getPdfRenditionContent(doc: { metadata?: { renditions?: unknown } }): ContentSource | undefined {
+    const renditions = doc.metadata?.renditions;
+    if (!Array.isArray(renditions)) {
+        return undefined;
+    }
+    const pdfRendition = renditions.find(
+        (rendition): rendition is Rendition =>
+            typeof rendition === 'object' &&
+            rendition !== null &&
+            (rendition as { name?: unknown }).name === PDF_RENDITION_NAME &&
+            typeof (rendition as { content?: { source?: unknown } }).content?.source === 'string',
+    );
+    return pdfRendition?.content;
+}
+
 export async function generateOrAssignContentType(
     payload: DSLActivityExecutionPayload<GenerateOrAssignContentTypeParams>,
-) {
+): Promise<GenerateOrAssignContentTypeResult> {
     const context = await setupActivity<GenerateOrAssignContentTypeParams>(payload);
     const { params, client, objectId } = context;
 
@@ -85,7 +118,7 @@ export async function generateOrAssignContentType(
 
     log.debug(`SelectDocumentType for object: ${objectId}`, { payload });
 
-    const object = await client.objects.retrieve(objectId, '+text');
+    const object = await client.objects.retrieve(objectId, '+text +metadata +content');
 
     //Expects object.type to be null on first ingestion of content
     //User initiated Content Type change via the Composable UI,
@@ -99,12 +132,13 @@ export async function generateOrAssignContentType(
         };
     }
 
-    if (
-        !object ||
-        (!object.text &&
-            !object.content?.type?.startsWith('image/') &&
-            !object.content?.type?.startsWith('application/pdf'))
-    ) {
+    const pdfRendition = getPdfRenditionContent(object);
+    const hasVisionSource =
+        object.content?.type?.startsWith('image/') ||
+        object.content?.type?.startsWith('application/pdf') ||
+        !!pdfRendition?.type?.startsWith('application/pdf');
+
+    if (!object || (!object.text && !hasVisionSource)) {
         log.info(`Object ${objectId} not found or text is empty and not an image`, {
             object,
         });
@@ -116,10 +150,13 @@ export async function generateOrAssignContentType(
     });
 
     //make a list of all existing types, and add hints if any
-    const existing_types = types.filter((t) => !['DocumentPart', 'Rendition'].includes(t.name));
+    const existing_types = types.filter((t) => !['DocumentPart', 'Rendition'].includes(t.name) && t.status !== 'draft');
     const content = object.text ? truncByMaxTokens(object.text, params.truncate || 30000) : undefined;
 
-    const getImage = async () => {
+    const getImage = async (): Promise<string | ContentSource | undefined> => {
+        if (pdfRendition?.type?.startsWith('application/pdf')) {
+            return pdfRendition;
+        }
         if (object.content?.type?.includes('pdf') && object.text?.length && object.text?.length < 100) {
             return `store:${objectId}`;
         }
@@ -180,20 +217,30 @@ export async function generateOrAssignContentType(
     log.debug(`Selected Content Type Result: ${JSON.stringify(jsonResult)}`);
 
     //if type is not identified or not present in the database, generate a new type
-    let selectedType: { id: string; name: string } | undefined;
+    let selectedType: { id: string; name: string; isNew: boolean } | undefined;
 
-    selectedType = types.find((t) => t.name === jsonResult.document_type);
+    const existingMatch = existing_types.find((t) => t.name === jsonResult.document_type);
+    if (existingMatch) {
+        selectedType = { id: existingMatch.id, name: existingMatch.name, isNew: false };
+    }
 
     if (!selectedType) {
         if (params.allowNewContentTypes === false) {
             // Type generation is disabled (handled separately, e.g. via the Studio Assistant), so
             // fall back to the project's default type (or sys:GenericDocument) rather than leaving
             // the document untyped.
+            if (jsonResult.document_type) {
+                log.warn('Document type selection returned an ineligible or unknown type; assigning fallback', {
+                    objectId,
+                    selectedDocumentType: jsonResult.document_type,
+                    eligibleTypes: existing_types.map((type) => type.name),
+                });
+            }
             selectedType = await resolveFallbackType(context, params.fallbackTypeId, jsonResult.document_type);
         } else {
             log.warn('Document type not identified: starting type generation');
             const newType = await generateNewType(context, existing_types, content, fileRef);
-            selectedType = { id: newType.id, name: newType.name };
+            selectedType = { id: newType.id, name: newType.name, isNew: true };
         }
     }
 
@@ -210,7 +257,7 @@ export async function generateOrAssignContentType(
     return {
         id: selectedType.id,
         name: selectedType.name,
-        isNew: !types.find((t) => t.name === selectedType.name),
+        isNew: selectedType.isNew,
     };
 }
 
@@ -222,7 +269,7 @@ async function resolveFallbackType(
     context: ActivityContext<GenerateOrAssignContentTypeParams>,
     fallbackTypeId: string | undefined,
     selectedDocumentType: unknown,
-): Promise<{ id: string; name: string }> {
+): Promise<{ id: string; name: string; isNew: false }> {
     if (fallbackTypeId && fallbackTypeId !== GENERIC_DOCUMENT_TYPE_ID) {
         try {
             const resolved = await context.client.types.catalog.resolve(fallbackTypeId);
@@ -230,7 +277,7 @@ async function resolveFallbackType(
                 fallbackTypeId,
                 selectedDocumentType,
             });
-            return { id: resolved.id ?? fallbackTypeId, name: resolved.name ?? fallbackTypeId };
+            return { id: resolved.id ?? fallbackTypeId, name: resolved.name ?? fallbackTypeId, isNew: false };
         } catch (error) {
             log.warn('Configured default content type not resolvable; using GenericDocument', {
                 fallbackTypeId,
@@ -239,14 +286,14 @@ async function resolveFallbackType(
         }
     }
     log.info('Document type not identified; assigning GenericDocument fallback', { selectedDocumentType });
-    return { id: GENERIC_DOCUMENT_TYPE_ID, name: GENERIC_DOCUMENT_TYPE_NAME };
+    return { id: GENERIC_DOCUMENT_TYPE_ID, name: GENERIC_DOCUMENT_TYPE_NAME, isNew: false };
 }
 
 async function generateNewType(
     context: ActivityContext<GenerateOrAssignContentTypeParams>,
     existing_types: ContentObjectTypeItem[],
     content?: string,
-    fileRef?: string,
+    fileRef?: string | ContentSource,
 ) {
     const { client, params } = context;
 

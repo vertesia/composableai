@@ -1,18 +1,22 @@
 import { ApplicationFailure, log } from '@temporalio/activity';
-import type { DSLActivityExecutionPayload, DSLActivitySpec, JSONObject } from '@vertesia/common';
+import {
+    type ContentSource,
+    type DSLActivityExecutionPayload,
+    type DSLActivitySpec,
+    type JSONObject,
+    PDF_RENDITION_NAME,
+    type Rendition,
+} from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
 import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
 
 const INT_EXTRACT_INFORMATION = 'sys:ExtractInformation';
 
+export type GenerateDocumentPropertiesSource = 'auto' | 'text' | 'vision' | 'mixed';
+
 interface RetryableError extends Error {
     retryable?: boolean;
-}
-
-interface GeneratedPropertiesSummary {
-    title?: unknown;
-    description?: unknown;
 }
 
 function toRetryableError(error: unknown): RetryableError {
@@ -31,57 +35,96 @@ export interface GenerateDocumentPropertiesParams extends InteractionExecutionPa
 
     interactionName?: string;
 
+    /**
+     * @deprecated Use source: 'mixed'. Accepted for backward compatibility with existing DSL callers.
+     */
     use_vision?: boolean;
+
+    source?: GenerateDocumentPropertiesSource;
+
+    instructions?: string;
 }
 export interface GenerateDocumentProperties extends DSLActivitySpec<GenerateDocumentPropertiesParams> {
     name: 'generateDocumentProperties';
 }
+export type GenerateDocumentPropertiesResult =
+    | { status: 'completed' }
+    | { status: 'failed'; error: string }
+    | { document: string; status: 'skipped'; message: string };
+
+function getPdfRenditionContent(doc: { metadata?: { renditions?: unknown } }): ContentSource | undefined {
+    const renditions = doc.metadata?.renditions;
+    if (!Array.isArray(renditions)) {
+        return undefined;
+    }
+    const pdfRendition = renditions.find(
+        (rendition): rendition is Rendition =>
+            typeof rendition === 'object' &&
+            rendition !== null &&
+            (rendition as { name?: unknown }).name === PDF_RENDITION_NAME &&
+            typeof (rendition as { content?: { source?: unknown } }).content?.source === 'string',
+    );
+    return pdfRendition?.content;
+}
 
 export async function generateDocumentProperties(
     payload: DSLActivityExecutionPayload<GenerateDocumentPropertiesParams>,
-) {
+): Promise<GenerateDocumentPropertiesResult> {
     const context = await setupActivity<GenerateDocumentPropertiesParams>(payload);
     const { params, client, objectId } = context;
     const interactionName = params.interactionName ?? INT_EXTRACT_INFORMATION;
 
     const project = await context.fetchProject();
 
-    const doc = await client.objects.retrieve(objectId, '+text');
+    const doc = await client.objects.retrieve(objectId, '+text +metadata +content');
     const type = doc.type ? await client.types.catalog.resolve(doc.type) : undefined;
-
-    if (!doc?.text && !params.use_vision && !doc?.content?.type?.startsWith('image/')) {
-        log.warn(`Object ${objectId} not found or text is empty`);
-        return { status: 'failed', error: 'no-text' };
-    }
 
     if (!type?.object_schema) {
         log.info(`Object ${objectId} has no schema`);
         return { document: objectId, status: 'skipped', message: 'no schema defined on type' };
     }
 
-    const getImageRef = () => {
+    const source = params.source ?? (params.use_vision ? 'mixed' : 'auto');
+    const getImageRef = (): string | ContentSource | undefined => {
         if (doc.content?.type?.startsWith('image/')) {
             return `store:${doc.id}`;
         }
 
-        if (params.use_vision && doc.content?.type?.startsWith('application/pdf')) {
+        if (doc.content?.type?.startsWith('application/pdf')) {
             return `store:${doc.id}`;
+        }
+
+        const pdfRendition = getPdfRenditionContent(doc);
+        if (pdfRendition?.type?.startsWith('application/pdf')) {
+            return pdfRendition;
         }
 
         log.info(`Object ${objectId} is not an image or pdf`);
         return undefined;
     };
 
-    const content = doc.text ? truncByMaxTokens(doc.text, params.truncate || 30000) : undefined;
+    const hasRealText = !!doc.text?.trim();
+    const content =
+        hasRealText && (source === 'auto' || source === 'text' || source === 'mixed')
+            ? truncByMaxTokens(doc.text ?? '', params.truncate || 30000)
+            : undefined;
+    const imageRef =
+        source === 'vision' || source === 'mixed' || (source === 'auto' && !content) ? getImageRef() : undefined;
+
+    if (!content && !imageRef) {
+        log.warn(`Object ${objectId} has no text or supported vision source`);
+        return { status: 'failed', error: 'no-source' };
+    }
 
     const promptData = {
         content: content,
-        image: getImageRef() ?? undefined,
+        image: imageRef,
+        extraction_instructions: params.instructions,
         human_context: project?.configuration?.human_context ?? undefined,
     };
 
     log.info(
-        ` Extracting information from object ${objectId} with type ${type.name}`,
+        `Extracting information from object ${objectId} with type ${type.name}`,
         payload.debug_mode ? { params } : undefined,
     );
 
@@ -125,34 +168,11 @@ export async function generateDocumentProperties(
         throw error;
     }
 
-    const getText = () => {
-        if (doc.text) {
-            return undefined;
-        }
-        let text = '';
-        const jsonResult = infoRes.result.object<GeneratedPropertiesSummary>();
-        if (typeof jsonResult.title === 'string') {
-            text += `${jsonResult.title}\n`;
-        }
-        if (typeof jsonResult.description === 'string') {
-            text += jsonResult.description;
-        }
-        if (text) {
-            return text;
-        } else {
-            return undefined;
-        }
-    };
-
     log.info(`Extracted information from object ${objectId} with type ${type.name}`, { runId: infoRes.id });
     await client.objects.update(
         doc.id,
         {
-            properties: {
-                ...infoRes.result.object<JSONObject>(),
-                ...(doc.text_etag !== undefined ? { etag: doc.text_etag } : {}),
-            },
-            text: getText(),
+            properties: infoRes.result.object<JSONObject>(),
             generation_run_info: {
                 id: infoRes.id,
                 date: new Date().toISOString(),

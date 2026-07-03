@@ -1,3 +1,4 @@
+import type { JSONSchemaType } from 'ajv';
 import type { ComputedFacetResponse } from '../facets.js';
 import type { JSONObject } from '../json.js';
 import type { SearchPayload } from '../payload.js';
@@ -448,6 +449,8 @@ export interface ContentMetadata {
     location?: Location;
     generation_runs?: GenerationRunMetadata[];
     etag?: string;
+    /** ETag of text materialized from object properties by intake rendering. */
+    rendered_text_etag?: string;
     renditions?: Rendition[];
 }
 
@@ -723,9 +726,260 @@ export interface ColumnLayout {
      */
     default?: unknown;
 }
+
+export type ContentObjectTypeStatus = 'active' | 'draft';
+
+/**
+ * Per-content-type policy for the standard intake workflows.
+ */
+export interface ContentTypeIntakePolicy {
+    /** Intake orchestration mode for this type. */
+    mode?: 'programmatic' | 'agentic';
+    /** Guidance used when selecting or creating this content type. */
+    identification?: {
+        guidance?: string;
+        distinguish_from?: string;
+        examples?: string[];
+    };
+    /** Controls source-to-text conversion before extraction and embedding. */
+    text_conversion?: {
+        enabled?: boolean;
+        method?: 'auto' | 'basic' | 'llm' | 'custom';
+        custom?: {
+            interaction?: string;
+            agent?: string;
+        };
+        instructions?: string;
+        output_format?: 'markdown' | 'text';
+    };
+    /** Controls schema-property extraction after type assignment. */
+    extraction?: {
+        enabled?: boolean;
+        source?: 'auto' | 'text' | 'vision' | 'mixed';
+        instructions?: string;
+        interaction?: string;
+        verification?: {
+            enabled?: boolean;
+            model?: string;
+            environment?: string;
+            materiality?: string;
+            threshold?: number;
+            max_retries?: number;
+            on_fail?: 'flag' | 'block';
+        };
+    };
+    /** Handlebars template used to materialize extracted properties into object text. */
+    rendering_template?: string;
+    /** Per-type embedding switches. Unspecified values inherit the project policy. */
+    embeddings?: Partial<Record<SupportedEmbeddingTypes, boolean>>;
+    /** Whether intake should generate a table of contents for matching documents. */
+    generate_toc?: boolean;
+    /** Preferred first view for objects of this type. */
+    default_view?: 'auto' | 'text' | 'pdf' | 'image' | 'properties';
+}
+
+/** JSON schema for validating ContentTypeIntakePolicy payloads at API/tool boundaries. */
+export const ContentTypeIntakePolicySchema: JSONSchemaType<ContentTypeIntakePolicy> = {
+    type: 'object',
+    description:
+        'Per-content-type policy for standard intake: type selection, conversion, extraction, rendering, and embeddings.',
+    required: [],
+    additionalProperties: false,
+    properties: {
+        mode: {
+            type: 'string',
+            enum: ['programmatic', 'agentic'],
+            description:
+                'Intake orchestration mode. Use programmatic unless the user explicitly asks for agentic intake.',
+            nullable: true,
+        },
+        identification: {
+            type: 'object',
+            description: 'Guidance used by automatic type selection to recognize this type before full extraction.',
+            nullable: true,
+            required: [],
+            additionalProperties: false,
+            properties: {
+                guidance: {
+                    type: 'string',
+                    description: 'Classifier-facing description of what this type is and when it should be selected.',
+                    nullable: true,
+                },
+                distinguish_from: {
+                    type: 'string',
+                    description: 'How to distinguish this type from common look-alike document types.',
+                    nullable: true,
+                },
+                examples: {
+                    type: 'array',
+                    description: 'Object ids of human-confirmed examples for this type.',
+                    nullable: true,
+                    items: { type: 'string' },
+                },
+            },
+        },
+        text_conversion: {
+            type: 'object',
+            description: 'Controls source-to-text conversion before extraction, search, and text embeddings.',
+            nullable: true,
+            required: [],
+            additionalProperties: false,
+            properties: {
+                enabled: {
+                    type: 'boolean',
+                    description: 'Set false for extraction-only types that should not create converted markdown/text.',
+                    nullable: true,
+                },
+                method: {
+                    type: 'string',
+                    enum: ['auto', 'basic', 'llm', 'custom'],
+                    description: 'Conversion method. Use auto unless the user asks for a specific converter.',
+                    nullable: true,
+                },
+                custom: {
+                    type: 'object',
+                    description: 'Custom conversion implementation for method=custom.',
+                    nullable: true,
+                    required: [],
+                    additionalProperties: false,
+                    properties: {
+                        interaction: {
+                            type: 'string',
+                            description: 'Interaction id to call for custom conversion.',
+                            nullable: true,
+                        },
+                        agent: {
+                            type: 'string',
+                            description: 'Agent id to launch for custom conversion.',
+                            nullable: true,
+                        },
+                    },
+                },
+                instructions: {
+                    type: 'string',
+                    description: 'Instructions for what source content to preserve during conversion.',
+                    nullable: true,
+                },
+                output_format: {
+                    type: 'string',
+                    enum: ['markdown', 'text'],
+                    description: 'Output format for converted text. Prefer markdown for readable documents.',
+                    nullable: true,
+                },
+            },
+        },
+        extraction: {
+            type: 'object',
+            description: 'Controls structured property extraction against the content type object_schema.',
+            nullable: true,
+            required: [],
+            additionalProperties: false,
+            properties: {
+                enabled: {
+                    type: 'boolean',
+                    description: 'Whether intake should extract structured properties for this type.',
+                    nullable: true,
+                },
+                source: {
+                    type: 'string',
+                    enum: ['auto', 'text', 'vision', 'mixed'],
+                    description:
+                        'Evidence source for extraction: auto chooses text or vision, text sends text only, vision sends image/PDF evidence only, mixed sends both.',
+                    nullable: true,
+                },
+                instructions: {
+                    type: 'string',
+                    description: 'Type-specific extraction instructions such as pages or sections to ignore.',
+                    nullable: true,
+                },
+                interaction: {
+                    type: 'string',
+                    description: 'Interaction id used for extraction. Omit to use the system extractor.',
+                    nullable: true,
+                },
+                verification: {
+                    type: 'object',
+                    description: 'Optional safe-mode verification of extracted values against source evidence.',
+                    nullable: true,
+                    required: [],
+                    additionalProperties: false,
+                    properties: {
+                        enabled: {
+                            type: 'boolean',
+                            description: 'Whether to verify extracted values after extraction.',
+                            nullable: true,
+                        },
+                        model: { type: 'string', description: 'Verifier model override.', nullable: true },
+                        environment: {
+                            type: 'string',
+                            description: 'Verifier environment override.',
+                            nullable: true,
+                        },
+                        materiality: {
+                            type: 'string',
+                            description: 'What errors are material for this type.',
+                            nullable: true,
+                        },
+                        threshold: {
+                            type: 'number',
+                            description: 'Minimum verification confidence before flag/block behavior applies.',
+                            nullable: true,
+                        },
+                        max_retries: {
+                            type: 'number',
+                            description: 'Maximum extraction retries when verification fails.',
+                            nullable: true,
+                        },
+                        on_fail: {
+                            type: 'string',
+                            enum: ['flag', 'block'],
+                            description: 'Failure behavior after retries: flag for review or block property write.',
+                            nullable: true,
+                        },
+                    },
+                },
+            },
+        },
+        rendering_template: {
+            type: 'string',
+            description: 'Handlebars template used to materialize extracted properties into object text.',
+            nullable: true,
+        },
+        embeddings: {
+            type: 'object',
+            description: 'Per-type embedding switches. Omitted fields inherit the project embedding policy.',
+            nullable: true,
+            required: [],
+            additionalProperties: false,
+            properties: {
+                text: { type: 'boolean', description: 'Whether to generate text embeddings.', nullable: true },
+                image: { type: 'boolean', description: 'Whether to generate image embeddings.', nullable: true },
+                properties: {
+                    type: 'boolean',
+                    description: 'Whether to generate property embeddings.',
+                    nullable: true,
+                },
+            },
+        },
+        generate_toc: {
+            type: 'boolean',
+            description: 'Whether intake should generate table-of-contents sections for this type.',
+            nullable: true,
+        },
+        default_view: {
+            type: 'string',
+            enum: ['auto', 'text', 'pdf', 'image', 'properties'],
+            description: 'Preferred first view for objects of this type.',
+            nullable: true,
+        },
+    },
+};
+
 export interface ContentObjectType extends ContentObjectTypeItem {}
 export interface ContentObjectTypeItem extends BaseObject {
+    status?: ContentObjectTypeStatus;
     is_chunkable?: boolean;
+    intake?: ContentTypeIntakePolicy;
     /**
      * This is only included in ContentObjectTypeItem if explicitly requested
      * It is always included in ContentObjectType
@@ -744,7 +998,16 @@ export interface ContentObjectTypeItem extends BaseObject {
 }
 export type InCodeTypeDefinition = Pick<
     ContentObjectTypeItem,
-    'id' | 'name' | 'description' | 'tags' | 'object_schema' | 'table_layout' | 'is_chunkable' | 'strict_mode'
+    | 'id'
+    | 'name'
+    | 'description'
+    | 'tags'
+    | 'object_schema'
+    | 'table_layout'
+    | 'is_chunkable'
+    | 'strict_mode'
+    | 'status'
+    | 'intake'
 >;
 export interface ContentObjectTypeCatalogEntry extends InCodeTypeDefinition {
     updated_by?: string;
