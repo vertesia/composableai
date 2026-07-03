@@ -9,3 +9,4 @@ export * from './search';
 export * from './TableLayoutEditor';
 export * from './TypeRegistry';
 export * from './TypeRegistryProvider';
+export * from './typeCatalogCache';

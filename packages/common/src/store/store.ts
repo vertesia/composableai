@@ -688,6 +688,12 @@ interface StoredTypeRef {
      */
     id: string;
     name: string;
+    /**
+     * Display hint from the type's intake policy (`intake.default_view`). Enriched by the
+     * API on single-object reads so clients can pick the initial view without fetching the
+     * type. Absent on list responses and older servers.
+     */
+    default_view?: ContentTypeIntakePolicy['default_view'];
 }
 
 interface InCodeTypeRef {
@@ -697,6 +703,12 @@ interface InCodeTypeRef {
      */
     id: string;
     name: string;
+    /**
+     * Display hint from the type's intake policy (`intake.default_view`). Enriched by the
+     * API on single-object reads so clients can pick the initial view without fetching the
+     * type. Absent on list responses and older servers.
+     */
+    default_view?: ContentTypeIntakePolicy['default_view'];
 }
 
 export interface ComplexSearchPayload extends Omit<SearchPayload, 'query'> {

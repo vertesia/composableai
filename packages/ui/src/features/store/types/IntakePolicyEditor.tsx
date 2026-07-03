@@ -18,8 +18,14 @@ import { Braces, CheckCircle2, FileText, RotateCcw, Save, WandSparkles } from 'l
 import { useMemo, useRef, useState } from 'react';
 
 interface IntakePolicyEditorProps {
-    objectType: ContentObjectType;
-    onIntakeUpdate: (value: ContentTypeIntakePolicy | undefined) => void;
+    /** Content type whose intake policy is edited; omit when editing a standalone policy. */
+    objectType?: ContentObjectType;
+    /** Initial policy value when no objectType is given (e.g. the project default policy). */
+    value?: ContentTypeIntakePolicy;
+    /** Custom persistence (e.g. save to project configuration). Returns the saved policy.
+     *  Defaults to saving the objectType's intake when objectType is provided. */
+    onSave?: (policy: ContentTypeIntakePolicy) => Promise<ContentTypeIntakePolicy | undefined>;
+    onIntakeUpdate?: (value: ContentTypeIntakePolicy | undefined) => void;
     readonly?: boolean;
 }
 
@@ -28,7 +34,8 @@ type IntakeExampleKey =
     | 'extraction_only'
     | 'visual_first'
     | 'structured_spreadsheet'
-    | 'media_no_transcript';
+    | 'media_no_transcript'
+    | 'full_reference';
 
 interface IntakeExample {
     key: IntakeExampleKey;
@@ -63,7 +70,7 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
                 instructions:
                     'Extract required fields only. Ignore cover pages, appendices, legal boilerplate, and marketing content.',
             },
-            rendering_template: '# {{title}}\n\n{{summary}}',
+            rendering_template: '# {{properties.title}}\n\n{{properties.summary}}',
             embeddings: {
                 text: true,
                 properties: true,
@@ -126,11 +133,74 @@ const INTAKE_EXAMPLES: IntakeExample[] = [
             default_view: 'properties',
         },
     },
+    {
+        key: 'full_reference',
+        label: 'Full Reference',
+        description: 'Every available option with representative values. Trim to what your type needs.',
+        value: {
+            mode: 'programmatic',
+            identification: {
+                guidance:
+                    'Supplier invoices: billing documents with an invoice number, line items, ' +
+                    'amounts due, tax breakdown, and payment terms.',
+                distinguish_from:
+                    'Quotes and estimates are offers, not payment requests. Credit notes carry ' +
+                    'negative amounts. Receipts confirm a payment already made.',
+                examples: [],
+            },
+            text_conversion: {
+                enabled: true,
+                method: 'auto',
+                instructions: 'Keep the commercial terms and totals. Drop boilerplate and legal footers.',
+                output_format: 'markdown',
+                custom: {
+                    interaction: 'my-project:ConvertSpecialDocument',
+                    agent: 'my-project:DocumentConversionAgent',
+                },
+            },
+            extraction: {
+                enabled: true,
+                source: 'auto',
+                instructions:
+                    'Extract totals from the summary block, not from line items. ' +
+                    'Amounts include currency. Dates use ISO 8601.',
+                interaction: 'sys:ExtractInformation',
+                verification: {
+                    enabled: false,
+                    model: 'publishers/anthropic/models/claude-sonnet',
+                    environment: 'default',
+                    materiality:
+                        'Amounts, dates, identifiers, and party names are material. Typos in free text are not.',
+                    threshold: 0.85,
+                    max_retries: 1,
+                    on_fail: 'flag',
+                },
+            },
+            rendering_template:
+                '# Invoice {{properties.invoice_number}}\n\n' +
+                '- Vendor: {{properties.vendor_name}}\n' +
+                '- Total: {{properties.currency}} {{properties.total_amount}}\n' +
+                '- Due: {{properties.due_date}}',
+            embeddings: {
+                text: true,
+                image: false,
+                properties: true,
+            },
+            generate_toc: false,
+            default_view: 'auto',
+        },
+    },
 ];
 
 const EMPTY_POLICY: ContentTypeIntakePolicy = {};
 
-export function IntakePolicyEditor({ objectType, onIntakeUpdate, readonly = false }: IntakePolicyEditorProps) {
+export function IntakePolicyEditor({
+    objectType,
+    value,
+    onSave: onSaveProp,
+    onIntakeUpdate,
+    readonly = false,
+}: IntakePolicyEditorProps) {
     const { store } = useUserSession();
     const toast = useToast();
     const { theme } = useTheme();
@@ -138,13 +208,14 @@ export function IntakePolicyEditor({ objectType, onIntakeUpdate, readonly = fals
     const validatePolicy = useMemo(() => createPolicyValidator(), []);
 
     const [isUpdating, setUpdating] = useState(false);
-    const [editorValue, setEditorValue] = useState(() => stringifyPolicy(objectType.intake));
-    const [savedValue, setSavedValue] = useState(() => stringifyPolicy(objectType.intake));
+    const initialPolicy = objectType?.intake ?? value;
+    const [editorValue, setEditorValue] = useState(() => stringifyPolicy(initialPolicy));
+    const [savedValue, setSavedValue] = useState(() => stringifyPolicy(initialPolicy));
     const [validationMessage, setValidationMessage] = useState<string | undefined>(undefined);
 
     const isDirty = editorValue !== savedValue;
     const currentPolicy = useMemo(() => parsePolicyOrUndefined(editorValue), [editorValue]);
-    const summaryPolicy = currentPolicy ?? objectType.intake ?? EMPTY_POLICY;
+    const summaryPolicy = currentPolicy ?? initialPolicy ?? EMPTY_POLICY;
 
     const beforeMount = (monaco: Monaco) => {
         const namespace = monaco as unknown as {
@@ -182,16 +253,23 @@ export function IntakePolicyEditor({ objectType, onIntakeUpdate, readonly = fals
             return;
         }
 
+        const persist =
+            onSaveProp ??
+            (objectType
+                ? (next: ContentTypeIntakePolicy) =>
+                      store.types.update(objectType.id, { intake: next }).then((response) => response.intake)
+                : undefined);
+        if (!persist) {
+            return;
+        }
+
         setUpdating(true);
-        store.types
-            .update(objectType.id, {
-                intake: policy,
-            })
-            .then((response) => {
-                const nextValue = stringifyPolicy(response.intake);
+        persist(policy)
+            .then((saved) => {
+                const nextValue = stringifyPolicy(saved ?? policy);
                 setEditorValue(nextValue);
                 setSavedValue(nextValue);
-                onIntakeUpdate(response.intake);
+                onIntakeUpdate?.(saved ?? policy);
                 toast({
                     status: 'success',
                     title: 'Intake policy updated',

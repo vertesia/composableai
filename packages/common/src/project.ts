@@ -1,5 +1,6 @@
 import type { JSONSchemaType } from 'ajv';
 import type { SupportedIntegrations } from './integrations.js';
+import type { ContentTypeIntakePolicy } from './store/store.js';
 import type { WorkflowRunStatus } from './store/workflow.js';
 import type { AccountRef } from './user.js';
 
@@ -270,6 +271,20 @@ export type ProjectSearchTier = 'standard' | 'performance';
 export type ElasticsearchBackend = 'serverless' | 'hosted';
 
 export interface ProjectIntakeConfiguration {
+    /**
+     * Master switch for the standard intake pipeline. When false, StandardIntake exits as a
+     * no-op WITHOUT touching object status (objects stay in `created`, identifiable as
+     * unprocessed). Defaults to true.
+     */
+    enabled?: boolean;
+
+    /**
+     * Project-level intake policy defaults. Same shape as the per-content-type policy; a
+     * type's `intake` block wins field-by-field over these defaults, which in turn win over
+     * the legacy flat fields below. `identification` is type-specific and ignored here.
+     */
+    default_policy?: ContentTypeIntakePolicy;
+
     /**
      * Generate table-of-content sections during standard document intake.
      * Defaults to false.
