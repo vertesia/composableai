@@ -185,7 +185,7 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
             },
             minify: true,
             sourcemap: true,
-            rolldownOptions: {
+            rollupOptions: {
                 external: isExternal,
             },
         },

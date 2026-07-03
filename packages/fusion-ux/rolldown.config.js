@@ -11,7 +11,7 @@ export default defineConfig({
         file: TARGET_FILE,
         format: 'es',
         sourcemap: true,
-        inlineDynamicImports: true,
+        codeSplitting: false,
         minify: true,
     },
     external: [

@@ -70,8 +70,8 @@ export function UploadResultCategory({
                 <div id={panelId} className="p-3 border-t border-color-border max-h-48 overflow-y-auto">
                     {items.length > 0 ? (
                         <ul className="space-y-1">
-                            {items.map((item, index) => (
-                                <li key={`item-${index}`} className="text-sm py-1 px-2 rounded hover:bg-color-muted/10">
+                            {items.map((item) => (
+                                <li key={item} className="text-sm py-1 px-2 rounded hover:bg-color-muted/10">
                                     {item}
                                 </li>
                             ))}
