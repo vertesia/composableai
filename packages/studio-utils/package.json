@@ -45,7 +45,7 @@
         "lint": "biome lint src",
         "test": "vitest run",
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && pnpm exec tsc -p tsconfig.json && pnpm exec rolldown -c rollup.config.js",
+        "build": "pnpm run clean:lib && pnpm exec tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "devDependencies": {
