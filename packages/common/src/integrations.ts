@@ -18,8 +18,21 @@ export interface GladiaConfigurationWithSecrets extends GladiaConfiguration {
     api_key?: string;
 }
 
+export interface GithubConfigurationInput extends IntegrationConfigurationBase<SupportedIntegrations.github> {
+    /** Numeric GitHub App id used to mint installation tokens (non-secret). */
+    github_app_id?: string;
+    /** Allow-list of `owner/name` repos the bot may mint installation tokens for (default-deny when empty). */
+    allowed_repositories?: string[];
+    /** GitHub App private key (PEM). Write-only; never returned. Empty string clears it. */
+    private_key?: string;
+}
+
 export interface GithubConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.github> {
+    /** Numeric GitHub App id used to mint installation tokens (non-secret). */
+    github_app_id?: string;
     allowed_repositories: string[];
+    /** True when a GitHub App private key is stored for the project (the key itself is never returned). */
+    has_github_app_private_key?: boolean;
 }
 
 export interface AwsConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.aws> {
@@ -168,7 +181,7 @@ export enum SupportedIntegrations {
  */
 export type ProjectIntegrationConfigRequest =
     | GladiaConfigurationInput
-    | GithubConfiguration
+    | GithubConfigurationInput
     | AwsConfiguration
     | MagicPdfConfiguration
     | SerperConfigurationInput

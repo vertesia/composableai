@@ -45,5 +45,7 @@ export function useIntersectionObserver(
                 observer.unobserve(element);
             }
         };
-    }, [target, threshold]);
+        // opts.deps let callers re-attach the observer once the target element mounts
+        // (e.g. an infinite-scroll sentinel that renders only after the first page loads).
+    }, [target, threshold, ...(opts.deps ?? [])]);
 }

@@ -1,7 +1,13 @@
 import type { AuditMeter } from './audit-trail.js';
 import type { ConversationVisibility, InteractionExecutionConfiguration } from './interaction.js';
 import type { SystemRoles } from './project.js';
-import type { JsonLogicRule, ProcessDefinitionBody, ProcessRunType, WorkflowRuleInputType } from './store/index.js';
+import type {
+    AgentRunStatus,
+    JsonLogicRule,
+    ProcessDefinitionBody,
+    ProcessRunType,
+    WorkflowRuleInputType,
+} from './store/index.js';
 
 export type EventCategory = 'content' | 'workflow' | 'security' | 'billing' | 'system' | 'external';
 
@@ -104,6 +110,34 @@ export interface PublishWorkflowLifecycleEventRequest {
     error?: string;
     /** EventRef of the event that started the workflow (payload.vars.event_ref), if any. */
     caused_by?: EventRef;
+}
+
+/**
+ * A provider-neutral external work-item thread identity. The pair `(resource_type, resource_id)`
+ * derives a stable `eventThreadTag` (see `@dglabs/event-bus`), so all events of the same thread
+ * correlate to one agent run.
+ */
+export interface EventThreadRef {
+    resource_type: string;
+    resource_id: string;
+}
+
+/**
+ * Body of the internal, workload-identity-gated run-threads endpoint. Sent by a Temporal worker so an
+ * agent run can register additional external-thread identities on **itself** mid-run, so later events on
+ * those threads route to the same run. The server computes the thread tags from `(account, project,
+ * resource_type, resource_id)` and idempotently appends them to the run; the worker never supplies a raw
+ * tag.
+ */
+export interface AppendAgentRunThreadsRequest {
+    account_id: string;
+    project_id: string;
+    threads: EventThreadRef[];
+}
+
+export interface AppendAgentRunThreadsResponse {
+    /** The thread tags that are now present on the run (the full event-thread tag set). */
+    thread_tags: string[];
 }
 
 export interface EventSubscriptionFilter {
@@ -223,11 +257,27 @@ export interface WebhookEventDeliveryTarget {
 
 export const DEFAULT_EVENT_AGENT_INTERACTION_REF = 'sys:GeneralAgent';
 
+/**
+ * How a matching event is applied to the external work-item thread's agent run:
+ * - `start` (default): always start a new run. Gating is done by the subscription filter; no
+ *   `message_path` is needed.
+ * - `signal`: deliver only to an *existing* run on the thread (never start) — the follow-up path.
+ *   `missing_thread` governs the no-run case.
+ * - `ensure`: deliver to the run on the thread, **starting one if none exists**.
+ *
+ * For `signal`/`ensure` the message is delivered **exactly once**: as the run's initial instruction
+ * when starting, or as a signal to an existing/restarted run. Correlation is the provider-neutral
+ * `eventThreadTag(event_ref)` — the started run is auto-tagged with it and follow-ups recompute the
+ * same tag to find the run.
+ */
+export type AgentDeliveryMatchMode = 'start' | 'signal' | 'ensure';
+
 export interface AgentEventDeliveryTarget {
     type: 'agent';
-    /**
-     * Interaction ID, app ref, or system ref. Defaults to the general-purpose system agent.
-     */
+    /** Behavior when an event matches. Defaults to `start`. */
+    on_match?: AgentDeliveryMatchMode;
+    // --- Start payload (used when starting a run: `start`, or `ensure` with no existing run) ---
+    /** Interaction ID, app ref, or system ref. Defaults to the general-purpose system agent. */
     interaction_ref?: string;
     data?: Record<string, unknown>;
     config?: InteractionExecutionConfiguration;
@@ -238,6 +288,31 @@ export interface AgentEventDeliveryTarget {
     tool_names?: string[];
     max_iterations?: number;
     debug_mode?: boolean;
+    // --- Gate + signal config (used by `signal` and `ensure`) ---
+    /** Signal sent to an existing/restarted run. Only `UserInput` is implemented. */
+    signal_name?: 'UserInput';
+    /** Dot-path to the message (initial instruction when starting, else the signal). Required for signal/ensure. */
+    message_path?: string;
+    /** Dot-path to a stable per-message id, carried on the signal for (future) exactly-once dedupe. */
+    client_message_id_path?: string;
+    /** Run statuses eligible to receive the signal when a run exists. Defaults to ['running']. */
+    statuses?: AgentRunStatus[];
+    /** If this dot-path resolves to a value, the delivery is skipped. */
+    skip_if_path_exists?: string;
+    /** Dot-path to the message author, for the loop guard. */
+    author_path?: string;
+    /** Regex patterns matched against the resolved author; a match skips the delivery (loop guard). */
+    ignore_author_patterns?: string[];
+    /** The message must start with one of these prefixes to be delivered. */
+    require_command_prefixes?: string[];
+    /** ...or contain one of these mentions. Combined with prefixes as OR. */
+    require_mentions?: string[];
+    /** `signal` mode only — no run yet (open/follow-up race): 'retry' (default) or 'skip'. Ignored for `ensure`. */
+    missing_thread?: 'retry' | 'skip';
+    /** Behaviour when only terminal runs match: `skip` (default) or `restart` then signal. */
+    on_terminal?: 'skip' | 'restart';
+    /** Extra fields merged into the signal's metadata; same `{{event.*}}` / `$event.x` templating as `data`. */
+    metadata?: Record<string, unknown>;
 }
 
 export interface ProcessEventDeliveryTarget {
@@ -389,6 +464,8 @@ export interface EventDeliverySummary {
     intents: EventDeliveryIntentSummary[];
 }
 
+export type EventDeliverySortField = 'created_at' | 'status' | 'resource_type' | 'event_category' | 'action';
+
 export interface ListEventDeliveriesPayload {
     limit?: number;
     event_id?: string;
@@ -396,6 +473,16 @@ export interface ListEventDeliveriesPayload {
     subscription_id?: string;
     status?: EventDeliveryIntentStatus[];
     outbox_status?: EventOutboxStatus[];
+    /** Filter by outbox event category (e.g. external, content). */
+    event_category?: EventCategory[];
+    /** Filter by outbox action (e.g. opened, created). */
+    action?: string[];
+    /** Filter by outbox resource type (e.g. github_issue, content_object). */
+    resource_type?: string[];
+    /** Sort field (default created_at). */
+    sort_by?: EventDeliverySortField;
+    /** Sort order (default desc). */
+    sort_order?: 'asc' | 'desc';
 }
 
 export interface ListEventDeliveriesResponse {
@@ -455,6 +542,74 @@ export type EventDeliveryStreamEnvelope =
     | EventDeliveryStreamHeartbeat
     | EventDeliveryStreamError;
 
+export type EventSubscriptionSortField = 'name' | 'scope' | 'target_type' | 'enabled' | 'updated_at';
+
+export interface ListEventSubscriptionsQuery {
+    enabled?: boolean;
+    target_type?: EventDeliveryTarget['type'][];
+    scope?: ('account' | 'project')[];
+    sort_by?: EventSubscriptionSortField;
+    sort_order?: 'asc' | 'desc';
+}
+
+export type EventIngestChannelSortField = 'name' | 'source' | 'enabled' | 'updated_at';
+
+export interface ListEventIngestChannelsQuery {
+    enabled?: boolean;
+    source?: string[];
+    sort_by?: EventIngestChannelSortField;
+    sort_order?: 'asc' | 'desc';
+}
+
+export type EventDeliveryQueueSortField = 'subscription_name' | 'queued' | 'active' | 'failed' | 'oldest';
+
+export interface EventDeliveryQueueSummaryPayload {
+    subscription_id?: string;
+    target_type?: EventDeliveryTarget['type'][];
+    sort_by?: EventDeliveryQueueSortField;
+    sort_order?: 'asc' | 'desc';
+}
+
+export interface EventOutboxQueueSummary {
+    total: number;
+    active: number;
+    failed: number;
+    dropped: number;
+    by_status: Record<string, number>;
+    oldest_active_at?: string;
+}
+
+export interface EventDeliveryQueueFailureSummary {
+    intent_id: string;
+    event_id: string;
+    status: EventDeliveryIntentStatus;
+    attempt_count: number;
+    last_error?: string | null;
+    updated_at: string;
+}
+
+export interface EventDeliveryQueueSubscriptionSummary {
+    subscription_id: string;
+    subscription_name: string;
+    target_type: EventDeliveryTarget['type'];
+    total: number;
+    queued: number;
+    deferred: number;
+    active: number;
+    failed: number;
+    skipped: number;
+    max_attempt_count: number;
+    oldest_queued_at?: string;
+    oldest_deferred_at?: string;
+    latest_failure?: EventDeliveryQueueFailureSummary;
+}
+
+export interface EventDeliveryQueueSummaryResponse {
+    generated_at: string;
+    outbox: EventOutboxQueueSummary;
+    deliveries: EventDeliveryQueueSubscriptionSummary[];
+}
+
 export interface PublishPlatformEventPayload {
     event: PlatformEvent;
     priority?: EventPriority;
@@ -479,6 +634,31 @@ export interface WorkflowEventInput<T = Record<string, unknown>> {
 // source 'external:<source>', and match event subscriptions like any other platform event.
 
 /**
+ * A conditional rule for deriving `resource_type` + `resource_id` from the body, evaluated in order
+ * (first match wins) when a single dot-path can't serve every payload shape a channel receives. A
+ * sender whose one webhook delivers heterogeneous events (e.g. a GitHub App: issues, issue comments,
+ * PR reviews) needs different thread identities per event family; these rules express that without
+ * baking provider knowledge into the server.
+ */
+export interface EventIngestResourceRule {
+    /** Match when the captured `event_type` (see `event_type_header`) is one of these. */
+    event_type?: string[];
+    /** Match only when this dot-path resolves to a defined, non-null value (e.g. `issue.pull_request`). */
+    when_path_exists?: string;
+    /** Match only when this dot-path is undefined/null. */
+    when_path_absent?: string;
+    /** `resource_type` to set when this rule matches. */
+    resource_type?: string;
+    /** `resource_id` from a single dot-path. */
+    resource_id_path?: string;
+    /**
+     * ...or a composed `resource_id` from a `{{dot.path}}` template against the body, e.g.
+     * `{{repository.full_name}}#{{pull_request.number}}`. Takes precedence over `resource_id_path`.
+     */
+    resource_id_template?: string;
+}
+
+/**
  * Declarative mapping from a raw third-party webhook body to platform event fields, for senders that
  * cannot shape their payload (GitHub, Slack, DocuSign, Salesforce, ...). Each `*_path` is a dot-path
  * into the JSON body (array indices supported, e.g. `commits.0.id`). Extracted values override the
@@ -491,8 +671,28 @@ export interface EventIngestTransform {
     resource_type_path?: string;
     /** Dot-path to the value used as `event.resource_id`. */
     resource_id_path?: string;
+    /**
+     * Request **header** carrying the event family (e.g. GitHub's `x-github-event`), captured into
+     * `event.details.event_type`. Lets subscriptions and `resource_rules` discriminate event shapes when
+     * one channel receives heterogeneous payloads whose `action` alone is ambiguous (e.g. `created` for
+     * both an issue comment and a PR review comment).
+     */
+    event_type_header?: string;
+    /**
+     * Ordered conditional rules for `resource_type` + `resource_id` (first match wins). Used when a single
+     * `resource_id_path` can't serve every payload shape. Falls back to `resource_type_path` /
+     * `resource_id_path` / channel defaults when no rule matches.
+     */
+    resource_rules?: EventIngestResourceRule[];
     /** Dot-path to a deduplication key (same semantics as `idempotency_key`). */
     idempotency_key_path?: string;
+    /**
+     * Request **header** to use as the deduplication key when the body has no stable per-delivery id —
+     * e.g. GitHub App's `x-github-delivery`, unique per delivery for all event types, which is the only
+     * reliable dedup key when one App webhook delivers heterogeneous payloads (issues + comments) to a
+     * single channel. Lower precedence than `idempotency_key_path`.
+     */
+    idempotency_key_header?: string;
     /** Dot-path to an ISO 8601 event timestamp. */
     timestamp_path?: string;
     /** Static fields merged into `event.details`. */

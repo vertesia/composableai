@@ -6,11 +6,10 @@
     "type": "module",
     "scripts": {
         "build": "pnpm exec turbo run build",
-        "bump": "pnpm exec wst bump minor -x llumiverse",
         "check": "pnpm exec biome check .",
         "check:write": "pnpm exec biome check --write .",
         "ci:local": "pnpm run ci:renovate && pnpm run check && pnpm run build && pnpm run ci:test",
-        "ci:renovate": "npx --yes --package renovate -- renovate-config-validator --strict",
+        "ci:renovate": "npx --yes --package 'renovate@>=43' -- renovate-config-validator --strict",
         "ci:test": "pnpm exec turbo run typecheck:test test --filter='./packages/*' --filter='./llumiverse/*' --filter='./templates/*'",
         "ci:typecheck:test": "pnpm exec turbo run typecheck:test --filter='./packages/*' --filter='./llumiverse/*' --filter='./templates/*'",
         "clean": "rimraf ./node_modules && pnpm -r clean",
@@ -27,11 +26,10 @@
     },
     "devDependencies": {
         "@biomejs/biome": "2.5.0",
-        "npm-ws-tools": "^0.3.0",
         "rimraf": "^6.1.3",
         "turbo": "^2.9.18",
         "typescript": "^6.0.3",
-        "vite": "^8.0.16"
+        "vite": "catalog:"
     },
     "packageManager": "pnpm@11.8.0"
 }

@@ -1420,6 +1420,8 @@ function ModernAgentConversationInner({
     const workstreamFetchFailedRef = useRef(false);
     const dragCounterRef = useRef(0);
     const pendingPlaybackScrollRef = useRef(false);
+    const toolApprovalModeChangeVersionRef = useRef(0);
+    const pendingToolApprovalModeChangeRef = useRef<Promise<void> | null>(null);
 
     useEffect(() => {
         setToolApprovalMode(initialResolvedToolApprovalMode);
@@ -1913,6 +1915,13 @@ function ModernAgentConversationInner({
     // Handlers
     // ────────────────────────────────────────────
 
+    const waitForPendingToolApprovalModeChange = useCallback(async () => {
+        const pendingChange = pendingToolApprovalModeChangeRef.current;
+        if (pendingChange) {
+            await pendingChange;
+        }
+    }, []);
+
     // Send a message to the agent
     const handleSendMessage = useCallback(
         (message: string, inputMetadata?: Record<string, unknown>) => {
@@ -1984,12 +1993,15 @@ function ModernAgentConversationInner({
             // buffers the signal until the new run is ready to receive it. We reconnect
             // the stream in place (rather than remounting via onRestart) so the existing
             // timeline is preserved and the new exchange appends seamlessly at the bottom.
-            const deliver = isWorkflowTerminalRef.current
-                ? client.agents.restart(agentRunId).then(() => {
-                      reconnectStream();
-                      return sendUserInput().then(markReceived);
-                  })
-                : sendUserInput().then(markReceived);
+            const deliver = (async () => {
+                await waitForPendingToolApprovalModeChange();
+                if (isWorkflowTerminalRef.current) {
+                    await client.agents.restart(agentRunId);
+                    reconnectStream();
+                }
+                await sendUserInput();
+                markReceived();
+            })();
 
             deliver
                 .catch((err) => {
@@ -2016,6 +2028,7 @@ function ModernAgentConversationInner({
             addOptimisticMessage,
             updateOptimisticMessageStatus,
             t,
+            waitForPendingToolApprovalModeChange,
         ],
     );
 
@@ -2044,12 +2057,16 @@ function ModernAgentConversationInner({
     const [mcpDisabled, setMcpDisabled] = useState<string[] | undefined>(undefined);
     useEffect(() => {
         let cancelled = false;
+        const requestVersion = toolApprovalModeChangeVersionRef.current;
         client.agents
             .retrieve(agentRunId)
             .then((run) => {
                 if (!cancelled) {
                     setMcpDisabled(run.disabled_mcp_collections);
-                    if (run.tool_approval_mode !== undefined || run.interactive !== undefined) {
+                    if (
+                        toolApprovalModeChangeVersionRef.current === requestVersion &&
+                        (run.tool_approval_mode !== undefined || run.interactive !== undefined)
+                    ) {
                         setToolApprovalMode(normalizeAgentToolApprovalMode(run.tool_approval_mode, run.interactive));
                     }
                 }
@@ -2085,10 +2102,14 @@ function ModernAgentConversationInner({
     const handleToolApprovalModeChange = useCallback(
         (mode: AgentToolApprovalMode) => {
             const nextMode = normalizeAgentToolApprovalMode(mode, interactive);
+            const previousMode = toolApprovalMode;
+            toolApprovalModeChangeVersionRef.current += 1;
             setToolApprovalMode(nextMode);
-            client.agents
+            const signalPromise = client.agents
                 .sendSignal(agentRunId, 'ToolApprovalModeChanged', { mode: nextMode })
+                .then(() => undefined)
                 .catch((err: unknown) => {
+                    setToolApprovalMode((currentMode) => (currentMode === nextMode ? previousMode : currentMode));
                     toast({
                         status: 'error',
                         title: t('agent.approvalMode.changeFailed'),
@@ -2096,8 +2117,14 @@ function ModernAgentConversationInner({
                         duration: 3000,
                     });
                 });
+            pendingToolApprovalModeChangeRef.current = signalPromise;
+            void signalPromise.finally(() => {
+                if (pendingToolApprovalModeChangeRef.current === signalPromise) {
+                    pendingToolApprovalModeChangeRef.current = null;
+                }
+            });
         },
-        [agentRunId, client, interactive, t, toast],
+        [agentRunId, client, interactive, t, toast, toolApprovalMode],
     );
 
     // Drag and drop handlers for full-panel file upload

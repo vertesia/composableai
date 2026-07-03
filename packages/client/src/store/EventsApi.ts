@@ -1,5 +1,7 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    EventDeliveryQueueSummaryPayload,
+    EventDeliveryQueueSummaryResponse,
     EventDeliveryStreamEnvelope,
     EventDeliveryStreamItem,
     EventDeliveryStreamSnapshot,
@@ -38,6 +40,10 @@ export class EventsApi extends ApiTopic {
 
     searchDeliveries(payload: ListEventDeliveriesPayload = {}): Promise<ListEventDeliveriesResponse> {
         return this.post('/deliveries/search', { payload });
+    }
+
+    queueSummary(payload: EventDeliveryQueueSummaryPayload = {}): Promise<EventDeliveryQueueSummaryResponse> {
+        return this.post('/deliveries/queue-summary', { payload });
     }
 
     subscribeDeliveries(options: SubscribeEventDeliveriesOptions): ManagedEventSourceConnection {

@@ -14,6 +14,8 @@ type RunInteractionOptions = CliOptions<{
     verbose?: boolean;
     jsonl?: boolean;
     dataOnly?: boolean;
+    resultSchema?: string;
+    resultSchemaFile?: string;
 }>;
 
 export default async function runInteraction(
