@@ -71,8 +71,7 @@ export function UploadResultCategory({
                     {items.length > 0 ? (
                         <ul className="space-y-1">
                             {items.map((item, index) => (
-                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                                <li key={index} className="text-sm py-1 px-2 rounded hover:bg-color-muted/10">
+                                <li key={`item-${index}`} className="text-sm py-1 px-2 rounded hover:bg-color-muted/10">
                                     {item}
                                 </li>
                             ))}

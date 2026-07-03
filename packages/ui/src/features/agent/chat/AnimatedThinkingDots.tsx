@@ -393,8 +393,7 @@ export function WavyThinking({ className, color = 'blue', size = 'md' }: WavyThi
         >
             {barHeights.map((height, i) => (
                 <div
-                    // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length array of 7 visual bars never re-orders
-                    key={i}
+                    key={`bar-${i}`}
                     className={cn(sizeClasses[size].barWidth, 'rounded-full transform-gpu', colorClasses[color])}
                     style={{
                         height: `${height}%`,

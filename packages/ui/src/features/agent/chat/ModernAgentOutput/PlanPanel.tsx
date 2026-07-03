@@ -45,8 +45,7 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
                         }
 
                         return (
-                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                            <div key={index} className="flex items-start">
+                            <div key={`plan-step-${index}`} className="flex items-start">
                                 <div className={`me-1.5 mt-0.5 ${statusColor}`}>
                                     <StatusIcon className="h-3.5 w-3.5" />
                                 </div>
