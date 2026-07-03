@@ -1,6 +1,5 @@
-import { Plus } from "lucide-react";
-import { Button } from "./shadcn/button";
-
+import { Plus } from 'lucide-react';
+import { Button } from './shadcn/button';
 
 interface EmptyInteractionsProps {
     buttonLabel: string;
@@ -37,5 +36,5 @@ export function EmptyCollection({ buttonLabel, title, children, onClick }: Empty
                 </div>
             </div>
         </div>
-    )
+    );
 }

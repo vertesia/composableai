@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { I18nextProvider, Trans, useTranslation } from 'react-i18next';
 import { i18nInstance, NAMESPACE } from './instance.js';
 import { useLanguage } from './LanguageProvider.js';
@@ -30,11 +30,7 @@ export function I18nProvider({ lng, children }: I18nProviderProps) {
         }
     }, [lng]);
 
-    return (
-        <I18nextProvider i18n={i18nInstance}>
-            {children}
-        </I18nextProvider>
-    );
+    return <I18nextProvider i18n={i18nInstance}>{children}</I18nextProvider>;
 }
 
 /**
@@ -63,10 +59,10 @@ export {
     useLanguage,
 } from './LanguageProvider.js';
 export {
-    RTL_LANGUAGES,
-    SUPPORTED_LANGUAGES,
     isRTL,
+    RTL_LANGUAGES,
     resolveLanguage,
+    SUPPORTED_LANGUAGES,
     type SupportedLanguage,
 } from './rtl.js';
-export { useLocaleFormat, type LocaleFormat } from './useLocaleFormat.js';
+export { type LocaleFormat, useLocaleFormat } from './useLocaleFormat.js';

@@ -1,10 +1,8 @@
-import { AgentToolDefinition } from "@vertesia/common";
-import { HTTPException } from "hono/http-exception";
-import { Tool, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult, ToolUseContext } from "./types.js";
-
+import type { AgentToolDefinition } from '@vertesia/common';
+import { HTTPException } from 'hono/http-exception';
+import type { Tool, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult, ToolUseContext } from './types.js';
 
 export class ToolRegistry {
-
     // The category name usinfg this registry
     category: string;
     registry: Record<string, Tool> = {};
@@ -30,11 +28,11 @@ export class ToolRegistry {
             category: this.category,
             default: tool.default,
             ...(tool.annotations ? { annotations: tool.annotations } : {}),
-            ...(tool.requires_user_confirmation ? { requires_user_confirmation: true } : {}),
+            ...(tool.approval_class ? { approval_class: tool.approval_class } : {}),
         });
         let tools = Object.values(this.registry);
         if (context) {
-            tools = tools.filter(tool => {
+            tools = tools.filter((tool) => {
                 return tool.isEnabled ? tool.isEnabled(context) : true;
             });
         }
@@ -42,7 +40,7 @@ export class ToolRegistry {
     }
 
     getTool<ParamsT extends object>(name: string): Tool<ParamsT> {
-        const tool = this.registry[name]
+        const tool = this.registry[name];
         if (tool === undefined) {
             throw new ToolNotFoundError(name);
         }
@@ -57,17 +55,18 @@ export class ToolRegistry {
         this.registry[tool.name] = tool as unknown as Tool;
     }
 
-    runTool<ParamsT extends object>(payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext): Promise<ToolExecutionResult> {
+    runTool<ParamsT extends object>(
+        payload: ToolExecutionPayload<ParamsT>,
+        context: ToolExecutionContext,
+    ): Promise<ToolExecutionResult> {
         const toolName = payload.tool_use.tool_name;
         return this.getTool(toolName).run(payload, context);
     }
-
 }
-
 
 export class ToolNotFoundError extends HTTPException {
     constructor(name: string) {
-        super(404, { message: "Tool function not found: " + name });
-        this.name = "ToolNotFoundError";
+        super(404, { message: `Tool function not found: ${name}` });
+        this.name = 'ToolNotFoundError';
     }
 }

@@ -1,10 +1,10 @@
-import { log } from "@temporalio/activity";
-import { VertesiaClient } from "@vertesia/client";
-import { NodeStreamSource } from "@vertesia/client/node";
-import { ImageRenditionFormat } from "@vertesia/common";
-import fs from "fs";
+import fs from 'node:fs';
+import { log } from '@temporalio/activity';
+import type { VertesiaClient } from '@vertesia/client';
+import { NodeStreamSource } from '@vertesia/client/node';
+import type { ImageRenditionFormat } from '@vertesia/common';
 import pLimit from 'p-limit';
-import { imageResizer } from "../conversion/image.js";
+import { imageResizer } from '../conversion/image.js';
 
 export interface ImageRenditionParams {
     max_hw: number; //maximum size of the longest side of the image
@@ -20,10 +20,7 @@ export interface ImageRenditionParams {
  * @param pageNumber
  * @returns
  */
-export function getRenditionsPath(
-    contentEtag: string,
-    params: ImageRenditionParams,
-) {
+export function getRenditionsPath(contentEtag: string, params: ImageRenditionParams) {
     const path = `renditions/${contentEtag}/${params.max_hw}`;
     return path;
 }
@@ -37,8 +34,8 @@ export function getRenditionPagePath(
     pageNumber: number | string = 0,
 ) {
     //if number, pad to 4 char
-    if (typeof pageNumber === "number") {
-        pageNumber = String(pageNumber).padStart(4, "0");
+    if (typeof pageNumber === 'number') {
+        pageNumber = String(pageNumber).padStart(4, '0');
     }
     const path = getRenditionsPath(contentEtag, params);
     const pagePath = `${path}/${pageNumber}.${params.format}`;
@@ -62,75 +59,71 @@ export async function uploadRenditionPages(
 
     const limit = pLimit(concurrency ?? 20);
 
-    const uploads = files.map((file, i) => limit(async () => {
-        const pageId = params.outputPath
-            ? (files.length === 1
-                ? params.outputPath
-                : `${params.outputPath}/${String(i).padStart(4, "0")}.${params.format}`)
-            : getRenditionPagePath(contentEtag, params, i);
-        let resizedImagePath = null;
+    const uploads = files.map((file, i) =>
+        limit(async () => {
+            const pageId = params.outputPath
+                ? files.length === 1
+                    ? params.outputPath
+                    : `${params.outputPath}/${String(i).padStart(4, '0')}.${params.format}`
+                : getRenditionPagePath(contentEtag, params, i);
+            let resizedImagePath: string | undefined;
 
-        try {
-            log.debug(`Resizing image for ${contentEtag} page ${i}`, {
-                file,
-                params,
-            });
-            // Resize the image using ImageMagick
-            resizedImagePath = await imageResizer(
-                file,
-                params.max_hw,
-                params.format,
-            );
+            try {
+                log.debug(`Resizing image for ${contentEtag} page ${i}`, {
+                    file,
+                    params,
+                });
+                // Resize the image using ImageMagick
+                resizedImagePath = await imageResizer(file, params.max_hw, params.format);
 
-            // Create a read stream from the resized image file
-            const fileStream = fs.createReadStream(resizedImagePath);
-            const format = "image/" + params.format;
-            const fileId = pageId.split("/").pop() ?? pageId;
-            const source = new NodeStreamSource(
-                fileStream,
-                fileId,
-                format,
-                pageId,
-            );
+                // Create a read stream from the resized image file
+                const fileStream = fs.createReadStream(resizedImagePath);
+                const format = `image/${params.format}`;
+                const fileId = pageId.split('/').pop() ?? pageId;
+                const source = new NodeStreamSource(fileStream, fileId, format, pageId);
 
-            log.debug(
-                `Uploading rendition for ${contentEtag} page ${i} with max_hw: ${params.max_hw} and format: ${params.format}`,
-                {
-                    resizedImagePath,
-                    fileId,
-                    format,
-                    pageId,
-                },
-            );
+                log.debug(
+                    `Uploading rendition for ${contentEtag} page ${i} with max_hw: ${params.max_hw} and format: ${params.format}`,
+                    {
+                        resizedImagePath,
+                        fileId,
+                        format,
+                        pageId,
+                    },
+                );
 
-            const result = await client.files
-                .uploadFile(source)
-                .catch((err: unknown) => {
+                const result = await client.files.uploadFile(source).catch((err: unknown) => {
                     const message = err instanceof Error ? err.message : String(err);
                     const stack = err instanceof Error ? err.stack : undefined;
-                    log.error(
-                        `Failed to upload rendition for ${contentEtag} page ${i}`,
-                        {
-                            error: err,
-                            errorMessage: message,
-                            stack,
-                        },
-                    );
+                    log.error(`Failed to upload rendition for ${contentEtag} page ${i}`, {
+                        error: err,
+                        errorMessage: message,
+                        stack,
+                    });
                     return Promise.reject(`Upload failed: ${message}`);
                 });
-            log.debug(`Rendition uploaded for ${contentEtag} page ${i}`, {
-                result,
-            });
+                log.debug(`Rendition uploaded for ${contentEtag} page ${i}`, {
+                    result,
+                });
 
-            return result;
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
-            log.error(`Failed to upload rendition for ${contentEtag} page ${i}`, {
-                error: err,
-            });
-            return Promise.reject(`Upload failed: ${message}`);
-        }
-    }));
+                return result;
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : String(err);
+                log.error(`Failed to upload rendition for ${contentEtag} page ${i}`, {
+                    error: err,
+                });
+                return Promise.reject(`Upload failed: ${message}`);
+            } finally {
+                if (resizedImagePath) {
+                    try {
+                        fs.unlinkSync(resizedImagePath);
+                    } catch (err) {
+                        log.warn(`Failed to clean resized rendition file for ${contentEtag} page ${i}`, { err });
+                    }
+                }
+            }
+        }),
+    );
 
     return Promise.all(uploads);
 }

@@ -3,7 +3,7 @@ set -e
 
 # Script to publish all composableai packages to NPM
 # Usage: publish-all-packages.sh --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]]
-#   --ref: Git reference (main for dev builds, preview for releases)
+#   --ref: Git reference (main for dev builds, release/X.Y for releases, e.g. release/1.4)
 #   --release-type: Release type (release, snapshot). Release creates stable versions, snapshot creates dev versions.
 #   --bump-type: Bump type (minor, patch, keep). How to change the version.
 #   --dry-run: Optional flag for dry run mode (value can be true, false, or omitted which means true)
@@ -17,9 +17,11 @@ workspace_package_dirs() {
   repo_root="$(git rev-parse --show-toplevel)"
 
   # Use pnpm workspace filtering so pnpm-workspace.yaml exclusions are authoritative.
-  pnpm -r --filter "./packages/**" exec pwd | while IFS= read -r pkg_dir; do
+  # Published scope: all packages/* + libraries/jst. Libraries/koa-stack/* are
+  # published by a separate workflow (different release cadence).
+  pnpm -r --filter "./packages/**" --filter "./libraries/jst" exec pwd | while IFS= read -r pkg_dir; do
     case "$pkg_dir" in
-      "${repo_root}"/packages/*)
+      "${repo_root}"/packages/*|"${repo_root}"/libraries/jst)
         [ -f "${pkg_dir}/package.json" ] && printf '%s\n' "$pkg_dir"
         ;;
     esac
@@ -68,8 +70,8 @@ update_package_versions() {
   # Update root package.json
   npm version "${new_version}" --no-git-tag-version --workspaces=false
 
-  # Update all workspace packages (excluding llumiverse)
-  pnpm -r --filter "./packages/**" exec npm version "${new_version}" --no-git-tag-version
+  # Update all workspace packages (excluding llumiverse and libraries/koa-stack/*)
+  pnpm -r --filter "./packages/**" --filter "./libraries/jst" exec npm version "${new_version}" --no-git-tag-version
 }
 
 publish_packages() {
@@ -148,27 +150,6 @@ update_template_versions() {
       cd ../..
     fi
   done
-}
-
-update_template_versions() {
-  echo "=== Updating create-plugin templateVersions ==="
-
-  # Get the llumiverse version from its root package.json
-  llumiverse_version=$(node -e "console.log(JSON.parse(require('fs').readFileSync('llumiverse/package.json', 'utf8')).version)")
-
-  echo "  @vertesia version: ${new_version}"
-  echo "  @llumiverse version: ${llumiverse_version}"
-
-  # Write both versions into create-plugin's package.json templateVersions field
-  node -e "
-    const fs = require('fs');
-    const pkgPath = 'packages/create-plugin/package.json';
-    const p = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-    p.templateVersions = { '@vertesia': '${new_version}', '@llumiverse': '${llumiverse_version}' };
-    fs.writeFileSync(pkgPath, JSON.stringify(p, null, 2) + '\n');
-  "
-
-  echo "  ✓ Updated packages/create-plugin/package.json templateVersions"
 }
 
 commit_and_push() {
@@ -320,9 +301,10 @@ if [[ ! "$BUMP_TYPE" =~ ^(minor|patch|keep)$ ]]; then
   exit 1
 fi
 
-# Validate that releases can only be published from 'preview' or maintenance branches (skip in dry-run)
-if [ "$RELEASE_TYPE" = "release" ] && [ "$DRY_RUN" != "true" ] && [ "$REF" != "preview" ] && [[ ! "$REF" =~ ^[0-9]+\.[0-9]+$ ]]; then
-  echo "Error: Release versions can only be published from 'preview' or maintenance branches."
+# Validate that releases can only be published from a release branch (release/X.Y, e.g. release/1.4)
+# or a legacy bare-numeric maintenance branch (skip in dry-run)
+if [ "$RELEASE_TYPE" = "release" ] && [ "$DRY_RUN" != "true" ] && [[ ! "$REF" =~ ^release/[0-9]+\.[0-9]+$ ]] && [[ ! "$REF" =~ ^[0-9]+\.[0-9]+$ ]]; then
+  echo "Error: Release versions can only be published from a 'release/X.Y' branch (e.g. release/1.4) or a maintenance branch."
   echo "Current branch: $REF"
   exit 1
 fi

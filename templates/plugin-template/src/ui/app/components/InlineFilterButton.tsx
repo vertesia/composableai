@@ -1,5 +1,5 @@
-import { Filter as FilterIcon } from 'lucide-react';
 import { Button } from '@vertesia/ui/core';
+import { Filter as FilterIcon } from 'lucide-react';
 
 interface InlineFilterButtonProps {
     tooltip: string;

@@ -1,5 +1,5 @@
-import { log } from "@temporalio/activity";
-import { type VertesiaClient, ZenoClientNotFoundError } from "@vertesia/client";
+import { log } from '@temporalio/activity';
+import { type VertesiaClient, ZenoClientNotFoundError } from '@vertesia/client';
 import {
     type ContentObject,
     type DSLActivityExecutionPayload,
@@ -8,12 +8,12 @@ import {
     ImageRenditionFormat,
     type ProjectConfigurationEmbedding,
     SupportedEmbeddingTypes,
-} from "@vertesia/common";
-import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { DocumentNotFoundError } from "../errors.js";
-import { fetchBlobAsBase64, md5 } from "../utils/blobs.js";
-import type { DocPart } from "../utils/chunks.js";
-import { countTokens } from "../utils/tokens.js";
+} from '@vertesia/common';
+import { setupActivity } from '../dsl/setup/ActivityContext.js';
+import { DocumentNotFoundError } from '../errors.js';
+import { fetchBlobAsBase64, md5 } from '../utils/blobs.js';
+import type { DocPart } from '../utils/chunks.js';
+import { countTokens } from '../utils/tokens.js';
 
 export interface GenerateEmbeddingsParams {
     /**
@@ -44,31 +44,37 @@ export interface GenerateEmbeddingsParams {
     parts?: DocPart[];
 }
 
-export interface GenerateEmbeddings
-    extends DSLActivitySpec<GenerateEmbeddingsParams> {
-    name: "generateEmbeddings";
+export interface GenerateEmbeddings extends DSLActivitySpec<GenerateEmbeddingsParams> {
+    name: 'generateEmbeddings';
 }
 
-export async function generateEmbeddings(
-    payload: DSLActivityExecutionPayload<GenerateEmbeddingsParams>,
-) {
-    const { params, client, objectId, fetchProject } =
-        await setupActivity<GenerateEmbeddingsParams>(payload);
+/**
+ * True when an error indicates the embedding environment is missing/unavailable (e.g. the
+ * configured environment id no longer exists). Treated as "not configured" so intake skips
+ * embeddings gracefully instead of failing.
+ */
+function isEnvironmentNotFound(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /environment not found/i.test(message);
+}
+
+export async function generateEmbeddings(payload: DSLActivityExecutionPayload<GenerateEmbeddingsParams>) {
+    const { params, client, objectId, fetchProject } = await setupActivity<GenerateEmbeddingsParams>(payload);
     const { force, type } = params;
+
+    const skipped = (message: string) => {
+        log.info(`Skipping ${type} embeddings for ${objectId}: ${message}`);
+        return { id: objectId, status: 'skipped' as const, message };
+    };
 
     const projectData = await fetchProject();
     const config = projectData?.configuration.embeddings[type];
     if (!projectData) {
-        throw new DocumentNotFoundError("Project not found", [payload.project_id]);
+        throw new DocumentNotFoundError('Project not found', [payload.project_id]);
     }
+    // Embeddings not configured for this type -> skip rather than fail intake.
     if (!config) {
-        throw new DocumentNotFoundError("Embeddings configuration not found", [
-            objectId,
-        ]);
-    }
-
-    if (!projectData) {
-        throw new DocumentNotFoundError("Project not found", [payload.project_id]);
+        return skipped(`embeddings not configured for type ${type}`);
     }
 
     if (!projectData?.configuration.embeddings[type]?.enabled) {
@@ -78,7 +84,7 @@ export async function generateEmbeddings(
         );
         return {
             id: objectId,
-            status: "skipped",
+            status: 'skipped',
             message: `Embeddings generation disabled for type ${type}`,
         };
     }
@@ -88,18 +94,14 @@ export async function generateEmbeddings(
         config,
     });
 
+    // No embedding environment configured for this type -> skip rather than fail intake.
     if (!config.environment) {
-        throw new Error(
-            "No environment found in project configuration. Set environment in project configuration to generate embeddings.",
-        );
+        return skipped(`no embedding environment configured for type ${type}`);
     }
 
     let document: Awaited<ReturnType<typeof client.objects.retrieve>>;
     try {
-        document = await client.objects.retrieve(
-            objectId,
-            "+text +parts +embeddings +tokens +properties",
-        );
+        document = await client.objects.retrieve(objectId, '+text +parts +embeddings +tokens +properties');
     } catch (error) {
         if (error instanceof ZenoClientNotFoundError) {
             throw new DocumentNotFoundError(`Document not found: ${objectId}`, [objectId]);
@@ -108,11 +110,11 @@ export async function generateEmbeddings(
     }
 
     if (!document) {
-        throw new DocumentNotFoundError("Document not found", [objectId]);
+        throw new DocumentNotFoundError('Document not found', [objectId]);
     }
 
     if (!document.content) {
-        throw new DocumentNotFoundError("Document content not found", [objectId]);
+        throw new DocumentNotFoundError('Document content not found', [objectId]);
     }
 
     let res:
@@ -120,40 +122,31 @@ export async function generateEmbeddings(
         | Awaited<ReturnType<typeof generateImageEmbeddings>>
         | { id: string; status: string; message: string };
 
-    switch (type) {
-        case SupportedEmbeddingTypes.text:
-            res = await generateTextEmbeddings({
-                client,
-                config,
-                document,
-                type,
-                force,
-            });
-            break;
-        case SupportedEmbeddingTypes.properties:
-            res = await generateTextEmbeddings({
-                client,
-                config,
-                document,
-                type,
-                force,
-            });
-            break;
-        case SupportedEmbeddingTypes.image:
-            res = await generateImageEmbeddings({
-                client,
-                config,
-                document,
-                type,
-                force,
-            });
-            break;
-        default:
-            res = {
-                id: objectId,
-                status: "failed",
-                message: `unsupported embedding type: ${type}`,
-            };
+    try {
+        switch (type) {
+            case SupportedEmbeddingTypes.text:
+                res = await generateTextEmbeddings({ client, config, document, type, force });
+                break;
+            case SupportedEmbeddingTypes.properties:
+                res = await generateTextEmbeddings({ client, config, document, type, force });
+                break;
+            case SupportedEmbeddingTypes.image:
+                res = await generateImageEmbeddings({ client, config, document, type, force });
+                break;
+            default:
+                res = {
+                    id: objectId,
+                    status: 'failed',
+                    message: `unsupported embedding type: ${type}`,
+                };
+        }
+    } catch (error) {
+        // Configured environment is missing/unavailable -> skip rather than fail the whole intake
+        // (and avoid the long LLM-activity retry storm a throw would trigger).
+        if (isEnvironmentNotFound(error)) {
+            return skipped(`embedding environment unavailable for type ${type}`);
+        }
+        throw error;
     }
 
     return res;
@@ -168,40 +161,34 @@ interface ExecuteGenerateEmbeddingsParams {
     force?: boolean;
 }
 
-async function generateTextEmbeddings(
-    { document, client, type, config, force }: ExecuteGenerateEmbeddingsParams
-) {
-
+async function generateTextEmbeddings({ document, client, type, config, force }: ExecuteGenerateEmbeddingsParams) {
     if (!document) {
-        return { status: "error", message: "document is null or undefined" };
+        return { status: 'error', message: 'document is null or undefined' };
     }
 
-    if (
-        type !== SupportedEmbeddingTypes.text &&
-        type !== SupportedEmbeddingTypes.properties
-    ) {
+    if (type !== SupportedEmbeddingTypes.text && type !== SupportedEmbeddingTypes.properties) {
         return {
             id: document.id,
-            status: "failed",
+            status: 'failed',
             message: `unsupported embedding type: ${type}`,
         };
     }
 
     if (type === SupportedEmbeddingTypes.text && !document.text) {
-        return { id: document.id, status: "failed", message: "no text found" };
+        return { id: document.id, status: 'failed', message: 'no text found' };
     }
     if (type === SupportedEmbeddingTypes.properties && !document?.properties) {
         return {
             id: document.id,
-            status: "failed",
-            message: "no properties found",
+            status: 'failed',
+            message: 'no properties found',
         };
     }
 
     const { environment } = config;
     if (!environment) {
         throw new Error(
-            "No environment found in project configuration. Set environment in project configuration to generate embeddings.",
+            'No environment found in project configuration. Set environment in project configuration to generate embeddings.',
         );
     }
 
@@ -215,13 +202,13 @@ async function generateTextEmbeddings(
         return {
             id: document.id,
             type,
-            status: "skipped",
-            message: "embeddings already exist with matching etag",
+            status: 'skipped',
+            message: 'embeddings already exist with matching etag',
         };
     }
 
     // Count tokens if needed, do not rely on existing token count
-    let tokenCount: number | undefined = undefined;
+    let tokenCount: number | undefined;
     if (type === SupportedEmbeddingTypes.text && document.text) {
         tokenCount = countTokens(document.text).count;
     }
@@ -235,32 +222,24 @@ async function generateTextEmbeddings(
 
     //generate embeddings for the main doc if document isn't too large
     log.debug(`Generating ${type} embeddings for document ${document.id}`);
-    if (
-        tokenCount !== undefined && tokenCount > maxTokens
-    ) {
+    if (tokenCount !== undefined && tokenCount > maxTokens) {
         //TODO: Review strategy for large documents
-        log.warn(
-            `Document too large for ${type} embeddings generation, skipping (${tokenCount} tokens)`,
-        );
+        log.warn(`Document too large for ${type} embeddings generation, skipping (${tokenCount} tokens)`);
         return {
             id: document.id,
-            status: "skipped",
+            status: 'skipped',
             message: `${type} embeddings generation, skipped for large document (${tokenCount} tokens)`,
-        }
+        };
     } else {
         log.debug(`Generating ${type} embeddings for document`);
 
-        const res = await generateEmbeddingsFromStudio(
-            JSON.stringify(document[type]),
-            environment,
-            client,
-        );
+        const res = await generateEmbeddingsFromStudio(JSON.stringify(document[type]), environment, client);
         const values = res?.results?.[0]?.outputs?.[0]?.values;
         if (!values) {
             return {
                 id: document.id,
-                status: "failed",
-                message: "no embeddings generated",
+                status: 'failed',
+                message: 'no embeddings generated',
             };
         }
 
@@ -276,31 +255,22 @@ async function generateTextEmbeddings(
         return {
             id: document.id,
             type,
-            status: "completed",
+            status: 'completed',
             len: values.length,
         };
     }
 }
 
-async function generateImageEmbeddings({
-    document,
-    client,
-    type,
-    config,
-    force,
-}: ExecuteGenerateEmbeddingsParams) {
-    log.debug("Generating image embeddings for document " + document.id, {
+async function generateImageEmbeddings({ document, client, type, config, force }: ExecuteGenerateEmbeddingsParams) {
+    log.debug(`Generating image embeddings for document ${document.id}`, {
         content: document.content,
     });
-    if (
-        !document.content?.type?.startsWith("image/") &&
-        !document.content?.type?.includes("pdf")
-    ) {
+    if (!document.content?.type?.startsWith('image/') && !document.content?.type?.includes('pdf')) {
         return {
             id: document.id,
             type,
-            status: "failed",
-            message: "content is not an image",
+            status: 'failed',
+            message: 'content is not an image',
         };
     }
 
@@ -314,15 +284,15 @@ async function generateImageEmbeddings({
         return {
             id: document.id,
             type,
-            status: "skipped",
-            message: "embeddings already exist with matching etag",
+            status: 'skipped',
+            message: 'embeddings already exist with matching etag',
         };
     }
 
     const { environment, model } = config;
     if (!environment) {
         throw new Error(
-            "No environment found in project configuration. Set environment in project configuration to generate embeddings.",
+            'No environment found in project configuration. Set environment in project configuration to generate embeddings.',
         );
     }
 
@@ -332,21 +302,15 @@ async function generateImageEmbeddings({
         sign_url: true,
     });
 
-    if (resRnd.status === "generating") {
-        throw new Error("Rendition is generating, will retry later");
-    } else if (
-        resRnd.status === "failed" ||
-        !resRnd.renditions ||
-        !resRnd.renditions.length
-    ) {
-        throw new DocumentNotFoundError("Rendition retrieval failed", [document.id]);
+    if (resRnd.status === 'generating') {
+        throw new Error('Rendition is generating, will retry later');
+    } else if (resRnd.status === 'failed' || !resRnd.renditions || !resRnd.renditions.length) {
+        throw new DocumentNotFoundError('Rendition retrieval failed', [document.id]);
     }
 
     const renditions = resRnd.renditions;
     if (!renditions?.length) {
-        throw new DocumentNotFoundError("No source found in rendition", [
-            document.id,
-        ]);
+        throw new DocumentNotFoundError('No source found in rendition', [document.id]);
     }
 
     const rendition = renditions[0];
@@ -356,15 +320,17 @@ async function generateImageEmbeddings({
     // Revisit if task_type support is added to ImageEmbeddingInput in a later PR.
     const res = await client.environments
         .embeddings(environment, {
-            inputs: [{
-                type: "image",
-                source: { base64: image, mime_type: "image/jpeg" },
-            }],
+            inputs: [
+                {
+                    type: 'image',
+                    source: { base64: image, mime_type: 'image/jpeg' },
+                },
+            ],
             model,
         })
         .then((res) => res)
         .catch((e) => {
-            log.error("Error generating embeddings for image", { error: e });
+            log.error('Error generating embeddings for image', { error: e });
             throw e;
         });
 
@@ -372,25 +338,21 @@ async function generateImageEmbeddings({
     if (!values) {
         return {
             id: document.id,
-            status: "failed",
-            message: "no embeddings generated",
+            status: 'failed',
+            message: 'no embeddings generated',
         };
     }
 
-    await client.objects.setEmbedding(
-        document.id,
-        SupportedEmbeddingTypes.image,
-        {
-            values,
-            model: res.model,
-            etag: contentEtag,
-        },
-    );
+    await client.objects.setEmbedding(document.id, SupportedEmbeddingTypes.image, {
+        values,
+        model: res.model,
+        etag: contentEtag,
+    });
 
     return {
         id: document.id,
         type,
-        status: "completed",
+        status: 'completed',
         len: values.length,
     };
 }
@@ -401,19 +363,17 @@ async function generateEmbeddingsFromStudio(
     client: VertesiaClient,
     model?: string,
 ): Promise<EmbeddingsApiResult> {
-    log.debug(
-        `Generating embeddings for text of ${text.length} chars with environment ${env}`,
-    );
+    log.debug(`Generating embeddings for text of ${text.length} chars with environment ${env}`);
 
     // TODO(task_type): Document embedding task — add task_type: "document" once task_type support is validated end-to-end.
     return client.environments
         .embeddings(env, {
-            inputs: [{ type: "text", text }],
+            inputs: [{ type: 'text', text }],
             model,
         })
         .then((res) => res)
         .catch((e) => {
-            log.error("Error generating embeddings for text", { error: e });
+            log.error('Error generating embeddings for text', { error: e });
             throw e;
         });
 }

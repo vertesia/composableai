@@ -1,8 +1,8 @@
-import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
-import {
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type {
     CreateProcessDefinitionPayload,
-    PublishProcessDefinitionPayload,
     ProcessDefinition,
+    PublishProcessDefinitionPayload,
     RevertProcessDefinitionPayload,
     UpdateProcessDefinitionPayload,
 } from '@vertesia/common';

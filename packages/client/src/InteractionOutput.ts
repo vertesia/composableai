@@ -1,5 +1,5 @@
-import { CompletionResult, JSONObject } from '@llumiverse/common';
-import { ExecutionRun, InteractionExecutionResult } from '@vertesia/common';
+import type { CompletionResult, JSONObject } from '@llumiverse/common';
+import type { ExecutionRun, InteractionExecutionResult } from '@vertesia/common';
 
 /**
  * Symbol used to mark InteractionOutputArray instances.
@@ -7,12 +7,16 @@ import { ExecutionRun, InteractionExecutionResult } from '@vertesia/common';
  */
 export const IS_INTERACTION_OUTPUT = Symbol('InteractionOutput');
 
-export function enhanceInteractionExecutionResult<ResultT = unknown, ParamsT = unknown>(r: InteractionExecutionResult<ParamsT>): EnhancedInteractionExecutionResult<ResultT, ParamsT> {
+export function enhanceInteractionExecutionResult<ResultT = unknown, ParamsT = unknown>(
+    r: InteractionExecutionResult<ParamsT>,
+): EnhancedInteractionExecutionResult<ResultT, ParamsT> {
     r.result = InteractionOutput.from<ResultT>(r.result);
     return r as EnhancedInteractionExecutionResult<ResultT, ParamsT>;
 }
 
-export function enhanceExecutionRun<ResultT = unknown, ParamsT = unknown>(r: ExecutionRun<ParamsT>): EnhancedExecutionRun<ResultT, ParamsT> {
+export function enhanceExecutionRun<ResultT = unknown, ParamsT = unknown>(
+    r: ExecutionRun<ParamsT>,
+): EnhancedExecutionRun<ResultT, ParamsT> {
     r.result = InteractionOutput.from<ResultT>(r.result);
     return r as EnhancedExecutionRun<ResultT, ParamsT>;
 }
@@ -49,7 +53,7 @@ export class InteractionOutput<T = unknown> {
      * The raw completion results array.
      * Access this when you need to work with the underlying CompletionResult[] directly.
      */
-    constructor(public readonly results: CompletionResult[]) { }
+    constructor(public readonly results: CompletionResult[]) {}
 
     /**
      * Create an interaction output that acts as both an array and has convenience methods.
@@ -73,11 +77,13 @@ export class InteractionOutput<T = unknown> {
      * const text = output.text();     // string
      * ```
      */
-    static from<T = unknown>(results: CompletionResult[] | InteractionOutputArray<T> | JSONObject | string | null | undefined): InteractionOutputArray<T> {
+    static from<T = unknown>(
+        results: CompletionResult[] | InteractionOutputArray<T> | JSONObject | string | null | undefined,
+    ): InteractionOutputArray<T> {
         if (!results) {
             return createInteractionOutput<T>([]);
         }
-        // Check if already wrapped using the symbol marker        
+        // Check if already wrapped using the symbol marker
         if (isInteractionOutputMarker(results)) {
             return results as InteractionOutputArray<T>;
         }
@@ -99,15 +105,15 @@ export class InteractionOutput<T = unknown> {
     }
 
     hasObject() {
-        return this.results.some(r => r.type === 'json');
+        return this.results.some((r) => r.type === 'json');
     }
 
     hasText() {
-        return this.results.some(r => r.type === 'text');
+        return this.results.some((r) => r.type === 'text');
     }
 
     hasImage() {
-        return this.results.some(r => r.type === 'image');
+        return this.results.some((r) => r.type === 'image');
     }
 
     /**
@@ -116,8 +122,8 @@ export class InteractionOutput<T = unknown> {
      */
     text(delimiter = '\n'): string {
         return this.results
-            .filter(r => r.type === 'text')
-            .map(r => r.value)
+            .filter((r) => r.type === 'text')
+            .map((r) => r.value)
             .join(delimiter);
     }
 
@@ -125,9 +131,7 @@ export class InteractionOutput<T = unknown> {
      * Get an array of all text values from text results.
      */
     texts(): string[] {
-        return this.results
-            .filter(r => r.type === 'text')
-            .map(r => r.value);
+        return this.results.filter((r) => r.type === 'text').map((r) => r.value);
     }
 
     /**
@@ -137,7 +141,7 @@ export class InteractionOutput<T = unknown> {
      * @throws Error if no JSON result found and text cannot be parsed as JSON
      */
     object<U = T>(): U {
-        const jsonResult = this.results.find(r => r.type === 'json');
+        const jsonResult = this.results.find((r) => r.type === 'json');
         if (jsonResult) {
             return jsonResult.value as U;
         }
@@ -151,9 +155,7 @@ export class InteractionOutput<T = unknown> {
      * @returns An array of all JSON results typed as T[] (the class generic type)
      */
     objects(): T[] {
-        return this.results
-            .filter(r => r.type === 'json')
-            .map(r => r.value as T);
+        return this.results.filter((r) => r.type === 'json').map((r) => r.value as T);
     }
 
     /**
@@ -181,7 +183,7 @@ export class InteractionOutput<T = unknown> {
      * @throws Error if no image result exists
      */
     image(): string {
-        const imageResult = this.results.find(r => r.type === 'image');
+        const imageResult = this.results.find((r) => r.type === 'image');
         if (!imageResult) {
             throw new Error('No image result found');
         }
@@ -192,9 +194,7 @@ export class InteractionOutput<T = unknown> {
      * Get an array of all image values (base64 data URLs or URLs).
      */
     images(): string[] {
-        return this.results
-            .filter(r => r.type === 'image')
-            .map(r => r.value);
+        return this.results.filter((r) => r.type === 'image').map((r) => r.value);
     }
 
     /**
@@ -216,7 +216,7 @@ export class InteractionOutput<T = unknown> {
      */
     stringify(separator = '\n', indent = 2): string {
         return this.results
-            .map(r => {
+            .map((r) => {
                 switch (r.type) {
                     case 'json':
                         return JSON.stringify(r.value, null, indent);
@@ -240,7 +240,7 @@ export class InteractionOutput<T = unknown> {
      * Attempts to return the first JSON object, falls back to concatenated text.
      */
     toJSON(): CompletionResult[] {
-        return this.results
+        return this.results;
     }
 }
 
@@ -258,7 +258,8 @@ function isInteractionOutputMarker(obj: unknown): obj is InteractionOutputMarker
     return !!obj && typeof obj === 'object' && (obj as InteractionOutputMarker)[IS_INTERACTION_OUTPUT] === true;
 }
 
-export interface EnhancedInteractionExecutionResult<ResultT = unknown, ParamsT = unknown> extends InteractionExecutionResult<ParamsT> {
+export interface EnhancedInteractionExecutionResult<ResultT = unknown, ParamsT = unknown>
+    extends InteractionExecutionResult<ParamsT> {
     result: InteractionOutputArray<ResultT>;
 }
 
@@ -312,15 +313,14 @@ export function createInteractionOutput<T = unknown>(results: CompletionResult[]
             }
             // Otherwise delegate to the array
             return Reflect.get(target, prop, receiver);
-        }
+        },
     }) as InteractionOutputArray<T>;
 }
-
 
 function parseCompletionResultAsJson<T>(data: CompletionResult[]): T {
     let lastError: Error | undefined;
     for (const part of data) {
-        if (part.type === "text") {
+        if (part.type === 'text') {
             const text = part.value.trim();
             try {
                 return JSON.parse(text) as T;
@@ -330,7 +330,7 @@ function parseCompletionResultAsJson<T>(data: CompletionResult[]): T {
         }
     }
     if (!lastError) {
-        lastError = new Error("No JSON result found and no text available to parse");
+        lastError = new Error('No JSON result found and no text available to parse');
     }
     throw lastError;
 }

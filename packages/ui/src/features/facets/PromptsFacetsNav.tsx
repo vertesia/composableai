@@ -1,7 +1,14 @@
-import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
-import { useState } from 'react';
-import { filterValueToQueryValue, SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
 import type { FacetBucket } from '@vertesia/common';
+import {
+    type Filter as BaseFilter,
+    FilterBar,
+    FilterBtn,
+    FilterClear,
+    type FilterGroup,
+    FilterProvider,
+} from '@vertesia/ui/core';
+import { useState } from 'react';
+import { filterValueToQueryValue, type SearchInterface, setSearchQueryValue } from './utils/SearchInterface';
 
 interface PromptsFacetsNavProps {
     facets: {
@@ -10,11 +17,19 @@ interface PromptsFacetsNavProps {
         tags?: FacetBucket[];
     };
     search: SearchInterface;
+    /**
+     * Optional controlled filter state. When provided, the parent owns the filter list (and is
+     * responsible for translating it into the search query via {@link usePromptsFilterHandler}). This
+     * lets other surfaces — e.g. per-row "quick filter" buttons in the table — add filters that show
+     * up in the filter bar. When omitted, the component manages its own filter state internally.
+     */
+    filters?: BaseFilter[];
+    setFilters?: React.Dispatch<React.SetStateAction<BaseFilter[]>>;
+    filterGroups?: FilterGroup[];
 }
 
 // Hook to create filter groups for prompts
 export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']): FilterGroup[] {
-    void facets;
     const customFilterGroups: FilterGroup[] = [];
 
     // Add name filter as text type
@@ -22,7 +37,7 @@ export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']):
         name: 'name',
         placeholder: 'Name',
         type: 'text' as const,
-        multiple: false
+        multiple: false,
     };
     customFilterGroups.push(nameFilterGroup);
 
@@ -35,11 +50,24 @@ export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']):
             options: facets.role.map((facet) => ({
                 label: facet._id,
                 value: facet._id,
-                count: facet.count
+                count: facet.count,
             })),
         };
         customFilterGroups.push(rolesFilterGroup);
     }
+
+    // Add tags filter as stringList type (suggestions from facets, allows custom input)
+    const tagsFilterGroup = {
+        name: 'tags',
+        placeholder: 'Tags',
+        type: 'stringList' as const,
+        multiple: true,
+        options: (facets.tags ?? []).map((facet) => ({
+            label: facet._id,
+            value: facet._id,
+        })),
+    };
+    customFilterGroups.push(tagsFilterGroup);
 
     return customFilterGroups;
 }
@@ -56,7 +84,7 @@ export function usePromptsFilterHandler(search: SearchInterface) {
         // Clear all filters first without defaults, then apply new ones
         search.clearFilters(false, false);
 
-        newFilters.forEach(filter => {
+        newFilters.forEach((filter) => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name;
                 const filterValue = filterValueToQueryValue(filter);
@@ -64,28 +92,40 @@ export function usePromptsFilterHandler(search: SearchInterface) {
             }
         });
 
-        search.search();
+        void search.search();
     };
 }
 
 // Component for prompts filtering
-export function PromptsFacetsNav({ facets, search }: PromptsFacetsNavProps) {
-    const [filters, setFilters] = useState<BaseFilter[]>([]);
-    const filterGroups = usePromptsFilterGroups(facets);
+export function PromptsFacetsNav({
+    facets,
+    search,
+    filters: controlledFilters,
+    setFilters: controlledSetFilters,
+    filterGroups: controlledFilterGroups,
+}: PromptsFacetsNavProps) {
+    const [internalFilters, setInternalFilters] = useState<BaseFilter[]>([]);
+    const internalFilterGroups = usePromptsFilterGroups(facets);
     const handleFilterLogic = usePromptsFilterHandler(search);
 
+    // Controlled when the parent supplies both the filter list and its setter; otherwise self-managed.
+    const isControlled = controlledFilters !== undefined && controlledSetFilters !== undefined;
+    const filters = isControlled ? controlledFilters : internalFilters;
+    const filterGroups = controlledFilterGroups ?? internalFilterGroups;
+
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
-        const newFilters = typeof value === 'function' ? value(filters) : value;
-        setFilters(newFilters);
+        if (isControlled) {
+            // The parent's setter is expected to also run the filter→query translation.
+            controlledSetFilters(value);
+            return;
+        }
+        const newFilters = typeof value === 'function' ? value(internalFilters) : value;
+        setInternalFilters(newFilters);
         handleFilterLogic(newFilters);
     };
 
     return (
-        <FilterProvider
-            filterGroups={filterGroups}
-            filters={filters}
-            setFilters={handleFilterChange}
-        >
+        <FilterProvider filterGroups={filterGroups} filters={filters} setFilters={handleFilterChange}>
             <div className="flex gap-2 items-center">
                 <FilterBtn />
                 <FilterBar />

@@ -1,9 +1,8 @@
-import { Command } from 'commander';
-import { listAces, createAce, deleteAce, listRoles } from './commands.js';
+import type { Command } from 'commander';
+import { createAce, deleteAce, listAces, listRoles } from './commands.js';
 
 export function registerIamCommand(program: Command) {
-    const iam = program.command('iam')
-        .description('Manage access control entries and roles');
+    const iam = program.command('iam').description('Manage access control entries and roles');
 
     // --- ACEs ---
 

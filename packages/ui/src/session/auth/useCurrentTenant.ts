@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useUserSession } from "@vertesia/ui/session";
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
+import { useEffect, useState } from 'react';
+import { useUserSession } from '../UserSession';
 
 interface TenantConfig {
     tenantKey: string;
@@ -12,7 +12,6 @@ interface TenantConfig {
 }
 
 export function useCurrentTenant() {
-    const t = i18nInstance.getFixedT(null, NAMESPACE);
     const { user } = useUserSession();
     const [currentTenant, setCurrentTenant] = useState<TenantConfig | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -33,8 +32,8 @@ export function useCurrentTenant() {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        tenantEmail: user.email
-                    })
+                        tenantEmail: user.email,
+                    }),
                 });
 
                 if (response.ok) {
@@ -47,7 +46,7 @@ export function useCurrentTenant() {
                             domain: tenantData.domain || [],
                             firebaseTenantId: tenantData.firebaseTenantId,
                             provider: tenantData.provider,
-                            logo: tenantData.logo
+                            logo: tenantData.logo,
                         });
                     } else {
                         setCurrentTenant(null);
@@ -57,19 +56,19 @@ export function useCurrentTenant() {
                 }
             } catch (error) {
                 console.error('Error loading current tenant:', error);
-                setError(t('errors.failedToLoadTenantConfig'));
+                setError(i18nInstance.getFixedT(null, NAMESPACE)('errors.failedToLoadTenantConfig'));
                 setCurrentTenant(null);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        loadCurrentTenant();
+        void loadCurrentTenant();
     }, [user?.email]);
 
     return {
         currentTenant,
         isLoading,
-        error
+        error,
     };
 }

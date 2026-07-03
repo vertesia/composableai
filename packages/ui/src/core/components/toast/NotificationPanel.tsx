@@ -1,50 +1,48 @@
-import { AnimatePresence, motion } from "framer-motion"
-import { CircleCheck, AlertTriangle, Info, CircleX, X } from "lucide-react"
-import { useEffect, useState, useRef } from "react"
-import { ToastProps } from "./ToastProps.js"
+import { AnimatePresence, motion } from 'framer-motion';
+import { AlertTriangle, CircleCheck, CircleX, Info, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ToastProps } from './ToastProps.js';
 
 const icons = {
     success: CircleCheck,
     error: CircleX,
     warning: AlertTriangle,
-    info: Info
-}
+    info: Info,
+};
 
 const colors = {
     success: 'text-success',
     error: 'text-destructive',
     warning: 'text-attention',
-    info: 'text-info'
-}
+    info: 'text-info',
+};
 
 interface NotificationPanelProps {
-    data: ToastProps
-    onClose: () => void
+    data: ToastProps;
+    onClose: () => void;
 }
 export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
-    const [show, setShow] = useState(true)
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const [show, setShow] = useState(true);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const resetTimeout = () => {
+    const clearCurrentTimeout = useCallback(() => {
         if (timeoutRef.current) {
-            globalThis.clearTimeout(timeoutRef.current)
+            globalThis.clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
         }
+    }, []);
+
+    const resetTimeout = useCallback(() => {
+        clearCurrentTimeout();
         if (data.duration) {
-            timeoutRef.current = setTimeout(() => setShow(false), data.duration)
+            timeoutRef.current = setTimeout(() => setShow(false), data.duration);
         }
-    }
-
-    const clearCurrentTimeout = () => {
-        if (timeoutRef.current) {
-            globalThis.clearTimeout(timeoutRef.current)
-            timeoutRef.current = null
-        }
-    }
+    }, [clearCurrentTimeout, data.duration]);
 
     useEffect(() => {
-        resetTimeout()
-        return clearCurrentTimeout
-    }, [data.duration])
+        resetTimeout();
+        return clearCurrentTimeout;
+    }, [clearCurrentTimeout, resetTimeout]);
 
     const Icon = icons[data.status] || Info;
     const color = colors[data.status] || 'text-info';
@@ -73,7 +71,9 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
                                         <Icon className={`size-6 ${color}`} aria-hidden="true" />
                                     </div>
                                     <div className="ms-3 flex-1 pt-0.5 min-w-0">
-                                        <p className="text-sm font-semibold text-foreground break-words">{data.title}</p>
+                                        <p className="text-sm font-semibold text-foreground break-words">
+                                            {data.title}
+                                        </p>
                                         {data.description && (
                                             <p className="mt-2 text-sm text-muted break-words whitespace-pre-wrap leading-relaxed">
                                                 {data.description}
@@ -97,5 +97,5 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
                 </AnimatePresence>
             </div>
         </div>
-    )
+    );
 }

@@ -1,4 +1,4 @@
-import { PrincipalType, type AuthTokenPayload } from './apikey.js';
+import type { AuthTokenPayload, PrincipalType } from './apikey.js';
 import type { ProjectRef } from './project.js';
 
 export type OAuthClientType = 'public' | 'confidential';
@@ -10,8 +10,21 @@ export type OAuthGrantType = 'authorization_code' | 'refresh_token' | 'urn:ietf:
 export type OAuthResponseType = 'code';
 export type OAuthAuthorizationRequestStatus = 'pending' | 'denied' | 'consumed';
 export type OAuthClientRegistrationMode = 'registered' | 'client_id_metadata_document';
+/**
+ * How Vertesia identified itself to a *remote* authorization server when connecting
+ * out as an OAuth client. Distinct from {@link OAuthClientRegistrationMode}, which
+ * describes how inbound clients identified themselves to Vertesia's own AS.
+ */
+export type RemoteOAuthRegistrationMode = 'dynamic_client_registration' | 'client_id_metadata_document';
 export type OAuthGrantStatus = 'active' | 'revoked' | 'expired';
-export type OAuthGrantSortField = 'granted_at' | 'client_name' | 'user_name' | 'resource' | 'last_used_at' | 'expires_at' | 'status';
+export type OAuthGrantSortField =
+    | 'granted_at'
+    | 'client_name'
+    | 'user_name'
+    | 'resource'
+    | 'last_used_at'
+    | 'expires_at'
+    | 'status';
 export type OAuthGrantSortOrder = 'asc' | 'desc';
 
 export interface OAuthClientData {
@@ -27,6 +40,13 @@ export interface OAuthClientData {
     status: OAuthClientStatus;
     project_binding_mode: OAuthProjectBindingMode;
     fixed_project_id?: string;
+    /**
+     * When true (the default for new clients), the client may only be authorized for projects in its
+     * owning account/organization. Set to false to allow authorization for any project the approving
+     * user can access, regardless of account — required for OAuth/MCP clients used across
+     * organizations. The owning account itself is internal and not exposed here.
+     */
+    restrict_to_owner_account?: boolean;
     metadata?: Record<string, unknown>;
     created_by?: string;
     client_secret_configured?: boolean;
@@ -40,6 +60,10 @@ export interface OAuthClient extends OAuthClientData {
 
 export interface OAuthClientCreateResponse extends OAuthClient {
     client_secret?: string;
+}
+
+export interface OAuthClientScopeMetadata {
+    supported_scopes: string[];
 }
 
 export interface OAuthGrant {
@@ -102,6 +126,7 @@ export interface CreateOAuthClientPayload {
     default_scopes?: string[];
     project_binding_mode?: OAuthProjectBindingMode;
     fixed_project_id?: string;
+    restrict_to_owner_account?: boolean;
     client_secret?: string;
     metadata?: Record<string, unknown>;
 }
@@ -117,6 +142,7 @@ export interface UpdateOAuthClientPayload {
     status?: OAuthClientStatus;
     project_binding_mode?: OAuthProjectBindingMode;
     fixed_project_id?: string;
+    restrict_to_owner_account?: boolean;
     client_secret?: string;
     metadata?: Record<string, unknown>;
 }
@@ -182,9 +208,18 @@ export interface OAuthAuthorizationRequest {
     redirect_origin: string;
     resource?: string;
     requested_scopes: string[];
+    optional_scopes?: string[];
     requested_project_id?: string;
     project_binding_mode: OAuthProjectBindingMode;
     fixed_project_id?: string;
+    /**
+     * When true, the consent UI must constrain project selection to {@link owner_account_id}: the
+     * client may only be authorized for projects in its owning account. False (default) lets the user
+     * authorize any project they can access. Mirrors the server-side authorization enforcement.
+     */
+    restrict_to_owner_account?: boolean;
+    /** The owning account the client is restricted to, when {@link restrict_to_owner_account} is true. */
+    owner_account_id?: string;
     status: OAuthAuthorizationRequestStatus;
     created_at: string;
     expires_at: string;
@@ -192,6 +227,14 @@ export interface OAuthAuthorizationRequest {
 
 export interface ApproveOAuthAuthorizationRequestPayload {
     project_id?: string;
+    granted_scopes: string[];
+}
+
+export interface OAuthGrantableScopesResponse {
+    project_id: string;
+    requested_permission_scopes: string[];
+    grantable_permission_scopes: string[];
+    unavailable_permission_scopes: string[];
 }
 
 export interface OAuthAuthorizationDecisionResponse {
@@ -240,7 +283,10 @@ export interface OAuthTokenRequestDeviceCode {
     client_secret?: string;
 }
 
-export type OAuthTokenRequest = OAuthTokenRequestAuthorizationCode | OAuthTokenRequestRefreshToken | OAuthTokenRequestDeviceCode;
+export type OAuthTokenRequest =
+    | OAuthTokenRequestAuthorizationCode
+    | OAuthTokenRequestRefreshToken
+    | OAuthTokenRequestDeviceCode;
 
 export interface OAuthTokenResponse {
     access_token: string;
@@ -288,13 +334,13 @@ export interface OAuthAccessTokenPayload extends Omit<AuthTokenPayload, 'type' |
 export interface OAuthIdTokenPayload {
     sub: string;
     user_id: string;
-    name: string;
+    name?: string;
     email?: string;
     picture?: string;
     type: 'oauth_id';
     client_id: string;
-    account: AuthTokenPayload['account'];
-    accounts: AuthTokenPayload['accounts'];
+    account?: AuthTokenPayload['account'];
+    accounts?: AuthTokenPayload['accounts'];
     project?: ProjectRef;
     /** User groups */
     groups?: AuthTokenPayload['groups'];

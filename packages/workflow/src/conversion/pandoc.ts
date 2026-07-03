@@ -1,6 +1,6 @@
-import { log } from "@temporalio/activity";
-import { spawn } from "child_process";
-import { PassThrough } from "stream";
+import { spawn } from 'node:child_process';
+import { PassThrough } from 'node:stream';
+import { log } from '@temporalio/activity';
 
 export function markdownWithPandoc(buffer: Buffer, fromFormat: string): Promise<string> {
     const fromType = undefined;
@@ -10,30 +10,30 @@ export function markdownWithPandoc(buffer: Buffer, fromFormat: string): Promise<
         const input = new PassThrough();
         input.end(buffer);
 
-        let result: string[] = [];
+        const result: string[] = [];
 
-        const command = spawn("pandoc", ["-t", "markdown", "-f", fromFormat], {
-            stdio: "pipe",
+        const command = spawn('pandoc', ['-t', 'markdown', '-f', fromFormat], {
+            stdio: 'pipe',
         });
         input.pipe(command.stdin);
 
-        command.stdout.on("data", function (data: string) {
+        command.stdout.on('data', (data: string) => {
             result.push(data.toString());
         });
-        command.on("exit", function (code) {
+        command.on('exit', (code) => {
             if (code) {
                 reject(new Error(`pandoc exited with code ${code}`));
             }
         });
-        command.on("close", function (code) {
+        command.on('close', (code) => {
             if (code) {
                 reject(new Error(`pandoc exited with code ${code}`));
             } else {
-                resolve(result.join(""));
+                resolve(result.join(''));
             }
         });
 
-        command.on("error", (err) => {
+        command.on('error', (err) => {
             reject(err);
         });
     });

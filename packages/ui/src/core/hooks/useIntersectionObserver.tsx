@@ -1,4 +1,4 @@
-import { RefObject, useEffect } from "react";
+import { type RefObject, useEffect, useRef } from 'react';
 
 /**
  * if leave option is true then callback will be called when the target leaves the viewport
@@ -7,34 +7,45 @@ import { RefObject, useEffect } from "react";
  * @param cb
  * @param opts
  */
-export function useIntersectionObserver(target: RefObject<HTMLElement | null | undefined>, cb: (entry: IntersectionObserverEntry) => void, opts: { leave?: boolean, threshold?: number, deps?: unknown[] } = {}) {
+export function useIntersectionObserver(
+    target: RefObject<HTMLElement | null | undefined>,
+    cb: (entry: IntersectionObserverEntry) => void,
+    opts: { leave?: boolean; threshold?: number; deps?: unknown[] } = {},
+) {
+    const cbRef = useRef(cb);
+    cbRef.current = cb;
+    const optsRef = useRef(opts);
+    optsRef.current = opts;
+    const threshold = opts.threshold || 1;
 
     useEffect(() => {
+        const element = target.current;
         const observer = new IntersectionObserver(
-            entries => {
+            (entries) => {
                 const isEntering = entries[0].isIntersecting;
-                if (opts.leave) {
+                if (optsRef.current.leave) {
                     if (!isEntering) {
-                        cb(entries[0]);
+                        cbRef.current(entries[0]);
                     }
                 } else {
                     if (isEntering) {
-                        cb(entries[0]);
+                        cbRef.current(entries[0]);
                     }
                 }
             },
-            { threshold: opts.threshold || 1 }
+            { threshold },
         );
 
-        if (target.current) {
-            observer.observe(target.current);
+        if (element) {
+            observer.observe(element);
         }
 
         return () => {
-            if (target.current) {
-                observer.unobserve(target.current);
+            if (element) {
+                observer.unobserve(element);
             }
         };
-    }, opts.deps ? opts.deps.concat(target) : [target]);
-
+        // opts.deps let callers re-attach the observer once the target element mounts
+        // (e.g. an infinite-scroll sentinel that renders only after the first page loads).
+    }, [target, threshold, ...(opts.deps ?? [])]);
 }

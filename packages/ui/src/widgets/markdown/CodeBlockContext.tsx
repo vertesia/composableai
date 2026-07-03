@@ -24,7 +24,7 @@ export function CodeBlockHandlerProvider({
 }: CodeBlockHandlerContext & { children: React.ReactNode }) {
     const value = useMemo(
         () => ({ artifactRunId, onProposalSelect, onProposalSubmit, MarkdownRenderer }),
-        [artifactRunId, onProposalSelect, onProposalSubmit, MarkdownRenderer]
+        [artifactRunId, onProposalSelect, onProposalSubmit, MarkdownRenderer],
     );
     return <CodeBlockContext.Provider value={value}>{children}</CodeBlockContext.Provider>;
 }

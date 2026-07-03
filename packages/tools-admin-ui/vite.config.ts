@@ -16,11 +16,8 @@ export default defineConfig(({ mode }) => {
                 minify: false,
                 sourcemap: true,
                 emptyOutDir: false,
-                rolldownOptions: {
-                    external: (id: string) =>
-                        !id.startsWith('.') &&
-                        !id.startsWith('/') &&
-                        !id.startsWith('virtual:'),
+                rollupOptions: {
+                    external: (id: string) => !id.startsWith('.') && !id.startsWith('/') && !id.startsWith('virtual:'),
                 },
             },
         };

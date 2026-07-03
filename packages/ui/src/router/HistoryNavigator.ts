@@ -1,7 +1,8 @@
-import { joinPath } from "./path";
-import { PathWithParams } from "./PathWithParams";
+import { PathWithParams } from './PathWithParams';
+import { joinPath } from './path';
 
 const BASE_PATH = Symbol('BASE_PATH');
+
 export { BASE_PATH };
 
 export type LocationChangeEventName = 'beforeChange' | 'afterChange';
@@ -12,8 +13,8 @@ export class LocationChangeEvent {
         public name: LocationChangeEventName,
         public type: LocationChangeType,
         public location: URL,
-        public state?: unknown) {
-    }
+        public state?: unknown,
+    ) {}
 
     get isPageLoad() {
         return this.type === 'initial';
@@ -41,7 +42,6 @@ export class LocationChangeEvent {
         }
         this._canceled = true;
     }
-
 }
 
 export class BeforeLocationChangeEvent extends LocationChangeEvent {
@@ -88,8 +88,6 @@ export class HistoryNavigator {
     _popStateListener?: (ev: PopStateEvent) => void;
     _linkNavListener?: (ev: MouseEvent) => void;
     _listeners: ((event: LocationChangeEvent) => void)[] = [];
-    constructor() {
-    }
 
     addListener(listener: (event: LocationChangeEvent) => void) {
         this._listeners.push(listener);
@@ -116,6 +114,27 @@ export class HistoryNavigator {
         return path;
     }
 
+    /**
+     * Rewrite the current browser URL in place so that the sticky params are present, without
+     * navigating. Used on load / when the params first become known so the address bar reflects
+     * the active account/project before the first navigation.
+     *
+     * Idempotent and side-effect-light: only calls replaceState when the URL would actually
+     * change, preserves the existing history state, and never fires a location-change event
+     * (so there is no route re-match or component remount).
+     */
+    normalizeCurrentUrl() {
+        if (typeof window === 'undefined' || !this.stickyParams) {
+            return;
+        }
+        const current = window.location.pathname + window.location.search + window.location.hash;
+        const normalized = this.addStickyParams(current);
+        if (normalized !== current) {
+            const to = new URL(normalized, window.location.href);
+            window.history.replaceState(window.history.state, '', to.href);
+        }
+    }
+
     navigate(to: string, options: NavigateOptions = {}) {
         if (options.stepsBack && options.stepsBack > 0) {
             this.stepBack(options.stepsBack, options);
@@ -125,7 +144,7 @@ export class HistoryNavigator {
         if (options.basePath) {
             let basePath = options.basePath;
             if (!basePath.startsWith('/')) {
-                basePath = '/' + basePath;
+                basePath = `/${basePath}`;
             }
             to = joinPath(basePath, to);
         }
@@ -135,19 +154,20 @@ export class HistoryNavigator {
 
     stepBack(steps: number, options: NavigateOptions = {}) {
         const historyChain = window.history.state.historyChain || [];
-        const to = historyChain.length >= steps
-            ? new URL(historyChain[historyChain.length - steps].href, window.location.href)
-            : new URL(window.location.origin, window.location.href);
+        const to =
+            historyChain.length >= steps
+                ? new URL(historyChain[historyChain.length - steps].href, window.location.href)
+                : new URL(window.location.origin, window.location.href);
         this._navigate(to, 'popState', options);
 
         const stateToStore = {
             from: window.location.href,
             historyChain: historyChain.slice(0, -steps),
             data: options.state || undefined,
-            title: options.title || document.title
+            title: options.title || document.title,
         };
 
-        window.history['replaceState'](stateToStore, '', to.href);
+        window.history.replaceState(stateToStore, '', to.href);
         this.fireLocationChange(new AfterLocationChangeEvent('popState', to, options.state));
     }
 
@@ -165,11 +185,11 @@ export class HistoryNavigator {
         // Create new history chain entry
         const newChainEntry = {
             title: currentTitle,
-            href: window.location.pathname + window.location.search + window.location.hash
+            href: window.location.pathname + window.location.search + window.location.hash,
         };
 
         // Build the history chain - clear if using replace
-        let historyChain: Array<{ title: string, href: string }> = [];
+        let historyChain: Array<{ title: string; href: string }> = [];
         if (!options.replace && currentState?.historyChain) {
             historyChain = [...currentState.historyChain];
         }
@@ -188,7 +208,7 @@ export class HistoryNavigator {
             from: window.location.href,
             historyChain: historyChain,
             data: options.state || undefined,
-            title: options.title || document.title
+            title: options.title || document.title,
         };
 
         window.history[options.replace ? 'replaceState' : 'pushState'](stateToStore, '', to.href);
@@ -197,13 +217,13 @@ export class HistoryNavigator {
     }
 
     start() {
-        if (typeof window === "undefined") {
+        if (typeof window === 'undefined') {
             return;
         }
         const _popStateListener = (ev: PopStateEvent) => {
             let type: LocationChangeType;
             const to = new URL(window.location.href);
-            let state: unknown = undefined;
+            let state: unknown;
             if (ev.state) {
                 type = 'popState';
                 state = ev.state.data;
@@ -211,28 +231,30 @@ export class HistoryNavigator {
                 type = 'linkClick';
             }
             this.fireLocationChange(new AfterLocationChangeEvent(type, to, state));
-        }
+        };
         const _linkNavListener = (ev: MouseEvent) => {
             const target = ev.target as HTMLElement;
             // Skip anchors with download attribute or blob: URLs - they are file downloads, not navigation
-            if (target.tagName.toLowerCase() === 'a' && (
-                (target as HTMLAnchorElement).hasAttribute('download') ||
-                (target as HTMLAnchorElement).href?.startsWith('blob:')
-            )) {
+            if (
+                target.tagName.toLowerCase() === 'a' &&
+                ((target as HTMLAnchorElement).hasAttribute('download') ||
+                    (target as HTMLAnchorElement).href?.startsWith('blob:'))
+            ) {
                 return;
             }
-            const url = getElementHrefAsUrl(target)
+            const url = getElementHrefAsUrl(target);
             if (url && url.origin === window.location.origin) {
                 ev.preventDefault();
                 const to = new URL(this.addStickyParams(url.href));
-                const basePath = (ev as MouseEvent & Partial<Record<typeof BASE_PATH, string>>)[BASE_PATH]
-                    || (ev.target as HTMLElement & Partial<Record<typeof BASE_PATH, string>>)[BASE_PATH];
+                const basePath =
+                    (ev as MouseEvent & Partial<Record<typeof BASE_PATH, string>>)[BASE_PATH] ||
+                    (ev.target as HTMLElement & Partial<Record<typeof BASE_PATH, string>>)[BASE_PATH];
                 if (basePath) {
                     to.pathname = joinPath(basePath, to.pathname);
                 }
                 this._navigate(to, 'linkClick', {});
             }
-        }
+        };
         this._popStateListener = _popStateListener;
         this._linkNavListener = _linkNavListener;
         window.addEventListener('popstate', _popStateListener);

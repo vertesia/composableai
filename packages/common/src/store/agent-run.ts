@@ -12,13 +12,28 @@
  * (workflowId, runId) are internal server concerns.
  */
 
-import { AgentSearchScope, ConversationVisibility, InteractionExecutionConfiguration, InteractionRef, RunSource } from "../interaction.js";
-import { UserChannel } from "../email.js";
-import { AgentEvent } from "../workflow-analytics.js";
-import { UserInputSignal } from "./signals.js";
-import { ContentObjectTypeRef } from "./store.js";
-import { ProcessDefinitionBody, ProcessState } from "./process.js";
-import { AgentMessage, CompactMessage, ConversationActivityState, ConversationFileRef, WorkflowRunEvent } from "./workflow.js";
+import type { UserChannel } from '../email.js';
+import type {
+    AgentSearchScope,
+    ConversationVisibility,
+    InteractionExecutionConfiguration,
+    InteractionRef,
+    RunSource,
+} from '../interaction.js';
+import type { EventRef } from '../platform-event.js';
+import type { AgentEvent } from '../workflow-analytics.js';
+import type { AgentToolApprovalMode } from './agent-approval.js';
+import type { ProcessDefinitionBody, ProcessState } from './process.js';
+import type { StopSignal, UserInputSignal } from './signals.js';
+import type { ContentObjectTypeRef } from './store.js';
+import type {
+    AgentMessage,
+    CompactMessage,
+    ConversationActivityState,
+    ConversationFileRef,
+    ConversationFileRemovedRef,
+    WorkflowRunEvent,
+} from './workflow.js';
 
 /**
  * Status of an agent run through its lifecycle.
@@ -39,7 +54,7 @@ export type AgentRunArchiveState = 'none' | 'pending' | 'archiving' | 'complete'
 /**
  * How the agent run was created.
  */
-export type AgentRunType = 'api' | 'schedule';
+export type AgentRunType = 'api' | 'schedule' | 'event_subscription';
 
 /**
  * Internal discriminator key for documents stored in the agent_runs collection.
@@ -116,6 +131,12 @@ export interface RunBase {
     /** Schedule ID — set when this run was triggered by a Temporal schedule */
     schedule_id?: string;
 
+    /** Event subscription ID — set when this run was triggered by the event bus. */
+    event_subscription_id?: string;
+
+    /** Event reference — set when this run was triggered by the event bus. */
+    event_ref?: EventRef;
+
     /** Archive lifecycle state */
     archive_state?: AgentRunArchiveState;
 
@@ -145,11 +166,21 @@ export interface AgentRunBase<TData = Record<string, unknown>, TProperties = Rec
     /** Whether the agent accepts user input */
     interactive?: boolean;
 
+    /** How side-effecting tool actions are approved for interactive runs. */
+    tool_approval_mode?: AgentToolApprovalMode;
+
     /** Tools configured for this run (+/- syntax supported) */
     tool_names?: string[];
 
     /** Scoped collection (if any) */
     collection_id?: string;
+
+    /**
+     * Denylist of MCP tool-collection ids deactivated for this run.
+     * `undefined`/empty means all installed/connected MCP collections are active (back-compat,
+     * and new servers stay active by default). Listed collections are excluded even if connected.
+     */
+    disabled_mcp_collections?: string[];
 
     /** Content type linked to this run — defines the schema for `properties` */
     content_type?: ContentObjectTypeRef;
@@ -190,7 +221,9 @@ export interface AgentRunBase<TData = Record<string, unknown>, TProperties = Rec
  * @typeParam TData - The interaction's expected input data type.
  * @typeParam TProperties - The content type's property schema.
  */
-export interface AgentRun<TData = Record<string, unknown>, TProperties = Record<string, unknown>> extends RunBase, AgentRunBase<TData, TProperties> {
+export interface AgentRun<TData = Record<string, unknown>, TProperties = Record<string, unknown>>
+    extends RunBase,
+        AgentRunBase<TData, TProperties> {
     run_kind: 'agent';
     run_type: 'autonomous';
 
@@ -287,7 +320,10 @@ export interface ProcessRun extends RunBase {
 }
 
 export type AnyAgentRun = AgentRun | ProcessRun;
-export type AutonomousRunResponse<TData = Record<string, unknown>, TProperties = Record<string, unknown>> = AgentRun<TData, TProperties>;
+export type AutonomousRunResponse<TData = Record<string, unknown>, TProperties = Record<string, unknown>> = AgentRun<
+    TData,
+    TProperties
+>;
 export type SupervisedRunResponse = ProcessRun & { run_type: 'supervised' };
 export type ProgrammaticRunResponse = ProcessRun & { run_type: 'programmatic' };
 /**
@@ -342,7 +378,8 @@ export interface ProcessRunInputPayload<TData = Record<string, unknown>, TSource
     started_by?: string;
 }
 
-export interface CreateProcessRunPayload<TData = Record<string, unknown>, TSource = RunSource> extends ProcessRunInputPayload<TData, TSource> {
+export interface CreateProcessRunPayload<TData = Record<string, unknown>, TSource = RunSource>
+    extends ProcessRunInputPayload<TData, TSource> {
     run_type: ProcessRunType;
 }
 
@@ -372,7 +409,8 @@ export interface RecordAgentRunPayload<TData = Record<string, unknown>> extends 
  * starting its Temporal child workflow.
  */
 export interface RecordProcessRunPayload<TData = Record<string, unknown>, TSource = RunSource>
-    extends ProcessRunInputPayload<TData, TSource>, RecordRunWorkflowPayload {
+    extends ProcessRunInputPayload<TData, TSource>,
+        RecordRunWorkflowPayload {
     run_kind: 'process';
     run_type?: ProcessRunType;
 }
@@ -409,6 +447,13 @@ export interface UpdateAgentRunStatusPayload {
     lessons_learned?: string[];
     /** ES-only: conversation content text (not stored in MongoDB) */
     content?: string;
+    /**
+     * MCP collections deactivated for this run. Persisted when the user toggles activation
+     * mid-conversation so a page reload reflects the live state. An empty array clears the denylist.
+     */
+    disabled_mcp_collections?: string[];
+    /** Tool approval mode persisted for interactive agent runs. */
+    tool_approval_mode?: AgentToolApprovalMode;
     /** Archive state fields (set by the archive workflow) */
     archive_state?: AgentRunArchiveState;
     archived_at?: string;
@@ -423,7 +468,9 @@ export interface UpdateAgentRunStatusPayload {
  */
 export type SignalAgentPayload =
     | UserInputSignal
+    | StopSignal
     | ConversationFileRef
+    | ConversationFileRemovedRef
     | Record<string, unknown>;
 
 /**
@@ -517,9 +564,7 @@ export interface AgentRunDetailsHistoryStreamEvent {
 /**
  * Control payload emitted by the agent details SSE stream.
  */
-export type AgentRunDetailsControlStreamEvent =
-    | { type: 'continueAsNew'; newRunId: string }
-    | { type: 'done' };
+export type AgentRunDetailsControlStreamEvent = { type: 'continueAsNew'; newRunId: string } | { type: 'done' };
 
 /**
  * Error payload emitted by the agent details SSE stream.
@@ -710,6 +755,12 @@ export interface AgentRunSearchHit {
 
     /** Schedule ID (if schedule-triggered) */
     schedule_id?: string;
+
+    /** Event subscription ID (if event-triggered) */
+    event_subscription_id?: string;
+
+    /** Event reference (if event-triggered) */
+    event_ref?: EventRef;
 
     /** How the run was created */
     source_type?: AgentRunType;

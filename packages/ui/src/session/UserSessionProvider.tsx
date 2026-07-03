@@ -1,13 +1,13 @@
-import { Env } from "@vertesia/ui/env";
-import { onAuthStateChanged } from "firebase/auth";
-import { ReactNode, useEffect, useRef, useState } from "react";
-import { STSError, UserNotFoundError, getComposableToken } from "./auth/composable";
-import { shouldRedirectToCentralAuth } from "./auth/domainRouting";
-import { getFirebaseAuth } from "./auth/firebase";
-import { useAuthState } from "./auth/useAuthState";
-import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from "./UserSession";
+import { Env } from '@vertesia/ui/env';
+import { onAuthStateChanged } from 'firebase/auth';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { getComposableToken, STSError, UserNotFoundError } from './auth/composable';
+import { shouldRedirectToCentralAuth } from './auth/domainRouting';
+import { getFirebaseAuth } from './auth/firebase';
+import { useAuthState } from './auth/useAuthState';
+import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from './UserSession';
 
-const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
+const CENTRAL_AUTH_REDIRECT = 'https://internal-auth.vertesia.app/';
 
 interface UserSessionProviderProps {
     children: ReactNode | ReactNode[];
@@ -15,43 +15,44 @@ interface UserSessionProviderProps {
 }
 export function UserSessionProvider({ children, loadOnboardingStatus = true }: UserSessionProviderProps) {
     const hashParams = new URLSearchParams(location.hash.substring(1));
-    const token = hashParams.get("token");
-    const state = hashParams.get("state");
+    const token = hashParams.get('token');
+    const state = hashParams.get('state');
     const [session, setSession] = useState<UserSession>(new UserSession());
     const { generateState, verifyState, clearState } = useAuthState();
     const hasInitiatedAuthRef = useRef(false);
+    const authFlowRef = useRef<(() => undefined | (() => void)) | undefined>(undefined);
 
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
-        const url = new URL(`${CENTRAL_AUTH_REDIRECT}?sts=${Env.endpoints.sts ?? "https://sts.vertesia.io"}`);
+        const url = new URL(`${CENTRAL_AUTH_REDIRECT}?sts=${Env.endpoints.sts ?? 'https://sts.vertesia.io'}`);
         const currentUrl = new URL(window.location.href);
-        currentUrl.hash = "";
-        if (projectId) currentUrl.searchParams.set("p", projectId);
-        if (accountId) currentUrl.searchParams.set("a", accountId);
-        url.searchParams.set("redirect_uri", currentUrl.toString());
-        url.searchParams.set("state", generateState());
+        currentUrl.hash = '';
+        if (projectId) currentUrl.searchParams.set('p', projectId);
+        if (accountId) currentUrl.searchParams.set('a', accountId);
+        url.searchParams.set('redirect_uri', currentUrl.toString());
+        url.searchParams.set('state', generateState());
         location.replace(url.toString());
     };
 
-    useEffect(() => {
+    authFlowRef.current = () => {
         // Make this effect idempotent - only run auth flow once
         if (hasInitiatedAuthRef.current) {
-            console.log("Auth: skipping duplicate auth flow initiation");
+            console.log('Auth: skipping duplicate auth flow initiation');
             return;
         }
         hasInitiatedAuthRef.current = true;
 
-        console.log("Auth: starting auth flow");
-        Env.logger.info("Starting auth flow");
+        console.log('Auth: starting auth flow');
+        Env.logger.info('Starting auth flow');
         const currentUrl = new URL(window.location.href);
         const selectedAccount =
-            currentUrl.searchParams.get("a") ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined;
+            currentUrl.searchParams.get('a') ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined;
         const selectedProject =
-            currentUrl.searchParams.get("p") ??
-            localStorage.getItem(LastSelectedProjectId_KEY + "-" + selectedAccount) ??
+            currentUrl.searchParams.get('p') ??
+            localStorage.getItem(`${LastSelectedProjectId_KEY}-${selectedAccount}`) ??
             undefined;
-        console.log("Auth: selected account", selectedAccount);
-        console.log("Auth: selected project", selectedProject);
-        Env.logger.info("Selected account and project", {
+        console.log('Auth: selected account', selectedAccount);
+        console.log('Auth: selected project', selectedProject);
+        Env.logger.info('Selected account and project', {
             vertesia: {
                 account_id: selectedAccount,
                 project_id: selectedProject,
@@ -70,20 +71,20 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                 });
                 redirectToCentralAuth();
             } else {
-                clearState()
+                clearState();
             }
             getComposableToken(selectedAccount, selectedProject, token, false, shouldRedirectToCentralAuth())
                 .then((res) => {
                     session.login(res.rawToken, { loadOnboardingStatus }).then(() => {
                         setSession(session.clone());
                         //cleanup the hash
-                        window.location.hash = "";
+                        window.location.hash = '';
                     });
                 })
                 .catch((err) => {
                     // Don't redirect to central auth for UserNotFoundError - let signup flow handle it
                     if (err instanceof UserNotFoundError) {
-                        console.log("User not found - will trigger signup flow", err);
+                        console.log('User not found - will trigger signup flow', err);
                         session.isLoading = false;
                         session.authError = err;
                         setSession(session.clone());
@@ -91,8 +92,8 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                     }
 
                     if (err instanceof STSError) {
-                        console.error("STS error during token exchange", err);
-                        Env.logger.error("STS error during token exchange", {
+                        console.error('STS error during token exchange', err);
+                        Env.logger.error('STS error during token exchange', {
                             vertesia: {
                                 account_id: selectedAccount,
                                 project_id: selectedProject,
@@ -100,15 +101,17 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                                 error: err,
                             },
                         });
-                        window.alert("Authentication failed due to an issue with the authentication service. Please try again later.");
+                        window.alert(
+                            'Authentication failed due to an issue with the authentication service. Please try again later.',
+                        );
                         session.logout();
                         setSession(session.clone());
-                        window.location.hash = "";
+                        window.location.hash = '';
                         return;
                     }
 
-                    console.error("Failed to fetch user token from studio, redirecting to central auth", err);
-                    Env.logger.error("Failed to fetch user token from studio, redirecting to central auth", {
+                    console.error('Failed to fetch user token from studio, redirecting to central auth', err);
+                    Env.logger.error('Failed to fetch user token from studio, redirecting to central auth', {
                         vertesia: {
                             error: err,
                         },
@@ -119,8 +122,8 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
         } else {
             // If the current host is not in the Firebase allowlist, central auth owns sign-in.
             if (!session.isLoggedIn()) {
-                console.log("Auth: not logged in & no token/state");
-                Env.logger.info("Not logged in & no token/state", {
+                console.log('Auth: not logged in & no token/state');
+                Env.logger.info('Not logged in & no token/state', {
                     vertesia: {
                         account_id: selectedAccount,
                         project_id: selectedProject,
@@ -128,11 +131,11 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                 });
                 if (shouldRedirectToCentralAuth()) {
                     console.log(
-                        "Auth: host is not in Firebase auth allowlist, redirecting to central auth with selection",
+                        'Auth: host is not in Firebase auth allowlist, redirecting to central auth with selection',
                         selectedAccount,
                         selectedProject,
                     );
-                    Env.logger.info("Redirecting to central auth with selection", {
+                    Env.logger.info('Redirecting to central auth with selection', {
                         vertesia: {
                             account_id: selectedAccount,
                             project_id: selectedProject,
@@ -141,8 +144,8 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                     redirectToCentralAuth();
                     return; // Don't register onAuthStateChanged listener when redirecting
                 } else {
-                    console.log("Auth: host is in Firebase auth allowlist");
-                    Env.logger.info("Host is in Firebase auth allowlist", {
+                    console.log('Auth: host is in Firebase auth allowlist');
+                    Env.logger.info('Host is in Firebase auth allowlist', {
                         vertesia: {
                             account_id: selectedAccount,
                             project_id: selectedProject,
@@ -154,21 +157,27 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
 
         return onAuthStateChanged(getFirebaseAuth(), async (firebaseUser) => {
             if (firebaseUser) {
-                console.log("Auth: successful login with firebase");
-                Env.logger.info("Successful login with firebase", {
+                console.log('Auth: successful login with firebase');
+                Env.logger.info('Successful login with firebase', {
                     vertesia: {
                         account_id: selectedAccount,
                         project_id: selectedProject,
                     },
                 });
                 session.setSession = setSession;
-                await getComposableToken(selectedAccount, selectedProject, undefined, false, shouldRedirectToCentralAuth())
+                await getComposableToken(
+                    selectedAccount,
+                    selectedProject,
+                    undefined,
+                    false,
+                    shouldRedirectToCentralAuth(),
+                )
                     .then((res) => {
                         session.login(res.rawToken, { loadOnboardingStatus }).then(() => setSession(session.clone()));
                     })
                     .catch((err) => {
-                        console.error("Failed to fetch user token from studio", err);
-                        Env.logger.error("Failed to fetch user token from studio", {
+                        console.error('Failed to fetch user token from studio', err);
+                        Env.logger.error('Failed to fetch user token from studio', {
                             vertesia: {
                                 account_id: selectedAccount,
                                 project_id: selectedProject,
@@ -182,8 +191,8 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                     });
             } else {
                 // anonymous user
-                console.log("Auth: using anonymous user");
-                Env.logger.info("Using anonymous user", {
+                console.log('Auth: using anonymous user');
+                Env.logger.info('Using anonymous user', {
                     vertesia: {
                         account_id: selectedAccount,
                         project_id: selectedProject,
@@ -194,6 +203,10 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                 setSession(session.clone());
             }
         });
+    };
+
+    useEffect(() => {
+        return authFlowRef.current?.();
     }, []);
 
     return <UserSessionContext.Provider value={session}>{children}</UserSessionContext.Provider>;

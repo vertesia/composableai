@@ -1,137 +1,145 @@
 /**
  * User prompts for configuration
  */
-import prompts from 'prompts';
+
 import chalk from 'chalk';
-import { PromptConfig, TemplateConfig } from './template-config.js';
+import prompts from 'prompts';
+import type { PromptConfig, TemplateConfig } from './template-config.js';
 import { applyMapTransform, applyTransform, concatValues } from './transforms.js';
 
 type ProcessedPromptConfig = Omit<PromptConfig, 'validate'> & {
-  choices?: Array<{ value: unknown }>;
-  validate?: string | ((value: string) => boolean | string);
+    choices?: Array<{ value: unknown }>;
+    validate?: string | ((value: string) => boolean | string);
 };
 
 /**
  * Prompt user for configuration values
  * @param nonInteractive - If true, skip prompts and use default/initial values
  */
-export async function promptUser(projectName: string, templateConfig: TemplateConfig, nonInteractive = false): Promise<Record<string, unknown>> {
-  if (!templateConfig.prompts) {
-    return {};
-  }
-
-  // Pre-populate PROJECT_NAME from the directory name — skip the prompt entirely
-  const filteredPrompts = templateConfig.prompts.filter(p => p.name !== 'PROJECT_NAME');
-
-  // Process prompts - replace ${PROJECT_NAME} and other variables in initial values
-  const processedPrompts: ProcessedPromptConfig[] = filteredPrompts.map(p => {
-    const prompt: ProcessedPromptConfig = { ...p };
-
-    // Replace ${PROJECT_NAME} in initial values
-    if (typeof prompt.initial === 'string') {
-      prompt.initial = prompt.initial.replace(/\$\{PROJECT_NAME\}/g, projectName);
+export async function promptUser(
+    projectName: string,
+    templateConfig: TemplateConfig,
+    nonInteractive = false,
+): Promise<Record<string, unknown>> {
+    if (!templateConfig.prompts) {
+        return {};
     }
 
-    // Convert validate string to function
-    // Can be either a regex pattern (e.g., "^[a-z]+$") or a function string (e.g., "(v) => v.length > 0")
-    if (typeof prompt.validate === 'string') {
-      const validateStr = prompt.validate;
-      if (validateStr.includes('=>') || validateStr.includes('function')) {
-        // It's a function string - evaluate it
-        try {
-          prompt.validate = eval(validateStr);
-        } catch {
-          // If eval fails, remove the validator
-          delete prompt.validate;
+    // Pre-populate PROJECT_NAME from the directory name — skip the prompt entirely
+    const filteredPrompts = templateConfig.prompts.filter((p) => p.name !== 'PROJECT_NAME');
+
+    // Process prompts - replace ${PROJECT_NAME} and other variables in initial values
+    const processedPrompts: ProcessedPromptConfig[] = filteredPrompts.map((p) => {
+        const prompt: ProcessedPromptConfig = { ...p };
+
+        // Replace ${PROJECT_NAME} in initial values
+        if (typeof prompt.initial === 'string') {
+            prompt.initial = prompt.initial.replace(/\$\{PROJECT_NAME\}/g, projectName);
         }
-      } else {
-        // It's a regex pattern
-        try {
-          const regex = new RegExp(validateStr);
-          prompt.validate = (value: string) => regex.test(value) || `Must match pattern: ${validateStr}`;
-        } catch {
-          // If regex is invalid, remove the validator
-          delete prompt.validate;
+
+        // Convert validate string to function
+        // Can be either a regex pattern (e.g., "^[a-z]+$") or a function string (e.g., "(v) => v.length > 0")
+        if (typeof prompt.validate === 'string') {
+            const validateStr = prompt.validate;
+            if (validateStr.includes('=>') || validateStr.includes('function')) {
+                // It's a function string - evaluate it (template authors author validators here)
+                try {
+                    // biome-ignore lint/security/noGlobalEval: plugin templates author trusted validator code that must run dynamically
+                    prompt.validate = eval(validateStr);
+                } catch {
+                    // If eval fails, remove the validator
+                    delete prompt.validate;
+                }
+            } else {
+                // It's a regex pattern
+                try {
+                    const regex = new RegExp(validateStr);
+                    prompt.validate = (value: string) => regex.test(value) || `Must match pattern: ${validateStr}`;
+                } catch {
+                    // If regex is invalid, remove the validator
+                    delete prompt.validate;
+                }
+            }
         }
-      }
-    }
 
-    return prompt;
-  });
-
-  let answers: Record<string, unknown> = { PROJECT_NAME: projectName };
-
-  if (nonInteractive) {
-    // Use default/initial values for all prompts
-    console.log(chalk.gray('Using default values (non-interactive mode)\n'));
-    for (const prompt of processedPrompts) {
-      if (prompt.type === 'confirm') {
-        answers[prompt.name] = prompt.initial ?? true;
-      } else if (prompt.type === 'select' && prompt.choices) {
-        const idx = typeof prompt.initial === 'number' ? prompt.initial : 0;
-        answers[prompt.name] = prompt.choices[idx]?.value ?? prompt.choices[0]?.value;
-      } else {
-        answers[prompt.name] = prompt.initial ?? '';
-      }
-    }
-  } else {
-    console.log(chalk.blue('⚙️  Configure your project:\n'));
-
-    const userAnswers = await prompts(processedPrompts as Parameters<typeof prompts>[0], {
-      onCancel: () => {
-        throw new Error('Installation cancelled by user');
-      }
+        return prompt;
     });
 
-    // Check if all prompts were answered
-    if (Object.keys(userAnswers).length !== processedPrompts.length) {
-      throw new Error('Installation cancelled');
-    }
+    let answers: Record<string, unknown> = { PROJECT_NAME: projectName };
 
-    answers = { ...answers, ...userAnswers };
-  }
-
-  // Process derived variables
-  if (templateConfig.derived) {
-    for (const [targetName, derivedConfig] of Object.entries(templateConfig.derived)) {
-      try {
-        if (derivedConfig.transform === 'concat') {
-          // Handle concat transform with multiple source fields
-          const sourceFields = Array.isArray(derivedConfig.from) ? derivedConfig.from : [derivedConfig.from];
-          const values = sourceFields.map(field => {
-            const value = answers[field];
-            if (value === undefined) {
-              throw new Error(`Source field "${field}" not found in answers`);
+    if (nonInteractive) {
+        // Use default/initial values for all prompts
+        console.log(chalk.gray('Using default values (non-interactive mode)\n'));
+        for (const prompt of processedPrompts) {
+            if (prompt.type === 'confirm') {
+                answers[prompt.name] = prompt.initial ?? true;
+            } else if (prompt.type === 'select' && prompt.choices) {
+                const idx = typeof prompt.initial === 'number' ? prompt.initial : 0;
+                answers[prompt.name] = prompt.choices[idx]?.value ?? prompt.choices[0]?.value;
+            } else {
+                answers[prompt.name] = prompt.initial ?? '';
             }
-            return String(value);
-          });
-          answers[targetName] = concatValues(values, derivedConfig.separator || '');
-        } else if (derivedConfig.transform === 'map') {
-          // Look up the source value in a fixed map
-          if (!derivedConfig.map) {
-            throw new Error(`"map" transform requires a "map" field`);
-          }
-          const sourceField = Array.isArray(derivedConfig.from) ? derivedConfig.from[0] : derivedConfig.from;
-          const sourceValue = answers[sourceField];
-          if (sourceValue === undefined) {
-            throw new Error(`Source field "${sourceField}" not found in answers`);
-          }
-          answers[targetName] = applyMapTransform(String(sourceValue), derivedConfig.map);
-        } else {
-          // Handle single-source transforms
-          const sourceField = Array.isArray(derivedConfig.from) ? derivedConfig.from[0] : derivedConfig.from;
-          const sourceValue = answers[sourceField];
-          if (sourceValue !== undefined) {
-            answers[targetName] = applyTransform(String(sourceValue), derivedConfig.transform);
-          }
         }
-      } catch (error) {
-        const fromStr = Array.isArray(derivedConfig.from) ? derivedConfig.from.join(', ') : derivedConfig.from;
-        throw new Error(`Failed to derive ${targetName} from ${fromStr}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-    }
-  }
+    } else {
+        console.log(chalk.blue('⚙️  Configure your project:\n'));
 
-  console.log(); // Empty line after prompts
-  return answers;
+        const userAnswers = await prompts(processedPrompts as Parameters<typeof prompts>[0], {
+            onCancel: () => {
+                throw new Error('Installation cancelled by user');
+            },
+        });
+
+        // Check if all prompts were answered
+        if (Object.keys(userAnswers).length !== processedPrompts.length) {
+            throw new Error('Installation cancelled');
+        }
+
+        answers = { ...answers, ...userAnswers };
+    }
+
+    // Process derived variables
+    if (templateConfig.derived) {
+        for (const [targetName, derivedConfig] of Object.entries(templateConfig.derived)) {
+            try {
+                if (derivedConfig.transform === 'concat') {
+                    // Handle concat transform with multiple source fields
+                    const sourceFields = Array.isArray(derivedConfig.from) ? derivedConfig.from : [derivedConfig.from];
+                    const values = sourceFields.map((field) => {
+                        const value = answers[field];
+                        if (value === undefined) {
+                            throw new Error(`Source field "${field}" not found in answers`);
+                        }
+                        return String(value);
+                    });
+                    answers[targetName] = concatValues(values, derivedConfig.separator || '');
+                } else if (derivedConfig.transform === 'map') {
+                    // Look up the source value in a fixed map
+                    if (!derivedConfig.map) {
+                        throw new Error(`"map" transform requires a "map" field`);
+                    }
+                    const sourceField = Array.isArray(derivedConfig.from) ? derivedConfig.from[0] : derivedConfig.from;
+                    const sourceValue = answers[sourceField];
+                    if (sourceValue === undefined) {
+                        throw new Error(`Source field "${sourceField}" not found in answers`);
+                    }
+                    answers[targetName] = applyMapTransform(String(sourceValue), derivedConfig.map);
+                } else {
+                    // Handle single-source transforms
+                    const sourceField = Array.isArray(derivedConfig.from) ? derivedConfig.from[0] : derivedConfig.from;
+                    const sourceValue = answers[sourceField];
+                    if (sourceValue !== undefined) {
+                        answers[targetName] = applyTransform(String(sourceValue), derivedConfig.transform);
+                    }
+                }
+            } catch (error) {
+                const fromStr = Array.isArray(derivedConfig.from) ? derivedConfig.from.join(', ') : derivedConfig.from;
+                throw new Error(
+                    `Failed to derive ${targetName} from ${fromStr}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                );
+            }
+        }
+    }
+
+    console.log(); // Empty line after prompts
+    return answers;
 }

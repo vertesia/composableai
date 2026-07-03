@@ -1,7 +1,13 @@
-import { VertesiaClient } from "@vertesia/client";
-import { ConfigModes, InteractionExecutionPayload, InteractionExecutionResult, RunDataStorageLevel } from "@vertesia/common";
-import { TextFallbackOptions } from "@llumiverse/common";
-import { getStringOption, type CliOptions } from "../utils/options.js";
+import type { VertesiaClient } from '@vertesia/client';
+import {
+    ConfigModes,
+    type InteractionExecutionPayload,
+    type InteractionExecutionResult,
+    RunDataStorageLevel,
+    type TextFallbackOptions,
+} from '@vertesia/common';
+import { type CliOptions, errorMessage, getStringOption, isRecord } from '../utils/options.js';
+import { readFile } from '../utils/stdio.js';
 
 export type CliExecutionResult = InteractionExecutionResult & {
     runNumber?: number;
@@ -23,7 +29,11 @@ export class ExecutionQueue {
         this.abortController.abort();
     }
 
-    async run(onBatch: (completed: CliExecutionResult[]) => void, onChunk?: ((chunk: string) => void), signal?: AbortSignal) {
+    async run(
+        onBatch: (completed: CliExecutionResult[]) => void,
+        onChunk?: (chunk: string) => void,
+        signal?: AbortSignal,
+    ) {
         // If an external signal is provided, link it to our local abort controller
         if (signal) {
             if (signal.aborted) {
@@ -56,7 +66,7 @@ export class ExecutionQueue {
 
                 // Pass our abort signal to each request
                 const res = await Promise.all(
-                    chunk.map(request => request.run(onChunk, this.abortController.signal))
+                    chunk.map((request) => request.run(onChunk, this.abortController.signal)),
                 );
 
                 out.push(...res);
@@ -79,43 +89,46 @@ export class ExecutionQueue {
 }
 
 function convertRunData(raw_run_data: unknown): RunDataStorageLevel | undefined {
-    const levelStr: string = typeof raw_run_data === 'string' ? raw_run_data.toUpperCase() : "";
-    return Object.values(RunDataStorageLevel).includes(levelStr as RunDataStorageLevel) ? levelStr as RunDataStorageLevel : undefined;
+    const levelStr: string = typeof raw_run_data === 'string' ? raw_run_data.toUpperCase() : '';
+    return Object.values(RunDataStorageLevel).includes(levelStr as RunDataStorageLevel)
+        ? (levelStr as RunDataStorageLevel)
+        : undefined;
 }
 
 function convertConfigMode(raw_config_mode: unknown): ConfigModes | undefined {
-    const configStr: string = typeof raw_config_mode === 'string' ? raw_config_mode.toUpperCase() : "";
-    return Object.values(ConfigModes).includes(configStr as ConfigModes) ? configStr as ConfigModes : undefined;
+    const configStr: string = typeof raw_config_mode === 'string' ? raw_config_mode.toUpperCase() : '';
+    return Object.values(ConfigModes).includes(configStr as ConfigModes) ? (configStr as ConfigModes) : undefined;
 }
 
 export class ExecutionRequest {
-
     runNumber?: number;
 
     constructor(
         public readonly client: VertesiaClient,
         public interactionSpec: string, // namespace:name@version
         public data: unknown,
-        public options: CliOptions) {
-    }
+        public options: CliOptions,
+    ) {}
 
-    async run(onChunk?: ((chunk: string) => void), signal?: AbortSignal): Promise<CliExecutionResult> {
+    async run(onChunk?: (chunk: string) => void, signal?: AbortSignal): Promise<CliExecutionResult> {
         // Check if already aborted
         if (signal?.aborted) {
-            throw new Error("Operation aborted");
+            throw new Error('Operation aborted');
         }
 
         const options = this.options;
 
         //TODO: Support for other modalities, like images
         const model_options: TextFallbackOptions = {
-            _option_id: "text-fallback",
+            _option_id: 'text-fallback',
             temperature: typeof options.temperature === 'string' ? parseFloat(options.temperature) : undefined,
-            max_tokens: typeof options.maxTokens === 'string' ? parseInt(options.maxTokens) : undefined,
+            max_tokens: typeof options.maxTokens === 'string' ? parseInt(options.maxTokens, 10) : undefined,
             top_p: typeof options.topP === 'string' ? parseFloat(options.topP) : undefined,
-            top_k: typeof options.topK === 'string' ? parseInt(options.topK) : undefined,
-            presence_penalty: typeof options.presencePenalty === 'string' ? parseFloat(options.presencePenalty) : undefined,
-            frequency_penalty: typeof options.frequencyPenalty === 'string' ? parseFloat(options.frequencyPenalty) : undefined,
+            top_k: typeof options.topK === 'string' ? parseInt(options.topK, 10) : undefined,
+            presence_penalty:
+                typeof options.presencePenalty === 'string' ? parseFloat(options.presencePenalty) : undefined,
+            frequency_penalty:
+                typeof options.frequencyPenalty === 'string' ? parseFloat(options.frequencyPenalty) : undefined,
             stop_sequence: getStringOption(options.stopSequence)?.split(/\s*,\s*/),
         };
 
@@ -127,32 +140,39 @@ export class ExecutionRequest {
             run_data: convertRunData(options.runData),
         };
         const tags = getStringOption(options.tags)?.split(/\s,*\s*/);
+        const payload: InteractionExecutionPayload = {
+            data: readInteractionData(this.data),
+            config,
+            tags,
+        };
+        const resultSchema = readResultSchema(options);
+        if (resultSchema !== undefined) {
+            payload.result_schema = resultSchema;
+        }
 
         // Create a wrapper for the onChunk callback that checks for abort
-        const abortAwareChunkHandler = onChunk ? (chunk: string) => {
-            if (signal?.aborted) return;
-            onChunk(chunk);
-        } : undefined;
+        const abortAwareChunkHandler = onChunk
+            ? (chunk: string) => {
+                  if (signal?.aborted) return;
+                  onChunk(chunk);
+              }
+            : undefined;
 
         let run: CliExecutionResult;
         try {
             if (this.options.byId) {
-                run = await this.client.interactions.execute(this.interactionSpec, {
-                    data: readInteractionData(this.data),
-                    config,
-                    tags
-                }, abortAwareChunkHandler);
+                run = await this.client.interactions.execute(this.interactionSpec, payload, abortAwareChunkHandler);
             } else {
-                run = await this.client.interactions.executeByName(this.interactionSpec, {
-                    data: readInteractionData(this.data),
-                    config,
-                    tags
-                }, abortAwareChunkHandler);
+                run = await this.client.interactions.executeByName(
+                    this.interactionSpec,
+                    payload,
+                    abortAwareChunkHandler,
+                );
             }
 
             // Check if aborted during execution
             if (signal?.aborted) {
-                throw new Error("Operation aborted");
+                throw new Error('Operation aborted');
             }
 
             // add count number in the run
@@ -164,13 +184,40 @@ export class ExecutionRequest {
             // Check if aborted
             if (signal?.aborted) {
                 //TODO: Maybe use error cause?
-                throw new Error("Operation aborted");
+                throw new Error('Operation aborted');
             }
             throw error;
         }
     }
 }
 
-function readInteractionData(data: unknown): InteractionExecutionPayload["data"] {
-    return data as InteractionExecutionPayload["data"];
+function readInteractionData(data: unknown): InteractionExecutionPayload['data'] {
+    return data as InteractionExecutionPayload['data'];
+}
+
+function readResultSchema(options: CliOptions): InteractionExecutionPayload['result_schema'] | undefined {
+    const inlineSchema = getStringOption(options.resultSchema);
+    const schemaFile = getStringOption(options.resultSchemaFile);
+
+    if (inlineSchema && schemaFile) {
+        throw new Error('Use either --result-schema or --result-schema-file, not both.');
+    }
+    if (!inlineSchema && !schemaFile) {
+        return undefined;
+    }
+
+    const source = inlineSchema ? '--result-schema' : '--result-schema-file';
+    const rawSchema = inlineSchema ?? readFile(schemaFile as string);
+    let schema: unknown;
+    try {
+        schema = JSON.parse(rawSchema);
+    } catch (err: unknown) {
+        throw new Error(`Invalid JSON in ${source}: ${errorMessage(err)}`);
+    }
+
+    if (schema !== null && !isRecord(schema)) {
+        throw new Error(`${source} must be a JSON object or null.`);
+    }
+
+    return schema as InteractionExecutionPayload['result_schema'];
 }

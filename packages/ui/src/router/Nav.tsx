@@ -1,5 +1,5 @@
-import { SyntheticEvent } from "react";
-import { useNavigate, useRouterContext } from "./Router";
+import type { SyntheticEvent } from 'react';
+import { useNavigate, useRouterContext } from './Router';
 
 /**
  * Wraps a <a href="..."> and perform the navigation to href through the router.
@@ -34,36 +34,60 @@ export function Nav({ children, to, onClick, replace = true }: NavProps) {
             navigate(target, { replace });
             onClick?.(ev);
         }
-    }
+    };
     return (
         // biome-ignore lint/a11y/noStaticElementInteractions: span intercepts clicks on inner <a>; keyboard a11y comes from the anchor (Enter triggers click natively).
         // biome-ignore lint/a11y/useKeyWithClickEvents: same — the inner <a> provides keyboard activation natively.
         <span onClick={_onClick}>{children}</span>
-    )
+    );
 }
 
 /**
- * A anchor tag that performs navigation through the router.
+ * An anchor that navigates via the router. Internal paths are intercepted and carry the active
+ * tenant sticky params (a/p); external URLs and `_blank` targets fall through to the browser.
  */
 interface NavLinkProps {
     children: React.ReactNode | React.ReactNode[];
     href: string;
     className?: string;
+    target?: string;
     /**
      * use the root router to navigate
      */
     topLevelNav?: boolean;
     clearBreadcrumbs?: boolean;
+    replace?: boolean; //If true, replace the current history entry instead of pushing (defaults to clearBreadcrumbs)
+    skipStickyParams?: boolean; //If true, do not append the account (a) & project (p) sticky params to the href
 }
-export function NavLink({ children, href, className, topLevelNav, clearBreadcrumbs = false }: NavLinkProps) {
+export function NavLink({
+    children,
+    href,
+    className,
+    target,
+    topLevelNav,
+    clearBreadcrumbs = false,
+    replace,
+    skipStickyParams,
+}: NavLinkProps) {
     const { router } = useRouterContext();
+    // In-app route = not an external URL, `_blank` target, or bare hash. Relative paths count too —
+    // they must be routed, else the global link listener re-applies the module base path (wrong URL).
+    const isAnchorOrEmpty = !href || href.startsWith('#');
+    const isExternal = /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//') || (!!target && target !== '_self');
+    const isInternal = !isAnchorOrEmpty && !isExternal;
+    const resolvedHref = !skipStickyParams && isInternal ? router.getTopRouter().navigator.addStickyParams(href) : href;
     const _onClick = (ev: SyntheticEvent) => {
+        if (ev.defaultPrevented || !isInternal) {
+            return;
+        }
         ev.stopPropagation();
         ev.preventDefault();
         const actualRouter = topLevelNav ? router.getTopRouter() : router;
-        actualRouter.navigate(href, { replace: clearBreadcrumbs  });
-    }
+        actualRouter.navigate(href, { replace: replace ?? clearBreadcrumbs });
+    };
     return (
-        <a href={href} className={className} onClick={_onClick}>{children}</a>
-    )
+        <a href={resolvedHref} className={className} target={target} onClick={_onClick}>
+            {children}
+        </a>
+    );
 }

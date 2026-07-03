@@ -1,7 +1,8 @@
-import ansiColors from "ansi-colors";
-import ansiEscapes from "ansi-escapes";
-import { WriteStream } from "node:tty";
-import { onExit } from "signal-exit";
+import type { WriteStream } from 'node:tty';
+import ansiColors from 'ansi-colors';
+import ansiEscapes from 'ansi-escapes';
+import { onExit } from 'signal-exit';
+
 /**
  * See https://github.com/sindresorhus/cli-spinners/blob/HEAD/spinners.json for more spinners
  */
@@ -12,34 +13,17 @@ interface SpinnerData {
 }
 
 const spinners: Record<string, SpinnerData> = {
-    "dots": {
-        "interval": 200,
-        "frames": [
-            ".  ",
-            ".. ",
-            "...",
-            " ..",
-            "  .",
-            "   "
-        ]
+    dots: {
+        interval: 200,
+        frames: ['.  ', '.. ', '...', ' ..', '  .', '   '],
     },
-    "bar": {
-        "interval": 80,
-        "frames": [
-            "[    ]",
-            "[=   ]",
-            "[==  ]",
-            "[=== ]",
-            "[====]",
-            "[ ===]",
-            "[  ==]",
-            "[   =]",
-        ]
+    bar: {
+        interval: 80,
+        frames: ['[    ]', '[=   ]', '[==  ]', '[=== ]', '[====]', '[ ===]', '[  ==]', '[   =]'],
     },
-}
+};
 
 export class Spinner {
-
     data: SpinnerData;
     log: LogUpdate;
     timer?: NodeJS.Timeout;
@@ -69,8 +53,8 @@ export class Spinner {
         };
 
         // Store handlers so we can remove them later
-        this.signalHandlers['SIGINT'] = handleSignal;
-        this.signalHandlers['SIGTERM'] = handleSignal;
+        this.signalHandlers.SIGINT = handleSignal;
+        this.signalHandlers.SIGTERM = handleSignal;
 
         // Register handlers
         process.on('SIGINT', handleSignal);
@@ -185,7 +169,6 @@ export class Spinner {
 }
 
 export class LogUpdate {
-
     stream: WriteStream;
 
     last?: string;
@@ -208,7 +191,6 @@ export class LogUpdate {
         this.stream.write(text);
         return this;
     }
-
 }
 
 const streamsToRestore: WriteStream[] = [];
@@ -223,7 +205,7 @@ export function toggleCursor(show: boolean, stream: WriteStream = process.stdout
 }
 
 export function showCursor(stream: WriteStream = process.stdout) {
-    const i = streamsToRestore.findIndex((s) => s === stream);
+    const i = streamsToRestore.indexOf(stream);
     if (i > -1) {
         streamsToRestore.splice(i, 1);
     }
@@ -242,7 +224,9 @@ export function restoreCursorOnExit() {
     if (!restoreCursorIsRegistered) {
         restoreCursorIsRegistered = true;
         onExit(() => {
-            streamsToRestore.forEach(stream => showCursor(stream));
+            streamsToRestore.forEach((stream) => {
+                showCursor(stream);
+            });
         });
     }
 }

@@ -1,21 +1,10 @@
-import {
-    useCallback,
-    useMemo,
-    useRef,
-    useState,
-    type Dispatch,
-    type ReactNode,
-    type SetStateAction,
-} from 'react';
+import type { ContentObjectItem } from '@vertesia/common';
 import { type Filter, useDebounce, useFetch, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import type { ContentObjectItem } from '@vertesia/common';
+import { type Dispatch, type ReactNode, type SetStateAction, useCallback, useMemo, useRef, useState } from 'react';
 import type { SortDir } from '../../components/SortableHead';
-import {
-    ContentObjectsListStateContext,
-    type ContentObjectsListStateValue,
-} from './ContentObjectsListStateContext';
+import { ContentObjectsListStateContext, type ContentObjectsListStateValue } from './ContentObjectsListStateContext';
 import { PAGE_SIZE, SORT_FIELD_MAP, type SortField } from './types';
 import { getSelectValues } from './utils';
 
@@ -26,16 +15,11 @@ function dedupeFilters(filters: Filter[]) {
     const deduped: Filter[] = [];
     for (const filter of filters) {
         const normalizedValue = Array.isArray(filter.value)
-            ? filter.value.map((entry) =>
-                  typeof entry === 'string' ? entry : `${entry.value}|${entry.label || ''}`,
-              )
+            ? filter.value.map((entry) => (typeof entry === 'string' ? entry : `${entry.value}|${entry.label || ''}`))
             : [];
-        const key = [
-            filter.name,
-            filter.type ?? '',
-            filter.multiple ? 'multi' : 'single',
-            ...normalizedValue,
-        ].join('::');
+        const key = [filter.name, filter.type ?? '', filter.multiple ? 'multi' : 'single', ...normalizedValue].join(
+            '::',
+        );
         if (seen.has(key)) continue;
         seen.add(key);
         deduped.push(filter);
@@ -81,12 +65,13 @@ export function ContentObjectsListStateProvider({ children }: ProviderProps) {
         };
     }, [debouncedQuery, filtersState]);
 
-    const sortPayload = useMemo(
-        () => [{ field: SORT_FIELD_MAP[sortField], order: sortDir }],
-        [sortField, sortDir],
-    );
+    const sortPayload = useMemo(() => [{ field: SORT_FIELD_MAP[sortField], order: sortDir }], [sortField, sortDir]);
 
-    const { data: firstPage, isLoading, refetch } = useFetch<ContentObjectItem[]>(
+    const {
+        data: firstPage,
+        isLoading,
+        refetch,
+    } = useFetch<ContentObjectItem[]>(
         async () => {
             const result = await client.objects.search({
                 query: buildQuery(),
@@ -132,17 +117,7 @@ export function ContentObjectsListStateProvider({ children }: ProviderProps) {
                 toast({ status: 'error', title: t('objects.searchError') });
             })
             .finally(() => setIsLoadingMore(false));
-    }, [
-        client,
-        buildQuery,
-        sortPayload,
-        items.length,
-        isLoadingMore,
-        isLoading,
-        hasMore,
-        toast,
-        t,
-    ]);
+    }, [client, buildQuery, sortPayload, items.length, isLoadingMore, isLoading, hasMore, toast, t]);
 
     const value: ContentObjectsListStateValue = useMemo(
         () => ({
@@ -177,9 +152,5 @@ export function ContentObjectsListStateProvider({ children }: ProviderProps) {
         ],
     );
 
-    return (
-        <ContentObjectsListStateContext.Provider value={value}>
-            {children}
-        </ContentObjectsListStateContext.Provider>
-    );
+    return <ContentObjectsListStateContext.Provider value={value}>{children}</ContentObjectsListStateContext.Provider>;
 }

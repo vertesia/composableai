@@ -1,0 +1,23 @@
+{
+    "name": "@vertesia/tsconfig",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Shared TypeScript configurations for Vertesia packages.",
+    "license": "Apache-2.0",
+    "files": [
+        "base.json",
+        "lib.json",
+        "web-lib.json",
+        "ui-lib.json",
+        "server-app.json",
+        "app.json"
+    ],
+    "exports": {
+        "./base.json": "./base.json",
+        "./lib.json": "./lib.json",
+        "./web-lib.json": "./web-lib.json",
+        "./ui-lib.json": "./ui-lib.json",
+        "./server-app.json": "./server-app.json",
+        "./app.json": "./app.json"
+    }
+}

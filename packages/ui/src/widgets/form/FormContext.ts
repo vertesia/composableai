@@ -1,5 +1,5 @@
-import { ChangeEvent, ComponentType, createContext, useContext } from "react";
-import { ManagedObject, ManagedObjectBase, Node } from "./ManagedObject.js";
+import { type ChangeEvent, type ComponentType, createContext, useContext } from 'react';
+import type { ManagedObject, ManagedObjectBase, Node } from './ManagedObject.js';
 
 const FieldSetContext = createContext<ManagedObjectBase | undefined>(undefined);
 const FieldSetContextProvider = FieldSetContext.Provider;
@@ -21,11 +21,11 @@ export interface InputComponentProps {
     disabled?: boolean;
 }
 export class FormContext {
-    constructor(public object: ManagedObject,
+    constructor(
+        public object: ManagedObject,
         public components: Record<string, ComponentType<InputComponentProps>> = {},
-        public disabled: boolean = false) {
-    }
-
+        public disabled: boolean = false,
+    ) {}
 }
 
 const _FormContext = createContext<FormContext | undefined>(undefined);

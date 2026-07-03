@@ -1,14 +1,11 @@
+import { log, workflowInfo } from '@temporalio/workflow';
+import type { WebHookSpec, WorkflowExecutionPayload } from '@vertesia/common';
+import type * as activities from '../activities/notifyWebhook.js';
+import { dslProxyActivities } from '../dsl/dslProxyActivities.js';
+import { WF_NON_RETRYABLE_ERRORS } from '../errors.js';
 
-import { log, workflowInfo } from "@temporalio/workflow";
-import { WebHookSpec, WorkflowExecutionPayload } from "@vertesia/common";
-import * as activities from "../activities/notifyWebhook.js";
-import { dslProxyActivities } from "../dsl/dslProxyActivities.js";
-import { WF_NON_RETRYABLE_ERRORS } from "../errors.js";
-
-const {
-    notifyWebhook
-} = dslProxyActivities<typeof activities>("notifyWebhookWorkflow", {
-    startToCloseTimeout: "5 minute",
+const { notifyWebhook } = dslProxyActivities<typeof activities>('notifyWebhookWorkflow', {
+    startToCloseTimeout: '5 minute',
     retry: {
         initialInterval: '5s',
         backoffCoefficient: 2,
@@ -19,14 +16,22 @@ const {
 });
 
 export interface NotifyWebhookWorfklowParams {
-    workflow_type: string;
-    endpoints: (string | WebHookSpec)[],
-    data: Record<string, unknown>
+    workflow_type?: string;
+    endpoints?: (string | WebHookSpec)[];
+    data?: Record<string, unknown>;
+    requests?: NotifyWebhookRequest[];
 }
 
+export interface NotifyWebhookRequest {
+    url: string;
+    body: string;
+    headers?: Record<string, string>;
+    timeout_ms?: number;
+}
 
-export async function notifyWebhookWorkflow(payload: WorkflowExecutionPayload<NotifyWebhookWorfklowParams>): Promise<unknown> {
-
+export async function notifyWebhookWorkflow(
+    payload: WorkflowExecutionPayload<NotifyWebhookWorfklowParams>,
+): Promise<unknown> {
     const info = workflowInfo();
     const { objectIds, vars } = payload;
     const notifications = [];
@@ -35,6 +40,7 @@ export async function notifyWebhookWorkflow(payload: WorkflowExecutionPayload<No
         webhook_data?: Record<string, unknown>;
     };
     const endpoints = legacyVars.endpoints ?? legacyVars.webhooks ?? [];
+    const requests = legacyVars.requests ?? [];
     const data = legacyVars.data ?? legacyVars.webhook_data ?? undefined;
     const workflow_type = vars.workflow_type ?? info.workflowType;
     const eventName = payload.event;
@@ -42,9 +48,27 @@ export async function notifyWebhookWorkflow(payload: WorkflowExecutionPayload<No
     const workflowId = info.parent?.workflowId || info.workflowId;
     const workflowRunId = info.parent?.runId || info.runId;
 
-    if (!endpoints.length) {
+    if (!endpoints.length && !requests.length) {
         log.info(`No webhooks to notify`);
-        return { notifications: [], message: "No webhooks to notify" };
+        return { notifications: [], message: 'No webhooks to notify' };
+    }
+
+    for (const request of requests) {
+        const n = notifyWebhook(payload, {
+            webhook: request.url,
+            method: 'POST',
+            workflow_type,
+            workflow_id: workflowId,
+            workflow_run_id: workflowRunId,
+            event_name: eventName,
+            body: request.body,
+            headers: request.headers,
+            timeout_ms: request.timeout_ms,
+        }).then((res) => {
+            log.info(`Webhook notified at ${request.url} with response code: ${res.status}`, { res });
+            return res;
+        });
+        notifications.push(n);
     }
 
     for (const ep of endpoints) {
@@ -57,9 +81,9 @@ export async function notifyWebhookWorkflow(payload: WorkflowExecutionPayload<No
             event_name: eventName,
             detail: {
                 object_ids: objectIds,
-                data
-            }
-        }).then(res => {
+                data,
+            },
+        }).then((res) => {
             log.info(`Webhook notified at ${ep} with response code: ${res.status}`, { res });
             return res;
         });
@@ -69,6 +93,5 @@ export async function notifyWebhookWorkflow(payload: WorkflowExecutionPayload<No
     const res = await Promise.all(notifications);
     log.info(`Webhooks notified`);
 
-    return { notifications: res, message: "Webhooks notified" };
-
+    return { notifications: res, message: 'Webhooks notified' };
 }

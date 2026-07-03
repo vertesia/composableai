@@ -1,17 +1,17 @@
-import { describe, expect, it } from 'vitest';
 import { useState } from 'react';
+import { describe, expect, it } from 'vitest';
+import { FormItem } from '../core/components/FormItem.js';
 import { Button, CopyButton } from '../core/components/shadcn/button.js';
+import { Checkbox } from '../core/components/shadcn/checkbox.js';
 import { Input } from '../core/components/shadcn/input.js';
 import { Label } from '../core/components/shadcn/label.js';
-import { Checkbox } from '../core/components/shadcn/checkbox.js';
-import { Switch } from '../core/components/shadcn/switch.js';
+import { Modal, ModalBody, ModalTitle } from '../core/components/shadcn/modal/dialog.js';
 import { RadioGroup } from '../core/components/shadcn/radioGroup.js';
-import { FormItem } from '../core/components/FormItem.js';
-import { Modal, ModalTitle, ModalBody } from '../core/components/shadcn/modal/dialog.js';
-import { Table, THead, TBody, TableHeaderCell, SortableTableHeaderCell } from '../core/components/table/index.js';
 import { SelectBox } from '../core/components/shadcn/selectBox.js';
-import { renderWithProviders } from './test-utils.js';
+import { Switch } from '../core/components/shadcn/switch.js';
+import { SortableTableHeaderCell, Table, TableHeaderCell, TBody, THead } from '../core/components/table/index.js';
 import { axe } from './axe-helper.js';
+import { renderWithProviders } from './test-utils.js';
 
 describe('@vertesia/ui accessibility (axe)', () => {
     it('Button (text + icon-only with aria-label) has no violations', async () => {
@@ -54,9 +54,7 @@ describe('@vertesia/ui accessibility (axe)', () => {
     });
 
     it('CopyButton has an accessible name via internal aria-label', async () => {
-        const { container } = renderWithProviders(
-            <CopyButton content="example value" />,
-        );
+        const { container } = renderWithProviders(<CopyButton content="example value" />);
         const button = container.querySelector('button');
         expect(button?.getAttribute('aria-label')).toBeTruthy();
         expect(await axe(container)).toHaveNoViolations();
@@ -75,13 +73,7 @@ describe('@vertesia/ui accessibility (axe)', () => {
         const { container } = renderWithProviders(
             <div>
                 <Label htmlFor="a11y-test-invalid-input">Username</Label>
-                <Input
-                    id="a11y-test-invalid-input"
-                    value="x"
-                    onChange={() => undefined}
-                    clearable={false}
-                    invalid
-                />
+                <Input id="a11y-test-invalid-input" value="x" onChange={() => undefined} clearable={false} invalid />
             </div>,
         );
         const input = container.querySelector('input');
@@ -134,11 +126,7 @@ describe('@vertesia/ui accessibility (axe)', () => {
             const [val, setVal] = useState<string | undefined>(undefined);
             return (
                 <FormItem label="Country" helpText="Pick where you live." error="Required.">
-                    <SelectBox
-                        options={['France', 'Germany', 'Spain']}
-                        value={val}
-                        onChange={setVal}
-                    />
+                    <SelectBox options={['France', 'Germany', 'Spain']} value={val} onChange={setVal} />
                 </FormItem>
             );
         }
@@ -175,6 +163,7 @@ describe('@vertesia/ui accessibility (axe)', () => {
     it('FormItem does NOT auto-wire a Fragment child (Fragment ignores cloned props)', async () => {
         const { container } = renderWithProviders(
             <FormItem label="Fragment example">
+                {/* biome-ignore lint/complexity/noUselessFragments: this is the SUT — the test verifies FormItem short-circuits when the child is a Fragment. */}
                 <>
                     <Input value="" onChange={() => undefined} clearable={false} />
                 </>
@@ -202,7 +191,9 @@ describe('@vertesia/ui accessibility (axe)', () => {
         const { container } = renderWithProviders(
             <div className="flex items-center gap-2">
                 <Checkbox id="a11y-test-tos" aria-labelledby="a11y-test-tos-label" />
-                <Label htmlFor="a11y-test-tos" id="a11y-test-tos-label">I accept the terms</Label>
+                <Label htmlFor="a11y-test-tos" id="a11y-test-tos-label">
+                    I accept the terms
+                </Label>
             </div>,
         );
         expect(await axe(container)).toHaveNoViolations();
@@ -381,14 +372,16 @@ describe('@vertesia/ui accessibility (axe)', () => {
                         <tr>
                             <SortableTableHeaderCell
                                 sortDirection={dir}
-                                onSort={() => setDir(d => (d === 'ascending' ? 'descending' : 'ascending'))}
+                                onSort={() => setDir((d) => (d === 'ascending' ? 'descending' : 'ascending'))}
                             >
                                 Name
                             </SortableTableHeaderCell>
                         </tr>
                     </THead>
                     <TBody columns={1}>
-                        <tr><td>Ada</td></tr>
+                        <tr>
+                            <td>Ada</td>
+                        </tr>
                     </TBody>
                 </Table>
             );

@@ -1,6 +1,5 @@
-import clsx from "clsx";
-import React from "react";
-
+import clsx from 'clsx';
+import type React from 'react';
 
 const defaultTableCass = `
 divide-y divide-border
@@ -9,85 +8,78 @@ divide-y divide-border
 [&_td]:px-3 [&_td]:py-4 [&_td]:text-sm
 `;
 
-
 export function Table({ className, children, ...others }: React.HTMLProps<HTMLTableElement>) {
     return (
         <table className={clsx(defaultTableCass, className)} {...others}>
             {children}
         </table>
-    )
+    );
 }
 
 interface THeadProps {
-    children: React.ReactNode
+    children: React.ReactNode;
 }
 export function THead({ children }: Readonly<THeadProps>) {
     return (
         <thead className="sticky top-0 bg-background z-10 after:absolute after:bottom-0 after:start-0 after:w-full after:h-px after:bg-muted/20">
             {children}
         </thead>
-    )
+    );
 }
 
 export function RowSkeleton({ columns }: { columns: number }) {
     return (
         <tr className="hover:bg-muted">
-            {Array(columns).fill(0).map((_, index) =>
-                <td key={index}>
-                    <div className="animate-pulse rounded-xs h-5 bg-muted"></div>
-                </td>
-            )}
+            {Array(columns)
+                .fill(0)
+                .map((_, index) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
+                    <td key={index}>
+                        <div className="animate-pulse rounded-xs h-5 bg-muted"></div>
+                    </td>
+                ))}
         </tr>
-    )
+    );
 }
 
 interface TBodySkeletonProps {
-    isLoading?: boolean
-    columns: number
-    rows?: number
-    children: React.ReactNode
+    isLoading?: boolean;
+    columns: number;
+    rows?: number;
+    children: React.ReactNode;
 }
 export function TBody({ isLoading = false, columns, rows = 3, children }: Readonly<TBodySkeletonProps>) {
+    const skeletonRows = Array.from({ length: rows }, (_, index) => `skeleton-row-${index}`);
+
     return (
-        <tbody>
-            {
-                (isLoading) ? (
-                    Array(rows).fill(0).map((_, index) => <RowSkeleton columns={columns} key={index} />)
-                ) : (
-                    children
-                )
-            }
-        </tbody>
-    )
+        <tbody>{isLoading ? skeletonRows.map((key) => <RowSkeleton columns={columns} key={key} />) : children}</tbody>
+    );
 }
 
 export function TR({ className, children, ...others }: React.HTMLProps<HTMLTableRowElement>) {
     return (
-        <tr className={clsx("hover:bg-muted hover:cursor-pointer", className)} {...others}>
+        <tr className={clsx('hover:bg-muted hover:cursor-pointer', className)} {...others}>
             {children}
         </tr>
-    )
+    );
 }
 
 /**
  * Header cell. Defaults to scope="col" so screen readers associate column
  * cells with their header. Pass scope="row" for row headers.
  */
-export function TableHeaderCell({
-    scope = "col",
-    children,
-    ...others
-}: React.ThHTMLAttributes<HTMLTableCellElement>) {
+export function TableHeaderCell({ scope = 'col', children, ...others }: React.ThHTMLAttributes<HTMLTableCellElement>) {
     return (
         <th scope={scope} {...others}>
             {children}
         </th>
-    )
+    );
 }
 
-export type SortDirection = "ascending" | "descending" | "none";
+export type SortDirection = 'ascending' | 'descending' | 'none';
 
-interface SortableTableHeaderCellProps extends Omit<React.ThHTMLAttributes<HTMLTableCellElement>, 'onClick' | 'aria-sort'> {
+interface SortableTableHeaderCellProps
+    extends Omit<React.ThHTMLAttributes<HTMLTableCellElement>, 'onClick' | 'aria-sort'> {
     /** Current sort state. Drives aria-sort on the <th>. */
     sortDirection?: SortDirection;
     /** Fired when the user activates the sort trigger (mouse or keyboard). */
@@ -106,22 +98,17 @@ interface SortableTableHeaderCellProps extends Omit<React.ThHTMLAttributes<HTMLT
  * automatically — no onKeyDown plumbing required.
  */
 export function SortableTableHeaderCell({
-    sortDirection = "none",
+    sortDirection = 'none',
     onSort,
     sortIndicator,
     disabled = false,
     children,
     className,
-    scope = "col",
+    scope = 'col',
     ...others
 }: SortableTableHeaderCellProps) {
     return (
-        <th
-            scope={scope}
-            aria-sort={sortDirection}
-            className={className}
-            {...others}
-        >
+        <th scope={scope} aria-sort={sortDirection} className={className} {...others}>
             {disabled ? (
                 <span className="inline-flex items-center gap-1">
                     {children}
@@ -138,5 +125,5 @@ export function SortableTableHeaderCell({
                 </button>
             )}
         </th>
-    )
+    );
 }

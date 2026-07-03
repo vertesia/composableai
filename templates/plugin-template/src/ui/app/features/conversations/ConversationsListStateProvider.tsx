@@ -1,21 +1,10 @@
-import {
-    useCallback,
-    useMemo,
-    useRef,
-    useState,
-    type Dispatch,
-    type ReactNode,
-    type SetStateAction,
-} from 'react';
+import type { AgentRunResponse, AgentRunSearchHit, AgentRunStatus } from '@vertesia/common';
 import { type Filter, useDebounce, useFetch, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import type { AgentRunResponse, AgentRunSearchHit, AgentRunStatus } from '@vertesia/common';
+import { type Dispatch, type ReactNode, type SetStateAction, useCallback, useMemo, useRef, useState } from 'react';
 import type { SortDir } from '../../components/SortableHead';
-import {
-    ConversationsListStateContext,
-    type ConversationsListStateValue,
-} from './ConversationsListStateContext';
+import { ConversationsListStateContext, type ConversationsListStateValue } from './ConversationsListStateContext';
 import { PAGE_SIZE, type SortField } from './types';
 import { getSelectValues } from './utils';
 
@@ -55,16 +44,11 @@ function dedupeFilters(filters: Filter[]) {
     const deduped: Filter[] = [];
     for (const filter of filters) {
         const normalizedValue = Array.isArray(filter.value)
-            ? filter.value.map((entry) =>
-                  typeof entry === 'string' ? entry : `${entry.value}|${entry.label || ''}`,
-              )
+            ? filter.value.map((entry) => (typeof entry === 'string' ? entry : `${entry.value}|${entry.label || ''}`))
             : [];
-        const key = [
-            filter.name,
-            filter.type ?? '',
-            filter.multiple ? 'multi' : 'single',
-            ...normalizedValue,
-        ].join('::');
+        const key = [filter.name, filter.type ?? '', filter.multiple ? 'multi' : 'single', ...normalizedValue].join(
+            '::',
+        );
         if (seen.has(key)) continue;
         seen.add(key);
         deduped.push(filter);
@@ -155,9 +139,5 @@ export function ConversationsListStateProvider({ children }: ProviderProps) {
         [query, filtersState, setFilters, sortField, sortDir, hits, isLoading, refetch],
     );
 
-    return (
-        <ConversationsListStateContext.Provider value={value}>
-            {children}
-        </ConversationsListStateContext.Provider>
-    );
+    return <ConversationsListStateContext.Provider value={value}>{children}</ConversationsListStateContext.Provider>;
 }

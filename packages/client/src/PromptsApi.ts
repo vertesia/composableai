@@ -1,9 +1,19 @@
-import { ComputePromptFacetPayload, PromptSearchPayload, PromptSearchQuery, PromptTemplate, PromptTemplateForkPayload, PromptTemplateCreatePayload, PromptTemplateRef, PromptTemplateUpdatePayload, TemplateType } from "@vertesia/common";
-import { PromptRole } from "@llumiverse/common";
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import type { PromptRole } from '@llumiverse/common';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type {
+    ComputePromptFacetPayload,
+    PromptSearchPayload,
+    PromptSearchQuery,
+    PromptTemplate,
+    PromptTemplateCreatePayload,
+    PromptTemplateForkPayload,
+    PromptTemplateRef,
+    PromptTemplateUpdatePayload,
+    TemplateType,
+} from '@vertesia/common';
 
 export interface ComputePromptFacetsResponse {
-    role?: { _id: string, count: number }[];
+    role?: { _id: string; count: number }[];
     total?: { count: number }[];
 }
 
@@ -17,7 +27,7 @@ export interface PromptRenderResponse {
 
 export default class PromptsApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/prompts")
+        super(parent, '/api/v1/prompts');
     }
 
     /**
@@ -26,12 +36,12 @@ export default class PromptsApi extends ApiTopic {
      * @returns PromptTemplateRef[]
      **/
     list(payload: PromptSearchPayload = {}): Promise<PromptTemplateRef[]> {
-        const query = payload.query || {} as PromptSearchQuery;
+        const query = payload.query || ({} as PromptSearchQuery);
 
-        return this.get("/", {
+        return this.get('/', {
             query: {
-                ...query
-            }
+                ...query,
+            },
         });
     }
 
@@ -41,8 +51,8 @@ export default class PromptsApi extends ApiTopic {
      * @returns ComputePromptFacetsResponse[]
      **/
     computeFacets(query: ComputePromptFacetPayload): Promise<ComputePromptFacetsResponse> {
-        return this.post("/facets", {
-            payload: query
+        return this.post('/facets', {
+            payload: query,
         });
     }
 
@@ -56,7 +66,7 @@ export default class PromptsApi extends ApiTopic {
      **/
     create(payload: PromptTemplateCreatePayload): Promise<PromptTemplate> {
         return this.post('/', {
-            payload
+            payload,
         });
     }
 
@@ -81,7 +91,7 @@ export default class PromptsApi extends ApiTopic {
      **/
     update(id: string, payload: PromptTemplateUpdatePayload): Promise<PromptTemplate> {
         return this.put(`/${id}`, {
-            payload
+            payload,
         });
     }
 
@@ -102,7 +112,7 @@ export default class PromptsApi extends ApiTopic {
      */
     fork(id: string, payload: PromptTemplateForkPayload): Promise<PromptTemplate> {
         return this.post(`/${id}/fork`, {
-            payload
+            payload,
         });
     }
 
@@ -117,7 +127,7 @@ export default class PromptsApi extends ApiTopic {
      */
     render(id: string, payload: object): Promise<PromptRenderResponse> {
         return this.post(`/${id}/render`, {
-            payload
+            payload,
         });
     }
 
@@ -140,7 +150,6 @@ export default class PromptsApi extends ApiTopic {
         return this.get(`/${id}/versions`);
     }
 
-
     /**
      * Retrieve list of interactions that use the prompt template
      */
@@ -156,14 +165,13 @@ export default class PromptsApi extends ApiTopic {
     listForks(id: string): Promise<PromptTemplateRef[]> {
         return this.get(`/${id}/forks`);
     }
-
 }
 
 export interface ListInteractionsResponse {
-    prompt: string,
+    prompt: string;
     interactions: {
-        id: string,
-        name: string,
-        versions: string[],
-    }[]
+        id: string;
+        name: string;
+        versions: string[];
+    }[];
 }

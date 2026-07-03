@@ -1,11 +1,14 @@
+import type { OnResultCallback } from './commands.js';
 import type { Profile } from './index.js';
 import { config, shouldRefreshProfileToken } from './index.js';
-import type { OnResultCallback } from './commands.js';
-import { canUseOAuthProfile, refreshOAuthSession } from './oauth.js';
 import { readAuthBundle, readProfileAccessToken } from './keyring.js';
+import { canUseOAuthProfile, refreshOAuthSession } from './oauth.js';
 import type { ConfigResult } from './server/index.js';
 
-export async function ensureProfileAccessToken(profile: Profile, onResult?: OnResultCallback): Promise<string | undefined> {
+export async function ensureProfileAccessToken(
+    profile: Profile,
+    onResult?: OnResultCallback,
+): Promise<string | undefined> {
     const token = readProfileAccessToken(profile);
     if (token && !shouldRefreshProfileToken(profile, 30)) {
         return token;
@@ -50,6 +53,7 @@ export async function refreshProfileAuthentication(
     try {
         const refreshed = await refreshProfileAccessToken(profile, onResult, options);
         if (refreshed) {
+            logRefreshSuccess(profileName, refreshed);
             return refreshed;
         }
     } catch (error) {
@@ -61,12 +65,25 @@ export async function refreshProfileAuthentication(
     }
 
     if (options.projectId) {
-        throw new Error('Project switching requires a stored OAuth refresh token. Run `vertesia auth refresh` without --project to authenticate again.');
+        throw new Error(
+            'Project switching requires a stored OAuth refresh token. Run `vertesia auth refresh` without --project to authenticate again.',
+        );
     }
 
     const updater = config.updateProfile(profileName);
     await updater.start(onResult, signal);
     return undefined;
+}
+
+function logRefreshSuccess(profileName: string, result: ConfigResult): void {
+    const expiresAtMs =
+        typeof result.access_token_expires_at === 'number'
+            ? result.access_token_expires_at
+            : typeof result.expires_in === 'number'
+              ? Date.now() + result.expires_in * 1000
+              : undefined;
+    const suffix = expiresAtMs ? ` (expires ${new Date(expiresAtMs).toISOString()})` : '';
+    console.log(`Refreshed access token for profile "${profileName}"${suffix}.`);
 }
 
 export async function refreshCurrentProfileAuthentication(
@@ -77,7 +94,7 @@ export async function refreshCurrentProfileAuthentication(
     } = {},
 ): Promise<ConfigResult | undefined> {
     if (!config.current) {
-        console.log("No profile is selected. Run `vertesia profiles use <name>` to select a profile");
+        console.log('No profile is selected. Run `vertesia profiles use <name>` to select a profile');
         process.exit(1);
     }
     return refreshProfileAuthentication(config.current.name, onResult, signal, options);

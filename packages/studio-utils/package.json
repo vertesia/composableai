@@ -1,0 +1,64 @@
+{
+    "name": "@vertesia/studio-utils",
+    "version": "1.5.0-dev",
+    "type": "module",
+    "description": "Shared utilities for Vertesia studio: prompt template rendering, schema-based mock data generation, prompt and interaction validation helpers.",
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        },
+        "./conditions": {
+            "types": "./lib/conditions/index.d.ts",
+            "default": "./lib/conditions/index.js"
+        },
+        "./logger": {
+            "types": "./lib/logger.d.ts",
+            "default": "./lib/logger.js"
+        },
+        "./lib/*": "./lib/*",
+        "./src/*": "./src/*"
+    },
+    "license": "Apache-2.0",
+    "homepage": "https://docs.vertesiahq.com",
+    "files": [
+        "lib",
+        "src"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/studio-utils"
+    },
+    "keywords": [
+        "vertesia",
+        "studio",
+        "prompt",
+        "template",
+        "handlebars",
+        "jst",
+        "validation"
+    ],
+    "scripts": {
+        "lint": "biome lint src",
+        "test": "vitest run",
+        "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
+        "build": "pnpm run clean:lib && pnpm exec tsc -p tsconfig.json && pnpm exec rolldown -c rollup.config.js",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+    },
+    "devDependencies": {
+        "@types/node": "catalog:",
+        "@vertesia/tsconfig": "workspace:*",
+        "rolldown": "^1.0.2",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.9"
+    },
+    "dependencies": {
+        "@llumiverse/common": "workspace:*",
+        "@vertesia/common": "workspace:*",
+        "@vertesia/jst": "workspace:*",
+        "handlebars": "^4.7.9"
+    }
+}

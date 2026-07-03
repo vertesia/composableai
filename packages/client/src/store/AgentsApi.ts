@@ -1,58 +1,63 @@
-import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import {
-    ActiveWorkstreamsQueryResult,
-    AgentEvent,
-    AgentArtifactUrlResponse,
-    AgentMessage,
-    AgentRun,
-    AgentRunDetailsStreamEvent,
-    AgentRunInternals,
-    AgentRunResponse,
-    AgentRunUpdatesResponse,
-    BindRunWorkflowPayload,
-    CompactMessage,
-    CreateAgentRunPayload,
-    CreateProcessRunPayload,
-    ErrorAnalyticsResponse,
-    FirstResponseBehaviorAnalyticsResponse,
-    LatencyAnalyticsResponse,
-    ListAgentRunsQuery,
-    ListAgentRunsResponse,
-    ListWorkflowRunsResponse,
+    type ActiveWorkstreamsQueryResult,
+    type AgentArtifactUrlResponse,
+    type AgentEvent,
+    type AgentMessage,
+    type AgentRun,
+    type AgentRunDetailsStreamEvent,
+    type AgentRunInternals,
+    type AgentRunResponse,
+    type AgentRunUpdatesResponse,
+    type BindRunWorkflowPayload,
+    type CreateAgentRunPayload,
+    type CreateProcessRunPayload,
+    type ErrorAnalyticsResponse,
+    type FirstResponseBehaviorAnalyticsResponse,
+    type IngestAgentEventsPayload,
+    type IngestAgentEventsResponse,
+    type LatencyAnalyticsResponse,
+    type ListAgentRunsQuery,
+    type ListAgentRunsResponse,
+    type ListWorkflowRunsResponse,
+    type PostAgentRunUpdatePayload,
+    type PostAgentRunUpdateResponse,
+    type ProcessRun,
+    type ProcessState,
+    type PromptSizeAnalyticsResponse,
     parseMessage,
-    PromptSizeAnalyticsResponse,
-    PostAgentRunUpdatePayload,
-    PostAgentRunUpdateResponse,
-    ProcessRun,
-    ProcessState,
-    RecordAgentRunPayload,
-    RecordProcessRunPayload,
-    RecordRunPayload,
-    RunsByAgentAnalyticsResponse,
-    SearchAgentRunsQuery,
-    SearchAgentRunsResponse,
-    SignalAgentPayload,
-    SignalAgentResponse,
-    TimeToFirstResponseAnalyticsResponse,
-    TerminateAgentRunResponse,
+    type RecordAgentRunPayload,
+    type RecordProcessRunPayload,
+    type RecordRunPayload,
+    type RunsByAgentAnalyticsResponse,
+    type SearchAgentRunsQuery,
+    type SearchAgentRunsResponse,
+    type SignalAgentPayload,
+    type SignalAgentResponse,
+    type TerminateAgentRunResponse,
+    type TimeToFirstResponseAnalyticsResponse,
+    type TokenUsageAnalyticsResponse,
+    type ToolAnalyticsResponse,
+    type ToolParameterAnalyticsResponse,
+    type TopPrincipalsAnalyticsResponse,
     toAgentMessage,
-    TokenUsageAnalyticsResponse,
-    ToolAnalyticsResponse,
-    ToolParameterAnalyticsResponse,
-    TopPrincipalsAnalyticsResponse,
-    UpdateAgentRunStatusPayload,
-    WorkflowAnalyticsFilterOptionsResponse,
-    WorkflowAnalyticsSummaryQuery,
-    WorkflowAnalyticsSummaryResponse,
-    WorkflowAnalyticsTimeSeriesQuery,
-    WorkflowRunWithDetails,
-    WorkflowToolParametersQuery,
-    IngestAgentEventsPayload,
-    IngestAgentEventsResponse,
+    type UpdateAgentRunStatusPayload,
+    type WorkflowAnalyticsFilterOptionsResponse,
+    type WorkflowAnalyticsSummaryQuery,
+    type WorkflowAnalyticsSummaryResponse,
+    type WorkflowAnalyticsTimeSeriesQuery,
+    type WorkflowRunWithDetails,
+    type WorkflowToolParametersQuery,
 } from '@vertesia/common';
-import { VertesiaClient } from '../client.js';
+import type { VertesiaClient } from '../client.js';
 import { EventSourceProvider } from '../execute.js';
+import { fetchSignedUrl } from './signed-url.js';
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
+
+export interface AgentRunStreamMessagesOptions {
+    onHistoryLoaded?: (messages: AgentMessage[]) => void;
+    onHistoryError?: (error: unknown) => void;
+}
 
 export class AgentsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -67,12 +72,8 @@ export class AgentsApi extends ApiTopic {
      * Create and start a new agent run.
      * Returns the created AgentRun with its stable id.
      */
-    start<TData = Record<string, unknown>>(
-        payload: CreateAgentRunPayload<TData>,
-    ): Promise<AgentRun<TData>>;
-    start<TData = Record<string, unknown>>(
-        payload: CreateProcessRunPayload<TData>,
-    ): Promise<ProcessRun>;
+    start<TData = Record<string, unknown>>(payload: CreateAgentRunPayload<TData>): Promise<AgentRun<TData>>;
+    start<TData = Record<string, unknown>>(payload: CreateProcessRunPayload<TData>): Promise<ProcessRun>;
     start<TData = Record<string, unknown>>(
         payload: CreateAgentRunPayload<TData> | CreateProcessRunPayload<TData>,
     ): Promise<AgentRun<TData> | ProcessRun> {
@@ -87,7 +88,9 @@ export class AgentsApi extends ApiTopic {
      */
     recordRun<TData = Record<string, unknown>>(payload: RecordAgentRunPayload<TData>): Promise<AgentRun<TData>>;
     recordRun<TData = Record<string, unknown>>(payload: RecordProcessRunPayload<TData>): Promise<ProcessRun>;
-    recordRun<TData = Record<string, unknown>>(payload: RecordRunPayload<TData>): Promise<AgentRun<TData> | ProcessRun> {
+    recordRun<TData = Record<string, unknown>>(
+        payload: RecordRunPayload<TData>,
+    ): Promise<AgentRun<TData> | ProcessRun> {
         return this.post('/record', { payload });
     }
 
@@ -141,7 +144,8 @@ export class AgentsApi extends ApiTopic {
         if (query?.until) params.until = query.until.toISOString();
         if (query?.schedule_id) params.schedule_id = query.schedule_id;
         if (query?.type) params.type = query.type;
-        if (query?.run_type) params.run_type = Array.isArray(query.run_type) ? query.run_type.join(',') : query.run_type;
+        if (query?.run_type)
+            params.run_type = Array.isArray(query.run_type) ? query.run_type.join(',') : query.run_type;
         if (query?.run_kind) params.run_kind = query.run_kind;
         if (query?.limit) params.limit = String(query.limit);
         if (query?.offset) params.offset = String(query.offset);
@@ -227,10 +231,7 @@ export class AgentsApi extends ApiTopic {
      * Update agent run status/metadata.
      * Called by workflow activities to sync lifecycle state.
      */
-    updateStatus(
-        id: string,
-        update: UpdateAgentRunStatusPayload,
-    ): Promise<AgentRun | ProcessRun> {
+    updateStatus(id: string, update: UpdateAgentRunStatusPayload): Promise<AgentRun | ProcessRun> {
         return this.post(`/${id}/status`, { payload: update });
     }
 
@@ -249,7 +250,7 @@ export class AgentsApi extends ApiTopic {
 
     /**
      * Send a signal to a running agent.
-     * Signals: "UserInput", "Stop", "FileUploaded"
+     * Signals: "UserInput", "Stop", "FileUploaded", "FileRemoved"
      */
     sendSignal(id: string, signalName: string, payload?: SignalAgentPayload): Promise<SignalAgentResponse> {
         return this.post(`/${id}/signal/${signalName}`, { payload });
@@ -280,8 +281,8 @@ export class AgentsApi extends ApiTopic {
      */
     async retrieveMessages(id: string, since?: number): Promise<AgentMessage[]> {
         const query = since ? { since } : undefined;
-        const response = await this.get(`/${id}/updates`, { query }) as AgentRunUpdatesResponse;
-        return response.messages.map((m: CompactMessage) => toAgentMessage(m, id));
+        const response = (await this.get(`/${id}/updates`, { query })) as AgentRunUpdatesResponse;
+        return response.messages.map((m) => toAgentMessage(parseMessage(m), id));
     }
 
     /**
@@ -306,6 +307,7 @@ export class AgentsApi extends ApiTopic {
         onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
         since?: number,
         signal?: AbortSignal,
+        options?: AgentRunStreamMessagesOptions,
     ): Promise<unknown> {
         let resolveFn: (value: unknown) => void = () => {};
         let rejectFn: (reason?: unknown) => void = () => {};
@@ -316,6 +318,7 @@ export class AgentsApi extends ApiTopic {
 
         let reconnectAttempts = 0;
         let lastMessageTimestamp = since || 0;
+        const historyFetchStartedAt = Date.now();
         let isClosed = false;
         let currentSse: EventSource | null = null;
         let interval: ReturnType<typeof setInterval> | null = null;
@@ -327,16 +330,28 @@ export class AgentsApi extends ApiTopic {
         const maxDelay = 30000;
 
         const calculateBackoffDelay = (attempts: number): number => {
-            const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
+            const exponentialDelay = Math.min(baseDelay * 2 ** attempts, maxDelay);
             const jitter = Math.random() * 0.1 * exponentialDelay;
             return exponentialDelay + jitter;
         };
 
         const cleanup = () => {
-            if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-            if (interval) { clearInterval(interval); interval = null; }
-            if (currentSse) { currentSse.close(); currentSse = null; }
-            if (signal && abortHandler) { signal.removeEventListener('abort', abortHandler); abortHandler = null; }
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
+            if (interval) {
+                clearInterval(interval);
+                interval = null;
+            }
+            if (currentSse) {
+                currentSse.close();
+                currentSse = null;
+            }
+            if (signal && abortHandler) {
+                signal.removeEventListener('abort', abortHandler);
+                abortHandler = null;
+            }
         };
 
         const exit = (payload: unknown) => {
@@ -348,8 +363,15 @@ export class AgentsApi extends ApiTopic {
         };
 
         if (signal) {
-            if (signal.aborted) { isClosed = true; cleanup(); resolveFn(null); return promise; }
-            abortHandler = () => { exit(null); };
+            if (signal.aborted) {
+                isClosed = true;
+                cleanup();
+                resolveFn(null);
+                return promise;
+            }
+            abortHandler = () => {
+                exit(null);
+            };
             signal.addEventListener('abort', abortHandler, { once: true });
         }
 
@@ -357,22 +379,34 @@ export class AgentsApi extends ApiTopic {
         try {
             if (!isClosed) {
                 const historical = await this.retrieveMessages(id, since);
-                for (const msg of historical) {
+                options?.onHistoryLoaded?.(historical);
+                let shouldCloseAfterHistory = false;
+                for (let index = 0; index < historical.length; index++) {
+                    const msg = historical[index];
                     if (isClosed) break;
                     lastMessageTimestamp = Math.max(lastMessageTimestamp, msg.timestamp || 0);
                     if (onMessage) onMessage(msg, exit);
                     if (isClosed) break;
 
-                    if (shouldCloseAgentRunStream(msg, id)) {
-                        exit(null);
-                        return promise;
-                    }
+                    shouldCloseAfterHistory = index === historical.length - 1 && shouldCloseAgentRunStream(msg, id);
+                }
+                if (shouldCloseAfterHistory) {
+                    exit(null);
+                    return promise;
                 }
             }
         } catch (err) {
             if (!isClosed) {
+                options?.onHistoryError?.(err);
                 console.warn('Failed to fetch historical messages, continuing with SSE:', err);
             }
+        }
+        if (!isClosed && lastMessageTimestamp <= 0) {
+            // The server only replays the GET-to-SSE handoff gap when `since > 0`.
+            // New runs often have no history yet, so use the GET start time as the
+            // cursor to avoid dropping messages emitted before the SSE subscription
+            // is active.
+            lastMessageTimestamp = Math.max(1, historyFetchStartedAt - 1);
         }
 
         // 2. Connect to SSE for real-time updates
@@ -382,7 +416,7 @@ export class AgentsApi extends ApiTopic {
                 const EventSourceImpl = await EventSourceProvider();
                 if (isClosed) return;
                 const client = this.client as VertesiaClient;
-                const streamUrl = new URL(client.agents.baseUrl + `/${id}/stream`);
+                const streamUrl = new URL(`${client.agents.baseUrl}/${id}/stream`);
 
                 if (lastMessageTimestamp > 0) {
                     streamUrl.searchParams.set('since', lastMessageTimestamp.toString());
@@ -402,13 +436,15 @@ export class AgentsApi extends ApiTopic {
                 streamUrl.searchParams.set('access_token', token);
 
                 if (isReconnect) {
-                    console.log(`Reconnecting to agent stream ${id} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+                    console.log(
+                        `Reconnecting to agent stream ${id} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`,
+                    );
                 }
 
                 if (isClosed) return;
                 const sse = new EventSourceImpl(streamUrl.href);
                 currentSse = sse;
-                interval = setInterval(() => { }, 1000);
+                interval = setInterval(() => {}, 1000);
 
                 let connectionOpenedAt = 0;
 
@@ -460,12 +496,14 @@ export class AgentsApi extends ApiTopic {
                         reconnectAttempts++;
                         reconnectTimer = setTimeout(() => {
                             reconnectTimer = null;
-                            if (!isClosed) setupStream(true);
+                            if (!isClosed) void setupStream(true);
                         }, delay);
                     } else {
                         isClosed = true;
                         cleanup();
-                        rejectFn(new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`));
+                        rejectFn(
+                            new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`),
+                        );
                     }
                 };
             } catch (err) {
@@ -475,7 +513,7 @@ export class AgentsApi extends ApiTopic {
                     reconnectAttempts++;
                     reconnectTimer = setTimeout(() => {
                         reconnectTimer = null;
-                        if (!isClosed) setupStream(true);
+                        if (!isClosed) void setupStream(true);
                     }, delay);
                 } else {
                     isClosed = true;
@@ -485,7 +523,7 @@ export class AgentsApi extends ApiTopic {
             }
         };
 
-        setupStream(false);
+        void setupStream(false);
         return promise;
     }
 
@@ -529,7 +567,7 @@ export class AgentsApi extends ApiTopic {
     ): Promise<void> {
         const EventSourceImpl = await EventSourceProvider();
         const client = this.client as VertesiaClient;
-        const streamUrl = new URL(client.agents.baseUrl + `/${id}/details/stream`);
+        const streamUrl = new URL(`${client.agents.baseUrl}/${id}/details/stream`);
 
         const bearerToken = client._auth ? await client._auth() : undefined;
         if (!bearerToken) {
@@ -551,34 +589,53 @@ export class AgentsApi extends ApiTopic {
             };
 
             if (signal) {
-                if (signal.aborted) { cleanup(); resolve(); return; }
-                abortHandler = () => { cleanup(); resolve(); };
+                if (signal.aborted) {
+                    cleanup();
+                    resolve();
+                    return;
+                }
+                abortHandler = () => {
+                    cleanup();
+                    resolve();
+                };
                 signal.addEventListener('abort', abortHandler, { once: true });
             }
 
             sse.addEventListener('history', (ev: MessageEvent) => {
                 try {
-                    const data = JSON.parse(ev.data) as Extract<AgentRunDetailsStreamEvent, { type: 'history' }>['data'];
+                    const data = JSON.parse(ev.data) as Extract<
+                        AgentRunDetailsStreamEvent,
+                        { type: 'history' }
+                    >['data'];
                     if (onEvent) onEvent({ type: 'history', data });
-                } catch (_err) { /* ignore parse errors */ }
+                } catch (_err) {
+                    /* ignore parse errors */
+                }
             });
 
             sse.addEventListener('control', (ev: MessageEvent) => {
                 try {
-                    const data = JSON.parse(ev.data) as Extract<AgentRunDetailsStreamEvent, { type: 'control' }>['data'];
+                    const data = JSON.parse(ev.data) as Extract<
+                        AgentRunDetailsStreamEvent,
+                        { type: 'control' }
+                    >['data'];
                     if (onEvent) onEvent({ type: 'control', data });
                     if ('type' in data && data.type === 'done') {
                         cleanup();
                         resolve();
                     }
-                } catch (_err) { /* ignore parse errors */ }
+                } catch (_err) {
+                    /* ignore parse errors */
+                }
             });
 
             sse.addEventListener('error', (ev: MessageEvent) => {
                 try {
                     const data = JSON.parse(ev.data) as Extract<AgentRunDetailsStreamEvent, { type: 'error' }>['data'];
                     if (onEvent) onEvent({ type: 'error', data });
-                } catch (_err) { /* ignore parse errors */ }
+                } catch (_err) {
+                    /* ignore parse errors */
+                }
             });
 
             sse.onerror = (_err: unknown) => {
@@ -659,12 +716,12 @@ export class AgentsApi extends ApiTopic {
         const mimeType = contentType || 'application/octet-stream';
 
         // 1. Get signed upload URL from the agents API
-        const result = await this.put(`/${id}/artifacts/${path}`, {
+        const result = (await this.put(`/${id}/artifacts/${path}`, {
             headers: { 'Content-Type': mimeType },
-        }) as AgentArtifactUrlResponse;
+        })) as AgentArtifactUrlResponse;
 
         // 2. Upload directly to cloud storage
-        const res = await fetch(result.url, {
+        const res = await fetchSignedUrl(result.url, {
             method: 'PUT',
             body: content,
             headers: { 'Content-Type': mimeType },
@@ -680,12 +737,9 @@ export class AgentsApi extends ApiTopic {
     /**
      * Download an artifact from an agent run.
      */
-    async downloadArtifact(
-        id: string,
-        path: string,
-    ): Promise<ReadableStream<Uint8Array>> {
+    async downloadArtifact(id: string, path: string): Promise<ReadableStream<Uint8Array>> {
         const { url } = await this.getArtifactUrl(id, path, 'attachment');
-        const res = await fetch(url);
+        const res = await fetchSignedUrl(url);
         if (!res.ok) {
             throw new Error(`Failed to download artifact: ${res.statusText}`);
         }
@@ -703,10 +757,7 @@ export class AgentsApi extends ApiTopic {
      * Ingest telemetry events for an agent run.
      * Workers use this to send telemetry to zeno-server for BigQuery storage.
      */
-    ingestEvents(
-        agentRunId: string,
-        events: AgentEvent[],
-    ): Promise<IngestAgentEventsResponse> {
+    ingestEvents(agentRunId: string, events: AgentEvent[]): Promise<IngestAgentEventsResponse> {
         const payload: IngestAgentEventsPayload = { events };
         return this.post(`/${agentRunId}/events`, { payload });
     }
@@ -719,9 +770,7 @@ export class AgentsApi extends ApiTopic {
      * Get analytics summary.
      * Returns overall metrics including token usage, success rates, and run counts.
      */
-    getAnalyticsSummary(
-        query: WorkflowAnalyticsSummaryQuery = {}
-    ): Promise<WorkflowAnalyticsSummaryResponse> {
+    getAnalyticsSummary(query: WorkflowAnalyticsSummaryQuery = {}): Promise<WorkflowAnalyticsSummaryResponse> {
         return this.post('/analytics/summary', { payload: query });
     }
 
@@ -729,9 +778,7 @@ export class AgentsApi extends ApiTopic {
      * Get token usage analytics.
      * Returns token consumption metrics by model, agent, tool, or over time.
      */
-    getTokenUsageAnalytics(
-        query: WorkflowAnalyticsTimeSeriesQuery = {}
-    ): Promise<TokenUsageAnalyticsResponse> {
+    getTokenUsageAnalytics(query: WorkflowAnalyticsTimeSeriesQuery = {}): Promise<TokenUsageAnalyticsResponse> {
         return this.post('/analytics/tokens', { payload: query });
     }
 
@@ -739,9 +786,7 @@ export class AgentsApi extends ApiTopic {
      * Get LLM latency analytics.
      * Returns duration/latency metrics for LLM calls.
      */
-    getLlmLatencyAnalytics(
-        query: WorkflowAnalyticsTimeSeriesQuery = {}
-    ): Promise<LatencyAnalyticsResponse> {
+    getLlmLatencyAnalytics(query: WorkflowAnalyticsTimeSeriesQuery = {}): Promise<LatencyAnalyticsResponse> {
         return this.post('/analytics/latency/llm', { payload: query });
     }
 
@@ -749,9 +794,7 @@ export class AgentsApi extends ApiTopic {
      * Get tool latency analytics.
      * Returns duration/latency metrics for tool calls.
      */
-    getToolLatencyAnalytics(
-        query: WorkflowAnalyticsTimeSeriesQuery = {}
-    ): Promise<LatencyAnalyticsResponse> {
+    getToolLatencyAnalytics(query: WorkflowAnalyticsTimeSeriesQuery = {}): Promise<LatencyAnalyticsResponse> {
         return this.post('/analytics/latency/tools', { payload: query });
     }
 
@@ -759,9 +802,7 @@ export class AgentsApi extends ApiTopic {
      * Get agent latency analytics.
      * Returns duration metrics for complete agent runs.
      */
-    getAgentLatencyAnalytics(
-        query: WorkflowAnalyticsTimeSeriesQuery = {}
-    ): Promise<LatencyAnalyticsResponse> {
+    getAgentLatencyAnalytics(query: WorkflowAnalyticsTimeSeriesQuery = {}): Promise<LatencyAnalyticsResponse> {
         return this.post('/analytics/latency/agents', { payload: query });
     }
 
@@ -769,9 +810,7 @@ export class AgentsApi extends ApiTopic {
      * Get error analytics.
      * Returns error rates, types, and trends.
      */
-    getErrorAnalytics(
-        query: WorkflowAnalyticsTimeSeriesQuery = {}
-    ): Promise<ErrorAnalyticsResponse> {
+    getErrorAnalytics(query: WorkflowAnalyticsTimeSeriesQuery = {}): Promise<ErrorAnalyticsResponse> {
         return this.post('/analytics/errors', { payload: query });
     }
 
@@ -779,9 +818,7 @@ export class AgentsApi extends ApiTopic {
      * Get tool usage analytics.
      * Returns tool invocation counts, success rates, and performance metrics.
      */
-    getToolAnalytics(
-        query: WorkflowAnalyticsSummaryQuery = {}
-    ): Promise<ToolAnalyticsResponse> {
+    getToolAnalytics(query: WorkflowAnalyticsSummaryQuery = {}): Promise<ToolAnalyticsResponse> {
         return this.post('/analytics/tools', { payload: query });
     }
 
@@ -789,9 +826,7 @@ export class AgentsApi extends ApiTopic {
      * Get tool parameter analytics.
      * Returns parameter value distributions for a specific tool.
      */
-    getToolParameterAnalytics(
-        query: WorkflowToolParametersQuery
-    ): Promise<ToolParameterAnalyticsResponse> {
+    getToolParameterAnalytics(query: WorkflowToolParametersQuery): Promise<ToolParameterAnalyticsResponse> {
         return this.post('/analytics/tools/parameters', { payload: query });
     }
 
@@ -800,7 +835,7 @@ export class AgentsApi extends ApiTopic {
      * Returns unique agents, environments, and models from telemetry data.
      */
     getAnalyticsFilterOptions(
-        query: WorkflowAnalyticsSummaryQuery = {}
+        query: WorkflowAnalyticsSummaryQuery = {},
     ): Promise<WorkflowAnalyticsFilterOptionsResponse> {
         return this.post('/analytics/filter-options', { payload: query });
     }
@@ -809,9 +844,7 @@ export class AgentsApi extends ApiTopic {
      * Get average prompt size (input tokens) by agent for startConversation calls.
      * This represents the initial prompt + tools size.
      */
-    getPromptSizeAnalytics(
-        query: WorkflowAnalyticsSummaryQuery = {}
-    ): Promise<PromptSizeAnalyticsResponse> {
+    getPromptSizeAnalytics(query: WorkflowAnalyticsSummaryQuery = {}): Promise<PromptSizeAnalyticsResponse> {
         return this.post('/analytics/prompt-size', { payload: query });
     }
 
@@ -819,9 +852,7 @@ export class AgentsApi extends ApiTopic {
      * Get top principals (users/API keys) who started the most agent runs.
      * Returns the top N principals sorted by run count descending.
      */
-    getTopPrincipalsAnalytics(
-        query: WorkflowAnalyticsSummaryQuery = {}
-    ): Promise<TopPrincipalsAnalyticsResponse> {
+    getTopPrincipalsAnalytics(query: WorkflowAnalyticsSummaryQuery = {}): Promise<TopPrincipalsAnalyticsResponse> {
         return this.post('/analytics/top-principals', { payload: query });
     }
 
@@ -829,9 +860,7 @@ export class AgentsApi extends ApiTopic {
      * Get agent run distribution - how many runs per agent/interaction type.
      * Returns the top N agents sorted by run count descending.
      */
-    getRunsByAgentAnalytics(
-        query: WorkflowAnalyticsSummaryQuery = {}
-    ): Promise<RunsByAgentAnalyticsResponse> {
+    getRunsByAgentAnalytics(query: WorkflowAnalyticsSummaryQuery = {}): Promise<RunsByAgentAnalyticsResponse> {
         return this.post('/analytics/runs-by-agent', { payload: query });
     }
 
@@ -841,7 +870,7 @@ export class AgentsApi extends ApiTopic {
      * Returns average, min, max, median, p95, and p99 metrics.
      */
     getTimeToFirstResponseAnalytics(
-        query: WorkflowAnalyticsTimeSeriesQuery = {}
+        query: WorkflowAnalyticsTimeSeriesQuery = {},
     ): Promise<TimeToFirstResponseAnalyticsResponse> {
         return this.post('/analytics/time-to-first-response', { payload: query });
     }
@@ -853,11 +882,10 @@ export class AgentsApi extends ApiTopic {
      * - Percentage of agents that return no tool calls at start
      */
     getFirstResponseBehaviorAnalytics(
-        query: WorkflowAnalyticsTimeSeriesQuery = {}
+        query: WorkflowAnalyticsTimeSeriesQuery = {},
     ): Promise<FirstResponseBehaviorAnalyticsResponse> {
         return this.post('/analytics/first-response-behavior', { payload: query });
     }
-
 }
 
 function isProcessRunResponse(run: AgentRunResponse): run is ProcessRun {

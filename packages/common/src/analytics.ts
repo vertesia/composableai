@@ -1,4 +1,3 @@
-
 export interface AnalyticsAxis {
     environment?: string;
     project?: string;
@@ -10,12 +9,11 @@ export interface AnalyticsAxis {
 }
 
 export interface RunAnalyticsQuery {
-
     /** filters to apply to the query */
     filterBy: AnalyticsAxis;
 
     /** The field to group by */
-    groupBy?: RunAnalyticsGroupBy
+    groupBy?: RunAnalyticsGroupBy;
 
     /** The start date of the query in EPOCH format */
     from?: number;
@@ -30,25 +28,22 @@ export interface RunAnalyticsQuery {
 
     /** The field to sort by */
     virtual?: boolean;
-
 }
 
+export type RunAnalyticsGroupBy = 'interaction' | 'modelId' | 'project' | 'status' | 'tags' | 'environment';
 
-export type RunAnalyticsGroupBy = "interaction" | "modelId" | "project" | "status" | "tags" | "environment";
-
-export type TimeResolution = "minute" | "hour" | "day" | "week" | "month" | "year";
-
+export type TimeResolution = 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
 
 export interface RunAnalyticsResult {
-    date: string,
-    timestamp: string,
-    group: string
-    count: number,
+    date: string;
+    timestamp: string;
+    group: string;
+    count: number;
     execution_time: {
-        avg: number,
-        min: number,
-        max: number
-    },
+        avg: number;
+        min: number;
+        max: number;
+    };
 }
 
 /** Entity with status breakdown */

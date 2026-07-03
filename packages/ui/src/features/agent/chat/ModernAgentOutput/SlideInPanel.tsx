@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { XIcon } from 'lucide-react';
 import { Button } from '@vertesia/ui/core';
+import { XIcon } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 
 interface SlideInPanelProps {
     isOpen: boolean;
@@ -10,15 +11,9 @@ interface SlideInPanelProps {
     width?: string;
 }
 
-export default function SlideInPanel({ 
-    isOpen, 
-    onClose, 
-    title, 
-    children, 
-    width = '320px' 
-}: SlideInPanelProps) {
+export default function SlideInPanel({ isOpen, onClose, title, children, width = '320px' }: SlideInPanelProps) {
     const [mounted, setMounted] = useState(false);
-    
+
     // Handle animation timing
     useEffect(() => {
         if (isOpen) {
@@ -30,11 +25,13 @@ export default function SlideInPanel({
             return () => clearTimeout(timer);
         }
     }, [isOpen]);
-    
+
     if (!mounted && !isOpen) {
         return null;
     }
-    
+
+    const panelTranslateClass = isOpen ? 'translate-x-0' : 'translate-x-full rtl:-translate-x-full'; // rtl-ok: mirrored inline-end transform
+
     return (
         <>
             {/* Backdrop overlay */}
@@ -48,12 +45,10 @@ export default function SlideInPanel({
                 }`}
                 onClick={onClose}
             />
-            
+
             {/* Slide-in panel */}
-            <div 
-                className={`fixed top-0 end-0 bottom-0 z-50 bg-white dark:bg-gray-900 shadow-lg border-s border-gray-200 dark:border-gray-800 transition-transform duration-300 ease-in-out ${
-                    isOpen ? 'translate-x-0' : 'translate-x-full rtl:-translate-x-full'
-                }`}
+            <div
+                className={`fixed top-0 end-0 bottom-0 z-50 bg-white dark:bg-gray-900 shadow-lg border-s border-gray-200 dark:border-gray-800 transition-transform duration-300 ease-in-out ${panelTranslateClass}`}
                 style={{ width }}
             >
                 {/* Header */}
@@ -68,7 +63,7 @@ export default function SlideInPanel({
                         <XIcon className="h-5 w-5" />
                     </Button>
                 </div>
-                
+
                 {/* Content */}
                 <div className="p-4 overflow-y-auto" style={{ height: 'calc(100% - 57px)' }}>
                     {children}

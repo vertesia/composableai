@@ -1,24 +1,22 @@
 import { defineConfig } from 'rolldown';
 
+// Bundles the already-built ES output (`lib/index.js`, produced by `tsc`) into a single
+// browser-friendly file. Build script: `tsc && rolldown -c rollup.config.js`.
+// rolldown provides node resolution, CommonJS interop and minification natively,
+// so the former @rollup/plugin-{node-resolve,commonjs,terser} are no longer needed.
 const TARGET_FILE = 'lib/vertesia-common.js';
 
 export default defineConfig({
-    input: 'src/index.ts',
-    platform: 'browser',
-    tsconfig: './tsconfig.web.json',
-    resolve: {
-        mainFields: ['browser', 'module', 'main'],
-        conditionNames: ['browser', 'import', 'default'],
-    },
+    input: 'lib/index.js',
     output: {
-        file: TARGET_FILE,         // ES module output for browser
+        file: TARGET_FILE,
         format: 'es',
         sourcemap: true,
         minify: true,
     },
-    external: [
-        // Add any packages you want to keep external (e.g., use via import map)
-        "json-schema", "ajv",
-    ],
-    plugins: [],
+    external: ['json-schema', 'ajv'],
+    resolve: {
+        mainFields: ['browser', 'module', 'main'],
+        conditionNames: ['browser', 'import', 'default'],
+    },
 });

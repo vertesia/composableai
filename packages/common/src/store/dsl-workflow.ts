@@ -1,8 +1,8 @@
-import { StringValue } from "ms";
-import { ToolExecutionMetadata } from "../tool-execution.js";
-import { BaseObject } from "./common.js";
-import { WorkflowExecutionPayload } from "./index.js";
-import { ParentClosePolicyType } from "./temporalio.js";
+import type { StringValue } from 'ms';
+import type { ToolExecutionMetadata } from '../tool-execution.js';
+import type { BaseObject } from './common.js';
+import type { WorkflowExecutionPayload } from './index.js';
+import type { ParentClosePolicyType } from './temporalio.js';
 
 export type DurationValue = StringValue | number;
 
@@ -27,8 +27,8 @@ export interface WorkflowInputFile {
  * @discriminator inputType
  */
 export type WorkflowInput =
-    | { inputType: 'objectIds', objectIds: string[] }
-    | { inputType: 'files', files: WorkflowInputFile[] };
+    | { inputType: 'objectIds'; objectIds: string[] }
+    | { inputType: 'files'; files: WorkflowInputFile[] };
 
 /**
  * The payload sent when starting a workflow from the temporal client to the workflow instance.
@@ -77,15 +77,16 @@ export interface DSLActivityExecutionPayload<ParamsT extends object> extends Wor
     params: ParamsT;
     workflow_name: string;
     debug_mode?: boolean;
+    toolRunId?: string;
+    activityGroupId?: string;
 }
-
 
 export type ImportSpec = (string | Record<string, string>)[];
 export interface ActivityFetchSpec {
     /**
      * The data provider name
      */
-    type: "document" | "document_type" | "interaction_run";
+    type: 'document' | 'document_type' | 'interaction_run';
     /**
      * An optional URI to the data source.
      */
@@ -110,7 +111,7 @@ export interface ActivityFetchSpec {
      * 1. ignore - Ignore and return an empty array for multi objects query (or undefined for single object query) or empty array for multiple objects throw an error.
      * 2. throw - Throw an error if the object or no objects are found.
      */
-    on_not_found?: "ignore" | "throw";
+    on_not_found?: 'ignore' | 'throw';
 }
 
 export interface DSLWorkflowStepBase {
@@ -118,7 +119,7 @@ export interface DSLWorkflowStepBase {
      * The type fo the step.
      * If not set defaults to "activity"
      */
-    type: "activity" | "workflow";
+    type: 'activity' | 'workflow';
 }
 
 export interface DSLActivitySpec<PARAMS extends object = Record<string, unknown>> {
@@ -196,12 +197,14 @@ export interface DSLActivitySpec<PARAMS extends object = Record<string, unknown>
     options?: DSLActivityOptions;
 }
 
-export interface DSLActivityStep<PARAMS extends object = Record<string, unknown>> extends DSLActivitySpec<PARAMS>, DSLWorkflowStepBase {
-    type: "activity";
+export interface DSLActivityStep<PARAMS extends object = Record<string, unknown>>
+    extends DSLActivitySpec<PARAMS>,
+        DSLWorkflowStepBase {
+    type: 'activity';
 }
 
 export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
-    type: "workflow";
+    type: 'workflow';
     // the workflow endpoint to run
     name: string;
     /**
@@ -245,7 +248,7 @@ export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
         //cancellationType
         //versioningIntent
         //workflowIdReusePolicy
-    }
+    };
 }
 
 /**
@@ -333,7 +336,7 @@ export interface WorkflowDefinitionRef {
     updated_at: Date;
 }
 
-export const WorkflowDefinitionRefPopulate = "id name description tags created_at updated_at"
+export const WorkflowDefinitionRefPopulate = 'id name description tags created_at updated_at';
 
 /**
  * Payload sent to a remote activity endpoint on a tool server.

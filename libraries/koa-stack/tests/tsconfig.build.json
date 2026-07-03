@@ -1,0 +1,13 @@
+{
+    "extends": "@vertesia/tsconfig/lib.json",
+    "references": [
+        { "path": "../server" },
+        { "path": "../router" },
+        { "path": "../body" }
+    ],
+    "compilerOptions": {
+        "rootDir": "./src",
+        "outDir": "./lib"
+    },
+    "include": ["src"]
+}

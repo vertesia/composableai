@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 interface SvgIconProps extends React.SVGProps<SVGSVGElement> {
     content: string; // the SVG content as a string
@@ -31,7 +31,7 @@ export function SvgIcon({ content, ...props }: SvgIconProps) {
         // Clear and append the new SVG
         containerRef.current.innerHTML = '';
         containerRef.current.appendChild(svgEl);
-    }, [content, props]);
+    });
 
     return <span ref={containerRef} />;
 }

@@ -1,7 +1,7 @@
-import { useState, createContext, useContext, useCallback, ReactNode } from "react";
-import { Button, onActivateKey } from "@vertesia/ui/core";
-import { X, ExternalLink } from "lucide-react";
+import { Button, onActivateKey } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { ExternalLink, X } from 'lucide-react';
+import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
 
 interface ImageLightboxContextValue {
     openImage: (src: string, alt?: string) => void;
@@ -15,7 +15,7 @@ export function useImageLightbox() {
     if (!ctx) {
         // Return a fallback that opens in new tab if no provider
         return {
-            openImage: (src: string) => window.open(src, "_blank"),
+            openImage: (src: string) => window.open(src, '_blank'),
             closeImage: () => {},
         };
     }
@@ -111,7 +111,7 @@ export function LightboxImage({ src, alt, className }: LightboxImageProps) {
             <img
                 src={src}
                 alt={alt}
-                className={`cursor-pointer hover:opacity-90 transition-opacity ${className || ""}`}
+                className={`cursor-pointer hover:opacity-90 transition-opacity ${className || ''}`}
             />
         </Button>
     );

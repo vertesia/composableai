@@ -1,10 +1,10 @@
-import { FindPayload } from "@vertesia/common";
+import type { FindPayload } from '@vertesia/common';
 
 function parseSelector(selector: string) {
     const parts = selector.split(/\s+/);
     const result: Record<string, number> = {};
     for (const part of parts) {
-        if (part.startsWith("-")) {
+        if (part.startsWith('-')) {
             result[part.substring(1)] = 0;
         } else {
             result[part] = 1;
@@ -32,11 +32,14 @@ function applyProjection(result: Record<string, unknown>, select: string) {
 }
 
 export abstract class DataProvider {
-    constructor(public name: string, public isProjectionSupported = false) {
-    }
+    constructor(
+        public name: string,
+        public isProjectionSupported = false,
+    ) {}
     async fetch(payload: FindPayload) {
         let results = await this.doFetch(payload);
         if (payload.select && !this.isProjectionSupported) {
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             results = results.map((result: Record<string, unknown>) => applyProjection(result, payload.select!));
         }
         return results;

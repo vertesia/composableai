@@ -1,3 +1,24 @@
+import type { ContentObjectTypeItem } from '@vertesia/common';
+import {
+    Button,
+    FilterBar,
+    FilterBtn,
+    FilterClear,
+    type FilterGroup,
+    type FilterOption,
+    FilterProvider,
+    Input,
+    Spinner,
+    Table,
+    TBody,
+    THead,
+    useIntersectionObserver,
+} from '@vertesia/ui/core';
+import { GenericPageNavHeader } from '@vertesia/ui/features';
+import { useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
+import { useNavigate } from '@vertesia/ui/router';
+import { useUserSession } from '@vertesia/ui/session';
+import { RefreshCw } from 'lucide-react';
 import {
     startTransition,
     useCallback,
@@ -8,36 +29,10 @@ import {
     useRef,
     useState,
 } from 'react';
-import { RefreshCw } from 'lucide-react';
-import {
-    Button,
-    type FilterGroup,
-    type FilterOption,
-    FilterBar,
-    FilterBtn,
-    FilterClear,
-    FilterProvider,
-    Input,
-    Spinner,
-    TBody,
-    THead,
-    Table,
-    useIntersectionObserver,
-} from '@vertesia/ui/core';
-import { GenericPageNavHeader } from '@vertesia/ui/features';
-import { useLocaleFormat, useUITranslation } from '@vertesia/ui/i18n';
-import { useNavigate } from '@vertesia/ui/router';
-import { useUserSession } from '@vertesia/ui/session';
-import type { ContentObjectTypeItem } from '@vertesia/common';
 import { SortableHead } from '../../components/SortableHead';
-import { ContentObjectRow } from './components/ContentObjectRow';
 import { useContentObjectsListState } from './ContentObjectsListStateContext';
-import {
-    STATUS_VALUES,
-    type ContentObjectRowModel,
-    type FilterableField,
-    type SortField,
-} from './types';
+import { ContentObjectRow } from './components/ContentObjectRow';
+import { type ContentObjectRowModel, type FilterableField, type SortField, STATUS_VALUES } from './types';
 import { statusVariant } from './utils';
 
 const SCROLL_HISTORY_KEY = 'contentObjectsScrollTop';
@@ -57,9 +52,7 @@ function persistScrollTop(scrollTop: number) {
 }
 
 function readScrollTop(): number | undefined {
-    const state = window.history.state as
-        | { data?: Record<string, unknown> }
-        | null;
+    const state = window.history.state as { data?: Record<string, unknown> } | null;
     const value = state?.data?.[SCROLL_HISTORY_KEY];
     return typeof value === 'number' ? value : undefined;
 }
@@ -72,8 +65,7 @@ function findScrollableElement(start: HTMLElement | null): HTMLElement | null {
     while (current && current !== document.body) {
         const overflowY = window.getComputedStyle(current).overflowY;
         const canScroll =
-            (overflowY === 'auto' || overflowY === 'scroll') &&
-            current.scrollHeight > current.clientHeight;
+            (overflowY === 'auto' || overflowY === 'scroll') && current.scrollHeight > current.clientHeight;
         if (canScroll) return current;
         current = current.parentElement;
     }
@@ -165,9 +157,7 @@ export function ContentObjectsView() {
         }
 
         const trySync = (): boolean => {
-            const el =
-                scrollElRef.current ??
-                findScrollableElement(scrollContainerRef.current);
+            const el = scrollElRef.current ?? findScrollableElement(scrollContainerRef.current);
             scrollElRef.current = el;
             if (!el) return false;
             const maxScroll = el.scrollHeight - el.clientHeight;
@@ -231,8 +221,7 @@ export function ContentObjectsView() {
 
     const addFilterValue = useCallback(
         (name: FilterableField, value: string, label: string) => {
-            const placeholder =
-                name === 'type' ? t('objects.filterType') : t('objects.filterStatus');
+            const placeholder = name === 'type' ? t('objects.filterType') : t('objects.filterStatus');
             const newOption: FilterOption = { value, label };
             startTransition(() => {
                 setFilters((prev) => {
@@ -250,14 +239,10 @@ export function ContentObjectsView() {
                         ];
                     }
                     const currentValues = Array.isArray(existing.value) ? existing.value : [];
-                    const alreadyHas = currentValues.some(
-                        (v) => (typeof v === 'string' ? v : v.value) === value,
-                    );
+                    const alreadyHas = currentValues.some((v) => (typeof v === 'string' ? v : v.value) === value);
                     if (alreadyHas) return prev;
                     return prev.map((f) =>
-                        f === existing
-                            ? { ...f, value: [...(f.value as FilterOption[]), newOption] }
-                            : f,
+                        f === existing ? { ...f, value: [...(f.value as FilterOption[]), newOption] } : f,
                     );
                 });
             });
@@ -304,13 +289,10 @@ export function ContentObjectsView() {
                     description: item.description,
                     typeId,
                     typeName,
-                    typeFilterTooltip:
-                        typeId ? t('objects.filterByValue', { value: typeName }) : undefined,
+                    typeFilterTooltip: typeId ? t('objects.filterByValue', { value: typeName }) : undefined,
                     statusValue: item.status,
                     statusLabel,
-                    statusFilterTooltip: item.status
-                        ? t('objects.filterByValue', { value: statusLabel })
-                        : undefined,
+                    statusFilterTooltip: item.status ? t('objects.filterByValue', { value: statusLabel }) : undefined,
                     statusVariant: statusVariant(item.status),
                     updatedLabel: formatDateTime(item.updated_at),
                 };
@@ -321,12 +303,7 @@ export function ContentObjectsView() {
     const tableRows = useMemo(
         () =>
             rowModels.map((row) => (
-                <ContentObjectRow
-                    key={row.id}
-                    row={row}
-                    onAddFilter={addFilterValue}
-                    onOpen={handleRowOpen}
-                />
+                <ContentObjectRow key={row.id} row={row} onAddFilter={addFilterValue} onOpen={handleRowOpen} />
             )),
         [rowModels, addFilterValue, handleRowOpen],
     );
@@ -337,18 +314,10 @@ export function ContentObjectsView() {
         <div className="flex flex-col h-full">
             <GenericPageNavHeader title={t('objects.title')} useDynamicBreadcrumbs={false} />
             <div className="flex flex-col gap-4 p-4 flex-1 min-h-0">
-                <FilterProvider
-                    filters={filters}
-                    setFilters={setFilters}
-                    filterGroups={filterGroups}
-                >
+                <FilterProvider filters={filters} setFilters={setFilters} filterGroups={filterGroups}>
                     <div className="flex items-center gap-2">
                         <div className="flex-1 max-w-md">
-                            <Input
-                                value={query}
-                                onChange={setQuery}
-                                placeholder={t('objects.searchPlaceholder')}
-                            />
+                            <Input value={query} onChange={setQuery} placeholder={t('objects.searchPlaceholder')} />
                         </div>
                         <FilterBtn />
                         <FilterClear />
@@ -411,9 +380,7 @@ export function ContentObjectsView() {
                     )}
                     <div ref={loadMoreRef} className="h-4 w-full" />
                     {showEmpty && (
-                        <div className="text-center text-sm text-muted-foreground py-8">
-                            {t('objects.empty')}
-                        </div>
+                        <div className="text-center text-sm text-muted-foreground py-8">{t('objects.empty')}</div>
                     )}
                 </div>
             </div>

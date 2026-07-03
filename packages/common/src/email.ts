@@ -9,7 +9,7 @@
  * Used for email-based agent communication.
  */
 export interface EmailChannel {
-    type: "email";
+    type: 'email';
     /** Email address to send agent messages to */
     to_email: string;
     /** Subject for the email thread (without "Re:" prefix) */
@@ -27,7 +27,7 @@ export interface EmailChannel {
  * Used for real-time chat interface communication.
  */
 export interface InteractiveChannel {
-    type: "interactive";
+    type: 'interactive';
 }
 
 /**
@@ -42,14 +42,14 @@ export type UserChannel = EmailChannel | InteractiveChannel;
  * Type guard for email channels
  */
 export function isEmailChannel(channel: UserChannel): channel is EmailChannel {
-    return channel.type === "email";
+    return channel.type === 'email';
 }
 
 /**
  * Type guard for interactive channels
  */
 export function isInteractiveChannel(channel: UserChannel): channel is InteractiveChannel {
-    return channel.type === "interactive";
+    return channel.type === 'interactive';
 }
 
 // ================= Email Routing ====================

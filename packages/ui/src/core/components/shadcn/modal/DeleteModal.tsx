@@ -1,7 +1,7 @@
-import { ReactNode } from "react";
-import { useUITranslation } from "@vertesia/ui/i18n";
-import { ConfirmModal } from "./ConfirmModal.js";
-import { useToast } from "../../toast/index.js";
+import { useUITranslation } from '@vertesia/ui/i18n';
+import type { ReactNode } from 'react';
+import { useToast } from '../../toast/index.js';
+import { ConfirmModal } from './ConfirmModal.js';
 
 interface DeleteModalProps {
     idToDelete?: string;
@@ -15,7 +15,6 @@ export function DeleteModal({ idToDelete, title, content, setIdToDelete, deleteA
     const toast = useToast();
 
     const doDelete = async () => {
-
         if (!idToDelete) {
             return;
         }
@@ -23,15 +22,17 @@ export function DeleteModal({ idToDelete, title, content, setIdToDelete, deleteA
             .then(() => {
                 toast({
                     title: t('modal.delete.succeeded'),
-                    status: 'success'
+                    status: 'success',
                 });
-            }).catch((err: unknown) => {
+            })
+            .catch((err: unknown) => {
                 toast({
                     title: t('modal.delete.failed'),
                     description: err instanceof Error ? err.message : t('modal.delete.error'),
-                    status: 'error'
+                    status: 'error',
                 });
-            }).finally(() => {
+            })
+            .finally(() => {
                 setIdToDelete(undefined);
             });
     };
@@ -42,6 +43,9 @@ export function DeleteModal({ idToDelete, title, content, setIdToDelete, deleteA
             content={content}
             isOpen={!!idToDelete}
             onConfirm={doDelete}
-            onCancel={() => { setIdToDelete(undefined); }} />
+            onCancel={() => {
+                setIdToDelete(undefined);
+            }}
+        />
     );
 }

@@ -1,4 +1,3 @@
-
 export type PositionType = 'top' | 'right' | 'bottom' | 'left' | 'nw' | 'sw' | 'ne' | 'se';
 export type AlignType = 'start' | 'center' | 'end' | 'fill';
 export interface Constraints {
@@ -52,23 +51,35 @@ export interface Position {
 
 function flipPos(position: PositionType) {
     switch (position) {
-        case "top": return "bottom";
-        case "bottom": return "top";
-        case "left": return "right";
-        case "right": return "left";
-        case "ne": return "sw";
-        case "nw": return "se";
-        case "se": return "nw";
-        case "sw": return "ne";
-        default: return position;
+        case 'top':
+            return 'bottom';
+        case 'bottom':
+            return 'top';
+        case 'left':
+            return 'right';
+        case 'right':
+            return 'left';
+        case 'ne':
+            return 'sw';
+        case 'nw':
+            return 'se';
+        case 'se':
+            return 'nw';
+        case 'sw':
+            return 'ne';
+        default:
+            return position;
     }
 }
 
 function flipAlign(align: AlignType) {
     switch (align) {
-        case "start": return "end";
-        case "end": return "start";
-        default: return align;
+        case 'start':
+            return 'end';
+        case 'end':
+            return 'start';
+        default:
+            return align;
     }
 }
 
@@ -106,42 +117,42 @@ class PositionResolver {
 
     position(pos: PositionType, anchorRect: DOMRect, elemRect: DOMRect) {
         switch (pos) {
-            case "top": {
+            case 'top': {
                 this.top = anchorRect.top - elemRect.height - this.gap;
                 this.alignAxis = 'x';
                 break;
             }
-            case "bottom": {
+            case 'bottom': {
                 this.top = anchorRect.bottom + this.gap;
                 this.alignAxis = 'x';
                 break;
             }
-            case "left": {
+            case 'left': {
                 this.left = anchorRect.left - elemRect.width - this.gap;
                 this.alignAxis = 'y';
                 break;
             }
-            case "right": {
+            case 'right': {
                 this.left = anchorRect.right + this.gap;
                 this.alignAxis = 'y';
                 break;
             }
-            case "ne": {
+            case 'ne': {
                 this.top = anchorRect.top - elemRect.height - this.gap;
                 this.left = anchorRect.right + this.gap;
                 break;
             }
-            case "nw": {
+            case 'nw': {
                 this.top = anchorRect.top - elemRect.height - this.gap;
                 this.left = anchorRect.left - elemRect.width - this.gap;
                 break;
             }
-            case "se": {
+            case 'se': {
                 this.top = anchorRect.bottom + this.gap;
                 this.left = anchorRect.right + this.gap;
                 break;
             }
-            case "sw": {
+            case 'sw': {
                 this.top = anchorRect.bottom + this.gap;
                 this.left = anchorRect.left - elemRect.width - this.gap;
                 break;
@@ -194,30 +205,35 @@ class PositionResolver {
         this.position(constraints.position, anchorRect, elemRect);
         if (constraints.align) this.align(constraints.align, anchorRect, elemRect);
         if (!this.left && !this.top) {
-            throw new Error("Invalid position. Cannot compute x,y coordinates");
+            throw new Error('Invalid position. Cannot compute x,y coordinates');
         }
         const constrainWidth = this.width != null;
         const constrainHeight = this.height != null;
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         const width = constrainWidth ? this.width! : elemRect.width;
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         const height = constrainHeight ? this.height! : elemRect.height;
         return {
+            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
             rect: new DOMRect(this.left!, this.top!, width, height),
             constrainWidth,
             constrainHeight,
             position: constraints.position,
-            align: constraints.align
-        }
+            align: constraints.align,
+        };
     }
 
     flipAxis(constraints: Constraints, axis: 'x' | 'y'): Constraints | null {
-        if (this.alignAxis === axis) { // flip alignment
+        if (this.alignAxis === axis) {
+            // flip alignment
             if (constraints.align) {
                 const newAlign = flipAlign(constraints.align);
                 if (newAlign !== constraints.align) {
                     return { ...constraints, align: newAlign };
                 }
             }
-        } else { // flip positioning
+        } else {
+            // flip positioning
             const newPos = flipPos(constraints.position);
             if (newPos !== constraints.position) {
                 return { ...constraints, position: newPos };
@@ -225,12 +241,14 @@ class PositionResolver {
         }
         return null; // nothing to do
     }
-
 }
 function isElementVisible(elemRect: DOMRect, clientRect: DOMRect) {
-    return elemRect.left >= clientRect.left && elemRect.right <= clientRect.right
-        &&
-        elemRect.top >= clientRect.top && elemRect.bottom <= clientRect.bottom;
+    return (
+        elemRect.left >= clientRect.left &&
+        elemRect.right <= clientRect.right &&
+        elemRect.top >= clientRect.top &&
+        elemRect.bottom <= clientRect.bottom
+    );
 }
 
 function isElementVisibleOnAxis(elemRect: DOMRect, clientRect: DOMRect, axis: 'x' | 'y') {
@@ -241,7 +259,6 @@ function isElementVisibleOnAxis(elemRect: DOMRect, clientRect: DOMRect, axis: 'x
     }
 }
 
-
 /**
  * Compute the position by trying to adjust the constraints until the computed position fits into the client area.
  * Returns the best position that fits the constraints.
@@ -251,7 +268,12 @@ function isElementVisibleOnAxis(elemRect: DOMRect, clientRect: DOMRect, axis: 'x
  * @param clientRect
  * @returns null if the element cannot be positioned otherwise returns a position object
  */
-export function computePosition(constraints: Constraints, elemRect: DOMRect, anchorRect: DOMRect, clientRect: DOMRect): Position | null {
+export function computePosition(
+    constraints: Constraints,
+    elemRect: DOMRect,
+    anchorRect: DOMRect,
+    clientRect: DOMRect,
+): Position | null {
     const resolver = new PositionResolver(constraints.gap);
     let computedPos = resolver.computePosition(constraints, elemRect, anchorRect);
     const isVisibleOnXAxis = isElementVisibleOnAxis(computedPos.rect, clientRect, 'x');

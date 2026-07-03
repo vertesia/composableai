@@ -1,18 +1,24 @@
-import type { ModelOptions } from "@llumiverse/common";
-import { ConversationVisibility, InteractionRef, UserChannel } from "../interaction.js";
-import { JSONSchema } from "../json-schema.js";
-import { JSONObject, JSONValue } from "../json.js";
-import type { WorkflowInput } from "./dsl-workflow.js";
+import type { ExecutionTokenUsage, HttpTimeoutOptions, ModelOptions } from '@llumiverse/common';
+import type {
+    ConversationVisibility,
+    InteractionExecutionConfiguration,
+    InteractionRef,
+    UserChannel,
+} from '../interaction.js';
+import type { JSONObject, JSONValue } from '../json.js';
+import type { JSONSchema } from '../json-schema.js';
+import type { AgentToolApprovalMode } from './agent-approval.js';
+import type { WorkflowInput } from './dsl-workflow.js';
 
 export enum ContentEventName {
-    create = "create",
-    change_type = "change_type",
-    update = "update",
-    revision_created = "revision_created",
-    delete = "delete",
-    workflow_finished = "workflow_finished",
-    workflow_execution_request = "workflow_execution_request",
-    api_request = "api_request",
+    create = 'create',
+    change_type = 'change_type',
+    update = 'update',
+    revision_created = 'revision_created',
+    delete = 'delete',
+    workflow_finished = 'workflow_finished',
+    workflow_execution_request = 'workflow_execution_request',
+    api_request = 'api_request',
 }
 
 export interface Queue {
@@ -53,7 +59,8 @@ export interface WorkflowExecutionBaseParams<T = Record<string, unknown>> {
      * The user input ar custom user options that can be used to configure the workflow.
      * You can see the user input as the arguments for a command line app.
      *
-     * In the case of workflows started by events (e.g. using a a workflow rule) the user input vars will be initialized with the workflow rule configuration field.
+     * In the case of workflows started by event subscriptions, the user input vars
+     * are initialized from the subscription target configuration.
      *
      * In case of dsl workflows the workflow execution payload vars will be applied over the default vars values stored in the DSL vars field.
      */
@@ -86,13 +93,12 @@ export interface WorkflowExecutionBaseParams<T = Record<string, unknown>> {
     /**
      * Full ancestry chain from root to immediate parent (for hierarchical aggregation)
      */
-    ancestors?: WorkflowAncestor[]
+    ancestors?: WorkflowAncestor[];
 
     /**
      *  List of enabled processing queues. Managed by the application.
      */
     _enabled_queues?: Queue[];
-
 }
 
 export interface WebHookSpec {
@@ -133,11 +139,12 @@ export interface WebHookSpec {
     result_path?: string;
 }
 
-export interface WorkflowExecutionPayload<T = Record<string, unknown>> extends WorkflowExecutionBaseParams<T> {
+export interface WorkflowExecutionPayload<T = Record<string, unknown>, EventName extends string = string>
+    extends WorkflowExecutionBaseParams<T> {
     /**
      * The event which started the workflow who created the activity.
      */
-    event: ContentEventName;
+    event: EventName;
 
     /*
      * The Workflow Rule ID if any. If the workflow was started by a rule this field will contain the rule ID
@@ -237,7 +244,7 @@ export interface ListWorkflowRunsPayload {
     event_name?: string;
 
     /**
-     * The workflow rule ID that triggered the workflow.
+     * Legacy workflow rule ID filter, when applicable.
      */
     rule_id?: string;
 
@@ -349,13 +356,13 @@ export interface WorkflowRunEvent {
     };
 
     childWorkflow?: {
-        workflowId?: string,
-        workflowType?: string,
-        runId?: string,
-        scheduledEventId?: string,
-        startedEventId?: string,
-        input?: unknown,
-        result?: unknown,
+        workflowId?: string;
+        workflowType?: string;
+        runId?: string;
+        scheduledEventId?: string;
+        startedEventId?: string;
+        input?: unknown;
+        result?: unknown;
     };
 
     signal?: SignalEventProperties;
@@ -380,7 +387,7 @@ export enum TaskStatus {
     CANCELED = 'canceled',
     TIMED_OUT = 'timed_out',
     TERMINATED = 'terminated',
-    SENT = 'sent',        // for signals
+    SENT = 'sent', // for signals
     RECEIVED = 'received', // for signals
 }
 
@@ -447,11 +454,7 @@ export interface TimerTask extends TaskBase {
 /**
  * @discriminator type
  */
-export type WorkflowTask =
-    | ActivityTask
-    | ChildWorkflowTask
-    | SignalTask
-    | TimerTask;
+export type WorkflowTask = ActivityTask | ChildWorkflowTask | SignalTask | TimerTask;
 
 // History format discriminated union
 /**
@@ -537,7 +540,7 @@ export interface WorkflowRun {
     interaction_name?: string;
     input?: unknown;
     result?: unknown;
-    error?: unknown,
+    error?: unknown;
     has_reported_errors?: boolean;
     raw?: unknown;
     /**
@@ -601,9 +604,9 @@ export interface WorkflowExecutionStartResult {
 }
 
 export interface ListWorkflowInteractionsResponse {
-    workflow_id: string,
-    run_id: string,
-    interaction: WorkflowInteractionVars
+    workflow_id: string;
+    run_id: string;
+    interaction: WorkflowInteractionVars;
 }
 
 export interface WorkflowRunUpdatesResponse {
@@ -635,25 +638,31 @@ export interface WorkflowActionResponse {
 export type WorkflowQueryResult = JSONValue;
 
 export interface WorkflowInteractionVars {
-    type: string,
-    interaction: string,
-    interactive: boolean,
-    debug_mode?: boolean,
-    non_blocking_subagents?: boolean,
+    type: string;
+    interaction: string;
+    interactive: boolean;
+    tool_approval_mode?: AgentToolApprovalMode;
+    debug_mode?: boolean;
+    non_blocking_subagents?: boolean;
     /**
      * Array of channels to use for user communication.
      * Multiple channels can be active simultaneously.
      */
-    user_channels?: UserChannel[],
-    data?: JSONObject,
-    tool_names: string[],
+    user_channels?: UserChannel[];
+    data?: JSONObject;
+    tool_names: string[];
     config: {
-        environment: string,
-        model: string,
-        model_options?: ModelOptions
-    },
-    interactionParamsSchema?: JSONSchema,
+        environment: string;
+        model: string;
+        model_options?: ModelOptions;
+    };
+    interactionParamsSchema?: JSONSchema;
     collection_id?: string;
+    /**
+     * Denylist of MCP tool-collection ids deactivated for this conversation.
+     * `undefined`/empty ⇒ all installed/connected MCP collections are active.
+     */
+    disabled_mcp_collections?: string[];
     /**
      * The token threshold in thousands (K) for creating checkpoints.
      * If total tokens exceed this value, a checkpoint will be created.
@@ -667,7 +676,7 @@ export interface WorkflowInteractionVars {
     version?: number;
 }
 
-export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, "config"> {
+export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, 'config'> {
     config: {
         interactionName: string;
         action: DocumentActionConfig;
@@ -736,27 +745,37 @@ export enum AgentMessageType {
 }
 
 export interface AgentMessageDetails extends Record<string, unknown> {
+    ack?: string;
     event_class?: string;
     tool?: string;
     tools?: string[];
+    tool_event?: 'started' | 'progress' | 'completed' | 'failed';
     streamed?: boolean;
     display_role?: string;
     activity_id?: string;
     activity_group_id?: string;
     batch_id?: string;
     tool_run_id?: string;
-    tool_status?: ToolCallDetails["tool_status"];
+    tool_use_id?: string;
+    tool_status?: ToolCallDetails['tool_status'];
     tool_iteration?: number;
+    message_to_human?: string;
+    duration_ms?: number;
     observation?: unknown;
+    token_usage?: ExecutionTokenUsage;
+    checkpoint_at?: number;
+    checkpoint_threshold?: number;
     workflow_run_id?: string;
     outputFiles?: string[];
     files?: ConversationFile[] | string[];
     plan?: PlanTask[];
     streaming_id?: string;
+    streaming_id_scope?: 'workflow_run' | 'workstream';
     chunk_index?: number;
     is_final?: boolean;
     _optimistic?: boolean;
     _messageId?: string;
+    _deliveryStatus?: 'sending' | 'received' | 'consumed' | 'failed';
 }
 
 // ============================================
@@ -769,9 +788,13 @@ export interface AgentMessageDetails extends Record<string, unknown> {
 export interface ToolCallDetails {
     event_class: 'activity';
     tool: string;
+    tool_event?: 'started' | 'progress' | 'completed' | 'failed';
     tool_run_id?: string;
+    tool_use_id?: string;
     tool_status?: 'running' | 'completed' | 'error' | 'warning';
     tool_iteration?: number;
+    message_to_human?: string;
+    duration_ms?: number;
     activity_group_id?: string;
     activity_id?: string;
     files?: string[];
@@ -814,42 +837,45 @@ export interface PlanMessageDetails {
 
 export function isToolCallMessage(msg: AgentMessage): msg is AgentMessage & { details: ToolCallDetails } {
     const details = msg.details as Record<string, unknown> | undefined;
-    return msg.type === AgentMessageType.THOUGHT &&
+    return (
+        msg.type === AgentMessageType.THOUGHT &&
         !!details &&
         typeof details === 'object' &&
-        typeof details.tool === 'string';
+        typeof details.tool === 'string'
+    );
 }
 
 export function isDocumentEventMessage(msg: AgentMessage): msg is AgentMessage & { details: DocumentEventDetails } {
     const details = msg.details as Record<string, unknown> | undefined;
-    return msg.type === AgentMessageType.UPDATE &&
+    return (
+        msg.type === AgentMessageType.UPDATE &&
         !!details &&
         typeof details === 'object' &&
         (details.event_class === 'document_created' || details.event_class === 'document_updated') &&
-        typeof details.document_id === 'string';
+        typeof details.document_id === 'string'
+    );
 }
 
 export function isFileProcessingMessage(msg: AgentMessage): msg is AgentMessage & { details: FileProcessingDetails } {
     const details = msg.details as Record<string, unknown> | undefined;
-    return msg.type === AgentMessageType.SYSTEM &&
+    return (
+        msg.type === AgentMessageType.SYSTEM &&
         !!details &&
         typeof details === 'object' &&
         details.system_type === 'file_processing' &&
-        Array.isArray(details.files);
+        Array.isArray(details.files)
+    );
 }
 
 export function isPlanMessage(msg: AgentMessage): msg is AgentMessage & { details: PlanMessageDetails } {
     const details = msg.details as Record<string, unknown> | undefined;
-    return msg.type === AgentMessageType.PLAN &&
-        !!details &&
-        typeof details === 'object' &&
-        Array.isArray(details.plan);
+    return (
+        msg.type === AgentMessageType.PLAN && !!details && typeof details === 'object' && Array.isArray(details.plan)
+    );
 }
 
 export function isRequestInputMessage(msg: AgentMessage): msg is AgentMessage & { details: RequestInputDetails } {
-    return msg.type === AgentMessageType.REQUEST_INPUT &&
-        !!msg.details &&
-        typeof msg.details === 'object';
+    return msg.type === AgentMessageType.REQUEST_INPUT && !!msg.details && typeof msg.details === 'object';
 }
 
 /**
@@ -860,7 +886,7 @@ export interface StreamingChunkDetails {
     /** Unique identifier grouping chunks from the same stream */
     streaming_id: string;
     /** Order of this chunk within the stream (0-indexed) */
-    chunk_index: number;
+    chunk_index?: number;
     /** True if this is the final chunk of the stream */
     is_final: boolean;
     /** Activity ID for deduplication with final THOUGHT/ANSWER message */
@@ -925,20 +951,20 @@ export function isLegacyMessage(msg: unknown): msg is LegacyAgentMessage {
  * Map old string enum values to AgentMessageType
  */
 const STRING_TO_TYPE_MAP: Record<string, AgentMessageType> = {
-    'system': AgentMessageType.SYSTEM,
-    'thought': AgentMessageType.THOUGHT,
-    'plan': AgentMessageType.PLAN,
-    'update': AgentMessageType.UPDATE,
-    'complete': AgentMessageType.COMPLETE,
-    'warning': AgentMessageType.WARNING,
-    'error': AgentMessageType.ERROR,
-    'answer': AgentMessageType.ANSWER,
-    'question': AgentMessageType.QUESTION,
-    'request_input': AgentMessageType.REQUEST_INPUT,
-    'idle': AgentMessageType.IDLE,
-    'terminated': AgentMessageType.TERMINATED,
-    'streaming_chunk': AgentMessageType.STREAMING_CHUNK,
-    'batch_progress': AgentMessageType.BATCH_PROGRESS,
+    system: AgentMessageType.SYSTEM,
+    thought: AgentMessageType.THOUGHT,
+    plan: AgentMessageType.PLAN,
+    update: AgentMessageType.UPDATE,
+    complete: AgentMessageType.COMPLETE,
+    warning: AgentMessageType.WARNING,
+    error: AgentMessageType.ERROR,
+    answer: AgentMessageType.ANSWER,
+    question: AgentMessageType.QUESTION,
+    request_input: AgentMessageType.REQUEST_INPUT,
+    idle: AgentMessageType.IDLE,
+    terminated: AgentMessageType.TERMINATED,
+    streaming_chunk: AgentMessageType.STREAMING_CHUNK,
+    batch_progress: AgentMessageType.BATCH_PROGRESS,
 };
 
 /**
@@ -1022,7 +1048,7 @@ export function createCompactMessage(
         details?: AgentMessageDetails;
         isFinal?: boolean;
         timestamp?: number;
-    } = {}
+    } = {},
 ): CompactMessage {
     const compact: CompactMessage = { t: type };
 
@@ -1052,14 +1078,18 @@ export function toAgentMessage(compact: CompactMessage, workflowRunId: string = 
 
     if (compact.d !== undefined && compact.d !== null) message.details = compact.d;
 
-    // For streaming chunks, restore is_final and streaming_id in details
-    // (streaming_id removed from wire format, use workstream_id as grouping key)
+    // For streaming chunks, restore is_final and preserve an explicit streaming_id
+    // when present. Older chunks fall back to workstream_id as their grouping key.
     if (compact.t === AgentMessageType.STREAMING_CHUNK) {
+        const details: AgentMessageDetails = typeof compact.d === 'object' && compact.d !== null ? compact.d : {};
+        const streamingId = typeof details.streaming_id === 'string' ? details.streaming_id : compact.w || 'main';
+        const activityId = compact.i ?? (typeof details.activity_id === 'string' ? details.activity_id : undefined);
+
         message.details = {
-            ...(typeof compact.d === 'object' ? compact.d : {}),
-            streaming_id: compact.w || 'main', // Use workstream_id as streaming_id
+            ...details,
+            streaming_id: streamingId,
             is_final: compact.f === 1,
-            activity_id: compact.i, // For deduplication with final THOUGHT/ANSWER
+            ...(activityId ? { activity_id: activityId } : {}),
         };
     }
 
@@ -1073,7 +1103,7 @@ export interface BatchItemStatus {
     /** Unique identifier for this batch item */
     id: string;
     /** Current status of the item */
-    status: "pending" | "running" | "success" | "error";
+    status: 'pending' | 'running' | 'success' | 'error';
     /** Optional message (e.g., error message or result summary) */
     message?: string;
     /** Execution duration in milliseconds (when completed) */
@@ -1109,13 +1139,13 @@ export interface BatchProgressDetails {
  */
 export enum FileProcessingStatus {
     /** File is being uploaded to artifact storage */
-    UPLOADING = "uploading",
+    UPLOADING = 'uploading',
     /** File uploaded, text extraction in progress */
-    PROCESSING = "processing",
+    PROCESSING = 'processing',
     /** File is ready for use in conversation */
-    READY = "ready",
+    READY = 'ready',
     /** File processing failed */
-    ERROR = "error",
+    ERROR = 'error',
 }
 
 /**
@@ -1184,6 +1214,14 @@ export interface ConversationFileRef {
 }
 
 /**
+ * Reference to a file removed from the conversation attachment set.
+ */
+export interface ConversationFileRemovedRef {
+    /** Client-generated unique ID */
+    id: string;
+}
+
+/**
  * Get the Redis pub/sub channel name for workflow messages.
  * Used by both publishers (workflow activities, studio-server) and subscribers (zeno-server, clients).
  * @param workflowRunId - The Temporal workflow run ID (NOT the interaction execution run ID)
@@ -1206,7 +1244,7 @@ export interface PlanTask {
     goal: string;
     instructions?: string[];
     comment?: string;
-    status?: "pending" | "in_progress" | "completed" | "skipped";
+    status?: 'pending' | 'in_progress' | 'completed' | 'skipped';
 }
 
 export interface Plan {
@@ -1214,7 +1252,7 @@ export interface Plan {
     comment?: string;
 }
 
-export const LOW_PRIORITY_TASK_QUEUE = "low_priority";
+export const LOW_PRIORITY_TASK_QUEUE = 'low_priority';
 
 /**
  * WebSocket message types for bidirectional communication
@@ -1245,15 +1283,9 @@ export interface WebSocketErrorMessage {
     error: string;
 }
 
-export type WebSocketClientMessage =
-    | WebSocketSignalMessage
-    | WebSocketPingMessage;
+export type WebSocketClientMessage = WebSocketSignalMessage | WebSocketPingMessage;
 
-export type WebSocketServerMessage =
-    | WebSocketPongMessage
-    | WebSocketAckMessage
-    | WebSocketErrorMessage
-    | AgentMessage;
+export type WebSocketServerMessage = WebSocketPongMessage | WebSocketAckMessage | WebSocketErrorMessage | AgentMessage;
 
 /**
  * Payload for applying actions to a workflow run (e.g., cancel, terminate).
@@ -1318,7 +1350,17 @@ export interface AgentIntakeWorkflowParams {
     /**
      * Additional model options.
      */
-    model_options?: Record<string, unknown>;
+    model_options?: ModelOptions;
+
+    /**
+     * Per-run HTTP timeouts for upstream LLM-provider calls.
+     */
+    http_timeout?: HttpTimeoutOptions;
+
+    /**
+     * LLM execution config. Prefer this for event-subscription-driven execution settings.
+     */
+    config?: InteractionExecutionConfiguration;
 
     /**
      * Whether to use semantic layer (MagicPDF) for PDF processing.
@@ -1370,6 +1412,7 @@ export interface WorkstreamProgressInfo {
 export interface ActiveWorkstreamEntry {
     launch_id: string;
     workstream_id: string;
+    kind?: 'agent' | 'process';
     interaction: string;
     started_at: number;
     elapsed_ms: number;
@@ -1380,9 +1423,35 @@ export interface ActiveWorkstreamEntry {
     child_workflow_id: string;
     /** Child workflow run ID — use with retrieveMessages / streamMessages */
     child_workflow_run_id?: string;
+    process_run_id?: string;
+    process_workflow_id?: string;
+    process_name?: string;
+    process_run_type?: 'programmatic' | 'supervised';
+}
+
+/** Recently completed workstream entry returned by the ActiveWorkstreams query */
+export interface CompletedWorkstreamEntry {
+    launch_id: string;
+    workstream_id: string;
+    kind?: 'agent' | 'process';
+    status: 'completed' | 'failed' | 'canceled' | 'timeout';
+    summary?: string;
+    error?: string;
+    duration_ms?: number;
+    started_at?: number;
+    interaction?: string;
+    last_progress?: WorkstreamProgressInfo;
+    child_workflow_id?: string;
+    child_workflow_run_id?: string;
+    process_run_id?: string;
+    process_workflow_id?: string;
+    process_name?: string;
 }
 
 /** Result of the ActiveWorkstreams Temporal query */
 export interface ActiveWorkstreamsQueryResult {
     running: ActiveWorkstreamEntry[];
+    completed?: CompletedWorkstreamEntry[];
+    /** True when the workflow could not answer this optional query. */
+    unavailable?: boolean;
 }

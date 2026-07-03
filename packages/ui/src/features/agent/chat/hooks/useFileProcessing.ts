@@ -1,19 +1,38 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { VertesiaClient } from '@vertesia/client';
-import {
-    ConversationFile,
-    ConversationFileRef,
-    FileProcessingStatus,
-} from '@vertesia/common';
+import type { VertesiaClient } from '@vertesia/client';
+import { type ConversationFile, type ConversationFileRef, FileProcessingStatus } from '@vertesia/common';
 import { i18nInstance, NAMESPACE } from '@vertesia/ui/i18n';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface UseFileProcessingResult {
     processingFiles: Map<string, ConversationFile>;
     hasProcessingFiles: boolean;
     handleFileUpload: (files: File[]) => Promise<void>;
+    removeProcessingFile: (fileId: string) => Promise<void>;
 }
 
-type ToastFn = (opts: { status: 'success' | 'error' | 'warning' | 'info'; title: string; description?: string; duration?: number }) => void;
+type ToastFn = (opts: {
+    status: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    description?: string;
+    duration?: number;
+}) => void;
+
+type LocalConversationFile = ConversationFile & { preview_url?: string };
+
+function isPreviewableImage(file: File): boolean {
+    return file.type.startsWith('image/');
+}
+
+function createPreviewUrl(file: File): string | undefined {
+    if (!isPreviewableImage(file) || typeof URL === 'undefined' || !URL.createObjectURL) return undefined;
+    return URL.createObjectURL(file);
+}
+
+function revokePreviewUrlValue(previewUrl: string): void {
+    if (typeof URL !== 'undefined' && URL.revokeObjectURL) {
+        URL.revokeObjectURL(previewUrl);
+    }
+}
 
 /**
  * Hook that manages file upload and processing state.
@@ -35,93 +54,175 @@ export function useFileProcessing(
     const t = i18nInstance.getFixedT(null, NAMESPACE);
     // Local optimistic file state (uploads initiated from the UI)
     const [localFiles, setLocalFiles] = useState<Map<string, ConversationFile>>(new Map());
+    const [removedFileIds, setRemovedFileIds] = useState<Set<string>>(new Set());
+    const removedFileIdsRef = useRef<Set<string>>(new Set());
+    const previewUrlsRef = useRef<Map<string, string>>(new Map());
+    const previousAgentRunId = useRef(agentRunId);
+
+    const revokePreviewUrl = useCallback((fileId: string) => {
+        const previewUrl = previewUrlsRef.current.get(fileId);
+        if (previewUrl) {
+            revokePreviewUrlValue(previewUrl);
+            previewUrlsRef.current.delete(fileId);
+        }
+    }, []);
 
     // Reset when agentRunId changes
     useEffect(() => {
-        setLocalFiles(new Map());
+        if (previousAgentRunId.current !== agentRunId) {
+            previousAgentRunId.current = agentRunId;
+            previewUrlsRef.current.forEach(revokePreviewUrlValue);
+            previewUrlsRef.current.clear();
+            setLocalFiles(new Map());
+            const nextRemovedFileIds = new Set<string>();
+            removedFileIdsRef.current = nextRemovedFileIds;
+            setRemovedFileIds(nextRemovedFileIds);
+        }
     }, [agentRunId]);
+
+    useEffect(() => {
+        return () => {
+            previewUrlsRef.current.forEach(revokePreviewUrlValue);
+            previewUrlsRef.current.clear();
+        };
+    }, []);
 
     // Merge local + server state (server takes precedence for same IDs)
     const processingFiles = useMemo(() => {
-        const merged = new Map(localFiles);
+        const merged = new Map<string, ConversationFile>();
+        localFiles.forEach((file, id) => {
+            if (!removedFileIds.has(id)) {
+                merged.set(id, file);
+            }
+        });
         serverFileUpdates.forEach((file, id) => {
-            merged.set(id, file);
+            if (!removedFileIds.has(id)) {
+                const localPreviewUrl = (localFiles.get(id) as LocalConversationFile | undefined)?.preview_url;
+                merged.set(
+                    id,
+                    localPreviewUrl ? ({ ...file, preview_url: localPreviewUrl } as LocalConversationFile) : file,
+                );
+            }
         });
         return merged;
-    }, [localFiles, serverFileUpdates]);
+    }, [localFiles, removedFileIds, serverFileUpdates]);
 
-    const hasProcessingFiles = useMemo(() =>
-        Array.from(processingFiles.values()).some(
-            f => f.status === FileProcessingStatus.UPLOADING || f.status === FileProcessingStatus.PROCESSING
-        ), [processingFiles]);
+    const hasProcessingFiles = useMemo(
+        () =>
+            Array.from(processingFiles.values()).some(
+                (f) => f.status === FileProcessingStatus.UPLOADING || f.status === FileProcessingStatus.PROCESSING,
+            ),
+        [processingFiles],
+    );
 
-    const handleFileUpload = useCallback(async (files: File[]) => {
-        for (const file of files) {
-            const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            const artifactPath = `files/${file.name}`;
+    const handleFileUpload = useCallback(
+        async (files: File[]) => {
+            for (const file of files) {
+                const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                const artifactPath = `files/${file.name}`;
+                const previewUrl = createPreviewUrl(file);
+                if (previewUrl) previewUrlsRef.current.set(fileId, previewUrl);
 
-            // Add to local state immediately (optimistic - uploading status)
-            const fileState: ConversationFile = {
-                id: fileId,
-                name: file.name,
-                content_type: file.type || 'application/octet-stream',
-                size: file.size,
-                status: FileProcessingStatus.UPLOADING,
-                started_at: Date.now(),
-            };
+                // Add to local state immediately (optimistic - uploading status)
+                const fileState: LocalConversationFile = {
+                    id: fileId,
+                    name: file.name,
+                    content_type: file.type || 'application/octet-stream',
+                    size: file.size,
+                    status: FileProcessingStatus.UPLOADING,
+                    started_at: Date.now(),
+                    preview_url: previewUrl,
+                };
 
-            setLocalFiles(prev => new Map(prev).set(fileId, fileState));
+                setLocalFiles((prev) => new Map(prev).set(fileId, fileState));
 
-            try {
-                // Upload to artifact storage
-                await client.agents.uploadArtifact(agentRunId, artifactPath, file);
+                try {
+                    // Upload to artifact storage
+                    await client.agents.uploadArtifact(agentRunId, artifactPath, file);
 
-                // Update local state to processing
-                setLocalFiles(prev => {
-                    const newMap = new Map(prev);
-                    const f = newMap.get(fileId);
-                    if (f) {
-                        f.status = FileProcessingStatus.PROCESSING;
-                        f.artifact_path = artifactPath;
-                        f.reference = `artifact:${artifactPath}`;
+                    // Update local state to processing
+                    setLocalFiles((prev) => {
+                        const newMap = new Map(prev);
+                        const f = newMap.get(fileId);
+                        if (f) {
+                            f.status = FileProcessingStatus.PROCESSING;
+                            f.artifact_path = artifactPath;
+                            f.reference = `artifact:${artifactPath}`;
+                        }
+                        return newMap;
+                    });
+
+                    if (removedFileIdsRef.current.has(fileId)) {
+                        continue;
                     }
-                    return newMap;
-                });
 
-                // Signal agent that file was uploaded
-                await client.agents.sendSignal(
-                    agentRunId,
-                    'FileUploaded',
-                    {
+                    // Signal agent that file was uploaded
+                    await client.agents.sendSignal(agentRunId, 'FileUploaded', {
                         id: fileId,
                         name: file.name,
                         content_type: file.type || 'application/octet-stream',
                         reference: `artifact:${artifactPath}`,
                         artifact_path: artifactPath,
-                    } as ConversationFileRef
-                );
-            } catch (error) {
-                // Update local state to error
-                setLocalFiles(prev => {
-                    const newMap = new Map(prev);
-                    const f = newMap.get(fileId);
-                    if (f) {
-                        f.status = FileProcessingStatus.ERROR;
-                        f.error = error instanceof Error ? error.message : 'Upload failed';
-                        f.completed_at = Date.now();
+                    } as ConversationFileRef);
+                } catch (error) {
+                    if (removedFileIdsRef.current.has(fileId)) {
+                        continue;
                     }
-                    return newMap;
-                });
 
+                    // Update local state to error
+                    setLocalFiles((prev) => {
+                        const newMap = new Map(prev);
+                        const f = newMap.get(fileId);
+                        if (f) {
+                            f.status = FileProcessingStatus.ERROR;
+                            f.error = error instanceof Error ? error.message : 'Upload failed';
+                            f.completed_at = Date.now();
+                        }
+                        return newMap;
+                    });
+
+                    toast({
+                        status: 'error',
+                        title: t('agent.uploadFailed'),
+                        description: error instanceof Error ? error.message : 'Failed to upload file',
+                        duration: 3000,
+                    });
+                }
+            }
+        },
+        [client, agentRunId, toast, t],
+    );
+
+    const removeProcessingFile = useCallback(
+        async (fileId: string) => {
+            setRemovedFileIds((prev) => {
+                if (prev.has(fileId)) return prev;
+                const next = new Set(prev);
+                next.add(fileId);
+                removedFileIdsRef.current = next;
+                return next;
+            });
+            setLocalFiles((prev) => {
+                if (!prev.has(fileId)) return prev;
+                const next = new Map(prev);
+                next.delete(fileId);
+                return next;
+            });
+            revokePreviewUrl(fileId);
+
+            try {
+                await client.agents.sendSignal(agentRunId, 'FileRemoved', { id: fileId });
+            } catch (error) {
                 toast({
                     status: 'error',
-                    title: t('agent.uploadFailed'),
-                    description: error instanceof Error ? error.message : 'Failed to upload file',
+                    title: t('agent.removeFileFailed'),
+                    description: error instanceof Error ? error.message : 'Failed to remove file',
                     duration: 3000,
                 });
             }
-        }
-    }, [client, agentRunId, toast]);
+        },
+        [agentRunId, client, revokePreviewUrl, t, toast],
+    );
 
-    return { processingFiles, hasProcessingFiles, handleFileUpload };
+    return { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile };
 }

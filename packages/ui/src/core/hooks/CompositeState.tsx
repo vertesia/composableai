@@ -1,4 +1,4 @@
-import React, { ReactNode, useContext, useEffect, useState } from "react";
+import React, { type ReactNode, useContext, useEffect, useState } from 'react';
 
 //type KeysOfType<T, V> = { [K in keyof T]-?: T[K] extends V ? K : never }[keyof T];
 //type KeysNotOfType<T, V> = { [K in keyof T]-?: T[K] extends V ? never : K }[keyof T];
@@ -37,13 +37,13 @@ export class Property<V = unknown> {
     watch(watcher: (value: V | undefined) => void) {
         this.watchers.push(watcher);
         return () => {
-            this.watchers = this.watchers.filter(w => w !== watcher);
+            this.watchers = this.watchers.filter((w) => w !== watcher);
         };
     }
 }
 
 interface ContextContainer<T> {
-    Context: React.Context<T>
+    Context: React.Context<T>;
 }
 
 type ConstructorOf<T = unknown> = new (...args: never[]) => T;
@@ -53,10 +53,8 @@ export function createCompositeStateProvider<T>(StateClass: ConstructorOf<T>) {
     return context.Provider;
 }
 
-
 export class Slot {
-
-    private consume: ((content: ReactNode) => void) | undefined = undefined
+    private consume: ((content: ReactNode) => void) | undefined = undefined;
     private _current: ReactNode;
 
     constructor(content?: ReactNode) {
@@ -81,26 +79,25 @@ export class Slot {
     }
 }
 
-
 export function useCompositeState<T>(StateClass: ConstructorOf<T>) {
     const context = (StateClass as unknown as ContextContainer<T>).Context;
     if (!context) {
-        throw new Error("Context not defined for " + StateClass.name);
+        throw new Error(`Context not defined for ${StateClass.name}`);
     }
     return useContext(context);
 }
 
 export function useGetCompositeStateProperty<V>(property: Property<V>) {
-    const [value, setValue] = useState(property.value)
+    const [value, setValue] = useState(property.value);
     useEffect(() => {
         return property.watch((value) => {
             if (typeof value === 'function') {
-                setValue(() => value) // cannot directly store functions
+                setValue(() => value); // cannot directly store functions
             } else {
-                setValue(value)
+                setValue(value);
             }
         });
-    }, [property])
+    }, [property]);
     return value as V;
 }
 
@@ -110,8 +107,8 @@ export function useSetCompositeStateProperty<V>(property: Property<V>, value: V 
         property.value = value;
         return () => {
             property.value = undefined;
-        }
-    }, [property, value])
+        };
+    }, [property, value]);
     return value;
 }
 
@@ -119,17 +116,17 @@ export function useSetCompositeStateProperty<V>(property: Property<V>, value: V 
 export function useWatchCompositeStateProperty<V>(property: Property<V>, watcher: (value: V | undefined) => void) {
     useEffect(() => {
         return property.watch(watcher);
-    }, [property, watcher])
+    }, [property, watcher]);
 }
 
 export function useSlot(slot: Slot) {
-    const [value, setValue] = useState(slot.current)
+    const [value, setValue] = useState(slot.current);
     useEffect(() => {
         slot.withConsumer(setValue);
         return () => {
             slot.withConsumer(undefined);
-        }
-    }, [slot])
+        };
+    }, [slot]);
     return value;
 }
 
@@ -138,8 +135,8 @@ export function useWatchSlot(slot: Slot, watcher: (value: ReactNode | undefined)
         slot.withConsumer(watcher);
         return () => {
             slot.withConsumer(undefined);
-        }
-    }, [slot, watcher])
+        };
+    }, [slot, watcher]);
 }
 
 // use memo for value if needed
@@ -148,8 +145,8 @@ export function useDefineSlot(slot: Slot, value: ReactNode | undefined) {
         slot.current = value;
         return () => {
             slot.current = undefined;
-        }
-    }, [slot, value])
+        };
+    }, [slot, value]);
 }
 
 /**
@@ -237,16 +234,14 @@ export class ComputedProperty<V = unknown> {
     constructor(
         private compute: () => V,
         dependencies: Property<unknown>[],
-        name?: string
+        name?: string,
     ) {
         this.name = name;
         this.recalculate();
 
         // Watch all dependencies - when any changes, recalculate
         for (const dep of dependencies) {
-            this.unsubscribers.push(
-                dep.watch(() => this.recalculate())
-            );
+            this.unsubscribers.push(dep.watch(() => this.recalculate()));
         }
     }
 
@@ -267,7 +262,7 @@ export class ComputedProperty<V = unknown> {
     watch(watcher: (value: V | undefined) => void) {
         this.watchers.push(watcher);
         return () => {
-            this.watchers = this.watchers.filter(w => w !== watcher);
+            this.watchers = this.watchers.filter((w) => w !== watcher);
         };
     }
 

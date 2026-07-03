@@ -1,4 +1,5 @@
 import type {
+    ContentObjectProcessingPriority,
     CreateCollectionPayload,
     CreateContentObjectPayload,
 } from '@vertesia/common';
@@ -47,11 +48,7 @@ export interface StorageObjectSourceItem extends BaseItem {
     mimeType: string;
 }
 
-export type SourceItem =
-    | ContentObjectSourceItem
-    | CollectionSourceItem
-    | MetadataSourceItem
-    | StorageObjectSourceItem;
+export type SourceItem = ContentObjectSourceItem | CollectionSourceItem | MetadataSourceItem | StorageObjectSourceItem;
 
 export interface SourceItemBatch {
     index: number;
@@ -96,11 +93,21 @@ export interface BulkImportParams {
     partitionSize?: number;
     dryRun?: boolean;
     updateByContentSource?: boolean;
+    /** @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire. */
+    skipWorkflows?: boolean;
+    /**
+     * Processing priority for the document-processing workflows triggered by created objects.
+     * Defaults to `low` so bulk imports run on the low-priority ("bulk") task queue and don't
+     * compete with interactive traffic.
+     */
+    processingPriority?: ContentObjectProcessingPriority;
 }
 
 export interface PartitionError {
     partitionIndex: number;
     errorCount: number;
+    /** Workflow-level error message if the partition itself failed (vs. per-batch failures). */
+    message?: string;
 }
 
 export interface BulkImportResult {

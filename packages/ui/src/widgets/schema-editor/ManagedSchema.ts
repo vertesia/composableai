@@ -1,20 +1,26 @@
-import type { JSONSchema } from "@vertesia/common";
-import { TypeNames, TypeSignature, parseTypeSignature } from "./type-signature.js";
-import { addProperty, getTypeSignature, removeProperty, setPropertyName, setPropertyType, setRequireProperty } from "./json-schema4-utils.js";
-
+import type { JSONSchema } from '@vertesia/common';
+import {
+    addProperty,
+    getTypeSignature,
+    removeProperty,
+    setPropertyName,
+    setPropertyType,
+    setRequireProperty,
+} from './json-schema4-utils.js';
+import { parseTypeSignature, TypeNames, type TypeSignature } from './type-signature.js';
 
 let new_prop_name_cnt = 0;
 
 export interface NodeUpdate {
-    name?: string,
-    type?: TypeSignature,
-    isRequired?: boolean,
+    name?: string;
+    type?: TypeSignature;
+    isRequired?: boolean;
     editor?: string | null; // use null to force remove editor
     description?: string;
 }
 
 interface SchemaLoader {
-    reload(): void
+    reload(): void;
 }
 
 export interface SchemaSource {
@@ -25,16 +31,16 @@ export class ManagedSchema implements SchemaLoader {
     // the schema source contains information about where the schema was loaded
     // the uri serves to retrieve the schema and for now only store:ID URIs are supported
     source?: SchemaSource;
-    onChange: (schema: ManagedSchema) => void = () => { };
+    onChange: (schema: ManagedSchema) => void = () => {};
     schema: JSONSchema;
     root: SchemaNode;
     constructor(schema?: string | JSONSchema | null | undefined, title?: string) {
         if (!schema) {
             this.schema = {
                 title: title,
-                type: "object",
+                type: 'object',
                 properties: {},
-            }
+            };
         } else if (typeof schema === 'string') {
             this.schema = JSON.parse(schema);
         } else {
@@ -43,7 +49,7 @@ export class ManagedSchema implements SchemaLoader {
         if (!this.schema.properties) {
             this.schema.properties = {};
         }
-        this.root = new SchemaNode("", this.schema, this);
+        this.root = new SchemaNode('', this.schema, this);
         this.root.loadChildren();
     }
 
@@ -52,11 +58,12 @@ export class ManagedSchema implements SchemaLoader {
     }
 
     get children() {
+        // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
         return this.root.children!;
     }
 
     reload() {
-        this.root = new SchemaNode("", this.schema, this);
+        this.root = new SchemaNode('', this.schema, this);
         this.root.loadChildren();
         this.onChange?.(this);
         return this;
@@ -65,8 +72,8 @@ export class ManagedSchema implements SchemaLoader {
     withSource(name: string, uri: string) {
         this.source = {
             uri,
-            name
-        }
+            name,
+        };
         return this;
     }
 
@@ -79,9 +86,9 @@ export class ManagedSchema implements SchemaLoader {
         if (!schema) {
             this.schema = {
                 title: this.schema.title,
-                type: "object",
+                type: 'object',
                 properties: {},
-            }
+            };
         } else {
             this.schema = schema;
         }
@@ -114,7 +121,7 @@ export class SchemaNode {
         this.name = name;
         this.type = getTypeSignature(schema);
         if (this.parent) {
-            let required = this.parent._getPropertiesSchema().required;
+            const required = this.parent._getPropertiesSchema().required;
             this.isRequired = required && Array.isArray(required) ? required.includes(name) : false;
         }
     }
@@ -141,13 +148,13 @@ export class SchemaNode {
 
     // the isNew is a hack to preserve the open state in UI after a node is created and the tree reloaded
     get isNew() {
-        return !!this.schema.isNew
+        return !!this.schema.isNew;
     }
     set isNew(value: boolean) {
         if (value) {
-            this.schema.isNew = true
+            this.schema.isNew = true;
         } else {
-            delete this.schema.isNew
+            delete this.schema.isNew;
         }
     }
     resetIsNew() {
@@ -158,15 +165,15 @@ export class SchemaNode {
     // end hack
 
     getNameSignature() {
-        return `${this.name}${this.isRequired ? '' : '?'}`
+        return `${this.name}${this.isRequired ? '' : '?'}`;
     }
 
     getTypeSignature() {
-        return `${this.type.name}${this.type.isArray ? '[]' : ''}${this.type.isNullable ? '?' : ''}`
+        return `${this.type.name}${this.type.isArray ? '[]' : ''}${this.type.isNullable ? '?' : ''}`;
     }
 
     getSignature() {
-        return `${this.getNameSignature()}: ${this.getTypeSignature()}`
+        return `${this.getNameSignature()}: ${this.getTypeSignature()}`;
     }
 
     reloadTree() {
@@ -206,7 +213,7 @@ export class SchemaNode {
         const properties = this._getPropertiesSchema().properties || {};
         let name: string;
         do {
-            name = prefix + (++new_prop_name_cnt);
+            name = prefix + ++new_prop_name_cnt;
         } while (properties[name]);
         return name;
     }
@@ -216,12 +223,12 @@ export class SchemaNode {
      */
     addChild(name: string, type: TypeSignature, isRequired = false) {
         if (!this.type.isObject) {
-            throw new Error("Cannot add child to a non object node");
+            throw new Error('Cannot add child to a non object node');
         }
         if (!this.children) {
             this.children = [];
         }
-        let schema = this._getPropertiesSchema();
+        const schema = this._getPropertiesSchema();
         const childSchema = addProperty(schema, name, type, isRequired);
         const child = new SchemaNode(name, childSchema, this.loader, this);
         this.children.push(child);
@@ -232,11 +239,11 @@ export class SchemaNode {
      * Remove this node
      */
     remove() {
-        if (this.parent && this.parent.type.isObject) {
+        if (this.parent?.type.isObject) {
             const schema = this.parent._getPropertiesSchema();
             removeProperty(schema, this.name);
             if (this.parent.children) {
-                this.parent.children = this.parent.children.filter(c => c.name !== this.name);
+                this.parent.children = this.parent.children.filter((c) => c.name !== this.name);
             }
             return true;
         }
@@ -247,7 +254,7 @@ export class SchemaNode {
         let updated = false;
         if (data.name != null && this.name !== data.name) {
             if (this.parent) {
-                setPropertyName(this.parent._getPropertiesSchema(), this.name, data.name)
+                setPropertyName(this.parent._getPropertiesSchema(), this.name, data.name);
             }
             this.name = data.name;
             updated = true;
@@ -260,12 +267,12 @@ export class SchemaNode {
             updated = true;
         }
         let actualType: string | undefined = data.type?.name;
-        if (actualType === "any") {
+        if (actualType === 'any') {
             actualType = undefined;
         }
         const typeChanged = actualType !== this.schema.type;
         if (data.type) {
-            setPropertyType(this.schema, data.type)
+            setPropertyType(this.schema, data.type);
             this.type = data.type;
             if (this.type.isObject) {
                 if (!this.children) {
@@ -281,7 +288,8 @@ export class SchemaNode {
             // explicitly set to null => delete current editor
             this.schema.editor = undefined;
             updated = true;
-        } else if (data.editor) { // a new editor is set
+        } else if (data.editor) {
+            // a new editor is set
             this.schema.editor = data.editor;
             updated = true;
         } else if (typeChanged) {
@@ -308,13 +316,13 @@ export class SchemaNode {
         let editor: string | null | undefined;
         if (type.name === 'text') {
             type.name = TypeNames.string;
-            editor = 'textarea'
+            editor = 'textarea';
         } else if (type.name === 'media') {
             type.name = TypeNames.any;
-            editor = 'media'
+            editor = 'media';
         } else if (type.name === 'document') {
             type.name = TypeNames.any;
-            editor = 'document'
+            editor = 'document';
         } else {
             editor = null; // remove custom editor
         }
@@ -329,7 +337,7 @@ export class SchemaNode {
         text = text.trim();
         const index = text.indexOf(':');
         if (index < 0) {
-            throw new Error("Expecting a name and a type separated by a colon");
+            throw new Error('Expecting a name and a type separated by a colon');
         }
         const nameSig = text.substring(0, index);
         const typeSig = text.substring(index + 1);

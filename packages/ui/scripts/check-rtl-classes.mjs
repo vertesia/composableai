@@ -42,10 +42,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, '..');
 const REPO_ROOT = resolve(PKG_ROOT, '..', '..');
 
-const SCAN_TARGETS = [
-    resolve(PKG_ROOT, 'src'),
-    resolve(REPO_ROOT, 'templates', 'plugin-template', 'src', 'ui'),
-];
+const SCAN_TARGETS = [resolve(PKG_ROOT, 'src'), resolve(REPO_ROOT, 'templates', 'plugin-template', 'src', 'ui')];
 
 const SOURCE_EXT = /\.(tsx?|css)$/;
 const SKIP_DIRS = new Set(['node_modules', 'lib', 'dist', '.turbo']);
@@ -55,7 +52,7 @@ const BASELINE_PATH = resolve(PKG_ROOT, '.rtl-baseline.json');
 // Variant prefix matcher: peer-focus:, hover:, md:, lg:, dark:, data-[..]:,
 // [&_th]:, etc. We allow 0+ variants, then capture the base utility.
 const VARIANT = String.raw`(?:(?:[a-z][a-z0-9-]*|\[[^\]]+\]|peer-[a-z-]+|group-[a-z-]+|data-\[[^\]]+\]|aria-\[[^\]]+\]|has-\[[^\]]+\]|not-[a-z-]+):)*`;
-const NEG = String.raw`-?`;
+const NEG = `-?`;
 
 // Class boundary — a directional utility must START at one of these to count
 // as its own class. Without this, `left-2` inside `slide-in-from-left-2`
@@ -66,34 +63,34 @@ const BOUNDARY_BEFORE = String.raw`(?<=^|[\s"'\`{(\[,>])`;
 // directional fragments inside larger class names (e.g. `slide-in-from-left-2`)
 // don't double-count.
 const AUTO_PATTERNS = [
-    ['ml',         `${BOUNDARY_BEFORE}${VARIANT}${NEG}ml-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
-    ['mr',         `${BOUNDARY_BEFORE}${VARIANT}${NEG}mr-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
-    ['pl',         `${BOUNDARY_BEFORE}${VARIANT}pl-(?:\\d+|\\[.+?\\]|px|\\d+\\.\\d+|[\\d./]+)`],
-    ['pr',         `${BOUNDARY_BEFORE}${VARIANT}pr-(?:\\d+|\\[.+?\\]|px|\\d+\\.\\d+|[\\d./]+)`],
-    ['left',       `${BOUNDARY_BEFORE}${VARIANT}${NEG}left-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
-    ['right',      `${BOUNDARY_BEFORE}${VARIANT}${NEG}right-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
-    ['text-left',  `${BOUNDARY_BEFORE}${VARIANT}text-left\\b`],
+    ['ml', `${BOUNDARY_BEFORE}${VARIANT}${NEG}ml-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
+    ['mr', `${BOUNDARY_BEFORE}${VARIANT}${NEG}mr-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
+    ['pl', `${BOUNDARY_BEFORE}${VARIANT}pl-(?:\\d+|\\[.+?\\]|px|\\d+\\.\\d+|[\\d./]+)`],
+    ['pr', `${BOUNDARY_BEFORE}${VARIANT}pr-(?:\\d+|\\[.+?\\]|px|\\d+\\.\\d+|[\\d./]+)`],
+    ['left', `${BOUNDARY_BEFORE}${VARIANT}${NEG}left-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
+    ['right', `${BOUNDARY_BEFORE}${VARIANT}${NEG}right-(?:\\d+|\\[.+?\\]|px|auto|full|\\d+\\.\\d+|[\\d./]+)`],
+    ['text-left', `${BOUNDARY_BEFORE}${VARIANT}text-left\\b`],
     ['text-right', `${BOUNDARY_BEFORE}${VARIANT}text-right\\b`],
-    ['border-l',   `${BOUNDARY_BEFORE}${VARIANT}border-l(?:-(?:\\d+|\\[.+?\\]|none|px))?\\b`],
-    ['border-r',   `${BOUNDARY_BEFORE}${VARIANT}border-r(?:-(?:\\d+|\\[.+?\\]|none|px))?\\b`],
-    ['rounded-l',  `${BOUNDARY_BEFORE}${VARIANT}rounded-l(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
-    ['rounded-r',  `${BOUNDARY_BEFORE}${VARIANT}rounded-r(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
+    ['border-l', `${BOUNDARY_BEFORE}${VARIANT}border-l(?:-(?:\\d+|\\[.+?\\]|none|px))?\\b`],
+    ['border-r', `${BOUNDARY_BEFORE}${VARIANT}border-r(?:-(?:\\d+|\\[.+?\\]|none|px))?\\b`],
+    ['rounded-l', `${BOUNDARY_BEFORE}${VARIANT}rounded-l(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
+    ['rounded-r', `${BOUNDARY_BEFORE}${VARIANT}rounded-r(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
     ['rounded-tl', `${BOUNDARY_BEFORE}${VARIANT}rounded-tl(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
     ['rounded-tr', `${BOUNDARY_BEFORE}${VARIANT}rounded-tr(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
     ['rounded-bl', `${BOUNDARY_BEFORE}${VARIANT}rounded-bl(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
     ['rounded-br', `${BOUNDARY_BEFORE}${VARIANT}rounded-br(?:-(?:none|sm|md|lg|xl|\\d?xl|full|\\[.+?\\]))?\\b`],
-    ['float',      `${BOUNDARY_BEFORE}${VARIANT}float-(?:left|right)\\b`],
-    ['clear',      `${BOUNDARY_BEFORE}${VARIANT}clear-(?:left|right)\\b`],
+    ['float', `${BOUNDARY_BEFORE}${VARIANT}float-(?:left|right)\\b`],
+    ['clear', `${BOUNDARY_BEFORE}${VARIANT}clear-(?:left|right)\\b`],
 ];
 
 // Audit categories — context-dependent; codemod must NOT rewrite blindly.
 const AUDIT_PATTERNS = [
-    ['space-x',     `${BOUNDARY_BEFORE}${VARIANT}space-x-(?:\\d+|\\[.+?\\]|px|reverse|\\d+\\.\\d+|[\\d./]+)`],
-    ['divide-x',    `${BOUNDARY_BEFORE}${VARIANT}divide-x(?:-(?:\\d+|\\[.+?\\]|reverse))?\\b`],
+    ['space-x', `${BOUNDARY_BEFORE}${VARIANT}space-x-(?:\\d+|\\[.+?\\]|px|reverse|\\d+\\.\\d+|[\\d./]+)`],
+    ['divide-x', `${BOUNDARY_BEFORE}${VARIANT}divide-x(?:-(?:\\d+|\\[.+?\\]|reverse))?\\b`],
     ['translate-x', `${BOUNDARY_BEFORE}${VARIANT}${NEG}translate-x-(?:\\d+|\\[.+?\\]|px|full|\\d+\\.\\d+|[\\d./]+)`],
-    ['slide-in',    `${BOUNDARY_BEFORE}${VARIANT}slide-in-from-(?:left|right)(?:-\\d+|\\[.+?\\])?\\b`],
-    ['slide-out',   `${BOUNDARY_BEFORE}${VARIANT}slide-out-to-(?:left|right)(?:-\\d+|\\[.+?\\])?\\b`],
-    ['fixed-edge',  `${BOUNDARY_BEFORE}${VARIANT}(?:left|right)-0\\b`],
+    ['slide-in', `${BOUNDARY_BEFORE}${VARIANT}slide-in-from-(?:left|right)(?:-\\d+|\\[.+?\\])?\\b`],
+    ['slide-out', `${BOUNDARY_BEFORE}${VARIANT}slide-out-to-(?:left|right)(?:-\\d+|\\[.+?\\])?\\b`],
+    ['fixed-edge', `${BOUNDARY_BEFORE}${VARIANT}(?:left|right)-0\\b`],
 ];
 
 const ALL_PATTERNS = [
@@ -126,9 +123,7 @@ function scanFile(file) {
         // Also skip if the line above marks an rtl-ok exemption.
         if (i > 0 && RTL_OK.test(lines[i - 1])) continue;
         for (const { category, klass, re } of ALL_PATTERNS) {
-            re.lastIndex = 0;
-            let m;
-            while ((m = re.exec(line)) !== null) {
+            for (const m of line.matchAll(re)) {
                 // The match itself may start with an `rtl:` variant — that's
                 // deliberate RTL-aware code, not a violation. Skip it.
                 if (m[0].includes('rtl:')) continue;
@@ -175,7 +170,7 @@ function fileTotals(violations) {
 }
 
 function fmt(o) {
-    return JSON.stringify(o, null, 2) + '\n';
+    return `${JSON.stringify(o, null, 2)}\n`;
 }
 
 function parseArgs(argv) {
@@ -222,7 +217,9 @@ function main() {
         printSummary(byCategory, total);
         if (total > baseline.totalViolations) {
             console.error(`\n❌ Directional-utility count increased: ${baseline.totalViolations} → ${total}.`);
-            console.error('Fix new violations (prefer logical equivalents: ms-/me-/ps-/pe-/start-/end-/text-start/text-end),');
+            console.error(
+                'Fix new violations (prefer logical equivalents: ms-/me-/ps-/pe-/start-/end-/text-start/text-end),',
+            );
             console.error('or — only if the direction is semantic — add `// rtl-ok: <reason>` on/above the line.');
             process.exit(1);
         }
@@ -256,7 +253,9 @@ function main() {
         }
         const auditTotal = total - autoTotal;
         if (auditTotal > 0) {
-            console.log(`\n✅ No auto-fixable violations. ${auditTotal} audit-only occurrences remain (informational).`);
+            console.log(
+                `\n✅ No auto-fixable violations. ${auditTotal} audit-only occurrences remain (informational).`,
+            );
         } else {
             console.log(`\n✅ No directional-utility violations.`);
         }

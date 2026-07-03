@@ -1,25 +1,18 @@
-import { Hono } from "hono";
+import type { Hono } from 'hono';
 import {
     activityCollectionPage,
     contentTypeCollectionPage,
+    // biome-ignore lint/suspicious/noDeprecatedImports: index page is still served alongside the React site until that migration completes
     indexPage,
     interactionCollectionPage,
     skillCollectionPage,
     templateCollectionPage,
-    toolCollectionPage
-} from "../site/templates.js";
-import { ToolServerConfig } from "./types.js";
-
+    toolCollectionPage,
+} from '../site/templates.js';
+import type { ToolServerConfig } from './types.js';
 
 export function createSiteRoute(app: Hono, basePath: string, config: ToolServerConfig) {
-    const {
-        tools = [],
-        activities = [],
-        interactions = [],
-        types = [],
-        skills = [],
-        templates = [],
-    } = config;
+    const { tools = [], activities = [], interactions = [], types = [], skills = [], templates = [] } = config;
 
     // Index page
     app.get(`${basePath}/`, (c) => {
@@ -67,5 +60,4 @@ export function createSiteRoute(app: Hono, basePath: string, config: ToolServerC
             return c.html(contentTypeCollectionPage(coll));
         });
     }
-
 }

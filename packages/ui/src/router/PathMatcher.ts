@@ -1,4 +1,4 @@
-import { PathMatchParams, getPathSegments, toSegments } from "./path";
+import { getPathSegments, type PathMatchParams, toSegments } from './path';
 
 export interface PathMatch<T = unknown> {
     params: PathMatchParams;
@@ -12,7 +12,6 @@ export interface PathMatch<T = unknown> {
  * The wildcard segment is only supported as the last segment
  */
 export class PathMatcher<T = unknown> {
-
     tree: RootSegmentNode<T> = new RootSegmentNode<T>();
 
     loadMapping(mapping: Record<string, T>) {
@@ -33,16 +32,22 @@ export class PathMatcher<T = unknown> {
                     childNode = new VariableSegmentNode<T>(segment);
                     node.wildcard = childNode;
                 } else if (!(childNode instanceof VariableSegmentNode)) {
-                    throw new Error(`Failed to index path segments: ${segments.join('/')}. A wildcard ":" segment will overwrite an existing wildcard segment at path: ${'/' + segments.slice(0, i).join("/")}`);
+                    throw new Error(
+                        `Failed to index path segments: ${segments.join('/')}. A wildcard ":" segment will overwrite an existing wildcard segment at path: ${`/${segments.slice(0, i).join('/')}`}`,
+                    );
                 }
                 node = childNode as VariableSegmentNode<T>;
             } else if (segment === '*') {
                 if (node.wildcard) {
-                    throw new Error(`Failed to index path segments: ${segments.join('/')}. A wildcard "*" segment already exists at path: ${'/' + segments.slice(0, i).join("/")}`);
+                    throw new Error(
+                        `Failed to index path segments: ${segments.join('/')}. A wildcard "*" segment already exists at path: ${`/${segments.slice(0, i).join('/')}`}`,
+                    );
                 }
                 node.wildcard = new WildcardSegmentNode(segment, value);
                 if (i < l - 1) {
-                    throw new Error(`Failed to index path segments: ${segments.join('/')}. A wildcard segment must be the last segment`);
+                    throw new Error(
+                        `Failed to index path segments: ${segments.join('/')}. A wildcard segment must be the last segment`,
+                    );
                 }
                 return;
             } else {
@@ -55,7 +60,9 @@ export class PathMatcher<T = unknown> {
             }
         }
         if (node.value !== undefined) {
-            throw new Error(`Failed to index path segments: ${segments.join('/')}. A value already exists at path: ${'/' + segments.join("/")}`);
+            throw new Error(
+                `Failed to index path segments: ${segments.join('/')}. A value already exists at path: ${`/${segments.join('/')}`}`,
+            );
         }
         node.value = value;
     }
@@ -76,12 +83,13 @@ export class PathMatcher<T = unknown> {
             }
         }
 
-        if (!node.value) { // not a leaf node (partial match)
+        if (!node.value) {
+            // not a leaf node (partial match)
             if (node instanceof ParentSegmentNode) {
                 if (node.wildcard instanceof WildcardSegmentNode) {
                     node = node.wildcard.match('', params);
                     if (!node.value) {
-                        throw new Error("Wildcard segment node `*` must have a value");
+                        throw new Error('Wildcard segment node `*` must have a value');
                     }
                 }
             }
@@ -96,7 +104,6 @@ export class PathMatcher<T = unknown> {
         }
         return { params, matchedSegments, remainingSegments, value: node.value };
     }
-
 }
 
 interface SegmentNode<T = unknown> {
@@ -108,11 +115,13 @@ class ParentSegmentNode<T = unknown> implements SegmentNode<T> {
     children: Record<string, SegmentNode<T>> = {};
     wildcard?: SegmentNode<T>;
 
-    constructor(public name: string, public value?: T | undefined) {
-    }
+    constructor(
+        public name: string,
+        public value?: T | undefined,
+    ) {}
 
     match(segment: string, params: PathMatchParams): SegmentNode<T> | null {
-        let node = this.children[segment];
+        const node = this.children[segment];
         if (node) {
             return node;
         } else if (this.wildcard) {
@@ -122,38 +131,35 @@ class ParentSegmentNode<T = unknown> implements SegmentNode<T> {
                 params[this.wildcard.paramName] = segment;
                 return this.wildcard;
             } else {
-                throw new Error("Unknown wildcard segment node type: " + this.wildcard.constructor.name);
+                throw new Error(`Unknown wildcard segment node type: ${this.wildcard.constructor.name}`);
             }
         } else {
             return null;
         }
     }
-
 }
 
 class RootSegmentNode<T = unknown> extends ParentSegmentNode<T> {
     constructor() {
-        super("#root");
+        super('#root');
     }
 }
 
-class LiteralSegmentNode<T = unknown> extends ParentSegmentNode<T> {
-    constructor(name: string, value?: T | undefined) {
-        super(name, value);
-    }
-}
+class LiteralSegmentNode<T = unknown> extends ParentSegmentNode<T> {}
 
 class VariableSegmentNode<T = unknown> extends ParentSegmentNode<T> {
     paramName: string;
     constructor(name: string, value?: T | undefined) {
-        super(name, value)
+        super(name, value);
         this.paramName = name.substring(1);
     }
 }
 
 class WildcardSegmentNode<T = unknown> implements SegmentNode<T> {
-    constructor(public name: string, public value?: T | undefined) {
-    }
+    constructor(
+        public name: string,
+        public value?: T | undefined,
+    ) {}
 
     match(segment: string, params: PathMatchParams) {
         if (!params._) {

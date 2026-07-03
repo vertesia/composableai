@@ -1,8 +1,7 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type {
     Account,
     AccountProjectsResponse,
-    GoogleProjectTokenResponse,
     InviteAcceptanceResponse,
     InviteDeclineResponse,
     InviteUserRequestPayload,
@@ -14,12 +13,11 @@ import {
     UpdateAccountPayload,
     User,
     UserInviteTokenData,
-} from "@vertesia/common";
+} from '@vertesia/common';
 
 export default class AccountApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/account")
+        super(parent, '/api/v1/account');
     }
 
     /**
@@ -40,13 +38,13 @@ export default class AccountApi extends ApiTopic {
 
     /**
      * Get all projects for account
-    */
+     */
     projects(): Promise<ProjectRef[]> {
         return this.get<AccountProjectsResponse>('/projects').then((res) => res.data);
     }
 
     members(): Promise<User[]> {
-        return this.get('/members')
+        return this.get('/members');
     }
 
     /**
@@ -68,7 +66,7 @@ export default class AccountApi extends ApiTopic {
      * @param type Filter for the type of invitation, either "project" or "account"
      * @returns UserInviteTokenData[]
      * */
-    listInvitation(type: "project" | "account" = "project"): Promise<TransientToken<UserInviteTokenData>[]> {
+    listInvitation(type: 'project' | 'account' = 'project'): Promise<TransientToken<UserInviteTokenData>[]> {
         return this.get(`/invites/${type}`);
     }
 
@@ -95,17 +93,7 @@ export default class AccountApi extends ApiTopic {
         return this.get('/onboarding');
     }
 
-    /**
-     * Get a google auth token for the current project.
-     * This token can be used to access exposed google cloud services
-     * @returns
-     */
-    getGoogleToken(): Promise<GoogleProjectTokenResponse> {
-        return this.get('/google-token');
-    }
-
     getStripeBillingStatus(): Promise<StripeBillingStatusResponse> {
-        return this.get('/stripe-billing-status')
+        return this.get('/stripe-billing-status');
     }
-
 }

@@ -1,3 +1,3 @@
 export function InvalidXml() {
-  return <div>Invalid XML!</div>;
+    return <div>Invalid XML!</div>;
 }

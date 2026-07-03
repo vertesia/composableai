@@ -1,9 +1,9 @@
-import { ClientBase, FETCH_FN, IRequestParamsWithPayload } from "./base.js";
-import { RequestError } from "./errors.js";
+import { ClientBase, type FETCH_FN, type IRequestParamsWithPayload } from './base.js';
+import type { RequestError } from './errors.js';
 
 function isAuthorizationHeaderSet(headers: HeadersInit | undefined): boolean {
     if (!headers) return false;
-    return "authorization" in headers;
+    return 'authorization' in headers;
 }
 
 function isServerFetchRuntime(): boolean {
@@ -12,15 +12,15 @@ function isServerFetchRuntime(): boolean {
         process?: { versions?: { bun?: string; node?: string } };
         window?: unknown;
     };
-    return typeof runtime.window === "undefined" && (
-        typeof runtime.process?.versions?.node === "string"
-        || typeof runtime.process?.versions?.bun === "string"
-        || typeof runtime.Bun !== "undefined"
+    return (
+        typeof runtime.window === 'undefined' &&
+        (typeof runtime.process?.versions?.node === 'string' ||
+            typeof runtime.process?.versions?.bun === 'string' ||
+            typeof runtime.Bun !== 'undefined')
     );
 }
 
 export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends ClientBase {
-
     headers: Record<string, string>;
     _auth?: () => Promise<string>;
     // callbacks useful to log requests and responses
@@ -92,7 +92,7 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
             init.headers = headers;
             const auth = await this._auth();
             if (auth) {
-                init.headers["authorization"] = auth;
+                init.headers.authorization = auth;
             }
         }
         this.response = undefined;
@@ -101,29 +101,23 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
         return request;
     }
 
-    async handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): Promise<T> {
+    handleFetchResponse(req: Request, res: Response): void {
         this.response = res; // store last response
         this.onResponse?.(res, req);
-        return super.handleResponse<T>(req, res, params);
     }
-
 }
 
-export class FetchClient extends AbstractFetchClient<FetchClient> {
-
-    constructor(baseUrl: string, fetchImpl?: FETCH_FN | Promise<FETCH_FN>) {
-        super(baseUrl, fetchImpl);
-    }
-
-}
+export class FetchClient extends AbstractFetchClient<FetchClient> {}
 
 export abstract class ApiTopic extends ClientBase {
-
-    constructor(public client: ClientBase, basePath: string) {
+    constructor(
+        public client: ClientBase,
+        basePath: string,
+    ) {
         //TODO we should refactor the way ClientBase and ApiTopic is created
         // to avoid cloning all customizations
         super(client.getUrl(basePath), client._fetch);
-        this.createServerError = client.createServerError
+        this.createServerError = client.createServerError;
         this.errorFactory = client.errorFactory;
         this.verboseErrors = client.verboseErrors;
     }
@@ -132,12 +126,27 @@ export abstract class ApiTopic extends ClientBase {
         return this.client.createRequest(url, init);
     }
 
-    handleResponse<T = unknown>(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): T | Promise<T> {
+    handleResponse<T = unknown>(
+        req: Request,
+        res: Response,
+        params: IRequestParamsWithPayload | undefined,
+    ): T | Promise<T> {
         return this.client.handleResponse<T>(req, res, params);
+    }
+
+    handleFetchResponse(req: Request, res: Response): void {
+        this.client.handleFetchResponse(req, res);
+    }
+
+    getRetryPolicy() {
+        return this.client.getRetryPolicy();
+    }
+
+    getTimeout() {
+        return this.client.getTimeout();
     }
 
     get headers() {
         return this.client.headers;
     }
-
 }

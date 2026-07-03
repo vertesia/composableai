@@ -1,6 +1,6 @@
-import { CheckCircleIcon } from "lucide-react";
-import { useId, useState } from "react";
-import { useUITranslation } from "@vertesia/ui/i18n";
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { CheckCircleIcon } from 'lucide-react';
+import { useId, useState } from 'react';
 
 /**
  * Props for the UploadResultCategory component
@@ -31,7 +31,7 @@ export function UploadResultCategory({
     title,
     count,
     icon = <CheckCircleIcon className="h-4 w-4 text-green-500" />,
-    items
+    items,
 }: UploadResultCategoryProps) {
     const { t } = useUITranslation();
     const [isExpanded, setIsExpanded] = useState(false);
@@ -51,9 +51,7 @@ export function UploadResultCategory({
                 <span className="flex items-center">
                     <span className="me-2">{icon}</span>
                     <span className="font-medium">{title}</span>
-                    <span className="ms-2 px-2 py-0.5 bg-color-muted/20 rounded-full text-xs">
-                        {count}
-                    </span>
+                    <span className="ms-2 px-2 py-0.5 bg-color-muted/20 rounded-full text-xs">{count}</span>
                 </span>
                 <span className="text-muted" aria-hidden="true">
                     <svg
@@ -61,6 +59,7 @@ export function UploadResultCategory({
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
+                        aria-hidden="true"
                     >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
@@ -72,15 +71,14 @@ export function UploadResultCategory({
                     {items.length > 0 ? (
                         <ul className="space-y-1">
                             {items.map((item, index) => (
+                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                 <li key={index} className="text-sm py-1 px-2 rounded hover:bg-color-muted/10">
                                     {item}
                                 </li>
                             ))}
                         </ul>
                     ) : (
-                        <div className="text-sm text-muted py-2">
-                            {t('upload.noItems')}
-                        </div>
+                        <div className="text-sm text-muted py-2">{t('upload.noItems')}</div>
                     )}
                 </div>
             )}

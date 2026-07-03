@@ -1,10 +1,10 @@
-import { useCallback } from "react";
-import { GenericPageNavHeader, ModernAgentConversation } from "@vertesia/ui/features";
-import { NavLink, useNavigate, useParams } from "@vertesia/ui/router";
-import { useUserSession } from "@vertesia/ui/session";
-import { useUITranslation } from "@vertesia/ui/i18n";
-import type { CreateAgentRunPayload } from "@vertesia/common";
-import { ASSISTANT_INTERACTION } from "../constants";
+import type { CreateAgentRunPayload } from '@vertesia/common';
+import { GenericPageNavHeader, ModernAgentConversation } from '@vertesia/ui/features';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { NavLink, useNavigate, useParams } from '@vertesia/ui/router';
+import { useUserSession } from '@vertesia/ui/session';
+import { useCallback } from 'react';
+import { ASSISTANT_INTERACTION } from '../constants';
 
 export function ChatPage() {
     const { t } = useUITranslation();
@@ -13,19 +13,22 @@ export function ChatPage() {
     const params = useParams();
     const { agentRunId } = params as { agentRunId?: string };
 
-    const startWorkflow = useCallback(async (initialMessage?: string) => {
-        const payload: CreateAgentRunPayload = {
-            interaction: ASSISTANT_INTERACTION,
-            interactive: true,
-            data: { user_prompt: initialMessage || '' },
-        };
-        const result = await store.agents.start(payload);
-        if (result) {
-            navigate(`/chat/${result.id}`);
-            return { agent_run_id: result.id! };
-        }
-        return undefined;
-    }, [store, navigate]);
+    const startWorkflow = useCallback(
+        async (initialMessage?: string) => {
+            const payload: CreateAgentRunPayload = {
+                interaction: ASSISTANT_INTERACTION,
+                interactive: true,
+                data: { user_prompt: initialMessage || '' },
+            };
+            const result = await store.agents.start(payload);
+            if (result?.id) {
+                navigate(`/chat/${result.id}`);
+                return { agent_run_id: result.id };
+            }
+            return undefined;
+        },
+        [store, navigate],
+    );
 
     const handleReset = useCallback(() => navigate('/chat'), [navigate]);
 

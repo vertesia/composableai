@@ -1,15 +1,15 @@
-import { AccessControlPrincipalType, AccessControlResourceType, ProjectRoles } from '@vertesia/common';
-import { Command } from 'commander';
+import type { AccessControlPrincipalType, AccessControlResourceType, SystemRoles } from '@vertesia/common';
 import colors from 'ansi-colors';
+import type { Command } from 'commander';
 import { getClient } from '../client.js';
-import { getStringOption, type CliOptions } from '../utils/options.js';
+import { type CliOptions, getStringOption } from '../utils/options.js';
 
 type CreateAceOptions = CliOptions<{
     principal?: string;
     principalType?: AccessControlPrincipalType;
     resource?: string;
     resourceType?: AccessControlResourceType;
-    role?: ProjectRoles;
+    role?: SystemRoles;
     principalProps?: string;
     resourceProps?: string;
 }>;

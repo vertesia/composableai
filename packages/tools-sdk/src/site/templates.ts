@@ -1,14 +1,14 @@
-import type { RemoteActivityDefinition } from "@vertesia/common";
-import type { ActivityCollection } from "../ActivityCollection.js";
-import type { InteractionCollection } from "../InteractionCollection.js";
-import { ToolServerConfig } from "../server/types.js";
-import type { SkillCollection } from "../SkillCollection.js";
-import type { RenderingTemplateCollection } from "../RenderingTemplateCollection.js";
-import type { ToolCollection } from "../ToolCollection.js";
-import type { ContentTypesCollection } from "../ContentTypesCollection.js";
-import type { ICollection, SkillDefinition, RenderingTemplateDefinition, Tool } from "../types.js";
-import { join } from "../utils.js";
-import { baseStyles } from "./styles.js";
+import type { RemoteActivityDefinition } from '@vertesia/common';
+import type { ActivityCollection } from '../ActivityCollection.js';
+import type { ContentTypesCollection } from '../ContentTypesCollection.js';
+import type { InteractionCollection } from '../InteractionCollection.js';
+import type { RenderingTemplateCollection } from '../RenderingTemplateCollection.js';
+import type { SkillCollection } from '../SkillCollection.js';
+import type { ToolServerConfig } from '../server/types.js';
+import type { ToolCollection } from '../ToolCollection.js';
+import type { ICollection, RenderingTemplateDefinition, SkillDefinition, Tool } from '../types.js';
+import { join } from '../utils.js';
+import { baseStyles } from './styles.js';
 
 type MCPProviderMeta = {
     name: string;
@@ -18,17 +18,17 @@ type MCPProviderMeta = {
 /**
  * Default icon SVG for collections without a custom icon
  */
-const defaultIcon = /*html*/`
+const defaultIcon = /*html*/ `
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
   <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
 </svg>`;
 
-const skillIcon = /*html*/`
+const skillIcon = /*html*/ `
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
 </svg>`;
 
-const templateIcon = /*html*/`
+const templateIcon = /*html*/ `
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
   <polyline points="14 2 14 8 20 8"/>
@@ -37,7 +37,7 @@ const templateIcon = /*html*/`
   <polyline points="10 9 9 9 8 9"/>
 </svg>`;
 
-const activityIcon = /*html*/`
+const activityIcon = /*html*/ `
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
 </svg>`;
@@ -45,7 +45,7 @@ const activityIcon = /*html*/`
 /**
  * Extended styles for detail pages
  */
-const detailStyles = /*css*/`
+const detailStyles = /*css*/ `
 ${baseStyles}
 
 .nav {
@@ -363,7 +363,7 @@ function highlightJson(obj: unknown): string {
 /**
  * Back navigation arrow
  */
-const backArrow = /*html*/`
+const backArrow = /*html*/ `
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
   <path d="M19 12H5M12 19l-7-7 7-7"/>
 </svg>`;
@@ -371,7 +371,7 @@ const backArrow = /*html*/`
 /**
  * Copy icon
  */
-const copyIcon = /*html*/`
+const copyIcon = /*html*/ `
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -380,7 +380,7 @@ const copyIcon = /*html*/`
 /**
  * File icon
  */
-const fileIcon = /*html*/`
+const fileIcon = /*html*/ `
 <svg class="script-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
   <polyline points="14 2 14 8 20 8"></polyline>
@@ -390,7 +390,7 @@ const fileIcon = /*html*/`
  * Render a collection card for the index page
  */
 export function collectionCard(collection: ICollection, pathPrefix: string, meta?: string): string {
-    return /*html*/`
+    return /*html*/ `
 <a class="card" href="/${pathPrefix}/${collection.name}" data-collection-type="${pathPrefix}" data-collection-name="${collection.name}">
     <div class="card-icon">${collection.icon || defaultIcon}</div>
     <div class="card-title">${collection.title || collection.name}</div>
@@ -403,13 +403,17 @@ export function collectionCard(collection: ICollection, pathPrefix: string, meta
  * Render a tool card (simple version for lists)
  */
 export function toolCard(tool: Tool<Record<string, unknown>>): string {
-    return /*html*/`
+    return /*html*/ `
 <div class="item-card">
     <div class="item-name">${tool.name}</div>
     <div class="item-desc">${tool.description || ''}</div>
-    ${tool.input_schema ? /*html*/`
+    ${
+        tool.input_schema
+            ? /*html*/ `
     <div class="item-schema">${JSON.stringify(tool.input_schema, null, 2)}</div>
-    ` : ''}
+    `
+            : ''
+    }
 </div>`;
 }
 
@@ -417,7 +421,7 @@ export function toolCard(tool: Tool<Record<string, unknown>>): string {
  * Render an MCP provider card
  */
 export function mcpProviderCard(provider: MCPProviderMeta): string {
-    return /*html*/`
+    return /*html*/ `
 <a class="card" href="/api/mcp/${provider.name}">
     <div class="card-title">${provider.name}</div>
     <div class="card-desc">${provider.description || ''}</div>
@@ -432,7 +436,7 @@ export function toolDetailCard(tool: Tool<Record<string, unknown>>, collectionNa
     const properties = (schema as Record<string, unknown>)?.properties as Record<string, unknown> | undefined;
     const required = (schema as Record<string, unknown>)?.required as string[] | undefined;
 
-    return /*html*/`
+    return /*html*/ `
 <div class="detail-card">
     <div class="detail-header">
         <div>
@@ -454,15 +458,20 @@ export function toolDetailCard(tool: Tool<Record<string, unknown>>, collectionNa
             </div>
         </div>
 
-        ${schema ? /*html*/`
+        ${
+            schema
+                ? /*html*/ `
         <div class="detail-section">
             <h4 class="detail-section-title">Input Schema</h4>
-            ${properties ? /*html*/`
+            ${
+                properties
+                    ? /*html*/ `
             <div class="info-grid" style="margin-bottom: 1rem;">
-                ${Object.entries(properties).map(([key, value]) => {
-        const prop = value as Record<string, unknown>;
-        const isRequired = required?.includes(key);
-        return /*html*/`
+                ${Object.entries(properties)
+                    .map(([key, value]) => {
+                        const prop = value as Record<string, unknown>;
+                        const isRequired = required?.includes(key);
+                        return /*html*/ `
                     <div class="info-item">
                         <div class="info-label">${key}${isRequired ? ' *' : ''}</div>
                         <div class="info-value">
@@ -470,19 +479,24 @@ export function toolDetailCard(tool: Tool<Record<string, unknown>>, collectionNa
                             ${prop.description ? `<br><span style="color: #6b7280; font-size: 0.85rem;">${prop.description}</span>` : ''}
                         </div>
                     </div>`;
-    }).join('')}
+                    })
+                    .join('')}
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
             <details>
                 <summary style="cursor: pointer; color: #6b7280; font-size: 0.85rem;">View full schema</summary>
                 <div class="schema-block" style="margin-top: 0.75rem;">${highlightJson(schema)}</div>
             </details>
         </div>
-        ` : /*html*/`
+        `
+                : /*html*/ `
         <div class="detail-section">
             <div class="empty-state">No input schema defined</div>
         </div>
-        `}
+        `
+        }
     </div>
 </div>`;
 }
@@ -491,7 +505,7 @@ export function toolDetailCard(tool: Tool<Record<string, unknown>>, collectionNa
  * Render a skill card (simple version for lists)
  */
 export function skillCard(skill: SkillDefinition): string {
-    return /*html*/`
+    return /*html*/ `
 <div class="item-card skill">
     <div class="item-name">${skill.name}</div>
     <div class="item-desc">${skill.description || ''}</div>
@@ -507,16 +521,22 @@ function skillWidgetsTemplate(skillWidgets: string[] | undefined) {
     if (!skillWidgets || skillWidgets.length === 0) {
         return 'n/a';
     }
-    return skillWidgets.map(w => `<div style='display: flex; align-items: center; gap: 0.5rem; width:100%;justify-content: space-between;'><span>${w}</span>
+    return skillWidgets
+        .map(
+            (
+                w,
+            ) => `<div style='display: flex; align-items: center; gap: 0.5rem; width:100%;justify-content: space-between;'><span>${w}</span>
         <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '/widgets/${w}.js')" title="Copy endpoint URL">
             ${copyIcon}
         </button>
-    </div>`).join('');
+    </div>`,
+        )
+        .join('');
 }
 
 function renderSkillUrl(skill: SkillDefinition, collectionName: string): string {
     const skillPath = `/api/skills/${collectionName}/${skill.name}`;
-    return /*html*/`<div class="script-item" style='display: flex; align-items: center; gap: 0.5rem; width:100%;justify-content: space-between;'><span class="script-name">${skillPath}</span>
+    return /*html*/ `<div class="script-item" style='display: flex; align-items: center; gap: 0.5rem; width:100%;justify-content: space-between;'><span class="script-name">${skillPath}</span>
         <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '${skillPath}')" title="Copy endpoint URL">
             ${copyIcon}
         </button>
@@ -532,7 +552,7 @@ export function skillDetailCard(skill: SkillDefinition, collection: SkillCollect
     const hasScripts = skill.scripts?.length;
     const hasRelatedTools = skill.tools?.length;
 
-    return /*html*/`
+    return /*html*/ `
 <div class="detail-card">
     <div class="detail-header">
         <div>
@@ -552,59 +572,83 @@ export function skillDetailCard(skill: SkillDefinition, collection: SkillCollect
                 <div class="info-label">Content Type</div>
                 <div class="info-value">${skill.content_type === 'jst' ? 'Dynamic (JST Template)' : 'Static (Markdown)'}</div>
             </div>
-            ${skill.execution?.language ? /*html*/`
+            ${
+                skill.execution?.language
+                    ? /*html*/ `
             <div class="info-item">
                 <div class="info-label">Language</div>
                 <div class="info-value"><code>${skill.execution.language}</code></div>
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
             <div class="info-item">
                 <div class="info-label">Widgets</div>
                 <div class="info-value">${skillWidgetsTemplate(skill.widgets)}</div>
             </div>
         </div>
 
-        ${hasRelatedTools ? /*html*/`
+        ${
+            hasRelatedTools
+                ? /*html*/ `
         <div class="detail-section">
             <h4 class="detail-section-title">Unlocks Tools</h4>
             <p style="color: #6b7280; font-size: 0.85rem; margin: 0 0 0.75rem 0;">These tools become available when this skill is activated:</p>
             <div class="package-list">
-                ${skill.tools?.map(tool => `<span class="package-tag" style="background: #ede9fe; color: #6d28d9;">${tool}</span>`).join('')}
+                ${skill.tools?.map((tool) => `<span class="package-tag" style="background: #ede9fe; color: #6d28d9;">${tool}</span>`).join('')}
             </div>
         </div>
-        ` : ''}
+        `
+                : ''
+        }
 
-        ${hasKeywords ? /*html*/`
+        ${
+            hasKeywords
+                ? /*html*/ `
         <div class="detail-section">
             <h4 class="detail-section-title">Trigger Keywords</h4>
             <div class="keyword-list">
-                ${skill.context_triggers?.keywords?.map(kw => `<span class="keyword-tag">${kw}</span>`).join('')}
+                ${skill.context_triggers?.keywords?.map((kw) => `<span class="keyword-tag">${kw}</span>`).join('')}
             </div>
         </div>
-        ` : ''}
+        `
+                : ''
+        }
 
-        ${hasPackages ? /*html*/`
+        ${
+            hasPackages
+                ? /*html*/ `
         <div class="detail-section">
             <h4 class="detail-section-title">Required Packages</h4>
             <div class="package-list">
-                ${skill.execution?.packages?.map(pkg => `<span class="package-tag">${pkg}</span>`).join('')}
+                ${skill.execution?.packages?.map((pkg) => `<span class="package-tag">${pkg}</span>`).join('')}
             </div>
         </div>
-        ` : ''}
+        `
+                : ''
+        }
 
-        ${hasScripts ? /*html*/`
+        ${
+            hasScripts
+                ? /*html*/ `
         <div class="detail-section">
             <h4 class="detail-section-title">Bundled Scripts</h4>
             <div class="script-list">
-                ${skill.scripts?.map(script => /*html*/`
+                ${skill.scripts
+                    ?.map(
+                        (script) => /*html*/ `
                 <div class="script-item">
                     ${fileIcon}
-                    <span class="script-name">${join("/scripts", script)}</span>
+                    <span class="script-name">${join('/scripts', script)}</span>
                 </div>
-                `).join('')}
+                `,
+                    )
+                    .join('')}
             </div>
         </div>
-        ` : ''}
+        `
+                : ''
+        }
 
         <div class="detail-section">
             <h4 class="detail-section-title">Instructions Preview</h4>
@@ -619,7 +663,7 @@ export function skillDetailCard(skill: SkillDefinition, collection: SkillCollect
  */
 function renderTemplateUrl(template: RenderingTemplateDefinition, collectionName: string): string {
     const templatePath = `/api/templates/${collectionName}/${template.name}`;
-    return /*html*/`<div class="script-item" style='display: flex; align-items: center; gap: 0.5rem; width:100%;justify-content: space-between;'><span class="script-name">${templatePath}</span>
+    return /*html*/ `<div class="script-item" style='display: flex; align-items: center; gap: 0.5rem; width:100%;justify-content: space-between;'><span class="script-name">${templatePath}</span>
         <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '${templatePath}')" title="Copy endpoint URL">
             ${copyIcon}
         </button>
@@ -631,11 +675,11 @@ function renderTemplateUrl(template: RenderingTemplateDefinition, collectionName
  */
 function tagList(tags: string[] | undefined): string {
     if (!tags || tags.length === 0) return '';
-    return /*html*/`
+    return /*html*/ `
     <div class="detail-section">
         <h4 class="detail-section-title">Tags</h4>
         <div class="keyword-list">
-            ${tags.map(tag => `<span class="keyword-tag">${tag}</span>`).join('')}
+            ${tags.map((tag) => `<span class="keyword-tag">${tag}</span>`).join('')}
         </div>
     </div>`;
 }
@@ -645,16 +689,20 @@ function tagList(tags: string[] | undefined): string {
  */
 function assetList(assets: string[]): string {
     if (assets.length === 0) return '';
-    return /*html*/`
+    return /*html*/ `
     <div class="detail-section">
         <h4 class="detail-section-title">Assets</h4>
         <div class="script-list">
-            ${assets.map(asset => /*html*/`
+            ${assets
+                .map(
+                    (asset) => /*html*/ `
             <div class="script-item">
                 ${fileIcon}
                 <span class="script-name">${asset}</span>
             </div>
-            `).join('')}
+            `,
+                )
+                .join('')}
         </div>
     </div>`;
 }
@@ -663,7 +711,7 @@ function assetList(assets: string[]): string {
  * Render an instructions preview section
  */
 function instructionsPreview(instructions: string): string {
-    return /*html*/`
+    return /*html*/ `
     <div class="detail-section">
         <h4 class="detail-section-title">Instructions Preview</h4>
         <div class="instructions-preview">${escapeHtml(instructions.slice(0, 1000))}${instructions.length > 1000 ? '...' : ''}</div>
@@ -673,8 +721,11 @@ function instructionsPreview(instructions: string): string {
 /**
  * Render a detailed template card
  */
-export function templateDetailCard(template: RenderingTemplateDefinition, collection: RenderingTemplateCollection): string {
-    return /*html*/`
+export function templateDetailCard(
+    template: RenderingTemplateDefinition,
+    collection: RenderingTemplateCollection,
+): string {
+    return /*html*/ `
 <div class="detail-card">
     <div class="detail-header">
         <div>
@@ -710,7 +761,7 @@ export function templateDetailCard(template: RenderingTemplateDefinition, collec
  */
 export function templateCollectionPage(collection: RenderingTemplateCollection): string {
     const templatesArray = Array.from(collection);
-    return /*html*/`
+    return /*html*/ `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -740,10 +791,11 @@ export function templateCollectionPage(collection: RenderingTemplateCollection):
 
     <h2>${templatesArray.length} Template${templatesArray.length !== 1 ? 's' : ''}</h2>
 
-    ${templatesArray.length > 0 ?
-            templatesArray.map(template => templateDetailCard(template, collection)).join('') :
-            '<div class="empty-state">No templates in this collection</div>'
-        }
+    ${
+        templatesArray.length > 0
+            ? templatesArray.map((template) => templateDetailCard(template, collection)).join('')
+            : '<div class="empty-state">No templates in this collection</div>'
+    }
 </body>
 </html>`;
 }
@@ -765,18 +817,18 @@ function escapeHtml(str: string): string {
  */
 function getInitials(title: string): string {
     const words = title.trim().split(/\s+/).filter(Boolean);
-    if (!words.length) return "TS";
+    if (!words.length) return 'TS';
     const initials = words
         .slice(0, 2)
         .map((word) => word.charAt(0).toUpperCase())
-        .join("");
-    return initials || "TS";
+        .join('');
+    return initials || 'TS';
 }
 
 function renderUILinks() {
     const copyIconSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
 
-    return /*html*/`
+    return /*html*/ `
 <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(156, 163, 175, 0.2); display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
     <a target="_blank" href="/ui/" class="plugin-link-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: background 0.15s;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -820,12 +872,10 @@ function copyPluginUrl(btn) {
  * Note: The fourth argument is backward compatible:
  * - If a string is passed, it is treated as the title.
  * - If an array is passed, it is treated as MCP providers and the fifth argument (if any) is the title.
- * @deprecated Static templates were replaced by a React site. Do not use them anymore. 
+ * @deprecated Static templates were replaced by a React site. Do not use them anymore.
  * Will be removed.
  */
-export function indexPage(
-    config: ToolServerConfig
-): string {
+export function indexPage(config: ToolServerConfig): string {
     const {
         title = 'Tools Server',
         tools = [],
@@ -838,8 +888,7 @@ export function indexPage(
         hideUILinks = false,
     } = config;
 
-
-    return /*html*/`
+    return /*html*/ `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -862,13 +911,13 @@ export function indexPage(
                         Discover the tools, activities, skills, interactions, and content types exposed by this server.
                     </p>
                     <div class="hero-summary">
-                        ${tools.length ? /*html*/`<span><dot></dot> ${tools.length} tool collection${tools.length !== 1 ? 's' : ''}</span>` : ''}
-                        ${activities.length ? /*html*/`<span><dot></dot> ${activities.length} activity collection${activities.length !== 1 ? 's' : ''}</span>` : ''}
-                        ${skills.length ? /*html*/`<span><dot></dot> ${skills.length} skill collection${skills.length !== 1 ? 's' : ''}</span>` : ''}
-                        ${interactions.length ? /*html*/`<span><dot></dot> ${interactions.length} interaction collection${interactions.length !== 1 ? 's' : ''}</span>` : ''}
-                        ${types.length ? /*html*/`<span><dot></dot> ${types.length} content type collection${types.length !== 1 ? 's' : ''}</span>` : ''}
-                        ${templates.length ? /*html*/`<span><dot></dot> ${templates.length} template collection${templates.length !== 1 ? 's' : ''}</span>` : ''}
-                        ${mcpProviders.length ? /*html*/`<span><dot></dot> ${mcpProviders.length} MCP provider${mcpProviders.length !== 1 ? 's' : ''}</span>` : ''}
+                        ${tools.length ? /*html*/ `<span><dot></dot> ${tools.length} tool collection${tools.length !== 1 ? 's' : ''}</span>` : ''}
+                        ${activities.length ? /*html*/ `<span><dot></dot> ${activities.length} activity collection${activities.length !== 1 ? 's' : ''}</span>` : ''}
+                        ${skills.length ? /*html*/ `<span><dot></dot> ${skills.length} skill collection${skills.length !== 1 ? 's' : ''}</span>` : ''}
+                        ${interactions.length ? /*html*/ `<span><dot></dot> ${interactions.length} interaction collection${interactions.length !== 1 ? 's' : ''}</span>` : ''}
+                        ${types.length ? /*html*/ `<span><dot></dot> ${types.length} content type collection${types.length !== 1 ? 's' : ''}</span>` : ''}
+                        ${templates.length ? /*html*/ `<span><dot></dot> ${templates.length} template collection${templates.length !== 1 ? 's' : ''}</span>` : ''}
+                        ${mcpProviders.length ? /*html*/ `<span><dot></dot> ${mcpProviders.length} MCP provider${mcpProviders.length !== 1 ? 's' : ''}</span>` : ''}
                     </div>
                     ${hideUILinks ? '' : renderUILinks()}
                 </div>
@@ -907,19 +956,25 @@ export function indexPage(
             </p>
         </div>
 
-        ${tools.length > 0 ? /*html*/`
+        ${
+            tools.length > 0
+                ? /*html*/ `
         <section data-section="tools">
             <div class="section-header">
                 <h2>Tool Collections</h2>
                 <p class="section-subtitle">Remote tools available to agents via Vertesia.</p>
             </div>
             <div class="card-grid">
-                ${tools.map(t => collectionCard(t, 'tools')).join('')}
+                ${tools.map((t) => collectionCard(t, 'tools')).join('')}
             </div>
         </section>
-        ` : ''}
+        `
+                : ''
+        }
 
-        ${activities.length > 0 ? /*html*/`
+        ${
+            activities.length > 0
+                ? /*html*/ `
         <section data-section="activities">
             <hr>
             <div class="section-header">
@@ -927,15 +982,21 @@ export function indexPage(
                 <p class="section-subtitle">Remote activities for DSL workflows, invoked via HTTP.</p>
             </div>
             <div class="card-grid">
-                ${activities.map((a: ActivityCollection) => {
-        const count = a.getActivityDefinitions().length;
-        return collectionCard(a, 'activities', `${count} activit${count !== 1 ? 'ies' : 'y'}`);
-    }).join('')}
+                ${activities
+                    .map((a: ActivityCollection) => {
+                        const count = a.getActivityDefinitions().length;
+                        return collectionCard(a, 'activities', `${count} activit${count !== 1 ? 'ies' : 'y'}`);
+                    })
+                    .join('')}
             </div>
         </section>
-        ` : ''}
+        `
+                : ''
+        }
 
-        ${skills.length > 0 ? /*html*/`
+        ${
+            skills.length > 0
+                ? /*html*/ `
         <section data-section="skills">
             <hr>
             <div class="section-header">
@@ -943,15 +1004,21 @@ export function indexPage(
                 <p class="section-subtitle">Reusable instructions and scripts packaged as tools.</p>
             </div>
             <div class="card-grid">
-                ${skills.map(s => {
-        const count = Array.from(s).length;
-        return collectionCard(s, 'skills', `${count} skill${count !== 1 ? 's' : ''}`);
-    }).join('')}
+                ${skills
+                    .map((s) => {
+                        const count = Array.from(s).length;
+                        return collectionCard(s, 'skills', `${count} skill${count !== 1 ? 's' : ''}`);
+                    })
+                    .join('')}
             </div>
         </section>
-        ` : ''}
+        `
+                : ''
+        }
 
-        ${interactions.length > 0 ? /*html*/`
+        ${
+            interactions.length > 0
+                ? /*html*/ `
         <section data-section="interactions">
             <hr>
             <div class="section-header">
@@ -959,12 +1026,16 @@ export function indexPage(
                 <p class="section-subtitle">Conversation blueprints surfaced in the Vertesia UI.</p>
             </div>
             <div class="card-grid">
-                ${interactions.map(i => collectionCard(i, 'interactions')).join('')}
+                ${interactions.map((i) => collectionCard(i, 'interactions')).join('')}
             </div>
         </section>
-        ` : ''}
+        `
+                : ''
+        }
 
-        ${types.length > 0 ? /*html*/`
+        ${
+            types.length > 0
+                ? /*html*/ `
         <section data-section="types">
             <hr>
             <div class="section-header">
@@ -972,15 +1043,21 @@ export function indexPage(
                 <p class="section-subtitle">Schema definitions for structured content in the data store.</p>
             </div>
             <div class="card-grid">
-                ${types.map((t: ContentTypesCollection) => {
-        const count = t.getContentTypes().length;
-        return collectionCard(t, 'types', `${count} type${count !== 1 ? 's' : ''}`);
-    }).join('')}
+                ${types
+                    .map((t: ContentTypesCollection) => {
+                        const count = t.getContentTypes().length;
+                        return collectionCard(t, 'types', `${count} type${count !== 1 ? 's' : ''}`);
+                    })
+                    .join('')}
             </div>
         </section>
-        ` : ''}
+        `
+                : ''
+        }
 
-        ${templates.length > 0 ? /*html*/`
+        ${
+            templates.length > 0
+                ? /*html*/ `
         <section data-section="templates">
             <hr>
             <div class="section-header">
@@ -988,15 +1065,21 @@ export function indexPage(
                 <p class="section-subtitle">Document and presentation templates for content generation.</p>
             </div>
             <div class="card-grid">
-                ${templates.map((t: RenderingTemplateCollection) => {
-        const count = t.getTemplateDefinitions().length;
-        return collectionCard(t, 'templates', `${count} template${count !== 1 ? 's' : ''}`);
-    }).join('')}
+                ${templates
+                    .map((t: RenderingTemplateCollection) => {
+                        const count = t.getTemplateDefinitions().length;
+                        return collectionCard(t, 'templates', `${count} template${count !== 1 ? 's' : ''}`);
+                    })
+                    .join('')}
             </div>
         </section>
-        ` : ''}
+        `
+                : ''
+        }
 
-        ${mcpProviders.length > 0 ? /*html*/`
+        ${
+            mcpProviders.length > 0
+                ? /*html*/ `
         <section data-section="mcp">
             <hr>
             <div class="section-header">
@@ -1004,10 +1087,12 @@ export function indexPage(
                 <p class="section-subtitle">Remote MCP servers available through this tools server.</p>
             </div>
             <div class="card-grid">
-                ${mcpProviders.map(p => mcpProviderCard(p)).join('')}
+                ${mcpProviders.map((p) => mcpProviderCard(p)).join('')}
             </div>
         </section>
-        ` : ''}
+        `
+                : ''
+        }
     </div>
     <script>
     (function () {
@@ -1079,7 +1164,7 @@ export function indexPage(
  */
 export function toolCollectionPage(collection: ToolCollection): string {
     const toolsArray = Array.from(collection);
-    return /*html*/`
+    return /*html*/ `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1109,10 +1194,11 @@ export function toolCollectionPage(collection: ToolCollection): string {
 
     <h2>${toolsArray.length} Tool${toolsArray.length !== 1 ? 's' : ''}</h2>
 
-    ${toolsArray.length > 0 ?
-            toolsArray.map(tool => toolDetailCard(tool, collection.name)).join('') :
-            '<div class="empty-state">No tools in this collection</div>'
-        }
+    ${
+        toolsArray.length > 0
+            ? toolsArray.map((tool) => toolDetailCard(tool, collection.name)).join('')
+            : '<div class="empty-state">No tools in this collection</div>'
+    }
 </body>
 </html>`;
 }
@@ -1122,7 +1208,7 @@ export function toolCollectionPage(collection: ToolCollection): string {
  */
 export function skillCollectionPage(collection: SkillCollection): string {
     const skillsArray = Array.from(collection);
-    return /*html*/`
+    return /*html*/ `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1152,10 +1238,11 @@ export function skillCollectionPage(collection: SkillCollection): string {
 
     <h2>${skillsArray.length} Skill${skillsArray.length !== 1 ? 's' : ''}</h2>
 
-    ${skillsArray.length > 0 ?
-            skillsArray.map(skill => skillDetailCard(skill, collection)).join('') :
-            '<div class="empty-state">No skills in this collection</div>'
-        }
+    ${
+        skillsArray.length > 0
+            ? skillsArray.map((skill) => skillDetailCard(skill, collection)).join('')
+            : '<div class="empty-state">No skills in this collection</div>'
+    }
 </body>
 </html>`;
 }
@@ -1164,7 +1251,7 @@ export function skillCollectionPage(collection: SkillCollection): string {
  * Render a collection header with icon, title, description, and endpoint
  */
 function collectionDetailHeader(collection: ICollection, pathPrefix: string): string {
-    return /*html*/`
+    return /*html*/ `
     <nav class="nav">
         <a href="/">${backArrow} Back to all collections</a>
     </nav>
@@ -1188,7 +1275,7 @@ function collectionDetailHeader(collection: ICollection, pathPrefix: string): st
  * Render a simple item card with name, description, and tags
  */
 function simpleItemCard(item: { name: string; description?: string; tags?: string[] }): string {
-    return /*html*/`
+    return /*html*/ `
     <div class="detail-card">
         <div class="detail-header">
             <div>
@@ -1196,7 +1283,7 @@ function simpleItemCard(item: { name: string; description?: string; tags?: strin
                 <p class="detail-desc">${item.description || 'No description'}</p>
             </div>
             <div class="detail-badges">
-                ${item.tags?.map(tag => `<span class="badge">${tag}</span>`).join('') || ''}
+                ${item.tags?.map((tag) => `<span class="badge">${tag}</span>`).join('') || ''}
             </div>
         </div>
     </div>`;
@@ -1206,7 +1293,7 @@ function simpleItemCard(item: { name: string; description?: string; tags?: strin
  * Render an interaction collection detail page
  */
 export function interactionCollectionPage(collection: InteractionCollection): string {
-    return /*html*/`
+    return /*html*/ `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1221,7 +1308,7 @@ export function interactionCollectionPage(collection: InteractionCollection): st
     <h2>${collection.interactions.length} Interaction${collection.interactions.length !== 1 ? 's' : ''}</h2>
 
     <div class="item-list">
-        ${collection.interactions.map(inter => simpleItemCard(inter)).join('')}
+        ${collection.interactions.map((inter) => simpleItemCard(inter)).join('')}
     </div>
 </body>
 </html>`;
@@ -1232,7 +1319,7 @@ export function interactionCollectionPage(collection: InteractionCollection): st
  */
 export function contentTypeCollectionPage(collection: ContentTypesCollection): string {
     const typesArray = collection.getContentTypes();
-    return /*html*/`
+    return /*html*/ `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1247,7 +1334,7 @@ export function contentTypeCollectionPage(collection: ContentTypesCollection): s
     <h2>${typesArray.length} Content Type${typesArray.length !== 1 ? 's' : ''}</h2>
 
     <div class="item-list">
-        ${typesArray.map(type => simpleItemCard(type)).join('')}
+        ${typesArray.map((type) => simpleItemCard(type)).join('')}
     </div>
 </body>
 </html>`;
@@ -1261,7 +1348,7 @@ export function activityDetailCard(activity: RemoteActivityDefinition, collectio
     const properties = schema?.properties as Record<string, unknown> | undefined;
     const required = (schema as Record<string, unknown>)?.required as string[] | undefined;
 
-    return /*html*/`
+    return /*html*/ `
 <div class="detail-card">
     <div class="detail-header">
         <div>
@@ -1283,15 +1370,20 @@ export function activityDetailCard(activity: RemoteActivityDefinition, collectio
             </div>
         </div>
 
-        ${schema ? /*html*/`
+        ${
+            schema
+                ? /*html*/ `
         <div class="detail-section">
             <h4 class="detail-section-title">Input Schema</h4>
-            ${properties ? /*html*/`
+            ${
+                properties
+                    ? /*html*/ `
             <div class="info-grid" style="margin-bottom: 1rem;">
-                ${Object.entries(properties).map(([key, value]) => {
-        const prop = value as Record<string, unknown>;
-        const isRequired = required?.includes(key);
-        return /*html*/`
+                ${Object.entries(properties)
+                    .map(([key, value]) => {
+                        const prop = value as Record<string, unknown>;
+                        const isRequired = required?.includes(key);
+                        return /*html*/ `
                     <div class="info-item">
                         <div class="info-label">${key}${isRequired ? ' *' : ''}</div>
                         <div class="info-value">
@@ -1299,21 +1391,28 @@ export function activityDetailCard(activity: RemoteActivityDefinition, collectio
                             ${prop.description ? `<br><span style="color: #6b7280; font-size: 0.85rem;">${prop.description}</span>` : ''}
                         </div>
                     </div>`;
-    }).join('')}
+                    })
+                    .join('')}
             </div>
-            ` : ''}
+            `
+                    : ''
+            }
             <details>
                 <summary style="cursor: pointer; color: #6b7280; font-size: 0.85rem;">View full schema</summary>
                 <div class="schema-block" style="margin-top: 0.75rem;">${highlightJson(schema)}</div>
             </details>
         </div>
-        ` : /*html*/`
+        `
+                : /*html*/ `
         <div class="detail-section">
             <div class="empty-state">No input schema defined</div>
         </div>
-        `}
+        `
+        }
 
-        ${activity.output_schema ? /*html*/`
+        ${
+            activity.output_schema
+                ? /*html*/ `
         <div class="detail-section">
             <h4 class="detail-section-title">Output Schema</h4>
             <details>
@@ -1321,7 +1420,9 @@ export function activityDetailCard(activity: RemoteActivityDefinition, collectio
                 <div class="schema-block" style="margin-top: 0.75rem;">${highlightJson(activity.output_schema)}</div>
             </details>
         </div>
-        ` : ''}
+        `
+                : ''
+        }
     </div>
 </div>`;
 }
@@ -1331,7 +1432,7 @@ export function activityDetailCard(activity: RemoteActivityDefinition, collectio
  */
 export function activityCollectionPage(collection: ActivityCollection): string {
     const activitiesArray = collection.getActivityDefinitions();
-    return /*html*/`
+    return /*html*/ `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1361,10 +1462,11 @@ export function activityCollectionPage(collection: ActivityCollection): string {
 
     <h2>${activitiesArray.length} Activit${activitiesArray.length !== 1 ? 'ies' : 'y'}</h2>
 
-    ${activitiesArray.length > 0 ?
-            activitiesArray.map(activity => activityDetailCard(activity, collection.name)).join('') :
-            '<div class="empty-state">No activities in this collection</div>'
-        }
+    ${
+        activitiesArray.length > 0
+            ? activitiesArray.map((activity) => activityDetailCard(activity, collection.name)).join('')
+            : '<div class="empty-state">No activities in this collection</div>'
+    }
 </body>
 </html>`;
 }

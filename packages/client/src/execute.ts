@@ -1,5 +1,26 @@
-import { AsyncExecutionPayload, AsyncExecutionResult, ExecutionRunStatus, InteractionExecutionPayload, InteractionExecutionResult, NamedInteractionExecutionPayload, RateLimitRequestPayload, RateLimitRequestResponse } from '@vertesia/common';
-import { VertesiaClient } from './client.js';
+import {
+    type AsyncExecutionPayload,
+    type AsyncExecutionResult,
+    ExecutionRunStatus,
+    type InteractionExecutionPayload,
+    type InteractionExecutionResult,
+    type NamedInteractionExecutionPayload,
+    type RateLimitRequestPayload,
+    type RateLimitRequestResponse,
+} from '@vertesia/common';
+import type { VertesiaClient } from './client.js';
+
+/**
+ * Client-side timeout for a synchronous (non-streaming) interaction execution. The request blocks on
+ * studio-server until the model finishes — and the LLM (e.g. image generation) can legitimately take
+ * minutes — so the per-request timeout here is long, overriding any short client default. Override
+ * via the VERTESIA_INTERACTION_TIMEOUT_MS env var.
+ */
+const INTERACTION_EXECUTION_TIMEOUT_MS = (() => {
+    const raw = typeof process !== 'undefined' ? process.env?.VERTESIA_INTERACTION_TIMEOUT_MS : undefined;
+    const parsed = raw ? Number.parseInt(raw, 10) : NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 30 * 60 * 1000; // 30 minutes
+})();
 
 export async function EventSourceProvider(): Promise<typeof EventSource> {
     if (typeof globalThis.EventSource === 'function') {
@@ -19,14 +40,23 @@ export async function EventSourceProvider(): Promise<typeof EventSource> {
  * @param payload InteractionExecutionPayload
  * @param onChunk callback to be called when the next chunk of the response is available
  */
-export async function executeInteraction<P = unknown>(client: VertesiaClient,
+export async function executeInteraction<P = unknown>(
+    client: VertesiaClient,
     interactionId: string,
     payload: InteractionExecutionPayload = {},
-    onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P>> {
+    onChunk?: (chunk: string) => void,
+): Promise<InteractionExecutionResult<P>> {
     const stream = !!onChunk;
-    const response = await client.runs.create({
-        ...payload, interaction: interactionId, stream
-    }) as unknown as InteractionExecutionResult<P>;
+    const response = (await client.runs.create(
+        {
+            ...payload,
+            interaction: interactionId,
+            stream,
+        },
+        // Synchronous interaction execution blocks on the model; keep a long client timeout.
+        // (Streaming returns the run immediately, then streams over a separate channel — see below.)
+        { timeoutMs: stream ? undefined : INTERACTION_EXECUTION_TIMEOUT_MS },
+    )) as unknown as InteractionExecutionResult<P>;
     if (stream) {
         if (response.status === ExecutionRunStatus.failed) {
             return response;
@@ -52,17 +82,21 @@ export async function executeInteraction<P = unknown>(client: VertesiaClient,
  * @param onChunk
  * @returns
  */
-export async function executeInteractionByName<P = unknown>(client: VertesiaClient,
+export async function executeInteractionByName<P = unknown>(
+    client: VertesiaClient,
     interaction: string,
     payload: InteractionExecutionPayload = {},
-    onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P>> {
+    onChunk?: (chunk: string) => void,
+): Promise<InteractionExecutionResult<P>> {
     const stream = !!onChunk;
     const response = await client.post<InteractionExecutionResult<P>>('/api/v1/execute', {
         payload: {
             ...payload,
             interaction,
-            stream
+            stream,
         } as NamedInteractionExecutionPayload,
+        // Synchronous interaction execution blocks on the model; keep a long client timeout.
+        timeoutMs: stream ? undefined : INTERACTION_EXECUTION_TIMEOUT_MS,
     });
     if (stream) {
         if (response.status === ExecutionRunStatus.failed) {
@@ -75,10 +109,10 @@ export async function executeInteractionByName<P = unknown>(client: VertesiaClie
 
 function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk: string) => void) {
     return new Promise((resolve, reject) => {
-        (async () => {
+        void (async () => {
             try {
                 const EventSourceImpl = await EventSourceProvider();
-                const streamUrl = new URL(client.runs.baseUrl + '/' + runId + '/stream');
+                const streamUrl = new URL(`${client.runs.baseUrl}/${runId}/stream`);
                 const bearerToken = client._auth ? await client._auth() : undefined;
 
                 if (bearerToken) {
@@ -89,7 +123,7 @@ function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk:
                 }
 
                 const sse = new EventSourceImpl(streamUrl.href);
-                sse.addEventListener("message", ev => {
+                sse.addEventListener('message', (ev) => {
                     try {
                         const data = JSON.parse(ev.data);
                         if (data) {
@@ -99,10 +133,10 @@ function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk:
                         reject(err);
                     }
                 });
-                sse.addEventListener("close", (ev) => {
+                sse.addEventListener('close', (ev) => {
                     try {
                         sse.close();
-                        const msg = JSON.parse(ev.data)
+                        const msg = JSON.parse(ev.data);
                         resolve(msg);
                     } catch (err) {
                         reject(err);
@@ -115,14 +149,20 @@ function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk:
     });
 }
 
-export async function executeInteractionAsync(client: VertesiaClient, payload: AsyncExecutionPayload): Promise<AsyncExecutionResult> {
+export async function executeInteractionAsync(
+    client: VertesiaClient,
+    payload: AsyncExecutionPayload,
+): Promise<AsyncExecutionResult> {
     return await client.post('/api/v1/execute/async', {
         payload,
     });
 }
 
-export async function checkRateLimit(client: VertesiaClient, payload: RateLimitRequestPayload): Promise<RateLimitRequestResponse> {
+export async function checkRateLimit(
+    client: VertesiaClient,
+    payload: RateLimitRequestPayload,
+): Promise<RateLimitRequestResponse> {
     return await client.post('/api/v1/execute/rate-limit/request', {
-        payload
+        payload,
     });
 }

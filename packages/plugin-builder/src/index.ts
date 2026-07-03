@@ -1,22 +1,17 @@
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { Plugin } from "vite";
-import { extractTailwindUtilitiesLayer } from "./parse-css.js";
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import type { Plugin } from 'vite';
+import { extractTailwindUtilitiesLayer } from './parse-css.js';
 
 interface VertesiaPluginBuilderOptions {
-    inlineCss?: boolean,
+    inlineCss?: boolean;
     cssVar?: string;
     // the input file. defaults to src/index.css
     input?: string;
     // the output file name. Defaults to plugin.css
     output?: string;
 }
-export function vertesiaPluginBuilder({
-    inlineCss,
-    cssVar,
-    input,
-    output,
-}: VertesiaPluginBuilderOptions = {}) {
+export function vertesiaPluginBuilder({ inlineCss, cssVar, input, output }: VertesiaPluginBuilderOptions = {}) {
     const CSS_VAR = cssVar || 'css';
     if (!input) input = 'src/index.css';
     if (!output) output = 'plugin.css';
@@ -36,10 +31,7 @@ export function vertesiaPluginBuilder({
         load(id) {
             if (id === 'virtual:vertesia-plugin-css-entry') {
                 // This creates a virtual JS file that imports your actual CSS
-                return {
-                    code: `import "${inputRelative}";`,
-                    moduleType: 'js' as const,
-                };
+                return `import "${inputRelative}";`;
             }
             return null;
         },
@@ -51,25 +43,38 @@ export function vertesiaPluginBuilder({
                 id: 'virtual:vertesia-plugin-css-entry',
             });
         },
-        writeBundle(this, options, bundle) {
-            const virtualChunkFileName = join(options.dir!, 'virtual-vertesia-plugin-css-entry.js');
-            if (existsSync(virtualChunkFileName)) {
-                unlinkSync(virtualChunkFileName);
+        generateBundle(_options, bundle) {
+            const virtualChunkFileName = 'virtual-vertesia-plugin-css-entry.js';
+            delete bundle[virtualChunkFileName];
+            // Remove references to the virtual chunk from Rollup metadata first.
+            for (const chunk of Object.values(bundle)) {
+                if (chunk.type === 'chunk' && chunk.code) {
+                    chunk.imports = chunk.imports.filter((entry) => !entry.endsWith(virtualChunkFileName));
+                    chunk.dynamicImports = chunk.dynamicImports.filter(
+                        (entry) => !entry.endsWith(virtualChunkFileName),
+                    );
+                }
             }
-
+        },
+        writeBundle(this, options, bundle) {
             if (!inlineCss) return;
             // Look for the generated CSS file in the output directory
-            const keys = Object.keys(bundle).filter(k => k === output);
+            const keys = Object.keys(bundle).filter((k) => k === output);
             if (keys.length === 1) {
                 const asset = bundle[jsOutput];
                 if (asset) {
-                    const cssContent = readFileSync(join(options.dir!, output), 'utf8')
+                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
+                    const cssContent = readFileSync(join(options.dir!, output), 'utf8');
                     if (cssContent) {
                         const exportedContent = extractTailwindUtilitiesLayer(cssContent);
                         if (exportedContent) {
+                            // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
                             const jsFile = join(options.dir!, jsOutput);
                             const jsContent = readFileSync(jsFile, 'utf8');
-                            writeFileSync(jsFile, `${jsContent}\nexport const ${CSS_VAR} = \`\n${exportedContent}\n\`;\n`);
+                            writeFileSync(
+                                jsFile,
+                                `${jsContent}\nexport const ${CSS_VAR} = \`\n${exportedContent}\n\`;\n`,
+                            );
                         }
                     }
                 }

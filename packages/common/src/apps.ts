@@ -1,9 +1,9 @@
-import { JSONObject, JSONSchema, ToolDefinition } from "@llumiverse/common";
-import { CatalogInteractionRef } from "./interaction.js";
-import { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from "./store/index.js";
+import type { JSONObject, JSONSchema, ToolDefinition } from '@llumiverse/common';
+import type { CatalogInteractionRef } from './interaction.js';
+import type { DSLActivityOptions, InCodeProcessDefinition, InCodeTypeDefinition } from './store/index.js';
 
 /** Allowed values for AppUINavItem.preferredSection */
-export const PREFERRED_SECTIONS = ["default", "footer", "settings"] as const;
+export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
 
 /**
  * Additional navigation item for an app's UI configuration.
@@ -44,7 +44,7 @@ export interface AppUIConfig {
      * - shadow - use Shadow DOM to fully isolate the plugin from the host.
      * - css - use CSS processing (like prefixing or other isolation techniques). Ligther but plugins may conflict with the host
      */
-    isolation?: "shadow" | "css";
+    isolation?: 'shadow' | 'css';
     /**
      * Navigation items for the app's sidebar UI.
      * Only applicable for apps with UI capability in shell contexts (ie. CompositeApp shell).
@@ -72,12 +72,12 @@ export interface AppInstallationsQuery {
 /**
  * Authentication type for tool collections
  */
-export type ToolCollectionAuthType = "oauth" | "other";
+export type ToolCollectionAuthType = 'oauth' | 'other';
 
 /**
  * Tool collection type
  */
-export type ToolCollectionType = "mcp" | "vertesia_sdk";
+export type ToolCollectionType = 'mcp' | 'vertesia_sdk';
 
 /**
  * Base tool collection configuration
@@ -131,7 +131,7 @@ export interface MCPOAuthConfig {
  * MCP tool collection configuration (requires name, description, and namespace)
  */
 export interface MCPToolCollectionObject extends BaseToolCollectionObject {
-    type: "mcp";
+    type: 'mcp';
 
     /**
      * Stable identifier for this collection.
@@ -196,7 +196,7 @@ export interface MCPToolCollectionObject extends BaseToolCollectionObject {
  * Vertesia SDK tool collection configuration
  */
 export interface VertesiaSDKToolCollectionObject extends BaseToolCollectionObject {
-    type: "vertesia_sdk";
+    type: 'vertesia_sdk';
 
     /**
      * Optional namespace to use for tool names from this collection.
@@ -286,7 +286,6 @@ export function normalizeToolCollection(collection: ToolCollectionObject, vars?:
     return collection;
 }
 
-
 /**
  * Metadata hints from MCP tool annotations (per MCP spec).
  */
@@ -304,11 +303,21 @@ export interface MCPToolAnnotations {
 }
 
 /**
+ * Approval behavior class for a tool exposed to agents.
+ *
+ * - `read_only`: reads or inspects state without changing Vertesia, external systems, or user-visible artifacts.
+ * - `side_effecting`: can create, update, delete, send, execute, schedule, or otherwise change state.
+ * - `control`: affects agent control flow or tool availability, not user data or external systems.
+ * - `requires_confirmation`: high-impact action that must ask the user even in interactive full-control mode.
+ */
+export type AgentToolApprovalClass = 'read_only' | 'side_effecting' | 'control' | 'requires_confirmation';
+
+/**
  * Tool definition with optional activation control for agent exposure.
  */
 export interface AgentToolDefinition extends ToolDefinition {
     /**
-     * The tool execution URL. It can be an absolute URL or a path in which case the URL is obtained 
+     * The tool execution URL. It can be an absolute URL or a path in which case the URL is obtained
      * using the base URL of the tool server API. Ex: http://tool-server.com/api/
      * Example of relative URLs: "tools/my-tool-collection" or "/api/tools/my-tool-collection"
      */
@@ -334,15 +343,10 @@ export interface AgentToolDefinition extends ToolDefinition {
      */
     annotations?: MCPToolAnnotations;
     /**
-     * When true, agents must obtain explicit user confirmation via `ask_user`
-     * (Yes/No) before invoking this tool. If the user answers No, the tool
-     * must not run and should return an error indicating the user declined.
-     *
-     * Stronger than `annotations.destructiveHint` (which is only a hint) —
-     * this is a hard contract the agent is expected to honor. Set on tools
-     * that perform irreversible or destructive actions (e.g. delete_*).
+     * Approval classification used by interactive agent approval modes.
+     * Use `requires_confirmation` for actions that must prompt even in full-control mode.
      */
-    requires_user_confirmation?: boolean;
+    approval_class?: AgentToolApprovalClass;
 }
 
 /**
@@ -374,6 +378,37 @@ export interface RemoteActivityDefinition {
 
 export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
+
+/**
+ * Access control policy for an app installation.
+ * Declares which access surfaces are gated by per-user ACEs.
+ *
+ * - 'all' (default): every surface (UI portal, tool/endpoint use, contributions) requires
+ *   an explicit app_member ACE — the historical behavior.
+ * - 'ui': UI portal visibility requires an ACE, but tool/endpoint use and contributions
+ *   are open to anyone in the project.
+ * - 'none': fully open within the project — no ACE required for any surface.
+ *
+ * Declared on the manifest as the app's default. May be overridden per-installation.
+ */
+export type AppAccessControl = 'all' | 'ui' | 'none';
+
+/**
+ * Resolve the effective access_control policy for an installed app:
+ * installation override wins, then manifest default, then `'all'`.
+ *
+ * Shared by the STS (JWT generation), the studio-server (validation), and the UI (badge display)
+ * so the resolution rule lives in exactly one place. Named `effectiveAppAccessControl` (not just
+ * `effectiveAccessControl`) because exports from `@vertesia/common` are flattened — the broader
+ * name would risk colliding with other access-control families added later.
+ */
+export function effectiveAppAccessControl(
+    installation: { access_control?: AppAccessControl } | null | undefined,
+    manifest: { access_control?: AppAccessControl } | null | undefined,
+): AppAccessControl {
+    return installation?.access_control ?? manifest?.access_control ?? 'all';
+}
+
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.
@@ -387,7 +422,7 @@ export interface AppManifestData {
      * - "private": visible only to the owning account
      * - "vertesia": visible only to Vertesia team members (any project)
      */
-    visibility: "public" | "private" | "vertesia";
+    visibility: 'public' | 'private' | 'vertesia';
 
     title: string;
     description: string;
@@ -404,19 +439,19 @@ export interface AppManifestData {
      */
     color?: string;
 
-    status: "beta" | "stable" | "deprecated"
+    status: 'beta' | 'stable' | 'deprecated';
 
     /**
-     * The UI configuration of the app. If not specified and the app "ui" is in the app capabilities 
+     * The UI configuration of the app. If not specified and the app "ui" is in the app capabilities
      * then the ui configuration will be fetched from the endpoint property.
      */
-    ui?: AppUIConfig
+    ui?: AppUIConfig;
 
     /**
      * A list of tool collections endpoints to be used by this app.
      * Prefer using endpoint over tool_collections.
      */
-    tool_collections?: ToolCollectionObject[]
+    tool_collections?: ToolCollectionObject[];
 
     /**
      * Named OAuth providers shared across multiple MCP tool collections.
@@ -432,7 +467,7 @@ export interface AppManifestData {
      * The URL must provide 2 endpoints:
      * 1. GET URL - must return a JSON array with the list of interactions (as AppInteractionRef[])
      * 2. GET URL/{interaction_name} - must return the full interaction definition for the specified interaction.
-     * This feature is for advanced composition of interactions. Prefer using endpoint. 
+     * This feature is for advanced composition of interactions. Prefer using endpoint.
      */
     interactions?: string;
 
@@ -458,13 +493,13 @@ export interface AppManifestData {
      * - ui
      * - tools
      * - interactions
- * - types
- * - processes
+     * - types
+     * - processes
      * - settings
      * - all (the default if no scope is provided)
      *  You can also use comma-separated values to combine scopes (e.g. "ui,tools").
-     * 
-     * Example: 
+     *
+     * Example:
      * - ?scope=ui,tools - returns only the UI configuration
      */
     endpoint?: string;
@@ -488,6 +523,13 @@ export interface AppManifestData {
      * controls that don't apply to synthetic installations.
      */
     tags?: string[];
+
+    /**
+     * Access control policy for the app. Defaults to 'all' (ACE-gated everywhere)
+     * when undefined. See {@link AppAccessControl} for semantics. May be overridden
+     * on the AppInstallation.
+     */
+    access_control?: AppAccessControl;
 }
 
 /**
@@ -561,16 +603,16 @@ export function resolveAppEndpoint(
     manifest: Pick<AppManifestData, 'endpoint' | 'endpoint_overrides'>,
     envName?: string,
     vars?: Endpoints,
-    requestedOverride?: string
+    requestedOverride?: string,
 ): string | undefined {
     let raw: string | undefined;
-    if (requestedOverride
-        && manifest.endpoint_overrides?.[requestedOverride]
-        && isValidEndpointOverrideEnv(requestedOverride)) {
+    if (
+        requestedOverride &&
+        manifest.endpoint_overrides?.[requestedOverride] &&
+        isValidEndpointOverrideEnv(requestedOverride)
+    ) {
         raw = manifest.endpoint_overrides[requestedOverride];
-    } else if (envName
-        && manifest.endpoint_overrides?.[envName]
-        && isValidEndpointOverrideEnv(envName)) {
+    } else if (envName && manifest.endpoint_overrides?.[envName] && isValidEndpointOverrideEnv(envName)) {
         raw = manifest.endpoint_overrides[envName];
     } else {
         raw = manifest.endpoint;
@@ -591,7 +633,7 @@ export function resolveManifestUrls(
     manifest: Partial<AppManifestData> | null | undefined,
     envName?: string,
     vars?: Endpoints,
-    requestedOverride?: string
+    requestedOverride?: string,
 ): void {
     if (!manifest) return;
 
@@ -614,17 +656,27 @@ export function resolveManifestUrls(
     }
 }
 
-export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'processes' | 'templates' | 'settings' | 'widgets' | 'activities' | 'all';
+export type AppPackageScope =
+    | 'ui'
+    | 'tools'
+    | 'interactions'
+    | 'types'
+    | 'processes'
+    | 'templates'
+    | 'settings'
+    | 'widgets'
+    | 'activities'
+    | 'all';
 export interface AppPackage {
     /**
      * The UI configuration of the app
      */
-    ui?: AppUIConfig
+    ui?: AppUIConfig;
 
     /**
      * A list of tools exposed by the app.
      */
-    tools?: AgentToolDefinition[]
+    tools?: AgentToolDefinition[];
 
     /**
      * A list of skills (`learn_*` tools) exposed by the app. Kept separate from
@@ -632,7 +684,7 @@ export interface AppPackage {
      * (e.g. the worker building a combined tool registry) should concatenate
      * the two lists.
      */
-    skills?: AgentToolDefinition[]
+    skills?: AgentToolDefinition[];
 
     /**
      * A list of interactions exposed by the app
@@ -706,8 +758,19 @@ export interface AppManifest extends AppManifestData {
     id: string;
     /** The owning account. Undefined for apps imported from a master region. */
     account?: string;
+    /** Source metadata for generated or synced app manifests. */
+    source?: AppManifestSource;
     created_at: string;
     updated_at: string;
+}
+
+export interface AppManifestSource {
+    kind: 'git';
+    git: {
+        url: string;
+        default_branch?: string;
+        development_branch?: string;
+    };
 }
 
 /**
@@ -770,6 +833,12 @@ export interface AppInstallation {
      * Multiple collections sharing the same provider all resolve to the same OAuth provider.
      */
     provider_bindings?: AppInstallationProviderBinding[];
+    /**
+     * Per-installation override of the manifest's access_control policy.
+     * When set, takes precedence over the manifest value. When undefined, the
+     * manifest value (or 'all' default) applies.
+     */
+    access_control?: AppAccessControl;
     created_at: string;
     updated_at: string;
 }
@@ -805,6 +874,19 @@ export type AppOAuthProviderParams = Record<string, OAuthClientCredentials>;
 export interface AppInstallationPayload {
     app_id: string;
     settings?: Record<string, unknown>;
+    /**
+     * Per-installation override of the manifest's `access_control` policy. When provided, takes precedence
+     * over the manifest default for every access check. Sibling of `settings` — admin-controlled, not
+     * part of the app's own settings JSON.
+     *
+     * Three send-time semantics on update:
+     *  - Field omitted entirely from the payload → leave the existing override unchanged.
+     *  - Explicit `null` → clear the override, fall back to the manifest default.
+     *  - String enum → set the override to that value.
+     *
+     * (On install, the same shape applies; omit or pass `null` to use the manifest default.)
+     */
+    access_control?: AppAccessControl | null;
     /**
      * OAuth credentials for each collection, keyed by collection.id.
      * Legacy callers may still use collection.name for older manifests.
@@ -842,7 +924,7 @@ export interface AppToolCollection {
     /**
      * the tools provided by this collection
      */
-    tools: AgentToolDefinition[]
+    tools: AgentToolDefinition[];
 }
 
 /**
@@ -960,10 +1042,9 @@ export interface CompositeAppLogoOverrides {
     hideFooterLogo?: boolean;
 }
 
-
 /**
  * Message banner overrides for the shell header.
-*/
+ */
 export type CompositeAppMessageStyle = 'foreground' | 'info' | 'success' | 'attention' | 'destructive';
 export interface CompositeAppMessageOverrides {
     /** Message text to display */
@@ -986,6 +1067,10 @@ export interface CompositeAppSwitchersOverrides {
 
 /**
  * Header button visibility overrides for the CompositeApp header.
+ *
+ * @deprecated Superseded by `CompositeAppConfig.headerMenu` (free-form header items).
+ * Retained for backward compatibility and to seed the default header menu when no
+ * `headerMenu` has been configured yet.
  */
 export interface CompositeAppHeaderOverrides {
     /** Whether to hide the App Portal button (defaults to false) */
@@ -998,6 +1083,10 @@ export interface CompositeAppHeaderOverrides {
 
 /**
  * User menu overrides for the CompositeApp.
+ *
+ * @deprecated Superseded by the `user_menu` item in `CompositeAppConfig.headerMenu`.
+ * Retained for backward compatibility and to seed the default header menu when no
+ * `headerMenu` has been configured yet.
  */
 export interface CompositeAppUserMenuOverrides {
     /** Whether to hide the User Menu (defaults to false) */
@@ -1061,7 +1150,7 @@ export interface CompositeAppNavItemPermissions {
     groupsAllowed?: string[];
     /** User IDs who can see this item. */
     usersAllowed?: string[];
-    /** ProjectRoles values (e.g. "developer", "manager") whose holders can see this item. */
+    /** SystemRoles values (e.g. "developer", "manager") whose holders can see this item. */
     rolesAllowed?: string[];
 }
 
@@ -1119,6 +1208,51 @@ export interface CompositeAppHomePlugin {
     appRoute?: string;
 }
 
+// ============================================================================
+// Header Menu Types
+// ============================================================================
+
+/**
+ * Discriminator for a header item.
+ * The four built-ins (`app_portal`, `docs`, `help`, `user_menu`) seed the default
+ * header and cannot be deleted (only hidden/customized); `custom` items are fully
+ * user-defined buttons.
+ */
+export type CompositeAppHeaderItemKind = 'app_portal' | 'docs' | 'help' | 'user_menu' | 'custom';
+
+/** Where a header link opens. */
+export type CompositeAppHeaderItemTarget = '_self' | '_blank';
+
+/** Stable identifiers for the built-in header items. */
+export const COMPOSITE_APP_HEADER_BUILTIN_IDS = ['app_portal', 'docs', 'help', 'user_menu'] as const;
+
+/**
+ * A single button in the CompositeApp header bar.
+ *
+ * Unlike sidebar nav-items, header items are free-form and not tied to an installed
+ * app: each is a labelled, icon-bearing button linking to a route or external URL.
+ * The `user_menu` item is special — it renders the account dropdown, so its `icon`,
+ * `href`, and `target` are ignored.
+ */
+export interface CompositeAppHeaderItem {
+    /** Stable unique identifier. Built-ins use their kind as id (e.g. "app_portal"). */
+    id: string;
+    /** Item kind. `custom` for user-added buttons; otherwise one of the four built-ins. */
+    kind: CompositeAppHeaderItemKind;
+    /** Display label, used as the button tooltip / accessible name. */
+    label: string;
+    /** Lucide icon name or SVG content string. Ignored for `user_menu`. */
+    icon?: string;
+    /** Destination route ("/...") or external URL. Ignored for `user_menu`. */
+    href?: string;
+    /** Where to open the link (defaults to "_self"). Ignored for `user_menu`. */
+    target?: CompositeAppHeaderItemTarget;
+    /** When true, this item is hidden from the header. */
+    hidden?: boolean;
+    /** Optional access control settings for this header item. */
+    permissions?: CompositeAppNavItemPermissions;
+}
+
 /**
  * CompositeApp shell configuration.
  * This is the main configuration interface for storing CompositeApp settings.
@@ -1126,9 +1260,9 @@ export interface CompositeAppHomePlugin {
  */
 export interface CompositeAppConfig {
     /**
-     * The unique identifier for this CompositeApp configuration 
+     * The unique identifier for this CompositeApp configuration
      * Undefined if the configuration doesn't exists yet.
-    */
+     */
     id?: string;
     /** The project this CompositeApp belongs to */
     project: string;
@@ -1142,10 +1276,23 @@ export interface CompositeAppConfig {
     switchers?: CompositeAppSwitchersOverrides;
     /** Optional sidebar display overrides */
     sidebar?: CompositeAppSidebarOverrides;
-    /** Optional header button visibility overrides */
+    /**
+     * @deprecated Use `headerMenu` instead. Optional header button visibility overrides.
+     * Still read to seed `headerMenu` defaults for configs saved before the header menu existed.
+     */
     header?: CompositeAppHeaderOverrides;
-    /** Optional user menu overrides */
+    /**
+     * @deprecated Use the `user_menu` item in `headerMenu` instead. Optional user menu overrides.
+     * Still read to seed `headerMenu` defaults for configs saved before the header menu existed.
+     */
     userMenu?: CompositeAppUserMenuOverrides;
+    /**
+     * Optional free-form header menu. When present, the header renders from this ordered
+     * list instead of the legacy `header`/`userMenu` flags. Built-in items (App Portal,
+     * Docs, Help, User Menu) can be hidden/relabeled/re-icon'd/redirected; custom items
+     * are arbitrary buttons.
+     */
+    headerMenu?: CompositeAppHeaderItem[];
     /** Optional theme overrides (e.g. disable dark mode) */
     theme?: CompositeAppThemeOverrides;
     /** Optional home page override. When set, redirects "/" to the specified app route instead of the dashboard. Send null to unset. */

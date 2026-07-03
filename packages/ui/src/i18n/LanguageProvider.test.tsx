@@ -1,8 +1,7 @@
 /// <reference lib="dom" />
 // @vitest-environment jsdom
-import { StrictMode } from 'react';
+import { act, StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LanguageProvider, useLanguage } from './LanguageProvider.js';
 import type { SupportedLanguage } from './rtl.js';
@@ -25,8 +24,8 @@ function mount(node: React.ReactNode) {
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
-    act(() => {
-        root!.render(node);
+    void act(() => {
+        root?.render(node);
     });
 }
 
@@ -37,7 +36,7 @@ describe('LanguageProvider', () => {
         document.documentElement.lang = '';
     });
     afterEach(() => {
-        act(() => {
+        void act(() => {
             root?.unmount();
         });
         container?.remove();
@@ -123,13 +122,13 @@ describe('LanguageProvider', () => {
         expect(document.documentElement.dir).toBe('ltr');
         expect(document.documentElement.lang).toBe('en');
 
-        act(() => {
+        void act(() => {
             snap.setLanguage('ar');
         });
         expect(document.documentElement.dir).toBe('rtl');
         expect(document.documentElement.lang).toBe('ar');
 
-        act(() => {
+        void act(() => {
             snap.setLanguage('fr');
         });
         expect(document.documentElement.dir).toBe('ltr');
@@ -147,7 +146,7 @@ describe('LanguageProvider', () => {
                 <Probe />
             </LanguageProvider>,
         );
-        act(() => {
+        void act(() => {
             snap.setLanguage('ar');
         });
         expect(localStorage.getItem(STORAGE_KEY)).toBe('ar');
@@ -164,11 +163,10 @@ describe('LanguageProvider', () => {
                 <Probe />
             </LanguageProvider>,
         );
-        act(() => {
+        void act(() => {
             snap.setLanguage('ar');
         });
         expect(localStorage.getItem('custom-lang-key')).toBe('ar');
         expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     });
 });
-

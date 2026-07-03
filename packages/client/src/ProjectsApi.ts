@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import {
+import { ApiTopic, type ClientBase, type ServerError } from '@vertesia/api-fetch-client';
+import type {
     CompositeAppConfig,
     CompositeAppConfigPayload,
     CountResult,
@@ -18,11 +18,14 @@ import {
     RenderingTemplateDefinition,
     RenderingTemplateDefinitionRef,
     SupportedIntegrations,
-} from "@vertesia/common";
+} from '@vertesia/common';
 
 export default class ProjectsApi extends ApiTopic {
+    integrations: IntegrationsConfigurationApi;
+
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/projects");
+        super(parent, '/api/v1/projects');
+        this.integrations = new IntegrationsConfigurationApi(this);
     }
 
     list(account?: string[]): Promise<ProjectRef[]> {
@@ -35,13 +38,13 @@ export default class ProjectsApi extends ApiTopic {
 
     create(payload: ICreateProjectPayload): Promise<Project> {
         return this.post('/', {
-            payload
+            payload,
         });
     }
 
     update(projectId: string, payload: Partial<Project>): Promise<Project> {
         return this.put(`/${projectId}`, {
-            payload
+            payload,
         });
     }
 
@@ -51,11 +54,9 @@ export default class ProjectsApi extends ApiTopic {
 
     updateConfiguration(projectId: string, payload: Partial<ProjectConfiguration>): Promise<ProjectConfiguration> {
         return this.put(`/${projectId}/configuration`, {
-            payload
+            payload,
         });
     }
-
-    integrations: IntegrationsConfigurationApi = new IntegrationsConfigurationApi(this);
 
     /**
      * List all tools available in the project with their app installation info.
@@ -80,7 +81,7 @@ export default class ProjectsApi extends ApiTopic {
 
     listAppContentTypes(projectId: string, tag?: string): Promise<InCodeTypeDefinition[]> {
         return this.get(`/${projectId}/app-types`, {
-            query: { tag }
+            query: { tag },
         });
     }
 
@@ -90,7 +91,7 @@ export default class ProjectsApi extends ApiTopic {
 
     listAppProcesses(projectId: string, tag?: string): Promise<InCodeProcessDefinition[]> {
         return this.get(`/${projectId}/app-processes`, {
-            query: { tag }
+            query: { tag },
         });
     }
 
@@ -100,7 +101,7 @@ export default class ProjectsApi extends ApiTopic {
 
     listAppRenderingTemplates(projectId: string, tag?: string): Promise<RenderingTemplateDefinitionRef[]> {
         return this.get(`/${projectId}/app-templates`, {
-            query: { tag }
+            query: { tag },
         });
     }
 
@@ -112,36 +113,46 @@ export default class ProjectsApi extends ApiTopic {
         return this.get(`/${projectId}/composite-app`);
     }
 
-    updateCompositeAppConfiguration(projectId: string, payload: CompositeAppConfigPayload): Promise<CompositeAppConfig> {
+    updateCompositeAppConfiguration(
+        projectId: string,
+        payload: CompositeAppConfigPayload,
+    ): Promise<CompositeAppConfig> {
         return this.put(`/${projectId}/composite-app`, {
-            payload
+            payload,
         });
     }
-
 }
 
 class IntegrationsConfigurationApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
-        super(parent, "/");
+        super(parent, '/');
     }
 
     list(projectId: string): Promise<ProjectIntegrationListEntry[]> {
         return this.get<ProjectIntegrationListResponse>(`/${projectId}/integrations`).then((res) => res.integrations);
     }
 
-    retrieve(projectId: string, integrationId: SupportedIntegrations): Promise<ProjectIntegrationConfigResponse | undefined> {
-        return this.get<ProjectIntegrationConfigResponse>(`/${projectId}/integrations/${integrationId}`).catch(err => {
-            if (err.status === 404) {
-                return undefined;
-            }
-            throw err;
-        });
+    retrieve(
+        projectId: string,
+        integrationId: SupportedIntegrations,
+    ): Promise<ProjectIntegrationConfigResponse | undefined> {
+        return this.get<ProjectIntegrationConfigResponse>(`/${projectId}/integrations/${integrationId}`).catch(
+            (err) => {
+                if (err.status === 404) {
+                    return undefined;
+                }
+                throw err;
+            },
+        );
     }
 
-    update(projectId: string, integrationId: string, payload: ProjectIntegrationConfigRequest): Promise<ProjectIntegrationConfigResponse> {
+    update(
+        projectId: string,
+        integrationId: string,
+        payload: ProjectIntegrationConfigRequest,
+    ): Promise<ProjectIntegrationConfigResponse> {
         return this.put(`/${projectId}/integrations/${integrationId}`, {
-            payload
+            payload,
         });
     }
 
@@ -152,5 +163,4 @@ class IntegrationsConfigurationApi extends ApiTopic {
     listPlugins(projectId: string): Promise<string[]> {
         return this.get(`/${projectId}/plugins`);
     }
-
 }

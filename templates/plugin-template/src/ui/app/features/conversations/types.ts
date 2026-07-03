@@ -11,21 +11,8 @@ export const SORT_FIELD_MAP: Record<SortField, string> = {
 
 export const PAGE_SIZE = 100;
 
-export const STATUS_VALUES: AgentRunStatus[] = [
-    'created',
-    'running',
-    'completed',
-    'failed',
-    'cancelled',
-];
+export const STATUS_VALUES: AgentRunStatus[] = ['created', 'running', 'completed', 'failed', 'cancelled'];
 
 export type FilterableField = 'status' | 'agent';
 
-export type BadgeVariant =
-    | 'default'
-    | 'secondary'
-    | 'destructive'
-    | 'attention'
-    | 'success'
-    | 'info'
-    | 'done';
+export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'attention' | 'success' | 'info' | 'done';

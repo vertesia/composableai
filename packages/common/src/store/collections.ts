@@ -1,9 +1,9 @@
-import { BaseObject } from "./common.js";
-import { ColumnLayout, ContentObjectTypeRef } from "./store.js";
+import type { BaseObject } from './common.js';
+import type { ColumnLayout, ContentObjectTypeRef } from './store.js';
 
 export enum CollectionStatus {
-    active = "active",
-    archived = "archived",
+    active = 'active',
+    archived = 'archived',
 }
 
 export interface CreateCollectionPayload {
@@ -18,7 +18,7 @@ export interface CreateCollectionPayload {
     parent?: string | null;
     table_layout?: ColumnLayout[] | null;
     allowed_types?: string[];
-    updated_by?: string,
+    updated_by?: string;
     shared_properties?: string[];
     /** BLP sensitivity level for member documents */
     sensitivity?: number;
@@ -37,7 +37,7 @@ export interface CollectionItem extends BaseObject {
     // A ref to the object type
     type?: ContentObjectTypeRef;
     /**
-     * A flag to indicate whether to track and sync member HEAD revisions. 
+     * A flag to indicate whether to track and sync member HEAD revisions.
      * The default is to sync HEAD revisions for collection members (skip_head_sync: false)
      */
     skip_head_sync: boolean;
@@ -115,12 +115,12 @@ export interface CollectionChildrenUpdateResult {
 }
 
 export interface CollectionMembersUpdatePayload {
-    action: "add" | "delete";
+    action: 'add' | 'delete';
     members: string[];
 }
 
 export interface CollectionChildrenUpdatePayload {
-    action: "add" | "delete";
+    action: 'add' | 'delete';
     children: string[];
 }
 

@@ -1,9 +1,5 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import {
-    FindRelevantSkillsPayload,
-    InjectedSkill,
-    SkillContext,
-} from "@vertesia/common";
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type { FindRelevantSkillsPayload, InjectedSkill, SkillContext } from '@vertesia/common';
 
 /**
  * API client for skill operations.
@@ -13,7 +9,7 @@ import {
  */
 export default class SkillsApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/skills");
+        super(parent, '/api/v1/skills');
     }
 
     /**
@@ -25,7 +21,7 @@ export default class SkillsApi extends ApiTopic {
      */
     findRelevant(context: SkillContext, limit?: number): Promise<InjectedSkill[]> {
         const payload: FindRelevantSkillsPayload = { context, limit };
-        return this.post("/find-relevant", { payload });
+        return this.post('/find-relevant', { payload });
     }
 
     /**
@@ -34,10 +30,7 @@ export default class SkillsApi extends ApiTopic {
      * @param toolNames Optional list of tools being used
      * @returns Array of injected skills
      */
-    findRelevantForTask(
-        taskDescription: string,
-        toolNames?: string[]
-    ): Promise<InjectedSkill[]> {
+    findRelevantForTask(taskDescription: string, toolNames?: string[]): Promise<InjectedSkill[]> {
         return this.findRelevant({
             task_description: taskDescription,
             tool_names: toolNames,

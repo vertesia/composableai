@@ -1,36 +1,47 @@
-import { ColumnLayout, ComplexSearchQuery, ContentObject, ContentObjectItem } from '@vertesia/common';
-import { useUITranslation } from '@vertesia/ui/i18n';
+import type { ColumnLayout, ComplexSearchQuery, ContentObject, ContentObjectItem } from '@vertesia/common';
 import {
-    Filter as BaseFilter,
-    Button, Divider, ErrorBox,
+    type Filter as BaseFilter,
+    Button,
+    Divider,
+    ErrorBox,
     FilterBar,
     FilterBtn,
     FilterClear,
     FilterProvider,
-    SidePanel, Spinner, useIntersectionObserver, useToast
+    SidePanel,
+    Spinner,
+    useIntersectionObserver,
+    useToast,
+    VTooltip,
 } from '@vertesia/ui/core';
-import { useNavigate } from "@vertesia/ui/router";
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { useNavigate } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-import { TypeRegistry } from '../types/TypeRegistry.js';
-import { useTypeRegistry } from '../types/TypeRegistryProvider.js';
 import { Download, ExternalLink, RefreshCw } from 'lucide-react';
-import { useEffect, useRef, useState } from "react";
-import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useDocumentFilterGroups, useDocumentFilterHandler } from '../../facets/DocumentsFacetsNav';
+import type { TypeRegistry } from '../types/TypeRegistry.js';
+import { useTypeRegistry } from '../types/TypeRegistryProvider.js';
 import { ContentDispositionButton } from './components/ContentDispositionButton';
 import { ContentOverview } from './components/ContentOverview';
 import { useDownloadFile } from './components/useDownloadFile';
 import { VectorSearchWidget } from './components/VectorSearchWidget';
+import { DocumentQuickFilterProvider } from './DocumentQuickFilter';
 import { DocumentTable } from './DocumentTable';
-import { ExtendedColumnLayout } from './layout/DocumentTableColumn';
-import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from './search/DocumentSearchContext';
+import type { ExtendedColumnLayout } from './layout/DocumentTableColumn';
+import {
+    useDocumentSearch,
+    useWatchDocumentSearchFacets,
+    useWatchDocumentSearchResult,
+} from './search/DocumentSearchContext';
 import { useDocumentUploadHandler } from './upload/useUploadHandler';
 
 const defaultLayout: ColumnLayout[] = [
-    { name: "ID", field: "id", type: "objectId?slice=-7" },
-    { name: "Name", field: ".", type: "objectName" },
-    { name: "Type", field: "type.name", type: "string" },
-    { name: "Status", field: "status", type: "string" },
-    { name: "Updated At", field: "updated_at", type: "date" },
+    { name: 'ID', field: 'id', type: 'objectId?slice=-7' },
+    { name: 'Name', field: '.', type: 'objectName' },
+    { name: 'Type', field: 'type.name', type: 'string' },
+    { name: 'Status', field: 'status', type: 'string' },
+    { name: 'Updated At', field: 'updated_at', type: 'date' },
 ];
 
 function getTableLayout(registry: TypeRegistry, type: string | undefined): ColumnLayout[] {
@@ -48,42 +59,57 @@ interface DocumentSearchResultsWithDropZoneProps {
      */
     onUploadDone?: (objectIds: string[]) => Promise<void>;
 }
-export function DocumentSearchResultsWithDropZone({ onUploadDone = async () => { }, layout }: DocumentSearchResultsWithDropZoneProps) {
+export function DocumentSearchResultsWithDropZone({
+    onUploadDone = async () => {},
+    layout,
+}: DocumentSearchResultsWithDropZoneProps) {
     const search = useDocumentSearch();
     const toast = useToast();
     const { t } = useUITranslation();
 
     // Create a wrapper around the onUploadDone callback that also refreshes the search
-    const handleUploadDone = async (objectIds: string[]) => {
-        // First, call the original callback
-        await onUploadDone(objectIds);
+    const handleUploadDone = useCallback(
+        async (objectIds: string[]) => {
+            // First, call the original callback
+            await onUploadDone(objectIds);
 
-        // Use a timeout to let the backend catch up, then refresh the search results
-        setTimeout(() => {
-            console.log('Delayed refresh after upload to ensure backend consistency');
-            search.search().then(() => {
-                // Notify the user that the list has been refreshed
-                toast({
-                    title: t('store.documentListRefreshed'),
-                    description: t('store.documentListRefreshedDesc'),
-                    status: "info",
-                    duration: 3000,
-                });
-            }).catch(err => {
-                console.error('Failed to refresh search results:', err);
-            });
-        }, 1000); // 1-second delay for backend processing
-    };
+            // Use a timeout to let the backend catch up, then refresh the search results
+            setTimeout(() => {
+                console.log('Delayed refresh after upload to ensure backend consistency');
+                void search
+                    .search()
+                    .then((refreshed) => {
+                        if (!refreshed) {
+                            return;
+                        }
+                        // Notify the user that the list has been refreshed
+                        toast({
+                            title: t('store.documentListRefreshed'),
+                            description: t('store.documentListRefreshedDesc'),
+                            status: 'info',
+                            duration: 3000,
+                        });
+                    })
+                    .catch((err) => {
+                        console.error('Failed to refresh search results:', err);
+                    });
+            }, 1000); // 1-second delay for backend processing
+        },
+        [onUploadDone, search, t, toast],
+    );
 
     // Use the enhanced standard upload handler with smart processing
     const uploadHandler = useDocumentUploadHandler(handleUploadDone);
 
     // Wrap the uploadHandler to ensure the collectionId is passed
-    const wrappedUploadHandler = (files: File[], type: string | null) => {
-        // Get the collection ID from the search context
-        const collectionId = search.collectionId;
-        return uploadHandler(files, type, collectionId);
-    };
+    const wrappedUploadHandler = useCallback(
+        (files: File[], type: string | null) => {
+            // Get the collection ID from the search context
+            const collectionId = search.collectionId;
+            return uploadHandler(files, type, collectionId);
+        },
+        [search, uploadHandler],
+    );
 
     return <DocumentSearchResults layout={layout} onUpload={wrappedUploadHandler} />;
 }
@@ -94,7 +120,12 @@ interface DocumentSearchResultsProps {
     allowSearch?: boolean;
     onUpload?: (files: File[], type: string | null, collectionId?: string) => Promise<unknown>; // if defined, accept drag drop to upload
 }
-export function DocumentSearchResults({ layout, onUpload, allowFilter = true, allowSearch = true }: DocumentSearchResultsProps) {
+export function DocumentSearchResults({
+    layout,
+    onUpload,
+    allowFilter = true,
+    allowSearch = true,
+}: DocumentSearchResultsProps) {
     // Get the search context to access collectionId
     const { t } = useUITranslation();
     const searchContext = useDocumentSearch();
@@ -115,26 +146,54 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     //TODO _setRefreshTrigger state not used
     const [refreshTrigger, _setRefreshTrigger] = useState(0);
     const [loaded, setLoaded] = useState(0);
-    const [isGridView, setIsGridView] = useState(localStorage.getItem(ContentDispositionButton.LAST_DISPLAYED_VIEW) === "grid");
+    const [isGridView, setIsGridView] = useState(
+        localStorage.getItem(ContentDispositionButton.LAST_DISPLAYED_VIEW) === 'grid',
+    );
     const [filters, setFilters] = useState<BaseFilter[]>([]);
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    const settleSearch = useCallback((promise: Promise<unknown>, errorMessage: string) => {
+        setIsReady(false);
+        void promise
+            .catch((err: unknown) => {
+                console.error(errorMessage, err);
+            })
+            .finally(() => {
+                setIsReady(true);
+            });
+    }, []);
+
     // Trigger initial search when component mounts
     useEffect(() => {
-        if (!isReady && objects.length === 0) {
-            setLoaded(0);
-            // Manually set loading state to show spinner during initial load
-            search._updateRunningState(true);
-            search.search().then(() => {
-                setIsReady(true);
-            }).catch(err => {
-                console.error('Initial search failed:', err);
-                search._updateRunningState(false);
-            });
+        let cancelled = false;
+        if (search.initialized) {
+            setIsReady(true);
+            return () => {
+                cancelled = true;
+            };
         }
-    }, []);
+
+        setIsReady(false);
+        setLoaded(0);
+        void search
+            .search()
+            .catch((err: unknown) => {
+                if (!cancelled) {
+                    console.error('Initial search failed:', err);
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setIsReady(true);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [search]);
 
     useEffect(() => {
         if (objects.length < loaded) {
@@ -142,20 +201,28 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         }
     }, [objects.length, loaded]);
 
-    useIntersectionObserver(loadMoreRef, () => {
-        if (isReady && objects.length > 0 && objects.length != loaded) {
-            setIsReady(false);
-            search.loadMore().finally(() => {
-                setLoaded(objects.length)
-                setIsReady(true);
-            });
-        }
-    }, { deps: [isReady, objects.length] });
-
+    useIntersectionObserver(
+        loadMoreRef,
+        () => {
+            if (isReady && objects.length > 0 && objects.length !== loaded) {
+                setIsReady(false);
+                void search
+                    .loadMore()
+                    .catch((err: unknown) => {
+                        console.error('Failed to load more search results:', err);
+                    })
+                    .finally(() => {
+                        setLoaded(objects.length);
+                        setIsReady(true);
+                    });
+            }
+        },
+        { deps: [isReady, objects.length] },
+    );
 
     // Handler for vector search widget
     const handleVectorSearch = (query?: ComplexSearchQuery) => {
-        if (query && query.vector) {
+        if (query?.vector) {
             search.query.vector = query.vector;
             search.query.full_text = query.full_text;
             search.query.weights = query.weights;
@@ -165,32 +232,32 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 search.limit = query.limit;
                 search.query.limit = query.limit;
             }
-            if (!actualLayout.find((c) => c.name === "Search Score")) {
+            if (!actualLayout.find((c) => c.name === 'Search Score')) {
                 const layout = [
                     ...actualLayout,
                     {
-                        name: "Search Score",
-                        field: "score",
-                        render: (item) => typeof item.score === 'number' ? item.score.toFixed(4) : "0.0000"
+                        name: 'Search Score',
+                        field: 'score',
+                        render: (item) => (typeof item.score === 'number' ? item.score.toFixed(4) : '0.0000'),
                     } satisfies ExtendedColumnLayout,
                 ];
                 setActualLayout(layout);
             }
-            search.search().then(() => setIsReady(true));
-        } else if (query && query.full_text) {
+            settleSearch(search.search(), 'Vector search failed:');
+        } else if (query?.full_text) {
             search.query.full_text = query.full_text;
             if (query.limit !== undefined) {
                 search.limit = query.limit;
                 search.query.limit = query.limit;
             }
-            search.search().then(() => setIsReady(true));
+            settleSearch(search.search(), 'Text search failed:');
         } else if (query === undefined) {
             // Only clear search if this is a user-initiated clear (not initialization)
             // The VectorSearchWidget calls onChange(undefined) during initialization
             if (isReady) {
                 delete search.query.vector;
                 delete search.query.full_text;
-                search.search().then(() => setIsReady(true));
+                settleSearch(search.search(), 'Search reset failed:');
             }
         }
     };
@@ -199,7 +266,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const facetSearch = useDocumentSearch();
 
     const handleRefetch = () => {
-        search.search().then(() => setIsReady(true));
+        settleSearch(search.search(), 'Search refresh failed:');
     };
 
     // Use DocumentsFacetsNav hooks for cleaner organization
@@ -212,13 +279,29 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         handleFilterLogic(newFilters);
     };
 
+    // Per-row quick filters from the table cells: merge into the same filter list (so a chip shows in
+    // the bar) and re-run the search via handleFilterChange.
+    const addQuickFilter = (name: string, value: string | string[]) => {
+        const group = filterGroups.find((g) => g.name === name);
+        const base = { name, type: group?.type, placeholder: group?.placeholder, multiple: group?.multiple };
+        handleFilterChange((prev) => {
+            const others = prev.filter((f) => f.name !== name);
+            if (group?.type === 'stringList' || Array.isArray(value)) {
+                const incoming = Array.isArray(value) ? value : [value];
+                const current = (prev.find((f) => f.name === name)?.value as string[] | undefined) ?? [];
+                return [...others, { ...base, value: Array.from(new Set([...current, ...incoming])) }];
+            }
+            return [...others, { ...base, value: [{ value, label: value }] }];
+        });
+    };
+
     const url = new URL(window.location.href);
     const filtersParam = url.searchParams.get('filters');
 
     if (filtersParam) {
         try {
             const filterPairs = filtersParam.split(';');
-            const validFilterPairs = filterPairs.filter(pair => {
+            const validFilterPairs = filterPairs.filter((pair) => {
                 const [encodedName] = pair.split(':');
                 const name = decodeURIComponent(encodedName);
                 return name !== 'start' && name !== 'end';
@@ -234,26 +317,24 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 window.history.replaceState(window.history.state || {}, '', url.toString());
             }
         } catch (error) {
-            console.error("Failed to clean start/end filters from URL:", error);
+            console.error('Failed to clean start/end filters from URL:', error);
         }
     }
 
     const navigate = useNavigate();
     const onRowClick = (object: ContentObjectItem) => {
         navigate(`/objects/${object.id}`);
-    }
+    };
 
     const previewObject = (objectId: string) => {
-        const obj = objects.find(o => o.id === objectId) || null;
+        const obj = objects.find((o) => o.id === objectId) || null;
         setSelectedObject(obj);
-    }
+    };
 
     return (
         <div className="flex flex-col gap-y-2 flex-1 min-h-0 ">
             <OverviewDrawer object={selectedObject} onClose={() => setSelectedObject(null)} />
-            {
-                error && <ErrorBox title={t('store.error')}>{error.message}</ErrorBox>
-            }
+            {error && <ErrorBox title={t('store.error')}>{error.message}</ErrorBox>}
             <Toolsbar
                 isLoading={isLoading}
                 refreshTrigger={refreshTrigger}
@@ -268,20 +349,22 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
             />
             <div className="flex flex-col w-full flex-1 min-h-0 border rounded-md mb-2">
                 <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
-                    <DocumentTable
-                        objects={objects}
-                        isLoading={!objects.length && isLoading}
-                        layout={actualLayout}
-                        onRowClick={onRowClick}
-                        previewObject={previewObject}
-                        selectedObject={selectedObject}
-                        onUpload={onUpload}
-                        isGridView={isGridView}
-                        collectionId={searchContext.collectionId}
-                    />
+                    <DocumentQuickFilterProvider onFilter={addQuickFilter}>
+                        <DocumentTable
+                            objects={objects}
+                            isLoading={!objects.length && isLoading}
+                            layout={actualLayout}
+                            onRowClick={onRowClick}
+                            previewObject={previewObject}
+                            selectedObject={selectedObject}
+                            onUpload={onUpload}
+                            isGridView={isGridView}
+                            collectionId={searchContext.collectionId}
+                        />
+                    </DocumentQuickFilterProvider>
                     {hasMore ? (
-                        <div ref={loadMoreRef} className="w-full flex justify-center" >
-                            <Spinner size='xl' />
+                        <div ref={loadMoreRef} className="w-full flex justify-center">
+                            <Spinner size="xl" />
                         </div>
                     ) : (
                         <div className="text-muted text-center text-sm py-1">
@@ -323,40 +406,47 @@ function Toolsbar(props: ToolsbarProps) {
 
     return (
         <div className="sticky top-0 z-10 bg-background py-2 flex justify-between items-center">
-            {
-                allowFilter ? (
-                    <FilterProvider
-                        filterGroups={filterGroups}
-                        filters={filters}
-                        setFilters={handleFilterChange}
-                    >
-                        <div>
-                            <div className="flex flex-row gap-4 items-center justify-between w-full">
-                                <div className="flex gap-2 items-center w-2/3">
-                                    {
-                                        allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} className="w-full" />
-                                    }
-                                    <FilterBtn />
-                                </div>
-                            </div>
-                            <div className="flex gap-2 items-center pt-2">
-                                <FilterBar />
-                                <FilterClear />
+            {allowFilter ? (
+                <FilterProvider filterGroups={filterGroups} filters={filters} setFilters={handleFilterChange}>
+                    <div>
+                        <div className="flex flex-row gap-4 items-center justify-between w-full">
+                            <div className="flex gap-2 items-center w-2/3">
+                                {allowSearch && (
+                                    <VectorSearchWidget
+                                        onChange={handleVectorSearch}
+                                        isLoading={isLoading}
+                                        refresh={refreshTrigger}
+                                        className="w-full"
+                                    />
+                                )}
+                                <FilterBtn />
                             </div>
                         </div>
-                    </FilterProvider>
-                ) : (
-                    <div className="flex flex-row gap-4 items-center justify-between w-full">
-                        <div className="flex gap-2 items-center w-2/3">
-                            {
-                                allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} />
-                            }
+                        <div className="flex gap-2 items-center pt-2">
+                            <FilterBar />
+                            <FilterClear />
                         </div>
                     </div>
-                )
-            }
+                </FilterProvider>
+            ) : (
+                <div className="flex flex-row gap-4 items-center justify-between w-full">
+                    <div className="flex gap-2 items-center w-2/3">
+                        {allowSearch && (
+                            <VectorSearchWidget
+                                onChange={handleVectorSearch}
+                                isLoading={isLoading}
+                                refresh={refreshTrigger}
+                            />
+                        )}
+                    </div>
+                </div>
+            )}
             <div className="flex gap-1 items-center">
-                <Button variant="outline" onClick={handleRefetch} alt={t('store.refresh')}><RefreshCw size={16} /></Button>
+                <VTooltip description={t('store.refresh')} asChild size="xs" placement="top">
+                    <Button variant="outline" onClick={handleRefetch} aria-label={t('store.refresh')}>
+                        <RefreshCw size={16} />
+                    </Button>
+                </VTooltip>
                 <ContentDispositionButton onUpdate={setIsGridView} />
             </div>
         </div>
@@ -382,7 +472,12 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
                     <ExternalLink className="size-4" />
                 </Button>
                 {contentSource && (
-                    <Button variant="ghost" size="sm" title="Download" onClick={() => downloadFromContentSource(contentSource, object.name || object.content?.name)}>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Download"
+                        onClick={() => downloadFromContentSource(contentSource, object.name || object.content?.name)}
+                    >
                         <Download className="size-4" />
                     </Button>
                 )}

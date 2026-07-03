@@ -1,0 +1,28 @@
+// Universal base config: settings every Vertesia TypeScript project should have,
+// regardless of build mode or runtime target. Not consumed directly — extend
+// `lib.json`, `web-lib.json`, or `app.json` instead.
+{
+    "compilerOptions": {
+        "target": "ES2024",
+        "lib": ["ES2024"],
+        "useDefineForClassFields": true,
+        "sourceMap": true,
+        "forceConsistentCasingInFileNames": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true
+    },
+    "exclude": [
+        "${configDir}/node_modules",
+        "${configDir}/**/node_modules",
+        "${configDir}/lib",
+        "${configDir}/**/lib",
+        "${configDir}/**/*.test.ts"
+    ]
+}

@@ -1,27 +1,24 @@
-
 /**
  * This hook is used to generate and verify state for OAuth2 authorization requests.
- * @returns 
+ * @returns
  */
 
-import { useCallback } from "react";
-
+import { useCallback } from 'react';
 
 const AUTH_STATE_KEY = 'auth_state';
 const STATE_EXPIRY_KEY = 'auth_state_expiry';
 const STATE_TTL = 5 * 60 * 1000; // 5 min
-
 
 export function useAuthState() {
     // Generate new state
     const generateState = useCallback(() => {
         const state = crypto.randomUUID();
         const expiryTime = Date.now() + STATE_TTL;
-        
+
         // Store state and expiry
         sessionStorage.setItem(AUTH_STATE_KEY, state);
         sessionStorage.setItem(STATE_EXPIRY_KEY, expiryTime.toString());
-        
+
         return state;
     }, []);
 
@@ -32,7 +29,7 @@ export function useAuthState() {
         }
 
         const savedState = sessionStorage.getItem(AUTH_STATE_KEY);
-        const expiryTime = parseInt(sessionStorage.getItem(STATE_EXPIRY_KEY) || '0');
+        const expiryTime = parseInt(sessionStorage.getItem(STATE_EXPIRY_KEY) || '0', 10);
         let reason: string | undefined;
 
         // Verify state matches and hasn't expired

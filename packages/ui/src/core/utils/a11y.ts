@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent } from 'react';
 
 /**
  * Returns an `onKeyDown` handler that fires the given callback when the user presses
@@ -15,7 +15,7 @@ import type { KeyboardEvent } from "react";
  */
 export function onActivateKey<E extends Element>(callback: (event: KeyboardEvent<E>) => void) {
     return (event: KeyboardEvent<E>) => {
-        if (event.key === "Enter" || event.key === " ") {
+        if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
             callback(event);
         }

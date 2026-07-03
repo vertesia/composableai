@@ -1,44 +1,45 @@
 {
-  "name": "@vertesia/plugin-builder",
-  "version": "1.2.0",
-  "description": "A vite plugin to build vertesia UI plugins",
-  "type": "module",
-  "types": "./lib/index.d.ts",
-  "main": "./lib/index.js",
-  "files": [
-    "lib",
-    "src"
-  ],
-  "license": "Apache-2.0",
-  "homepage": "https://docs.vertesiahq.com",
-  "keywords": [
-    "vertesia",
-    "plugin",
-    "vite",
-    "vite-plugin",
-    "ui",
-    "react",
-    "css",
-    "tailwind"
-  ],
-  "scripts": {
-    "lint": "biome lint src",
-    "build": "tsc",
-    "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc"
-  },
-  "devDependencies": {
-    "typescript": "^6.0.2"
-  },
-  "dependencies": {
-    "@adobe/css-tools": "^4.4.1",
-    "@types/node": "^24.1.0"
-  },
-  "peerDependencies": {
-    "vite": "^8.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/vertesia/composableai.git",
-    "directory": "packages/plugin-builder"
-  }
+    "name": "@vertesia/plugin-builder",
+    "version": "1.5.0-dev",
+    "description": "A vite plugin to build vertesia UI plugins",
+    "type": "module",
+    "types": "./lib/index.d.ts",
+    "main": "./lib/index.js",
+    "files": [
+        "lib",
+        "src"
+    ],
+    "license": "Apache-2.0",
+    "homepage": "https://docs.vertesiahq.com",
+    "keywords": [
+        "vertesia",
+        "plugin",
+        "vite",
+        "vite-plugin",
+        "ui",
+        "react",
+        "css",
+        "tailwind"
+    ],
+    "scripts": {
+        "lint": "biome lint src",
+        "build": "tsc -p tsconfig.json",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+    },
+    "devDependencies": {
+        "@vertesia/tsconfig": "workspace:*",
+        "typescript": "^6.0.3"
+    },
+    "dependencies": {
+        "@adobe/css-tools": "^4.5.0",
+        "@types/node": "catalog:"
+    },
+    "peerDependencies": {
+        "vite": "catalog:"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/plugin-builder"
+    }
 }

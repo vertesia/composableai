@@ -1,10 +1,11 @@
-import { ProjectRef, RequireAtLeastOne } from "@vertesia/common";
-import { SelectBox, errorMessage, useFetch } from "@vertesia/ui/core";
-import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from "@vertesia/ui/session";
-import { useState } from "react";
+import type { ProjectRef, RequireAtLeastOne } from '@vertesia/common';
+import { errorMessage, SelectBox, useFetch } from '@vertesia/ui/core';
+import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from '@vertesia/ui/session';
+import { useState } from 'react';
 
 interface AppProjectSelectorProps {
-    app: RequireAtLeastOne<{ id?: string, name?: string }, 'id' | 'name'>;
+    app: RequireAtLeastOne<{ id?: string; name?: string }, 'id' | 'name'>;
+    // biome-ignore lint/suspicious/noConfusingVoidType: void in union is intentional — handlers return boolean (true delegates to default) or nothing
     onChange?: (value: ProjectRef) => void | boolean;
     placeholder?: string;
 }
@@ -12,7 +13,7 @@ export function AppProjectSelector({ app, onChange, placeholder }: AppProjectSel
     const { client, project } = useUserSession();
     const { data: projects, error } = useFetch(() => {
         return client.apps.getAppInstallationProjects(app);
-    }, [app.id, app.name])
+    }, [app.id, app.name]);
 
     const _onChange = (project: ProjectRef) => {
         if (onChange) {
@@ -23,29 +24,41 @@ export function AppProjectSelector({ app, onChange, placeholder }: AppProjectSel
         }
         // default on change
         localStorage.setItem(LastSelectedAccountId_KEY, project.account);
-        localStorage.setItem(LastSelectedProjectId_KEY + '-' + project.account, project.id);
+        localStorage.setItem(`${LastSelectedProjectId_KEY}-${project.account}`, project.id);
         window.location.reload();
-    }
+    };
 
     if (error) {
-        return <span className='text-red-600'>Error: failed to fetch projects: {errorMessage(error)}</span>
+        return <span className="text-red-600">Error: failed to fetch projects: {errorMessage(error)}</span>;
     }
-    return <SelectProject placeholder={placeholder} initialValue={project?.id} projects={projects || []} onChange={_onChange} />
+    return (
+        <SelectProject
+            placeholder={placeholder}
+            initialValue={project?.id}
+            projects={projects || []}
+            onChange={_onChange}
+        />
+    );
 }
 
 interface SelectProjectProps {
-    initialValue?: string
-    projects: ProjectRef[]
-    onChange: (value: ProjectRef) => void
+    initialValue?: string;
+    projects: ProjectRef[];
+    onChange: (value: ProjectRef) => void;
     placeholder?: string;
 }
-function SelectProject({ initialValue, projects, onChange, placeholder = "Select Project" }: Readonly<SelectProjectProps>) {
+function SelectProject({
+    initialValue,
+    projects,
+    onChange,
+    placeholder = 'Select Project',
+}: Readonly<SelectProjectProps>) {
     const [value, setValue] = useState<ProjectRef | undefined>();
     const _onChange = (value: ProjectRef) => {
-        setValue(value)
-        onChange(value)
-    }
-    let actualValue = !value && initialValue ? projects.find(p => p.id === initialValue) : value;
+        setValue(value);
+        onChange(value);
+    };
+    const actualValue = !value && initialValue ? projects.find((p) => p.id === initialValue) : value;
     return (
         <SelectBox
             by="id"
@@ -53,6 +66,7 @@ function SelectProject({ initialValue, projects, onChange, placeholder = "Select
             options={projects}
             optionLabel={(option) => option.name}
             placeholder={placeholder}
-            onChange={_onChange} />
-    )
+            onChange={_onChange}
+        />
+    );
 }

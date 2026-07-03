@@ -1,4 +1,4 @@
-import { DragEventHandler, MutableRefObject, ReactNode, useRef } from "react";
+import { type DragEventHandler, type ReactNode, type RefObject, useRef } from 'react';
 
 type DragCounterElement = HTMLElement & {
     __dragOver_cnt__?: number;
@@ -57,9 +57,9 @@ export function FileUploadInput({ children, onUpload }: FileUploadInputProps) {
         }
     };
     return (
-        <label style={{ cursor: "pointer" }}>
+        <label style={{ cursor: 'pointer' }}>
             {children}
-            <input ref={inputRef} type="file" style={{ display: "none" }} onChange={_onUpload} />
+            <input ref={inputRef} type="file" style={{ display: 'none' }} onChange={_onUpload} />
         </label>
     );
 }
@@ -110,14 +110,14 @@ export function DropZone({ onUpload }: DropZoneProps) {
 
 function _onDragEnter(el: DragCounterElement | null) {
     if (!el) return false;
-    let cnt = el.__dragOver_cnt__ || 0;
+    const cnt = el.__dragOver_cnt__ || 0;
     el.__dragOver_cnt__ = cnt + 1;
     return !cnt; // true if first drag o ver false if dragover already recorded
 }
 
 function _onDragLeave(el: DragCounterElement | null) {
     if (!el) return false;
-    let cnt = el.__dragOver_cnt__;
+    const cnt = el.__dragOver_cnt__;
     if (!cnt) return false;
     el.__dragOver_cnt__ = cnt - 1;
     return cnt === 1; // true if leave false if not
@@ -131,20 +131,20 @@ function _onDrop(el: DragCounterElement | null) {
 export interface IDropZoneOpts {
     onUpload: (files: File[]) => unknown;
     dragOverClass?: string;
-    dropEffect?: "none" | "copy" | "link" | "move";
+    dropEffect?: 'none' | 'copy' | 'link' | 'move';
 }
 export interface IDropZoneProps<T> {
     onDrop: DragEventHandler<T>;
     onDragOver: DragEventHandler<T>;
     onDragEnter: DragEventHandler<T>;
     onDragLeave: DragEventHandler<T>;
-    ref: MutableRefObject<T | null>;
+    ref: RefObject<T | null>;
 }
 
 export function useDropZone<T extends HTMLElement = HTMLDivElement>({
     onUpload,
-    dragOverClass = "is-drag-over-on",
-    dropEffect = "copy",
+    dragOverClass = 'is-drag-over-on',
+    dropEffect = 'copy',
 }: IDropZoneOpts): IDropZoneProps<T> {
     const ref = useRef<T>(null);
 
@@ -157,11 +157,11 @@ export function useDropZone<T extends HTMLElement = HTMLDivElement>({
         if (items) {
             const promises: Promise<File[]>[] = [];
 
-            const traverseFileTree = (item: FileSystemEntry, path: string = ""): Promise<File[]> => {
+            const traverseFileTree = (item: FileSystemEntry, path: string = ''): Promise<File[]> => {
                 return new Promise((resolve) => {
                     if (isFileEntry(item)) {
                         item.file((file: File) => {
-                            Object.defineProperty(file, "webkitRelativePath", { value: path + file.name });
+                            Object.defineProperty(file, 'webkitRelativePath', { value: path + file.name });
                             resolve([file]);
                         });
                     } else if (isDirectoryEntry(item)) {
@@ -171,10 +171,10 @@ export function useDropZone<T extends HTMLElement = HTMLDivElement>({
                         const readEntries = () => {
                             dirReader.readEntries((results) => {
                                 if (!results.length) {
-                                    Promise.all(entries).then((filesArrays) => resolve(filesArrays.flat()));
+                                    void Promise.all(entries).then((filesArrays) => resolve(filesArrays.flat()));
                                 } else {
                                     for (const entry of results) {
-                                        entries.push(traverseFileTree(entry, path + item.name + "/"));
+                                        entries.push(traverseFileTree(entry, `${path + item.name}/`));
                                     }
                                     readEntries();
                                 }
@@ -193,7 +193,7 @@ export function useDropZone<T extends HTMLElement = HTMLDivElement>({
                 }
             }
 
-            Promise.all(promises).then((filesArrays) => {
+            void Promise.all(promises).then((filesArrays) => {
                 const allFiles = filesArrays.flat();
                 if (allFiles.length) {
                     onUpload(allFiles);

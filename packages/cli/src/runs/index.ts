@@ -1,8 +1,8 @@
-import { Command } from "commander";
-import { ExecutionRunStatus } from "@vertesia/common";
-import { getClient } from "../client.js";
-import { writeFile } from "../utils/stdio.js";
-import { getStringOption, type CliOptions } from "../utils/options.js";
+import type { ExecutionRunStatus } from '@vertesia/common';
+import type { Command } from 'commander';
+import { getClient } from '../client.js';
+import { type CliOptions, getStringOption } from '../utils/options.js';
+import { writeFile } from '../utils/stdio.js';
 
 type RunHistoryOptions = CliOptions<{
     page?: string;
@@ -29,7 +29,8 @@ export async function runHistory(program: Command, interactionId: string | undef
     const offset = page * limit;
 
     const response = await client.runs.search({
-        limit, offset,
+        limit,
+        offset,
         query: {
             interaction: interactionId || undefined,
             tags: getStringOption(options.tags)?.split(/\s*,\s*/),
@@ -40,7 +41,6 @@ export async function runHistory(program: Command, interactionId: string | undef
             start: options.start || undefined,
             end: options.end || undefined,
         },
-
     });
 
     const runs = response || [];
@@ -56,7 +56,7 @@ export async function runHistory(program: Command, interactionId: string | undef
     } else if (options.format === 'csv') {
         throw new Error('CSV format is not supported yet');
     } else {
-        throw new Error('Unknown format:' + options.format);
+        throw new Error(`Unknown format:${options.format}`);
     }
 
     if (typeof options.output === 'string') {

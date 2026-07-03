@@ -1,30 +1,32 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import {
-    AlterTablePayload,
-    BatchQueryResult,
-    CreateDataStorePayload,
-    CreateSnapshotPayload,
-    CreateTablesPayload,
-    DataSchema,
-    DataSchemaForAI,
-    DataStoreArchiveResult,
-    DataStore,
+    type AlterTablePayload,
+    type BatchQueryResult,
+    type CreateDataStorePayload,
+    type CreateSnapshotPayload,
+    type CreateTablesPayload,
+    type DataSchema,
+    type DataSchemaForAI,
+    type DataStore,
     DataStoreApiHeaders,
-    DataStoreDownloadInfo,
-    DataStoreItem,
-    DataStoreVersion,
-    DataTable,
-    DataStoreTableDetail,
-    DataStoreTableDropResult,
-    DataTableSummary,
-    ImportDataPayload,
-    ImportJob,
-    QueryPayload,
-    QueryResult,
-    QueryValidationResult,
-    UpdateSchemaPayload,
-} from "@vertesia/common";
-import { DashboardApi } from "./DashboardApi.js";
+    type DataStoreArchiveResult,
+    type DataStoreDownloadInfo,
+    type DataStoreItem,
+    type DataStoreMutateRowsPayload,
+    type DataStoreMutateRowsResult,
+    type DataStoreTableDetail,
+    type DataStoreTableDropResult,
+    type DataStoreVersion,
+    type DataTable,
+    type DataTableSummary,
+    type ImportDataPayload,
+    type ImportJob,
+    type QueryPayload,
+    type QueryResult,
+    type QueryValidationResult,
+    type UpdateSchemaPayload,
+} from '@vertesia/common';
+import { DashboardApi } from './DashboardApi.js';
 
 /**
  * Client API for managing versioned analytical data stores.
@@ -37,7 +39,7 @@ import { DashboardApi } from "./DashboardApi.js";
  */
 export class DataApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/data");
+        super(parent, '/api/v1/data');
     }
 
     /**
@@ -56,7 +58,7 @@ export class DataApi extends ApiTopic {
      * List all data stores in the project.
      */
     list(): Promise<DataStoreItem[]> {
-        return this.get("/");
+        return this.get('/');
     }
 
     /**
@@ -74,7 +76,7 @@ export class DataApi extends ApiTopic {
      * ```
      */
     create(payload: CreateDataStorePayload): Promise<DataStore> {
-        return this.post("/", { payload });
+        return this.post('/', { payload });
     }
 
     /**
@@ -253,7 +255,7 @@ export class DataApi extends ApiTopic {
      *
      * @example
      * ```typescript
-     * const job = await client.data.import(storeId, {
+     * const job = await client.data.importData(storeId, {
      *   mode: 'append',
      *   message: 'Monthly data import',
      *   tables: {
@@ -270,7 +272,7 @@ export class DataApi extends ApiTopic {
      * });
      * ```
      */
-    import(id: string, payload: ImportDataPayload): Promise<ImportJob> {
+    importData(id: string, payload: ImportDataPayload): Promise<ImportJob> {
         return this.post(`/${id}/import`, { payload, headers: this.storeHeaders(id) });
     }
 
@@ -394,6 +396,20 @@ export class DataApi extends ApiTopic {
     }
 
     /**
+     * Execute a single row mutation statement against the data store.
+     *
+     * Only UPDATE and DELETE statements are accepted. The mutation is versioned
+     * and rolled back automatically if the statement or subsequent persistence fails.
+     *
+     * @param id - Data store ID
+     * @param payload - Mutation SQL and commit message
+     * @returns Resulting version ID and affected table row counts
+     */
+    mutateRows(id: string, payload: DataStoreMutateRowsPayload): Promise<DataStoreMutateRowsResult> {
+        return this.post(`/${id}/mutate`, { payload, headers: this.storeHeaders(id) });
+    }
+
+    /**
      * Validate SQL queries without executing them.
      *
      * Uses DuckDB's EXPLAIN to check syntax and table/column references
@@ -418,10 +434,7 @@ export class DataApi extends ApiTopic {
      * }
      * ```
      */
-    validateQueries(
-        id: string,
-        queries: Array<{ name: string; sql: string }>
-    ): Promise<QueryValidationResult> {
+    validateQueries(id: string, queries: Array<{ name: string; sql: string }>): Promise<QueryValidationResult> {
         return this.post(`/${id}/query/validate`, { payload: { queries }, headers: this.storeHeaders(id) });
     }
 

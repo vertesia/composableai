@@ -1,8 +1,13 @@
-import React, { useMemo } from 'react';
+import type React from 'react';
+import { useMemo } from 'react';
 import type { VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
-import { AskUserWidget, type AskUserWidgetProps } from '../../features/agent/chat/AskUserWidget';
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
-import { ArtifactContentRenderer, type ExpandRenderType, makeSvgResponsive, sanitizeSvg } from './ArtifactContentRenderer';
+import {
+    ArtifactContentRenderer,
+    type ExpandRenderType,
+    makeSvgResponsive,
+    sanitizeSvg,
+} from './ArtifactContentRenderer';
 import { useCodeBlockContext } from './CodeBlockContext';
 import { CodeBlockErrorBoundary, CodeBlockPlaceholder } from './CodeBlockPlaceholder';
 import type { CodeBlockRendererProps } from './CodeBlockRendering';
@@ -13,7 +18,7 @@ import { useArtifactContent } from './useArtifactContent';
  * Check if JSON parsing failed due to incomplete content (streaming)
  * vs actually invalid JSON structure
  */
-function isIncompleteJson(code: string): boolean {
+export function isIncompleteJson(code: string): boolean {
     const trimmed = code.trim();
 
     // Empty or very short content is likely incomplete
@@ -30,15 +35,10 @@ function isIncompleteJson(code: string): boolean {
         const message = e instanceof Error ? e.message : '';
 
         // Common indicators of incomplete JSON during streaming
-        const incompleteIndicators = [
-            'unexpected end',
-            'unterminated string',
-            'expected',
-            'unexpected token',
-        ];
+        const incompleteIndicators = ['unexpected end', 'unterminated string', 'expected', 'unexpected token'];
 
         const lowerMessage = message.toLowerCase();
-        if (incompleteIndicators.some(ind => lowerMessage.includes(ind))) {
+        if (incompleteIndicators.some((ind) => lowerMessage.includes(ind))) {
             // Additional check: count brackets to see if they're unbalanced
             let braceCount = 0;
             let bracketCount = 0;
@@ -96,12 +96,9 @@ function parseChartJson(code: string): Record<string, unknown> | null {
 /**
  * Detects the chart library from a parsed spec
  */
-function detectChartLibrary(
-    spec: Record<string, unknown>
-): 'vega-lite' | null {
+function detectChartLibrary(spec: Record<string, unknown>): 'vega-lite' | null {
     // Detect Vega-Lite by $schema containing "vega"
-    const hasVegaSchema =
-        typeof spec.$schema === 'string' && spec.$schema.includes('vega');
+    const hasVegaSchema = typeof spec.$schema === 'string' && spec.$schema.includes('vega');
     const isExplicitVegaLite = spec.library === 'vega-lite' && 'spec' in spec;
 
     if (hasVegaSchema || isExplicitVegaLite) {
@@ -136,21 +133,11 @@ export function VegaLiteCodeBlockHandler({ code }: CodeBlockRendererProps) {
 
     // Show loading placeholder for incomplete JSON (streaming)
     if (incomplete) {
-        return (
-            <CodeBlockPlaceholder
-                type="chart"
-                message="Loading chart..."
-            />
-        );
+        return <CodeBlockPlaceholder type="chart" message="Loading chart..." />;
     }
 
     if (!chartSpec) {
-        return (
-            <CodeBlockPlaceholder
-                type="chart"
-                error="Invalid Vega-Lite specification"
-            />
-        );
+        return <CodeBlockPlaceholder type="chart" error="Invalid Vega-Lite specification" />;
     }
 
     // Render VegaLiteChart directly - bypass AgentChart routing
@@ -195,21 +182,11 @@ export function ChartCodeBlockHandler({ code }: CodeBlockRendererProps) {
 
     // Show loading placeholder for incomplete JSON (streaming)
     if (incomplete) {
-        return (
-            <CodeBlockPlaceholder
-                type="chart"
-                message="Loading chart..."
-            />
-        );
+        return <CodeBlockPlaceholder type="chart" message="Loading chart..." />;
     }
 
     if (!chartSpec) {
-        return (
-            <CodeBlockPlaceholder
-                type="chart"
-                error="Invalid Vega-Lite chart specification"
-            />
-        );
+        return <CodeBlockPlaceholder type="chart" error="Invalid Vega-Lite chart specification" />;
     }
 
     return (
@@ -226,12 +203,7 @@ export function MermaidCodeBlockHandler({ code }: CodeBlockRendererProps) {
     const trimmedCode = code.trim();
 
     if (!trimmedCode) {
-        return (
-            <CodeBlockPlaceholder
-                type="mermaid"
-                error="Empty diagram"
-            />
-        );
+        return <CodeBlockPlaceholder type="mermaid" error="Empty diagram" />;
     }
 
     return (
@@ -239,95 +211,6 @@ export function MermaidCodeBlockHandler({ code }: CodeBlockRendererProps) {
             <MermaidDiagram code={trimmedCode} />
         </CodeBlockErrorBoundary>
     );
-}
-
-/**
- * Proposal/AskUser code block handler
- */
-export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
-    const { onProposalSelect, onProposalSubmit } = useCodeBlockContext();
-
-    // Check if JSON is incomplete (streaming in progress)
-    const incomplete = useMemo(() => isIncompleteJson(code), [code]);
-
-    const widgetProps = useMemo((): AskUserWidgetProps | null => {
-        if (incomplete) return null;
-
-        try {
-            const raw = code.trim();
-            const spec = JSON.parse(raw) as ProposalSpec;
-
-            if (!spec.options || (!spec.question && !spec.title)) {
-                return null;
-            }
-
-            const props: AskUserWidgetProps = {
-                question: spec.question || spec.title || '',
-                description: spec.description,
-                options: Array.isArray(spec.options)
-                    ? spec.options.map((opt) => ({
-                        id: opt.id || opt.value || '',
-                        label: opt.label || '',
-                        description: opt.description,
-                    }))
-                    : undefined,
-                allowFreeResponse: spec.allowFreeResponse ?? spec.multiple,
-                variant: spec.variant,
-                onSelect: onProposalSelect,
-                onSubmit: onProposalSubmit,
-            };
-
-            if (!props.question || !props.options?.length) {
-                return null;
-            }
-
-            return props;
-        } catch {
-            return null;
-        }
-    }, [code, onProposalSelect, onProposalSubmit, incomplete]);
-
-    // Show loading placeholder for incomplete JSON (streaming)
-    if (incomplete) {
-        return (
-            <CodeBlockPlaceholder
-                type="proposal"
-                message="Loading options..."
-            />
-        );
-    }
-
-    if (!widgetProps) {
-        return (
-            <CodeBlockPlaceholder
-                type="proposal"
-                error="Invalid proposal specification"
-            />
-        );
-    }
-
-    return (
-        <CodeBlockErrorBoundary type="proposal" fallbackCode={code}>
-            <AskUserWidget {...widgetProps} />
-        </CodeBlockErrorBoundary>
-    );
-}
-
-interface ProposalOption {
-    id?: string;
-    value?: string;
-    label?: string;
-    description?: string;
-}
-
-interface ProposalSpec {
-    question?: string;
-    title?: string;
-    description?: string;
-    options?: ProposalOption[];
-    allowFreeResponse?: boolean;
-    multiple?: boolean;
-    variant?: AskUserWidgetProps["variant"];
 }
 
 /**
@@ -341,15 +224,14 @@ export function MockupCodeBlockHandler({ code }: CodeBlockRendererProps) {
     }, [code]);
 
     if (!processedSvg) {
-        return (
-            <CodeBlockPlaceholder type="code" error="Empty mockup" />
-        );
+        return <CodeBlockPlaceholder type="code" error="Empty mockup" />;
     }
 
     return (
         <CodeBlockErrorBoundary type="code" fallbackCode={code}>
             <div
                 style={{ margin: '16px 0', width: '100%', overflowX: 'auto' }}
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG content is processed/sanitized upstream for inline rendering
                 dangerouslySetInnerHTML={{ __html: processedSvg }}
             />
         </CodeBlockErrorBoundary>
@@ -379,8 +261,15 @@ export function ExpandCodeBlockHandler({ code, language }: CodeBlockRendererProp
         const type = language.split(':')[1] as ExpandRenderType;
         // Validate known types
         const validTypes: ExpandRenderType[] = [
-            'chart', 'vega-lite', 'table', 'markdown',
-            'fusion-fragment', 'mockup', 'code', 'image', 'auto'
+            'chart',
+            'vega-lite',
+            'table',
+            'markdown',
+            'fusion-fragment',
+            'mockup',
+            'code',
+            'image',
+            'auto',
         ];
         return validTypes.includes(type) ? type : 'auto';
     }, [language]);
@@ -392,39 +281,19 @@ export function ExpandCodeBlockHandler({ code, language }: CodeBlockRendererProp
     });
 
     if (!artifactRunId) {
-        return (
-            <CodeBlockPlaceholder
-                type="expand"
-                error="No artifact run ID available"
-            />
-        );
+        return <CodeBlockPlaceholder type="expand" error="No artifact run ID available" />;
     }
 
     if (isLoading) {
-        return (
-            <CodeBlockPlaceholder
-                type="expand"
-                message={`Loading ${artifactPath}...`}
-            />
-        );
+        return <CodeBlockPlaceholder type="expand" message={`Loading ${artifactPath}...`} />;
     }
 
     if (error) {
-        return (
-            <CodeBlockPlaceholder
-                type="expand"
-                error={`Failed to load artifact: ${error}`}
-            />
-        );
+        return <CodeBlockPlaceholder type="expand" error={`Failed to load artifact: ${error}`} />;
     }
 
     if (data === undefined) {
-        return (
-            <CodeBlockPlaceholder
-                type="expand"
-                error="No content found in artifact"
-            />
-        );
+        return <CodeBlockPlaceholder type="expand" error="No content found in artifact" />;
     }
 
     // Render with explicit type
@@ -461,16 +330,13 @@ export function isExpandLanguage(language: string | undefined): boolean {
  * This allows users to override default behavior for specific languages
  * while still getting built-in support for charts, diagrams, and proposals.
  */
-export function createDefaultCodeBlockHandlers(): Record<
-    string,
-    React.FunctionComponent<CodeBlockRendererProps>
-> {
+export function createDefaultCodeBlockHandlers(): Record<string, React.FunctionComponent<CodeBlockRendererProps>> {
     return {
         // Chart handler for generic chart code blocks (Vega-Lite only)
         chart: ChartCodeBlockHandler,
         // Vega-Lite handlers - always treat as Vega-Lite
         'vega-lite': VegaLiteCodeBlockHandler,
-        'vegalite': VegaLiteCodeBlockHandler,
+        vegalite: VegaLiteCodeBlockHandler,
 
         // Mermaid handler
         mermaid: MermaidCodeBlockHandler,
@@ -479,8 +345,10 @@ export function createDefaultCodeBlockHandlers(): Record<
         mockup: MockupCodeBlockHandler,
         svg: MockupCodeBlockHandler,
 
-        // Proposal handlers
-        proposal: ProposalCodeBlockHandler,
-        askuser: ProposalCodeBlockHandler,
+        // Note: proposal/askuser handlers live in features/agent/chat
+        // (ProposalCodeBlockHandler.tsx). They're registered via
+        // SkillWidgetProvider/CodeBlockRendererProvider to keep
+        // widgets/markdown free of features/agent/chat imports (would
+        // create a runtime module cycle via MarkdownRenderer).
     };
 }

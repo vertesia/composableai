@@ -1,16 +1,16 @@
-import { Command } from "commander";
-import { createReadStream, createWriteStream } from "fs";
-import { basename } from "path";
-import { pipeline } from "stream/promises";
-import { Readable } from "stream";
-import type { ReadableStream as NodeReadableStream } from "node:stream/web";
-import { NodeStreamSource } from "@vertesia/client/node";
-import { getArtifactStorageId } from "../agent-context.js";
-import { getClient } from "../client.js";
-import { type CliOptions } from "../utils/options.js";
+import { createReadStream, createWriteStream } from 'node:fs';
+import { basename } from 'node:path';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
+import { NodeStreamSource } from '@vertesia/client/node';
+import type { Command } from 'commander';
+import { getArtifactStorageId } from '../agent-context.js';
+import { getClient } from '../client.js';
+import type { CliOptions } from '../utils/options.js';
 
 // Artifact storage prefix - matches the client's ARTIFACTS_PREFIX
-const ARTIFACTS_PREFIX = "agents";
+const ARTIFACTS_PREFIX = 'agents';
 
 type ArtifactOptions = CliOptions<{
     runId?: string;
@@ -36,7 +36,7 @@ export async function uploadArtifact(program: Command, file: string | undefined,
     if (!file || file === '-') {
         // Read from stdin
         if (!options.name) {
-            console.error("Error: --name is required when uploading from stdin");
+            console.error('Error: --name is required when uploading from stdin');
             process.exit(1);
         }
         stream = process.stdin;
@@ -76,7 +76,7 @@ export async function listArtifacts(program: Command, options: ArtifactOptions) 
     const artifacts = await client.files.listArtifacts(runId);
     // Show filenames only, strip the agents/{runId}/ prefix
     const prefix = `${ARTIFACTS_PREFIX}/${runId}/`;
-    artifacts.forEach(a => {
+    artifacts.forEach((a) => {
         const filename = a.startsWith(prefix) ? a.slice(prefix.length) : a;
         console.log(filename);
     });

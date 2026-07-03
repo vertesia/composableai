@@ -1,7 +1,12 @@
 import * as protos from '@temporalio/proto';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
-import { Worker, bundleWorkflowCode, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
-import { ContentEventName, DSLActivityExecutionPayload, DSLWorkflowExecutionPayload, DSLWorkflowStep } from '@vertesia/common';
+import { bundleWorkflowCode, Worker, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
+import {
+    ContentEventName,
+    type DSLActivityExecutionPayload,
+    type DSLWorkflowExecutionPayload,
+    type DSLWorkflowStep,
+} from '@vertesia/common';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { dslWorkflow } from './dsl-workflow.js';
 import { setupActivity } from './setup/ActivityContext.js';
@@ -26,7 +31,7 @@ async function sayHelloFromDSLChild(payload: DSLActivityExecutionPayload<SayHell
 
 async function prepareResult(payload: DSLActivityExecutionPayload<PrepareResultParams>) {
     const { params } = await setupActivity(payload);
-    return [params.parent, params.child]
+    return [params.parent, params.child];
 }
 
 const steps1: DSLWorkflowStep[] = [
@@ -34,7 +39,7 @@ const steps1: DSLWorkflowStep[] = [
         type: 'activity',
         name: 'sayHelloFromParent',
         output: 'parent',
-        import: ["name"],
+        import: ['name'],
     },
     {
         type: 'workflow',
@@ -44,26 +49,26 @@ const steps1: DSLWorkflowStep[] = [
     {
         type: 'activity',
         name: 'prepareResult',
-        import: ["parent", "child"],
+        import: ['parent', 'child'],
         output: 'result',
-    }
-]
+    },
+];
 
 const childSteps: DSLWorkflowStep[] = [
     {
         type: 'activity',
         name: 'sayHelloFromDSLChild',
         output: 'result',
-        import: ["name"],
+        import: ['name'],
     },
-]
+];
 
 const steps2: DSLWorkflowStep[] = [
     {
         type: 'activity',
         name: 'sayHelloFromParent',
         output: 'parent',
-        import: ["name"],
+        import: ['name'],
     },
     {
         type: 'workflow',
@@ -73,23 +78,23 @@ const steps2: DSLWorkflowStep[] = [
             spec_format: 'steps',
             name: 'testChildWorkflow',
             steps: childSteps,
-            vars: {}
-        }
+            vars: {},
+        },
     },
     {
         type: 'activity',
         name: 'prepareResult',
-        import: ["parent", "child"],
+        import: ['parent', 'child'],
         output: 'result',
-    }
-]
+    },
+];
 
 const steps3: DSLWorkflowStep[] = [
     {
         type: 'activity',
         name: 'sayHelloFromParent',
         output: 'parent',
-        import: ["name"],
+        import: ['name'],
     },
     {
         type: 'workflow',
@@ -99,27 +104,24 @@ const steps3: DSLWorkflowStep[] = [
             spec_format: 'steps',
             name: 'testChildWorkflow',
             steps: childSteps,
-            vars: {}
+            vars: {},
         },
         vars: {
             storeUrl: 'store:${objectIds[0]}',
-            name: '${name}'
-        }
+            name: '${name}',
+        },
     },
     {
         type: 'activity',
         name: 'prepareResult',
-        import: ["parent", "child"],
+        import: ['parent', 'child'],
         output: 'result',
-    }
-]
-
+    },
+];
 
 // ========== test env setup ==========
 
-
 describe('DSL Workflow with child workflows', () => {
-
     let testEnv: TestWorkflowEnvironment;
     let workflowBundle: WorkflowBundleWithSourceMap;
 
@@ -165,10 +167,12 @@ describe('DSL Workflow with child workflows', () => {
             account_id: '123',
             project_id: '123',
             wf_rule_name: 'test',
-            auth_token: process.env.VERTESIA_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature',
+            auth_token:
+                process.env.VERTESIA_KEY ||
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature',
             config: {
-                studio_url: process.env.CP_STUDIO_URL || "http://localhost:8081",
-                store_url: process.env.CP_STORE_URL || "http://localhost:8082",
+                studio_url: process.env.CP_STUDIO_URL || 'http://localhost:8081',
+                store_url: process.env.CP_STORE_URL || 'http://localhost:8082',
             },
             workflow: {
                 spec_format: 'steps',
@@ -177,17 +181,18 @@ describe('DSL Workflow with child workflows', () => {
                     name,
                 },
                 name: 'test',
-            }
-        }
+            },
+        };
 
-        const result = await worker.runUntil(client.workflow.execute(dslWorkflow, {
-            args: [payload],
-            workflowId: 'test',
-            taskQueue,
-        }));
+        const result = await worker.runUntil(
+            client.workflow.execute(dslWorkflow, {
+                args: [payload],
+                workflowId: 'test',
+                taskQueue,
+            }),
+        );
 
         expect(result).toEqual([`Parent: Hello, ${name}!`, `Child: Hello, ${name}!`]);
-
     });
 
     test('should execute DSL child workflow', async () => {
@@ -210,10 +215,12 @@ describe('DSL Workflow with child workflows', () => {
             account_id: '123',
             project_id: '123',
             wf_rule_name: 'test',
-            auth_token: process.env.VERTESIA_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature',
+            auth_token:
+                process.env.VERTESIA_KEY ||
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature',
             config: {
-                studio_url: process.env.CP_STUDIO_URL || "http://localhost:8081",
-                store_url: process.env.CP_STORE_URL || "http://localhost:8082",
+                studio_url: process.env.CP_STUDIO_URL || 'http://localhost:8081',
+                store_url: process.env.CP_STORE_URL || 'http://localhost:8082',
             },
             workflow: {
                 spec_format: 'steps',
@@ -222,17 +229,18 @@ describe('DSL Workflow with child workflows', () => {
                     name,
                 },
                 name: 'test',
-            }
-        }
+            },
+        };
 
-        const result = await worker.runUntil(client.workflow.execute(dslWorkflow, {
-            args: [payload],
-            workflowId: 'test',
-            taskQueue,
-        }));
+        const result = await worker.runUntil(
+            client.workflow.execute(dslWorkflow, {
+                args: [payload],
+                workflowId: 'test',
+                taskQueue,
+            }),
+        );
 
         expect(result).toEqual([`Parent: Hello, ${name}!`, `DSL Child: Hello, ${name}!`]);
-
     });
 
     test('should execute DSL child workflow with variable resolution', async () => {
@@ -255,10 +263,12 @@ describe('DSL Workflow with child workflows', () => {
             account_id: '123',
             project_id: '123',
             wf_rule_name: 'test',
-            auth_token: process.env.VERTESIA_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature',
+            auth_token:
+                process.env.VERTESIA_KEY ||
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature',
             config: {
-                studio_url: process.env.CP_STUDIO_URL || "http://localhost:8081",
-                store_url: process.env.CP_STORE_URL || "http://localhost:8082",
+                studio_url: process.env.CP_STUDIO_URL || 'http://localhost:8081',
+                store_url: process.env.CP_STORE_URL || 'http://localhost:8082',
             },
             workflow: {
                 spec_format: 'steps',
@@ -267,16 +277,17 @@ describe('DSL Workflow with child workflows', () => {
                     name,
                 },
                 name: 'test',
-            }
-        }
+            },
+        };
 
-        const result = await worker.runUntil(client.workflow.execute(dslWorkflow, {
-            args: [payload],
-            workflowId: 'test-vars',
-            taskQueue,
-        }));
+        const result = await worker.runUntil(
+            client.workflow.execute(dslWorkflow, {
+                args: [payload],
+                workflowId: 'test-vars',
+                taskQueue,
+            }),
+        );
 
         expect(result).toEqual([`Parent: Hello, ${name}!`, `DSL Child: Hello, ${name}!`]);
-
     });
 });

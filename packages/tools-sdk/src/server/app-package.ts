@@ -1,32 +1,39 @@
-import { AppPackage, AppPackageScope, AppWidgetInfo, CatalogInteractionRef, InCodeProcessDefinition, InCodeTypeDefinition, RemoteActivityDefinition } from "@vertesia/common";
-import { Context, Hono } from "hono";
-import { ToolUseContext } from "../types.js";
-import { ToolServerConfig } from "./types.js";
+import type {
+    AppPackage,
+    AppPackageScope,
+    AppWidgetInfo,
+    CatalogInteractionRef,
+    InCodeProcessDefinition,
+    InCodeTypeDefinition,
+    RemoteActivityDefinition,
+} from '@vertesia/common';
+import type { Context, Hono } from 'hono';
+import type { ToolUseContext } from '../types.js';
+import type { ToolServerConfig } from './types.js';
 
 function getRequestPayload<T>(c: Context): Promise<T | undefined> {
-    return c.req.method === "POST" ? c.req.json<T>() : Promise.resolve(undefined);
+    return c.req.method === 'POST' ? c.req.json<T>() : Promise.resolve(undefined);
 }
 
-const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config: ToolServerConfig, c: Context) => Promise<void>> = {
+const builders: Record<
+    Exclude<AppPackageScope, 'all'>,
+    (pkg: AppPackage, config: ToolServerConfig, c: Context) => Promise<void>
+> = {
     async tools(pkg: AppPackage, config: ToolServerConfig, c: Context) {
         const { tools: toolCollections = [], skills: skillCollections = [] } = config;
 
         const filterContext = await getRequestPayload<ToolUseContext>(c);
 
         // Aggregate all tools from all collections
-        const allTools = toolCollections.flatMap(collection =>
-            collection.getToolDefinitions(filterContext)
-        );
+        const allTools = toolCollections.flatMap((collection) => collection.getToolDefinitions(filterContext));
 
         // same for skills
-        const allSkills = skillCollections.flatMap(collection =>
-            collection.getToolDefinitions(filterContext)
-        );
+        const allSkills = skillCollections.flatMap((collection) => collection.getToolDefinitions(filterContext));
 
         // Deduplicate by tool name (skills listed first take priority)
         const seen = new Set<string>();
         const combined = allSkills.concat(allTools);
-        pkg.tools = combined.filter(tool => {
+        pkg.tools = combined.filter((tool) => {
             if (seen.has(tool.name)) {
                 console.warn(`[app-package] Duplicate tool name "${tool.name}", skipping`);
                 return false;
@@ -37,11 +44,11 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
     },
     async interactions(pkg: AppPackage, config: ToolServerConfig) {
         const allInteractions: CatalogInteractionRef[] = [];
-        for (const coll of (config.interactions || [])) {
+        for (const coll of config.interactions || []) {
             for (const inter of coll.interactions) {
                 allInteractions.push({
-                    type: "app",
-                    id: coll.name + ":" + inter.name,
+                    type: 'app',
+                    id: `${coll.name}:${inter.name}`,
                     name: inter.name,
                     title: inter.title || inter.name,
                     description: inter.description,
@@ -57,7 +64,7 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
             for (const type of coll.types) {
                 allTypes.push({
                     ...type,
-                    id: coll.name + ":" + type.name
+                    id: `${coll.name}:${type.name}`,
                 });
             }
         }
@@ -72,11 +79,11 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
     },
     async templates(pkg: AppPackage, config: ToolServerConfig) {
         const basePath = `${config.prefix || '/api'}/templates`;
-        pkg.templates = (config.templates || []).flatMap(coll =>
+        pkg.templates = (config.templates || []).flatMap((coll) =>
             coll.templates.map(({ instructions: _, ...ref }) => ({
                 ...ref,
                 path: `${basePath}/${coll.name}/${ref.name}`,
-            }))
+            })),
         );
     },
     async widgets(pkg: AppPackage, config: ToolServerConfig) {
@@ -88,7 +95,7 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
                     widgets[skill.name] = {
                         skill: skill.name,
                         collection: coll.name,
-                        url: `/widgets/${skill.widgets[0]}.js`
+                        url: `/widgets/${skill.widgets[0]}.js`,
                     } satisfies AppWidgetInfo;
                 }
             }
@@ -101,7 +108,7 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
             const origin = new URL(c.req.url).origin;
             pkg.ui.src = new URL(pkg.ui.src, origin).toString();
             if (!pkg.ui.isolation) {
-                pkg.ui.isolation = "shadow";
+                pkg.ui.isolation = 'shadow';
             }
         }
     },
@@ -119,8 +126,7 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
         }
         pkg.activities = allActivities;
     },
-}
-
+};
 
 async function handlePackageRequest(c: Context, config: ToolServerConfig) {
     const scope = c.req.query('scope') || 'all';
@@ -172,7 +178,6 @@ async function handlePackageRequest(c: Context, config: ToolServerConfig) {
 }
 
 export function createPackageRoute(app: Hono, basePath: string, config: ToolServerConfig) {
-
     app.get(basePath, (c: Context) => {
         return handlePackageRequest(c, config);
     });
@@ -180,5 +185,4 @@ export function createPackageRoute(app: Hono, basePath: string, config: ToolServ
     app.post(basePath, (c: Context) => {
         return handlePackageRequest(c, config);
     });
-
 }

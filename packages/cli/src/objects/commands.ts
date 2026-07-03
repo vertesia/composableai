@@ -1,31 +1,32 @@
-import { QueryResult, VertesiaClient } from "@vertesia/client";
-import { NodeStreamSource } from "@vertesia/client/node";
-import {
+import { createReadStream, createWriteStream, type Dirent, type Stats } from 'node:fs';
+import { readdir, stat } from 'node:fs/promises';
+import { basename, join, resolve } from 'node:path';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
+import type { QueryResult, VertesiaClient } from '@vertesia/client';
+import { NodeStreamSource } from '@vertesia/client/node';
+import type {
     ComplexSearchPayload,
     ContentObject,
-    ContentObjectItemApiResponse,
     ContentObjectItem,
+    ContentObjectItemApiResponse,
     ContentObjectTypeItem,
     CreateContentObjectPayload,
     ObjectSearchPayload,
-} from "@vertesia/common";
-import { Command } from "commander";
-import enquirer from "enquirer";
-import { Stats, createReadStream, createWriteStream, type Dirent } from "node:fs";
-import { readdir, stat } from "node:fs/promises";
+} from '@vertesia/common';
+import type { Command } from 'commander';
+import enquirer from 'enquirer';
 import { glob } from 'glob';
-import mime from "mime";
-import { basename, join, resolve } from "path";
-import { pipeline } from "stream/promises";
-import { Readable } from "stream";
-import type { ReadableStream as NodeReadableStream } from "node:stream/web";
-import { getClient } from "../client.js";
-import { getStringOption, hasErrorCode, type CliOptions } from "../utils/options.js";
+import mime from 'mime';
+import { getClient } from '../client.js';
+import { type CliOptions, getStringOption, hasErrorCode } from '../utils/options.js';
+
 const { prompt } = enquirer;
 
-const AUTOMATIC_TYPE_SELECTION = "auto";
-const AUTOMATIC_TYPE_SELECTION_DESC = "Auto (Vertesia will analyze the file and select the most appropriate type)";
-const TYPE_SELECTION_ERROR = "TypeSelectionError";
+const AUTOMATIC_TYPE_SELECTION = 'auto';
+const AUTOMATIC_TYPE_SELECTION_DESC = 'Auto (Vertesia will analyze the file and select the most appropriate type)';
+const TYPE_SELECTION_ERROR = 'TypeSelectionError';
 
 interface JsonOutputOptions {
     json?: boolean;
@@ -98,19 +99,23 @@ async function listFilesInDirectory(dir: string, recursive = false): Promise<str
     return await readdir(dir, {
         withFileTypes: true,
         recursive,
-    }).then((entries: Dirent[]) => entries.filter(ent => {
-        // exclude hidden files and include only file with extensions
-        return ent.isFile() && ent.name.lastIndexOf('.') > 0;
-    }).map(ent => {
-        // In Node.js 22+, use parentPath; fallback to dir for older versions
-        const parentPath = 'parentPath' in ent ? (ent as Dirent & { parentPath: string }).parentPath : dir;
-        return join(parentPath, ent.name);
-    }));
+    }).then((entries: Dirent[]) =>
+        entries
+            .filter((ent) => {
+                // exclude hidden files and include only file with extensions
+                return ent.isFile() && ent.name.lastIndexOf('.') > 0;
+            })
+            .map((ent) => {
+                // In Node.js 22+, use parentPath; fallback to dir for older versions
+                const parentPath = 'parentPath' in ent ? (ent as Dirent & { parentPath: string }).parentPath : dir;
+                return join(parentPath, ent.name);
+            }),
+    );
 }
 
 export async function createObject(program: Command, files: string[], options: CreateObjectOptions) {
     if (files.length === 0) {
-        return "No files specified"
+        return 'No files specified';
     } else if (files.length > 1) {
         const types = await listTypes(program);
         const questions = [];
@@ -118,12 +123,12 @@ export async function createObject(program: Command, files: string[], options: C
             questions.push({
                 type: 'select',
                 name: 'type',
-                message: "Select a Type",
+                message: 'Select a Type',
                 choices: types,
                 limit: 10,
                 result(this: TypePromptState) {
                     return this.focused.value;
-                }
+                },
             });
             const response = await prompt<{ type: string }>(questions);
             options.type = response.type;
@@ -145,7 +150,7 @@ export async function createObject(program: Command, files: string[], options: C
         if (file.indexOf('*') > -1) {
             const files = await glob(file);
             return createObjectFromFiles(program, files, options);
-        } else if (file.includes("://")) {
+        } else if (file.includes('://')) {
             return createObjectFromExternalSource(await getClient(program), file, options);
         } else {
             file = resolve(file);
@@ -168,12 +173,12 @@ export async function createObject(program: Command, files: string[], options: C
                     questions.push({
                         type: 'select',
                         name: 'type',
-                        message: "Select a Type",
+                        message: 'Select a Type',
                         choices: types,
                         limit: 10,
                         result(this: TypePromptState) {
                             return this.focused.value;
-                        }
+                        },
                     });
                     const response = await prompt<{ type: string }>(questions);
                     options.type = response.type;
@@ -195,12 +200,12 @@ export async function createObject(program: Command, files: string[], options: C
                 questions.push({
                     type: 'select',
                     name: 'type',
-                    message: "Select a Type (the type will be used for all the files in the directory)",
+                    message: 'Select a Type (the type will be used for all the files in the directory)',
                     choices: types,
                     limit: 10,
                     result(this: TypePromptState) {
                         return this.focused.value;
-                    }
+                    },
                 });
                 const response = await prompt<{ type: string }>(questions);
                 options.type = response.type;
@@ -220,17 +225,19 @@ export async function createObjectFromFiles(program: Command, files: string[], o
     if (!options) options = {};
     // split in 10 chunks
     const chunks = splitInChunks(files, 10);
-    Promise.all(chunks.map(async (chunk) => {
-        for (const file of chunk) {
-            await createObjectFromFile(program, file, options);
-        }
-    }));
+    void Promise.all(
+        chunks.map(async (chunk) => {
+            for (const file of chunk) {
+                await createObjectFromFile(program, file, options);
+            }
+        }),
+    );
 }
 
 export async function createObjectFromFile(program: Command, file: string, options: CreateObjectOptions) {
     const client = await getClient(program);
     let res: ContentObject;
-    if (file.startsWith("s3://") || file.startsWith("gs://")) {
+    if (file.startsWith('s3://') || file.startsWith('gs://')) {
         res = await createObjectFromExternalSource(client, file, options);
     } else {
         res = await createObjectFromLocalFile(client, file, options);
@@ -267,7 +274,12 @@ async function createObjectFromExternalSource(client: VertesiaClient, uri: strin
     });
 }
 
-export async function updateObject(program: Command, objectId: string, type: string, _options: Record<string, unknown>) {
+export async function updateObject(
+    program: Command,
+    objectId: string,
+    type: string,
+    _options: Record<string, unknown>,
+) {
     const types = await listTypes(program);
     let searchedType: string | undefined = findTypeValue(types, type);
     if (searchedType === TYPE_SELECTION_ERROR) {
@@ -354,8 +366,8 @@ export async function queryObjects(program: Command, options: QueryObjectsOption
 }
 
 export async function listTypes(program: Command): Promise<TypeChoice[]> {
-    const types: TypeChoice[] = []
-    types.push({ name: AUTOMATIC_TYPE_SELECTION_DESC, value: AUTOMATIC_TYPE_SELECTION })
+    const types: TypeChoice[] = [];
+    types.push({ name: AUTOMATIC_TYPE_SELECTION_DESC, value: AUTOMATIC_TYPE_SELECTION });
 
     const client = await getClient(program);
     const platformTypes: ContentObjectTypeItem[] = await client.types.list();
@@ -366,7 +378,7 @@ export async function listTypes(program: Command): Promise<TypeChoice[]> {
 }
 
 export function findTypeValue(types: TypeChoice[], name: string) {
-    const type = types.find(type => type.name === name || type.id === name);
+    const type = types.find((type) => type.name === name || type.id === name);
     return type ? type.value : TYPE_SELECTION_ERROR;
 }
 
@@ -378,7 +390,7 @@ export async function downloadObjectContent(program: Command, objectId: string, 
     const contentSource = await client.objects.getContentSource(objectId);
 
     if (!contentSource?.source) {
-        console.error("Object has no downloadable content");
+        console.error('Object has no downloadable content');
         process.exit(1);
     }
 
@@ -400,7 +412,7 @@ export async function downloadObjectContent(program: Command, objectId: string, 
 }
 
 function readOptionalIntegerOption(value: string | undefined): number | undefined {
-    if (value === undefined || value === "") {
+    if (value === undefined || value === '') {
         return undefined;
     }
     const parsed = Number.parseInt(value, 10);
@@ -413,13 +425,13 @@ function readOptionalIntegerOption(value: string | undefined): number | undefine
 
 function readQueryPayload(options: QueryObjectsOptions): { dsl: Record<string, unknown> } {
     if (!options.dsl) {
-        console.error("Specify --dsl with a JSON object.");
+        console.error('Specify --dsl with a JSON object.');
         process.exit(2);
     }
     try {
-        const dsl = JSON.parse(options.dsl ?? "");
+        const dsl = JSON.parse(options.dsl ?? '');
         if (!isRecord(dsl)) {
-            console.error("Invalid JSON for --dsl: expected a JSON object.");
+            console.error('Invalid JSON for --dsl: expected a JSON object.');
             process.exit(2);
         }
         return { dsl };
@@ -436,45 +448,47 @@ function printJson(value: unknown) {
 
 function printObjectItems(objects: Array<ContentObjectItem<unknown> | ContentObjectItemApiResponse>) {
     if (objects.length === 0) {
-        console.log("No objects found");
+        console.log('No objects found');
         return;
     }
     console.log(
         objects
             .map((object) => {
                 const typeName = readObjectTypeName(object);
-                const location = object.location ?? "";
-                const status = object.status ?? "";
-                return [object.id, object.name, typeName, status, location].join("\t");
+                const location = object.location ?? '';
+                const status = object.status ?? '';
+                return [object.id, object.name, typeName, status, location].join('\t');
             })
-            .join("\n"),
+            .join('\n'),
     );
 }
 
 function readObjectTypeName(object: ContentObjectItem<unknown> | ContentObjectItemApiResponse): string {
     if (!object.type) {
-        return "";
+        return '';
     }
-    if (typeof object.type === "string") {
+    if (typeof object.type === 'string') {
         return object.type;
     }
-    return object.type.name || object.type.id || object.type.code || "";
+    return object.type.name || object.type.id || '';
 }
 
 function printQueryResult(result: QueryResult) {
-    if (result.type === "dsl") {
+    if (result.type === 'dsl') {
         if (!result.hits || result.hits.length === 0) {
-            console.log("No hits");
+            console.log('No hits');
             return;
         }
         console.log(
             result.hits
-                .map((hit) => JSON.stringify({
-                    id: hit.id,
-                    score: hit.score,
-                    source: hit.source,
-                }))
-                .join("\n"),
+                .map((hit) =>
+                    JSON.stringify({
+                        id: hit.id,
+                        score: hit.score,
+                        source: hit.source,
+                    }),
+                )
+                .join('\n'),
         );
         return;
     }
@@ -482,34 +496,30 @@ function printQueryResult(result: QueryResult) {
     const columns = result.columns?.map((column) => column.name) ?? [];
     const rows = result.rows ?? [];
     if (columns.length > 0) {
-        console.log(columns.join("\t"));
+        console.log(columns.join('\t'));
     }
     if (rows.length === 0) {
         if (columns.length === 0) {
-            console.log("No rows");
+            console.log('No rows');
         }
         return;
     }
-    console.log(
-        rows
-            .map((row) => row.map((value) => formatQueryValue(value)).join("\t"))
-            .join("\n"),
-    );
+    console.log(rows.map((row) => row.map((value) => formatQueryValue(value)).join('\t')).join('\n'));
 }
 
 function formatQueryValue(value: unknown): string {
     if (value === null || value === undefined) {
-        return "";
+        return '';
     }
-    if (typeof value === "string") {
+    if (typeof value === 'string') {
         return value;
     }
-    if (typeof value === "number" || typeof value === "boolean") {
+    if (typeof value === 'number' || typeof value === 'boolean') {
         return String(value);
     }
     return JSON.stringify(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

@@ -1,14 +1,13 @@
-import { Collection } from "@vertesia/common";
-import { Panel, Switch, useToast } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import { useState } from "react";
+import type { Collection } from '@vertesia/common';
+import { Panel, Switch, useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { useUserSession } from '@vertesia/ui/session';
+import { useState } from 'react';
 
 interface SyncMemberHeadsToggleProps {
     collection: Collection;
 }
 export function SyncMemberHeadsToggle({ collection }: SyncMemberHeadsToggleProps) {
-
     const { client } = useUserSession();
     const { t } = useUITranslation();
     const [skipHeadSync, setSkipHeadSync] = useState<boolean>(collection.skip_head_sync ?? false);
@@ -18,26 +17,30 @@ export function SyncMemberHeadsToggle({ collection }: SyncMemberHeadsToggleProps
     const onSaveSkipHeadSync = (enableSyncHeads: boolean) => {
         const skip_head_sync = !enableSyncHeads;
         setIsSaving(true);
-        client.store.collections.update(collection.id, {
-            skip_head_sync: skip_head_sync
-        }).then(() => {
-            // Handle success
-            toast({
-                title: t('store.updatedSkipHeadSync'),
-                status: "success"
+        client.store.collections
+            .update(collection.id, {
+                skip_head_sync: skip_head_sync,
             })
-            setSkipHeadSync(skip_head_sync);
-        }).catch((error) => {
-            toast({
-                title: t('store.failedToUpdateSkipHeadSync'),
-                description: error.message,
-                status: "error"
+            .then(() => {
+                // Handle success
+                toast({
+                    title: t('store.updatedSkipHeadSync'),
+                    status: 'success',
+                });
+                setSkipHeadSync(skip_head_sync);
             })
-            // Handle error
-        }).finally(() => {
-            setIsSaving(false);
-        });
-    }
+            .catch((error) => {
+                toast({
+                    title: t('store.failedToUpdateSkipHeadSync'),
+                    description: error.message,
+                    status: 'error',
+                });
+                // Handle error
+            })
+            .finally(() => {
+                setIsSaving(false);
+            });
+    };
 
     return (
         <Panel title={t('store.syncMemberHeads')} description={t('store.syncMemberHeadsDescription')}>
@@ -45,6 +48,5 @@ export function SyncMemberHeadsToggle({ collection }: SyncMemberHeadsToggleProps
                 {t('store.enableSyncMemberHeads')}
             </Switch>
         </Panel>
-    )
-
+    );
 }

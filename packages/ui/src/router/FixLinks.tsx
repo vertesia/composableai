@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { BASE_PATH } from "./HistoryNavigator";
+import { useEffect, useRef } from 'react';
+import { BASE_PATH } from './HistoryNavigator';
 
 interface FixLinksProps {
     basePath: string;
@@ -15,14 +15,16 @@ export function FixLinks({ basePath, children }: FixLinksProps) {
                 if (elem.tagName.toLowerCase() === 'a') {
                     (ev as MouseEvent & Record<typeof BASE_PATH, string>)[BASE_PATH] = basePath;
                 }
-            }
+            };
             divElem.addEventListener('click', listener);
             return () => {
                 divElem.removeEventListener('click', listener);
-            }
+            };
         }
-    }, [ref.current]);
+    }, [basePath]);
     return (
-        <div ref={ref} className="h-full w-full">{children}</div>
-    )
+        <div ref={ref} className="h-full w-full">
+            {children}
+        </div>
+    );
 }

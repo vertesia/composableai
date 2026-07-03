@@ -1,4 +1,8 @@
-import { DSLActivityExecutionPayload, DSLWorkflowSpec, withDSLWorkflowSpecDiscriminator } from '@vertesia/common';
+import {
+    type DSLActivityExecutionPayload,
+    type DSLWorkflowSpec,
+    withDSLWorkflowSpecDiscriminator,
+} from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 
 export interface LoadChildWorkflowSpecParams {
@@ -12,7 +16,7 @@ export async function loadChildWorkflowSpec(
     const { workflowName } = params;
 
     const refs = await client.store.workflows.definitions.list();
-    const ref = refs.find(r => r.name === workflowName);
+    const ref = refs.find((r) => r.name === workflowName);
     if (!ref) {
         throw new Error(`Workflow definition not found: ${workflowName}`);
     }

@@ -1,8 +1,18 @@
-import React from 'react';
-import { BarChart3, GitBranch, MessageSquare, Code, Image, Link, Download, Table, FileText } from 'lucide-react';
 import { Button } from '@vertesia/ui/core';
+import { BarChart3, Code, Download, FileText, GitBranch, Image, Link, MessageSquare, Table } from 'lucide-react';
+import React from 'react';
 
-export type CodeBlockType = 'chart' | 'mermaid' | 'proposal' | 'code' | 'image' | 'link' | 'expand' | 'table' | 'markdown' | 'fusion-fragment';
+export type CodeBlockType =
+    | 'chart'
+    | 'mermaid'
+    | 'proposal'
+    | 'code'
+    | 'image'
+    | 'link'
+    | 'expand'
+    | 'table'
+    | 'markdown'
+    | 'fusion-fragment';
 
 export interface CodeBlockPlaceholderProps {
     /** The type of content being loaded */
@@ -34,13 +44,7 @@ const TYPE_CONFIG: Record<CodeBlockType, { icon: React.ElementType; label: strin
  * Placeholder component shown while code blocks are loading.
  * Provides visual feedback and error states with retry capability.
  */
-export function CodeBlockPlaceholder({
-    type,
-    error,
-    onRetry,
-    message,
-    height,
-}: CodeBlockPlaceholderProps) {
+export function CodeBlockPlaceholder({ type, error, onRetry, message, height }: CodeBlockPlaceholderProps) {
     const config = TYPE_CONFIG[type];
     const displayHeight = height ?? config.defaultHeight;
     const isInline = type === 'link';
@@ -84,12 +88,11 @@ export function CodeBlockPlaceholder({
             style={{ minHeight: displayHeight }}
         >
             <IconComponent className="h-8 w-8 text-muted" />
-            <span className="text-sm text-muted">
-                {message || `Loading ${config.label}...`}
-            </span>
+            <span className="text-sm text-muted">{message || `Loading ${config.label}...`}</span>
             <div className="flex gap-1">
                 {[...Array(3)].map((_, i) => (
                     <div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                         key={i}
                         className="h-2 w-2 rounded-full bg-muted animate-bounce"
                         style={{ animationDelay: `${i * 150}ms` }}
@@ -116,10 +119,7 @@ interface CodeBlockErrorBoundaryState {
     error?: Error;
 }
 
-export class CodeBlockErrorBoundary extends React.Component<
-    CodeBlockErrorBoundaryProps,
-    CodeBlockErrorBoundaryState
-> {
+export class CodeBlockErrorBoundary extends React.Component<CodeBlockErrorBoundaryProps, CodeBlockErrorBoundaryState> {
     constructor(props: CodeBlockErrorBoundaryProps) {
         super(props);
         this.state = { hasError: false };

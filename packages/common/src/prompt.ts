@@ -1,6 +1,5 @@
-import type { JSONObject, JSONSchema } from "@llumiverse/common";
-import { PromptRole } from "@llumiverse/common";
-import { ProjectRef } from "./project.js";
+import type { JSONObject, JSONSchema, PromptRole } from '@llumiverse/common';
+import type { ProjectRef } from './project.js';
 
 export interface ChatPromptSchema {
     role: PromptRole.user | PromptRole.assistant;
@@ -8,41 +7,34 @@ export interface ChatPromptSchema {
 }
 
 export enum PromptStatus {
-    draft = "draft",
-    published = "published",
-    archived = "archived",
+    draft = 'draft',
+    published = 'published',
+    archived = 'archived',
 }
-
 
 export enum PromptSegmentDefType {
-    chat = "chat",
-    template = "template",
+    chat = 'chat',
+    template = 'template',
 }
 
-export interface PromptSegmentDef<
-    T = string | PromptTemplate | PromptTemplateRef,
-> {
+export interface PromptSegmentDef<T = string | PromptTemplate | PromptTemplateRef> {
     id?: string;
     type: PromptSegmentDefType;
     template?: T; // the template id in case of a prompt template
     configuration?: unknown; // the configuration if any in case of builtin prompts
 }
 
-export interface PromptSegmentRef<
-    T = string | PromptTemplate | PromptTemplateRef,
-> extends PromptSegmentDef<T> {
+export interface PromptSegmentRef<T = string | PromptTemplate | PromptTemplateRef> extends PromptSegmentDef<T> {
     id: string;
 }
 
-export interface PopulatedPromptSegmentDef
-    extends Omit<PromptSegmentDef, "template"> {
+export interface PopulatedPromptSegmentDef extends Omit<PromptSegmentDef, 'template'> {
     template?: PromptTemplate;
 }
 /**
  * Used for prompt rendering at interaction execution
  */
-export interface ExecutablePromptSegmentDef
-    extends Omit<PromptSegmentDef, "template"> {
+export interface ExecutablePromptSegmentDef extends Omit<PromptSegmentDef, 'template'> {
     template?: ExecutablePromptTemplate;
 }
 
@@ -54,6 +46,7 @@ export interface PromptTemplateRef {
     version: number;
     status: PromptStatus;
     content_type?: TemplateType;
+    tags?: string[];
     created_at: Date;
     updated_at: Date;
 }
@@ -63,9 +56,9 @@ export interface PromptTemplateRefWithSchema extends PromptTemplateRef {
 }
 
 export enum TemplateType {
-    jst = "jst",
-    handlebars = "handlebars",
-    text = "text",
+    jst = 'jst',
+    handlebars = 'handlebars',
+    text = 'text',
 }
 export interface ExecutablePromptTemplate {
     role: PromptRole;
@@ -90,8 +83,8 @@ export interface PromptTemplate extends ExecutablePromptTemplate {
     tags?: string[];
     // only for drafts - when it was last published
     last_published_at?: Date;
-    created_by: string,
-    updated_by: string,
+    created_by: string;
+    updated_by: string;
     created_at: Date;
     updated_at: Date;
 }
@@ -104,13 +97,13 @@ export interface PromptTemplateForkPayload {
 export interface PromptTemplateCreatePayload
     extends Omit<
         PromptTemplate,
-        "id" | "created_at" | "updated_at" | "created_by" | "updated_by" | "project" | "status" | "version"
-    > { }
+        'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'project' | 'status' | 'version'
+    > {}
 
 export interface PromptTemplateUpdatePayload
     extends Partial<
-        Omit<PromptTemplate, "id" | "created_at" | "updated_at" | "created_by" | "updated_by" | "project">
-    > { }
+        Omit<PromptTemplate, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'project'>
+    > {}
 
 export interface PromptTemplateInteractionVersion {
     version: number;

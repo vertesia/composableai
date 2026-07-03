@@ -1,5 +1,3 @@
-
-
 export interface IntegrationConfigurationBase<TIntegration extends SupportedIntegrations = SupportedIntegrations> {
     integration: TIntegration;
     enabled: boolean;
@@ -20,8 +18,21 @@ export interface GladiaConfigurationWithSecrets extends GladiaConfiguration {
     api_key?: string;
 }
 
+export interface GithubConfigurationInput extends IntegrationConfigurationBase<SupportedIntegrations.github> {
+    /** Numeric GitHub App id used to mint installation tokens (non-secret). */
+    github_app_id?: string;
+    /** Allow-list of `owner/name` repos the bot may mint installation tokens for (default-deny when empty). */
+    allowed_repositories?: string[];
+    /** GitHub App private key (PEM). Write-only; never returned. Empty string clears it. */
+    private_key?: string;
+}
+
 export interface GithubConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.github> {
+    /** Numeric GitHub App id used to mint installation tokens (non-secret). */
+    github_app_id?: string;
     allowed_repositories: string[];
+    /** True when a GitHub App private key is stored for the project (the key itself is never returned). */
+    has_github_app_private_key?: boolean;
 }
 
 export interface AwsConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.aws> {
@@ -120,7 +131,8 @@ export interface ResendConfigurationWithSecrets extends ResendConfiguration {
  * Configuration for ask_user webhook notifications.
  * Sends webhooks when agents call ask_user and when users respond.
  */
-export interface AskUserWebhookConfigurationInput extends IntegrationConfigurationBase<SupportedIntegrations.ask_user_webhook> {
+export interface AskUserWebhookConfigurationInput
+    extends IntegrationConfigurationBase<SupportedIntegrations.ask_user_webhook> {
     /** Webhook URL to receive ask_user events */
     webhook_url: string;
     /** Secret for signing webhook payloads (HMAC-SHA256) */
@@ -135,7 +147,8 @@ export interface AskUserWebhookConfigurationInput extends IntegrationConfigurati
  * Configuration for ask_user webhook notifications.
  * Sends webhooks when agents call ask_user and when users respond.
  */
-export interface AskUserWebhookConfiguration extends IntegrationConfigurationBase<SupportedIntegrations.ask_user_webhook> {
+export interface AskUserWebhookConfiguration
+    extends IntegrationConfigurationBase<SupportedIntegrations.ask_user_webhook> {
     /** Webhook URL to receive ask_user events */
     webhook_url: string;
     has_webhook_secret?: boolean;
@@ -152,15 +165,15 @@ export interface AskUserWebhookConfigurationWithSecrets extends AskUserWebhookCo
 }
 
 export enum SupportedIntegrations {
-    gladia = "gladia",
-    github = "github",
-    aws = "aws",
-    magic_pdf = "magic_pdf",
-    serper = "serper",
-    exa = "exa",
-    linkup = "linkup",
-    resend = "resend",
-    ask_user_webhook = "ask_user_webhook",
+    gladia = 'gladia',
+    github = 'github',
+    aws = 'aws',
+    magic_pdf = 'magic_pdf',
+    serper = 'serper',
+    exa = 'exa',
+    linkup = 'linkup',
+    resend = 'resend',
+    ask_user_webhook = 'ask_user_webhook',
 }
 
 /**
@@ -168,7 +181,7 @@ export enum SupportedIntegrations {
  */
 export type ProjectIntegrationConfigRequest =
     | GladiaConfigurationInput
-    | GithubConfiguration
+    | GithubConfigurationInput
     | AwsConfiguration
     | MagicPdfConfiguration
     | SerperConfigurationInput

@@ -1,6 +1,6 @@
-import { ContentObjectStatus, DSLActivityExecutionPayload } from "@vertesia/common";
-import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { log } from "@temporalio/activity"
+import { log } from '@temporalio/activity';
+import { ContentObjectStatus, type DSLActivityExecutionPayload } from '@vertesia/common';
+import { setupActivity } from '../dsl/setup/ActivityContext.js';
 
 export interface HandleDslErrorParams {
     errorMessage: string;
@@ -10,15 +10,17 @@ export async function handleDslError(payload: DSLActivityExecutionPayload<Handle
     const { client, params, objectId } = await setupActivity<HandleDslErrorParams>(payload);
 
     const isIntake = [
-        "StandardDocumentIntake",
-        "StandardImageIntake",
-        "StandardMediaContainerIntake",
-        "StandardVideoIntake",
-        "StandardAudioIntake",
-        "StandardDocPartIntake",
+        'StandardIntake',
+        'StandardDocumentIntake',
+        'StandardImageIntake',
+        'StandardMediaContainerIntake',
+        'StandardVideoIntake',
+        'StandardAudioIntake',
+        'StandardDocPartIntake',
     ].includes(payload.workflow_name);
     if (!isIntake) {
-        log.warn(`Workflow execution failed, but no error handler registered for this workflow: ${payload.workflow_name}`,
+        log.warn(
+            `Workflow execution failed, but no error handler registered for this workflow: ${payload.workflow_name}`,
             { error: params.errorMessage },
         );
         return;
@@ -34,14 +36,11 @@ export async function handleDslError(payload: DSLActivityExecutionPayload<Handle
         // recovery failures are a real signal — but enrich the message so
         // it's clearly distinct from the upstream error rather than reading
         // like a duplicate.
-        log.error(
-            `Recovery failed: could not update object ${objectId} status to failed`,
-            {
-                error: e,
-                upstreamError: params.errorMessage,
-                workflow_name: payload.workflow_name,
-            },
-        );
+        log.error(`Recovery failed: could not update object ${objectId} status to failed`, {
+            error: e,
+            upstreamError: params.errorMessage,
+            workflow_name: payload.workflow_name,
+        });
     }
     return;
 }

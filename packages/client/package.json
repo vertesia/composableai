@@ -1,68 +1,59 @@
 {
-  "name": "@vertesia/client",
-  "version": "1.2.0",
-  "type": "module",
-  "types": "./lib/types/index.d.ts",
-  "files": [
-    "lib",
-    "src",
-    "tsconfig.dist.json"
-  ],
-  "license": "Apache-2.0",
-  "scripts": {
-    "lint": "biome lint src",
-    "build": "pnpm exec tsmod build && tsc -p tsconfig.web.json --noEmit && pnpm exec rolldown -c rollup.config.js",
-    "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-    "test": "vitest run",
-    "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
-  },
-  "devDependencies": {
-    "@types/node": "^24.1.0",
-    "rolldown": "^1.0.2",
-    "ts-dual-module": "^0.6.3",
-    "typescript": "^6.0.2",
-    "vitest": "^4.0.16"
-  },
-  "dependencies": {
-    "@llumiverse/common": "workspace:*",
-    "@vertesia/api-fetch-client": "workspace:*",
-    "@vertesia/common": "workspace:*",
-    "eventsource": "^3.0.6"
-  },
-  "ts_dual_module": {
-    "outDir": "lib"
-  },
-  "exports": {
-    ".": {
-      "types": "./lib/types/index.d.ts",
-      "import": "./lib/esm/index.js",
-      "require": "./lib/cjs/index.js"
+    "name": "@vertesia/client",
+    "version": "1.5.0-dev",
+    "type": "module",
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
+    "files": [
+        "lib",
+        "src",
+        "tsconfig.dist.json"
+    ],
+    "license": "Apache-2.0",
+    "scripts": {
+        "lint": "biome lint src",
+        "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
+        "build": "pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rolldown -c rollup.config.js",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
+        "test": "vitest run",
+        "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
     },
-    "./node": {
-      "types": "./lib/types/nodejs/index.d.ts",
-      "import": "./lib/esm/nodejs/index.js",
-      "require": "./lib/cjs/nodejs/index.js"
-    }
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/vertesia/composableai.git",
-    "directory": "packages/client"
-  },
-  "keywords": [
-    "vertesia",
-    "client",
-    "api",
-    "sdk",
-    "llm",
-    "ai",
-    "typescript"
-  ],
-  "typesVersions": {
-    "*": {
-      "node": [
-        "./lib/types/nodejs/index.d.ts"
-      ]
-    }
-  }
+    "devDependencies": {
+        "@types/node": "catalog:",
+        "@vertesia/tsconfig": "workspace:*",
+        "rolldown": "^1.0.2",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.9"
+    },
+    "dependencies": {
+        "@llumiverse/common": "workspace:*",
+        "@vertesia/api-fetch-client": "workspace:*",
+        "@vertesia/common": "workspace:*",
+        "eventsource": "^4.1.0"
+    },
+    "exports": {
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        },
+        "./package.json": "./package.json",
+        "./node": {
+            "types": "./lib/nodejs/index.d.ts",
+            "default": "./lib/nodejs/index.js"
+        }
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/client"
+    },
+    "keywords": [
+        "vertesia",
+        "client",
+        "api",
+        "sdk",
+        "llm",
+        "ai",
+        "typescript"
+    ]
 }
