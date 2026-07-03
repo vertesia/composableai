@@ -121,7 +121,7 @@
         "culori": "^4.0.2",
         "i18next-cli": "^1.64.2",
         "jsdom": "^29.1.1",
-        "rolldown": "^1.0.2",
+        "rolldown": "catalog:",
         "typescript": "^6.0.3",
         "vitest": "^4.1.9",
         "vitest-axe": "^0.1.0",

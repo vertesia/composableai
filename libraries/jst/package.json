@@ -37,7 +37,7 @@
         "@types/estree": "^1.0.9",
         "@types/papaparse": "^5.5.2",
         "@vertesia/tsconfig": "workspace:*",
-        "rolldown": "^1.0.2",
+        "rolldown": "catalog:",
         "typescript": "^6.0.3",
         "vitest": "^4.1.9"
     },
