@@ -227,10 +227,9 @@ const FilterBtn = ({ className }: { className?: string }) => {
             return <CommandEmpty>{t('filter.noAvailableFilters')}</CommandEmpty>;
         }
 
-        return options.map((group: FilterGroup, index: number) => (
+        return options.map((group: FilterGroup) => (
             <CommandItem
-                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                key={index}
+                key={group.name}
                 onSelect={() => handleSelect(group.name)}
                 className="group flex gap-2 items-center hover:bg-muted"
             >
