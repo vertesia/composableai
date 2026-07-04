@@ -423,6 +423,12 @@ export interface GenerationRunMetadata {
     date: string;
     model: string;
     target?: string;
+    /**
+     * Fingerprint of the inputs used by property extraction (content etag, type + its object
+     * schema, source, instructions, interaction). Lets a later run skip re-extraction when
+     * nothing changed.
+     */
+    extraction_fingerprint?: string;
 }
 
 // Base rendition interface for document and audio
@@ -452,6 +458,38 @@ export interface ContentMetadata {
     /** ETag of text materialized from object properties by intake rendering. */
     rendered_text_etag?: string;
     renditions?: Rendition[];
+    /**
+     * Embedded/technical metadata harvested from the source file by intake
+     * (office docProps, PDF docinfo). Free-form, nature-appropriate keys.
+     */
+    embedded?: Record<string, unknown>;
+    /** Type-detection provenance recorded by the intake sniff pipeline. */
+    type_detection?: TypeDetectionMetadata;
+}
+
+/**
+ * Durable provenance persisted at `metadata.type_detection` whenever the intake sniff pipeline
+ * runs. `method` records which mechanism decides the type: the sniff itself (high confidence),
+ * the post-conversion selector (medium/low/other), or the post-conversion selector because the
+ * document was below the small-doc page threshold.
+ */
+export interface TypeDetectionMetadata {
+    method: 'sniff' | 'post_conversion' | 'post_conversion_small_doc';
+    /** Sniffed type id, or 'other'. */
+    type?: string;
+    type_name?: string;
+    /** Sniff confidence, 0..1. */
+    confidence?: number;
+    band?: 'high' | 'medium' | 'low';
+    rationale?: string;
+    alternates?: string[];
+    /** Which evidence kinds the sniff saw. */
+    evidence?: 'text' | 'image' | 'both';
+    page_count?: number;
+    /** Why the sniff LLM call was skipped (e.g. 'below_min_pages'). */
+    skipped_reason?: string;
+    min_pages?: number;
+    detected_at: string;
 }
 
 // Type-specific metadata interfaces

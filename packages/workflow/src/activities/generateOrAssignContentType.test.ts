@@ -141,7 +141,7 @@ describe('generateOrAssignContentType', () => {
                 ],
             }),
         );
-        expect(update).toHaveBeenCalledWith('object-1', { type: 'sys:GenericDocument' });
+        expect(update).toHaveBeenCalledWith('object-1', { type: 'sys:GenericDocument' }, { suppressWorkflows: true });
         expect(result).toEqual({
             id: 'sys:GenericDocument',
             isNew: false,
@@ -182,7 +182,11 @@ describe('generateOrAssignContentType', () => {
                 image: pdfRendition.content,
             }),
         );
-        expect(update).toHaveBeenCalledWith('object-1', { type: 'type-MarketPresentation' });
+        expect(update).toHaveBeenCalledWith(
+            'object-1',
+            { type: 'type-MarketPresentation' },
+            { suppressWorkflows: true },
+        );
         expect(result).toEqual({
             id: 'type-MarketPresentation',
             isNew: false,

@@ -1,5 +1,6 @@
 import { ApplicationFailure, log } from '@temporalio/activity';
 import {
+    type ContentMetadata,
     type ContentSource,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
@@ -8,6 +9,7 @@ import {
     type Rendition,
 } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
+import { md5 } from '../utils/blobs.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
 import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
 
@@ -43,6 +45,16 @@ export interface GenerateDocumentPropertiesParams extends InteractionExecutionPa
     source?: GenerateDocumentPropertiesSource;
 
     instructions?: string;
+
+    /**
+     * Opt-in freshness guard. When true, the activity computes a fingerprint of the extraction
+     * inputs (content etag, type + its object schema, source, instructions, interaction name)
+     * and returns `{ status: 'skipped' }` without executing the interaction when the fingerprint
+     * stored by a previous successful extraction matches and the object already has non-empty
+     * properties. Defaults to false so shared DSL callers keep the always-extract behavior.
+     * `payload.vars.forceGeneration` bypasses the skip.
+     */
+    skip_if_fresh?: boolean;
 }
 export interface GenerateDocumentProperties extends DSLActivitySpec<GenerateDocumentPropertiesParams> {
     name: 'generateDocumentProperties';
@@ -51,6 +63,49 @@ export type GenerateDocumentPropertiesResult =
     | { status: 'completed' }
     | { status: 'failed'; error: string }
     | { document: string; status: 'skipped'; message: string };
+
+/**
+ * Stable fingerprint of the inputs that determine the extraction output. Key order is fixed by
+ * the object literal so the hash is deterministic.
+ */
+export function computeExtractionFingerprint(input: {
+    content_etag?: string;
+    type_id?: string;
+    source: GenerateDocumentPropertiesSource;
+    instructions?: string;
+    interactionName: string;
+    /** The type's object_schema: a schema edit under the same type id must invalidate the fingerprint. */
+    object_schema?: unknown;
+}): string {
+    return md5(
+        JSON.stringify({
+            content_etag: input.content_etag,
+            type_id: input.type_id,
+            source: input.source,
+            instructions: input.instructions,
+            interactionName: input.interactionName,
+            object_schema: input.object_schema,
+        }),
+    );
+}
+
+/**
+ * The fingerprint is persisted inside the generation run info of the last successful extraction
+ * (the server appends it to `metadata.generation_runs`). Other writers append runs without a
+ * fingerprint, so scan backwards for the most recent extraction entry.
+ */
+function getStoredExtractionFingerprint(metadata: ContentMetadata | undefined): string | undefined {
+    const runs = metadata?.generation_runs;
+    if (!Array.isArray(runs)) {
+        return undefined;
+    }
+    for (let i = runs.length - 1; i >= 0; i--) {
+        if (runs[i]?.extraction_fingerprint) {
+            return runs[i].extraction_fingerprint;
+        }
+    }
+    return undefined;
+}
 
 function getPdfRenditionContent(doc: { metadata?: { renditions?: unknown } }): ContentSource | undefined {
     const renditions = doc.metadata?.renditions;
@@ -85,6 +140,31 @@ export async function generateDocumentProperties(
     }
 
     const source = params.source ?? (params.use_vision ? 'mixed' : 'auto');
+
+    const extractionFingerprint = computeExtractionFingerprint({
+        content_etag: doc.content?.etag,
+        type_id: type.id,
+        source,
+        instructions: params.instructions,
+        interactionName,
+        object_schema: type.object_schema,
+    });
+
+    if (params.skip_if_fresh && !payload.vars?.forceGeneration) {
+        const storedFingerprint = getStoredExtractionFingerprint(doc.metadata);
+        const hasProperties = !!doc.properties && Object.keys(doc.properties).length > 0;
+        if (storedFingerprint === extractionFingerprint && hasProperties) {
+            log.info(`Skipping property extraction for ${objectId}: extraction inputs unchanged`, {
+                extractionFingerprint,
+            });
+            return {
+                document: objectId,
+                status: 'skipped',
+                message: 'properties are fresh (extraction fingerprint matches)',
+            };
+        }
+    }
+
     const getImageRef = (): string | ContentSource | undefined => {
         if (doc.content?.type?.startsWith('image/')) {
             return `store:${doc.id}`;
@@ -177,6 +257,7 @@ export async function generateDocumentProperties(
                 id: infoRes.id,
                 date: new Date().toISOString(),
                 model: infoRes.modelId ?? '',
+                extraction_fingerprint: extractionFingerprint,
             },
         },
         { suppressWorkflows: true },

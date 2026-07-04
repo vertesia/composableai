@@ -3,6 +3,7 @@ import type { VertesiaClient } from '@vertesia/client';
 import {
     ContentEventName,
     type DSLActivityExecutionPayload,
+    type GenerationRunMetadata,
     PDF_RENDITION_NAME,
     type Rendition,
 } from '@vertesia/common';
@@ -10,6 +11,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
 import { executeInteractionFromActivity } from './executeInteraction.js';
 import {
+    computeExtractionFingerprint,
     type GenerateDocumentPropertiesParams,
     type GenerateDocumentPropertiesResult,
     generateDocumentProperties,
@@ -47,6 +49,7 @@ function mockExtractionResult(properties: Record<string, unknown>) {
 
 function payload(
     params: GenerateDocumentPropertiesParams,
+    vars: Record<string, unknown> = {},
 ): DSLActivityExecutionPayload<GenerateDocumentPropertiesParams> {
     return {
         auth_token: 'mock-token',
@@ -58,16 +61,26 @@ function payload(
         event: ContentEventName.create,
         objectIds: ['object-1'],
         input: { inputType: 'objectIds', objectIds: ['object-1'] },
-        vars: {},
+        vars,
         activity: { name: 'generateDocumentProperties', params: {} },
     };
 }
 
+const DEFAULT_OBJECT_SCHEMA = {
+    type: 'object',
+    properties: {
+        title: { type: 'string' },
+    },
+};
+
 async function mockSetup(options: {
     text?: string;
     contentType?: string;
+    contentEtag?: string;
     objectSchema?: Record<string, unknown>;
     renditions?: Rendition[];
+    properties?: Record<string, unknown>;
+    generationRuns?: GenerationRunMetadata[];
 }) {
     const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
     const update = vi.fn(async () => ({}));
@@ -75,23 +88,21 @@ async function mockSetup(options: {
         id: 'object-1',
         text: options.text,
         text_etag: 'source-etag',
+        properties: options.properties,
         content: {
             type: options.contentType,
+            etag: options.contentEtag,
         },
         metadata: {
             renditions: options.renditions,
+            generation_runs: options.generationRuns,
         },
         type: { id: 'type-1', name: 'Invoice', ref_type: 'stored' },
     }));
     const resolveType = vi.fn(async () => ({
         id: 'type-1',
         name: 'Invoice',
-        object_schema: options.objectSchema ?? {
-            type: 'object',
-            properties: {
-                title: { type: 'string' },
-            },
-        },
+        object_schema: options.objectSchema ?? DEFAULT_OBJECT_SCHEMA,
     }));
 
     vi.mocked(setupActivity).mockImplementation(
@@ -288,5 +299,180 @@ describe('generateDocumentProperties', () => {
             }),
             { suppressWorkflows: true },
         );
+    });
+
+    describe('skip_if_fresh freshness guard', () => {
+        const CONTENT_ETAG = 'content-etag-1';
+        const freshFingerprint = computeExtractionFingerprint({
+            content_etag: CONTENT_ETAG,
+            type_id: 'type-1',
+            source: 'auto',
+            instructions: undefined,
+            interactionName: 'sys:ExtractInformation',
+            object_schema: DEFAULT_OBJECT_SCHEMA,
+        });
+
+        function freshSetupOptions(overrides: Parameters<typeof mockSetup>[0] = {}) {
+            return {
+                text: 'source text',
+                contentType: 'text/plain',
+                contentEtag: CONTENT_ETAG,
+                properties: { title: 'Statement' },
+                generationRuns: [
+                    {
+                        id: 'run-0',
+                        date: '2026-01-01T00:00:00.000Z',
+                        model: 'model-1',
+                        extraction_fingerprint: freshFingerprint,
+                    },
+                ],
+                ...overrides,
+            };
+        }
+
+        it('skips extraction when the stored fingerprint matches and properties are present', async () => {
+            const { update } = await mockSetup(freshSetupOptions());
+
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(
+                generateDocumentProperties,
+                payload({ skip_if_fresh: true }),
+            );
+
+            expect(result).toEqual({
+                document: 'object-1',
+                status: 'skipped',
+                message: expect.stringContaining('fresh'),
+            });
+            expect(executeInteractionFromActivity).not.toHaveBeenCalled();
+            expect(update).not.toHaveBeenCalled();
+        });
+
+        it('scans backwards past generation runs written without a fingerprint', async () => {
+            await mockSetup(
+                freshSetupOptions({
+                    generationRuns: [
+                        {
+                            id: 'run-0',
+                            date: '2026-01-01T00:00:00.000Z',
+                            model: 'model-1',
+                            extraction_fingerprint: freshFingerprint,
+                        },
+                        { id: 'run-1', date: '2026-01-02T00:00:00.000Z', model: 'model-2' },
+                    ],
+                }),
+            );
+
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(
+                generateDocumentProperties,
+                payload({ skip_if_fresh: true }),
+            );
+
+            expect(result).toMatchObject({ status: 'skipped' });
+            expect(executeInteractionFromActivity).not.toHaveBeenCalled();
+        });
+
+        it('re-extracts by default: the guard is opt-in', async () => {
+            await mockSetup(freshSetupOptions());
+            mockExtractionResult({ title: 'Statement' });
+
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(generateDocumentProperties, payload({}));
+
+            expect(result).toEqual({ status: 'completed' });
+            expect(executeInteractionFromActivity).toHaveBeenCalled();
+        });
+
+        it('re-extracts when the stored fingerprint is stale', async () => {
+            await mockSetup(
+                freshSetupOptions({
+                    generationRuns: [
+                        {
+                            id: 'run-0',
+                            date: '2026-01-01T00:00:00.000Z',
+                            model: 'model-1',
+                            extraction_fingerprint: 'stale-fingerprint',
+                        },
+                    ],
+                }),
+            );
+            mockExtractionResult({ title: 'Statement' });
+
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(
+                generateDocumentProperties,
+                payload({ skip_if_fresh: true }),
+            );
+
+            expect(result).toEqual({ status: 'completed' });
+            expect(executeInteractionFromActivity).toHaveBeenCalled();
+        });
+
+        it('re-extracts when the type schema changed under the same type id', async () => {
+            await mockSetup(
+                freshSetupOptions({
+                    objectSchema: {
+                        type: 'object',
+                        properties: {
+                            title: { type: 'string' },
+                            total: { type: 'number' },
+                        },
+                    },
+                }),
+            );
+            mockExtractionResult({ title: 'Statement', total: 12 });
+
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(
+                generateDocumentProperties,
+                payload({ skip_if_fresh: true }),
+            );
+
+            expect(result).toEqual({ status: 'completed' });
+            expect(executeInteractionFromActivity).toHaveBeenCalled();
+        });
+
+        it('re-extracts when the fingerprint matches but the object has no properties', async () => {
+            await mockSetup(freshSetupOptions({ properties: {} }));
+            mockExtractionResult({ title: 'Statement' });
+
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(
+                generateDocumentProperties,
+                payload({ skip_if_fresh: true }),
+            );
+
+            expect(result).toEqual({ status: 'completed' });
+            expect(executeInteractionFromActivity).toHaveBeenCalled();
+        });
+
+        it('re-extracts when payload vars carry forceGeneration', async () => {
+            await mockSetup(freshSetupOptions());
+            mockExtractionResult({ title: 'Statement' });
+
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(
+                generateDocumentProperties,
+                payload({ skip_if_fresh: true }, { forceGeneration: true }),
+            );
+
+            expect(result).toEqual({ status: 'completed' });
+            expect(executeInteractionFromActivity).toHaveBeenCalled();
+        });
+
+        it('persists the extraction fingerprint in the generation run info after a successful extraction', async () => {
+            const { update } = await mockSetup(freshSetupOptions({ generationRuns: undefined }));
+            mockExtractionResult({ title: 'Statement' });
+
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(
+                generateDocumentProperties,
+                payload({ skip_if_fresh: true }),
+            );
+
+            expect(result).toEqual({ status: 'completed' });
+            expect(update).toHaveBeenCalledWith(
+                'object-1',
+                expect.objectContaining({
+                    generation_run_info: expect.objectContaining({
+                        extraction_fingerprint: freshFingerprint,
+                    }),
+                }),
+                { suppressWorkflows: true },
+            );
+        });
     });
 });

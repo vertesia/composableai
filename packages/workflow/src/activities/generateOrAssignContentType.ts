@@ -1,3 +1,4 @@
+import type { JSONSchema } from '@llumiverse/common';
 import { ApplicationFailure, log } from '@temporalio/activity';
 import {
     type ContentObjectTypeItem,
@@ -177,18 +178,48 @@ export async function generateOrAssignContentType(
 
     const fileRef = await getImage();
 
+    // Slim catalog for the selection prompt: names + identification guidance only, NO schemas
+    // (design intake-v2 §3). The full list (with schemas) is still used for matching and for
+    // new-type generation below.
+    const selectionCatalog = existing_types.map((t) => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        guidance: t.intake?.identification?.guidance,
+        distinguish_from: t.intake?.identification?.distinguish_from,
+    }));
+
+    // Closed-world output: constrain the result to the eligible type names + 'other', which
+    // removes the exact-string-match fragility on the model's answer.
+    const selectionResultSchema: JSONSchema = {
+        type: 'object',
+        properties: {
+            document_type: {
+                type: 'string',
+                enum: [...existing_types.map((t) => t.name), 'other'],
+                description: "Name of the matching document type, or 'other' when none matches.",
+            },
+        },
+        required: ['document_type'],
+    };
+
     log.info(
-        'Execute SelectDocumentType interaction on content with \nexisting types - passing full types: ' +
-            existing_types.filter((t) => !t.tags?.includes('system')),
+        'Execute SelectDocumentType interaction on content with \nexisting types - passing slim catalog: ' +
+            existing_types.filter((t) => !t.tags?.includes('system')).map((t) => t.name),
     );
 
     let res: Awaited<ReturnType<typeof executeInteractionFromActivity>>;
     try {
-        res = await executeInteractionFromActivity(client, interactionName, params, {
-            existing_types,
-            content,
-            image: fileRef,
-        });
+        res = await executeInteractionFromActivity(
+            client,
+            interactionName,
+            { ...params, result_schema: selectionResultSchema },
+            {
+                existing_types: selectionCatalog,
+                content,
+                image: fileRef,
+            },
+        );
     } catch (error: unknown) {
         const selectionError = toRetryableError(error);
         log.error(`Failed to select document type`, { error: selectionError, retryable: selectionError.retryable });
@@ -228,8 +259,9 @@ export async function generateOrAssignContentType(
         if (params.allowNewContentTypes === false) {
             // Type generation is disabled (handled separately, e.g. via the Studio Assistant), so
             // fall back to the project's default type (or sys:GenericDocument) rather than leaving
-            // the document untyped.
-            if (jsonResult.document_type) {
+            // the document untyped. 'other' is the constrained schema's first-class no-match
+            // answer, not a selection defect — only warn on anything else.
+            if (jsonResult.document_type && jsonResult.document_type !== 'other') {
                 log.warn('Document type selection returned an ineligible or unknown type; assigning fallback', {
                     objectId,
                     selectedDocumentType: jsonResult.document_type,
@@ -249,10 +281,16 @@ export async function generateOrAssignContentType(
         throw new Error(`Type not found: ${jsonResult.document_type}`);
     }
 
-    //update object with selected type
-    await client.objects.update(objectId, {
-        type: selectedType.id,
-    });
+    // Update object with selected type. Suppress workflow triggers: this is an intake-internal
+    // self-write — type updates now emit dirty.type and match the StandardIntake trigger, so an
+    // unsuppressed write here would recursively re-run intake on every type assignment.
+    await client.objects.update(
+        objectId,
+        {
+            type: selectedType.id,
+        },
+        { suppressWorkflows: true },
+    );
 
     return {
         id: selectedType.id,
