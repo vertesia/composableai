@@ -215,11 +215,8 @@ export class DocumentSearch implements SearchInterface {
 const DocumentSearchContext = createContext<DocumentSearch | undefined>(undefined);
 
 export function useDocumentSearch() {
-    const context = useContext(DocumentSearchContext);
-    if (!context) {
-        throw new Error('useDocumentSearch must be used within DocumentSearchContext.Provider');
-    }
-    return context;
+    // biome-ignore lint/style/noNonNullAssertion: intentionally tolerant — called outside its Provider by shared toolbars/action menus (e.g. on the object-detail page) where the context is undefined and callers handle it; throwing here crashes those pages (regressed in PR #6024)
+    return useContext(DocumentSearchContext)!;
 }
 
 export function useWatchDocumentSearchFacets() {

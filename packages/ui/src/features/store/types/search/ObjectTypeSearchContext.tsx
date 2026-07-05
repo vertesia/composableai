@@ -107,11 +107,8 @@ export class ObjectTypeSearch {
 const ObjectTypeSearchContext = createContext<ObjectTypeSearch | undefined>(undefined);
 
 export function useSearch() {
-    const context = useContext(ObjectTypeSearchContext);
-    if (!context) {
-        throw new Error('useSearch must be used within ObjectTypeSearchContext.Provider');
-    }
-    return context;
+    // biome-ignore lint/style/noNonNullAssertion: intentionally tolerant — called outside its Provider by shared toolbars/action menus where the context is undefined and callers handle it; throwing here crashes those pages (regressed the object-detail page in PR #6024)
+    return useContext(ObjectTypeSearchContext)!;
 }
 
 export function useWatchSearchResult() {
