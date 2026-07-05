@@ -107,8 +107,11 @@ export class ObjectTypeSearch {
 const ObjectTypeSearchContext = createContext<ObjectTypeSearch | undefined>(undefined);
 
 export function useSearch() {
-    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-    return useContext(ObjectTypeSearchContext)!;
+    const context = useContext(ObjectTypeSearchContext);
+    if (!context) {
+        throw new Error('useSearch must be used within ObjectTypeSearchContext.Provider');
+    }
+    return context;
 }
 
 export function useWatchSearchResult() {

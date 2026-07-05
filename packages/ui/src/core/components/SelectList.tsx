@@ -82,7 +82,6 @@ export function SelectList<T>({
                     layout = defaultOptionLayout(option, isSelected);
                 }
                 return (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                     <SelectListOption key={i} option={option} onSelect={onSelect} layout={layout} noCheck={noCheck} />
                 );
             })}

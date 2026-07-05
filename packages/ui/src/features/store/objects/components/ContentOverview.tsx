@@ -830,9 +830,8 @@ function TranscriptPanel({
             <div className={`h-full} overflow-auto px-2`}>
                 {segments && segments.length > 0 ? (
                     <div className="space-y-2">
-                        {segments.map((segment, idx) => (
-                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                            <div key={idx} className="flex gap-3 text-sm">
+                        {segments.map((segment) => (
+                            <div key={segment.start} className="flex gap-3 text-sm">
                                 <span className="text-muted font-mono text-xs shrink-0 pt-0.5">
                                     {formatTimestamp(segment.start)}
                                     {segment.end && ` - ${formatTimestamp(segment.end)}`}

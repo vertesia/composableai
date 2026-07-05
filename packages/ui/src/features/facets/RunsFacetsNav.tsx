@@ -237,7 +237,6 @@ export function RunsFacetsNav({
                         {actions && actions.length > 0 ? (
                             <div className="flex items-center gap-2 mb-1 me-2">
                                 {actions.map((action, index) => (
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
                                     <div key={index}>{action}</div>
                                 ))}
                             </div>

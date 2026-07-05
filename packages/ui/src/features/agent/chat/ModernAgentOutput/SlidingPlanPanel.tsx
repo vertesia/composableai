@@ -61,9 +61,9 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                 // Determine task status - use task.status if available or lookup from workstream
                                 let status: 'pending' | 'in_progress' | 'completed' | 'skipped' =
                                     task.status || 'pending';
-                                if (workstreamStatus.has(taskId)) {
-                                    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-                                    status = workstreamStatus.get(taskId)!;
+                                const wsStatus = workstreamStatus.get(taskId);
+                                if (wsStatus !== undefined) {
+                                    status = wsStatus;
                                 }
 
                                 // Determine status icon and style
@@ -81,8 +81,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                 }
 
                                 return (
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                                    <div key={index} className={`flex p-3 ${bgColor}`}>
+                                    <div key={taskId} className={`flex p-3 ${bgColor}`}>
                                         <div className={`me-3 mt-0.5 flex-shrink-0 ${statusColor}`}>
                                             <StatusIcon className="h-4 w-4" />
                                         </div>

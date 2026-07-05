@@ -17,7 +17,6 @@ export function JSONCode({ data, className }: { data: unknown; className?: strin
         >
             <code>
                 {lines.map((line, index) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: static formatted text lines
                     <span key={index}>
                         {renderJsonLine(line)}
                         {index < lines.length - 1 ? '\n' : null}

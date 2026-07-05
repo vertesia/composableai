@@ -215,8 +215,11 @@ export class DocumentSearch implements SearchInterface {
 const DocumentSearchContext = createContext<DocumentSearch | undefined>(undefined);
 
 export function useDocumentSearch() {
-    // biome-ignore lint/style/noNonNullAssertion: intentional non-null assertion; TS can't prove narrowing here
-    return useContext(DocumentSearchContext)!;
+    const context = useContext(DocumentSearchContext);
+    if (!context) {
+        throw new Error('useDocumentSearch must be used within DocumentSearchContext.Provider');
+    }
+    return context;
 }
 
 export function useWatchDocumentSearchFacets() {
