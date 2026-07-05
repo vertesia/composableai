@@ -303,6 +303,16 @@ export interface MCPToolAnnotations {
 }
 
 /**
+ * Approval behavior class for a tool exposed to agents.
+ *
+ * - `read_only`: reads or inspects state without changing Vertesia, external systems, or user-visible artifacts.
+ * - `side_effecting`: can create, update, delete, send, execute, schedule, or otherwise change state.
+ * - `control`: affects agent control flow or tool availability, not user data or external systems.
+ * - `requires_confirmation`: high-impact action that must ask the user even in interactive full-control mode.
+ */
+export type AgentToolApprovalClass = 'read_only' | 'side_effecting' | 'control' | 'requires_confirmation';
+
+/**
  * Tool definition with optional activation control for agent exposure.
  */
 export interface AgentToolDefinition extends ToolDefinition {
@@ -333,15 +343,10 @@ export interface AgentToolDefinition extends ToolDefinition {
      */
     annotations?: MCPToolAnnotations;
     /**
-     * When true, agents must obtain explicit user confirmation via `ask_user`
-     * (Yes/No) before invoking this tool. If the user answers No, the tool
-     * must not run and should return an error indicating the user declined.
-     *
-     * Stronger than `annotations.destructiveHint` (which is only a hint) —
-     * this is a hard contract the agent is expected to honor. Set on tools
-     * that perform irreversible or destructive actions (e.g. delete_*).
+     * Approval classification used by interactive agent approval modes.
+     * Use `requires_confirmation` for actions that must prompt even in full-control mode.
      */
-    requires_user_confirmation?: boolean;
+    approval_class?: AgentToolApprovalClass;
 }
 
 /**
@@ -753,8 +758,19 @@ export interface AppManifest extends AppManifestData {
     id: string;
     /** The owning account. Undefined for apps imported from a master region. */
     account?: string;
+    /** Source metadata for generated or synced app manifests. */
+    source?: AppManifestSource;
     created_at: string;
     updated_at: string;
+}
+
+export interface AppManifestSource {
+    kind: 'git';
+    git: {
+        url: string;
+        default_branch?: string;
+        development_branch?: string;
+    };
 }
 
 /**
@@ -1051,6 +1067,10 @@ export interface CompositeAppSwitchersOverrides {
 
 /**
  * Header button visibility overrides for the CompositeApp header.
+ *
+ * @deprecated Superseded by `CompositeAppConfig.headerMenu` (free-form header items).
+ * Retained for backward compatibility and to seed the default header menu when no
+ * `headerMenu` has been configured yet.
  */
 export interface CompositeAppHeaderOverrides {
     /** Whether to hide the App Portal button (defaults to false) */
@@ -1063,6 +1083,10 @@ export interface CompositeAppHeaderOverrides {
 
 /**
  * User menu overrides for the CompositeApp.
+ *
+ * @deprecated Superseded by the `user_menu` item in `CompositeAppConfig.headerMenu`.
+ * Retained for backward compatibility and to seed the default header menu when no
+ * `headerMenu` has been configured yet.
  */
 export interface CompositeAppUserMenuOverrides {
     /** Whether to hide the User Menu (defaults to false) */
@@ -1184,6 +1208,51 @@ export interface CompositeAppHomePlugin {
     appRoute?: string;
 }
 
+// ============================================================================
+// Header Menu Types
+// ============================================================================
+
+/**
+ * Discriminator for a header item.
+ * The four built-ins (`app_portal`, `docs`, `help`, `user_menu`) seed the default
+ * header and cannot be deleted (only hidden/customized); `custom` items are fully
+ * user-defined buttons.
+ */
+export type CompositeAppHeaderItemKind = 'app_portal' | 'docs' | 'help' | 'user_menu' | 'custom';
+
+/** Where a header link opens. */
+export type CompositeAppHeaderItemTarget = '_self' | '_blank';
+
+/** Stable identifiers for the built-in header items. */
+export const COMPOSITE_APP_HEADER_BUILTIN_IDS = ['app_portal', 'docs', 'help', 'user_menu'] as const;
+
+/**
+ * A single button in the CompositeApp header bar.
+ *
+ * Unlike sidebar nav-items, header items are free-form and not tied to an installed
+ * app: each is a labelled, icon-bearing button linking to a route or external URL.
+ * The `user_menu` item is special — it renders the account dropdown, so its `icon`,
+ * `href`, and `target` are ignored.
+ */
+export interface CompositeAppHeaderItem {
+    /** Stable unique identifier. Built-ins use their kind as id (e.g. "app_portal"). */
+    id: string;
+    /** Item kind. `custom` for user-added buttons; otherwise one of the four built-ins. */
+    kind: CompositeAppHeaderItemKind;
+    /** Display label, used as the button tooltip / accessible name. */
+    label: string;
+    /** Lucide icon name or SVG content string. Ignored for `user_menu`. */
+    icon?: string;
+    /** Destination route ("/...") or external URL. Ignored for `user_menu`. */
+    href?: string;
+    /** Where to open the link (defaults to "_self"). Ignored for `user_menu`. */
+    target?: CompositeAppHeaderItemTarget;
+    /** When true, this item is hidden from the header. */
+    hidden?: boolean;
+    /** Optional access control settings for this header item. */
+    permissions?: CompositeAppNavItemPermissions;
+}
+
 /**
  * CompositeApp shell configuration.
  * This is the main configuration interface for storing CompositeApp settings.
@@ -1207,10 +1276,23 @@ export interface CompositeAppConfig {
     switchers?: CompositeAppSwitchersOverrides;
     /** Optional sidebar display overrides */
     sidebar?: CompositeAppSidebarOverrides;
-    /** Optional header button visibility overrides */
+    /**
+     * @deprecated Use `headerMenu` instead. Optional header button visibility overrides.
+     * Still read to seed `headerMenu` defaults for configs saved before the header menu existed.
+     */
     header?: CompositeAppHeaderOverrides;
-    /** Optional user menu overrides */
+    /**
+     * @deprecated Use the `user_menu` item in `headerMenu` instead. Optional user menu overrides.
+     * Still read to seed `headerMenu` defaults for configs saved before the header menu existed.
+     */
     userMenu?: CompositeAppUserMenuOverrides;
+    /**
+     * Optional free-form header menu. When present, the header renders from this ordered
+     * list instead of the legacy `header`/`userMenu` flags. Built-in items (App Portal,
+     * Docs, Help, User Menu) can be hidden/relabeled/re-icon'd/redirected; custom items
+     * are arbitrary buttons.
+     */
+    headerMenu?: CompositeAppHeaderItem[];
     /** Optional theme overrides (e.g. disable dark mode) */
     theme?: CompositeAppThemeOverrides;
     /** Optional home page override. When set, redirects "/" to the specified app route instead of the dashboard. Send null to unset. */

@@ -162,7 +162,7 @@ export const ModalFooter = ({ align = 'right', children, className, ...props }: 
     return (
         <div
             className={cn(
-                'w-full flex py-3 sm:py-2 sm:flex sm:flex-row-reverse sm:flex-row sm:justify-end sm:space-x-2',
+                'w-full flex py-3 sm:py-2 sm:flex sm:flex-row-reverse sm:flex-row sm:justify-end gap-2',
                 alignClass[align],
                 className,
             )}

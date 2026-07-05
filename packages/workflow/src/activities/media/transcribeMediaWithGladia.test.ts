@@ -7,8 +7,8 @@ import {
     ContentNature,
     type DSLActivityExecutionPayload,
 } from '@vertesia/common';
-import type { ActivityContext } from '@vertesia/workflow';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ActivityContext } from '../../dsl/setup/ActivityContext.js';
 import { TextExtractionStatus } from '../../result-types.js';
 import {
     type TranscriptMediaParams,

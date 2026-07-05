@@ -151,9 +151,8 @@ function TableRenderer({ content }: { content: unknown }): ReactElement {
             <table className="min-w-full text-sm border-collapse">
                 <thead>
                     <tr className="border-b">
-                        {headers.map((h, i) => (
-                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                            <th key={i} className="px-3 py-2 text-start font-medium text-muted">
+                        {headers.map((h) => (
+                            <th key={h} className="px-3 py-2 text-start font-medium text-muted">
                                 {h}
                             </th>
                         ))}
@@ -161,11 +160,9 @@ function TableRenderer({ content }: { content: unknown }): ReactElement {
                 </thead>
                 <tbody>
                     {rows.slice(0, 100).map((row, i) => (
-                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                        <tr key={i} className="border-b border-muted/20">
+                        <tr key={`row-${i}`} className="border-b border-muted/20">
                             {row.map((cell, j) => (
-                                // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                                <td key={j} className="px-3 py-2">
+                                <td key={`cell-${j}`} className="px-3 py-2">
                                     {cell}
                                 </td>
                             ))}

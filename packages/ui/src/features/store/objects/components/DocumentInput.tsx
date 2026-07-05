@@ -1,4 +1,4 @@
-import type { ContentObjectItem } from '@vertesia/common';
+import type { ContentObject, ContentObjectItem } from '@vertesia/common';
 import { Button, Styles, useFlag } from '@vertesia/ui/core';
 
 import { useUserSession } from '@vertesia/ui/session';
@@ -20,7 +20,7 @@ export function DocumentInput({ object }: DocumentInputProps) {
 
     const { off, on, isOn } = useFlag();
     const [actualValue, setValue] = useState(object.value != null ? String(object.value) : '');
-    const [doc, setDoc] = useState<ContentObjectItem | undefined>(undefined);
+    const [doc, setDoc] = useState<ContentObject | ContentObjectItem | undefined>(undefined);
 
     const _onChange = (event: ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;

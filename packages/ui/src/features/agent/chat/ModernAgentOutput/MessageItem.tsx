@@ -106,7 +106,7 @@ export interface MessageItemProps extends MessageItemClassNames {
     message: AgentMessage;
     showPulsatingCircle?: boolean;
     /** Callback when user sends a message (e.g., from proposal selection) */
-    onSendMessage?: (message: string) => void;
+    onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
     /** Whether a REQUEST_INPUT message has already been answered by a later user message */
     requestInputAnswered?: boolean;
     /** Sparse per-type overrides for MESSAGE_STYLES (deep-merged with defaults) */
@@ -651,6 +651,10 @@ function MessageItemComponent({
                                       multiSelect={uxConfig.multiSelect}
                                       onSelect={(optionId) => onSendMessage?.(optionId)}
                                       onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(', '))}
+                                      allowFreeResponse={!uxConfig.options?.length || !!uxConfig.free_response}
+                                      placeholder={uxConfig.free_response?.placeholder}
+                                      submitLabel={uxConfig.free_response?.submit_label}
+                                      onSubmit={(value) => onSendMessage?.(value, uxConfig.free_response?.metadata)}
                                       hideBorder
                                       compact
                                       answered={requestInputAnswered}

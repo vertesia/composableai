@@ -12,6 +12,8 @@ import {
     type DataStoreArchiveResult,
     type DataStoreDownloadInfo,
     type DataStoreItem,
+    type DataStoreMutateRowsPayload,
+    type DataStoreMutateRowsResult,
     type DataStoreTableDetail,
     type DataStoreTableDropResult,
     type DataStoreVersion,
@@ -253,7 +255,7 @@ export class DataApi extends ApiTopic {
      *
      * @example
      * ```typescript
-     * const job = await client.data.import(storeId, {
+     * const job = await client.data.importData(storeId, {
      *   mode: 'append',
      *   message: 'Monthly data import',
      *   tables: {
@@ -270,7 +272,7 @@ export class DataApi extends ApiTopic {
      * });
      * ```
      */
-    import(id: string, payload: ImportDataPayload): Promise<ImportJob> {
+    importData(id: string, payload: ImportDataPayload): Promise<ImportJob> {
         return this.post(`/${id}/import`, { payload, headers: this.storeHeaders(id) });
     }
 
@@ -391,6 +393,20 @@ export class DataApi extends ApiTopic {
 
     queryBatch(id: string, queries: QueryPayload[]): Promise<BatchQueryResult> {
         return this.post(`/${id}/query/batch`, { payload: { queries }, headers: this.storeHeaders(id) });
+    }
+
+    /**
+     * Execute a single row mutation statement against the data store.
+     *
+     * Only UPDATE and DELETE statements are accepted. The mutation is versioned
+     * and rolled back automatically if the statement or subsequent persistence fails.
+     *
+     * @param id - Data store ID
+     * @param payload - Mutation SQL and commit message
+     * @returns Resulting version ID and affected table row counts
+     */
+    mutateRows(id: string, payload: DataStoreMutateRowsPayload): Promise<DataStoreMutateRowsResult> {
+        return this.post(`/${id}/mutate`, { payload, headers: this.storeHeaders(id) });
     }
 
     /**

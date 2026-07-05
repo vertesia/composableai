@@ -40,6 +40,13 @@ export interface OAuthClientData {
     status: OAuthClientStatus;
     project_binding_mode: OAuthProjectBindingMode;
     fixed_project_id?: string;
+    /**
+     * When true (the default for new clients), the client may only be authorized for projects in its
+     * owning account/organization. Set to false to allow authorization for any project the approving
+     * user can access, regardless of account — required for OAuth/MCP clients used across
+     * organizations. The owning account itself is internal and not exposed here.
+     */
+    restrict_to_owner_account?: boolean;
     metadata?: Record<string, unknown>;
     created_by?: string;
     client_secret_configured?: boolean;
@@ -119,6 +126,7 @@ export interface CreateOAuthClientPayload {
     default_scopes?: string[];
     project_binding_mode?: OAuthProjectBindingMode;
     fixed_project_id?: string;
+    restrict_to_owner_account?: boolean;
     client_secret?: string;
     metadata?: Record<string, unknown>;
 }
@@ -134,6 +142,7 @@ export interface UpdateOAuthClientPayload {
     status?: OAuthClientStatus;
     project_binding_mode?: OAuthProjectBindingMode;
     fixed_project_id?: string;
+    restrict_to_owner_account?: boolean;
     client_secret?: string;
     metadata?: Record<string, unknown>;
 }
@@ -203,6 +212,14 @@ export interface OAuthAuthorizationRequest {
     requested_project_id?: string;
     project_binding_mode: OAuthProjectBindingMode;
     fixed_project_id?: string;
+    /**
+     * When true, the consent UI must constrain project selection to {@link owner_account_id}: the
+     * client may only be authorized for projects in its owning account. False (default) lets the user
+     * authorize any project they can access. Mirrors the server-side authorization enforcement.
+     */
+    restrict_to_owner_account?: boolean;
+    /** The owning account the client is restricted to, when {@link restrict_to_owner_account} is true. */
+    owner_account_id?: string;
     status: OAuthAuthorizationRequestStatus;
     created_at: string;
     expires_at: string;

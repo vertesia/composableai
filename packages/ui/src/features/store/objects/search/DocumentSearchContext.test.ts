@@ -1,5 +1,5 @@
 import type { ZenoClient } from '@vertesia/client';
-import type { ContentObjectItem } from '@vertesia/common';
+import type { ContentObjectItemApiResponse } from '@vertesia/common';
 import { describe, expect, it, vi } from 'vitest';
 import { DocumentSearch } from './DocumentSearchContext';
 
@@ -14,7 +14,7 @@ function createClient(searchImpl: () => Promise<unknown>): ZenoClient {
 describe('DocumentSearch', () => {
     it('settles loading state and preserves current objects when search fails', async () => {
         const error = new Error('search failed');
-        const currentObject = { id: 'object-1', name: 'Existing object' } as ContentObjectItem;
+        const currentObject = { id: 'object-1', name: 'Existing object' } as ContentObjectItemApiResponse;
         const search = new DocumentSearch(createClient(() => Promise.reject(error)));
         search.result.value = {
             objects: [currentObject],

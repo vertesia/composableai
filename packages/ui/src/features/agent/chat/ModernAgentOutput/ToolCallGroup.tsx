@@ -267,14 +267,13 @@ function FileDisplay({ files, className: fileClassName }: { files: string[]; cla
 
     return (
         <div className={cn('mt-2 flex flex-wrap gap-2', fileClassName)}>
-            {files.map((file, idx) => {
+            {files.map((file) => {
                 const fileName = file.split('/').pop()?.split('?')[0] || 'file';
                 if (isImageUrl(file)) {
                     return (
                         <Button
                             variant="unstyled"
-                            // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                            key={idx}
+                            key={file}
                             className="cursor-pointer p-0"
                             onClick={() => openImage(file, fileName)}
                             title={t('agent.clickToEnlarge')}
@@ -290,8 +289,7 @@ function FileDisplay({ files, className: fileClassName }: { files: string[]; cla
                 }
                 return (
                     <a
-                        // biome-ignore lint/suspicious/noArrayIndexKey: list order is stable for this render
-                        key={idx}
+                        key={file}
                         href={file}
                         target="_blank"
                         rel="noopener noreferrer"
