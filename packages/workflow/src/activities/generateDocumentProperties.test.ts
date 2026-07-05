@@ -272,6 +272,132 @@ describe('generateDocumentProperties', () => {
         );
     });
 
+    describe('scoped vision evidence (evidence_images contract)', () => {
+        const evidence = [
+            { source: 'vision/etag-1/standard/page-7.jpeg', type: 'image/jpeg', name: 'page-7.jpeg' },
+            { source: 'vision/etag-1/standard/page-3.jpeg', type: 'image/jpeg', name: 'page-3.jpeg' },
+        ];
+
+        it('sends scratch page refs as images and never the store ref for vision', async () => {
+            await mockSetup({ text: 'PDF text content', contentType: 'application/pdf' });
+            mockExtractionResult({ title: 'Scoped' });
+
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(
+                generateDocumentProperties,
+                payload({ source: 'vision', evidence_images: evidence }),
+            );
+
+            expect(result).toEqual({ status: 'completed' });
+            expect(executeInteractionFromActivity).toHaveBeenCalledWith(
+                expect.anything(),
+                'sys:ExtractInformation',
+                expect.anything(),
+                expect.objectContaining({
+                    content: undefined,
+                    image: undefined,
+                    images: evidence,
+                }),
+                false,
+            );
+        });
+
+        it('sends text AND scratch page refs for mixed', async () => {
+            await mockSetup({ text: 'PDF text content', contentType: 'application/pdf' });
+            mockExtractionResult({ title: 'Mixed scoped' });
+
+            await testEnv.run(generateDocumentProperties, payload({ source: 'mixed', evidence_images: evidence }));
+
+            expect(executeInteractionFromActivity).toHaveBeenCalledWith(
+                expect.anything(),
+                'sys:ExtractInformation',
+                expect.anything(),
+                expect.objectContaining({
+                    content: 'PDF text content',
+                    image: undefined,
+                    images: evidence,
+                }),
+                false,
+            );
+        });
+
+        it('fails with no-source (no store-ref fallback) when the provided evidence is empty and no text exists', async () => {
+            await mockSetup({ contentType: 'application/pdf' });
+
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(
+                generateDocumentProperties,
+                payload({ source: 'vision', evidence_images: [] }),
+            );
+
+            expect(result).toEqual({ status: 'failed', error: 'no-source' });
+            expect(executeInteractionFromActivity).not.toHaveBeenCalled();
+        });
+
+        it('extracts from text only when the provided evidence is empty for mixed', async () => {
+            await mockSetup({ text: 'PDF text content', contentType: 'application/pdf' });
+            mockExtractionResult({ title: 'Text only' });
+
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(
+                generateDocumentProperties,
+                payload({ source: 'mixed', evidence_images: [] }),
+            );
+
+            expect(result).toEqual({ status: 'completed' });
+            expect(executeInteractionFromActivity).toHaveBeenCalledWith(
+                expect.anything(),
+                'sys:ExtractInformation',
+                expect.anything(),
+                expect.objectContaining({
+                    content: 'PDF text content',
+                    image: undefined,
+                    images: undefined,
+                }),
+                false,
+            );
+        });
+
+        it('ignores evidence images for the text source', async () => {
+            await mockSetup({ text: 'PDF text content', contentType: 'application/pdf' });
+            mockExtractionResult({ title: 'Text' });
+
+            await testEnv.run(generateDocumentProperties, payload({ source: 'text', evidence_images: evidence }));
+
+            expect(executeInteractionFromActivity).toHaveBeenCalledWith(
+                expect.anything(),
+                'sys:ExtractInformation',
+                expect.anything(),
+                expect.objectContaining({
+                    content: 'PDF text content',
+                    image: undefined,
+                    images: undefined,
+                }),
+                false,
+            );
+        });
+
+        it('folds the evidence refs into the extraction fingerprint (absent = legacy hash)', () => {
+            const base = {
+                content_etag: 'etag-1',
+                type_id: 'type-1',
+                source: 'vision' as const,
+                interactionName: 'sys:ExtractInformation',
+                object_schema: DEFAULT_OBJECT_SCHEMA,
+            };
+            const legacy = computeExtractionFingerprint(base);
+            const withEvidence = computeExtractionFingerprint({
+                ...base,
+                evidence: ['vision/etag-1/standard/page-7.jpeg'],
+            });
+            const withOtherEvidence = computeExtractionFingerprint({
+                ...base,
+                evidence: ['vision/etag-1/high/page-7.jpeg'],
+            });
+            expect(withEvidence).not.toBe(legacy);
+            expect(withEvidence).not.toBe(withOtherEvidence);
+            // undefined evidence must keep previously stored legacy hashes valid
+            expect(computeExtractionFingerprint({ ...base, evidence: undefined })).toBe(legacy);
+        });
+    });
+
     it('updates properties without writing title or description into object text', async () => {
         const { update } = await mockSetup({
             text: 'source text',

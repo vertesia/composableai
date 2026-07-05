@@ -465,6 +465,54 @@ export interface ContentMetadata {
     embedded?: Record<string, unknown>;
     /** Type-detection provenance recorded by the intake sniff pipeline. */
     type_detection?: TypeDetectionMetadata;
+    /** Locate-pass provenance: which pages the document map found relevant. */
+    locate?: LocateMetadata;
+    /** Vision-evidence provenance for the last visual extraction run. */
+    vision_evidence?: VisionEvidenceMetadata;
+}
+
+/**
+ * Provenance persisted at `metadata.locate` when the intake locate (document-map) pass runs.
+ * The page list doubles as navigation metadata for the UI.
+ */
+export interface LocateMetadata {
+    /** Relevant pages proposed by the locate pass, in plan-ranked order (1-based). */
+    pages: number[];
+    /** Detail profile the plan requested for visual extraction. */
+    visual_detail?: 'low' | 'standard' | 'high';
+    /** Whether the plan asked for color rendering. */
+    needs_color?: boolean;
+    /** The model's one-line explanation of the selection. */
+    reason?: string;
+    page_count?: number;
+    /** Pages per contact sheet used for the pass (8 or 16). */
+    detail?: number;
+    sheet_count?: number;
+    located_at: string;
+}
+
+/**
+ * Provenance persisted at `metadata.vision_evidence` whenever intake prepares scoped page
+ * images for visual extraction (design: vision evidence spec — dropped pages are recorded,
+ * never silently batched).
+ */
+export interface VisionEvidenceMetadata {
+    /** Extraction source that requested the evidence. */
+    source_requested?: 'auto' | 'text' | 'vision' | 'mixed';
+    /** Pages rendered and sent as evidence, in ranked order (1-based). */
+    pages_sent: number[];
+    /** Resolved detail profile name. */
+    detail: 'low' | 'standard' | 'high';
+    /** Candidate pages dropped by budget clamping (recorded, not batched). */
+    dropped_pages?: number[];
+    /** The locate plan's reason, when the plan drove the page selection. */
+    plan_reason?: string;
+    /** Which clamps fired (page_count, allowed_details, token budget, page caps, payload). */
+    clamps_applied?: string[];
+    /** Estimated image tokens for the pages sent. */
+    est_tokens?: number;
+    page_count?: number;
+    prepared_at: string;
 }
 
 /**
@@ -779,6 +827,37 @@ export interface ColumnLayout {
 
 export type ContentObjectTypeStatus = 'active' | 'draft';
 
+/** Vision detail level names referenced by intake policies. The rendering profiles behind the
+ * names (dpi, max size, quality, color mode) are PLATFORM-defined and project-overridable —
+ * a type only ever references a detail name. */
+export type IntakeVisionDetail = 'low' | 'standard' | 'high';
+
+/**
+ * Named page scope for intake conversion/extraction: everything or the locate-pass result.
+ * Static page ranges live in the sibling `page_ranges` field (which wins when set) — kept as
+ * a SEPARATE field because scalar-or-collection unions generate unstable API clients.
+ */
+export type IntakePageScope = 'all' | 'located';
+
+/**
+ * Static page ranges: inclusive [start, end] pairs; negative indexes count from the end of
+ * the document ([[1, 2], [-1, -1]] = first two pages plus the last page).
+ */
+export type IntakePageRanges = [number, number][];
+
+/** Rendering settings behind a vision detail name (platform defaults, project-overridable
+ * via `configuration.intake.vision_profiles`). */
+export interface IntakeVisionProfileSettings {
+    /** Render resolution in dots per inch. */
+    dpi: number;
+    /** Maximum height/width of the rendered page image in pixels. */
+    max_hw: number;
+    /** JPEG quality (0-100). */
+    quality: number;
+    /** grayscale renders gray always; auto keeps color when the plan asks for it. */
+    color_mode: 'grayscale' | 'auto';
+}
+
 /**
  * Per-content-type policy for the standard intake workflows.
  */
@@ -791,6 +870,19 @@ export interface ContentTypeIntakePolicy {
         distinguish_from?: string;
         examples?: string[];
     };
+    /**
+     * Document-map ("locate") pass: page thumbnails tiled into labeled contact sheets, one
+     * vision call returns which pages matter for THIS type. The result can scope conversion
+     * and extraction, and doubles as the vision planner for visual extraction.
+     */
+    locate?: {
+        /** What to look for ("commercial terms, payment schedule, signature pages"). */
+        instructions: string;
+        /** Pages per contact sheet: 8 = bigger tiles (headings readable). Default 16. */
+        detail?: 8 | 16;
+        /** Only run when the page count is at least this. Default 8. */
+        min_pages?: number;
+    };
     /** Controls source-to-text conversion before extraction and embedding. */
     text_conversion?: {
         enabled?: boolean;
@@ -801,6 +893,10 @@ export interface ContentTypeIntakePolicy {
         };
         instructions?: string;
         output_format?: 'markdown' | 'text';
+        /** Which pages to convert: everything or the locate result. Default all. */
+        scope?: IntakePageScope;
+        /** Static page ranges to convert (wins over `scope` when set). */
+        page_ranges?: IntakePageRanges;
     };
     /** Controls schema-property extraction after type assignment. */
     extraction?: {
@@ -808,6 +904,24 @@ export interface ContentTypeIntakePolicy {
         source?: 'auto' | 'text' | 'vision' | 'mixed';
         instructions?: string;
         interaction?: string;
+        /** Which pages extraction sees: everything or the locate result. */
+        scope?: IntakePageScope;
+        /** Static page ranges extraction sees (wins over `scope` when set). */
+        page_ranges?: IntakePageRanges;
+        /** Cap on pages sent to extraction. Default 20. */
+        max_pages?: number;
+        /** Vision evidence budget for visual extraction. Detail names reference platform
+         * profiles; the type never defines dpi/quality/resolution. */
+        vision?: {
+            default_detail?: IntakeVisionDetail;
+            allowed_details?: IntakeVisionDetail[];
+            /** PRIMARY budget: estimated image tokens per extraction call. Default 16000. */
+            max_image_tokens?: number;
+            /** Transport guard in megabytes. Default 16. */
+            max_payload_mb?: number;
+            /** Cap on page images per extraction call. Default 8. */
+            max_pages_per_call?: number;
+        };
         verification?: {
             enabled?: boolean;
             model?: string;
@@ -828,8 +942,30 @@ export interface ContentTypeIntakePolicy {
     default_view?: 'auto' | 'text' | 'pdf' | 'image' | 'properties';
 }
 
-/** JSON schema for validating ContentTypeIntakePolicy payloads at API/tool boundaries. */
-export const ContentTypeIntakePolicySchema: JSONSchemaType<ContentTypeIntakePolicy> = {
+/** Reusable sub-schema for IntakePageScope ('all' | 'located'). */
+const IntakePageScopeSchema = {
+    type: 'string',
+    enum: ['all', 'located'],
+    description: "Named pages selection: 'all' or 'located' (the locate-pass result). Default all.",
+    nullable: true,
+};
+
+/** Reusable sub-schema for IntakePageRanges (inclusive [start, end] pairs, negative = from end). */
+const IntakePageRangesSchema = {
+    type: 'array',
+    items: { type: 'array', items: { type: 'integer' }, minItems: 2, maxItems: 2 },
+    description:
+        'Static inclusive [start, end] page ranges; negative indexes count from the end ' +
+        '([[1,2],[-1,-1]] = first two pages plus the last). Wins over scope when set.',
+    nullable: true,
+};
+
+/** JSON schema for validating ContentTypeIntakePolicy payloads at API/tool boundaries.
+ * NOTE: typed via a cast because AJV's strict `JSONSchemaType` mapping cannot express the
+ * `[number, number]` pair items of `page_ranges` as a uniform-items array. The runtime
+ * schema is compiled (and thus validated) by every consumer and by the schema-acceptance
+ * unit test in packages/workflows. */
+export const ContentTypeIntakePolicySchema = {
     type: 'object',
     description:
         'Per-content-type policy for standard intake: type selection, conversion, extraction, rendering, and embeddings.',
@@ -865,6 +1001,32 @@ export const ContentTypeIntakePolicySchema: JSONSchemaType<ContentTypeIntakePoli
                     description: 'Object ids of human-confirmed examples for this type.',
                     nullable: true,
                     items: { type: 'string' },
+                },
+            },
+        },
+        locate: {
+            type: 'object',
+            description:
+                'Document-map pass: labeled page-thumbnail contact sheets and one vision call return which ' +
+                'pages matter for this type. Scopes conversion/extraction and plans visual extraction.',
+            nullable: true,
+            required: ['instructions'],
+            additionalProperties: false,
+            properties: {
+                instructions: {
+                    type: 'string',
+                    description: 'What to look for (e.g. "commercial terms, payment schedule, signature pages").',
+                },
+                detail: {
+                    type: 'integer',
+                    enum: [8, 16],
+                    description: 'Pages per contact sheet: 8 = bigger tiles with readable headings. Default 16.',
+                    nullable: true,
+                },
+                min_pages: {
+                    type: 'number',
+                    description: 'Only run the locate pass when the page count is at least this. Default 8.',
+                    nullable: true,
                 },
             },
         },
@@ -916,6 +1078,8 @@ export const ContentTypeIntakePolicySchema: JSONSchemaType<ContentTypeIntakePoli
                     description: 'Output format for converted text. Prefer markdown for readable documents.',
                     nullable: true,
                 },
+                scope: IntakePageScopeSchema,
+                page_ranges: IntakePageRangesSchema,
             },
         },
         extraction: {
@@ -946,6 +1110,51 @@ export const ContentTypeIntakePolicySchema: JSONSchemaType<ContentTypeIntakePoli
                     type: 'string',
                     description: 'Interaction id used for extraction. Omit to use the system extractor.',
                     nullable: true,
+                },
+                scope: IntakePageScopeSchema,
+                page_ranges: IntakePageRangesSchema,
+                max_pages: {
+                    type: 'number',
+                    description: 'Cap on pages sent to extraction. Default 20.',
+                    nullable: true,
+                },
+                vision: {
+                    type: 'object',
+                    description:
+                        'Vision evidence budget for visual extraction. Detail names reference platform-defined ' +
+                        'profiles; the type never sets dpi, quality, or resolution.',
+                    nullable: true,
+                    required: [],
+                    additionalProperties: false,
+                    properties: {
+                        default_detail: {
+                            type: 'string',
+                            enum: ['low', 'standard', 'high'],
+                            description: 'Detail profile used when the plan does not request one. Default standard.',
+                            nullable: true,
+                        },
+                        allowed_details: {
+                            type: 'array',
+                            items: { type: 'string', enum: ['low', 'standard', 'high'] },
+                            description: 'Detail profiles the plan may request. Others fall back to default_detail.',
+                            nullable: true,
+                        },
+                        max_image_tokens: {
+                            type: 'number',
+                            description: 'PRIMARY budget: estimated image tokens per extraction call. Default 16000.',
+                            nullable: true,
+                        },
+                        max_payload_mb: {
+                            type: 'number',
+                            description: 'Transport guard in megabytes. Default 16.',
+                            nullable: true,
+                        },
+                        max_pages_per_call: {
+                            type: 'number',
+                            description: 'Cap on page images per extraction call. Default 8.',
+                            nullable: true,
+                        },
+                    },
                 },
                 verification: {
                     type: 'object',
@@ -1023,7 +1232,7 @@ export const ContentTypeIntakePolicySchema: JSONSchemaType<ContentTypeIntakePoli
             nullable: true,
         },
     },
-};
+} as unknown as JSONSchemaType<ContentTypeIntakePolicy>;
 
 export interface ContentObjectType extends ContentObjectTypeItem {}
 export interface ContentObjectTypeItem extends BaseObject {

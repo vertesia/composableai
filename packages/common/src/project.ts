@@ -1,6 +1,6 @@
 import type { JSONSchemaType } from 'ajv';
 import type { SupportedIntegrations } from './integrations.js';
-import type { ContentTypeIntakePolicy } from './store/store.js';
+import type { ContentTypeIntakePolicy, IntakeVisionDetail, IntakeVisionProfileSettings } from './store/store.js';
 import type { WorkflowRunStatus } from './store/workflow.js';
 import type { AccountRef } from './user.js';
 
@@ -326,6 +326,13 @@ export interface ProjectIntakeConfiguration {
      * the legacy flat fields below. `identification` is type-specific and ignored here.
      */
     default_policy?: ContentTypeIntakePolicy;
+
+    /**
+     * Project overrides for the platform vision detail profiles used by intake visual
+     * extraction (`low`/`standard`/`high`). Partial: omitted profiles or fields inherit the
+     * platform defaults. Types reference detail NAMES only; the profile settings live here.
+     */
+    vision_profiles?: Partial<Record<IntakeVisionDetail, Partial<IntakeVisionProfileSettings>>>;
 
     /**
      * Generate table-of-content sections during standard document intake.

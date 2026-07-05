@@ -47,6 +47,18 @@ export interface GenerateDocumentPropertiesParams extends InteractionExecutionPa
     instructions?: string;
 
     /**
+     * Scoped page-image evidence prepared by intake (`prepareVisionEvidence` scratch refs).
+     * When the param is PRESENT (even as an empty array) and the source calls for visual
+     * evidence, these refs are the ONLY visual evidence used — never the whole-object
+     * `store:{id}` ref, which resolves to ALL pages near-full-res through the rendition
+     * generate-and-poll path. An empty array means intake prepared no usable evidence
+     * (budget-impossible or no renderable source): extraction then runs text-only or fails
+     * with no-source instead of shipping an over-budget payload.
+     * Absent = legacy behavior for existing DSL callers.
+     */
+    evidence_images?: ContentSource[];
+
+    /**
      * Opt-in freshness guard. When true, the activity computes a fingerprint of the extraction
      * inputs (content etag, type + its object schema, source, instructions, interaction name)
      * and returns `{ status: 'skipped' }` without executing the interaction when the fingerprint
@@ -76,6 +88,9 @@ export function computeExtractionFingerprint(input: {
     interactionName: string;
     /** The type's object_schema: a schema edit under the same type id must invalidate the fingerprint. */
     object_schema?: unknown;
+    /** Scoped vision evidence refs: a different page/profile selection must invalidate the fingerprint.
+     *  Undefined (legacy callers) keeps previously stored hashes valid. */
+    evidence?: string[];
 }): string {
     return md5(
         JSON.stringify({
@@ -85,6 +100,7 @@ export function computeExtractionFingerprint(input: {
             instructions: input.instructions,
             interactionName: input.interactionName,
             object_schema: input.object_schema,
+            ...(input.evidence ? { evidence: input.evidence } : {}),
         }),
     );
 }
@@ -140,6 +156,8 @@ export async function generateDocumentProperties(
     }
 
     const source = params.source ?? (params.use_vision ? 'mixed' : 'auto');
+    const evidenceProvided = Array.isArray(params.evidence_images);
+    const evidenceImages = params.evidence_images?.length ? params.evidence_images : undefined;
 
     const extractionFingerprint = computeExtractionFingerprint({
         content_etag: doc.content?.etag,
@@ -148,6 +166,7 @@ export async function generateDocumentProperties(
         instructions: params.instructions,
         interactionName,
         object_schema: type.object_schema,
+        evidence: evidenceImages?.map((image) => image.source ?? image.name ?? ''),
     });
 
     if (params.skip_if_fresh && !payload.vars?.forceGeneration) {
@@ -188,10 +207,15 @@ export async function generateDocumentProperties(
         hasRealText && (source === 'auto' || source === 'text' || source === 'mixed')
             ? truncByMaxTokens(doc.text ?? '', params.truncate || 30000)
             : undefined;
-    const imageRef =
-        source === 'vision' || source === 'mixed' || (source === 'auto' && !content) ? getImageRef() : undefined;
+    const needsVisualEvidence = source === 'vision' || source === 'mixed' || (source === 'auto' && !content);
+    // Scoped scratch page refs win over the whole-object store: ref (which resolves to ALL
+    // pages near-full-res through the rendition generate-and-poll path). A PRESENT param —
+    // even empty — disables the store-ref fallback entirely: intake decided what evidence
+    // (if any) may be sent.
+    const scopedImages = needsVisualEvidence ? evidenceImages : undefined;
+    const imageRef = needsVisualEvidence && !evidenceProvided ? getImageRef() : undefined;
 
-    if (!content && !imageRef) {
+    if (!content && !imageRef && !scopedImages) {
         log.warn(`Object ${objectId} has no text or supported vision source`);
         return { status: 'failed', error: 'no-source' };
     }
@@ -199,6 +223,7 @@ export async function generateDocumentProperties(
     const promptData = {
         content: content,
         image: imageRef,
+        images: scopedImages,
         extraction_instructions: params.instructions,
         human_context: project?.configuration?.human_context ?? undefined,
     };
