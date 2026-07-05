@@ -23,7 +23,7 @@
     "scripts": {
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run check:locales && pnpm run check:rtl-classes && pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rollup -c",
+        "build": "pnpm run check:locales && pnpm run check:rtl-classes && pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "lint": "biome lint src && pnpm run check:rtl-classes",
         "lint:fix": "biome lint --write src",
         "check:locales": "node scripts/check-locales.mjs",
@@ -108,11 +108,6 @@
         "vega-lite": "^6.4.3"
     },
     "devDependencies": {
-        "@rollup/plugin-commonjs": "^29.0.3",
-        "@rollup/plugin-json": "^6.1.0",
-        "@rollup/plugin-node-resolve": "^16.0.3",
-        "@rollup/plugin-replace": "^6.0.3",
-        "@rollup/plugin-terser": "^1.0.0",
         "@testing-library/react": "^16.3.2",
         "@testing-library/user-event": "^14.6.1",
         "@types/hast": "^3.0.4",
@@ -126,7 +121,7 @@
         "culori": "^4.0.2",
         "i18next-cli": "^1.64.2",
         "jsdom": "^29.1.1",
-        "rollup": "^4.62.2",
+        "rolldown": "catalog:",
         "typescript": "^6.0.3",
         "vitest": "^4.1.9",
         "vitest-axe": "^0.1.0",

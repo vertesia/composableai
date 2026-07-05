@@ -393,7 +393,7 @@ export function WavyThinking({ className, color = 'blue', size = 'md' }: WavyThi
         >
             {barHeights.map((height, i) => (
                 <div
-                    key={i}
+                    key={`bar-${i}`}
                     className={cn(sizeClasses[size].barWidth, 'rounded-full transform-gpu', colorClasses[color])}
                     style={{
                         height: `${height}%`,

@@ -17,7 +17,7 @@ export function JSONCode({ data, className }: { data: unknown; className?: strin
         >
             <code>
                 {lines.map((line, index) => (
-                    <span key={index}>
+                    <span key={`line-${index}`}>
                         {renderJsonLine(line)}
                         {index < lines.length - 1 ? '\n' : null}
                     </span>

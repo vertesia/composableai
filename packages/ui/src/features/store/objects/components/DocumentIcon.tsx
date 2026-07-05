@@ -25,7 +25,7 @@ export function DocumentIconSkeleton({ isLoading = false, counts = 6 }: { isLoad
             {Array(counts)
                 .fill(0)
                 .map((_, index) => (
-                    <div key={index} className="w-[15vw] animate-pulse">
+                    <div key={`skeleton-${index}`} className="w-[15vw] animate-pulse">
                         <Card className="relative flex flex-col border h-fit">
                             <div className="h-48 bg-muted rounded-t-xl flex items-center justify-center text-muted">
                                 &nbsp;

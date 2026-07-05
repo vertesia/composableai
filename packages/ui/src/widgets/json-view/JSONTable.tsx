@@ -36,7 +36,7 @@ function formatValue(value: unknown): JSX.Element | string {
         return (
             <>
                 {value.map((item, index) => (
-                    <div className="flex gap-1" key={index}>
+                    <div className="flex gap-1" key={`item-${index}`}>
                         <span className="text-xs align-top pe-2 font-medium">{index + 1}:</span>
                         <span className="text-xs">{formatValue(item)}</span>
                     </div>

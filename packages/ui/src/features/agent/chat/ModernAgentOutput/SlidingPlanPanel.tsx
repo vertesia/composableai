@@ -81,7 +81,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                 }
 
                                 return (
-                                    <div key={taskId} className={`flex p-3 ${bgColor}`}>
+                                    <div key={`plan-step-${index}`} className={`flex p-3 ${bgColor}`}>
                                         <div className={`me-3 mt-0.5 flex-shrink-0 ${statusColor}`}>
                                             <StatusIcon className="h-4 w-4" />
                                         </div>

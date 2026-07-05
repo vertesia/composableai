@@ -19,7 +19,7 @@ export function TextElement(props: TextElementProps) {
                 .split('\n')
                 .filter((element) => !!element.trim())
                 .map((line, index) => (
-                    <div key={`${index}`}>{`${indentation}${line.trim()}`}</div>
+                    <div key={`line-${index}`}>{`${indentation}${line.trim()}`}</div>
                 ))}
         </div>
     ) : (

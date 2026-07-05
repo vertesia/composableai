@@ -82,7 +82,13 @@ export function SelectList<T>({
                     layout = defaultOptionLayout(option, isSelected);
                 }
                 return (
-                    <SelectListOption key={i} option={option} onSelect={onSelect} layout={layout} noCheck={noCheck} />
+                    <SelectListOption
+                        key={`option-${i}`}
+                        option={option}
+                        onSelect={onSelect}
+                        layout={layout}
+                        noCheck={noCheck}
+                    />
                 );
             })}
         </div>

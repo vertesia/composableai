@@ -92,7 +92,7 @@ export function CodeBlockPlaceholder({ type, error, onRetry, message, height }: 
             <div className="flex gap-1">
                 {[...Array(3)].map((_, i) => (
                     <div
-                        key={i}
+                        key={`dot-${i}`}
                         className="h-2 w-2 rounded-full bg-muted animate-bounce"
                         style={{ animationDelay: `${i * 150}ms` }}
                     />

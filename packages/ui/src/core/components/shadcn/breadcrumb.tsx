@@ -47,7 +47,7 @@ export function Breadcrumbs({ path, maxItems = 3, className, separator }: Breadc
             <Breadcrumb className={cn('w-full flex items-center', className)}>
                 <BreadcrumbList>
                     {items.map((item, index) => (
-                        <React.Fragment key={index}>
+                        <React.Fragment key={`crumb-${index}`}>
                             <BreadcrumbItem>{renderBreadcrumbItem(item)}</BreadcrumbItem>
                             {index < items.length - 1 && (
                                 <BreadcrumbSeparator>
@@ -72,7 +72,7 @@ export function Breadcrumbs({ path, maxItems = 3, className, separator }: Breadc
                 <BreadcrumbSeparator>{separator ?? <ChevronRight className="cn-rtl-flip" />}</BreadcrumbSeparator>
 
                 {lastThreeItems.map((item, index) => (
-                    <React.Fragment key={index}>
+                    <React.Fragment key={`crumb-${index}`}>
                         <BreadcrumbItem>{renderBreadcrumbItem(item)}</BreadcrumbItem>
                         {index < lastThreeItems.length - 1 && (
                             <BreadcrumbSeparator>

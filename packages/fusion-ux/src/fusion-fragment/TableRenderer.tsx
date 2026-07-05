@@ -182,7 +182,7 @@ export function TableRenderer({ columns, rows }: TableRendererProps): ReactEleme
                 </thead>
                 <tbody>
                     {rows.map((row, rowIndex) => (
-                        <tr key={rowIndex}>
+                        <tr key={`row-${rowIndex}`}>
                             {columns.map((col) => {
                                 const value = row[col.key];
                                 const formatted = formatCellValue(value, col);

@@ -237,7 +237,7 @@ export function RunsFacetsNav({
                         {actions && actions.length > 0 ? (
                             <div className="flex items-center gap-2 mb-1 me-2">
                                 {actions.map((action, index) => (
-                                    <div key={index}>{action}</div>
+                                    <div key={`action-${index}`}>{action}</div>
                                 ))}
                             </div>
                         ) : null}
