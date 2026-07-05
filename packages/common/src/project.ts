@@ -1,5 +1,6 @@
 import type { JSONSchemaType } from 'ajv';
 import type { SupportedIntegrations } from './integrations.js';
+import type { ContentTypeIntakePolicy, IntakeVisionDetail, IntakeVisionProfileSettings } from './store/store.js';
 import type { WorkflowRunStatus } from './store/workflow.js';
 import type { AccountRef } from './user.js';
 
@@ -269,7 +270,70 @@ export const BrowserUseProjectConfigurationSchema: JSONSchemaType<BrowserUseProj
 export type ProjectSearchTier = 'standard' | 'performance';
 export type ElasticsearchBackend = 'serverless' | 'hosted';
 
+/**
+ * Fast pre-conversion type identification (the "sniff") for untyped documents.
+ * The sniff classifies a document from cheap local evidence (first/last page text,
+ * a low-res first-page image, office docProps) BEFORE any conversion, so a
+ * high-confidence match can apply the type's intake policy — including skipping
+ * conversion — without paying for it first.
+ */
+export interface ProjectIntakeSniffConfiguration {
+    /**
+     * Enable the pre-conversion sniff for untyped documents. Defaults to true.
+     * Can be overridden per run with the `sniffEnabled` workflow var.
+     */
+    enabled?: boolean;
+
+    /**
+     * Confidence at or above which the sniffed type is committed and its full policy applied
+     * (including conversion-skip). 0..1, defaults to 0.85.
+     */
+    high_confidence?: number;
+
+    /**
+     * Confidence at or above which the sniffed type is treated as provisional: the document
+     * still converts and the post-conversion selector confirms on neutral evidence.
+     * 0..1, defaults to 0.6. Below this the sniff result is advisory provenance only.
+     */
+    medium_confidence?: number;
+
+    /**
+     * Minimum page count for the sniff LLM call. Below this, conversion is cheap and full
+     * converted text is better selection evidence, so intake uses the standard
+     * convert-then-select path. Documents with unknown page counts are sniffed.
+     * Defaults to 5; 0 means always sniff.
+     */
+    min_pages?: number;
+}
+
 export interface ProjectIntakeConfiguration {
+    /**
+     * Master switch for the standard intake pipeline. When false, StandardIntake exits as a
+     * no-op WITHOUT touching object status (objects stay in `created`, identifiable as
+     * unprocessed). Defaults to true.
+     */
+    enabled?: boolean;
+
+    /**
+     * Fast pre-conversion type identification for untyped documents. Absent means enabled
+     * with platform default thresholds.
+     */
+    sniff?: ProjectIntakeSniffConfiguration;
+
+    /**
+     * Project-level intake policy defaults. Same shape as the per-content-type policy; a
+     * type's `intake` block wins field-by-field over these defaults, which in turn win over
+     * the legacy flat fields below. `identification` is type-specific and ignored here.
+     */
+    default_policy?: ContentTypeIntakePolicy;
+
+    /**
+     * Project overrides for the platform vision detail profiles used by intake visual
+     * extraction (`low`/`standard`/`high`). Partial: omitted profiles or fields inherit the
+     * platform defaults. Types reference detail NAMES only; the profile settings live here.
+     */
+    vision_profiles?: Partial<Record<IntakeVisionDetail, Partial<IntakeVisionProfileSettings>>>;
+
     /**
      * Generate table-of-content sections during standard document intake.
      * Defaults to false.

@@ -2,6 +2,7 @@ import {
     ContentNature,
     type ContentObject,
     ContentObjectStatus,
+    type ContentObjectTypeItem,
     type DocAnalyzerProgress,
     type DocProcessorOutputFormat,
     type DocumentMetadata,
@@ -33,6 +34,7 @@ import { AudioPanel, ImagePanel, VideoPanel } from '../../../media-viewer';
 import { SimplePdfViewer } from '../../../pdf-viewer';
 import { SecureButton } from '../../../permissions/SecureButton.js';
 import { getWorkflowStatusColor, getWorkflowStatusName, isPreviewableAsPdf } from '../../../utils/index.js';
+import { resolveTypeCached } from '../../types/typeCatalogCache.js';
 import { PropertiesEditorModal } from './PropertiesEditorModal';
 import { TextEditorPanel } from './TextEditorPanel.js';
 import { useObjectText, useOfficePdfConversion, usePdfProcessingStatus } from './useContentPanelHooks.js';
@@ -309,17 +311,51 @@ function PropertiesPanel({
     );
 }
 
-function DataPanel({
-    object,
-    loadText,
-    handleCopyContent,
-    refetch,
-}: {
+type IntakeDefaultView = NonNullable<NonNullable<ContentObjectTypeItem['intake']>['default_view']>;
+
+interface DataPanelProps {
     object: ContentObject;
     loadText: boolean;
     handleCopyContent: (content: string, type: 'text' | 'properties') => Promise<void>;
     refetch?: () => Promise<unknown>;
-}) {
+}
+
+/**
+ * Resolves the object's content-type intake policy BEFORE the initial panel is chosen so
+ * `default_view` can drive it. Renders a spinner until the type is resolved — never the
+ * MIME-guessed panel first (no guess-then-flip). Objects without a type render immediately.
+ */
+function DataPanel(props: DataPanelProps) {
+    const { client } = useUserSession();
+    const typeRef = props.object.type;
+    const typeId = typeRef?.id;
+    // Fast path: single-object reads carry the display hint on the API-enriched type ref.
+    const refView = typeRef?.default_view;
+    // Fallback (list-fed contexts, older servers): session-cached catalog lookup.
+    // null = resolved with no default view; undefined = not resolved yet.
+    const { data: fetchedView } = useFetch<IntakeDefaultView | null>(async () => {
+        if (!typeId || refView) return null;
+        const type = await resolveTypeCached(client, typeId);
+        return type?.intake?.default_view ?? null;
+    }, [typeId, refView]);
+    const defaultView = refView ?? fetchedView;
+    if (typeId && !refView && fetchedView === undefined) {
+        return (
+            <div className="flex h-full items-center justify-center">
+                <Spinner size="lg" />
+            </div>
+        );
+    }
+    return <DataPanelContent {...props} defaultView={defaultView ?? undefined} />;
+}
+
+function DataPanelContent({
+    object,
+    loadText,
+    handleCopyContent,
+    refetch,
+    defaultView,
+}: DataPanelProps & { defaultView?: IntakeDefaultView }) {
     const { t } = useUITranslation();
     const isImage = object?.metadata?.type === ContentNature.Image;
     const isVideo = object?.metadata?.type === ContentNature.Video;
@@ -333,8 +369,25 @@ function DataPanel({
     const metadata = object.metadata as DocumentMetadata;
     const pdfRendition = metadata?.renditions?.find((r) => r.name === PDF_RENDITION_NAME);
 
-    // Determine initial panel view
+    // Determine initial panel view: the type's default_view wins when it applies to this
+    // object; otherwise fall back to the nature/MIME heuristics.
     const getInitialView = (): PanelView => {
+        switch (defaultView) {
+            case 'text':
+                return PanelView.Text;
+            case 'pdf':
+                if (isPdf || isPreviewableAsPdfDoc || pdfRendition) return PanelView.Pdf;
+                break;
+            case 'image':
+                if (isImage) return PanelView.Image;
+                break;
+            case 'properties':
+                // Properties live in the right-hand panel which is always visible; the text
+                // panel shows the rendered property card for extraction-only types.
+                return PanelView.Text;
+            default:
+                break;
+        }
         if (isVideo) return PanelView.Video;
         if (isAudio) return PanelView.Audio;
         if (isImage) return PanelView.Image;

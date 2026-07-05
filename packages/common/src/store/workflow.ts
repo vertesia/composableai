@@ -7,6 +7,7 @@ import type {
 } from '../interaction.js';
 import type { JSONObject, JSONValue } from '../json.js';
 import type { JSONSchema } from '../json-schema.js';
+import type { SupportedEmbeddingTypes } from '../project.js';
 import type { AgentToolApprovalMode } from './agent-approval.js';
 import type { WorkflowInput } from './dsl-workflow.js';
 
@@ -1391,6 +1392,8 @@ export interface AgentIntakeWorkflowResult {
     collectionIds?: string[];
     /** Whether embeddings were generated */
     hasEmbeddings: boolean;
+    /** Embedding kinds that were actually generated. Skipped or failed activity results are omitted. */
+    generatedEmbeddings?: SupportedEmbeddingTypes[];
 }
 
 // ---------------------------------------------------------------------------
