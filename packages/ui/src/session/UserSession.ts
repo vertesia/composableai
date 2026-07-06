@@ -227,25 +227,23 @@ class UserSession {
             });
     }
 
+    /**
+     * Refresh `onboardingComplete` from the persisted account flag (authoritative),
+     * not from derived step progress. Always notifies subscribers so the UI reflects
+     * a restart (completed → not completed) as well as a completion.
+     * @returns whether the completion flag changed.
+     */
     async fetchOnboardingStatus(): Promise<boolean> {
-        if (this.onboardingComplete) {
-            console.log('Onboarding already completed');
-            return false;
-        }
         const previousStatus = this.onboardingComplete;
         try {
-            const onboarding = await this.client.account.onboardingProgress();
-            this.onboardingComplete = Object.values(onboarding).every((value) => value === true);
-            if (previousStatus !== this.onboardingComplete) {
-                return true;
-            }
-            this.setSession?.(this.clone());
+            const status = await this.client.account.onboardingStatus();
+            this.onboardingComplete = status.completed;
         } catch (error) {
             console.error('Error fetching onboarding status:', error);
             this.onboardingComplete = false;
-            this.setSession?.(this.clone());
         }
-        return false;
+        this.setSession?.(this.clone());
+        return previousStatus !== this.onboardingComplete;
     }
 
     clone() {

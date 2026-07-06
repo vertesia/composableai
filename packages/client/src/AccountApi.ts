@@ -6,7 +6,7 @@ import type {
     InviteDeclineResponse,
     InviteUserRequestPayload,
     InviteUserResponsePayload,
-    OnboardingProgress,
+    OnboardingStatus,
     ProjectRef,
     StripeBillingStatusResponse,
     TransientToken,
@@ -87,10 +87,24 @@ export default class AccountApi extends ApiTopic {
     }
 
     /**
-     * Get Onboarding Progress for account
+     * Get onboarding status (completion flag + per-step progress) for the current account.
      */
-    onboardingProgress(): Promise<OnboardingProgress> {
+    onboardingStatus(): Promise<OnboardingStatus> {
         return this.get('/onboarding');
+    }
+
+    /**
+     * Explicitly mark onboarding as completed for the current account.
+     */
+    completeOnboarding(): Promise<OnboardingStatus> {
+        return this.post('/onboarding/complete');
+    }
+
+    /**
+     * Restart onboarding for the current account (account admins only).
+     */
+    restartOnboarding(): Promise<OnboardingStatus> {
+        return this.post('/onboarding/restart');
     }
 
     getStripeBillingStatus(): Promise<StripeBillingStatusResponse> {

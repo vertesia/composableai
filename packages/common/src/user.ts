@@ -108,7 +108,7 @@ export interface Account {
 
     onboarding: {
         completed: boolean;
-        completed_at: Date;
+        completed_at?: Date;
     };
 
     datacenter: string;
@@ -177,10 +177,22 @@ export interface UserSessionInfo extends SessionInfo<User> {}
 export interface ApiKeySessionInfo extends SessionInfo<ApiKey> {}
 
 export interface OnboardingProgress {
-    interactions: boolean;
-    prompts: boolean;
+    /** The account has at least one project. */
+    project: boolean;
+    /** The account has at least one execution environment. */
     environments: boolean;
+    /** The current project has a base default environment and model configured. */
     default_environment_defined: boolean;
+}
+
+/**
+ * Onboarding status for the current account: the persisted completion latch plus
+ * the per-step progress computed from the current account/project state.
+ */
+export interface OnboardingStatus {
+    completed: boolean;
+    completed_at?: Date;
+    progress: OnboardingProgress;
 }
 
 /**

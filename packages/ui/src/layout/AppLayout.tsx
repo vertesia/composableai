@@ -16,6 +16,8 @@ interface AppLayoutProps {
     mainNav?: React.ReactNode;
     className?: string; // will be forwarded to the main page element
     sidebarClassName?: string; // will be forwarded to the sidebar element
+    /** Hide the left sidebar entirely (no column reserved). Used for focused full-page views. */
+    hideSidebar?: boolean;
 }
 export function AppLayout({
     sidebarClassName,
@@ -26,6 +28,7 @@ export function AppLayout({
     navbar,
     sidebar,
     mainNav,
+    hideSidebar = false,
 }: AppLayoutProps) {
     if (localStorage.getItem('desktopSidebarOpen') === null) {
         localStorage.setItem('desktopSidebarOpen', 'true');
@@ -70,32 +73,36 @@ export function AppLayout({
                 <div className="w-full">{mainNav}</div>
 
                 <div className="flex h-full overflow-y-auto w-full">
-                    {/* Mobile sidebar */}
-                    <div className="lg:hidden">
-                        <SidePanel
-                            className="bg-sidebar"
-                            isOpen={sidebarOpen}
-                            onClose={() => setSidebarOpen(false)}
-                            side={isRTL ? 'right' : 'left'}
-                            panelWidth={288}
-                            resizable={false}
-                            backdrop={true}
-                        >
-                            <Sidebar logo={logo} className={sidebarClassName}>
-                                {sidebar}
-                            </Sidebar>
-                        </SidePanel>
-                    </div>
+                    {!hideSidebar && (
+                        <>
+                            {/* Mobile sidebar */}
+                            <div className="lg:hidden">
+                                <SidePanel
+                                    className="bg-sidebar"
+                                    isOpen={sidebarOpen}
+                                    onClose={() => setSidebarOpen(false)}
+                                    side={isRTL ? 'right' : 'left'}
+                                    panelWidth={288}
+                                    resizable={false}
+                                    backdrop={true}
+                                >
+                                    <Sidebar logo={logo} className={sidebarClassName}>
+                                        {sidebar}
+                                    </Sidebar>
+                                </SidePanel>
+                            </div>
 
-                    {/* Static sidebar for desktop */}
-                    <div
-                        className={`hidden lg:block relative transition-all duration-300 ${desktopSidebarOpen ? 'w-72' : 'w-12'}`}
-                    >
-                        {/* Sidebar component, swap this element with another sidebar if you like */}
-                        <Sidebar logo={logo} className={sidebarClassName}>
-                            {sidebar}
-                        </Sidebar>
-                    </div>
+                            {/* Static sidebar for desktop */}
+                            <div
+                                className={`hidden lg:block relative transition-all duration-300 ${desktopSidebarOpen ? 'w-72' : 'w-12'}`}
+                            >
+                                {/* Sidebar component, swap this element with another sidebar if you like */}
+                                <Sidebar logo={logo} className={sidebarClassName}>
+                                    {sidebar}
+                                </Sidebar>
+                            </div>
+                        </>
+                    )}
 
                     <div className="w-full h-full overflow-y-hidden">
                         {navbar ? (
